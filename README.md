@@ -1,2 +1,2 @@
 # pynapple
-PYthon Neural Analysis Package Pour Laboratoire d’Excellence
+PYthon Neural Analysis Package Pour Laboratoires d’Excellence
