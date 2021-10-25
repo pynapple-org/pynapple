@@ -1,9 +1,9 @@
 ========
-|pic1| pynapple
+|pic1|
 ========
 
-.. |pic1| image:: LOGO.png
-   :width: 10%
+.. |pic1| image:: pynapple_logo.png
+   :width: 80%
 
 
 .. image:: https://img.shields.io/pypi/v/pynapple.svg
