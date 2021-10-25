@@ -1,6 +1,9 @@
 ========
-pynapple
+pynapple |pic1| 
 ========
+
+.. |pic1| image:: https://avatars2.githubusercontent.com/u/26169608?s=400&u=c95268d6ce14e5fa4e4c94ec51888042c2245c66&v=4
+   :width: 5%
 
 
 .. image:: https://img.shields.io/pypi/v/pynapple.svg
