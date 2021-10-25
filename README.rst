@@ -25,7 +25,33 @@ pynapple is a Python library for analysing neurophysiological data. It allows to
 * Free software: GNU General Public License v3
 * Documentation: https://pynapple.readthedocs.io.
 
+Installing pynapple
+===================
 
+The only pre-requisite is to have **Python 3** installed. The easiest way is via the `Anaconda distribution <https://www.anaconda.com/download/>`_.
+
++-------------------------------------------+---------------------------------------------------+
+|      **With pip** (recommended)           |         **With conda**                            |
++-------------------------------------------+---------------------------------------------------+
+|                                           |                                                   |
+| .. code::                                 | .. code::                                         |
+|                                           |                                                   |
+|   pip install pynapple                    |   conda install -c conda-forge pynapple           |
+|                                           |                                                   |
+|                                           |                                                   |
++-------------------------------------------+---------------------------------------------------+
+|                               **Development (from git)**                                      |
++-------------------------------------------+---------------------------------------------------+
+|                                                                                               |
+|          .. code::                                                                            |
+|                                                                                               |
+|             # clone the repository                                                            |
+|             git clone https://github.com/PeyracheLab/pynapple.git                                    |
+|             cd pynapple                                                                       |
+|             # Install in editable mode with `-e` or, equivalently, `--editable`               |
+|             pip install -e .                                                                  |
+|                                                                                               |
++-----------------------------------------------------------------------------------------------+  
 
 
 Features
