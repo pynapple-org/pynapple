@@ -1,29 +1,44 @@
+#!/usr/bin/env python
+
+"""The setup script."""
+
 from setuptools import setup, find_packages
 
-VERSION = '0.0.1' 
-DESCRIPTION = 'PYthon Neural Analysis Package Pour Laboratoires d’Excellence'
-LONG_DESCRIPTION = '''
-Python package for analysing neurophysiological and behavioral data
-'''
+with open('README.rst') as readme_file:
+    readme = readme_file.read()
 
-# Setting up
-setup(       
-        name="pynapple", 
-        version=VERSION,
-        author="Guillaume Viejo",
-        author_email="guillaume.viejo@gmail.com ",
-        description=DESCRIPTION,
-        long_description=LONG_DESCRIPTION,
-        packages=find_packages(),
-        install_requires=[], # add any additional packages that 
-        # needs to be installed along with your package. Eg: 'caer'
-        
-        keywords=['python', 'electrophysiology', 'time-series'],
-        classifiers= [
-            "Development Status :: 3 - Alpha",
-            "Intended Audience :: Researchers",
-            "Programming Language :: Python :: 3",
-            # "Operating System :: MacOS :: MacOS X",
-            # "Operating System :: Microsoft :: Windows",
-        ]
+with open('HISTORY.rst') as history_file:
+    history = history_file.read()
+
+requirements = [ ]
+
+test_requirements = [ ]
+
+setup(
+    author="Guillaume Viejo",
+    author_email='guillaume.viejo@gmail.com',
+    python_requires='>=3.6',
+    classifiers=[
+        'Development Status :: 2 - Pre-Alpha',
+        'Intended Audience :: Developers',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Natural Language :: English',
+        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.6',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.8',
+    ],
+    description="PYthon Neural Analysis Package Pour Laboratoires d’Excellence",
+    install_requires=requirements,
+    license="GNU General Public License v3",
+    long_description=readme + '\n\n' + history,
+    include_package_data=True,
+    keywords='pynapple',
+    name='pynapple',
+    packages=find_packages(include=['pynapple', 'pynapple.*']),
+    test_suite='tests',
+    tests_require=test_requirements,
+    url='https://github.com/gviejo/pynapple',
+    version='0.1.0',
+    zip_safe=False,
 )
