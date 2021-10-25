@@ -32,21 +32,13 @@ So that next time, you load the script, the wrappers will search in /Analysis to
 
 import numpy as np
 import pandas as pd
-import neuroseries as nts
+import pynapple as ap
 from pylab import *
 
 # first we define a string for the data directory
 # It is usually better to separate the data from the code
-data_directory = '../data_raw/KA28-190405'
+data_directory = '../data/A2929-200711'
 # The two dots means we go backward in the folder architecture and then into the data folder
-
-# First thing is to put some data there.
-# The data were too big to live in github.
-# So i put them on dropbox.
-# The link is :
-url = "https://www.dropbox.com/sh/8bu167zgk6u9r1r/AAAdiK1zW6r_Pil78Ger6SlVa?dl=1"
-# It's best to do it manually
-# Just extract the zip file in the folder StarterPack/data_raw/
 
 
 # To list the files in the directory, you use the os package (for Operating System) and the listdir function
@@ -57,14 +49,12 @@ files
 
 # First thing to load are the spikes.
 # Here you can use the wrappers loadSpikeData
-from wrappers import loadSpikeData
-spikes, shank = loadSpikeData(data_directory)
+spikes, shank = ap.loadSpikeData(data_directory)
 # Type your variables in the terminal to see what it looks like
 
 # Second thing is some information about the recording session like the geometry of the shanks and sampling frequency
 # You can use the loadXML wrapper
-from wrappers import loadXML
-n_channels, fs, shank_to_channel = loadXML(data_directory)
+n_channels, fs, shank_to_channel = ap.loadXML(data_directory)
 # Again type your variables
 
 # Now we want to load the position of the animal
@@ -79,8 +69,7 @@ events = ['1']
 
 # Now we can load the position and rotation contained into the file Tracking_data.csv
 # The order is by default [rotation y, rotation x, rotation z, position x, position y, position z]
-from wrappers import loadPosition
-position = loadPosition(data_directory, events, episodes, n_ttl_channels = 2, optitrack_ch = 1)
+position = ap.loadPosition(data_directory, events, episodes)
 
 # The loadPosition is doing of lot of stuff in the background
 # in particular it's making a BehavEpoch.h5 in the folder analysis
@@ -88,9 +77,8 @@ position = loadPosition(data_directory, events, episodes, n_ttl_channels = 2, op
 # plus it's automatically realigning the start and end of the wake epoch to the start and end of the tracking
 
 # But now, you can load the different epoch 
-from wrappers import loadEpoch
-wake_ep 							= loadEpoch(data_directory, 'wake', episodes)
-sleep_ep 							= loadEpoch(data_directory, 'sleep')					
+wake_ep 							= ap.loadEpoch(data_directory, 'wake', episodes)
+sleep_ep 							= ap.loadEpoch(data_directory, 'sleep')					
 
 
 # We can look at the position of the animal in 2d with a figure
@@ -102,8 +90,7 @@ show()
 # Now we are going to compute the tuning curve for all neurons during exploration
 # The process of making a tuning curve has been covered in main3_tuningcurves.py
 # So here we are gonna use the function computeAngularTuningCurves from functions.py 
-from functions import computeAngularTuningCurves
-tuning_curves = computeAngularTuningCurves(spikes, position['ry'], wake_ep, 60)
+tuning_curves = ap.computeAngularTuningCurves(spikes, position['ry'], wake_ep, 60)
 
 	
 # And let's plot all the tuning curves in a polar plot
@@ -116,8 +103,7 @@ show()
 
 
 # It's a bit dirty. Let's smooth the tuning curves ...
-from functions import smoothAngularTuningCurves
-tuning_curves = smoothAngularTuningCurves(tuning_curves, 10, 2)
+tuning_curves = ap.smoothAngularTuningCurves(tuning_curves, 10, 2)
 
 # and plot it again
 figure()

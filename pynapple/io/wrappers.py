@@ -1,10 +1,12 @@
+import sys, os
 import numpy as np
-import sys,os
 import scipy.io
-#import neuroseries as nts
 import pandas as pd
 import scipy.signal
-from numba import jit
+from .. import core as nts
+
+
+
 '''
 Wrappers should be able to distinguish between raw data or matlab processed data
 '''

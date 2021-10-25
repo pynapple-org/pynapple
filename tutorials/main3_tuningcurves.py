@@ -12,7 +12,7 @@ and learn how to use one of the most important function : realign
 
 import numpy as np
 import pandas as pd
-import neuroseries as nts
+import pynapple as ap
 from pylab import *
 from scipy.stats import norm
 
@@ -31,11 +31,11 @@ dt = 1/100.
 # and a duration of
 duration = dt*len(angle)
 # let's put angle in a neuroseries tsd
-angle = nts.Tsd(t = np.arange(0, duration, dt), d = angle, time_units = 's')
+angle = ap.Tsd(t = np.arange(0, duration, dt), d = angle, time_units = 's')
 
 # now let's imagine we have some spikes
 spikes = np.sort(np.random.uniform(0, duration, 100))
-spikes = nts.Ts(spikes, time_units = 's')
+spikes = ap.Ts(spikes, time_units = 's')
 
 # We can plot both angle and spikes together
 figure()
@@ -75,7 +75,7 @@ spike_count = spike_count/occupancy
 tuning_curve = spike_count/dt
 
 # let's put that in a nice dataframe
-# it's not a time series so no need to use nts
+# it's not a time series so no need to use ap
 tuning_curve = pd.DataFrame(index = bins[0:-1]+np.diff(bins)/2, data = tuning_curve)
 
 # Now let's plot that along with the spikes
@@ -99,7 +99,7 @@ ypos = np.sin(angle.values)+np.random.randn(len(angle))*0.05
 
 # We can stack the x,y position in a TsdFrame
 position = np.vstack((xpos, ypos)).T
-position = nts.TsdFrame(t = angle.times(), d = position, columns = ['x', 'y'])
+position = ap.TsdFrame(t = angle.times(), d = position, columns = ['x', 'y'])
 
 # and we can plot it
 figure()
