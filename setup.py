@@ -26,7 +26,7 @@ setup(
     python_requires='>=3.6',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
-        'Intended Audience :: Developers',
+        'Intended Audience :: Researchers',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
@@ -40,13 +40,13 @@ setup(
     long_description='pynapple is a Python library for analysing neurophysiological data. It allows to handle time series and epochs but also to use generic functions for neuroscience such as tuning curves and cross-correlogram of spikes. It is heavily based on neuroseries.' 
     + '\n\n' + history,
     include_package_data=True,
-    keywords='pynapple',
+    keywords='neuroscience',
     name='pynapple',
     packages=find_packages(include=['pynapple', 'pynapple.*']),
     test_suite='tests',
     tests_require=test_requirements,
-    url='https://github.com/gviejo/pynapple',
-    version='0.1.0',
+    url='https://github.com/PeyracheLab/pynapple',
+    version='0.1.1',
     zip_safe=False,
     long_description_content_type='text/x-rst'
 )

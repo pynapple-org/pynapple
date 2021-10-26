@@ -6,7 +6,7 @@ import scipy
 from scipy import signal
 from itertools import combinations
 #from pycircstat.descriptive import mean as circmean
-from pylab import *
+#from pylab import *
 from .. import core as nts
 
 
@@ -903,15 +903,15 @@ def shuffleByIntervalSpikes(spikes, epochs):
 		shuffled[n] = nts.Ts(t = np.cumsum(np.hstack(isi)) + epochs.loc[0,'start'])
 	return shuffled
 
-def plotTuningCurves(tcurves, tokeep = []):	
-	figure()
-	for i in tcurves.columns:
-		subplot(int(np.ceil(np.sqrt(tcurves.shape[1]))),int(np.ceil(np.sqrt(tcurves.shape[1]))),i+1, projection='polar')
-		plot(tcurves[i])
-		if len(tokeep):
-			if i in tokeep:
-				plot(tcurves[i], linewidth = 4)
-	return
+# def plotTuningCurves(tcurves, tokeep = []):	
+# 	figure()
+# 	for i in tcurves.columns:
+# 		subplot(int(np.ceil(np.sqrt(tcurves.shape[1]))),int(np.ceil(np.sqrt(tcurves.shape[1]))),i+1, projection='polar')
+# 		plot(tcurves[i])
+# 		if len(tokeep):
+# 			if i in tokeep:
+# 				plot(tcurves[i], linewidth = 4)
+# 	return
 
 
 ######################################################################################
