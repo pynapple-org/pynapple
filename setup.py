@@ -26,7 +26,7 @@ setup(
     python_requires='>=3.6',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
-        'Intended Audience :: Researchers',
+        'Intended Audience :: Science/Research',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
@@ -46,7 +46,7 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/PeyracheLab/pynapple',
-    version='0.1.1',
+    version='0.1.1.post1',
     zip_safe=False,
     long_description_content_type='text/x-rst'
 )
