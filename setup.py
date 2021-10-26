@@ -10,7 +10,13 @@ with open('README.rst') as readme_file:
 with open('HISTORY.rst') as history_file:
     history = history_file.read()
 
-requirements = [ ]
+requirements = [
+        'pandas>=1.0.3',
+        'numba>=0.46.0',
+        'numpy',
+        'scipy'
+
+]
 
 test_requirements = [ ]
 
@@ -31,7 +37,8 @@ setup(
     description="PYthon Neural Analysis Package Pour Laboratoires d’Excellence",
     install_requires=requirements,
     license="GNU General Public License v3",
-    long_description=readme + '\n\n' + history,
+    long_description='pynapple is a Python library for analysing neurophysiological data. It allows to handle time series and epochs but also to use generic functions for neuroscience such as tuning curves and cross-correlogram of spikes. It is heavily based on neuroseries.' 
+    + '\n\n' + history,
     include_package_data=True,
     keywords='pynapple',
     name='pynapple',
@@ -41,4 +48,5 @@ setup(
     url='https://github.com/gviejo/pynapple',
     version='0.1.0',
     zip_safe=False,
+    long_description_content_type='text/x-rst'
 )
