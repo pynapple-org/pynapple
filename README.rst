@@ -40,7 +40,7 @@ Installing pynapple
 |                                           |                                                   |
 | .. code::                                 | .. code::                                         |
 |                                           |                                                   |
-|   pip install pynapple                    |   conda install -c conda-forge pynapple           |
+|   pip install pynapple                    |   TODO                                            |
 |                                           |                                                   |
 |                                           |                                                   |
 +-------------------------------------------+---------------------------------------------------+
