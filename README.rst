@@ -30,46 +30,88 @@ pynapple is a Python library for analysing neurophysiological data. It allows to
 
 ----------------------------
 
-Installing pynapple
-===================
+Getting Started
+===============
 
+Requirements
+------------
 
-+-------------------------------------------+---------------------------------------------------+
-|      **With pip** (recommended)           |         **With conda**                            |
-+-------------------------------------------+---------------------------------------------------+
-|                                           |                                                   |
-| .. code::                                 | .. code::                                         |
-|                                           |                                                   |
-|   pip install pynapple                    |   TODO                                            |
-|                                           |                                                   |
-|                                           |                                                   |
-+-------------------------------------------+---------------------------------------------------+
-|                               **Development (from git)**                                      |
-+-------------------------------------------+---------------------------------------------------+
-|                                                                                               |
-|          .. code::                                                                            |
-|                                                                                               |
-|             # clone the repository                                                            |
-|             git clone https://github.com/PeyracheLab/pynapple.git                             |
-|             cd pynapple                                                                       |
-|             # Install in editable mode with `-e` or, equivalently, `--editable`               |
-|             pip install -e .                                                                  |
-|                                                                                               |
-+-----------------------------------------------------------------------------------------------+  
- 
+* Python 3.6+
+* Pandas 1.0.3+
+* numpy 1.17+
+* scipy 1.3+
+* numba 0.46+
 
-------------------
+Installation
+------------
+
+pynapple can be installed with pip:
+
+.. code-block:: shell
+
+    $ pip install starstruct
+
+or directly from the source code:
+
+.. code-block:: shell
+
+    $ # clone the repository
+    $ git clone https://github.com/PeyracheLab/pynapple.git
+    $ cd pynapple
+    $ # Install in editable mode with `-e` or, equivalently, `--editable`
+    $ pip install -e
 
 
 Features
---------
+========
 
-* TODO
+* Automatic handling of spike times and epochs
+* Tuning curves
+* Loading data coming from various pipelines
+
+Basic Usage
+===========
+
+
+After installation, the package can imported:
+
+.. code-block:: shell
+
+    $ python
+    >>> import pynapple as ap
+
+An example of the package can be seen below
+    
+.. code-block:: python
+
+    import numpy as np
+    import pandas as pd
+    import pynapple as ap
+    from pylab import *
+    import sys
+    
+    data_directory = 'data/A2929-200711'
+    
+    
+    episodes = ['sleep', 'wake']
+    events = ['1']
+    
+    # Loading Data
+    
+    spikes, shank = ap.loadSpikeData(data_directory)
+    position = ap.loadPosition(data_directory, events, episodes)
+    wake_ep = ap.loadEpoch(data_directory, 'wake', episodes)
+    sleep_ep = ap.loadEpoch(data_directory, 'sleep')					
+    
+    # Computing tuning curves
+    
+    tuning_curves = ap.computeAngularTuningCurves(spikes, position['ry'], wake_ep, 60)
+    tuning_curves = ap.smoothAngularTuningCurves(tuning_curves, 10, 2)
+
+
+
+
 
 Credits
 -------
 
-This package was created with Cookiecutter_ and the `audreyr/cookiecutter-pypackage`_ project template.
-
-.. _Cookiecutter: https://github.com/audreyr/cookiecutter
-.. _`audreyr/cookiecutter-pypackage`: https://github.com/audreyr/cookiecutter-pypackage

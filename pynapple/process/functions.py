@@ -320,6 +320,31 @@ def computeLMNAngularTuningCurves(spikes, angle, ep, nb_bins = 180, frequency = 
 	return tuning_curves, velocity, bins_velocity
 
 def computeAngularTuningCurves(spikes, angle, ep, nb_bins = 180, frequency = 120.0):
+	"""
+	Compute angular tuning curves
+
+	Parameters
+	----------
+	spikes: dict
+		Dictionnary of Ts objects
+	angles: Tsd object
+		Angle between 0 and 2pi
+	ep: IntervalSet object
+		Epoch to compute the tuning curve
+	nb_bins: int
+		Number of bins of the tuning curves
+	frequency: float
+		Sampling frequency of the angle
+
+	Returns
+	-------
+	tuning_curves: DataFrame object
+
+	Examples
+	--------
+	>>> import pynapple as ap
+	>>> tuning_curves = ap.computeAngularTuningCurves(spikes, angles, wake_ep, 60, 120)
+	"""
 	bins 			= np.linspace(0, 2*np.pi, nb_bins)
 	idx 			= bins[0:-1]+np.diff(bins)/2
 	tuning_curves 	= pd.DataFrame(index = idx, columns = list(spikes.keys()))	
