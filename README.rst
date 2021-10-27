@@ -12,12 +12,6 @@
 .. image:: https://img.shields.io/travis/gviejo/pynapple.svg
         :target: https://travis-ci.com/gviejo/pynapple
 
-.. image:: https://readthedocs.org/projects/pynapple/badge/?version=latest
-        :target: https://pynapple.readthedocs.io/en/latest/?version=latest
-        :alt: Documentation Status
-
-
-
 
 PYthon Neural Analysis Package Pour Laboratoires d’Excellence
 
@@ -26,7 +20,7 @@ pynapple is a Python library for analysing neurophysiological data. It allows to
 
 
 * Free software: GNU General Public License v3
-* Documentation: https://pynapple.readthedocs.io.
+* Documentation: https://peyrachelab.github.io/pynapple/html/index.html
 
 ----------------------------
 
