@@ -62,6 +62,7 @@ Features
 * Automatic handling of spike times and epochs
 * Tuning curves
 * Loading data coming from various pipelines
+* More and more coming!
 
 Basic Usage
 ===========
@@ -74,7 +75,7 @@ After installation, the package can imported:
     $ python
     >>> import pynapple as ap
 
-An example of the package can be seen below
+An example of the package can be seen below. The exemple data can be found `here <https://www.dropbox.com/s/1kc0ulz7yudd9ru/A2929-200711.tar.gz?dl=1>`_.
     
 .. code-block:: python
 
@@ -108,4 +109,4 @@ An example of the package can be seen below
 
 Credits
 -------
-
+Thanks Francesco Battaglia for neuroseries.
