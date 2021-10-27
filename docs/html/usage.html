@@ -5,7 +5,7 @@
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Credits &#8212; pynapple  documentation</title>
+    <title>Usage &#8212; pynapple  documentation</title>
     
   <link href="_static/css/theme.css" rel="stylesheet">
   <link href="_static/css/index.ff1ffe594081f20da1ef19478df9384b.css" rel="stylesheet">
@@ -33,8 +33,8 @@
     <script src="_static/doctools.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
     <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="History" href="history.html" />
-    <link rel="prev" title="Contributing" href="contributing.html" />
+    <link rel="next" title="Contributing" href="contributing.html" />
+    <link rel="prev" title="Installation" href="installation.html" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <meta name="docsearch:language" content="None">
     
@@ -71,7 +71,6 @@
         <ul id="navbar-main-elements" class="navbar-nav">
     <li class="toctree-l1 nav-item">
  <a class="reference internal nav-link" href="readme.html">
-  pynapple
  </a>
 </li>
 
@@ -81,8 +80,8 @@
  </a>
 </li>
 
-<li class="toctree-l1 nav-item">
- <a class="reference internal nav-link" href="usage.html">
+<li class="toctree-l1 current active nav-item">
+ <a class="current reference internal nav-link" href="#">
   Usage
  </a>
 </li>
@@ -93,8 +92,8 @@
  </a>
 </li>
 
-<li class="toctree-l1 current active nav-item">
- <a class="current reference internal nav-link" href="#">
+<li class="toctree-l1 nav-item">
+ <a class="reference internal nav-link" href="authors.html">
   Credits
  </a>
 </li>
@@ -153,14 +152,14 @@
 
 <nav id="bd-toc-nav">
     <ul class="visible nav section-nav flex-column">
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#development-lead">
-   Development Lead
+ <li class="toc-h1 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#">
+   Usage
   </a>
  </li>
- <li class="toc-h2 nav-item toc-entry">
-  <a class="reference internal nav-link" href="#contributors">
-   Contributors
+ <li class="toc-h1 nav-item toc-entry">
+  <a class="reference internal nav-link" href="#functions">
+   Functions
   </a>
  </li>
 </ul>
@@ -184,18 +183,38 @@
               
               <div>
                 
-  <div class="section" id="credits">
-<h1>Credits<a class="headerlink" href="#credits" title="Permalink to this headline">¶</a></h1>
-<div class="section" id="development-lead">
-<h2>Development Lead<a class="headerlink" href="#development-lead" title="Permalink to this headline">¶</a></h2>
-<ul class="simple">
-<li><p>Guillaume Viejo &lt;<a class="reference external" href="mailto:guillaume&#46;viejo&#37;&#52;&#48;gmail&#46;com">guillaume<span>&#46;</span>viejo<span>&#64;</span>gmail<span>&#46;</span>com</a>&gt;</p></li>
-</ul>
+  <div class="section" id="usage">
+<h1>Usage<a class="headerlink" href="#usage" title="Permalink to this headline">¶</a></h1>
+<p>To use pynapple in a project:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pynapple</span>
+</pre></div>
 </div>
-<div class="section" id="contributors">
-<h2>Contributors<a class="headerlink" href="#contributors" title="Permalink to this headline">¶</a></h2>
-<p>None yet. Why not be the first?</p>
 </div>
+<div class="section" id="functions">
+<h1>Functions<a class="headerlink" href="#functions" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="pynapple.process.functions.computeAngularTuningCurves">
+<span class="sig-prename descclassname"><span class="pre">pynapple.process.functions.</span></span><span class="sig-name descname"><span class="pre">computeAngularTuningCurves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">spikes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">angle</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nb_bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">180</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">frequency</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">120.0</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="_modules/pynapple/process/functions.html#computeAngularTuningCurves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.process.functions.computeAngularTuningCurves" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute angular tuning curves</p>
+<dl class="simple">
+<dt>spikes: dict</dt><dd><p>Dictionnary of Ts objects</p>
+</dd>
+<dt>angles: Tsd object</dt><dd><p>Angle between 0 and 2pi</p>
+</dd>
+<dt>ep: IntervalSet object</dt><dd><p>Epoch to compute the tuning curve</p>
+</dd>
+<dt>nb_bins: int</dt><dd><p>Number of bins of the tuning curves</p>
+</dd>
+<dt>frequency: float</dt><dd><p>Sampling frequency of the angle</p>
+</dd>
+</dl>
+<p>tuning_curves: DataFrame object</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">ap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tuning_curves</span> <span class="o">=</span> <span class="n">ap</span><span class="o">.</span><span class="n">computeAngularTuningCurves</span><span class="p">(</span><span class="n">spikes</span><span class="p">,</span> <span class="n">angles</span><span class="p">,</span> <span class="n">wake_ep</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">120</span><span class="p">)</span>
+</pre></div>
+</div>
+</dd></dl>
+
 </div>
 
 
@@ -204,17 +223,17 @@
               
               <!-- Previous / next buttons -->
 <div class='prev-next-area'> 
-    <a class='left-prev' id="prev-link" href="contributing.html" title="previous page">
+    <a class='left-prev' id="prev-link" href="installation.html" title="previous page">
         <i class="fas fa-angle-left"></i>
         <div class="prev-next-info">
             <p class="prev-next-subtitle">previous</p>
-            <p class="prev-next-title">Contributing</p>
+            <p class="prev-next-title">Installation</p>
         </div>
     </a>
-    <a class='right-next' id="next-link" href="history.html" title="next page">
+    <a class='right-next' id="next-link" href="contributing.html" title="next page">
     <div class="prev-next-info">
         <p class="prev-next-subtitle">next</p>
-        <p class="prev-next-title">History</p>
+        <p class="prev-next-title">Contributing</p>
     </div>
     <i class="fas fa-angle-right"></i>
     </a>
