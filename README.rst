@@ -49,7 +49,7 @@ pynapple can be installed with pip:
 
 .. code-block:: shell
 
-    $ pip install starstruct
+    $ pip install pynapple
 
 or directly from the source code:
 
