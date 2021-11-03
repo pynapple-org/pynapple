@@ -110,3 +110,4 @@ An example of the package can be seen below. The exemple data can be found `here
 Credits
 -------
 Thanks Francesco Battaglia for neuroseries.
+Thanks for Sofia for the logo
