@@ -16,12 +16,12 @@ import pynapple as ap
 from pylab import *
 from scipy.stats import norm
 
-# In this first example, we are gonna create some fake data of head-direction neurons
-# So we need spike times and angular position
-# The idea is to construct a tuning curve
-# For the moment we don't care if the tuning curve is ugly
+# Let's make our first tuning curve.
+# In this first example, we are going to create some fake head-direction neuron data
+# We need spike times and angular position
+# For now, it does not matter if the tuning curve is ugly
 
-# let's imagine that the animal is moving his head clockwise at a constant speed
+# let's imagine that the animal is moving her head clockwise at a constant speed
 angle = np.arange(0, 100, 0.1)
 # let's bring that between 0 and 2pi
 angle = angle%(2*np.pi)
@@ -30,7 +30,7 @@ angle = angle%(2*np.pi)
 dt = 1/100.
 # and a duration of
 duration = dt*len(angle)
-# let's put angle in a neuroseries tsd
+# let's put angle in a pynapple tsd
 angle = ap.Tsd(t = np.arange(0, duration, dt), d = angle, time_units = 's')
 
 # now let's imagine we have some spikes
@@ -43,10 +43,10 @@ plot(angle)
 plot(spikes.times(), np.zeros(len(spikes)), '|', markersize = 10)
 show()
 
-#So the question is: What was the corresponding angular position when a spike was recorded
-# To do that, you use realign which basically takes the closed angle value in time from the spike
+# So the question is: What was the angular position when a given spike was detected
+# To this end, you use the realign function which basically looks for the closest angle from the spike time.
 angle_spike = angle.realign(spikes)
-# The order matters here! it's not spikes.realign(angle)
+# The order matters here! It is NOT equivalent to spikes.realign(angle).
 # let's look at what it does
 figure()
 plot(angle)
@@ -62,20 +62,20 @@ show()
 bins = np.linspace(0, 2*np.pi, 30)
 spike_count, bin_edges = np.histogram(angle_spike, bins)
 
-# But maybe the animal spend most of its time in one particular direction
-# You need thus to correct for occupancy
-# For that you do the histogram of the angle WITH THE SAME BINS
+# The animal may have spent most of her time in one particular direction
+# You thus need to correct for occupancy
+# To this end, you do the histogram of the angle WITH THE SAME BINS
 occupancy, _ = np.histogram(angle, bins)
 
 # So correcting for occupancy give :
 spike_count = spike_count/occupancy
 
-# Still it's just a spike count
-# You need a frequency and it's given by the sampling frequency of the camera that track the position
+# Still, it's just a spike count. You want a rate (in Hz).
+# This is given by the sampling frequency of the camera that track the position
 tuning_curve = spike_count/dt
 
 # let's put that in a nice dataframe
-# it's not a time series so no need to use ap
+# it's not a time series so no need to use pynapple here
 tuning_curve = pd.DataFrame(index = bins[0:-1]+np.diff(bins)/2, data = tuning_curve)
 
 # Now let's plot that along with the spikes
@@ -88,12 +88,12 @@ subplot(212)
 plot(tuning_curve)
 show()
 
-# Ok it's ugly but who cares
+# Ok it's ugly but who cares?
 # It's just random data
 
-# This second example is about constructing a place field
-# so this time, the spikes times are realigned to a 2d position
-# Let's imagine the animal is in a circular environment this time
+# Now, let's make a place field!
+# This time, the spike times are realigned to a 2d position
+# Let's imagine the animal is in a circular environment
 xpos = np.cos(angle.values)+np.random.randn(len(angle))*0.05
 ypos = np.sin(angle.values)+np.random.randn(len(angle))*0.05
 
@@ -106,8 +106,8 @@ figure()
 plot(position['x'], position['y'])
 show()
 
-# Now it's the same as before
-# except the histogram is in 2d
+# Now, same thing as before, except that the histogram is 2D
+
 position_spike = position.realign(spikes)
 xbins = np.linspace(xpos.min(), xpos.max()+0.01, 10)
 ybins = np.linspace(ypos.min(), ypos.max()+0.01, 10)

@@ -5,7 +5,7 @@
 	Date created: 03/01/2019
 	Python Version: 3.5.2
 
-This scripts will show you how to compute the auto and cross-correlograms of neurons
+This scripts will show you how to compute the auto and cross-correlograms of neuronal spikte trains
 
 The main function crossCorr is already written in pynapple
 
@@ -16,21 +16,28 @@ import pynapple as ap
 from pylab import *
 
 
-# First let's get some spikes
-data_directory = '../data/A2929-200711'
+# The data should be found in pynapple/tutorials/data/A2929-200711
+# First thing is to put some data there.
+# The data were too big to live in github, please download the following zip:
+url = "https://www.dropbox.com/s/1kc0ulz7yudd9ru/A2929-200711.tar.gz?dl=1"
+# Extract the zip file in the folder pynapple/tutorials/data/
+
+
+# We define a string for the data directory (assuming we are in pynapple/tutorials)
+data_directory = 'data/A2929-200711'
 
 spikes, shank = ap.loadSpikeData(data_directory)
 
-# Let's restrict the spikes to the wake episode
+# Restrict the spikes to the wake episode
 wake_ep = ap.loadEpoch(data_directory, 'wake')
 
 # Let's make the autocorrelogram of the first neuron
 neuron_0 = spikes[0]
 
-# restricted for wake
+# restrict for wake epoch
 neuron_0 = neuron_0.restrict(wake_ep)
 
-# transforming the times in millisecond
+# converting the times in millisecond
 neuron_0 = neuron_0.as_units('ms')
 
 # and extracting the index to feed the function crossCorr

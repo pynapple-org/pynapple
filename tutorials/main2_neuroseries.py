@@ -36,7 +36,7 @@ my_spike2
 
 
 
-# If you have timestamps associated with a value for example 15 poiap of EEG during 15seconds
+# If you have timestamps associated with a value for example 15 points of EEG during 15seconds
 my_eeg = np.sin(np.arange(0, 15))
 # You use a Tsd (Time series data)
 my_eeg = ap.Tsd(t = np.arange(15), d = my_eeg, time_units = 's')
