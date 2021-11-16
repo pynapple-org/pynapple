@@ -55,6 +55,13 @@ or directly from the source code:
     $ # Install in editable mode with `-e` or, equivalently, `--editable`
     $ pip install -e
 
+* We highly recommend to create an environment before doing this. Using environments is a great way to avoid future conflicts with the requirements of other projects in which you are working on.
+
+One way is to do it through Anaconda navigator. 
+1. Go to the environments section.
+2. Create button (bottom left). 
+3. Select a fancy name and the recommended python version.
+You can even manage the package versions from there. The other way is to do it through the terminal. You can follow this documentation for that https://docs.conda.io/projects/conda/en/latest/user-guide/tasks/manage-environments.html
 
 Features
 ========
