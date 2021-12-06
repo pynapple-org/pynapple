@@ -206,6 +206,28 @@ class Tsd(pd.Series):
             return Tsd(s)
         return Tsd(tsd_r, copy=True)
 
+    def count(self, bin_size, ep = None, time_units = 's'):
+        """
+        Count occurences of events within bin size 
+        bin_size should be seconds unless specified     
+        If no epochs is passed, the data will be binned based on the largest merge of time span.
+        """     
+        if not isinstance(ep, IntervalSet):
+            ep = self.time_span
+            
+        bin_size_us = TimeUnits.format_timestamps(np.array([bin_size]), time_units)[0]
+
+        # bin for each epochs
+        time_index = []
+        count = []
+        for i in ep.index:
+            bins = np.arange(ep.start[i], ep.end[i] + bin_size_us, bin_size_us)
+            count.append(np.histogram(self.index.values, bins)[0])
+            time_index.append(bins[0:-1] + np.diff(bins)/2)
+        time_index = np.hstack(time_index)
+        count = np.hstack(count)
+        return Tsd(t=time_index, d=count)
+
     def gaps(self, min_gap, method='absolute'):
         """
         finds gaps in a tsd
@@ -366,11 +388,6 @@ class TsdFrame(pd.DataFrame):
 
     def end_time(self, units='us'):
         return self.times(units=units)[-1]
-
-    @property
-    def r(self):
-        print(1)
-
 
 
 # noinspection PyAbstractClass
