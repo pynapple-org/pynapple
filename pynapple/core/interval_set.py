@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from warnings import warn
-from .time_series import TimeUnits, Range
+from .time_units import TimeUnits, Range
 
 
 # noinspection PyAbstractClass
