@@ -3,7 +3,7 @@ import numpy as np
 import scipy.io
 import pandas as pd
 import scipy.signal
-from .. import core as nts
+from .. import core as nap
 
 
 
@@ -44,12 +44,12 @@ def loadSpikeData(path, index=None, fs = 20000):
 				shankIndex     = np.where(shank == index)[0]
 			spikes         = {}    
 			for i in shankIndex:    
-				spikes[i]     = nts.Ts(spikedata['S'][0][0][0][i][0][0][0][1][0][0][2], time_units = 's')
+				spikes[i]     = nap.Ts(spikedata['S'][0][0][0][i][0][0][0][1][0][0][2], time_units = 's')
 			a             = spikes[0].as_units('s').index.values    
 			if ((a[-1]-a[0])/60.)/60. > 20. : # VERY BAD        
 				spikes         = {}    
 				for i in shankIndex:
-					spikes[i]     = nts.Ts(spikedata['S'][0][0][0][i][0][0][0][1][0][0][2]*0.0001, time_units = 's')
+					spikes[i]     = nap.Ts(spikedata['S'][0][0][0][i][0][0][0][1][0][0][2]*0.0001, time_units = 's')
 			return spikes, shank
 		elif 'SpikeData.h5' in files:            
 			final_path = os.path.join(new_path, 'SpikeData.h5')            
@@ -58,7 +58,7 @@ def loadSpikeData(path, index=None, fs = 20000):
 				# Returning a dictionnary | can be changed to return a dataframe
 				toreturn = {}
 				for i,j in spikes:
-					toreturn[j] = nts.Ts(t=spikes[(i,j)].replace(0,np.nan).dropna().index.values, time_units = 's')
+					toreturn[j] = nap.Ts(t=spikes[(i,j)].replace(0,np.nan).dropna().index.values, time_units = 's')
 				shank = spikes.columns.get_level_values(0).values[:,np.newaxis]
 				return toreturn, shank
 			except:
@@ -66,7 +66,7 @@ def loadSpikeData(path, index=None, fs = 20000):
 				shanks = spikes['/shanks']
 				toreturn = {}
 				for j in shanks.index:
-					toreturn[j] = nts.Ts(spikes['/spikes/s'+str(j)])
+					toreturn[j] = nap.Ts(spikes['/spikes/s'+str(j)])
 				shank = shanks.values
 				spikes.close()
 				del spikes
@@ -117,7 +117,7 @@ def loadSpikeData(path, index=None, fs = 20000):
 		shank.append(s.columns.get_level_values(0).values)
 		sh = np.unique(shank[-1])[0]
 		for i,j in s:
-			toreturn[j] = nts.Ts(t=s[(i,j)].replace(0,np.nan).dropna().index.values, time_units = 's')
+			toreturn[j] = nap.Ts(t=s[(i,j)].replace(0,np.nan).dropna().index.values, time_units = 's')
 
 	del spikes
 	shank = np.hstack(shank)
@@ -142,7 +142,7 @@ def loadSpikeData(path, index=None, fs = 20000):
 	# Returning a dictionnary
 	# toreturn = {}
 	# for i,j in spikes:
-	# 	toreturn[j] = nts.Ts(t=spikes[(i,j)].replace(0,np.nan).dropna().index.values, time_units = 's')
+	# 	toreturn[j] = nap.Ts(t=spikes[(i,j)].replace(0,np.nan).dropna().index.values, time_units = 's')
 
 	# shank = spikes.columns.get_level_values(0).values[:,np.newaxis].flatten()
 
@@ -231,7 +231,7 @@ def makeEpochs(path, order, file = None, start=None, end = None, time_units = 's
 	epoch 		= np.unique(order)
 	for i, n in enumerate(epoch):
 		idx = np.where(np.array(order) == n)[0]
-		ep = nts.IntervalSet(start = epochs.loc[idx,0],
+		ep = nap.IntervalSet(start = epochs.loc[idx,0],
 							end = epochs.loc[idx,1],
 							time_units = time_units)
 		store[n] = pd.DataFrame(ep)
@@ -317,7 +317,7 @@ def makePositions(path, file_order, episodes, n_channels=1, trackchannel=0, name
 			frames.append(position)
 	
 	position = pd.concat(frames)
-	#position = nts.TsdFrame(t = position.index.values, d = position.values, time_units = 's', columns = names)
+	#position = nap.TsdFrame(t = position.index.values, d = position.values, time_units = 's', columns = names)
 	position.columns = names
 	position[['ry', 'rx', 'rz']] *= (np.pi/180)
 	position[['ry', 'rx', 'rz']] += 2*np.pi
@@ -370,7 +370,7 @@ def loadEpoch(path, epoch, episodes = None):
 		if os.path.exists(file):
 			tmp = np.genfromtxt(file)[:,0]
 			tmp = tmp.reshape(len(tmp)//2,2)/1000
-			ep = nts.IntervalSet(start = tmp[:,0], end = tmp[:,1], time_units = 's')
+			ep = nap.IntervalSet(start = tmp[:,0], end = tmp[:,1], time_units = 's')
 			# TO make sure it's only in sleep since using the TheStateEditor
 			sleep_ep = loadEpoch(path, 'sleep')
 			ep = sleep_ep.intersect(ep)
@@ -383,7 +383,7 @@ def loadEpoch(path, epoch, episodes = None):
 		if os.path.exists(file):
 			tmp = np.genfromtxt(file)[:,0]
 			tmp = tmp.reshape(len(tmp)//2,2)/1000
-			ep = nts.IntervalSet(start = tmp[:,0], end = tmp[:,1], time_units = 's')
+			ep = nap.IntervalSet(start = tmp[:,0], end = tmp[:,1], time_units = 's')
 			return ep
 		else:
 			print("The file ", file, "does not exist; Exiting ...")
@@ -401,7 +401,7 @@ def loadEpoch(path, epoch, episodes = None):
 		if '/'+epoch in store.keys():
 			ep = store[epoch]
 			store.close()
-			return nts.IntervalSet(ep)
+			return nap.IntervalSet(ep)
 		else:
 			print("The file BehavEpochs.h5 does not contain the key "+epoch+"; Exiting ...")
 			sys.exit()
@@ -409,7 +409,7 @@ def loadEpoch(path, epoch, episodes = None):
 		behepochs = scipy.io.loadmat(os.path.join(filepath,file[0]))
 		if epoch == 'wake':
 			wake_ep = np.hstack([behepochs['wakeEp'][0][0][1],behepochs['wakeEp'][0][0][2]])
-			return nts.IntervalSet(wake_ep[:,0], wake_ep[:,1], time_units = 's').drop_short_intervals(0.0)
+			return nap.IntervalSet(wake_ep[:,0], wake_ep[:,1], time_units = 's').drop_short_intervals(0.0)
 		elif epoch == 'sleep':
 			sleep_pre_ep, sleep_post_ep = [], []
 			if 'sleepPreEp' in behepochs.keys():
@@ -426,7 +426,7 @@ def loadEpoch(path, epoch, episodes = None):
 				sleep_ep = sleep_pre_ep
 			elif len(sleep_post_ep):
 				sleep_ep = sleep_post_ep						
-			return nts.IntervalSet(sleep_ep[:,0], sleep_ep[:,1], time_units = 's')
+			return nap.IntervalSet(sleep_ep[:,0], sleep_ep[:,1], time_units = 's')
 		###################################
 		# WORKS ONLY FOR MATLAB FROM HERE #
 		###################################		
@@ -436,7 +436,7 @@ def loadEpoch(path, epoch, episodes = None):
 			for f in new_listdir:
 				if 'sts.SWS' in f:
 					sws = np.genfromtxt(os.path.join(path,f))/float(sampling_freq)
-					return nts.IntervalSet.drop_short_intervals(nts.IntervalSet(sws[:,0], sws[:,1], time_units = 's'), 0.0)
+					return nap.IntervalSet.drop_short_intervals(nap.IntervalSet(sws[:,0], sws[:,1], time_units = 's'), 0.0)
 
 				elif '-states.mat' in f:
 					sws = scipy.io.loadmat(os.path.join(path,f))['states'][0]
@@ -444,7 +444,7 @@ def loadEpoch(path, epoch, episodes = None):
 					index = index[1:] - index[0:-1]
 					start = np.where(index == 1)[0]+1
 					stop = np.where(index == -1)[0]
-					return nts.IntervalSet.drop_short_intervals(nts.IntervalSet(start, stop, time_units = 's', expect_fix=True), 0.0)
+					return nap.IntervalSet.drop_short_intervals(nap.IntervalSet(start, stop, time_units = 's', expect_fix=True), 0.0)
 
 		elif epoch == 'rem':
 			sampling_freq = 1250
@@ -452,7 +452,7 @@ def loadEpoch(path, epoch, episodes = None):
 			for f in new_listdir:
 				if 'sts.REM' in f:
 					rem = np.genfromtxt(os.path.join(path,f))/float(sampling_freq)
-					return nts.IntervalSet(rem[:,0], rem[:,1], time_units = 's').drop_short_intervals(0.0)
+					return nap.IntervalSet(rem[:,0], rem[:,1], time_units = 's').drop_short_intervals(0.0)
 
 				elif '-states/m' in listdir:
 					rem = scipy.io.loadmat(path+f)['states'][0]
@@ -460,7 +460,7 @@ def loadEpoch(path, epoch, episodes = None):
 					index = index[1:] - index[0:-1]
 					start = np.where(index == 1)[0]+1
 					stop = np.where(index == -1)[0]
-					return nts.IntervalSet(start, stop, time_units = 's', expect_fix=True).drop_short_intervals(0.0)
+					return nap.IntervalSet(start, stop, time_units = 's', expect_fix=True).drop_short_intervals(0.0)
 
 def loadPosition(path, events = None, episodes = None, n_channels=1,trackchannel=0):
 	"""
@@ -487,7 +487,7 @@ def loadPosition(path, events = None, episodes = None, n_channels=1,trackchannel
 		store = pd.HDFStore(file, 'r')
 		position = store['position']
 		store.close()
-		position = nts.TsdFrame(t = position.index.values, d = position.values, columns = position.columns, time_units = 's')
+		position = nap.TsdFrame(t = position.index.values, d = position.values, columns = position.columns, time_units = 's')
 		return position
 	else:
 		print("Cannot find "+file+" for loading position")
@@ -534,7 +534,7 @@ def loadAuxiliary(path, n_probe = 1, fs = 20000):
 		store = pd.HDFStore(accel_file, 'r')
 		accel = store['acceleration'] 
 		store.close()
-		accel = nts.TsdFrame(t = accel.index.values*1e6, d = accel.values) 
+		accel = nap.TsdFrame(t = accel.index.values*1e6, d = accel.values) 
 		return accel
 	else:
 		aux_files = np.sort([f for f in os.listdir(path) if 'auxiliary' in f])
@@ -572,7 +572,7 @@ def loadAuxiliary(path, n_probe = 1, fs = 20000):
 		store = pd.HDFStore(accel_file, 'w')
 		store['acceleration'] = tmp
 		store.close()
-		accel = nts.TsdFrame(t = tmp.index.values*1e6, d = tmp.values) 
+		accel = nap.TsdFrame(t = tmp.index.values*1e6, d = tmp.values) 
 		return accel
 
 def downsampleDatFile(path, n_channels = 32, fs = 20000):
@@ -650,8 +650,8 @@ def loadUFOs(path):
 	else:
 		print("No ufo in ", path)
 		sys.exit()
-	return (nts.IntervalSet(ripples[:,0], ripples[:,2], time_units = 's'), 
-			nts.Ts(ripples[:,1], time_units = 's'))
+	return (nap.IntervalSet(ripples[:,0], ripples[:,2], time_units = 's'), 
+			nap.Ts(ripples[:,1], time_units = 's'))
 
 def loadRipples(path):
 	"""
@@ -667,8 +667,8 @@ def loadRipples(path):
 	else:
 		print("No ripples in ", path)
 		sys.exit()
-	return (nts.IntervalSet(ripples[:,0], ripples[:,2], time_units = 's'), 
-			nts.Ts(ripples[:,1], time_units = 's'))
+	return (nap.IntervalSet(ripples[:,0], ripples[:,2], time_units = 's'), 
+			nap.Ts(ripples[:,1], time_units = 's'))
 
 
 
@@ -850,7 +850,7 @@ def loadOptoEp(path, epoch, n_channels = 2, channel = 0, fs = 20000):
 	if 'OptoEpochs.h5' in files:
 		new_file = os.path.join(path, 'Analysis/OptoEpochs.h5')
 		opto_ep = pd.read_hdf(new_file)
-		return nts.IntervalSet(opto_ep)
+		return nap.IntervalSet(opto_ep)
 	else:
 		files = os.listdir(path)
 		afile = os.path.join(path, [f for f in files if '_'+str(epoch)+'_' in f][0])
@@ -871,7 +871,7 @@ def loadOptoEp(path, epoch, n_channels = 2, channel = 0, fs = 20000):
 		# aliging based on epoch_TS.csv
 		epochs = pd.read_csv(os.path.join(path, 'Epoch_TS.csv'), header = None)
 		timestep = timestep + epochs.loc[epoch,0]
-		opto_ep = nts.IntervalSet(start = timestep[start], end = timestep[end], time_units = 's')
+		opto_ep = nap.IntervalSet(start = timestep[start], end = timestep[end], time_units = 's')
 		#pd.DataFrame(opto_ep).to_hdf(os.path.join(path, 'Analysis/OptoEpochs.h5'), 'opto')
 		return opto_ep	
 
@@ -928,7 +928,7 @@ def loadHDCellInfo(path, index):
 
 
 def loadLFP(path, n_channels=90, channel=64, frequency=1250.0, precision='int16'):
-	import neuroseries as nts	
+	import neuroseries as nap	
 	f = open(path, 'rb')
 	startoffile = f.seek(0, 0)
 	endoffile = f.seek(0, 2)
@@ -942,14 +942,14 @@ def loadLFP(path, n_channels=90, channel=64, frequency=1250.0, precision='int16'
 
 	if type(channel) is not list:
 		timestep = np.arange(0, n_samples)/frequency
-		return nts.Tsd(timestep, fp[:,channel], time_units = 's')
+		return nap.Tsd(timestep, fp[:,channel], time_units = 's')
 	elif type(channel) is list:
 		timestep = np.arange(0, n_samples)/frequency
-		return nts.TsdFrame(timestep, fp[:,channel], time_units = 's')
+		return nap.TsdFrame(timestep, fp[:,channel], time_units = 's')
 
 
 def loadBunch_Of_LFP(path,  start, stop, n_channels=90, channel=64, frequency=1250.0, precision='int16'):
-	import neuroseries as nts	
+	import neuroseries as nap	
 	bytes_size = 2		
 	start_index = int(start*frequency*n_channels*bytes_size)
 	stop_index = int(stop*frequency*n_channels*bytes_size)
@@ -958,23 +958,23 @@ def loadBunch_Of_LFP(path,  start, stop, n_channels=90, channel=64, frequency=12
 
 	if type(channel) is not list:
 		timestep = np.arange(0, len(data))/frequency
-		return nts.Tsd(timestep, data[:,channel], time_units = 's')
+		return nap.Tsd(timestep, data[:,channel], time_units = 's')
 	elif type(channel) is list:
 		timestep = np.arange(0, len(data))/frequency		
-		return nts.TsdFrame(timestep, data[:,channel], time_units = 's')
+		return nap.TsdFrame(timestep, data[:,channel], time_units = 's')
 
 def loadUpDown(path):
-	import neuroseries as nts
+	import neuroseries as nap
 	import os
 	name = path.split("/")[-1]
 	files = os.listdir(path)
 	if name + '.evt.py.dow' in files:
 		tmp = np.genfromtxt(path+'/'+name+'.evt.py.dow')[:,0]
 		tmp = tmp.reshape(len(tmp)//2,2)/1000
-		down_ep = nts.IntervalSet(start = tmp[:,0], end = tmp[:,1], time_units = 's')
+		down_ep = nap.IntervalSet(start = tmp[:,0], end = tmp[:,1], time_units = 's')
 	if name + '.evt.py.upp' in files:
 		tmp = np.genfromtxt(path+'/'+name+'.evt.py.upp')[:,0]
 		tmp = tmp.reshape(len(tmp)//2,2)/1000
-		up_ep = nts.IntervalSet(start = tmp[:,0], end = tmp[:,1], time_units = 's')
+		up_ep = nap.IntervalSet(start = tmp[:,0], end = tmp[:,1], time_units = 's')
 	return (down_ep, up_ep)
 

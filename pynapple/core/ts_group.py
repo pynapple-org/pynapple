@@ -148,7 +148,7 @@ class TsGroup(UserDict):
 		count = []
 		for i in ep.index:
 			bins = np.arange(ep.start[i], ep.end[i] + bin_size_us, bin_size_us)
-			tmp = np.array([np.histogram(self[n].index.values, bins)[0] for n in self])
+			tmp = np.array([np.histogram(self.data[n].index.values, bins)[0] for n in self.keys()])
 			count.append(np.transpose(tmp))
 			time_index.append(bins[0:-1] + np.diff(bins)//2)
 
@@ -158,13 +158,27 @@ class TsGroup(UserDict):
 		return TsdFrame(t = time_index, d = count, span = ep)
 		
 	"""
-	Special slicing 
+	Special slicing of metadata
 	"""
-	def getby_threshold(self, keythr):
+	def getby_threshold(self, key, thr, op = '>'):
 		"""
 		Return TsGroup above/below a threshold
 		"""
-		pass
+		if op == '>':
+			ix = list(self._metadata.index[self._metadata[key] > thr])
+			return self[ix]
+		elif op == '<':
+			ix = list(self._metadata.index[self._metadata[key] < thr])
+			return self[ix]
+		elif op == '>=':
+			ix = list(self._metadata.index[self._metadata[key] >= thr])
+			return self[ix]
+		elif op == '<=':
+			ix = list(self._metadata.index[self._metadata[key] <= thr])
+			return self[ix]
+		else:
+			raise RuntimeError("Operation {} not recognized.".format(op))
+
 
 	def getby_intervals(self, key, bins):
 		"""
@@ -184,8 +198,4 @@ class TsGroup(UserDict):
 		Return a dictionnay of all catergories
 		"""
 		return self._metadata.groupby(key).groups
-
-	def raster_plot(self):
-		pass
-
 
