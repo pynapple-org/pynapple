@@ -13,7 +13,7 @@
         :target: https://travis-ci.com/gviejo/pynapple
 
 
-PYthon Neural Analysis Package Pour Laboratoires d’Excellence
+PYthon Neural Analysis Package
 
 pynapple is a Python library for analysing neurophysiological data. It allows to handle time series and epochs but also to use generic functions for neuroscience such as tuning curves and cross-correlogram of spikes. It is heavily based on neuroseries.
 
@@ -37,7 +37,7 @@ Requirements
 * numba
 * pytables
 * tabulate
-* pycircstat
+* pycircstat (pip only)
 * nose
 
 Installation
@@ -53,9 +53,12 @@ or directly from the source code:
 
 .. code-block:: shell
 
-    $ # clone the repository
-    $ git clone https://github.com/PeyracheLab/pynapple.git
+    $ # fork the repository at PeyracheLab to your github account
+    $ # clone your github repository
+    $ git clone https://github.com/YOUR USERNAME/pynapple.git
     $ cd pynapple
+    $ # open git bash terminal (or Github Desktop or any other software you use) and run the following line
+    $ git remote add upstream https://github.com/PeyracheLab/pynapple.git
     $ # Install in editable mode with `-e` or, equivalently, `--editable`
     $ pip install -e
 
@@ -94,8 +97,7 @@ An example of the package can be seen below. The exemple data can be found `here
 
     import numpy as np
     import pandas as pd
-    import pynapple as ap
-    from pylab import *
+    import pynapple as nap
     import sys
     
     data_directory = 'data/A2929-200711'
@@ -105,16 +107,14 @@ An example of the package can be seen below. The exemple data can be found `here
     events = ['1']
     
     # Loading Data
-    
-    spikes, shank = ap.loadSpikeData(data_directory)
-    position = ap.loadPosition(data_directory, events, episodes)
-    wake_ep = ap.loadEpoch(data_directory, 'wake', episodes)
-    sleep_ep = ap.loadEpoch(data_directory, 'sleep')					
-    
+    spikes = nap.loadSpikeData(data_directory)   
+    position = nap.loadPosition(data_directory, events, episodes)
+    wake_ep = nap.loadEpoch(data_directory, 'wake', episodes)
+   
     # Computing tuning curves
-    
-    tuning_curves = ap.computeAngularTuningCurves(spikes, position['ry'], wake_ep, 60)
-    tuning_curves = ap.smoothAngularTuningCurves(tuning_curves, 10, 2)
+    tuning_curves = nap.computeAngularTuningCurves(spikes, position['ry'], wake_ep, 60)
+    tuning_curves = nap.smoothAngularTuningCurves(tuning_curves, 10, 2)
+
 
 
 
