@@ -57,6 +57,8 @@ or directly from the source code:
     $ # clone your github repository
     $ git clone https://github.com/YOUR USERNAME/pynapple.git
     $ cd pynapple
+    $ # open git bash terminal (or Github Desktop or any other software you use) and run the following line
+    $ git remote add upstream https://github.com/PeyracheLab/pynapple.git
     $ # Install in editable mode with `-e` or, equivalently, `--editable`
     $ pip install -e
 
