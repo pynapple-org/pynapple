@@ -37,7 +37,7 @@ Requirements
 * numba
 * pytables
 * tabulate
-* pycircstat
+* pycircstat (pip only)
 * nose
 
 Installation
