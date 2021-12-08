@@ -53,8 +53,9 @@ or directly from the source code:
 
 .. code-block:: shell
 
-    $ # clone the repository
-    $ git clone https://github.com/PeyracheLab/pynapple.git
+    $ # fork the repository at PeyracheLab to your github account
+    $ # clone your github repository
+    $ git clone https://github.com/YOUR USERNAME/pynapple.git
     $ cd pynapple
     $ # Install in editable mode with `-e` or, equivalently, `--editable`
     $ pip install -e
