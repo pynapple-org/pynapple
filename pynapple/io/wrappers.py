@@ -67,10 +67,10 @@ def loadSpikeData(path, index=None, fs = 20000):
 				toreturn = {}
 				for j in shanks.index:
 					toreturn[j] = nap.Ts(spikes['/spikes/s'+str(j)])
-				shank = shanks.values
+				#shank = shanks.values
 				spikes.close()
 				del spikes
-				return toreturn, shank
+				return nap.TsGroup(toreturn, shank=shanks)
 			
 		else:            
 			print("Couldn't find any SpikeData file in "+new_path)
@@ -121,12 +121,13 @@ def loadSpikeData(path, index=None, fs = 20000):
 
 	del spikes
 	shank = np.hstack(shank)
+	shank = pd.Series(index = list(toreturn.keys()), data = shank)
 
 	final_path = os.path.join(new_path, 'SpikeData.h5')
 	store = pd.HDFStore(final_path)
 	for s in toreturn.keys():
 		store.put('spikes/s'+str(s), toreturn[s].as_series())
-	store.put('shanks', pd.Series(index = list(toreturn.keys()), data = shank))
+	store.put('shanks', shank)
 	store.close()
 
 	# OLD WAY
@@ -146,7 +147,7 @@ def loadSpikeData(path, index=None, fs = 20000):
 
 	# shank = spikes.columns.get_level_values(0).values[:,np.newaxis].flatten()
 
-	return toreturn, shank
+	return nap.TsGroup(toreturn, shank = shank)
 
 def loadXML(path):
 	"""

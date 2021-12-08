@@ -19,7 +19,7 @@ events = ['1']
 # LOADING DATA
 ###############################################################################################
 
-spikes, shank 						= nap.loadSpikeData(data_directory)
+spikes	 							= nap.loadSpikeData(data_directory)
 n_channels, fs, shank_to_channel 	= nap.loadXML(data_directory)
 position 							= nap.loadPosition(data_directory, events, episodes)
 wake_ep 							= nap.loadEpoch(data_directory, 'wake', episodes)
@@ -41,8 +41,8 @@ tuning_curves 						= nap.smoothAngularTuningCurves(tuning_curves, 10, 2)
 figure()
 for i in spikes:
 	subplot(6,7,i+1, projection = 'polar')
-	plot(tuning_curves[i], label = str(shank[i]))
-	legend()
+	plot(tuning_curves[i])
+	
 
 
 show()
