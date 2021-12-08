@@ -109,7 +109,7 @@ An example of the package can be seen below. The exemple data can be found `here
 
 Credits
 -------
-Special thanks to Francesco P. Battaglia (https://github.com/fpbattaglia) for the development of the orignal *TSToolbox* (https://github.com/PeyracheLab/TStoolbox) and *neuroseries* (https://github.com/NeuroNetMem/neuroseries) packages, the latter constituting the core of *pynapple*.
+Special thanks to Francesco P. Battaglia (https://github.com/fpbattaglia) for the development of the original *TSToolbox* (https://github.com/PeyracheLab/TStoolbox) and *neuroseries* (https://github.com/NeuroNetMem/neuroseries) packages, the latter constituting the core of *pynapple*.
 
 This package was developped by Guillaume Viejo (https://github.com/gviejo) and other members of the Peyrache Lab.
 
