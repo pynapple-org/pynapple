@@ -111,8 +111,8 @@ Credits
 -------
 Special thanks to:
 
-Francesco P. Battaglia (<github.com/fpbattaglia>) for the development of the orignal TSToolbox (<github.com/PeyracheLab/TStoolbox>) and Neuroseries (<github.com/NeuroNetMem/neuroseries>) packages, the latter constituting the core of the present package.
+Francesco P. Battaglia (<https://github.com/fpbattaglia>) for the development of the orignal TSToolbox (<https://github.com/PeyracheLab/TStoolbox>) and Neuroseries (<https://github.com/NeuroNetMem/neuroseries>) packages, the latter constituting the core of the present package.
 
 Logo: Sofia Skromne Carrasco, 2021.
 
-This package was developped by Guillaume Viejo (github.com/gviejo>) and other members of the Peyrache Lab.
+This package was developped by Guillaume Viejo (https://github.com/gviejo>) and other members of the Peyrache Lab.
