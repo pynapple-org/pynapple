@@ -109,5 +109,8 @@ An example of the package can be seen below. The exemple data can be found `here
 
 Credits
 -------
-Special thanks to [Francesco P. Battaglia](https://github.com/fpbattaglia) for the development of the orignal [TSToolbox](https://github.com/PeyracheLab/TStoolbox) and [neuroseries](https://github.com/NeuroNetMem/neuroseries) packages, the latter constituting the core of the present package.
+Special thanks to:
+
+[Francesco P. Battaglia](github.com/fpbattaglia) for the development of the orignal [TSToolbox](github.com/PeyracheLab/TStoolbox) and [neuroseries](github.com/NeuroNetMem/neuroseries) packages, the latter constituting the core of the present package.
+
 Logo: Sofia Skromne Carrasco, 2021.
