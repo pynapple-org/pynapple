@@ -16,8 +16,7 @@ class TsGroup(UserDict):
 		"""
 		"""
 		index = np.sort(list(data.keys()))
-		self.rates = pd.Series(index=index, dtype=np.float64)
-		self._metadata = pd.DataFrame(index=index)
+		self._metadata = pd.DataFrame(index=index, columns = ['freq'])
 		
 		UserDict.__init__(self, data)
 		
@@ -36,14 +35,12 @@ class TsGroup(UserDict):
 			raise KeyError("Key {} already in group index.".format(key))
 		else:
 			if isinstance(value, (Ts, Tsd)):
-				self.rates.loc[int(key)] = value.rate
-				self._metadata.loc[int(key)] = np.nan
+				self._metadata.loc[int(key),'freq'] = value.rate
 				super().__setitem__(int(key), value)
 			elif isinstance(value, (np.ndarray, list)):
 				warnings.warn('Elements should not be passed as numpy array. Default time units is seconds when creating the Ts object.')
 				tmp = Ts(t = value, time_units = 's')
-				self.rates.loc[int(key)] = tmp.rate
-				self._metadata.loc[int(key)] = np.nan
+				self._metadata.loc[int(key),'freq'] = tmp.rate
 				super().__setitem__(int(key), tmp)
 			else:
 				raise ValueError("Value with key {} is not an iterable.".format(key))
@@ -58,14 +55,15 @@ class TsGroup(UserDict):
 			else:
 				raise KeyError("Can't find key {} in group index.".format(key))
 		else:			
-			metadata = self._metadata.loc[key]
+			metadata = self._metadata.loc[key,self._metadata.columns.drop('freq')]
 			return TsGroup({k:self[k] for k in key}, metadata)
 	
 	def __repr__(self):
 		headers = ['Index', 'Freq. (Hz)'] + [c for c in self._metadata.columns]		
-		lines = []
+		lines = []		
+		cols = self._metadata.columns.drop('freq')
 		for i in self.data.keys():
-			lines.append([str(i), '%.2f' % self.rates[i]] + [self._metadata.loc[i,c] for c in self._metadata.columns])
+			lines.append([str(i), '%.2f' % self._metadata.loc[i,'freq']] + [self._metadata.loc[i,c] for c in cols])
 		return tabulate(lines, headers = headers)		
 		
 	def __str__(self):

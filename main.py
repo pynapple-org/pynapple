@@ -32,7 +32,7 @@ sleep_ep 							= nap.loadEpoch(data_directory, 'sleep')
 tuning_curves 						= nap.computeAngularTuningCurves(spikes, position['ry'], wake_ep, 60)
 tuning_curves 						= nap.smoothAngularTuningCurves(tuning_curves, 10, 2)
 
-hd, stat 						= nap.findHDCells(tuning_curves)
+hd, stat 							= nap.findHDCells(tuning_curves)
 
 spikes.set_info(hd = hd)
 		
