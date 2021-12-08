@@ -97,8 +97,7 @@ An example of the package can be seen below. The exemple data can be found `here
 
     import numpy as np
     import pandas as pd
-    import pynapple as ap
-    from pylab import *
+    import pynapple as nap
     import sys
     
     data_directory = 'data/A2929-200711'
@@ -108,16 +107,14 @@ An example of the package can be seen below. The exemple data can be found `here
     events = ['1']
     
     # Loading Data
-    
-    spikes, shank = ap.loadSpikeData(data_directory)
-    position = ap.loadPosition(data_directory, events, episodes)
-    wake_ep = ap.loadEpoch(data_directory, 'wake', episodes)
-    sleep_ep = ap.loadEpoch(data_directory, 'sleep')					
-    
+    spikes = nap.loadSpikeData(data_directory)   
+    position = nap.loadPosition(data_directory, events, episodes)
+    wake_ep = nap.loadEpoch(data_directory, 'wake', episodes)
+   
     # Computing tuning curves
-    
-    tuning_curves = ap.computeAngularTuningCurves(spikes, position['ry'], wake_ep, 60)
-    tuning_curves = ap.smoothAngularTuningCurves(tuning_curves, 10, 2)
+    tuning_curves = nap.computeAngularTuningCurves(spikes, position['ry'], wake_ep, 60)
+    tuning_curves = nap.smoothAngularTuningCurves(tuning_curves, 10, 2)
+
 
 
 
