@@ -59,9 +59,10 @@ class TsGroup(UserDict):
 			return TsGroup({k:self[k] for k in key}, metadata)
 	
 	def __repr__(self):
-		headers = ['Index', 'Freq. (Hz)'] + [c for c in self._metadata.columns]		
-		lines = []		
 		cols = self._metadata.columns.drop('freq')
+		headers = ['Index', 'Freq. (Hz)'] + [c for c in cols]		
+		lines = []		
+	
 		for i in self.data.keys():
 			lines.append([str(i), '%.2f' % self._metadata.loc[i,'freq']] + [self._metadata.loc[i,c] for c in cols])
 		return tabulate(lines, headers = headers)		
@@ -87,7 +88,7 @@ class TsGroup(UserDict):
 				if isinstance(arg, pd.DataFrame):					
 					self._metadata = self._metadata.join(arg)
 				elif isinstance(arg, (pd.Series, np.ndarray)):
-					raise("Columns needs to be labelled for metadata")
+					raise RuntimeError("Columns needs to be labelled for metadata")
 		if len(kwargs):
 			for k, v in kwargs.items():	
 				self._metadata[k] = v
@@ -96,9 +97,9 @@ class TsGroup(UserDict):
 	def get_info(self, key):
 		return self._metadata[key]
 
-	def _union_time_span(self):		
+	def _union_time_support(self):		
 		idx = list(self.data.keys())
-		i_sets = [self.data[i].time_span for i in idx]
+		i_sets = [self.data[i].time_support for i in idx]
 		time = np.hstack([i_set['start'] for i_set in i_sets] +
 						 [i_set['end'] for i_set in i_sets])
 		start_end = np.hstack((np.ones(len(time)//2, dtype=np.int32),
@@ -120,7 +121,9 @@ class TsGroup(UserDict):
 		newgr = {}
 		for k in self.data:
 			newgr[k] = self.data[k].restrict(iset)
-		return TsGroup(newgr, self._metadata)
+		cols = self._metadata.columns.drop('freq')
+
+		return TsGroup(newgr, self._metadata[cols])
 
 	def realign(self, tsd, align='closest'):
 		"""
@@ -128,16 +131,18 @@ class TsGroup(UserDict):
 		newgr = {}
 		for k in self.data:
 			newgr[k] = tsd.realign(self.data[k], align)
-		return TsGroup(newgr, self._metadata)		
+
+		cols = self._metadata.columns.drop('freq')
+		return TsGroup(newgr, self._metadata[cols])		
 
 	def count(self, bin_size, ep = None, time_units = 's'):
 		"""
 		Count occurences of events within bin size for each item
 		bin_size should be seconds unless specified		
-		If no epochs is passed, the data will be binned based on the largest merge of time span.
+		If no epochs is passed, the data will be binned based on the largest merge of time support.
 		"""		
 		if not isinstance(ep, IntervalSet):
-			ep = self._union_time_span()
+			ep = self._union_time_support()
 			
 		bin_size_us = TimeUnits.format_timestamps(np.array([bin_size]), time_units)[0]
 
@@ -153,7 +158,7 @@ class TsGroup(UserDict):
 		count = np.vstack(count)
 		time_index = np.hstack(time_index)
 
-		return TsdFrame(t = time_index, d = count, span = ep)
+		return TsdFrame(t = time_index, d = count, support = ep)
 		
 	"""
 	Special slicing of metadata

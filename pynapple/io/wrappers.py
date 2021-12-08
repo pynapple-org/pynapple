@@ -70,7 +70,7 @@ def loadSpikeData(path, index=None, fs = 20000):
 				#shank = shanks.values
 				spikes.close()
 				del spikes
-				return nap.TsGroup(toreturn, shank=shanks)
+				return nap.TsGroup(toreturn, group=shanks)
 			
 		else:            
 			print("Couldn't find any SpikeData file in "+new_path)
@@ -147,7 +147,7 @@ def loadSpikeData(path, index=None, fs = 20000):
 
 	# shank = spikes.columns.get_level_values(0).values[:,np.newaxis].flatten()
 
-	return nap.TsGroup(toreturn, shank = shank)
+	return nap.TsGroup(toreturn, group = shank)
 
 def loadXML(path):
 	"""

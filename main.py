@@ -34,6 +34,8 @@ tuning_curves 						= nap.smoothAngularTuningCurves(tuning_curves, 10, 2)
 
 hd, stat 							= nap.findHDCells(tuning_curves)
 
+#sys.exit()	
+
 spikes.set_info(hd = hd)
 		
 

@@ -69,7 +69,7 @@ class Tsd(pd.Series):
     Tsd provides standardized time representation, plus functions for restricting and realigning time series
     """
 
-    def __init__(self, t, d=None, time_units=None, span=None, **kwargs):
+    def __init__(self, t, d=None, time_units=None, support=None, **kwargs):
         """
         Tsd Initializer.
 
@@ -90,19 +90,19 @@ class Tsd(pd.Series):
 
         t = TimeUnits.format_timestamps(t, time_units)
 
-        if span is not None:
-            bins = span.values.ravel()
+        if support is not None:
+            bins = support.values.ravel()
             ix = np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64)))
             ix[np.floor(ix / 2) * 2 != ix] = np.NaN
             ix = np.floor(ix/2)
             ix = ~np.isnan(ix)
             super().__init__(index=t[ix],data=d[ix])
         else:
-            span = IntervalSet(start = t[0], end = t[-1])
+            support = IntervalSet(start = t[0], end = t[-1])
             super().__init__(index=t, data=d)
 
-        self.time_span = span
-        self.rate = len(t)/self.time_span.tot_length('s')
+        self.time_support = support
+        self.rate = len(t)/self.time_support.tot_length('s')
         self.index.name = "Time (us)"
         self._metadata.append("nts_class")
         self.nts_class = self.__class__.__name__
@@ -210,10 +210,10 @@ class Tsd(pd.Series):
         """
         Count occurences of events within bin size 
         bin_size should be seconds unless specified     
-        If no epochs is passed, the data will be binned based on the largest merge of time span.
+        If no epochs is passed, the data will be binned based on the largest merge of time support.
         """     
         if not isinstance(ep, IntervalSet):
-            ep = self.time_span
+            ep = self.time_support
             
         bin_size_us = TimeUnits.format_timestamps(np.array([bin_size]), time_units)[0]
 
@@ -261,7 +261,7 @@ class Tsd(pd.Series):
 
 # noinspection PyAbstractClass
 class TsdFrame(pd.DataFrame):
-    def __init__(self, t, d=None, time_units=None, span=None, **kwargs):
+    def __init__(self, t, d=None, time_units=None, support=None, **kwargs):
         if isinstance(t, pd.DataFrame):
             d = t.values
             c = t.columns.values
@@ -274,22 +274,22 @@ class TsdFrame(pd.DataFrame):
 
         t = TimeUnits.format_timestamps(t, time_units)
 
-        if span is not None:
-            bins = span.values.ravel()
+        if support is not None:
+            bins = support.values.ravel()
             ix = np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64)))
             ix[np.floor(ix / 2) * 2 != ix] = np.NaN
             ix = np.floor(ix/2)
             ix = ~np.isnan(ix)
             super().__init__(index=t[ix],data=d[ix], columns = c)
         else:
-            span = IntervalSet(start = t[0], end = t[-1])
+            support = IntervalSet(start = t[0], end = t[-1])
             super().__init__(index=t, data=d, columns=c)
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            self.time_span = span
+            self.time_support = support
 
-        self.rate = len(t)/self.time_span.tot_length('s')
+        self.rate = len(t)/self.time_support.tot_length('s')
         self.index.name = "Time (us)"
         self._metadata.append("nts_class")
         self.nts_class = self.__class__.__name__
@@ -301,14 +301,14 @@ class TsdFrame(pd.DataFrame):
 
     def __getitem__(self, key):
         """
-        Override to pass time_span
+        Override to pass time_support
         """
         result = super().__getitem__(key)
-        span = self.time_span
+        support = self.time_support
         if isinstance(result, pd.Series):
-            return Tsd(result, span=span)
+            return Tsd(result, support=support)
         elif isinstance(result, pd.DataFrame):
-            return TsdFrame(result, span=span)
+            return TsdFrame(result, support=support)
 
     def times(self, units=None):
         return TimeUnits.return_timestamps(self.index.values.astype(np.float64), units)
