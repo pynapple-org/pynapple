@@ -118,7 +118,7 @@ class TsGroup(UserDict):
 	"""
 	def restrict(self, iset):
 		"""
-		"""
+		"""		
 		newgr = {}
 		for k in self.data:
 			newgr[k] = self.data[k].restrict(iset)
@@ -184,7 +184,7 @@ class TsGroup(UserDict):
 		"""
 		Return list of TsGroup sliced by bins and center bins
 		"""
-		idx = np.digitize(self._metadata['alpha'], bins)-1
+		idx = np.digitize(self._metadata[key], bins)-1
 		groups = self._metadata.index.groupby(idx)
 		ix = np.unique(list(groups.keys()))
 		ix = ix[ix>=0]
@@ -195,7 +195,9 @@ class TsGroup(UserDict):
 
 	def getby_category(self, key):
 		"""
-		Return a dictionnay of all catergories
+		Return a dictionnay of all categories
 		"""
-		return self._metadata.groupby(key).groups
+		groups = self._metadata.groupby(key).groups
+		sliced = {k:self[groups[k]] for k in groups.keys()}
+		return sliced
 

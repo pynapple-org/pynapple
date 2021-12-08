@@ -262,12 +262,7 @@ class Tsd(pd.Series):
 # noinspection PyAbstractClass
 class TsdFrame(pd.DataFrame):
     def __init__(self, t, d=None, time_units=None, span=None, **kwargs):
-        if isinstance(t, BlockManager):
-            print("TODO")
-            # d = t.values
-            # t = t.index
-            # c = kwargs['columns']
-        elif isinstance(t, pd.DataFrame):
+        if isinstance(t, pd.DataFrame):
             d = t.values
             c = t.columns.values
             t = t.index.values
