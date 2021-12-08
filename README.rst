@@ -13,7 +13,7 @@
         :target: https://travis-ci.com/gviejo/pynapple
 
 
-PYthon Neural Analysis Package Pour Laboratoires d’Excellence
+PYthon Neural Analysis Package.
 
 pynapple is a Python library for analysing neurophysiological data. It allows to handle time series and epochs but also to use generic functions for neuroscience such as tuning curves and cross-correlogram of spikes. It is heavily based on neuroseries.
 
@@ -109,5 +109,5 @@ An example of the package can be seen below. The exemple data can be found `here
 
 Credits
 -------
-Thanks Francesco Battaglia for neuroseries.
-Thanks for Sofia for the logo
+Special thanks to [Francesco P. Battaglia](https://github.com/fpbattaglia) for the development of the orignal [TSToolbox](https://github.com/PeyracheLab/TStoolbox) and [neuroseries](https://github.com/NeuroNetMem/neuroseries) packages, the latter constituting the core of the present package.
+Logo: Sofia Skromne Carrasco, 2021.
