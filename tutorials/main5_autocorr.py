@@ -12,7 +12,7 @@ The main function crossCorr is already written in pynapple
 '''
 import numpy as np
 import pandas as pd
-import pynapple as ap
+import pynapple as nap
 from pylab import *
 
 
@@ -26,10 +26,10 @@ url = "https://www.dropbox.com/s/1kc0ulz7yudd9ru/A2929-200711.tar.gz?dl=1"
 # We define a string for the data directory (assuming we are in pynapple/tutorials)
 data_directory = 'data/A2929-200711'
 
-spikes, shank = ap.loadSpikeData(data_directory)
+spikes, shank = nap.loadSpikeData(data_directory)
 
 # Restrict the spikes to the wake episode
-wake_ep = ap.loadEpoch(data_directory, 'wake')
+wake_ep = nap.loadEpoch(data_directory, 'wake')
 
 # Let's make the autocorrelogram of the first neuron
 neuron_0 = spikes[0]
@@ -49,7 +49,7 @@ binsize = 5
 nbins = 200
 
 # Now we can call the function crossCorr
-autocorr_0 = ap.crossCorr(neuron_0_t, neuron_0_t, binsize, nbins)
+autocorr_0 = nap.crossCorr(neuron_0_t, neuron_0_t, binsize, nbins)
 
 # The corresponding times can be computed as follow 
 times = np.arange(0, binsize*(nbins+1), binsize) - (nbins*binsize)/2

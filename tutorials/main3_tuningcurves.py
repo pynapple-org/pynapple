@@ -12,7 +12,7 @@ and learn how to use one of the most important function : realign
 
 import numpy as np
 import pandas as pd
-import pynapple as ap
+import pynapple as nap
 from pylab import *
 from scipy.stats import norm
 
@@ -31,11 +31,11 @@ dt = 1/100.
 # and a duration of
 duration = dt*len(angle)
 # let's put angle in a pynapple tsd
-angle = ap.Tsd(t = np.arange(0, duration, dt), d = angle, time_units = 's')
+angle = nap.Tsd(t = np.arange(0, duration, dt), d = angle, time_units = 's')
 
 # now let's imagine we have some spikes
 spikes = np.sort(np.random.uniform(0, duration, 100))
-spikes = ap.Ts(spikes, time_units = 's')
+spikes = nap.Ts(spikes, time_units = 's')
 
 # We can plot both angle and spikes together
 figure()
@@ -99,7 +99,7 @@ ypos = np.sin(angle.values)+np.random.randn(len(angle))*0.05
 
 # We can stack the x,y position in a TsdFrame
 position = np.vstack((xpos, ypos)).T
-position = ap.TsdFrame(t = angle.times(), d = position, columns = ['x', 'y'])
+position = nap.TsdFrame(t = angle.times(), d = position, columns = ['x', 'y'])
 
 # and we can plot it
 figure()

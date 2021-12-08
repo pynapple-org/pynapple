@@ -12,7 +12,7 @@ This script will introduce you to the basics of time series handling
 
 import numpy as np
 import pandas as pd
-import pynapple as ap
+import pynapple as nap
 from pylab import *
 
 # let's create fake data for example the time of 10 spikes between 0 and 15 s

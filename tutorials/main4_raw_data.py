@@ -30,7 +30,7 @@ So that next time, you load the script, the wrappers will search in /Analysis to
 
 import numpy as np
 import pandas as pd
-import pynapple as ap
+import pynapple as nap
 from pylab import *
 
 # The data should be found in pynapple/tutorials/data/KA28-190405
@@ -50,13 +50,13 @@ files
 
 # First, we load the spikes
 # Here you can use the pynapple wrapper loadSpikeData
-spikes, shank = ap.loadSpikeData(data_directory)
+spikes, shank = nap.loadSpikeData(data_directory)
 # Type your variables in the terminal to see what it looks like
 
 # Second, we need some information about the recording session like the geometry of the shanks and sampling frequency
 # For this particular file format, the info are stored in a xml file (See http://neurosuite.sourceforge.net/information.html)
 # You can use the loadXML wrapper
-n_channels, fs, shank_to_channel = ap.loadXML(data_directory)
+n_channels, fs, shank_to_channel = nap.loadXML(data_directory)
 # Again type your variables
 
 # Let's load the animal's position.
@@ -70,7 +70,7 @@ events = ['1']
 
 # Now we can load the position and head angles contained into the file Tracking_data.csv
 # The order is by default [rotation y, rotation x, rotation z, position x, position y, position z]
-position = ap.loadPosition(data_directory, events, episodes)
+position = nap.loadPosition(data_directory, events, episodes)
 
 # The loadPosition is doing many things in the background
 # in particular it's making a BehavEpoch.h5 in the folder analysis
@@ -78,8 +78,8 @@ position = ap.loadPosition(data_directory, events, episodes)
 # plus it's automatically realigning the start and end of the wake epoch to the start and end of the tracking
 
 # We load the different epoch 
-wake_ep 							= ap.loadEpoch(data_directory, 'wake', episodes)
-sleep_ep 							= ap.loadEpoch(data_directory, 'sleep')					
+wake_ep 							= nap.loadEpoch(data_directory, 'wake', episodes)
+sleep_ep 							= nap.loadEpoch(data_directory, 'sleep')					
 
 # We can look at the position of the animal in 2d with a figure
 figure()
@@ -90,7 +90,7 @@ show()
 # Now we are going to compute the tuning curve for all neurons during exploration
 # The process of making a tuning curve has been covered in main3_tuningcurves.py
 # So here we are gonna use the function computeAngularTuningCurves from functions.py 
-tuning_curves = ap.computeAngularTuningCurves(spikes, position['ry'], wake_ep, 60)
+tuning_curves = nap.computeAngularTuningCurves(spikes, position['ry'], wake_ep, 60)
 
 	
 # And let's plot all the tuning curves in a polar plot
@@ -103,7 +103,7 @@ show()
 
 
 # It's a bit dirty. Let's smooth the tuning curves ...
-tuning_curves = ap.smoothAngularTuningCurves(tuning_curves, 10, 2)
+tuning_curves = nap.smoothAngularTuningCurves(tuning_curves, 10, 2)
 
 # and plot it again
 figure()
