@@ -5,7 +5,6 @@ from .time_units import TimeUnits
 from pandas.core.internals import SingleBlockManager, BlockManager
 from .interval_set import IntervalSet
 
-use_pandas_metadata = True
 
 def _get_restrict_method(align):
     if align in ('closest', 'nearest'):
@@ -69,7 +68,7 @@ class Tsd(pd.Series):
     Tsd provides standardized time representation, plus functions for restricting and realigning time series
     """
 
-    def __init__(self, t, d=None, time_units=None, support=None, **kwargs):
+    def __init__(self, t, d=None, time_units=None, time_support=None, **kwargs):
         """
         Tsd Initializer.
 
@@ -90,18 +89,18 @@ class Tsd(pd.Series):
 
         t = TimeUnits.format_timestamps(t, time_units)
 
-        if support is not None:
-            bins = support.values.ravel()
+        if time_support is not None:
+            bins = time_support.values.ravel()
             ix = np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64)))
             ix[np.floor(ix / 2) * 2 != ix] = np.NaN
             ix = np.floor(ix/2)
             ix = ~np.isnan(ix)
             super().__init__(index=t[ix],data=d[ix])
         else:
-            support = IntervalSet(start = t[0], end = t[-1])
+            time_support = IntervalSet(start = t[0], end = t[-1])
             super().__init__(index=t, data=d)
 
-        self.time_support = support
+        self.time_support = time_support
         self.rate = len(t)/self.time_support.tot_length('s')
         self.index.name = "Time (us)"
         self._metadata.append("nts_class")
@@ -163,28 +162,17 @@ class Tsd(pd.Series):
         """
         return self.values
 
-    def realign(self, t, align='closest'):
+    def value_from(self, tsd, ep, align='closest'):
         """
-        Provides a new Series only including the data points that are close to one time point in the t argument.
-
-        Args:
-            t: the aligning series, in numpy or pandas format
-            align: the values accepted by :func:`pandas.Series.reindex` plus
-            - next (similar to bfill)
-            - prev (similar to ffill)
-            - closest (similar to nearest)
-
-        Returns:
-            The realigned Tsd
-
+        Replace the value with the closest value from tsd
         """
         method = _get_restrict_method(align)
-        ix = TimeUnits.format_timestamps(t.index.values)
+        ix = TimeUnits.format_timestamps(self.restrict(ep).index.values)
+        tsd = tsd.restrict(ep)
+        new_tsd = tsd.reindex(ix, method=method)
+        return Tsd(new_tsd, time_support = ep)
 
-        rest_t = self.reindex(ix, method=method)
-        return rest_t
-
-    def restrict(self, iset, keep_labels=False):
+    def restrict(self, ep, keep_labels=False):
         """
         Restricts the Tsd to a set of times delimited by a :func:`~neuroseries.interval_set.IntervalSet`
 
@@ -195,22 +183,19 @@ class Tsd(pd.Series):
         Returns:
         # changed col to 0
         """
-        ix = iset.in_interval(self)
+        ix = ep.in_interval(self)
         tsd_r = pd.DataFrame(self, copy=True)
         col = tsd_r.columns[0]
         tsd_r['interval'] = ix
         ix = ~np.isnan(ix)
         tsd_r = tsd_r[ix]
-        if not keep_labels:
-            s = tsd_r.iloc[:,0]
-            return Tsd(s)
-        return Tsd(tsd_r, copy=True)
+        return Tsd(tsd_r[col], time_support=ep)
 
     def count(self, bin_size, ep = None, time_units = 's'):
         """
         Count occurences of events within bin size 
         bin_size should be seconds unless specified     
-        If no epochs is passed, the data will be binned based on the largest merge of time support.
+        If no epochs is passed, the data will be binned based on the time support.
         """     
         if not isinstance(ep, IntervalSet):
             ep = self.time_support
@@ -226,7 +211,11 @@ class Tsd(pd.Series):
             time_index.append(bins[0:-1] + np.diff(bins)/2)
         time_index = np.hstack(time_index)
         count = np.hstack(count)
-        return Tsd(t=time_index, d=count)
+        return Tsd(t=time_index, d=count, time_support=ep)
+
+    def threshold(self):
+        pass
+
 
     def gaps(self, min_gap, method='absolute'):
         """
@@ -261,7 +250,8 @@ class Tsd(pd.Series):
 
 # noinspection PyAbstractClass
 class TsdFrame(pd.DataFrame):
-    def __init__(self, t, d=None, time_units=None, support=None, **kwargs):
+
+    def __init__(self, t, d=None, time_units=None, time_support=None, **kwargs):
         if isinstance(t, pd.DataFrame):
             d = t.values
             c = t.columns.values
@@ -274,20 +264,20 @@ class TsdFrame(pd.DataFrame):
 
         t = TimeUnits.format_timestamps(t, time_units)
 
-        if support is not None:
-            bins = support.values.ravel()
+        if time_support is not None:
+            bins = time_support.values.ravel()
             ix = np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64)))
             ix[np.floor(ix / 2) * 2 != ix] = np.NaN
             ix = np.floor(ix/2)
             ix = ~np.isnan(ix)
             super().__init__(index=t[ix],data=d[ix], columns = c)
         else:
-            support = IntervalSet(start = t[0], end = t[-1])
+            time_support = IntervalSet(start = t[0], end = t[-1])
             super().__init__(index=t, data=d, columns=c)
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            self.time_support = support
+            self.time_support = time_support
 
         self.rate = len(t)/self.time_support.tot_length('s')
         self.index.name = "Time (us)"
@@ -304,11 +294,11 @@ class TsdFrame(pd.DataFrame):
         Override to pass time_support
         """
         result = super().__getitem__(key)
-        support = self.time_support
+        time_support = self.time_support
         if isinstance(result, pd.Series):
-            return Tsd(result, support=support)
+            return Tsd(result, time_support=time_support)
         elif isinstance(result, pd.DataFrame):
-            return TsdFrame(result, support=support)
+            return TsdFrame(result, time_support=time_support)
 
     def times(self, units=None):
         return TimeUnits.return_timestamps(self.index.values.astype(np.float64), units)
@@ -355,7 +345,7 @@ class TsdFrame(pd.DataFrame):
         tsd_r = tsd_r[ix]
         if not keep_labels:
             del tsd_r['interval']
-        return TsdFrame(tsd_r, copy=True)
+        return TsdFrame(tsd_r, time_support=iset, copy=True)
 
     def gaps(self, min_gap, method='absolute'):
         """
@@ -390,8 +380,4 @@ class Ts(Tsd):
     def __init__(self, t, time_units=None, **kwargs):
         super().__init__(t, None, time_units=time_units, **kwargs)
         self.nts_class = self.__class__.__name__
-
-
-
-
 

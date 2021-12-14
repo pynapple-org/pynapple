@@ -8,32 +8,74 @@ from .time_series import Ts, Tsd, TsdFrame
 from .interval_set import IntervalSet
 from .time_units import TimeUnits
 
+def intersect_intervals(i_sets):			
+	n_sets = len(i_sets)
+	time1 = [i_set['start'] for i_set in i_sets]
+	time2 = [i_set['end'] for i_set in i_sets]
+	time1.extend(time2)
+	time = np.hstack(time1)
+	start_end = np.hstack((np.ones(len(time)//2, dtype=np.int32),
+						  -1 * np.ones(len(time)//2, dtype=np.int32)))
+
+	df = pd.DataFrame({'time': time, 'start_end': start_end})
+	df.sort_values(by='time', inplace=True)
+	df.reset_index(inplace=True, drop=True)
+	df['cumsum'] = df['start_end'].cumsum()
+	ix = (df['cumsum']==n_sets).to_numpy().nonzero()[0]
+	return IntervalSet(df['time'][ix], df['time'][ix+1])
+
+def union_intervals(i_sets):
+	time = np.hstack([i_set['start'] for i_set in i_sets] +
+					 [i_set['end'] for i_set in i_sets])
+	start_end = np.hstack((np.ones(len(time)//2, dtype=np.int32),
+						  -1 * np.ones(len(time)//2, dtype=np.int32)))
+	df = pd.DataFrame({'time': time, 'start_end': start_end})
+	df.sort_values(by='time', inplace=True)
+	df.reset_index(inplace=True, drop=True)
+	df['cumsum'] = df['start_end'].cumsum()
+	ix_stop = (df['cumsum']==0).to_numpy().nonzero()[0]
+	ix_start = np.hstack((0, ix_stop[:-1]+1))
+	return IntervalSet(df['time'][ix_start], df['time'][ix_stop])
+
+
 class TsGroup(UserDict):
 	"""
 
 	"""
-	def __init__(self, data=None, time_support = None, *args, **kwargs):
+	def __init__(self, data=None, time_support=None, time_units='s', **kwargs):
 		"""
 		"""
 		self._initialized = False
+		
 		index = np.sort(list(data.keys()))
+
 		self._metadata = pd.DataFrame(index=index, columns = ['freq'])
 		
+		# Transform elements to Ts/Tsd objects
+		for k in index:
+			if isinstance(data[k], (np.ndarray,list)):
+				warnings.warn('Elements should not be passed as numpy array. Default time units is seconds when creating the Ts object.', stacklevel=2)
+				data[k] = Ts(t = data[k], time_support = time_support, time_units = time_units)
+
+		# If time_support is passed, all elements of data are restricted prior to init
+		if isinstance(time_support, IntervalSet):
+			self.time_support = time_support
+			data = {k:data[k].restrict(self.time_support) for k in index}
+		else:
+			# Otherwise do the intersection of all time supports			
+			time_support = intersect_intervals([data[k].time_support for k in index])
+			if len(time_support) == 0:
+				raise RuntimeError("Intersection of time supports is empty. Consider passing a time support as argument.")
+			self.time_support = time_support				
+			data = {k:data[k].restrict(self.time_support) for k in index}
+
 		UserDict.__init__(self, data)
 		
 		# Making the TsGroup non mutable
 		self._initialized = True
 
 		# Trying to add argument as metainfo
-		self.set_info(*args, **kwargs)
-
-		# Check/set the time support
-		if isinstance(time_support, IntervalSet):
-			self.time_support = time_support
-			self._update_time_support(time_support)
-		else:
-			self._make_time_support()
-
+		self.set_info(**kwargs)
 		
 	"""
 	Base functions
@@ -53,7 +95,7 @@ class TsGroup(UserDict):
 				self._metadata.loc[int(key),'freq'] = value.rate
 				super().__setitem__(int(key), value)
 			elif isinstance(value, (np.ndarray, list)):
-				warnings.warn('Elements should not be passed as numpy array. Default time units is seconds when creating the Ts object.')
+				warnings.warn('Elements should not be passed as numpy array. Default time units is seconds when creating the Ts object.', stacklevel=2)
 				tmp = Ts(t = value, time_units = 's')
 				self._metadata.loc[int(key),'freq'] = tmp.rate
 				super().__setitem__(int(key), tmp)
@@ -71,7 +113,7 @@ class TsGroup(UserDict):
 				raise KeyError("Can't find key {} in group index.".format(key))
 		else:			
 			metadata = self._metadata.loc[key,self._metadata.columns.drop('freq')]
-			return TsGroup({k:self[k] for k in key}, metadata)
+			return TsGroup({k:self[k] for k in key}, **metadata)
 	
 	def __repr__(self):
 		cols = self._metadata.columns.drop('freq')
@@ -115,59 +157,38 @@ class TsGroup(UserDict):
 	def _union_time_support(self):		
 		idx = list(self.data.keys())
 		i_sets = [self.data[i].time_support for i in idx]
-		time = np.hstack([i_set['start'] for i_set in i_sets] +
-						 [i_set['end'] for i_set in i_sets])
-		start_end = np.hstack((np.ones(len(time)//2, dtype=np.int32),
-							  -1 * np.ones(len(time)//2, dtype=np.int32)))
-		df = pd.DataFrame({'time': time, 'start_end': start_end})
-		df.sort_values(by='time', inplace=True)
-		df.reset_index(inplace=True, drop=True)
-		df['cumsum'] = df['start_end'].cumsum()
-		ix_stop = (df['cumsum']==0).to_numpy().nonzero()[0]
-		ix_start = np.hstack((0, ix_stop[:-1]+1))
-		return IntervalSet(df['time'][ix_start], df['time'][ix_stop])
+		return union_intervals(i_sets)
 
 	def _intersect_time_support(self):
 		idx = list(self.data.keys())
 		i_sets = [self.data[i].time_support for i in idx]
-		n_sets = len(i_sets)
-		time1 = [i_set['start'] for i_set in i_sets]
-		time2 = [i_set['end'] for i_set in i_sets]
-		time1.extend(time2)
-		time = np.hstack(time1)
-		start_end = np.hstack((np.ones(len(time)//2, dtype=np.int32),
-							  -1 * np.ones(len(time)//2, dtype=np.int32)))
-
-		df = pd.DataFrame({'time': time, 'start_end': start_end})
-		df.sort_values(by='time', inplace=True)
-		df.reset_index(inplace=True, drop=True)
-		df['cumsum'] = df['start_end'].cumsum()
-		ix = (df['cumsum']==n_sets).to_numpy().nonzero()[0]
-		return IntervalSet(df['time'][ix], df['time'][ix+1])
+		return intersect_intervals(i_sets)
 
 
 	"""
 	Generic functions of Tsd objects
 	"""
-	def restrict(self, iset):
+	def restrict(self, ep):
 		"""
 		"""		
 		newgr = {}
 		for k in self.data:
-			newgr[k] = self.data[k].restrict(iset)
+			newgr[k] = self.data[k].restrict(ep)
 		cols = self._metadata.columns.drop('freq')
 
-		return TsGroup(newgr, self._metadata[cols])
+		return TsGroup(newgr, time_support = ep, **self._metadata[cols])
 
-	def realign(self, tsd, align='closest'):
+	def value_from(self, tsd, ep, align='closest'):
 		"""
+		Assign to each time points the closest value from tsd within ep
 		"""
+		tsd = tsd.restrict(ep)
 		newgr = {}
 		for k in self.data:
-			newgr[k] = tsd.realign(self.data[k], align)
+			newgr[k] = self.data[k].value_from(tsd, ep, align)
 
 		cols = self._metadata.columns.drop('freq')
-		return TsGroup(newgr, self._metadata[cols])		
+		return TsGroup(newgr, time_support = ep, **self._metadata[cols])
 
 	def count(self, bin_size, ep = None, time_units = 's'):
 		"""
