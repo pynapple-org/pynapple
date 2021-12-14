@@ -12,16 +12,28 @@ class TsGroup(UserDict):
 	"""
 
 	"""
-	def __init__(self, data=None, *args, **kwargs):
+	def __init__(self, data=None, time_support = None, *args, **kwargs):
 		"""
 		"""
+		self._initialized = False
 		index = np.sort(list(data.keys()))
 		self._metadata = pd.DataFrame(index=index, columns = ['freq'])
 		
 		UserDict.__init__(self, data)
 		
+		# Making the TsGroup non mutable
+		self._initialized = True
+
 		# Trying to add argument as metainfo
 		self.set_info(*args, **kwargs)
+
+		# Check/set the time support
+		if isinstance(time_support, IntervalSet):
+			self.time_support = time_support
+			self._update_time_support(time_support)
+		else:
+			self._make_time_support()
+
 		
 	"""
 	Base functions
@@ -30,7 +42,10 @@ class TsGroup(UserDict):
 		"""
 		Can't overwrite key that already exists
 		If true, raise an error
+		Can't add an item if TsGroup has been already initialized
 		"""
+		if self._initialized:
+			raise RuntimeError("TsGroup object is not mutable.")
 		if self.__contains__(key):
 			raise KeyError("Key {} already in group index.".format(key))
 		else:
@@ -111,6 +126,25 @@ class TsGroup(UserDict):
 		ix_stop = (df['cumsum']==0).to_numpy().nonzero()[0]
 		ix_start = np.hstack((0, ix_stop[:-1]+1))
 		return IntervalSet(df['time'][ix_start], df['time'][ix_stop])
+
+	def _intersect_time_support(self):
+		idx = list(self.data.keys())
+		i_sets = [self.data[i].time_support for i in idx]
+		n_sets = len(i_sets)
+		time1 = [i_set['start'] for i_set in i_sets]
+		time2 = [i_set['end'] for i_set in i_sets]
+		time1.extend(time2)
+		time = np.hstack(time1)
+		start_end = np.hstack((np.ones(len(time)//2, dtype=np.int32),
+							  -1 * np.ones(len(time)//2, dtype=np.int32)))
+
+		df = pd.DataFrame({'time': time, 'start_end': start_end})
+		df.sort_values(by='time', inplace=True)
+		df.reset_index(inplace=True, drop=True)
+		df['cumsum'] = df['start_end'].cumsum()
+		ix = (df['cumsum']==n_sets).to_numpy().nonzero()[0]
+		return IntervalSet(df['time'][ix], df['time'][ix+1])
+
 
 	"""
 	Generic functions of Tsd objects
