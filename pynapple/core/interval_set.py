@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from warnings import warn
-from .time_series import TimeUnits, Range
+from .time_units import TimeUnits, Range
 
 
 # noinspection PyAbstractClass
@@ -83,6 +83,12 @@ class IntervalSet(pd.DataFrame):
         self.r_cache = None
         self._metadata = ['nts_class']
         self.nts_class = self.__class__.__name__
+
+    def __repr__(self):
+        return self.as_units('s').__repr__()
+                
+    def __str__(self):
+        return self.__repr__()       
 
     def time_span(self):
         """
@@ -282,32 +288,3 @@ class IntervalSet(pd.DataFrame):
     @property
     def _constructor(self):
         return IntervalSet
-
-    @property
-    def r(self):
-        """
-        Time restricted version of the IntervalSet. (property, read-only)
-
-        when running under a :py:class:`neuroseries.Range` context manager
-        Returns:  when running under a :py:class:`neuroseries.Range` context manager
-
-
-        """
-        if Range.interval is None:
-            raise ValueError('no range interval set')
-        if self.r_cache is None:
-            self.r_cache = self.intersect(Range.interval)
-            Range.cached_objects.append(self)
-
-        return self.r_cache
-
-    def invalidate_restrict_cache(self):
-        self.r_cache = None
-
-    # def __iter__(self):
-    #     self.iter_r = self.iterrows()
-    #     return self
-    #
-    # def __next__(self):
-    #     n = next(self.iter_r)[1]
-    #     return IntervalSet(n['start'], n['end'])
