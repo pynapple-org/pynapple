@@ -213,8 +213,37 @@ class Tsd(pd.Series):
         count = np.hstack(count)
         return Tsd(t=time_index, d=count, time_support=ep)
 
-    def threshold(self):
-        pass
+    def threshold(self, thr, method='above'):
+        """
+        Apply a threshold function to the tsd to return a new tsd 
+        with the time support being the epochs above/below the threshold
+        """
+        d = self.values
+        t = self.index.values
+        idx_rising = np.where(np.logical_and(d[:-1] <= thr, d[1:] > thr))[0]
+        idx_falling = np.where(np.logical_and(d[:-1] >= thr, d[1:] < thr))[0]
+
+        if method == 'above':
+            if d[0] > thr:
+                idx_rising = np.hstack(([0], idx_rising))
+            if d[-1] > thr:
+                idx_falling = np.hstack((idx_falling, [len(d)-1]))
+            starts = t[idx_rising]
+            ends = t[idx_falling]
+        elif method == 'below':
+            if d[0] < thr:
+                idx_falling = np.hstack(([0], idx_falling))
+            if d[-1] < thr:
+                idx_rising = np.hstack((idx_rising, [len(d)-1]))
+            starts = t[idx_falling]
+            ends = t[idx_rising]
+        else:
+            raise ValueError("Method {} for thresholding is not accepted.".format(method))
+
+        time_support = IntervalSet(start = starts, end = ends)
+        tsd = self.restrict(time_support)
+
+        return tsd
 
 
     def gaps(self, min_gap, method='absolute'):
