@@ -26,7 +26,7 @@ url = "https://www.dropbox.com/s/1kc0ulz7yudd9ru/A2929-200711.tar.gz?dl=1"
 # We define a string for the data directory (assuming we are in pynapple/tutorials)
 data_directory = 'data/A2929-200711'
 
-spikes, shank = nap.loadSpikeData(data_directory)
+spikes = nap.loadSpikeData(data_directory)
 
 # Restrict the spikes to the wake episode
 wake_ep = nap.loadEpoch(data_directory, 'wake')
