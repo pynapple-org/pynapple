@@ -108,4 +108,3 @@ Special thanks to Francesco P. Battaglia (https://github.com/fpbattaglia) for th
 This package was developped by Guillaume Viejo (https://github.com/gviejo) and other members of the Peyrache Lab.
 
 Logo: Sofia Skromne Carrasco, 2021.
-=======
