@@ -50,7 +50,7 @@ files
 
 # First, we load the spikes
 # Here you can use the pynapple wrapper loadSpikeData
-spikes, shank = nap.loadSpikeData(data_directory)
+spikes = nap.loadSpikeData(data_directory)
 # Type your variables in the terminal to see what it looks like
 
 # Second, we need some information about the recording session like the geometry of the shanks and sampling frequency
