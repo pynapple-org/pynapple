@@ -1,156 +1,9 @@
 import pandas as pd
 import numpy as np
-from warnings import warn
+import warnings
+from .time_units import TimeUnits
 from pandas.core.internals import SingleBlockManager, BlockManager
-
-use_pandas_metadata = True
-
-
-class Range:
-    """
-    A class defining a range to restrict analyses.
-
-    This is used as a context manager, taking a :func:`~neuroseries.interval_set.IntervalSet` as an input.
-    After that, all neuroseries objects will have a property r set, that will be restricted, for example:
-
-    .. code:: python
-
-        with nts.Range(range_interval):
-            np.testing.assert_array_almost_equal_nulp(self.tsd.r.times(), tsd_r.times())
-    """
-    interval = None
-    cached_objects = []
-
-    def __init__(self, a, b=None, time_units=None):
-        """
-        Creates a Range object
-        Args:
-            a: an :ref:`IntervalSet` defining the range, or the lower bound of the range
-            b : if defined (defaults to :ref:`None`), contains the upper bound of the range, as a number of a Series
-            (or other object with an Index)
-            time_units (str): a string defining the :ref:`TimeUnits` used to define the bounds.
-        """
-        if b:
-            start = TimeUnits.format_timestamps(np.array((a,), dtype=np.int64).ravel(), time_units)
-            end = TimeUnits.format_timestamps(np.array((b,), dtype=np.int64).ravel(), time_units)
-            from neuroseries.interval_set import IntervalSet
-            Range.interval = IntervalSet(start, end)
-        else:
-            Range.interval = a
-
-    def __enter__(self):
-        return Range.interval
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        Range.interval = None
-        for i in Range.cached_objects:
-            i.invalidate_restrict_cache()
-        self.cached_objects = []
-
-
-class TimeUnits:
-    """
-    This class deals with conversion between different time units for all neuroseries objects.
-    It also provides a context manager that tweaks the default time units to the supported units:
-    - 'us': microseconds (overall default)
-    - 'ms': milliseconds
-    - 's': seconds
-
-    The context manager is called as follows
-
-    .. code:: python
-
-        with nts.TimeUnits('ms'):
-            t = self.tsd.times()
-
-    """
-    default_time_units = 'us'
-
-    def __init__(self, units):
-        TimeUnits.default_time_units = units
-
-    def __enter__(self):
-        return self.default_time_units
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        TimeUnits.default_time_units = 'us'
-
-    @staticmethod
-    def format_timestamps(t, units=None, give_warning=True):
-        """
-        Converts numerical types to the type :func:`numpy.int64` that is used for the time index in neuroseries.
-
-        Args:
-            t: a vector (or scalar) of times
-            units: the units in which times are given
-            give_warning: if True, it will warn when the timestamps are not sored
-
-        Returns:
-            ts: times in standard neuroseries format
-        """
-
-        import numbers
-
-        if not units:
-            units = TimeUnits.default_time_units
-
-        # get the times (or the index if pandas object, in int64 vector format
-
-        if isinstance(t, BlockManager):
-            t = pd.DataFrame(t, copy=True)
-
-        if isinstance(t, (pd.Series, pd.DataFrame)):
-            t = t.index.values.astype(np.int64)
-
-        if isinstance(t, np.floating):
-            t = t.round()
-
-        if isinstance(t, (pd.Series, pd.DataFrame)):
-            t = t.index
-
-        if isinstance(t, numbers.Number):
-            t = np.array((t,))
-
-        t = t.astype(np.float64)
-        if units == 'us':
-            pass
-        elif units == 'ms':
-            t *= 1000
-        elif units == 's':
-            t *= 1000000
-        else:
-            raise ValueError('unrecognized time units type')
-
-        # noinspection PyUnresolvedReferences,PyTypeChecker
-        ts = t.astype(np.int64).reshape((len(t),))
-
-        if not (np.diff(ts) >= 0).all():
-            if give_warning:
-                warn('timestamps are not sorted', UserWarning)
-            ts.sort()
-        return ts
-
-    @staticmethod
-    def return_timestamps(t, units=None):
-        """
-        package the times in the desired units
-        Args:
-            t: standard neuroseries times
-            units: the desired units for the output
-
-        Returns:
-            ts: times in the desired format
-        """
-        if units is None:
-            units = TimeUnits.default_time_units
-        if units == 'us':
-            return t
-        elif units == 'ms':
-            return t / 1000.
-        elif units == 's':
-            return t / 1.0e6
-        else:
-            raise ValueError('Unrecognized units')
+from .interval_set import IntervalSet
 
 
 def _get_restrict_method(align):
@@ -164,6 +17,49 @@ def _get_restrict_method(align):
         raise ValueError('Unrecognized restrict align method')
     return method
 
+def gaps_func(data, min_gap, method='absolute'):
+    """
+    finds gaps in a tsd
+    :param data: a Tsd/TsdFrame
+    :param min_gap: the minimum gap that will be considered
+    :param method: 'absolute': min gap is expressed in time (us), 'median',
+    min_gap expressed in units of the median inter-sample event
+    :return: an IntervalSet containing the gaps in the TSd
+    """
+    dt = np.diff(data.times(units='us'))
+
+    if method == 'absolute':
+        pass
+    elif method == 'median':
+        md = np.median(dt)
+        min_gap *= md
+    else:
+        raise ValueError('unrecognized method')
+
+    ix = np.where(dt > min_gap)
+    t = data.times()
+    st = t[ix] + 1
+    en = t[(np.array(ix) + 1)] - 1
+    from neuroseries.interval_set import IntervalSet
+    return IntervalSet(st, en)
+
+def support_func(data, min_gap, method='absolute'):
+    """
+    find the smallest (to a min_gap resolution) IntervalSet containing all the times in the Tsd
+    :param data: a Tsd/TsdFrame
+    :param min_gap: the minimum gap that will be considered
+    :param method: 'absolute': min gap is expressed in time (us), 'median',
+    min_gap expressed in units of the median inter-sample event
+    :return: an IntervalSet
+    """
+
+    here_gaps = data.gaps(min_gap, method=method)
+    t = data.times('us')
+    from neuroseries.interval_set import IntervalSet
+    span = IntervalSet(t[0] - 1, t[-1] + 1)
+    support_here = span.set_diff(here_gaps)
+    return support_here
+
 
 class Tsd(pd.Series):
     """
@@ -172,7 +68,7 @@ class Tsd(pd.Series):
     Tsd provides standardized time representation, plus functions for restricting and realigning time series
     """
 
-    def __init__(self, t, d=None, time_units=None, **kwargs):
+    def __init__(self, t, d=None, time_units=None, time_support=None, **kwargs):
         """
         Tsd Initializer.
 
@@ -183,15 +79,38 @@ class Tsd(pd.Series):
             is provided as the first argument
             **kwargs: arguments that will be passed to the :func:`~pandas.Series` initializer.
         """
-        if isinstance(t, (pd.Series, SingleBlockManager)):
-            super().__init__(t, **kwargs)
+        if isinstance(t, SingleBlockManager):
+            d = t.array
+            t = t.index.values
+            if 'index' in kwargs: kwargs.pop('index')            
+        elif isinstance(t, pd.Series):
+            d = t.values
+            t = t.index.values
+
+        t = TimeUnits.format_timestamps(t, time_units)
+
+        if time_support is not None:
+            bins = time_support.values.ravel()
+            ix = np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64)))
+            ix[np.floor(ix / 2) * 2 != ix] = np.NaN
+            ix = np.floor(ix/2)
+            ix = ~np.isnan(ix)
+            super().__init__(index=t[ix],data=d[ix])
         else:
-            t = TimeUnits.format_timestamps(t, time_units)
-            super().__init__(index=t, data=d, **kwargs)
+            time_support = IntervalSet(start = t[0], end = t[-1])
+            super().__init__(index=t, data=d)
+
+        self.time_support = time_support
+        self.rate = len(t)/self.time_support.tot_length('s')
         self.index.name = "Time (us)"
         self._metadata.append("nts_class")
         self.nts_class = self.__class__.__name__
-        self.r_cache = None
+
+
+    def __repr__(self):
+        return self.as_units('s').__repr__()
+
+    def __str__(self): return self.__repr__()
 
     def times(self, units=None):
         """
@@ -243,28 +162,17 @@ class Tsd(pd.Series):
         """
         return self.values
 
-    def realign(self, t, align='closest'):
+    def value_from(self, tsd, ep, align='closest'):
         """
-        Provides a new Series only including the data points that are close to one time point in the t argument.
-
-        Args:
-            t: the aligning series, in numpy or pandas format
-            align: the values accepted by :func:`pandas.Series.reindex` plus
-            - next (similar to bfill)
-            - prev (similar to ffill)
-            - closest (similar to nearest)
-
-        Returns:
-            The realigned Tsd
-
+        Replace the value with the closest value from tsd
         """
         method = _get_restrict_method(align)
-        ix = TimeUnits.format_timestamps(t.index.values)
+        ix = TimeUnits.format_timestamps(self.restrict(ep).index.values)
+        tsd = tsd.restrict(ep)
+        new_tsd = tsd.reindex(ix, method=method)
+        return Tsd(new_tsd, time_support = ep)
 
-        rest_t = self.reindex(ix, method=method)
-        return rest_t
-
-    def restrict(self, iset, keep_labels=False):
+    def restrict(self, ep, keep_labels=False):
         """
         Restricts the Tsd to a set of times delimited by a :func:`~neuroseries.interval_set.IntervalSet`
 
@@ -275,16 +183,72 @@ class Tsd(pd.Series):
         Returns:
         # changed col to 0
         """
-        ix = iset.in_interval(self)
+        ix = ep.in_interval(self)
         tsd_r = pd.DataFrame(self, copy=True)
         col = tsd_r.columns[0]
         tsd_r['interval'] = ix
         ix = ~np.isnan(ix)
         tsd_r = tsd_r[ix]
-        if not keep_labels:
-            s = tsd_r.iloc[:,0]
-            return Tsd(s)
-        return Tsd(tsd_r, copy=True)
+        return Tsd(tsd_r[col], time_support=ep)
+
+    def count(self, bin_size, ep = None, time_units = 's'):
+        """
+        Count occurences of events within bin size 
+        bin_size should be seconds unless specified     
+        If no epochs is passed, the data will be binned based on the time support.
+        """     
+        if not isinstance(ep, IntervalSet):
+            ep = self.time_support
+            
+        bin_size_us = TimeUnits.format_timestamps(np.array([bin_size]), time_units)[0]
+
+        # bin for each epochs
+        time_index = []
+        count = []
+        for i in ep.index:
+            bins = np.arange(ep.start[i], ep.end[i] + bin_size_us, bin_size_us)
+            count.append(np.histogram(self.index.values, bins)[0])
+            time_index.append(bins[0:-1] + np.diff(bins)/2)
+        time_index = np.hstack(time_index)
+        count = np.hstack(count)
+        return Tsd(t=time_index, d=count, time_support=ep)
+
+    def threshold(self, thr, method='above'):
+        """
+        Apply a threshold function to the tsd to return a new tsd 
+        with the time support being the epochs above/below the threshold
+        """
+        d = self.values
+        t = self.index.values
+        idx_rising = np.where(np.logical_and(d[:-1] <= thr, d[1:] > thr))[0]
+        idx_falling = np.where(np.logical_and(d[:-1] >= thr, d[1:] < thr))[0]
+
+        if method == 'above':
+            starts = t[idx_rising] + (t[idx_rising+1]-t[idx_rising])/2
+            ends = t[idx_falling] + (t[idx_falling+1]-t[idx_falling])/2
+            if d[0] > thr:
+                starts = np.hstack((t[0], starts))                
+            if d[-1] > thr:
+                ends = np.hstack((ends, t[-1]))
+        elif method == 'below':
+            starts = t[idx_falling] + (t[idx_falling+1]-t[idx_falling])/2
+            ends = t[idx_rising] + (t[idx_rising+1]-t[idx_rising])/2
+            if d[0] < thr:
+                starts = np.hstack((t[0], starts))                
+            if d[-1] < thr:
+                ends = np.hstack((ends, t[-1]))
+        else:
+            raise ValueError("Method {} for thresholding is not accepted.".format(method))
+
+        if (len(starts)==0 and len(ends)==0) or len(starts)!=len(ends):
+            raise RuntimeError("Threshold {} with method {} returned empty tsd.".format(thr, method))
+        else:
+            time_support = IntervalSet(start = starts, end = ends)
+            time_support = time_support.drop_short_intervals(0)
+            time_support = self.time_support.intersect(time_support)
+            tsd = self.restrict(time_support)
+            return tsd
+
 
     def gaps(self, min_gap, method='absolute'):
         """
@@ -312,27 +276,6 @@ class Tsd(pd.Series):
     def end_time(self, units='us'):
         return self.times(units=units)[-1]
 
-    def store(self, the_store, key, **kwargs):
-        data_to_store = self.as_series()
-
-        the_store[key] = data_to_store
-        # noinspection PyProtectedMember
-        metadata = {k: getattr(self, k) for k in self._metadata}
-        the_store.put(key, data_to_store, metadata, **kwargs)
-
-    @property
-    def r(self):
-        if Range.interval is None:
-            raise ValueError('no range interval set')
-        if self.r_cache is None:
-            self.r_cache = self.restrict(Range.interval)
-            Range.cached_objects.append(self)
-
-        return self.r_cache
-
-    def invalidate_restrict_cache(self):
-        self.r_cache = None
-
     @property
     def _constructor(self):
         return Tsd
@@ -340,16 +283,55 @@ class Tsd(pd.Series):
 
 # noinspection PyAbstractClass
 class TsdFrame(pd.DataFrame):
-    def __init__(self, t, d=None, time_units=None, **kwargs):
-        if isinstance(t, (pd.DataFrame, SingleBlockManager, BlockManager)):
-            super().__init__(t, **kwargs)
+
+    def __init__(self, t, d=None, time_units=None, time_support=None, **kwargs):
+        if isinstance(t, pd.DataFrame):
+            d = t.values
+            c = t.columns.values
+            t = t.index.values
         else:
-            t = TimeUnits.format_timestamps(t, time_units)
-            super().__init__(index=t, data=d, **kwargs)
+            if 'columns' in kwargs:
+                c = kwargs['columns']
+            else:
+                c = np.arange(d.shape[1])
+
+        t = TimeUnits.format_timestamps(t, time_units)
+
+        if time_support is not None:
+            bins = time_support.values.ravel()
+            ix = np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64)))
+            ix[np.floor(ix / 2) * 2 != ix] = np.NaN
+            ix = np.floor(ix/2)
+            ix = ~np.isnan(ix)
+            super().__init__(index=t[ix],data=d[ix], columns = c)
+        else:
+            time_support = IntervalSet(start = t[0], end = t[-1])
+            super().__init__(index=t, data=d, columns=c)
+
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            self.time_support = time_support
+
+        self.rate = len(t)/self.time_support.tot_length('s')
         self.index.name = "Time (us)"
         self._metadata.append("nts_class")
         self.nts_class = self.__class__.__name__
-        self.r_cache = None
+
+    def __repr__(self):
+        return self.as_units('s').__repr__()
+
+    def __str__(self): return self.__repr__()
+
+    def __getitem__(self, key):
+        """
+        Override to pass time_support
+        """
+        result = super().__getitem__(key)
+        time_support = self.time_support
+        if isinstance(result, pd.Series):
+            return Tsd(result, time_support=time_support)
+        elif isinstance(result, pd.DataFrame):
+            return TsdFrame(result, time_support=time_support)
 
     def times(self, units=None):
         return TimeUnits.return_timestamps(self.index.values.astype(np.float64), units)
@@ -376,23 +358,6 @@ class TsdFrame(pd.DataFrame):
         df.columns = self.columns.copy()
         return df
 
-    def plot(self, units=None):
-        """
-        makes a plot with the units of choices
-        Args:
-            units: us (s), ms, or s
-
-        Returns:
-            None
-        """
-
-        dz = pd.DataFrame(index=self.times(units=units), data=self.values, columns=self.columns, copy=False)
-        units_str = units
-        if not units_str:
-            units_str = 'us'
-        dz.index.name = "Time (" + units_str + ")"
-        dz.plot()
-
     def data(self):
         if len(self.columns) == 1:
             return self.values.ravel()
@@ -413,7 +378,7 @@ class TsdFrame(pd.DataFrame):
         tsd_r = tsd_r[ix]
         if not keep_labels:
             del tsd_r['interval']
-        return TsdFrame(tsd_r, copy=True)
+        return TsdFrame(tsd_r, time_support=iset, copy=True)
 
     def gaps(self, min_gap, method='absolute'):
         """
@@ -436,39 +401,11 @@ class TsdFrame(pd.DataFrame):
         """
         return support_func(self, min_gap, method)
 
-    def store(self, the_store, key, **kwargs):
-        data_to_store = pd.DataFrame(self)
-        the_store[key] = data_to_store
-        # noinspection PyProtectedMember
-        metadata = {k: getattr(self, k) for k in self._metadata}
-        the_store.put(key, data_to_store, metadata, **kwargs)
-
     def start_time(self, units='us'):
         return self.times(units=units)[0]
 
     def end_time(self, units='us'):
         return self.times(units=units)[-1]
-
-    @property
-    def _constructor(self):
-        return TsdFrame
-
-    @property
-    def _constructor_sliced(self):
-        return Tsd
-
-    @property
-    def r(self):
-        if Range.interval is None:
-            raise ValueError('no range interval set')
-        if self.r_cache is None:
-            self.r_cache = self.restrict(Range.interval)
-            Range.cached_objects.append(self)
-
-        return self.r_cache
-
-    def invalidate_restrict_cache(self):
-        self.r_cache = None
 
 
 # noinspection PyAbstractClass
@@ -477,84 +414,3 @@ class Ts(Tsd):
         super().__init__(t, None, time_units=time_units, **kwargs)
         self.nts_class = self.__class__.__name__
 
-
-def gaps_func(data, min_gap, method='absolute'):
-    """
-    finds gaps in a tsd
-    :param data: a Tsd/TsdFrame
-    :param min_gap: the minimum gap that will be considered
-    :param method: 'absolute': min gap is expressed in time (us), 'median',
-    min_gap expressed in units of the median inter-sample event
-    :return: an IntervalSet containing the gaps in the TSd
-    """
-    dt = np.diff(data.times(units='us'))
-
-    if method == 'absolute':
-        pass
-    elif method == 'median':
-        md = np.median(dt)
-        min_gap *= md
-    else:
-        raise ValueError('unrecognized method')
-
-    ix = np.where(dt > min_gap)
-    t = data.times()
-    st = t[ix] + 1
-    en = t[(np.array(ix) + 1)] - 1
-    from neuroseries.interval_set import IntervalSet
-    return IntervalSet(st, en)
-
-
-def support_func(data, min_gap, method='absolute'):
-    """
-    find the smallest (to a min_gap resolution) IntervalSet containing all the times in the Tsd
-    :param data: a Tsd/TsdFrame
-    :param min_gap: the minimum gap that will be considered
-    :param method: 'absolute': min gap is expressed in time (us), 'median',
-    min_gap expressed in units of the median inter-sample event
-    :return: an IntervalSet
-    """
-
-    here_gaps = data.gaps(min_gap, method=method)
-    t = data.times('us')
-    from neuroseries.interval_set import IntervalSet
-    span = IntervalSet(t[0] - 1, t[-1] + 1)
-    support_here = span.set_diff(here_gaps)
-    return support_here
-
-
-# noinspection PyUnusedLocal
-def filter_time_series(data, columns=None):
-    pass
-
-
-def store(data, the_store, key, **kwargs):
-    if isinstance(data, Tsd):
-        data_to_store = data.as_series()
-    else:
-        data_to_store = pd.DataFrame(data)
-
-    the_store[key] = data_to_store
-    # noinspection PyProtectedMember
-    metadata = {k: getattr(data, k) for k in data._metadata}
-    the_store.put(key, data_to_store, metadata, **kwargs)
-
-
-def extract_from(storer):
-    from neuroseries.interval_set import IntervalSet
-    ks = storer.keys()
-    extractable_classes = [Ts, Tsd, TsdFrame, IntervalSet]
-    extractable_classes_id = {c.__name__: c for c in extractable_classes}
-
-    variables = {}
-    for k in ks:
-        k = k[1:]
-        (v, metadata) = storer.get_with_metadata(k)
-        if metadata is not None and \
-                        'nts_class' in metadata and \
-                        metadata['nts_class'] in extractable_classes_id:
-            variables[k] = extractable_classes_id[metadata['nts_class']](v)
-
-        if hasattr(v, 'nts_class') and v.nts_class in extractable_classes_id:
-            variables[k] = extractable_classes_id[v.nts_class](v)
-    return variables

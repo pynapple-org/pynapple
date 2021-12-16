@@ -357,7 +357,8 @@ def computeAngularTuningCurves(spikes, angle, ep, nb_bins = 180, frequency = 120
 		spks 			= spikes[k]
 		# true_ep 		= nts.IntervalSet(start = np.maximum(angle.index[0], spks.index[0]), end = np.minimum(angle.index[-1], spks.index[-1]))		
 		spks 			= spks.restrict(ep)	
-		angle_spike 	= angle.restrict(ep).realign(spks)
+		angle_spike 	= spks.value_from(angle, ep)
+		#angle_spike 	= angle.restrict(ep).realign(spks)
 		spike_count, bin_edges = np.histogram(angle_spike, bins)
 		occupancy, _ 	= np.histogram(angle, bins)
 		spike_count 	= spike_count/occupancy		
@@ -395,7 +396,9 @@ def findHDCells(tuning_curves, z = 50, p = 0.0001 , m = 1):
 		stat.loc[k] = rayleigh(tuning_curves[k].index.values, tuning_curves[k].values)
 	cond2 = np.logical_and(stat['pval']<p,stat['z']>z)
 	tokeep = stat.index.values[np.where(np.logical_and(cond1, cond2))[0]]
-	return tokeep, stat
+	hd = pd.Series(index = tuning_curves.columns, data = 0)
+	hd.loc[tokeep] = 1
+	return hd, stat
 
 def decodeHD(tuning_curves, spikes, ep, bin_size = 200, px = None):
 	"""
