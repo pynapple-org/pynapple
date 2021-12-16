@@ -224,26 +224,30 @@ class Tsd(pd.Series):
         idx_falling = np.where(np.logical_and(d[:-1] >= thr, d[1:] < thr))[0]
 
         if method == 'above':
+            starts = t[idx_rising] + (t[idx_rising+1]-t[idx_rising])/2
+            ends = t[idx_falling] + (t[idx_falling+1]-t[idx_falling])/2
             if d[0] > thr:
-                idx_rising = np.hstack(([0], idx_rising))
+                starts = np.hstack((t[0], starts))                
             if d[-1] > thr:
-                idx_falling = np.hstack((idx_falling, [len(d)-1]))
-            starts = t[idx_rising]
-            ends = t[idx_falling]
+                ends = np.hstack((ends, t[-1]))
         elif method == 'below':
+            starts = t[idx_falling] + (t[idx_falling+1]-t[idx_falling])/2
+            ends = t[idx_rising] + (t[idx_rising+1]-t[idx_rising])/2
             if d[0] < thr:
-                idx_falling = np.hstack(([0], idx_falling))
+                starts = np.hstack((t[0], starts))                
             if d[-1] < thr:
-                idx_rising = np.hstack((idx_rising, [len(d)-1]))
-            starts = t[idx_falling]
-            ends = t[idx_rising]
+                ends = np.hstack((ends, t[-1]))
         else:
             raise ValueError("Method {} for thresholding is not accepted.".format(method))
 
-        time_support = IntervalSet(start = starts, end = ends)
-        tsd = self.restrict(time_support)
-
-        return tsd
+        if (len(starts)==0 and len(ends)==0) or len(starts)!=len(ends):
+            raise RuntimeError("Threshold {} with method {} returned empty tsd.".format(thr, method))
+        else:
+            time_support = IntervalSet(start = starts, end = ends)
+            time_support = time_support.drop_short_intervals(0)
+            time_support = self.time_support.intersect(time_support)
+            tsd = self.restrict(time_support)
+            return tsd
 
 
     def gaps(self, min_gap, method='absolute'):
