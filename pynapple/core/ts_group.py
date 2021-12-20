@@ -8,7 +8,10 @@ from .time_series import Ts, Tsd, TsdFrame
 from .interval_set import IntervalSet
 from .time_units import TimeUnits
 
-def intersect_intervals(i_sets):			
+def intersect_intervals(i_sets):
+	"""
+	Helper to intersect intervals from ts_group
+	"""
 	n_sets = len(i_sets)
 	time1 = [i_set['start'] for i_set in i_sets]
 	time2 = [i_set['end'] for i_set in i_sets]
@@ -25,6 +28,9 @@ def intersect_intervals(i_sets):
 	return IntervalSet(df['time'][ix], df['time'][ix+1])
 
 def union_intervals(i_sets):
+	"""
+	Helper to merge intervals from ts_group
+	"""
 	time = np.hstack([i_set['start'] for i_set in i_sets] +
 					 [i_set['end'] for i_set in i_sets])
 	start_end = np.hstack((np.ones(len(time)//2, dtype=np.int32),
@@ -40,10 +46,34 @@ def union_intervals(i_sets):
 
 class TsGroup(UserDict):
 	"""
+	The TsGroup is a dictionnary-like object to hold multiple Ts object with different time index.
 
+
+	Attributes
+	----------
+	time_support : IntervalSet
+		The time support of the TsGroup
 	"""
-	def __init__(self, data=None, time_support=None, time_units='s', **kwargs):
+	
+	def __init__(self, data, time_support=None, time_units='s', **kwargs):
 		"""
+		TsGroup Initializer
+		
+		Parameters
+		----------
+		data : dict
+			Dictionnary containing Ts/Tsd objects
+		time_support : IntervalSet, optional
+			The time support of the TsGroup. Ts/Tsd objects will be restricted to the time support if passed.
+		time_units : str, optional
+			Time units if data does not contain Ts/Tsd objects (us, ms, s)
+		**kwargs
+			Meta-info about the Ts/Tsd objects.
+		
+		Raises
+		------
+		RuntimeError
+			Raise error if the intersection of time support of Ts/Tsd object is empty.
 		"""
 		self._initialized = False
 		
@@ -128,18 +158,91 @@ class TsGroup(UserDict):
 		return self.__repr__()
 
 	def keys(self): 
+		"""
+		Return index/keys of TsGroup
+		
+		Returns
+		-------
+		list
+			List of keys
+		"""
 		return list(self.data.keys())
 
-	def items(self): 
+	def items(self):
+		"""
+		Return a list of key/object.
+		
+		Returns
+		-------
+		list
+			List of tuples
+		"""
 		return list(self.data.items())
 
-	def values(self): 
+	def values(self):
+		"""
+		Return a list of all the Ts/Tsd objects in the TsGroup
+		
+		Returns
+		-------
+		list
+			List of Ts/Tsd objects
+		"""
 		return list(self.data.values())
 
-	"""
-	Metadata 
-	"""
+	#######################
+	# Metadata 
+	#######################
 	def set_info(self, *args, **kwargs):		
+		"""
+		Add metadata informations about the TsGroup.
+		Metadata are saved as a DataFrame.
+
+		Parameters
+		----------
+		*args
+			pandas.Dataframe or list of pandas.DataFrame
+		**kwargs
+			Can be either pandas.Series or numpy.ndarray
+		Raises
+		------
+		RuntimeError
+			Raise an error if no column labels are found when passing arguments.
+		
+		Example
+		-------
+		>>> import pynapple as nap
+		>>> import numpy as np
+		>>> tmp = {	0:nap.Ts(t=np.arange(0,200), time_units='s'),
+		1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
+		2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
+		}
+		>>> tsgroup = nap.TsGroup(tmp)
+		
+		To add metadata with a pandas.DataFrame:
+
+		>>> import pandas as pd
+		>>> structs = pd.DataFrame(index = [0,1,2], data=['pfc','pfc','ca1'], columns=['struct'])
+		>>> tsgroup.set_info(structs)
+		>>> tsgroup
+		  Index    Freq. (Hz)  struct
+		-------  ------------  --------
+			  0             1  pfc
+			  1             2  pfc
+			  2             4  ca1
+		
+		To add metadata with a pd.Series or numpy.ndarray:
+
+		>>> hd = pd.Series(index = [0,1,2], data = [0,1,1])
+		>>> tsgroup.set_info(hd=hd)
+		>>> tsgroup
+		  Index    Freq. (Hz)  struct      hd
+		-------  ------------  --------  ----
+			  0             1  pfc          0
+			  1             2  pfc          1
+			  2             4  ca1          1
+
+		"""
 		if len(args):
 			for arg in args:
 				if isinstance(arg, pd.DataFrame):					
@@ -152,25 +255,76 @@ class TsGroup(UserDict):
 		return
 
 	def get_info(self, key):
+		"""
+		Returns the metainfo located in one column
+		
+		Parameters
+		----------
+		key : str
+			One of the metainfo columns name
+		
+		Returns
+		-------
+		pandas.Series
+			The metainfo
+		"""
 		return self._metadata[key]
 
-	def _union_time_support(self):		
+	def _union_time_support(self):
+		"""
+		Helper
+		"""
 		idx = list(self.data.keys())
 		i_sets = [self.data[i].time_support for i in idx]
 		return union_intervals(i_sets)
 
 	def _intersect_time_support(self):
+		"""
+		Helper
+		"""
 		idx = list(self.data.keys())
 		i_sets = [self.data[i].time_support for i in idx]
 		return intersect_intervals(i_sets)
 
 
-	"""
-	Generic functions of Tsd objects
-	"""
+	#################################
+	#Generic functions of Tsd objects
+	#################################
 	def restrict(self, ep):
 		"""
-		"""		
+		Restricts a TsGroup object to a set of time intervals delimited by an IntervalSet object`
+		
+		Parameters
+		----------
+		ep : IntervalSet
+			the IntervalSet object 
+		
+		Returns
+		-------
+		TsGroup
+			TsGroup object restricted to ep
+		
+		Example
+		-------
+		>>> import pynapple as nap
+		>>> import numpy as np
+		>>> tmp = {	0:nap.Ts(t=np.arange(0,200), time_units='s'),
+		1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
+		2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
+		}
+		>>> tsgroup = nap.TsGroup(tmp)
+		>>> ep = nap.IntervalSet(start=0, end=100, time_units='s')
+		>>> newtsgroup = tsgroup.restrict(ep)
+		
+		All objects within the TsGroup automatically inherit the epochs defined by ep.
+				
+		>>> newtsgroup.time_support
+		   start    end
+		0    0.0  100.0
+		>>> newtsgroup[0].time_support
+		   start    end
+		0    0.0  100.0
+		"""
 		newgr = {}
 		for k in self.data:
 			newgr[k] = self.data[k].restrict(ep)
@@ -180,7 +334,39 @@ class TsGroup(UserDict):
 
 	def value_from(self, tsd, ep, align='closest'):
 		"""
-		Assign to each time points the closest value from tsd within ep
+		Replace the value of each Ts/Tsd object within the Ts group with the closest value from tsd argument
+		
+		Parameters
+		----------
+		tsd : Tsd
+			The Tsd object holding the values to replace
+		ep : IntervalSet
+			The IntervalSet object to restrict the operation
+		align : str, optional
+			The method to align (closest/prev/next)
+		
+		Returns
+		-------
+		TsGroup
+			TsGroup object with the new values
+		
+		Example
+		-------
+		>>> import pynapple as nap
+		>>> import numpy as np
+		>>> tmp = {	0:nap.Ts(t=np.arange(0,200), time_units='s'),
+		1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
+		2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
+		}
+		>>> tsgroup = nap.TsGroup(tmp)
+		>>> ep = nap.IntervalSet(start=0, end=100, time_units='s')		
+		
+		The variable tsd is a time series object containing the values to assign, for example the tracking data
+		
+		>>> tsd = nap.Tsd(t=np.arange(0,100), d=np.random.rand(100), time_units='s')
+		>>> ep = nap.IntervalSet(start = 0, end = 100, time_units = 's')
+		>>> newtsgroup = tsgroup.value_from(tsd, ep)
+			   
 		"""
 		tsd = tsd.restrict(ep)
 		newgr = {}
@@ -192,10 +378,55 @@ class TsGroup(UserDict):
 
 	def count(self, bin_size, ep = None, time_units = 's'):
 		"""
-		Count occurences of events within bin size for each item
-		bin_size should be seconds unless specified		
-		If no epochs is passed, the data will be binned based on the largest merge of time support.
-		"""		
+		Count occurences of events within bin_size.
+		bin_size should be seconds unless specified.
+		If no epochs is passed, the data will be binned based on the time support.
+
+		Parameters
+		----------
+		bin_size : float
+			The bin size (default is second)		    
+		ep : IntervalSet, optional
+			IntervalSet to restrict the operation
+		time_units : str, optional
+			Time units of bin size (us, ms, s)
+		
+		Returns
+		-------
+		TsdFrame
+			A TsdFrame with the columns being the index of each item in the TsGroup.
+
+		Example
+		-------
+		This example shows how to count events within bins of 0.1 second for the first 100 seconds.
+		
+		>>> import pynapple as nap
+		>>> import numpy as np
+		>>> tmp = {	0:nap.Ts(t=np.arange(0,200), time_units='s'),
+		1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
+		2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
+		}
+		>>> tsgroup = nap.TsGroup(tmp)
+		>>> ep = nap.IntervalSet(start=0, end=100, time_units='s')	        
+		>>> bincount = tsgroup.count(0.1, ep)
+		>>> bincount
+		          0  1  2
+		Time (s)         
+		0.05      0  0  0
+		0.15      0  0  0
+		0.25      0  0  1
+		0.35      0  0  0
+		0.45      0  0  0
+		...      .. .. ..
+		99.55     0  1  1
+		99.65     0  0  0
+		99.75     0  0  1
+		99.85     0  0  0
+		99.95     1  1  1
+
+		[1000 rows x 3 columns]		
+		
+		"""
 		if not isinstance(ep, IntervalSet):
 			ep = self._union_time_support()
 			
@@ -220,7 +451,49 @@ class TsGroup(UserDict):
 	"""
 	def getby_threshold(self, key, thr, op = '>'):
 		"""
-		Return TsGroup above/below a threshold
+		Return a TsGroup with all Ts/Tsd objects with values above threshold for metainfo under key.
+		
+		Parameters
+		----------
+		key : str
+		    One of the metainfo columns name
+		thr : float
+		    THe value for thresholding
+		op : str, optional
+		    The type of operation. Possibilities are '>', '<', '>=' or '<='.
+		
+		Returns
+		-------
+		TsGroup
+		    The new TsGroup
+		
+		Raises
+		------
+		RuntimeError
+		    Raise eror is operation is not recognized.
+
+		Example
+		-------
+		>>> import pynapple as nap
+		>>> import numpy as np
+		>>> tmp = {	0:nap.Ts(t=np.arange(0,200), time_units='s'),
+		1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
+		2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
+		}
+		>>> tsgroup = nap.TsGroup(tmp)
+		  Index    Freq. (Hz)
+		-------  ------------
+		      0             1
+		      1             2
+		      2             4	
+
+		This exemple shows how to get a new TsGroup with all elements for which the metainfo frequency is above 1.
+		>>> newtsgroup = tsgroup.getby_threshold('freq', 1, op = '>')
+		  Index    Freq. (Hz)
+		-------  ------------
+		      1             2
+		      2             4
+
 		"""
 		if op == '>':
 			ix = list(self._metadata.index[self._metadata[key] > thr])
@@ -240,7 +513,48 @@ class TsGroup(UserDict):
 
 	def getby_intervals(self, key, bins):
 		"""
-		Return list of TsGroup sliced by bins and center bins
+		Return a list of TsGroup binned.
+		
+		Parameters
+		----------
+		key : str
+		    One of the metainfo columns name
+		bins : numpy.ndarray or list
+		    The bin intervals
+		
+		Returns
+		-------
+		list
+		    A list of TsGroup
+		
+		Example
+		-------
+		>>> import pynapple as nap
+		>>> import numpy as np
+		>>> tmp = {	0:nap.Ts(t=np.arange(0,200), time_units='s'),
+		1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
+		2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
+		}
+		>>> tsgroup = nap.TsGroup(tmp, alpha = np.arange(3))
+		  Index    Freq. (Hz)    alpha                                                                    
+		-------  ------------  -------
+		      0             1        0
+		      1             2        1
+		      2             4        2
+
+		This exemple shows how to bin the TsGroup according to one metainfo key.
+		>>> newtsgroup, bincenter = tsgroup.getby_intervals('alpha', [0, 1, 2])
+		>>> newtsgroup
+		[  Index    Freq. (Hz)    alpha
+		 -------  ------------  -------
+		       0             1        0,
+		   Index    Freq. (Hz)    alpha
+		 -------  ------------  -------
+		       1             2        1]
+
+		By default, the function returns the center of the bins.
+		>>>	bincenter
+		array([0.5, 1.5])
 		"""
 		idx = np.digitize(self._metadata[key], bins)-1
 		groups = self._metadata.index.groupby(idx)
@@ -253,7 +567,43 @@ class TsGroup(UserDict):
 
 	def getby_category(self, key):
 		"""
-		Return a dictionnay of all categories
+		Return a list of TsGroup grouped by category.
+		
+		Parameters
+		----------
+		key : str
+		    One of the metainfo columns name
+		
+		Returns
+		-------
+		dict
+		    A dictionnary of TsGroup
+		
+		Example
+		-------
+		>>> import pynapple as nap
+		>>> import numpy as np
+		>>> tmp = {	0:nap.Ts(t=np.arange(0,200), time_units='s'),
+		1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
+		2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
+		}
+		>>> tsgroup = nap.TsGroup(tmp, group = [0,1,1])
+		  Index    Freq. (Hz)    group
+		-------  ------------  -------
+		      0             1        0
+		      1             2        1
+		      2             4        1
+
+		This exemple shows how to group the TsGroup according to one metainfo key.
+		>>> newtsgroup = tsgroup.getby_category('group')
+		>>> newtsgroup
+		{0:   Index    Freq. (Hz)    group
+		 -------  ------------  -------
+		       0             1        0,
+		 1:   Index    Freq. (Hz)    group
+		 -------  ------------  -------
+		       1             2        1
+		       2             4        1}		
 		"""
 		groups = self._metadata.groupby(key).groups
 		sliced = {k:self[groups[k]] for k in groups.keys()}
