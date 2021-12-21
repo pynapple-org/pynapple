@@ -54,7 +54,7 @@ def support_func(data, min_gap, method='absolute'):
     return support_here
 
 
-class Tsd():
+class Tsd(pd.Series):
     """
     A subclass of pandas.Series specialized for neurophysiology time series.
     
@@ -443,7 +443,7 @@ class Tsd():
 
 
 # noinspection PyAbstractClass
-class TsdFrame():
+class TsdFrame(pd.DataFrame):
     """
     A subclass of pandas.DataFrame specialized for neurophysiological time series.
     
@@ -630,7 +630,7 @@ class TsdFrame():
 
 
 # noinspection PyAbstractClass
-class Ts():
+class Ts(Tsd):
     """
     A subclass of the Tsd object for a time series with only time index,
     By default, the values are set to nan.

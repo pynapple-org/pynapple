@@ -44,7 +44,7 @@ def union_intervals(i_sets):
     return IntervalSet(df['time'][ix_start], df['time'][ix_stop])
 
 
-class TsGroup():
+class TsGroup(UserDict):
     """
     The TsGroup is a dictionnary-like object to hold multiple [`Ts`][pynapple.core.time_series.Ts] or [`Tsd`][pynapple.core.time_series.Tsd] objects with different time index.
 

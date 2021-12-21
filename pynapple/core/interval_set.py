@@ -4,7 +4,7 @@ from warnings import warn
 from .time_units import TimeUnits, Range
 
 
-class IntervalSet():
+class IntervalSet(pd.DataFrame):
     """
     A subclass of pandas.DataFrame representing a (irregular) set of time intervals in elapsed time,
     with relative operations
