@@ -54,7 +54,7 @@ def support_func(data, min_gap, method='absolute'):
     return support_here
 
 
-class Tsd(pd.Series):
+class Tsd():
     """
     A subclass of pandas.Series specialized for neurophysiology time series.
     
@@ -62,12 +62,10 @@ class Tsd(pd.Series):
 
     Attributes
     ----------
-    nts_class : TYPE
-        Description
-    rate : TYPE
-        Description
-    time_support : TYPE
-        Description
+    rate : float
+        Frequency of the time series (Hz) computed over the time support
+    time_support : IntervalSet
+        The time support of the time series
     """
     
     def __init__(self, t, d=None, time_units=None, time_support=None, **kwargs):
@@ -77,7 +75,7 @@ class Tsd(pd.Series):
         Parameters
         ----------
         t : numpy.ndarray or pandas.Series
-            An object transformable in a time series, or a :func:`~pandas.Series` equivalent (if d is None)
+            An object transformable in a time series, or a pandas.Series equivalent (if d is None)
         d : numpy.ndarray, optional
             The data of the time series
         time_units : str, optional
@@ -85,7 +83,7 @@ class Tsd(pd.Series):
         time_support : IntervalSet, optional
             The time support of the tsd object
         **kwargs
-            Arguments that will be passed to the :func:`~pandas.Series` initializer.
+            Arguments that will be passed to the pandas.Series initializer.
         """
         if isinstance(t, SingleBlockManager):
             d = t.array
@@ -128,13 +126,14 @@ class Tsd(pd.Series):
         ----------
         units : str, optional
             us, ms, or s (default is us)
-        
+
         Returns
         -------
-        numpy.ndarray        
-
+        out: numpy.ndarray
+            the time indexes
         """
-        return TimeUnits.return_timestamps(self.index.values.astype(np.float64), units)
+        times = TimeUnits.return_timestamps(self.index.values.astype(np.float64), units)
+        return times
 
     def as_series(self):
         """
@@ -142,8 +141,8 @@ class Tsd(pd.Series):
         
         Returns
         -------
-        pandas.Series
-            
+        out: pandas.Series
+            _
         """
         return pd.Series(self, copy=True)
 
@@ -177,8 +176,8 @@ class Tsd(pd.Series):
         
         Returns
         -------
-        numpy.ndarray
-            
+        out: numpy.ndarray
+            _
         """
         return self.values
 
@@ -197,21 +196,21 @@ class Tsd(pd.Series):
         
         Returns
         -------
-        Tsd
+        out: Tsd
             Tsd object with the new values
         
         Example
         -------
+        In this example, the ts object will receive the closest values in time from tsd.
+
         >>> import pynapple as nap
         >>> import numpy as np
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
-        >>> ts = nap.Ts(t=t, time_units='s') 
-        
-        The variable ts is a time series object containing only nan.
-        
+        >>> ts = nap.Ts(t=t, time_units='s')             
         >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
         >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
         
+        The variable ts is a time series object containing only nan.
         The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
         
         >>> newts = ts.value_from(tsd, ep)
@@ -219,8 +218,7 @@ class Tsd(pd.Series):
         newts is the same size as ts restrict to ep.
         
         >>> print(len(ts.restrict(ep)), len(newts))
-        52 52
-        
+            52 52
         """
         method = _get_restrict_method(align)
         ix = TimeUnits.format_timestamps(self.restrict(ep).index.values)
@@ -230,7 +228,7 @@ class Tsd(pd.Series):
 
     def restrict(self, ep, keep_labels=False):
         """
-        Restricts a Tsd object to a set of time intervals delimited by an IntervalSet object`
+        Restricts a Tsd object to a set of time intervals delimited by an IntervalSet object
         
         Parameters
         ----------
@@ -241,11 +239,13 @@ class Tsd(pd.Series):
         
         Returns
         -------
-        Tsd
+        out: Tsd
             Tsd object restricted to ep
         
         Example
         -------
+        The Ts object is restrict to the intervals defined by ep.
+    
         >>> import pynapple as nap
         >>> import numpy as np
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
@@ -256,8 +256,8 @@ class Tsd(pd.Series):
         The time support of newts automatically inherit the epochs defined by ep.
         
         >>> newts.time_support
-           start    end
-        0    0.0  500.0
+        >>>    start    end
+        >>> 0    0.0  500.0
         
         """
         ix = ep.in_interval(self)
@@ -299,13 +299,16 @@ class Tsd(pd.Series):
         >>> ts = nap.Ts(t=t, time_units='s')
         >>> bincount = ts.count(0.1)
         
-        An epoch can be specified.
+        An epoch can be specified:
         
         >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
         >>> bincount = ts.count(0.1, ep=ep)
+
+        And bincount automatically inherit ep as time support: 
+
         >>> bincount.time_support
-           start    end
-        0  100.0  800.0
+        >>>    start    end
+        >>> 0  100.0  800.0
         """
         if not isinstance(ep, IntervalSet):
             ep = self.time_support
@@ -349,16 +352,18 @@ class Tsd(pd.Series):
         
         Example
         -------
+        This example finds all epoch above 0.5 within the tsd object.
+        
         >>> import pynapple as nap
         >>> tsd = nap.Tsd(t=np.arange(100), d=np.random.rand(100))
         >>> newtsd = tsd.threshold(0.5)
         
-        The epochs with the times above/below the threshold can be accessed throuhg the time support:
+        The epochs with the times above/below the threshold can be accessed through the time support:
         
         >>> tsd = nap.Tsd(t=np.arange(100), d=np.arange(100), time_units='s')
         >>> tsd.threshold(50).time_support
-           start   end
-        0   50.5  99.0
+        >>>    start   end
+        >>> 0   50.5  99.0
         
         """
         d = self.values
@@ -394,15 +399,9 @@ class Tsd(pd.Series):
 
 
     def gaps(self, min_gap, method='absolute'):
-        """
-        finds gaps in a tsd
-        """
         return gaps_func(self, min_gap, method)
 
     def support(self, min_gap, method='absolute'):
-        """
-        find the smallest (to a min_gap resolution) IntervalSet containing all the times in the Tsd
-        """
         return support_func(self, min_gap, method)
 
     def start_time(self, units='us'):
@@ -441,20 +440,18 @@ class Tsd(pd.Series):
 
 
 # noinspection PyAbstractClass
-class TsdFrame(pd.DataFrame):
+class TsdFrame():
     """
-    A subclass of pandas.DataFrame specialized for neurophysiology time series.
+    A subclass of pandas.DataFrame specialized for neurophysiological time series.
     
     TsdFrame provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.
     
     Attributes
     ----------
-    nts_class : TYPE
-        Description
-    rate : TYPE
-        Description
-    time_support : TYPE
-        Description
+    rate : float
+        Frequency of the time series (Hz) computed over the time support
+    time_support : IntervalSet
+        The time support of the time series
     """
     
     def __init__(self, t, d=None, time_units=None, time_support=None, **kwargs):
@@ -512,9 +509,6 @@ class TsdFrame(pd.DataFrame):
     def __str__(self): return self.__repr__()
 
     def __getitem__(self, key):
-        """
-        Override to pass time_support
-        """
         result = super().__getitem__(key)
         time_support = self.time_support
         if isinstance(result, pd.Series):
@@ -533,8 +527,8 @@ class TsdFrame(pd.DataFrame):
         
         Returns
         -------
-        numpy.ndarray        
-
+        out: numpy.ndarray        
+            _
         """        
         return TimeUnits.return_timestamps(self.index.values.astype(np.float64), units)
 
@@ -544,8 +538,8 @@ class TsdFrame(pd.DataFrame):
         
         Returns
         -------
-        pandas.DataFrame
-            
+        out: pandas.DataFrame
+            _
         """
         return pd.DataFrame(self, copy=copy)
 
@@ -560,7 +554,7 @@ class TsdFrame(pd.DataFrame):
         
         Returns
         -------
-        pandas.DataFrame
+        out: pandas.DataFrame
             the series object with adjusted times
         """
         t = self.index.values.copy()
@@ -579,8 +573,8 @@ class TsdFrame(pd.DataFrame):
         
         Returns
         -------
-        numpy.ndarray
-            
+        out: numpy.ndarray
+            _
         """        
         if len(self.columns) == 1:
             return self.values.ravel()
@@ -620,15 +614,9 @@ class TsdFrame(pd.DataFrame):
         return TsdFrame(tsd_r, time_support=iset, copy=True)
 
     def gaps(self, min_gap, method='absolute'):
-        """
-        finds gaps in a tsd
-        """
         return gaps_func(self, min_gap, method)
 
     def support(self, min_gap, method='absolute'):
-        """
-        find the smallest (to a min_gap resolution) IntervalSet containing all the times in the Tsd
-        """
         return support_func(self, min_gap, method)
 
     def start_time(self, units='us'):
@@ -639,11 +627,18 @@ class TsdFrame(pd.DataFrame):
 
 
 # noinspection PyAbstractClass
-class Ts(Tsd):
+class Ts():
     """
     A subclass of the Tsd object for a time series with only time index,
     By default, the values are set to nan.
     All the functions of a Tsd object are available in a Ts object.
+
+    Attributes
+    ----------
+    rate : float
+        Frequency of the time series (Hz) computed over the time support
+    time_support : IntervalSet
+        The time support of the time series
     """
 
     def __init__(self, t, time_units=None, time_support=None,**kwargs):
@@ -653,13 +648,13 @@ class Ts(Tsd):
         Parameters
         ----------
         t : numpy.ndarray or pandas.Series
-            An object transformable in a time series, or a :func:`~pandas.Series` equivalent (if d is None)
+            An object transformable in a time series, or a pandas.Series equivalent (if d is None)
         time_units : str, optional
             The time units in which times are specified (in s, ms or us)
         time_support : IntervalSet, optional
             The time support of the Ts object
         **kwargs
-            Arguments that will be passed to the :func:`~pandas.Series` initializer.
+            Arguments that will be passed to the pandas.Series initializer.
         """
         super().__init__(t, None, time_units=time_units, time_support=time_support, **kwargs)
         self.nts_class = self.__class__.__name__
