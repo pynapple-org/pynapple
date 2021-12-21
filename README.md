@@ -57,7 +57,7 @@ Basic Usage
 
 After installation, the package can imported:
 
-``` {.sourceCode .shell}
+```shell
 $ python
 >>> import pynapple as nap
 ```
@@ -66,7 +66,7 @@ An example of the package can be seen below. The exemple data can be
 found
 [here](https://www.dropbox.com/s/1kc0ulz7yudd9ru/A2929-200711.tar.gz?dl=1).
 
-``` {.sourceCode .python}
+```python
 import numpy as np
 import pandas as pd
 import pynapple as nap
