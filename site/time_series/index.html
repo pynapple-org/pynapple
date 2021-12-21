@@ -1,0 +1,2818 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      <link rel="icon" href="../assets/images/favicon.png">
+      <meta name="generator" content="mkdocs-1.2.3, mkdocs-material-8.1.3">
+    
+    
+      
+        <title>Time Series - pynapple</title>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/stylesheets/main.edf004c2.min.css">
+      
+        
+        <link rel="stylesheet" href="../assets/stylesheets/palette.e6a45f82.min.css">
+        
+          
+          
+          <meta name="theme-color" content="#4cae4f">
+        
+      
+    
+    
+    
+      
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,400i,700%7CRoboto+Mono&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../assets/_mkdocstrings.css">
+    
+    <script>__md_scope=new URL("..",location),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="" data-md-color-primary="green" data-md-color-accent="">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#pynapple.core.time_series" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+<header class="md-header" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href=".." title="pynapple" class="md-header__button md-logo" aria-label="pynapple" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pynapple
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Time Series
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5z"/></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" aria-label="Clear" tabindex="-1">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/PeyracheLab/pynapple/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href=".." title="pynapple" class="md-nav__button md-logo" aria-label="pynapple" data-md-component="logo">
+      
+  
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M12 8a3 3 0 0 0 3-3 3 3 0 0 0-3-3 3 3 0 0 0-3 3 3 3 0 0 0 3 3m0 3.54C9.64 9.35 6.5 8 3 8v11c3.5 0 6.64 1.35 9 3.54 2.36-2.19 5.5-3.54 9-3.54V8c-3.5 0-6.64 1.35-9 3.54z"/></svg>
+
+    </a>
+    pynapple
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/PeyracheLab/pynapple/" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href=".." class="md-nav__link">
+        Overview
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2" type="checkbox" id="__nav_2" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2">
+          Usage
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Usage" data-md-level="1">
+        <label class="md-nav__title" for="__nav_2">
+          <span class="md-nav__icon md-icon"></span>
+          Usage
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_2_1" type="checkbox" id="__nav_2_1" >
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_2_1">
+          Tutorials
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Tutorials" data-md-level="2">
+        <label class="md-nav__title" for="__nav_2_1">
+          <span class="md-nav__icon md-icon"></span>
+          Tutorials
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../usage/" class="md-nav__link">
+        Quick start
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../pynapple-core-notebook/" class="md-nav__link">
+        Pynapple Core Tutorial
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3" type="checkbox" id="__nav_3" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3">
+          Modules
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Modules" data-md-level="1">
+        <label class="md-nav__title" for="__nav_3">
+          <span class="md-nav__icon md-icon"></span>
+          Modules
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+    
+  
+  
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+      
+        <input class="md-nav__toggle md-toggle" data-md-toggle="__nav_3_1" type="checkbox" id="__nav_3_1" checked>
+      
+      
+      
+      
+        <label class="md-nav__link" for="__nav_3_1">
+          Core
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <nav class="md-nav" aria-label="Core" data-md-level="2">
+        <label class="md-nav__title" for="__nav_3_1">
+          <span class="md-nav__icon md-icon"></span>
+          Core
+        </label>
+        <ul class="md-nav__list" data-md-scrollfix>
+          
+            
+              
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" data-md-toggle="toc" type="checkbox" id="__toc">
+      
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          Time Series
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        Time Series
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pynapple.core.time_series" class="md-nav__link">
+    pynapple.core.time_series
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Ts" class="md-nav__link">
+    Ts
+  </a>
+  
+    <nav class="md-nav" aria-label="Ts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Ts.__init__" class="md-nav__link">
+    __init__()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd" class="md-nav__link">
+    Tsd
+  </a>
+  
+    <nav class="md-nav" aria-label="Tsd">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.__init__" class="md-nav__link">
+    __init__()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.times" class="md-nav__link">
+    times()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.as_series" class="md-nav__link">
+    as_series()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.as_units" class="md-nav__link">
+    as_units()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.data" class="md-nav__link">
+    data()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.value_from" class="md-nav__link">
+    value_from()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.restrict" class="md-nav__link">
+    restrict()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.count" class="md-nav__link">
+    count()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.threshold" class="md-nav__link">
+    threshold()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.start_time" class="md-nav__link">
+    start_time()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.end_time" class="md-nav__link">
+    end_time()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.TsdFrame" class="md-nav__link">
+    TsdFrame
+  </a>
+  
+    <nav class="md-nav" aria-label="TsdFrame">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.TsdFrame.__init__" class="md-nav__link">
+    __init__()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.TsdFrame.times" class="md-nav__link">
+    times()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.TsdFrame.as_dataframe" class="md-nav__link">
+    as_dataframe()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.TsdFrame.as_units" class="md-nav__link">
+    as_units()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.TsdFrame.data" class="md-nav__link">
+    data()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.TsdFrame.restrict" class="md-nav__link">
+    restrict()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../interval_set/" class="md-nav__link">
+        Interval Sets
+      </a>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../ts_group/" class="md-nav__link">
+        Time Series Group
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+            
+          
+            
+              
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../io/" class="md-nav__link">
+        IO
+      </a>
+    </li>
+  
+
+            
+          
+        </ul>
+      </nav>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../CONTRIBUTING/" class="md-nav__link">
+        Contributing
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../AUTHORS/" class="md-nav__link">
+        Authors
+      </a>
+    </li>
+  
+
+    
+      
+      
+      
+
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../HISTORY/" class="md-nav__link">
+        History
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#pynapple.core.time_series" class="md-nav__link">
+    pynapple.core.time_series
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Ts" class="md-nav__link">
+    Ts
+  </a>
+  
+    <nav class="md-nav" aria-label="Ts">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Ts.__init__" class="md-nav__link">
+    __init__()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd" class="md-nav__link">
+    Tsd
+  </a>
+  
+    <nav class="md-nav" aria-label="Tsd">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.__init__" class="md-nav__link">
+    __init__()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.times" class="md-nav__link">
+    times()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.as_series" class="md-nav__link">
+    as_series()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.as_units" class="md-nav__link">
+    as_units()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.data" class="md-nav__link">
+    data()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.value_from" class="md-nav__link">
+    value_from()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.restrict" class="md-nav__link">
+    restrict()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.count" class="md-nav__link">
+    count()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.threshold" class="md-nav__link">
+    threshold()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.start_time" class="md-nav__link">
+    start_time()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.Tsd.end_time" class="md-nav__link">
+    end_time()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.TsdFrame" class="md-nav__link">
+    TsdFrame
+  </a>
+  
+    <nav class="md-nav" aria-label="TsdFrame">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.TsdFrame.__init__" class="md-nav__link">
+    __init__()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.TsdFrame.times" class="md-nav__link">
+    times()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.TsdFrame.as_dataframe" class="md-nav__link">
+    as_dataframe()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.TsdFrame.as_units" class="md-nav__link">
+    as_units()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.TsdFrame.data" class="md-nav__link">
+    data()
+  </a>
+  
+</li>
+        
+          <li class="md-nav__item">
+  <a href="#pynapple.core.time_series.TsdFrame.restrict" class="md-nav__link">
+    restrict()
+  </a>
+  
+</li>
+        
+      </ul>
+    </nav>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          <div class="md-content" data-md-component="content">
+            <article class="md-content__inner md-typeset">
+              
+                
+<a href="https://github.com/PeyracheLab/pynapple/edit/master/docs/time_series.md" title="Edit this page" class="md-content__button md-icon">
+  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20.71 7.04c.39-.39.39-1.04 0-1.41l-2.34-2.34c-.37-.39-1.02-.39-1.41 0l-1.84 1.83 3.75 3.75M3 17.25V21h3.75L17.81 9.93l-3.75-3.75L3 17.25z"/></svg>
+</a>
+
+
+  <h1>Time Series</h1>
+
+<div class="doc doc-object doc-module">
+
+<a id="pynapple.core.time_series"></a>
+    <div class="doc doc-contents first">
+
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="pynapple.core.time_series.Ts" class="doc doc-heading">
+        <code>
+Ts        </code>
+
+
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>A subclass of the Tsd object for a time series with only time index,</p>
+<p>By default, the values are set to nan.
+All the functions of a Tsd object are available in a Ts object.</p>
+
+<p><strong>Attributes:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>rate</code></td>
+        <td><code>float</code></td>
+        <td><p>Frequency of the time series (Hz) computed over the time support</p></td>
+      </tr>
+      <tr>
+        <td><code>time_support</code></td>
+        <td><code>IntervalSet</code></td>
+        <td><p>The time support of the time series</p></td>
+      </tr>
+  </tbody>
+</table>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.Ts.__init__" class="doc doc-heading">
+<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-special"><code>special</code></small>
+  </span>
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Ts Initializer</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>t</code></td>
+        <td><code>numpy.ndarray or pandas.Series</code></td>
+        <td><p>An object transformable in a time series, or a pandas.Series equivalent (if d is None)</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>time_units</code></td>
+        <td><code>str</code></td>
+        <td><p>The time units in which times are specified (in s, ms or us)</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>time_support</code></td>
+        <td><code>IntervalSet</code></td>
+        <td><p>The time support of the Ts object</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>**kwargs</code></td>
+        <td><code>None</code></td>
+        <td><p>Arguments that will be passed to the pandas.Series initializer.</p></td>
+        <td><code>{}</code></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Ts Initializer</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : numpy.ndarray or pandas.Series</span>
+<span class="sd">        An object transformable in a time series, or a pandas.Series equivalent (if d is None)</span>
+<span class="sd">    time_units : str, optional</span>
+<span class="sd">        The time units in which times are specified (in s, ms or us)</span>
+<span class="sd">    time_support : IntervalSet, optional</span>
+<span class="sd">        The time support of the Ts object</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Arguments that will be passed to the pandas.Series initializer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="n">time_units</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="n">time_support</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">nts_class</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="pynapple.core.time_series.Tsd" class="doc doc-heading">
+        <code>
+Tsd        </code>
+
+
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>A subclass of pandas.Series specialized for neurophysiology time series.</p>
+<p>Tsd provides standardized time representation, plus various functions for manipulating times series.</p>
+
+<p><strong>Attributes:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>rate</code></td>
+        <td><code>float</code></td>
+        <td><p>Frequency of the time series (Hz) computed over the time support</p></td>
+      </tr>
+      <tr>
+        <td><code>time_support</code></td>
+        <td><code>IntervalSet</code></td>
+        <td><p>The time support of the time series</p></td>
+      </tr>
+  </tbody>
+</table>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.Tsd.__init__" class="doc doc-heading">
+<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-special"><code>special</code></small>
+  </span>
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Tsd Initializer.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>t</code></td>
+        <td><code>numpy.ndarray or pandas.Series</code></td>
+        <td><p>An object transformable in a time series, or a pandas.Series equivalent (if d is None)</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>d</code></td>
+        <td><code>numpy.ndarray</code></td>
+        <td><p>The data of the time series</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>time_units</code></td>
+        <td><code>str</code></td>
+        <td><p>The time units in which times are specified (in s, ms or us)</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>time_support</code></td>
+        <td><code>IntervalSet</code></td>
+        <td><p>The time support of the tsd object</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>**kwargs</code></td>
+        <td><code>None</code></td>
+        <td><p>Arguments that will be passed to the pandas.Series initializer.</p></td>
+        <td><code>{}</code></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Tsd Initializer.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : numpy.ndarray or pandas.Series</span>
+<span class="sd">        An object transformable in a time series, or a pandas.Series equivalent (if d is None)</span>
+<span class="sd">    d : numpy.ndarray, optional</span>
+<span class="sd">        The data of the time series</span>
+<span class="sd">    time_units : str, optional</span>
+<span class="sd">        The time units in which times are specified (in s, ms or us)</span>
+<span class="sd">    time_support : IntervalSet, optional</span>
+<span class="sd">        The time support of the tsd object</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Arguments that will be passed to the pandas.Series initializer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">SingleBlockManager</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">array</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span>
+        <span class="k">if</span> <span class="s1">&#39;index&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s1">&#39;index&#39;</span><span class="p">)</span>            
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="n">TimeUnits</span><span class="o">.</span><span class="n">format_timestamps</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">time_units</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">time_support</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">time_support</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="n">ix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">cut</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)))</span>
+        <span class="n">ix</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">ix</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">!=</span> <span class="n">ix</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span>
+        <span class="n">ix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">ix</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">ix</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ix</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">t</span><span class="p">[</span><span class="n">ix</span><span class="p">],</span><span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">[</span><span class="n">ix</span><span class="p">])</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">time_support</span> <span class="o">=</span> <span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">end</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">)</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">time_support</span> <span class="o">=</span> <span class="n">time_support</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">rate</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">time_support</span><span class="o">.</span><span class="n">tot_length</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Time (us)&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;nts_class&quot;</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">nts_class</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.Tsd.times" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>The time index of the Tsd, returned as np.double in the desired time units.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>units</code></td>
+        <td><code>str</code></td>
+        <td><p>us, ms, or s (default is us)</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>numpy.ndarray</code></td>
+      <td><p>the time indexes</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The time index of the Tsd, returned as np.double in the desired time units.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    units : str, optional</span>
+<span class="sd">        us, ms, or s (default is us)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out: numpy.ndarray</span>
+<span class="sd">        the time indexes</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">times</span> <span class="o">=</span> <span class="n">TimeUnits</span><span class="o">.</span><span class="n">return_timestamps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span> <span class="n">units</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">times</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.Tsd.as_series" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">as_series</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></code>
+
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Convert the Ts/Tsd object to a pandas.Series object.</p>
+
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>pandas.Series</code></td>
+      <td><p>_</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">as_series</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert the Ts/Tsd object to a pandas.Series object.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out: pandas.Series</span>
+<span class="sd">        _</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.Tsd.as_units" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">as_units</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Returns a Series with time expressed in the desired unit.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>units</code></td>
+        <td><code>str</code></td>
+        <td><p>us, ms, or s (default is us)</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>pandas.Series</code></td>
+      <td><p>the series object with adjusted times</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">as_units</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a Series with time expressed in the desired unit.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    units : str, optional</span>
+<span class="sd">        us, ms, or s (default is us)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.Series</span>
+<span class="sd">        the series object with adjusted times</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ss</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">as_series</span><span class="p">()</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">TimeUnits</span><span class="o">.</span><span class="n">return_timestamps</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">units</span><span class="p">)</span>
+    <span class="n">ss</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">t</span>
+    <span class="n">units_str</span> <span class="o">=</span> <span class="n">units</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">units_str</span><span class="p">:</span>
+        <span class="n">units_str</span> <span class="o">=</span> <span class="s1">&#39;us&#39;</span>
+    <span class="n">ss</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Time (&quot;</span> <span class="o">+</span> <span class="n">units_str</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+    <span class="k">return</span> <span class="n">ss</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.Tsd.data" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></code>
+
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>The data in the Tsd object</p>
+
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>numpy.ndarray</code></td>
+      <td><p>_</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The data in the Tsd object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out: numpy.ndarray</span>
+<span class="sd">        _</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.Tsd.value_from" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">value_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tsd</span><span class="p">,</span> <span class="n">ep</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="s1">&#39;closest&#39;</span><span class="p">)</span></code>
+
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Replace the value with the closest value from tsd argument</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>tsd</code></td>
+        <td><code>Tsd</code></td>
+        <td><p>The Tsd object holding the values to replace</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>ep</code></td>
+        <td><code>IntervalSet</code></td>
+        <td><p>The IntervalSet object to restrict the operation</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>align</code></td>
+        <td><code>str</code></td>
+        <td><p>The method to align (closest/prev/next)</p></td>
+        <td><code>&#39;closest&#39;</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Examples:</strong></p>
+    <p>In this example, the ts object will receive the closest values in time from tsd.</p>
+    <div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">100</span><span class="p">)))</span> <span class="c1"># random times</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">ts</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>             
+<span class="o">&gt;&gt;&gt;</span> <span class="n">tsd</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1000</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1000</span><span class="p">),</span> <span class="n">time_units</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span> <span class="n">time_units</span> <span class="o">=</span> <span class="s1">&#39;s&#39;</span><span class="p">)</span>
+</code></pre></div>
+    <p>The variable ts is a time series object containing only nan.
+The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.</p>
+    <div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">newts</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">value_from</span><span class="p">(</span><span class="n">tsd</span><span class="p">,</span> <span class="n">ep</span><span class="p">)</span>
+</code></pre></div>
+    <p>newts is the same size as ts restrict to ep.</p>
+    <div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">ep</span><span class="p">)),</span> <span class="nb">len</span><span class="p">(</span><span class="n">newts</span><span class="p">))</span>
+    <span class="mi">52</span> <span class="mi">52</span>
+</code></pre></div>
+
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Tsd</code></td>
+      <td><p>Tsd object with the new values</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">value_from</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tsd</span><span class="p">,</span> <span class="n">ep</span><span class="p">,</span> <span class="n">align</span><span class="o">=</span><span class="s1">&#39;closest&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Replace the value with the closest value from tsd argument</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tsd : Tsd</span>
+<span class="sd">        The Tsd object holding the values to replace</span>
+<span class="sd">    ep : IntervalSet</span>
+<span class="sd">        The IntervalSet object to restrict the operation</span>
+<span class="sd">    align : str, optional</span>
+<span class="sd">        The method to align (closest/prev/next)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out: Tsd</span>
+<span class="sd">        Tsd object with the new values</span>
+
+<span class="sd">    Example</span>
+<span class="sd">    -------</span>
+<span class="sd">    In this example, the ts object will receive the closest values in time from tsd.</span>
+
+<span class="sd">    &gt;&gt;&gt; import pynapple as nap</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times</span>
+<span class="sd">    &gt;&gt;&gt; ts = nap.Ts(t=t, time_units=&#39;s&#39;)             </span>
+<span class="sd">    &gt;&gt;&gt; tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units=&#39;s&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; ep = nap.IntervalSet(start = 0, end = 500, time_units = &#39;s&#39;)</span>
+
+<span class="sd">    The variable ts is a time series object containing only nan.</span>
+<span class="sd">    The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.</span>
+
+<span class="sd">    &gt;&gt;&gt; newts = ts.value_from(tsd, ep)</span>
+
+<span class="sd">    newts is the same size as ts restrict to ep.</span>
+
+<span class="sd">    &gt;&gt;&gt; print(len(ts.restrict(ep)), len(newts))</span>
+<span class="sd">        52 52</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">method</span> <span class="o">=</span> <span class="n">_get_restrict_method</span><span class="p">(</span><span class="n">align</span><span class="p">)</span>
+    <span class="n">ix</span> <span class="o">=</span> <span class="n">TimeUnits</span><span class="o">.</span><span class="n">format_timestamps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">ep</span><span class="p">)</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">tsd</span> <span class="o">=</span> <span class="n">tsd</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">ep</span><span class="p">)</span>
+    <span class="n">new_tsd</span> <span class="o">=</span> <span class="n">tsd</span><span class="o">.</span><span class="n">reindex</span><span class="p">(</span><span class="n">ix</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">method</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Tsd</span><span class="p">(</span><span class="n">new_tsd</span><span class="p">,</span> <span class="n">time_support</span> <span class="o">=</span> <span class="n">ep</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.Tsd.restrict" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">restrict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ep</span><span class="p">,</span> <span class="n">keep_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Restricts a Tsd object to a set of time intervals delimited by an IntervalSet object</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>ep</code></td>
+        <td><code>IntervalSet</code></td>
+        <td><p>the IntervalSet object</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>keep_labels</code></td>
+        <td><code>bool</code></td>
+        <td><p>Wheter or not to drop the label of a column</p></td>
+        <td><code>False</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Examples:</strong></p>
+    <p>The Ts object is restrict to the intervals defined by ep.</p>
+    <div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">100</span><span class="p">)))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">ts</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">newts</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">ep</span><span class="p">)</span>
+</code></pre></div>
+    <p>The time support of newts automatically inherit the epochs defined by ep.</p>
+    <div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">newts</span><span class="o">.</span><span class="n">time_support</span>
+<span class="o">&gt;&gt;&gt;</span>    <span class="n">start</span>    <span class="n">end</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">0</span>    <span class="mf">0.0</span>  <span class="mf">500.0</span>
+</code></pre></div>
+
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Tsd</code></td>
+      <td><p>Tsd object restricted to ep</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">restrict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ep</span><span class="p">,</span> <span class="n">keep_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Restricts a Tsd object to a set of time intervals delimited by an IntervalSet object</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    ep : IntervalSet</span>
+<span class="sd">        the IntervalSet object </span>
+<span class="sd">    keep_labels : bool, optional</span>
+<span class="sd">        Wheter or not to drop the label of a column</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out: Tsd</span>
+<span class="sd">        Tsd object restricted to ep</span>
+
+<span class="sd">    Example</span>
+<span class="sd">    -------</span>
+<span class="sd">    The Ts object is restrict to the intervals defined by ep.</span>
+
+<span class="sd">    &gt;&gt;&gt; import pynapple as nap</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; t = np.unique(np.sort(np.random.randint(0, 1000, 100)))</span>
+<span class="sd">    &gt;&gt;&gt; ts = nap.Ts(t=t, time_units=&#39;s&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; ep = nap.IntervalSet(start=0, end=500, time_units=&#39;s&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; newts = ts.restrict(ep)</span>
+
+<span class="sd">    The time support of newts automatically inherit the epochs defined by ep.</span>
+
+<span class="sd">    &gt;&gt;&gt; newts.time_support</span>
+<span class="sd">    &gt;&gt;&gt;    start    end</span>
+<span class="sd">    &gt;&gt;&gt; 0    0.0  500.0</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ix</span> <span class="o">=</span> <span class="n">ep</span><span class="o">.</span><span class="n">in_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+    <span class="n">tsd_r</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">col</span> <span class="o">=</span> <span class="n">tsd_r</span><span class="o">.</span><span class="n">columns</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">tsd_r</span><span class="p">[</span><span class="s1">&#39;interval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ix</span>
+    <span class="n">ix</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ix</span><span class="p">)</span>
+    <span class="n">tsd_r</span> <span class="o">=</span> <span class="n">tsd_r</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">Tsd</span><span class="p">(</span><span class="n">tsd_r</span><span class="p">[</span><span class="n">col</span><span class="p">],</span> <span class="n">time_support</span><span class="o">=</span><span class="n">ep</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.Tsd.count" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bin_size</span><span class="p">,</span> <span class="n">ep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span></code>
+
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Count occurences of events within bin_size. </p>
+<p>bin_size should be seconds unless specified.
+If no epochs is passed, the data will be binned based on the time support.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>bin_size</code></td>
+        <td><code>float</code></td>
+        <td><p>The bin size (default is second)</p></td>
+        <td><code>&#39;second&#39;</code></td>
+      </tr>
+      <tr>
+        <td><code>ep</code></td>
+        <td><code>None or IntervalSet</code></td>
+        <td><p>IntervalSet to restrict the operation</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>time_units</code></td>
+        <td><code>str</code></td>
+        <td><p>Time units of bin size (us, ms, s)</p></td>
+        <td><code>&#39;s&#39;</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Examples:</strong></p>
+    <p>This example shows how to count events within bins of 0.1 second.</p>
+    <div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">100</span><span class="p">)))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">ts</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">bincount</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mf">0.1</span><span class="p">)</span>
+</code></pre></div>
+    <p>An epoch can be specified:</p>
+    <div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="mi">800</span><span class="p">,</span> <span class="n">time_units</span> <span class="o">=</span> <span class="s1">&#39;s&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">bincount</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">ep</span><span class="o">=</span><span class="n">ep</span><span class="p">)</span>
+</code></pre></div>
+    <p>And bincount automatically inherit ep as time support: </p>
+    <div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">bincount</span><span class="o">.</span><span class="n">time_support</span>
+<span class="o">&gt;&gt;&gt;</span>    <span class="n">start</span>    <span class="n">end</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">0</span>  <span class="mf">100.0</span>  <span class="mf">800.0</span>
+</code></pre></div>
+
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Tsd</code></td>
+      <td><p>A Tsd object indexed by the center of the bins.</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">count</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">bin_size</span><span class="p">,</span> <span class="n">ep</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">time_units</span> <span class="o">=</span> <span class="s1">&#39;s&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Count occurences of events within bin_size. </span>
+<span class="sd">    bin_size should be seconds unless specified.</span>
+<span class="sd">    If no epochs is passed, the data will be binned based on the time support.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    bin_size : float</span>
+<span class="sd">        The bin size (default is second)</span>
+
+<span class="sd">    ep : None or IntervalSet, optional</span>
+<span class="sd">        IntervalSet to restrict the operation</span>
+
+<span class="sd">    time_units : str, optional</span>
+<span class="sd">        Time units of bin size (us, ms, s)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out: Tsd</span>
+<span class="sd">        A Tsd object indexed by the center of the bins.</span>
+
+<span class="sd">    Example</span>
+<span class="sd">    -------</span>
+<span class="sd">    This example shows how to count events within bins of 0.1 second.</span>
+
+<span class="sd">    &gt;&gt;&gt; import pynapple as nap</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; t = np.unique(np.sort(np.random.randint(0, 1000, 100)))</span>
+<span class="sd">    &gt;&gt;&gt; ts = nap.Ts(t=t, time_units=&#39;s&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; bincount = ts.count(0.1)</span>
+
+<span class="sd">    An epoch can be specified:</span>
+
+<span class="sd">    &gt;&gt;&gt; ep = nap.IntervalSet(start = 100, end = 800, time_units = &#39;s&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; bincount = ts.count(0.1, ep=ep)</span>
+
+<span class="sd">    And bincount automatically inherit ep as time support: </span>
+
+<span class="sd">    &gt;&gt;&gt; bincount.time_support</span>
+<span class="sd">    &gt;&gt;&gt;    start    end</span>
+<span class="sd">    &gt;&gt;&gt; 0  100.0  800.0</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ep</span><span class="p">,</span> <span class="n">IntervalSet</span><span class="p">):</span>
+        <span class="n">ep</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_support</span>
+
+    <span class="n">bin_size_us</span> <span class="o">=</span> <span class="n">TimeUnits</span><span class="o">.</span><span class="n">format_timestamps</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">bin_size</span><span class="p">]),</span> <span class="n">time_units</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># bin for each epochs</span>
+    <span class="n">time_index</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">ep</span><span class="o">.</span><span class="n">index</span><span class="p">:</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">ep</span><span class="o">.</span><span class="n">start</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">ep</span><span class="o">.</span><span class="n">end</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">bin_size_us</span><span class="p">,</span> <span class="n">bin_size_us</span><span class="p">)</span>
+        <span class="n">count</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">bins</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">time_index</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">bins</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">time_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">time_index</span><span class="p">)</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">(</span><span class="n">count</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">Tsd</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">time_index</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="n">count</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="n">ep</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.Tsd.threshold" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thr</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;above&#39;</span><span class="p">)</span></code>
+
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Apply a threshold function to the tsd to return a new tsd </p>
+<p>with the time support being the epochs above/below the threshold</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>thr</code></td>
+        <td><code>float</code></td>
+        <td><p>The threshold value</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>method</code></td>
+        <td><code>str</code></td>
+        <td><p>The threshold method (above/below)</p></td>
+        <td><code>&#39;above&#39;</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Exceptions:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>ValueError</code></td>
+        <td><p>Raise an error if method is not 'below' or 'above'</p></td>
+      </tr>
+      <tr>
+        <td><code>RuntimeError</code></td>
+        <td><p>Raise an error if thr is too high/low and no epochs is found.</p></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Examples:</strong></p>
+    <p>This example finds all epoch above 0.5 within the tsd object.</p>
+    <div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">tsd</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">100</span><span class="p">))</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">newtsd</span> <span class="o">=</span> <span class="n">tsd</span><span class="o">.</span><span class="n">threshold</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+</code></pre></div>
+    <p>The epochs with the times above/below the threshold can be accessed through the time support:</p>
+    <div class="highlight"><pre><span></span><code><span class="o">&gt;&gt;&gt;</span> <span class="n">tsd</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">time_units</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="n">tsd</span><span class="o">.</span><span class="n">threshold</span><span class="p">(</span><span class="mi">50</span><span class="p">)</span><span class="o">.</span><span class="n">time_support</span>
+<span class="o">&gt;&gt;&gt;</span>    <span class="n">start</span>   <span class="n">end</span>
+<span class="o">&gt;&gt;&gt;</span> <span class="mi">0</span>   <span class="mf">50.5</span>  <span class="mf">99.0</span>
+</code></pre></div>
+
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>Tsd</code></td>
+      <td><p>All the time points below or above the threshold</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">threshold</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">thr</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s1">&#39;above&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a threshold function to the tsd to return a new tsd </span>
+<span class="sd">    with the time support being the epochs above/below the threshold</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    thr : float</span>
+<span class="sd">        The threshold value</span>
+<span class="sd">    method : str, optional</span>
+<span class="sd">        The threshold method (above/below)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out: Tsd</span>
+<span class="sd">        All the time points below or above the threshold</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        Raise an error if method is not &#39;below&#39; or &#39;above&#39;</span>
+<span class="sd">    RuntimeError</span>
+<span class="sd">        Raise an error if thr is too high/low and no epochs is found.</span>
+
+<span class="sd">    Example</span>
+<span class="sd">    -------</span>
+<span class="sd">    This example finds all epoch above 0.5 within the tsd object.</span>
+
+<span class="sd">    &gt;&gt;&gt; import pynapple as nap</span>
+<span class="sd">    &gt;&gt;&gt; tsd = nap.Tsd(t=np.arange(100), d=np.random.rand(100))</span>
+<span class="sd">    &gt;&gt;&gt; newtsd = tsd.threshold(0.5)</span>
+
+<span class="sd">    The epochs with the times above/below the threshold can be accessed through the time support:</span>
+
+<span class="sd">    &gt;&gt;&gt; tsd = nap.Tsd(t=np.arange(100), d=np.arange(100), time_units=&#39;s&#39;)</span>
+<span class="sd">    &gt;&gt;&gt; tsd.threshold(50).time_support</span>
+<span class="sd">    &gt;&gt;&gt;    start   end</span>
+<span class="sd">    &gt;&gt;&gt; 0   50.5  99.0</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">d</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">idx_rising</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">d</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">thr</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">&gt;</span> <span class="n">thr</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">idx_falling</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">logical_and</span><span class="p">(</span><span class="n">d</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">thr</span><span class="p">,</span> <span class="n">d</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">&lt;</span> <span class="n">thr</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;above&#39;</span><span class="p">:</span>
+        <span class="n">starts</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">idx_rising</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">idx_rising</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">t</span><span class="p">[</span><span class="n">idx_rising</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span>
+        <span class="n">ends</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">idx_falling</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">idx_falling</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">t</span><span class="p">[</span><span class="n">idx_falling</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span>
+        <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">thr</span><span class="p">:</span>
+            <span class="n">starts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">starts</span><span class="p">))</span>                
+        <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">thr</span><span class="p">:</span>
+            <span class="n">ends</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">ends</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="k">elif</span> <span class="n">method</span> <span class="o">==</span> <span class="s1">&#39;below&#39;</span><span class="p">:</span>
+        <span class="n">starts</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">idx_falling</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">idx_falling</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">t</span><span class="p">[</span><span class="n">idx_falling</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span>
+        <span class="n">ends</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="n">idx_rising</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="n">idx_rising</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span><span class="o">-</span><span class="n">t</span><span class="p">[</span><span class="n">idx_rising</span><span class="p">])</span><span class="o">/</span><span class="mi">2</span>
+        <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">thr</span><span class="p">:</span>
+            <span class="n">starts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">starts</span><span class="p">))</span>                
+        <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">thr</span><span class="p">:</span>
+            <span class="n">ends</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">ends</span><span class="p">,</span> <span class="n">t</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Method </span><span class="si">{}</span><span class="s2"> for thresholding is not accepted.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">method</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">starts</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">ends</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">starts</span><span class="p">)</span><span class="o">!=</span><span class="nb">len</span><span class="p">(</span><span class="n">ends</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Threshold </span><span class="si">{}</span><span class="s2"> with method </span><span class="si">{}</span><span class="s2"> returned empty tsd.&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">thr</span><span class="p">,</span> <span class="n">method</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">time_support</span> <span class="o">=</span> <span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span> <span class="o">=</span> <span class="n">starts</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">ends</span><span class="p">)</span>
+        <span class="n">time_support</span> <span class="o">=</span> <span class="n">time_support</span><span class="o">.</span><span class="n">drop_short_intervals</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">time_support</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_support</span><span class="o">.</span><span class="n">intersect</span><span class="p">(</span><span class="n">time_support</span><span class="p">)</span>
+        <span class="n">tsd</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">time_support</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">tsd</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.Tsd.start_time" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;us&#39;</span><span class="p">)</span></code>
+
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>The first time index in the Ts/Tsd object</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>units</code></td>
+        <td><code>str</code></td>
+        <td><p>us, ms or s (default is us)</p></td>
+        <td><code>&#39;us&#39;</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>numpy.float64</code></td>
+      <td><p>_</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">start_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;us&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The first time index in the Ts/Tsd object</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    units : str, optional</span>
+<span class="sd">        us, ms or s (default is us)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out: numpy.float64</span>
+<span class="sd">        _</span>
+<span class="sd">    &quot;&quot;&quot;</span>        
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">times</span><span class="p">(</span><span class="n">units</span><span class="o">=</span><span class="n">units</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.Tsd.end_time" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">end_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;us&#39;</span><span class="p">)</span></code>
+
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>The last time index in the Ts/Tsd object</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>units</code></td>
+        <td><code>str</code></td>
+        <td><p>us, ms or s (default is us)</p></td>
+        <td><code>&#39;us&#39;</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>numpy.float64</code></td>
+      <td><p>_</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">end_time</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="s1">&#39;us&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The last time index in the Ts/Tsd object</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    units : str, optional</span>
+<span class="sd">        us, ms or s (default is us)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out: numpy.float64</span>
+<span class="sd">        _</span>
+<span class="sd">    &quot;&quot;&quot;</span>        
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">times</span><span class="p">(</span><span class="n">units</span><span class="o">=</span><span class="n">units</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-class">
+
+
+
+<h2 id="pynapple.core.time_series.TsdFrame" class="doc doc-heading">
+        <code>
+TsdFrame        </code>
+
+
+
+</h2>
+
+    <div class="doc doc-contents ">
+
+      <p>A subclass of pandas.DataFrame specialized for neurophysiological time series.</p>
+<p>TsdFrame provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.</p>
+
+<p><strong>Attributes:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>rate</code></td>
+        <td><code>float</code></td>
+        <td><p>Frequency of the time series (Hz) computed over the time support</p></td>
+      </tr>
+      <tr>
+        <td><code>time_support</code></td>
+        <td><code>IntervalSet</code></td>
+        <td><p>The time support of the time series</p></td>
+      </tr>
+  </tbody>
+</table>
+
+
+
+  <div class="doc doc-children">
+
+
+
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.TsdFrame.__init__" class="doc doc-heading">
+<code class="highlight language-python"><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></code>
+
+  <span class="doc doc-properties">
+      <small class="doc doc-property doc-property-special"><code>special</code></small>
+  </span>
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>TsdFrame initializer</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>t</code></td>
+        <td><code>numpy.ndarray or pandas.DataFrame</code></td>
+        <td><p>the time index t,  or a pandas.DataFrame (if d is None)</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>d</code></td>
+        <td><code>numpy.ndarray</code></td>
+        <td><p>The data</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>time_units</code></td>
+        <td><code>str</code></td>
+        <td><p>The time units in which times are specified</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>time_support</code></td>
+        <td><code>IntervalSet</code></td>
+        <td><p>The time support of the TsdFrame object</p></td>
+        <td><code>None</code></td>
+      </tr>
+      <tr>
+        <td><code>**kwargs</code></td>
+        <td><code>None</code></td>
+        <td><p>Arguments that will be passed to the pandas.DataFrame initializer.</p></td>
+        <td><code>{}</code></td>
+      </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    TsdFrame initializer</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    t : numpy.ndarray or pandas.DataFrame</span>
+<span class="sd">        the time index t,  or a pandas.DataFrame (if d is None)</span>
+<span class="sd">    d : numpy.ndarray</span>
+<span class="sd">        The data</span>
+<span class="sd">    time_units : str, optional</span>
+<span class="sd">        The time units in which times are specified</span>
+<span class="sd">    time_support : IntervalSet, optional</span>
+<span class="sd">        The time support of the TsdFrame object</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Arguments that will be passed to the pandas.DataFrame initializer.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="n">d</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">c</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">t</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s1">&#39;columns&#39;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s1">&#39;columns&#39;</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">c</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="n">t</span> <span class="o">=</span> <span class="n">TimeUnits</span><span class="o">.</span><span class="n">format_timestamps</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">time_units</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">time_support</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">time_support</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+        <span class="n">ix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">cut</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">bins</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">bins</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)))</span>
+        <span class="n">ix</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">ix</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">!=</span> <span class="n">ix</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">NaN</span>
+        <span class="n">ix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">ix</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">ix</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ix</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">t</span><span class="p">[</span><span class="n">ix</span><span class="p">],</span><span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">[</span><span class="n">ix</span><span class="p">],</span> <span class="n">columns</span> <span class="o">=</span> <span class="n">c</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">time_support</span> <span class="o">=</span> <span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">end</span> <span class="o">=</span> <span class="n">t</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">c</span><span class="p">)</span>
+
+    <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_support</span> <span class="o">=</span> <span class="n">time_support</span>
+
+    <span class="bp">self</span><span class="o">.</span><span class="n">rate</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">time_support</span><span class="o">.</span><span class="n">tot_length</span><span class="p">(</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Time (us)&quot;</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">_metadata</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;nts_class&quot;</span><span class="p">)</span>
+    <span class="bp">self</span><span class="o">.</span><span class="n">nts_class</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.TsdFrame.times" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>The time index of the TsdFrame, returned as np.double in the desired time units.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>units</code></td>
+        <td><code>str</code></td>
+        <td><p>us, ms, or s (default is us)</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>numpy.ndarray        </code></td>
+      <td><p>_</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">times</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The time index of the TsdFrame, returned as np.double in the desired time units.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    units : str, optional</span>
+<span class="sd">        us, ms, or s (default is us)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out: numpy.ndarray        </span>
+<span class="sd">        _</span>
+<span class="sd">    &quot;&quot;&quot;</span>        
+    <span class="k">return</span> <span class="n">TimeUnits</span><span class="o">.</span><span class="n">return_timestamps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span> <span class="n">units</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.TsdFrame.as_dataframe" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">as_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></code>
+
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Convert the TsdFrame object to a pandas.DataFrame object.</p>
+
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>pandas.DataFrame</code></td>
+      <td><p>_</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">as_dataframe</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Convert the TsdFrame object to a pandas.DataFrame object.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out: pandas.DataFrame</span>
+<span class="sd">        _</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="n">copy</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.TsdFrame.as_units" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">as_units</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span></code>
+
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Returns a DataFrame with time expressed in the desired unit.</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>units</code></td>
+        <td><code>str</code></td>
+        <td><p>us, ms, or s (default is us)</p></td>
+        <td><code>None</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>pandas.DataFrame</code></td>
+      <td><p>the series object with adjusted times</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">as_units</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">units</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Returns a DataFrame with time expressed in the desired unit.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    units : str, optional</span>
+<span class="sd">        us, ms, or s (default is us)</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out: pandas.DataFrame</span>
+<span class="sd">        the series object with adjusted times</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">TimeUnits</span><span class="o">.</span><span class="n">return_timestamps</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">units</span><span class="p">)</span>
+    <span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">units_str</span> <span class="o">=</span> <span class="n">units</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">units_str</span><span class="p">:</span>
+        <span class="n">units_str</span> <span class="o">=</span> <span class="s1">&#39;us&#39;</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;Time (&quot;</span> <span class="o">+</span> <span class="n">units_str</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+    <span class="n">df</span><span class="o">.</span><span class="n">columns</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">df</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.TsdFrame.data" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">data</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span></code>
+
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>The data in the TsdFrame object</p>
+
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>numpy.ndarray</code></td>
+      <td><p>_</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">data</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    The data in the TsdFrame object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    out: numpy.ndarray</span>
+<span class="sd">        _</span>
+<span class="sd">    &quot;&quot;&quot;</span>        
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">columns</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">ravel</span><span class="p">()</span>
+    <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">values</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+  <div class="doc doc-object doc-method">
+
+
+
+<h3 id="pynapple.core.time_series.TsdFrame.restrict" class="doc doc-heading">
+<code class="highlight language-python"><span class="n">restrict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iset</span><span class="p">,</span> <span class="n">keep_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span></code>
+
+
+</h3>
+
+    <div class="doc doc-contents ">
+
+      <p>Restricts a TsdFrame object to a set of time intervals delimited by an IntervalSet object`</p>
+
+<p><strong>Parameters:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Type</th>
+      <th>Description</th>
+      <th>Default</th>
+    </tr>
+  </thead>
+  <tbody>
+      <tr>
+        <td><code>iset</code></td>
+        <td><code>IntervalSet</code></td>
+        <td><p>the IntervalSet object</p></td>
+        <td><em>required</em></td>
+      </tr>
+      <tr>
+        <td><code>keep_labels</code></td>
+        <td><code>bool</code></td>
+        <td><p>Wheter or not to drop the label of a column</p></td>
+        <td><code>False</code></td>
+      </tr>
+  </tbody>
+</table>
+<p><strong>Returns:</strong></p>
+<table>
+  <thead>
+    <tr>
+      <th>Type</th>
+      <th>Description</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td><code>TsdFrame</code></td>
+      <td><p>TsdFrame object restricted to ep</p></td>
+    </tr>
+  </tbody>
+</table>
+        <details class="quote">
+          <summary>Source code in <code>pynapple/core/time_series.py</code></summary>
+          <div class="highlight"><pre><span></span><code><span class="k">def</span> <span class="nf">restrict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">iset</span><span class="p">,</span> <span class="n">keep_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Restricts a TsdFrame object to a set of time intervals delimited by an IntervalSet object`</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    iset : IntervalSet</span>
+<span class="sd">        the IntervalSet object </span>
+<span class="sd">    keep_labels : bool, optional</span>
+<span class="sd">        Wheter or not to drop the label of a column</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    TsdFrame</span>
+<span class="sd">        TsdFrame object restricted to ep</span>
+
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ix</span> <span class="o">=</span> <span class="n">iset</span><span class="o">.</span><span class="n">in_interval</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+    <span class="n">tsd_r</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">tsd_r</span><span class="p">[</span><span class="s1">&#39;interval&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ix</span>
+    <span class="n">ix</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">ix</span><span class="p">)</span>
+    <span class="n">tsd_r</span> <span class="o">=</span> <span class="n">tsd_r</span><span class="p">[</span><span class="n">ix</span><span class="p">]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">keep_labels</span><span class="p">:</span>
+        <span class="k">del</span> <span class="n">tsd_r</span><span class="p">[</span><span class="s1">&#39;interval&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">TsdFrame</span><span class="p">(</span><span class="n">tsd_r</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="n">iset</span><span class="p">,</span> <span class="n">copy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+        </details>
+    </div>
+
+  </div>
+
+
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+
+
+
+
+
+
+  </div>
+
+    </div>
+
+  </div>
+
+              
+            </article>
+          </div>
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+    <nav class="md-footer__inner md-grid" aria-label="Footer">
+      
+        
+        <a href="../pynapple-core-notebook/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Pynapple Core Tutorial" rel="prev">
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12z"/></svg>
+          </div>
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Previous
+              </span>
+              Pynapple Core Tutorial
+            </div>
+          </div>
+        </a>
+      
+      
+        
+        <a href="../interval_set/" class="md-footer__link md-footer__link--next" aria-label="Next: Interval Sets" rel="next">
+          <div class="md-footer__title">
+            <div class="md-ellipsis">
+              <span class="md-footer__direction">
+                Next
+              </span>
+              Interval Sets
+            </div>
+          </div>
+          <div class="md-footer__button md-icon">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M4 11v2h12l-5.5 5.5 1.42 1.42L19.84 12l-7.92-7.92L10.5 5.5 16 11H4z"/></svg>
+          </div>
+        </a>
+      
+    </nav>
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    <script id="__config" type="application/json">{"base": "..", "features": [], "translations": {"clipboard.copy": "Copy to clipboard", "clipboard.copied": "Copied to clipboard", "search.config.lang": "en", "search.config.pipeline": "trimmer, stopWordFilter", "search.config.separator": "[\\s\\-]+", "search.placeholder": "Search", "search.result.placeholder": "Type to start searching", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.term.missing": "Missing", "select.version.title": "Select version"}, "search": "../assets/javascripts/workers/search.0bbba5b5.min.js"}</script>
+    
+    
+      <script src="../assets/javascripts/bundle.e1a181d9.min.js"></script>
+      
+    
+  </body>
+</html>

@@ -287,7 +287,8 @@ class Tsd():
         
         Returns
         -------
-        Tsd
+        out: Tsd
+            A Tsd object indexed by the center of the bins.
         
         Example
         -------
@@ -340,16 +341,16 @@ class Tsd():
         
         Returns
         -------
-        Tsd
-        
+        out: Tsd
+            All the time points below or above the threshold
+
         Raises
         ------
         ValueError
             Raise an error if method is not 'below' or 'above'
         RuntimeError
             Raise an error if thr is too high/low and no epochs is found.
-        
-        
+          
         Example
         -------
         This example finds all epoch above 0.5 within the tsd object.
@@ -415,7 +416,8 @@ class Tsd():
         
         Returns
         -------
-        numpy.float64
+        out: numpy.float64
+            _
         """        
         return self.times(units=units)[0]
 
@@ -430,7 +432,8 @@ class Tsd():
         
         Returns
         -------
-        numpy.float64
+        out: numpy.float64
+            _
         """        
         return self.times(units=units)[-1]
 
@@ -593,7 +596,7 @@ class TsdFrame():
         
         Parameters
         ----------
-        ep : IntervalSet
+        iset : IntervalSet
             the IntervalSet object 
         keep_labels : bool, optional
             Wheter or not to drop the label of a column
