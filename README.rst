@@ -20,7 +20,7 @@ pynapple is a Python library for analysing neurophysiological data. It allows to
 
 
 * Free software: GNU General Public License v3
-* Documentation: https://peyrachelab.github.io/pynapple/html/index.html
+* Documentation: https://peyrachelab.github.io/pynapple
 
 ----------------------------
 
