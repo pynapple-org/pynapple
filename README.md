@@ -24,6 +24,7 @@ Getting Started
 -   numpy 1.17+
 -   scipy 1.3+
 -   numba 0.46+
+-   tabulate
 
 ### Installation
 
