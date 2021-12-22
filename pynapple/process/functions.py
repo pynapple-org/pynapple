@@ -243,6 +243,7 @@ def compute_RandomCrossCorrs(spks, ep,  binsize=10, nbins = 2000, norm = False, 
 			cc[(i,j)] = tmp
 	return cc
 
+# NEW FUNCTION, TODO
 def tuning_2d(spikes, position, ep, nb_bins = 100, frequency = 120.0):
     
     if isinstance(spikes,TsGroup)
@@ -274,7 +275,7 @@ def tuning_2d(spikes, position, ep, nb_bins = 100, frequency = 120.0):
 #########################################################
 
 
-
+#Necessary??
 def computeLMNAngularTuningCurves(spikes, angle, ep, nb_bins = 180, frequency = 120.0, bin_size = 100):
 	tmp 			= pd.Series(index = angle.index.values, data = np.unwrap(angle.values))	
 	tmp2 			= tmp.rolling(window=50,win_type='gaussian',center=True,min_periods=1).mean(std=10.0)	
@@ -313,6 +314,7 @@ def computeLMNAngularTuningCurves(spikes, angle, ep, nb_bins = 180, frequency = 
 
 	return tuning_curves, velocity, bins_velocity
 
+# SHould be changed to tuning_1d_angle
 def computeAngularTuningCurves(spikes, angle, ep, nb_bins = 180, frequency = 120.0):
 	"""
 	Compute angular tuning curves
@@ -360,6 +362,7 @@ def computeAngularTuningCurves(spikes, angle, ep, nb_bins = 180, frequency = 120
 
 	return tuning_curves
 
+# should be perhaps more generic
 def computeSpatialInfo(tc, angle, ep):
 	nb_bins = tc.shape[0]+1
 	bins 	= np.linspace(0, 2*np.pi, nb_bins)
@@ -394,6 +397,7 @@ def findHDCells(tuning_curves, z = 50, p = 0.0001 , m = 1):
 	hd.loc[tokeep] = 1
 	return hd, stat
 
+# should be more generic? Or only pynacollada?
 def decodeHD(tuning_curves, spikes, ep, bin_size = 200, px = None):
 	"""
 		See : Zhang, 1998, Interpreting Neuronal Population Activity by Reconstruction: Unified Framework With Application to Hippocampal Place Cells
