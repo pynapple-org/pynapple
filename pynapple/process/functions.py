@@ -109,6 +109,7 @@ def xcrossCorr_fast(t1, t2, binsize, nbins, nbiter, jitter, confInt):
 	HeS 			= np.NaN	
 	return (H0, Hm, HeI, HeS, Hstd, times)	
 
+# This has now been transferred to neural_crosscorr
 def compute_AutoCorrs(spks, ep, binsize = 5, nbins = 200):
 	# First let's prepare a pandas dataframe to receive the data
 	times = np.arange(0, binsize*(nbins+1), binsize) - (nbins*binsize)/2	
@@ -131,25 +132,7 @@ def compute_AutoCorrs(spks, ep, binsize = 5, nbins = 200):
 	autocorrs.loc[0] = 0.0
 	return autocorrs, firing_rates
 
-def compute_CrossCorrs(spks, ep, binsize=10, nbins = 2000, norm = False):
-	"""
-		
-	"""	
-	neurons = list(spks.keys())
-	times = np.arange(0, binsize*(nbins+1), binsize) - (nbins*binsize)/2
-	cc = pd.DataFrame(index = times, columns = list(combinations(neurons, 2)))
-		
-	for i,j in cc.columns:		
-		spk1 = spks[i].restrict(ep).as_units('ms').index.values
-		spk2 = spks[j].restrict(ep).as_units('ms').index.values		
-		tmp = crossCorr(spk1, spk2, binsize, nbins)		
-		fr = len(spk2)/ep.tot_length('s')
-		if norm:
-			cc[(i,j)] = tmp/fr
-		else:
-			cc[(i,j)] = tmp
-	return cc
-
+# This has now been transferred to neural_crosscorr
 def compute_PairCrossCorr(spks, ep, pair, binsize=10, nbins = 2000, norm = False):
 	"""
 		
@@ -205,24 +188,6 @@ def compute_ISI(spks, ep, maxisi, nbins, log_=False):
 
 	return isi
 
-def compute_AllPairsCrossCorrs(spks, ep, binsize=10, nbins = 2000, norm = False):
-	"""
-		
-	"""	
-	neurons = list(spks.keys())
-	times = np.arange(0, binsize*(nbins+1), binsize) - (nbins*binsize)/2
-	cc = pd.DataFrame(index = times, columns = list(combinations(neurons, 2)))
-		
-	for i,j in cc.columns:		
-		spk1 = spks[i].restrict(ep).as_units('ms').index.values
-		spk2 = spks[j].restrict(ep).as_units('ms').index.values		
-		tmp = crossCorr(spk1, spk2, binsize, nbins)		
-		fr = len(spk2)/ep.tot_length('s')
-		if norm:
-			cc[(i,j)] = tmp/fr
-		else:
-			cc[(i,j)] = tmp
-	return cc
 
 def compute_AsyncCrossCorrs(spks, ep, binsize=10, nbins = 2000, norm = False, edge = 20):
 	"""
@@ -278,9 +243,38 @@ def compute_RandomCrossCorrs(spks, ep,  binsize=10, nbins = 2000, norm = False, 
 			cc[(i,j)] = tmp
 	return cc
 
+def tuning_2d(spikes, position, ep, nb_bins = 100, frequency = 120.0):
+    
+    if isinstance(spikes,TsGroup)
+        fields = {}
+        for n in spikes:
+            place_fields
+    position = position.restrict(ep)
+    xpos = position.iloc[:,0]
+    ypos = position.iloc[:,1]
+    xbins = np.linspace(xpos.min(), xpos.max()+1e-6, nb_bins+1)
+    ybins = np.linspace(ypos.min(), ypos.max()+1e-6, nb_bins+1)    
+    occupancy, _, _ = np.histogram2d(ypos, xpos, [ybins,xbins])
+    
+    
+        position_spike = position.realign(spikes[n].restrict(ep))
+        spike_count,_,_ = np.histogram2d(position_spike.iloc[:,1].values, position_spike.iloc[:,0].values, [ybins,xbins])
+        
+        mean_spike_count = spike_count/(occupancy+1)
+        place_field = mean_spike_count*frequency    
+        place_fields[n] = pd.DataFrame(index = ybins[0:-1][::-1],columns = xbins[0:-1], data = place_field)
+        
+    extent = (xbins[0], xbins[-1], ybins[0], ybins[-1]) # USEFUL FOR MATPLOTLIB
+    return , occupancy, extent
+
+
+
 #########################################################
 # VARIOUS
 #########################################################
+
+
+
 def computeLMNAngularTuningCurves(spikes, angle, ep, nb_bins = 180, frequency = 120.0, bin_size = 100):
 	tmp 			= pd.Series(index = angle.index.values, data = np.unwrap(angle.values))	
 	tmp2 			= tmp.rolling(window=50,win_type='gaussian',center=True,min_periods=1).mean(std=10.0)	
@@ -383,7 +377,7 @@ def computeSpatialInfo(tc, angle, ep):
 	SI = pd.DataFrame(index = tc.columns, columns = ['SI'], data = SI)
 	return SI
 
-
+#Copied to neural_tuning
 def findHDCells(tuning_curves, z = 50, p = 0.0001 , m = 1):
 	"""
 		Peak firing rate larger than 1
@@ -456,6 +450,8 @@ def decodeHD(tuning_curves, spikes, ep, bin_size = 200, px = None):
 	decoded = nts.Tsd(t = proba_angle.index.values, d = proba_angle.idxmax(1).values, time_units = 'ms')
 	return decoded, proba_angle, spike_counts
 
+
+# This should be removed, replaced by tuning_2d and a placefiled function in neural_tuning
 def computePlaceFields(spikes, position, ep, nb_bins = 200, frequency = 120.0):
 	place_fields = {}
 	position_tsd = position.restrict(ep)
@@ -474,6 +470,7 @@ def computePlaceFields(spikes, position, ep, nb_bins = 200, frequency = 120.0):
 	extent = (xbins[0], xbins[-1], ybins[0], ybins[-1]) # USEFUL FOR MATPLOTLIB
 	return place_fields, extent
 
+
 def computeOccupancy(position_tsd, nb_bins = 100):
     xpos = position_tsd.iloc[:,0]
     ypos = position_tsd.iloc[:,1]    
@@ -482,6 +479,7 @@ def computeOccupancy(position_tsd, nb_bins = 100):
     occupancy, _, _ = np.histogram2d(ypos, xpos, [ybins,xbins])
     return occupancy
 
+# copied to neural_tuning
 def computeAngularVelocityTuningCurves(spikes, angle, ep, nb_bins = 61, bin_size = 10000, norm=True):
 	tmp 			= pd.Series(index = angle.index.values, data = np.unwrap(angle.values))
 	tmp2 			= tmp.rolling(window=100,win_type='gaussian',center=True,min_periods=1).mean(std=10.0)
@@ -513,6 +511,7 @@ def computeAngularVelocityTuningCurves(spikes, angle, ep, nb_bins = 61, bin_size
 
 	return velo_curves
 
+# copied to neural_tuning
 def smoothAngularTuningCurves(tuning_curves, window = 20, deviation = 3.0):
 	new_tuning_curves = {}	
 	for i in tuning_curves.columns:
@@ -529,6 +528,7 @@ def smoothAngularTuningCurves(tuning_curves, window = 20, deviation = 3.0):
 
 	return new_tuning_curves
 
+#necessary????
 def computeMeanFiringRate(spikes, epochs, name):
 	mean_frate = pd.DataFrame(index = spikes.keys(), columns = name)
 	for n, ep in zip(name, epochs):
@@ -536,6 +536,7 @@ def computeMeanFiringRate(spikes, epochs, name):
 			mean_frate.loc[k,n] = len(spikes[k].restrict(ep))/ep.tot_length('s')
 	return mean_frate
 
+# copied to neural_tuning
 def computeSpeedTuningCurves(spikes, position, ep, bin_size = 0.1, nb_bins = 20, speed_max = 0.4):
 	time_bins 	= np.arange(position.index[0], position.index[-1]+bin_size*1e6, bin_size*1e6)
 	index 		= np.digitize(position.index.values, time_bins)
@@ -557,6 +558,8 @@ def computeSpeedTuningCurves(spikes, position, ep, bin_size = 0.1, nb_bins = 20,
 		speed_curves[k] = spike_count/bin_size
 
 	return speed_curves
+
+# copied to neural_tuning
 
 def computeAccelerationTuningCurves(spikes, position, ep, bin_size = 0.1, nb_bins = 40):
 	time_bins 	= np.arange(position.index[0], position.index[-1]+bin_size*1e6, bin_size*1e6)
@@ -583,6 +586,8 @@ def computeAccelerationTuningCurves(spikes, position, ep, bin_size = 0.1, nb_bin
 
 	return accel_curves
 
+
+# copied to brain_state_scoring
 def refineSleepFromAccel(acceleration, sleep_ep):
 	vl = acceleration[0].restrict(sleep_ep)
 	vl = vl.as_series().diff().abs().dropna()	
@@ -599,6 +604,7 @@ def refineSleepFromAccel(acceleration, sleep_ep):
 
 	return newsleep_ep
 
+# what's this?
 def splitWake(ep):
 	if len(ep) != 1:
 		print('Cant split wake in 2')
@@ -609,6 +615,7 @@ def splitWake(ep):
 	tmp[0,1] = tmp[1,0] = ep.values[0,0] + np.diff(ep.values[0])/2
 	return nts.IntervalSet(start = tmp[:,0], end = tmp[:,1])
 
+# copied to neural_tuning
 def centerTuningCurves(tcurve):
 	"""
 	center tuning curves by peak
@@ -624,6 +631,7 @@ def centerTuningCurves(tcurve):
 	new_tcurve = pd.DataFrame(index = np.linspace(-np.pi, np.pi, tcurve.shape[0]+1)[0:-1], data = np.array(new_tcurve).T, columns = tcurve.columns)
 	return new_tcurve
 
+# copied to neural_tuning
 def offsetTuningCurves(tcurve, diffs):
 	"""
 	offseting tuning curves synced by diff
@@ -639,91 +647,8 @@ def offsetTuningCurves(tcurve, diffs):
 	return new_tcurve
 
 
-#########################################################
-# LFP FUNCTIONS
-#########################################################
-def butter_bandpass(lowcut, highcut, fs, order=5):
-	from scipy.signal import butter
-	nyq = 0.5 * fs
-	low = lowcut / nyq
-	high = highcut / nyq
-	b, a = butter(order, [low, high], btype='band')
-	return b, a
 
-def butter_bandpass_filter(data, lowcut, highcut, fs, order=5):
-	from scipy.signal import lfilter
-	b, a = butter_bandpass(lowcut, highcut, fs, order=order)
-	y = lfilter(b, a, data)
-	return y
-
-def downsample(tsd, up, down):
-	import scipy.signal
-	import neuroseries as nts
-	dtsd = scipy.signal.resample_poly(tsd.values, up, down)
-	dt = tsd.as_units('s').index.values[np.arange(0, tsd.shape[0], down)]
-	if len(tsd.shape) == 1:		
-		return nts.Tsd(dt, dtsd, time_units = 's')
-	elif len(tsd.shape) == 2:
-		return nts.TsdFrame(dt, dtsd, time_units = 's', columns = list(tsd.columns))
-
-def getPeaksandTroughs(lfp, min_points):
-	"""	 
-		At 250Hz (1250/5), 2 troughs cannont be closer than 20 (min_points) points (if theta reaches 12Hz);		
-	"""
-	import neuroseries as nts
-	import scipy.signal
-	if isinstance(lfp, nts.time_series.Tsd):
-		troughs 		= nts.Tsd(lfp.as_series().iloc[scipy.signal.argrelmin(lfp.values, order =min_points)[0]], time_units = 'us')
-		peaks 			= nts.Tsd(lfp.as_series().iloc[scipy.signal.argrelmax(lfp.values, order =min_points)[0]], time_units = 'us')
-		tmp 			= nts.Tsd(troughs.realign(peaks, align = 'next').as_series().drop_duplicates('first')) # eliminate double peaks
-		peaks			= peaks[tmp.index]
-		tmp 			= nts.Tsd(peaks.realign(troughs, align = 'prev').as_series().drop_duplicates('first')) # eliminate double troughs
-		troughs 		= troughs[tmp.index]
-		return (peaks, troughs)
-	elif isinstance(lfp, nts.time_series.TsdFrame):
-		peaks 			= nts.TsdFrame(lfp.index.values, np.zeros(lfp.shape))
-		troughs			= nts.TsdFrame(lfp.index.values, np.zeros(lfp.shape))
-		for i in lfp.keys():
-			peaks[i], troughs[i] = getPeaksandTroughs(lfp[i], min_points)
-		return (peaks, troughs)
-
-def getPhase(lfp, fmin, fmax, nbins, fsamp, power = False):
-	""" Continuous Wavelets Transform
-		return phase of lfp in a Tsd array
-	"""
-	import neuroseries as nts
-	from Wavelets import MyMorlet as Morlet
-	if isinstance(lfp, nts.time_series.TsdFrame):
-		allphase 		= nts.TsdFrame(lfp.index.values, np.zeros(lfp.shape))
-		allpwr 			= nts.TsdFrame(lfp.index.values, np.zeros(lfp.shape))
-		for i in lfp.keys():
-			allphase[i], allpwr[i] = getPhase(lfp[i], fmin, fmax, nbins, fsamp, power = True)
-		if power:
-			return allphase, allpwr
-		else:
-			return allphase			
-
-	elif isinstance(lfp, nts.time_series.Tsd):
-		cw 				= Morlet(lfp.values, fmin, fmax, nbins, fsamp)
-		cwt 			= cw.getdata()
-		cwt 			= np.flip(cwt, axis = 0)
-		wave 			= np.abs(cwt)**2.0
-		phases 			= np.arctan2(np.imag(cwt), np.real(cwt)).transpose()	
-		cwt 			= None
-		index 			= np.argmax(wave, 0)
-		# memory problem here, need to loop
-		phase 			= np.zeros(len(index))	
-		for i in range(len(index)) : phase[i] = phases[i,index[i]]
-		phases 			= None
-		if power: 
-			pwrs 		= cw.getpower()		
-			pwr 		= np.zeros(len(index))		
-			for i in range(len(index)):
-				pwr[i] = pwrs[index[i],i]	
-			return nts.Tsd(lfp.index.values, phase), nts.Tsd(lfp.index.values, pwr)
-		else:
-			return nts.Tsd(lfp.index.values, phase)
-
+# copied to neural_tuning
 #########################################################
 # INTERPOLATION
 #########################################################
@@ -746,6 +671,8 @@ def filter_(z, n):
 #########################################################
 # HELPERS
 #########################################################
+
+# copied to io/wrappers
 def writeNeuroscopeEvents(path, ep, name):
 	f = open(path, 'w')
 	for i in range(len(ep)):
@@ -754,6 +681,7 @@ def writeNeuroscopeEvents(path, ep, name):
 	f.close()		
 	return
 
+# necessary??
 def getAllInfos(data_directory, datasets):
 	allm = np.unique(["/".join(s.split("/")[0:2]) for s in datasets])
 	infos = {}
@@ -763,6 +691,7 @@ def getAllInfos(data_directory, datasets):
 		infos[m.split('/')[1]] = pd.read_csv(os.path.join(path, csv_file), index_col = 0)
 	return infos
 
+# copied to neural_tuning
 def computeSpeed(position, ep, bin_size = 0.1):
 	time_bins 	= np.arange(position.index[0], position.index[-1]+bin_size*1e6, bin_size*1e6)
 	index 		= np.digitize(position.index.values, time_bins)
@@ -791,6 +720,7 @@ def getSyncAsync(spk1, spk2):
 	spkasync = np.array(spkasync)
 	return spksync, spkasync
 
+#necessary????
 
 def getSpikesSyncAsync(spks, hd_neurons):
 	"""
@@ -809,6 +739,7 @@ def getSpikesSyncAsync(spks, hd_neurons):
 
 	return allsync, allasync
 
+#necessary????
 	
 def sample_frates(frates_value, time_index, hd_neurons, n = 30):
 	spikes_random = {}
@@ -820,6 +751,8 @@ def sample_frates(frates_value, time_index, hd_neurons, n = 30):
 			tmp[j] = nts.Ts(time_index[s[j]>0])
 		spikes_random[hd_neurons[i]] = tmp
 	return spikes_random
+
+#necessary????
 
 def sampleSpikesFromAngularPosition(tcurve, angles, ep, bin_size = 1000):
 	"""
@@ -846,6 +779,8 @@ def sampleSpikesFromAngularPosition(tcurve, angles, ep, bin_size = 1000):
 	spikes_random = sample_frates(frates_value, time_index, hd_neurons)
 
 	return spikes_random
+
+#necessary????
 
 def sampleSpikesFromAngularVelocity(ahvcurve, angles, ep, bin_size = 1000):
 	"""
@@ -885,6 +820,7 @@ def sampleSpikesFromAngularVelocity(ahvcurve, angles, ep, bin_size = 1000):
 
 	return spikes_random
 
+#copied to io/wrappers
 def loadShankStructure(generalinfo):
 	shankStructure = {}
 	for k,i in zip(generalinfo['shankStructure'][0][0][0][0],range(len(generalinfo['shankStructure'][0][0][0][0]))):
@@ -895,6 +831,7 @@ def loadShankStructure(generalinfo):
 	
 	return shankStructure	
 
+#necessary????
 def binSpikeTrain(spikes, epochs, bin_size, std=0):
 	if epochs is None:
 		start = np.inf
