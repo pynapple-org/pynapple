@@ -383,6 +383,7 @@ def computeSpatialInfo(tc, angle, ep):
 	return SI
 
 
+
 def findHDCells(tuning_curves, z = 50, p = 0.0001 , m = 1):
 	"""
 		Peak firing rate larger than 1
@@ -472,6 +473,74 @@ def computePlaceFields(spikes, position, ep, nb_bins = 200, frequency = 120.0):
 		
 	extent = (xbins[0], xbins[-1], ybins[0], ybins[-1]) # USEFUL FOR MATPLOTLIB
 	return place_fields, extent
+
+def computePlaceFields_continuous(C, position, nb_bins = (20,20)):
+    if type(nb_bins) == int:
+        nb_bins = (nb_bins,nb_bins)
+        
+    #Note: is this just restrict to the same time frames
+    time_frame 		= C.index.values
+    time_bins		= np.zeros(len(time_frame)+1)
+    time_bins[1:-1] = time_frame[1:] - np.diff(time_frame)/2
+    time_bins[0] = time_frame[0] - np.mean(np.diff(time_frame))
+    time_bins[-1] = time_frame[-1] + np.mean(np.diff(time_frame))
+
+    index 			= np.digitize(position.index.values, time_bins)
+    tmp 			= position.groupby(index).mean()
+    if 0 in tmp.index: 	tmp 			= tmp.drop(0)
+    if len(time_bins) in tmp.index: tmp			= tmp.drop(len(time_bins))	
+
+    xpos = tmp.iloc[:,0]
+    ypos = tmp.iloc[:,1]
+    xbins = np.linspace(xpos.min(), xpos.max()+1e-6, nb_bins[0]+1)
+    ybins = np.linspace(ypos.min(), ypos.max()+1e-6, nb_bins[1]+1)
+    xidx = np.digitize(xpos, xbins)-1
+    yidx = np.digitize(ypos, ybins)-1
+
+    place_fields = np.zeros((C.shape[1], nb_bins[0], nb_bins[1]))
+    for i in range(nb_bins[0]):
+        for j in range(nb_bins[1]):
+             idx = np.logical_and(xidx==i, yidx==j)
+             if np.sum(idx):
+                 place_fields[:,i,j] = C[idx].mean(0)
+		
+    extent = (xbins[0], xbins[-1], ybins[0], ybins[-1]) # USEFUL FOR MATPLOTLIB
+    return place_fields, extent
+
+def computeSpatialInfo_2D(tc, position, ep):
+    """
+    See Skaggs, McNaughton, Gothard 1992,
+    An Information-Theoretic Approach to Deciphering the Hippocampal Code
+
+    Parameters
+    ----------
+    tc : tuning curves, obtained from computePlaceFields
+    position : Tsd of x y position
+    ep : epochs to restrict to
+
+    Returns
+    -------
+    SI : TYPE
+        DESCRIPTION.
+
+    """
+    nb_bins = tc.shape[0]+1
+    bins 	= np.linspace(0, 2*np.pi, nb_bins)
+	angle 			= angle.restrict(ep)
+	# Smoothing the angle here
+	tmp 			= pd.Series(index = angle.index.values, data = np.unwrap(angle.values))
+	tmp2 			= tmp.rolling(window=50,win_type='gaussian',center=True,min_periods=1).mean(std=10.0)
+	angle			= nts.Tsd(tmp2%(2*np.pi))
+	pf = tc.values
+    
+	occupancy, _ 	= np.histogram(angle, bins)
+    occupancy = computeOccupancy(position)
+    occ = np.atleast_2d(occupancy/occupancy.sum()).T
+	f = np.sum(pf * occ, 0)
+	pf = pf / f
+	SI = np.sum(occ * pf * np.log2(pf), 0)
+	SI = pd.DataFrame(index = tc.columns, columns = ['SI'], data = SI)
+	return SI
 
 def computeOccupancy(position_tsd, nb_bins = 100):
     xpos = position_tsd.iloc[:,0]
