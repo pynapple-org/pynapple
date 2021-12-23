@@ -9,8 +9,17 @@ from .. import core as nap
 
 '''
 Wrappers should be able to distinguish between raw data or matlab processed data
+
+TODO:
+    load/write NWB
+    
+
 '''
 
+
+
+## THIS SHOULD BE DISCUSSED.
+## SEEMS TO COMPLICATED
 def loadSpikeData(path, index=None, fs = 20000):
 	"""
 	if the path contains a folder named /Analysis, 
