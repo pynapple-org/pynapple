@@ -1,0 +1,34 @@
+site_name: pynapple
+nav:  
+  - Overview: index.md
+  - Usage:
+    - Tutorials:
+      - Quick start: usage.md
+      - Core: pynapple-core-notebook.ipynb
+    #   # - IO: pynapple-io-notebook.ipynb
+    #   # - Process: pynapple-process-notebook.ipynb
+    # - pynacollada: pynacollada.md
+  - Modules:
+    - Core:
+      - Time Series: time_series.md
+      - Interval Sets: interval_set.md
+      - Time Series Group: ts_group.md
+    - IO: io.md
+    # - Process: process.md
+  # - Plugins:
+  #   - pynalog: pynalog.md
+  #   - pynapplesonfire: pynapplesonfire.md
+  - Contributing: CONTRIBUTING.md
+  - Authors: AUTHORS.md
+  - History: HISTORY.md
+theme:
+  name: 'material'
+  palette:
+    primary: 'green'
+  # features:
+  #   - navigation.tabs
+repo_url: https://github.com/PeyracheLab/pynapple
+plugins:
+  - search
+  - mkdocstrings
+  - mkdocs-jupyter

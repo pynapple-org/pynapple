@@ -357,7 +357,8 @@ def computeAngularTuningCurves(spikes, angle, ep, nb_bins = 180, frequency = 120
 		spks 			= spikes[k]
 		# true_ep 		= nts.IntervalSet(start = np.maximum(angle.index[0], spks.index[0]), end = np.minimum(angle.index[-1], spks.index[-1]))		
 		spks 			= spks.restrict(ep)	
-		angle_spike 	= angle.restrict(ep).realign(spks)
+		angle_spike 	= spks.value_from(angle, ep)
+		#angle_spike 	= angle.restrict(ep).realign(spks)
 		spike_count, bin_edges = np.histogram(angle_spike, bins)
 		occupancy, _ 	= np.histogram(angle, bins)
 		spike_count 	= spike_count/occupancy		
