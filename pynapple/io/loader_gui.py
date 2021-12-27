@@ -5,6 +5,37 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QStackedLayout  # add this import
+import scipy.signal
+import matplotlib.pyplot as plt
+import numpy as np
+
+def check_ttl_detection(file, n_channels=1, channel=0, bytes_size=2, fs=20000.0):
+    """
+        load ttl from analogin.dat
+    """
+    f = open(file, 'rb')
+    startoffile = f.seek(0, 0)
+    endoffile = f.seek(0, 2)
+    n_samples = int((endoffile-startoffile)/n_channels/bytes_size)
+    f.close()
+    with open(file, 'rb') as f:
+        data = np.fromfile(f, np.uint16).reshape((n_samples, n_channels))
+    if n_channels == 1:
+        data = data.flatten().astype(np.int32)
+    else:
+        data = data[:,channel].flatten().astype(np.int32)
+    data = data/data.max()
+    peaks,_ = scipy.signal.find_peaks(np.diff(data), height=0.5)
+    timestep = np.arange(0, len(data))/fs
+    analogin = pd.Series(index = timestep, data = data)
+    peaks+=1
+    ttl = pd.Series(index = timestep[peaks], data = data[peaks])    
+    plt.figure()
+    plt.plot(analogin)
+    plt.plot(ttl, 'o')
+    plt.title(file)
+    plt.show()
+    return
 
 
 class EpochsTable(QTableWidget):
@@ -180,65 +211,22 @@ class SessionInformationTab(QWidget):
         self.session_information['name'] = name
         # print(self.session_information)
 
-
-# class TrackingTable(QTableWidget):
-#     def __init__(self, r, c, path):
-#         super().__init__(r, c)
-#         self.path = path
-#         self.setHorizontalHeaderLabels(['CSV file', 'TTL file', 'start', 'end'])
-
-#         self.check_change = True
-#         self.cellChanged.connect(self.c_current)
-
-#         header = self.horizontalHeader()
-#         header.setSectionResizeMode(QHeaderView.ResizeToContents)     
-#         for i in range(4):  
-#             header.setSectionResizeMode(i, QHeaderView.Stretch)
-
-#         self.epochs = pd.DataFrame(index = [], columns = ['start', 'end', 'label'])
-#         self.show()
-
-#     def c_current(self):
-#         if self.check_change:
-#             row = self.currentRow()
-#             col = self.currentColumn()
-#             value = self.item(row, col)
-#             value = value.text()
-#             if col in [0,1]: value = float(value)
-#             self.epochs.loc[row,self.epochs.columns[col]] = value
-#             if row==0 and col==2: self.item(0,2).setForeground(QColor('black'))
-
-#     def open_sheet(self):
-#         self.check_change = False
-#         suggested_dir = self.path if self.path else os.getenv('HOME')
-#         path = QFileDialog.getOpenFileName(self, 'Open CSV', suggested_dir, 'CSV(*.csv)')
-#         if path[0] != '':
-#             self.epochs = pd.read_csv(path[0], usecols=[0,1], header = None, names = ['start', 'end'])
-#             self.setRowCount(0)
-#             for r in self.epochs.index:
-#                 row = self.rowCount()
-#                 self.insertRow(row)
-#                 for column, clabel in enumerate(['start', 'end']):
-#                     item = QTableWidgetItem(str(self.epochs.loc[r,clabel]))
-#                     self.setItem(row, column, item)
-#             self.epochs['label'] = ''
-#         self.check_change = True
-
-#     def change_table(self, n):
-#         self.setRowCount(n)
-
-#     def update_path_info(self, path):
-#         self.path = path
-#         print("yo", path)
-
 class TrackingTab(QWidget):
     def __init__(self, path=None, parent=None):
         super(TrackingTab, self).__init__(parent)
         self.path = path
         self.time_units = 's'
-        self.n_tracking = 1
         self.tracking_method = 'Optitrack'
         self.csv_files = []
+        self.parameters = pd.DataFrame(
+            columns = [ 'csv', 
+                        'ttl', 
+                        'n_channels', 
+                        'tracking_channel', 
+                        'bytes_size',
+                        'fs',
+                        'epoch'])
+        self.ttl_param_widgets = {}
 
         self.layout = QVBoxLayout(self)
         
@@ -260,66 +248,123 @@ class TrackingTab(QWidget):
         self.layout.addLayout(laytop)
 
         # Table view
-        # self.table = TrackingTable(1, 4, self.path)
-        self.table = QTableWidget(1,3)
-        self.table.setHorizontalHeaderLabels(['CSV file', 'TTL file', 'Epoch'])
+        self.table = QTableWidget(1,8)
+        self.table.setHorizontalHeaderLabels(
+            ['CSV file', 
+            'TTL file', 
+            'Number\nof\nchannels', 
+            'Tracking\nchannel', 
+            'Bytes\nsize', 
+            'Sampling\nfrequency\n(Hz)', 
+            'Start\nepoch',
+            'TTL\ndetection'
+            ]
+            )
+        self.table.itemDoubleClicked.connect(self.change_file)
+        header = self.table.horizontalHeader()       
+        header.setSectionResizeMode(QHeaderView.Stretch)
+
         self.layout.addWidget(self.table)
-        header = self.table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeToContents)     
-        for i in range(3):  
-            header.setSectionResizeMode(i, QHeaderView.Stretch)
 
         self.layout.addStretch()
 
     def load_csv_files(self, s):
         suggested_dir = self.path if self.path else os.getenv('HOME')
-        paths = QFileDialog.getOpenFileNames(self, 'Open CSV', suggested_dir, 'CSV(*.csv)')
+        paths = QFileDialog.getOpenFileNames(self, 'Open CSV', suggested_dir, 'CSV(*.csv)')        
         self.csv_files = paths[0]
         self.table.setRowCount(len(self.csv_files))
+
         for i in range(len(self.csv_files)):
-            item = QTableWidgetItem(os.path.basename(self.csv_files[i]))
-            self.table.setItem(i, 0, item)
+            path = os.path.dirname(self.csv_files[i])
+            files = os.listdir(os.path.dirname(self.csv_files[i]))
+            filename = os.path.basename(self.csv_files[i])
 
-            nepoch = 1
+            # Updating parameters table
+            self.parameters.loc[filename, 'csv'] = self.csv_files[i]            
 
-            self.table.setCellWidget(i, 2, QSpinBox())
+            # Set filename in place
+            self.table.setItem(i, 0, QTableWidgetItem(filename))
 
-            # create an item
-            item = QTableWidgetItem('12/1/12')
+            # Infer the epoch
+            n = os.path.splitext(filename)[0].split('_')[-1]
+            nepoch = QSpinBox()
+            if n.isdigit(): 
+                nepoch.setValue(int(n))
+                self.parameters.loc[filename,'epoch'] = int(n)
+            nepoch.valueChanged.connect(self.change_ttl_params)
+            self.table.setCellWidget(i, 6, nepoch)
+
+            # Infer the ttl file
+            possiblettlfile = [f for f in files if '_'+n in f and f != filename]
+            if len(possiblettlfile):
+                item = QTableWidgetItem(possiblettlfile[0])
+                self.parameters.loc[filename,'ttl'] = os.path.join(path, possiblettlfile[0])
+            else:
+                item = QTableWidgetItem("Select ttl file")
             self.table.setItem(i, 1, item)
-
-            # if you don't want to allow in-table editing, either disable the table like:
-            # table.setEditTriggers( QTableWidget.NoEditTriggers )
-
-            # or specifically for this item
             item.setFlags( item.flags() ^ Qt.ItemIsEditable)
 
-            # create a connection to the double click event
-            self.table.itemDoubleClicked.connect(self.editItem)
+            # Default analogin parameters
+            self.fill_default_value_parameters(filename, i)
 
+            # Check button
+            check_button = QPushButton("Check")
+            check_button.clicked.connect(self.check_ttl)
+            self.table.setCellWidget(i,7,check_button)
 
+        header = self.table.horizontalHeader()       
+        header.setSectionResizeMode(QHeaderView.ResizeToContents)
+        header.setSectionResizeMode(0, QHeaderView.Stretch)
 
-    def editItem(self, item):
-        print('editing', item.text())
+    def check_ttl(self):
+        r = self.table.currentRow()
+        check_ttl_detection(
+            file=self.parameters.loc[self.parameters.index[r],'ttl'],
+            n_channels=self.parameters.loc[self.parameters.index[r],'n_channels'],
+            channel=self.parameters.loc[self.parameters.index[r],'tracking_channel'],
+            bytes_size=self.parameters.loc[self.parameters.index[r],'bytes_size'],
+            fs=self.parameters.loc[self.parameters.index[r],'fs']
+            )
+        
+        
+    def fill_default_value_parameters(self, filename, row):        
+        ttl_param_widgets = {}
+        iterates = zip(
+            ['n_channels', 'tracking_channel', 'bytes_size', 'fs'],
+            [2,3,4,5],
+            [1, 0, 2, 20000.0]
+            )        
+        for key, col, dval in iterates:
+            self.parameters.loc[filename,key] = dval
+            if key == 'fs':
+                ttl_param_widgets[key] = QDoubleSpinBox()
+                ttl_param_widgets[key].setMaximum(100000.0)
+                ttl_param_widgets[key].setSingleStep(1000.0)
+            else:
+                ttl_param_widgets[key] = QSpinBox()
+            ttl_param_widgets[key].setValue(dval)
+            ttl_param_widgets[key].valueChanged.connect(self.change_ttl_params)
+            self.table.setCellWidget(row, col, ttl_param_widgets[key])
+        self.ttl_param_widgets[row] = ttl_param_widgets
 
-        # if path[0] != '':
-        #     self.epochs = pd.read_csv(path[0], usecols=[0,1], header = None, names = ['start', 'end'])
-        #     self.setRowCount(0)
-        #     for r in self.epochs.index:
-        #         row = self.rowCount()
-        #         self.insertRow(row)
-        #         for column, clabel in enumerate(['start', 'end']):
-        #             item = QTableWidgetItem(str(self.epochs.loc[r,clabel]))
-        #             self.setItem(row, column, item)
-        #     self.epochs['label'] = ''
-        # self.check_change = True
-
-
-    # def update_path_info(self, path):
-    #     self.table.update_path_info(path)
+    def change_file(self, item):
+        suggested_dir = self.path if self.path else os.getenv('HOME')
+        if self.table.currentColumn() == 0:
+            paths = QFileDialog.getOpenFileName(self, 'Open CSV', suggested_dir, 'CSV(*.csv)')        
+        elif self.table.currentColumn() == 1:
+            paths = QFileDialog.getOpenFileName(self, 'Open TTL file', suggested_dir)
+        filename = os.path.basename(paths[0])
+        item.setText(filename)
+        self.parameters.iloc[self.table.currentRow(),self.table.currentColumn()] = paths[0]
 
     def get_tracking_method(self, s):
         self.tracking_method = s
+
+    def change_ttl_params(self, value):
+        if self.table.currentColumn() == 5: 
+            self.parameters.iloc[self.table.currentRow(),self.table.currentColumn()] = float(value)
+        else:
+            self.parameters.iloc[self.table.currentRow(),self.table.currentColumn()] = int(value)    
 
 class HelpTab(QWidget):
     def __init__(self, parent=None):
@@ -338,7 +383,7 @@ class BaseLoaderGUI(QMainWindow):
         self.path = path
 
         self.setWindowTitle("The minimalist session loader")
-        self.setMinimumSize(600, 480)
+        self.setMinimumSize(760, 480)
 
         pagelayout = QVBoxLayout()
 
