@@ -11,8 +11,8 @@ with open('docs/HISTORY.md') as history_file:
     history = history_file.read()
 
 requirements = [
-        'pandas>=1.0.3',
-        'numba>=0.46.0',
+        'pandas',
+        'numba',
         'numpy',
         'scipy'
 

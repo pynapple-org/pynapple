@@ -116,7 +116,8 @@ class SessionInformationTab(QWidget):
         
         self.session_information = {
             'path':path,
-            'name':None
+            'name':None,
+            'description':None
         }
                 
         self.layout = QVBoxLayout(self)
@@ -134,12 +135,13 @@ class SessionInformationTab(QWidget):
         # Table view 
         self.layout.addWidget(QLabel("Additional informations :"))
 
-        self.table = QTableWidget(2,2)
+        self.table = QTableWidget(3,2)
         self.layout.addWidget(self.table)
 
         self.table.setHorizontalHeaderLabels(['key', 'value'])
-        self.table.setItem(0, 0, QTableWidgetItem("experimentalist"))
-        self.table.setItem(1, 0, QTableWidgetItem("genotype"))
+        self.table.setItem(0, 0, QTableWidgetItem("description"))
+        self.table.setItem(1, 0, QTableWidgetItem("experimentalist"))
+        self.table.setItem(2, 0, QTableWidgetItem("genotype"))
 
         self.table.cellChanged.connect(self.c_current)
 
@@ -178,16 +180,146 @@ class SessionInformationTab(QWidget):
         self.session_information['name'] = name
         # print(self.session_information)
 
+
+# class TrackingTable(QTableWidget):
+#     def __init__(self, r, c, path):
+#         super().__init__(r, c)
+#         self.path = path
+#         self.setHorizontalHeaderLabels(['CSV file', 'TTL file', 'start', 'end'])
+
+#         self.check_change = True
+#         self.cellChanged.connect(self.c_current)
+
+#         header = self.horizontalHeader()
+#         header.setSectionResizeMode(QHeaderView.ResizeToContents)     
+#         for i in range(4):  
+#             header.setSectionResizeMode(i, QHeaderView.Stretch)
+
+#         self.epochs = pd.DataFrame(index = [], columns = ['start', 'end', 'label'])
+#         self.show()
+
+#     def c_current(self):
+#         if self.check_change:
+#             row = self.currentRow()
+#             col = self.currentColumn()
+#             value = self.item(row, col)
+#             value = value.text()
+#             if col in [0,1]: value = float(value)
+#             self.epochs.loc[row,self.epochs.columns[col]] = value
+#             if row==0 and col==2: self.item(0,2).setForeground(QColor('black'))
+
+#     def open_sheet(self):
+#         self.check_change = False
+#         suggested_dir = self.path if self.path else os.getenv('HOME')
+#         path = QFileDialog.getOpenFileName(self, 'Open CSV', suggested_dir, 'CSV(*.csv)')
+#         if path[0] != '':
+#             self.epochs = pd.read_csv(path[0], usecols=[0,1], header = None, names = ['start', 'end'])
+#             self.setRowCount(0)
+#             for r in self.epochs.index:
+#                 row = self.rowCount()
+#                 self.insertRow(row)
+#                 for column, clabel in enumerate(['start', 'end']):
+#                     item = QTableWidgetItem(str(self.epochs.loc[r,clabel]))
+#                     self.setItem(row, column, item)
+#             self.epochs['label'] = ''
+#         self.check_change = True
+
+#     def change_table(self, n):
+#         self.setRowCount(n)
+
+#     def update_path_info(self, path):
+#         self.path = path
+#         print("yo", path)
+
 class TrackingTab(QWidget):
-    def __init__(self, parent=None):
+    def __init__(self, path=None, parent=None):
         super(TrackingTab, self).__init__(parent)
-        lay = QVBoxLayout(self)
-        # Buttons
-        button_start = QPushButton("start") #self.lang["btn_start"])
-        button_stop = QPushButton("stop") #self.lang["btn_stop"])
-        lay.addWidget(button_start)
-        lay.addWidget(button_stop)
-        # lay.addStretch()
+        self.path = path
+        self.time_units = 's'
+        self.n_tracking = 1
+        self.tracking_method = 'Optitrack'
+        self.csv_files = []
+
+        self.layout = QVBoxLayout(self)
+        
+        laytop = QHBoxLayout()
+        laytop.addWidget(QLabel("Tracking system: "))
+        combobox1 = QComboBox()
+        combobox1.addItems(['Optitrack', 'Deep Lab Cut', 'Other'])
+        combobox1.currentTextChanged.connect(self.get_tracking_method)
+        laytop.addWidget(combobox1)
+        
+        # Load a csv
+        button = QPushButton("Load csv file(s)")
+        button.clicked.connect(self.load_csv_files)
+        button.resize(button.sizeHint())
+        laytop.addWidget(button)
+
+        laytop.addStretch()
+
+        self.layout.addLayout(laytop)
+
+        # Table view
+        # self.table = TrackingTable(1, 4, self.path)
+        self.table = QTableWidget(1,3)
+        self.table.setHorizontalHeaderLabels(['CSV file', 'TTL file', 'Epoch'])
+        self.layout.addWidget(self.table)
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeToContents)     
+        for i in range(3):  
+            header.setSectionResizeMode(i, QHeaderView.Stretch)
+
+        self.layout.addStretch()
+
+    def load_csv_files(self, s):
+        suggested_dir = self.path if self.path else os.getenv('HOME')
+        paths = QFileDialog.getOpenFileNames(self, 'Open CSV', suggested_dir, 'CSV(*.csv)')
+        self.csv_files = paths[0]
+        self.table.setRowCount(len(self.csv_files))
+        for i in range(len(self.csv_files)):
+            item = QTableWidgetItem(os.path.basename(self.csv_files[i]))
+            self.table.setItem(i, 0, item)
+
+            nepoch = 1
+
+            self.table.setCellWidget(i, 2, QSpinBox())
+
+            # create an item
+            item = QTableWidgetItem('12/1/12')
+            self.table.setItem(i, 1, item)
+
+            # if you don't want to allow in-table editing, either disable the table like:
+            # table.setEditTriggers( QTableWidget.NoEditTriggers )
+
+            # or specifically for this item
+            item.setFlags( item.flags() ^ Qt.ItemIsEditable)
+
+            # create a connection to the double click event
+            self.table.itemDoubleClicked.connect(self.editItem)
+
+
+
+    def editItem(self, item):
+        print('editing', item.text())
+
+        # if path[0] != '':
+        #     self.epochs = pd.read_csv(path[0], usecols=[0,1], header = None, names = ['start', 'end'])
+        #     self.setRowCount(0)
+        #     for r in self.epochs.index:
+        #         row = self.rowCount()
+        #         self.insertRow(row)
+        #         for column, clabel in enumerate(['start', 'end']):
+        #             item = QTableWidgetItem(str(self.epochs.loc[r,clabel]))
+        #             self.setItem(row, column, item)
+        #     self.epochs['label'] = ''
+        # self.check_change = True
+
+
+    # def update_path_info(self, path):
+    #     self.table.update_path_info(path)
+
+    def get_tracking_method(self, s):
+        self.tracking_method = s
 
 class HelpTab(QWidget):
     def __init__(self, parent=None):
@@ -231,7 +363,7 @@ class BaseLoaderGUI(QMainWindow):
 
         self.tab_session = SessionInformationTab(self.path)
         self.tab_epoch = EpochsTab(self.path)
-        self.tab_tracking = TrackingTab()
+        self.tab_tracking = TrackingTab(self.path)
         self.tab_help = HelpTab()
         
         self.tabs.addTab(self.tab_session, 'Session Information')
@@ -274,7 +406,7 @@ class BaseLoaderGUI(QMainWindow):
         self.directory_line.setText(self.path)
         self.tab_session.update_path_info(self.path)
         self.tab_epoch.update_path_info(self.path)
-
+        self.tab_tracking.update_path_info(self.path)
 
 
 
