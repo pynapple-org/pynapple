@@ -8,11 +8,16 @@ from PyQt5.QtWidgets import QStackedLayout  # add this import
 import scipy.signal
 import matplotlib.pyplot as plt
 import numpy as np
+import matplotlib
+matplotlib.use('Qt5Agg')
+import matplotlib.pyplot as plt
+
+
 
 def check_ttl_detection(file, n_channels=1, channel=0, bytes_size=2, fs=20000.0):
     """
         load ttl from analogin.dat
-    """
+    """    
     f = open(file, 'rb')
     startoffile = f.seek(0, 0)
     endoffile = f.seek(0, 2)
@@ -30,11 +35,13 @@ def check_ttl_detection(file, n_channels=1, channel=0, bytes_size=2, fs=20000.0)
     analogin = pd.Series(index = timestep, data = data)
     peaks+=1
     ttl = pd.Series(index = timestep[peaks], data = data[peaks])    
-    plt.figure()
-    plt.plot(analogin)
-    plt.plot(ttl, 'o')
-    plt.title(file)
-    plt.show()
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    ax.plot(analogin)
+    ax.plot(ttl, 'o')
+    ax.set_title(os.path.basename(file))
+    ax.set_xlabel("Time (s)")
+    fig.show()
     return
 
 
@@ -217,6 +224,7 @@ class TrackingTab(QWidget):
         self.path = path
         self.time_units = 's'
         self.tracking_method = 'Optitrack'
+        self.track_frequency = 120.0
         self.csv_files = []
         self.parameters = pd.DataFrame(
             columns = [ 'csv', 
@@ -237,6 +245,14 @@ class TrackingTab(QWidget):
         combobox1.currentTextChanged.connect(self.get_tracking_method)
         laytop.addWidget(combobox1)
         
+        laytop.addWidget(QLabel("Tracking sampling frequency (Hz): "))
+        fs = QDoubleSpinBox()
+        fs.setMaximum(100000.0)
+        fs.setSingleStep(10.0)
+        fs.setValue(self.track_frequency)
+        fs.valueChanged.connect(self.get_tracking_frequency)
+        laytop.addWidget(fs)
+
         # Load a csv
         button = QPushButton("Load csv file(s)")
         button.clicked.connect(self.load_csv_files)
@@ -255,7 +271,7 @@ class TrackingTab(QWidget):
             'Number\nof\nchannels', 
             'Tracking\nchannel', 
             'Bytes\nsize', 
-            'Sampling\nfrequency\n(Hz)', 
+            'TTL\nsampling\nfrequency\n(Hz)', 
             'Start\nepoch',
             'TTL\ndetection'
             ]
@@ -360,11 +376,18 @@ class TrackingTab(QWidget):
     def get_tracking_method(self, s):
         self.tracking_method = s
 
+    def get_tracking_frequency(self, s):
+        self.track_frequency = float(s)
+
     def change_ttl_params(self, value):
         if self.table.currentColumn() == 5: 
             self.parameters.iloc[self.table.currentRow(),self.table.currentColumn()] = float(value)
         else:
             self.parameters.iloc[self.table.currentRow(),self.table.currentColumn()] = int(value)    
+
+    def update_path_info(self, path):
+        self.path = path
+
 
 class HelpTab(QWidget):
     def __init__(self, parent=None):
@@ -440,6 +463,9 @@ class BaseLoaderGUI(QMainWindow):
         self.session_information = self.tab_session.session_information
         self.epochs = self.tab_epoch.table.epochs
         self.time_units_epochs = self.tab_epoch.time_units
+        self.tracking_parameters = self.tab_tracking.parameters
+        self.tracking_method = self.tab_tracking.tracking_method
+        self.tracking_frequency = self.tab_tracking.track_frequency
         self.close()
 
     def reject(self):

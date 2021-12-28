@@ -40,14 +40,66 @@ class BaseLoader(object):
             # Extracting all the informations from gui loader
             if self.window.status:
                 self.session_information = self.window.session_information
-                self.epochs = self._make_interval_set(self.window.epochs, self.window.time_units_epochs)
-                self.position = None
+                self.position = self._make_position(
+                    self.tracking_parameters,
+                    self.tracking_method,
+                    self.tracking_frequency,
+                    self.window.epochs,
+                    self.window.time_units_epochs
+                    )                
+                self.epochs = self._make_epochs(
+                    self.window.epochs, 
+                    self.window.time_units_epochs
+                    )
 
             # Save the data
             # self.save_data(self.nwb_path)
 
+    def _make_position(self, parameters, method, frequency, epochs, time_units):
+        """
+        Make the position TSDFrame with the parameters extracted from the GUI.
+        """
+        frames = []
+        others = []
 
-    def _make_interval_set(self, epochs, time_units='s'):
+        for i, f in enumerate(parameters.index):
+            print(i, f)
+            csv_file = os.path.join(path, "".join(s for s in files if f+'.csv' in s))
+            position = pd.read_csv(csv_file, header = [4,5], index_col = 1)
+            if 1 in position.columns:
+                position = position.drop(labels = 1, axis = 1)
+            position = position[~position.index.duplicated(keep='first')]
+            analogin_file = os.path.splitext(csv_file)[0]+'_analogin.dat'
+            if not os.path.split(analogin_file)[1] in files:
+                print("No analogin.dat file found.")
+                print("Please provide it as "+os.path.split(analogin_file)[1])
+                print("Exiting ...")
+                sys.exit()
+            else:
+                ttl = loadTTLPulse(analogin_file, n_channels, trackchannel)
+            
+            if len(ttl):
+                length = np.minimum(len(ttl), len(position))
+                ttl = ttl.iloc[0:length]
+                position = position.iloc[0:length]
+                time_offset = wake_ep.as_units('s').iloc[i,0] + ttl.index[0]
+            else:
+                print("No ttl for ", i, f)
+                time_offset = wake_ep.as_units('s').iloc[i,0]
+            
+            position.index += time_offset
+            wake_ep.iloc[i,0] = np.int64(np.maximum(wake_ep.as_units('s').iloc[i,0], position.index[0])*1e6)
+            wake_ep.iloc[i,1] = np.int64(np.minimum(wake_ep.as_units('s').iloc[i,1], position.index[-1])*1e6)
+
+            if len(position.columns) > 6:
+                frames.append(position.iloc[:,0:6])
+                others.append(position.iloc[:,6:])
+            else:
+                frames.append(position)
+
+
+
+    def _make_epochs(self, epochs, time_units='s'):
         """
         Split GUI epochs into dict of epochs
         """
@@ -57,6 +109,8 @@ class BaseLoader(object):
             tmp = epochs.loc[labels[l]]
             isets[l] = nap.IntervalSet(start=tmp['start'],end=tmp['end'],time_units=time_units)
         return isets
+
+
 
     def save_data(self, path):
         """Summary
