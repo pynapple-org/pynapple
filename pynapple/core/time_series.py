@@ -101,7 +101,10 @@ class Tsd(pd.Series):
             ix[np.floor(ix / 2) * 2 != ix] = np.NaN
             ix = np.floor(ix/2)
             ix = ~np.isnan(ix)
-            super().__init__(index=t[ix],data=d[ix])
+            if d is not None:
+                super().__init__(index=t[ix],data=d[ix])
+            else:
+                super().__init__(index=t[ix],data=None)
         else:
             time_support = IntervalSet(start = t[0], end = t[-1])
             super().__init__(index=t, data=d)

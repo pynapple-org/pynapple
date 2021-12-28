@@ -154,8 +154,8 @@ class SessionInformationTab(QWidget):
         
         self.session_information = {
             'path':path,
-            'name':None,
-            'description':None
+            'name':'',
+            'description':''
         }
                 
         self.layout = QVBoxLayout(self)
@@ -173,13 +173,15 @@ class SessionInformationTab(QWidget):
         # Table view 
         self.layout.addWidget(QLabel("Additional informations :"))
 
-        self.table = QTableWidget(3,2)
+        self.table = QTableWidget(5,2)
         self.layout.addWidget(self.table)
 
         self.table.setHorizontalHeaderLabels(['key', 'value'])
         self.table.setItem(0, 0, QTableWidgetItem("description"))
-        self.table.setItem(1, 0, QTableWidgetItem("experimentalist"))
-        self.table.setItem(2, 0, QTableWidgetItem("genotype"))
+        self.table.setItem(1, 0, QTableWidgetItem("experimenter"))
+        self.table.setItem(2, 0, QTableWidgetItem("lab"))
+        self.table.setItem(3, 0, QTableWidgetItem("institution"))
+        self.table.setItem(4, 0, QTableWidgetItem("genotype"))
 
         self.table.cellChanged.connect(self.c_current)
 
