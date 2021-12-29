@@ -13,6 +13,7 @@ from .loader_gui import BaseLoaderGUI
 from PyQt5.QtWidgets import QApplication
 
 from pynwb import NWBFile, NWBHDF5IO, TimeSeries
+from pynwb.behavior import Position, SpatialSeries, CompassDirection
 import datetime
 
 import pandas as pd
@@ -47,6 +48,7 @@ class BaseLoader(object):
             # Extracting all the informations from gui loader
             if self.window.status:
                 self.session_information = self.window.session_information
+                self.tracking_frequency = self.window.tracking_frequency
                 self.position = self._make_position(
                     self.window.tracking_parameters,
                     self.window.tracking_method,
@@ -63,6 +65,7 @@ class BaseLoader(object):
                     self.window.epochs,
                     self.window.time_units_epochs
                     )
+
 
             # Save the data
             # self.save_data(path)
@@ -242,11 +245,32 @@ class BaseLoader(object):
             lab=self.session_information['lab']
         )
 
+        data = self.position.as_units('s')
+        position = Position()        
+        for c in ['x', 'y', 'z']:
+            tmp = SpatialSeries(
+                name=c, 
+                data=data[c].values, 
+                timestamps=data.index.values, 
+                unit='',
+                reference_frame='')
+            position.add_spatial_series(tmp)
+        direction = CompassDirection()
+        for c in ['rx', 'ry', 'rz']:
+            tmp = SpatialSeries(
+                name=c, 
+                data=data[c].values, 
+                timestamps=data.index.values, 
+                unit='radian',
+                reference_frame='')
+            direction.add_spatial_series(tmp)
 
+        self.nwbfile.add_acquisition(position)
+        self.nwbfile.add_acquisition(direction)
+            
 
         with NWBHDF5IO(self.nwbfilepath, 'w') as io:
             io.write(self.nwbfile)
-
 
         return
 
