@@ -48,6 +48,7 @@ class BaseLoader(object):
             # Extracting all the informations from gui loader
             if self.window.status:
                 self.session_information = self.window.session_information
+                self.name = self.session_information['name']
                 self.tracking_frequency = self.window.tracking_frequency
                 self.position = self._make_position(
                     self.window.tracking_parameters,
@@ -66,9 +67,8 @@ class BaseLoader(object):
                     self.window.time_units_epochs
                     )
 
-
             # Save the data
-            # self.save_data(path)
+            self.create_nwb_file(path)
 
     def load_optitrack_csv(self, csv_file):
         """Summary
@@ -220,7 +220,7 @@ class BaseLoader(object):
         iset = isets.merge_close_intervals(0.0) 
         return iset
 
-    def save_data(self, path):
+    def create_nwb_file(self, path):
         """Summary
         
         Parameters
@@ -237,7 +237,7 @@ class BaseLoader(object):
         if not os.path.exists(self.nwb_path):
             os.makedirs(self.nwb_path)
         self.nwbfilepath = os.path.join(self.nwb_path, self.session_information['name']+'.nwb')
-        self.nwbfile = NWBFile(
+        nwbfile = NWBFile(
             session_description=self.session_information['description'],
             identifier=self.session_information['name'],
             session_start_time=datetime.datetime.now(datetime.timezone.utc),
@@ -245,6 +245,7 @@ class BaseLoader(object):
             lab=self.session_information['lab']
         )
 
+        # Tracking
         data = self.position.as_units('s')
         position = Position()        
         for c in ['x', 'y', 'z']:
@@ -265,15 +266,80 @@ class BaseLoader(object):
                 reference_frame='')
             direction.add_spatial_series(tmp)
 
-        self.nwbfile.add_acquisition(position)
-        self.nwbfile.add_acquisition(direction)
-            
+        nwbfile.add_acquisition(position)
+        nwbfile.add_acquisition(direction)
+        
+        # Epochs
+        for ep in self.epochs.keys():
+            epochs = self.epochs[ep].as_units('s')
+            for i in self.epochs[ep].index:
+                nwbfile.add_epoch(
+                    start_time=epochs.loc[i,'start'],
+                    stop_time=epochs.loc[i,'end'],
+                    tags=[ep] # This is stupid nwb who tries to parse the string
+                    )
 
         with NWBHDF5IO(self.nwbfilepath, 'w') as io:
-            io.write(self.nwbfile)
+            io.write(nwbfile)
 
         return
 
     def load_data(self, path):
-        print("yo")
+        """Summary
+        
+        Parameters
+        ----------
+        path : TYPE
+            Description
+        
+        Returns
+        -------
+        TYPE
+            Description
+        """
+        self.nwb_path = os.path.join(path, 'pynapplenwb')
+        if os.path.exists(self.nwb_path):
+            files = os.listdir(self.nwb_path)
+        else:
+            raise RuntimeError("Path {} does not exist.".format(self.nwb_path))
+        self.nwbfilename = [f for f in os.listdir(self.nwb_path) if 'nwb' in f][0]
+        self.nwbfilepath = os.path.join(self.nwb_path, self.nwbfilename)
+
+        io = NWBHDF5IO(self.nwbfilepath, 'r+')
+        nwbfile = io.read()
+
+        position = {}
+        acq_keys = nwbfile.acquisition.keys()
+        if 'CompassDirection' in acq_keys:
+            compass = nwbfile.acquisition['CompassDirection']            
+            for k in compass.spatial_series.keys():
+                position[k] = pd.Series(
+                    index = compass.get_spatial_series(k).timestamps[:],
+                    data = compass.get_spatial_series(k).data[:],
+                    )
+        if 'Position' in acq_keys:
+            tracking = nwbfile.acquisition['Position']
+            for k in tracking.spatial_series.keys():
+                position[k] = pd.Series(
+                    index = tracking.get_spatial_series(k).timestamps[:],
+                    data = tracking.get_spatial_series(k).data[:],
+                    )
+        position = pd.DataFrame.from_dict(position)
+        self.position = nap.TsdFrame(position, time_units = 's')
+
+        epochs = nwbfile.epochs.to_dataframe()
+        # NWB is dumb and cannot take a single string for labels
+        epochs['label'] = [epochs.loc[i,'tags'][0] for i in epochs.index]
+        epochs = epochs.drop(labels='tags', axis=1)
+        epochs = epochs.rename(columns={'start_time':'start','stop_time':'end'})
+        self.epochs = self._make_epochs(epochs)
+
+        self.time_support = self._join_epochs(
+            epochs,
+            's'
+            )
+
+
+        io.close()
+
         return

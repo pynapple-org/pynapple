@@ -155,7 +155,11 @@ class SessionInformationTab(QWidget):
         self.session_information = {
             'path':path,
             'name':'',
-            'description':''
+            'description':'',
+            'experimenter':'',
+            'lab':'',
+            'institution':'',
+            'genotype':''
         }
                 
         self.layout = QVBoxLayout(self)
@@ -208,7 +212,7 @@ class SessionInformationTab(QWidget):
         value = value.text()
         key = self.table.item(row,0).text()
         self.session_information[key] = value
-        # print(self.session_information)
+        print(self.session_information)
 
     def add_row(self):
         row = self.table.rowCount()
