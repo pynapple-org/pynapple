@@ -70,6 +70,8 @@ class BaseLoader(object):
 
                 # Save the data
                 self.create_nwb_file(path)
+            app.quit()
+
 
     def load_optitrack_csv(self, csv_file):
         """Summary
