@@ -14,6 +14,7 @@ from PyQt5.QtWidgets import QApplication
 
 from pynwb import NWBFile, NWBHDF5IO, TimeSeries
 from pynwb.behavior import Position, SpatialSeries, CompassDirection
+from pynwb.file import Subject
 import datetime
 
 import pandas as pd
@@ -25,7 +26,6 @@ class BaseLoader(object):
     General loader for epochs and tracking data
     """
     def __init__(self, path=None):
-        self.data = None
         self.path = path
 
         start_gui = True
@@ -48,6 +48,7 @@ class BaseLoader(object):
             # Extracting all the informations from gui loader
             if self.window.status:
                 self.session_information = self.window.session_information
+                self.subject_information = self.window.subject_information
                 self.name = self.session_information['name']
                 self.tracking_frequency = self.window.tracking_frequency
                 self.position = self._make_position(
@@ -67,8 +68,8 @@ class BaseLoader(object):
                     self.window.time_units_epochs
                     )
 
-            # Save the data
-            self.create_nwb_file(path)
+                # Save the data
+                self.create_nwb_file(path)
 
     def load_optitrack_csv(self, csv_file):
         """Summary
@@ -107,7 +108,7 @@ class BaseLoader(object):
         print("TODO")
         return
 
-    def load_ttl_pulse(self, ttl_file, n_channels=1, channel=0, bytes_size=2, fs=20000.0):
+    def load_ttl_pulse(self, ttl_file, tracking_frequency, n_channels=1, channel=0, bytes_size=2, fs=20000.0, threshold=0.3,):
         """Summary
         
         Parameters
@@ -140,66 +141,64 @@ class BaseLoader(object):
         else:
             data = data[:,channel].flatten().astype(np.int32)
         data = data/data.max()
-        peaks,_ = scipy.signal.find_peaks(np.diff(data), height=0.5)
+        peaks,_ = scipy.signal.find_peaks(np.diff(data), height=threshold, distance=int(fs/(tracking_frequency*2)))
         timestep = np.arange(0, len(data))/fs
-        # analogin = pd.Series(index = timestep, data = data)
+        analogin = pd.Series(index = timestep, data = data)
         peaks+=1
-        ttl = pd.Series(index = timestep[peaks], data = data[peaks])    
+        ttl = pd.Series(index = timestep[peaks], data = data[peaks])
         return ttl
 
     def _make_position(self, parameters, method, frequency, epochs, time_units):
         """
         Make the position TSDFrame with the parameters extracted from the GUI.
         """
-        frames = []
+        if len(parameters.index) == 0:
+            return None
+        else:
+            frames = []
 
-        for i, f in enumerate(parameters.index):
+            for i, f in enumerate(parameters.index):
 
-            if method.lower() == 'optitrack':
-                position = self.load_optitrack_csv(parameters.loc[f,'csv'])
-            elif method.lower() == 'deeplabcut':
-                position = self.load_dlc_csv(parameters.loc[f,'csv'])
+                if method.lower() == 'optitrack':
+                    position = self.load_optitrack_csv(parameters.loc[f,'csv'])
+                elif method.lower() == 'deeplabcut':
+                    position = self.load_dlc_csv(parameters.loc[f,'csv'])
 
-            ttl = self.load_ttl_pulse(
-                ttl_file=parameters.loc[f,'ttl'],
-                n_channels=parameters.loc[f,'n_channels'],
-                channel=parameters.loc[f,'tracking_channel'],
-                bytes_size=parameters.loc[f,'bytes_size'],
-                fs=parameters.loc[f,'fs']
-                )
-            
-            if len(ttl):
-                length = np.minimum(len(ttl), len(position))
-                ttl = ttl.iloc[0:length]
-                position = position.iloc[0:length]
-            else:
-                raise RuntimeError("No ttl detected for {}".format(f))
+                ttl = self.load_ttl_pulse(
+                    ttl_file=parameters.loc[f,'ttl'],
+                    tracking_frequency=frequency,
+                    n_channels=parameters.loc[f,'n_channels'],
+                    channel=parameters.loc[f,'tracking_channel'],
+                    bytes_size=parameters.loc[f,'bytes_size'],
+                    fs=parameters.loc[f,'fs'],
+                    threshold=parameters.loc[f,'threshold'],
+                    )
+                
+                if len(ttl):
+                    length = np.minimum(len(ttl), len(position))
+                    ttl = ttl.iloc[0:length]
+                    position = position.iloc[0:length]
+                else:
+                    raise RuntimeError("No ttl detected for {}".format(f))
 
-            start_epoch = nap.TimeUnits.format_timestamps(epochs.loc[parameters.loc[f,'epoch'],'start'], time_units)
-            time_offset = nap.TimeUnits.return_timestamps(start_epoch,'s')[0] + ttl.index[0]
+                start_epoch = nap.TimeUnits.format_timestamps(epochs.loc[parameters.loc[f,'epoch'],'start'], time_units)
+                timestamps = nap.TimeUnits.return_timestamps(start_epoch,'s')[0] + ttl.index.values
+                position.index = pd.Index(timestamps)
 
-            position.index += time_offset
-            # wake_ep.iloc[i,0] = np.int64(np.maximum(wake_ep.as_units('s').iloc[i,0], position.index[0])*1e6)
-            # wake_ep.iloc[i,1] = np.int64(np.minimum(wake_ep.as_units('s').iloc[i,1], position.index[-1])*1e6)
-
-            if len(position.columns) > 6:
-                frames.append(position.iloc[:,0:6])
-                others.append(position.iloc[:,6:])
-            else:
                 frames.append(position)
 
-        position = pd.concat(frames)
-        position[['ry', 'rx', 'rz']] *= (np.pi/180)
-        position[['ry', 'rx', 'rz']] += 2*np.pi
-        position[['ry', 'rx', 'rz']] %= 2*np.pi
+            position = pd.concat(frames)
+            position[['ry', 'rx', 'rz']] *= (np.pi/180)
+            position[['ry', 'rx', 'rz']] += 2*np.pi
+            position[['ry', 'rx', 'rz']] %= 2*np.pi
 
-        position = nap.TsdFrame(
-            t = position.index.values, 
-            d = position.values,
-            columns = position.columns.values,
-            time_units = 's')
+            position = nap.TsdFrame(
+                t = position.index.values, 
+                d = position.values,
+                columns = position.columns.values,
+                time_units = 's')
 
-        return position
+            return position
 
     def _make_epochs(self, epochs, time_units='s'):
         """
@@ -218,7 +217,10 @@ class BaseLoader(object):
         """
         isets = nap.IntervalSet(start=epochs['start'], end=epochs['end'],time_units=time_units)
         iset = isets.merge_close_intervals(0.0) 
-        return iset
+        if len(iset):
+            return iset
+        else:
+            return None
 
     def create_nwb_file(self, path):
         """Summary
@@ -237,37 +239,43 @@ class BaseLoader(object):
         if not os.path.exists(self.nwb_path):
             os.makedirs(self.nwb_path)
         self.nwbfilepath = os.path.join(self.nwb_path, self.session_information['name']+'.nwb')
+        
+        self.subject_information['date_of_birth'] = None
+
         nwbfile = NWBFile(
             session_description=self.session_information['description'],
             identifier=self.session_information['name'],
             session_start_time=datetime.datetime.now(datetime.timezone.utc),
             experimenter=self.session_information['experimenter'],
-            lab=self.session_information['lab']
+            lab=self.session_information['lab'],
+            institution=self.session_information['institution'],
+            subject = Subject(**self.subject_information)
         )
 
         # Tracking
-        data = self.position.as_units('s')
-        position = Position()        
-        for c in ['x', 'y', 'z']:
-            tmp = SpatialSeries(
-                name=c, 
-                data=data[c].values, 
-                timestamps=data.index.values, 
-                unit='',
-                reference_frame='')
-            position.add_spatial_series(tmp)
-        direction = CompassDirection()
-        for c in ['rx', 'ry', 'rz']:
-            tmp = SpatialSeries(
-                name=c, 
-                data=data[c].values, 
-                timestamps=data.index.values, 
-                unit='radian',
-                reference_frame='')
-            direction.add_spatial_series(tmp)
+        if self.position is not None:
+            data = self.position.as_units('s')
+            position = Position()        
+            for c in ['x', 'y', 'z']:
+                tmp = SpatialSeries(
+                    name=c, 
+                    data=data[c].values, 
+                    timestamps=data.index.values, 
+                    unit='',
+                    reference_frame='')
+                position.add_spatial_series(tmp)
+            direction = CompassDirection()
+            for c in ['rx', 'ry', 'rz']:
+                tmp = SpatialSeries(
+                    name=c, 
+                    data=data[c].values, 
+                    timestamps=data.index.values, 
+                    unit='radian',
+                    reference_frame='')
+                direction.add_spatial_series(tmp)
 
-        nwbfile.add_acquisition(position)
-        nwbfile.add_acquisition(direction)
+            nwbfile.add_acquisition(position)
+            nwbfile.add_acquisition(direction)
         
         # Epochs
         for ep in self.epochs.keys():
@@ -324,20 +332,19 @@ class BaseLoader(object):
                     index = tracking.get_spatial_series(k).timestamps[:],
                     data = tracking.get_spatial_series(k).data[:],
                     )
-        position = pd.DataFrame.from_dict(position)
-        self.position = nap.TsdFrame(position, time_units = 's')
+        if len(position):
+            position = pd.DataFrame.from_dict(position)
+            self.position = nap.TsdFrame(position, time_units = 's')
 
-        epochs = nwbfile.epochs.to_dataframe()
-        # NWB is dumb and cannot take a single string for labels
-        epochs['label'] = [epochs.loc[i,'tags'][0] for i in epochs.index]
-        epochs = epochs.drop(labels='tags', axis=1)
-        epochs = epochs.rename(columns={'start_time':'start','stop_time':'end'})
-        self.epochs = self._make_epochs(epochs)
+        if nwbfile.epochs is not None:
+            epochs = nwbfile.epochs.to_dataframe()
+            # NWB is dumb and cannot take a single string for labels
+            epochs['label'] = [epochs.loc[i,'tags'][0] for i in epochs.index]
+            epochs = epochs.drop(labels='tags', axis=1)
+            epochs = epochs.rename(columns={'start_time':'start','stop_time':'end'})
+            self.epochs = self._make_epochs(epochs)
 
-        self.time_support = self._join_epochs(
-            epochs,
-            's'
-            )
+            self.time_support = self._join_epochs(epochs,'s')
 
 
         io.close()

@@ -11,7 +11,11 @@ from .. import core as nap
 from .loader import BaseLoader
 import pandas as pd
 from pynwb import NWBFile, NWBHDF5IO
+from pynwb.device import Device
 from xml.dom import minidom 
+from .ephys_gui import EphysGUI
+from PyQt5.QtWidgets import QApplication
+import re
 
 class NeuroSuite(BaseLoader):
     """
@@ -36,14 +40,23 @@ class NeuroSuite(BaseLoader):
             nwb_path = os.path.join(self.path, 'pynapplenwb')
             if os.path.exists(nwb_path):
                 files = os.listdir(nwb_path)
-                if len([f for f in files if f.endswith('.nwb')]):
-                    loading_neurosuite = False           
-                    self.load_nwb_spikes(path)
+                if len([f for f in files if f.endswith('.nwb')]):                    
+                    success = self.load_nwb_spikes(path)
+                    if success: loading_neurosuite = False
 
         # Bypass if data have already been transfered to nwb
         if loading_neurosuite:
-            self.load_neurosuite_spikes(path, self.basename, self.time_support)
             self.load_neurosuite_xml(path)
+
+            # To label the electrodes groups
+            app = QApplication([])
+            self.window = EphysGUI(path=path, groups=self.group_to_channel)
+            app.exec()            
+            if self.window.status:
+                self.ephys_information = self.window.ephys_information
+
+            self.load_neurosuite_spikes(path, self.basename, self.time_support)
+            
             self.save_data(path)
 
     def load_neurosuite_spikes(self,path, basename, time_support=None, fs = 20000.0):
@@ -83,13 +96,29 @@ class NeuroSuite(BaseLoader):
                     spikes[k] = nap.Ts(t=t, time_units='s')
                     group.loc[k] = s
 
-                count+=len(idx_clu)
+                count+=len(idx_clu)    
+
+        group = group - 1 # better to start it a 0    
 
         self.spikes = nap.TsGroup(
             spikes, 
             time_support=time_support,
             time_units='s',
             group=group)
+
+        # adding some information to help parse the neurons
+        names = pd.Series(
+            index = group.index,
+            data = [self.ephys_information[group.loc[i]]['name'] for i in group.index]
+            )
+        if ~np.all(names.values==''):
+            self.spikes.set_info(name=names)
+        locations = pd.Series(
+            index = group.index,
+            data = [self.ephys_information[group.loc[i]]['location'] for i in group.index]
+            )
+        if ~np.all(locations.values==''):
+            self.spikes.set_info(location=locations)
 
         return
 
@@ -153,32 +182,51 @@ class NeuroSuite(BaseLoader):
         io = NWBHDF5IO(self.nwbfilepath, 'r+')
         nwbfile = io.read()
 
-        device = nwbfile.create_device(name='my_device')
+        electrode_groups = {}
 
         for g in self.group_to_channel:
-            electrode_group = nwbfile.create_electrode_group('group'+str(g+1),
-                                                         description='',
-                                                         location='',
-                                                         device=device)
+
+            device = nwbfile.create_device(
+                name=self.ephys_information[g]['device']['name']+'-'+str(g),
+                description=self.ephys_information[g]['device']['description'],
+                manufacturer=self.ephys_information[g]['device']['manufacturer']
+                )
+
+            if len(self.ephys_information[g]['position']) and type(self.ephys_information[g]['position']) is str:
+                self.ephys_information[g]['position'] = re.split(';|,| ', self.ephys_information[g]['position'])
+            elif self.ephys_information[g]['position'] == '':
+                self.ephys_information[g]['position'] = None
+
+            electrode_groups[g] = nwbfile.create_electrode_group(
+                name='group'+str(g)+'_'+self.ephys_information[g]['name'],
+                description=self.ephys_information[g]['description'],
+                position=self.ephys_information[g]['position'],
+                location=self.ephys_information[g]['location'],
+                device=device
+                )
+
             for idx in self.group_to_channel[g]:
                 nwbfile.add_electrode(id=idx,
                                       x=0.0, y=0.0, z=0.0,
-                                      imp=float(-idx),
-                                      location='', filtering='none',
-                                      group=electrode_group)
+                                      imp=0.0,
+                                      location=self.ephys_information[g]['location'], 
+                                      filtering='none',
+                                      group=electrode_groups[g])
 
         # Adding units
         nwbfile.add_unit_column('location', 'the anatomical location of this unit')
+        nwbfile.add_unit_column('group', 'the group of the unit')
         for u in self.spikes.keys():
             nwbfile.add_unit(
-                id=u, 
-                spike_times=self.spikes[u].as_units('s').index.values,
-                location=str(self.spikes.get_info('group').loc[u])
+                id=u,
+                spike_times=self.spikes[u].as_units('s').index.values,                
+                electrode_group=electrode_groups[self.spikes.get_info('group').loc[u]],
+                location=self.ephys_information[self.spikes.get_info('group').loc[u]]['location'],
+                group=self.spikes.get_info('group').loc[u]
                 )
 
         io.write(nwbfile)
         io.close()
-
 
         return
 
@@ -206,15 +254,23 @@ class NeuroSuite(BaseLoader):
         io = NWBHDF5IO(self.nwbfilepath, 'r')
         nwbfile = io.read()
 
-        units = nwbfile.units.to_dataframe()
-        spikes = {n:nap.Ts(t=units.loc[n,'spike_times'], time_units='s') for n in units.index}
+        if nwbfile.units is None:
+            io.close()
+            return False
+        else:
+            units = nwbfile.units.to_dataframe()
+            spikes = {n:nap.Ts(t=units.loc[n,'spike_times'], time_units='s') for n in units.index}
 
-        self.spikes = nap.TsGroup(
-            spikes, 
-            time_support=self.time_support,
-            time_units='s',
-            group=units['location'])        
+            self.spikes = nap.TsGroup(
+                spikes, 
+                time_support=self.time_support,
+                time_units='s',
+                group=units['group']
+                )
 
-        return      
+            if ~np.all(units['location']==''):
+                self.spikes.set_info(location=units['location'])
 
+            io.close()
+            return True
 

@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-import sys, os, csv
+import sys, os, csv, getpass
 import pandas as pd
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
@@ -9,41 +9,91 @@ import scipy.signal
 import matplotlib.pyplot as plt
 import numpy as np
 import matplotlib
-matplotlib.use('Qt5Agg')
+# matplotlib.use('Qt5Agg')
 import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+
+class TTLDetection(QDialog):
+
+    def __init__(self, file, n_channels=1, channel=0, bytes_size=2, fs=20000.0):
+        super().__init__()
+        self.setWindowTitle("Check TTL detection")
+        self.setMinimumSize(640, 480)
+        self.threshold = 0.3
+        self.status = False
+        self.figure = plt.figure()
+        self.canvas = FigureCanvas(self.figure)
+        self.toolbar = NavigationToolbar(self.canvas, self)
+        self.load_ttl(file, n_channels, channel, bytes_size, fs)
+        self.plot()
 
 
+        slider = QDoubleSpinBox()
+        slider.setMinimum(0)
+        slider.setMaximum(1)
+        slider.setSingleStep(0.1)
+        slider.lineEdit().setEnabled(False)
+        slider.valueChanged.connect(self.change_threshold)
+        slider.setValue(self.threshold)
+        slider.setGeometry(100, 100, 100, 40)
 
-def check_ttl_detection(file, n_channels=1, channel=0, bytes_size=2, fs=20000.0):
-    """
-        load ttl from analogin.dat
-    """    
-    f = open(file, 'rb')
-    startoffile = f.seek(0, 0)
-    endoffile = f.seek(0, 2)
-    n_samples = int((endoffile-startoffile)/n_channels/bytes_size)
-    f.close()
-    with open(file, 'rb') as f:
-        data = np.fromfile(f, np.uint16).reshape((n_samples, n_channels))
-    if n_channels == 1:
-        data = data.flatten().astype(np.int32)
-    else:
-        data = data[:,channel].flatten().astype(np.int32)
-    data = data/data.max()
-    peaks,_ = scipy.signal.find_peaks(np.diff(data), height=0.5)
-    timestep = np.arange(0, len(data))/fs
-    analogin = pd.Series(index = timestep, data = data)
-    peaks+=1
-    ttl = pd.Series(index = timestep[peaks], data = data[peaks])    
-    fig = plt.figure()
-    ax = fig.add_subplot(111)
-    ax.plot(analogin)
-    ax.plot(ttl, 'o')
-    ax.set_title(os.path.basename(file))
-    ax.set_xlabel("Time (s)")
-    fig.show()
-    return
+        layout = QVBoxLayout()
+        layout.addWidget(self.toolbar)
 
+        layout2 = QHBoxLayout()
+        layout2.addWidget(QLabel("TTL threshold: "))
+        layout2.addWidget(slider)
+        layout2.addStretch()
+        layout.addLayout(layout2)
+        layout.addWidget(self.canvas)
+
+        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+
+        self.buttonBox = QDialogButtonBox(QBtn)
+        self.buttonBox.accepted.connect(self.accept)
+        self.buttonBox.rejected.connect(self.reject)
+
+        layout.addWidget(self.buttonBox)
+                            
+        self.setLayout(layout)
+
+    def load_ttl(self, file, n_channels, channel, bytes_size, fs):
+        f = open(file, 'rb')
+        startoffile = f.seek(0, 0)
+        endoffile = f.seek(0, 2)
+        n_samples = int((endoffile-startoffile)/n_channels/bytes_size)
+        f.close()
+        with open(file, 'rb') as f:
+            data = np.fromfile(f, np.uint16).reshape((n_samples, n_channels))
+        if n_channels == 1:
+            data = data.flatten().astype(np.int32)
+        else:
+            data = data[:,channel].flatten().astype(np.int32)
+        self.data = data/data.max()
+        peaks,_ = scipy.signal.find_peaks(np.diff(self.data), height=self.threshold)
+        self.timestep = np.arange(0, len(self.data))/fs
+        self.analogin = pd.Series(index = self.timestep, data = self.data)
+        peaks+=1
+        self.ttl = pd.Series(index = self.timestep[peaks], data = self.data[peaks])    
+
+    def plot(self):
+        self.figure.clear()
+        ax = self.figure.add_subplot(111)
+        ax.plot(self.analogin)
+        ax.plot(self.ttl, 'o')   
+        ax.axhline(self.threshold)     
+        ax.set_xlabel("Time (s)")
+        
+        # refresh canvas
+        self.canvas.draw()
+
+    def change_threshold(self, thr):
+        self.threshold = thr
+        peaks,_ = scipy.signal.find_peaks(np.diff(self.data), height=self.threshold)
+        peaks+=1
+        self.ttl = pd.Series(index = self.timestep[peaks], data = self.data[peaks])
+        self.plot()
 
 class EpochsTable(QTableWidget):
     def __init__(self, r, c, path):
@@ -80,15 +130,19 @@ class EpochsTable(QTableWidget):
         suggested_dir = self.path if self.path else os.getenv('HOME')
         path = QFileDialog.getOpenFileName(self, 'Open CSV', suggested_dir, 'CSV(*.csv)')
         if path[0] != '':
-            self.epochs = pd.read_csv(path[0], usecols=[0,1], header = None, names = ['start', 'end'])
+            self.epochs = pd.read_csv(path[0], header=None)
+            if len(self.epochs.columns) == 3:
+                self.epochs.columns = ['start', 'end', 'label']
+            elif len(self.epochs.columns) == 2:
+                self.epochs.columns = ['start', 'end']
+                self.epochs['label'] = ''
             self.setRowCount(0)
             for r in self.epochs.index:
                 row = self.rowCount()
                 self.insertRow(row)
-                for column, clabel in enumerate(['start', 'end']):
+                for column, clabel in enumerate(self.epochs.columns):
                     item = QTableWidgetItem(str(self.epochs.loc[r,clabel]))
                     self.setItem(row, column, item)
-            self.epochs['label'] = ''
         self.check_change = True
 
     def update_path_info(self, path):
@@ -151,78 +205,81 @@ class EpochsTab(QWidget):
 class SessionInformationTab(QWidget):
     def __init__(self, path=None, parent=None):
         super(SessionInformationTab, self).__init__(parent)
-        
+        try:
+            experimenter=getpass.getuser()
+
+        except:
+            experimenter=''
+
         self.session_information = {
             'path':path,
             'name':'',
             'description':'',
-            'experimenter':'',
+            'experimenter':experimenter,
             'lab':'',
             'institution':'',
-            'genotype':''
+        }
+        self.subject_information = {
+            'age':'',
+            'description':'',
+            'genotype':'',
+            'sex':'',
+            'species':'',
+            'subject_id':'',
+            'weight':'',
+            # 'date_of_birth':'',
+            'strain':''
         }
                 
-        self.layout = QVBoxLayout(self)
+        self.layout = QHBoxLayout(self)
 
-        # Session name
-        hbox = QHBoxLayout()
-        hbox.addWidget(QLabel("Session name:"))
-        hbox.setAlignment(Qt.AlignLeft)
-        self.name = QLineEdit()
-        self.name.textChanged.connect(self.update_name)
-        hbox.addWidget(self.name)
+        formsession = QGroupBox("Session")
+        self.form1 = QFormLayout()
+        for k in self.session_information.keys():
+            if k != 'path':
+                tmp = QLineEdit(self.session_information[k])
+                self.form1.addRow(k, tmp)
+                if k == 'name':
+                    self.name = tmp
 
-        self.layout.addLayout(hbox)        
+        formsession.setLayout(self.form1)
 
-        # Table view 
-        self.layout.addWidget(QLabel("Additional informations :"))
+        formsubject = QGroupBox("Subject")
+        self.form2 = QFormLayout()
+        for k in self.subject_information.keys():
+            self.form2.addRow(QLabel(k), QLineEdit(self.subject_information[k]))
+        formsubject.setLayout(self.form2)
 
-        self.table = QTableWidget(5,2)
-        self.layout.addWidget(self.table)
-
-        self.table.setHorizontalHeaderLabels(['key', 'value'])
-        self.table.setItem(0, 0, QTableWidgetItem("description"))
-        self.table.setItem(1, 0, QTableWidgetItem("experimenter"))
-        self.table.setItem(2, 0, QTableWidgetItem("lab"))
-        self.table.setItem(3, 0, QTableWidgetItem("institution"))
-        self.table.setItem(4, 0, QTableWidgetItem("genotype"))
-
-        self.table.cellChanged.connect(self.c_current)
-
-        header = self.table.horizontalHeader()
-        for i in range(2): header.setSectionResizeMode(i, QHeaderView.Stretch)
-        
-        self.addRowBtn = QPushButton("Add row")
-        self.addRowBtn.clicked.connect(self.add_row)
-        self.layout.addWidget(self.addRowBtn)
-        self.layout.addStretch()
+        self.layout.addWidget(formsession)
+        self.layout.addWidget(formsubject)
 
         self.update_path_info(path)
 
+        # self.retrieve_session_information()
+
+    def retrieve_session_information(self):
+        n = self.form1.rowCount()
+        for i in range(0, n*2, 2):
+            key = self.form1.itemAt(i)
+            value = self.form1.itemAt(i+1)
+            self.session_information[key.widget().text()] = value.widget().text()
+
+        return self.session_information
+
+    def retrieve_subject_information(self):
+        n = self.form2.rowCount()
+        for i in range(0, n*2, 2):
+            key = self.form2.itemAt(i)
+            value = self.form2.itemAt(i+1)
+            self.subject_information[key.widget().text()] = value.widget().text()
+
+        return self.subject_information
+        
     def update_path_info(self, path):
         self.session_information['path'] = path 
-        self.session_information['name'] = os.path.basename(path) if path else None
+        self.session_information['name'] = os.path.basename(path) if path else ''
         self.name.setText(self.session_information['name'])
-        # print(self.session_information)
 
-    def c_current(self):
-        row = self.table.currentRow()
-        col = self.table.currentColumn()
-        value = self.table.item(row, col)
-        value = value.text()
-        key = self.table.item(row,0).text()
-        self.session_information[key] = value
-        print(self.session_information)
-
-    def add_row(self):
-        row = self.table.rowCount()
-        self.table.insertRow(row)
-        self.table.update()
-
-    def update_name(self, name):       
-        self.name.setText(name)
-        self.session_information['name'] = name
-        # print(self.session_information)
 
 class TrackingTab(QWidget):
     def __init__(self, path=None, parent=None):
@@ -239,7 +296,8 @@ class TrackingTab(QWidget):
                         'tracking_channel', 
                         'bytes_size',
                         'fs',
-                        'epoch'])
+                        'epoch',
+                        'threshold'])
         self.ttl_param_widgets = {}
 
         self.layout = QVBoxLayout(self)
@@ -247,7 +305,7 @@ class TrackingTab(QWidget):
         laytop = QHBoxLayout()
         laytop.addWidget(QLabel("Tracking system: "))
         combobox1 = QComboBox()
-        combobox1.addItems(['Optitrack', 'Deep Lab Cut', 'Other'])
+        combobox1.addItems(['Optitrack', 'Deep Lab Cut'])
         combobox1.currentTextChanged.connect(self.get_tracking_method)
         laytop.addWidget(combobox1)
         
@@ -340,14 +398,16 @@ class TrackingTab(QWidget):
 
     def check_ttl(self):
         r = self.table.currentRow()
-        check_ttl_detection(
+        self.w = TTLDetection(
             file=self.parameters.loc[self.parameters.index[r],'ttl'],
             n_channels=self.parameters.loc[self.parameters.index[r],'n_channels'],
             channel=self.parameters.loc[self.parameters.index[r],'tracking_channel'],
             bytes_size=self.parameters.loc[self.parameters.index[r],'bytes_size'],
             fs=self.parameters.loc[self.parameters.index[r],'fs']
             )
-        
+
+        if self.w.exec():
+            self.parameters['threshold'][r] = self.w.threshold
         
     def fill_default_value_parameters(self, filename, row):        
         ttl_param_widgets = {}
@@ -367,6 +427,8 @@ class TrackingTab(QWidget):
             ttl_param_widgets[key].setValue(dval)
             ttl_param_widgets[key].valueChanged.connect(self.change_ttl_params)
             self.table.setCellWidget(row, col, ttl_param_widgets[key])
+            # Adding default trheshod value
+            self.parameters.loc[filename,'threshold'] = 0.3
         self.ttl_param_widgets[row] = ttl_param_widgets
 
     def change_file(self, item):
@@ -395,13 +457,6 @@ class TrackingTab(QWidget):
         self.path = path
 
 
-class HelpTab(QWidget):
-    def __init__(self, parent=None):
-        super(HelpTab, self).__init__(parent)
-        lay = QVBoxLayout(self)
-        lay.addWidget(QLabel("Help"))
-
-
 class BaseLoaderGUI(QMainWindow):
 
     def __init__(self, path=None):
@@ -412,7 +467,7 @@ class BaseLoaderGUI(QMainWindow):
         self.path = path
 
         self.setWindowTitle("The minimalist session loader")
-        self.setMinimumSize(760, 480)
+        self.setMinimumSize(900, 560)
 
         pagelayout = QVBoxLayout()
 
@@ -438,12 +493,12 @@ class BaseLoaderGUI(QMainWindow):
         self.tab_session = SessionInformationTab(self.path)
         self.tab_epoch = EpochsTab(self.path)
         self.tab_tracking = TrackingTab(self.path)
-        self.tab_help = HelpTab()
+        # self.tab_help = HelpTab()
         
         self.tabs.addTab(self.tab_session, 'Session Information')
         self.tabs.addTab(self.tab_epoch, 'Epochs')
         self.tabs.addTab(self.tab_tracking, 'Tracking')
-        self.tabs.addTab(self.tab_help, 'Help')
+        # self.tabs.addTab(self.tab_help, 'Help')
 
         # BOTTOM SAVING
         self.finalbuttons = QDialogButtonBox()
@@ -466,7 +521,8 @@ class BaseLoaderGUI(QMainWindow):
     def accept(self):
         self.status = True
         # Collect all the information acquired
-        self.session_information = self.tab_session.session_information
+        self.session_information = self.tab_session.retrieve_session_information()
+        self.subject_information = self.tab_session.retrieve_subject_information()
         self.epochs = self.tab_epoch.table.epochs
         self.time_units_epochs = self.tab_epoch.time_units
         self.tracking_parameters = self.tab_tracking.parameters
