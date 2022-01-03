@@ -9,32 +9,29 @@ import pynapple as nap
 from matplotlib.pyplot import *
 import sys
 
-data_directory = '/home/guillaume/pynapple/data/A2929-200711'
+# data_directory = '/home/guillaume/pynapple/data/A2929-200711'
 
+data_directory = '/media/guillaume/LaCie/LMN-ADN/A5002/A5002-200221A'
 
-episodes = ['sleep', 'wake']
-events = ['1']
-
-############################################################################################### 
+################################################################
 # LOADING DATA
-###############################################################################################
+################################################################
+data = nap.load_session(data_directory, 'neurosuite')
 
-spikes	 							= nap.loadSpikeData(data_directory)
-n_channels, fs, shank_to_channel 	= nap.loadXML(data_directory)
-position 							= nap.loadPosition(data_directory, events, episodes)
-wake_ep 							= nap.loadEpoch(data_directory, 'wake', episodes)
-sleep_ep 							= nap.loadEpoch(data_directory, 'sleep')					
 
-############################################################################################### 
-# LOADING DATA
-###############################################################################################
+spikes = data.spikes
+position = data.position
+wake_ep = data.epochs['wake']
 
-tuning_curves 						= nap.computeAngularTuningCurves(spikes, position['ry'], wake_ep, 60)
-tuning_curves 						= nap.smoothAngularTuningCurves(tuning_curves, 10, 2)
+################################################################
+# COMPUTING TUNING CURVES
+################################################################
+tuning_curves = nap.computeAngularTuningCurves(spikes, position['ry'], wake_ep, 120)
+tuning_curves = nap.smoothAngularTuningCurves(tuning_curves, 10, 2)
 
-hd, stat 							= nap.findHDCells(tuning_curves)
+hd, stat = nap.findHDCells(tuning_curves)
 
-#sys.exit()	
+#sys.exit()
 
 spikes.set_info(hd = hd)
 		

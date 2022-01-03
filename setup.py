@@ -4,15 +4,15 @@
 
 from setuptools import setup, find_packages
 
-with open('README.rst') as readme_file:
+with open('README.md') as readme_file:
     readme = readme_file.read()
 
-with open('HISTORY.rst') as history_file:
+with open('docs/HISTORY.md') as history_file:
     history = history_file.read()
 
 requirements = [
-        'pandas>=1.0.3',
-        'numba>=0.46.0',
+        'pandas',
+        'numba',
         'numpy',
         'scipy'
 
