@@ -9,12 +9,13 @@ import pynapple as nap
 from matplotlib.pyplot import *
 import sys
 
-data_directory = '/home/guillaume/pynapple/data/A2929-200711'
+# data_directory = '/home/guillaume/pynapple/data/A2929-200711'
+
+data_directory = '/media/guillaume/LaCie/LMN-ADN/A5002/A5002-200221A'
 
 ################################################################
 # LOADING DATA
 ################################################################
-# data = nap.load_session(data_directory, 'neurosuite')
 data = nap.load_session(data_directory, 'neurosuite')
 
 
