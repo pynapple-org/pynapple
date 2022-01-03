@@ -1,2 +1,3 @@
 from .correlograms import *
-from .functions import *
+from .tuning_curves import *
+from .decoding import *
