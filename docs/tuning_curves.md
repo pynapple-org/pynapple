@@ -1,4 +1,4 @@
-::: pynapple.io.misc
+::: pynapple.process.tuning_curves
 	handler: python
 	selection:
 		docstring_style: numpy

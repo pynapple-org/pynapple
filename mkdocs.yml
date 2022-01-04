@@ -1,10 +1,10 @@
 site_name: pynapple
 nav:  
   - Overview: index.md
-  - Usage:
-    - Tutorials:
-      - Quick start: usage.md
-      - Core: pynapple-core-notebook.ipynb
+  # - Usage:
+  #   - Tutorials:
+  #     - Quick start: usage.md
+      # - Core: pynapple-core-notebook.ipynb
     #   # - IO: pynapple-io-notebook.ipynb
     #   # - Process: pynapple-process-notebook.ipynb
     # - pynacollada: pynacollada.md
@@ -13,8 +13,13 @@ nav:
       - Time Series: time_series.md
       - Interval Sets: interval_set.md
       - Time Series Group: ts_group.md
-    - IO: io.md
-    # - Process: process.md
+    - IO:
+      - Miscellaneous: io.md
+      - Neurosuite: neurosuite.md
+    - Process: 
+      - Correlograms: correlograms.md
+      - Tuning curves: tuning_curves.md
+      - Decoding: decoding.md
   # - Plugins:
   #   - pynalog: pynalog.md
   #   - pynapplesonfire: pynapplesonfire.md

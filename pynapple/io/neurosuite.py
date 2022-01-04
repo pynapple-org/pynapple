@@ -22,12 +22,13 @@ class NeuroSuite(BaseLoader):
     Loader for kluster data
     """
     def __init__(self, path):
-        """Summary
+        """
+        Instantiate the data class from a neurosuite folder.
         
         Parameters
         ----------
-        path : TYPE
-            Description
+        path : str
+            The path to the data.
         """     
         self.basename = os.path.basename(path)
         self.time_support = None
@@ -62,17 +63,26 @@ class NeuroSuite(BaseLoader):
             app.quit()
 
     def load_neurosuite_spikes(self,path, basename, time_support=None, fs = 20000.0):
-        """Summary
+        """
+        Read the clus and res files and convert to nwb.
+        Instantiate automatically a TsGroup object.
         
         Parameters
         ----------
-        path : TYPE
-            Description
-        
-        Returns
-        -------
-        TYPE
-            Description
+        path : str
+            The path to the data
+        basename : str
+            Basename of the clu and res files.
+        time_support : IntevalSet, optional
+            The time support of the data
+        fs : float, optional
+            Sampling rate of the recording.
+                
+        Raises
+        ------
+        RuntimeError
+            If number of clu and res are not equal.
+
         """
         files = os.listdir(path)
         clu_files     = np.sort([f for f in files if '.clu.' in f and f[0] != '.'])
@@ -127,16 +137,23 @@ class NeuroSuite(BaseLoader):
     def load_neurosuite_xml(self, path):
         """
         path should be the folder session containing the XML file
-        Function returns :
-            1. the number of channels
-            2. the sampling frequency of the dat file or the eeg file depending of what is present in the folder
-                eeg file first if both are present or both are absent
-            3. the mappings shanks to channels as a dict
-        Args:
-            path : string
-
-        Returns:
-            int, int, dict
+        
+        Function reads
+        --------------
+        1. the number of channels
+        2. the sampling frequency of the dat file or the eeg file depending of what is present in the folder
+            eeg file first if both are present or both are absent
+        3. the mappings shanks to channels as a dict
+        
+        Parameters
+        ----------
+        path: str
+            The path to the data
+                
+        Raises
+        ------
+        RuntimeError
+            If path does not contain the xml file.
         """
         listdir = os.listdir(path)
         xmlfiles = [f for f in listdir if f.endswith('.xml')]
@@ -160,17 +177,14 @@ class NeuroSuite(BaseLoader):
 
 
     def save_data(self, path):
-        """Summary
+        """
+        Save the data to NWB format.
         
         Parameters
         ----------
         path : str
             The path to save the data
         
-        Returns
-        -------
-        TYPE
-            Description
         """
         self.nwb_path = os.path.join(path, 'pynapplenwb')
         if os.path.exists(self.nwb_path):
@@ -233,12 +247,13 @@ class NeuroSuite(BaseLoader):
         return
 
     def load_nwb_spikes(self, path):
-        """Summary
-        
+        """
+        Read the nwb spikes to extract the spike times.
+
         Parameters
         ----------
-        path : TYPE
-            Description
+        path : str
+            The path to the data
         
         Returns
         -------
