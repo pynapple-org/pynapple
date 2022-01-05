@@ -15,17 +15,17 @@ def compute_1d_tuning_curves(group, variable, ep, nb_bins, minmax=None):
 	
 	Parameters
 	----------
-	group : TsGroup or dict of Ts/Tsd objects
+	group: TsGroup or dict of Ts/Tsd objects
 	    The group input
-	variable : Tsd
-	    The unidimensional target variable (e.g. head-direction)
-	ep : IntervalSet
+	variable: Tsd
+	    The unidimensional target feature (e.g. head-direction)
+	ep: IntervalSet
 	    The epoch to perform the operation
-	nb_bins : int
+	nb_bins: int
 	    Number of bins in the tuning curve
-	minmax : tuple or list, optional
+	minmax: tuple or list, optional
 	    The min and max boundaries of the tuning curves.
-	    If None, the boundaries is inferred from the target variable
+	    If None, the boundaries is inferred from the target feature
 	
 	Returns
 	-------
@@ -57,20 +57,20 @@ def compute_1d_tuning_curves(group, variable, ep, nb_bins, minmax=None):
 
 def compute_2d_tuning_curves(group, variable, ep, nb_bins, minmax=None):
 	"""
-	Compute 2 dimensional tuning curves from target variables
+	Computes 2 dimensional tuning curves from a 2d feature
 	Variable should be a 2 dimensional TsdFrame (e.g. position x and y).
 	
 	Parameters
 	----------
-	group : TsGroup or dict of Ts/Tsd objects
+	group: TsGroup or dict of Ts/Tsd objects
 	    The group input
-	variable : TsdFrame
+	variable: TsdFrame
 	    The 2d target variable
-	ep : IntervalSet
+	ep: IntervalSet
 	    The epoch to perform the operation
-	nb_bins : int
+	nb_bins: int
 	    Number of bins in the tuning curve
-	minmax : tuple or list, optional
+	minmax: tuple or list, optional
 	    The min and max boundaries of the tuning curves given as:
 	    (minx, maxx, miny, maxy)
 	    If None, the boundaries is inferred from the target variable

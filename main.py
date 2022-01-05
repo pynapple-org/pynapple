@@ -9,7 +9,7 @@ import pynapple as nap
 from matplotlib.pyplot import *
 import sys
 
-data_directory = 'data/A2929-200711'
+data_directory = '../A2929-200711'
 
 ################################################################
 # LOADING DATA

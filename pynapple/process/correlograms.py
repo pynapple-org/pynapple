@@ -23,7 +23,7 @@ def cross_correlogram(t1, t2, binsize, windowsize):
 	"""
 	Perform the discrete cross-correlogram of two time series. 
 	The units should be in ms for all arguments.
-	Return a cross-correlogram t1/t2 where 0 ms is the time of a t1 spike.
+	Return a the firing rate of t2 relative to times t1 (i.e. 0ms bin)
 	
 	
 	Parameters
@@ -87,22 +87,23 @@ def cross_correlogram(t1, t2, binsize, windowsize):
 
 def compute_autocorrelogram(group, ep, binsize, windowsize, norm=True):
 	"""
-	Compute the autocorrelogram of a group of Ts/Tsd objects.
+	Computes the autocorrelogram of a group of Ts/Tsd objects.
 	The group can be passed directly as a TsGroup object.
 	
 	Parameters
 	----------
-	group : TsGroup or dict of Ts/Tsd objects
+	group: TsGroup or dict of Ts/Tsd objects
 	    The input Ts/Tsd objects 
-	ep : IntervalSet
-	    The epoch to restrict the Ts/Tsd objects
-	binsize : float
-	    The bin size in ms
-	windowsize : float
-	    The window size in ms
-	norm : bool, optional
-	    Whether to normalize the autocorrelogram
-	
+	ep: IntervalSet
+	    The epoch on which auto-corrs are computed
+	binsize: float
+	    The bin size (in ms)
+	windowsize: float
+	    The window size (in ms)
+	norm: bool, optional
+	     If True, autocorrelograms are normalized to baseline (i.e. divided by the average rate)
+         If False, autoorrelograms are returned as the rate (Hz) of the time series (relative to itself)
+
 	Returns
 	-------
 	pandas.DataFrame
@@ -138,25 +139,26 @@ def compute_autocorrelogram(group, ep, binsize, windowsize, norm=True):
 
 def compute_crosscorrelogram(group, ep, binsize, windowsize, norm=True,reverse=False):
 	"""
-	Compute all the pairwise cross-correlogram from a group of Ts/Tsd objects.
+	Computes all the pairwise cross-correlograms from a group of Ts/Tsd objects.
 	The group can be passed directly as a TsGroup object.
-	The reference neuron and target is chosen based on the buildin itertools.combinations function.
+	The reference neuron and target is chosen based on the builtin itertools.combinations function.
 	For example if indexes are [0,1,2], the function will compute cross-correlograms 
 	for the pairs : (0,1), (0, 2) and (1, 2). The left index gives the reference unit.
 	To reverse the order, set reverse=True.
 	
 	Parameters
 	----------
-	group : TsGroup or dict of Ts/Tsd objects
-	    The Ts/Tsd objects to correlate
-	ep : IntervalSet
-	    The epoch to restrict the Ts/Tsd objects
-	binsize : float
+	group: TsGroup or dict of Ts/Tsd objects
+	    The Ts/Tsd objects to cross-correlate
+	ep: IntervalSet
+	    The epoch on which cross-correlograms are computed
+	binsize: float
 	    The bin size in ms
-	windowsize : float
+	windowsize: float
 	    The window size in ms
-	norm : bool, optional
-	    Whether to normalize the crosscorrelogram
+	norm: bool, optional
+        If True (default), cross-correlograms are normalized to baseline (i.e. divided by the average rate of the target time series)
+        If False, cross-orrelograms are returned as the rate (Hz) of the target time series ((relative to the reference time series)
 	reverse : bool, optional
 	    To reverse the pair order
 	
@@ -200,7 +202,7 @@ def compute_crosscorrelogram(group, ep, binsize, windowsize, norm=True,reverse=F
 
 def compute_eventcorrelogram(group, event, ep, binsize, windowsize, norm=True):
 	"""
-	Compute the correlogram of a group of Ts/Tsd objects with another single Ts/Tsd object
+	Computes the correlograms of a group of Ts/Tsd objects with another single Ts/Tsd object
 	The group can be passed directly as a TsGroup object.
 	
 	Parameters
@@ -208,15 +210,16 @@ def compute_eventcorrelogram(group, event, ep, binsize, windowsize, norm=True):
 	group : TsGroup or dict of Ts/Tsd objects
 	    The Ts/Tsd objects to correlate with the event
 	event : Ts/Tsd
-	    The event to correlate the spikes with
+	    The event to correlate the each of the time series in the group with.
 	ep : IntervalSet
-	    The epoch to restrict the Ts/Tsd objects and the events
+	    The epoch on which cross-correlograms are computed
 	binsize : float
 	    The bin size in ms
 	windowsize : float
 	    The window size in ms
 	norm : bool, optional
-	    Whether to normalize the crosscorrelogram
+	    If True (default), cross-correlograms are normalized to baseline (i.e. divided by the average rate of the target time series)
+        If False, cross-orrelograms are returned as the rate (Hz) of the target time series (relative to the event time series)
 	
 	Returns
 	-------
