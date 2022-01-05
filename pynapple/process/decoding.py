@@ -11,7 +11,7 @@ from .. import core as nap
 
 def decode_1d(tuning_curves, group, variable, ep, bin_size):
 	"""
-	Performs Bayesian decoding over one dimensional feature.
+	Performs Bayesian decoding over a one dimensional feature.
 	See: 
 	Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J. 
 	(1998). Interpreting neuronal population activity by 
