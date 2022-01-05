@@ -9,9 +9,7 @@ import pynapple as nap
 from matplotlib.pyplot import *
 import sys
 
-# data_directory = '/home/guillaume/pynapple/data/A2929-200711'
-
-data_directory = '/media/guillaume/LaCie/LMN-ADN/A5002/A5002-200221A'
+data_directory = 'data/A2929-200711'
 
 ################################################################
 # LOADING DATA
@@ -26,19 +24,12 @@ wake_ep = data.epochs['wake']
 ################################################################
 # COMPUTING TUNING CURVES
 ################################################################
-tuning_curves = nap.computeAngularTuningCurves(spikes, position['ry'], wake_ep, 120)
-tuning_curves = nap.smoothAngularTuningCurves(tuning_curves, 10, 2)
+tuning_curves = nap.compute_1d_tuning_curves(spikes, position['ry'], position['ry'].time_support, 120)
 
-hd, stat = nap.findHDCells(tuning_curves)
-
-#sys.exit()
-
-spikes.set_info(hd = hd)
 		
-
-############################################################################################### 
+################################################################
 # PLOT
-###############################################################################################
+################################################################
 
 figure()
 for i in spikes:

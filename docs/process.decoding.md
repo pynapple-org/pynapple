@@ -1,4 +1,4 @@
-::: pynapple.io.misc
+::: pynapple.process.decoding
 	handler: python
 	selection:
 		docstring_style: numpy

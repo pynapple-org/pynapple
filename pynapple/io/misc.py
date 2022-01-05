@@ -11,19 +11,19 @@ from .loader import BaseLoader
 
 def load_session(path=None, session_type=None):
 	"""
-	General Loader for Neurosuite, Phy or default
+	General Loader for Neurosuite, Phy or default session.
 
 	Parameters
 	----------
-	path : None, optional
-	    Description
+	path : str, optional
+	    The path to load the data
 	session_type : str, optional
-	    Description
+	    For the moment, pynapple support only Neurosuite.
 	
 	Returns
 	-------
-	TYPE
-	    Description
+	Session
+	    A class holding all the data from the session.
 	
 	"""
 	if path:
