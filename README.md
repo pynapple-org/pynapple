@@ -6,7 +6,7 @@
 
 PYthon Neural Analysis Package.
 
-pynapple is a light-weight python library for neurophysiological data analysis. The goal is to offer a versatile set of tools to study typical data in the field, i.e. time series (spike times, behavioral events, etc.) and time intervals (trials, brain states, etc.). It also provides users with generic functions for neuroscience such as tuning curves and cross-correlograms.
+pynapple is a light-weight python library for neurophysiological data analysis. The goal is to offer a versatile set of tools to study typical data in the field, i.e. time series (spike times, behavioral events, etc.), continuous data (spatial position, LFP, etc.) and time intervals (trials, brain states, etc.). It also provides users with generic functions for neuroscience such as tuning curves and cross-correlograms.
 
 -   Free software: GNU General Public License v3
 -   Documentation:
@@ -47,10 +47,10 @@ $ pip install -e .
 Features
 --------
 
--   Automatic handling of spike times and epochs
--   Tuning curves
--   Loading data coming from various pipelines
--   More and more coming!
+-   Easy handling of spike times and behavioural epochs
+-   Loading data from various pipelines.
+-   Native integration of the NWB format (see [Neurodata Without Border](https://www.nwb.org/))
+-   Includes low-level functions to compute cross-correlograms, tuning curves, decoders, etc.
 
 Basic Usage
 -----------
