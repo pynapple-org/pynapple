@@ -9,7 +9,7 @@ from numba import jit
 import pandas as pd
 from .. import core as nap
 
-def decode_1d(tuning_curves, group, variable, ep, bin_size):
+def decode_1d(tuning_curves, group, feature, ep, bin_size):
 	"""
 	Performs Bayesian decoding over a one dimensional feature.
 	See: 
@@ -22,13 +22,13 @@ def decode_1d(tuning_curves, group, variable, ep, bin_size):
 	Parameters
 	----------
 	tuning_curves: pandas.DataFrame
-	    Each column is the tuning curve of one neuron relative to a given feature. Index should be the center of the bin.
+	    Each column is the tuning curve of one neuron relative to the feature. Index should be the center of the bin.
 	group: TsGroup or dict of Ts/Tsd object.
 	    A group of neurons with the same index as tuning curves column names.
-	variable: Tsd
+	feature: Tsd
 	    The 1d feature used to compute the tuning curves. Used to correct for occupancy.
 	ep: IntervalSet
-	    The epoch to compute the decoding
+	    The epoch on which decoding is computed
 	bin_size: float
 	    Bin size in seconds
 	
@@ -65,7 +65,7 @@ def decode_1d(tuning_curves, group, variable, ep, bin_size):
 	diff = np.diff(tuning_curves.index.values)
 	bins = tuning_curves.index.values[:-1] - diff/2
 	bins = np.hstack((bins, [bins[-1]+diff[-1],bins[-1]+2*diff[-1]])) # assuming the size of the last 2 bins is equal
-	occupancy,_ = np.histogram(variable, bins)
+	occupancy,_ = np.histogram(feature, bins)
 
 	# Transforming to pure numpy array
 	tc = tuning_curves.values
@@ -96,7 +96,7 @@ def decode_1d(tuning_curves, group, variable, ep, bin_size):
 
 	return decoded, p
 
-def decode_2d(tuning_curves, group, variable, ep, bin_size, xy):
+def decode_2d(tuning_curves, group, feature, ep, bin_size, xy):
 	"""
 	Performs Bayesian decoding over a two dimensional feature.
 	See: 
@@ -109,13 +109,13 @@ def decode_2d(tuning_curves, group, variable, ep, bin_size, xy):
 	Parameters
 	----------
 	tuning_curves: dict
-	    Dictionnay of 2d tuning curves for each neuron.
+	    Dictionnay of 2d tuning curves (one for each neuron).
 	group: TsGroup or dict of Ts/Tsd object.
-	    A group of neurons with the same index as tuning curves column names.
+	    A group of neurons with the same index as tuning curve column names.
 	variable: Tsd
-	    The 2d featureused to compute the tuning curves. Used to correct for occupancy.
+	    The 2d feature used to compute the tuning curves. Used to correct for occupancy.
 	ep: IntervalSet
-	    The epoch to compute the decoding
+	    The epoch on which decoding is computed
 	bin_size: float
 	    Bin size in seconds
 	xy: tuple
@@ -159,8 +159,8 @@ def decode_2d(tuning_curves, group, variable, ep, bin_size, xy):
 		binsxy.append(bins)
 
 	occupancy, _, _ = np.histogram2d(
-		variable.iloc[:,0],
-		variable.iloc[:,1],
+		feature.iloc[:,0],
+		feature.iloc[:,1],
 		[binsxy[0], binsxy[1]])
 	occupancy = occupancy.flatten()
 
@@ -191,7 +191,7 @@ def decode_2d(tuning_curves, group, variable, ep, bin_size, xy):
 		t = count.index.values,
 		d = np.vstack((xy[0][idxmax2d[0]], xy[1][idxmax2d[1]])).T,
 		time_support = ep,
-		columns=variable.columns
+		columns=feature.columns
 		)
 
 	return decoded, p

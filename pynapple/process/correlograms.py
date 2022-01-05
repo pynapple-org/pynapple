@@ -21,28 +21,28 @@ from .. import core as nap
 @jit(nopython=True)
 def cross_correlogram(t1, t2, binsize, windowsize):
 	"""
-	Perform the discrete cross-correlogram of two time series. 
+	Performs the discrete cross-correlogram of two time series. 
 	The units should be in ms for all arguments.
-	Return a the firing rate of t2 relative to times t1 (i.e. 0ms bin)
+	Return the firing rate of the series t2 relative to the timings of t1.
 	
 	
 	Parameters
 	----------
 	t1 : numpy.ndarray
-	    The timestamps in ms of the reference unit
+	    The timestamps of the reference time series (in ms)
 	t2 : numpy.ndarray
-	    The timestamps in ms of the target unit
+	    The timestamps of the target time series (in ms)
 	binsize : float
-	    The bin size in ms
+	    The bin size (in ms)
 	windowsize : float
-	    The window size in ms
+	    The window size (in ms)
 	
 	Returns
 	-------
 	numpy.ndarray
 	    The cross-correlogram
 	numpy.ndarray
-		Center of the bins in ms	
+		Center of the bins (in ms)
 	
 	"""
 	# nbins = ((windowsize//binsize)*2)	
@@ -141,9 +141,9 @@ def compute_crosscorrelogram(group, ep, binsize, windowsize, norm=True,reverse=F
 	"""
 	Computes all the pairwise cross-correlograms from a group of Ts/Tsd objects.
 	The group can be passed directly as a TsGroup object.
-	The reference neuron and target is chosen based on the builtin itertools.combinations function.
-	For example if indexes are [0,1,2], the function will compute cross-correlograms 
-	for the pairs : (0,1), (0, 2) and (1, 2). The left index gives the reference unit.
+	The reference Ts/Tsd and target are chosen based on the builtin itertools.combinations function.
+	For example if indexes are [0,1,2], the function computes cross-correlograms 
+	for the pairs (0,1), (0, 2), and (1, 2). The left index gives the reference time series.
 	To reverse the order, set reverse=True.
 	
 	Parameters
