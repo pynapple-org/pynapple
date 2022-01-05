@@ -9,7 +9,7 @@ import pynapple as nap
 from matplotlib.pyplot import *
 import sys
 
-data_directory = '/home/guillaume/pynapple/data/A2929-200711'
+data_directory = '/your/path/to/A2929-200711'
 
 ################################################################
 # LOADING DATA
