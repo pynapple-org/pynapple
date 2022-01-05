@@ -1,7 +1,11 @@
-#!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Author: gviejo
+# @Date:   2022-01-02 23:30:51
+# @Last Modified by:   gviejo
+# @Last Modified time: 2022-01-04 17:56:16
 
 """
-Class and functions for loading data processed with the Neurosuite (Klusters, Neuroscope, NDmanager)
+BaseLoader is the general class for loading session with pynapple.
 
 @author: Guillaume Viejo
 """
@@ -74,22 +78,24 @@ class BaseLoader(object):
 
 
     def load_optitrack_csv(self, csv_file):
-        """Summary
+        """
+        Load tracking data exported with Optitrack.
+        By default, the function reads rows 4 and 5 to build the column names.
         
         Parameters
         ----------
-        csv_file : TYPE
-            Description
-        
-        Returns
-        -------
-        TYPE
-            Description
+        csv_file : str
+            path to the csv file
         
         Raises
         ------
         RuntimeError
-            Description
+            If header names are unknown. Should be 'Position' and 'Rotation'
+        
+        Returns
+        -------
+        pandas.DataFrame
+            _
         """
         position = pd.read_csv(csv_file, header = [4,5], index_col = 1)
         if 1 in position.columns:
@@ -107,29 +113,45 @@ class BaseLoader(object):
         return position
 
     def load_dlc_csv(self, csv_file):
-        print("TODO")
-        return
-
-    def load_ttl_pulse(self, ttl_file, tracking_frequency, n_channels=1, channel=0, bytes_size=2, fs=20000.0, threshold=0.3,):
-        """Summary
+        """
+        Load tracking data exported with DeepLabCut
         
         Parameters
         ----------
-        ttl_file : TYPE
-            Description
-        n_channels : int, optional
-            Description
-        channel : int, optional
-            Description
-        bytes_size : int, optional
-            Description
-        fs : float, optional
-            Description
+        csv_file : str
+            path to the csv file
         
         Returns
         -------
-        TYPE
-            Description
+        pandas.DataFrame
+            _
+        """
+        position = pd.read_csv(csv_file, header = [1,2], index_col = 0)
+        position = position[~position.index.duplicated(keep='first')]
+        position.columns = list(map(lambda x:"_".join(x), position.columns.values))
+        return position
+
+    def load_ttl_pulse(self, ttl_file, tracking_frequency, n_channels=1, channel=0, bytes_size=2, fs=20000.0, threshold=0.3,):
+        """
+        Load TTLs from a binary file. Each TTLs is then used to reaassign the time index of tracking frames.
+        
+        Parameters
+        ----------
+        ttl_file : str
+            File name
+        n_channels : int, optional
+            The number of channels in the binary file.
+        channel : int, optional
+            Which channel contains the TTL
+        bytes_size : int, optional
+            Bytes size of the binary file.
+        fs : float, optional
+            Sampling frequency of the binary file
+        
+        Returns
+        -------
+        pd.Series
+            A series containing the time index of the TTL.
         """
         f = open(ttl_file, 'rb')
         startoffile = f.seek(0, 0)
@@ -225,17 +247,14 @@ class BaseLoader(object):
             return None
 
     def create_nwb_file(self, path):
-        """Summary
+        """
+        Initialize the NWB file in the folder pynapplenwb within the data folder.        
         
         Parameters
         ----------
         path : str
             The path to save the data
         
-        Returns
-        -------
-        TYPE
-            Description
         """
         self.nwb_path = os.path.join(path, 'pynapplenwb')
         if not os.path.exists(self.nwb_path):
@@ -295,17 +314,13 @@ class BaseLoader(object):
         return
 
     def load_data(self, path):
-        """Summary
+        """
+        Load NWB data save with pynapple in the pynapplenwb folder
         
         Parameters
         ----------
-        path : TYPE
-            Description
-        
-        Returns
-        -------
-        TYPE
-            Description
+        path : str
+            Path to the session folder
         """
         self.nwb_path = os.path.join(path, 'pynapplenwb')
         if os.path.exists(self.nwb_path):

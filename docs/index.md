@@ -67,26 +67,42 @@ An example of the package can be seen below. The exemple data can be
 found
 [here](https://www.dropbox.com/s/1kc0ulz7yudd9ru/A2929-200711.tar.gz?dl=1).
 
-``` {.sourceCode .python}
+```python
 import numpy as np
 import pandas as pd
 import pynapple as nap
-import sys
+from matplotlib.pyplot import *
 
 data_directory = 'data/A2929-200711'
 
+################################################################
+# LOADING DATA
+################################################################
+data = nap.load_session(data_directory, 'neurosuite')
 
-episodes = ['sleep', 'wake']
-events = ['1']
 
-# Loading Data
-spikes = nap.loadSpikeData(data_directory)   
-position = nap.loadPosition(data_directory, events, episodes)
-wake_ep = nap.loadEpoch(data_directory, 'wake', episodes)
+spikes = data.spikes
+position = data.position
+wake_ep = data.epochs['wake']
 
-# Computing tuning curves
-tuning_curves = nap.computeAngularTuningCurves(spikes, position['ry'], wake_ep, 60)
-tuning_curves = nap.smoothAngularTuningCurves(tuning_curves, 10, 2)
+################################################################
+# COMPUTING TUNING CURVES
+################################################################
+tuning_curves = nap.compute_1d_tuning_curves(spikes, position['ry'], position['ry'].time_support, 120)
+
+        
+################################################################
+# PLOT
+################################################################
+
+figure()
+for i in spikes:
+    subplot(6,7,i+1, projection = 'polar')
+    plot(tuning_curves[i])
+    
+
+show()
+
 ```
 
 ### Credits

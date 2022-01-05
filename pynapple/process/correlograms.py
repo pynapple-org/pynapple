@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 11:39:55
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-02 23:21:17
+# @Last Modified time: 2022-01-03 17:44:36
 
 
 import numpy as np
@@ -23,7 +23,7 @@ def cross_correlogram(t1, t2, binsize, windowsize):
 	"""
 	Perform the discrete cross-correlogram of two time series. 
 	The units should be in ms for all arguments.
-	Return a cross-correlogram t1/t2 where 0ms is the time of a t1 spike.
+	Return a cross-correlogram t1/t2 where 0 ms is the time of a t1 spike.
 	
 	
 	Parameters

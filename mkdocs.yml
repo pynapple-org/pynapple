@@ -3,18 +3,24 @@ nav:
   - Overview: index.md
   - Usage:
     - Tutorials:
-      - Quick start: usage.md
-      - Core: pynapple-core-notebook.ipynb
-    #   # - IO: pynapple-io-notebook.ipynb
-    #   # - Process: pynapple-process-notebook.ipynb
-    # - pynacollada: pynacollada.md
+      - Quick start: notebooks/pynapple-quick-start.ipynb
+      - Core: notebooks/pynapple-core-notebook.ipynb
+      - IO: notebooks/pynapple-io-notebook.ipynb
+      - Process: notebooks/pynapple-process-notebook.ipynb
+    - pynacollada: pynacollada.md
   - Modules:
     - Core:
-      - Time Series: time_series.md
-      - Interval Sets: interval_set.md
-      - Time Series Group: ts_group.md
-    - IO: io.md
-    # - Process: process.md
+      - Time Series: core.time_series.md
+      - Interval Sets: core.interval_set.md
+      - Time Series Group: core.ts_group.md
+    - IO:
+      - Miscellaneous: io.md
+      - Basic IO: io.loader.md
+      - Neurosuite: io.neurosuite.md
+    - Process: 
+      - Correlograms: process.correlograms.md
+      - Tuning curves: process.tuning_curves.md
+      - Decoding: process.decoding.md
   # - Plugins:
   #   - pynalog: pynalog.md
   #   - pynapplesonfire: pynapplesonfire.md
@@ -31,4 +37,4 @@ repo_url: https://github.com/PeyracheLab/pynapple
 plugins:
   - search
   - mkdocstrings
-  - mkdocs-jupyter
+  - mkdocs-jupyter  

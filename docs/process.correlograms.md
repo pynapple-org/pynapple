@@ -1,4 +1,4 @@
-::: pynapple.io.misc
+::: pynapple.process.correlograms
 	handler: python
 	selection:
 		docstring_style: numpy
