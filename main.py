@@ -9,7 +9,7 @@ import pynapple as nap
 from matplotlib.pyplot import *
 import sys
 
-data_directory = '/home/guillaume/pynapple/data/A2929-200711'
+data_directory = 'data/A2929-200711'
 
 ################################################################
 # LOADING DATA
@@ -27,9 +27,9 @@ wake_ep = data.epochs['wake']
 tuning_curves = nap.compute_1d_tuning_curves(spikes, position['ry'], position['ry'].time_support, 120)
 
 		
-############################################################################################### 
+################################################################
 # PLOT
-###############################################################################################
+################################################################
 
 figure()
 for i in spikes:
