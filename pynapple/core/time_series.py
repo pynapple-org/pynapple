@@ -54,8 +54,8 @@ def support_func(data, min_gap, method='absolute'):
     return support_here
 
 
-# class Tsd(pd.Series):
-class Tsd():
+class Tsd(pd.Series):
+# class Tsd():
     """
     A subclass of pandas.Series specialized for neurophysiology time series.
     
@@ -447,8 +447,8 @@ class Tsd():
 
 
 # noinspection PyAbstractClass
-# class TsdFrame(pd.DataFrame):
-class TsdFrame():
+class TsdFrame(pd.DataFrame):
+# class TsdFrame():
     """
     A subclass of pandas.DataFrame specialized for neurophysiological time series.
     
