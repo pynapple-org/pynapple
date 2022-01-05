@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:34:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-04 17:16:28
+# @Last Modified time: 2022-01-04 23:44:34
 
 import numpy as np
 from numba import jit
@@ -71,12 +71,12 @@ def decode_1d(tuning_curves, group, variable, ep, bin_size):
 	tc = tuning_curves.values
 	ct = count.values
 
-	p1 = np.exp(-bin_size*tc.sum(1))	
+	p1 = np.exp(-bin_size*np.nansum(tc, 1))	
 	p2 = occupancy/occupancy.sum()
 
 	ct2 = np.tile(ct[:,np.newaxis,:], (1,tc.shape[0],1))
 
-	p3 = np.prod(tc**ct2, -1)
+	p3 = np.nanprod(tc**ct2, -1)
 
 	p = p1 * p2 * p3
 	p = p / p.sum(1)[:,np.newaxis]
