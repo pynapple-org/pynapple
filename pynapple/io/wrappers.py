@@ -9,8 +9,17 @@ from .. import core as nap
 
 '''
 Wrappers should be able to distinguish between raw data or matlab processed data
+
+TODO:
+    load/write NWB
+    
+
 '''
 
+
+
+## THIS SHOULD BE DISCUSSED.
+## SEEMS TO COMPLICATED
 def loadSpikeData(path, index=None, fs = 20000):
 	"""
 	if the path contains a folder named /Analysis, 
@@ -979,3 +988,21 @@ def loadUpDown(path):
 		up_ep = nap.IntervalSet(start = tmp[:,0], end = tmp[:,1], time_units = 's')
 	return (down_ep, up_ep)
 
+
+def writeNeuroscopeEvents(path, ep, name):
+	f = open(path, 'w')
+	for i in range(len(ep)):
+		f.writelines(str(ep.as_units('ms').iloc[i]['start']) + " "+name+" start "+ str(1)+"\n")
+		f.writelines(str(ep.as_units('ms').iloc[i]['end']) + " "+name+" end "+ str(1)+"\n")
+	f.close()		
+	return
+
+def loadShankStructure(generalinfo):
+	shankStructure = {}
+	for k,i in zip(generalinfo['shankStructure'][0][0][0][0],range(len(generalinfo['shankStructure'][0][0][0][0]))):
+		if len(generalinfo['shankStructure'][0][0][1][0][i]):
+			shankStructure[k[0]] = generalinfo['shankStructure'][0][0][1][0][i][0]-1
+		else :
+			shankStructure[k[0]] = []
+	
+	return shankStructure	

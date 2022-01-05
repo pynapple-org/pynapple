@@ -2,17 +2,17 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:34:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-04 23:44:34
+# @Last Modified time: 2022-01-04 17:16:28
 
 import numpy as np
 from numba import jit
 import pandas as pd
 from .. import core as nap
 
-def decode_1d(tuning_curves, group, variable, ep, bin_size):
+def decode_1d(tuning_curves, group, feature, ep, bin_size):
 	"""
-	Perform bayesian decoding over one dimension.
-	See : 
+	Performs Bayesian decoding over a one dimensional feature.
+	See: 
 	Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J. 
 	(1998). Interpreting neuronal population activity by 
 	reconstruction: unified framework with application to 
@@ -21,23 +21,23 @@ def decode_1d(tuning_curves, group, variable, ep, bin_size):
 	
 	Parameters
 	----------
-	tuning_curves : pandas.DataFrame
-	    Each column is the tuning curve of one neuron. Index should be the center of the bin.
-	group : TsGroup or dict of Ts/Tsd object.
+	tuning_curves: pandas.DataFrame
+	    Each column is the tuning curve of one neuron relative to the feature. Index should be the center of the bin.
+	group: TsGroup or dict of Ts/Tsd object.
 	    A group of neurons with the same index as tuning curves column names.
-	variable : Tsd
-	    The 1d variable used to compute the tuning curves. Used to correct for occupancy.
-	ep : IntervalSet
-	    The epoch to compute the decoding
-	bin_size : float
+	feature: Tsd
+	    The 1d feature used to compute the tuning curves. Used to correct for occupancy.
+	ep: IntervalSet
+	    The epoch on which decoding is computed
+	bin_size: float
 	    Bin size in seconds
 	
 	Returns
 	-------
 	Tsd
-	    The decoded trajectory
+	    The decoded feature
 	TsdFrame
-		The probabilities of the decoded trajectory
+		The probability distribution of the decoded feature for each time bin
 	
 	Raises
 	------
@@ -65,18 +65,18 @@ def decode_1d(tuning_curves, group, variable, ep, bin_size):
 	diff = np.diff(tuning_curves.index.values)
 	bins = tuning_curves.index.values[:-1] - diff/2
 	bins = np.hstack((bins, [bins[-1]+diff[-1],bins[-1]+2*diff[-1]])) # assuming the size of the last 2 bins is equal
-	occupancy,_ = np.histogram(variable, bins)
+	occupancy,_ = np.histogram(feature, bins)
 
 	# Transforming to pure numpy array
 	tc = tuning_curves.values
 	ct = count.values
 
-	p1 = np.exp(-bin_size*np.nansum(tc, 1))	
+	p1 = np.exp(-bin_size*tc.sum(1))	
 	p2 = occupancy/occupancy.sum()
 
 	ct2 = np.tile(ct[:,np.newaxis,:], (1,tc.shape[0],1))
 
-	p3 = np.nanprod(tc**ct2, -1)
+	p3 = np.prod(tc**ct2, -1)
 
 	p = p1 * p2 * p3
 	p = p / p.sum(1)[:,np.newaxis]
@@ -96,10 +96,10 @@ def decode_1d(tuning_curves, group, variable, ep, bin_size):
 
 	return decoded, p
 
-def decode_2d(tuning_curves, group, variable, ep, bin_size, xy):
+def decode_2d(tuning_curves, group, feature, ep, bin_size, xy):
 	"""
-	Perform bayesian decoding over two dimension.
-	See : 
+	Performs Bayesian decoding over a two dimensional feature.
+	See: 
 	Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J. 
 	(1998). Interpreting neuronal population activity by 
 	reconstruction: unified framework with application to 
@@ -108,25 +108,25 @@ def decode_2d(tuning_curves, group, variable, ep, bin_size, xy):
 
 	Parameters
 	----------
-	tuning_curves : dict
-	    Dictionnay of 2d tuning curves for each neuron.
-	group : TsGroup or dict of Ts/Tsd object.
-	    A group of neurons with the same index as tuning curves column names.
-	variable : Tsd
-	    The 1d variable used to compute the tuning curves. Used to correct for occupancy.
-	ep : IntervalSet
-	    The epoch to compute the decoding
-	bin_size : float
+	tuning_curves: dict
+	    Dictionnay of 2d tuning curves (one for each neuron).
+	group: TsGroup or dict of Ts/Tsd object.
+	    A group of neurons with the same index as tuning curve column names.
+	variable: Tsd
+	    The 2d feature used to compute the tuning curves. Used to correct for occupancy.
+	ep: IntervalSet
+	    The epoch on which decoding is computed
+	bin_size: float
 	    Bin size in seconds
-	xy : tuple
-	    A tuple of bins position for the tuning curves i.e. xy=(x,y)
+	xy: tuple
+	    A tuple of bin positions for the tuning curves i.e. xy=(x,y)
 	
 	Returns
 	-------
 	Tsd
-	    The decoded trajectory in 2d
+	    The decoded feature in 2d
 	numpy.ndarray
-		The probabilities of the decoded trajectory
+		The probability distribution of the decoded trajectory for each time bin
 	
 	Raises
 	------
@@ -159,8 +159,8 @@ def decode_2d(tuning_curves, group, variable, ep, bin_size, xy):
 		binsxy.append(bins)
 
 	occupancy, _, _ = np.histogram2d(
-		variable.iloc[:,0],
-		variable.iloc[:,1],
+		feature.iloc[:,0],
+		feature.iloc[:,1],
 		[binsxy[0], binsxy[1]])
 	occupancy = occupancy.flatten()
 
@@ -191,7 +191,7 @@ def decode_2d(tuning_curves, group, variable, ep, bin_size, xy):
 		t = count.index.values,
 		d = np.vstack((xy[0][idxmax2d[0]], xy[1][idxmax2d[1]])).T,
 		time_support = ep,
-		columns=variable.columns
+		columns=feature.columns
 		)
 
 	return decoded, p
