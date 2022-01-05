@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-03 18:00:07
+# @Last Modified time: 2022-01-04 15:36:12
 
 import numpy as np
 import pandas as pd
@@ -80,8 +80,8 @@ def compute_2d_tuning_curves(group, variable, ep, nb_bins, minmax=None):
 	numpy.ndarray
 	    Stacked array of the tuning curves with dimensions (n, nb_bins, nb_bins).
 	    n is the number of object in the input group. 
-	dict
-		Dictionnary of bins in the two dimensions
+	list
+		bins center in the two dimensions
 
 	"""
 	if type(group) is dict:
@@ -116,5 +116,7 @@ def compute_2d_tuning_curves(group, variable, ep, nb_bins, minmax=None):
 			)
 		count = count / occupancy
 		tc[n] = count * variable.rate
+
+	xy = [binsxy[c][0:-1] + np.diff(binsxy[c])/2 for c in binsxy.keys()]
 	
-	return tc, binsxy
+	return tc, xy

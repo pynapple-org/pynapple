@@ -64,7 +64,7 @@ class NeuroSuite(BaseLoader):
 
     def load_neurosuite_spikes(self,path, basename, time_support=None, fs = 20000.0):
         """
-        Read the clus and res files and convert to nwb.
+        Read the clus and res files and convert to NWB.
         Instantiate automatically a TsGroup object.
         
         Parameters
@@ -248,7 +248,7 @@ class NeuroSuite(BaseLoader):
 
     def load_nwb_spikes(self, path):
         """
-        Read the nwb spikes to extract the spike times.
+        Read the NWB spikes to extract the spike times.
 
         Parameters
         ----------

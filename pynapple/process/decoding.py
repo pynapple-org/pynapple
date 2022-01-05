@@ -2,128 +2,196 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:34:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-03 19:42:54
+# @Last Modified time: 2022-01-04 17:16:28
 
 import numpy as np
 from numba import jit
 import pandas as pd
 from .. import core as nap
 
-def decode_1d(tuning_curves, group, ep, bin_size):
+def decode_1d(tuning_curves, group, variable, ep, bin_size):
 	"""
 	Perform bayesian decoding over one dimension.
-	See : Zhang, 1998, Interpreting Neuronal Population Activity by Reconstruction: Unified Framework With Application to Hippocampal Place Cells
+	See : 
+	Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J. 
+	(1998). Interpreting neuronal population activity by 
+	reconstruction: unified framework with application to 
+	hippocampal place cells. Journal of neurophysiology, 79(2), 
+	1017-1044.
 	
 	Parameters
 	----------
-	tuning_curves : TYPE
-	    Description
-	group : TYPE
-	    Description
-	ep : TYPE
-	    Description
-	bin_size : TYPE
-	    Description
+	tuning_curves : pandas.DataFrame
+	    Each column is the tuning curve of one neuron. Index should be the center of the bin.
+	group : TsGroup or dict of Ts/Tsd object.
+	    A group of neurons with the same index as tuning curves column names.
+	variable : Tsd
+	    The 1d variable used to compute the tuning curves. Used to correct for occupancy.
+	ep : IntervalSet
+	    The epoch to compute the decoding
+	bin_size : float
+	    Bin size in seconds
 	
 	Returns
 	-------
-	TYPE
-	    Description
+	Tsd
+	    The decoded trajectory
+	TsdFrame
+		The probabilities of the decoded trajectory
+	
+	Raises
+	------
+	RuntimeError
+	    If indexes don't match between tuning_curves and group
+	
 	"""
-
-	if len(ep) == 1:
-		bins = np.arange(ep.as_units('ms').start.iloc[0], ep.as_units('ms').end.iloc[-1], bin_size)
+	if type(group) is dict:
+		newgroup = nap.TsGroup(group, time_support = ep)
+	elif type(group) is nap.TsGroup:
+		newgroup = group.restrict(ep)
 	else:
-		# ep2 = nts.IntervalSet(ep.copy().as_units('ms'))
-		# ep2 = ep2.drop_short_intervals(bin_size*2)
-		# bins = []
-		# for i in ep2.index:
-		# 	bins.append(np.arange())
-		# bins = np.arange(ep2.start.iloc[0], ep.end.iloc[-1], bin_size)
-		print("TODO")
-		sys.exit()
+		raise RuntimeError("Unknown format for group")
 
+	if tuning_curves.shape[1] != len(newgroup):
+		raise RuntimeError("Different shapes for tuning_curves and group")
 
-	order = tuning_curves.columns.values
-	# TODO CHECK MATCH
+	if not np.all(tuning_curves.columns.values == np.array(newgroup.keys())):
+		raise RuntimeError("Difference indexes for tuning curves and group keys")	
 
-	# smoothing with a non-normalized gaussian
-	w = scipy.signal.gaussian(51, 2)
+	# Bin spikes
+	count = newgroup.count(bin_size, ep, 's')
+
+	# Occupancy
+	diff = np.diff(tuning_curves.index.values)
+	bins = tuning_curves.index.values[:-1] - diff/2
+	bins = np.hstack((bins, [bins[-1]+diff[-1],bins[-1]+2*diff[-1]])) # assuming the size of the last 2 bins is equal
+	occupancy,_ = np.histogram(variable, bins)
+
+	# Transforming to pure numpy array
+	tc = tuning_curves.values
+	ct = count.values
+
+	p1 = np.exp(-bin_size*tc.sum(1))	
+	p2 = occupancy/occupancy.sum()
+
+	ct2 = np.tile(ct[:,np.newaxis,:], (1,tc.shape[0],1))
+
+	p3 = np.prod(tc**ct2, -1)
+
+	p = p1 * p2 * p3
+	p = p / p.sum(1)[:,np.newaxis]
+
+	idxmax = np.argmax(p, 1)
+
+	p = nap.TsdFrame(
+		t=count.index.values,
+		d=p, 
+		time_support=ep,
+		columns=tuning_curves.index.values)
+
+	decoded = nap.Tsd(
+		t=count.index.values,
+		d=tuning_curves.index.values[idxmax],
+		time_support=ep)
+
+	return decoded, p
+
+def decode_2d(tuning_curves, group, variable, ep, bin_size, xy):
+	"""
+	Perform bayesian decoding over two dimension.
+	See : 
+	Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J. 
+	(1998). Interpreting neuronal population activity by 
+	reconstruction: unified framework with application to 
+	hippocampal place cells. Journal of neurophysiology, 79(2), 
+	1017-1044.
+
+	Parameters
+	----------
+	tuning_curves : dict
+	    Dictionnay of 2d tuning curves for each neuron.
+	group : TsGroup or dict of Ts/Tsd object.
+	    A group of neurons with the same index as tuning curves column names.
+	variable : Tsd
+	    The 1d variable used to compute the tuning curves. Used to correct for occupancy.
+	ep : IntervalSet
+	    The epoch to compute the decoding
+	bin_size : float
+	    Bin size in seconds
+	xy : tuple
+	    A tuple of bins position for the tuning curves i.e. xy=(x,y)
 	
-	spike_counts = pd.DataFrame(index = bins[0:-1]+np.diff(bins)/2, columns = order)
-	for n in spike_counts:		
-		spks = spikes[n].restrict(ep).as_units('ms').index.values
-		tmp = np.histogram(spks, bins)
-		spike_counts[n] = np.convolve(tmp[0], w, mode = 'same')
-		# spike_counts[k] = tmp[0]
+	Returns
+	-------
+	Tsd
+	    The decoded trajectory in 2d
+	numpy.ndarray
+		The probabilities of the decoded trajectory
+	
+	Raises
+	------
+	RuntimeError
+	    If indexes don't match between tuning_curves and group
 
-	tcurves_array = tuning_curves.values
-	spike_counts_array = spike_counts.values
-	proba_angle = np.zeros((spike_counts.shape[0], tuning_curves.shape[0]))
-
-	part1 = np.exp(-(bin_size/1000)*tcurves_array.sum(1))
-	if px is not None:
-		part2 = px
+	"""
+	if type(group) is dict:
+		newgroup = nap.TsGroup(group, time_support = ep)
+	elif type(group) is nap.TsGroup:
+		newgroup = group.restrict(ep)
 	else:
-		part2 = np.ones(tuning_curves.shape[0])
-	#part2 = np.histogram(position['ry'], np.linspace(0, 2*np.pi, 61), weights = np.ones_like(position['ry'])/float(len(position['ry'])))[0]
-	
-	for i in range(len(proba_angle)):
-		part3 = np.prod(tcurves_array**spike_counts_array[i], 1)
-		p = part1 * part2 * part3
-		proba_angle[i] = p/p.sum() # Normalization process here
+		raise RuntimeError("Unknown format for group")
 
-	proba_angle  = pd.DataFrame(index = spike_counts.index.values, columns = tuning_curves.index.values, data= proba_angle)	
-	proba_angle = proba_angle.astype('float')
-	decoded = nts.Tsd(t = proba_angle.index.values, d = proba_angle.idxmax(1).values, time_units = 'ms')
-	return decoded, proba_angle, spike_counts
+	if len(tuning_curves) != len(newgroup):
+		raise RuntimeError("Different shapes for tuning_curves and group")
 
-# def decodeHD(tuning_curves, spikes, ep, bin_size = 200, px = None):
-# 	"""
-# 	"""		
-# 	if len(ep) == 1:
-# 		bins = np.arange(ep.as_units('ms').start.iloc[0], ep.as_units('ms').end.iloc[-1], bin_size)
-# 	else:
-# 		# ep2 = nts.IntervalSet(ep.copy().as_units('ms'))
-# 		# ep2 = ep2.drop_short_intervals(bin_size*2)
-# 		# bins = []
-# 		# for i in ep2.index:
-# 		# 	bins.append(np.arange())
-# 		# bins = np.arange(ep2.start.iloc[0], ep.end.iloc[-1], bin_size)
-# 		print("TODO")
-# 		sys.exit()
+	if not np.all(np.array(list(tuning_curves.keys())) == np.array(newgroup.keys())):
+		raise RuntimeError("Difference indexes for tuning curves and group keys")	
 
+	# Bin spikes
+	count = newgroup.count(bin_size, ep, 's')
 
-# 	order = tuning_curves.columns.values
-# 	# TODO CHECK MATCH
+	# Occupancy
+	binsxy = []
+	for i in range(len(xy)):
+		diff = np.diff(xy[i])
+		bins = xy[i][:-1] - diff/2
+		bins = np.hstack((bins, [bins[-1]+diff[-1],bins[-1]+2*diff[-1]])) # assuming the size of the last 2 bins is equal
+		binsxy.append(bins)
 
-# 	# smoothing with a non-normalized gaussian
-# 	w = scipy.signal.gaussian(51, 2)
-	
-# 	spike_counts = pd.DataFrame(index = bins[0:-1]+np.diff(bins)/2, columns = order)
-# 	for n in spike_counts:		
-# 		spks = spikes[n].restrict(ep).as_units('ms').index.values
-# 		tmp = np.histogram(spks, bins)
-# 		spike_counts[n] = np.convolve(tmp[0], w, mode = 'same')
-# 		# spike_counts[k] = tmp[0]
+	occupancy, _, _ = np.histogram2d(
+		variable.iloc[:,0],
+		variable.iloc[:,1],
+		[binsxy[0], binsxy[1]])
+	occupancy = occupancy.flatten()
 
-# 	tcurves_array = tuning_curves.values
-# 	spike_counts_array = spike_counts.values
-# 	proba_angle = np.zeros((spike_counts.shape[0], tuning_curves.shape[0]))
+	# Transforming to pure numpy array
+	tc = np.array([tuning_curves[i] for i in tuning_curves.keys()])
+	tc = tc.reshape(tc.shape[0], np.prod(tc.shape[1:]))
+	tc = tc.T
 
-# 	part1 = np.exp(-(bin_size/1000)*tcurves_array.sum(1))
-# 	if px is not None:
-# 		part2 = px
-# 	else:
-# 		part2 = np.ones(tuning_curves.shape[0])
-# 	#part2 = np.histogram(position['ry'], np.linspace(0, 2*np.pi, 61), weights = np.ones_like(position['ry'])/float(len(position['ry'])))[0]
-	
-# 	for i in range(len(proba_angle)):
-# 		part3 = np.prod(tcurves_array**spike_counts_array[i], 1)
-# 		p = part1 * part2 * part3
-# 		proba_angle[i] = p/p.sum() # Normalization process here
+	ct = count.values
 
-# 	proba_angle  = pd.DataFrame(index = spike_counts.index.values, columns = tuning_curves.index.values, data= proba_angle)	
-# 	proba_angle = proba_angle.astype('float')
-# 	decoded = nts.Tsd(t = proba_angle.index.values, d = proba_angle.idxmax(1).values, time_units = 'ms')
-# 	return decoded, proba_angle, spike_counts
+	p1 = np.exp(-bin_size*np.nansum(tc, 1))
+	p2 = occupancy/occupancy.sum()
+
+	ct2 = np.tile(ct[:,np.newaxis,:], (1,tc.shape[0],1))
+
+	p3 = np.nanprod(tc**ct2, -1)
+
+	p = p1 * p2 * p3
+	p = p / p.sum(1)[:,np.newaxis]
+
+	idxmax = np.argmax(p, 1)
+
+	p = p.reshape(p.shape[0], len(xy[0]), len(xy[1]))
+
+	idxmax2d = np.unravel_index(idxmax, (len(xy[0]), len(xy[1])))
+
+	decoded = nap.TsdFrame(
+		t = count.index.values,
+		d = np.vstack((xy[0][idxmax2d[0]], xy[1][idxmax2d[1]])).T,
+		time_support = ep,
+		columns=variable.columns
+		)
+
+	return decoded, p
