@@ -112,7 +112,7 @@ def decode_2d(tuning_curves, group, feature, ep, bin_size, xy):
 	    Dictionnay of 2d tuning curves (one for each neuron).
 	group: TsGroup or dict of Ts/Tsd object.
 	    A group of neurons with the same index as tuning curve column names.
-	variable: Tsd
+	feature: Tsd
 	    The 2d feature used to compute the tuning curves. Used to correct for occupancy.
 	ep: IntervalSet
 	    The epoch on which decoding is computed
