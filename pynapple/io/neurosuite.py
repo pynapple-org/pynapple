@@ -48,12 +48,12 @@ class NeuroSuite(BaseLoader):
         # Bypass if data have already been transfered to nwb
         if loading_neurosuite:
             self.load_neurosuite_xml(path)
-            print("XML loaded")
+            # print("XML loaded")
             # To label the electrodes groups
             app = QApplication([])
             self.window = EphysGUI(path=path, groups=self.group_to_channel)
             app.exec()
-            print("GUI DONE")     
+            # print("GUI DONE")     
             if self.window.status:
                 self.ephys_information = self.window.ephys_information
 
