@@ -20,11 +20,13 @@ Getting Started
 ### Requirements
 
 -   Python 3.6+
--   Pandas 1.0.3+
--   numpy 1.17+
--   scipy 1.3+
--   numba 0.46+
+-   Pandas
+-   numpy
+-   scipy
+-   numba
+-   pynwb 2.0
 -   tabulate
+-   pyqt5
 
 ### Installation
 
