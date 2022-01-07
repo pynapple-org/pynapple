@@ -35,6 +35,7 @@ theme:
   #   - navigation.tabs
 repo_url: https://github.com/PeyracheLab/pynapple
 plugins:
+  - mkdocs-jupyter:
+      ignore_h1_titles: True      
   - search
   - mkdocstrings
-  - mkdocs-jupyter  

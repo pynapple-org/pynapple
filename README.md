@@ -44,20 +44,20 @@ $ # Install in editable mode with `-e` or, equivalently, `--editable`
 $ pip install -e .
 ```
 
-Features
+<!-- Features
 --------
 
 -   Automatic handling of spike times and epochs
 -   Tuning curves
 -   Loading data coming from various pipelines
--   More and more coming!
+-   More and more coming! -->
 
 Basic Usage
 -----------
 
 After installation, the package can imported:
 
-```shell
+``` {.sourceCode .shell}
 $ python
 >>> import pynapple as nap
 ```
@@ -66,18 +66,15 @@ An example of the package can be seen below. The exemple data can be
 found
 [here](https://www.dropbox.com/s/1kc0ulz7yudd9ru/A2929-200711.tar.gz?dl=1).
 
-```python
+``` py
 import numpy as np
 import pandas as pd
 import pynapple as nap
 from matplotlib.pyplot import *
-import sys
 
-data_directory = 'data/A2929-200711'
+data_directory = '/your/path/to/A2929-200711'
 
-################################################################
 # LOADING DATA
-################################################################
 data = nap.load_session(data_directory, 'neurosuite')
 
 
@@ -85,16 +82,16 @@ spikes = data.spikes
 position = data.position
 wake_ep = data.epochs['wake']
 
-################################################################
 # COMPUTING TUNING CURVES
-################################################################
-tuning_curves = nap.compute_1d_tuning_curves(spikes, position['ry'], position['ry'].time_support, 120)
+tuning_curves = nap.compute_1d_tuning_curves(group = spikes, 
+                                            feature = position['ry'], 
+                                            ep = position['ry'].time_support, 
+                                            nb_bins = 120,  
+                                            minmax=(0, 2*np.pi) )
+                                                
 
         
-################################################################
 # PLOT
-################################################################
-
 figure()
 for i in spikes:
     subplot(6,7,i+1, projection = 'polar')
@@ -102,6 +99,7 @@ for i in spikes:
     
 
 show()
+
 ```
 
 ### Credits

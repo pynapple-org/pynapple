@@ -5,14 +5,12 @@
 
 PYthon Neural Analysis Package.
 
-pynapple is a Python library for analysing neurophysiological data. It
-allows to handle time series and epochs but also to use generic
-functions for neuroscience such as tuning curves and cross-correlogram
-of spikes. It is heavily based on neuroseries.
+pynapple is a light-weight python library for neurophysiological data analysis. The goal is to offer a versatile set of tools to study typical data in the field, i.e. time series (spike times, behavioral events, etc.) and time intervals (trials, brain states, etc.). It also provides users with generic functions for neuroscience such as tuning curves and cross-correlograms.
 
 -   Free software: GNU General Public License v3
 -   Documentation:
-    <https://peyrachelab.github.io/pynapple/html/index.html>
+    <https://peyrachelab.github.io/pynapple>
+
 
 ------------------------------------------------------------------------
 
@@ -22,10 +20,13 @@ Getting Started
 ### Requirements
 
 -   Python 3.6+
--   Pandas 1.0.3+
--   numpy 1.17+
--   scipy 1.3+
--   numba 0.46+
+-   Pandas
+-   numpy
+-   scipy
+-   numba
+-   pynwb 2.0
+-   tabulate
+-   pyqt5
 
 ### Installation
 
@@ -42,17 +43,17 @@ $ # clone the repository
 $ git clone https://github.com/PeyracheLab/pynapple.git
 $ cd pynapple
 $ # Install in editable mode with `-e` or, equivalently, `--editable`
-$ pip install -e
+$ pip install -e .
 ```
 
-Features
+<!-- Features
 --------
 
 -   Automatic handling of spike times and epochs
 -   Tuning curves
 -   Loading data coming from various pipelines
 -   More and more coming!
-
+ -->
 Basic Usage
 -----------
 
@@ -67,17 +68,15 @@ An example of the package can be seen below. The exemple data can be
 found
 [here](https://www.dropbox.com/s/1kc0ulz7yudd9ru/A2929-200711.tar.gz?dl=1).
 
-```python
+``` py
 import numpy as np
 import pandas as pd
 import pynapple as nap
 from matplotlib.pyplot import *
 
-data_directory = 'data/A2929-200711'
+data_directory = '/your/path/to/A2929-200711'
 
-################################################################
 # LOADING DATA
-################################################################
 data = nap.load_session(data_directory, 'neurosuite')
 
 
@@ -85,16 +84,16 @@ spikes = data.spikes
 position = data.position
 wake_ep = data.epochs['wake']
 
-################################################################
 # COMPUTING TUNING CURVES
-################################################################
-tuning_curves = nap.compute_1d_tuning_curves(spikes, position['ry'], position['ry'].time_support, 120)
+tuning_curves = nap.compute_1d_tuning_curves(group = spikes, 
+                                            feature = position['ry'], 
+                                            ep = position['ry'].time_support, 
+                                            nb_bins = 120,  
+                                            minmax=(0, 2*np.pi) )
+                                                
 
         
-################################################################
 # PLOT
-################################################################
-
 figure()
 for i in spikes:
     subplot(6,7,i+1, projection = 'polar')
