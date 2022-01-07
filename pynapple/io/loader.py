@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-04 17:56:16
+# @Last Modified time: 2022-01-06 19:17:43
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -60,7 +60,8 @@ class BaseLoader(object):
                     self.window.tracking_method,
                     self.window.tracking_frequency,
                     self.window.epochs,
-                    self.window.time_units_epochs
+                    self.window.time_units_epochs,
+                    self.window.tracking_alignement
                     )                
                 self.epochs = self._make_epochs(
                     self.window.epochs, 
@@ -75,6 +76,25 @@ class BaseLoader(object):
                 # Save the data
                 self.create_nwb_file(path)
             app.quit()
+    
+    def load_default_csv(self, csv_file):
+        """
+        Load tracking data. The default csv should have the time index in the first column in seconds.
+        If no header is provided, the column names will be the column index.
+        
+        Parameters
+        ----------
+        csv_file : str
+            path to the csv file
+        
+        Returns
+        -------
+        pandas.DataFrame
+            _
+        """
+        position = pd.read_csv(csv_file, header = [0], index_col = 0)
+        position = position[~position.index.duplicated(keep='first')]        
+        return position
 
 
     def load_optitrack_csv(self, csv_file):
@@ -172,13 +192,14 @@ class BaseLoader(object):
         ttl = pd.Series(index = timestep[peaks], data = data[peaks])
         return ttl
 
-    def _make_position(self, parameters, method, frequency, epochs, time_units):
+    def _make_position(self, parameters, method, frequency, epochs, time_units, alignement):
         """
         Make the position TSDFrame with the parameters extracted from the GUI.
         """
         if len(parameters.index) == 0:
             return None
         else:
+
             frames = []
 
             for i, f in enumerate(parameters.index):
@@ -187,34 +208,45 @@ class BaseLoader(object):
                     position = self.load_optitrack_csv(parameters.loc[f,'csv'])
                 elif method.lower() == 'deeplabcut':
                     position = self.load_dlc_csv(parameters.loc[f,'csv'])
+                elif method.lower() == 'default':
+                    position = self.load_default_csv(parameters.loc[f,'csv'])
 
-                ttl = self.load_ttl_pulse(
-                    ttl_file=parameters.loc[f,'ttl'],
-                    tracking_frequency=frequency,
-                    n_channels=parameters.loc[f,'n_channels'],
-                    channel=parameters.loc[f,'tracking_channel'],
-                    bytes_size=parameters.loc[f,'bytes_size'],
-                    fs=parameters.loc[f,'fs'],
-                    threshold=parameters.loc[f,'threshold'],
-                    )
-                
-                if len(ttl):
-                    length = np.minimum(len(ttl), len(position))
-                    ttl = ttl.iloc[0:length]
-                    position = position.iloc[0:length]
-                else:
-                    raise RuntimeError("No ttl detected for {}".format(f))
+                if alignement.lower() == 'local':
+                    start_epoch = nap.TimeUnits.format_timestamps(epochs.loc[parameters.loc[f,'epoch'],'start'], time_units)
+                    timestamps = position.index.values + nap.TimeUnits.return_timestamps(start_epoch,'s')[0]
+                    position.index = pd.Index(timestamps)
 
-                start_epoch = nap.TimeUnits.format_timestamps(epochs.loc[parameters.loc[f,'epoch'],'start'], time_units)
-                timestamps = nap.TimeUnits.return_timestamps(start_epoch,'s')[0] + ttl.index.values
-                position.index = pd.Index(timestamps)
+                if alignement.lower() == 'ttl':
+                    ttl = self.load_ttl_pulse(
+                        ttl_file=parameters.loc[f,'ttl'],
+                        tracking_frequency=frequency,
+                        n_channels=parameters.loc[f,'n_channels'],
+                        channel=parameters.loc[f,'tracking_channel'],
+                        bytes_size=parameters.loc[f,'bytes_size'],
+                        fs=parameters.loc[f,'fs'],
+                        threshold=parameters.loc[f,'threshold'],
+                        )
+                    
+                    if len(ttl):
+                        length = np.minimum(len(ttl), len(position))
+                        ttl = ttl.iloc[0:length]
+                        position = position.iloc[0:length]
+                    else:
+                        raise RuntimeError("No ttl detected for {}".format(f))
+
+                    start_epoch = nap.TimeUnits.format_timestamps(epochs.loc[parameters.loc[f,'epoch'],'start'], time_units)
+                    timestamps = nap.TimeUnits.return_timestamps(start_epoch,'s')[0] + ttl.index.values
+                    position.index = pd.Index(timestamps)
 
                 frames.append(position)
 
             position = pd.concat(frames)
-            position[['ry', 'rx', 'rz']] *= (np.pi/180)
-            position[['ry', 'rx', 'rz']] += 2*np.pi
-            position[['ry', 'rx', 'rz']] %= 2*np.pi
+
+            # Specific to optitrACK
+            if set(['rx', 'ry', 'rz']).issubset(position.columns):
+                position[['ry', 'rx', 'rz']] *= (np.pi/180)
+                position[['ry', 'rx', 'rz']] += 2*np.pi
+                position[['ry', 'rx', 'rz']] %= 2*np.pi
 
             position = nap.TsdFrame(
                 t = position.index.values, 

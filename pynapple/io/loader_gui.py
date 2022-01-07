@@ -28,7 +28,6 @@ class TTLDetection(QDialog):
         self.load_ttl(file, n_channels, channel, bytes_size, fs)
         self.plot()
 
-
         slider = QDoubleSpinBox()
         slider.setMinimum(0)
         slider.setMaximum(1)
@@ -288,16 +287,36 @@ class TrackingTab(QWidget):
         self.time_units = 's'
         self.tracking_method = 'Optitrack'
         self.track_frequency = 120.0
+        self.alignement_csv = 'global' # local or ttl
         self.csv_files = []
-        self.parameters = pd.DataFrame(
-            columns = [ 'csv', 
-                        'ttl', 
-                        'n_channels', 
-                        'tracking_channel', 
-                        'bytes_size',
-                        'fs',
-                        'epoch',
-                        'threshold'])
+
+        self.align_to_headers = {
+            'global':['CSV files'],
+            'local':['CSV files','Start\nepoch'],
+            'ttl':['CSV files', 'TTL file', 'Number\nof\nchannels','Tracking\nchannel','Bytes\nsize','TTL\nsampling\nfrequency\n(Hz)','Start\nepoch','TTL\ndetection']
+                }
+
+        self.headers_to_param = {
+            'global':{
+                'CSV files':'csv'
+            },
+            'local':{
+                'CSV files':'csv',
+                'Start\nepoch':'epoch'
+            },
+            'ttl':{'CSV files':'csv',
+                'TTL file':'ttl',
+                'Number\nof\nchannels':'n_channels',
+                'Tracking\nchannel':'tracking_channel',
+                'Bytes\nsize':'bytes_size',
+                'TTL\nsampling\nfrequency\n(Hz)':'fs',
+                'Start\nepoch':'epoch',
+                'TTL\ndetection':'threshold'
+                }
+            }
+
+        self.parameters = pd.DataFrame(columns = ['csv'])
+
         self.ttl_param_widgets = {}
 
         self.layout = QVBoxLayout(self)
@@ -305,11 +324,24 @@ class TrackingTab(QWidget):
         laytop = QHBoxLayout()
         laytop.addWidget(QLabel("Tracking system: "))
         combobox1 = QComboBox()
-        combobox1.addItems(['Optitrack', 'Deep Lab Cut'])
+        combobox1.addItems(['Optitrack', 'Deep Lab Cut', 'Default'])
         combobox1.currentTextChanged.connect(self.get_tracking_method)
         laytop.addWidget(combobox1)
+
+        # Select type of alignement
+        abox = QHBoxLayout()
+        abox.addWidget(QLabel("Tracking alignment :"))
+        abox.setAlignment(Qt.AlignLeft)
+        vbox2 = QVBoxLayout()
+        for tu in ['Global timestamps in CSV', 'Local timestamps in CSV', 'TTL detection']:
+            tubox = QRadioButton(tu, self)
+            if tu == 'Global timestamps in CSV': tubox.setChecked(True)
+            tubox.toggled.connect(self._update_table_headers)
+            vbox2.addWidget(tubox)
+        abox.addLayout(vbox2)
+        laytop.addLayout(abox)
         
-        laytop.addWidget(QLabel("Tracking sampling frequency (Hz): "))
+        laytop.addWidget(QLabel("Tracking\nfrequency (Hz): "))
         fs = QDoubleSpinBox()
         fs.setMaximum(100000.0)
         fs.setSingleStep(10.0)
@@ -328,18 +360,9 @@ class TrackingTab(QWidget):
         self.layout.addLayout(laytop)
 
         # Table view
-        self.table = QTableWidget(1,8)
-        self.table.setHorizontalHeaderLabels(
-            ['CSV file', 
-            'TTL file', 
-            'Number\nof\nchannels', 
-            'Tracking\nchannel', 
-            'Bytes\nsize', 
-            'TTL\nsampling\nfrequency\n(Hz)', 
-            'Start\nepoch',
-            'TTL\ndetection'
-            ]
-            )
+        self.table = QTableWidget(1,1)
+        self.table.setHorizontalHeaderLabels(['CSV file'])
+            
         self.table.itemDoubleClicked.connect(self.change_file)
         header = self.table.horizontalHeader()       
         header.setSectionResizeMode(QHeaderView.Stretch)
@@ -348,55 +371,124 @@ class TrackingTab(QWidget):
 
         self.layout.addStretch()
 
+    def _update_table_headers(self, s):
+        rbtn = self.sender()
+        if rbtn.isChecked() == True:
+
+            self.table.clearContents()      
+            self.parameters = pd.DataFrame(columns = ['csv'])
+
+            nc = self.table.columnCount()
+
+            while nc > 1:
+                self.table.removeColumn(nc-1)
+                nc -= 1
+
+            if rbtn.text() == 'Global timestamps in CSV':                 
+                self.alignement_csv='global'
+            elif rbtn.text() == 'Local timestamps in CSV':
+                self.alignement_csv='local'
+                for i in range(len(self.align_to_headers['local'][1:])):
+                    self.table.insertColumn(i+1)
+                self.table.setHorizontalHeaderLabels(self.align_to_headers[self.alignement_csv])
+            elif rbtn.text() == 'TTL detection':                 
+                self.alignement_csv='ttl'
+                for i in range(len(self.align_to_headers['ttl'][1:])):
+                    self.table.insertColumn(i+1)
+                self.table.setHorizontalHeaderLabels(self.align_to_headers[self.alignement_csv])
+        
+
     def load_csv_files(self, s):
         suggested_dir = self.path if self.path else os.getenv('HOME')
         paths = QFileDialog.getOpenFileNames(self, 'Open CSV', suggested_dir, 'CSV(*.csv)')        
         self.csv_files = paths[0]
         self.table.setRowCount(len(self.csv_files))
 
-        for i in range(len(self.csv_files)):
-            path = os.path.dirname(self.csv_files[i])
-            files = os.listdir(os.path.dirname(self.csv_files[i]))
-            filename = os.path.basename(self.csv_files[i])
+        if self.alignement_csv == 'global':
 
-            # Updating parameters table
-            self.parameters.loc[filename, 'csv'] = self.csv_files[i]            
+            for i in range(len(self.csv_files)):
+                path = os.path.dirname(self.csv_files[i])
+                files = os.listdir(os.path.dirname(self.csv_files[i]))
+                filename = os.path.basename(self.csv_files[i])
 
-            # Set filename in place
-            self.table.setItem(i, 0, QTableWidgetItem(filename))
+                # Updating parameters table
+                self.parameters.loc[filename, 'csv'] = self.csv_files[i]            
 
-            # Infer the epoch
-            n = os.path.splitext(filename)[0].split('_')[-1]
-            nepoch = QSpinBox()
-            if n.isdigit(): 
-                nepoch.setValue(int(n))
-                self.parameters.loc[filename,'epoch'] = int(n)
-            nepoch.valueChanged.connect(self.change_ttl_params)
-            self.table.setCellWidget(i, 6, nepoch)
+                # Set filename in place
+                self.table.setItem(i, 0, QTableWidgetItem(filename))
 
-            # Infer the ttl file
-            possiblettlfile = [f for f in files if '_'+n in f and f != filename]
-            if len(possiblettlfile):
-                item = QTableWidgetItem(possiblettlfile[0])
-                self.parameters.loc[filename,'ttl'] = os.path.join(path, possiblettlfile[0])
-            else:
-                item = QTableWidgetItem("Select ttl file")
-            self.table.setItem(i, 1, item)
-            item.setFlags( item.flags() ^ Qt.ItemIsEditable)
+        if self.alignement_csv == 'local':
 
-            # Default analogin parameters
-            self.fill_default_value_parameters(filename, i)
+            self.parameters = pd.DataFrame(columns = ['csv', 'epoch'])
 
-            # Check button
-            check_button = QPushButton("Check")
-            check_button.clicked.connect(self.check_ttl)
-            self.table.setCellWidget(i,7,check_button)
+            for i in range(len(self.csv_files)):
+                path = os.path.dirname(self.csv_files[i])
+                files = os.listdir(os.path.dirname(self.csv_files[i]))
+                filename = os.path.basename(self.csv_files[i])
 
+                # Updating parameters table
+                self.parameters.loc[filename, 'csv'] = self.csv_files[i]            
+
+                # Set filename in place
+                self.table.setItem(i, 0, QTableWidgetItem(filename))            
+
+                # Infer the epoch
+                n = os.path.splitext(filename)[0].split('_')[-1]
+                nepoch = QSpinBox()
+                if n.isdigit(): 
+                    nepoch.setValue(int(n))
+                    self.parameters.loc[filename,'epoch'] = int(n)                
+                nepoch.valueChanged.connect(self.change_ttl_params)
+                self.table.setCellWidget(i, 1, nepoch)
+
+
+        elif self.alignement_csv == 'ttl':
+
+            self.parameters = pd.DataFrame(columns = ['csv','ttl','n_channels','tracking_channel','bytes_size','fs','epoch','threshold'])
+
+            for i in range(len(self.csv_files)):
+                path = os.path.dirname(self.csv_files[i])
+                files = os.listdir(os.path.dirname(self.csv_files[i]))
+                filename = os.path.basename(self.csv_files[i])
+
+                # Updating parameters table
+                self.parameters.loc[filename, 'csv'] = self.csv_files[i]            
+
+                # Set filename in place
+                self.table.setItem(i, 0, QTableWidgetItem(filename))
+
+                # Infer the epoch
+                n = os.path.splitext(filename)[0].split('_')[-1]
+                nepoch = QSpinBox()
+                if n.isdigit(): 
+                    nepoch.setValue(int(n))
+                    self.parameters.loc[filename,'epoch'] = int(n)
+                nepoch.valueChanged.connect(self.change_ttl_params)
+                self.table.setCellWidget(i, 6, nepoch)
+
+                # Infer the ttl file
+                possiblettlfile = [f for f in files if '_'+n in f and f != filename]
+                if len(possiblettlfile):
+                    item = QTableWidgetItem(possiblettlfile[0])
+                    self.parameters.loc[filename,'ttl'] = os.path.join(path, possiblettlfile[0])
+                else:
+                    item = QTableWidgetItem("Select ttl file")
+                self.table.setItem(i, 1, item)
+                item.setFlags( item.flags() ^ Qt.ItemIsEditable)
+
+                # Default analogin parameters
+                self.fill_default_value_parameters(filename, i)
+
+                # Check button
+                check_button = QPushButton("Check")
+                check_button.clicked.connect(self.check_ttl)
+                self.table.setCellWidget(i,7,check_button)
+        
         header = self.table.horizontalHeader()       
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
         header.setSectionResizeMode(0, QHeaderView.Stretch)
 
-    def check_ttl(self):
+    def check_ttl(self):        
         r = self.table.currentRow()
         self.w = TTLDetection(
             file=self.parameters.loc[self.parameters.index[r],'ttl'],
@@ -417,7 +509,10 @@ class TrackingTab(QWidget):
             [1, 0, 2, 20000.0]
             )        
         for key, col, dval in iterates:
-            self.parameters.loc[filename,key] = dval
+            if col in [2,3,4]:
+                self.parameters.loc[filename,key] = int(dval)
+            else:
+                self.parameters.loc[filename,key] = dval
             if key == 'fs':
                 ttl_param_widgets[key] = QDoubleSpinBox()
                 ttl_param_widgets[key].setMaximum(100000.0)
@@ -434,9 +529,10 @@ class TrackingTab(QWidget):
     def change_file(self, item):
         suggested_dir = self.path if self.path else os.getenv('HOME')
         if self.table.currentColumn() == 0:
-            paths = QFileDialog.getOpenFileName(self, 'Open CSV', suggested_dir, 'CSV(*.csv)')        
-        elif self.table.currentColumn() == 1:
-            paths = QFileDialog.getOpenFileName(self, 'Open TTL file', suggested_dir)
+            paths = QFileDialog.getOpenFileName(self, 'Open CSV', suggested_dir, 'CSV(*.csv)')
+        if self.table.columnCount()>1:        
+            if self.table.currentColumn() == 1:
+                paths = QFileDialog.getOpenFileName(self, 'Open TTL file', suggested_dir)
         filename = os.path.basename(paths[0])
         item.setText(filename)
         self.parameters.iloc[self.table.currentRow(),self.table.currentColumn()] = paths[0]
@@ -526,6 +622,7 @@ class BaseLoaderGUI(QMainWindow):
         self.epochs = self.tab_epoch.table.epochs
         self.time_units_epochs = self.tab_epoch.time_units
         self.tracking_parameters = self.tab_tracking.parameters
+        self.tracking_alignement = self.tab_tracking.alignement_csv
         self.tracking_method = self.tab_tracking.tracking_method
         self.tracking_frequency = self.tab_tracking.track_frequency
         self.close()

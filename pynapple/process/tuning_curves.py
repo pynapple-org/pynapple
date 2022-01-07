@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-04 15:36:12
+# @Last Modified time: 2022-01-06 15:27:55
 
 import numpy as np
 import pandas as pd
@@ -48,9 +48,10 @@ def compute_1d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
     occupancy, _     = np.histogram(feature.values, bins)
 
     for k in group_value:
-        count, bin_edges = np.histogram(group_value[k].values, bins)
-        tuning_curves[k] = count
+        count, bin_edges = np.histogram(group_value[k].values, bins) 
         count = count/occupancy
+        count[np.isnan(count)] = 0.0
+        tuning_curves[k] = count
         tuning_curves[k] = count*feature.rate
 
     return tuning_curves
@@ -114,6 +115,7 @@ def compute_2d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
             [binsxy[cols[0]], binsxy[cols[1]]]
             )
         count = count / occupancy
+        count[np.isnan(count)] = 0.0
         tc[n] = count * feature.rate
 
     xy = [binsxy[c][0:-1] + np.diff(binsxy[c])/2 for c in binsxy.keys()]
