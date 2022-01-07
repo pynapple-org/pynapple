@@ -227,6 +227,7 @@ class Tsd(pd.Series):
         method = _get_restrict_method(align)
         ix = TimeUnits.format_timestamps(self.restrict(ep).index.values)
         tsd = tsd.restrict(ep)
+        tsd = tsd.as_series()
         new_tsd = tsd.reindex(ix, method=method)
         return Tsd(new_tsd, time_support = ep)
 
