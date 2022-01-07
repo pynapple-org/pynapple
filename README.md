@@ -33,7 +33,7 @@ Getting Started
 pynapple can be installed with pip:
 
 ``` {.sourceCode .shell}
-$ pip install pynapple
+$ pip install pynapple==0.2.0a1
 ```
 
 or directly from the source code:
