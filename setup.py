@@ -28,7 +28,7 @@ setup(
     author_email='guillaume.viejo@gmail.com',
     python_requires='>=3.6',
     classifiers=[
-        'Development Status :: 2 - Alpha',
+        'Development Status :: 2 - Pre-Alpha',
         'Intended Audience :: Science/Research',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Natural Language :: English',
