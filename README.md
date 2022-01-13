@@ -20,18 +20,20 @@ Getting Started
 ### Requirements
 
 -   Python 3.6+
--   Pandas 1.0.3+
--   numpy 1.17+
--   scipy 1.3+
--   numba 0.46+
+-   Pandas
+-   numpy
+-   scipy
+-   numba
+-   pynwb 2.0
 -   tabulate
+-   pyqt5
 
 ### Installation
 
 pynapple can be installed with pip:
 
 ``` {.sourceCode .shell}
-$ pip install pynapple
+$ pip install pynapple==0.2.0a1
 ```
 
 or directly from the source code:
@@ -44,20 +46,20 @@ $ # Install in editable mode with `-e` or, equivalently, `--editable`
 $ pip install -e .
 ```
 
-Features
+<!-- Features
 --------
 
 -   Automatic handling of spike times and epochs
 -   Tuning curves
 -   Loading data coming from various pipelines
--   More and more coming!
+-   More and more coming! -->
 
 Basic Usage
 -----------
 
 After installation, the package can imported:
 
-```shell
+``` {.sourceCode .shell}
 $ python
 >>> import pynapple as nap
 ```
@@ -66,26 +68,40 @@ An example of the package can be seen below. The exemple data can be
 found
 [here](https://www.dropbox.com/s/1kc0ulz7yudd9ru/A2929-200711.tar.gz?dl=1).
 
-```python
+``` py
 import numpy as np
 import pandas as pd
 import pynapple as nap
-import sys
+from matplotlib.pyplot import *
 
-data_directory = 'data/A2929-200711'
+data_directory = '/your/path/to/A2929-200711'
+
+# LOADING DATA
+data = nap.load_session(data_directory, 'neurosuite')
 
 
-episodes = ['sleep', 'wake']
-events = ['1']
+spikes = data.spikes
+position = data.position
+wake_ep = data.epochs['wake']
 
-# Loading Data
-spikes = nap.loadSpikeData(data_directory)   
-position = nap.loadPosition(data_directory, events, episodes)
-wake_ep = nap.loadEpoch(data_directory, 'wake', episodes)
+# COMPUTING TUNING CURVES
+tuning_curves = nap.compute_1d_tuning_curves(group = spikes, 
+                                            feature = position['ry'], 
+                                            ep = position['ry'].time_support, 
+                                            nb_bins = 120,  
+                                            minmax=(0, 2*np.pi) )
+                                                
 
-# Computing tuning curves
-tuning_curves = nap.computeAngularTuningCurves(spikes, position['ry'], wake_ep, 60)
-tuning_curves = nap.smoothAngularTuningCurves(tuning_curves, 10, 2)
+        
+# PLOT
+figure()
+for i in spikes:
+    subplot(6,7,i+1, projection = 'polar')
+    plot(tuning_curves[i])
+    
+
+show()
+
 ```
 
 ### Credits

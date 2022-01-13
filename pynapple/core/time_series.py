@@ -55,6 +55,7 @@ def support_func(data, min_gap, method='absolute'):
 
 
 class Tsd(pd.Series):
+# class Tsd():
     """
     A subclass of pandas.Series specialized for neurophysiology time series.
     
@@ -101,7 +102,10 @@ class Tsd(pd.Series):
             ix[np.floor(ix / 2) * 2 != ix] = np.NaN
             ix = np.floor(ix/2)
             ix = ~np.isnan(ix)
-            super().__init__(index=t[ix],data=d[ix])
+            if d is not None:
+                super().__init__(index=t[ix],data=d[ix])
+            else:
+                super().__init__(index=t[ix],data=None)
         else:
             time_support = IntervalSet(start = t[0], end = t[-1])
             super().__init__(index=t, data=d)
@@ -223,6 +227,7 @@ class Tsd(pd.Series):
         method = _get_restrict_method(align)
         ix = TimeUnits.format_timestamps(self.restrict(ep).index.values)
         tsd = tsd.restrict(ep)
+        tsd = tsd.as_series()
         new_tsd = tsd.reindex(ix, method=method)
         return Tsd(new_tsd, time_support = ep)
 
@@ -444,6 +449,7 @@ class Tsd(pd.Series):
 
 # noinspection PyAbstractClass
 class TsdFrame(pd.DataFrame):
+# class TsdFrame():
     """
     A subclass of pandas.DataFrame specialized for neurophysiological time series.
     
