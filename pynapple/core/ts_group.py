@@ -552,7 +552,7 @@ class TsGroup(UserDict):
         ix = ix[ix>=0]
         ix = ix[ix<len(bins)-1]
         xb = bins[0:-1] + np.diff(bins)/2
-        sliced = [self[groups[i]] for i in ix]  
+        sliced = [self[list(groups[i])] for i in ix]  
         return sliced, xb[ix]           
 
     def getby_category(self, key):
@@ -596,6 +596,6 @@ class TsGroup(UserDict):
                2             4        1}        
         """
         groups = self._metadata.groupby(key).groups
-        sliced = {k:self[groups[k]] for k in groups.keys()}
+        sliced = {k:self[list(groups[k])] for k in groups.keys()}
         return sliced
 
