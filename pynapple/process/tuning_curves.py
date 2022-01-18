@@ -2,11 +2,12 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-06 15:27:55
+# @Last Modified time: 2022-01-18 15:45:20
 
 import numpy as np
 import pandas as pd
 from .. import core as nap
+import warnings
 
 
 def compute_1d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
@@ -115,9 +116,75 @@ def compute_2d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
             [binsxy[cols[0]], binsxy[cols[1]]]
             )
         count = count / occupancy
-        count[np.isnan(count)] = 0.0
+        # count[np.isnan(count)] = 0.0
         tc[n] = count * feature.rate
 
     xy = [binsxy[c][0:-1] + np.diff(binsxy[c])/2 for c in binsxy.keys()]
     
     return tc, xy
+
+def compute_mutual_information_1d(tc, feature, ep, minmax=None, bitssecond=False):
+    """
+    Mutual information as defined by the following equation :
+    $I = \int_{x} \lambda(x) log_2 \frac{\lambda(x)}{\lambda} p(x) dx$
+        
+    See also :
+    Skaggs, W. E., McNaughton, B. L., & Gothard, K. M. (1993). 
+    An information-theoretic approach to deciphering the hippocampal code. 
+    In Advances in neural information processing systems (pp. 1030-1037).
+
+    Parameters
+    ----------
+    tc : pandas.DataFrame or numpy.ndarray
+        Tuning curves in columns
+    feature : Tsd
+        The feature that was used to compute the tuning curves
+    ep : IntervalSet
+        The epoch over which the tuning curves were computed
+    minmax: tuple or list, optional
+        The min and max boundaries of the tuning curves.
+        If None, the boundaries are inferred from the target feature
+    bitssecond: bool, optional
+        By default, the function return bits per spikes.
+        Set to true for bits per seconds
+
+    Returns
+    -------
+    pandas.DataFrame
+        Spatial Information
+    """
+    if type(tc) is pd.DataFrame:
+        columns = tc.columns.values
+        fx = np.atleast_2d(tc.values)
+    elif type(tc is np.ndarray):
+        columns = np.arange(tc.shape[1])
+        fx = np.atleast_2d(tc)
+
+    nb_bins = tc.shape[0]+1
+    if minmax is None:
+        bins = np.linspace(np.min(feature), np.max(feature), nb_bins)
+    else:
+        bins = np.linspace(minmax[0], minmax[1], nb_bins)
+    idx = bins[0:-1]+np.diff(bins)/2
+
+    
+
+    occupancy, _ = np.histogram(feature.restrict(ep).values, bins)
+    occupancy = occupancy / occupancy.sum()
+    occupancy = occupancy[:,np.newaxis]
+
+    fr = np.sum(fx * occupancy, 0)
+    fxfr = fx/fr
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        logfx = np.log2(fxfr)        
+    logfx[np.isinf(logfx)] = 0.0
+    SI = np.sum(occupancy * fx * logfx, 0)
+
+    if bitssecond:
+        SI = pd.DataFrame(index = columns, columns = ['SI'], data = SI)    
+        return SI
+    else:
+        SI = SI / fr
+        SI = pd.DataFrame(index = columns, columns = ['SI'], data = SI)
+        return SI
