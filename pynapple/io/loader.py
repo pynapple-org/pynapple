@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-17 19:23:25
+# @Last Modified time: 2022-01-18 16:50:43
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -446,6 +446,7 @@ class BaseLoader(object):
     def save_nwb_intervals(self, iset, name, description = ''):
         """
         Add epochs to the NWB file (e.g. ripples epochs)
+        See pynwb.epoch.TimeIntervals
         
         Parameters
         ----------
@@ -477,7 +478,9 @@ class BaseLoader(object):
 
     def save_nwb_timeseries(self, tsd, name, description = ''):
         """
-        Save timestamps in the NWB file (e.g. ripples time)
+        Save timestamps in the NWB file (e.g. ripples time) with the time support.        
+        See pynwb.base.TimeSeries
+
         
         Parameters
         ----------
@@ -541,7 +544,7 @@ class BaseLoader(object):
 
     def load_nwb_timeseries(self, name):
         """
-        Save timestamps in the NWB file (e.g. ripples time)
+        Load timestamps in the NWB file (e.g. ripples time)
         
         Parameters
         ----------

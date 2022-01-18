@@ -18,7 +18,7 @@ def load_session(path=None, session_type=None):
 	path : str, optional
 	    The path to load the data
 	session_type : str, optional
-	    For the moment, pynapple support only Neurosuite.
+	    For the moment, pynapple support only 'neurosuite'.
 	
 	Returns
 	-------

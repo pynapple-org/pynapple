@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-18 16:39:26
+# @Last Modified time: 2022-01-18 16:44:38
 
 import numpy as np
 import pandas as pd
@@ -123,7 +123,7 @@ def compute_2d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
     
     return tc, xy
 
-def compute_mutual_information_1d(tc, feature, ep, minmax=None, bitssec=False):
+def compute_1d_mutual_info(tc, feature, ep, minmax=None, bitssec=False):
     """
     Mutual information as defined in 
         
@@ -149,7 +149,7 @@ def compute_mutual_information_1d(tc, feature, ep, minmax=None, bitssec=False):
     Returns
     -------
     pandas.DataFrame
-        Spatial Information
+        Spatial Information (default is bits/spikes)
     """
     if type(tc) is pd.DataFrame:
         columns = tc.columns.values
@@ -187,7 +187,7 @@ def compute_mutual_information_1d(tc, feature, ep, minmax=None, bitssec=False):
         SI = pd.DataFrame(index = columns, columns = ['SI'], data = SI)
         return SI
 
-def compute_mutual_information_2d(tc, features, ep, minmax=None, bitssec=False):
+def compute_2d_mutual_info(tc, features, ep, minmax=None, bitssec=False):
     """
     Mutual information as defined in 
         
@@ -213,7 +213,7 @@ def compute_mutual_information_2d(tc, features, ep, minmax=None, bitssec=False):
     Returns
     -------
     pandas.DataFrame
-        Spatial Information
+        Spatial Information (default is bits/spikes)
     """
     # A bit tedious here
     if type(tc) is dict:

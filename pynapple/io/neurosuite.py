@@ -138,8 +138,7 @@ class NeuroSuite(BaseLoader):
         """
         path should be the folder session containing the XML file
         
-        Function reads
-        --------------
+        Function reads :        
         1. the number of channels
         2. the sampling frequency of the dat file or the eeg file depending of what is present in the folder
             eeg file first if both are present or both are absent
@@ -313,7 +312,7 @@ class NeuroSuite(BaseLoader):
         Raises
         ------
         RuntimeError
-            If can't file the lfp/eeg/dat file
+            If can't find the lfp/eeg/dat file
         
         Returns
         -------
