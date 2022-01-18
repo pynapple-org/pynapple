@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2022-01-11 16:19:16
+# @Last Modified by:   gviejo
+# @Last Modified time: 2022-01-17 19:23:25
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -442,3 +442,131 @@ class BaseLoader(object):
         io.close()
 
         return
+
+    def save_nwb_intervals(self, iset, name, description = ''):
+        """
+        Add epochs to the NWB file (e.g. ripples epochs)
+        
+        Parameters
+        ----------
+        iset : IntervalSet
+            The intervalSet to save
+        name : str
+            The name in the nwb file
+        """        
+        io = NWBHDF5IO(self.nwbfilepath, 'r+')
+        nwbfile = io.read()
+
+        epochs = iset.as_units('s')
+        time_intervals = TimeIntervals(
+            name=name,
+            description=description
+            )
+        for i in epochs.index:
+            time_intervals.add_interval(
+                start_time=epochs.loc[i,'start'],
+                stop_time=epochs.loc[i,'end'],
+                tags=str(i)
+                )
+
+        nwbfile.add_time_intervals(time_intervals)
+        io.write(nwbfile)
+        io.close()
+
+        return
+
+    def save_nwb_timeseries(self, tsd, name, description = ''):
+        """
+        Save timestamps in the NWB file (e.g. ripples time)
+        
+        Parameters
+        ----------
+        tsd : TsdFrame
+            _
+        name : str
+            _
+        description : str, optional
+            _
+        """
+        io = NWBHDF5IO(self.nwbfilepath, 'r+')
+        nwbfile = io.read()
+
+        ts = TimeSeries(
+            name=name, 
+            unit='s',
+            data = tsd.values,
+            timestamps=tsd.as_units('s').index.values)
+
+        time_support = TimeIntervals(
+            name=name+'_timesupport',
+            description="The time support of the object"
+            )
+        
+        epochs = tsd.time_support.as_units('s')
+        for i in epochs.index:
+            time_support.add_interval(
+                start_time=epochs.loc[i,'start'],
+                stop_time=epochs.loc[i,'end'],
+                tags=str(i)
+                )
+        nwbfile.add_time_intervals(time_support)
+        nwbfile.add_acquisition(ts)
+        io.write(nwbfile)
+        io.close()
+
+        return
+
+    def load_nwb_intervals(self, name):
+        """
+        Load epochs from the NWB file (e.g. 'ripples')
+        
+        Parameters
+        ----------
+        name : str
+            The name in the nwb file
+        """        
+        io = NWBHDF5IO(self.nwbfilepath, 'r')
+        nwbfile = io.read()
+
+        epochs = nwbfile.intervals[name].to_dataframe()
+                
+        isets = nap.IntervalSet(
+            start = epochs['start_time'],
+            end = epochs['stop_time'],
+            time_units = 's')
+
+        io.close()
+
+        return isets
+
+    def load_nwb_timeseries(self, name):
+        """
+        Save timestamps in the NWB file (e.g. ripples time)
+        
+        Parameters
+        ----------
+        tsd : TsdFrame
+            _
+        name : str
+            _
+        description : str, optional
+            _
+        """
+        io = NWBHDF5IO(self.nwbfilepath, 'r')
+        nwbfile = io.read()
+
+        ts = nwbfile.acquisition[name]
+
+        time_support = self.load_nwb_intervals(name+'_timesupport')
+
+        tsd = nap.Tsd(
+            t = ts.timestamps[:],
+            d = ts.data[:],
+            time_units = 's',
+            time_support = time_support
+            )
+
+        io.close()
+
+        return tsd
+
