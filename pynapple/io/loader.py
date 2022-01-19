@@ -56,6 +56,7 @@ class BaseLoader(object):
         # Starting the GUI
         if start_gui:
             app = QApplication([])
+            app.setQuitOnLastWindowClosed(True)    
             self.window = BaseLoaderGUI(path=path)
             app.exec()
 
