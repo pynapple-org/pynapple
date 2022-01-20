@@ -94,6 +94,12 @@ class TTLDetection(QDialog):
         self.ttl = pd.Series(index = self.timestep[peaks], data = self.data[peaks])
         self.plot()
 
+    def accept(self):
+        self.close()
+
+    def reject(self):
+        self.close()        
+
 class EpochsTable(QTableWidget):
     def __init__(self, r, c, path):
         super().__init__(r, c)
@@ -499,8 +505,8 @@ class TrackingTab(QWidget):
             )
 
         if self.w.exec():
-            self.parameters['threshold'][r] = self.w.threshold
-        
+            self.parameters['threshold'][r] = self.w.threshold        
+
     def fill_default_value_parameters(self, filename, row):        
         ttl_param_widgets = {}
         iterates = zip(

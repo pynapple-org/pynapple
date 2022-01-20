@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-06 19:17:43
+# @Last Modified time: 2022-01-18 16:50:43
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -19,11 +19,21 @@ from PyQt5.QtWidgets import QApplication
 from pynwb import NWBFile, NWBHDF5IO, TimeSeries
 from pynwb.behavior import Position, SpatialSeries, CompassDirection
 from pynwb.file import Subject
+from pynwb.epoch import TimeIntervals
 import datetime
 
 import pandas as pd
 import scipy.signal
 
+def format_timestamp(t, time_unit):
+    if time_unit == 's':
+        return t
+    elif time_unit == 'ms':
+        return t*1000
+    elif time_unit == 'us':
+        return t*1000000
+    else:
+        raise ValueError('unrecognized time units type')
 
 class BaseLoader(object):
     """
@@ -46,6 +56,7 @@ class BaseLoader(object):
         # Starting the GUI
         if start_gui:
             app = QApplication([])
+            app.setQuitOnLastWindowClosed(True)    
             self.window = BaseLoaderGUI(path=path)
             app.exec()
 
@@ -95,7 +106,6 @@ class BaseLoader(object):
         position = pd.read_csv(csv_file, header = [0], index_col = 0)
         position = position[~position.index.duplicated(keep='first')]        
         return position
-
 
     def load_optitrack_csv(self, csv_file):
         """
@@ -201,6 +211,8 @@ class BaseLoader(object):
         else:
 
             frames = []
+            time_supports_starts = []
+            time_support_ends = []
 
             for i, f in enumerate(parameters.index):
 
@@ -234,13 +246,20 @@ class BaseLoader(object):
                     else:
                         raise RuntimeError("No ttl detected for {}".format(f))
 
-                    start_epoch = nap.TimeUnits.format_timestamps(epochs.loc[parameters.loc[f,'epoch'],'start'], time_units)
-                    timestamps = nap.TimeUnits.return_timestamps(start_epoch,'s')[0] + ttl.index.values
+                    # Make sure start epochis in seconds
+                    start_epoch = format_timestamp(epochs.loc[parameters.loc[f,'epoch'],'start'], time_units)
+                    timestamps = start_epoch + ttl.index.values
                     position.index = pd.Index(timestamps)
 
                 frames.append(position)
+                time_supports_starts.append(position.index[0])
+                time_support_ends.append(position.index[-1])
 
             position = pd.concat(frames)
+
+            time_supports = nap.IntervalSet(start = time_supports_starts,
+                                            end = time_support_ends,
+                                            time_units = 's')
 
             # Specific to optitrACK
             if set(['rx', 'ry', 'rz']).issubset(position.columns):
@@ -252,6 +271,7 @@ class BaseLoader(object):
                 t = position.index.values, 
                 d = position.values,
                 columns = position.columns.values,
+                time_support = time_supports,
                 time_units = 's')
 
             return position
@@ -271,7 +291,7 @@ class BaseLoader(object):
         """
         To create the global time support of the data
         """
-        isets = nap.IntervalSet(start=epochs['start'], end=epochs['end'],time_units=time_units)
+        isets = nap.IntervalSet(start=epochs['start'].sort_values(), end=epochs['end'].sort_values(),time_units=time_units)
         iset = isets.merge_close_intervals(0.0) 
         if len(iset):
             return iset
@@ -340,6 +360,21 @@ class BaseLoader(object):
                     tags=[ep] # This is stupid nwb who tries to parse the string
                     )
 
+        # Adding time support of position as TimeIntervals
+        epochs = self.position.time_support.as_units('s')
+        position_time_support = TimeIntervals(
+            name="position_time_support",
+            description="The time support of the position i.e the real start and end of the tracking"
+            )
+        for i in self.position.time_support.index:
+            position_time_support.add_interval(
+                start_time=epochs.loc[i,'start'],
+                stop_time=epochs.loc[i,'end'],
+                tags=str(i)
+                )
+
+        nwbfile.add_time_intervals(position_time_support)
+
         with NWBHDF5IO(self.nwbfilepath, 'w') as io:
             io.write(nwbfile)
 
@@ -383,7 +418,16 @@ class BaseLoader(object):
                     )
         if len(position):
             position = pd.DataFrame.from_dict(position)
-            self.position = nap.TsdFrame(position, time_units = 's')
+
+            # retrieveing time support position if in epochs
+            if 'position_time_support' in nwbfile.intervals.keys():
+                epochs = nwbfile.intervals['position_time_support'].to_dataframe()
+                time_support = nap.IntervalSet(
+                    start = epochs['start_time'],
+                    end = epochs['stop_time'],
+                    time_units = 's')
+
+            self.position = nap.TsdFrame(position, time_units = 's', time_support = time_support)
 
         if nwbfile.epochs is not None:
             epochs = nwbfile.epochs.to_dataframe()
@@ -399,3 +443,134 @@ class BaseLoader(object):
         io.close()
 
         return
+
+    def save_nwb_intervals(self, iset, name, description = ''):
+        """
+        Add epochs to the NWB file (e.g. ripples epochs)
+        See pynwb.epoch.TimeIntervals
+        
+        Parameters
+        ----------
+        iset : IntervalSet
+            The intervalSet to save
+        name : str
+            The name in the nwb file
+        """        
+        io = NWBHDF5IO(self.nwbfilepath, 'r+')
+        nwbfile = io.read()
+
+        epochs = iset.as_units('s')
+        time_intervals = TimeIntervals(
+            name=name,
+            description=description
+            )
+        for i in epochs.index:
+            time_intervals.add_interval(
+                start_time=epochs.loc[i,'start'],
+                stop_time=epochs.loc[i,'end'],
+                tags=str(i)
+                )
+
+        nwbfile.add_time_intervals(time_intervals)
+        io.write(nwbfile)
+        io.close()
+
+        return
+
+    def save_nwb_timeseries(self, tsd, name, description = ''):
+        """
+        Save timestamps in the NWB file (e.g. ripples time) with the time support.        
+        See pynwb.base.TimeSeries
+
+        
+        Parameters
+        ----------
+        tsd : TsdFrame
+            _
+        name : str
+            _
+        description : str, optional
+            _
+        """
+        io = NWBHDF5IO(self.nwbfilepath, 'r+')
+        nwbfile = io.read()
+
+        ts = TimeSeries(
+            name=name, 
+            unit='s',
+            data = tsd.values,
+            timestamps=tsd.as_units('s').index.values)
+
+        time_support = TimeIntervals(
+            name=name+'_timesupport',
+            description="The time support of the object"
+            )
+        
+        epochs = tsd.time_support.as_units('s')
+        for i in epochs.index:
+            time_support.add_interval(
+                start_time=epochs.loc[i,'start'],
+                stop_time=epochs.loc[i,'end'],
+                tags=str(i)
+                )
+        nwbfile.add_time_intervals(time_support)
+        nwbfile.add_acquisition(ts)
+        io.write(nwbfile)
+        io.close()
+
+        return
+
+    def load_nwb_intervals(self, name):
+        """
+        Load epochs from the NWB file (e.g. 'ripples')
+        
+        Parameters
+        ----------
+        name : str
+            The name in the nwb file
+        """        
+        io = NWBHDF5IO(self.nwbfilepath, 'r')
+        nwbfile = io.read()
+
+        epochs = nwbfile.intervals[name].to_dataframe()
+                
+        isets = nap.IntervalSet(
+            start = epochs['start_time'],
+            end = epochs['stop_time'],
+            time_units = 's')
+
+        io.close()
+
+        return isets
+
+    def load_nwb_timeseries(self, name):
+        """
+        Load timestamps in the NWB file (e.g. ripples time)
+        
+        Parameters
+        ----------
+        tsd : TsdFrame
+            _
+        name : str
+            _
+        description : str, optional
+            _
+        """
+        io = NWBHDF5IO(self.nwbfilepath, 'r')
+        nwbfile = io.read()
+
+        ts = nwbfile.acquisition[name]
+
+        time_support = self.load_nwb_intervals(name+'_timesupport')
+
+        tsd = nap.Tsd(
+            t = ts.timestamps[:],
+            d = ts.data[:],
+            time_units = 's',
+            time_support = time_support
+            )
+
+        io.close()
+
+        return tsd
+

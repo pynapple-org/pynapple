@@ -285,7 +285,7 @@ class IntervalSet(pd.DataFrame):
         out: IntervalSet
             A copied IntervalSet with the dropped intervals
         """
-        threshold = TimeUnits.format_timestamps(np.array((threshold,), dtype=np.int64).ravel(), time_units)[0]
+        threshold = TimeUnits.format_timestamps(np.array((threshold,), dtype=np.float64).ravel(), time_units)[0]
         return self.loc[(self['end']-self['start']) > threshold]
 
     def drop_long_intervals(self, threshold, time_units=None):
@@ -304,7 +304,7 @@ class IntervalSet(pd.DataFrame):
         out: IntervalSet
             A copied IntervalSet with the dropped intervals
         """
-        threshold = TimeUnits.format_timestamps(np.array((threshold,), dtype=np.int64).ravel(), time_units)[0]
+        threshold = TimeUnits.format_timestamps(np.array((threshold,), dtype=np.float64).ravel(), time_units)[0]
         return self.loc[(self['end']-self['start']) < threshold]
 
 

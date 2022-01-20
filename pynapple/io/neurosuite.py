@@ -138,8 +138,7 @@ class NeuroSuite(BaseLoader):
         """
         path should be the folder session containing the XML file
         
-        Function reads
-        --------------
+        Function reads :        
         1. the number of channels
         2. the sampling frequency of the dat file or the eeg file depending of what is present in the folder
             eeg file first if both are present or both are absent
@@ -164,9 +163,9 @@ class NeuroSuite(BaseLoader):
         
         
         self.xmldoc      = minidom.parse(new_path)
-        self.nChannels   = self.xmldoc.getElementsByTagName('acquisitionSystem')[0].getElementsByTagName('nChannels')[0].firstChild.data
-        self.fs_dat      = self.xmldoc.getElementsByTagName('acquisitionSystem')[0].getElementsByTagName('samplingRate')[0].firstChild.data
-        self.fs_eeg      = self.xmldoc.getElementsByTagName('fieldPotentials')[0].getElementsByTagName('lfpSamplingRate')[0].firstChild.data
+        self.nChannels   = int(self.xmldoc.getElementsByTagName('acquisitionSystem')[0].getElementsByTagName('nChannels')[0].firstChild.data)
+        self.fs_dat      = int(self.xmldoc.getElementsByTagName('acquisitionSystem')[0].getElementsByTagName('samplingRate')[0].firstChild.data)
+        self.fs_eeg      = int(self.xmldoc.getElementsByTagName('fieldPotentials')[0].getElementsByTagName('lfpSamplingRate')[0].firstChild.data)
 
         self.group_to_channel = {}
         groups      = self.xmldoc.getElementsByTagName('anatomicalDescription')[0].getElementsByTagName('channelGroups')[0].getElementsByTagName('group')
@@ -174,7 +173,6 @@ class NeuroSuite(BaseLoader):
             self.group_to_channel[i] = np.sort([int(child.firstChild.data) for child in groups[i].getElementsByTagName('channel')])
         
         return
-
 
     def save_data(self, path):
         """
@@ -290,4 +288,115 @@ class NeuroSuite(BaseLoader):
 
             io.close()
             return True
+
+    def load_lfp(self, filename=None, channel=None, extension='.eeg', frequency=1250.0, precision='int16', bytes_size=2):
+        """
+        Load the LFP.
+        
+        Parameters
+        ----------
+        filename : str, optional
+            The filename of the lfp file.
+            It can be useful it multiple dat files are present in the data directory
+        channel : int or list of int, optional
+            The channel(s) to load. If None return a memory map of the dat file to avoid memory error
+        extension : str, optional
+            The file extenstion (.eeg, .dat, .lfp). Make sure the frequency match
+        frequency : float, optional
+            Default 1250 Hz for the eeg file
+        precision : str, optional
+            The precision of the binary file
+        bytes_size : int, optional
+            Bytes size of the lfp file
+        
+        Raises
+        ------
+        RuntimeError
+            If can't find the lfp/eeg/dat file
+        
+        Returns
+        -------
+        Tsd or TsdFrame
+            The lfp in a time series format
+        """
+        if filename is not None:
+            filepath = os.path.join(self.path, filename)
+        else:
+            listdir = os.listdir(self.path)
+            eegfile = [f for f in listdir if f.endswith(extension)]
+            if not len(eegfile):
+                raise RuntimeError("Path {} contains no {} files;".format(self.path, extension))
+                
+            filepath = os.path.join(self.path, eegfile[0])
+
+        self.load_neurosuite_xml(self.path)
+
+        n_channels = int(self.nChannels)
+
+        f = open(filepath, 'rb')
+        startoffile = f.seek(0, 0)
+        endoffile = f.seek(0, 2)
+        bytes_size = 2      
+        n_samples = int((endoffile-startoffile)/n_channels/bytes_size)
+        duration = n_samples/frequency
+        interval = 1/frequency
+        f.close()
+        fp = np.memmap(filepath, np.int16, 'r', shape = (n_samples, n_channels))        
+        timestep = np.arange(0, n_samples)/frequency
+
+        time_support = nap.IntervalSet(start = 0, end = duration, time_units = 's')
+
+        if channel is None:
+            return nap.TsdFrame(
+                t = timestep, 
+                d=fp, 
+                time_units = 's', 
+                time_support = time_support)
+        elif type(channel) is int:
+            return nap.Tsd(
+                t = timestep, 
+                d=fp[:,channel], 
+                time_units = 's',
+                time_support = time_support)
+        elif type(channel) is list:            
+            return nap.TsdFrame(
+                t = timestep,
+                d=fp[:,channel], 
+                time_units = 's',
+                time_support = time_support,
+                columns=channel)
+
+    def write_neuroscope_intervals(self, extension, isets, name):
+        """Write events to load with neuroscope (e.g. ripples start and ends)
+        
+        Parameters
+        ----------
+        extension : str
+            The extension of the file (e.g. basename.evt.py.rip)
+        isets : IntervalSet
+            The IntervalSet to write
+        name : str
+            The name of the events (e.g. Ripples)
+        """
+        start = isets.as_units('ms')['start'].values        
+        ends = isets.as_units('ms')['end'].values
+
+        datatowrite = np.vstack((start,ends)).T.flatten()
+
+        n = len(isets)
+
+        texttowrite = np.vstack(((np.repeat(np.array([name + ' start']), n)),                         
+                                (np.repeat(np.array([name + ' end']), n))
+                                    )).T.flatten()
+
+        evt_file = os.path.join(self.path, self.basename + extension)
+
+        f = open(evt_file, 'w')
+        for t, n in zip(datatowrite, texttowrite):
+            f.writelines("{:1.6f}".format(t) + "\t" + n + "\n")
+        f.close()        
+
+        return
+
+
 
