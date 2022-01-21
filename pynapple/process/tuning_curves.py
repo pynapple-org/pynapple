@@ -123,6 +123,70 @@ def compute_2d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
     
     return tc, xy
 
+def compute_2d_tuning_curves_continuous(group, feature, ep, nb_bins, minmax=None):
+    """
+    Computes 2-dimensional tuning curves relative to a 2d feature
+    
+    Parameters
+    ----------
+    group: Tsd or TsdFrame or dict of Tsd objets
+        The group input
+    feature: 2d TsdFrame
+        The 2d feature.
+    ep: IntervalSet
+        The epoch on which tuning curves are computed
+    nb_bins: int
+        Number of bins in the tuning curves
+    minmax: tuple or list, optional
+        The min and max boundaries of the tuning curves given as:
+        (minx, maxx, miny, maxy)
+        If None, the boundaries are inferred from the target variable
+    
+    Returns
+    -------
+    numpy.ndarray
+        Stacked array of the tuning curves with dimensions (n, nb_bins, nb_bins).
+        n is the number of object in the input group. 
+    list
+        bins center in the two dimensions
+
+    """
+    if type(group) is dict:
+        group = nap.TsFrame(group, time_support = ep)
+
+    if feature.shape[1] != 2:
+        raise RuntimeError("Variable is not 2 dimensional.")
+
+    cols = list(feature.columns)
+
+    groups_value = {}
+    binsxy = {}
+    for i, c in enumerate(cols):
+        groups_value[c] = group.value_from(feature[c], ep)
+        if minmax is None:
+            bins = np.linspace(np.min(feature[c]), np.max(feature[c]), nb_bins)
+        else:
+            bins = np.linspace(minmax[i+i%2], minmax[i+1+i%2], nb_bins)
+        binsxy[c] = bins
+        groups_value[c] = np.digitize(groups_value[c],binsxy[c])-1
+        # This might be better done with 
+        #groups_value[c] = pd.cut(groups_value[c],binsxy[c])
+        # to keep groups_value as a Tsd object, but that threw an error
+
+    tc = {}
+    tc_np = np.zeros((group.shape[1], nb_bins, nb_bins))
+    for i in range(nb_bins):
+        for j in range(nb_bins):
+             idx = np.logical_and(groups_value[cols[0]]==i, groups_value[cols[1]]==j)
+             if np.sum(idx):
+                 tc_np[:,i,j] = group[idx].mean(0)
+    for n in group.keys():
+        tc[n] = tc_np[n,:,:]
+    
+    xy = [binsxy[c][0:-1] + np.diff(binsxy[c])/2 for c in binsxy.keys()]
+    
+    return tc, xy
+
 def compute_1d_mutual_info(tc, feature, ep, minmax=None, bitssec=False):
     """
     Mutual information as defined in 
