@@ -55,7 +55,7 @@ def support_func(data, min_gap, method='absolute'):
 
 
 class Tsd(pd.Series):
-# class Tsd():
+    # class Tsd():
     """
     A subclass of pandas.Series specialized for neurophysiology time series.
     
@@ -98,16 +98,22 @@ class Tsd(pd.Series):
 
         if time_support is not None:
             bins = time_support.values.ravel()
-            ix = np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64)))
+            # Because yes there is no funtion with both bounds closed as an option
+            ix = np.vstack((
+                np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64))),
+                np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64), right=False))
+                )).T
             ix[np.floor(ix / 2) * 2 != ix] = np.NaN
             ix = np.floor(ix/2)
-            ix = ~np.isnan(ix)
+            ix[np.isnan(ix[:,0]),0] = ix[np.isnan(ix[:,0]),1]
+            ix = ~np.isnan(ix[:,0])
             if d is not None:
                 super().__init__(index=t[ix],data=d[ix])
             else:
                 super().__init__(index=t[ix],data=None)
         else:
-            time_support = IntervalSet(start = t[0], end = t[-1])
+            # Adding a millisecond in time support in order to include the whole ts
+            time_support = IntervalSet(start = t[0], end = t[-1]+1)
             super().__init__(index=t, data=d)
 
         self.time_support = time_support
@@ -494,13 +500,19 @@ class TsdFrame(pd.DataFrame):
 
         if time_support is not None:
             bins = time_support.values.ravel()
-            ix = np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64)))
+            # Because yes there is no funtion with both bounds closed as an option
+            ix = np.vstack((
+                np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64))),
+                np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64), right=False))
+                )).T
             ix[np.floor(ix / 2) * 2 != ix] = np.NaN
             ix = np.floor(ix/2)
-            ix = ~np.isnan(ix)
+            ix[np.isnan(ix[:,0]),0] = ix[np.isnan(ix[:,0]),1]
+            ix = ~np.isnan(ix[:,0])
             super().__init__(index=t[ix],data=d[ix], columns = c)
         else:
-            time_support = IntervalSet(start = t[0], end = t[-1])
+            # Adding a millisecond in time support in order to include the whole tsdframe
+            time_support = IntervalSet(start = t[0], end = t[-1]+1)
             super().__init__(index=t, data=d, columns=c)
 
         with warnings.catch_warnings():
@@ -595,6 +607,52 @@ class TsdFrame(pd.DataFrame):
 
         rest_t = self.reindex(ix, method=method, columns=self.columns.values)
         return rest_t
+
+    def value_from(self, tsd, ep, align='closest'):
+        """
+        Replace the value with the closest value from tsd argument
+        
+        Parameters
+        ----------
+        tsd : Tsd
+            The Tsd object holding the values to replace
+        ep : IntervalSet
+            The IntervalSet object to restrict the operation
+        align : str, optional
+            The method to align (closest/prev/next)
+        
+        Returns
+        -------
+        out: Tsd
+            Tsd object with the new values
+        
+        Example
+        -------
+        In this example, the ts object will receive the closest values in time from tsd.
+
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
+        >>> ts = nap.Ts(t=t, time_units='s')             
+        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+        
+        The variable ts is a time series object containing only nan.
+        The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
+        
+        >>> newts = ts.value_from(tsd, ep)
+        
+        newts is the same size as ts restrict to ep.
+        
+        >>> print(len(ts.restrict(ep)), len(newts))
+            52 52
+        """
+        method = _get_restrict_method(align)
+        ix = TimeUnits.format_timestamps(self.restrict(ep).index.values)
+        tsd = tsd.restrict(ep)
+        tsd = tsd.as_series()
+        new_tsd = tsd.reindex(ix, method=method)
+        return Tsd(new_tsd, time_support = ep)
 
     def restrict(self, iset, keep_labels=False):
         """
