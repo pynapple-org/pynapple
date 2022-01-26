@@ -112,8 +112,7 @@ class Tsd(pd.Series):
             else:
                 super().__init__(index=t[ix],data=None)
         else:
-            # Adding a millisecond in time support in order to include the whole ts
-            time_support = IntervalSet(start = t[0], end = t[-1]+1)
+            time_support = IntervalSet(start = t[0], end = t[-1])
             super().__init__(index=t, data=d)
 
         self.time_support = time_support
@@ -511,8 +510,7 @@ class TsdFrame(pd.DataFrame):
             ix = ~np.isnan(ix[:,0])
             super().__init__(index=t[ix],data=d[ix], columns = c)
         else:
-            # Adding a millisecond in time support in order to include the whole tsdframe
-            time_support = IntervalSet(start = t[0], end = t[-1]+1)
+            time_support = IntervalSet(start = t[0], end = t[-1])
             super().__init__(index=t, data=d, columns=c)
 
         with warnings.catch_warnings():
