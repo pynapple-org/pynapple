@@ -4,7 +4,7 @@
 	File name: main2.py
 	Author: Guillaume Viejo
 	Date created: 12/10/2017    
-	Python Version: 3.5.2
+	Python Version: 3.8
 
 This script will introduce you to the basics of time series handling with Pynapple
 
@@ -24,7 +24,7 @@ my_spike = nap.Ts(random_times, time_units = 's')
 # DON'T FORGET THE time_units otherwise it will consider you have spikes in microseconds
 # Observe your dataset
 my_spike
-# The first column indicates the timestamps in microseconds
+# The first column indicates the timestamps in seconds
 # The second column is full of NaN (Not A Number) because it's just time stamps
 # Let's try with spikes with milliseconds timestamps
 my_spike2 = nap.Ts(random_times, time_units = 'ms')

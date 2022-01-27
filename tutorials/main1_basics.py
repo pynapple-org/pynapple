@@ -4,7 +4,7 @@
 	File name: main1.py
 	Author: Guillaume Viejo
 	Date created: 12/10/2017    
-	Python Version: 3.5.2
+	Python Version: 3.8
 
 First let's import the package and verify that everything is installed
 You should write each line in ipython3 yourself. That's a good way to learn
