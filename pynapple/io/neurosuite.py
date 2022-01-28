@@ -405,10 +405,6 @@ class NeuroSuite(BaseLoader):
         
         Parameters
         ----------
-        path : string
-            path in computer where dat and xml files are located    
-        spikes : pynapple.core.ts_group.TsGroup
-            A TsGroup should contain the spike times of n neurons.
         epoch : ap.interval_set.Intervalset
             default = None
             Restrict spikes to an epoch.
