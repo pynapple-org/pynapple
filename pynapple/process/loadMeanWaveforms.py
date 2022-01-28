@@ -8,11 +8,6 @@ import pynapple as nap
 def loadMeanWaveforms(path, spikes, epoch = None, waveform_window = [0.5, 1], spike_count = 1000):
     """
     load waveforms from dat file.
-    The script will create and save the waveforms and the maxchannel as 
-    "MeanWaveforms.h5" and "MaxWaveforms.h5" under a folder called
-    /Analysis in the specified path.
-    If "MeanWaveforms.h5" and "MaxWaveforms.h5" already exist, it will
-    simply load them.
     
     
     Parameters
