@@ -74,7 +74,7 @@ class TimeUnits:
         TimeUnits.default_time_units = 'us'
 
     @staticmethod
-    def format_timestamps(t, units=None, give_warning=True):
+    def format_timestamps(t, units=None, give_warning=True, sortt = True):
         """
         Converts numerical types to the type :func:`numpy.int64` that is used for the time index in neuroseries.
 
@@ -125,7 +125,8 @@ class TimeUnits:
         if not (np.diff(ts) >= 0).all():
             if give_warning:
                 warn('timestamps are not sorted', UserWarning)
-            ts.sort()
+            if sortt:
+                ts.sort()
         return ts
 
     @staticmethod
