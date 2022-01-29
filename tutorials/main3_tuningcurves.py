@@ -44,8 +44,8 @@ plot(spikes.times(), np.zeros(len(spikes)), '|', markersize = 10)
 show()
 
 # So the question is: What was the angular position when a given spike was detected
-# To this end, you use the realign function which basically looks for the closest angle from the spike time.
-angle_spike = angle.realign(spikes)
+# To this end, you use the value_from function which basically looks for the closest angle from the spike time.
+angle_spike = spikes.value_from(angle, angle.time_support)
 # The order matters here! It is NOT equivalent to spikes.realign(angle).
 # let's look at what it does
 figure()
