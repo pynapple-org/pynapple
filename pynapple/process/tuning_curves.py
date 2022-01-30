@@ -13,11 +13,11 @@ import warnings
 def compute_1d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
     """
     Computes 1-dimensional tuning curves relative to a 1d feature.
-    
+
     Parameters
     ----------
     group: TsGroup or dict of Ts/Tsd objects
-        The group of Ts/Tsd for which the tuning curves will be computed 
+        The group of Ts/Tsd for which the tuning curves will be computed
     feature: Tsd
         The 1-dimensional target feature (e.g. head-direction)
     ep: IntervalSet
@@ -27,7 +27,7 @@ def compute_1d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
     minmax: tuple or list, optional
         The min and max boundaries of the tuning curves.
         If None, the boundaries are inferred from the target feature
-    
+
     Returns
     -------
     pandas.DataFrame
@@ -44,12 +44,12 @@ def compute_1d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
         bins = np.linspace(minmax[0], minmax[1], nb_bins)
     idx = bins[0:-1]+np.diff(bins)/2
 
-    tuning_curves = pd.DataFrame(index = idx, columns = list(group.keys()))    
+    tuning_curves = pd.DataFrame(index = idx, columns = list(group.keys()))
 
     occupancy, _     = np.histogram(feature.values, bins)
 
     for k in group_value:
-        count, bin_edges = np.histogram(group_value[k].values, bins) 
+        count, bin_edges = np.histogram(group_value[k].values, bins)
         count = count/occupancy
         count[np.isnan(count)] = 0.0
         tuning_curves[k] = count
@@ -60,7 +60,7 @@ def compute_1d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
 def compute_2d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
     """
     Computes 2-dimensional tuning curves relative to a 2d feature
-    
+
     Parameters
     ----------
     group: TsGroup or dict of Ts/Tsd objects
@@ -75,12 +75,12 @@ def compute_2d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
         The min and max boundaries of the tuning curves given as:
         (minx, maxx, miny, maxy)
         If None, the boundaries are inferred from the target variable
-    
+
     Returns
     -------
     numpy.ndarray
         Stacked array of the tuning curves with dimensions (n, nb_bins, nb_bins).
-        n is the number of object in the input group. 
+        n is the number of object in the input group.
     list
         bins center in the two dimensions
 
@@ -104,8 +104,8 @@ def compute_2d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
         binsxy[c] = bins
 
     occupancy, _, _ = np.histogram2d(
-        feature[cols[0]].values, 
-        feature[cols[1]].values, 
+        feature[cols[0]].values,
+        feature[cols[1]].values,
         [binsxy[cols[0]], binsxy[cols[1]]])
 
     tc = {}
@@ -120,17 +120,17 @@ def compute_2d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
         tc[n] = count * feature.rate
 
     xy = [binsxy[c][0:-1] + np.diff(binsxy[c])/2 for c in binsxy.keys()]
-    
+
     return tc, xy
 
-def compute_2d_tuning_curves_continuous(group, feature, ep, nb_bins, minmax=None):
+def compute_2d_tuning_curves_continuous(tsdframe, feature, ep, nb_bins, minmax=None):
     """
     Computes 2-dimensional tuning curves relative to a 2d feature
-    
+
     Parameters
     ----------
-    group: Tsd or TsdFrame or dict of Tsd objets
-        The group input
+    tsdframe: Tsd or TsdFrame
+        The tsdframe input
     feature: 2d TsdFrame
         The 2d feature.
     ep: IntervalSet
@@ -141,58 +141,56 @@ def compute_2d_tuning_curves_continuous(group, feature, ep, nb_bins, minmax=None
         The min and max boundaries of the tuning curves given as:
         (minx, maxx, miny, maxy)
         If None, the boundaries are inferred from the target variable
-    
+
     Returns
     -------
     numpy.ndarray
         Stacked array of the tuning curves with dimensions (n, nb_bins, nb_bins).
-        n is the number of object in the input group. 
+        n is the number of object in the input group.
     list
         bins center in the two dimensions
 
     """
-    if type(group) is dict:
-        group = nap.TsFrame(group, time_support = ep)
 
     if feature.shape[1] != 2:
         raise RuntimeError("Variable is not 2 dimensional.")
 
     cols = list(feature.columns)
 
-    groups_value = {}
+    tsdframe_value = {}
     binsxy = {}
     for i, c in enumerate(cols):
-        groups_value[c] = group.value_from(feature[c], ep)
+        tsdframe_value[c] = tsdframe.value_from(feature[c], ep)
         if minmax is None:
             bins = np.linspace(np.min(feature[c]), np.max(feature[c]), nb_bins)
         else:
             bins = np.linspace(minmax[i+i%2], minmax[i+1+i%2], nb_bins)
         binsxy[c] = bins
-        groups_value[c] = np.digitize(groups_value[c],binsxy[c])-1
-        # This might be better done with 
+        tsdframe_value[c] = np.digitize(tsdframe_value[c],binsxy[c])-1
+        # This might be better done with
         #groups_value[c] = pd.cut(groups_value[c],binsxy[c])
         # to keep groups_value as a Tsd object, but that threw an error
 
     tc = {}
-    tc_np = np.zeros((group.shape[1], nb_bins, nb_bins))
+    tc_np = np.zeros((tsdframe.shape[1], nb_bins, nb_bins))
     for i in range(nb_bins):
         for j in range(nb_bins):
-             idx = np.logical_and(groups_value[cols[0]]==i, groups_value[cols[1]]==j)
+             idx = np.logical_and(tsdframe_value[cols[0]]==i, tsdframe_value[cols[1]]==j)
              if np.sum(idx):
-                 tc_np[:,i,j] = group[idx].mean(0)
-    for n in group.keys():
+                 tc_np[:,i,j] = tsdframe[idx].mean(0)
+    for n in tsdframe.keys():
         tc[n] = tc_np[n,:,:]
-    
+
     xy = [binsxy[c][0:-1] + np.diff(binsxy[c])/2 for c in binsxy.keys()]
-    
+
     return tc, xy
 
 def compute_1d_mutual_info(tc, feature, ep, minmax=None, bitssec=False):
     """
-    Mutual information as defined in 
-        
-    Skaggs, W. E., McNaughton, B. L., & Gothard, K. M. (1993). 
-    An information-theoretic approach to deciphering the hippocampal code. 
+    Mutual information as defined in
+
+    Skaggs, W. E., McNaughton, B. L., & Gothard, K. M. (1993).
+    An information-theoretic approach to deciphering the hippocampal code.
     In Advances in neural information processing systems (pp. 1030-1037).
 
     Parameters
@@ -229,7 +227,7 @@ def compute_1d_mutual_info(tc, feature, ep, minmax=None, bitssec=False):
         bins = np.linspace(minmax[0], minmax[1], nb_bins)
     idx = bins[0:-1]+np.diff(bins)/2
 
-    
+
 
     occupancy, _ = np.histogram(feature.restrict(ep).values, bins)
     occupancy = occupancy / occupancy.sum()
@@ -239,12 +237,12 @@ def compute_1d_mutual_info(tc, feature, ep, minmax=None, bitssec=False):
     fxfr = fx/fr
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        logfx = np.log2(fxfr)        
+        logfx = np.log2(fxfr)
     logfx[np.isinf(logfx)] = 0.0
     SI = np.sum(occupancy * fx * logfx, 0)
 
     if bitssec:
-        SI = pd.DataFrame(index = columns, columns = ['SI'], data = SI)    
+        SI = pd.DataFrame(index = columns, columns = ['SI'], data = SI)
         return SI
     else:
         SI = SI / fr
@@ -253,10 +251,10 @@ def compute_1d_mutual_info(tc, feature, ep, minmax=None, bitssec=False):
 
 def compute_2d_mutual_info(tc, features, ep, minmax=None, bitssec=False):
     """
-    Mutual information as defined in 
-        
-    Skaggs, W. E., McNaughton, B. L., & Gothard, K. M. (1993). 
-    An information-theoretic approach to deciphering the hippocampal code. 
+    Mutual information as defined in
+
+    Skaggs, W. E., McNaughton, B. L., & Gothard, K. M. (1993).
+    An information-theoretic approach to deciphering the hippocampal code.
     In Advances in neural information processing systems (pp. 1030-1037).
 
     Parameters
@@ -297,7 +295,7 @@ def compute_2d_mutual_info(tc, features, ep, minmax=None, bitssec=False):
             bins.append(np.linspace(np.min(features[c]), np.max(features[c]), nb_bins[i]))
         else:
             bins.append(np.linspace(minmax[i+i%2], minmax[i+1+i%2], nb_bins[i]))
-            
+
     occupancy, _, _ = np.histogram2d(features[cols[0]].values, features[cols[1]].values, [bins[0], bins[1]])
     occupancy = occupancy / occupancy.sum()
 
@@ -307,12 +305,12 @@ def compute_2d_mutual_info(tc, features, ep, minmax=None, bitssec=False):
     fxfr = fx/fr
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        logfx = np.log2(fxfr)        
+        logfx = np.log2(fxfr)
     logfx[np.isinf(logfx)] = 0.0
     SI = np.nansum(occupancy * fx * logfx, (1,2))
 
     if bitssec:
-        SI = pd.DataFrame(index = idx, columns = ['SI'], data = SI)    
+        SI = pd.DataFrame(index = idx, columns = ['SI'], data = SI)
         return SI
     else:
         SI = SI / fr[:,0,0]
