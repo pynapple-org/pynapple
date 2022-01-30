@@ -1,24 +1,16 @@
-# -*- coding: utf-8 -*-
-# @Date:   2022-01-25 21:50:48
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-26 17:28:14
-
-"""
-"""
-
-import warnings
 import pandas as pd
 import numpy as np
-from .time_units import TimeUnits
+from warnings import warn
+from .time_units import TimeUnits, Range
 
 
 class IntervalSet(pd.DataFrame):
-    # class IntervalSet():
+# class IntervalSet():
     """
     A subclass of pandas.DataFrame representing a (irregular) set of time intervals in elapsed time,
     with relative operations
     """
-    def __init__(self, start, end = None, time_units=None, expect_fix=False, **kwargs):
+    def __init__(self, start, end=None, time_units=None, expect_fix=False, **kwargs):
         """
         IntervalSet initializer
         
@@ -40,7 +32,7 @@ class IntervalSet(pd.DataFrame):
             Additional parameters passed ot pandas.DataFrame
         
         """
-        
+
         if end is None:
             df = pd.DataFrame(start)
             if 'start' not in df.columns or 'end' not in df.columns:
@@ -51,60 +43,52 @@ class IntervalSet(pd.DataFrame):
             self.nts_class = self.__class__.__name__
             return
 
-        start = np.array(start).ravel()
-        end = np.array(end).ravel()
-
-        if len(start) != len(end):
-            raise RuntimeError("Starts end ends are not of the same length")
-
-        if not (np.diff(start) > 0).all():
-            warnings.warn("start is not sorted.", stacklevel=2)
-            start = np.sort(start)
-
-        if not (np.diff(end) > 0).all():
-            warnings.warn("end is not sorted.", stacklevel=2)
-            end = np.sort(end)
-
+        start = np.array(start)
+        end = np.array(end)
         start = TimeUnits.format_timestamps(start.ravel(), time_units,
-                                            give_warning=False)
+                                            give_warning=not expect_fix)
         end = TimeUnits.format_timestamps(end.ravel(), time_units,
-                                          give_warning=False)
+                                          give_warning=not expect_fix)
 
         to_fix = False
-        if (start > end).any():
-            warnings.warn("Some ends precede the relative start.", stacklevel=2)
+        msg = ''
+        if not (np.diff(start) > 0).all():
+            msg = "start is not sorted"
             to_fix = True
+        if not (np.diff(end) > 0).all():
+            msg = "end is not sorted"
+            to_fix = True
+        if len(start) != len(end):
+            msg = "start and end not of the same length"
+            to_fix = True
+        else:
+            # noinspection PyUnresolvedReferences
+            if (start > end).any():
+                msg = "some ends precede the relative start"
+                to_fix = True
+            # noinspection PyUnresolvedReferences
+            if (end[:-1] > start[1:]).any():
+                msg = "some start precede the previous end"
+                to_fix = True
 
-        if (start[1:] < end[0:-1]).any():
-            warnings.warn("Some starts precede the previous end.", stacklevel=2)            
-            to_fix = True
+        if to_fix and not expect_fix:
+            warn(msg, UserWarning)
 
         if to_fix:
+            start.sort()
+            end.sort()
             mm = np.hstack((start, end))
             mz = np.hstack((np.zeros_like(start), np.ones_like(end)))
-            mx = np.argsort(mm)
+            mx = mm.argsort()
             mm = mm[mx]
             mz = mz[mx]
             good_ix = np.nonzero(np.diff(mz) == 1)[0]
             start = mm[good_ix]
             end = mm[good_ix+1]
 
-        if (start == end).any():
-            warnings.warn("Some epochs have no duration", stacklevel=2)
-            idx = start != end
-            start = start[idx]
-            end = end[idx]
-
-        if (start[1:] == end[0:-1]).any():
-            warnings.warn("Some starts and ends are equal.", stacklevel=2)
-            idx = np.where((start[1:] == end[0:-1]))[0]
-            end[idx] -= 1 # removing 1 microseconds because bounds are both closed
-            idx2 = start != end
-            start = start[idx2]
-            end = end[idx2]
-
+        # super().__init__({'start': start, 'end': end}, **kwargs)
+        # self = self[['start', 'end']]
         data = np.vstack((start, end)).T
-
         super().__init__(data=data, columns=('start', 'end'), **kwargs)
         self.r_cache = None
         self._metadata = ['nts_class']
@@ -279,16 +263,11 @@ class IntervalSet(pd.DataFrame):
             an array with the interval index labels for each time stamp (NaN) for timestamps not in IntervalSet
         """
         bins = self.values.ravel()
-        # Because yes there is no funtion with both bounds closed as an option
+        # ix = np.array(pd.cut(tsd.index, bins, labels=np.arange(len(bins) - 1, dtype=np.int64)))
         ix = np.array(pd.cut(tsd.index, bins, labels=np.arange(len(bins) - 1, dtype=np.float64)))
-        ix2 = np.array(pd.cut(tsd.index, bins, labels=np.arange(len(bins) - 1, dtype=np.float64), right=False))
-        ix3 = np.vstack((ix, ix2)).T
-        # ix[np.floor(ix / 2) * 2 != ix] = np.NaN
-        # ix = np.floor(ix/2)
-        ix3[np.floor(ix3 / 2) * 2 != ix3] = np.NaN
-        ix3 = np.floor(ix3/2)
-        ix3[np.isnan(ix3[:,0]),0] = ix3[np.isnan(ix3[:,0]),1]
-        return ix3[:,0]
+        ix[np.floor(ix / 2) * 2 != ix] = np.NaN
+        ix = np.floor(ix/2)
+        return ix
 
     def drop_short_intervals(self, threshold, time_units=None):
         """
@@ -369,15 +348,10 @@ class IntervalSet(pd.DataFrame):
         """
         if len(self) == 0:
             return IntervalSet(start=[], end=[])
-
-        threshold = TimeUnits.format_timestamps(np.array((threshold,), dtype=np.float64).ravel(), time_units)[0]
-        start = self['start'].values
-        end = self['end'].values
-        tojoin = (start[1:] - end[0:-1]) > threshold
-        start = np.hstack((start[0], start[1:][tojoin]))
-        end = np.hstack((end[0:-1][tojoin], end[-1]))
-
-        return IntervalSet(start = start, end = end)
+        tsp = self.time_span()
+        i1 = tsp.set_diff(self)
+        i1 = i1.drop_short_intervals(threshold, time_units=time_units)
+        return tsp.set_diff(i1)
 
     def store(self, the_store, key, **kwargs):
         data_to_store = pd.DataFrame(self)

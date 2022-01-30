@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-26 17:34:55
+# @Last Modified time: 2022-01-18 16:50:43
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -21,7 +21,7 @@ from pynwb.behavior import Position, SpatialSeries, CompassDirection
 from pynwb.file import Subject
 from pynwb.epoch import TimeIntervals
 import datetime
-import warnings
+
 import pandas as pd
 import scipy.signal
 
@@ -73,15 +73,17 @@ class BaseLoader(object):
                     self.window.epochs,
                     self.window.time_units_epochs,
                     self.window.tracking_alignement
-                    ) 
+                    )                
                 self.epochs = self._make_epochs(
                     self.window.epochs, 
                     self.window.time_units_epochs
                     )
+
                 self.time_support = self._join_epochs(
                     self.window.epochs,
                     self.window.time_units_epochs
                     )
+
                 # Save the data
                 self.create_nwb_file(path)
             app.quit()
@@ -289,10 +291,8 @@ class BaseLoader(object):
         """
         To create the global time support of the data
         """
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            isets = nap.IntervalSet(start=epochs['start'].sort_values(), end=epochs['end'].sort_values(),time_units=time_units)
-            iset = isets.merge_close_intervals(1, time_units = 'us')
+        isets = nap.IntervalSet(start=epochs['start'].sort_values(), end=epochs['end'].sort_values(),time_units=time_units)
+        iset = isets.merge_close_intervals(0.0) 
         if len(iset):
             return iset
         else:
@@ -349,23 +349,6 @@ class BaseLoader(object):
 
             nwbfile.add_acquisition(position)
             nwbfile.add_acquisition(direction)
-
-            # Adding time support of position as TimeIntervals
-            epochs = self.position.time_support.as_units('s')
-            position_time_support = TimeIntervals(
-                name="position_time_support",
-                description="The time support of the position i.e the real start and end of the tracking"
-                )
-            for i in self.position.time_support.index:
-                position_time_support.add_interval(
-                    start_time=epochs.loc[i,'start'],
-                    stop_time=epochs.loc[i,'end'],
-                    tags=str(i)
-                    )
-
-            nwbfile.add_time_intervals(position_time_support)
-
-
         
         # Epochs
         for ep in self.epochs.keys():
@@ -377,6 +360,20 @@ class BaseLoader(object):
                     tags=[ep] # This is stupid nwb who tries to parse the string
                     )
 
+        # Adding time support of position as TimeIntervals
+        epochs = self.position.time_support.as_units('s')
+        position_time_support = TimeIntervals(
+            name="position_time_support",
+            description="The time support of the position i.e the real start and end of the tracking"
+            )
+        for i in self.position.time_support.index:
+            position_time_support.add_interval(
+                start_time=epochs.loc[i,'start'],
+                stop_time=epochs.loc[i,'end'],
+                tags=str(i)
+                )
+
+        nwbfile.add_time_intervals(position_time_support)
 
         with NWBHDF5IO(self.nwbfilepath, 'w') as io:
             io.write(nwbfile)

@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-01-27 18:33:31
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-28 14:10:10
-
 import pandas as pd
 import numpy as np
 import warnings
@@ -61,7 +55,7 @@ def support_func(data, min_gap, method='absolute'):
 
 
 class Tsd(pd.Series):
-    # class Tsd():
+# class Tsd():
     """
     A subclass of pandas.Series specialized for neurophysiology time series.
     
@@ -102,27 +96,18 @@ class Tsd(pd.Series):
 
         t = TimeUnits.format_timestamps(t, time_units)
 
-        if len(t):
-            if time_support is not None:
-                bins = time_support.values.ravel()
-                # Because yes there is no funtion with both bounds closed as an option
-                ix = np.vstack((
-                    np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64))),
-                    np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64), right=False))
-                    )).T
-                ix[np.floor(ix / 2) * 2 != ix] = np.NaN
-                ix = np.floor(ix/2)
-                ix[np.isnan(ix[:,0]),0] = ix[np.isnan(ix[:,0]),1]
-                ix = ~np.isnan(ix[:,0])
-                if d is not None:
-                    super().__init__(index=t[ix],data=d[ix])
-                else:
-                    super().__init__(index=t[ix],data=None)
+        if time_support is not None:
+            bins = time_support.values.ravel()
+            ix = np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64)))
+            ix[np.floor(ix / 2) * 2 != ix] = np.NaN
+            ix = np.floor(ix/2)
+            ix = ~np.isnan(ix)
+            if d is not None:
+                super().__init__(index=t[ix],data=d[ix])
             else:
-                time_support = IntervalSet(start = t[0], end = t[-1])
-                super().__init__(index=t, data=d)
+                super().__init__(index=t[ix],data=None)
         else:
-            time_support = IntervalSet(pd.DataFrame(columns=['start','end']))
+            time_support = IntervalSet(start = t[0], end = t[-1])
             super().__init__(index=t, data=d)
 
         self.time_support = time_support
@@ -418,51 +403,6 @@ class Tsd(pd.Series):
             tsd = self.restrict(time_support)
             return tsd
 
-    def center(self, tsd, minmax, time_units = 's'):
-        """
-        Center itself around the timestamps given by the tsd argument.
-        minmax indicates the start and end of the window.
-        
-        Parameters
-        ----------
-        tsd : Ts/Tsd
-            Timestamps to center around.
-        minmax : tuple or int or float
-            The window size. Can be unequal on each side i.e. (-500, 1000).
-        time_units : str, optional
-            Time units of the minmax. Default is second.
-        
-        Returns
-        -------
-        dict
-            A dictionnary holding all the centered events.
-        
-        Raises
-        ------
-        RuntimeError
-            tsd argument should be a Tsd object.
-        """
-        if not isinstance(tsd, Tsd):
-            raise RuntimeError("tsd should be a Tsd object.")
-
-        window = np.abs(TimeUnits.format_timestamps(np.array(minmax), time_units))
-
-        time_support = IntervalSet(start = -window[0], end = window[1], time_units = 'us')
-
-        tmp = self.as_series()
-
-        group = {}
-        for i,t in enumerate(tsd.index.values):
-            tmp2 = tmp.loc[t-window[0]:t+window[1]]
-            group[i] = Tsd(
-                t = tmp2.index.values - t,
-                d = tmp2.values,
-                time_units = 'us',
-                time_support = time_support
-                )        
-        
-        return group
-
 
     def gaps(self, min_gap, method='absolute'):
         return gaps_func(self, min_gap, method)
@@ -509,7 +449,7 @@ class Tsd(pd.Series):
 
 # noinspection PyAbstractClass
 class TsdFrame(pd.DataFrame):
-    # class TsdFrame():
+# class TsdFrame():
     """
     A subclass of pandas.DataFrame specialized for neurophysiological time series.
     
@@ -554,15 +494,10 @@ class TsdFrame(pd.DataFrame):
 
         if time_support is not None:
             bins = time_support.values.ravel()
-            # Because yes there is no funtion with both bounds closed as an option
-            ix = np.vstack((
-                np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64))),
-                np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64), right=False))
-                )).T
+            ix = np.array(pd.cut(t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64)))
             ix[np.floor(ix / 2) * 2 != ix] = np.NaN
             ix = np.floor(ix/2)
-            ix[np.isnan(ix[:,0]),0] = ix[np.isnan(ix[:,0]),1]
-            ix = ~np.isnan(ix[:,0])
+            ix = ~np.isnan(ix)
             super().__init__(index=t[ix],data=d[ix], columns = c)
         else:
             time_support = IntervalSet(start = t[0], end = t[-1])
