@@ -123,13 +123,13 @@ def compute_2d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
     
     return tc, xy
 
-def compute_2d_tuning_curves_continuous(group, feature, ep, nb_bins, minmax=None):
+def compute_2d_tuning_curves_continuous(tsdframe, feature, ep, nb_bins, minmax=None):
     """
     Computes 2-dimensional tuning curves relative to a 2d feature
     
     Parameters
     ----------
-    group: Tsd or TsdFrame or dict of Tsd objets
+    tsdframe: Tsd or TsdFrame
         The group input
     feature: 2d TsdFrame
         The 2d feature.
@@ -151,36 +151,34 @@ def compute_2d_tuning_curves_continuous(group, feature, ep, nb_bins, minmax=None
         bins center in the two dimensions
 
     """
-    if type(group) is dict:
-        group = nap.TsFrame(group, time_support = ep)
 
     if feature.shape[1] != 2:
         raise RuntimeError("Variable is not 2 dimensional.")
 
     cols = list(feature.columns)
 
-    groups_value = {}
+    tsdframe_value = {}
     binsxy = {}
     for i, c in enumerate(cols):
-        groups_value[c] = group.value_from(feature[c], ep)
+        tsdframe_value[c] = tsdframe.value_from(feature[c], ep)
         if minmax is None:
             bins = np.linspace(np.min(feature[c]), np.max(feature[c]), nb_bins)
         else:
             bins = np.linspace(minmax[i+i%2], minmax[i+1+i%2], nb_bins)
         binsxy[c] = bins
-        groups_value[c] = np.digitize(groups_value[c],binsxy[c])-1
+        tsdframe_value[c] = np.digitize(tsdframe_value[c],binsxy[c])-1
         # This might be better done with 
         #groups_value[c] = pd.cut(groups_value[c],binsxy[c])
         # to keep groups_value as a Tsd object, but that threw an error
 
     tc = {}
-    tc_np = np.zeros((group.shape[1], nb_bins, nb_bins))
+    tc_np = np.zeros((tsdframe.shape[1], nb_bins, nb_bins))
     for i in range(nb_bins):
         for j in range(nb_bins):
-             idx = np.logical_and(groups_value[cols[0]]==i, groups_value[cols[1]]==j)
+             idx = np.logical_and(tsdframe_value[cols[0]]==i, tsdframe_value[cols[1]]==j)
              if np.sum(idx):
-                 tc_np[:,i,j] = group[idx].mean(0)
-    for n in group.keys():
+                 tc_np[:,i,j] = tsdframe[idx].mean(0)
+    for n in tsdframe.keys():
         tc[n] = tc_np[n,:,:]
     
     xy = [binsxy[c][0:-1] + np.diff(binsxy[c])/2 for c in binsxy.keys()]
