@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-31 21:19:09
+# @Last Modified time: 2022-01-31 21:50:27
 
 import numpy as np
 from numba import jit
@@ -113,6 +113,7 @@ def compute_peristimulus(data, tref,  minmax, time_units = 's'):
                 )
 
         group = nap.TsGroup(group, time_support = time_support)
+        group.set_info(ref_times = tref.as_units('s').index.values)
 
     else: 
         raise RuntimeError("Unknown format for data")
