@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+# @Author: gviejo
+# @Date:   2022-01-28 15:10:48
+# @Last Modified by:   gviejo
+# @Last Modified time: 2022-01-31 22:24:16
+
+
 import numpy as np
 import pandas as pd
 import sys
@@ -134,7 +141,7 @@ class TsGroup(UserDict):
                 raise KeyError("Can't find key {} in group index.".format(key))
         else:           
             metadata = self._metadata.loc[key,self._metadata.columns.drop('freq')]
-            return TsGroup({k:self[k] for k in key}, **metadata)
+            return TsGroup({k:self[k] for k in key}, time_support=self.time_support, **metadata)
     
     def __repr__(self):
         cols = self._metadata.columns.drop('freq')
@@ -435,7 +442,7 @@ class TsGroup(UserDict):
         time_index = np.hstack(time_index)
 
         return TsdFrame(t = time_index, d = count, support = ep)
-        
+
     """
     Special slicing of metadata
     """
