@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-28 14:10:10
+# @Last Modified time: 2022-01-31 21:21:27
 
 import pandas as pd
 import numpy as np
@@ -10,7 +10,6 @@ import warnings
 from .time_units import TimeUnits
 from pandas.core.internals import SingleBlockManager, BlockManager
 from .interval_set import IntervalSet
-
 
 def _get_restrict_method(align):
     """
@@ -58,7 +57,6 @@ def support_func(data, min_gap, method='absolute'):
     span = IntervalSet(t[0] - 1, t[-1] + 1)
     support_here = span.set_diff(here_gaps)
     return support_here
-
 
 class Tsd(pd.Series):
     # class Tsd():
@@ -417,52 +415,6 @@ class Tsd(pd.Series):
             time_support = self.time_support.intersect(time_support)
             tsd = self.restrict(time_support)
             return tsd
-
-    def center(self, tsd, minmax, time_units = 's'):
-        """
-        Center itself around the timestamps given by the tsd argument.
-        minmax indicates the start and end of the window.
-        
-        Parameters
-        ----------
-        tsd : Ts/Tsd
-            Timestamps to center around.
-        minmax : tuple or int or float
-            The window size. Can be unequal on each side i.e. (-500, 1000).
-        time_units : str, optional
-            Time units of the minmax. Default is second.
-        
-        Returns
-        -------
-        dict
-            A dictionnary holding all the centered events.
-        
-        Raises
-        ------
-        RuntimeError
-            tsd argument should be a Tsd object.
-        """
-        if not isinstance(tsd, Tsd):
-            raise RuntimeError("tsd should be a Tsd object.")
-
-        window = np.abs(TimeUnits.format_timestamps(np.array(minmax), time_units))
-
-        time_support = IntervalSet(start = -window[0], end = window[1], time_units = 'us')
-
-        tmp = self.as_series()
-
-        group = {}
-        for i,t in enumerate(tsd.index.values):
-            tmp2 = tmp.loc[t-window[0]:t+window[1]]
-            group[i] = Tsd(
-                t = tmp2.index.values - t,
-                d = tmp2.values,
-                time_units = 'us',
-                time_support = time_support
-                )        
-        
-        return group
-
 
     def gaps(self, min_gap, method='absolute'):
         return gaps_func(self, min_gap, method)

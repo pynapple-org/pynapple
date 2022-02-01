@@ -10,3 +10,5 @@ Contributors
 ------------
 
 -	Adrien Peyrache
+-	Sofia Skromne Carrasco
+- 	Dan Levenstein

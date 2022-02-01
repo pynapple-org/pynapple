@@ -1,3 +1,10 @@
+# -*- coding: utf-8 -*-
+# @Author: gviejo
+# @Date:   2022-01-28 15:10:48
+# @Last Modified by:   gviejo
+# @Last Modified time: 2022-01-30 22:38:13
+
+
 import numpy as np
 import pandas as pd
 import sys
@@ -435,7 +442,7 @@ class TsGroup(UserDict):
         time_index = np.hstack(time_index)
 
         return TsdFrame(t = time_index, d = count, support = ep)
-        
+
     """
     Special slicing of metadata
     """
