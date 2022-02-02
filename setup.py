@@ -18,7 +18,8 @@ requirements = [
         'pynwb',
         'tabulate',
         'pyqt5',
-        'matplotlib'
+        'matplotlib',
+        'h5py'
 ]
 
 test_requirements = [ ]
