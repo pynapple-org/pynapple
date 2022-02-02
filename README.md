@@ -17,17 +17,6 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 Getting Started
 ---------------
 
-### Requirements
-
--   Python 3.6+
--   Pandas
--   numpy
--   scipy
--   numba
--   pynwb 2.0
--   tabulate
--   pyqt5
-
 ### Installation
 
 pynapple can be installed with pip:
@@ -45,6 +34,18 @@ $ cd pynapple
 $ # Install in editable mode with `-e` or, equivalently, `--editable`
 $ pip install -e .
 ```
+this procedue will install all the dependencies including 
+
+-   Python 3.6+
+-   Pandas
+-   numpy
+-   scipy
+-   numba
+-   pynwb 2.0
+-   tabulate
+-   pyqt5
+
+
 
 <!-- Features
 --------
