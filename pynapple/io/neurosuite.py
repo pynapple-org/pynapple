@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Author: gviejo
+# @Date:   2022-02-02 20:45:09
+# @Last Modified by:   gviejo
+# @Last Modified time: 2022-02-02 20:45:22
 
 """
 Class and functions for loading data processed with the Neurosuite (Klusters, Neuroscope, NDmanager)
@@ -398,11 +403,10 @@ class NeuroSuite(BaseLoader):
 
         return
     
-    def load_MeanWaveforms(self, epoch = None, waveform_window = nap.IntervalSet(start = -0.5, end = 1, time_units = 'ms'), spike_count = 1000):
+    def load_mean_waveforms(self, epoch = None, waveform_window = nap.IntervalSet(start = -0.5, end = 1, time_units = 'ms'), spike_count = 1000):
         """
-        load the mean waveforms from a dat file.
-        
-        
+        Load the mean waveforms from a dat file.
+                
         Parameters
         ----------
         epoch : IntervalSet

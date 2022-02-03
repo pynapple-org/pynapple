@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-31 21:50:27
+# @Last Modified time: 2022-02-01 18:15:54
 
 import numpy as np
 from numba import jit
@@ -53,7 +53,7 @@ def align_to_event(times, data, tref, windowsize):
 
     return x, y
 
-def compute_peristimulus(data, tref,  minmax, time_units = 's'):
+def compute_peristimulus(data, tref,  minmax, time_unit = 's'):
     """
     Center ts/tsd/tsgroup object around the timestamps given by the tref argument.
     minmax indicates the start and end of the window.
@@ -68,7 +68,7 @@ def compute_peristimulus(data, tref,  minmax, time_units = 's'):
         The timestamps of the stimulus to align to
     minmax : tuple or int or float
         The window size. Can be unequal on each side i.e. (-500, 1000).
-    time_units : str, optional
+    time_unit : str, optional
         Time units of the minmax. Default is second.
     
     Returns
@@ -88,14 +88,14 @@ def compute_peristimulus(data, tref,  minmax, time_units = 's'):
     if isinstance(minmax, float) or isinstance(minmax, int):
         minmax = (minmax, minmax)
 
-    window = np.abs(nap.TimeUnits.format_timestamps(np.array(minmax), time_units))
+    window = np.abs(nap.TimeUnits.format_timestamps(np.array(minmax), time_unit))
 
     time_support = nap.IntervalSet(start = -window[0], end = window[1], time_units = 'us')
 
     if isinstance(data, nap.TsGroup):
         toreturn = {}
         for n in data.keys():
-            toreturn[n] = compute_peristimulus(data[n], tref, minmax, time_units)       
+            toreturn[n] = compute_peristimulus(data[n], tref, minmax, time_unit)
 
         return toreturn
 

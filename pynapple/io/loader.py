@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-26 17:34:55
+# @Last Modified time: 2022-02-02 16:59:40
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -130,13 +130,17 @@ class BaseLoader(object):
             position = position.drop(labels = 1, axis = 1)
         position = position[~position.index.duplicated(keep='first')]
         order = []
+        cols = []
         for n in position.columns:
             if n[0] == 'Rotation':
                 order.append('r'+n[1].lower())
+                cols.append(n)
             elif n[0] == 'Position':
                 order.append(n[1].lower())
-            else:
+                cols.append(n)
+        if len(order) == 0:
                 raise RuntimeError('Unknow tracking format for csv file {}'.format(csv_file))
+        position = position[cols]
         position.columns = order
         return position
 

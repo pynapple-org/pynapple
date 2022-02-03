@@ -34,7 +34,8 @@ $ cd pynapple
 $ # Install in editable mode with `-e` or, equivalently, `--editable`
 $ pip install -e .
 ```
-this procedue will install all the dependencies including 
+
+This procedure will install all the dependencies including 
 
 -   Python 3.6+
 -   Pandas
@@ -44,16 +45,8 @@ this procedue will install all the dependencies including
 -   pynwb 2.0
 -   tabulate
 -   pyqt5
+-   h5py
 
-
-
-<!-- Features
---------
-
--   Automatic handling of spike times and epochs
--   Tuning curves
--   Loading data coming from various pipelines
--   More and more coming! -->
 
 Basic Usage
 -----------
