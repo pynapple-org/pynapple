@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-02 16:59:40
+# @Last Modified time: 2022-02-03 17:30:19
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -56,8 +56,8 @@ class BaseLoader(object):
         # Starting the GUI
         if start_gui:
             app = QApplication([])
-            app.setQuitOnLastWindowClosed(True)    
-            self.window = BaseLoaderGUI(path=path)
+            app.setQuitOnLastWindowClosed(True)
+            self.window = BaseLoaderGUI(path=path)            
             app.exec()
 
             # Extracting all the informations from gui loader
@@ -85,7 +85,7 @@ class BaseLoader(object):
                 # Save the data
                 self.create_nwb_file(path)
             app.quit()
-    
+
     def load_default_csv(self, csv_file):
         """
         Load tracking data. The default csv should have the time index in the first column in seconds.

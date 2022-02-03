@@ -367,9 +367,10 @@ class TrackingTab(QWidget):
 
         # Table view
         self.table = QTableWidget(1,1)
-        self.table.setHorizontalHeaderLabels(['CSV file'])
-            
+        self.table.setHorizontalHeaderLabels(['CSV file'])            
         self.table.itemDoubleClicked.connect(self.change_file)
+        self.table.itemChanged.connect(self.change_ttl_params)
+
         header = self.table.horizontalHeader()       
         header.setSectionResizeMode(QHeaderView.Stretch)
 
@@ -402,7 +403,6 @@ class TrackingTab(QWidget):
                 for i in range(len(self.align_to_headers['ttl'][1:])):
                     self.table.insertColumn(i+1)
                 self.table.setHorizontalHeaderLabels(self.align_to_headers[self.alignement_csv])
-        
 
     def load_csv_files(self, s):
         suggested_dir = self.path if self.path else os.getenv('HOME')
@@ -465,12 +465,14 @@ class TrackingTab(QWidget):
 
                 # Infer the epoch
                 n = os.path.splitext(filename)[0].split('_')[-1]
-                nepoch = QSpinBox()
+                # nepoch = QSpinBox()
                 if n.isdigit(): 
-                    nepoch.setValue(int(n))
+                    # nepoch.setValue(int(n))
                     self.parameters.loc[filename,'epoch'] = int(n)
-                nepoch.valueChanged.connect(self.change_ttl_params)
-                self.table.setCellWidget(i, 6, nepoch)
+                    item = QTableWidgetItem(str(n))
+                    self.table.setItem(i, 6, item)
+                # nepoch.valueChanged.connect(self.change_ttl_params)
+                # self.table.setCellWidget(i, 6, nepoch)
 
                 # Infer the ttl file
                 possiblettlfile = [f for f in files if '_'+n in f and f != filename]
@@ -508,7 +510,7 @@ class TrackingTab(QWidget):
             self.parameters['threshold'][r] = self.w.threshold        
 
     def fill_default_value_parameters(self, filename, row):        
-        ttl_param_widgets = {}
+        # ttl_param_widgets = {}
         iterates = zip(
             ['n_channels', 'tracking_channel', 'bytes_size', 'fs'],
             [2,3,4,5],
@@ -519,41 +521,46 @@ class TrackingTab(QWidget):
                 self.parameters.loc[filename,key] = int(dval)
             else:
                 self.parameters.loc[filename,key] = dval
-            if key == 'fs':
-                ttl_param_widgets[key] = QDoubleSpinBox()
-                ttl_param_widgets[key].setMaximum(100000.0)
-                ttl_param_widgets[key].setSingleStep(1000.0)
-            else:
-                ttl_param_widgets[key] = QSpinBox()
-            ttl_param_widgets[key].setValue(dval)
-            ttl_param_widgets[key].valueChanged.connect(self.change_ttl_params)
-            self.table.setCellWidget(row, col, ttl_param_widgets[key])
+            item = QTableWidgetItem(str(dval))
+            self.table.setItem(row, col, item)
+            # if key == 'fs':
+            #     ttl_param_widgets[key] = QDoubleSpinBox()
+            #     ttl_param_widgets[key].setMaximum(100000.0)
+            #     ttl_param_widgets[key].setSingleStep(1000.0)
+            # else:
+            #     ttl_param_widgets[key] = QSpinBox()
+            # ttl_param_widgets[key].setValue(dval)
+            # ttl_param_widgets[key].valueChanged.connect(self.change_ttl_params)
+            # self.table.setCellWidget(row, col, ttl_param_widgets[key])
             # Adding default trheshod value
             self.parameters.loc[filename,'threshold'] = 0.3
-        self.ttl_param_widgets[row] = ttl_param_widgets
+        # self.ttl_param_widgets[row] = ttl_param_widgets
 
     def change_file(self, item):
-        suggested_dir = self.path if self.path else os.getenv('HOME')
-        if self.table.currentColumn() == 0:
-            paths = QFileDialog.getOpenFileName(self, 'Open CSV', suggested_dir, 'CSV(*.csv)')
-        if self.table.columnCount()>1:        
-            if self.table.currentColumn() == 1:
-                paths = QFileDialog.getOpenFileName(self, 'Open TTL file', suggested_dir)
-        filename = os.path.basename(paths[0])
-        item.setText(filename)
-        self.parameters.iloc[self.table.currentRow(),self.table.currentColumn()] = paths[0]
+        if self.table.currentColumn() in [0, 1]:
+            suggested_dir = self.path if self.path else os.getenv('HOME')
+            if self.table.currentColumn() == 0:
+                paths = QFileDialog.getOpenFileName(self, 'Open CSV', suggested_dir, 'CSV(*.csv)')
+            if self.table.columnCount()>1:        
+                if self.table.currentColumn() == 1:
+                    paths = QFileDialog.getOpenFileName(self, 'Open TTL file', suggested_dir)
+            filename = os.path.basename(paths[0])
+            item.setText(filename)
+            self.parameters.iloc[self.table.currentRow(),self.table.currentColumn()] = paths[0]
 
     def get_tracking_method(self, s):
         self.tracking_method = s
 
     def get_tracking_frequency(self, s):
-        self.track_frequency = float(s)
+        self.track_frequency = float(s)        
 
-    def change_ttl_params(self, value):
-        if self.table.currentColumn() == 5: 
-            self.parameters.iloc[self.table.currentRow(),self.table.currentColumn()] = float(value)
-        else:
-            self.parameters.iloc[self.table.currentRow(),self.table.currentColumn()] = int(value)    
+    def change_ttl_params(self, item):
+        row, col = (self.table.currentRow(),self.table.currentColumn())
+        if col in [2, 3, 4, 5, 6]:
+            if col == 5: 
+                self.parameters.iloc[row, col] = float(item.text())
+            else:
+                self.parameters.iloc[row, col] = int(item.text())        
 
     def update_path_info(self, path):
         self.path = path
