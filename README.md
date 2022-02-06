@@ -46,6 +46,7 @@ This procedure will install all the dependencies including
 -   tabulate
 -   pyqt5
 -   h5py
+-   matplotlib
 
 
 Basic Usage
