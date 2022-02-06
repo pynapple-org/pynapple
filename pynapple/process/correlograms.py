@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 11:39:55
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-30 23:10:49
+# @Last Modified time: 2022-02-05 13:26:17
 
 
 import numpy as np
@@ -22,27 +22,28 @@ from .. import core as nap
 def cross_correlogram(t1, t2, binsize, windowsize):
     """
     Performs the discrete cross-correlogram of two time series. 
-    The units should be in ms for all arguments.
+    The units should be in us for all arguments.
     Return the firing rate of the series t2 relative to the timings of t1.
-    
+    See compute_crosscorrelogram, compute_autocorrelogram and compute_eventcorrelogram
+    for wrappers of this function.
     
     Parameters
     ----------
     t1 : numpy.ndarray
-        The timestamps of the reference time series (in ms)
+        The timestamps of the reference time series (in us)
     t2 : numpy.ndarray
-        The timestamps of the target time series (in ms)
+        The timestamps of the target time series (in us)
     binsize : float
-        The bin size (in ms)
+        The bin size (in us)
     windowsize : float
-        The window size (in ms)
+        The window size (in us)
     
     Returns
     -------
     numpy.ndarray
         The cross-correlogram
     numpy.ndarray
-        Center of the bins (in ms)
+        Center of the bins (in us)
     
     """
     # nbins = ((windowsize//binsize)*2)    
@@ -76,7 +77,7 @@ def cross_correlogram(t1, t2, binsize, windowsize):
 
             C[j] += k
 
-    C = C/(nt1 * binsize/1000)
+    C = C/(nt1 * binsize/1000/1000)
 
     m = -w + binsize/2
     B = np.zeros(nbins)
@@ -85,25 +86,31 @@ def cross_correlogram(t1, t2, binsize, windowsize):
 
     return C, B
 
-def compute_autocorrelogram(group, ep, binsize, windowsize, norm=True):
+def compute_autocorrelogram(group, binsize, windowsize, ep=None, norm=True, time_units='s'):
     """
     Computes the autocorrelogram of a group of Ts/Tsd objects.
     The group can be passed directly as a TsGroup object.
     
     Parameters
     ----------
-    group: TsGroup or dict of Ts/Tsd objects
-        The input Ts/Tsd objects 
-    ep: IntervalSet
-        The epoch on which auto-corrs are computed
-    binsize: float
-        The bin size (in ms)
-    windowsize: float
-        The window size (in ms)
-    norm: bool, optional
+    group : TsGroup
+        The group of Ts/Tsd objects to auto-correlate
+    binsize : float
+        The bin size. Default is second. 
+        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
+    windowsize : float
+        The window size. Default is second.
+        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
+    ep : IntervalSet
+        The epoch on which auto-corrs are computed. 
+        If None, the epoch is the time support of the group.
+    norm : bool, optional
          If True, autocorrelograms are normalized to baseline (i.e. divided by the average rate)
          If False, autoorrelograms are returned as the rate (Hz) of the time series (relative to itself)
-
+    time_units : str, optional
+        The time units of the parameters. They have to be consistent for binsize and windowsize.
+        ('s' [default], 'ms', 'us').
+    
     Returns
     -------
     pandas.DataFrame
@@ -112,20 +119,25 @@ def compute_autocorrelogram(group, ep, binsize, windowsize, norm=True):
     Raises
     ------
     RuntimeError
-        group must be TsGroup or dictionnary of Ts/Tsd objects
+        group must be TsGroup
     """
-    if type(group) is dict:
-        newgroup = nap.TsGroup(group, time_support = ep)
-    elif type(group) is nap.TsGroup:
-        newgroup = group.restrict(ep)
+    if type(group) is nap.TsGroup:
+        if isinstance(ep, nap.IntervalSet):            
+            newgroup = group.restrict(ep)
+        else:
+            newgroup = group
     else:
         raise RuntimeError("Unknown format for group")
 
     autocorrs = {}
 
+    binsize = nap.TimeUnits.format_timestamps(binsize, time_units)[0]
+    windowsize = nap.TimeUnits.format_timestamps(windowsize, time_units)[0]
+
     for n in newgroup.keys():        
-        spk_time = newgroup[n].as_units('ms').index.values        
+        spk_time = newgroup[n].as_units('us').index.values
         auc, times = cross_correlogram(spk_time, spk_time, binsize, windowsize)
+        times = nap.TimeUnits.return_timestamps(times, 's')
         autocorrs[n] = pd.Series(index = times,data = auc)
         
     autocorrs = pd.DataFrame.from_dict(autocorrs)
@@ -137,7 +149,7 @@ def compute_autocorrelogram(group, ep, binsize, windowsize, norm=True):
 
     return autocorrs
 
-def compute_crosscorrelogram(group, ep, binsize, windowsize, norm=True,reverse=False):
+def compute_crosscorrelogram(group, binsize, windowsize, ep=None, norm=True, time_units='s',reverse=False):
     """
     Computes all the pairwise cross-correlograms from a group of Ts/Tsd objects.
     The group can be passed directly as a TsGroup object.
@@ -148,17 +160,23 @@ def compute_crosscorrelogram(group, ep, binsize, windowsize, norm=True,reverse=F
     
     Parameters
     ----------
-    group: TsGroup or dict of Ts/Tsd objects
-        The Ts/Tsd objects to cross-correlate
-    ep: IntervalSet
-        The epoch on which cross-correlograms are computed
-    binsize: float
-        The bin size in ms
-    windowsize: float
-        The window size in ms
-    norm: bool, optional
+    group : TsGroup
+        The group of Ts/Tsd objects to cross-correlate
+    binsize : float
+        The bin size. Default is second. 
+        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
+    windowsize : float
+        The window size. Default is second.
+        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
+    ep : IntervalSet
+        The epoch on which cross-corrs are computed. 
+        If None, the epoch is the time support of the group.
+    norm : bool, optional
         If True (default), cross-correlograms are normalized to baseline (i.e. divided by the average rate of the target time series)
         If False, cross-orrelograms are returned as the rate (Hz) of the target time series ((relative to the reference time series)
+    time_units : str, optional
+        The time units of the parameters. They have to be consistent for binsize and windowsize.
+        ('s' [default], 'ms', 'us').
     reverse : bool, optional
         To reverse the pair order
     
@@ -170,13 +188,14 @@ def compute_crosscorrelogram(group, ep, binsize, windowsize, norm=True,reverse=F
     Raises
     ------
     RuntimeError
-        group must be TsGroup or dictionnary of Ts/Tsd objects
+        group must be TsGroup
     
     """
-    if type(group) is dict:
-        newgroup = nap.TsGroup(group, time_support = ep)
-    elif type(group) is nap.TsGroup:
-        newgroup = group.restrict(ep)
+    if type(group) is nap.TsGroup:
+        if isinstance(ep, nap.IntervalSet):            
+            newgroup = group.restrict(ep)
+        else:
+            newgroup = group
     else:
         raise RuntimeError("Unknown format for group")
 
@@ -185,10 +204,14 @@ def compute_crosscorrelogram(group, ep, binsize, windowsize, norm=True,reverse=F
     if reverse: pairs = list(map(lambda n: (n[1],n[0]), pairs))
     crosscorrs = {}
 
+    binsize = nap.TimeUnits.format_timestamps(binsize, time_units)[0]
+    windowsize = nap.TimeUnits.format_timestamps(windowsize, time_units)[0]
+
     for i, j in pairs:
-        spk1 = newgroup[i].as_units('ms').index.values
-        spk2 = newgroup[j].as_units('ms').index.values            
+        spk1 = newgroup[i].as_units('us').index.values
+        spk2 = newgroup[j].as_units('us').index.values            
         auc, times = cross_correlogram(spk1, spk2, binsize, windowsize)
+        times = nap.TimeUnits.return_timestamps(times, 's')
         crosscorrs[(i,j)] = pd.Series(index = times,data = auc)
         
     crosscorrs = pd.DataFrame.from_dict(crosscorrs)
@@ -200,27 +223,32 @@ def compute_crosscorrelogram(group, ep, binsize, windowsize, norm=True,reverse=F
 
     return crosscorrs
 
-def compute_eventcorrelogram(group, event, ep, binsize, windowsize, norm=True):
+def compute_eventcorrelogram(group, event, binsize, windowsize, ep=None, norm=True, time_units='s'):
     """
     Computes the correlograms of a group of Ts/Tsd objects with another single Ts/Tsd object
-    The group can be passed directly as a TsGroup object.
+    The time of reference is the event times.
     
     Parameters
     ----------
-    group : TsGroup or dict of Ts/Tsd objects
-        The Ts/Tsd objects to correlate with the event
+    group : TsGroup
+        The group of Ts/Tsd objects to correlate with the event
     event : Ts/Tsd
         The event to correlate the each of the time series in the group with.
-    ep : IntervalSet
-        The epoch on which cross-correlograms are computed
     binsize : float
-        The bin size in ms
+        The bin size. Default is second. 
+        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
     windowsize : float
-        The window size in ms
+        The window size. Default is second.
+        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
+    ep : IntervalSet
+        The epoch on which cross-corrs are computed. 
+        If None, the epoch is the time support of the event.
     norm : bool, optional
         If True (default), cross-correlograms are normalized to baseline (i.e. divided by the average rate of the target time series)
         If False, cross-orrelograms are returned as the rate (Hz) of the target time series (relative to the event time series)
-    
+    time_units : str, optional
+        The time units of the parameters. They have to be consistent for binsize and windowsize.
+        ('s' [default], 'ms', 'us').
     Returns
     -------
     pandas.DataFrame
@@ -229,23 +257,29 @@ def compute_eventcorrelogram(group, event, ep, binsize, windowsize, norm=True):
     Raises
     ------
     RuntimeError
-        group must be TsGroup or dictionnary of Ts/Tsd objects
+        group must be TsGroup
     
     """
-    if type(group) is dict:
-        newgroup = nap.TsGroup(group, time_support = ep)
-    elif type(group) is nap.TsGroup:
+    if ep is None:
+        ep = event.time_support
+        tsd1 = event.as_units('us').index.values
+    else:
+        tsd1 = event.restrict(ep).as_units('us').index.values
+
+    if type(group) is nap.TsGroup:
         newgroup = group.restrict(ep)
     else:
         raise RuntimeError("Unknown format for group")
 
     crosscorrs = {}
 
-    tsd1 = event.restrict(ep).as_units('ms').index.values
+    binsize = nap.TimeUnits.format_timestamps(binsize, time_units)[0]
+    windowsize = nap.TimeUnits.format_timestamps(windowsize, time_units)[0]
 
     for n in newgroup.keys():        
-        spk_time = newgroup[n].as_units('ms').index.values        
+        spk_time = newgroup[n].as_units('us').index.values
         auc, times = cross_correlogram(tsd1, spk_time, binsize, windowsize)
+        times = nap.TimeUnits.return_timestamps(times, 's')
         crosscorrs[n] = pd.Series(index = times,data = auc)
         
     crosscorrs = pd.DataFrame.from_dict(crosscorrs)

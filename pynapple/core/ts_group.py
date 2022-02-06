@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-28 15:10:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-31 22:24:16
+# @Last Modified time: 2022-02-04 18:24:43
 
 
 import numpy as np
@@ -32,7 +32,7 @@ def intersect_intervals(i_sets):
     df.reset_index(inplace=True, drop=True)
     df['cumsum'] = df['start_end'].cumsum()
     ix = (df['cumsum']==n_sets).to_numpy().nonzero()[0]
-    return IntervalSet(df['time'][ix], df['time'][ix+1])
+    return IntervalSet(df['time'][ix], df['time'][ix+1], time_units = 'us')
 
 def union_intervals(i_sets):
     """
@@ -48,7 +48,7 @@ def union_intervals(i_sets):
     df['cumsum'] = df['start_end'].cumsum()
     ix_stop = (df['cumsum']==0).to_numpy().nonzero()[0]
     ix_start = np.hstack((0, ix_stop[:-1]+1))
-    return IntervalSet(df['time'][ix_start], df['time'][ix_stop])
+    return IntervalSet(df['time'][ix_start], df['time'][ix_stop], time_units = 'us')
 
 
 class TsGroup(UserDict):
@@ -72,7 +72,7 @@ class TsGroup(UserDict):
         time_support : IntervalSet, optional
             The time support of the TsGroup. Ts/Tsd objects will be restricted to the time support if passed.
         time_units : str, optional
-            Time units if data does not contain Ts/Tsd objects (us, ms, s)
+            Time units if data does not contain Ts/Tsd objects ('us', 'ms', 's' [default]).
         **kwargs
             Meta-info about the Ts/Tsd objects.
         
@@ -330,7 +330,7 @@ class TsGroup(UserDict):
 
         return TsGroup(newgr, time_support = ep, **self._metadata[cols])
 
-    def value_from(self, tsd, ep, align='closest'):
+    def value_from(self, tsd, ep=None, align='closest'):
         """
         Replace the value of each Ts/Tsd object within the Ts group with the closest value from tsd argument
         
@@ -339,7 +339,8 @@ class TsGroup(UserDict):
         tsd : Tsd
             The Tsd object holding the values to replace
         ep : IntervalSet
-            The IntervalSet object to restrict the operation
+            The IntervalSet object to restrict the operation.
+            If None, the time support of the tsd input object is used.
         align : str, optional
             The method to align (closest/prev/next)
         
@@ -364,8 +365,10 @@ class TsGroup(UserDict):
         >>> tsd = nap.Tsd(t=np.arange(0,100), d=np.random.rand(100), time_units='s')
         >>> ep = nap.IntervalSet(start = 0, end = 100, time_units = 's')
         >>> newtsgroup = tsgroup.value_from(tsd, ep)
-               
+            
         """
+        if ep is None:
+            ep = tsd.time_support        
         tsd = tsd.restrict(ep)
         newgr = {}
         for k in self.data:
@@ -386,8 +389,9 @@ class TsGroup(UserDict):
             The bin size (default is second)            
         ep : IntervalSet, optional
             IntervalSet to restrict the operation
+            If None, the time support of self is used.
         time_units : str, optional
-            Time units of bin size (us, ms, s)
+            Time units of bin size ('us', 'ms', 's' [default])
         
         Returns
         -------
@@ -425,7 +429,7 @@ class TsGroup(UserDict):
         
         """
         if not isinstance(ep, IntervalSet):
-            ep = self._union_time_support()
+            ep = self.time_support
             
         bin_size_us = TimeUnits.format_timestamps(np.array([bin_size]), time_units)[0]
 
@@ -441,7 +445,7 @@ class TsGroup(UserDict):
         count = np.vstack(count)
         time_index = np.hstack(time_index)
 
-        return TsdFrame(t = time_index, d = count, support = ep)
+        return TsdFrame(t = time_index, d = count, support = ep, time_units = 'us')
 
     """
     Special slicing of metadata

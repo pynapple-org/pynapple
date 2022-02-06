@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-31 21:21:27
+# @Last Modified time: 2022-02-04 17:41:11
 
 import pandas as pd
 import numpy as np
@@ -73,7 +73,7 @@ class Tsd(pd.Series):
         The time support of the time series
     """
     
-    def __init__(self, t, d=None, time_units=None, time_support=None, **kwargs):
+    def __init__(self, t, d=None, time_units='s', time_support=None, **kwargs):
         """
         Tsd Initializer.
                 
@@ -84,7 +84,7 @@ class Tsd(pd.Series):
         d : numpy.ndarray, optional
             The data of the time series
         time_units : str, optional
-            The time units in which times are specified (in s, ms or us)
+            The time units in which times are specified ('us', 'ms', 's' [default])
         time_support : IntervalSet, optional
             The time support of the tsd object
         **kwargs
@@ -117,7 +117,7 @@ class Tsd(pd.Series):
                 else:
                     super().__init__(index=t[ix],data=None)
             else:
-                time_support = IntervalSet(start = t[0], end = t[-1])
+                time_support = IntervalSet(start = t[0], end = t[-1], time_units = 'us')
                 super().__init__(index=t, data=d)
         else:
             time_support = IntervalSet(pd.DataFrame(columns=['start','end']))
@@ -135,14 +135,14 @@ class Tsd(pd.Series):
 
     def __str__(self): return self.__repr__()
 
-    def times(self, units=None):
+    def times(self, units='s'):
         """
         The time index of the Tsd, returned as np.double in the desired time units.
         
         Parameters
         ----------
         units : str, optional
-            us, ms, or s (default is us)
+            ('us', 'ms', 's' [default])
 
         Returns
         -------
@@ -163,14 +163,14 @@ class Tsd(pd.Series):
         """
         return pd.Series(self, copy=True)
 
-    def as_units(self, units=None):
+    def as_units(self, units='s'):
         """
         Returns a Series with time expressed in the desired unit.
         
         Parameters
         ----------
         units : str, optional
-            us, ms, or s (default is us)
+            ('us', 'ms', 's' [default])
         
         Returns
         -------
@@ -198,7 +198,7 @@ class Tsd(pd.Series):
         """
         return self.values
 
-    def value_from(self, tsd, ep, align='closest'):
+    def value_from(self, tsd, ep=None, align='closest'):
         """
         Replace the value with the closest value from tsd argument
         
@@ -206,20 +206,21 @@ class Tsd(pd.Series):
         ----------
         tsd : Tsd
             The Tsd object holding the values to replace
-        ep : IntervalSet
-            The IntervalSet object to restrict the operation
+        ep : IntervalSet (optional)
+            The IntervalSet object to restrict the operation. 
+            If None, the time support of the tsd input object is used.
         align : str, optional
             The method to align (closest/prev/next)
         
         Returns
         -------
-        out: Tsd
+        out : Tsd
             Tsd object with the new values
         
         Example
         -------
         In this example, the ts object will receive the closest values in time from tsd.
-
+        
         >>> import pynapple as nap
         >>> import numpy as np
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
@@ -237,12 +238,14 @@ class Tsd(pd.Series):
         >>> print(len(ts.restrict(ep)), len(newts))
             52 52
         """
+        if ep is None:
+            ep = tsd.time_support
         method = _get_restrict_method(align)
         ix = TimeUnits.format_timestamps(self.restrict(ep).index.values)
         tsd = tsd.restrict(ep)
         tsd = tsd.as_series()
         new_tsd = tsd.reindex(ix, method=method)
-        return Tsd(new_tsd, time_support = ep)
+        return Tsd(new_tsd, time_support = ep, time_units = 'us')
 
     def restrict(self, ep, keep_labels=False):
         """
@@ -284,7 +287,7 @@ class Tsd(pd.Series):
         tsd_r['interval'] = ix
         ix = ~np.isnan(ix)
         tsd_r = tsd_r[ix]
-        return Tsd(tsd_r[col], time_support=ep)
+        return Tsd(tsd_r[col], time_support=ep, time_units = 'us')
 
     def count(self, bin_size, ep = None, time_units = 's'):
         """
@@ -301,7 +304,7 @@ class Tsd(pd.Series):
             IntervalSet to restrict the operation
         
         time_units : str, optional
-            Time units of bin size (us, ms, s)
+            Time units of bin size ('us', 'ms', 's' [default])
         
         Returns
         -------
@@ -343,7 +346,7 @@ class Tsd(pd.Series):
             time_index.append(bins[0:-1] + np.diff(bins)/2)
         time_index = np.hstack(time_index)
         count = np.hstack(count)
-        return Tsd(t=time_index, d=count, time_support=ep)
+        return Tsd(t=time_index, d=count, time_support=ep, time_units = 'us')
 
     def threshold(self, thr, method='above'):
         """
@@ -410,7 +413,7 @@ class Tsd(pd.Series):
         if (len(starts)==0 and len(ends)==0) or len(starts)!=len(ends):
             raise RuntimeError("Threshold {} with method {} returned empty tsd.".format(thr, method))
         else:
-            time_support = IntervalSet(start = starts, end = ends)
+            time_support = IntervalSet(start = starts, end = ends, time_units = 'us')
             time_support = time_support.drop_short_intervals(0)
             time_support = self.time_support.intersect(time_support)
             tsd = self.restrict(time_support)
@@ -422,14 +425,14 @@ class Tsd(pd.Series):
     def support(self, min_gap, method='absolute'):
         return support_func(self, min_gap, method)
 
-    def start_time(self, units='us'):
+    def start_time(self, units='s'):
         """
         The first time index in the Ts/Tsd object
         
         Parameters
         ----------
         units : str, optional
-            us, ms or s (default is us)
+            ('us', 'ms', 's' [default])
         
         Returns
         -------
@@ -438,14 +441,14 @@ class Tsd(pd.Series):
         """        
         return self.times(units=units)[0]
 
-    def end_time(self, units='us'):
+    def end_time(self, units='s'):
         """
         The last time index in the Ts/Tsd object
         
         Parameters
         ----------
         units : str, optional
-            us, ms or s (default is us)
+            ('us', 'ms', 's' [default])
         
         Returns
         -------
@@ -475,7 +478,7 @@ class TsdFrame(pd.DataFrame):
         The time support of the time series
     """
     
-    def __init__(self, t, d=None, time_units=None, time_support=None, **kwargs):
+    def __init__(self, t, d=None, time_units='s', time_support=None, **kwargs):
         """
         TsdFrame initializer
         
@@ -486,7 +489,7 @@ class TsdFrame(pd.DataFrame):
         d : numpy.ndarray
             The data
         time_units : str, optional
-            The time units in which times are specified
+            The time units in which times are specified ('us', 'ms', 's' [default]).
         time_support : IntervalSet, optional
             The time support of the TsdFrame object
         **kwargs
@@ -517,7 +520,7 @@ class TsdFrame(pd.DataFrame):
             ix = ~np.isnan(ix[:,0])
             super().__init__(index=t[ix],data=d[ix], columns = c)
         else:
-            time_support = IntervalSet(start = t[0], end = t[-1])
+            time_support = IntervalSet(start = t[0], end = t[-1], time_units = 'us')
             super().__init__(index=t, data=d, columns=c)
 
         with warnings.catch_warnings():
@@ -538,18 +541,18 @@ class TsdFrame(pd.DataFrame):
         result = super().__getitem__(key)
         time_support = self.time_support
         if isinstance(result, pd.Series):
-            return Tsd(result, time_support=time_support)
+            return Tsd(result, time_support=time_support, time_units = 'us')
         elif isinstance(result, pd.DataFrame):
-            return TsdFrame(result, time_support=time_support)
+            return TsdFrame(result, time_support=time_support, time_units = 'us')
 
-    def times(self, units=None):
+    def times(self, units='s'):
         """
         The time index of the TsdFrame, returned as np.double in the desired time units.
         
         Parameters
         ----------
         units : str, optional
-            us, ms, or s (default is us)
+            ('us', 'ms', 's' [default])
         
         Returns
         -------
@@ -569,14 +572,14 @@ class TsdFrame(pd.DataFrame):
         """
         return pd.DataFrame(self, copy=copy)
 
-    def as_units(self, units=None):
+    def as_units(self, units='s'):
         """
         Returns a DataFrame with time expressed in the desired unit.
         
         Parameters
         ----------
         units : str, optional
-            us, ms, or s (default is us)
+            ('us', 'ms', 's' [default])
         
         Returns
         -------
@@ -613,7 +616,7 @@ class TsdFrame(pd.DataFrame):
         rest_t = self.reindex(ix, method=method, columns=self.columns.values)
         return rest_t
 
-    def value_from(self, tsd, ep, align='closest'):
+    def value_from(self, tsd, ep=None, align='closest'):
         """
         Replace the value with the closest value from tsd argument
         
@@ -621,8 +624,9 @@ class TsdFrame(pd.DataFrame):
         ----------
         tsd : Tsd
             The Tsd object holding the values to replace
-        ep : IntervalSet
-            The IntervalSet object to restrict the operation
+        ep : IntervalSet, optional
+            The IntervalSet object to restrict the operation.
+            If None, ep is taken from the tsd of the time support
         align : str, optional
             The method to align (closest/prev/next)
         
@@ -638,8 +642,8 @@ class TsdFrame(pd.DataFrame):
         >>> import pynapple as nap
         >>> import numpy as np
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
-        >>> ts = nap.Ts(t=t, time_units='s')             
-        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
+        >>> ts = nap.Ts(t=t, time_units='s')
+        >>> tsd = nap.TsdFrame(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
         >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
         
         The variable ts is a time series object containing only nan.
@@ -652,12 +656,14 @@ class TsdFrame(pd.DataFrame):
         >>> print(len(ts.restrict(ep)), len(newts))
             52 52
         """
+        if ep is None:
+            ep = tsd.time_support
         method = _get_restrict_method(align)
         ix = TimeUnits.format_timestamps(self.restrict(ep).index.values)
         tsd = tsd.restrict(ep)
         tsd = tsd.as_series()
         new_tsd = tsd.reindex(ix, method=method)
-        return Tsd(new_tsd, time_support = ep)
+        return Tsd(new_tsd, time_support = ep, time_units = 'us')
 
     def restrict(self, iset, keep_labels=False):
         """
@@ -683,7 +689,7 @@ class TsdFrame(pd.DataFrame):
         tsd_r = tsd_r[ix]
         if not keep_labels:
             del tsd_r['interval']
-        return TsdFrame(tsd_r, time_support=iset, copy=True)
+        return TsdFrame(tsd_r, time_units = 'us', time_support=iset, copy=True)
 
     def gaps(self, min_gap, method='absolute'):
         return gaps_func(self, min_gap, method)
@@ -691,10 +697,10 @@ class TsdFrame(pd.DataFrame):
     def support(self, min_gap, method='absolute'):
         return support_func(self, min_gap, method)
 
-    def start_time(self, units='us'):
+    def start_time(self, units='s'):
         return self.times(units=units)[0]
 
-    def end_time(self, units='us'):
+    def end_time(self, units='s'):
         return self.times(units=units)[-1]
 
 
@@ -713,7 +719,7 @@ class Ts(Tsd):
         The time support of the time series
     """
 
-    def __init__(self, t, time_units=None, time_support=None,**kwargs):
+    def __init__(self, t, time_units='s', time_support=None,**kwargs):
         """
         Ts Initializer
         
@@ -722,7 +728,7 @@ class Ts(Tsd):
         t : numpy.ndarray or pandas.Series
             An object transformable in a time series, or a pandas.Series equivalent (if d is None)
         time_units : str, optional
-            The time units in which times are specified (in s, ms or us)
+            The time units in which times are specified ('us', 'ms', 's' [default])
         time_support : IntervalSet, optional
             The time support of the Ts object
         **kwargs

@@ -17,7 +17,7 @@ position = data.position
 wake_ep = data.epochs['wake']
 
 # COMPUTING TUNING CURVES
-tuning_curves = nap.compute_1d_tuning_curves(spikes, position['ry'], position['ry'].time_support, 120,  minmax=(0, 2*np.pi))
+tuning_curves = nap.compute_1d_tuning_curves(spikes, position['ry'], 120, minmax=(0, 2*np.pi))
 
 
 # PLOT
