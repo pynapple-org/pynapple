@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-04 17:41:11
+# @Last Modified time: 2022-02-07 17:16:06
 
 import pandas as pd
 import numpy as np
@@ -93,6 +93,7 @@ class Tsd(pd.Series):
         if isinstance(t, SingleBlockManager):
             d = t.array
             t = t.index.values
+            time_units = 'us'
             if 'index' in kwargs: kwargs.pop('index')            
         elif isinstance(t, pd.Series):
             d = t.values

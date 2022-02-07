@@ -9,7 +9,26 @@ In 2018, Francesco started neuroseries, a Python package built on Pandas. It was
 In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuroseries and started *pynapple*. The core of pynapple is largely built upon neuroseries. Some of the original changes to TSToolbox made by Luke were included in this package, especially the *time_support* property of all ts/tsd objects.
 
 
-0.1.0 (2021-10-25)
+0.2.1 (2022-02-07)
+------------------
+
+-   Beta testing version for Peyrache Lab.
+
+
+0.2.0 (2022-01-10)
+------------------
+
+-   First version for pynapple with main features in core, process and IO.
+
+
+0.2.0 Pre-release (2022-01-06)
+------------------------------
+
+-   Pre-release version for pynapple with main features in core and process.
+
+
+0.1.1 (2021-10-25)
 ------------------
 
 -   First release on PyPI.
+- 	Firt minimal version
