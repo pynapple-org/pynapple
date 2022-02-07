@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date:   2022-01-25 21:50:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-04 14:41:58
+# @Last Modified time: 2022-02-06 18:41:11
 
 """
 """
@@ -11,6 +11,20 @@ import pandas as pd
 import numpy as np
 from .time_units import TimeUnits
 
+def _join_helper(start, end):
+    time = np.hstack((start, end))
+    start_end = np.hstack((np.ones(len(time)//2, dtype=np.int32),
+                          -1 * np.ones(len(time)//2, dtype=np.int32)))
+    df = pd.DataFrame({'time': time, 'start_end': start_end})
+    df.sort_values(by='time', inplace=True)
+    df.reset_index(inplace=True, drop=True)
+    df['cumsum'] = df['start_end'].cumsum()
+    ix_stop = (df['cumsum']==0).to_numpy().nonzero()[0]
+    ix_start = np.hstack((0, ix_stop[:-1]+1))
+    start = df['time'][ix_start].values
+    end = df['time'][ix_stop].values
+    return start, end    
+
 
 class IntervalSet(pd.DataFrame):
     # class IntervalSet():
@@ -18,14 +32,14 @@ class IntervalSet(pd.DataFrame):
     A subclass of pandas.DataFrame representing a (irregular) set of time intervals in elapsed time,
     with relative operations
     """
-    def __init__(self, start, end = None, time_units=None, expect_fix=False, **kwargs):
+    def __init__(self, start, end = None, time_units='s', expect_fix=False, **kwargs):
         """
         IntervalSet initializer
         
         If start and end and not aligned, meaning that len(start) == len(end),
         end[i] > start[i] and start[i+1] > end[i], or start and end are not sorted,
         will try to "fix" the data by eliminating some of the start and end data point
-                
+        
         Parameters
         ----------
         start : numpy.ndarray or number
@@ -33,11 +47,24 @@ class IntervalSet(pd.DataFrame):
         end : numpy.ndarray or number, optional
             Ends of intervals
         time_units : str, optional
-            Time unit of the intervals ('us' [default], 'ms', 's')
+            Time unit of the intervals ('us', 'ms', 's' [default])
         expect_fix : bool, optional
             if False, will give a warning when a fix is needed (default: False)
         **kwargs
             Additional parameters passed ot pandas.DataFrame
+        
+        Returns
+        -------
+        IntervalSet
+            _
+        
+        Raises
+        ------
+        RuntimeError
+            Description
+        ValueError
+            If a pandas.DataFrame is passed, it should contains 
+            a column 'start' and a column 'end'.
         
         """
         
@@ -45,10 +72,15 @@ class IntervalSet(pd.DataFrame):
             df = pd.DataFrame(start)
             if 'start' not in df.columns or 'end' not in df.columns:
                 raise ValueError('wrong columns')
+            start = df['end'].values
+            end = df['end'].values
+            if (start[1:] < end[0:-1]).any():
+                start, end = _join_helper(start, end)
+                df = pd.DataFrame.from_dict({'start':start,'end':end})
             super().__init__(df, **kwargs)
             self.r_cache = None
-            self._metadata = ['nts_class']
-            self.nts_class = self.__class__.__name__
+            self._metadata = ['nap_class']
+            self.nap_class = self.__class__.__name__
             return
 
         start = np.array(start).ravel()
@@ -110,8 +142,8 @@ class IntervalSet(pd.DataFrame):
 
         super().__init__(data=data, columns=('start', 'end'), **kwargs)
         self.r_cache = None
-        self._metadata = ['nts_class']
-        self.nts_class = self.__class__.__name__
+        self._metadata = ['nap_class']
+        self.nap_class = self.__class__.__name__
 
     def __repr__(self):
         return self.as_units('s').__repr__()
@@ -130,16 +162,16 @@ class IntervalSet(pd.DataFrame):
         """
         s = self['start'][0]
         e = self['end'].iloc[-1]
-        return IntervalSet(s, e)
+        return IntervalSet(s, e, time_units = 'us')
 
-    def tot_length(self, time_units=None):
+    def tot_length(self, time_units='s'):
         """
         Total elapsed time in the set.
                 
         Parameters
         ----------
         time_units : None, optional
-            The time units to return the result in ('us' [default], 'ms', 's')
+            The time units to return the result in ('us', 'ms', 's' [default])
         
         Returns
         -------
@@ -149,13 +181,13 @@ class IntervalSet(pd.DataFrame):
         tot_l = (self['end'] - self['start']).astype(np.float64).sum()
         return TimeUnits.return_timestamps(tot_l, time_units)
 
-    def intersect(self, *a):
+    def intersect(self, a):
         """
         set intersection of IntervalSet's
                 
         Parameters
         ----------
-        *a : IntervalSet or tuple of IntervalSets
+        a : IntervalSet or list/tuple of IntervalSets
             the IntervalSet to intersect self with, or a tuple of
         
         Returns
@@ -163,6 +195,11 @@ class IntervalSet(pd.DataFrame):
         out: IntervalSet
             _
         """
+        if isinstance(a, IntervalSet):
+            a = [a]
+        elif isinstance(a, (list, tuple)):
+            a = list(a)
+
         i_sets = [self]
         i_sets.extend(a)
         n_sets = len(i_sets)
@@ -187,7 +224,7 @@ class IntervalSet(pd.DataFrame):
         # noinspection PyTypeChecker
         end = df['time'][ix+1]
 
-        return IntervalSet(start, end)
+        return IntervalSet(start, end, time_units = 'us')
 
     def union(self, a):
         """
@@ -229,7 +266,7 @@ class IntervalSet(pd.DataFrame):
         start = df['time'][ix_start]
         stop = df['time'][ix_stop]
 
-        return IntervalSet(start, stop)
+        return IntervalSet(start, stop, time_units = 'us')
 
     def set_diff(self, a):
         """
@@ -269,7 +306,7 @@ class IntervalSet(pd.DataFrame):
         end = end.reset_index(drop=True)  
         idx = start!=end
 
-        return IntervalSet(start[idx], end[idx])
+        return IntervalSet(start[idx], end[idx], time_units = 'us')
 
     def in_interval(self, tsd):
         """
@@ -301,7 +338,7 @@ class IntervalSet(pd.DataFrame):
         ix3[np.isnan(ix3[:,0]),0] = ix3[np.isnan(ix3[:,0]),1]
         return ix3[:,0]
 
-    def drop_short_intervals(self, threshold, time_units=None):
+    def drop_short_intervals(self, threshold, time_units='s'):
         """
         Drops the short intervals in the interval set.
         
@@ -310,7 +347,7 @@ class IntervalSet(pd.DataFrame):
         threshold : numeric
             Time threshold for "short" intervals
         time_units : None, optional
-            The time units for the treshold ('us'[default], 'ms', 's')
+            The time units for the treshold ('us', 'ms', 's' [default])
         
         Returns
         -------
@@ -320,7 +357,7 @@ class IntervalSet(pd.DataFrame):
         threshold = TimeUnits.format_timestamps(np.array((threshold,), dtype=np.float64).ravel(), time_units)[0]
         return self.loc[(self['end']-self['start']) > threshold].reset_index(drop=True)
 
-    def drop_long_intervals(self, threshold, time_units=None):
+    def drop_long_intervals(self, threshold, time_units='s'):
         """
         Drops the long intervals in the interval set.
         
@@ -329,7 +366,7 @@ class IntervalSet(pd.DataFrame):
         threshold : numeric
             Time threshold for "long" intervals
         time_units : None, optional
-            The time units for the treshold ('us'[default], 'ms', 's')
+            The time units for the treshold ('us', 'ms', 's' [default])
         
         Returns
         -------
@@ -339,15 +376,14 @@ class IntervalSet(pd.DataFrame):
         threshold = TimeUnits.format_timestamps(np.array((threshold,), dtype=np.float64).ravel(), time_units)[0]
         return self.loc[(self['end']-self['start']) < threshold].reset_index(drop=True)
 
-
-    def as_units(self, units=None):
+    def as_units(self, units='s'):
         """        
         returns a DataFrame with time expressed in the desired unit
         
         Parameters
         ----------
         units : None, optional
-            'us'[default], 'ms', or 's'
+            'us', 'ms', or 's' [default]
         
         Returns
         -------
@@ -361,7 +397,7 @@ class IntervalSet(pd.DataFrame):
 
         return df
 
-    def merge_close_intervals(self, threshold, time_units=None):
+    def merge_close_intervals(self, threshold, time_units='s'):
         """
         Merges intervals that are very close.
         
@@ -370,7 +406,7 @@ class IntervalSet(pd.DataFrame):
         threshold : numeric
             time threshold for the closeness of the intervals
         time_units : None, optional
-            time units for the threshold ('us'[optional], 'ms', 's')
+            time units for the threshold ('us', 'ms', 's' [default])
         
         Returns
         -------
@@ -388,7 +424,7 @@ class IntervalSet(pd.DataFrame):
         start = np.hstack((start[0], start[1:][tojoin]))
         end = np.hstack((end[0:-1][tojoin], end[-1]))
 
-        return IntervalSet(start = start, end = end)
+        return IntervalSet(start = start, end = end, time_units ='us')
 
     def store(self, the_store, key, **kwargs):
         data_to_store = pd.DataFrame(self)

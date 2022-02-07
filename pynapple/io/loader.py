@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-03 17:30:19
+# @Last Modified time: 2022-02-07 00:10:52
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -57,34 +57,38 @@ class BaseLoader(object):
         if start_gui:
             app = QApplication([])
             app.setQuitOnLastWindowClosed(True)
-            self.window = BaseLoaderGUI(path=path)            
+            window = BaseLoaderGUI(path=path)
+            window.show()
+
             app.exec()
 
             # Extracting all the informations from gui loader
-            if self.window.status:
-                self.session_information = self.window.session_information
-                self.subject_information = self.window.subject_information
+            if window.status:
+                self.session_information = window.session_information
+                self.subject_information = window.subject_information
                 self.name = self.session_information['name']
-                self.tracking_frequency = self.window.tracking_frequency
+                self.tracking_frequency = window.tracking_frequency
                 self.position = self._make_position(
-                    self.window.tracking_parameters,
-                    self.window.tracking_method,
-                    self.window.tracking_frequency,
-                    self.window.epochs,
-                    self.window.time_units_epochs,
-                    self.window.tracking_alignement
+                    window.tracking_parameters,
+                    window.tracking_method,
+                    window.tracking_frequency,
+                    window.epochs,
+                    window.time_units_epochs,
+                    window.tracking_alignement
                     ) 
                 self.epochs = self._make_epochs(
-                    self.window.epochs, 
-                    self.window.time_units_epochs
+                    window.epochs, 
+                    window.time_units_epochs
                     )
                 self.time_support = self._join_epochs(
-                    self.window.epochs,
-                    self.window.time_units_epochs
+                    window.epochs,
+                    window.time_units_epochs
                     )
                 # Save the data
-                self.create_nwb_file(path)
+                self.create_nwb_file(path)            
             app.quit()
+            # print('\n'.join(repr(w) for w in app.allWidgets()))
+            # del app, window
 
     def load_default_csv(self, csv_file):
         """

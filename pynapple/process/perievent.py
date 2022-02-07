@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-02 21:01:57
+# @Last Modified time: 2022-02-05 20:59:03
 
 import numpy as np
 from numba import jit
@@ -69,7 +69,7 @@ def compute_perievent(data, tref,  minmax, time_unit = 's'):
     minmax : tuple or int or float
         The window size. Can be unequal on each side i.e. (-500, 1000).
     time_unit : str, optional
-        Time units of the minmax. Default is second.
+        Time units of the minmax ('s' [default], 'ms', 'us').
     
     Returns
     -------

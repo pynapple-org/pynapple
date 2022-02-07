@@ -2,41 +2,47 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-18 16:44:38
+# @Last Modified time: 2022-02-05 20:57:03
 
+
+import warnings
 import numpy as np
 import pandas as pd
 from .. import core as nap
-import warnings
 
 
-def compute_1d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
+def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     """
     Computes 1-dimensional tuning curves relative to a 1d feature.
     
     Parameters
     ----------
-    group: TsGroup or dict of Ts/Tsd objects
+    group : TsGroup
         The group of Ts/Tsd for which the tuning curves will be computed 
-    feature: Tsd
+    feature : Tsd
         The 1-dimensional target feature (e.g. head-direction)
-    ep: IntervalSet
-        The epoch on which tuning curves are computed
-    nb_bins: int
+    nb_bins : int
         Number of bins in the tuning curve
-    minmax: tuple or list, optional
+    ep : IntervalSet, optional
+        The epoch on which tuning curves are computed.
+        If None, the epoch is the time support of the feature.
+    minmax : tuple or list, optional
         The min and max boundaries of the tuning curves.
         If None, the boundaries are inferred from the target feature
-    
+   
     Returns
     -------
     pandas.DataFrame
         DataFrame to hold the tuning curves
+   
+    Raises
+    ------
+    RuntimeError
+        If group is not a TsGroup object.
+   
     """
-    if type(group) is dict:
-        group = nap.TsGroup(group, time_support = ep)
-
-    group_value = group.value_from(feature, ep)
+    if not isinstance(group, nap.TsGroup):
+        raise RuntimeError("Unknown format for group")
 
     if minmax is None:
         bins = np.linspace(np.min(feature), np.max(feature), nb_bins)
@@ -44,12 +50,17 @@ def compute_1d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
         bins = np.linspace(minmax[0], minmax[1], nb_bins)
     idx = bins[0:-1]+np.diff(bins)/2
 
-    tuning_curves = pd.DataFrame(index = idx, columns = list(group.keys()))    
+    tuning_curves = pd.DataFrame(index=idx, columns=list(group.keys()))    
 
-    occupancy, _     = np.histogram(feature.values, bins)
+    if isinstance(ep, nap.IntervalSet):
+        group_value = group.value_from(feature, ep)
+        occupancy, _ = np.histogram(feature.restrict(ep).values, bins)
+    else:
+        group_value = group.value_from(feature)
+        occupancy, _ = np.histogram(feature.values, bins)
 
     for k in group_value:
-        count, bin_edges = np.histogram(group_value[k].values, bins) 
+        count, _ = np.histogram(group_value[k].values, bins) 
         count = count/occupancy
         count[np.isnan(count)] = 0.0
         tuning_curves[k] = count
@@ -57,21 +68,22 @@ def compute_1d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
 
     return tuning_curves
 
-def compute_2d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
+def compute_2d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     """
     Computes 2-dimensional tuning curves relative to a 2d feature
     
     Parameters
     ----------
-    group: TsGroup or dict of Ts/Tsd objects
-        The group input
-    feature: 2d TsdFrame
-        The 2d feature.
-    ep: IntervalSet
-        The epoch on which tuning curves are computed
-    nb_bins: int
+    group : TsGroup
+        The group of Ts/Tsd for which the tuning curves will be computed 
+    feature : TsdFrame
+        The 2d feature (i.e. 2 columns features).
+    nb_bins : int
         Number of bins in the tuning curves
-    minmax: tuple or list, optional
+    ep : IntervalSet, optional
+        The epoch on which tuning curves are computed.
+        If None, the epoch is the time support of the feature.
+    minmax : tuple or list, optional
         The min and max boundaries of the tuning curves given as:
         (minx, maxx, miny, maxy)
         If None, the boundaries are inferred from the target variable
@@ -83,18 +95,28 @@ def compute_2d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
         n is the number of object in the input group. 
     list
         bins center in the two dimensions
-
+    
+    Raises
+    ------
+    RuntimeError
+        If group is not a TsGroup object or if feature is not 2 columns only.
+        
     """
-    if type(group) is dict:
-        group = nap.TsGroup(group, time_support = ep)
-
     if feature.shape[1] != 2:
-        raise RuntimeError("Variable is not 2 dimensional.")
+        raise RuntimeError("feature should have 2 columns only.")
 
-    cols = list(feature.columns)
+    if type(group) is not nap.TsGroup:
+        raise RuntimeError("Unknown format for group")
 
+    if isinstance(ep, nap.IntervalSet):
+        feature = feature.restrict(ep)
+    else:
+        ep = feature.time_support
+
+    cols = list(feature.columns)    
     groups_value = {}
     binsxy = {}
+    
     for i, c in enumerate(cols):
         groups_value[c] = group.value_from(feature[c], ep)
         if minmax is None:
@@ -123,91 +145,30 @@ def compute_2d_tuning_curves(group, feature, ep, nb_bins, minmax=None):
     
     return tc, xy
 
-def compute_2d_tuning_curves_continuous(tsdframe, feature, ep, nb_bins, minmax=None):
-    """
-    Computes 2-dimensional tuning curves relative to a 2d feature
-    
-    Parameters
-    ----------
-    tsdframe: Tsd or TsdFrame
-        The group input
-    feature: 2d TsdFrame
-        The 2d feature.
-    ep: IntervalSet
-        The epoch on which tuning curves are computed
-    nb_bins: int
-        Number of bins in the tuning curves
-    minmax: tuple or list, optional
-        The min and max boundaries of the tuning curves given as:
-        (minx, maxx, miny, maxy)
-        If None, the boundaries are inferred from the target variable
-    
-    Returns
-    -------
-    numpy.ndarray
-        Stacked array of the tuning curves with dimensions (n, nb_bins, nb_bins).
-        n is the number of object in the input group. 
-    list
-        bins center in the two dimensions
-
-    """
-
-    if feature.shape[1] != 2:
-        raise RuntimeError("Variable is not 2 dimensional.")
-
-    cols = list(feature.columns)
-
-    tsdframe_value = {}
-    binsxy = {}
-    for i, c in enumerate(cols):
-        tsdframe_value[c] = tsdframe.value_from(feature[c], ep)
-        if minmax is None:
-            bins = np.linspace(np.min(feature[c]), np.max(feature[c]), nb_bins)
-        else:
-            bins = np.linspace(minmax[i+i%2], minmax[i+1+i%2], nb_bins)
-        binsxy[c] = bins
-        tsdframe_value[c] = np.digitize(tsdframe_value[c],binsxy[c])-1
-        # This might be better done with 
-        #groups_value[c] = pd.cut(groups_value[c],binsxy[c])
-        # to keep groups_value as a Tsd object, but that threw an error
-
-    tc = {}
-    tc_np = np.zeros((tsdframe.shape[1], nb_bins, nb_bins))
-    for i in range(nb_bins):
-        for j in range(nb_bins):
-             idx = np.logical_and(tsdframe_value[cols[0]]==i, tsdframe_value[cols[1]]==j)
-             if np.sum(idx):
-                 tc_np[:,i,j] = tsdframe[idx].mean(0)
-    for n in tsdframe.keys():
-        tc[n] = tc_np[n,:,:]
-    
-    xy = [binsxy[c][0:-1] + np.diff(binsxy[c])/2 for c in binsxy.keys()]
-    
-    return tc, xy
-
-def compute_1d_mutual_info(tc, feature, ep, minmax=None, bitssec=False):
+def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
     """
     Mutual information as defined in 
-        
+    
     Skaggs, W. E., McNaughton, B. L., & Gothard, K. M. (1993). 
     An information-theoretic approach to deciphering the hippocampal code. 
     In Advances in neural information processing systems (pp. 1030-1037).
-
+    
     Parameters
     ----------
     tc : pandas.DataFrame or numpy.ndarray
         Tuning curves in columns
     feature : Tsd
         The feature that was used to compute the tuning curves
-    ep : IntervalSet
+    ep : IntervalSet, optional
         The epoch over which the tuning curves were computed
-    minmax: tuple or list, optional
+        If None, the epoch is the time support of the feature.
+    minmax : tuple or list, optional
         The min and max boundaries of the tuning curves.
         If None, the boundaries are inferred from the target feature
-    bitssec: bool, optional
+    bitssec : bool, optional
         By default, the function return bits per spikes.
         Set to true for bits per seconds
-
+    
     Returns
     -------
     pandas.DataFrame
@@ -227,9 +188,10 @@ def compute_1d_mutual_info(tc, feature, ep, minmax=None, bitssec=False):
         bins = np.linspace(minmax[0], minmax[1], nb_bins)
     idx = bins[0:-1]+np.diff(bins)/2
 
-    
-
-    occupancy, _ = np.histogram(feature.restrict(ep).values, bins)
+    if isinstance(ep, nap.IntervalSet):
+        occupancy, _ = np.histogram(feature.restrict(ep).values, bins)
+    else:
+        occupancy, _ = np.histogram(feature.values, bins)
     occupancy = occupancy / occupancy.sum()
     occupancy = occupancy[:,np.newaxis]
 
@@ -249,7 +211,7 @@ def compute_1d_mutual_info(tc, feature, ep, minmax=None, bitssec=False):
         SI = pd.DataFrame(index = columns, columns = ['SI'], data = SI)
         return SI
 
-def compute_2d_mutual_info(tc, features, ep, minmax=None, bitssec=False):
+def compute_2d_mutual_info(tc, features, ep=None, minmax=None, bitssec=False):
     """
     Mutual information as defined in 
         
@@ -262,9 +224,10 @@ def compute_2d_mutual_info(tc, features, ep, minmax=None, bitssec=False):
     tc : dict or numpy.ndarray
         If array, first dimension should be the neuron
     features : TsdFrame
-        The features that were used to compute the tuning curves
-    ep : IntervalSet
+        The 2 columns features that were used to compute the tuning curves
+    ep : IntervalSet, optional
         The epoch over which the tuning curves were computed
+        If None, the epoch is the time support of the feature.
     minmax: tuple or list, optional
         The min and max boundaries of the tuning curves.
         If None, the boundaries are inferred from the target features
@@ -296,9 +259,11 @@ def compute_2d_mutual_info(tc, features, ep, minmax=None, bitssec=False):
         else:
             bins.append(np.linspace(minmax[i+i%2], minmax[i+1+i%2], nb_bins[i]))
             
+    if isinstance(ep, nap.IntervalSet):
+        features = features.restrict(ep)
+
     occupancy, _, _ = np.histogram2d(features[cols[0]].values, features[cols[1]].values, [bins[0], bins[1]])
     occupancy = occupancy / occupancy.sum()
-
 
     fr = np.nansum(fx * occupancy, (1,2))
     fr = fr[:,np.newaxis,np.newaxis]
@@ -316,3 +281,129 @@ def compute_2d_mutual_info(tc, features, ep, minmax=None, bitssec=False):
         SI = SI / fr[:,0,0]
         SI = pd.DataFrame(index = idx, columns = ['SI'], data = SI)
         return SI
+
+def compute_1d_tuning_curves_continous(tsdframe, feature, nb_bins, ep=None, minmax=None):
+    """
+    Computes 1-dimensional tuning curves relative to a feature with continous data.
+    
+    Parameters
+    ----------
+    tsdframe : Tsd or TsdFrame
+        Input data (e.g. continus calcium data 
+        where each column is the calcium activity of one neuron)
+    feature : Tsd
+        The feature (one column)
+    nb_bins : int
+        Number of bins in the tuning curves
+    ep : IntervalSet, optional
+        The epoch on which tuning curves are computed.
+        If None, the epoch is the time support of the feature.
+    minmax : tuple or list, optional
+        The min and max boundaries of the tuning curves.
+        If None, the boundaries are inferred from the target feature
+    
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame to hold the tuning curves    
+    
+    Raises
+    ------
+    RuntimeError
+        If tsdframe is not a Tsd or a TsdFrame object.
+    
+    """
+    if not isinstance(tsdframe, (nap.Tsd, nap.TsdFrame)):
+        raise RuntimeError("Unknown format for tsdframe.")
+
+    if isinstance(ep, nap.IntervalSet):
+        feature = feature.restrict(ep)
+        tsdframe = tsdframe.restrict(ep)
+    else:
+        tsdframe = tsdframe.restrict(feature.time_support)
+
+    if minmax is None:
+        bins = np.linspace(np.min(feature), np.max(feature), nb_bins)
+    else:
+        bins = np.linspace(minmax[0], minmax[1], nb_bins)
+
+    align_times = tsdframe.value_from(feature)
+    idx = np.digitize(align_times.values, bins)-1
+    tmp = pd.DataFrame(tsdframe).groupby(idx).mean()
+    tmp = tmp.reindex(np.arange(0, len(bins)-1))
+    tmp.index = pd.Index(bins[0:-1]+np.diff(bins)/2)
+
+    return tmp
+
+def compute_2d_tuning_curves_continuous(tsdframe, features, nb_bins, ep=None, minmax=None):
+    """
+    Computes 2-dimensional tuning curves relative to a 2d feature with continous data.
+    
+    Parameters
+    ----------
+    tsdframe : Tsd or TsdFrame
+        Input data (e.g. continus calcium data 
+        where each column is the calcium activity of one neuron)
+    features : TsdFrame
+        The 2d feature (two columns).
+    nb_bins : int
+        Number of bins in the tuning curves
+    ep : IntervalSet, optional
+        The epoch on which tuning curves are computed.
+        If None, the epoch is the time support of the feature.
+    minmax : tuple or list, optional
+        The min and max boundaries of the tuning curves given as:
+        (minx, maxx, miny, maxy)
+        If None, the boundaries are inferred from the target variable
+    
+    Returns
+    -------
+    numpy.ndarray
+        Stacked array of the tuning curves with dimensions (n, nb_bins, nb_bins).
+        n is the number of object in the input group. 
+    list
+        bins center in the two dimensions
+    
+    Raises
+    ------
+    RuntimeError
+        If tsdframe is not a Tsd/TsdFrame or if features is not 2 columns
+    
+    """
+    if not isinstance(tsdframe, (nap.Tsd, nap.TsdFrame)):
+        raise RuntimeError("Unknown format for tsdframe.")
+
+    if isinstance(ep, nap.IntervalSet):
+        features = features.restrict(ep)
+        tsdframe = tsdframe.restrict(ep)
+    else:
+        tsdframe = tsdframe.restrict(features.time_support)
+
+    if features.shape[1] != 2:
+        raise RuntimeError("features input is not 2 columns.")
+
+    cols = list(features.columns)
+
+    binsxy = {}
+    idxs = {}
+
+    for i, c in enumerate(cols):
+        if minmax is None:
+            bins = np.linspace(np.min(features[c]), np.max(features[c]), nb_bins)
+        else:
+            bins = np.linspace(minmax[i+i%2], minmax[i+1+i%2], nb_bins)
+
+        align_times = tsdframe.value_from(features[c], ep)
+        idxs[c] = np.digitize(align_times.values, bins)-1
+        binsxy[c] = bins
+
+    idxs = pd.DataFrame(idxs)
+
+    tc_np = np.zeros((tsdframe.shape[1], nb_bins, nb_bins))*np.nan
+
+    for k, tmp in idxs.groupby(cols):
+        tc_np[:,k[0],k[1]] = tsdframe.iloc[tmp.index].mean(0).values
+    
+    xy = [binsxy[c][0:-1] + np.diff(binsxy[c])/2 for c in binsxy.keys()]
+    
+    return tc_np, xy
