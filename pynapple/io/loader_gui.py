@@ -6,24 +6,9 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QStackedLayout  # add this import
 import scipy.signal
-# import matplotlib.pyplot as plt
 import numpy as np
-# import matplotlib
-# matplotlib.use('Qt5Agg')
-# import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
-from matplotlib.figure import Figure
-
-class MplCanvas(FigureCanvas):
-    def __init__(self, parent=None, dpi=50):
-        fig = Figure(dpi=dpi)
-        self.axes = fig.add_subplot(111)
-        super(MplCanvas, self).__init__(fig)
-
-class MplToolbar(NavigationToolbar):
-    def __init__(self, parent=None, canvas=None):
-        super(MplToolbar, self).__init__(canvas, parent)
+from pyqtgraph import PlotWidget, plot
+import pyqtgraph as pg
 
 class TTLDetection(QDialog):
 
@@ -33,11 +18,11 @@ class TTLDetection(QDialog):
         self.setMinimumSize(640, 480)
         self.threshold = 0.3
         self.status = False
+
+        self.graphWidget = pg.PlotWidget()
+
         self.load_ttl(file, n_channels, channel, bytes_size, fs)
-
-        self.canvas = MplCanvas(self)
-        self.toolbar = MplToolbar(self, self.canvas)
-
+        self.plot_ttl()
 
         slider = QDoubleSpinBox()
         slider.setMinimum(0)
@@ -48,8 +33,7 @@ class TTLDetection(QDialog):
         slider.valueChanged.connect(self.change_threshold)
         slider.setGeometry(100, 100, 100, 40)
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.toolbar)
+        layout = QVBoxLayout()        
 
         layout2 = QHBoxLayout()
         layout2.addWidget(QLabel("TTL threshold: "))
@@ -57,7 +41,7 @@ class TTLDetection(QDialog):
         layout2.addStretch()
         layout.addLayout(layout2)
 
-        layout.addWidget(self.canvas)
+        layout.addWidget(self.graphWidget)
 
         self.buttons = QDialogButtonBox(
             QDialogButtonBox.Ok | QDialogButtonBox.Cancel,
@@ -85,14 +69,11 @@ class TTLDetection(QDialog):
         self.ttl = pd.Series(index = self.timestep[peaks], data = self.data[peaks])    
 
     def plot_ttl(self):
-        self.canvas.axes.clear()
-        self.canvas.axes.plot(self.timestep, self.data)
-        self.canvas.axes.plot(self.ttl, 'o')
-        self.canvas.axes.axhline(self.threshold)
-        self.canvas.axes.set_xlabel("Time (s)")
-        
-        # refresh canvas
-        self.canvas.draw()
+        self.graphWidget.clear()        
+        self.graphWidget.plot(self.timestep, self.data)
+        self.graphWidget.plot(self.ttl.index.values, self.ttl.values, pen=None, symbol='o')
+        self.graphWidget.addLine(x=None, y = self.threshold)
+        self.graphWidget.setLabel('bottom', 'Time (s)')
 
     def change_threshold(self, thr):
         self.threshold = thr
@@ -100,15 +81,6 @@ class TTLDetection(QDialog):
         peaks+=1
         self.ttl = pd.Series(index = self.timestep[peaks], data = self.data[peaks])
         self.plot_ttl()
-
-    # def accept(self):
-    #     self.canvas.destroy()
-    #     self.close()
-
-    # def reject(self):
-    #     self.canvas.destroy()
-    #     self.close()
-
 
 class EpochsTable(QTableWidget):
     def __init__(self, r, c, path):
@@ -506,7 +478,7 @@ class TrackingTab(QWidget):
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
         header.setSectionResizeMode(0, QHeaderView.Stretch)
 
-    def check_ttl(self):        
+    def check_ttl(self):
         r = self.table.currentRow()
         w = TTLDetection(
             parent = self,
@@ -519,10 +491,8 @@ class TrackingTab(QWidget):
         w.show()
         if w.exec():
             self.parameters['threshold'][r] = w.threshold        
-        w.canvas.destroy()
-        # plt.close()
-        # plt.clf()
-        # w.close()
+        w.close()
+        print(self.parameters['threshold'][r])
 
     def fill_default_value_parameters(self, filename, row):        
         # ttl_param_widgets = {}
