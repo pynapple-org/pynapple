@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date:   2022-01-25 21:50:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-04 18:13:35
+# @Last Modified time: 2022-02-06 18:41:11
 
 """
 """
@@ -10,6 +10,20 @@ import warnings
 import pandas as pd
 import numpy as np
 from .time_units import TimeUnits
+
+def _join_helper(start, end):
+    time = np.hstack((start, end))
+    start_end = np.hstack((np.ones(len(time)//2, dtype=np.int32),
+                          -1 * np.ones(len(time)//2, dtype=np.int32)))
+    df = pd.DataFrame({'time': time, 'start_end': start_end})
+    df.sort_values(by='time', inplace=True)
+    df.reset_index(inplace=True, drop=True)
+    df['cumsum'] = df['start_end'].cumsum()
+    ix_stop = (df['cumsum']==0).to_numpy().nonzero()[0]
+    ix_start = np.hstack((0, ix_stop[:-1]+1))
+    start = df['time'][ix_start].values
+    end = df['time'][ix_stop].values
+    return start, end    
 
 
 class IntervalSet(pd.DataFrame):
@@ -25,7 +39,7 @@ class IntervalSet(pd.DataFrame):
         If start and end and not aligned, meaning that len(start) == len(end),
         end[i] > start[i] and start[i+1] > end[i], or start and end are not sorted,
         will try to "fix" the data by eliminating some of the start and end data point
-                
+        
         Parameters
         ----------
         start : numpy.ndarray or number
@@ -39,16 +53,34 @@ class IntervalSet(pd.DataFrame):
         **kwargs
             Additional parameters passed ot pandas.DataFrame
         
+        Returns
+        -------
+        IntervalSet
+            _
+        
+        Raises
+        ------
+        RuntimeError
+            Description
+        ValueError
+            If a pandas.DataFrame is passed, it should contains 
+            a column 'start' and a column 'end'.
+        
         """
         
         if end is None:
             df = pd.DataFrame(start)
             if 'start' not in df.columns or 'end' not in df.columns:
                 raise ValueError('wrong columns')
+            start = df['end'].values
+            end = df['end'].values
+            if (start[1:] < end[0:-1]).any():
+                start, end = _join_helper(start, end)
+                df = pd.DataFrame.from_dict({'start':start,'end':end})
             super().__init__(df, **kwargs)
             self.r_cache = None
-            self._metadata = ['nts_class']
-            self.nts_class = self.__class__.__name__
+            self._metadata = ['nap_class']
+            self.nap_class = self.__class__.__name__
             return
 
         start = np.array(start).ravel()
@@ -110,8 +142,8 @@ class IntervalSet(pd.DataFrame):
 
         super().__init__(data=data, columns=('start', 'end'), **kwargs)
         self.r_cache = None
-        self._metadata = ['nts_class']
-        self.nts_class = self.__class__.__name__
+        self._metadata = ['nap_class']
+        self.nap_class = self.__class__.__name__
 
     def __repr__(self):
         return self.as_units('s').__repr__()

@@ -1,4 +1,4 @@
-::: pynapple.process.peristimulus
+::: pynapple.process.perievent
 	handler: python
 	selection:
 		docstring_style: numpy

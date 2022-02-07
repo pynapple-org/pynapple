@@ -6,35 +6,46 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QStackedLayout  # add this import
 import scipy.signal
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib
+# import matplotlib
 # matplotlib.use('Qt5Agg')
-import matplotlib.pyplot as plt
+# import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
 from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
+
+class MplCanvas(FigureCanvas):
+    def __init__(self, parent=None, dpi=50):
+        fig = Figure(dpi=dpi)
+        self.axes = fig.add_subplot(111)
+        super(MplCanvas, self).__init__(fig)
+
+class MplToolbar(NavigationToolbar):
+    def __init__(self, parent=None, canvas=None):
+        super(MplToolbar, self).__init__(canvas, parent)
 
 class TTLDetection(QDialog):
 
-    def __init__(self, file, n_channels=1, channel=0, bytes_size=2, fs=20000.0):
-        super().__init__()
+    def __init__(self, parent, file, n_channels=1, channel=0, bytes_size=2, fs=20000.0):
+        super(TTLDetection, self).__init__(parent)
         self.setWindowTitle("Check TTL detection")
         self.setMinimumSize(640, 480)
         self.threshold = 0.3
         self.status = False
-        self.figure = plt.figure()
-        self.canvas = FigureCanvas(self.figure)
-        self.toolbar = NavigationToolbar(self.canvas, self)
         self.load_ttl(file, n_channels, channel, bytes_size, fs)
-        self.plot()
+
+        self.canvas = MplCanvas(self)
+        self.toolbar = MplToolbar(self, self.canvas)
+
 
         slider = QDoubleSpinBox()
         slider.setMinimum(0)
         slider.setMaximum(1)
         slider.setSingleStep(0.1)
-        slider.lineEdit().setEnabled(False)
-        slider.valueChanged.connect(self.change_threshold)
+        slider.lineEdit().setEnabled(False)        
         slider.setValue(self.threshold)
+        slider.valueChanged.connect(self.change_threshold)
         slider.setGeometry(100, 100, 100, 40)
 
         layout = QVBoxLayout()
@@ -45,16 +56,18 @@ class TTLDetection(QDialog):
         layout2.addWidget(slider)
         layout2.addStretch()
         layout.addLayout(layout2)
+
         layout.addWidget(self.canvas)
 
-        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        self.buttons = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel,
+            Qt.Horizontal, self)
+        self.buttons.accepted.connect(self.accept)
+        self.buttons.rejected.connect(self.reject)
+        layout.addWidget(self.buttons)
+            
+        self.plot_ttl()
 
-        self.buttonBox = QDialogButtonBox(QBtn)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
-
-        layout.addWidget(self.buttonBox)
-                            
         self.setLayout(layout)
 
     def load_ttl(self, file, n_channels, channel, bytes_size, fs):
@@ -63,26 +76,20 @@ class TTLDetection(QDialog):
         endoffile = f.seek(0, 2)
         n_samples = int((endoffile-startoffile)/n_channels/bytes_size)
         f.close()
-        with open(file, 'rb') as f:
-            data = np.fromfile(f, np.uint16).reshape((n_samples, n_channels))
-        if n_channels == 1:
-            data = data.flatten().astype(np.int32)
-        else:
-            data = data[:,channel].flatten().astype(np.int32)
+        data = np.memmap(file, np.uint16, 'r', shape = (n_samples, n_channels))
+        data = data[np.arange(0, n_samples, 3),channel].astype(np.int32)
         self.data = data/data.max()
         peaks,_ = scipy.signal.find_peaks(np.diff(self.data), height=self.threshold)
-        self.timestep = np.arange(0, len(self.data))/fs
-        self.analogin = pd.Series(index = self.timestep, data = self.data)
+        self.timestep = np.arange(0, n_samples, 3)/fs
         peaks+=1
         self.ttl = pd.Series(index = self.timestep[peaks], data = self.data[peaks])    
 
-    def plot(self):
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
-        ax.plot(self.analogin)
-        ax.plot(self.ttl, 'o')   
-        ax.axhline(self.threshold)     
-        ax.set_xlabel("Time (s)")
+    def plot_ttl(self):
+        self.canvas.axes.clear()
+        self.canvas.axes.plot(self.timestep, self.data)
+        self.canvas.axes.plot(self.ttl, 'o')
+        self.canvas.axes.axhline(self.threshold)
+        self.canvas.axes.set_xlabel("Time (s)")
         
         # refresh canvas
         self.canvas.draw()
@@ -92,13 +99,16 @@ class TTLDetection(QDialog):
         peaks,_ = scipy.signal.find_peaks(np.diff(self.data), height=self.threshold)
         peaks+=1
         self.ttl = pd.Series(index = self.timestep[peaks], data = self.data[peaks])
-        self.plot()
+        self.plot_ttl()
 
-    def accept(self):
-        self.close()
+    # def accept(self):
+    #     self.canvas.destroy()
+    #     self.close()
 
-    def reject(self):
-        self.close()        
+    # def reject(self):
+    #     self.canvas.destroy()
+    #     self.close()
+
 
 class EpochsTable(QTableWidget):
     def __init__(self, r, c, path):
@@ -498,16 +508,21 @@ class TrackingTab(QWidget):
 
     def check_ttl(self):        
         r = self.table.currentRow()
-        self.w = TTLDetection(
+        w = TTLDetection(
+            parent = self,
             file=self.parameters.loc[self.parameters.index[r],'ttl'],
             n_channels=self.parameters.loc[self.parameters.index[r],'n_channels'],
             channel=self.parameters.loc[self.parameters.index[r],'tracking_channel'],
             bytes_size=self.parameters.loc[self.parameters.index[r],'bytes_size'],
             fs=self.parameters.loc[self.parameters.index[r],'fs']
             )
-
-        if self.w.exec():
-            self.parameters['threshold'][r] = self.w.threshold        
+        w.show()
+        if w.exec():
+            self.parameters['threshold'][r] = w.threshold        
+        w.canvas.destroy()
+        # plt.close()
+        # plt.clf()
+        # w.close()
 
     def fill_default_value_parameters(self, filename, row):        
         # ttl_param_widgets = {}
