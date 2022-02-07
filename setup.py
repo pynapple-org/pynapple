@@ -18,7 +18,7 @@ requirements = [
         'pynwb',
         'tabulate',
         'pyqt5',
-        'matplotlib',
+        'pyqtgraph',
         'h5py'
 ]
 
