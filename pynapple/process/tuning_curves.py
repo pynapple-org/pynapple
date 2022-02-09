@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-05 20:57:03
+# @Last Modified time: 2022-02-09 12:27:47
 
 
 import warnings
@@ -406,4 +406,6 @@ def compute_2d_tuning_curves_continuous(tsdframe, features, nb_bins, ep=None, mi
     
     xy = [binsxy[c][0:-1] + np.diff(binsxy[c])/2 for c in binsxy.keys()]
     
-    return tc_np, xy
+    tc = {c:tc_np[i] for i, c in enumerate(tsdframe.columns)}
+
+    return tc, xy

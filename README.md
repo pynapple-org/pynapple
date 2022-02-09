@@ -45,8 +45,8 @@ This procedure will install all the dependencies including
 -   pynwb 2.0
 -   tabulate
 -   pyqt5
+-   pyqtgraph
 -   h5py
--   matplotlib
 
 
 Basic Usage
