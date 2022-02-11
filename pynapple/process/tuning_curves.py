@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-05 20:57:03
+# @Last Modified time: 2022-02-09 13:50:32
 
 
 import warnings
@@ -90,17 +90,16 @@ def compute_2d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     
     Returns
     -------
-    numpy.ndarray
-        Stacked array of the tuning curves with dimensions (n, nb_bins, nb_bins).
-        n is the number of object in the input group. 
-    list
-        bins center in the two dimensions
+    tuple
+        A tuple containing: \n
+        tc (dict): Dictionnary of the tuning curves with dimensions (nb_bins, nb_bins).\n
+        xy (list): List of bins center in the two dimensions
     
     Raises
     ------
     RuntimeError
         If group is not a TsGroup object or if feature is not 2 columns only.
-        
+    
     """
     if feature.shape[1] != 2:
         raise RuntimeError("feature should have 2 columns only.")
@@ -358,11 +357,10 @@ def compute_2d_tuning_curves_continuous(tsdframe, features, nb_bins, ep=None, mi
     
     Returns
     -------
-    numpy.ndarray
-        Stacked array of the tuning curves with dimensions (n, nb_bins, nb_bins).
-        n is the number of object in the input group. 
-    list
-        bins center in the two dimensions
+    tuple
+        A tuple containing: \n
+        tc (dict): Dictionnary of the tuning curves with dimensions (nb_bins, nb_bins).\n
+        xy (list): List of bins center in the two dimensions
     
     Raises
     ------
@@ -406,4 +404,6 @@ def compute_2d_tuning_curves_continuous(tsdframe, features, nb_bins, ep=None, mi
     
     xy = [binsxy[c][0:-1] + np.diff(binsxy[c])/2 for c in binsxy.keys()]
     
-    return tc_np, xy
+    tc = {c:tc_np[i] for i, c in enumerate(tsdframe.columns)}
+
+    return tc, xy
