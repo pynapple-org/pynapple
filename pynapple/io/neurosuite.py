@@ -372,6 +372,35 @@ class NeuroSuite(BaseLoader):
                 time_support = time_support,
                 columns=channel)
 
+            
+    def read_neuroscope_intervals(self, name):
+        """
+        This function reads .evt files in which odd raws indicate the beginning 
+        of the time series and the even raws are the ends. If the file is not present
+        in the nwb, it loads the events from the nwb directory.
+        
+    
+        Parameters
+        ----------
+        name: name of the .evt file
+    
+        Returns
+        -------
+        IntervalSet  
+    
+        """
+        isets = self.load_nwb_intervals(name)
+        if str(type(isets)) !="<class 'pynapple.core.interval_set.IntervalSet'>":
+            print("reading intervals...")
+            evt_file = os.path.join(self.path, self.path.split('/')[-1] + "." + name + ".evt")
+            df = pd.read_csv(evt_file, delimiter=' ', usecols = [0], header = None)
+            start = nap.Ts(df.iloc[::2].values, time_units='ms')
+            end = nap.Ts(df.iloc[1::2].values, time_units='ms')
+            isets = nap.IntervalSet(start.index, end.index, time_units='ms')
+            print(isets)
+            self.save_nwb_intervals(isets, name)
+        return isets
+  
     def write_neuroscope_intervals(self, extension, isets, name):
         """Write events to load with neuroscope (e.g. ripples start and ends)
         
@@ -402,7 +431,7 @@ class NeuroSuite(BaseLoader):
             f.writelines("{:1.6f}".format(t) + "\t" + n + "\n")
         f.close()        
 
-        return
+        return        
     
     def load_mean_waveforms(self, epoch=None, waveform_window=None, spike_count=1000):
         """
