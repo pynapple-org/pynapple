@@ -988,27 +988,7 @@ def loadUpDown(path):
 		up_ep = nap.IntervalSet(start = tmp[:,0], end = tmp[:,1], time_units = 's')
 	return (down_ep, up_ep)
 
-def read_NeuroscopeEvents(path):
-    import pynapple as nap
-    import os
-    """
-    This function reads a .evt file in which even raws are starts of a time series
-    and the pair raws are the ends. Units of the .evt are assumed to be in miliseconds.
 
-    Parameters
-    ----------
-    path : Path of the .evt file
-
-    Returns
-    -------
-    IntervalSet with start and end 
-
-    """
-    df = pd.read_csv(path, delimiter=' ', usecols = [0], header = None)
-    start = nap.Ts(df.iloc[::2].values, time_units='ms')
-    end = nap.Ts(df.iloc[1::2].values, time_units='ms')
-    return nap.IntervalSet(start.index, end.index)
-    
 def writeNeuroscopeEvents(path, ep, name):
 	f = open(path, 'w')
 	for i in range(len(ep)):
