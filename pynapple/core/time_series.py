@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-07 17:16:06
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2022-02-15 14:06:11
 
 import pandas as pd
 import numpy as np
@@ -114,15 +114,18 @@ class Tsd(pd.Series):
                 ix[np.isnan(ix[:,0]),0] = ix[np.isnan(ix[:,0]),1]
                 ix = ~np.isnan(ix[:,0])
                 if d is not None:
-                    super().__init__(index=t[ix],data=d[ix])
+                    super().__init__(index=t[ix], data=d[ix])
                 else:
-                    super().__init__(index=t[ix],data=None)
+                    super().__init__(index=t[ix], data=None, dtype=np.float64)
             else:
                 time_support = IntervalSet(start = t[0], end = t[-1], time_units = 'us')
-                super().__init__(index=t, data=d)
+                if d is not None:
+                    super().__init__(index=t, data=d)
+                else:
+                    super().__init__(index=t, data=d, dtype=np.float64)
         else:
             time_support = IntervalSet(pd.DataFrame(columns=['start','end']))
-            super().__init__(index=t, data=d)
+            super().__init__(index=t, data=d, dtype=np.float64)
 
         self.time_support = time_support
         self.rate = len(t)/self.time_support.tot_length('s')
@@ -735,6 +738,9 @@ class Ts(Tsd):
         **kwargs
             Arguments that will be passed to the pandas.Series initializer.
         """
-        super().__init__(t, None, time_units=time_units, time_support=time_support, **kwargs)
+        super().__init__(t, None, 
+            time_units=time_units, 
+            time_support=time_support, 
+            dtype=np.float64,**kwargs)
         self.nts_class = self.__class__.__name__
 
