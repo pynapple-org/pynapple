@@ -382,7 +382,10 @@ class NeuroSuite(BaseLoader):
     
         Parameters
         ----------
-        name: name of the .evt file
+        name: name of the .evt file. The name of the file in the loading directory should
+        be 
+        "Session + name + .evt", example: A0001.rem.evt
+        For using this function you just need the name between the two dots. 
     
         Returns
         -------
@@ -394,9 +397,8 @@ class NeuroSuite(BaseLoader):
             print("reading intervals...")
             evt_file = os.path.join(self.path, self.path.split('/')[-1] + "." + name + ".evt")
             df = pd.read_csv(evt_file, delimiter=' ', usecols = [0], header = None)
-            start = nap.Ts(df.iloc[::2].values, time_units='ms')
-            end = nap.Ts(df.iloc[1::2].values, time_units='ms')
-            isets = nap.IntervalSet(start.index, end.index, time_units='ms')
+            isets = nap.IntervalSet(df.iloc[::2].values, 
+                        df.iloc[1::2].values, time_units='ms')
             print(isets)
             self.save_nwb_intervals(isets, name)
         return isets
