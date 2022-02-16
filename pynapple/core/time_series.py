@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2022-02-15 14:06:11
+# @Last Modified by:   gviejo
+# @Last Modified time: 2022-02-16 17:11:14
 
 import pandas as pd
 import numpy as np
@@ -93,7 +93,6 @@ class Tsd(pd.Series):
         if isinstance(t, SingleBlockManager):
             d = t.array
             t = t.index.values
-            time_units = 'us'
             if 'index' in kwargs: kwargs.pop('index')            
         elif isinstance(t, pd.Series):
             d = t.values
@@ -118,7 +117,7 @@ class Tsd(pd.Series):
                 else:
                     super().__init__(index=t[ix], data=None, dtype=np.float64)
             else:
-                time_support = IntervalSet(start = t[0], end = t[-1], time_units = 'us')
+                time_support = IntervalSet(start = t[0], end = t[-1], time_units = 's')
                 if d is not None:
                     super().__init__(index=t, data=d)
                 else:
@@ -129,13 +128,13 @@ class Tsd(pd.Series):
 
         self.time_support = time_support
         self.rate = len(t)/self.time_support.tot_length('s')
-        self.index.name = "Time (us)"
+        self.index.name = "Time (s)"
         self._metadata.append("nts_class")
         self.nts_class = self.__class__.__name__
 
 
     def __repr__(self):
-        return self.as_units('s').__repr__()
+        return self.as_series().__repr__()
 
     def __str__(self): return self.__repr__()
 
@@ -184,10 +183,12 @@ class Tsd(pd.Series):
         ss = self.as_series()
         t = self.index.values
         t = TimeUnits.return_timestamps(t, units)
+        if units == 'us':
+            t = t.astype(np.int64)
         ss.index = t
         units_str = units
         if not units_str:
-            units_str = 'us'
+            units_str = 's'
         ss.index.name = "Time (" + units_str + ")"
         return ss
 
@@ -249,7 +250,7 @@ class Tsd(pd.Series):
         tsd = tsd.restrict(ep)
         tsd = tsd.as_series()
         new_tsd = tsd.reindex(ix, method=method)
-        return Tsd(new_tsd, time_support = ep, time_units = 'us')
+        return Tsd(new_tsd, time_support = ep)
 
     def restrict(self, ep, keep_labels=False):
         """
@@ -291,7 +292,7 @@ class Tsd(pd.Series):
         tsd_r['interval'] = ix
         ix = ~np.isnan(ix)
         tsd_r = tsd_r[ix]
-        return Tsd(tsd_r[col], time_support=ep, time_units = 'us')
+        return Tsd(tsd_r[col], time_support=ep)
 
     def count(self, bin_size, ep = None, time_units = 's'):
         """
@@ -350,7 +351,7 @@ class Tsd(pd.Series):
             time_index.append(bins[0:-1] + np.diff(bins)/2)
         time_index = np.hstack(time_index)
         count = np.hstack(count)
-        return Tsd(t=time_index, d=count, time_support=ep, time_units = 'us')
+        return Tsd(t=time_index, d=count, time_support=ep)
 
     def threshold(self, thr, method='above'):
         """
@@ -417,7 +418,7 @@ class Tsd(pd.Series):
         if (len(starts)==0 and len(ends)==0) or len(starts)!=len(ends):
             raise RuntimeError("Threshold {} with method {} returned empty tsd.".format(thr, method))
         else:
-            time_support = IntervalSet(start = starts, end = ends, time_units = 'us')
+            time_support = IntervalSet(start = starts, end = ends)
             time_support = time_support.drop_short_intervals(0)
             time_support = self.time_support.intersect(time_support)
             tsd = self.restrict(time_support)
@@ -524,7 +525,7 @@ class TsdFrame(pd.DataFrame):
             ix = ~np.isnan(ix[:,0])
             super().__init__(index=t[ix],data=d[ix], columns = c)
         else:
-            time_support = IntervalSet(start = t[0], end = t[-1], time_units = 'us')
+            time_support = IntervalSet(start = t[0], end = t[-1])
             super().__init__(index=t, data=d, columns=c)
 
         with warnings.catch_warnings():
@@ -532,7 +533,7 @@ class TsdFrame(pd.DataFrame):
             self.time_support = time_support
 
         self.rate = len(t)/self.time_support.tot_length('s')
-        self.index.name = "Time (us)"
+        self.index.name = "Time (s)"
         self._metadata.append("nts_class")
         self.nts_class = self.__class__.__name__
 
@@ -545,9 +546,9 @@ class TsdFrame(pd.DataFrame):
         result = super().__getitem__(key)
         time_support = self.time_support
         if isinstance(result, pd.Series):
-            return Tsd(result, time_support=time_support, time_units = 'us')
+            return Tsd(result, time_support=time_support)
         elif isinstance(result, pd.DataFrame):
-            return TsdFrame(result, time_support=time_support, time_units = 'us')
+            return TsdFrame(result, time_support=time_support)
 
     def times(self, units='s'):
         """
@@ -592,10 +593,13 @@ class TsdFrame(pd.DataFrame):
         """
         t = self.index.values.copy()
         t = TimeUnits.return_timestamps(t, units)
+        if units == 'us':
+            t = t.astype(np.int64)
+
         df = pd.DataFrame(index=t, data=self.values)
         units_str = units
         if not units_str:
-            units_str = 'us'
+            units_str = 's'
         df.index.name = "Time (" + units_str + ")"
         df.columns = self.columns.copy()
         return df
@@ -667,7 +671,7 @@ class TsdFrame(pd.DataFrame):
         tsd = tsd.restrict(ep)
         tsd = tsd.as_series()
         new_tsd = tsd.reindex(ix, method=method)
-        return Tsd(new_tsd, time_support = ep, time_units = 'us')
+        return Tsd(new_tsd, time_support = ep)
 
     def restrict(self, iset, keep_labels=False):
         """
@@ -693,7 +697,7 @@ class TsdFrame(pd.DataFrame):
         tsd_r = tsd_r[ix]
         if not keep_labels:
             del tsd_r['interval']
-        return TsdFrame(tsd_r, time_units = 'us', time_support=iset, copy=True)
+        return TsdFrame(tsd_r, time_support=iset, copy=True)
 
     def gaps(self, min_gap, method='absolute'):
         return gaps_func(self, min_gap, method)
