@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-05 20:59:03
+# @Last Modified time: 2022-02-16 18:31:48
 
 import numpy as np
 from numba import jit
@@ -90,7 +90,7 @@ def compute_perievent(data, tref,  minmax, time_unit = 's'):
 
     window = np.abs(nap.TimeUnits.format_timestamps(np.array(minmax), time_unit))
 
-    time_support = nap.IntervalSet(start = -window[0], end = window[1], time_units = 'us')
+    time_support = nap.IntervalSet(start = -window[0], end = window[1])
 
     if isinstance(data, nap.TsGroup):
         toreturn = {}
@@ -108,7 +108,6 @@ def compute_perievent(data, tref,  minmax, time_unit = 's'):
             group[i] = nap.Tsd(
                 t = x,
                 d = y,
-                time_units = 'us',
                 time_support = time_support
                 )
 
