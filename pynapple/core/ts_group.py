@@ -448,7 +448,7 @@ class TsGroup(UserDict):
         toreturn = TsdFrame(
             t = time_index, 
             d = count, 
-            support = ep, 
+            time_support = ep, 
             columns = list(self.keys()))
         return toreturn
 
