@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-28 15:10:48
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-16 17:34:10
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2022-02-18 12:38:00
 
 
 import numpy as np
@@ -440,7 +440,7 @@ class TsGroup(UserDict):
             bins = np.arange(ep.start[i], ep.end[i] + bin_size, bin_size)
             tmp = np.array([np.histogram(self.data[n].index.values, bins)[0] for n in self.keys()])
             count.append(np.transpose(tmp))
-            time_index.append(bins[0:-1] + np.diff(bins)//2)
+            time_index.append(bins[0:-1] + np.diff(bins)/2)
 
         count = np.vstack(count)
         time_index = np.hstack(time_index)
