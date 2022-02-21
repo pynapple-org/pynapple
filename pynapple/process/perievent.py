@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-01-31 21:50:27
+# @Last Modified time: 2022-02-16 18:31:48
 
 import numpy as np
 from numba import jit
@@ -17,7 +17,7 @@ from .. import core as nap
 def align_to_event(times, data, tref, windowsize):
     """
     Helper function compiled with numba for aligning times.
-    See compute_peristimulus for using this function
+    See compute_perievent for using this function
 
     Parameters
     ----------
@@ -53,7 +53,7 @@ def align_to_event(times, data, tref, windowsize):
 
     return x, y
 
-def compute_peristimulus(data, tref,  minmax, time_units = 's'):
+def compute_perievent(data, tref,  minmax, time_unit = 's'):
     """
     Center ts/tsd/tsgroup object around the timestamps given by the tref argument.
     minmax indicates the start and end of the window.
@@ -65,11 +65,11 @@ def compute_peristimulus(data, tref,  minmax, time_units = 's'):
         If Ts/Tsd, returns a TsGroup. 
         If TsGroup, returns a dictionnary of TsGroup
     tref : Ts/Tsd
-        The timestamps of the stimulus to align to
+        The timestamps of the event to align to
     minmax : tuple or int or float
         The window size. Can be unequal on each side i.e. (-500, 1000).
-    time_units : str, optional
-        Time units of the minmax. Default is second.
+    time_unit : str, optional
+        Time units of the minmax ('s' [default], 'ms', 'us').
     
     Returns
     -------
@@ -88,14 +88,14 @@ def compute_peristimulus(data, tref,  minmax, time_units = 's'):
     if isinstance(minmax, float) or isinstance(minmax, int):
         minmax = (minmax, minmax)
 
-    window = np.abs(nap.TimeUnits.format_timestamps(np.array(minmax), time_units))
+    window = np.abs(nap.TimeUnits.format_timestamps(np.array(minmax), time_unit))
 
-    time_support = nap.IntervalSet(start = -window[0], end = window[1], time_units = 'us')
+    time_support = nap.IntervalSet(start = -window[0], end = window[1])
 
     if isinstance(data, nap.TsGroup):
         toreturn = {}
         for n in data.keys():
-            toreturn[n] = compute_peristimulus(data[n], tref, minmax, time_units)       
+            toreturn[n] = compute_perievent(data[n], tref, minmax, time_unit)
 
         return toreturn
 
@@ -108,7 +108,6 @@ def compute_peristimulus(data, tref,  minmax, time_units = 's'):
             group[i] = nap.Tsd(
                 t = x,
                 d = y,
-                time_units = 'us',
                 time_support = time_support
                 )
 

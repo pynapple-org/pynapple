@@ -6,55 +6,52 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from PyQt5.QtWidgets import QStackedLayout  # add this import
 import scipy.signal
-import matplotlib.pyplot as plt
 import numpy as np
-import matplotlib
-# matplotlib.use('Qt5Agg')
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
-from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+from pyqtgraph import PlotWidget, plot
+import pyqtgraph as pg
 
 class TTLDetection(QDialog):
 
-    def __init__(self, file, n_channels=1, channel=0, bytes_size=2, fs=20000.0):
-        super().__init__()
+    def __init__(self, parent, file, n_channels=1, channel=0, bytes_size=2, fs=20000.0):
+        super(TTLDetection, self).__init__(parent)
         self.setWindowTitle("Check TTL detection")
         self.setMinimumSize(640, 480)
         self.threshold = 0.3
         self.status = False
-        self.figure = plt.figure()
-        self.canvas = FigureCanvas(self.figure)
-        self.toolbar = NavigationToolbar(self.canvas, self)
+
+        self.graphWidget = pg.PlotWidget()
+
         self.load_ttl(file, n_channels, channel, bytes_size, fs)
-        self.plot()
+        self.plot_ttl()
 
         slider = QDoubleSpinBox()
         slider.setMinimum(0)
         slider.setMaximum(1)
         slider.setSingleStep(0.1)
-        slider.lineEdit().setEnabled(False)
-        slider.valueChanged.connect(self.change_threshold)
+        slider.lineEdit().setEnabled(False)        
         slider.setValue(self.threshold)
+        slider.valueChanged.connect(self.change_threshold)
         slider.setGeometry(100, 100, 100, 40)
 
-        layout = QVBoxLayout()
-        layout.addWidget(self.toolbar)
+        layout = QVBoxLayout()        
 
         layout2 = QHBoxLayout()
         layout2.addWidget(QLabel("TTL threshold: "))
         layout2.addWidget(slider)
         layout2.addStretch()
         layout.addLayout(layout2)
-        layout.addWidget(self.canvas)
 
-        QBtn = QDialogButtonBox.Ok | QDialogButtonBox.Cancel
+        layout.addWidget(self.graphWidget)
 
-        self.buttonBox = QDialogButtonBox(QBtn)
-        self.buttonBox.accepted.connect(self.accept)
-        self.buttonBox.rejected.connect(self.reject)
+        self.buttons = QDialogButtonBox(
+            QDialogButtonBox.Ok | QDialogButtonBox.Cancel,
+            Qt.Horizontal, self)
+        self.buttons.accepted.connect(self.accept)
+        self.buttons.rejected.connect(self.reject)
+        layout.addWidget(self.buttons)
+            
+        self.plot_ttl()
 
-        layout.addWidget(self.buttonBox)
-                            
         self.setLayout(layout)
 
     def load_ttl(self, file, n_channels, channel, bytes_size, fs):
@@ -63,42 +60,27 @@ class TTLDetection(QDialog):
         endoffile = f.seek(0, 2)
         n_samples = int((endoffile-startoffile)/n_channels/bytes_size)
         f.close()
-        with open(file, 'rb') as f:
-            data = np.fromfile(f, np.uint16).reshape((n_samples, n_channels))
-        if n_channels == 1:
-            data = data.flatten().astype(np.int32)
-        else:
-            data = data[:,channel].flatten().astype(np.int32)
+        data = np.memmap(file, np.uint16, 'r', shape = (n_samples, n_channels))
+        data = data[np.arange(0, n_samples, 3),channel].astype(np.int32)
         self.data = data/data.max()
         peaks,_ = scipy.signal.find_peaks(np.diff(self.data), height=self.threshold)
-        self.timestep = np.arange(0, len(self.data))/fs
-        self.analogin = pd.Series(index = self.timestep, data = self.data)
+        self.timestep = np.arange(0, n_samples, 3)/fs
         peaks+=1
         self.ttl = pd.Series(index = self.timestep[peaks], data = self.data[peaks])    
 
-    def plot(self):
-        self.figure.clear()
-        ax = self.figure.add_subplot(111)
-        ax.plot(self.analogin)
-        ax.plot(self.ttl, 'o')   
-        ax.axhline(self.threshold)     
-        ax.set_xlabel("Time (s)")
-        
-        # refresh canvas
-        self.canvas.draw()
+    def plot_ttl(self):
+        self.graphWidget.clear()        
+        self.graphWidget.plot(self.timestep, self.data)
+        self.graphWidget.plot(self.ttl.index.values, self.ttl.values, pen=None, symbol='o')
+        self.graphWidget.addLine(x=None, y = self.threshold)
+        self.graphWidget.setLabel('bottom', 'Time (s)')
 
     def change_threshold(self, thr):
         self.threshold = thr
         peaks,_ = scipy.signal.find_peaks(np.diff(self.data), height=self.threshold)
         peaks+=1
         self.ttl = pd.Series(index = self.timestep[peaks], data = self.data[peaks])
-        self.plot()
-
-    def accept(self):
-        self.close()
-
-    def reject(self):
-        self.close()        
+        self.plot_ttl()
 
 class EpochsTable(QTableWidget):
     def __init__(self, r, c, path):
@@ -367,9 +349,10 @@ class TrackingTab(QWidget):
 
         # Table view
         self.table = QTableWidget(1,1)
-        self.table.setHorizontalHeaderLabels(['CSV file'])
-            
+        self.table.setHorizontalHeaderLabels(['CSV file'])            
         self.table.itemDoubleClicked.connect(self.change_file)
+        self.table.itemChanged.connect(self.change_ttl_params)
+
         header = self.table.horizontalHeader()       
         header.setSectionResizeMode(QHeaderView.Stretch)
 
@@ -402,7 +385,6 @@ class TrackingTab(QWidget):
                 for i in range(len(self.align_to_headers['ttl'][1:])):
                     self.table.insertColumn(i+1)
                 self.table.setHorizontalHeaderLabels(self.align_to_headers[self.alignement_csv])
-        
 
     def load_csv_files(self, s):
         suggested_dir = self.path if self.path else os.getenv('HOME')
@@ -465,12 +447,14 @@ class TrackingTab(QWidget):
 
                 # Infer the epoch
                 n = os.path.splitext(filename)[0].split('_')[-1]
-                nepoch = QSpinBox()
+                # nepoch = QSpinBox()
                 if n.isdigit(): 
-                    nepoch.setValue(int(n))
+                    # nepoch.setValue(int(n))
                     self.parameters.loc[filename,'epoch'] = int(n)
-                nepoch.valueChanged.connect(self.change_ttl_params)
-                self.table.setCellWidget(i, 6, nepoch)
+                    item = QTableWidgetItem(str(n))
+                    self.table.setItem(i, 6, item)
+                # nepoch.valueChanged.connect(self.change_ttl_params)
+                # self.table.setCellWidget(i, 6, nepoch)
 
                 # Infer the ttl file
                 possiblettlfile = [f for f in files if '_'+n in f and f != filename]
@@ -494,21 +478,24 @@ class TrackingTab(QWidget):
         header.setSectionResizeMode(QHeaderView.ResizeToContents)
         header.setSectionResizeMode(0, QHeaderView.Stretch)
 
-    def check_ttl(self):        
+    def check_ttl(self):
         r = self.table.currentRow()
-        self.w = TTLDetection(
+        w = TTLDetection(
+            parent = self,
             file=self.parameters.loc[self.parameters.index[r],'ttl'],
             n_channels=self.parameters.loc[self.parameters.index[r],'n_channels'],
             channel=self.parameters.loc[self.parameters.index[r],'tracking_channel'],
             bytes_size=self.parameters.loc[self.parameters.index[r],'bytes_size'],
             fs=self.parameters.loc[self.parameters.index[r],'fs']
             )
-
-        if self.w.exec():
-            self.parameters['threshold'][r] = self.w.threshold        
+        w.show()
+        if w.exec():
+            self.parameters['threshold'][r] = w.threshold        
+        w.close()
+        print(self.parameters['threshold'][r])
 
     def fill_default_value_parameters(self, filename, row):        
-        ttl_param_widgets = {}
+        # ttl_param_widgets = {}
         iterates = zip(
             ['n_channels', 'tracking_channel', 'bytes_size', 'fs'],
             [2,3,4,5],
@@ -519,41 +506,46 @@ class TrackingTab(QWidget):
                 self.parameters.loc[filename,key] = int(dval)
             else:
                 self.parameters.loc[filename,key] = dval
-            if key == 'fs':
-                ttl_param_widgets[key] = QDoubleSpinBox()
-                ttl_param_widgets[key].setMaximum(100000.0)
-                ttl_param_widgets[key].setSingleStep(1000.0)
-            else:
-                ttl_param_widgets[key] = QSpinBox()
-            ttl_param_widgets[key].setValue(dval)
-            ttl_param_widgets[key].valueChanged.connect(self.change_ttl_params)
-            self.table.setCellWidget(row, col, ttl_param_widgets[key])
+            item = QTableWidgetItem(str(dval))
+            self.table.setItem(row, col, item)
+            # if key == 'fs':
+            #     ttl_param_widgets[key] = QDoubleSpinBox()
+            #     ttl_param_widgets[key].setMaximum(100000.0)
+            #     ttl_param_widgets[key].setSingleStep(1000.0)
+            # else:
+            #     ttl_param_widgets[key] = QSpinBox()
+            # ttl_param_widgets[key].setValue(dval)
+            # ttl_param_widgets[key].valueChanged.connect(self.change_ttl_params)
+            # self.table.setCellWidget(row, col, ttl_param_widgets[key])
             # Adding default trheshod value
             self.parameters.loc[filename,'threshold'] = 0.3
-        self.ttl_param_widgets[row] = ttl_param_widgets
+        # self.ttl_param_widgets[row] = ttl_param_widgets
 
     def change_file(self, item):
-        suggested_dir = self.path if self.path else os.getenv('HOME')
-        if self.table.currentColumn() == 0:
-            paths = QFileDialog.getOpenFileName(self, 'Open CSV', suggested_dir, 'CSV(*.csv)')
-        if self.table.columnCount()>1:        
-            if self.table.currentColumn() == 1:
-                paths = QFileDialog.getOpenFileName(self, 'Open TTL file', suggested_dir)
-        filename = os.path.basename(paths[0])
-        item.setText(filename)
-        self.parameters.iloc[self.table.currentRow(),self.table.currentColumn()] = paths[0]
+        if self.table.currentColumn() in [0, 1]:
+            suggested_dir = self.path if self.path else os.getenv('HOME')
+            if self.table.currentColumn() == 0:
+                paths = QFileDialog.getOpenFileName(self, 'Open CSV', suggested_dir, 'CSV(*.csv)')
+            if self.table.columnCount()>1:        
+                if self.table.currentColumn() == 1:
+                    paths = QFileDialog.getOpenFileName(self, 'Open TTL file', suggested_dir)
+            filename = os.path.basename(paths[0])
+            item.setText(filename)
+            self.parameters.iloc[self.table.currentRow(),self.table.currentColumn()] = paths[0]
 
     def get_tracking_method(self, s):
         self.tracking_method = s
 
     def get_tracking_frequency(self, s):
-        self.track_frequency = float(s)
+        self.track_frequency = float(s)        
 
-    def change_ttl_params(self, value):
-        if self.table.currentColumn() == 5: 
-            self.parameters.iloc[self.table.currentRow(),self.table.currentColumn()] = float(value)
-        else:
-            self.parameters.iloc[self.table.currentRow(),self.table.currentColumn()] = int(value)    
+    def change_ttl_params(self, item):
+        row, col = (self.table.currentRow(),self.table.currentColumn())
+        if col in [2, 3, 4, 5, 6]:
+            if col == 5: 
+                self.parameters.iloc[row, col] = float(item.text())
+            else:
+                self.parameters.iloc[row, col] = int(item.text())        
 
     def update_path_info(self, path):
         self.path = path

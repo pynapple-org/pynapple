@@ -47,7 +47,7 @@ class EphysGUI(QMainWindow):
         font.setPointSize(20)
         logo.setFont(font)
 
-        # TREE VIEW
+        # # TREE VIEW
         self.tree = QTreeWidget()
         self.tree.setAlternatingRowColors( True )
         self.tree.setColumnCount(2)
@@ -96,7 +96,6 @@ class EphysGUI(QMainWindow):
         widget = QWidget()
         widget.setLayout(pagelayout)
         self.setCentralWidget(widget)
-        self.show()
 
     def accept(self):
         self.status = True

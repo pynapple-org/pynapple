@@ -21,7 +21,7 @@ nav:
       - Correlograms: process.correlograms.md
       - Tuning curves: process.tuning_curves.md
       - Decoding: process.decoding.md
-      - Peri-Stimulus: process.peristimulus.md
+      - Peri-Stimulus: process.perievent.md
   # - Plugins:
   #   - pynalog: pynalog.md
   #   - pynapplesonfire: pynapplesonfire.md

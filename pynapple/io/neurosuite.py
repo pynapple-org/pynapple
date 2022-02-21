@@ -1,4 +1,9 @@
 #!/usr/bin/env python
+# -*- coding: utf-8 -*-
+# @Author: gviejo
+# @Date:   2022-02-02 20:45:09
+# @Last Modified by:   gviejo
+# @Last Modified time: 2022-02-07 18:54:30
 
 """
 Class and functions for loading data processed with the Neurosuite (Klusters, Neuroscope, NDmanager)
@@ -51,16 +56,17 @@ class NeuroSuite(BaseLoader):
             # print("XML loaded")
             # To label the electrodes groups
             app = QApplication([])
-            self.window = EphysGUI(path=path, groups=self.group_to_channel)
+            window = EphysGUI(path=path, groups=self.group_to_channel)
+            window.show()
             app.exec()
             # print("GUI DONE")     
-            if self.window.status:
-                self.ephys_information = self.window.ephys_information
-
-                self.load_neurosuite_spikes(path, self.basename, self.time_support)
-                
+            if window.status:
+                self.ephys_information = window.ephys_information
+                self.load_neurosuite_spikes(path, self.basename, self.time_support)                
                 self.save_data(path)
             app.quit()
+            # del app, window
+
 
     def load_neurosuite_spikes(self,path, basename, time_support=None, fs = 20000.0):
         """
@@ -398,10 +404,9 @@ class NeuroSuite(BaseLoader):
 
         return
     
-    def load_MeanWaveforms(self, epoch = None, waveform_window = nap.IntervalSet(start = -0.5, end = 1, time_units = 'ms'), spike_count = 1000):
+    def load_mean_waveforms(self, epoch=None, waveform_window=None, spike_count=1000):
         """
-        load the mean waveforms from a dat file.
-        
+        Load the mean waveforms from a dat file.
         
         Parameters
         ----------
@@ -409,20 +414,23 @@ class NeuroSuite(BaseLoader):
             default = None
             Restrict spikes to an epoch.
         waveform_window : IntervalSet
-            default = start = -0.0005, end = 0.001, time_units = 'ms'
+            default interval nap.IntervalSet(start = -0.0005, end = 0.001, time_units = 'ms')
             Limit waveform extraction before and after spike time
         spike_count : int
             default = 1000
             Number of spikes used per neuron for the calculation of waveforms
-            
+        
         Returns
-        ----------
+        -------
         dictionary
             the waveforms for all neurons
         pandas.Series
             the channel with the maximum waveform for each neuron
         
         """
+        if not isinstance(waveform_window, nap.IntervalSet):
+            waveform_window = nap.IntervalSet(start = -0.5, end = 1, time_units = 'ms')
+
         spikes = self.spikes
         if not os.path.exists(self.path): #check if path exists
             print("The path "+self.path+" doesn't exist; Exiting ...")
