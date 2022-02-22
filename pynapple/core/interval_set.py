@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date:   2022-01-25 21:50:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-06 18:41:11
+# @Last Modified time: 2022-02-16 16:56:45
 
 """
 """
@@ -72,10 +72,16 @@ class IntervalSet(pd.DataFrame):
             df = pd.DataFrame(start)
             if 'start' not in df.columns or 'end' not in df.columns:
                 raise ValueError('wrong columns')
-            start = df['end'].values
+            start = df['start'].values
             end = df['end'].values
+            start = TimeUnits.format_timestamps(start.ravel(), time_units,
+                                                give_warning=False)
+            end = TimeUnits.format_timestamps(end.ravel(), time_units,
+                                              give_warning=False)            
             if (start[1:] < end[0:-1]).any():
                 start, end = _join_helper(start, end)
+                df = pd.DataFrame.from_dict({'start':start,'end':end})
+            else:
                 df = pd.DataFrame.from_dict({'start':start,'end':end})
             super().__init__(df, **kwargs)
             self.r_cache = None
@@ -106,7 +112,7 @@ class IntervalSet(pd.DataFrame):
         if (start[1:] == end[0:-1]).any():
             warnings.warn("Some starts and ends are equal. Removing 1 microsecond!", stacklevel=2)
             idx = np.where((start[1:] == end[0:-1]))[0]
-            end[idx] -= 1 # removing 1 microseconds because bounds are both closed
+            end[idx] -= 1.0e-6 # removing 1 microseconds because bounds are both closed
             idx2 = start != end
             start = start[idx2]
             end = end[idx2]
@@ -162,7 +168,7 @@ class IntervalSet(pd.DataFrame):
         """
         s = self['start'][0]
         e = self['end'].iloc[-1]
-        return IntervalSet(s, e, time_units = 'us')
+        return IntervalSet(s, e)
 
     def tot_length(self, time_units='s'):
         """
@@ -224,7 +230,7 @@ class IntervalSet(pd.DataFrame):
         # noinspection PyTypeChecker
         end = df['time'][ix+1]
 
-        return IntervalSet(start, end, time_units = 'us')
+        return IntervalSet(start, end)
 
     def union(self, a):
         """
@@ -266,7 +272,7 @@ class IntervalSet(pd.DataFrame):
         start = df['time'][ix_start]
         stop = df['time'][ix_stop]
 
-        return IntervalSet(start, stop, time_units = 'us')
+        return IntervalSet(start, stop)
 
     def set_diff(self, a):
         """
@@ -306,7 +312,7 @@ class IntervalSet(pd.DataFrame):
         end = end.reset_index(drop=True)  
         idx = start!=end
 
-        return IntervalSet(start[idx], end[idx], time_units = 'us')
+        return IntervalSet(start[idx], end[idx])
 
     def in_interval(self, tsd):
         """
@@ -393,6 +399,9 @@ class IntervalSet(pd.DataFrame):
 
         data = self.values.copy()
         data = TimeUnits.return_timestamps(data, units)
+        if units == 'us':
+            data = data.astype(np.int64)
+
         df = pd.DataFrame(index = self.index.values, data=data, columns=self.columns)
 
         return df
@@ -424,7 +433,7 @@ class IntervalSet(pd.DataFrame):
         start = np.hstack((start[0], start[1:][tojoin]))
         end = np.hstack((end[0:-1][tojoin], end[-1]))
 
-        return IntervalSet(start = start, end = end, time_units ='us')
+        return IntervalSet(start = start, end = end)
 
     def store(self, the_store, key, **kwargs):
         data_to_store = pd.DataFrame(self)
