@@ -373,7 +373,7 @@ class NeuroSuite(BaseLoader):
                 columns=channel)
 
             
-    def read_neuroscope_intervals(self, name):
+    def read_neuroscope_intervals(self, name=None, path2file=None):
         """
         This function reads .evt files in which odd raws indicate the beginning 
         of the time series and the even raws are the ends. If the file is not present
@@ -382,26 +382,31 @@ class NeuroSuite(BaseLoader):
     
         Parameters
         ----------
-        name: name of the .evt file. The name of the file in the loading directory should
-        be 
-        "Session + name + .evt", example: A0001.rem.evt
-        For using this function you just need the name between the two dots. 
+        name: str
+            name of the .evt file. The name of the file in the loading directory should
+            be:   "Session + name + .evt", example: A0001.rem.evt
+            For using this function you just need the name between the two dots.
+        
+        path2file: str
+            Path of the file you want to load.
     
         Returns
         -------
-        IntervalSet  
+        IntervalSet
+            Containing two columns corresponding to the start and end of the intervals.
     
         """
         isets = self.load_nwb_intervals(name)
         if str(type(isets)) !="<class 'pynapple.core.interval_set.IntervalSet'>":
-            print("reading intervals...")
-            evt_file = os.path.join(self.path, self.path.split('/')[-1] + "." + name + ".evt")
-            df = pd.read_csv(evt_file, delimiter=' ', usecols = [0], header = None)
+            if path2file is None and name is not None:
+                path2file = os.path.join(self.path, self.basename + "." + name + ".evt")
+            else:
+                raise RuntimeError("Please specifiy a path or name")
+                df = pd.read_csv(path2file, delimiter=' ', usecols = [0], header = None)
             isets = nap.IntervalSet(df.iloc[::2].values, 
                         df.iloc[1::2].values, time_units='ms')
-            print(isets)
             self.save_nwb_intervals(isets, name)
-        return isets
+        return isets               
   
     def write_neuroscope_intervals(self, extension, isets, name):
         """Write events to load with neuroscope (e.g. ripples start and ends)

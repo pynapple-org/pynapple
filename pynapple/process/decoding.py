@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:34:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-05 21:45:52
+# @Last Modified time: 2022-02-16 18:27:56
 
 """
 """
@@ -96,14 +96,12 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units = 's', feature=None
     p = nap.TsdFrame(
         t=count.index.values,
         d=p,
-        time_units='us',
         time_support=ep,
         columns=tuning_curves.index.values)
 
     decoded = nap.Tsd(
         t=count.index.values,
         d=tuning_curves.index.values[idxmax],
-        time_units='us',
         time_support=ep)
 
     return decoded, p
@@ -219,7 +217,6 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units='s', features=N
     decoded = nap.TsdFrame(
         t = count.index.values,
         d = np.vstack((xy[0][idxmax2d[0]], xy[1][idxmax2d[1]])).T,
-        time_units = 'us',
         time_support = ep,
         columns=features.columns
         )

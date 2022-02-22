@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-28 15:10:48
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-04 18:24:43
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2022-02-18 12:38:00
 
 
 import numpy as np
@@ -32,7 +32,7 @@ def intersect_intervals(i_sets):
     df.reset_index(inplace=True, drop=True)
     df['cumsum'] = df['start_end'].cumsum()
     ix = (df['cumsum']==n_sets).to_numpy().nonzero()[0]
-    return IntervalSet(df['time'][ix], df['time'][ix+1], time_units = 'us')
+    return IntervalSet(df['time'][ix], df['time'][ix+1])
 
 def union_intervals(i_sets):
     """
@@ -48,7 +48,7 @@ def union_intervals(i_sets):
     df['cumsum'] = df['start_end'].cumsum()
     ix_stop = (df['cumsum']==0).to_numpy().nonzero()[0]
     ix_start = np.hstack((0, ix_stop[:-1]+1))
-    return IntervalSet(df['time'][ix_start], df['time'][ix_stop], time_units = 'us')
+    return IntervalSet(df['time'][ix_start], df['time'][ix_stop])
 
 
 class TsGroup(UserDict):
@@ -98,8 +98,8 @@ class TsGroup(UserDict):
             self.time_support = time_support
             data = {k:data[k].restrict(self.time_support) for k in index}
         else:
-            # Otherwise do the intersection of all time supports            
-            time_support = intersect_intervals([data[k].time_support for k in index])
+            # Otherwise do the union of all time supports            
+            time_support = union_intervals([data[k].time_support for k in index])
             if len(time_support) == 0:
                 raise RuntimeError("Intersection of time supports is empty. Consider passing a time support as argument.")
             self.time_support = time_support                
@@ -431,21 +431,26 @@ class TsGroup(UserDict):
         if not isinstance(ep, IntervalSet):
             ep = self.time_support
             
-        bin_size_us = TimeUnits.format_timestamps(np.array([bin_size]), time_units)[0]
+        bin_size = TimeUnits.format_timestamps(np.array([bin_size]), time_units)[0]
 
         # bin for each epochs
         time_index = []
         count = []
         for i in ep.index:
-            bins = np.arange(ep.start[i], ep.end[i] + bin_size_us, bin_size_us)
+            bins = np.arange(ep.start[i], ep.end[i] + bin_size, bin_size)
             tmp = np.array([np.histogram(self.data[n].index.values, bins)[0] for n in self.keys()])
             count.append(np.transpose(tmp))
-            time_index.append(bins[0:-1] + np.diff(bins)//2)
+            time_index.append(bins[0:-1] + np.diff(bins)/2)
 
         count = np.vstack(count)
         time_index = np.hstack(time_index)
 
-        return TsdFrame(t = time_index, d = count, support = ep, time_units = 'us')
+        toreturn = TsdFrame(
+            t = time_index, 
+            d = count, 
+            time_support = ep, 
+            columns = list(self.keys()))
+        return toreturn
 
     """
     Special slicing of metadata

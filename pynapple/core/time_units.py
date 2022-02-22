@@ -50,9 +50,9 @@ class TimeUnits:
     """
     This class deals with conversion between different time units for all neuroseries objects.
     It also provides a context manager that tweaks the default time units to the supported units:
-    - 'us': microseconds (overall default)
+    - 'us': microseconds
     - 'ms': milliseconds
-    - 's': seconds
+    - 's': seconds  (overall default)
 
     The context manager is called as follows
 
@@ -62,7 +62,7 @@ class TimeUnits:
             t = self.tsd.times()
 
     """
-    default_time_units = 'us'
+    default_time_units = 's'
 
     def __init__(self, units):
         TimeUnits.default_time_units = units
@@ -71,12 +71,12 @@ class TimeUnits:
         return self.default_time_units
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        TimeUnits.default_time_units = 'us'
+        TimeUnits.default_time_units = 's'
 
     @staticmethod
     def format_timestamps(t, units=None, give_warning=True, sortt = True):
         """
-        Converts numerical types to the type :func:`numpy.int64` that is used for the time index in neuroseries.
+        Converts numerical types to the type :func:`numpy.float64` that is used for the time index in neuroseries.
 
         Args:
             t: a vector (or scalar) of times
@@ -92,16 +92,14 @@ class TimeUnits:
         if not units:
             units = TimeUnits.default_time_units
 
-        # get the times (or the index if pandas object, in int64 vector format
-
         if isinstance(t, BlockManager):
             t = pd.DataFrame(t, copy=True)
 
         if isinstance(t, (pd.Series, pd.DataFrame)):
-            t = t.index.values.astype(np.int64)
+            t = t.index.values.astype(np.float64)
 
-        if isinstance(t, np.floating):
-            t = t.round()
+        # if isinstance(t, np.floating):
+        #     t = t.round(6)
 
         if isinstance(t, (pd.Series, pd.DataFrame)):
             t = t.index
@@ -110,17 +108,22 @@ class TimeUnits:
             t = np.array((t,))
 
         t = t.astype(np.float64)
-        if units == 'us':
-            pass
+
+        if units == 's':
+            # t *= 1000000
+            t = np.around(t, 6)
+            # pass
         elif units == 'ms':
-            t *= 1000
-        elif units == 's':
-            t *= 1000000
+            # t *= 1000
+            t = np.around(t/1.0e3, 6)
+        elif units == 'us':
+            # pass
+            t = np.around(t/1.0e6, 6)
         else:
             raise ValueError('unrecognized time units type')
 
         # noinspection PyUnresolvedReferences,PyTypeChecker
-        ts = t.astype(np.int64).reshape((len(t),))
+        ts = t.astype(np.float64).reshape((len(t),))
 
         if not (np.diff(ts) >= 0).all():
             if give_warning:
@@ -143,11 +146,14 @@ class TimeUnits:
         if units is None:
             units = TimeUnits.default_time_units
         if units == 'us':
-            return t
+            # return t
+            return t * 1.0e6
         elif units == 'ms':
-            return t / 1000.
+            # return t / 1000.
+            return t * 1.0e3
         elif units == 's':
-            return t / 1.0e6
+            # return t / 1.0e6
+            return t
         else:
             raise ValueError('Unrecognized units')
 
