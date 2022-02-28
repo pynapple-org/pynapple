@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-07 00:10:52
+# @Last Modified time: 2022-02-27 21:32:25
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -215,7 +215,8 @@ class BaseLoader(object):
         if len(parameters.index) == 0:
             return None
         else:
-
+            if len(epochs) == 0:
+                epochs.loc[0, 'start'] = 0.0
             frames = []
             time_supports_starts = []
             time_support_ends = []
