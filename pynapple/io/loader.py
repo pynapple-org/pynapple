@@ -543,19 +543,17 @@ class BaseLoader(object):
         """        
         io = NWBHDF5IO(self.nwbfilepath, 'r')
         nwbfile = io.read()
-        if name in nwbfile.intervals.keys():
-            print("loading data...")
-            epochs = nwbfile.intervals[name].to_dataframe()          
-            isets = nap.IntervalSet(
-                start = epochs['start_time'],
-                end = epochs['stop_time'],
-                time_units = 'ms')
-            io.close()
-            return isets
-        else: 
-            print("interval does not exists in the nwb file")
-            io.close()
-        return
+
+        epochs = nwbfile.intervals[name].to_dataframe()
+                
+        isets = nap.IntervalSet(
+            start = epochs['start_time'],
+            end = epochs['stop_time'],
+            time_units = 's')
+
+        io.close()
+
+        return isets
 
     def load_nwb_timeseries(self, name):
         """
