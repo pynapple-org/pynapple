@@ -371,6 +371,41 @@ class NeuroSuite(BaseLoader):
                 time_units = 's',
                 time_support = time_support,
                 columns=channel)
+            
+    def read_neuroscope_intervals(self, name=None, path2file=None):
+        """
+        This function reads .evt files in which odd raws indicate the beginning 
+        of the time series and the even raws are the ends. If the file is not present
+        in the nwb, it loads the events from the nwb directory.
+        
+    
+        Parameters
+        ----------
+        name: str
+            name of the .evt file. The name of the file in the loading directory should
+            be:   "Session + name + .evt", example: A0001.rem.evt
+            For using this function you just need the name between the two dots.
+        
+        path2file: str
+            Path of the file you want to load.
+    
+        Returns
+        -------
+        IntervalSet
+            Containing two columns corresponding to the start and end of the intervals.
+    
+        """
+        isets = self.load_nwb_intervals(name)
+        if str(type(isets)) !="<class 'pynapple.core.interval_set.IntervalSet'>":
+            if path2file is None and name is not None:
+                path2file = os.path.join(self.path, self.basename + "." + name + ".evt")
+            else:
+                raise RuntimeError("Please specifiy a path or name")
+            df = pd.read_csv(path2file, delimiter=' ', usecols = [0], header = None)
+            isets = nap.IntervalSet(df.iloc[::2].values, 
+                        df.iloc[1::2].values, time_units='ms')
+            self.save_nwb_intervals(isets, name)
+        return isets              
 
     def write_neuroscope_intervals(self, extension, isets, name):
         """Write events to load with neuroscope (e.g. ripples start and ends)
