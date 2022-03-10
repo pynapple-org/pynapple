@@ -406,7 +406,8 @@ class NeuroSuite(BaseLoader):
                         df.iloc[1::2].values, time_units='ms')
             self.save_nwb_intervals(isets, name)
         return isets              
-
+                      
+  
     def write_neuroscope_intervals(self, extension, isets, name):
         """Write events to load with neuroscope (e.g. ripples start and ends)
         
