@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-27 21:32:25
+# @Last Modified time: 2022-03-22 12:23:17
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -544,16 +544,18 @@ class BaseLoader(object):
         io = NWBHDF5IO(self.nwbfilepath, 'r')
         nwbfile = io.read()
 
-        epochs = nwbfile.intervals[name].to_dataframe()
-                
-        isets = nap.IntervalSet(
-            start = epochs['start_time'],
-            end = epochs['stop_time'],
-            time_units = 's')
+        if name in nwbfile.intervals.keys():
 
-        io.close()
-
-        return isets
+            epochs = nwbfile.intervals[name].to_dataframe()
+            isets = nap.IntervalSet(
+                start = epochs['start_time'],
+                end = epochs['stop_time'],
+                time_units = 's')
+            io.close()
+            return isets
+        else:
+            io.close()
+        return
 
     def load_nwb_timeseries(self, name):
         """

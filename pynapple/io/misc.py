@@ -7,6 +7,7 @@ Various io functions
 """
 import os
 from .neurosuite import NeuroSuite
+from .phy import Phy
 from .loader import BaseLoader
 
 
@@ -19,7 +20,7 @@ def load_session(path=None, session_type=None):
     path : str, optional
         The path to load the data
     session_type : str, optional
-        For the moment, pynapple support only 'neurosuite'.
+        Can be 'neurosuite', 'phy' or None for default loader.
 
     Returns
     -------
@@ -33,7 +34,7 @@ def load_session(path=None, session_type=None):
 
     if session_type == 'neurosuite':
         return NeuroSuite(path)
-    # elif session_type == 'phy':
-    #   return NeuroSuite(path)
+    elif session_type == 'phy':
+      return Phy(path)
     else:
         return BaseLoader(path)
