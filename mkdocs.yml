@@ -17,6 +17,7 @@ nav:
       - Miscellaneous: io.md
       - Basic IO: io.loader.md
       - Neurosuite: io.neurosuite.md
+      - Phy: io.phy.md
     - Process: 
       - Correlograms: process.correlograms.md
       - Tuning curves: process.tuning_curves.md
