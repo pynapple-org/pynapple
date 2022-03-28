@@ -19,7 +19,9 @@ requirements = [
         'tabulate',
         'pyqt5',
         'pyqtgraph',
-        'h5py'
+        'h5py',
+        'tifffile',
+        'zarr'
 ]
 
 test_requirements = [ ]

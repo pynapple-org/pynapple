@@ -18,6 +18,7 @@ nav:
       - Basic IO: io.loader.md
       - Neurosuite: io.neurosuite.md
       - Phy: io.phy.md
+      - CNMF-E: io.cnmfe.md
     - Process: 
       - Correlograms: process.correlograms.md
       - Tuning curves: process.tuning_curves.md
