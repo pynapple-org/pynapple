@@ -371,7 +371,52 @@ class NeuroSuite(BaseLoader):
                 time_units = 's',
                 time_support = time_support,
                 columns=channel)
-
+            
+    def read_neuroscope_intervals(self, name=None, path2file=None):
+        """
+        This function reads .evt files in which odd raws indicate the beginning 
+        of the time series and the even raws are the ends. 
+        If the file is present in the nwb, provide the just the name. If the file 
+        is not present in the nwb, it loads the events from the nwb directory. 
+        If just the path is provided but not the name, it takes the name from the file.
+    
+        Parameters
+        ----------
+        name: str
+            name of the epoch in the nwb file, e.g. "rem" or desired name save 
+            the data in the nwb.
+        
+        path2file: str
+            Path of the file you want to load.
+    
+        Returns
+        -------
+        IntervalSet
+            Contains two columns corresponding to the start and end of the intervals.
+    
+        """
+        if name:
+            isets = self.load_nwb_intervals(name)
+            if isinstance(isets, nap.IntervalSet):
+                return isets
+        if name != None and path2file == None:
+            path2file = os.path.join(self.path, self.basename + '.' + name + '.evt')
+        if path2file != None:
+            try:
+                df = pd.read_csv(path2file, delimiter=' ', usecols = [0], header = None)
+            except:
+                raise ValueError("specify a valid name")
+            isets = nap.IntervalSet(df.iloc[::2].values, 
+                        df.iloc[1::2].values, time_units='ms')
+            if name == None:
+                name = path2file.split('.')[-2]
+                print("*** saving file in the nwb as", name)
+            self.save_nwb_intervals(isets, name)
+        else: 
+            raise ValueError("specify a valid path")
+        return isets            
+                   
+  
     def write_neuroscope_intervals(self, extension, isets, name):
         """Write events to load with neuroscope (e.g. ripples start and ends)
         
