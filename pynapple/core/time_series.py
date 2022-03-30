@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-16 17:11:14
+# @Last Modified time: 2022-03-30 16:44:08
 
 import pandas as pd
 import numpy as np
@@ -129,8 +129,8 @@ class Tsd(pd.Series):
         self.time_support = time_support
         self.rate = len(t)/self.time_support.tot_length('s')
         self.index.name = "Time (s)"
-        self._metadata.append("nts_class")
-        self.nts_class = self.__class__.__name__
+        self._metadata.append("nap_class")
+        self.nap_class = self.__class__.__name__
 
 
     def __repr__(self):
@@ -252,7 +252,7 @@ class Tsd(pd.Series):
         new_tsd = tsd.reindex(ix, method=method)
         return Tsd(new_tsd, time_support = ep)
 
-    def restrict(self, ep, keep_labels=False):
+    def restrict(self, ep):
         """
         Restricts a Tsd object to a set of time intervals delimited by an IntervalSet object
         
@@ -260,8 +260,6 @@ class Tsd(pd.Series):
         ----------
         ep : IntervalSet
             the IntervalSet object 
-        keep_labels : bool, optional
-            Wheter or not to drop the label of a column
         
         Returns
         -------
@@ -340,13 +338,13 @@ class Tsd(pd.Series):
         if not isinstance(ep, IntervalSet):
             ep = self.time_support
             
-        bin_size_us = TimeUnits.format_timestamps(np.array([bin_size]), time_units)[0]
+        bin_size = TimeUnits.format_timestamps(np.array([bin_size]), time_units)[0]
 
         # bin for each epochs
         time_index = []
         count = []
         for i in ep.index:
-            bins = np.arange(ep.start[i], ep.end[i] + bin_size_us, bin_size_us)
+            bins = np.arange(ep.start[i], ep.end[i] + bin_size, bin_size)
             count.append(np.histogram(self.index.values, bins)[0])
             time_index.append(bins[0:-1] + np.diff(bins)/2)
         time_index = np.hstack(time_index)
@@ -534,8 +532,8 @@ class TsdFrame(pd.DataFrame):
 
         self.rate = len(t)/self.time_support.tot_length('s')
         self.index.name = "Time (s)"
-        self._metadata.append("nts_class")
-        self.nts_class = self.__class__.__name__
+        self._metadata.append("nap_class")
+        self.nap_class = self.__class__.__name__
 
     def __repr__(self):
         return self.as_units('s').__repr__()
