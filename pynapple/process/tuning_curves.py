@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-09 13:50:32
+# @Last Modified time: 2022-03-28 11:52:32
 
 
 import warnings
@@ -45,9 +45,9 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
         raise RuntimeError("Unknown format for group")
 
     if minmax is None:
-        bins = np.linspace(np.min(feature), np.max(feature), nb_bins)
+        bins = np.linspace(np.min(feature), np.max(feature), nb_bins+1)
     else:
-        bins = np.linspace(minmax[0], minmax[1], nb_bins)
+        bins = np.linspace(minmax[0], minmax[1], nb_bins+1)
     idx = bins[0:-1]+np.diff(bins)/2
 
     tuning_curves = pd.DataFrame(index=idx, columns=list(group.keys()))    
@@ -119,9 +119,9 @@ def compute_2d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     for i, c in enumerate(cols):
         groups_value[c] = group.value_from(feature[c], ep)
         if minmax is None:
-            bins = np.linspace(np.min(feature[c]), np.max(feature[c]), nb_bins)
+            bins = np.linspace(np.min(feature[c]), np.max(feature[c]), nb_bins+1)
         else:
-            bins = np.linspace(minmax[i+i%2], minmax[i+1+i%2], nb_bins)
+            bins = np.linspace(minmax[i+i%2], minmax[i+1+i%2], nb_bins+1)
         binsxy[c] = bins
 
     occupancy, _, _ = np.histogram2d(
@@ -322,9 +322,9 @@ def compute_1d_tuning_curves_continous(tsdframe, feature, nb_bins, ep=None, minm
         tsdframe = tsdframe.restrict(feature.time_support)
 
     if minmax is None:
-        bins = np.linspace(np.min(feature), np.max(feature), nb_bins)
+        bins = np.linspace(np.min(feature), np.max(feature), nb_bins+1)
     else:
-        bins = np.linspace(minmax[0], minmax[1], nb_bins)
+        bins = np.linspace(minmax[0], minmax[1], nb_bins+1)
 
     align_times = tsdframe.value_from(feature)
     idx = np.digitize(align_times.values, bins)-1
@@ -387,9 +387,9 @@ def compute_2d_tuning_curves_continuous(tsdframe, features, nb_bins, ep=None, mi
 
     for i, c in enumerate(cols):
         if minmax is None:
-            bins = np.linspace(np.min(features[c]), np.max(features[c]), nb_bins)
+            bins = np.linspace(np.min(features[c]), np.max(features[c]), nb_bins+1)
         else:
-            bins = np.linspace(minmax[i+i%2], minmax[i+1+i%2], nb_bins)
+            bins = np.linspace(minmax[i+i%2], minmax[i+1+i%2], nb_bins+1)
 
         align_times = tsdframe.value_from(features[c], ep)
         idxs[c] = np.digitize(align_times.values, bins)-1

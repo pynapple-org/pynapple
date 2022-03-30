@@ -9,6 +9,7 @@ import os
 from .neurosuite import NeuroSuite
 from .phy import Phy
 from .loader import BaseLoader
+from .cnmfe import InscopixCNMFE, Minian, CNMF_E
 from xml.dom import minidom
 import numpy as np
 from .. import core as nap
@@ -22,7 +23,9 @@ def load_session(path=None, session_type=None):
     path : str, optional
         The path to load the data
     session_type : str, optional
-        Can be 'neurosuite', 'phy' or None for default loader.
+        Can be 'neurosuite', 'phy',
+        'minian', 'inscopix-cnmfe'
+         or None for default loader.
 
     Returns
     -------
@@ -36,8 +39,19 @@ def load_session(path=None, session_type=None):
 
     if session_type == 'neurosuite':
         return NeuroSuite(path)
+
     elif session_type == 'phy':
-      return Phy(path)
+        return Phy(path)
+
+    elif session_type == 'inscopix-cnmfe':
+        return InscopixCNMFE(path)
+
+    elif session_type == 'minian':
+        return Minian(path)
+
+    elif session_type == 'cnmfe-matlab':
+        return CNMF_E(path)
+
     else:
         return BaseLoader(path)
 

@@ -2,7 +2,9 @@
 ==========================
 
 [![image](https://img.shields.io/pypi/v/pynapple.svg)](https://pypi.python.org/pypi/pynapple)
-[![image](https://img.shields.io/travis/gviejo/pynapple.svg)](https://travis-ci.com/gviejo/pynapple)
+![GitHub contributors](https://img.shields.io/github/contributors/peyrachelab/pynapple)
+[![GitHub issues](https://img.shields.io/github/issues/PeyracheLab/pynapple)](https://github.com/PeyracheLab/pynapple/issues)
+<!-- [![image](https://img.shields.io/travis/gviejo/pynapple.svg)](https://travis-ci.com/gviejo/pynapple) -->
 
 PYthon Neural Analysis Package.
 
