@@ -4,6 +4,8 @@
 [![image](https://img.shields.io/pypi/v/pynapple.svg)](https://pypi.python.org/pypi/pynapple)
 ![GitHub contributors](https://img.shields.io/github/contributors/peyrachelab/pynapple)
 [![GitHub issues](https://img.shields.io/github/issues/PeyracheLab/pynapple)](https://github.com/PeyracheLab/pynapple/issues)
+![Twitter Follow](https://img.shields.io/twitter/follow/thepynapple?style=social)
+
 <!-- [![image](https://img.shields.io/travis/gviejo/pynapple.svg)](https://travis-ci.com/gviejo/pynapple) -->
 
 PYthon Neural Analysis Package.
