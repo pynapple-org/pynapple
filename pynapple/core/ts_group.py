@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-28 15:10:48
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2022-02-18 12:38:00
+# @Last Modified by:   gviejo
+# @Last Modified time: 2022-04-01 12:16:06
 
 
 import numpy as np
@@ -53,7 +53,9 @@ def union_intervals(i_sets):
 
 class TsGroup(UserDict):
     """
-    The TsGroup is a dictionnary-like object to hold multiple [`Ts`][pynapple.core.time_series.Ts] or [`Tsd`][pynapple.core.time_series.Tsd] objects with different time index.
+    The TsGroup is a dictionnary-like object to hold multiple [`Ts`][pynapple.core.time_series.Ts] 
+    or [`Tsd`][pynapple.core.time_series.Tsd] objects
+    with different time index.
 
     Attributes
     ----------
@@ -74,7 +76,8 @@ class TsGroup(UserDict):
         time_units : str, optional
             Time units if data does not contain Ts/Tsd objects ('us', 'ms', 's' [default]).
         **kwargs
-            Meta-info about the Ts/Tsd objects.
+            Meta-info about the Ts/Tsd objects. Can be either pandas.Series or numpy.ndarray.
+            Note that the index should match the index of the input dictionnary.
         
         Raises
         ------
@@ -205,8 +208,11 @@ class TsGroup(UserDict):
         Raises
         ------
         RuntimeError
-            Raise an error if no column labels are found when passing arguments.
-        
+            Raise an error if
+                no column labels are found when passing simple arguments,
+                indexes are not equals for a pandas series,
+                not the same length when passing numpy array.
+
         Example
         -------
         >>> import pynapple as nap
@@ -243,13 +249,25 @@ class TsGroup(UserDict):
         """
         if len(args):
             for arg in args:
-                if isinstance(arg, pd.DataFrame):                   
-                    self._metadata = self._metadata.join(arg)
+                if isinstance(arg, pd.DataFrame):
+                    if pd.Index.equals(self._metadata.index, arg.index):
+                        self._metadata = self._metadata.join(arg)
+                    else:
+                        raise RuntimeError("Index are not equals")
                 elif isinstance(arg, (pd.Series, np.ndarray)):
                     raise RuntimeError("Columns needs to be labelled for metadata")
         if len(kwargs):
-            for k, v in kwargs.items(): 
-                self._metadata[k] = v
+            for k, v in kwargs.items():
+                if isinstance(v, pd.Series):
+                    if pd.Index.equals(self._metadata.index, v.index):
+                        self._metadata[k] = v
+                    else:
+                        raise RuntimeError("Index are not equals")
+                elif isinstance(v, np.ndarray):
+                    if len(self._metadata) == len(v):
+                        self._metadata[k] = v
+                    else:
+                        raise RuntimeError("Array is not the same length.")
         return
 
     def get_info(self, key):

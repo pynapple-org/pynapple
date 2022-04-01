@@ -1,6 +1,11 @@
+# -*- coding: utf-8 -*-
+# @Author: gviejo
+# @Date:   2022-04-01 09:57:55
+# @Last Modified by:   gviejo
+# @Last Modified time: 2022-04-01 09:58:45
 #!/usr/bin/env python
 
-"""Tests for `pynapple` package."""
+"""Tests of time series for `pynapple` package."""
 
 import pynapple as nap
 import numpy as np
