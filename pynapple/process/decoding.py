@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:34:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-16 18:27:56
+# @Last Modified time: 2022-04-04 17:39:59
 
 """
 """
@@ -81,7 +81,9 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units = 's', feature=None
     tc = tuning_curves.values
     ct = count.values
 
-    p1 = np.exp(-bin_size*tc.sum(1))    
+    bin_size_s = nap.TimeUnits.format_timestamps(np.array([bin_size]), time_units)[0]
+
+    p1 = np.exp(-bin_size_s*tc.sum(1))    
     p2 = occupancy/occupancy.sum()
 
     ct2 = np.tile(ct[:,np.newaxis,:], (1,tc.shape[0],1))
@@ -198,7 +200,9 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units='s', features=N
 
     ct = count.values
 
-    p1 = np.exp(-bin_size*np.nansum(tc, 1))
+    bin_size_s = nap.TimeUnits.format_timestamps(np.array([bin_size]), time_units)[0]
+
+    p1 = np.exp(-bin_size_s*np.nansum(tc, 1))
     p2 = occupancy/occupancy.sum()
 
     ct2 = np.tile(ct[:,np.newaxis,:], (1,tc.shape[0],1))
@@ -214,11 +218,16 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units='s', features=N
 
     idxmax2d = np.unravel_index(idxmax, (len(xy[0]), len(xy[1])))
 
+    if features is not None:
+        cols = features.columns
+    else:
+        cols = np.arange(2)
+
     decoded = nap.TsdFrame(
         t = count.index.values,
         d = np.vstack((xy[0][idxmax2d[0]], xy[1][idxmax2d[1]])).T,
         time_support = ep,
-        columns=features.columns
+        columns=cols
         )
 
     return decoded, p

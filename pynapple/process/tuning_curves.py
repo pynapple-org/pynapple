@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-03-28 11:52:32
+# @Last Modified time: 2022-04-04 15:44:43
 
 
 import warnings
@@ -332,6 +332,8 @@ def compute_1d_tuning_curves_continous(tsdframe, feature, nb_bins, ep=None, minm
     tmp = tmp.reindex(np.arange(0, len(bins)-1))
     tmp.index = pd.Index(bins[0:-1]+np.diff(bins)/2)
 
+    tmp = tmp.fillna(0)
+
     return tmp
 
 def compute_2d_tuning_curves_continuous(tsdframe, features, nb_bins, ep=None, minmax=None):
@@ -400,8 +402,11 @@ def compute_2d_tuning_curves_continuous(tsdframe, features, nb_bins, ep=None, mi
     tc_np = np.zeros((tsdframe.shape[1], nb_bins, nb_bins))*np.nan
 
     for k, tmp in idxs.groupby(cols):
-        tc_np[:,k[0],k[1]] = tsdframe.iloc[tmp.index].mean(0).values
+        if (0<=k[0]<nb_bins) and (0<=k[1]<nb_bins):
+            tc_np[:,k[0],k[1]] = tsdframe.iloc[tmp.index].mean(0).values
     
+    tc_np[np.isnan(tc_np)] = 0.0
+
     xy = [binsxy[c][0:-1] + np.diff(binsxy[c])/2 for c in binsxy.keys()]
     
     tc = {c:tc_np[i] for i, c in enumerate(tsdframe.columns)}
