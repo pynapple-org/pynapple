@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-04 22:40:51
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-04-04 23:18:33
+# @Last Modified time: 2022-04-05 10:49:38
 
 """Tests of CNMFE loaders for `pynapple` package."""
 
@@ -16,7 +16,7 @@ import warnings
 def test_inscopix_cnmfe():
     data = nap.load_session('nwbfilestest/inscopix-cnmfe', 'inscopix-cnmfe')
     assert isinstance(data.C, nap.TsdFrame)
-    assert len(data.C.columns) == 263
+    assert len(data.C.columns) == 10
     assert len(data.C) > 0
     assert isinstance(data.A, np.ndarray)
     assert len(data.A) == len(data.C.columns)
@@ -25,7 +25,7 @@ def test_inscopix_cnmfe():
 def test_minian():
     data = nap.load_session('nwbfilestest/minian', 'minian')
     assert isinstance(data.C, nap.TsdFrame)
-    assert len(data.C.columns) == 140
+    assert len(data.C.columns) == 10
     assert len(data.C) > 0
     assert isinstance(data.A, np.ndarray)
     assert len(data.A) == len(data.C.columns)
@@ -34,7 +34,7 @@ def test_minian():
 def test_cnmfe_matlab():
     data = nap.load_session('nwbfilestest/matlab-cnmfe', 'cnmfe-matlab')
     assert isinstance(data.C, nap.TsdFrame)
-    assert len(data.C.columns) == 156
+    assert len(data.C.columns) == 10
     assert len(data.C) > 0
     assert isinstance(data.A, np.ndarray)
     assert len(data.A) == len(data.C.columns)
