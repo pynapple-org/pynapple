@@ -13,10 +13,18 @@ from .cnmfe import InscopixCNMFE, Minian, CNMF_E
 from xml.dom import minidom
 import numpy as np
 from .. import core as nap
+from pynwb import NWBFile, NWBHDF5IO
+from pynwb.ecephys import ElectricalSeries, LFP
 
 def load_session(path=None, session_type=None):
     """
-    General Loader for Neurosuite, Phy or default session.
+    General Loader for :
+        - Neurosuite\n
+        - Phy\n
+        - Minian\n
+        - Inscopix-cnmfe\n
+        - Matlab-cnmfe\n
+        - None for default session.
 
     Parameters
     ----------
@@ -24,7 +32,7 @@ def load_session(path=None, session_type=None):
         The path to load the data
     session_type : str, optional
         Can be 'neurosuite', 'phy',
-        'minian', 'inscopix-cnmfe'
+        'minian', 'inscopix-cnmfe', 'cnmfe-matlab',
          or None for default loader.
 
     Returns
@@ -141,3 +149,74 @@ def load_eeg(filepath, channel=None, n_channels=None, frequency=None, precision=
             time_units = 's',
             time_support = time_support,
             columns=channel)
+
+def append_NWB_LFP(path, lfp, channel=None):
+    """Standalone function for adding lfp/eeg to already existing nwb files. 
+    
+    Parameters
+    ----------
+    path : str
+        The path to the data. The function will looks for a nwb file in path
+        or in path/pynapplenwb.
+    lfp : Tsd or TsdFrame
+        Description
+    channel : None, optional
+        channel number in int ff lfp is a Tsd
+            
+    Raises
+    ------
+    RuntimeError
+        If can't find the nwb file \n
+        If no channel is specify when passing a Tsd
+    
+    """
+    new_path = os.path.join(path, 'pynapplenwb')
+    nwb_path = ''
+    if os.path.exists(new_path):                
+        nwbfilename = [f for f in os.listdir(new_path) if f.endswith('.nwb')]
+        if len(nwbfilename):
+            nwb_path = os.path.join(path, 'pynapplenwb', nwbfilename[0])
+    else:
+        nwbfilename = [f for f in os.listdir(path) if f.endswith('.nwb')]
+        if len(nwbfilename):
+            nwb_path = os.path.join(path, 'pynapplenwb', nwbfilename[0])
+
+    if len(nwb_path) == 0:
+        raise RuntimeError("Can't find nwb file in {}".format(path))
+
+    if isinstance(lfp, nap.TsdFrame):
+        channels = lfp.columns.values
+    elif isinstance(lfp, nap.Tsd):
+        if isinstance(channel, int):
+            channels = [channel]
+        else:
+            raise RuntimeError("Please specify which channel it is.")
+
+    io = NWBHDF5IO(nwb_path, 'r+')
+    nwbfile = io.read()
+
+
+    all_table_region = nwbfile.create_electrode_table_region(
+        region=channels,
+        description='',
+        name='electrodes')
+
+    lfp_electrical_series = ElectricalSeries(
+        name='ElectricalSeries',
+        data=lfp.values,
+        timestamps=lfp.index.values,
+        electrodes=all_table_region,        
+        )
+
+    lfp = LFP(electrical_series=lfp_electrical_series)
+
+    ecephys_module = nwbfile.create_processing_module(
+        name='ecephys',
+        description='processed extracellular electrophysiology data'
+    )
+    ecephys_module.add(lfp)
+
+    io.write(nwbfile)
+    io.close()
+
+    return
