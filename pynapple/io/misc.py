@@ -18,13 +18,14 @@ from pynwb.ecephys import ElectricalSeries, LFP
 
 def load_session(path=None, session_type=None):
     """
-    General Loader for :
-        - Neurosuite\n
-        - Phy\n
-        - Minian\n
-        - Inscopix-cnmfe\n
-        - Matlab-cnmfe\n
-        - None for default session.
+    General Loader for
+        
+    - Neurosuite\n
+    - Phy\n
+    - Minian\n
+    - Inscopix-cnmfe\n
+    - Matlab-cnmfe\n
+    - None for default session.
 
     Parameters
     ----------

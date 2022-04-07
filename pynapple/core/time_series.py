@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-03-30 16:44:08
+# @Last Modified time: 2022-04-07 11:24:31
 
 import pandas as pd
 import numpy as np
@@ -132,6 +132,23 @@ class Tsd(pd.Series):
         self._metadata.append("nap_class")
         self.nap_class = self.__class__.__name__
 
+    def __lt__(self, value):
+        return self.as_series().__lt__(value)
+
+    def __gt__(self, value):
+        return self.as_series().__gt__(value)
+
+    def __le__(self, value):
+        return self.as_series().__le__(value)
+
+    def __ge__(self, value):
+        return self.as_series().__ge__(value)
+
+    def __ne__(self, value):
+        return self.as_series().__ne__(value)
+
+    def __eq__(self, value):        
+        return self.as_series().__eq__(value)
 
     def __repr__(self):
         return self.as_series().__repr__()

@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-04-01 09:58:45
+# @Last Modified time: 2022-04-07 11:22:06
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -214,6 +214,36 @@ class Test_Time_Series_2:
         time_support = thrs.time_support
         thrs2 = tsd.restrict(time_support)
         assert len(thrs2) == np.sum(tsd.values>0.5)
+
+    def test_operators(self, tsd):
+        v = tsd.values
+        a = tsd > 0.5
+        assert isinstance(a, pd.Series)
+        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        assert np.all(a.values == (v>0.5))
+
+        a = tsd >= 0.5
+        assert isinstance(a, pd.Series)
+        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        assert np.all(a.values == (v>=0.5))
+
+        a = tsd < 0.5
+        assert isinstance(a, pd.Series)
+        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        assert np.all(a.values == (v<=0.5))
+
+        tsd = nap.Tsd(t=np.arange(10), d=np.arange(10))
+        v = tsd.values
+        a = tsd == 5
+        assert isinstance(a, pd.Series)
+        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        assert np.all(a.values == (v==5))
+
+        a = tsd != 5
+        assert isinstance(a, pd.Series)
+        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        assert np.all(a.values == (v!=5))
+
 
 ####################################################
 # Test for tsdframe

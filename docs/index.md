@@ -1,7 +1,12 @@
 ![pic1](pynapple_logo.png)
 ==========================
 
-[![image](https://img.shields.io/pypi/v/pynapple.svg)](https://pypi.python.org/pypi/pynapple) [![image](https://img.shields.io/travis/gviejo/pynapple.svg)](https://travis-ci.com/gviejo/pynapple)
+[![image](https://img.shields.io/pypi/v/pynapple.svg)](https://pypi.python.org/pypi/pynapple)
+![GitHub contributors](https://img.shields.io/github/contributors/peyrachelab/pynapple)
+[![GitHub issues](https://img.shields.io/github/issues/PeyracheLab/pynapple)](https://github.com/PeyracheLab/pynapple/issues)
+![Twitter Follow](https://img.shields.io/twitter/follow/thepynapple?style=social)
+
+<!-- [![image](https://img.shields.io/travis/gviejo/pynapple.svg)](https://travis-ci.com/gviejo/pynapple) -->
 
 PYthon Neural Analysis Package.
 
@@ -11,22 +16,10 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 -   Documentation:
     <https://peyrachelab.github.io/pynapple>
 
-
 ------------------------------------------------------------------------
 
 Getting Started
 ---------------
-
-### Requirements
-
--   Python 3.6+
--   Pandas
--   numpy
--   scipy
--   numba
--   pynwb 2.0
--   tabulate
--   pyqt5
 
 ### Installation
 
@@ -46,14 +39,20 @@ $ # Install in editable mode with `-e` or, equivalently, `--editable`
 $ pip install -e .
 ```
 
-<!-- Features
---------
+This procedure will install all the dependencies including 
 
--   Automatic handling of spike times and epochs
--   Tuning curves
--   Loading data coming from various pipelines
--   More and more coming!
- -->
+-   Python 3.6+
+-   Pandas
+-   numpy
+-   scipy
+-   numba
+-   pynwb 2.0
+-   tabulate
+-   pyqt5
+-   pyqtgraph
+-   h5py
+
+
 Basic Usage
 -----------
 
