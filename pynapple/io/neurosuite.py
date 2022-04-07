@@ -3,7 +3,7 @@
 # @Author: gviejo
 # @Date:   2022-02-02 20:45:09
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-07 18:54:30
+# @Last Modified time: 2022-04-07 16:05:00
 
 """
 Class and functions for loading data processed with the Neurosuite (Klusters, Neuroscope, NDmanager)
@@ -403,11 +403,13 @@ class NeuroSuite(BaseLoader):
             path2file = os.path.join(self.path, self.basename + '.' + name + '.evt')
         if path2file != None:
             try:
-                df = pd.read_csv(path2file, delimiter=' ', usecols = [0], header = None)
+                #df = pd.read_csv(path2file, delimiter=' ', usecols = [0], header = None)
+                tmp = np.genfromtxt(path2file)[:,0]
+                df = tmp.reshape(len(tmp)//2,2)
             except:
                 raise ValueError("specify a valid name")
-            isets = nap.IntervalSet(df.iloc[::2].values, 
-                        df.iloc[1::2].values, time_units='ms')
+            isets = nap.IntervalSet(df[:,0], 
+                        df[:,1], time_units='ms')
             if name == None:
                 name = path2file.split('.')[-2]
                 print("*** saving file in the nwb as", name)
