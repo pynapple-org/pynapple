@@ -3,7 +3,7 @@
 # @Author: gviejo
 # @Date:   2022-02-02 20:45:09
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-04-07 16:05:00
+# @Last Modified time: 2022-04-08 18:56:27
 
 """
 Class and functions for loading data processed with the Neurosuite (Klusters, Neuroscope, NDmanager)
@@ -176,7 +176,7 @@ class NeuroSuite(BaseLoader):
         self.group_to_channel = {}
         groups      = self.xmldoc.getElementsByTagName('anatomicalDescription')[0].getElementsByTagName('channelGroups')[0].getElementsByTagName('group')
         for i in range(len(groups)):
-            self.group_to_channel[i] = np.sort([int(child.firstChild.data) for child in groups[i].getElementsByTagName('channel')])
+            self.group_to_channel[i] = np.array([int(child.firstChild.data) for child in groups[i].getElementsByTagName('channel')])
         
         return
 
