@@ -10,5 +10,7 @@ Contributors
 ------------
 
 -	Adrien Peyrache
--	Sofia Skromne Carrasco
 - 	Dan Levenstein
+-	Sofia Skromne Carrasco
+- 	Sara Mahallati
+- 	Gilberto Vite
