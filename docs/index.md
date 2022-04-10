@@ -1,5 +1,8 @@
-![pic1](pynapple_logo.png)
-==========================
+<!-- ![pic1](pynapple_logo.png) -->
+<p align="center">
+  <img width="80%" src="banner_logo.png">
+</p>
+
 
 [![image](https://img.shields.io/pypi/v/pynapple.svg)](https://pypi.python.org/pypi/pynapple)
 ![GitHub contributors](https://img.shields.io/github/contributors/peyrachelab/pynapple)
