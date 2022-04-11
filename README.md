@@ -18,9 +18,9 @@ PYthon Neural Analysis Package.
 pynapple is a light-weight python library for neurophysiological data analysis. The goal is to offer a versatile set of tools to study typical data in the field, i.e. time series (spike times, behavioral events, etc.) and time intervals (trials, brain states, etc.). It also provides users with generic functions for neuroscience such as tuning curves and cross-correlograms.
 
 -   Free software: GNU General Public License v3
--   Documentation:
-    <https://peyrachelab.github.io/pynapple>
-
+-   __Documentation__: <https://peyrachelab.github.io/pynapple>
+-   __Notebooks and tutorials__ : <https://peyrachelab.github.io/pynapple/notebooks/pynapple-quick-start/>
+-   __Collaborative repository__: <https://github.com/PeyracheLab/pynacollada>
 ------------------------------------------------------------------------
 
 Getting Started
