@@ -26,15 +26,17 @@ Getting Started
 
 ### Installation
 
-pynapple can be installed with pip:
+The best way to install pynapple is with pip within a new [conda](https://docs.conda.io/en/latest/) environment :
 
 ``` {.sourceCode .shell}
+$ conda create --name pynapple pip
 $ pip install pynapple
 ```
 
 or directly from the source code:
 
 ``` {.sourceCode .shell}
+$ conda create --name pynapple pip
 $ # clone the repository
 $ git clone https://github.com/PeyracheLab/pynapple.git
 $ cd pynapple
@@ -44,7 +46,6 @@ $ pip install -e .
 
 This procedure will install all the dependencies including 
 
--   Python 3.6+
 -   Pandas
 -   numpy
 -   scipy
@@ -54,6 +55,13 @@ This procedure will install all the dependencies including
 -   pyqt5
 -   pyqtgraph
 -   h5py
+
+For spyder users, it is recommended to install spyder after installing pynapple with :
+
+``` {.sourceCode .shell}
+$ pip install spyder
+$ spyder
+```
 
 
 Basic Usage

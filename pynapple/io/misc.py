@@ -5,7 +5,7 @@ Various io functions
 
 @author: Guillaume Viejo
 """
-import os
+import os, sys
 from .neurosuite import NeuroSuite
 from .phy import Phy
 from .loader import BaseLoader
@@ -53,9 +53,19 @@ def load_session(path=None, session_type=None):
         return Phy(path)
 
     elif session_type == 'inscopix-cnmfe':
+        try:
+            import tifffile as tiff
+        except ImportError as ie:
+            print("Please install module tifffile for loading inscopix-cnmfe data.", ie)
+            sys.exit()        
         return InscopixCNMFE(path)
 
     elif session_type == 'minian':
+        try:
+            import zarr
+        except ImportError as ie:
+            print("Please install module zarr for loading minian data", ie)
+            sys.exit()        
         return Minian(path)
 
     elif session_type == 'cnmfe-matlab':

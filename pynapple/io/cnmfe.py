@@ -7,9 +7,9 @@ Support CNMF-E in matlab, inscopix-cnmfe and minian.
 # @Author: gviejo
 # @Date:   2022-02-17 11:07:00
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-03-27 22:35:52
+# @Last Modified time: 2022-04-10 21:47:06
 
-import os
+import os, sys
 from .loader import BaseLoader
 from pynwb import NWBFile, NWBHDF5IO
 from pynwb.ophys import TwoPhotonSeries, OpticalChannel, ImageSegmentation, Fluorescence, CorrectedImageStack, MotionCorrection, RoiResponseSeries
@@ -18,8 +18,6 @@ import numpy as np
 from .. import core as nap
 from PyQt5.QtWidgets import QApplication
 from .ophys_gui import OphysGUI
-import tifffile as tiff
-import zarr
 from scipy.io.matlab import loadmat
 
 class CNMF_E(BaseLoader):
@@ -292,6 +290,11 @@ class Minian(BaseLoader):
         if not os.path.exists(minian_folder):
             raise RuntimeError("Path {} does not contain a minian folder".format(path))
 
+        try:
+            import zarr
+        except ImportError as ie:
+            print("Please install module zarr for loading minian data", ie)
+            sys.exit()
         data = zarr.open(minian_folder, 'r')
 
         C = data['C.zarr']['C'][:]
@@ -507,6 +510,11 @@ class InscopixCNMFE(BaseLoader):
             t = time_index,
             d = C.values            
             )
+        try:
+            import tifffile as tiff
+        except ImportError as ie:
+            print("Please install module tifffile for loading inscopix-cnmfe data", ie)
+            sys.exit()
 
         tifffile = [f for f in files if f.endswith('.tiff')]
         if len(tifffile):
