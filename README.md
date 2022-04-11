@@ -48,7 +48,7 @@ $ pip install -e .
 
 This procedure will install all the dependencies including 
 
--   Pandas
+-   pandas
 -   numpy
 -   scipy
 -   numba
