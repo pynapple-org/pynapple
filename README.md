@@ -32,6 +32,7 @@ The best way to install pynapple is with pip within a new [conda](https://docs.c
 
 ``` {.sourceCode .shell}
 $ conda create --name pynapple pip
+$ conda activate pynapple
 $ pip install pynapple
 ```
 
@@ -39,6 +40,7 @@ or directly from the source code:
 
 ``` {.sourceCode .shell}
 $ conda create --name pynapple pip
+$ conda activate pynapple
 $ # clone the repository
 $ git clone https://github.com/PeyracheLab/pynapple.git
 $ cd pynapple
@@ -62,6 +64,7 @@ For spyder users, it is recommended to install spyder after installing pynapple 
 
 ``` {.sourceCode .shell}
 $ conda create --name pynapple pip
+$ conda activate pynapple
 $ pip install pynapple
 $ pip install spyder
 $ spyder
