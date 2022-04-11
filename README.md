@@ -61,6 +61,8 @@ This procedure will install all the dependencies including
 For spyder users, it is recommended to install spyder after installing pynapple with :
 
 ``` {.sourceCode .shell}
+$ conda create --name pynapple pip
+$ pip install pynapple
 $ pip install spyder
 $ spyder
 ```
