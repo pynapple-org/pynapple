@@ -83,7 +83,7 @@ $ python
 
 An example of the package can be seen below. The exemple data can be
 found
-[here](https://www.dropbox.com/s/1kc0ulz7yudd9ru/A2929-200711.tar.gz?dl=1).
+[here](https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1). The folder already contains the NWB file (See this [notebook](https://github.com/PeyracheLab/pynapple/blob/main/docs/notebooks/pynapple-io-notebook.ipynb) for understanding the creation of the NWB file).
 
 ``` py
 import numpy as np
