@@ -423,10 +423,10 @@ class TrackingTab(QWidget):
                 # Infer the epoch
                 n = os.path.splitext(filename)[0].split('_')[-1]
                 nepoch = QSpinBox()
-                if n.isdigit(): 
+                if n.isdigit():
                     nepoch.setValue(int(n))
-                    self.parameters.loc[filename,'epoch'] = int(n)                
-                nepoch.valueChanged.connect(self.change_ttl_params)
+                    self.parameters.loc[filename,'epoch'] = int(n)
+                nepoch.valueChanged.connect(self.change_local_params)
                 self.table.setCellWidget(i, 1, nepoch)
 
 
@@ -540,12 +540,17 @@ class TrackingTab(QWidget):
         self.track_frequency = float(s)        
 
     def change_ttl_params(self, item):
-        row, col = (self.table.currentRow(),self.table.currentColumn())
+        row, col = (self.table.currentRow(),self.table.currentColumn())        
         if col in [2, 3, 4, 5, 6]:
             if col == 5: 
                 self.parameters.iloc[row, col] = float(item.text())
             else:
-                self.parameters.iloc[row, col] = int(item.text())        
+                self.parameters.iloc[row, col] = int(item.text())
+
+    def change_local_params(self, item):
+        row, col = (self.table.currentRow(),self.table.currentColumn())
+        if col == 1:
+            self.parameters.iloc[row, col] = int(item)            
 
     def update_path_info(self, path):
         self.path = path

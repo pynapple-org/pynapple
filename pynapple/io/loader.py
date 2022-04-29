@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-03-22 12:23:17
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2022-04-29 11:35:38
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -85,7 +85,7 @@ class BaseLoader(object):
                     window.time_units_epochs
                     )
                 # Save the data
-                self.create_nwb_file(path)            
+                self.create_nwb_file(path)
             app.quit()
             # print('\n'.join(repr(w) for w in app.allWidgets()))
             # del app, window
@@ -161,7 +161,7 @@ class BaseLoader(object):
         -------
         pandas.DataFrame
             _
-        """
+        """        
         position = pd.read_csv(csv_file, header = [1,2], index_col = 0)
         position = position[~position.index.duplicated(keep='first')]
         position.columns = list(map(lambda x:"_".join(x), position.columns.values))
@@ -211,7 +211,7 @@ class BaseLoader(object):
     def _make_position(self, parameters, method, frequency, epochs, time_units, alignement):
         """
         Make the position TSDFrame with the parameters extracted from the GUI.
-        """
+        """            
         if len(parameters.index) == 0:
             return None
         else:
@@ -225,15 +225,19 @@ class BaseLoader(object):
 
                 if method.lower() == 'optitrack':
                     position = self.load_optitrack_csv(parameters.loc[f,'csv'])
-                elif method.lower() == 'deeplabcut':
+                elif method.lower() == 'deep lab cut':
                     position = self.load_dlc_csv(parameters.loc[f,'csv'])
                 elif method.lower() == 'default':
                     position = self.load_default_csv(parameters.loc[f,'csv'])
 
                 if alignement.lower() == 'local':
                     start_epoch = nap.TimeUnits.format_timestamps(epochs.loc[parameters.loc[f,'epoch'],'start'], time_units)
+                    end_epoch = nap.TimeUnits.format_timestamps(epochs.loc[parameters.loc[f,'epoch'],'end'], time_units)
                     timestamps = position.index.values + nap.TimeUnits.return_timestamps(start_epoch,'s')[0]
-                    position.index = pd.Index(timestamps)
+                    # Make sure timestamps are within the epochs
+                    idx = np.where(timestamps < end_epoch)[0]
+                    position = position.iloc[idx]
+                    position.index = pd.Index(timestamps[idx])
 
                 if alignement.lower() == 'ttl':
                     ttl = self.load_ttl_pulse(
@@ -253,7 +257,7 @@ class BaseLoader(object):
                     else:
                         raise RuntimeError("No ttl detected for {}".format(f))
 
-                    # Make sure start epochis in seconds
+                    # Make sure start epochs in seconds
                     start_epoch = format_timestamp(epochs.loc[parameters.loc[f,'epoch'],'start'], time_units)
                     timestamps = start_epoch + ttl.index.values
                     position.index = pd.Index(timestamps)
@@ -337,27 +341,42 @@ class BaseLoader(object):
         # Tracking
         if self.position is not None:
             data = self.position.as_units('s')
-            position = Position()        
-            for c in ['x', 'y', 'z']:
-                tmp = SpatialSeries(
-                    name=c, 
-                    data=data[c].values, 
-                    timestamps=data.index.values, 
-                    unit='',
-                    reference_frame='')
-                position.add_spatial_series(tmp)
-            direction = CompassDirection()
-            for c in ['rx', 'ry', 'rz']:
-                tmp = SpatialSeries(
-                    name=c, 
-                    data=data[c].values, 
-                    timestamps=data.index.values, 
-                    unit='radian',
-                    reference_frame='')
-                direction.add_spatial_series(tmp)
+            # specific to optitrack
+            if set(['x', 'y', 'z', 'rx', 'ry', 'rz']).issubset(data.columns):
+                position = Position()
+                for c in ['x', 'y', 'z']:
+                    tmp = SpatialSeries(
+                        name=c, 
+                        data=data[c].values, 
+                        timestamps=data.index.values, 
+                        unit='',
+                        reference_frame='')
+                    position.add_spatial_series(tmp)
+                direction = CompassDirection()
+                for c in ['rx', 'ry', 'rz']:
+                    tmp = SpatialSeries(
+                        name=c, 
+                        data=data[c].values, 
+                        timestamps=data.index.values, 
+                        unit='radian',
+                        reference_frame='')
+                    direction.add_spatial_series(tmp)
 
-            nwbfile.add_acquisition(position)
-            nwbfile.add_acquisition(direction)
+                nwbfile.add_acquisition(position)
+                nwbfile.add_acquisition(direction)
+
+            # Other types
+            else:
+                position = Position()
+                for c in data.columns:
+                    tmp = SpatialSeries(
+                        name=c, 
+                        data=data[c].values, 
+                        timestamps=data.index.values, 
+                        unit='',
+                        reference_frame='')
+                    position.add_spatial_series(tmp)
+                nwbfile.add_acquisition(position)
 
             # Adding time support of position as TimeIntervals
             epochs = self.position.time_support.as_units('s')
