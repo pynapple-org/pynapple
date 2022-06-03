@@ -120,6 +120,13 @@ for i in spikes:
 show()
 
 ```
+Shown below, the final figure from the example code displays the firing rate of 15 neurons as a function of the direction of the head of the animal in the horizontal plane.
+
+<!-- ![pic1](readme_figure.png) -->
+<p align="center">
+  <img width="90%" src="readme_figure.png">
+</p>
+
 
 ### Credits
 
