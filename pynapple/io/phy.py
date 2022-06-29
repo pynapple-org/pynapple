@@ -14,6 +14,7 @@ from xml.dom import minidom
 from .ephys_gui import EphysGUI
 from PyQt5.QtWidgets import QApplication
 import re
+import warnings
 
 class Phy(BaseLoader):
     """
@@ -124,16 +125,25 @@ class Phy(BaseLoader):
         """
         files = os.listdir(path)
 
-        has_cluster_info = False
-        if 'cluster_info.tsv' in files:
-            self.cluster_info = pd.read_csv(os.path.join(path, 'cluster_info.tsv'), sep='\t', index_col='cluster_id')
-            cluster_id_good = self.cluster_info[self.cluster_info.group=='good'].index.values
-            has_cluster_info = True
-        elif 'cluster_group.tsv' in files:
-            self.cluster_group = pd.read_csv(os.path.join(path, 'cluster_group.tsv'), sep='\t', index_col='cluster_id')
-            cluster_id_good = self.cluster_group[self.cluster_group.group=='good'].index.values
-        else:
+        cluster_info_filenames = ['cluster_info.tsv', 'cluster_group.tsv']
+        cluster_info_file = None
+        for filename in cluster_info_filenames:
+            if filename in files:
+                cluster_info_file = filename
+
+        if cluster_info_file is None:
             raise RuntimeError("Can't find cluster_info.tsv or cluster_group.tsv in {};".format(path))
+
+        self.cluster_info = pd.read_csv(os.path.join(path,  cluster_info_file), sep='\t', index_col='cluster_id')
+        if "group" in self.cluster_info.columns:
+            cluster_id_good = self.cluster_info[self.cluster_info.group=='good'].index.values
+        elif "KSLabel" in self.cluster_info.columns:
+            cluster_id_good = self.cluster_info[self.cluster_info.KSLabel == 'good'].index.values
+        else:
+            raise RuntimeError("Can't find column 'group' or 'KSLabel' in {}".format(cluster_info_file))
+
+        has_cluster_info = True
+
 
         spike_times = np.load(os.path.join(path, 'spike_times.npy'))
         spike_clusters = np.load(os.path.join(path, 'spike_clusters.npy'))
