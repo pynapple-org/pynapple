@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-02 11:39:55
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-04-01 16:03:42
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2022-06-09 17:49:10
 
 
 import numpy as np
@@ -138,14 +138,16 @@ def compute_autocorrelogram(group, binsize, windowsize, ep=None, norm=True, time
         spk_time = newgroup[n].as_units('s').index.values
         auc, times = cross_correlogram(spk_time, spk_time, binsize, windowsize)
         # times = nap.TimeUnits.return_timestamps(times, 's')
-        autocorrs[n] = pd.Series(index=times, data=auc, dtype='float')
+        autocorrs[n] = pd.Series(index=np.round(times, 6), data=auc, dtype='float')
         
     autocorrs = pd.DataFrame.from_dict(autocorrs)
 
     if norm:    
         autocorrs = autocorrs / newgroup.get_info('freq')
 
-    autocorrs.loc[0] = 0.0
+    # Bug here
+    if 0 in autocorrs.index.values:
+        autocorrs.loc[0] = 0.0
 
     return autocorrs.astype('float')
 
