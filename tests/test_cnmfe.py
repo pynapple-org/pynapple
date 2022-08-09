@@ -6,37 +6,40 @@
 
 """Tests of CNMFE loaders for `pynapple` package."""
 
-import pynapple as nap
+import warnings
+
 import numpy as np
 import pandas as pd
 import pytest
-import warnings
+
+import pynapple as nap
+
 
 @pytest.mark.filterwarnings("ignore")
 def test_inscopix_cnmfe():
-    data = nap.load_session('nwbfilestest/inscopix-cnmfe', 'inscopix-cnmfe')
+    data = nap.load_session("nwbfilestest/inscopix-cnmfe", "inscopix-cnmfe")
     assert isinstance(data.C, nap.TsdFrame)
     assert len(data.C.columns) == 10
     assert len(data.C) > 0
     assert isinstance(data.A, np.ndarray)
     assert len(data.A) == len(data.C.columns)
+
 
 @pytest.mark.filterwarnings("ignore")
 def test_minian():
-    data = nap.load_session('nwbfilestest/minian', 'minian')
+    data = nap.load_session("nwbfilestest/minian", "minian")
     assert isinstance(data.C, nap.TsdFrame)
     assert len(data.C.columns) == 10
     assert len(data.C) > 0
     assert isinstance(data.A, np.ndarray)
     assert len(data.A) == len(data.C.columns)
+
 
 @pytest.mark.filterwarnings("ignore")
 def test_cnmfe_matlab():
-    data = nap.load_session('nwbfilestest/matlab-cnmfe', 'cnmfe-matlab')
+    data = nap.load_session("nwbfilestest/matlab-cnmfe", "cnmfe-matlab")
     assert isinstance(data.C, nap.TsdFrame)
     assert len(data.C.columns) == 10
     assert len(data.C) > 0
     assert isinstance(data.A, np.ndarray)
     assert len(data.A) == len(data.C.columns)
-
-

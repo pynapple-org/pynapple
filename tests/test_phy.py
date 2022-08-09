@@ -6,35 +6,36 @@
 
 """Tests of phy loader for `pynapple` package."""
 
-import pynapple as nap
+import warnings
+
 import numpy as np
 import pandas as pd
 import pytest
-import warnings
+
+import pynapple as nap
 
 
 @pytest.mark.filterwarnings("ignore")
-def test_load_session():    
-    data = nap.load_session('nwbfilestest/phy', 'phy')
-    
+def test_load_session():
+    data = nap.load_session("nwbfilestest/phy", "phy")
+
+
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-    data = nap.load_session('nwbfilestest/phy', 'phy')
+    data = nap.load_session("nwbfilestest/phy", "phy")
+
 
 @pytest.mark.parametrize("data", [data])
 class Test_PHY:
-
     def test_epochs(self, data):
         epochs = data.epochs
         assert isinstance(epochs, dict)
-        assert "wake" in epochs.keys()        
+        assert "wake" in epochs.keys()
         for k in epochs.keys():
             assert isinstance(epochs[k], nap.IntervalSet)
 
     def test_spikes(self, data):
-    	assert isinstance(data.spikes, nap.TsGroup)
-    	assert len(data.spikes) == 3
-    	for i in data.spikes.keys():
-    		assert len(data.spikes[i])
-
-    
+        assert isinstance(data.spikes, nap.TsGroup)
+        assert len(data.spikes) == 3
+        for i in data.spikes.keys():
+            assert len(data.spikes[i])

@@ -6,23 +6,27 @@
 
 """Tests of neurosuite loader for `pynapple` package."""
 
-import pynapple as nap
+import warnings
+
 import numpy as np
 import pandas as pd
 import pytest
-import warnings
+
+import pynapple as nap
+
 
 @pytest.mark.filterwarnings("ignore")
-def test_load_session():    
-    data = nap.load_session('nwbfilestest/neurosuite', 'neurosuite')
-    
+def test_load_session():
+    data = nap.load_session("nwbfilestest/neurosuite", "neurosuite")
+
+
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-    data = nap.load_session('nwbfilestest/neurosuite', 'neurosuite')
+    data = nap.load_session("nwbfilestest/neurosuite", "neurosuite")
+
 
 @pytest.mark.parametrize("data", [data])
 class Test_Neurosuite:
-
     def test_epochs(self, data):
         epochs = data.epochs
         assert isinstance(epochs, dict)
@@ -42,8 +46,7 @@ class Test_Neurosuite:
         assert isinstance(data.time_support, nap.IntervalSet)
 
     def test_spikes(self, data):
-    	assert isinstance(data.spikes, nap.TsGroup)
-    	assert len(data.spikes) == 15
-    	for i in data.spikes.keys():
-    		assert len(data.spikes[i])
-
+        assert isinstance(data.spikes, nap.TsGroup)
+        assert len(data.spikes) == 15
+        for i in data.spikes.keys():
+            assert len(data.spikes[i])
