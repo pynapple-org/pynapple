@@ -120,6 +120,9 @@ venv.bak/
 # mkdocs documentation
 #/site
 
+# PyCharm
+.idea/*
+
 # mypy
 .mypy_cache/
 .dmypy.json
@@ -134,3 +137,4 @@ tutorials/data/KA28-190405/Analysis/
 
 tutorials/data/KA28-190405/
 .DS_Store
+

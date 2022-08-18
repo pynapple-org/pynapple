@@ -1,0 +1,28 @@
+[tool.black]
+target-version = ['py36', 'py37', 'py38']
+skip-string-normalization = false
+exclude = '''
+(
+  /(
+      \.eggs
+    | \.git
+    | \.hg
+    | \.mypy_cache
+    | \.md
+    | \.toml
+    | \.cfg
+    | \.txt
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | examples
+  )/
+)
+'''
+
+[tool.isort]
+multi_line_output = 3
+include_trailing_comma = true
