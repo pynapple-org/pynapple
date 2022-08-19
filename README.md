@@ -1,17 +1,17 @@
 <!-- ![pic1](banner_logo.png) -->
 <p align="center">
-  <img width="70%" src="banner_logo.png">
+  <img width="60%" src="banner_logo.png">
 </p>
 
 
 <!-- ========================== -->
 
 [![image](https://img.shields.io/pypi/v/pynapple.svg)](https://pypi.python.org/pypi/pynapple)
-![GitHub contributors](https://img.shields.io/github/contributors/peyrachelab/pynapple)
+[![pynapple CI](https://github.com/PeyracheLab/pynapple/actions/workflows/main.yml/badge.svg)](https://github.com/PeyracheLab/pynapple/actions/workflows/main.yml)
+[![Coverage Status](https://coveralls.io/repos/github/PeyracheLab/pynapple/badge.svg?branch=main)](https://coveralls.io/github/PeyracheLab/pynapple?branch=main)
 [![GitHub issues](https://img.shields.io/github/issues/PeyracheLab/pynapple)](https://github.com/PeyracheLab/pynapple/issues)
+![GitHub contributors](https://img.shields.io/github/contributors/peyrachelab/pynapple)
 ![Twitter Follow](https://img.shields.io/twitter/follow/thepynapple?style=social)
-
-<!-- [![image](https://img.shields.io/travis/gviejo/pynapple.svg)](https://travis-ci.com/gviejo/pynapple) -->
 
 PYthon Neural Analysis Package.
 
