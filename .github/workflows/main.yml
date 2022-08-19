@@ -23,10 +23,10 @@ jobs:
           pip install .[dev]
       - name: Lint
         run: |
-          black --check pynalog
-          isort --check pynalog
-          flake8 pynalog --max-complexity 10
-          pylint pynalog
+          black --check pynapple
+          isort --check pynapple
+          flake8 pynapple --max-complexity 10
+          pylint pynapple
   test:
     needs: lint
     runs-on: ${{ matrix.os }}
@@ -51,7 +51,7 @@ jobs:
           pip install .[dev]
       - name: Test
         run: |
-          coverage run --source=pynalog --branch -m pytest tests/
+          coverage run --source=pynapple --branch -m pytest tests/
           coverage report -m          
 
       - name: Coveralls
