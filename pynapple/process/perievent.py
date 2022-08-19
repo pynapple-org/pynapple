@@ -2,14 +2,11 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-02-16 18:31:48
+# @Last Modified time: 2022-08-18 17:14:32
 
 import numpy as np
 from numba import jit
-import pandas as pd
-import sys, os
-import scipy
-from scipy import signal
+
 from .. import core as nap
 
 
@@ -29,7 +26,7 @@ def align_to_event(times, data, tref, windowsize):
         The reference times
     windowsize : tuple
         Start and end of the window size around tref
-    
+
     Returns
     -------
     list
@@ -37,7 +34,7 @@ def align_to_event(times, data, tref, windowsize):
     """
     nt2 = len(tref)
 
-    x = []    
+    x = []
     y = []
 
     for i in range(nt2):
@@ -53,16 +50,17 @@ def align_to_event(times, data, tref, windowsize):
 
     return x, y
 
-def compute_perievent(data, tref,  minmax, time_unit = 's'):
+
+def compute_perievent(data, tref, minmax, time_unit="s"):
     """
     Center ts/tsd/tsgroup object around the timestamps given by the tref argument.
     minmax indicates the start and end of the window.
-    
+
     Parameters
     ----------
     data : Ts/Tsd/TsGroup
-        The data to align to tref. 
-        If Ts/Tsd, returns a TsGroup. 
+        The data to align to tref.
+        If Ts/Tsd, returns a TsGroup.
         If TsGroup, returns a dictionnary of TsGroup
     tref : Ts/Tsd
         The timestamps of the event to align to
@@ -70,13 +68,13 @@ def compute_perievent(data, tref,  minmax, time_unit = 's'):
         The window size. Can be unequal on each side i.e. (-500, 1000).
     time_unit : str, optional
         Time units of the minmax ('s' [default], 'ms', 'us').
-    
+
     Returns
     -------
     dict
         A TsGroup if data is a Ts/Tsd or
         a dictionnary of TsGroup if data is a TsGroup.
-    
+
     Raises
     ------
     RuntimeError
@@ -90,7 +88,7 @@ def compute_perievent(data, tref,  minmax, time_unit = 's'):
 
     window = np.abs(nap.TimeUnits.format_timestamps(np.array(minmax), time_unit))
 
-    time_support = nap.IntervalSet(start = -window[0], end = window[1])
+    time_support = nap.IntervalSet(start=-window[0], end=window[1])
 
     if isinstance(data, nap.TsGroup):
         toreturn = {}
@@ -100,22 +98,19 @@ def compute_perievent(data, tref,  minmax, time_unit = 's'):
         return toreturn
 
     elif isinstance(data, (nap.Ts, nap.Tsd)):
-        
-        xt, yd = align_to_event(data.index.values, data.values, tref.index.values, window)
+
+        xt, yd = align_to_event(
+            data.index.values, data.values, tref.index.values, window
+        )
 
         group = {}
         for i, (x, y) in enumerate(zip(xt, yd)):
-            group[i] = nap.Tsd(
-                t = x,
-                d = y,
-                time_support = time_support
-                )
+            group[i] = nap.Tsd(t=x, d=y, time_support=time_support)
 
-        group = nap.TsGroup(group, time_support = time_support)
-        group.set_info(ref_times = tref.as_units('s').index.values)
+        group = nap.TsGroup(group, time_support=time_support)
+        group.set_info(ref_times=tref.as_units("s").index.values)
 
-    else: 
+    else:
         raise RuntimeError("Unknown format for data")
-    
-    return group
 
+    return group

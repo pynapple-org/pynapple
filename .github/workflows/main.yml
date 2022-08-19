@@ -1,6 +1,11 @@
-name: tests
+# .github/workflows/build.yaml
+name: pynapple CI
 
-on: push
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
 
 jobs:
   lint:
@@ -18,20 +23,22 @@ jobs:
           pip install .[dev]
       - name: Lint
         run: |
-          black . --check
-          isort . --check
+          black --check pynalog
+          isort --check pynalog
+          flake8 pynalog --max-complexity 10
+          pylint pynalog
   test:
     needs: lint
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: [3.7, 3.8.6]
-        exclude:
-          - os: macos-latest
-            python-version: 3.7
-          - os: windows-latest
-            python-version: 3.7
+        python-version: ["3.6", "3.7", "3.8", "3.9"]
+        # exclude:
+        #   - os: macos-latest
+        #     python-version: 3.7
+        #   - os: windows-latest
+        #     python-version: 3.7
     steps:
       - uses: actions/checkout@v2
       - name: Set up Python
@@ -43,9 +50,10 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[dev]
       - name: Test
-        run: | 
-          cd tests
-          pytest --cov
+        run: |
+          coverage run --source=pynalog --branch -m pytest tests/
+          coverage report -m          
+
       - name: Coveralls
         env:
             GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

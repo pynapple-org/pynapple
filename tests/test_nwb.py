@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-04 21:32:10
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-04-04 22:34:56
+# @Last Modified time: 2022-08-19 09:05:17
 
 """Tests of nwb reading for `pynapple` package."""
 
@@ -12,17 +12,25 @@ import pandas as pd
 import pytest
 import warnings
 
+
 @pytest.mark.filterwarnings("ignore")
-def test_load_session():    
-    data = nap.load_session('nwbfilestest/basic')
-    
+def test_load_session():
+    try:
+        data = nap.load_session("nwbfilestest/basic")
+    except:
+        data = nap.load_session("tests/nwbfilestest/basic")
+
+
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
-    data = nap.load_session('nwbfilestest/basic')
+    try:
+        data = nap.load_session("nwbfilestest/basic")
+    except:
+        data = nap.load_session("tests/nwbfilestest/basic")
+
 
 @pytest.mark.parametrize("data", [data])
 class Test_NWB:
-
     def test_epochs(self, data):
         epochs = data.epochs
         assert isinstance(epochs, dict)
@@ -44,7 +52,8 @@ class Test_NWB:
     @pytest.mark.filterwarnings("ignore")
     def test_nwb_meta_info(self, data):
         from pynwb import NWBFile, NWBHDF5IO
-        io = NWBHDF5IO(data.nwbfilepath, 'r')
+
+        io = NWBHDF5IO(data.nwbfilepath, "r")
         nwbfile = io.read()
-        assert nwbfile.experimenter == ('guillaume',)
+        assert nwbfile.experimenter == ("guillaume",)
         io.close()

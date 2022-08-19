@@ -1,14 +1,34 @@
-import sys, os, csv, getpass
-import pandas as pd
+"""Summary
+"""
 import numpy as np
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import QStackedLayout  # add this import
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
+    QDialogButtonBox,
+    QHeaderView,
+    QLabel,
+    QMainWindow,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
+
 
 def convert_to_dict(parent):
+    """Summary
+
+    Parameters
+    ----------
+    parent : TYPE
+        Description
+
+    Returns
+    -------
+    TYPE
+        Description
+    """
     childCount = parent.childCount()
-    if not childCount:        
+    if not childCount:
         return parent.text(1)
     values = {}
     for r in range(childCount):
@@ -18,8 +38,36 @@ def convert_to_dict(parent):
 
 
 class EphysGUI(QMainWindow):
+    """Summary
 
-    def __init__(self, path=None, groups = {}):
+    Attributes
+    ----------
+    ephys : dict
+        Description
+    ephys_information : TYPE
+        Description
+    finalbuttons : TYPE
+        Description
+    groups : TYPE
+        Description
+    path : TYPE
+        Description
+    status : bool
+        Description
+    tree : TYPE
+        Description
+    """
+
+    def __init__(self, path=None, groups={}):
+        """Summary
+
+        Parameters
+        ----------
+        path : None, optional
+            Description
+        groups : dict, optional
+            Description
+        """
         super().__init__()
 
         # Basic properties to return
@@ -29,11 +77,11 @@ class EphysGUI(QMainWindow):
         self.ephys = {}
         for k in groups.keys():
             self.ephys[k] = {}
-            self.ephys[k]['electrodes'] = " ".join(groups[k].astype(np.str_))
-            for n in ["name","description", "location", "device","position"]:
-                self.ephys[k][n] = ''
-            self.ephys[k]['device'] = {
-                d:'' for d in ['name', 'description', 'manufacturer']
+            self.ephys[k]["electrodes"] = " ".join(groups[k].astype(np.str_))
+            for n in ["name", "description", "location", "device", "position"]:
+                self.ephys[k][n] = ""
+            self.ephys[k]["device"] = {
+                d: "" for d in ["name", "description", "manufacturer"]
             }
 
         self.setWindowTitle("Ephys loader")
@@ -49,22 +97,19 @@ class EphysGUI(QMainWindow):
 
         # # TREE VIEW
         self.tree = QTreeWidget()
-        self.tree.setAlternatingRowColors( True )
+        self.tree.setAlternatingRowColors(True)
         self.tree.setColumnCount(2)
-        self.tree.setHeaderLabels([
-            "Groups",
-            "Informations"
-            ])
+        self.tree.setHeaderLabels(["Groups", "Informations"])
         self.tree.header().resizeSections(QHeaderView.ResizeToContents)
         self.tree.header().setSectionResizeMode(0, QHeaderView.Stretch)
-        
+
         items = []
         for key in self.ephys.keys():
-            item = QTreeWidgetItem(['Group '+str(key)])
-            for k, value in self.ephys[key].items():                
+            item = QTreeWidgetItem(["Group " + str(key)])
+            for k, value in self.ephys[key].items():
                 if type(value) is str:
                     child = QTreeWidgetItem([k, value])
-                    if k != 'electrodes':
+                    if k != "electrodes":
                         child.setFlags(child.flags() | Qt.ItemIsEditable)
                 elif type(value) is dict:
                     child = QTreeWidgetItem([k])
@@ -82,7 +127,9 @@ class EphysGUI(QMainWindow):
         # BOTTOM SAVING
         self.finalbuttons = QDialogButtonBox()
         self.finalbuttons.setOrientation(Qt.Horizontal)
-        self.finalbuttons.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok)
+        self.finalbuttons.setStandardButtons(
+            QDialogButtonBox.Cancel | QDialogButtonBox.Ok
+        )
         self.finalbuttons.accepted.connect(self.accept)
         self.finalbuttons.rejected.connect(self.reject)
 
@@ -98,20 +145,19 @@ class EphysGUI(QMainWindow):
         self.setCentralWidget(widget)
 
     def accept(self):
+        """Summary"""
         self.status = True
 
         # Retrieve everything
         root = self.tree.invisibleRootItem()
-        ephys_information = convert_to_dict(root)        
-        self.ephys_information = {int(k.split(' ')[1]):ephys_information[k] for k in ephys_information.keys()}
+        ephys_information = convert_to_dict(root)
+        self.ephys_information = {
+            int(k.split(" ")[1]): ephys_information[k] for k in ephys_information.keys()
+        }
 
         self.close()
 
     def reject(self):
+        """Summary"""
         self.status = False
         self.close()
-
-
-
-
-

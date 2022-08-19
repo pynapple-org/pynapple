@@ -1,17 +1,16 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-02 11:39:55
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2022-06-09 17:49:10
+# @Last Modified by:   gviejo
+# @Last Modified time: 2022-08-18 17:09:03
 
+
+from itertools import combinations
 
 import numpy as np
-from numba import jit
 import pandas as pd
-import sys, os
-import scipy
-from scipy import signal
-from itertools import combinations
+from numba import jit
+
 from .. import core as nap
 
 
@@ -21,12 +20,12 @@ from .. import core as nap
 @jit(nopython=True)
 def cross_correlogram(t1, t2, binsize, windowsize):
     """
-    Performs the discrete cross-correlogram of two time series. 
+    Performs the discrete cross-correlogram of two time series.
     The units should be in s for all arguments.
     Return the firing rate of the series t2 relative to the timings of t1.
     See compute_crosscorrelogram, compute_autocorrelogram and compute_eventcorrelogram
     for wrappers of this function.
-    
+
     Parameters
     ----------
     t1 : numpy.ndarray
@@ -37,72 +36,75 @@ def cross_correlogram(t1, t2, binsize, windowsize):
         The bin size (in seconds)
     windowsize : float
         The window size (in seconds)
-    
+
     Returns
     -------
     numpy.ndarray
         The cross-correlogram
     numpy.ndarray
         Center of the bins (in s)
-    
+
     """
-    # nbins = ((windowsize//binsize)*2)    
+    # nbins = ((windowsize//binsize)*2)
 
     nt1 = len(t1)
     nt2 = len(t2)
 
-    nbins = int((windowsize*2)//binsize)
-    if np.floor(nbins/2)*2 == nbins:
-        nbins = nbins+1
+    nbins = int((windowsize * 2) // binsize)
+    if np.floor(nbins / 2) * 2 == nbins:
+        nbins = nbins + 1
 
-    w = ((nbins/2) * binsize)
+    w = (nbins / 2) * binsize
     C = np.zeros(nbins)
     i2 = 0
 
     for i1 in range(nt1):
         lbound = t1[i1] - w
         while i2 < nt2 and t2[i2] < lbound:
-            i2 = i2+1
-        while i2 > 0 and t2[i2-1] > lbound:
-            i2 = i2-1
+            i2 = i2 + 1
+        while i2 > 0 and t2[i2 - 1] > lbound:
+            i2 = i2 - 1
 
         rbound = lbound
-        l = i2
+        leftb = i2
         for j in range(nbins):
             k = 0
-            rbound = rbound+binsize
-            while l < nt2 and t2[l] < rbound:
-                l = l+1
-                k = k+1
+            rbound = rbound + binsize
+            while leftb < nt2 and t2[leftb] < rbound:
+                leftb = leftb + 1
+                k = k + 1
 
             C[j] += k
 
-    C = C/(nt1 * binsize)
+    C = C / (nt1 * binsize)
 
-    m = -w + binsize/2
+    m = -w + binsize / 2
     B = np.zeros(nbins)
     for j in range(nbins):
-        B[j] = m+j*binsize
+        B[j] = m + j * binsize
 
     return C, B
 
-def compute_autocorrelogram(group, binsize, windowsize, ep=None, norm=True, time_units='s'):
+
+def compute_autocorrelogram(
+    group, binsize, windowsize, ep=None, norm=True, time_units="s"
+):
     """
     Computes the autocorrelogram of a group of Ts/Tsd objects.
     The group can be passed directly as a TsGroup object.
-    
+
     Parameters
     ----------
     group : TsGroup
         The group of Ts/Tsd objects to auto-correlate
     binsize : float
-        The bin size. Default is second. 
+        The bin size. Default is second.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
     windowsize : float
         The window size. Default is second.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
     ep : IntervalSet
-        The epoch on which auto-corrs are computed. 
+        The epoch on which auto-corrs are computed.
         If None, the epoch is the time support of the group.
     norm : bool, optional
          If True, autocorrelograms are normalized to baseline (i.e. divided by the average rate)
@@ -110,19 +112,19 @@ def compute_autocorrelogram(group, binsize, windowsize, ep=None, norm=True, time
     time_units : str, optional
         The time units of the parameters. They have to be consistent for binsize and windowsize.
         ('s' [default], 'ms', 'us').
-    
+
     Returns
     -------
     pandas.DataFrame
         _
-    
+
     Raises
     ------
     RuntimeError
         group must be TsGroup
     """
     if type(group) is nap.TsGroup:
-        if isinstance(ep, nap.IntervalSet):            
+        if isinstance(ep, nap.IntervalSet):
             newgroup = group.restrict(ep)
         else:
             newgroup = group
@@ -135,43 +137,46 @@ def compute_autocorrelogram(group, binsize, windowsize, ep=None, norm=True, time
     windowsize = nap.TimeUnits.format_timestamps(windowsize, time_units)[0]
 
     for n in newgroup.keys():
-        spk_time = newgroup[n].as_units('s').index.values
+        spk_time = newgroup[n].as_units("s").index.values
         auc, times = cross_correlogram(spk_time, spk_time, binsize, windowsize)
         # times = nap.TimeUnits.return_timestamps(times, 's')
-        autocorrs[n] = pd.Series(index=np.round(times, 6), data=auc, dtype='float')
-        
+        autocorrs[n] = pd.Series(index=np.round(times, 6), data=auc, dtype="float")
+
     autocorrs = pd.DataFrame.from_dict(autocorrs)
 
-    if norm:    
-        autocorrs = autocorrs / newgroup.get_info('freq')
+    if norm:
+        autocorrs = autocorrs / newgroup.get_info("freq")
 
     # Bug here
     if 0 in autocorrs.index.values:
         autocorrs.loc[0] = 0.0
 
-    return autocorrs.astype('float')
+    return autocorrs.astype("float")
 
-def compute_crosscorrelogram(group, binsize, windowsize, ep=None, norm=True, time_units='s',reverse=False):
+
+def compute_crosscorrelogram(
+    group, binsize, windowsize, ep=None, norm=True, time_units="s", reverse=False
+):
     """
     Computes all the pairwise cross-correlograms from a group of Ts/Tsd objects.
     The group can be passed directly as a TsGroup object.
     The reference Ts/Tsd and target are chosen based on the builtin itertools.combinations function.
-    For example if indexes are [0,1,2], the function computes cross-correlograms 
+    For example if indexes are [0,1,2], the function computes cross-correlograms
     for the pairs (0,1), (0, 2), and (1, 2). The left index gives the reference time series.
     To reverse the order, set reverse=True.
-    
+
     Parameters
     ----------
     group : TsGroup
         The group of Ts/Tsd objects to cross-correlate
     binsize : float
-        The bin size. Default is second. 
+        The bin size. Default is second.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
     windowsize : float
         The window size. Default is second.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
     ep : IntervalSet
-        The epoch on which cross-corrs are computed. 
+        The epoch on which cross-corrs are computed.
         If None, the epoch is the time support of the group.
     norm : bool, optional
         If True (default), cross-correlograms are normalized to baseline (i.e. divided by the average rate of the target time series)
@@ -181,20 +186,20 @@ def compute_crosscorrelogram(group, binsize, windowsize, ep=None, norm=True, tim
         ('s' [default], 'ms', 'us').
     reverse : bool, optional
         To reverse the pair order
-    
+
     Returns
     -------
     pandas.DataFrame
         _
-    
+
     Raises
     ------
     RuntimeError
         group must be TsGroup
-    
+
     """
     if type(group) is nap.TsGroup:
-        if isinstance(ep, nap.IntervalSet):            
+        if isinstance(ep, nap.IntervalSet):
             newgroup = group.restrict(ep)
         else:
             newgroup = group
@@ -203,32 +208,36 @@ def compute_crosscorrelogram(group, binsize, windowsize, ep=None, norm=True, tim
 
     neurons = list(newgroup.keys())
     pairs = list(combinations(neurons, 2))
-    if reverse: pairs = list(map(lambda n: (n[1],n[0]), pairs))
+    if reverse:
+        pairs = list(map(lambda n: (n[1], n[0]), pairs))
     crosscorrs = {}
 
     binsize = nap.TimeUnits.format_timestamps(binsize, time_units)[0]
     windowsize = nap.TimeUnits.format_timestamps(windowsize, time_units)[0]
 
     for i, j in pairs:
-        spk1 = newgroup[i].as_units('s').index.values
-        spk2 = newgroup[j].as_units('s').index.values            
-        auc, times = cross_correlogram(spk1, spk2, binsize, windowsize)        
-        crosscorrs[(i,j)] = pd.Series(index = times,data = auc, dtype='float')
-        
+        spk1 = newgroup[i].as_units("s").index.values
+        spk2 = newgroup[j].as_units("s").index.values
+        auc, times = cross_correlogram(spk1, spk2, binsize, windowsize)
+        crosscorrs[(i, j)] = pd.Series(index=times, data=auc, dtype="float")
+
     crosscorrs = pd.DataFrame.from_dict(crosscorrs)
 
-    if norm:    
-        freq = newgroup.get_info('freq')
-        freq2 = pd.Series(index=pairs,data=list(map(lambda n:freq.loc[n[1]], pairs)))
+    if norm:
+        freq = newgroup.get_info("freq")
+        freq2 = pd.Series(index=pairs, data=list(map(lambda n: freq.loc[n[1]], pairs)))
         crosscorrs = crosscorrs / freq2
 
-    return crosscorrs.astype('float')
+    return crosscorrs.astype("float")
 
-def compute_eventcorrelogram(group, event, binsize, windowsize, ep=None, norm=True, time_units='s'):
+
+def compute_eventcorrelogram(
+    group, event, binsize, windowsize, ep=None, norm=True, time_units="s"
+):
     """
     Computes the correlograms of a group of Ts/Tsd objects with another single Ts/Tsd object
     The time of reference is the event times.
-    
+
     Parameters
     ----------
     group : TsGroup
@@ -236,13 +245,13 @@ def compute_eventcorrelogram(group, event, binsize, windowsize, ep=None, norm=Tr
     event : Ts/Tsd
         The event to correlate the each of the time series in the group with.
     binsize : float
-        The bin size. Default is second. 
+        The bin size. Default is second.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
     windowsize : float
         The window size. Default is second.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
     ep : IntervalSet
-        The epoch on which cross-corrs are computed. 
+        The epoch on which cross-corrs are computed.
         If None, the epoch is the time support of the event.
     norm : bool, optional
         If True (default), cross-correlograms are normalized to baseline (i.e. divided by the average rate of the target time series)
@@ -254,18 +263,18 @@ def compute_eventcorrelogram(group, event, binsize, windowsize, ep=None, norm=Tr
     -------
     pandas.DataFrame
         _
-    
+
     Raises
     ------
     RuntimeError
         group must be TsGroup
-    
+
     """
     if ep is None:
         ep = event.time_support
-        tsd1 = event.as_units('s').index.values
+        tsd1 = event.as_units("s").index.values
     else:
-        tsd1 = event.restrict(ep).as_units('s').index.values
+        tsd1 = event.restrict(ep).as_units("s").index.values
 
     if type(group) is nap.TsGroup:
         newgroup = group.restrict(ep)
@@ -277,14 +286,14 @@ def compute_eventcorrelogram(group, event, binsize, windowsize, ep=None, norm=Tr
     binsize = nap.TimeUnits.format_timestamps(binsize, time_units)[0]
     windowsize = nap.TimeUnits.format_timestamps(windowsize, time_units)[0]
 
-    for n in newgroup.keys():        
-        spk_time = newgroup[n].as_units('s').index.values
-        auc, times = cross_correlogram(tsd1, spk_time, binsize, windowsize)        
-        crosscorrs[n] = pd.Series(index = times,data = auc, dtype='float')
-        
+    for n in newgroup.keys():
+        spk_time = newgroup[n].as_units("s").index.values
+        auc, times = cross_correlogram(tsd1, spk_time, binsize, windowsize)
+        crosscorrs[n] = pd.Series(index=times, data=auc, dtype="float")
+
     crosscorrs = pd.DataFrame.from_dict(crosscorrs)
 
-    if norm:    
-        crosscorrs = crosscorrs / newgroup.get_info('freq')
+    if norm:
+        crosscorrs = crosscorrs / newgroup.get_info("freq")
 
-    return crosscorrs.astype('float')
+    return crosscorrs.astype("float")

@@ -2,20 +2,24 @@
 # @Author: gviejo
 # @Date:   2022-03-25 11:34:45
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-03-25 16:44:28
+# @Last Modified time: 2022-08-18 17:31:42
 
-import sys, os, csv, getpass
-import pandas as pd
-import numpy as np
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from PyQt5.QtWidgets import QStackedLayout  # add this import
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import (
+    QDialogButtonBox,
+    QHeaderView,
+    QLabel,
+    QMainWindow,
+    QTreeWidget,
+    QTreeWidgetItem,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 def convert_to_dict(parent):
     childCount = parent.childCount()
-    if not childCount:        
+    if not childCount:
         return parent.text(1)
     values = {}
     for r in range(childCount):
@@ -25,32 +29,45 @@ def convert_to_dict(parent):
 
 
 class OphysGUI(QMainWindow):
-
     def __init__(self, path=None):
         super().__init__()
 
         # Basic properties to return
         self.status = False
         self.path = path
-        
+
         self.ophys = {}
         self.ophys = {
-        	'device': {n:d for n, d in zip(
-                ['name', 'description', 'manufacturer'],
-                ['Microscope', '', '']
-                )},
-        	'OpticalChannel': {n:d for n,d in zip(
-                ['name', 'description', 'emission_lambda'],
-                ["OpticalChannel", "", "500."]
-                )},
-        	'ImagingPlane': {n:d for n,d in zip(
-                ['name', 'imaging_rate', 'description', 'excitation_lambda', 'indicator', 'location'],
-                ["ImagingPlane", "30.", "", "600.", "GCAMP", ""]
-                )},
-            'PlaneSegmentation': {n:d for n, d in zip(
-                ['name', 'description'],
-                ['PlaneSegmentation', '']
-                )}
+            "device": {
+                n: d
+                for n, d in zip(
+                    ["name", "description", "manufacturer"], ["Microscope", "", ""]
+                )
+            },
+            "OpticalChannel": {
+                n: d
+                for n, d in zip(
+                    ["name", "description", "emission_lambda"],
+                    ["OpticalChannel", "", "500."],
+                )
+            },
+            "ImagingPlane": {
+                n: d
+                for n, d in zip(
+                    [
+                        "name",
+                        "imaging_rate",
+                        "description",
+                        "excitation_lambda",
+                        "indicator",
+                        "location",
+                    ],
+                    ["ImagingPlane", "30.", "", "600.", "GCAMP", ""],
+                )
+            },
+            "PlaneSegmentation": {
+                n: d for n, d in zip(["name", "description"], ["PlaneSegmentation", ""])
+            },
         }
 
         self.setWindowTitle("Calcium Imaging loader")
@@ -66,19 +83,16 @@ class OphysGUI(QMainWindow):
 
         # # TREE VIEW
         self.tree = QTreeWidget()
-        self.tree.setAlternatingRowColors( True )
+        self.tree.setAlternatingRowColors(True)
         self.tree.setColumnCount(2)
-        self.tree.setHeaderLabels([
-            "Metadata",
-            "Informations"
-            ])
+        self.tree.setHeaderLabels(["Metadata", "Informations"])
         self.tree.header().resizeSections(QHeaderView.ResizeToContents)
         self.tree.header().setSectionResizeMode(0, QHeaderView.Stretch)
-        
+
         items = []
         for key in self.ophys.keys():
             item = QTreeWidgetItem([key])
-            for k, value in self.ophys[key].items():                
+            for k, value in self.ophys[key].items():
                 child = QTreeWidgetItem([k, value])
                 child.setFlags(child.flags() | Qt.ItemIsEditable)
                 item.addChild(child)
@@ -90,7 +104,9 @@ class OphysGUI(QMainWindow):
         # BOTTOM SAVING
         self.finalbuttons = QDialogButtonBox()
         self.finalbuttons.setOrientation(Qt.Horizontal)
-        self.finalbuttons.setStandardButtons(QDialogButtonBox.Cancel|QDialogButtonBox.Ok)
+        self.finalbuttons.setStandardButtons(
+            QDialogButtonBox.Cancel | QDialogButtonBox.Ok
+        )
         self.finalbuttons.accepted.connect(self.accept)
         self.finalbuttons.rejected.connect(self.reject)
 
@@ -110,7 +126,7 @@ class OphysGUI(QMainWindow):
 
         # Retrieve everything
         root = self.tree.invisibleRootItem()
-        ophys_information = convert_to_dict(root)        
+        ophys_information = convert_to_dict(root)
         self.ophys_information = ophys_information
 
         self.close()
@@ -118,8 +134,3 @@ class OphysGUI(QMainWindow):
     def reject(self):
         self.status = False
         self.close()
-
-
-
-
-

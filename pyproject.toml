@@ -1,3 +1,63 @@
+[build-system]
+requires      = ["setuptools>=61.0.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pynapple"
+version = "0.2.4"
+description = "PYthon Neural Analysis Package Pour Laboratoires d’Excellence"
+readme = "README.md"
+authors = [{ name = "Guillaume Viejo", email = "guillaume.viejo@gmail.com" }]
+license = { file = "LICENSE" }
+classifiers = [
+        "Development Status :: 3 - Alpha",
+        "Intended Audience :: Science/Research",
+        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "Natural Language :: English",
+        "Programming Language :: Python :: 3",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
+]
+keywords = ["neuroscience"]
+dependencies = [
+    "pandas>=1.0.3",
+    "numpy>=1.17.4",
+    "scipy>=1.3.2",
+    "numba>=0.46.0",
+    "pynwb",
+    "tabulate",
+    "pyqt5",
+    "pyqtgraph",
+    "h5py",
+    "tifffile",
+    "zarr",
+]
+requires-python = ">=3.6"
+
+[tool.setuptools.packages.find]
+include = ["pynapple"]
+
+[project.optional-dependencies]
+dev = [
+  "black",  
+  "isort", 
+  "pip-tools", 
+  "pytest",
+  "flake8",  
+  "coverage"
+  ]
+
+[project.urls]
+homepage = "https://github.com/PeyracheLab/pynapple"
+documentation = "https://peyrachelab.github.io/pynapple/"
+repository = "https://github.com/PeyracheLab/pynapple"
+
+##########################################################################
+# Optional dependencies
+##########################################################################
+
 [tool.black]
 target-version = ['py36', 'py37', 'py38']
 skip-string-normalization = false
