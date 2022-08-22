@@ -31,7 +31,7 @@ Getting Started
 The best way to install pynapple is with pip within a new [conda](https://docs.conda.io/en/latest/) environment :
 
 ``` {.sourceCode .shell}
-$ conda create --name pynapple pip
+$ conda create --name pynapple pip python=3.8
 $ conda activate pynapple
 $ pip install pynapple
 ```
@@ -39,7 +39,7 @@ $ pip install pynapple
 or directly from the source code:
 
 ``` {.sourceCode .shell}
-$ conda create --name pynapple pip
+$ conda create --name pynapple pip python=3.8
 $ conda activate pynapple
 $ # clone the repository
 $ git clone https://github.com/PeyracheLab/pynapple.git
