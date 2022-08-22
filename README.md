@@ -69,6 +69,9 @@ $ pip install pynapple
 $ pip install spyder
 $ spyder
 ```
+> **Warning**
+> The package is now using a pyproject.toml file for installation and dependencies management. If you want to run the tests, use pip install -e .[dev]
+
 
 
 Basic Usage
