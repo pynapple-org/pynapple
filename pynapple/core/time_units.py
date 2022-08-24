@@ -119,14 +119,14 @@ class TimeUnits:
 
         if units == "s":
             # t *= 1000000
-            t = np.around(t, 6)
+            t = np.around(t, 9)
             # pass
         elif units == "ms":
             # t *= 1000
-            t = np.around(t / 1.0e3, 6)
+            t = np.around(t / 1.0e3, 9)
         elif units == "us":
             # pass
-            t = np.around(t / 1.0e6, 6)
+            t = np.around(t / 1.0e6, 9)
         else:
             raise ValueError("unrecognized time units type")
 
