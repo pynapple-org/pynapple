@@ -2,13 +2,15 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-08-18 17:09:34
+# @Last Modified time: 2022-08-24 17:25:44
 
 
 import warnings
 
 import numpy as np
 import pandas as pd
+from numba import jit
+from scipy.linalg import hankel
 
 from .. import core as nap
 
@@ -429,3 +431,129 @@ def compute_2d_tuning_curves_continuous(
     tc = {c: tc_np[i] for i, c in enumerate(tsdframe.columns)}
 
     return tc, xy
+
+
+@jit(nopython=True)
+def PoissonIRLS(X, y, niter=100, tolerance=1e-5):
+    """Poisson Iteratively Reweighted Least Square
+    for fitting Poisson GLM.
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        Predictors
+    y : numpy.ndarray
+        Target
+    niter : int, optional
+        Number of iterations
+    tolerance : float, optional
+        Default is 10^-5
+
+    Returns
+    -------
+    numpy.ndarray
+        Regression coefficients
+    """
+    y = y.astype(np.float64)
+    X = X.astype(np.float64)
+    n, d = X.shape
+    W = np.ones(n)
+    iXtWX = np.linalg.inv(np.dot(X.T * W, X))
+    XtWY = np.dot(X.T * W, y)
+    B = np.dot(iXtWX, XtWY)
+
+    for _ in range(niter):
+        B_ = B
+        L = np.exp(X.dot(B))  # Link function
+        Z = L.reshape((-1, 1)) * X  # partial derivatives
+        delta = np.dot(np.linalg.inv(np.dot(Z.T * W, Z)), np.dot(Z.T * W, y))
+        B = B + delta
+        tol = np.sum(np.abs((B - B_) / B_))
+        if tol < tolerance:
+            return B
+    return B
+
+
+def compute_1d_poisson_glm(
+    group, feature, binsize, windowsize, ep, time_units="s", niter=100, tolerance=1e-5
+):
+    """Summary
+
+    Parameters
+    ----------
+    group : TYPE
+        Description
+    feature : TYPE
+        Description
+    binsize : TYPE
+        Description
+    windowsize : TYPE
+        Description
+    ep : None, optional
+        Description
+    time_units : str, optional
+        Description
+    niter : int, optional
+        Description
+    tolerance : float, optional
+        Description
+
+    Returns
+    -------
+    TYPE
+        Description
+
+    Raises
+    ------
+    RuntimeError
+        Description
+
+    """
+    if type(group) is nap.TsGroup:
+        newgroup = group.restrict(ep)
+    else:
+        raise RuntimeError("Unknown format for group")
+
+    binsize = nap.TimeUnits.format_timestamps(binsize, time_units)[0]
+    windowsize = nap.TimeUnits.format_timestamps(windowsize, time_units)[0]
+
+    # Bin the spike train
+    count = newgroup.count(binsize)
+
+    # Downsample the feature to binsize
+    tidx = []
+    dfeat = []
+    for i in ep.index:
+        bins = np.arange(ep.start[i], ep.end[i] + binsize, binsize)
+        idx = np.digitize(feature.index.values, bins) - 1
+        tmp = feature.groupby(idx).mean()
+        tidx.append(bins[0:-1] + np.diff(bins) / 2)
+        dfeat.append(tmp)
+    dfeat = nap.Tsd(t=np.hstack(tidx), d=np.hstack(dfeat), time_support=ep)
+
+    # Build the Hankel matrix
+    nt = np.abs(windowsize // binsize).astype("int") + 1
+    X = hankel(
+        np.hstack((np.zeros(nt - 1), dfeat.values))[: -nt + 1], dfeat.values[-nt:]
+    )
+    X = np.hstack((np.ones((len(dfeat), 1)), X))
+
+    # Fitting GLM for each neuron
+    regressors = []
+    for i, n in enumerate(group.keys()):
+        print("Fitting Poisson GLM for unit %i" % n)
+        b = PoissonIRLS(X, count[n].values, niter=niter, tolerance=tolerance)
+        regressors.append(b)
+
+    regressors = np.array(regressors).T
+    offset = regressors[0]
+    regressors = regressors[1:]
+    regressors = nap.TsdFrame(t=np.arange(-nt + 1, 1) * binsize, d=regressors)
+    offset = pd.Series(index=group.keys(), data=offset)
+
+    prediction = nap.TsdFrame(
+        t=dfeat.index.values,
+        d=np.exp(np.dot(X[:, 1:], regressors.values) + offset.values) * binsize,
+    )
+
+    return regressors, offset, prediction
