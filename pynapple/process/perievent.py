@@ -2,10 +2,11 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-08-18 17:14:32
+# @Last Modified time: 2022-08-30 19:58:42
 
 import numpy as np
 from numba import jit
+from scipy.linalg import hankel
 
 from .. import core as nap
 
@@ -114,3 +115,92 @@ def compute_perievent(data, tref, minmax, time_unit="s"):
         raise RuntimeError("Unknown format for data")
 
     return group
+
+
+def compute_event_trigger_average(
+    group, feature, binsize, windowsize, ep, time_units="s"
+):
+    """
+    Bin the spike train in binsize and compute the
+    Spike Trigger Average (STA) within windowsize.
+    If C is the spike count matrix and feature is a Tsd array, the function
+    computes the Hankel matrix H from windowsize=(-t1,+t2) by offseting the Tsd array.
+
+    The STA is then defined as the dot product between H and C divided by
+    the number of spikes.
+
+    Parameters
+    ----------
+    group : TsGroup
+        The group of Ts/Tsd objects that hold the trigger time.
+    feature : Tsd
+        The 1-dimensional feature to average
+    binsize : float
+        The bin size. Default is second.
+        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
+    windowsize : float
+        The window size. Default is second.
+        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
+    ep : IntervalSet
+        The epoch on which STA are computed
+    time_units : str, optional
+        The time units of the parameters. They have to be consistent for binsize and windowsize.
+        ('s' [default], 'ms', 'us').
+
+    Returns
+    -------
+    TsdFrame
+        A TsdFrame of Spike-Trigger Average. Each column is an element from the group.
+
+    Raises
+    ------
+    RuntimeError
+        if group is not a Ts/Tsd or TsGroup
+    """
+    if type(group) is not nap.TsGroup:
+        raise RuntimeError("Unknown format for group")
+
+    binsize = nap.TimeUnits.format_timestamps(binsize, time_units)[0]
+    start = np.abs(nap.TimeUnits.format_timestamps(windowsize[0], time_units)[0])
+    end = np.abs(nap.TimeUnits.format_timestamps(windowsize[1], time_units)[0])
+    idx1 = -np.arange(0, start + binsize, binsize)[::-1][:-1]
+    idx2 = np.arange(0, end + binsize, binsize)[1:]
+    time_idx = np.hstack((idx1, np.zeros(1), idx2))
+
+    # Bin the spike train
+    #    count = newgroup.count(binsize)
+
+    sta = []
+    n_spikes = np.zeros(len(group))
+
+    for i in ep.index:
+
+        bins = np.arange(ep.start[i], ep.end[i] + binsize, binsize)
+        bins = np.round(bins, 9)
+        idx = np.digitize(feature.index.values, bins) - 1
+        tmp = feature.groupby(idx).mean()
+        if tmp.index.values[0] == -1.0:
+            tmp = tmp.iloc[1:]
+        if tmp.index.values[-1] == len(bins) - 1:
+            tmp = tmp.iloc[:-1]
+
+        # count_e = count.restrict(ep.loc[[i]]).values
+        count = group.count(binsize, ep.loc[[i]])
+
+        # Build the Hankel matrix
+        n_p = len(idx1)
+        n_f = len(idx2)
+        pad_tmp = np.pad(tmp.values, (n_p, n_f))
+        offset_tmp = hankel(pad_tmp, pad_tmp[-(n_p + n_f + 1) :])[0 : len(tmp)]
+
+        n_spikes += count.sum(0).values
+
+        sta.append(np.dot(offset_tmp.T, count))
+
+    sta = np.array(sta).sum(0)
+
+    sta = sta / n_spikes
+
+    sta = nap.TsdFrame(t=time_idx, d=sta, columns=list(group.keys()))
+
+    return sta

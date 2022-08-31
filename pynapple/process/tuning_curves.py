@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-08-24 17:25:44
+# @Last Modified time: 2022-08-25 15:56:24
 
 
 import warnings
@@ -548,7 +548,9 @@ def compute_1d_poisson_glm(
     regressors = np.array(regressors).T
     offset = regressors[0]
     regressors = regressors[1:]
-    regressors = nap.TsdFrame(t=np.arange(-nt + 1, 1) * binsize, d=regressors)
+    regressors = nap.TsdFrame(
+        t=np.arange(-nt + 1, 1) * binsize, d=regressors, columns=list(group.keys())
+    )
     offset = pd.Series(index=group.keys(), data=offset)
 
     prediction = nap.TsdFrame(
