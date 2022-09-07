@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-08-30 19:58:42
+# @Last Modified time: 2022-09-06 14:56:55
 
 import numpy as np
 from numba import jit
@@ -174,7 +174,6 @@ def compute_event_trigger_average(
     n_spikes = np.zeros(len(group))
 
     for i in ep.index:
-
         bins = np.arange(ep.start[i], ep.end[i] + binsize, binsize)
         bins = np.round(bins, 9)
         idx = np.digitize(feature.index.values, bins) - 1
@@ -184,13 +183,21 @@ def compute_event_trigger_average(
         if tmp.index.values[-1] == len(bins) - 1:
             tmp = tmp.iloc[:-1]
 
+        if len(tmp) < len(bins) - 1:  # dirty
+            tmp2 = np.zeros((len(bins) - 1))
+            tmp2[tmp.index.values.astype("int")] = tmp.values
+            tmp = tmp2
+
+        tidx = nap.Tsd(t=bins[0:-1] + np.diff(bins) / 2, d=np.arange(len(tmp)))
+        tmp = tmp[tidx.restrict(ep.loc[[i]]).values]
+
         # count_e = count.restrict(ep.loc[[i]]).values
         count = group.count(binsize, ep.loc[[i]])
 
         # Build the Hankel matrix
         n_p = len(idx1)
         n_f = len(idx2)
-        pad_tmp = np.pad(tmp.values, (n_p, n_f))
+        pad_tmp = np.pad(tmp, (n_p, n_f))
         offset_tmp = hankel(pad_tmp, pad_tmp[-(n_p + n_f + 1) :])[0 : len(tmp)]
 
         n_spikes += count.sum(0).values
