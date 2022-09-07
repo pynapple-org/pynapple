@@ -1,15 +1,17 @@
-<!-- ![pic1](pynapple_logo.png) -->
+<!-- ![pic1](banner_logo.png) -->
 <p align="center">
-  <img width="80%" src="banner_logo.png">
+  <img width="60%" src="banner_logo.png">
 </p>
 
 
-[![image](https://img.shields.io/pypi/v/pynapple.svg)](https://pypi.python.org/pypi/pynapple)
-![GitHub contributors](https://img.shields.io/github/contributors/peyrachelab/pynapple)
-[![GitHub issues](https://img.shields.io/github/issues/PeyracheLab/pynapple)](https://github.com/PeyracheLab/pynapple/issues)
-![Twitter Follow](https://img.shields.io/twitter/follow/thepynapple?style=social)
+<!-- ========================== -->
 
-<!-- [![image](https://img.shields.io/travis/gviejo/pynapple.svg)](https://travis-ci.com/gviejo/pynapple) -->
+[![image](https://img.shields.io/pypi/v/pynapple.svg)](https://pypi.python.org/pypi/pynapple)
+[![pynapple CI](https://github.com/PeyracheLab/pynapple/actions/workflows/main.yml/badge.svg)](https://github.com/PeyracheLab/pynapple/actions/workflows/main.yml)
+[![Coverage Status](https://coveralls.io/repos/github/PeyracheLab/pynapple/badge.svg?branch=main)](https://coveralls.io/github/PeyracheLab/pynapple?branch=main)
+[![GitHub issues](https://img.shields.io/github/issues/PeyracheLab/pynapple)](https://github.com/PeyracheLab/pynapple/issues)
+![GitHub contributors](https://img.shields.io/github/contributors/peyrachelab/pynapple)
+![Twitter Follow](https://img.shields.io/twitter/follow/thepynapple?style=social)
 
 PYthon Neural Analysis Package.
 
@@ -29,7 +31,7 @@ Getting Started
 The best way to install pynapple is with pip within a new [conda](https://docs.conda.io/en/latest/) environment :
 
 ``` {.sourceCode .shell}
-$ conda create --name pynapple pip
+$ conda create --name pynapple pip python=3.8
 $ conda activate pynapple
 $ pip install pynapple
 ```
@@ -37,7 +39,7 @@ $ pip install pynapple
 or directly from the source code:
 
 ``` {.sourceCode .shell}
-$ conda create --name pynapple pip
+$ conda create --name pynapple pip python=3.8
 $ conda activate pynapple
 $ # clone the repository
 $ git clone https://github.com/PeyracheLab/pynapple.git
@@ -67,6 +69,9 @@ $ pip install pynapple
 $ pip install spyder
 $ spyder
 ```
+> **Warning**
+> The package is now using a pyproject.toml file for installation and dependencies management. If you want to run the tests, use pip install -e .[dev]
+
 
 
 Basic Usage
@@ -81,7 +86,7 @@ $ python
 
 An example of the package can be seen below. The exemple data can be
 found
-[here](https://www.dropbox.com/s/1kc0ulz7yudd9ru/A2929-200711.tar.gz?dl=1).
+[here](https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1). The folder already contains the NWB file (See this [notebook](https://github.com/PeyracheLab/pynapple/blob/main/docs/notebooks/pynapple-io-notebook.ipynb) for understanding the creation of the NWB file).
 
 ``` py
 import numpy as np
@@ -118,6 +123,13 @@ for i in spikes:
 show()
 
 ```
+Shown below, the final figure from the example code displays the firing rate of 15 neurons as a function of the direction of the head of the animal in the horizontal plane.
+
+<!-- ![pic1](readme_figure.png) -->
+<p align="center">
+  <img width="90%" src="readme_figure.png">
+</p>
+
 
 ### Credits
 
