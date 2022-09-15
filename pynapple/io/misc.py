@@ -17,6 +17,7 @@ from .cnmfe import CNMF_E, InscopixCNMFE, Minian
 from .loader import BaseLoader
 from .neurosuite import NeuroSuite
 from .phy import Phy
+from .suite2p import Suite2P
 
 
 def load_session(path=None, session_type=None):
@@ -28,6 +29,7 @@ def load_session(path=None, session_type=None):
     - Minian\n
     - Inscopix-cnmfe\n
     - Matlab-cnmfe\n
+    - Suite2p
     - None for default session.
 
     Parameters
@@ -37,7 +39,7 @@ def load_session(path=None, session_type=None):
     session_type : str, optional
         Can be 'neurosuite', 'phy',
         'minian', 'inscopix-cnmfe', 'cnmfe-matlab',
-         or None for default loader.
+        'suite2p' or None for default loader.
 
     Returns
     -------
@@ -48,6 +50,9 @@ def load_session(path=None, session_type=None):
     if path:
         if not os.path.isdir(path):
             raise RuntimeError("Path {} is not found.".format(path))
+
+    if isinstance(session_type, str):
+        session_type = session_type.lower()
 
     if session_type == "neurosuite":
         return NeuroSuite(path)
@@ -63,6 +68,9 @@ def load_session(path=None, session_type=None):
 
     elif session_type == "cnmfe-matlab":
         return CNMF_E(path)
+
+    elif session_type == "suite2p":
+        return Suite2P(path)
 
     else:
         return BaseLoader(path)

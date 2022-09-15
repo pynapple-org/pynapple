@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-09-06 14:56:55
+# @Last Modified time: 2022-09-07 16:18:39
 
 import numpy as np
 from numba import jit
@@ -121,13 +121,10 @@ def compute_event_trigger_average(
     group, feature, binsize, windowsize, ep, time_units="s"
 ):
     """
-    Bin the spike train in binsize and compute the
-    Spike Trigger Average (STA) within windowsize.
-    If C is the spike count matrix and feature is a Tsd array, the function
-    computes the Hankel matrix H from windowsize=(-t1,+t2) by offseting the Tsd array.
+    Bin the spike train in binsize and compute the Spike Trigger Average (STA) within windowsize.
+    If C is the spike count matrix and feature is a Tsd array, the function computes the Hankel matrix H from windowsize=(-t1,+t2) by offseting the Tsd array.
 
-    The STA is then defined as the dot product between H and C divided by
-    the number of spikes.
+    The STA is then defined as the dot product between H and C divided by the number of spikes.
 
     Parameters
     ----------

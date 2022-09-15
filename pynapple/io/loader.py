@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-08-18 17:29:37
+# @Last Modified time: 2022-09-15 14:12:21
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -26,17 +26,6 @@ from .. import core as nap
 from .loader_gui import BaseLoaderGUI
 
 
-def format_timestamp(t, time_unit):
-    if time_unit == "s":
-        return t
-    elif time_unit == "ms":
-        return t * 1000
-    elif time_unit == "us":
-        return t * 1000000
-    else:
-        raise ValueError("unrecognized time units type")
-
-
 class BaseLoader(object):
     """
     General loader for epochs and tracking data
@@ -46,7 +35,6 @@ class BaseLoader(object):
         self.path = path
 
         start_gui = True
-
         # Check if a pynapplenwb folder exist to bypass GUI
         if self.path is not None:
             nwb_path = os.path.join(self.path, "pynapplenwb")
@@ -278,7 +266,10 @@ class BaseLoader(object):
                         raise RuntimeError("No ttl detected for {}".format(f))
 
                     # Make sure start epochs in seconds
-                    start_epoch = format_timestamp(
+                    # start_epoch = format_timestamp(
+                    #     epochs.loc[parameters.loc[f, "epoch"], "start"], time_units
+                    # )
+                    start_epoch = nap.TimeUnits.format_timestamps(
                         epochs.loc[parameters.loc[f, "epoch"], "start"], time_units
                     )
                     timestamps = start_epoch + ttl.index.values
@@ -607,11 +598,12 @@ class BaseLoader(object):
 
         Parameters
         ----------
-        tsd : TsdFrame
-            _
         name : str
             _
-        description : str, optional
+
+        Returns
+        -------
+        Tsd
             _
         """
         io = NWBHDF5IO(self.nwbfilepath, "r")
