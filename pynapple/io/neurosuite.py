@@ -3,7 +3,7 @@
 # @Author: gviejo
 # @Date:   2022-02-02 20:45:09
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-08-19 08:56:06
+# @Last Modified time: 2022-09-16 16:28:11
 
 """
 Class and functions for loading data processed with the Neurosuite (Klusters, Neuroscope, NDmanager)
@@ -656,7 +656,7 @@ class NeuroSuite(BaseLoader):
                     ]  # waveform for this spike time
                     try:
                         neuron_waveforms[neuron] += spikewindow.values
-                    except RuntimeError:  # ignore if full waveform is not present in this batch
+                    except Exception:  # ignore if full waveform is not present in this batch
                         pass
 
         meanwf = {

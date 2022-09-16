@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:16:30
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-04-04 16:09:22
+# @Last Modified time: 2022-09-16 16:18:56
 
 """Tests of tuning curves for `pynapple` package."""
 
@@ -11,6 +11,27 @@ import numpy as np
 import pandas as pd
 import pytest
 
+def test_compute_discrete_tuning_curves():
+    tsgroup = nap.TsGroup({0: nap.Ts(t=np.arange(0, 100))})
+    dict_ep = { 0:nap.IntervalSet(start=0, end=50),
+                1:nap.IntervalSet(start=50, end=100)}
+    tc = nap.compute_discrete_tuning_curves(tsgroup, dict_ep)
+    assert len(tc) == 2
+    assert list(tc.columns) == list(tsgroup.keys())
+    np.testing.assert_array_almost_equal(tc.index.values, np.array(list(dict_ep.keys())))
+    np.testing.assert_almost_equal(tc.loc[0,0], 51/50)
+    np.testing.assert_almost_equal(tc.loc[1,0], 1)
+
+def test_compute_discrete_tuning_curves_with_strings():
+    tsgroup = nap.TsGroup({0: nap.Ts(t=np.arange(0, 100))})
+    dict_ep = { "0":nap.IntervalSet(start=0, end=50),
+                "1":nap.IntervalSet(start=50, end=100)}
+    tc = nap.compute_discrete_tuning_curves(tsgroup, dict_ep)
+    assert len(tc) == 2
+    assert list(tc.columns) == list(tsgroup.keys())
+    assert list(tc.index) == list(dict_ep.keys())    
+    np.testing.assert_almost_equal(tc.loc["0",0], 51/50)
+    np.testing.assert_almost_equal(tc.loc["1",0], 1)
 
 def test_compute_1d_tuning_curves():
     tsgroup = nap.TsGroup({0: nap.Ts(t=np.arange(0, 100))})

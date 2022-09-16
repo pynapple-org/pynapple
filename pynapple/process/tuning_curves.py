@@ -1,8 +1,10 @@
 # -*- coding: utf-8 -*-
+"""Summary
+"""
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-08-25 15:56:24
+# @Last Modified time: 2022-09-16 16:29:49
 
 
 import warnings
@@ -13,6 +15,63 @@ from numba import jit
 from scipy.linalg import hankel
 
 from .. import core as nap
+
+
+def compute_discrete_tuning_curves(group, dict_ep):
+    """
+        Compute discrete tuning curves of a TsGroup using a dictionnary of epochs.
+    The function returns a pandas DataFrame with each row being a key of the dictionnary of epochs
+    and each column being a neurons.
+
+       This function can typically being used for a set of stimulus being presented for multiple epochs.
+    An example of the dictionnary is :
+
+        >>> dict_ep =  {
+                "stim0": nap.IntervalSet(start=0, end=1),
+                "stim1":nap.IntervalSet(start=2, end=3)
+            }
+    In this case, the function will return a pandas DataFrame :
+
+        >>> tc
+                   neuron0    neuron1    neuron2
+        stim0        0 Hz       1 Hz       2 Hz
+        stim1        3 Hz       4 Hz       5 Hz
+
+
+    Parameters
+    ----------
+    group : nap.TsGroup
+        The group of Ts/Tsd for which the tuning curves will be computed
+    dict_ep : dict
+        Dictionary of IntervalSets
+
+    Returns
+    -------
+    pandas.DataFrame
+        Table of firing rate for each neuron and each IntervalSet
+
+    Raises
+    ------
+    RuntimeError
+        If group is not a TsGroup object.
+    """
+    if not isinstance(group, nap.TsGroup):
+        raise RuntimeError("Unknown format for group")
+
+    idx = np.sort(list(dict_ep.keys()))
+
+    tuning_curves = pd.DataFrame(index=idx, columns=list(group.keys()), data=0)
+
+    for k in dict_ep.keys():
+        if not isinstance(dict_ep[k], nap.IntervalSet):
+            raise RuntimeError("Key {} in dict_ep is not an IntervalSet".format(k))
+
+        for n in group.keys():
+            tuning_curves.loc[k, n] = float(len(group[n].restrict(dict_ep[k])))
+
+        tuning_curves.loc[k] = tuning_curves.loc[k] / dict_ep[k].tot_length("s")
+
+    return tuning_curves
 
 
 def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
@@ -234,10 +293,10 @@ def compute_2d_mutual_info(tc, features, ep=None, minmax=None, bitssec=False):
     ep : IntervalSet, optional
         The epoch over which the tuning curves were computed
         If None, the epoch is the time support of the feature.
-    minmax: tuple or list, optional
+    minmax : tuple or list, optional
         The min and max boundaries of the tuning curves.
         If None, the boundaries are inferred from the target features
-    bitssec: bool, optional
+    bitssec : bool, optional
         By default, the function return bits per spikes.
         Set to true for bits per seconds
 
@@ -317,13 +376,13 @@ def compute_1d_tuning_curves_continous(
         The min and max boundaries of the tuning curves.
         If None, the boundaries are inferred from the target feature
 
-    Returns
-    -------
+    No Longer Returned
+    ------------------
     pandas.DataFrame
         DataFrame to hold the tuning curves
 
-    Raises
-    ------
+    No Longer Raises
+    ----------------
     RuntimeError
         If tsdframe is not a Tsd or a TsdFrame object.
 
@@ -376,15 +435,15 @@ def compute_2d_tuning_curves_continuous(
         (minx, maxx, miny, maxy)
         If None, the boundaries are inferred from the target variable
 
-    Returns
-    -------
+    No Longer Returned
+    ------------------
     tuple
         A tuple containing: \n
         tc (dict): Dictionnary of the tuning curves with dimensions (nb_bins, nb_bins).\n
         xy (list): List of bins center in the two dimensions
 
-    Raises
-    ------
+    No Longer Raises
+    ----------------
     RuntimeError
         If tsdframe is not a Tsd/TsdFrame or if features is not 2 columns
 
@@ -498,13 +557,13 @@ def compute_1d_poisson_glm(
     tolerance : float, optional
         Description
 
-    Returns
-    -------
+    No Longer Returned
+    ------------------
     TYPE
         Description
 
-    Raises
-    ------
+    No Longer Raises
+    ----------------
     RuntimeError
         Description
 
