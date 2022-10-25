@@ -73,7 +73,7 @@ $ spyder
 > **Warning**
 > The package is now using a pyproject.toml file for installation and dependencies management. If you want to run the tests, use pip install -e .[dev]
 
-> **note: Windows users**
+> **Note: Windows users**
 > Windows limited user access causes the python path environment variable to miss some package directories, hence you may encounter an error in importing packages within pynappl. The most common is the error in importing PyQt5. In case of such errors, right click on your conda prompt and select `run as administrator`, activate your pynapple environment, and install the said package again (e.g. pip install PyQt) so that the paths are properly saved by Windows.
 
 Basic Usage
