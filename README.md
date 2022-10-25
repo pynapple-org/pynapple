@@ -29,7 +29,7 @@ Getting Started
 ### Installation
 
 The best way to install pynapple is with pip within a new [conda](https://docs.conda.io/en/latest/) environment :
-    - note for **Windows** users: on a multi-user Windows, make sure you open the conda prompt with *administrative access* otherwise directory paths for some dependencies may be missing from the PYTHONPATH environment variable (e.g Pyqt5 package). 
+- note for **Windows** users: on a multi-user Windows, make sure you open the conda prompt with *administrative access* otherwise directory paths for some dependencies may be missing from the PYTHONPATH environment variable (e.g Pyqt5 package). 
     
 ``` {.sourceCode .shell}
 $ conda create --name pynapple pip python=3.8
