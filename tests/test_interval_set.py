@@ -3,7 +3,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:15:02
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-04-01 09:35:04
+# @Last Modified time: 2022-11-15 22:53:19
 
 """Tests for IntervalSet of `pynapple` package."""
 
@@ -114,10 +114,10 @@ def test_set_diff():
 
 def test_in_interval():
     ep = nap.IntervalSet(start=[0, 30], end=[10, 70])
-    tsd = nap.Ts(t=np.array([5, 20, 50, 100]))
-    ep.in_interval(tsd)
+    tsd = nap.Ts(t=np.array([5, 20, 50, 100]))    
+    tmp = ep.in_interval(tsd)
     np.testing.assert_array_almost_equal(
-        ep.in_interval(tsd), np.array([0.0, np.nan, 1.0, np.nan])
+        tmp, np.array([0.0, np.nan, 1.0, np.nan])
     )
 
 

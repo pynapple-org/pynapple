@@ -2,17 +2,15 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-09-07 16:18:39
+# @Last Modified time: 2022-11-17 17:16:16
 
 import numpy as np
-from numba import jit
 from scipy.linalg import hankel
 
 from .. import core as nap
 
 
-@jit(nopython=True)
-def align_to_event(times, data, tref, windowsize):
+def _align_tsd(tsd, tref, window, time_support):
     """
     Helper function compiled with numba for aligning times.
     See compute_perievent for using this function
@@ -33,23 +31,25 @@ def align_to_event(times, data, tref, windowsize):
     list
         The align times and data
     """
-    nt2 = len(tref)
+    lbounds = np.searchsorted(tsd.index.values, tref.index.values - window[0])
+    rbounds = np.searchsorted(tsd.index.values, tref.index.values + window[1])
 
-    x = []
-    y = []
+    group = {}
 
-    for i in range(nt2):
-        lbound = tref[i] - windowsize[0]
-        rbound = tref[i] + windowsize[1]
-        left = times > lbound
-        right = times < rbound
+    if isinstance(tsd, nap.Ts):
+        for i in range(tref.shape[0]):
+            tmp = tsd.index.values[lbounds[i] : rbounds[i]] - tref.index.values[i]
+            group[i] = nap.Ts(t=tmp, time_support=time_support)
+    else:
+        for i in range(tref.shape[0]):
+            tmp = tsd.index.values[lbounds[i] : rbounds[i]] - tref.index.values[i]
+            tmp2 = tsd.values[lbounds[i] : rbounds[i]]
+            group[i] = nap.Tsd(t=tmp, d=tmp2, time_support=time_support)
 
-        idx = np.logical_and(left, right)
+    group = nap.TsGroup(group, time_support=time_support, bypass_check=True)
+    group.set_info(ref_times=tref.index.values)
 
-        x.append(times[idx] - tref[i])
-        y.append(data[idx])
-
-    return x, y
+    return group
 
 
 def compute_perievent(data, tref, minmax, time_unit="s"):
@@ -81,40 +81,30 @@ def compute_perievent(data, tref, minmax, time_unit="s"):
     RuntimeError
         if tref is not a Ts/Tsd object or if data is not a Ts/Tsd or TsGroup
     """
-    if not isinstance(tref, nap.Tsd):
+    if not isinstance(tref, (nap.Ts, nap.Tsd)):
         raise RuntimeError("tref should be a Tsd object.")
 
     if isinstance(minmax, float) or isinstance(minmax, int):
-        minmax = (minmax, minmax)
+        minmax = np.array([minmax, minmax], dtype=np.float64)
 
-    window = np.abs(nap.TimeUnits.format_timestamps(np.array(minmax), time_unit))
+    window = np.abs(nap.format_timestamps(np.array(minmax), time_unit))
 
     time_support = nap.IntervalSet(start=-window[0], end=window[1])
 
     if isinstance(data, nap.TsGroup):
+
         toreturn = {}
-        for n in data.keys():
-            toreturn[n] = compute_perievent(data[n], tref, minmax, time_unit)
+
+        for n in data.index:
+            toreturn[n] = _align_tsd(data[n], tref, window, time_support)
 
         return toreturn
 
     elif isinstance(data, (nap.Ts, nap.Tsd)):
-
-        xt, yd = align_to_event(
-            data.index.values, data.values, tref.index.values, window
-        )
-
-        group = {}
-        for i, (x, y) in enumerate(zip(xt, yd)):
-            group[i] = nap.Tsd(t=x, d=y, time_support=time_support)
-
-        group = nap.TsGroup(group, time_support=time_support)
-        group.set_info(ref_times=tref.as_units("s").index.values)
+        return _align_tsd(data, tref, window, time_support)
 
     else:
         raise RuntimeError("Unknown format for data")
-
-    return group
 
 
 def compute_event_trigger_average(
@@ -122,7 +112,8 @@ def compute_event_trigger_average(
 ):
     """
     Bin the spike train in binsize and compute the Spike Trigger Average (STA) within windowsize.
-    If C is the spike count matrix and feature is a Tsd array, the function computes the Hankel matrix H from windowsize=(-t1,+t2) by offseting the Tsd array.
+    If C is the spike count matrix and feature is a Tsd array, the function computes
+    the Hankel matrix H from windowsize=(-t1,+t2) by offseting the Tsd array.
 
     The STA is then defined as the dot product between H and C divided by the number of spikes.
 
@@ -157,54 +148,37 @@ def compute_event_trigger_average(
     if type(group) is not nap.TsGroup:
         raise RuntimeError("Unknown format for group")
 
-    binsize = nap.TimeUnits.format_timestamps(binsize, time_units)[0]
-    start = np.abs(nap.TimeUnits.format_timestamps(windowsize[0], time_units)[0])
-    end = np.abs(nap.TimeUnits.format_timestamps(windowsize[1], time_units)[0])
+    binsize = nap.format_timestamps(np.array([binsize], dtype=np.float64), time_units)[
+        0
+    ]
+    start = np.abs(
+        nap.format_timestamps(np.array([windowsize[0]], dtype=np.float64), time_units)[
+            0
+        ]
+    )
+    end = np.abs(
+        nap.format_timestamps(np.array([windowsize[1]], dtype=np.float64), time_units)[
+            0
+        ]
+    )
     idx1 = -np.arange(0, start + binsize, binsize)[::-1][:-1]
     idx2 = np.arange(0, end + binsize, binsize)[1:]
     time_idx = np.hstack((idx1, np.zeros(1), idx2))
 
-    # Bin the spike train
-    #    count = newgroup.count(binsize)
+    count = group.count(binsize, ep)
 
-    sta = []
-    n_spikes = np.zeros(len(group))
+    tmp = feature.bin_average(binsize, ep)
 
-    for i in ep.index:
-        bins = np.arange(ep.start[i], ep.end[i] + binsize, binsize)
-        bins = np.round(bins, 9)
-        idx = np.digitize(feature.index.values, bins) - 1
-        tmp = feature.groupby(idx).mean()
-        if tmp.index.values[0] == -1.0:
-            tmp = tmp.iloc[1:]
-        if tmp.index.values[-1] == len(bins) - 1:
-            tmp = tmp.iloc[:-1]
+    # Build the Hankel matrix
+    n_p = len(idx1)
+    n_f = len(idx2)
+    pad_tmp = np.pad(tmp, (n_p, n_f))
+    offset_tmp = hankel(pad_tmp, pad_tmp[-(n_p + n_f + 1) :])[0 : len(tmp)]
 
-        if len(tmp) < len(bins) - 1:  # dirty
-            tmp2 = np.zeros((len(bins) - 1))
-            tmp2[tmp.index.values.astype("int")] = tmp.values
-            tmp = tmp2
+    sta = np.dot(offset_tmp.T, count.values)
 
-        tidx = nap.Tsd(t=bins[0:-1] + np.diff(bins) / 2, d=np.arange(len(tmp)))
-        tmp = tmp[tidx.restrict(ep.loc[[i]]).values]
+    sta = sta / count.sum(0).values
 
-        # count_e = count.restrict(ep.loc[[i]]).values
-        count = group.count(binsize, ep.loc[[i]])
-
-        # Build the Hankel matrix
-        n_p = len(idx1)
-        n_f = len(idx2)
-        pad_tmp = np.pad(tmp, (n_p, n_f))
-        offset_tmp = hankel(pad_tmp, pad_tmp[-(n_p + n_f + 1) :])[0 : len(tmp)]
-
-        n_spikes += count.sum(0).values
-
-        sta.append(np.dot(offset_tmp.T, count))
-
-    sta = np.array(sta).sum(0)
-
-    sta = sta / n_spikes
-
-    sta = nap.TsdFrame(t=time_idx, d=sta, columns=list(group.keys()))
+    sta = nap.TsdFrame(t=time_idx, d=sta, columns=group.index)
 
     return sta

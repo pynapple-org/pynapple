@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:16:22
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-04-01 17:16:42
+# @Last Modified time: 2022-11-17 16:52:18
 #!/usr/bin/env python
 
 """Tests of correlograms for `pynapple` package."""
@@ -88,7 +88,7 @@ class Test_Correlograms:
     def test_autocorrelogram_with_norm(self, group):
         cc = nap.compute_autocorrelogram(group, 1, 100, norm=False)
         cc2 = nap.compute_autocorrelogram(group, 1, 100, norm=True)
-        tmp = group._metadata["freq"].values.astype("float")
+        tmp = group._metadata["rate"].values.astype("float")
         np.testing.assert_array_almost_equal(cc / tmp, cc2)
 
     def test_autocorrelogram_time_units(self, group):
@@ -118,7 +118,7 @@ class Test_Correlograms:
     def test_crosscorrelogram_with_norm(self, group):
         cc = nap.compute_crosscorrelogram(group, 1, 100, norm=False)
         cc2 = nap.compute_crosscorrelogram(group, 1, 100, norm=True)
-        tmp = group._metadata["freq"].values.astype("float")
+        tmp = group._metadata["rate"].values.astype("float")
         tmp = tmp[[t[1] for t in cc.columns]]
         np.testing.assert_array_almost_equal(cc / tmp, cc2)
 
@@ -147,7 +147,8 @@ class Test_Correlograms:
     def test_eventcorrelogram_with_norm(self, group):
         cc = nap.compute_eventcorrelogram(group, group[0], 1, 100, norm=False)
         cc2 = nap.compute_eventcorrelogram(group, group[0], 1, 100, norm=True)
-        tmp = group._metadata["freq"].values.astype("float")
+        # tmp = group._metadata["rate"].values.astype("float")
+        tmp = group.get_info("rate").values
         np.testing.assert_array_almost_equal(cc / tmp, cc2)
 
     def test_eventcorrelogram_time_units(self, group):

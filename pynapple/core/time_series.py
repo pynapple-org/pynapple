@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-08-18 16:25:33
+# @Last Modified time: 2022-11-17 17:12:36
 
 import warnings
 
@@ -11,59 +11,16 @@ import pandas as pd
 from pandas.core.internals import SingleBlockManager
 
 from .interval_set import IntervalSet
-from .time_units import TimeUnits
-
-
-def _get_restrict_method(align):
-    """
-    Get method for alignment
-    """
-    if align in ("closest", "nearest"):
-        method = "nearest"
-    elif align in ("next", "bfill", "backfill"):
-        method = "bfill"
-    elif align in ("prev", "ffill", "pad"):
-        method = "pad"
-    else:
-        raise ValueError("Unrecognized restrict align method")
-    return method
-
-
-def gaps_func(data, min_gap, method="absolute"):
-    """
-    finds gaps in a tsd
-    """
-    dt = np.diff(data.times(units="us"))
-
-    if method == "absolute":
-        pass
-    elif method == "median":
-        md = np.median(dt)
-        min_gap *= md
-    else:
-        raise ValueError("unrecognized method")
-
-    ix = np.where(dt > min_gap)
-    t = data.times()
-    st = t[ix] + 1
-    en = t[(np.array(ix) + 1)] - 1
-    from neuroseries.interval_set import IntervalSet
-
-    return IntervalSet(st, en)
-
-
-def support_func(data, min_gap, method="absolute"):
-    """
-    find the smallest (to a min_gap resolution) IntervalSet containing all the times in the Tsd
-    """
-
-    here_gaps = data.gaps(min_gap, method=method)
-    t = data.times("us")
-    from neuroseries.interval_set import IntervalSet
-
-    span = IntervalSet(t[0] - 1, t[-1] + 1)
-    support_here = span.set_diff(here_gaps)
-    return support_here
+from .jitted_functions import (
+    jitbin,
+    jitbin_array,
+    jitcount,
+    jitrestrict,
+    jitthreshold,
+    jittsrestrict,
+    jitvaluefrom,
+)
+from .time_units import format_timestamps, return_timestamps, sort_timestamps
 
 
 class Tsd(pd.Series):
@@ -107,41 +64,22 @@ class Tsd(pd.Series):
             d = t.values
             t = t.index.values
 
-        t = TimeUnits.format_timestamps(t, time_units)
+        t = t.astype(np.float64).flatten()
+        t = format_timestamps(t, time_units)
+        t = sort_timestamps(t)
 
         if len(t):
             if time_support is not None:
-                bins = time_support.values.ravel()
-                # Because yes there is no funtion with both bounds closed as an option
-                ix = np.vstack(
-                    (
-                        np.array(
-                            pd.cut(
-                                t,
-                                bins,
-                                labels=np.arange(len(bins) - 1, dtype=np.float64),
-                            )
-                        ),
-                        np.array(
-                            pd.cut(
-                                t,
-                                bins,
-                                labels=np.arange(len(bins) - 1, dtype=np.float64),
-                                right=False,
-                            )
-                        ),
-                    )
-                ).T
-                ix[np.floor(ix / 2) * 2 != ix] = np.NaN
-                ix = np.floor(ix / 2)
-                ix[np.isnan(ix[:, 0]), 0] = ix[np.isnan(ix[:, 0]), 1]
-                ix = ~np.isnan(ix[:, 0])
+                starts = time_support.start.values
+                ends = time_support.end.values
                 if d is not None:
-                    super().__init__(index=t[ix], data=d[ix])
+                    t, d = jitrestrict(t, d, starts, ends)
+                    super().__init__(index=t, data=d)
                 else:
-                    super().__init__(index=t[ix], data=None, dtype=np.float64)
+                    t = jittsrestrict(t, starts, ends)
+                    super().__init__(index=t, data=None, dtype=np.int8)
             else:
-                time_support = IntervalSet(start=t[0], end=t[-1], time_units="s")
+                time_support = IntervalSet(start=t[0], end=t[-1])
                 if d is not None:
                     super().__init__(index=t, data=d)
                 else:
@@ -151,10 +89,40 @@ class Tsd(pd.Series):
             super().__init__(index=t, data=d, dtype=np.float64)
 
         self.time_support = time_support
-        self.rate = len(t) / self.time_support.tot_length("s")
+        self.rate = t.shape[0] / np.sum(
+            time_support.values[:, 1] - time_support.values[:, 0]
+        )
         self.index.name = "Time (s)"
-        self._metadata.append("nap_class")
+        # self._metadata.append("nap_class")
         self.nap_class = self.__class__.__name__
+
+    def __add__(self, value):
+        ts = self.time_support
+        return Tsd(self.as_series().__add__(value), time_support=ts)
+
+    def __sub__(self, value):
+        ts = self.time_support
+        return Tsd(self.as_series().__sub__(value), time_support=ts)
+
+    def __truediv__(self, value):
+        ts = self.time_support
+        return Tsd(self.as_series().__truediv__(value), time_support=ts)
+
+    def __floordiv__(self, value):
+        ts = self.time_support
+        return Tsd(self.as_series().__floordiv__(value), time_support=ts)
+
+    def __mul__(self, value):
+        ts = self.time_support
+        return Tsd(self.as_series().__mul__(value), time_support=ts)
+
+    def __mod__(self, value):
+        ts = self.time_support
+        return Tsd(self.as_series().__mod__(value), time_support=ts)
+
+    def __pow__(self, value):
+        ts = self.time_support
+        return Tsd(self.as_series().__pow__(value), time_support=ts)
 
     def __lt__(self, value):
         return self.as_series().__lt__(value)
@@ -194,8 +162,7 @@ class Tsd(pd.Series):
         out: numpy.ndarray
             the time indexes
         """
-        times = TimeUnits.return_timestamps(self.index.values.astype(np.float64), units)
-        return times
+        return return_timestamps(self.index.values, units)
 
     def as_series(self):
         """
@@ -224,7 +191,7 @@ class Tsd(pd.Series):
         """
         ss = self.as_series()
         t = self.index.values
-        t = TimeUnits.return_timestamps(t, units)
+        t = return_timestamps(t, units)
         if units == "us":
             t = t.astype(np.int64)
         ss.index = t
@@ -245,7 +212,7 @@ class Tsd(pd.Series):
         """
         return self.values
 
-    def value_from(self, tsd, ep=None, align="closest"):
+    def value_from(self, tsd, ep=None):
         """
         Replace the value with the closest value from tsd argument
 
@@ -256,8 +223,6 @@ class Tsd(pd.Series):
         ep : IntervalSet (optional)
             The IntervalSet object to restrict the operation.
             If None, the time support of the tsd input object is used.
-        align : str, optional
-            The method to align (closest/prev/next)
 
         Returns
         -------
@@ -287,12 +252,18 @@ class Tsd(pd.Series):
         """
         if ep is None:
             ep = tsd.time_support
-        method = _get_restrict_method(align)
-        ix = TimeUnits.format_timestamps(self.restrict(ep).index.values)
-        tsd = tsd.restrict(ep)
-        tsd = tsd.as_series()
-        new_tsd = tsd.reindex(ix, method=method)
-        return Tsd(new_tsd, time_support=ep)
+
+        time_array = self.index.values
+        time_target_array = tsd.index.values
+        data_target_array = tsd.values
+        starts = ep.start.values
+        ends = ep.end.values
+
+        t, d, ns, ne = jitvaluefrom(
+            time_array, time_target_array, data_target_array, starts, ends
+        )
+        time_support = IntervalSet(start=ns, end=ne)
+        return Tsd(t=t, d=d, time_support=time_support)
 
     def restrict(self, ep):
         """
@@ -326,13 +297,12 @@ class Tsd(pd.Series):
         >>> 0    0.0  500.0
 
         """
-        ix = ep.in_interval(self)
-        tsd_r = pd.DataFrame(self, copy=True)
-        col = tsd_r.columns[0]
-        tsd_r["interval"] = ix
-        ix = ~np.isnan(ix)
-        tsd_r = tsd_r[ix]
-        return Tsd(tsd_r[col], time_support=ep)
+        time_array = self.index.values
+        data_array = self.values
+        starts = ep.start.values
+        ends = ep.end.values
+        t, d = jitrestrict(time_array, data_array, starts, ends)
+        return Tsd(t=t, d=d, time_support=ep)
 
     def count(self, bin_size, ep=None, time_units="s"):
         """
@@ -380,18 +350,70 @@ class Tsd(pd.Series):
         if not isinstance(ep, IntervalSet):
             ep = self.time_support
 
-        bin_size = TimeUnits.format_timestamps(np.array([bin_size]), time_units)[0]
+        bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
 
-        # bin for each epochs
-        time_index = []
-        count = []
-        for i in ep.index:
-            bins = np.arange(ep.start[i], ep.end[i] + bin_size, bin_size)
-            count.append(np.histogram(self.index.values, bins)[0])
-            time_index.append(bins[0:-1] + np.diff(bins) / 2)
-        time_index = np.hstack(time_index)
-        count = np.hstack(count)
-        return Tsd(t=time_index, d=count, time_support=ep)
+        time_array = self.index.values
+        starts = ep.start.values
+        ends = ep.end.values
+        t, d = jitcount(time_array, starts, ends, bin_size)
+        time_support = IntervalSet(start=starts, end=ends)
+        return Tsd(t=t, d=d, time_support=time_support)
+
+    def bin_average(self, bin_size, ep=None, time_units="s"):
+        """
+        Bin the data by averaging points within bin_size
+        bin_size should be seconds unless specified.
+        If no epochs is passed, the data will be binned based on the time support.
+
+        Parameters
+        ----------
+        bin_size : float
+            The bin size (default is second)
+
+        ep : None or IntervalSet, optional
+            IntervalSet to restrict the operation
+
+        time_units : str, optional
+            Time units of bin size ('us', 'ms', 's' [default])
+
+        Returns
+        -------
+        out: Tsd
+            A Tsd object indexed by the center of the bins and holding the averaged data points.
+
+        Example
+        -------
+        This example shows how to count events within bins of 0.1 second.
+
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
+        >>> ts = nap.Ts(t=t, time_units='s')
+        >>> bincount = ts.count(0.1)
+
+        An epoch can be specified:
+
+        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
+        >>> bincount = ts.count(0.1, ep=ep)
+
+        And bincount automatically inherit ep as time support:
+
+        >>> bincount.time_support
+        >>>    start    end
+        >>> 0  100.0  800.0
+        """
+        if not isinstance(ep, IntervalSet):
+            ep = self.time_support
+
+        bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
+
+        time_array = self.index.values
+        data_array = self.values
+        starts = ep.start.values
+        ends = ep.end.values
+        t, d = jitbin(time_array, data_array, starts, ends, bin_size)
+        time_support = IntervalSet(start=starts, end=ends)
+        return Tsd(t=t, d=d, time_support=time_support)
 
     def threshold(self, thr, method="above"):
         """
@@ -433,46 +455,52 @@ class Tsd(pd.Series):
         >>> 0   50.5  99.0
 
         """
-        d = self.values
-        t = self.index.values
-        idx_rising = np.where(np.logical_and(d[:-1] <= thr, d[1:] > thr))[0]
-        idx_falling = np.where(np.logical_and(d[:-1] >= thr, d[1:] < thr))[0]
 
-        if method == "above":
-            starts = t[idx_rising] + (t[idx_rising + 1] - t[idx_rising]) / 2
-            ends = t[idx_falling] + (t[idx_falling + 1] - t[idx_falling]) / 2
-            if d[0] > thr:
-                starts = np.hstack((t[0], starts))
-            if d[-1] > thr:
-                ends = np.hstack((ends, t[-1]))
-        elif method == "below":
-            starts = t[idx_falling] + (t[idx_falling + 1] - t[idx_falling]) / 2
-            ends = t[idx_rising] + (t[idx_rising + 1] - t[idx_rising]) / 2
-            if d[0] < thr:
-                starts = np.hstack((t[0], starts))
-            if d[-1] < thr:
-                ends = np.hstack((ends, t[-1]))
-        else:
+        time_array = self.index.values
+        data_array = self.values
+        starts = self.time_support.start.values
+        ends = self.time_support.end.values
+        if method not in ["above", "below"]:
             raise ValueError(
                 "Method {} for thresholding is not accepted.".format(method)
             )
 
-        if (len(starts) == 0 and len(ends) == 0) or len(starts) != len(ends):
-            raise RuntimeError(
-                "Threshold {} with method {} returned empty tsd.".format(thr, method)
-            )
-        else:
-            time_support = IntervalSet(start=starts, end=ends)
-            time_support = time_support.drop_short_intervals(0)
-            time_support = self.time_support.intersect(time_support)
-            tsd = self.restrict(time_support)
-            return tsd
+        t, d, ns, ne = jitthreshold(time_array, data_array, starts, ends, thr, method)
+        time_support = IntervalSet(start=ns, end=ne)
+        return Tsd(t=t, d=d, time_support=time_support)
 
-    def gaps(self, min_gap, method="absolute"):
-        return gaps_func(self, min_gap, method)
+    # def find_gaps(self, min_gap, method="absolute"):
+    #     """
+    #     finds gaps in a tsd larger than min_gap
 
-    def support(self, min_gap, method="absolute"):
-        return support_func(self, min_gap, method)
+    #     Parameters
+    #     ----------
+    #     min_gap : TYPE
+    #         Description
+    #     method : str, optional
+    #         Description
+    #     """
+    #     print("TODO")
+    #     return
+
+    # def find_support(self, min_gap, method="absolute"):
+    #     """
+    #     find the smallest (to a min_gap resolution) IntervalSet containing all the times in the Tsd
+
+    #     Parameters
+    #     ----------
+    #     min_gap : TYPE
+    #         Description
+    #     method : str, optional
+    #         Description
+
+    #     Returns
+    #     -------
+    #     TYPE
+    #         Description
+    #     """
+    #     print("TODO")
+    #     return
 
     def start_time(self, units="s"):
         """
@@ -552,46 +580,45 @@ class TsdFrame(pd.DataFrame):
             if "columns" in kwargs:
                 c = kwargs["columns"]
             else:
-                c = np.arange(d.shape[1])
+                if isinstance(d, np.ndarray):
+                    if len(d.shape) == 2:
+                        c = np.arange(d.shape[1])
+                    elif len(d.shape) == 1:
+                        c = np.zeros(1)
+                    else:
+                        c = np.array([])
 
-        t = TimeUnits.format_timestamps(t, time_units)
+        t = t.astype(np.float64).flatten()
+        t = format_timestamps(t, time_units)
+        t = sort_timestamps(t)
 
-        if time_support is not None:
-            bins = time_support.values.ravel()
-            # Because yes there is no funtion with both bounds closed as an option
-            ix = np.vstack(
-                (
-                    np.array(
-                        pd.cut(
-                            t, bins, labels=np.arange(len(bins) - 1, dtype=np.float64)
-                        )
-                    ),
-                    np.array(
-                        pd.cut(
-                            t,
-                            bins,
-                            labels=np.arange(len(bins) - 1, dtype=np.float64),
-                            right=False,
-                        )
-                    ),
-                )
-            ).T
-            ix[np.floor(ix / 2) * 2 != ix] = np.NaN
-            ix = np.floor(ix / 2)
-            ix[np.isnan(ix[:, 0]), 0] = ix[np.isnan(ix[:, 0]), 1]
-            ix = ~np.isnan(ix[:, 0])
-            super().__init__(index=t[ix], data=d[ix], columns=c)
+        if len(t):
+            if time_support is not None:
+                starts = time_support.start.values
+                ends = time_support.end.values
+                if d is not None:
+                    t, d = jitrestrict(t, d, starts, ends)
+                    super().__init__(index=t, data=d, columns=c)
+                else:
+                    t = jittsrestrict(t, starts, ends)
+                    super().__init__(index=t, data=None, columns=c)
+            else:
+                time_support = IntervalSet(start=t[0], end=t[-1])
+                super().__init__(index=t, data=d, columns=c)
+
         else:
-            time_support = IntervalSet(start=t[0], end=t[-1])
-            super().__init__(index=t, data=d, columns=c)
+            time_support = IntervalSet(pd.DataFrame(columns=["start", "end"]))
+            super().__init__(index=np.array([]), dtype=np.float64)
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             self.time_support = time_support
 
-        self.rate = len(t) / self.time_support.tot_length("s")
+        self.rate = t.shape[0] / np.sum(
+            time_support.values[:, 1] - time_support.values[:, 0]
+        )
         self.index.name = "Time (s)"
-        self._metadata.append("nap_class")
+        # self._metadata.append("nap_class")
         self.nap_class = self.__class__.__name__
 
     def __repr__(self):
@@ -622,7 +649,7 @@ class TsdFrame(pd.DataFrame):
         out: numpy.ndarray
             _
         """
-        return TimeUnits.return_timestamps(self.index.values.astype(np.float64), units)
+        return return_timestamps(self.index.values, units)
 
     def as_dataframe(self, copy=True):
         """
@@ -650,7 +677,7 @@ class TsdFrame(pd.DataFrame):
             the series object with adjusted times
         """
         t = self.index.values.copy()
-        t = TimeUnits.return_timestamps(t, units)
+        t = return_timestamps(t, units)
         if units == "us":
             t = t.astype(np.int64)
 
@@ -675,14 +702,14 @@ class TsdFrame(pd.DataFrame):
             return self.values.ravel()
         return self.values
 
-    def realign(self, t, align="closest"):
-        method = _get_restrict_method(align)
-        ix = TimeUnits.format_timestamps(t)
+    # def realign(self, t, align="closest"):
+    #     method = _get_restrict_method(align)
+    #     ix = TimeUnits.format_timestamps(t)
 
-        rest_t = self.reindex(ix, method=method, columns=self.columns.values)
-        return rest_t
+    #     rest_t = self.reindex(ix, method=method, columns=self.columns.values)
+    #     return rest_t
 
-    def value_from(self, tsd, ep=None, align="closest"):
+    def value_from(self, tsd, ep=None):
         """
         Replace the value with the closest value from tsd argument
 
@@ -693,8 +720,6 @@ class TsdFrame(pd.DataFrame):
         ep : IntervalSet, optional
             The IntervalSet object to restrict the operation.
             If None, ep is taken from the tsd of the time support
-        align : str, optional
-            The method to align (closest/prev/next)
 
         Returns
         -------
@@ -724,14 +749,20 @@ class TsdFrame(pd.DataFrame):
         """
         if ep is None:
             ep = tsd.time_support
-        method = _get_restrict_method(align)
-        ix = TimeUnits.format_timestamps(self.restrict(ep).index.values)
-        tsd = tsd.restrict(ep)
-        tsd = tsd.as_series()
-        new_tsd = tsd.reindex(ix, method=method)
-        return Tsd(new_tsd, time_support=ep)
 
-    def restrict(self, iset, keep_labels=False):
+        time_array = self.index.values
+        time_target_array = tsd.index.values
+        data_target_array = tsd.values
+        starts = ep.start.values
+        ends = ep.end.values
+
+        t, d, ns, ne = jitvaluefrom(
+            time_array, time_target_array, data_target_array, starts, ends
+        )
+        time_support = IntervalSet(start=ns, end=ne)
+        return Tsd(t=t, d=d, time_support=time_support)
+
+    def restrict(self, iset):
         """
         Restricts a TsdFrame object to a set of time intervals delimited by an IntervalSet object`
 
@@ -748,20 +779,110 @@ class TsdFrame(pd.DataFrame):
             TsdFrame object restricted to ep
 
         """
-        ix = iset.in_interval(self)
-        tsd_r = pd.DataFrame(self, copy=True)
-        tsd_r["interval"] = ix
-        ix = ~np.isnan(ix)
-        tsd_r = tsd_r[ix]
-        if not keep_labels:
-            del tsd_r["interval"]
-        return TsdFrame(tsd_r, time_support=iset, copy=True)
+        c = self.columns.values
+        time_array = self.index.values
+        data_array = self.values
+        starts = iset.start.values
+        ends = iset.end.values
+        t, d = jitrestrict(time_array, data_array, starts, ends)
+        return TsdFrame(t=t, d=d, columns=c, time_support=iset)
 
-    def gaps(self, min_gap, method="absolute"):
-        return gaps_func(self, min_gap, method)
+    def bin_average(self, bin_size, ep=None, time_units="s"):
+        """
+        Bin the data by averaging points within bin_size
+        bin_size should be seconds unless specified.
+        If no epochs is passed, the data will be binned based on the time support.
 
-    def support(self, min_gap, method="absolute"):
-        return support_func(self, min_gap, method)
+        Parameters
+        ----------
+        bin_size : float
+            The bin size (default is second)
+
+        ep : None or IntervalSet, optional
+            IntervalSet to restrict the operation
+
+        time_units : str, optional
+            Time units of bin size ('us', 'ms', 's' [default])
+
+        Returns
+        -------
+        out: Tsd
+            A Tsd object indexed by the center of the bins and holding the averaged data points.
+
+        Example
+        -------
+        This example shows how to count events within bins of 0.1 second.
+
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
+        >>> ts = nap.Ts(t=t, time_units='s')
+        >>> bincount = ts.count(0.1)
+
+        An epoch can be specified:
+
+        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
+        >>> bincount = ts.count(0.1, ep=ep)
+
+        And bincount automatically inherit ep as time support:
+
+        >>> bincount.time_support
+        >>>    start    end
+        >>> 0  100.0  800.0
+        """
+        if not isinstance(ep, IntervalSet):
+            ep = self.time_support
+
+        bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
+
+        time_array = self.index.values
+        data_array = self.values
+        starts = ep.start.values
+        ends = ep.end.values
+        t, d = jitbin_array(time_array, data_array, starts, ends, bin_size)
+        time_support = IntervalSet(start=starts, end=ends)
+        return TsdFrame(t=t, d=d, time_support=time_support)
+
+    # def find_gaps(self, min_gap, time_units='s'):
+    #     """
+    #     finds gaps in a tsd larger than min_gap. Return an IntervalSet.
+    #     Epochs are defined by adding and removing 1 microsecond to the time index.
+
+    #     Parameters
+    #     ----------
+    #     min_gap : float
+    #         The minimum interval size considered to be a gap (default is second).
+    #     time_units : str, optional
+    #         Time units of min_gap ('us', 'ms', 's' [default])
+    #     """
+    #     min_gap = format_timestamps(np.array([min_gap]), time_units)[0]
+
+    #     time_array = self.index.values
+    #     starts = self.time_support.start.values
+    #     ends = self.time_support.end.values
+
+    #     s, e = jitfind_gaps(time_array, starts, ends, min_gap)
+
+    #     return nap.IntervalSet(s, e)
+
+    # def find_support(self, min_gap, method="absolute"):
+    #     """
+    #     find the smallest (to a min_gap resolution) IntervalSet containing all the times in the Tsd
+
+    #     Parameters
+    #     ----------
+    #     min_gap : float
+    #         Description
+    #     method : str, optional
+    #         Description
+
+    #     Returns
+    #     -------
+    #     TYPE
+    #         Description
+    #     """
+    #     print("TODO")
+    #     return
 
     def start_time(self, units="s"):
         return self.times(units=units)[0]
@@ -770,7 +891,6 @@ class TsdFrame(pd.DataFrame):
         return self.times(units=units)[-1]
 
 
-# noinspection PyAbstractClass
 class Ts(Tsd):
     """
     A subclass of the Tsd object for a time series with only time index,
@@ -809,3 +929,9 @@ class Ts(Tsd):
             **kwargs,
         )
         self.nts_class = self.__class__.__name__
+
+    def __repr__(self):
+        return self.as_series().fillna("").__repr__()
+
+    def __str__(self):
+        return self.__repr__()

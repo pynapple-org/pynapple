@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 11:39:55
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-08-18 17:09:03
+# @Last Modified time: 2022-11-17 16:58:01
 
 
 from itertools import combinations
@@ -133,11 +133,15 @@ def compute_autocorrelogram(
 
     autocorrs = {}
 
-    binsize = nap.TimeUnits.format_timestamps(binsize, time_units)[0]
-    windowsize = nap.TimeUnits.format_timestamps(windowsize, time_units)[0]
+    binsize = nap.format_timestamps(np.array([binsize], dtype=np.float64), time_units)[
+        0
+    ]
+    windowsize = nap.format_timestamps(
+        np.array([windowsize], dtype=np.float64), time_units
+    )[0]
 
     for n in newgroup.keys():
-        spk_time = newgroup[n].as_units("s").index.values
+        spk_time = newgroup[n].index.values
         auc, times = cross_correlogram(spk_time, spk_time, binsize, windowsize)
         # times = nap.TimeUnits.return_timestamps(times, 's')
         autocorrs[n] = pd.Series(index=np.round(times, 6), data=auc, dtype="float")
@@ -145,7 +149,7 @@ def compute_autocorrelogram(
     autocorrs = pd.DataFrame.from_dict(autocorrs)
 
     if norm:
-        autocorrs = autocorrs / newgroup.get_info("freq")
+        autocorrs = autocorrs / newgroup.get_info("rate")
 
     # Bug here
     if 0 in autocorrs.index.values:
@@ -212,19 +216,23 @@ def compute_crosscorrelogram(
         pairs = list(map(lambda n: (n[1], n[0]), pairs))
     crosscorrs = {}
 
-    binsize = nap.TimeUnits.format_timestamps(binsize, time_units)[0]
-    windowsize = nap.TimeUnits.format_timestamps(windowsize, time_units)[0]
+    binsize = nap.format_timestamps(np.array([binsize], dtype=np.float64), time_units)[
+        0
+    ]
+    windowsize = nap.format_timestamps(
+        np.array([windowsize], dtype=np.float64), time_units
+    )[0]
 
     for i, j in pairs:
-        spk1 = newgroup[i].as_units("s").index.values
-        spk2 = newgroup[j].as_units("s").index.values
+        spk1 = newgroup[i].index.values
+        spk2 = newgroup[j].index.values
         auc, times = cross_correlogram(spk1, spk2, binsize, windowsize)
         crosscorrs[(i, j)] = pd.Series(index=times, data=auc, dtype="float")
 
     crosscorrs = pd.DataFrame.from_dict(crosscorrs)
 
     if norm:
-        freq = newgroup.get_info("freq")
+        freq = newgroup.get_info("rate")
         freq2 = pd.Series(index=pairs, data=list(map(lambda n: freq.loc[n[1]], pairs)))
         crosscorrs = crosscorrs / freq2
 
@@ -272,9 +280,9 @@ def compute_eventcorrelogram(
     """
     if ep is None:
         ep = event.time_support
-        tsd1 = event.as_units("s").index.values
+        tsd1 = event.index.values
     else:
-        tsd1 = event.restrict(ep).as_units("s").index.values
+        tsd1 = event.restrict(ep).index.values
 
     if type(group) is nap.TsGroup:
         newgroup = group.restrict(ep)
@@ -283,17 +291,21 @@ def compute_eventcorrelogram(
 
     crosscorrs = {}
 
-    binsize = nap.TimeUnits.format_timestamps(binsize, time_units)[0]
-    windowsize = nap.TimeUnits.format_timestamps(windowsize, time_units)[0]
+    binsize = nap.format_timestamps(np.array([binsize], dtype=np.float64), time_units)[
+        0
+    ]
+    windowsize = nap.format_timestamps(
+        np.array([windowsize], dtype=np.float64), time_units
+    )[0]
 
     for n in newgroup.keys():
-        spk_time = newgroup[n].as_units("s").index.values
+        spk_time = newgroup[n].index.values
         auc, times = cross_correlogram(tsd1, spk_time, binsize, windowsize)
         crosscorrs[n] = pd.Series(index=times, data=auc, dtype="float")
 
     crosscorrs = pd.DataFrame.from_dict(crosscorrs)
 
     if norm:
-        crosscorrs = crosscorrs / newgroup.get_info("freq")
+        crosscorrs = crosscorrs / newgroup.get_info("rate")
 
     return crosscorrs.astype("float")

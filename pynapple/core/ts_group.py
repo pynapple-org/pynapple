@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-28 15:10:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-08-18 16:28:37
+# @Last Modified time: 2022-11-17 17:15:31
 
 
 import warnings
@@ -13,54 +13,41 @@ import pandas as pd
 from tabulate import tabulate
 
 from .interval_set import IntervalSet
+from .jitted_functions import jitcount, jitunion, jitunion_isets
 from .time_series import Ts, Tsd, TsdFrame
-from .time_units import TimeUnits
-
-
-def intersect_intervals(i_sets):
-    """
-    Helper to intersect intervals from ts_group
-    """
-    n_sets = len(i_sets)
-    time1 = [i_set["start"] for i_set in i_sets]
-    time2 = [i_set["end"] for i_set in i_sets]
-    time1.extend(time2)
-    time = np.hstack(time1)
-    start_end = np.hstack(
-        (
-            np.ones(len(time) // 2, dtype=np.int32),
-            -1 * np.ones(len(time) // 2, dtype=np.int32),
-        )
-    )
-
-    df = pd.DataFrame({"time": time, "start_end": start_end})
-    df.sort_values(by="time", inplace=True)
-    df.reset_index(inplace=True, drop=True)
-    df["cumsum"] = df["start_end"].cumsum()
-    ix = (df["cumsum"] == n_sets).to_numpy().nonzero()[0]
-    return IntervalSet(df["time"][ix], df["time"][ix + 1])
+from .time_units import format_timestamps
 
 
 def union_intervals(i_sets):
     """
     Helper to merge intervals from ts_group
     """
-    time = np.hstack(
-        [i_set["start"] for i_set in i_sets] + [i_set["end"] for i_set in i_sets]
-    )
-    start_end = np.hstack(
-        (
-            np.ones(len(time) // 2, dtype=np.int32),
-            -1 * np.ones(len(time) // 2, dtype=np.int32),
+    n = len(i_sets)
+
+    if n == 1:
+        return i_sets[0]
+
+    new_start = np.zeros(0)
+    new_end = np.zeros(0)
+
+    if n == 2:
+        new_start, new_end = jitunion(
+            i_sets[0].start.values,
+            i_sets[0].end.values,
+            i_sets[1].start.values,
+            i_sets[1].end.values,
         )
-    )
-    df = pd.DataFrame({"time": time, "start_end": start_end})
-    df.sort_values(by="time", inplace=True)
-    df.reset_index(inplace=True, drop=True)
-    df["cumsum"] = df["start_end"].cumsum()
-    ix_stop = (df["cumsum"] == 0).to_numpy().nonzero()[0]
-    ix_start = np.hstack((0, ix_stop[:-1] + 1))
-    return IntervalSet(df["time"][ix_start], df["time"][ix_stop])
+
+    if n > 2:
+        sizes = np.array([i_sets[i].shape[0] for i in range(n)])
+        startends = np.zeros((np.sum(sizes), 2))
+        ct = 0
+        for i in range(sizes.shape[0]):
+            startends[ct : ct + sizes[i], :] = i_sets[i].values
+            ct += sizes[i]
+        new_start, new_end = jitunion_isets(startends[:, 0], startends[:, 1])
+
+    return IntervalSet(new_start, new_end)
 
 
 class TsGroup(UserDict):
@@ -75,7 +62,9 @@ class TsGroup(UserDict):
         The time support of the TsGroup
     """
 
-    def __init__(self, data, time_support=None, time_units="s", **kwargs):
+    def __init__(
+        self, data, time_support=None, time_units="s", bypass_check=False, **kwargs
+    ):
         """
         TsGroup Initializer
 
@@ -87,6 +76,9 @@ class TsGroup(UserDict):
             The time support of the TsGroup. Ts/Tsd objects will be restricted to the time support if passed.
         time_units : str, optional
             Time units if data does not contain Ts/Tsd objects ('us', 'ms', 's' [default]).
+        bypass_check: bool, optional
+            To avoid checking that each element is within time_support.
+            Useful to speed up initialization of TsGroup when Ts/Tsd objects have already been restricted beforehand
         **kwargs
             Meta-info about the Ts/Tsd objects. Can be either pandas.Series or numpy.ndarray.
             Note that the index should match the index of the input dictionnary.
@@ -94,16 +86,16 @@ class TsGroup(UserDict):
         Raises
         ------
         RuntimeError
-            Raise error if the intersection of time support of Ts/Tsd object is empty.
+            Raise error if the union of time support of Ts/Tsd object is empty.
         """
         self._initialized = False
 
-        index = np.sort(list(data.keys()))
+        self.index = np.sort(list(data.keys()))
 
-        self._metadata = pd.DataFrame(index=index, columns=["freq"])
+        self._metadata = pd.DataFrame(index=self.index, columns=["rate"])
 
         # Transform elements to Ts/Tsd objects
-        for k in index:
+        for k in self.index:
             if isinstance(data[k], (np.ndarray, list)):
                 warnings.warn(
                     "Elements should not be passed as numpy array. Default time units is seconds when creating the Ts object.",
@@ -116,16 +108,18 @@ class TsGroup(UserDict):
         # If time_support is passed, all elements of data are restricted prior to init
         if isinstance(time_support, IntervalSet):
             self.time_support = time_support
-            data = {k: data[k].restrict(self.time_support) for k in index}
+            if not bypass_check:
+                data = {k: data[k].restrict(self.time_support) for k in self.index}
         else:
             # Otherwise do the union of all time supports
-            time_support = union_intervals([data[k].time_support for k in index])
+            time_support = union_intervals([data[k].time_support for k in self.index])
             if len(time_support) == 0:
                 raise RuntimeError(
-                    "Intersection of time supports is empty. Consider passing a time support as argument."
+                    "Union of time supports is empty. Consider passing a time support as argument."
                 )
             self.time_support = time_support
-            data = {k: data[k].restrict(self.time_support) for k in index}
+            if not bypass_check:
+                data = {k: data[k].restrict(self.time_support) for k in self.index}
 
         UserDict.__init__(self, data)
 
@@ -146,7 +140,7 @@ class TsGroup(UserDict):
             raise KeyError("Key {} already in group index.".format(key))
         else:
             if isinstance(value, (Ts, Tsd)):
-                self._metadata.loc[int(key), "freq"] = value.rate
+                self._metadata.loc[int(key), "rate"] = value.rate
                 super().__setitem__(int(key), value)
             elif isinstance(value, (np.ndarray, list)):
                 warnings.warn(
@@ -154,7 +148,7 @@ class TsGroup(UserDict):
                     stacklevel=2,
                 )
                 tmp = Ts(t=value, time_units="s")
-                self._metadata.loc[int(key), "freq"] = tmp.rate
+                self._metadata.loc[int(key), "rate"] = tmp.rate
                 super().__setitem__(int(key), tmp)
             else:
                 raise ValueError("Value with key {} is not an iterable.".format(key))
@@ -166,19 +160,19 @@ class TsGroup(UserDict):
             else:
                 raise KeyError("Can't find key {} in group index.".format(key))
         else:
-            metadata = self._metadata.loc[key, self._metadata.columns.drop("freq")]
+            metadata = self._metadata.loc[key, self._metadata.columns.drop("rate")]
             return TsGroup(
                 {k: self[k] for k in key}, time_support=self.time_support, **metadata
             )
 
     def __repr__(self):
-        cols = self._metadata.columns.drop("freq")
-        headers = ["Index", "Freq. (Hz)"] + [c for c in cols]
+        cols = self._metadata.columns.drop("rate")
+        headers = ["Index", "rate"] + [c for c in cols]
         lines = []
 
         for i in self.data.keys():
             lines.append(
-                [str(i), "%.2f" % self._metadata.loc[i, "freq"]]
+                [str(i), "%.2f" % self._metadata.loc[i, "rate"]]
                 + [self._metadata.loc[i, c] for c in cols]
             )
         return tabulate(lines, headers=headers)
@@ -300,7 +294,8 @@ class TsGroup(UserDict):
 
     def get_info(self, key):
         """
-        Returns the metainfo located in one column
+        Returns the metainfo located in one column.
+        The key for the column frequency is "rate".
 
         Parameters
         ----------
@@ -312,23 +307,9 @@ class TsGroup(UserDict):
         pandas.Series
             The metainfo
         """
+        if key in ["freq", "frequency"]:
+            key = "rate"
         return self._metadata[key]
-
-    def _union_time_support(self):
-        """
-        Helper
-        """
-        idx = list(self.data.keys())
-        i_sets = [self.data[i].time_support for i in idx]
-        return union_intervals(i_sets)
-
-    def _intersect_time_support(self):
-        """
-        Helper
-        """
-        idx = list(self.data.keys())
-        i_sets = [self.data[i].time_support for i in idx]
-        return intersect_intervals(i_sets)
 
     #################################
     # Generic functions of Tsd objects
@@ -369,13 +350,15 @@ class TsGroup(UserDict):
         0    0.0  100.0
         """
         newgr = {}
-        for k in self.data:
+        for k in self.index:
             newgr[k] = self.data[k].restrict(ep)
-        cols = self._metadata.columns.drop("freq")
+        cols = self._metadata.columns.drop("rate")
 
-        return TsGroup(newgr, time_support=ep, **self._metadata[cols])
+        return TsGroup(
+            newgr, time_support=ep, bypass_check=True, **self._metadata[cols]
+        )
 
-    def value_from(self, tsd, ep=None, align="closest"):
+    def value_from(self, tsd, ep=None):
         """
         Replace the value of each Ts/Tsd object within the Ts group with the closest value from tsd argument
 
@@ -386,8 +369,6 @@ class TsGroup(UserDict):
         ep : IntervalSet
             The IntervalSet object to restrict the operation.
             If None, the time support of the tsd input object is used.
-        align : str, optional
-            The method to align (closest/prev/next)
 
         Returns
         -------
@@ -414,12 +395,12 @@ class TsGroup(UserDict):
         """
         if ep is None:
             ep = tsd.time_support
-        tsd = tsd.restrict(ep)
+
         newgr = {}
         for k in self.data:
-            newgr[k] = self.data[k].value_from(tsd, ep, align)
+            newgr[k] = self.data[k].value_from(tsd, ep)
 
-        cols = self._metadata.columns.drop("freq")
+        cols = self._metadata.columns.drop("rate")
         return TsGroup(newgr, time_support=ep, **self._metadata[cols])
 
     def count(self, bin_size, ep=None, time_units="s"):
@@ -476,25 +457,28 @@ class TsGroup(UserDict):
         if not isinstance(ep, IntervalSet):
             ep = self.time_support
 
-        bin_size = TimeUnits.format_timestamps(np.array([bin_size]), time_units)[0]
+        bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
 
-        # bin for each epochs
         time_index = []
-        count = []
         for i in ep.index:
             bins = np.arange(ep.start[i], ep.end[i] + bin_size, bin_size)
-            tmp = np.array(
-                [np.histogram(self.data[n].index.values, bins)[0] for n in self.keys()]
-            )
-            count.append(np.transpose(tmp))
             time_index.append(bins[0:-1] + np.diff(bins) / 2)
-
-        count = np.vstack(count)
         time_index = np.hstack(time_index)
+        time_index = Ts(time_index).restrict(ep).index.values
 
-        toreturn = TsdFrame(
-            t=time_index, d=count, time_support=ep, columns=list(self.keys())
-        )
+        n = len(self.index)
+
+        count = np.zeros((time_index.shape[0], n), dtype=np.int64)
+
+        starts = ep.start.values
+        ends = ep.end.values
+
+        for i in range(n):
+            count[:, i] = jitcount(
+                self.data[self.index[i]].index.values, starts, ends, bin_size
+            )[1]
+
+        toreturn = TsdFrame(t=time_index, d=count, time_support=ep, columns=self.index)
         return toreturn
 
     """

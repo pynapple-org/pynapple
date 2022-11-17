@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:34:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-04-04 17:39:59
+# @Last Modified time: 2022-11-15 21:40:29
 
 """
 """
@@ -84,7 +84,9 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
     tc = tuning_curves.values
     ct = count.values
 
-    bin_size_s = nap.TimeUnits.format_timestamps(np.array([bin_size]), time_units)[0]
+    bin_size_s = nap.format_timestamps(
+        np.array([bin_size], dtype=np.float64), time_units
+    )[0]
 
     p1 = np.exp(-bin_size_s * tc.sum(1))
     p2 = occupancy / occupancy.sum()
@@ -202,7 +204,9 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
 
     ct = count.values
 
-    bin_size_s = nap.TimeUnits.format_timestamps(np.array([bin_size]), time_units)[0]
+    bin_size_s = nap.format_timestamps(
+        np.array([bin_size], dtype=np.float64), time_units
+    )[0]
 
     p1 = np.exp(-bin_size_s * np.nansum(tc, 1))
     p2 = occupancy / occupancy.sum()
