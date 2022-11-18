@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-09-15 14:12:21
+# @Last Modified time: 2022-11-18 17:29:17
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -232,15 +232,15 @@ class BaseLoader(object):
                     position = self.load_default_csv(parameters.loc[f, "csv"])
 
                 if alignement.lower() == "local":
-                    start_epoch = nap.TimeUnits.format_timestamps(
+                    start_epoch = nap.format_timestamps(
                         epochs.loc[parameters.loc[f, "epoch"], "start"], time_units
                     )
-                    end_epoch = nap.TimeUnits.format_timestamps(
+                    end_epoch = nap.format_timestamps(
                         epochs.loc[parameters.loc[f, "epoch"], "end"], time_units
                     )
                     timestamps = (
                         position.index.values
-                        + nap.TimeUnits.return_timestamps(start_epoch, "s")[0]
+                        + nap.return_timestamps(start_epoch, "s")[0]
                     )
                     # Make sure timestamps are within the epochs
                     idx = np.where(timestamps < end_epoch)[0]
@@ -269,7 +269,7 @@ class BaseLoader(object):
                     # start_epoch = format_timestamp(
                     #     epochs.loc[parameters.loc[f, "epoch"], "start"], time_units
                     # )
-                    start_epoch = nap.TimeUnits.format_timestamps(
+                    start_epoch = nap.format_timestamps(
                         epochs.loc[parameters.loc[f, "epoch"], "start"], time_units
                     )
                     timestamps = start_epoch + ttl.index.values

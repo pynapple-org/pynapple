@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-17 22:41:20
+# @Last Modified time: 2022-11-18 17:29:53
 
 import warnings
 
@@ -706,13 +706,6 @@ class TsdFrame(pd.DataFrame):
         if len(self.columns) == 1:
             return self.values.ravel()
         return self.values
-
-    # def realign(self, t, align="closest"):
-    #     method = _get_restrict_method(align)
-    #     ix = TimeUnits.format_timestamps(t)
-
-    #     rest_t = self.reindex(ix, method=method, columns=self.columns.values)
-    #     return rest_t
 
     def value_from(self, tsd, ep=None):
         """

@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 11:39:55
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-17 16:58:01
+# @Last Modified time: 2022-11-18 17:30:21
 
 
 from itertools import combinations
@@ -143,7 +143,6 @@ def compute_autocorrelogram(
     for n in newgroup.keys():
         spk_time = newgroup[n].index.values
         auc, times = cross_correlogram(spk_time, spk_time, binsize, windowsize)
-        # times = nap.TimeUnits.return_timestamps(times, 's')
         autocorrs[n] = pd.Series(index=np.round(times, 6), data=auc, dtype="float")
 
     autocorrs = pd.DataFrame.from_dict(autocorrs)
