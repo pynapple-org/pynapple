@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date:   2022-01-25 21:50:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-17 17:16:04
+# @Last Modified time: 2022-11-17 22:30:52
 
 """
 """
@@ -10,14 +10,9 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from numba import jit
 
-from .jitted_functions import (
-    jitdiff,
-    jitfix_iset,
-    jitin_interval,
-    jitintersect,
-    jitunion,
-)
+from .jitted_functions import jitdiff, jitin_interval, jitintersect, jitunion
 from .time_units import format_timestamps, return_timestamps, sort_timestamps
 
 all_warnings = np.array(
@@ -28,6 +23,83 @@ all_warnings = np.array(
         "Some epochs have no duration",
     ]
 )
+
+
+@jit(nopython=True)
+def jitfix_iset(start, end):
+    """
+    0 - > "Some starts and ends are equal. Removing 1 microsecond!",
+    1 - > "Some ends precede the relative start. Dropping them!",
+    2 - > "Some starts precede the previous end. Joining them!",
+    3 - > "Some epochs have no duration"
+
+    Parameters
+    ----------
+    start : TYPE
+        Description
+    end : TYPE
+        Description
+
+    Returns
+    -------
+    TYPE
+        Description
+    """
+    to_warn = np.zeros(4, dtype=np.bool_)
+
+    m = start.shape[0]
+
+    data = np.zeros((m, 2), dtype=np.float64)
+
+    i = 0
+    ct = 0
+
+    while i < m:
+
+        newstart = start[i]
+        newend = end[i]
+
+        while i < m:
+            if end[i] == start[i]:
+                to_warn[3] = True
+                i += 1
+            else:
+                newstart = start[i]
+                newend = end[i]
+                break
+
+        while i < m:
+            if end[i] < start[i]:
+                to_warn[1] = True
+                i += 1
+            else:
+                newstart = start[i]
+                newend = end[i]
+                break
+
+        while i < m - 1:
+
+            if start[i + 1] < end[i]:
+                to_warn[2] = True
+                i += 1
+                newend = max(end[i - 1], end[i])
+            else:
+                break
+
+        if i < m - 1:
+            if newend == start[i + 1]:
+                to_warn[0] = True
+                newend -= 1.0e-9
+
+        data[ct, 0] = newstart
+        data[ct, 1] = end[i]
+
+        ct += 1
+        i += 1
+
+    data = data[0:ct]
+
+    return (data, to_warn)
 
 
 class IntervalSet(pd.DataFrame):
@@ -75,8 +147,8 @@ class IntervalSet(pd.DataFrame):
             df = pd.DataFrame(start)
             if "start" not in df.columns or "end" not in df.columns:
                 raise ValueError("wrong columns")
-            start = df["start"].values
-            end = df["end"].values
+            start = df["start"].values.astype(np.float64)
+            end = df["end"].values.astype(np.float64)
 
             start = sort_timestamps(format_timestamps(start.ravel(), time_units))
             end = sort_timestamps(format_timestamps(end.ravel(), time_units))
@@ -90,6 +162,9 @@ class IntervalSet(pd.DataFrame):
             self._metadata = ["nap_class"]
             self.nap_class = self.__class__.__name__
             return
+
+        start = np.array(start).astype(np.float64)
+        end = np.array(end).astype(np.float64)
 
         start = format_timestamps(np.array(start).ravel(), time_units)
         end = format_timestamps(np.array(end).ravel(), time_units)

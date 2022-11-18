@@ -2,7 +2,7 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-17 17:22:36
+# @Last Modified time: 2022-11-17 22:12:35
 import numpy as np
 from numba import jit
 
@@ -798,83 +798,6 @@ def jitdiff(start1, end1, start2, end2):
     newend = newend[0:ct]
 
     return (newstart, newend)
-
-
-@jit(nopython=True)
-def jitfix_iset(start, end):
-    """
-    0 - > "Some starts and ends are equal. Removing 1 microsecond!",
-    1 - > "Some ends precede the relative start. Dropping them!",
-    2 - > "Some starts precede the previous end. Joining them!",
-    3 - > "Some epochs have no duration"
-
-    Parameters
-    ----------
-    start : TYPE
-        Description
-    end : TYPE
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
-    """
-    to_warn = np.zeros(4, dtype=np.bool_)
-
-    m = start.shape[0]
-
-    data = np.zeros((m, 2), dtype=np.float64)
-
-    i = 0
-    ct = 0
-
-    while i < m:
-
-        newstart = start[i]
-        newend = end[i]
-
-        while i < m:
-            if end[i] == start[i]:
-                to_warn[3] = True
-                i += 1
-            else:
-                newstart = start[i]
-                newend = end[i]
-                break
-
-        while i < m:
-            if end[i] < start[i]:
-                to_warn[1] = True
-                i += 1
-            else:
-                newstart = start[i]
-                newend = end[i]
-                break
-
-        while i < m - 1:
-
-            if start[i + 1] < end[i]:
-                to_warn[2] = True
-                i += 1
-                newend = max(end[i - 1], end[i])
-            else:
-                break
-
-        if i < m - 1:
-            if newend == start[i + 1]:
-                to_warn[0] = True
-                newend -= 1.0e-9
-
-        data[ct, 0] = newstart
-        data[ct, 1] = end[i]
-
-        ct += 1
-        i += 1
-
-    data = data[0:ct]
-
-    return (data, to_warn)
 
 
 @jit(nopython=True)

@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-17 17:12:36
+# @Last Modified time: 2022-11-17 22:41:20
 
 import warnings
 
@@ -84,14 +84,19 @@ class Tsd(pd.Series):
                     super().__init__(index=t, data=d)
                 else:
                     super().__init__(index=t, data=d, dtype=np.float64)
+
+            self.time_support = time_support
+            self.rate = t.shape[0] / np.sum(
+                time_support.values[:, 1] - time_support.values[:, 0]
+            )
+
         else:
             time_support = IntervalSet(pd.DataFrame(columns=["start", "end"]))
             super().__init__(index=t, data=d, dtype=np.float64)
 
-        self.time_support = time_support
-        self.rate = t.shape[0] / np.sum(
-            time_support.values[:, 1] - time_support.values[:, 0]
-        )
+            self.time_support = time_support
+            self.rate = 0.0
+
         self.index.name = "Time (s)"
         # self._metadata.append("nap_class")
         self.nap_class = self.__class__.__name__
