@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-17 22:12:35
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2022-11-24 18:10:22
 import numpy as np
 from numba import jit
 
@@ -43,8 +43,8 @@ def jitrestrict(time_array, data_array, starts, ends):
         # Outside
         while t < n:
             if time_array[t] >= starts[k]:
-                ix[t] = True
-                t += 1
+                # ix[t] = True
+                # t += 1
                 break
             t += 1
 
@@ -103,8 +103,8 @@ def jittsrestrict(time_array, starts, ends):
         # Outside
         while t < n:
             if time_array[t] >= starts[k]:
-                ix[t] = True
-                t += 1
+                # ix[t] = True
+                # t += 1
                 break
             t += 1
 
@@ -114,7 +114,7 @@ def jittsrestrict(time_array, starts, ends):
                 k += 1
                 break
             else:
-                ix[t] = True
+                ix[t] = True                
             t += 1
 
         if k == m:
