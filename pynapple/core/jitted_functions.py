@@ -114,7 +114,7 @@ def jittsrestrict(time_array, starts, ends):
                 k += 1
                 break
             else:
-                ix[t] = True                
+                ix[t] = True
             t += 1
 
         if k == m:
