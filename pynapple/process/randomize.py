@@ -103,15 +103,13 @@ def _shift_tsgroup(tsgroup,min_shift=0,max_shift=None):
 
 def jitter_timestamps(ts,max_jitter=None,keep_tsupport=False):
     """
-    Jitters each time stamp independently of a random amount between min_jitter and max_jitter.
+    Jitters each time stamp independently of random amounts uniformly drawn between -max_jitter and max_jitter.
 
 
     Parameters
     ----------
     timestamps : Ts or TsGroup
         The timestamps to jitter. If TsGroup, jitter is applied to each element of the group.
-    min_jitter : float, optional
-        minimum jitter (default: 0 )
     max_jitter : float
         maximum jitter
     keep_tsupport: bool, optional
@@ -144,8 +142,6 @@ def _jitter_ts(ts,max_jitter=None,keep_tsupport=False):
     ----------
     timestamps : Ts 
         The timestamps to jitter.
-    min_jitter : float, optional
-        minimum jitter (default: 0 )
     max_jitter : float
         maximum jitter
     keep_tsupport: bool, optional
@@ -169,16 +165,13 @@ def _jitter_ts(ts,max_jitter=None,keep_tsupport=False):
 
 def _jitter_tsgroup(tsgroup,max_jitter=None,keep_tsupport=False):
     """
-    Jitters each time stamp, in each element of the group,
-    independently of a random amount between min_jitter and max_jitter.
-
+    Jitters each time stamp independently, for each element in the TsGroup
+    of random amounts uniformly drawn between -max_jitter and max_jitter.
 
     Parameters
     ----------
     timestamps : TsGroup
         The timestamps to jitter, the jitter is applied to each element of the group.
-    min_jitter : float, optional
-        minimum jitter (default: 0 )
     max_jitter : float
         maximum jitter
     keep_tsupport: bool, optional
