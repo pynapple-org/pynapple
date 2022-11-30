@@ -101,7 +101,7 @@ def _shift_tsgroup(tsgroup,min_shift=0,max_shift=None):
 # Random jitter
 
 
-def jitter_timestamps(ts,min_jitter=0.0,max_jitter=None,keep_tsupport=False):
+def jitter_timestamps(ts,max_jitter=None,keep_tsupport=False):
     """
     Jitters each time stamp independently of a random amount between min_jitter and max_jitter.
 
@@ -135,10 +135,10 @@ def jitter_timestamps(ts,min_jitter=0.0,max_jitter=None,keep_tsupport=False):
         raise TypeError('missing required argument: max_jitter ')
 
     strategy = strategies[type(ts)]
-    return strategy(ts,min_jitter,max_jitter,keep_tsupport)
+    return strategy(ts,max_jitter,keep_tsupport)
 
 
-def _jitter_ts(ts,min_jitter=0,max_jitter=None,keep_tsupport=False):
+def _jitter_ts(ts,max_jitter=None,keep_tsupport=False):
     """
     Parameters
     ----------
@@ -158,7 +158,7 @@ def _jitter_ts(ts,min_jitter=0,max_jitter=None,keep_tsupport=False):
     Ts 
         The jittered timestamps
     """
-    jittered_timestamps = ts.times() + np.random.uniform(min_jitter,max_jitter,len(ts))
+    jittered_timestamps = ts.times() + np.random.uniform(-max_jitter,max_jitter,len(ts))
     if keep_tsupport:
         jittered_ts = nap.Ts(t=np.sort(jittered_timestamps),time_support=ts.time_support)
     else:
@@ -167,7 +167,7 @@ def _jitter_ts(ts,min_jitter=0,max_jitter=None,keep_tsupport=False):
     return jittered_ts
 
 
-def _jitter_tsgroup(tsgroup,min_jitter=0,max_jitter=None,keep_tsupport=False):
+def _jitter_tsgroup(tsgroup,max_jitter=None,keep_tsupport=False):
     """
     Jitters each time stamp, in each element of the group,
     independently of a random amount between min_jitter and max_jitter.
@@ -194,7 +194,7 @@ def _jitter_tsgroup(tsgroup,min_jitter=0,max_jitter=None,keep_tsupport=False):
 
     jittered_tsgroup = {}
     for k in tsgroup.keys():
-        jittered_timestamps = tsgroup[k].times() + np.random.uniform(min_jitter,max_jitter,len(tsgroup[k]))
+        jittered_timestamps = tsgroup[k].times() + np.random.uniform(-max_jitter,max_jitter,len(tsgroup[k]))
         jittered_tsgroup[k] = nap.Ts(t=np.sort(jittered_timestamps))
 
     if keep_tsupport:

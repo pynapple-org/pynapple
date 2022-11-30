@@ -32,7 +32,7 @@ def test_shift_tsgroup():
 
 def test_jitter_ts():
     ts = nap.Ts(t=np.arange(0, 100))
-    jitter_ts = nap.randomize.jitter_timestamps(ts,min_jitter=0.01,max_jitter=0.1)
+    jitter_ts = nap.randomize.jitter_timestamps(ts,max_jitter=0.1)
 
     assert isinstance(jitter_ts,nap.Ts)
     assert len(ts) == len(jitter_ts)
@@ -42,7 +42,7 @@ def test_jitter_tsgroup():
     tsgroup = nap.TsGroup(
         {0: nap.Ts(t=np.arange(0, 100)), 1: nap.Ts(t=np.arange(0, 200))}
     )
-    jitter_tsgroup = nap.randomize.jitter_timestamps(tsgroup,min_jitter=0.01,max_jitter=0.1)
+    jitter_tsgroup = nap.randomize.jitter_timestamps(tsgroup,max_jitter=0.1)
 
     assert isinstance(jitter_tsgroup,nap.TsGroup)
     assert len(tsgroup) == len(jitter_tsgroup)
