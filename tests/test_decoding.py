@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:16:39
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-04-04 17:43:07
+# @Last Modified time: 2022-12-02 11:56:11
 #!/usr/bin/env python
 
 """Tests of decoding for `pynapple` package."""
@@ -37,12 +37,40 @@ def test_decode_1d():
     tmp[0:50, 1] = 0.0
     np.testing.assert_array_almost_equal(proba.values, tmp)
 
+def test_decode_1d_with_dict():
+    feature, group, tc, ep = get_testing_set_1d()
+    group = dict(group)
+    decoded, proba = nap.decode_1d(tc, group, ep, bin_size=1)
+
+    assert isinstance(decoded, nap.Tsd)
+    assert isinstance(proba, nap.TsdFrame)
+    np.testing.assert_array_almost_equal(feature.values, decoded.values)
+    assert len(decoded) == 100
+    assert len(proba) == 100
+    tmp = np.ones((100, 2))
+    tmp[50:, 0] = 0.0
+    tmp[0:50, 1] = 0.0
+    np.testing.assert_array_almost_equal(proba.values, tmp)
 
 def test_decode_1d_with_feature():
     feature, group, tc, ep = get_testing_set_1d()
     decoded, proba = nap.decode_1d(tc, group, ep, bin_size=1, feature=feature)
     np.testing.assert_array_almost_equal(feature.values, decoded.values)
+    assert isinstance(decoded, nap.Tsd)
+    assert isinstance(proba, nap.TsdFrame)
+    np.testing.assert_array_almost_equal(feature.values, decoded.values)
+    assert len(decoded) == 100
+    assert len(proba) == 100
+    tmp = np.ones((100, 2))
+    tmp[50:, 0] = 0.0
+    tmp[0:50, 1] = 0.0
+    np.testing.assert_array_almost_equal(proba.values, tmp)
 
+def test_decode_1d_with_wrong_feature():
+    feature, group, tc, ep = get_testing_set_1d()
+    with pytest.raises(RuntimeError) as e_info:
+        nap.decode_1d(tc, group, ep, bin_size=1, feature=[1,2,3])
+    assert str(e_info.value) == "Unknown format for feature in decode_1d"
 
 def test_decode_1d_with_time_units():
     feature, group, tc, ep = get_testing_set_1d()
@@ -110,6 +138,25 @@ def test_decode_2d():
     tmp[51:100:2, 1] = 1
     np.testing.assert_array_almost_equal(proba[:, :, 1], tmp)
 
+def test_decode_2d_with_dict():
+    features, group, tc, ep, xy = get_testing_set_2d()
+    group = dict(group)
+    decoded, proba = nap.decode_2d(tc, group, ep, 1, xy)
+
+    assert isinstance(decoded, nap.TsdFrame)
+    assert isinstance(proba, np.ndarray)
+    np.testing.assert_array_almost_equal(features.values, decoded.values)
+    assert len(decoded) == 100
+    assert len(proba) == 100
+    tmp = np.zeros((100, 2))
+    tmp[0:50:2, 0] = 1
+    tmp[50:100:2, 1] = 1
+    np.testing.assert_array_almost_equal(proba[:, :, 0], tmp)
+
+    tmp = np.zeros((100, 2))
+    tmp[1:50:2, 0] = 1
+    tmp[51:100:2, 1] = 1
+    np.testing.assert_array_almost_equal(proba[:, :, 1], tmp)
 
 def test_decode_1d_with_feature():
     features, group, tc, ep, xy = get_testing_set_2d()

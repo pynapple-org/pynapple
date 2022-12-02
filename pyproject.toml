@@ -84,3 +84,11 @@ exclude = '''
 [tool.isort]
 multi_line_output = 3
 include_trailing_comma = true
+
+[tool.coverage.run]
+omit = [    
+    "pynapple/io/loader_gui.py",
+    "pynapple/io/ephys_gui.py",
+    "pynapple/io/ophys_gui.py",
+    "pynapple/core/jitted_functions.py" # coverage doesn't work with numba
+]

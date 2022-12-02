@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:16:22
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-17 16:52:18
+# @Last Modified time: 2022-12-02 11:31:23
 #!/usr/bin/env python
 
 """Tests of correlograms for `pynapple` package."""
@@ -80,6 +80,11 @@ class Test_Correlograms:
         tmp[[90, 110]] = 0.5
         np.testing.assert_array_almost_equal(tmp, cc[2])
 
+    def test_autocorrelogram_error(self, group):
+        with pytest.raises(RuntimeError) as e_info:
+            nap.compute_autocorrelogram([1,2,3], 1, 100, norm=False)
+        assert str(e_info.value) == "Unknown format for group"
+
     def test_autocorrelogram_with_ep(self, group):
         ep = nap.IntervalSet(start=0, end=99)
         cc = nap.compute_autocorrelogram(group, 1, 100, ep=ep, norm=False)
@@ -110,6 +115,17 @@ class Test_Correlograms:
             ),
         )
 
+    def test_crosscorrelogram_reverse(self, group):
+        cc = nap.compute_crosscorrelogram(group, 1, 100, reverse=True)
+        assert isinstance(cc, pd.DataFrame)
+
+        from itertools import combinations
+
+        pairs = list(combinations(group.index, 2))
+        pairs = list(map(lambda n: (n[1], n[0]), pairs))
+
+        assert pairs == list(cc.keys())
+
     def test_crosscorrelogram_with_ep(self, group):
         ep = nap.IntervalSet(start=0, end=99)
         cc = nap.compute_crosscorrelogram(group, 1, 100, ep=ep, norm=False)
@@ -128,6 +144,11 @@ class Test_Correlograms:
         cc3 = nap.compute_crosscorrelogram(group, 1 * 1e6, 100 * 1e6, time_units="us")
         pd.testing.assert_frame_equal(cc, cc2)
         pd.testing.assert_frame_equal(cc, cc3)
+
+    def test_crosscorrelogram_error(self, group):
+        with pytest.raises(RuntimeError) as e_info:
+            nap.compute_crosscorrelogram([1,2,3], 1, 100)
+        assert str(e_info.value) == "Unknown format for group"
 
     def test_eventcorrelogram(self, group):
         cc = nap.compute_eventcorrelogram(group, group[0], 1, 100, norm=False)
@@ -161,3 +182,8 @@ class Test_Correlograms:
         )
         pd.testing.assert_frame_equal(cc, cc2)
         pd.testing.assert_frame_equal(cc, cc3)
+
+    def test_eventcorrelogram_error(self, group):
+        with pytest.raises(RuntimeError) as e_info:
+            nap.compute_eventcorrelogram([1,2,3], group[0], 1, 100)
+        assert str(e_info.value) == "Unknown format for group"

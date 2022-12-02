@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2022-11-24 18:10:22
+# @Last Modified by:   gviejo
+# @Last Modified time: 2022-12-02 17:52:50
 import numpy as np
 from numba import jit
 
@@ -495,7 +495,7 @@ def jitbin(time_array, data_array, starts, ends, bin_size):
     return (new_time_array, new_data_array)
 
 
-# @jit(nopython=True)
+@jit(nopython=True)
 def jitbin_array(time_array, data_array, starts, ends, bin_size):
     time_array, data_array, countin = jitrestrict_with_count(
         time_array, data_array, starts, ends
@@ -547,7 +547,7 @@ def jitbin_array(time_array, data_array, starts, ends, bin_size):
         k += 1
 
     new_time_array = bins[0:b]
-    new_data_array = average[0:b] / cnt[0:b, np.newaxis]
+    new_data_array = average[0:b] / np.expand_dims(cnt[0:b], -1)
 
     return (new_time_array, new_data_array)
 

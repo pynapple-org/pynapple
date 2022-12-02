@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:34:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-15 21:40:29
+# @Last Modified time: 2022-12-02 11:54:27
 
 """
 """
@@ -72,13 +72,15 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
     # Occupancy
     if feature is None:
         occupancy = np.ones(tuning_curves.shape[0])
-    else:
+    elif isinstance(feature, nap.Tsd):
         diff = np.diff(tuning_curves.index.values)
         bins = tuning_curves.index.values[:-1] - diff / 2
         bins = np.hstack(
             (bins, [bins[-1] + diff[-1], bins[-1] + 2 * diff[-1]])
         )  # assuming the size of the last 2 bins is equal
         occupancy, _ = np.histogram(feature, bins)
+    else:
+        raise RuntimeError("Unknown format for feature in decode_1d")
 
     # Transforming to pure numpy array
     tc = tuning_curves.values

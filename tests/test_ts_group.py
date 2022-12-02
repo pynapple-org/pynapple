@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:14:41
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-04-01 14:51:23
+# @Last Modified time: 2022-12-01 22:43:18
 
 """Tests of ts group for `pynapple` package."""
 
@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import pytest
 from collections import UserDict
+import warnings
 
 
 @pytest.mark.parametrize(
@@ -29,6 +30,15 @@ class Test_Ts_Group_1:
         assert isinstance(tsgroup, UserDict)
         assert len(tsgroup) == 3
 
+    def test_create_ts_group_from_array(self, group):
+        with warnings.catch_warnings(record=True) as w:
+            nap.TsGroup({
+                0: np.arange(0, 200),
+                1: np.arange(0, 200, 0.5),
+                2: np.arange(0, 300, 0.2),
+                })
+        assert str(w[0].message) == "Elements should not be passed as numpy array. Default time units is seconds when creating the Ts object."
+
     def test_create_ts_group_with_time_support(self, group):
         ep = nap.IntervalSet(start=0, end=100)
         tsgroup = nap.TsGroup(group, time_support=ep)
@@ -37,6 +47,34 @@ class Test_Ts_Group_1:
         last = [tsgroup[i].index.values[-1] for i in tsgroup]
         assert np.all(first >= ep.loc[0, "start"])
         assert np.all(last <= ep.loc[0, "end"])
+
+    def test_create_ts_group_with_empty_time_support(self, group):
+        with pytest.raises(RuntimeError) as e_info:
+            tmp = nap.TsGroup({
+                0: nap.Ts(t=np.array([])),
+                1: nap.Ts(t=np.array([])),
+                2: nap.Ts(t=np.array([])),
+                })
+        assert str(e_info.value) == "Union of time supports is empty. Consider passing a time support as argument."
+
+    def test_create_ts_group_with_bypass_check(self, group):
+        tmp = {
+            0: nap.Ts(t=np.arange(0, 100)),
+            1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
+            2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s")
+        }
+        tsgroup = nap.TsGroup(tmp, time_support = nap.IntervalSet(0, 100), bypass_check=True)
+        for i in tmp.keys():
+            pd.testing.assert_series_equal(tmp[0], tsgroup[0])
+
+        tmp = {
+            0: nap.Ts(t=np.arange(0, 100)),
+            1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
+            2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s")
+        }
+        tsgroup = nap.TsGroup(tmp, bypass_check=True)
+        for i in tmp.keys():
+            pd.testing.assert_series_equal(tmp[0], tsgroup[0])
 
     def test_create_ts_group_with_metainfo(self, group):
         sr_info = pd.Series(index=[0, 1, 2], data=[0, 0, 0], name="sr")
@@ -56,6 +94,29 @@ class Test_Ts_Group_1:
         pd.testing.assert_series_equal(tsgroup._metadata["df"], df_info["df"])
         pd.testing.assert_series_equal(tsgroup._metadata["sr"], sr_info)
         np.testing.assert_array_almost_equal(tsgroup._metadata["ar"].values, ar_info)
+
+    def test_add_metainfo_raise_error(self, group):
+        tsgroup = nap.TsGroup(group)
+        df_info = pd.DataFrame(index=[4, 5, 6], data=[0, 0, 0], columns=["df"])
+
+        with pytest.raises(RuntimeError) as e_info:
+            tsgroup.set_info(df_info)
+        assert str(e_info.value) == "Index are not equals"
+
+        tsgroup = nap.TsGroup(group)
+        sr_info = pd.Series(index=[0, 1, 2], data=[1, 1, 1])
+
+        with pytest.raises(RuntimeError) as e_info:
+            tsgroup.set_info(sr_info)
+        assert str(e_info.value) == "Columns needs to be labelled for metadata"
+
+        tsgroup = nap.TsGroup(group)
+        ar_info = np.ones(3) * 3
+
+        with pytest.raises(RuntimeError) as e_info:
+            tsgroup.set_info(ar_info)
+        assert str(e_info.value) == "Columns needs to be labelled for metadata"
+
 
     def test_add_metainfo_test_runtime_errors(self, group):
         tsgroup = nap.TsGroup(group)
@@ -90,6 +151,20 @@ class Test_Ts_Group_1:
         tsgroup = nap.TsGroup(group)
         assert tsgroup.keys() == [0, 1, 2]
 
+    def test_items(self, group):
+        tsgroup = nap.TsGroup(group)
+        items = tsgroup.items()
+        assert isinstance(items, list)
+        for i,it in items:
+            pd.testing.assert_series_equal(tsgroup[i], it)
+
+    def test_items(self, group):
+        tsgroup = nap.TsGroup(group)
+        values = tsgroup.values()
+        assert isinstance(values, list)
+        for i,it in enumerate(values):
+            pd.testing.assert_series_equal(tsgroup[i], it)
+
     def test_slicing(self, group):
         tsgroup = nap.TsGroup(group)
         assert isinstance(tsgroup[0], nap.Tsd)
@@ -112,6 +187,13 @@ class Test_Ts_Group_1:
         pd.testing.assert_series_equal(tsgroup.get_info("df"), df_info["df"])
         pd.testing.assert_series_equal(tsgroup.get_info("sr"), sr_info)
         np.testing.assert_array_almost_equal(tsgroup.get_info("ar").values, ar_info)
+
+    def test_get_rate(self, group):
+        tsgroup = nap.TsGroup(group)
+        rate = tsgroup._metadata["rate"]
+        pd.testing.assert_series_equal(rate, tsgroup.get_info("rate"))
+        pd.testing.assert_series_equal(rate, tsgroup.get_info("freq"))
+        pd.testing.assert_series_equal(rate, tsgroup.get_info("frequency"))
 
     def test_restrict(self, group):
         tsgroup = nap.TsGroup(group)
@@ -176,6 +258,15 @@ class Test_Ts_Group_1:
         assert tsgroup.getby_threshold("sr", 1, ">=").keys() == [1, 2]
         assert tsgroup.getby_threshold("sr", 1, "<=").keys() == [0, 1]
 
+    def test_threshold_error(self, group):
+        sr_info = pd.Series(index=[0, 1, 2], data=[0, 1, 2], name="sr")
+        tsgroup = nap.TsGroup(group, sr=sr_info)
+        op = "!="
+        with pytest.raises(RuntimeError) as e_info:
+            tsgroup.getby_threshold("sr", 1, op)
+        assert str(e_info.value) == "Operation {} not recognized.".format(op)
+
+
     def test_intervals_slicing(self, group):
         sr_info = pd.Series(index=[0, 1, 2], data=[0, 1, 2], name="sr")
         tsgroup = nap.TsGroup(group, sr=sr_info)
@@ -192,3 +283,38 @@ class Test_Ts_Group_1:
         assert list(dgroup.keys()) == ["a", "b"]
         assert dgroup["a"].keys() == [0, 1]
         assert dgroup["b"].keys() == [2]
+
+    def test_repr_(self, group):
+        from tabulate import tabulate
+
+        tsgroup = nap.TsGroup(group)
+
+        cols = tsgroup._metadata.columns.drop("rate")
+        headers = ["Index", "rate"] + [c for c in cols]
+        lines = []
+
+        for i in tsgroup.index:
+            lines.append(
+                [str(i), "%.2f" % tsgroup._metadata.loc[i, "rate"]]
+                + [tsgroup._metadata.loc[i, c] for c in cols]
+            )
+        assert tabulate(lines, headers=headers) == tsgroup.__repr__()
+
+    def test_str_(self, group):
+        from tabulate import tabulate
+
+        tsgroup = nap.TsGroup(group)
+
+        cols = tsgroup._metadata.columns.drop("rate")
+        headers = ["Index", "rate"] + [c for c in cols]
+        lines = []
+
+        for i in tsgroup.index:
+            lines.append(
+                [str(i), "%.2f" % tsgroup._metadata.loc[i, "rate"]]
+                + [tsgroup._metadata.loc[i, c] for c in cols]
+            )
+        assert tabulate(lines, headers=headers) == tsgroup.__str__()
+        
+
+        

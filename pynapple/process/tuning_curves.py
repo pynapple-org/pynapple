@@ -4,7 +4,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-18 17:27:34
+# @Last Modified time: 2022-12-02 16:42:53
 
 
 import warnings
@@ -239,12 +239,12 @@ def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
     pandas.DataFrame
         Spatial Information (default is bits/spikes)
     """
-    if type(tc) is pd.DataFrame:
+    if isinstance(tc, pd.DataFrame):
         columns = tc.columns.values
         fx = np.atleast_2d(tc.values)
-    elif type(tc) is np.ndarray:
-        columns = np.arange(tc.shape[1])
+    elif isinstance(tc, np.ndarray):
         fx = np.atleast_2d(tc)
+        columns = np.arange(tc.shape[1])
 
     nb_bins = tc.shape[0] + 1
     if minmax is None:
@@ -451,6 +451,9 @@ def compute_2d_tuning_curves_continuous(
     if not isinstance(tsdframe, (nap.Tsd, nap.TsdFrame)):
         raise RuntimeError("Unknown format for tsdframe.")
 
+    if not isinstance(features, nap.TsdFrame):
+        raise RuntimeError("Unknown format for features.")
+
     if isinstance(ep, nap.IntervalSet):
         features = features.restrict(ep)
         tsdframe = tsdframe.restrict(ep)
@@ -536,26 +539,29 @@ def PoissonIRLS(X, y, niter=100, tolerance=1e-5):
 def compute_1d_poisson_glm(
     group, feature, binsize, windowsize, ep, time_units="s", niter=100, tolerance=1e-5
 ):
-    """Summary
+    """
+    Poisson GLM
+
+    Warning : this function is still experimental!
 
     Parameters
     ----------
-    group : TYPE
-        Description
-    feature : TYPE
-        Description
-    binsize : TYPE
-        Description
-    windowsize : TYPE
-        Description
-    ep : None, optional
-        Description
+    group : TsGroup
+        Spike trains
+    feature : Tsd
+        The regressors
+    binsize : float
+        Bin size
+    windowsize : Float
+        The window for offsetting the regressors
+    ep : IntervalSet, optional
+        On which epoch to perfom the GLM
     time_units : str, optional
-        Description
+        Time units of binsize and windowsize
     niter : int, optional
-        Description
+        Number of iteration for fitting the GLM
     tolerance : float, optional
-        Description
+        Tolerance for stopping the IRLS
 
     No Longer Returned
     ------------------

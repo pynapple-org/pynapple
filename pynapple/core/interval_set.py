@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date:   2022-01-25 21:50:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-17 22:30:52
+# @Last Modified time: 2022-11-27 23:54:54
 
 """
 """
@@ -89,10 +89,10 @@ def jitfix_iset(start, end):
         if i < m - 1:
             if newend == start[i + 1]:
                 to_warn[0] = True
-                newend -= 1.0e-9
+                newend -= 1.0e-6
 
         data[ct, 0] = newstart
-        data[ct, 1] = end[i]
+        data[ct, 1] = newend
 
         ct += 1
         i += 1
@@ -146,7 +146,7 @@ class IntervalSet(pd.DataFrame):
         if end is None:
             df = pd.DataFrame(start)
             if "start" not in df.columns or "end" not in df.columns:
-                raise ValueError("wrong columns")
+                raise ValueError("wrong columns name")
             start = df["start"].values.astype(np.float64)
             end = df["end"].values.astype(np.float64)
 

@@ -2,13 +2,13 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-18 17:29:53
+# @Last Modified time: 2022-11-29 22:58:10
 
 import warnings
 
 import numpy as np
 import pandas as pd
-from pandas.core.internals import SingleBlockManager
+from pandas.core.internals import BlockManager, SingleBlockManager
 
 from .interval_set import IntervalSet
 from .jitted_functions import (
@@ -200,10 +200,7 @@ class Tsd(pd.Series):
         if units == "us":
             t = t.astype(np.int64)
         ss.index = t
-        units_str = units
-        if not units_str:
-            units_str = "s"
-        ss.index.name = "Time (" + units_str + ")"
+        ss.index.name = "Time (" + str(units) + ")"
         return ss
 
     def data(self):
@@ -544,7 +541,6 @@ class Tsd(pd.Series):
         return Tsd
 
 
-# noinspection PyAbstractClass
 class TsdFrame(pd.DataFrame):
     # class TsdFrame():
     """
@@ -577,7 +573,11 @@ class TsdFrame(pd.DataFrame):
         **kwargs
             Arguments that will be passed to the pandas.DataFrame initializer.
         """
-        if isinstance(t, pd.DataFrame):
+        if isinstance(t, BlockManager):
+            d = t.as_array()
+            c = t.axes[0].values
+            t = t.axes[1].values
+        elif isinstance(t, pd.DataFrame):
             d = t.values
             c = t.columns.values
             t = t.index.values
@@ -592,6 +592,8 @@ class TsdFrame(pd.DataFrame):
                         c = np.zeros(1)
                     else:
                         c = np.array([])
+                else:
+                    c = None
 
         t = t.astype(np.float64).flatten()
         t = format_timestamps(t, time_units)
@@ -611,17 +613,19 @@ class TsdFrame(pd.DataFrame):
                 time_support = IntervalSet(start=t[0], end=t[-1])
                 super().__init__(index=t, data=d, columns=c)
 
+            self.rate = t.shape[0] / np.sum(
+                time_support.values[:, 1] - time_support.values[:, 0]
+            )
+
         else:
             time_support = IntervalSet(pd.DataFrame(columns=["start", "end"]))
             super().__init__(index=np.array([]), dtype=np.float64)
+            self.rate = 0.0
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             self.time_support = time_support
 
-        self.rate = t.shape[0] / np.sum(
-            time_support.values[:, 1] - time_support.values[:, 0]
-        )
         self.index.name = "Time (s)"
         # self._metadata.append("nap_class")
         self.nap_class = self.__class__.__name__
@@ -639,6 +643,56 @@ class TsdFrame(pd.DataFrame):
             return Tsd(result, time_support=time_support)
         elif isinstance(result, pd.DataFrame):
             return TsdFrame(result, time_support=time_support)
+
+    def __add__(self, value):
+        ts = self.time_support
+        return TsdFrame(self.as_dataframe().__add__(value), time_support=ts)
+
+    def __sub__(self, value):
+        ts = self.time_support
+        return TsdFrame(self.as_dataframe().__sub__(value), time_support=ts)
+
+    def __truediv__(self, value):
+        ts = self.time_support
+        return TsdFrame(self.as_dataframe().__truediv__(value), time_support=ts)
+
+    def __floordiv__(self, value):
+        ts = self.time_support
+        return TsdFrame(self.as_dataframe().__floordiv__(value), time_support=ts)
+
+    def __mul__(self, value):
+        ts = self.time_support
+        return TsdFrame(self.as_dataframe().__mul__(value), time_support=ts)
+
+    def __mod__(self, value):
+        ts = self.time_support
+        return TsdFrame(self.as_dataframe().__mod__(value), time_support=ts)
+
+    def __pow__(self, value):
+        ts = self.time_support
+        return TsdFrame(self.as_dataframe().__pow__(value), time_support=ts)
+
+    def __lt__(self, value):
+        return self.as_dataframe().__lt__(value)
+
+    def __gt__(self, value):
+        return self.as_dataframe().__gt__(value)
+
+    def __le__(self, value):
+        return self.as_dataframe().__le__(value)
+
+    def __ge__(self, value):
+        return self.as_dataframe().__ge__(value)
+
+    def __ne__(self, value):
+        return self.as_dataframe().__ne__(value)
+
+    def __eq__(self, value):
+        return self.as_dataframe().__eq__(value)
+
+    @property
+    def _constructor(self):
+        return TsdFrame
 
     def times(self, units="s"):
         """
@@ -678,7 +732,7 @@ class TsdFrame(pd.DataFrame):
 
         Returns
         -------
-        out: pandas.DataFrame
+        pandas.DataFrame
             the series object with adjusted times
         """
         t = self.index.values.copy()
@@ -687,10 +741,7 @@ class TsdFrame(pd.DataFrame):
             t = t.astype(np.int64)
 
         df = pd.DataFrame(index=t, data=self.values)
-        units_str = units
-        if not units_str:
-            units_str = "s"
-        df.index.name = "Time (" + units_str + ")"
+        df.index.name = "Time (" + str(units) + ")"
         df.columns = self.columns.copy()
         return df
 
@@ -703,8 +754,6 @@ class TsdFrame(pd.DataFrame):
         out: numpy.ndarray
             _
         """
-        if len(self.columns) == 1:
-            return self.values.ravel()
         return self.values
 
     def value_from(self, tsd, ep=None):

@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-28 15:10:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-17 17:15:31
+# @Last Modified time: 2022-12-02 16:38:40
 
 
 import warnings
@@ -13,8 +13,8 @@ import pandas as pd
 from tabulate import tabulate
 
 from .interval_set import IntervalSet
-from .jitted_functions import jitcount, jitunion, jitunion_isets
-from .time_series import Ts, Tsd, TsdFrame
+from .jitted_functions import jitcount, jittsrestrict, jitunion, jitunion_isets
+from .time_series import Ts, TsdFrame
 from .time_units import format_timestamps
 
 
@@ -136,22 +136,25 @@ class TsGroup(UserDict):
     def __setitem__(self, key, value):
         if self._initialized:
             raise RuntimeError("TsGroup object is not mutable.")
-        if self.__contains__(key):
-            raise KeyError("Key {} already in group index.".format(key))
-        else:
-            if isinstance(value, (Ts, Tsd)):
-                self._metadata.loc[int(key), "rate"] = value.rate
-                super().__setitem__(int(key), value)
-            elif isinstance(value, (np.ndarray, list)):
-                warnings.warn(
-                    "Elements should not be passed as numpy array. Default time units is seconds when creating the Ts object.",
-                    stacklevel=2,
-                )
-                tmp = Ts(t=value, time_units="s")
-                self._metadata.loc[int(key), "rate"] = tmp.rate
-                super().__setitem__(int(key), tmp)
-            else:
-                raise ValueError("Value with key {} is not an iterable.".format(key))
+
+        self._metadata.loc[int(key), "rate"] = value.rate
+        super().__setitem__(int(key), value)
+        # if self.__contains__(key):
+        #     raise KeyError("Key {} already in group index.".format(key))
+        # else:
+        # if isinstance(value, (Ts, Tsd)):
+        #     self._metadata.loc[int(key), "rate"] = value.rate
+        #     super().__setitem__(int(key), value)
+        # elif isinstance(value, (np.ndarray, list)):
+        #     warnings.warn(
+        #         "Elements should not be passed as numpy array. Default time units is seconds when creating the Ts object.",
+        #         stacklevel=2,
+        #     )
+        #     tmp = Ts(t=value, time_units="s")
+        #     self._metadata.loc[int(key), "rate"] = tmp.rate
+        #     super().__setitem__(int(key), tmp)
+        # else:
+        #     raise ValueError("Value with key {} is not an iterable.".format(key))
 
     def __getitem__(self, key):
         if key.__hash__:
@@ -462,9 +465,13 @@ class TsGroup(UserDict):
         time_index = []
         for i in ep.index:
             bins = np.arange(ep.start[i], ep.end[i] + bin_size, bin_size)
-            time_index.append(bins[0:-1] + np.diff(bins) / 2)
+            t = bins[0:-1] + np.diff(bins) / 2
+            t = jittsrestrict(
+                t, np.array([ep.loc[i, "start"]]), np.array([ep.loc[i, "end"]])
+            )
+            time_index.append(t)
+
         time_index = np.hstack(time_index)
-        time_index = Ts(time_index).restrict(ep).index.values
 
         n = len(self.index)
 
