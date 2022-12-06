@@ -2,7 +2,7 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-12-02 17:52:50
+# @Last Modified time: 2022-12-06 14:26:51
 import numpy as np
 from numba import jit
 
@@ -69,25 +69,6 @@ def jitrestrict(time_array, data_array, starts, ends):
 
 @jit(nopython=True)
 def jittsrestrict(time_array, starts, ends):
-    """
-    Jitted version of restrict for timestamps only
-
-    Parameters
-    ----------
-    time_array : numpy.ndarray
-        Description
-    data_array : numpy.ndarray
-        Description
-    starts : numpy.ndarray
-        Description
-    ends : numpy.ndarray
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
-    """
     n = len(time_array)
     m = len(starts)
     ix = np.zeros(n, dtype=np.bool_)
@@ -124,6 +105,93 @@ def jittsrestrict(time_array, starts, ends):
 
     new_time_array = time_array[ix]
     return new_time_array
+
+
+@jit(nopython=True)
+def jitrestrict_with_count(time_array, data_array, starts, ends):
+    n = len(time_array)
+    m = len(starts)
+    ix = np.zeros(n, dtype=np.bool_)
+    count = np.zeros(m, dtype=np.int64)
+
+    k = 0
+    t = 0
+
+    while ends[k] < time_array[t]:
+        k += 1
+
+    while k < m:
+
+        # Outside
+        while t < n:
+            if time_array[t] >= starts[k]:
+                # ix[t] = True
+                # count[k] += 1
+                # t += 1
+                break
+            t += 1
+
+        # Inside
+        while t < n:
+            if time_array[t] > ends[k]:
+                k += 1
+                break
+            else:
+                ix[t] = True
+                count[k] += 1
+            t += 1
+
+        if k == m:
+            break
+        if t == n:
+            break
+
+    new_time_array = time_array[ix]
+    new_data_array = data_array[ix]
+    return new_time_array, new_data_array, count
+
+
+@jit(nopython=True)
+def jittsrestrict_with_count(time_array, starts, ends):
+    n = len(time_array)
+    m = len(starts)
+    ix = np.zeros(n, dtype=np.bool_)
+    count = np.zeros(m, dtype=np.int64)
+
+    k = 0
+    t = 0
+
+    while ends[k] < time_array[t]:
+        k += 1
+
+    while k < m:
+
+        # Outside
+        while t < n:
+            if time_array[t] >= starts[k]:
+                # ix[t] = True
+                # count[k] += 1
+                # t += 1
+                break
+            t += 1
+
+        # Inside
+        while t < n:
+            if time_array[t] > ends[k]:
+                k += 1
+                break
+            else:
+                ix[t] = True
+                count[k] += 1
+            t += 1
+
+        if k == m:
+            break
+        if t == n:
+            break
+
+    new_time_array = time_array[ix]
+    return new_time_array, count
 
 
 @jit(nopython=True)
@@ -221,68 +289,6 @@ def jitthreshold(time_array, data_array, starts, ends, thr, method="above"):
 
 
 @jit(nopython=True)
-def jitrestrict_with_count(time_array, data_array, starts, ends):
-    """Summary
-
-    Parameters
-    ----------
-    time_array : TYPE
-        Description
-    data_array : TYPE
-        Description
-    starts : TYPE
-        Description
-    ends : TYPE
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
-    """
-    n = len(time_array)
-    m = len(starts)
-    ix = np.zeros(n, dtype=np.bool_)
-    count = np.zeros(m, dtype=np.int64)
-
-    k = 0
-    t = 0
-
-    while ends[k] < time_array[t]:
-        k += 1
-
-    while k < m:
-
-        # Outside
-        while t < n:
-            if time_array[t] >= starts[k]:
-                # ix[t] = True
-                # count[k] += 1
-                # t += 1
-                break
-            t += 1
-
-        # Inside
-        while t < n:
-            if time_array[t] > ends[k]:
-                k += 1
-                break
-            else:
-                ix[t] = True
-                count[k] += 1
-            t += 1
-
-        if k == m:
-            break
-        if t == n:
-            break
-
-    new_time_array = time_array[ix]
-    new_data_array = data_array[ix]
-    return new_time_array, new_data_array, count
-
-
-@jit(nopython=True)
 def jitvaluefrom(time_array, time_target_array, data_target_array, starts, ends):
     """Summary
 
@@ -345,49 +351,6 @@ def jitvaluefrom(time_array, time_target_array, data_target_array, starts, ends)
 
 
 @jit(nopython=True)
-def jittsrestrict_with_count(time_array, starts, ends):
-    n = len(time_array)
-    m = len(starts)
-    ix = np.zeros(n, dtype=np.bool_)
-    count = np.zeros(m, dtype=np.int64)
-
-    k = 0
-    t = 0
-
-    while ends[k] < time_array[t]:
-        k += 1
-
-    while k < m:
-
-        # Outside
-        while t < n:
-            if time_array[t] >= starts[k]:
-                # ix[t] = True
-                # count[k] += 1
-                # t += 1
-                break
-            t += 1
-
-        # Inside
-        while t < n:
-            if time_array[t] > ends[k]:
-                k += 1
-                break
-            else:
-                ix[t] = True
-                count[k] += 1
-            t += 1
-
-        if k == m:
-            break
-        if t == n:
-            break
-
-    new_time_array = time_array[ix]
-    return new_time_array, count
-
-
-@jit(nopython=True)
 def jitcount(time_array, starts, ends, bin_size):
     time_array, countin = jittsrestrict_with_count(time_array, starts, ends)
 
@@ -409,7 +372,6 @@ def jitcount(time_array, starts, ends, bin_size):
     b = 0
 
     while k < m:
-
         maxb = b + nb_bins[k]
         maxt = t + countin[k]
         lbound = starts[k]
@@ -430,7 +392,7 @@ def jitcount(time_array, starts, ends, bin_size):
 
                 lbound += bin_size
                 b += 1
-
+        t = maxt
         k += 1
 
     new_time_array = bins[0:b]
@@ -486,7 +448,7 @@ def jitbin(time_array, data_array, starts, ends, bin_size):
 
                 lbound += bin_size
                 b += 1
-
+        t = maxt
         k += 1
 
     new_time_array = bins[0:b]
@@ -543,7 +505,7 @@ def jitbin_array(time_array, data_array, starts, ends, bin_size):
 
                 lbound += bin_size
                 b += 1
-
+        t = maxt
         k += 1
 
     new_time_array = bins[0:b]
@@ -709,24 +671,6 @@ def jitunion(start1, end1, start2, end2):
 
 @jit(nopython=True)
 def jitdiff(start1, end1, start2, end2):
-    """Summary
-
-    Parameters
-    ----------
-    start1 : TYPE
-        Description
-    end1 : TYPE
-        Description
-    start2 : TYPE
-        Description
-    end2 : TYPE
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
-    """
     m = start1.shape[0]
     n = start2.shape[0]
 
@@ -802,20 +746,6 @@ def jitdiff(start1, end1, start2, end2):
 
 @jit(nopython=True)
 def jitunion_isets(starts, ends):
-    """Summary
-
-    Parameters
-    ----------
-    starts : TYPE
-        Description
-    ends : TYPE
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
-    """
     idx = np.argsort(starts)
     starts = starts[idx]
     ends = ends[idx]
@@ -879,17 +809,17 @@ def jitin_interval(time_array, starts, ends):
         # Outside
         while t < n:
             if time_array[t] >= starts[k]:
-                data[t] = k
-                t += 1
+                # data[t] = k
+                # t += 1
                 break
-            data[t] = np.nan
+            # data[t] = np.nan
             t += 1
 
         # Inside
         while t < n:
             if time_array[t] > ends[k]:
                 k += 1
-                data[t] = np.nan
+                # data[t] = np.nan
                 break
             else:
                 data[t] = k
