@@ -35,6 +35,103 @@ def shift_timestamps(ts,min_shift=0.0,max_shift=None):
     strategy = strategies[type(ts)]
     return strategy(ts,min_shift,max_shift)
 
+# Random shuffle intervals between timestamps
+
+
+def shuffle_ts_intervals(ts,min_shift=0.0,max_shift=None):
+    """
+    Randomizes the timestamps by shuffling the intervals between them.
+
+
+    Parameters
+    ----------
+    ts : Ts or TsGroup
+        The timestamps to randomize. If TsGroup, randomizes all Ts in the group independently.
+
+    Returns
+    -------
+    Ts or TsGroup
+        The randomized timestamps, with shuffled intervals
+    """
+    strategies = {nap.time_series.Ts : _shuffle_intervals_ts,
+                  nap.ts_group.TsGroup : _shuffle_intervals_tsgroup,
+                  }
+    # checks input type              
+    if type(ts) not in strategies.keys():
+        raise TypeError('Invalid input type, should be Ts or TsGroup')
+
+    strategy = strategies[type(ts)]
+    return strategy(ts)
+
+# Random Jitter
+
+
+def jitter_timestamps(ts,max_jitter=None,keep_tsupport=False):
+    """
+    Jitters each time stamp independently of random amounts uniformly drawn between -max_jitter and max_jitter.
+
+
+    Parameters
+    ----------
+    timestamps : Ts or TsGroup
+        The timestamps to jitter. If TsGroup, jitter is applied to each element of the group.
+    max_jitter : float
+        maximum jitter
+    keep_tsupport: bool, optional
+        If True, keep time support of the input. The number of timestamps will not be conserved.
+        If False, the time support is inferred from the jittered timestamps. The number of tmestamps
+        is conserved. (default: False)
+
+    Returns
+    -------
+    Ts or TsGroup
+        The jittered timestamps
+    """
+    strategies = {nap.time_series.Ts : _jitter_ts,
+                  nap.ts_group.TsGroup : _jitter_tsgroup,
+                  }
+    # checks input type              
+    if type(ts) not in strategies.keys():
+        raise TypeError('Invalid input type, should be Ts or TsGroup')
+
+    if max_jitter == None:
+        raise TypeError('missing required argument: max_jitter ')
+
+    strategy = strategies[type(ts)]
+    return strategy(ts,max_jitter,keep_tsupport)
+
+# Random resample
+
+
+def resample_timestamps(ts):
+    """
+    Resamples the timestamps in the time support, with uniform distribution.
+
+
+    Parameters
+    ----------
+    timestamps : Ts or TsGroup
+        The timestamps to resample. If TsGroup, each Ts object in the group is independently
+        resampled, in the time support of the whole group.
+
+
+    Returns
+    -------
+    Ts or TsGroup
+        The resampled timestamps
+    """
+    strategies = {nap.time_series.Ts : _resample_ts,
+                  nap.ts_group.TsGroup : _resample_tsgroup,
+                  }
+    # checks input type              
+    if type(ts) not in strategies.keys():
+        raise TypeError('Invalid input type, should be Ts or TsGroup')
+
+    strategy = strategies[type(ts)]
+    return strategy(ts)
+
+# Helper functions    
+
 
 def _shift_ts(ts,min_shift=0,max_shift=None):
     """
@@ -97,43 +194,6 @@ def _shift_tsgroup(tsgroup,min_shift=0,max_shift=None):
         shifted_timestamps = (tsgroup[k].times() + shift) % end_time + start_time
         shifted_tsgroup[k] = nap.Ts(t=np.sort(shifted_timestamps))
     return nap.TsGroup(shifted_tsgroup,time_support=tsgroup.time_support)
-
-# Random jitter
-
-
-def jitter_timestamps(ts,max_jitter=None,keep_tsupport=False):
-    """
-    Jitters each time stamp independently of random amounts uniformly drawn between -max_jitter and max_jitter.
-
-
-    Parameters
-    ----------
-    timestamps : Ts or TsGroup
-        The timestamps to jitter. If TsGroup, jitter is applied to each element of the group.
-    max_jitter : float
-        maximum jitter
-    keep_tsupport: bool, optional
-        If True, keep time support of the input. The number of timestamps will not be conserved.
-        If False, the time support is inferred from the jittered timestamps. The number of tmestamps
-        is conserved. (default: False)
-
-    Returns
-    -------
-    Ts or TsGroup
-        The jittered timestamps
-    """
-    strategies = {nap.time_series.Ts : _jitter_ts,
-                  nap.ts_group.TsGroup : _jitter_tsgroup,
-                  }
-    # checks input type              
-    if type(ts) not in strategies.keys():
-        raise TypeError('Invalid input type, should be Ts or TsGroup')
-
-    if max_jitter == None:
-        raise TypeError('missing required argument: max_jitter ')
-
-    strategy = strategies[type(ts)]
-    return strategy(ts,max_jitter,keep_tsupport)
 
 
 def _jitter_ts(ts,max_jitter=None,keep_tsupport=False):
@@ -198,35 +258,6 @@ def _jitter_tsgroup(tsgroup,max_jitter=None,keep_tsupport=False):
     return jittered_tsgroup
 
 
-# Random resample
-def resample_timestamps(ts):
-    """
-    Resamples the timestamps in the time support, with uniform distribution.
-
-
-    Parameters
-    ----------
-    timestamps : Ts or TsGroup
-        The timestamps to resample. If TsGroup, each Ts object in the group is independently
-        resampled, in the time support of the whole group.
-
-
-    Returns
-    -------
-    Ts or TsGroup
-        The resampled timestamps
-    """
-    strategies = {nap.time_series.Ts : _resample_ts,
-                  nap.ts_group.TsGroup : _resample_tsgroup,
-                  }
-    # checks input type              
-    if type(ts) not in strategies.keys():
-        raise TypeError('Invalid input type, should be Ts or TsGroup')
-
-    strategy = strategies[type(ts)]
-    return strategy(ts)
-
-
 def _resample_ts(ts):
     """
     Resamples the timestamps in the time support, with uniform distribution.
@@ -271,3 +302,44 @@ def _resample_tsgroup(tsgroup):
         resampled_tsgroup[k] = nap.Ts(t=np.sort(resampled_timestamps))
 
     return nap.TsGroup(resampled_tsgroup,time_support=tsgroup.time_support)
+
+
+def _shuffle_intervals_ts(ts):
+    """
+    Randomizes the timestamps by shuffling the intervals between them.
+
+    Parameters
+    ----------
+    ts : Ts 
+        The timestamps to randomize.
+    Returns
+    -------
+    Ts 
+        The timestamps with shuffled intervals
+    """
+    intervals = np.diff(ts.times())
+    shuffled_intervals = np.random.permutation(intervals)
+    start_time = ts.times()[0]
+    randomized_timestamps = np.hstack([start_time,start_time + np.cumsum(shuffled_intervals)])
+    randomized_ts = nap.Ts(t=randomized_timestamps)
+
+    return randomized_ts
+
+
+def _shuffle_intervals_tsgroup(tsgroup):
+    """
+    Randomizes the timestamps by shuffling the intervals between them.
+    Each Ts in the group is randomized independently
+
+    Parameters
+    ----------
+    tsGroup : TsGroup 
+        The TsGroup to randomize.
+    Returns
+    -------
+    tsGroup
+        The TsGroup with shuffled intervals.
+    """
+    randomized_tsgroup = {k:_shuffle_intervals_ts(tsgroup[k]) for k in tsgroup.keys()}
+
+    return nap.TsGroup(randomized_tsgroup)
