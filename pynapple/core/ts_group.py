@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-28 15:10:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-12-02 16:38:40
+# @Last Modified time: 2022-12-06 20:06:39
 
 
 import warnings
@@ -52,14 +52,14 @@ def union_intervals(i_sets):
 
 class TsGroup(UserDict):
     """
-    The TsGroup is a dictionnary-like object to hold multiple [`Ts`][pynapple.core.time_series.Ts]
-    or [`Tsd`][pynapple.core.time_series.Tsd] objects
-    with different time index.
+    The TsGroup is a dictionnary-like object to hold multiple [`Ts`][pynapple.core.time_series.Ts] or [`Tsd`][pynapple.core.time_series.Tsd] objects with different time index.
 
     Attributes
     ----------
     time_support: IntervalSet
         The time support of the TsGroup
+    rates : pandas.Series
+        The rate of each element of the TsGroup
     """
 
     def __init__(
@@ -74,6 +74,7 @@ class TsGroup(UserDict):
             Dictionnary containing Ts/Tsd objects
         time_support : IntervalSet, optional
             The time support of the TsGroup. Ts/Tsd objects will be restricted to the time support if passed.
+            If no time support is specified, TsGroup will merge time supports from all the Ts/Tsd objects in data.
         time_units : str, optional
             Time units if data does not contain Ts/Tsd objects ('us', 'ms', 's' [default]).
         bypass_check: bool, optional
@@ -215,6 +216,10 @@ class TsGroup(UserDict):
             List of Ts/Tsd objects
         """
         return list(self.data.values())
+
+    @property
+    def rates(self):
+        return self._metadata["rate"]
 
     #######################
     # Metadata

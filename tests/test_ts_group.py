@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:14:41
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-12-01 22:43:18
+# @Last Modified time: 2022-12-06 14:52:38
 
 """Tests of ts group for `pynapple` package."""
 
@@ -150,6 +150,10 @@ class Test_Ts_Group_1:
     def test_keys(self, group):
         tsgroup = nap.TsGroup(group)
         assert tsgroup.keys() == [0, 1, 2]
+
+    def test_rates_property(self, group):
+        tsgroup = nap.TsGroup(group)
+        pd.testing.assert_series_equal(tsgroup.rates, tsgroup._metadata['rate'])
 
     def test_items(self, group):
         tsgroup = nap.TsGroup(group)

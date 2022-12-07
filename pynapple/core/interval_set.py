@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date:   2022-01-25 21:50:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-27 23:54:54
+# @Last Modified time: 2022-12-06 21:27:08
 
 """
 """
@@ -105,21 +105,24 @@ def jitfix_iset(start, end):
 class IntervalSet(pd.DataFrame):
     # class IntervalSet():
     """
-    A subclass of pandas.DataFrame representing a (irregular) set of time intervals in elapsed time,
-    with relative operations
+    A subclass of pandas.DataFrame representing a (irregular) set of time intervals in elapsed time, with relative operations
     """
 
     def __init__(self, start, end=None, time_units="s", **kwargs):
         """
         IntervalSet initializer
 
-        If start and end and not aligned, meaning that len(start) == len(end),
-        end[i] > start[i] and start[i+1] > end[i], or start and end are not sorted,
-        will try to "fix" the data by eliminating some of the start and end data point
+        If start and end and not aligned, meaning that \n
+        1. len(start) != len(end)
+        2. end[i] > start[i]
+        3. start[i+1] > end[i]
+        4. start and end are not sorted,
+
+        IntervalSet will try to "fix" the data by eliminating some of the start and end data point
 
         Parameters
         ----------
-        start : numpy.ndarray or number
+        start : numpy.ndarray or number or pandas.DataFrame
             Beginning of intervals
         end : numpy.ndarray or number, optional
             Ends of intervals
@@ -275,7 +278,7 @@ class IntervalSet(pd.DataFrame):
 
         Parameters
         ----------
-        a : IntervalSet or tuple of IntervalSets
+        a : IntervalSet
             the IntervalSet to set-substract from self
 
         Returns

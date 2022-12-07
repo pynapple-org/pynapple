@@ -2,7 +2,7 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-12-06 14:26:51
+# @Last Modified time: 2022-12-06 20:14:25
 import numpy as np
 from numba import jit
 
@@ -831,6 +831,47 @@ def jitin_interval(time_array, starts, ends):
             break
 
     return data
+
+
+@jit(nopython=True)
+def jit_poisson_IRLS(X, y, niter=100, tolerance=1e-5):
+    """Poisson Iteratively Reweighted Least Square
+    for fitting Poisson GLM.
+
+    Parameters
+    ----------
+    X : numpy.ndarray
+        Predictors
+    y : numpy.ndarray
+        Target
+    niter : int, optional
+        Number of iterations
+    tolerance : float, optional
+        Default is 10^-5
+
+    Returns
+    -------
+    numpy.ndarray
+        Regression coefficients
+    """
+    y = y.astype(np.float64)
+    X = X.astype(np.float64)
+    n, d = X.shape
+    W = np.ones(n)
+    iXtWX = np.linalg.inv(np.dot(X.T * W, X))
+    XtWY = np.dot(X.T * W, y)
+    B = np.dot(iXtWX, XtWY)
+
+    for _ in range(niter):
+        B_ = B
+        L = np.exp(X.dot(B))  # Link function
+        Z = L.reshape((-1, 1)) * X  # partial derivatives
+        delta = np.dot(np.linalg.inv(np.dot(Z.T * W, Z)), np.dot(Z.T * W, y))
+        B = B + delta
+        tol = np.sum(np.abs((B - B_) / B_))
+        if tol < tolerance:
+            return B
+    return B
 
 
 # @jit(nopython=True)

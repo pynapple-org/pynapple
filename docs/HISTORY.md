@@ -8,16 +8,14 @@ Around 2016-2017, Luke Sjulson started *TSToolbox2*, still in Matlab and which i
 In 2018, Francesco started neuroseries, a Python package built on Pandas. It was quickly adopted in Adrien's lab, especially by Guillaume Viejo, a postdoc in the lab. Gradually, the majority of the lab was using it and new functions were constantly added.
 In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuroseries and started *pynapple*. The core of pynapple is largely built upon neuroseries. Some of the original changes to TSToolbox made by Luke were included in this package, especially the *time_support* property of all ts/tsd objects.
 
-0.2.4 (coming)
+0.2.5 (2022-12-08)
 ------------------
 
--	IO for Suite2P 
--	Flexible loading of PHY
--	Fixed bug in cross-correlogram with zero time lag
--	IO for NeoRawIOLoader
-- 	ignore_close_timestamps (Issue 91)
--	average lengths of intervals (Issue 90)
--	Spike trigger average (Issue 86)
+- 	Core functions rewritten with Numba
+
+
+0.2.4 (2022-05-02)
+------------------
 
 
 0.2.3 (2022-04-05)

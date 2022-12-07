@@ -4,14 +4,13 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-12-02 16:42:53
+# @Last Modified time: 2022-12-06 21:30:23
 
 
 import warnings
 
 import numpy as np
 import pandas as pd
-from numba import jit
 from scipy.linalg import hankel
 
 from .. import core as nap
@@ -376,13 +375,13 @@ def compute_1d_tuning_curves_continous(
         The min and max boundaries of the tuning curves.
         If None, the boundaries are inferred from the target feature
 
-    No Longer Returned
-    ------------------
+    Returns
+    -------
     pandas.DataFrame
         DataFrame to hold the tuning curves
 
-    No Longer Raises
-    ----------------
+    Raises
+    ------
     RuntimeError
         If tsdframe is not a Tsd or a TsdFrame object.
 
@@ -409,14 +408,14 @@ def compute_1d_tuning_curves_continous(
 
     tmp = tmp.fillna(0)
 
-    return tmp
+    return pd.DataFrame(tmp)
 
 
 def compute_2d_tuning_curves_continuous(
     tsdframe, features, nb_bins, ep=None, minmax=None
 ):
     """
-    Computes 2-dimensional tuning curves relative to a 2d feature with continous data.
+    Computes 1-dimensional tuning curves relative to a feature with continous data.
 
     Parameters
     ----------
@@ -424,28 +423,28 @@ def compute_2d_tuning_curves_continuous(
         Input data (e.g. continus calcium data
         where each column is the calcium activity of one neuron)
     features : TsdFrame
-        The 2d feature (two columns).
+        The 2d feature (two columns)
     nb_bins : int
         Number of bins in the tuning curves
     ep : IntervalSet, optional
         The epoch on which tuning curves are computed.
         If None, the epoch is the time support of the feature.
     minmax : tuple or list, optional
-        The min and max boundaries of the tuning curves given as:
-        (minx, maxx, miny, maxy)
-        If None, the boundaries are inferred from the target variable
+        The min and max boundaries of the tuning curves.
+        Should be a tuple of minx, maxx, miny, maxy
+        If None, the boundaries are inferred from the target feature
 
-    No Longer Returned
-    ------------------
+    Returns
+    -------
     tuple
-        A tuple containing: \n
-        tc (dict): Dictionnary of the tuning curves with dimensions (nb_bins, nb_bins).\n
+        A typle containing : \n
+        tc (dict): Dictionnary of the tuning curves with dimensions (nb_bins, nb_bins). \n
         xy (list): List of bins center in the two dimensions
 
-    No Longer Raises
-    ----------------
+    Raises
+    ------
     RuntimeError
-        If tsdframe is not a Tsd/TsdFrame or if features is not 2 columns
+        If tsdframe is not a Tsd or a TsdFrame object.
 
     """
     if not isinstance(tsdframe, (nap.Tsd, nap.TsdFrame)):
@@ -495,47 +494,6 @@ def compute_2d_tuning_curves_continuous(
     return tc, xy
 
 
-@jit(nopython=True)
-def PoissonIRLS(X, y, niter=100, tolerance=1e-5):
-    """Poisson Iteratively Reweighted Least Square
-    for fitting Poisson GLM.
-
-    Parameters
-    ----------
-    X : numpy.ndarray
-        Predictors
-    y : numpy.ndarray
-        Target
-    niter : int, optional
-        Number of iterations
-    tolerance : float, optional
-        Default is 10^-5
-
-    Returns
-    -------
-    numpy.ndarray
-        Regression coefficients
-    """
-    y = y.astype(np.float64)
-    X = X.astype(np.float64)
-    n, d = X.shape
-    W = np.ones(n)
-    iXtWX = np.linalg.inv(np.dot(X.T * W, X))
-    XtWY = np.dot(X.T * W, y)
-    B = np.dot(iXtWX, XtWY)
-
-    for _ in range(niter):
-        B_ = B
-        L = np.exp(X.dot(B))  # Link function
-        Z = L.reshape((-1, 1)) * X  # partial derivatives
-        delta = np.dot(np.linalg.inv(np.dot(Z.T * W, Z)), np.dot(Z.T * W, y))
-        B = B + delta
-        tol = np.sum(np.abs((B - B_) / B_))
-        if tol < tolerance:
-            return B
-    return B
-
-
 def compute_1d_poisson_glm(
     group, feature, binsize, windowsize, ep, time_units="s", niter=100, tolerance=1e-5
 ):
@@ -563,15 +521,17 @@ def compute_1d_poisson_glm(
     tolerance : float, optional
         Tolerance for stopping the IRLS
 
-    No Longer Returned
-    ------------------
-    TYPE
-        Description
+    Returns
+    -------
+    tuple
+        regressors : TsdFrame\n
+        offset : pandas.Series\n
+        prediction : TsdFrame\n
 
-    No Longer Raises
-    ----------------
+    Raises
+    ------
     RuntimeError
-        Description
+        if group is not a TsGroup
 
     """
     if type(group) is nap.TsGroup:
@@ -607,7 +567,9 @@ def compute_1d_poisson_glm(
     regressors = []
     for i, n in enumerate(group.keys()):
         print("Fitting Poisson GLM for unit %i" % n)
-        b = PoissonIRLS(X, count[n].values, niter=niter, tolerance=tolerance)
+        b = nap.jitted_functions.jit_poisson_IRLS(
+            X, count[n].values, niter=niter, tolerance=tolerance
+        )
         regressors.append(b)
 
     regressors = np.array(regressors).T
@@ -623,4 +585,4 @@ def compute_1d_poisson_glm(
         d=np.exp(np.dot(X[:, 1:], regressors.values) + offset.values) * binsize,
     )
 
-    return regressors, offset, prediction
+    return (regressors, offset, prediction)

@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-29 22:58:10
+# @Last Modified time: 2022-12-06 21:22:31
 
 import warnings
 
@@ -385,24 +385,23 @@ class Tsd(pd.Series):
 
         Example
         -------
-        This example shows how to count events within bins of 0.1 second.
+        This example shows how to bin data within bins of 0.1 second.
 
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> bincount = ts.count(0.1)
+        >>> tsd = nap.Tsd(t=np.arange(100), d=np.random.rand(100))
+        >>> bintsd = tsd.bin_average(0.1)
 
         An epoch can be specified:
 
-        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
-        >>> bincount = ts.count(0.1, ep=ep)
+        >>> ep = nap.IntervalSet(start = 10, end = 80, time_units = 's')
+        >>> bintsd = tsd.bin_average(0.1, ep=ep)
 
-        And bincount automatically inherit ep as time support:
+        And bintsd automatically inherit ep as time support:
 
-        >>> bincount.time_support
+        >>> bintsd.time_support
         >>>    start    end
-        >>> 0  100.0  800.0
+        >>> 0  10.0     80.0
         """
         if not isinstance(ep, IntervalSet):
             ep = self.time_support
@@ -817,8 +816,6 @@ class TsdFrame(pd.DataFrame):
         ----------
         iset : IntervalSet
             the IntervalSet object
-        keep_labels : bool, optional
-            Wheter or not to drop the label of a column
 
         Returns
         -------
@@ -853,29 +850,28 @@ class TsdFrame(pd.DataFrame):
 
         Returns
         -------
-        out: Tsd
-            A Tsd object indexed by the center of the bins and holding the averaged data points.
+        out: TsdFrame
+            A TsdFrame object indexed by the center of the bins and holding the averaged data points.
 
         Example
         -------
-        This example shows how to count events within bins of 0.1 second.
+        This example shows how to bin data within bins of 0.1 second.
 
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> bincount = ts.count(0.1)
+        >>> tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3))
+        >>> bintsdframe = tsdframe.bin_average(0.1)
 
         An epoch can be specified:
 
-        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
-        >>> bincount = ts.count(0.1, ep=ep)
+        >>> ep = nap.IntervalSet(start = 10, end = 80, time_units = 's')
+        >>> bintsdframe = tsdframe.bin_average(0.1, ep=ep)
 
-        And bincount automatically inherit ep as time support:
+        And bintsdframe automatically inherit ep as time support:
 
-        >>> bincount.time_support
+        >>> bintsdframe.time_support
         >>>    start    end
-        >>> 0  100.0  800.0
+        >>> 0  10.0     80.0
         """
         if not isinstance(ep, IntervalSet):
             ep = self.time_support

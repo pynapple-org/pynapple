@@ -14,3 +14,5 @@ Contributors
 -	Sofia Skromne Carrasco
 - 	Sara Mahallati
 - 	Gilberto Vite
+-	Davide Spalla
+- 	Luigi Petrucco
