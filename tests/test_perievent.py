@@ -23,6 +23,7 @@ def test_align_tsd():
     for i, j in zip(peth.keys(), np.arange(0, 100, 10)):
         np.testing.assert_array_almost_equal(peth[i].index.values, np.arange(-10, 10))
 
+
 def test_compute_perievent_with_tsd():
     tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
     tref = nap.Ts(t=np.arange(10, 100, 10))

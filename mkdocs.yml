@@ -25,6 +25,7 @@ nav:
       - Tuning curves: process.tuning_curves.md
       - Decoding: process.decoding.md
       - Peri-Stimulus: process.perievent.md
+      - Randomzation: process.randomize.md
   # - Plugins:
   #   - pynalog: pynalog.md
   #   - pynapplesonfire: pynapplesonfire.md
