@@ -21,6 +21,11 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 -   __Documentation__: <https://peyrachelab.github.io/pynapple>
 -   __Notebooks and tutorials__ : <https://peyrachelab.github.io/pynapple/notebooks/pynapple-quick-start/>
 -   __Collaborative repository__: <https://github.com/PeyracheLab/pynacollada>
+
+
+> **Note**
+> :page_with_curl: If you are using pynapple, please cite the following [biorxiv paper](https://www.biorxiv.org/content/10.1101/2022.12.06.519376v1)
+
 ------------------------------------------------------------------------
 
 Getting Started
