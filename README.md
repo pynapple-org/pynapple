@@ -80,21 +80,31 @@ $ spyder
 > **Warning**
 > note for **Windows** users: on a multi-user Windows, make sure you open the conda prompt with *administrative access*: `run as administrator`; otherwise directory paths for some dependencies may be missing from the PYTHONPATH environment variable. The most common is the error in importing PyQt5. In case of such errors, right click on your conda prompt and select `run as administrator`, activate your pynapple environment, and install the said package again (e.g. pip install PyQt) so that the paths are properly saved by Windows.
 
-
+> **Warning**
+> note for **Mac** users with M1/M2 chips: PyQt5 may fail to install. In the Application folder, make a copy of the Terminal app (or any other console you're using), and call the second one, for exampe, 'Terminal-Rosetta'. Right click->Get Info and click on 'Open using Rosetta'. Open this terminal and enter the following instructions (you need to install virtualenv before)
+``` {.sourceCode .shell}
+$ /usr/bin/python3 -m venv pynapple
+$ (pynapple) pip install --upgrade pip
+$ (pynapple) pip install pynapple
+```
+Open python and try:
+``` py
+import pynapple as nap
+nap.load_session()
+```
+The data loader should open in a new window.
 
 Basic Usage
 -----------
 
-After installation, the package can imported:
+After installation, you can now import the package: 
 
 ``` {.sourceCode .shell}
 $ python
 >>> import pynapple as nap
 ```
 
-An example of the package can be seen below. The exemple data can be
-found
-[here](https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1). The folder already contains the NWB file (See this [notebook](https://github.com/PeyracheLab/pynapple/blob/main/docs/notebooks/pynapple-io-notebook.ipynb) for understanding the creation of the NWB file).
+You'll find an example of the package below. Click [here](https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1) to download the example dataset. The folder includes a NWB file containing the data (See this [notebook](https://github.com/PeyracheLab/pynapple/blob/main/docs/notebooks/pynapple-io-notebook.ipynb) for more information on the creation of the NWB file).
 
 ``` py
 import numpy as np
