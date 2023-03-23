@@ -402,7 +402,6 @@ class TrackingTab(QWidget):
     def _update_table_headers(self, s):
         rbtn = self.sender()
         if rbtn.isChecked() is True:
-
             self.table.clearContents()
             self.parameters = pd.DataFrame(columns=["csv"])
 
@@ -438,7 +437,6 @@ class TrackingTab(QWidget):
         self.table.setRowCount(len(self.csv_files))
 
         if self.alignement_csv == "global":
-
             for i in range(len(self.csv_files)):
                 path = os.path.dirname(self.csv_files[i])
                 files = os.listdir(os.path.dirname(self.csv_files[i]))
@@ -451,7 +449,6 @@ class TrackingTab(QWidget):
                 self.table.setItem(i, 0, QTableWidgetItem(filename))
 
         if self.alignement_csv == "local":
-
             self.parameters = pd.DataFrame(columns=["csv", "epoch"])
 
             for i in range(len(self.csv_files)):
@@ -475,7 +472,6 @@ class TrackingTab(QWidget):
                 self.table.setCellWidget(i, 1, nepoch)
 
         elif self.alignement_csv == "ttl":
-
             self.parameters = pd.DataFrame(
                 columns=[
                     "csv",

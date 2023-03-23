@@ -55,7 +55,6 @@ def jitfix_iset(start, end):
     ct = 0
 
     while i < m:
-
         newstart = start[i]
         newend = end[i]
 
@@ -78,7 +77,6 @@ def jitfix_iset(start, end):
                 break
 
         while i < m - 1:
-
             if start[i + 1] < end[i]:
                 to_warn[2] = True
                 i += 1

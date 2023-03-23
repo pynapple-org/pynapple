@@ -223,7 +223,6 @@ class BaseLoader(object):
             time_support_ends = []
 
             for i, f in enumerate(parameters.index):
-
                 if method.lower() == "optitrack":
                     position = self.load_optitrack_csv(parameters.loc[f, "csv"])
                 elif method.lower() == "deep lab cut":
@@ -581,7 +580,6 @@ class BaseLoader(object):
         nwbfile = io.read()
 
         if name in nwbfile.intervals.keys():
-
             epochs = nwbfile.intervals[name].to_dataframe()
             isets = nap.IntervalSet(
                 start=epochs["start_time"], end=epochs["stop_time"], time_units="s"

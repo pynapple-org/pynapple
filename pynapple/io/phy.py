@@ -221,7 +221,6 @@ class Phy(BaseLoader):
         electrode_groups = {}
 
         for g in self.channel_map:
-
             device = nwbfile.create_device(
                 name=self.ephys_information[g]["device"]["name"] + "-" + str(g),
                 description=self.ephys_information[g]["device"]["description"],

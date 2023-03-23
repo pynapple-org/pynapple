@@ -92,7 +92,6 @@ def compute_perievent(data, tref, minmax, time_unit="s"):
     time_support = nap.IntervalSet(start=-window[0], end=window[1])
 
     if isinstance(data, nap.TsGroup):
-
         toreturn = {}
 
         for n in data.index:
