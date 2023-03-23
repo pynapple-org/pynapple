@@ -298,6 +298,11 @@ class Test_Time_Series_2:
         assert len(thrs) == np.sum(tsd.values > 0.5)
         thrs = tsd.threshold(0.5, "below")
         assert len(thrs) == np.sum(tsd.values < 0.5)
+        thrs = tsd.threshold(0.5, "aboveequal")
+        assert len(thrs) == np.sum(tsd.values >= 0.5)
+        thrs = tsd.threshold(0.5, "belowequal")
+        assert len(thrs) == np.sum(tsd.values <= 0.5)
+
 
     def test_threshold_time_support(self, tsd):
         thrs = tsd.threshold(0.5, "above")

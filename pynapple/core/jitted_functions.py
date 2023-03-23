@@ -225,6 +225,10 @@ def jitthreshold(time_array, data_array, starts, ends, thr, method="above"):
         ix = data_array > thr
     elif method == "below":
         ix = data_array < thr
+    elif method == "aboveequal":
+        ix = data_array >= thr
+    elif method == "belowequal":
+        ix = data_array <= thr
 
     k = 0
     t = 0

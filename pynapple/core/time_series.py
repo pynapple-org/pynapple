@@ -419,19 +419,19 @@ class Tsd(pd.Series):
     def threshold(self, thr, method="above"):
         """
         Apply a threshold function to the tsd to return a new tsd
-        with the time support being the epochs above/below the threshold
+        with the time support being the epochs above/below/>=/<= the threshold
 
         Parameters
         ----------
         thr : float
             The threshold value
         method : str, optional
-            The threshold method (above/below)
+            The threshold method (above/below/aboveequal/belowequal)
 
         Returns
         -------
         out: Tsd
-            All the time points below or above the threshold
+            All the time points below/ above/greater than equal to/less than equal to the threshold
 
         Raises
         ------
@@ -461,7 +461,7 @@ class Tsd(pd.Series):
         data_array = self.values
         starts = self.time_support.start.values
         ends = self.time_support.end.values
-        if method not in ["above", "below"]:
+        if method not in ["above", "below","aboveequal","belowequal"]:
             raise ValueError(
                 "Method {} for thresholding is not accepted.".format(method)
             )

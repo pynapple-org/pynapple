@@ -145,6 +145,18 @@ def test_jitthreshold():
         assert len(d) == np.sum(tsd.values < thr)
         np.testing.assert_array_equal(d, tsd.values[tsd.values < thr])
 
+        t, d, s, e = nap.core.jitted_functions.jitthreshold(tsd.index.values, tsd.values, ep['start'].values, ep['end'].values, thr, "aboveequal")
+    
+        assert len(t) == np.sum(tsd.values >= thr)
+        assert len(d) == np.sum(tsd.values >= thr)
+        np.testing.assert_array_equal(d, tsd.values[tsd.values >= thr])
+
+        t, d, s, e = nap.core.jitted_functions.jitthreshold(tsd.index.values, tsd.values, ep['start'].values, ep['end'].values, thr, "belowequal")
+
+        assert len(t) == np.sum(tsd.values <= thr)
+        assert len(d) == np.sum(tsd.values <= thr)
+        np.testing.assert_array_equal(d, tsd.values[tsd.values <= thr])
+
 
         # with warnings.catch_warnings(record=True) as w:
         #     new_ep = nap.IntervalSet(start=s, end=e)
