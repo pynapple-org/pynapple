@@ -39,7 +39,6 @@ def jitrestrict(time_array, data_array, starts, ends):
         k += 1
 
     while k < m:
-
         # Outside
         while t < n:
             if time_array[t] >= starts[k]:
@@ -80,7 +79,6 @@ def jittsrestrict(time_array, starts, ends):
         k += 1
 
     while k < m:
-
         # Outside
         while t < n:
             if time_array[t] >= starts[k]:
@@ -121,7 +119,6 @@ def jitrestrict_with_count(time_array, data_array, starts, ends):
         k += 1
 
     while k < m:
-
         # Outside
         while t < n:
             if time_array[t] >= starts[k]:
@@ -165,7 +162,6 @@ def jittsrestrict_with_count(time_array, starts, ends):
         k += 1
 
     while k < m:
-
         # Outside
         while t < n:
             if time_array[t] >= starts[k]:
@@ -248,7 +244,6 @@ def jitthreshold(time_array, data_array, starts, ends, thr, method="above"):
     t += 1
 
     while t < n - 1:
-
         # transition
         if time_array[t] > ends[k]:
             k += 1
@@ -328,9 +323,7 @@ def jitvaluefrom(time_array, time_target_array, data_target_array, starts, ends)
     new_data_array = np.zeros(n, dtype=data_target_array.dtype)
 
     if n > 0 and d > 0:
-
         for k in range(m):
-
             if count[k] > 0 and count_target[k] > 0:
                 t = np.sum(count[0:k])
                 i = np.sum(count_target[0:k])
@@ -430,7 +423,6 @@ def jitbin(time_array, data_array, starts, ends, bin_size):
     b = 0
 
     while k < m:
-
         maxb = b + nb_bins[k]
         maxt = t + countin[k]
         lbound = starts[k]
@@ -487,7 +479,6 @@ def jitbin_array(time_array, data_array, starts, ends, bin_size):
     b = 0
 
     while k < m:
-
         maxb = b + nb_bins[k]
         maxt = t + countin[k]
         lbound = starts[k]
@@ -549,7 +540,6 @@ def jitintersect(start1, end1, start2, end2):
     ct = 0
 
     while i < m:
-
         while j < n:
             if end2[j] > start1[i]:
                 break
@@ -619,7 +609,6 @@ def jitunion(start1, end1, start2, end2):
 
         # overlap
         if start2[j] < end1[i]:
-
             newstart[ct] = min(start1[i], start2[j])
 
             while i < m and j < n:
@@ -686,7 +675,6 @@ def jitdiff(start1, end1, start2, end2):
     ct = 0
 
     while i < m:
-
         while j < n:
             if end2[j] > start1[i]:
                 break
@@ -697,7 +685,6 @@ def jitdiff(start1, end1, start2, end2):
 
         # overlap
         if start2[j] < end1[i]:
-
             if start2[j] < start1[i] and end1[i] < end2[j]:
                 i += 1
 
@@ -809,7 +796,6 @@ def jitin_interval(time_array, starts, ends):
         k += 1
 
     while k < m:
-
         # Outside
         while t < n:
             if time_array[t] >= starts[k]:

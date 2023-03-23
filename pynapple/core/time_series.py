@@ -461,7 +461,7 @@ class Tsd(pd.Series):
         data_array = self.values
         starts = self.time_support.start.values
         ends = self.time_support.end.values
-        if method not in ["above", "below","aboveequal","belowequal"]:
+        if method not in ["above", "below", "aboveequal", "belowequal"]:
             raise ValueError(
                 "Method {} for thresholding is not accepted.".format(method)
             )

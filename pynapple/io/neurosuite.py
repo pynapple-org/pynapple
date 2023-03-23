@@ -230,7 +230,6 @@ class NeuroSuite(BaseLoader):
         electrode_groups = {}
 
         for g in self.group_to_channel:
-
             device = nwbfile.create_device(
                 name=self.ephys_information[g]["device"]["name"] + "-" + str(g),
                 description=self.ephys_information[g]["device"]["description"],
@@ -656,7 +655,9 @@ class NeuroSuite(BaseLoader):
                     ]  # waveform for this spike time
                     try:
                         neuron_waveforms[neuron] += spikewindow.values
-                    except Exception:  # ignore if full waveform is not present in this batch
+                    except (
+                        Exception
+                    ):  # ignore if full waveform is not present in this batch
                         pass
 
         meanwf = {
