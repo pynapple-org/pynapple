@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-28 15:10:48
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-12-06 20:06:39
+# @Last Modified time: 2023-03-29 14:48:42
 
 
 import warnings
@@ -13,7 +13,7 @@ import pandas as pd
 from tabulate import tabulate
 
 from .interval_set import IntervalSet
-from .jitted_functions import jitcount, jittsrestrict, jitunion, jitunion_isets
+from .jitted_functions import jitcount, jitunion, jitunion_isets
 from .time_series import Ts, TsdFrame
 from .time_units import format_timestamps
 
@@ -467,23 +467,24 @@ class TsGroup(UserDict):
 
         bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
 
-        time_index = []
-        for i in ep.index:
-            bins = np.arange(ep.start[i], ep.end[i] + bin_size, bin_size)
-            t = bins[0:-1] + np.diff(bins) / 2
-            t = jittsrestrict(
-                t, np.array([ep.loc[i, "start"]]), np.array([ep.loc[i, "end"]])
-            )
-            time_index.append(t)
+        # time_index = []
+        # for i in ep.index:
+        #     bins = np.arange(ep.start[i], ep.end[i] + bin_size, bin_size)
+        #     t = bins[0:-1] + np.diff(bins) / 2
+        #     t = jittsrestrict(
+        #         t, np.array([ep.loc[i, "start"]]), np.array([ep.loc[i, "end"]])
+        #     )
+        #     time_index.append(t)
+        # time_index = np.hstack(time_index)
 
-        time_index = np.hstack(time_index)
+        starts = ep.start.values
+        ends = ep.end.values
+
+        time_index, _ = jitcount(np.array([]), starts, ends, bin_size)
 
         n = len(self.index)
 
         count = np.zeros((time_index.shape[0], n), dtype=np.int64)
-
-        starts = ep.start.values
-        ends = ep.end.values
 
         for i in range(n):
             count[:, i] = jitcount(
