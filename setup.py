@@ -17,8 +17,6 @@ requirements = [
         'scipy>=1.3.2',
         'pynwb',
         'tabulate',
-        'pyqt5',
-        'pyqtgraph',
         'h5py',
         'tifffile',
         'zarr'

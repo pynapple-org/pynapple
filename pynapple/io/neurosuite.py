@@ -3,7 +3,7 @@
 # @Author: gviejo
 # @Date:   2022-02-02 20:45:09
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-09-16 16:28:11
+# @Last Modified time: 2023-04-06 18:53:28
 
 """
 Class and functions for loading data processed with the Neurosuite (Klusters, Neuroscope, NDmanager)
@@ -18,10 +18,9 @@ from xml.dom import minidom
 import numpy as np
 import pandas as pd
 from pynwb import NWBHDF5IO
-from PyQt5.QtWidgets import QApplication
 
 from .. import core as nap
-from .ephys_gui import EphysGUI
+from .ephys_gui import App, EphysGUI
 from .loader import BaseLoader
 
 
@@ -60,17 +59,15 @@ class NeuroSuite(BaseLoader):
             self.load_neurosuite_xml(path)
             # print("XML loaded")
             # To label the electrodes groups
-            app = QApplication([])
-            window = EphysGUI(path=path, groups=self.group_to_channel)
-            window.show()
-            app.exec()
+            app = App()
+            window = EphysGUI(app, path=path, groups=self.group_to_channel)
+            app.mainloop()
+
             # print("GUI DONE")
             if window.status:
                 self.ephys_information = window.ephys_information
                 self.load_neurosuite_spikes(path, self.basename, self.time_support)
                 self.save_data(path)
-            app.quit()
-            # del app, window
 
     def load_neurosuite_spikes(self, path, basename, time_support=None, fs=20000.0):
         """

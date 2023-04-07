@@ -1,702 +1,587 @@
 # -*- coding: utf-8 -*-
+# @Author: gviejo
+# @Date:   2023-03-29 15:05:14
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-04-06 19:47:47
 import getpass
-import os
-
-import numpy as np
+import tkinter as tk
+from tkinter import ttk, filedialog
+import os, sys
 import pandas as pd
-import pyqtgraph as pg
-import scipy.signal
-from PyQt5.QtCore import Qt
-from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import (
-    QComboBox,
-    QDialog,
-    QDialogButtonBox,
-    QDoubleSpinBox,
-    QFileDialog,
-    QFormLayout,
-    QGroupBox,
-    QHBoxLayout,
-    QHeaderView,
-    QLabel,
-    QLineEdit,
-    QMainWindow,
-    QPushButton,
-    QRadioButton,
-    QSpinBox,
-    QTableWidget,
-    QTableWidgetItem,
-    QTabWidget,
-    QVBoxLayout,
-    QWidget,
-)
+import numpy as np
 
 
-class TTLDetection(QDialog):
-    def __init__(self, parent, file, n_channels=1, channel=0, bytes_size=2, fs=20000.0):
-        super(TTLDetection, self).__init__(parent)
-        self.setWindowTitle("Check TTL detection")
-        self.setMinimumSize(640, 480)
-        self.threshold = 0.3
-        self.status = False
+class EntryPopup(ttk.Entry):
+    def __init__(self, parent, iid, column, text, table, **kw):        
+        ttk.Style().configure('pad.TEntry', padding='1 1 1 1')
+        super().__init__(parent, style='pad.TEntry', **kw)
+        self.tv = parent
+        self.iid = iid
+        self.column = column
+        self.table = table
 
-        self.graphWidget = pg.PlotWidget()
+        self.insert(0, text) 
+        self['exportselection'] = False
 
-        self.load_ttl(file, n_channels, channel, bytes_size, fs)
-        self.plot_ttl()
-
-        slider = QDoubleSpinBox()
-        slider.setMinimum(0)
-        slider.setMaximum(1)
-        slider.setSingleStep(0.1)
-        slider.lineEdit().setEnabled(False)
-        slider.setValue(self.threshold)
-        slider.valueChanged.connect(self.change_threshold)
-        slider.setGeometry(100, 100, 100, 40)
-
-        layout = QVBoxLayout()
-
-        layout2 = QHBoxLayout()
-        layout2.addWidget(QLabel("TTL threshold: "))
-        layout2.addWidget(slider)
-        layout2.addStretch()
-        layout.addLayout(layout2)
-
-        layout.addWidget(self.graphWidget)
-
-        self.buttons = QDialogButtonBox(
-            QDialogButtonBox.Ok | QDialogButtonBox.Cancel, Qt.Horizontal, self
-        )
-        self.buttons.accepted.connect(self.accept)
-        self.buttons.rejected.connect(self.reject)
-        layout.addWidget(self.buttons)
-
-        self.plot_ttl()
-
-        self.setLayout(layout)
-
-    def load_ttl(self, file, n_channels, channel, bytes_size, fs):
-        f = open(file, "rb")
-        startoffile = f.seek(0, 0)
-        endoffile = f.seek(0, 2)
-        n_samples = int((endoffile - startoffile) / n_channels / bytes_size)
-        f.close()
-        data = np.memmap(file, np.uint16, "r", shape=(n_samples, n_channels))
-        data = data[np.arange(0, n_samples, 3), channel].astype(np.int32)
-        self.data = data / data.max()
-        peaks, _ = scipy.signal.find_peaks(np.diff(self.data), height=self.threshold)
-        self.timestep = np.arange(0, n_samples, 3) / fs
-        peaks += 1
-        self.ttl = pd.Series(index=self.timestep[peaks], data=self.data[peaks])
-
-    def plot_ttl(self):
-        self.graphWidget.clear()
-        self.graphWidget.plot(self.timestep, self.data)
-        self.graphWidget.plot(
-            self.ttl.index.values, self.ttl.values, pen=None, symbol="o"
-        )
-        self.graphWidget.addLine(x=None, y=self.threshold)
-        self.graphWidget.setLabel("bottom", "Time (s)")
-
-    def change_threshold(self, thr):
-        self.threshold = thr
-        peaks, _ = scipy.signal.find_peaks(np.diff(self.data), height=self.threshold)
-        peaks += 1
-        self.ttl = pd.Series(index=self.timestep[peaks], data=self.data[peaks])
-        self.plot_ttl()
+        self.focus_force()
+        self.select_all()
+        self.bind("<Return>", self.on_return)
+        self.bind("<Control-a>", self.select_all)
+        self.bind("<Escape>", lambda *ignore: self.destroy())
 
 
-class EpochsTable(QTableWidget):
-    def __init__(self, r, c, path):
-        super().__init__(r, c)
-        self.path = path
-        self.setHorizontalHeaderLabels(["start", "end", "label"])
-        prelabel = QTableWidgetItem("sleep/wake")
-        prelabel.setForeground(QColor("grey"))
-        self.setItem(0, 2, prelabel)
+    def on_return(self, event):
+        rowid = self.tv.focus()
+        vals = self.tv.item(rowid, 'values')
+        vals = list(vals)
+        vals[self.column] = self.get()
+        self.tv.item(rowid, values=vals)        
+        self.destroy()        
+        self.table.loc[int(rowid), self.table.columns[int(self.column)]] = vals[self.column]        
 
-        self.check_change = True
-        self.cellChanged.connect(self.c_current)
+    def select_all(self, *ignore):
+        ''' Set selection on the whole text '''
+        self.selection_range(0, 'end')
 
-        header = self.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        for i in range(3):
-            header.setSectionResizeMode(i, QHeaderView.Stretch)
+        # returns 'break' to interrupt default key-bindings
+        return 'break'
 
-        self.epochs = pd.DataFrame(index=[], columns=["start", "end", "label"])
-        self.show()
+class TrackingTable(ttk.Treeview):
 
-    def c_current(self):
-        if self.check_change:
-            row = self.currentRow()
-            col = self.currentColumn()
-            value = self.item(row, col)
-            value = value.text()
-            if col in [0, 1]:
-                value = float(value)
-            self.epochs.loc[row, self.epochs.columns[col]] = value
-            if row == 0 and col == 2:
-                self.item(0, 2).setForeground(QColor("black"))
-
-    def open_sheet(self):
-        self.check_change = False
-        suggested_dir = self.path if self.path else os.getenv("HOME")
-        path = QFileDialog.getOpenFileName(
-            self, "Open CSV", suggested_dir, "CSV(*.csv)"
-        )
-        if path[0] != "":
-            self.epochs = pd.read_csv(path[0], header=None)
-            if len(self.epochs.columns) == 3:
-                self.epochs.columns = ["start", "end", "label"]
-            elif len(self.epochs.columns) == 2:
-                self.epochs.columns = ["start", "end"]
-                self.epochs["label"] = ""
-            self.setRowCount(0)
-            for r in self.epochs.index:
-                row = self.rowCount()
-                self.insertRow(row)
-                for column, clabel in enumerate(self.epochs.columns):
-                    item = QTableWidgetItem(str(self.epochs.loc[r, clabel]))
-                    self.setItem(row, column, item)
-        self.check_change = True
-
-    def update_path_info(self, path):
-        self.path = path
-
-
-class EpochsTab(QWidget):
-    def __init__(self, path, parent=None):
-        super(EpochsTab, self).__init__(parent)
+    def __init__(self, parent, headers, path, parameters):
+        super().__init__(parent, columns = headers[1:])
 
         self.path = path
-        self.time_units = "s"
+        self.parameters = parameters
+        self.n_row = 0
 
-        self.layout = QVBoxLayout(self)
+        self.name_to_keys = {}
 
-        # Select time units
-        vbox = QHBoxLayout()
-        vbox.addWidget(QLabel("Please select the time units :"))
-        vbox.setAlignment(Qt.AlignLeft)
-        for tu in ["s", "ms", "us"]:
-            tubox = QRadioButton(tu, self)
-            tubox.toggled.connect(self._time_units)
-            if tu == "s":
-                tubox.setChecked(True)
-            vbox.addWidget(tubox)
+        for i,n in enumerate(headers):
+            self.heading(f'#{i}', text=n)
+            if i == 0:
+                self.column(f'#{i}', anchor=tk.CENTER, stretch=tk.NO, width=0)
+            else:
+                self.column(f'#{i}', anchor='c', width=10)
+                self.name_to_keys[f'#{i}'] = self.parameters.columns[i-1]
 
-        self.layout.addLayout(vbox)
+        yscrollbar = ttk.Scrollbar(self, orient='vertical', command=self.yview)
+        self.configure(yscrollcommand=yscrollbar.set)
+        yscrollbar.pack(side="right", fill="y")
 
-        # Table view
-        self.table = EpochsTable(1, 3, self.path)
-        self.layout.addWidget(self.table)
+        self.bind("<Double-1>", lambda event: self.on_double_click(event))
+        self.tag_configure('oddrow', background='gray66')
+        self.tag_configure('evenrow', background='gray92')
+        self.tags = ['evenrow', 'oddrow']
 
-        # Add row
-        self.addRowBtn = QPushButton("Add row")
-        self.addRowBtn.clicked.connect(self.add_row)
-        self.layout.addWidget(self.addRowBtn)
+    def _update_parameters(self, csv_files, alignment_csv):
+        if alignment_csv == 'global':            
+            for i in range(len(csv_files)):
+                path = os.path.dirname(csv_files[i])
+                files = os.listdir(os.path.dirname(csv_files[i]))
+                filename = os.path.basename(csv_files[i])
+                
+                # Updating parameters table
+                self.parameters.loc[i, "csv"] = csv_files[i]
 
-        # Load a csv
-        button = QPushButton("Load csv file")
-        button.clicked.connect(self.load_csv_file)
-        self.layout.addWidget(button)
+                # Set filename in place
+                self.insert_row((filename))
 
-        self.layout.addStretch()
+        elif alignment_csv == 'local':            
+            for i in range(len(csv_files)):
+                path = os.path.dirname(csv_files[i])
+                files = os.listdir(os.path.dirname(csv_files[i]))
+                filename = os.path.basename(csv_files[i])
+                
+                # Updating parameters table
+                self.parameters.loc[i, "csv"] = csv_files[i]
 
-    def load_csv_file(self, s):
-        self.table.open_sheet()
+                # Infer the epoch
+                n = os.path.splitext(filename)[0].split("_")[-1]                
+                if n.isdigit():                    
+                    self.parameters.loc[i, "epoch"] = int(n)
 
-    def _time_units(self, s):
-        rbtn = self.sender()
-        if rbtn.isChecked() is True:
-            self.time_units = rbtn.text()
+                # Set filename in place
+                self.insert_row((filename, n))
+                
+        elif alignment_csv == "ttl":
+            for i in range(len(csv_files)):
+                path = os.path.dirname(csv_files[i])
+                files = os.listdir(os.path.dirname(csv_files[i]))
+                filename = os.path.basename(csv_files[i])
+                
+                # Updating parameters table
+                self.parameters.loc[i, "csv"] = csv_files[i]
 
-    def add_row(self):
-        row = self.table.rowCount()
-        self.table.insertRow(row)
-        self.table.update()
+                # Infer the epoch
+                n = os.path.splitext(filename)[0].split("_")[-1]                
+                epoch = ''
+                if n.isdigit():                    
+                    self.parameters.loc[i, "epoch"] = int(n)                    
+                    epoch = str(int(n))
 
-    def update_path_info(self, path):
-        self.table.update_path_info(path)
+                values = [filename]
 
+                # Infer the ttl file
+                possiblettlfile = [f for f in files if "_" + n in f and f != filename]
+                if len(possiblettlfile):                    
+                    self.parameters.loc[i, "ttl"] = os.path.join(self.path, possiblettlfile[0])
+                    values.append(possiblettlfile[0])
+                else:
+                    values.append("Select ttl file")                
 
-class SessionInformationTab(QWidget):
-    def __init__(self, path=None, parent=None):
-        super(SessionInformationTab, self).__init__(parent)
-        try:
-            experimenter = getpass.getuser()
-        except RuntimeError:
-            experimenter = ""
+                # Default analogin parameters
+                iterates = zip(
+                    ["n_channels", "tracking_channel", "bytes_size", "fs", "epoch", "threshold"],
+                    ["1", "0", "2", "20000.0", epoch, "0.3"],
+                )
+                for key, dval in iterates:
+                    self.parameters.loc[i, key] = dval
+                    values.append(dval)
 
-        self.session_information = {
-            "path": path,
-            "name": "",
-            "description": "",
-            "experimenter": experimenter,
-            "lab": "",
-            "institution": "",
-        }
-        self.subject_information = {
-            "age": "",
-            "description": "",
-            "genotype": "",
-            "sex": "",
-            "species": "",
-            "subject_id": "",
-            "weight": "",
-            # 'date_of_birth':'',
-            "strain": "",
-        }
+                self.insert_row(values)
 
-        self.layout = QHBoxLayout(self)
+    def insert_row(self, values):
+        tags= (self.tags[self.n_row%2])
+        self.insert('', 'end', iid=self.n_row,
+            values=values, tags = (self.tags[self.n_row%2]))
+        self.n_row += 1
 
-        formsession = QGroupBox("Session")
-        self.form1 = QFormLayout()
-        for k in self.session_information.keys():
-            if k != "path":
-                tmp = QLineEdit(self.session_information[k])
-                self.form1.addRow(k, tmp)
-                if k == "name":
-                    self.name = tmp
+    def on_double_click(self, event):
+        # close previous popups
+        try:  # in case there was no previous popup
+            self.entryPopup.destroy()
+        except AttributeError:
+            pass
 
-        formsession.setLayout(self.form1)
+        rowid = self.identify_row(event.y)
+        column = self.identify_column(event.x)
+        key = self.name_to_keys[column]
+        if not rowid:
+            return
+        if key in ['csv', 'ttl']:
+            if key == 'csv':
+                path = filedialog.askopenfilename(
+                    initialdir=self.path, filetypes=[('CSV File', '*.csv')],
+                )
+            else:
+                path = filedialog.askopenfilename(
+                    initialdir=self.path
+                )                
+            self.parameters[key] = path
+            vals = self.item(rowid, 'values')
+            vals = list(vals)
+            vals[int(column[1:])-1] = os.path.basename(path)
+            self.item(rowid, values=vals)        
+            return
+        else:
+            x,y,width,height = self.bbox(rowid, column)        
+            pady = height // 2
+            text = self.item(rowid, 'values')[int(column[1:])-1]
+            self.entryPopup = EntryPopup(self, rowid, int(column[1:])-1, text, self.parameters)
+            self.entryPopup.place(x=x, y=y+pady, width=width, height=height, anchor='w')
+            return
 
-        formsubject = QGroupBox("Subject")
-        self.form2 = QFormLayout()
-        for k in self.subject_information.keys():
-            self.form2.addRow(QLabel(k), QLineEdit(self.subject_information[k]))
-        formsubject.setLayout(self.form2)
+class TrackingTab(ttk.Frame):
 
-        self.layout.addWidget(formsession)
-        self.layout.addWidget(formsubject)
-
-        self.update_path_info(path)
-
-        # self.retrieve_session_information()
-
-    def retrieve_session_information(self):
-        n = self.form1.rowCount()
-        for i in range(0, n * 2, 2):
-            key = self.form1.itemAt(i)
-            value = self.form1.itemAt(i + 1)
-            self.session_information[key.widget().text()] = value.widget().text()
-
-        return self.session_information
-
-    def retrieve_subject_information(self):
-        n = self.form2.rowCount()
-        for i in range(0, n * 2, 2):
-            key = self.form2.itemAt(i)
-            value = self.form2.itemAt(i + 1)
-            self.subject_information[key.widget().text()] = value.widget().text()
-
-        return self.subject_information
-
-    def update_path_info(self, path):
-        self.session_information["path"] = path
-        self.session_information["name"] = os.path.basename(path) if path else ""
-        self.name.setText(self.session_information["name"])
-
-
-class TrackingTab(QWidget):
-    def __init__(self, path=None, parent=None):
-        super(TrackingTab, self).__init__(parent)
+    def __init__(self, parent, path=None):
+        super().__init__(parent)
         self.path = path
         self.time_units = "s"
         self.tracking_method = "Optitrack"
         self.track_frequency = 120.0
-        self.alignement_csv = "global"  # local or ttl
+        self.alignment_csv = "global"  # local or ttl
         self.csv_files = []
 
         self.align_to_headers = {
-            "global": ["CSV files"],
-            "local": ["CSV files", "Start\nepoch"],
-            "ttl": [
-                "CSV files",
-                "TTL file",
-                "Number\nof\nchannels",
-                "Tracking\nchannel",
-                "Bytes\nsize",
-                "TTL\nsampling\nfrequency\n(Hz)",
-                "Start\nepoch",
-                "TTL\ndetection",
-            ],
-        }
-
-        self.headers_to_param = {
-            "global": {"CSV files": "csv"},
-            "local": {"CSV files": "csv", "Start\nepoch": "epoch"},
-            "ttl": {
-                "CSV files": "csv",
-                "TTL file": "ttl",
-                "Number\nof\nchannels": "n_channels",
-                "Tracking\nchannel": "tracking_channel",
-                "Bytes\nsize": "bytes_size",
-                "TTL\nsampling\nfrequency\n(Hz)": "fs",
-                "Start\nepoch": "epoch",
-                "TTL\ndetection": "threshold",
-            },
+            "global": ["\n\n\n", "CSV files"],
+            "local": ["\n\n\n", "CSV files", "Start epoch"],
+            "ttl": ("\n\n\n", 
+                    "CSV files",
+                    "TTL file",
+                    "Number\nof\nchannels",
+                    "Tracking\nchannel",
+                    "Bytes\nsize",
+                    "TTL\nsampling\nfrequency\n(Hz)",
+                    "Start\nepoch",
+                    "TTL\nthreshold")
         }
 
         self.parameters = pd.DataFrame(columns=["csv"])
 
         self.ttl_param_widgets = {}
 
-        self.layout = QVBoxLayout(self)
-
-        laytop = QHBoxLayout()
-        laytop.addWidget(QLabel("Tracking system: "))
-        combobox1 = QComboBox()
-        combobox1.addItems(["Optitrack", "Deep Lab Cut", "Default"])
-        combobox1.currentTextChanged.connect(self.get_tracking_method)
-        laytop.addWidget(combobox1)
-
-        # Select type of alignement
-        abox = QHBoxLayout()
-        abox.addWidget(QLabel("Tracking alignment :"))
-        abox.setAlignment(Qt.AlignLeft)
-        vbox2 = QVBoxLayout()
-        for tu in [
-            "Global timestamps in CSV",
-            "Local timestamps in CSV",
-            "TTL detection",
-        ]:
-            tubox = QRadioButton(tu, self)
-            if tu == "Global timestamps in CSV":
-                tubox.setChecked(True)
-            tubox.toggled.connect(self._update_table_headers)
-            vbox2.addWidget(tubox)
-        abox.addLayout(vbox2)
-        laytop.addLayout(abox)
-
-        laytop.addWidget(QLabel("Tracking\nfrequency (Hz): "))
-        fs = QDoubleSpinBox()
-        fs.setMaximum(100000.0)
-        fs.setSingleStep(10.0)
-        fs.setValue(self.track_frequency)
-        fs.valueChanged.connect(self.get_tracking_frequency)
-        laytop.addWidget(fs)
-
-        # Load a csv
-        button = QPushButton("Load csv file(s)")
-        button.clicked.connect(self.load_csv_files)
-        button.resize(button.sizeHint())
-        laytop.addWidget(button)
-
-        laytop.addStretch()
-
-        self.layout.addLayout(laytop)
-
-        # Table view
-        self.table = QTableWidget(1, 1)
-        self.table.setHorizontalHeaderLabels(["CSV file"])
-        self.table.itemDoubleClicked.connect(self.change_file)
-        self.table.itemChanged.connect(self.change_ttl_params)
-
-        header = self.table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.Stretch)
-
-        self.layout.addWidget(self.table)
-
-        self.layout.addStretch()
-
-    def _update_table_headers(self, s):
-        rbtn = self.sender()
-        if rbtn.isChecked() is True:
-            self.table.clearContents()
-            self.parameters = pd.DataFrame(columns=["csv"])
-
-            nc = self.table.columnCount()
-
-            while nc > 1:
-                self.table.removeColumn(nc - 1)
-                nc -= 1
-
-            if rbtn.text() == "Global timestamps in CSV":
-                self.alignement_csv = "global"
-            elif rbtn.text() == "Local timestamps in CSV":
-                self.alignement_csv = "local"
-                for i in range(len(self.align_to_headers["local"][1:])):
-                    self.table.insertColumn(i + 1)
-                self.table.setHorizontalHeaderLabels(
-                    self.align_to_headers[self.alignement_csv]
-                )
-            elif rbtn.text() == "TTL detection":
-                self.alignement_csv = "ttl"
-                for i in range(len(self.align_to_headers["ttl"][1:])):
-                    self.table.insertColumn(i + 1)
-                self.table.setHorizontalHeaderLabels(
-                    self.align_to_headers[self.alignement_csv]
-                )
-
-    def load_csv_files(self, s):
-        suggested_dir = self.path if self.path else os.getenv("HOME")
-        paths = QFileDialog.getOpenFileNames(
-            self, "Open CSV", suggested_dir, "CSV(*.csv)"
-        )
-        self.csv_files = paths[0]
-        self.table.setRowCount(len(self.csv_files))
-
-        if self.alignement_csv == "global":
-            for i in range(len(self.csv_files)):
-                path = os.path.dirname(self.csv_files[i])
-                files = os.listdir(os.path.dirname(self.csv_files[i]))
-                filename = os.path.basename(self.csv_files[i])
-
-                # Updating parameters table
-                self.parameters.loc[filename, "csv"] = self.csv_files[i]
-
-                # Set filename in place
-                self.table.setItem(i, 0, QTableWidgetItem(filename))
-
-        if self.alignement_csv == "local":
-            self.parameters = pd.DataFrame(columns=["csv", "epoch"])
-
-            for i in range(len(self.csv_files)):
-                path = os.path.dirname(self.csv_files[i])
-                files = os.listdir(os.path.dirname(self.csv_files[i]))
-                filename = os.path.basename(self.csv_files[i])
-
-                # Updating parameters table
-                self.parameters.loc[filename, "csv"] = self.csv_files[i]
-
-                # Set filename in place
-                self.table.setItem(i, 0, QTableWidgetItem(filename))
-
-                # Infer the epoch
-                n = os.path.splitext(filename)[0].split("_")[-1]
-                nepoch = QSpinBox()
-                if n.isdigit():
-                    nepoch.setValue(int(n))
-                    self.parameters.loc[filename, "epoch"] = int(n)
-                nepoch.valueChanged.connect(self.change_local_params)
-                self.table.setCellWidget(i, 1, nepoch)
-
-        elif self.alignement_csv == "ttl":
-            self.parameters = pd.DataFrame(
-                columns=[
-                    "csv",
-                    "ttl",
-                    "n_channels",
-                    "tracking_channel",
-                    "bytes_size",
-                    "fs",
-                    "epoch",
-                    "threshold",
-                ]
+        # Select tracking system
+        fr1 = tk.Frame(master=self)
+        fr1.pack(fill='x', padx=20, pady=5)
+        tk.Label(master=fr1, text="Tracking system:").pack(side=tk.LEFT)
+        self.tracking_method = tk.StringVar(fr1)
+        self.tracking_method.set("Optitrack")
+        self.tracking_menu = tk.OptionMenu(fr1, 
+            self.tracking_method, "Optitrack", "DeepLabCut", "Default",
             )
+        self.tracking_menu.pack(side=tk.LEFT, padx = 20)
 
-            for i in range(len(self.csv_files)):
-                path = os.path.dirname(self.csv_files[i])
-                files = os.listdir(os.path.dirname(self.csv_files[i]))
-                filename = os.path.basename(self.csv_files[i])
+        # Select type of alignment
+        tk.Label(master=fr1, text="Tracking alignment:").pack(side=tk.LEFT, padx=20)
+        texts = ['Global timestamps in CSV', 
+                'Local timestamps in CSV',
+                'TTL detection']
+        values = ['global', 'local', 'ttl']
+        fr1rb = tk.Frame(master=fr1)
+        fr1rb.pack(side=tk.LEFT)
+        self.tk_alignment = tk.StringVar(None, self.alignment_csv)
+        for i in range(3):
+            tk.Radiobutton(
+                master=fr1rb, 
+                text=texts[i], 
+                padx = 5, 
+                pady=10,
+                variable=self.tk_alignment,
+                value=values[i],
+                command=self._update_table_headers).pack(anchor="w")
 
-                # Updating parameters table
-                self.parameters.loc[filename, "csv"] = self.csv_files[i]
+        fr12 = tk.Frame(master=fr1)
+        fr12.pack(side=tk.LEFT, fill='y', padx=20, pady=5)        
 
-                # Set filename in place
-                self.table.setItem(i, 0, QTableWidgetItem(filename))
+        # Select tracking frequency
+        tk.Label(master=fr12, text="Tracking frequency (Hz):").pack(padx=20)#side=tk.LEFT, padx = 20)
+        self.track_frequency = tk.DoubleVar(fr1)
+        self.track_frequency.set(120.00)
+        self.fr = tk.Entry(master=fr12, textvariable=self.track_frequency)
+        self.fr.pack(padx=20, pady=20)#side=tk.LEFT, padx = 5, expand=True)
+        self.fr.bind('<Return>', lambda event: self.focus())
 
-                # Infer the epoch
-                n = os.path.splitext(filename)[0].split("_")[-1]
-                # nepoch = QSpinBox()
-                if n.isdigit():
-                    # nepoch.setValue(int(n))
-                    self.parameters.loc[filename, "epoch"] = int(n)
-                    item = QTableWidgetItem(str(n))
-                    self.table.setItem(i, 6, item)
-                # nepoch.valueChanged.connect(self.change_ttl_params)
-                # self.table.setCellWidget(i, 6, nepoch)
+        # Load a CSV
+        tk.Button(master=fr12, text = "Load csv file(s)", command=self._load_csv_files).pack()#side=tk.LEFT, padx=20)
 
-                # Infer the ttl file
-                possiblettlfile = [f for f in files if "_" + n in f and f != filename]
-                if len(possiblettlfile):
-                    item = QTableWidgetItem(possiblettlfile[0])
-                    self.parameters.loc[filename, "ttl"] = os.path.join(
-                        path, possiblettlfile[0]
-                    )
-                else:
-                    item = QTableWidgetItem("Select ttl file")
-                self.table.setItem(i, 1, item)
-                item.setFlags(item.flags() ^ Qt.ItemIsEditable)
-
-                # Default analogin parameters
-                self.fill_default_value_parameters(filename, i)
-
-                # Check button
-                check_button = QPushButton("Check")
-                check_button.clicked.connect(self.check_ttl)
-                self.table.setCellWidget(i, 7, check_button)
-
-        header = self.table.horizontalHeader()
-        header.setSectionResizeMode(QHeaderView.ResizeToContents)
-        header.setSectionResizeMode(0, QHeaderView.Stretch)
-
-    def check_ttl(self):
-        r = self.table.currentRow()
-        w = TTLDetection(
-            parent=self,
-            file=self.parameters.loc[self.parameters.index[r], "ttl"],
-            n_channels=self.parameters.loc[self.parameters.index[r], "n_channels"],
-            channel=self.parameters.loc[self.parameters.index[r], "tracking_channel"],
-            bytes_size=self.parameters.loc[self.parameters.index[r], "bytes_size"],
-            fs=self.parameters.loc[self.parameters.index[r], "fs"],
-        )
-        w.show()
-        if w.exec():
-            self.parameters["threshold"][r] = w.threshold
-        w.close()
-        print(self.parameters["threshold"][r])
-
-    def fill_default_value_parameters(self, filename, row):
-        # ttl_param_widgets = {}
-        iterates = zip(
-            ["n_channels", "tracking_channel", "bytes_size", "fs"],
-            [2, 3, 4, 5],
-            [1, 0, 2, 20000.0],
-        )
-        for key, col, dval in iterates:
-            if col in [2, 3, 4]:
-                self.parameters.loc[filename, key] = int(dval)
-            else:
-                self.parameters.loc[filename, key] = dval
-            item = QTableWidgetItem(str(dval))
-            self.table.setItem(row, col, item)
-            # if key == 'fs':
-            #     ttl_param_widgets[key] = QDoubleSpinBox()
-            #     ttl_param_widgets[key].setMaximum(100000.0)
-            #     ttl_param_widgets[key].setSingleStep(1000.0)
-            # else:
-            #     ttl_param_widgets[key] = QSpinBox()
-            # ttl_param_widgets[key].setValue(dval)
-            # ttl_param_widgets[key].valueChanged.connect(self.change_ttl_params)
-            # self.table.setCellWidget(row, col, ttl_param_widgets[key])
-            # Adding default trheshod value
-            self.parameters.loc[filename, "threshold"] = 0.3
-        # self.ttl_param_widgets[row] = ttl_param_widgets
-
-    def change_file(self, item):
-        if self.table.currentColumn() in [0, 1]:
-            suggested_dir = self.path if self.path else os.getenv("HOME")
-            if self.table.currentColumn() == 0:
-                paths = QFileDialog.getOpenFileName(
-                    self, "Open CSV", suggested_dir, "CSV(*.csv)"
+        # Initiate all tables
+        self.tables = {}
+        for k in ['global', 'local', 'ttl']:
+            self.tables[k] = TrackingTable(
+                self, 
+                tuple(self.align_to_headers[k]), 
+                self.path, 
+                self.get_parameters(k)
                 )
-            if self.table.columnCount() > 1:
-                if self.table.currentColumn() == 1:
-                    paths = QFileDialog.getOpenFileName(
-                        self, "Open TTL file", suggested_dir
-                    )
-            filename = os.path.basename(paths[0])
-            item.setText(filename)
-            self.parameters.iloc[
-                self.table.currentRow(), self.table.currentColumn()
-            ] = paths[0]
+        
+        self.tables['global'].pack(fill='both', padx=20, pady=5, expand=True)
 
-    def get_tracking_method(self, s):
-        self.tracking_method = s
+        self.n_row = 0
 
-    def get_tracking_frequency(self, s):
-        self.track_frequency = float(s)
-
-    def change_ttl_params(self, item):
-        row, col = (self.table.currentRow(), self.table.currentColumn())
-        if col in [2, 3, 4, 5, 6]:
-            if col == 5:
-                self.parameters.iloc[row, col] = float(item.text())
-            else:
-                self.parameters.iloc[row, col] = int(item.text())
-
-    def change_local_params(self, item):
-        row, col = (self.table.currentRow(), self.table.currentColumn())
-        if col == 1:
-            self.parameters.iloc[row, col] = int(item)
+    def get_parameters(self, alignment_csv):
+        if alignment_csv == 'global':
+            return pd.DataFrame(
+                columns=["csv"]
+                )
+        elif alignment_csv == 'local':
+            return pd.DataFrame(
+                columns=["csv", "epoch"]
+                )
+        elif alignment_csv == 'ttl':
+            return pd.DataFrame(
+                columns=["csv","ttl","n_channels","tracking_channel",
+                    "bytes_size","fs","epoch","threshold"]
+                )
 
     def update_path_info(self, path):
         self.path = path
 
+    def _update_table_headers(self):
+        self.tables[self.alignment_csv].pack_forget()
+        for item in self.tables[self.alignment_csv].get_children():
+            self.tables[self.alignment_csv].delete(item)
+        self.tables[self.alignment_csv].parameters = self.get_parameters(self.alignment_csv)
+        self.alignment_csv = self.tk_alignment.get()
+        self.tables[self.alignment_csv].pack(fill='both', padx=20, pady=5, expand=True)
+   
+    def _load_csv_files(self):
+        suggested_dir = self.path if self.path else os.getenv("HOME")        
+        paths = filedialog.askopenfilenames(
+            initialdir=suggested_dir, 
+            filetypes=[('CSV File(s)', '*.csv')],
+            multiple=True
+            )
+        for item in self.tables[self.alignment_csv].get_children():
+            self.tables[self.alignment_csv].delete(item)        
+        self.csv_files = paths
+        self.tables[self.alignment_csv]._update_parameters(self.csv_files, self.alignment_csv)
 
-class BaseLoaderGUI(QMainWindow):
-    def __init__(self, path=None):
-        super().__init__()
+    def retrieve_tracking_parameters(self):
+        return self.tables[self.alignment_csv].parameters
+
+class EpochsTable(ttk.Treeview):
+
+    def __init__(self, parent, n_row, n_col, path):
+        super().__init__(parent, 
+            column = ("start", "end", "label"), show="headings")
+
+        self.path = path
+        self.n_col = n_col
+        self.n_row = n_row
+
+        self.column("# 1", anchor=tk.CENTER)
+        self.heading("# 1", text="start")
+        self.column("# 2", anchor=tk.CENTER)
+        self.heading("# 2", text="end")
+        self.column("# 3", anchor=tk.CENTER)
+        self.heading("# 3", text="label")
+
+        yscrollbar = ttk.Scrollbar(self, orient='vertical', command=self.yview)
+        self.configure(yscrollcommand=yscrollbar.set)
+        yscrollbar.pack(side="right", fill="y")
+        
+        self.epochs = pd.DataFrame(index=[], columns=["start", "end", "label"])
+
+        self.bind("<Double-1>", lambda event: self.on_double_click(event))
+        self.tag_configure('oddrow', background='gray66')
+        self.tag_configure('evenrow', background='gray92')
+        self.tags = ['evenrow', 'oddrow']
+
+    def open_sheet(self):
+        self.check_change=False
+        suggested_dir = self.path if self.path else os.getenv("HOME")
+        path = filedialog.askopenfilename(initialdir=suggested_dir, filetypes=[('CSV File', '*.csv')])
+        if len(path):
+            for item in self.get_children():
+                self.delete(item)
+            self.n_row = 0
+            self.epochs = pd.read_csv(path, header=None)
+            if len(self.epochs.columns) == 3:
+                self.epochs.columns = ["start", "end", "label"]
+            elif len(self.epochs.columns) == 2:
+                self.epochs.columns = ["start", "end"]
+                self.epochs["label"] = ""
+            for r in self.epochs.index:
+                self.insert('', 'end', iid=r, values = tuple(self.epochs.loc[r]),
+                    tags= (self.tags[r%2]))
+                self.n_row += 1
+
+        return        
+
+    def on_double_click(self, event):
+        # close previous popups
+        try:  # in case there was no previous popup
+            self.entryPopup.destroy()
+        except AttributeError:
+            pass
+
+        rowid = self.identify_row(event.y)
+        column = self.identify_column(event.x)
+        if not rowid:
+            return
+
+        x,y,width,height = self.bbox(rowid, column)        
+        pady = height // 2
+        text = self.item(rowid, 'values')[int(column[1:])-1]
+        self.entryPopup = EntryPopup(self, rowid, int(column[1:])-1, text, self.epochs)
+        self.entryPopup.place(x=x, y=y+pady, width=width, height=height, anchor='w')
+        
+        return
+
+    def insert_row(self):        
+        tags= (self.tags[self.n_row%2])
+        self.insert('', 'end', iid=self.n_row,
+            values=('', '', ''), tags = (self.tags[self.n_row%2]))
+        self.epochs.loc[self.n_row] = np.nan
+        self.n_row += 1
+
+class EpochsTab(ttk.Frame):
+
+    def __init__(self, parent, path=None):
+        super().__init__(master=parent)
+
+        self.path = path
+        self.time_units = "s'"
+
+
+        # Select time units
+        fr1 = tk.Frame(master=self)
+        fr1.pack()
+        ttk.Label(master=fr1, text ="Please select the time units : ").pack(side=tk.LEFT)
+        # self.time_units = ['s', 'ms', 'us']
+        self.time_units = "s"
+        self.tk_tu = tk.StringVar(None, self.time_units)
+        for i, tu in enumerate(['s', 'ms', 'us']):
+            tk.Radiobutton( master=fr1, 
+                            text=tu, 
+                            padx = 5, 
+                            pady=10,
+                            variable=self.tk_tu,
+                            value=tu,
+                            command=self._time_units).pack(side=tk.LEFT)
+
+        # Table view
+        self.table = EpochsTable(self, 2, 3, path)
+        self.table.pack(fill='both', padx=20, pady=5, expand=True)
+
+        # Add row
+        fr2 = tk.Frame(master=self)
+        tk.Button(master=fr2, text = "Add row", command=self.add_row).pack(fill='x')
+
+        # Load a CSV
+        tk.Button(master=fr2, text = "Load csv file", command=self.load_csv_file).pack(fill='x')
+        fr2.pack(fill='x', padx=20, pady=10)
+
+    def load_csv_file(self):
+        self.table.open_sheet()
+
+    def update_path_info(self, path):
+        self.path = path
+        # self.table.update_path_info(path)
+
+    def _time_units(self):
+        self.time_units = self.tk_tu.get()
+
+    def add_row(self):
+        self.table.insert_row()       
+
+
+class SessionInformationTab(ttk.Frame):
+
+    def __init__(self, parent, path=None):
+        super().__init__(parent)
+        try:
+            experimenter = getpass.getuser()
+        except RuntimeError:
+            experimenter = ""
+
+        self.columnconfigure(0, weight=1)
+        self.columnconfigure(1, weight=1)        
+
+        session_frame = tk.Frame(master=self, padx = 15, pady = 10)
+        session_frame.columnconfigure(0, weight=1)
+        session_frame.columnconfigure(1, weight=5)
+        session_frame.rowconfigure(1)
+        session_frame.grid(row=0, column=0, sticky="nswe")
+        ttk.Label(master=session_frame, text ="Session").grid(row=0,column=0)
+        ttk.Label(master=session_frame, text ="_______").grid(row=1,column=0)
+
+        self.session_information = {
+            "path": tk.StringVar(master=session_frame, value=path),
+            "name": tk.StringVar(master=session_frame),
+            "description": tk.StringVar(master=session_frame),
+            "experimenter": tk.StringVar(master=session_frame, value=experimenter),
+            "lab": tk.StringVar(master=session_frame),
+            "institution": tk.StringVar(master=session_frame),
+        }
+        
+        for i, n in enumerate(self.session_information.keys()):
+            if n != 'path':
+                tk.Label(master=session_frame, text = n).grid(row=i+2,column=0, sticky="W")                
+                ent = tk.Entry(master=session_frame, textvariable=self.session_information[n])
+                ent.grid(row=i+2,column=1, sticky="EW", columnspan=4)                
+                if n == "name":
+                    self.name = self.session_information['name']
+
+
+        subject_frame = tk.Frame(master=self, padx = 15, pady = 10)
+        subject_frame.columnconfigure(0, weight=1)
+        subject_frame.columnconfigure(1, weight=5)
+        subject_frame.rowconfigure(1)
+        subject_frame.grid(row=0, column=1, sticky="nswe")
+        ttk.Label(master=subject_frame, text ="Subject").grid(row=0,column=0)
+        ttk.Label(master=subject_frame, text ="_______").grid(row=1,column=0)
+
+        self.subject_information = {
+            "age": tk.StringVar(master=subject_frame),
+            "description": tk.StringVar(master=subject_frame),
+            "genotype": tk.StringVar(master=subject_frame),
+            "sex": tk.StringVar(master=subject_frame),
+            "species": tk.StringVar(master=subject_frame),
+            "subject_id": tk.StringVar(master=subject_frame),
+            "weight": tk.StringVar(master=subject_frame),
+            # 'date_of_birth':'',
+            "strain": tk.StringVar(master=subject_frame),
+        }
+
+        for i, n in enumerate(self.subject_information.keys()):
+            tk.Label(master=subject_frame, text = n).grid(row=i+2,column=0, sticky="W")
+            ent = tk.Entry(master=subject_frame, textvariable=self.subject_information[n])
+            ent.grid(row=i+2,column=1, sticky="EW", columnspan=4)
+
+        self.update_path_info(path)
+
+    def retrieve_session_information(self):        
+        for n in self.session_information.keys():
+            self.session_information[n] = self.session_information[n].get()
+        return self.session_information
+
+    def retrieve_subject_information(self):
+        for n in self.subject_information.keys():
+            self.subject_information[n] = self.subject_information[n].get()
+        return self.subject_information
+
+    def update_path_info(self, path):
+        self.session_information["path"].set(path)
+        self.session_information["name"].set(os.path.basename(path) if path else "")
+        # self.name.set(self.session_information["name"])
+
+class BaseLoaderGUI(ttk.Frame):
+
+    def __init__(self, container, path=""):
+        super().__init__(container)
+        self.container = container
 
         # Basic properties to return
         self.status = False
         self.path = path
 
-        self.setWindowTitle("The minimalist session loader")
-        self.setMinimumSize(900, 560)
+        topframe = tk.Frame()
+        topframe.pack(fill='x', pady =10)
+        tk.Label(master=topframe, text="Pynapple").pack()
+        tk.Label(master=topframe, text="Data directory").pack(side=tk.LEFT, padx=10)
+        self.directory_line = tk.StringVar()
+        tk.Entry(master=topframe, text=self.directory_line).pack(side=tk.LEFT, expand=True, fill='x', padx=10)
+        self.directory_line.set(path)
+        tk.Button(master=topframe, text = "Browse", command=self.select_folder).pack(side=tk.LEFT, padx=20)
 
-        pagelayout = QVBoxLayout()
+        
+        nb = ttk.Notebook()
+        self.tab_session = SessionInformationTab(nb, self.path)
+        nb.add(self.tab_session, text = "Session Information")
+        self.tab_epoch = EpochsTab(nb, self.path)
+        nb.add(self.tab_epoch, text = "Epochs")
+        self.tab_tracking = TrackingTab(nb, self.path)
+        nb.add(self.tab_tracking, text = "Tracking")
 
-        # LOGO
-        logo = QLabel("Pynapple")
-        font = logo.font()
-        font.setPointSize(20)
-        logo.setFont(font)
+        nb.pack(expand=1, fill='both')
 
-        toplayout = QHBoxLayout()
-        toplayout.addWidget(QLabel("Data directory:"))
-        self.directory_line = QLineEdit(self.path)
-        toplayout.addWidget(self.directory_line)
-        fileselect = QPushButton("Browse")
-        fileselect.clicked.connect(self.select_folder)
-        toplayout.addWidget(fileselect)
+        botframe = tk.Frame()
+        botframe.pack(fill='x', padx = 20)
 
-        # TABS
-        self.tabs = QTabWidget()
-        self.tabs.setTabPosition(QTabWidget.North)
-        self.tabs.setMovable(False)
+        tk.Button(master=botframe, text = "Ok", command=self.accept).pack(pady=10, side=tk.RIGHT)
+        tk.Button(master=botframe, text = "Cancel", command=self.reject).pack(pady=10, side=tk.RIGHT)
 
-        self.tab_session = SessionInformationTab(self.path)
-        self.tab_epoch = EpochsTab(self.path)
-        self.tab_tracking = TrackingTab(self.path)
-        # self.tab_help = HelpTab()
-
-        self.tabs.addTab(self.tab_session, "Session Information")
-        self.tabs.addTab(self.tab_epoch, "Epochs")
-        self.tabs.addTab(self.tab_tracking, "Tracking")
-        # self.tabs.addTab(self.tab_help, 'Help')
-
-        # BOTTOM SAVING
-        self.finalbuttons = QDialogButtonBox()
-        self.finalbuttons.setOrientation(Qt.Horizontal)
-        self.finalbuttons.setStandardButtons(
-            QDialogButtonBox.Cancel | QDialogButtonBox.Ok
-        )
-        self.finalbuttons.accepted.connect(self.accept)
-        self.finalbuttons.rejected.connect(self.reject)
-
-        pagelayout.addWidget(logo)
-        pagelayout.addLayout(toplayout)
-        pagelayout.addWidget(self.tabs)
-        pagelayout.addWidget(self.finalbuttons)
-
-        widget = QWidget()
-        widget.setLayout(pagelayout)
-        self.setCentralWidget(widget)
-
-        self.show()
 
     def accept(self):
         self.status = True
-        # Collect all the information acquired
+        # # Collect all the information acquired
         self.session_information = self.tab_session.retrieve_session_information()
         self.subject_information = self.tab_session.retrieve_subject_information()
         self.epochs = self.tab_epoch.table.epochs
         self.time_units_epochs = self.tab_epoch.time_units
-        self.tracking_parameters = self.tab_tracking.parameters
-        self.tracking_alignement = self.tab_tracking.alignement_csv
-        self.tracking_method = self.tab_tracking.tracking_method
-        self.tracking_frequency = self.tab_tracking.track_frequency
-        self.close()
+        self.tracking_parameters = self.tab_tracking.retrieve_tracking_parameters()
+        self.tracking_alignment = self.tab_tracking.alignment_csv
+        self.tracking_method = self.tab_tracking.tracking_method.get()
+        self.tracking_frequency = self.tab_tracking.track_frequency.get()
+        self.container.destroy()
 
     def reject(self):
         self.status = False
-        self.close()
+        self.container.destroy()
 
     def select_folder(self):
-        self.path = QFileDialog.getExistingDirectory(self, "Select Folder")
-        self.directory_line.setText(self.path)
+        self.path = filedialog.askdirectory()
+        self.directory_line.set(self.path)
         self.tab_session.update_path_info(self.path)
         self.tab_epoch.update_path_info(self.path)
         self.tab_tracking.update_path_info(self.path)
+
+class App(tk.Tk):
+
+    def __init__(self):
+        super().__init__()
+        self.title("The minimalist session loader")
+        self.geometry("1000x550")
+

@@ -3,7 +3,7 @@
 # @Author: gviejo
 # @Date:   2022-09-09 14:53:21
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-09-15 14:40:10
+# @Last Modified time: 2023-04-06 19:25:56
 
 """
 Loader for Suite2P
@@ -26,11 +26,10 @@ from pynwb.ophys import (
     RoiResponseSeries,
     TwoPhotonSeries,
 )
-from PyQt5.QtWidgets import QApplication
 
 from .. import core as nap
 from .loader import BaseLoader
-from .ophys_gui import OphysGUI
+from .ophys_gui import App, OphysGUI
 
 
 class Suite2P(BaseLoader):
@@ -87,10 +86,11 @@ class Suite2P(BaseLoader):
 
         # Bypass if data have already been transfered to nwb
         if loading_my_data:
-            app = QApplication([])
-            window = OphysGUI(path=path)
-            window.show()
-            app.exec()
+
+            app = App()
+            window = OphysGUI(app, path=path)
+            app.mainloop()
+
             if window.status:
                 self.ophys_information = window.ophys_information
                 self.load_suite2p(path)

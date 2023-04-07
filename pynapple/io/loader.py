@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-18 17:29:17
+# @Last Modified time: 2023-04-06 18:38:01
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -10,7 +10,7 @@ BaseLoader is the general class for loading session with pynapple.
 @author: Guillaume Viejo
 """
 import datetime
-import os
+import os, sys
 import warnings
 
 import numpy as np
@@ -20,10 +20,9 @@ from pynwb import NWBHDF5IO, NWBFile, TimeSeries
 from pynwb.behavior import CompassDirection, Position, SpatialSeries
 from pynwb.epoch import TimeIntervals
 from pynwb.file import Subject
-from PyQt5.QtWidgets import QApplication
 
 from .. import core as nap
-from .loader_gui import BaseLoaderGUI
+from .loader_gui import App, BaseLoaderGUI
 
 
 class BaseLoader(object):
@@ -46,12 +45,9 @@ class BaseLoader(object):
 
         # Starting the GUI
         if start_gui:
-            app = QApplication([])
-            app.setQuitOnLastWindowClosed(True)
-            window = BaseLoaderGUI(path=path)
-            window.show()
-
-            app.exec()
+            app = App()
+            window = BaseLoaderGUI(app, path=path)
+            app.mainloop()
 
             # Extracting all the informations from gui loader
             if window.status:
@@ -59,13 +55,14 @@ class BaseLoader(object):
                 self.subject_information = window.subject_information
                 self.name = self.session_information["name"]
                 self.tracking_frequency = window.tracking_frequency
+
                 self.position = self._make_position(
                     window.tracking_parameters,
                     window.tracking_method,
                     window.tracking_frequency,
                     window.epochs,
                     window.time_units_epochs,
-                    window.tracking_alignement,
+                    window.tracking_alignment,
                 )
                 self.epochs = self._make_epochs(window.epochs, window.time_units_epochs)
                 self.time_support = self._join_epochs(
@@ -73,9 +70,7 @@ class BaseLoader(object):
                 )
                 # Save the data
                 self.create_nwb_file(path)
-            app.quit()
-            # print('\n'.join(repr(w) for w in app.allWidgets()))
-            # del app, window
+            
 
     def load_default_csv(self, csv_file):
         """
@@ -208,7 +203,7 @@ class BaseLoader(object):
         return ttl
 
     def _make_position(
-        self, parameters, method, frequency, epochs, time_units, alignement
+        self, parameters, method, frequency, epochs, time_units, alignment
     ):
         """
         Make the position TSDFrame with the parameters extracted from the GUI.
@@ -222,20 +217,20 @@ class BaseLoader(object):
             time_supports_starts = []
             time_support_ends = []
 
-            for i, f in enumerate(parameters.index):
+            for i in range(len(parameters)):
                 if method.lower() == "optitrack":
-                    position = self.load_optitrack_csv(parameters.loc[f, "csv"])
+                    position = self.load_optitrack_csv(parameters.loc[i, "csv"])
                 elif method.lower() == "deep lab cut":
-                    position = self.load_dlc_csv(parameters.loc[f, "csv"])
+                    position = self.load_dlc_csv(parameters.loc[i, "csv"])
                 elif method.lower() == "default":
-                    position = self.load_default_csv(parameters.loc[f, "csv"])
+                    position = self.load_default_csv(parameters.loc[i, "csv"])
 
-                if alignement.lower() == "local":
+                if alignment.lower() == "local":
                     start_epoch = nap.format_timestamps(
-                        epochs.loc[parameters.loc[f, "epoch"], "start"], time_units
+                        epochs.loc[int(parameters.loc[i, "epoch"]), "start"], time_units
                     )
                     end_epoch = nap.format_timestamps(
-                        epochs.loc[parameters.loc[f, "epoch"], "end"], time_units
+                        epochs.loc[int(parameters.loc[i, "epoch"]), "end"], time_units
                     )
                     timestamps = (
                         position.index.values
@@ -246,15 +241,15 @@ class BaseLoader(object):
                     position = position.iloc[idx]
                     position.index = pd.Index(timestamps[idx])
 
-                if alignement.lower() == "ttl":
+                if alignment.lower() == "ttl":
                     ttl = self.load_ttl_pulse(
-                        ttl_file=parameters.loc[f, "ttl"],
+                        ttl_file=parameters.loc[i, "ttl"],
                         tracking_frequency=frequency,
-                        n_channels=parameters.loc[f, "n_channels"],
-                        channel=parameters.loc[f, "tracking_channel"],
-                        bytes_size=parameters.loc[f, "bytes_size"],
-                        fs=parameters.loc[f, "fs"],
-                        threshold=parameters.loc[f, "threshold"],
+                        n_channels=int(parameters.loc[i, "n_channels"]),
+                        channel=int(parameters.loc[i, "tracking_channel"]),
+                        bytes_size=int(parameters.loc[i, "bytes_size"]),
+                        fs=float(parameters.loc[i, "fs"]),
+                        threshold=float(parameters.loc[i, "threshold"]),
                     )
 
                     if len(ttl):
@@ -262,14 +257,14 @@ class BaseLoader(object):
                         ttl = ttl.iloc[0:length]
                         position = position.iloc[0:length]
                     else:
-                        raise RuntimeError("No ttl detected for {}".format(f))
+                        raise RuntimeError("No ttl detected for {}".format(parameters.loc[i, "ttl"]))
 
                     # Make sure start epochs in seconds
                     # start_epoch = format_timestamp(
                     #     epochs.loc[parameters.loc[f, "epoch"], "start"], time_units
-                    # )
+                    # )                    
                     start_epoch = nap.format_timestamps(
-                        epochs.loc[parameters.loc[f, "epoch"], "start"], time_units
+                        epochs.loc[int(parameters.loc[i, "epoch"]), "start"], time_units
                     )
                     timestamps = start_epoch + ttl.index.values
                     position.index = pd.Index(timestamps)

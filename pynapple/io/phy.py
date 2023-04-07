@@ -10,10 +10,9 @@ import sys
 import numpy as np
 import pandas as pd
 from pynwb import NWBHDF5IO
-from PyQt5.QtWidgets import QApplication
 
 from .. import core as nap
-from .ephys_gui import EphysGUI
+from .ephys_gui import App, EphysGUI
 from .loader import BaseLoader
 
 
@@ -49,11 +48,12 @@ class Phy(BaseLoader):
 
         # Bypass if data have already been transfered to nwb
         if loading_phy:
-            self.load_phy_params(path)
-            app = QApplication([])
-            window = EphysGUI(path=path, groups=self.channel_map)
-            window.show()
-            app.exec()
+            self.load_phy_params(path)            
+
+            app = App()
+            window = EphysGUI(app, path=path, groups=self.channel_map)
+            app.mainloop()
+
             if window.status:
                 self.ephys_information = window.ephys_information
                 self.load_phy_spikes(path, self.time_support)

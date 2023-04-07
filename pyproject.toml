@@ -26,8 +26,6 @@ dependencies = [
     "numba>=0.46.0",
     "pynwb",
     "tabulate",
-    "pyqt5",
-    "pyqtgraph",
     "h5py",
     "tifffile",
     "zarr",

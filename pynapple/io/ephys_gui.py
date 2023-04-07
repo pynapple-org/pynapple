@@ -1,74 +1,14 @@
 """Summary
 """
+import tkinter as tk
+from tkinter import ttk
 import numpy as np
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (
-    QDialogButtonBox,
-    QHeaderView,
-    QLabel,
-    QMainWindow,
-    QTreeWidget,
-    QTreeWidgetItem,
-    QVBoxLayout,
-    QWidget,
-)
 
+class EphysGUI(ttk.Frame):
 
-def convert_to_dict(parent):
-    """Summary
-
-    Parameters
-    ----------
-    parent : TYPE
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
-    """
-    childCount = parent.childCount()
-    if not childCount:
-        return parent.text(1)
-    values = {}
-    for r in range(childCount):
-        child = parent.child(r)
-        values[child.text(0)] = convert_to_dict(child)
-    return values
-
-
-class EphysGUI(QMainWindow):
-    """Summary
-
-    Attributes
-    ----------
-    ephys : dict
-        Description
-    ephys_information : TYPE
-        Description
-    finalbuttons : TYPE
-        Description
-    groups : TYPE
-        Description
-    path : TYPE
-        Description
-    status : bool
-        Description
-    tree : TYPE
-        Description
-    """
-
-    def __init__(self, path=None, groups={}):
-        """Summary
-
-        Parameters
-        ----------
-        path : None, optional
-            Description
-        groups : dict, optional
-            Description
-        """
-        super().__init__()
+    def __init__(self, container, path="", groups={}):
+        super().__init__(container)
+        self.container = container        
 
         # Basic properties to return
         self.status = False
@@ -76,88 +16,96 @@ class EphysGUI(QMainWindow):
         self.groups = groups
         self.ephys = {}
         for k in groups.keys():
-            self.ephys[k] = {}
-            self.ephys[k]["electrodes"] = " ".join(groups[k].astype(np.str_))
-            for n in ["name", "description", "location", "device", "position"]:
-                self.ephys[k][n] = ""
-            self.ephys[k]["device"] = {
-                d: "" for d in ["name", "description", "manufacturer"]
-            }
+            self.ephys[k] = {}            
+            self.ephys[k]["electrodes"] = " ".join(groups[k][0:9].astype(np.str_))
+            if len(groups[k])>9:
+                self.ephys[k]["electrodes"] += " ..."
+            for n in ["name", "description", "location", "position", "device.name", "device.description", "device.manufacturer"]:
+                self.ephys[k][n] = tk.StringVar(self)
 
-        self.setWindowTitle("Ephys loader")
-        self.setMinimumSize(640, 480)
+        topframe = tk.Frame()
+        topframe.pack(fill='x', pady =10)
+        tk.Label(master=topframe, text="Pynapple").pack()
+        tk.Label(master=topframe, text=path).pack()
 
-        pagelayout = QVBoxLayout()
+        midframe = tk.Frame()
+        midframe.pack(fill='both', pady =10)
+        # midframe.columnconfigure(3)
 
-        # LOGO
-        logo = QLabel("Pynapple")
-        font = logo.font()
-        font.setPointSize(20)
-        logo.setFont(font)
+        self.canvas = tk.Canvas(midframe, height= 530)
+        self.canvas.grid(row=0, column=0, sticky="nsew")
 
-        # # TREE VIEW
-        self.tree = QTreeWidget()
-        self.tree.setAlternatingRowColors(True)
-        self.tree.setColumnCount(2)
-        self.tree.setHeaderLabels(["Groups", "Informations"])
-        self.tree.header().resizeSections(QHeaderView.ResizeToContents)
-        self.tree.header().setSectionResizeMode(0, QHeaderView.Stretch)
+        frame2 = tk.Frame(self.canvas)
+        self.canvas.create_window(0, 0, window=frame2, anchor="nw")
 
-        items = []
-        for key in self.ephys.keys():
-            item = QTreeWidgetItem(["Group " + str(key)])
-            for k, value in self.ephys[key].items():
-                if type(value) is str:
-                    child = QTreeWidgetItem([k, value])
-                    if k != "electrodes":
-                        child.setFlags(child.flags() | Qt.ItemIsEditable)
-                elif type(value) is dict:
-                    child = QTreeWidgetItem([k])
-                    for d in self.ephys[key][k].keys():
-                        child2 = QTreeWidgetItem([d, self.ephys[key][k][d]])
-                        child2.setFlags(child.flags() | Qt.ItemIsEditable)
-                        child.addChild(child2)
+        self.entries = {}
 
-                item.addChild(child)
-            items.append(item)
+        n_row = 0
+        for i, n in enumerate(self.ephys.keys()):
+            tk.Label(master=frame2, text="Group "+str(n)).grid(row=n_row, column=0, sticky="nswe")
+            n_row += 1
+            self.entries[n] = {}
+            for k in self.ephys[n].keys():
+                tk.Label(master=frame2, text=k).grid(row=n_row, column=1, sticky="nswe")
+                if k == 'electrodes':
+                    tk.Label(master=frame2, text=self.ephys[n][k]).grid(row=n_row, column=2, sticky="nswe")
+                else:
+                    self.entries[n][k] = tk.Entry(master=frame2, textvariable=self.ephys[n][k], width=25)
+                    self.entries[n][k].grid(row=n_row, column=2)#, sticky="nswe")
+                    # self.entries[n][k].bind('<Return>', lambda event: self.focus())
+                    self.entries[n][k].bind('<Return>', self.on_return)
+                n_row += 1
+            n_row += 1
 
-        self.tree.insertTopLevelItems(0, items)
-        self.tree.expandAll()
+        photoScroll = tk.Scrollbar(midframe, orient=tk.VERTICAL)
+        photoScroll.config(command=self.canvas.yview)
+        self.canvas.config(yscrollcommand=photoScroll.set)
+        photoScroll.grid(row=0, column=1, sticky="ns")
+        midframe.bind("<Configure>", self.update_scrollregion)
 
-        # BOTTOM SAVING
-        self.finalbuttons = QDialogButtonBox()
-        self.finalbuttons.setOrientation(Qt.Horizontal)
-        self.finalbuttons.setStandardButtons(
-            QDialogButtonBox.Cancel | QDialogButtonBox.Ok
-        )
-        self.finalbuttons.accepted.connect(self.accept)
-        self.finalbuttons.rejected.connect(self.reject)
+        botframe = tk.Frame()
+        botframe.pack(fill='x', padx = 20)
 
-        pagelayout.addWidget(logo)
-        pagelayout.addWidget(QLabel(path))
+        tk.Button(master=botframe, text = "Ok", command=self.accept).pack(pady=10, side=tk.RIGHT)
+        tk.Button(master=botframe, text = "Cancel", command=self.reject).pack(pady=10, side=tk.RIGHT)
 
-        pagelayout.addWidget(self.tree)
+    def update_scrollregion(self, event):
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
-        pagelayout.addWidget(self.finalbuttons)
 
-        widget = QWidget()
-        widget.setLayout(pagelayout)
-        self.setCentralWidget(widget)
-
-    def accept(self):
-        """Summary"""
-        self.status = True
-
+    def accept(self):        
         # Retrieve everything
-        root = self.tree.invisibleRootItem()
-        ephys_information = convert_to_dict(root)
         self.ephys_information = {
-            int(k.split(" ")[1]): ephys_information[k] for k in ephys_information.keys()
         }
+        for i, n in enumerate(self.ephys.keys()):
+            self.ephys_information[n] = {}
+            device = {}
+            for k in self.ephys[n].keys():
+                if isinstance(self.ephys[n][k], tk.StringVar):
+                    if "device" in k:
+                        device[k.split(".")[1]] = self.ephys[n][k].get()
+                    else:                    
+                        self.ephys_information[n][k] = self.ephys[n][k].get()
+                else:
+                    self.ephys_information[n][k] = self.ephys[n][k]
+            self.ephys_information[n]['device'] = device
 
-        self.close()
+        self.container.destroy()
+
+        self.status = True
+        return self.status
 
     def reject(self):
-        """Summary"""
         self.status = False
-        self.close()
+        self.container.destroy()
+
+    def on_return(self, event):
+        self.container.focus()
+
+
+class App(tk.Tk):
+
+    def __init__(self):
+        super().__init__()
+        self.title("Ephys Loader")
+        self.geometry("430x650")

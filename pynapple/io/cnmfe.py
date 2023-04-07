@@ -7,7 +7,7 @@ Support CNMF-E in matlab, inscopix-cnmfe and minian.
 # @Author: gviejo
 # @Date:   2022-02-17 11:07:00
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-08-18 17:50:29
+# @Last Modified time: 2023-04-06 19:17:03
 
 import os
 import sys
@@ -21,12 +21,11 @@ from pynwb.ophys import (
     OpticalChannel,
     RoiResponseSeries,
 )
-from PyQt5.QtWidgets import QApplication
 from scipy.io.matlab import loadmat
 
 from .. import core as nap
 from .loader import BaseLoader
-from .ophys_gui import OphysGUI
+from .ophys_gui import App, OphysGUI
 
 
 class CNMF_E(BaseLoader):
@@ -70,10 +69,11 @@ class CNMF_E(BaseLoader):
 
         # Bypass if data have already been transfered to nwb
         if loading_my_data:
-            app = QApplication([])
-            window = OphysGUI(path=path)
-            window.show()
-            app.exec()
+
+            app = App()
+            window = OphysGUI(app, path=path)
+            app.mainloop()
+
             if window.status:
                 self.ophys_information = window.ophys_information
                 self.load_cnmf_e(path)
@@ -273,10 +273,11 @@ class Minian(BaseLoader):
 
         # Bypass if data have already been transfered to nwb
         if loading_my_data:
-            app = QApplication([])
-            window = OphysGUI(path=path)
-            window.show()
-            app.exec()
+
+            app = App()
+            window = OphysGUI(app, path=path)
+            app.mainloop()
+
             if window.status:
                 self.ophys_information = window.ophys_information
                 self.load_minian(path)
@@ -480,10 +481,11 @@ class InscopixCNMFE(BaseLoader):
 
         # Bypass if data have already been transfered to nwb
         if loading_my_data:
-            app = QApplication([])
-            window = OphysGUI(path=path)
-            window.show()
-            app.exec()
+
+            app = App()
+            window = OphysGUI(app, path=path)
+            app.mainloop()
+
             if window.status:
                 self.ophys_information = window.ophys_information
                 self.load_inscopix_cnmfe(path)

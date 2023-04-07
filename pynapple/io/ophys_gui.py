@@ -2,53 +2,34 @@
 # @Author: gviejo
 # @Date:   2022-03-25 11:34:45
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-08-18 17:31:42
-
-from PyQt5.QtCore import Qt
-from PyQt5.QtWidgets import (
-    QDialogButtonBox,
-    QHeaderView,
-    QLabel,
-    QMainWindow,
-    QTreeWidget,
-    QTreeWidgetItem,
-    QVBoxLayout,
-    QWidget,
-)
+# @Last Modified time: 2023-04-06 19:13:43
 
 
-def convert_to_dict(parent):
-    childCount = parent.childCount()
-    if not childCount:
-        return parent.text(1)
-    values = {}
-    for r in range(childCount):
-        child = parent.child(r)
-        values[child.text(0)] = convert_to_dict(child)
-    return values
+import tkinter as tk
+from tkinter import ttk
 
+class OphysGUI(ttk.Frame):
 
-class OphysGUI(QMainWindow):
-    def __init__(self, path=None):
-        super().__init__()
+    def __init__(self, container, path=""):
+        super().__init__(container)
+        self.container = container
 
         # Basic properties to return
         self.status = False
         self.path = path
-
-        self.ophys = {}
         self.ophys = {
             "device": {
                 n: d
                 for n, d in zip(
-                    ["name", "description", "manufacturer"], ["Microscope", "", ""]
+                    ["name", "description", "manufacturer"], 
+                    [tk.StringVar(self, value="Microscope"), tk.StringVar(self), tk.StringVar(self)]
                 )
             },
             "OpticalChannel": {
                 n: d
                 for n, d in zip(
                     ["name", "description", "emission_lambda"],
-                    ["OpticalChannel", "", "500."],
+                    [tk.StringVar(self, value="OpticalChannel"), tk.StringVar(self), tk.StringVar(self, "500.")],
                 )
             },
             "ImagingPlane": {
@@ -62,75 +43,79 @@ class OphysGUI(QMainWindow):
                         "indicator",
                         "location",
                     ],
-                    ["ImagingPlane", "30.", "", "600.", "GCAMP", ""],
+                    [
+                        tk.StringVar(self, value="ImagingPlane"), 
+                        tk.StringVar(self, value = "30."), 
+                        tk.StringVar(self), 
+                        tk.StringVar(self, value="600."),
+                        tk.StringVar(self, value="GCAMP"),
+                        tk.StringVar(self)
+                    ],
                 )
             },
             "PlaneSegmentation": {
-                n: d for n, d in zip(["name", "description"], ["PlaneSegmentation", ""])
+                n: d for n, d in zip(["name", "description"], [tk.StringVar(self, "PlaneSegmentation"), tk.StringVar(self)])
             },
         }
 
-        self.setWindowTitle("Calcium Imaging loader")
-        self.setMinimumSize(640, 480)
+        topframe = tk.Frame()
+        topframe.pack(fill='x', pady =10)
+        tk.Label(master=topframe, text="Pynapple").pack()
+        tk.Label(master=topframe, text=path).pack()
 
-        pagelayout = QVBoxLayout()
+        frame2 = tk.Frame()
+        frame2.pack(fill='both', pady=10)
+        frame2.columnconfigure(3)
 
-        # LOGO
-        logo = QLabel("Pynapple")
-        font = logo.font()
-        font.setPointSize(20)
-        logo.setFont(font)
+        n_row = 0
+        for i, n in enumerate(self.ophys.keys()):
+            tk.Label(master=frame2, text=n).grid(row=n_row, column=0, sticky="nswe")
+            n_row += 1            
+            for k in self.ophys[n].keys():
+                tk.Label(master=frame2, text=k).grid(row=n_row, column=1, sticky="nswe")
+                entry = tk.Entry(master=frame2, textvariable=self.ophys[n][k], width=25)
+                entry.grid(row=n_row, column=2)#, sticky="nswe")
+                entry.bind('<Return>', self.on_return)
+                n_row += 1
+            n_row += 1
 
-        # # TREE VIEW
-        self.tree = QTreeWidget()
-        self.tree.setAlternatingRowColors(True)
-        self.tree.setColumnCount(2)
-        self.tree.setHeaderLabels(["Metadata", "Informations"])
-        self.tree.header().resizeSections(QHeaderView.ResizeToContents)
-        self.tree.header().setSectionResizeMode(0, QHeaderView.Stretch)
 
-        items = []
-        for key in self.ophys.keys():
-            item = QTreeWidgetItem([key])
-            for k, value in self.ophys[key].items():
-                child = QTreeWidgetItem([k, value])
-                child.setFlags(child.flags() | Qt.ItemIsEditable)
-                item.addChild(child)
-            items.append(item)
+        botframe = tk.Frame()
+        botframe.pack(fill='x', padx = 20)
 
-        self.tree.insertTopLevelItems(0, items)
-        self.tree.expandAll()
+        tk.Button(master=botframe, text = "Ok", command=self.accept).pack(pady=10, side=tk.RIGHT)
+        tk.Button(master=botframe, text = "Cancel", command=self.reject).pack(pady=10, side=tk.RIGHT)
 
-        # BOTTOM SAVING
-        self.finalbuttons = QDialogButtonBox()
-        self.finalbuttons.setOrientation(Qt.Horizontal)
-        self.finalbuttons.setStandardButtons(
-            QDialogButtonBox.Cancel | QDialogButtonBox.Ok
-        )
-        self.finalbuttons.accepted.connect(self.accept)
-        self.finalbuttons.rejected.connect(self.reject)
 
-        pagelayout.addWidget(logo)
-        pagelayout.addWidget(QLabel(path))
+    def update_scrollregion(self, event):
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
-        pagelayout.addWidget(self.tree)
 
-        pagelayout.addWidget(self.finalbuttons)
-
-        widget = QWidget()
-        widget.setLayout(pagelayout)
-        self.setCentralWidget(widget)
-
-    def accept(self):
-        self.status = True
-
+    def accept(self):        
         # Retrieve everything
-        root = self.tree.invisibleRootItem()
-        ophys_information = convert_to_dict(root)
-        self.ophys_information = ophys_information
+        self.ophys_information = {}
+        for i, n in enumerate(self.ophys.keys()):
+            self.ophys_information[n] = {}            
+            for k in self.ophys[n].keys():
+                self.ophys_information[n][k] = self.ophys[n][k].get()            
 
-        self.close()
+        self.container.destroy()
+
+        self.status = True
+        return self.status
+
 
     def reject(self):
         self.status = False
-        self.close()
+        self.container.destroy()
+
+    def on_return(self, event):
+        self.container.focus()
+
+
+class App(tk.Tk):
+
+    def __init__(self):
+        super().__init__()
+        self.title("Calcium Imaging Loader")
+        self.geometry("450x420")
