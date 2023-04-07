@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-04-06 18:38:01
+# @Last Modified time: 2023-04-06 20:05:28
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -10,7 +10,7 @@ BaseLoader is the general class for loading session with pynapple.
 @author: Guillaume Viejo
 """
 import datetime
-import os, sys
+import os
 import warnings
 
 import numpy as np
@@ -70,7 +70,6 @@ class BaseLoader(object):
                 )
                 # Save the data
                 self.create_nwb_file(path)
-            
 
     def load_default_csv(self, csv_file):
         """
@@ -257,12 +256,14 @@ class BaseLoader(object):
                         ttl = ttl.iloc[0:length]
                         position = position.iloc[0:length]
                     else:
-                        raise RuntimeError("No ttl detected for {}".format(parameters.loc[i, "ttl"]))
+                        raise RuntimeError(
+                            "No ttl detected for {}".format(parameters.loc[i, "ttl"])
+                        )
 
                     # Make sure start epochs in seconds
                     # start_epoch = format_timestamp(
                     #     epochs.loc[parameters.loc[f, "epoch"], "start"], time_units
-                    # )                    
+                    # )
                     start_epoch = nap.format_timestamps(
                         epochs.loc[int(parameters.loc[i, "epoch"]), "start"], time_units
                     )

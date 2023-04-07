@@ -48,7 +48,7 @@ class Phy(BaseLoader):
 
         # Bypass if data have already been transfered to nwb
         if loading_phy:
-            self.load_phy_params(path)            
+            self.load_phy_params(path)
 
             app = App()
             window = EphysGUI(app, path=path, groups=self.channel_map)
