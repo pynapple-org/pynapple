@@ -69,7 +69,6 @@ class CNMF_E(BaseLoader):
 
         # Bypass if data have already been transfered to nwb
         if loading_my_data:
-
             app = App()
             window = OphysGUI(app, path=path)
             app.mainloop()
@@ -273,7 +272,6 @@ class Minian(BaseLoader):
 
         # Bypass if data have already been transfered to nwb
         if loading_my_data:
-
             app = App()
             window = OphysGUI(app, path=path)
             app.mainloop()
@@ -481,7 +479,6 @@ class InscopixCNMFE(BaseLoader):
 
         # Bypass if data have already been transfered to nwb
         if loading_my_data:
-
             app = App()
             window = OphysGUI(app, path=path)
             app.mainloop()

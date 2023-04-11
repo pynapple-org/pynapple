@@ -86,7 +86,6 @@ class Suite2P(BaseLoader):
 
         # Bypass if data have already been transfered to nwb
         if loading_my_data:
-
             app = App()
             window = OphysGUI(app, path=path)
             app.mainloop()
