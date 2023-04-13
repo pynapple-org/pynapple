@@ -7,8 +7,8 @@ from setuptools import setup, find_namespace_packages
 with open('README.md') as readme_file:
     readme = readme_file.read()
 
-with open('docs/HISTORY.md') as history_file:
-    history = history_file.read()
+# with open('docs/HISTORY.md') as history_file:
+#     history = history_file.read()
 
 requirements = [
         'pandas>=1.0.3',
@@ -55,7 +55,7 @@ setup(
     keywords='neuroscience',
     name='pynapple',    
     packages=find_namespace_packages(
-        include=['pynapple', 'pynapple.io', 'pynapple.core', 'pynapple.process'],
+        include=['pynapple', 'pynapple.*'],
         exclude=['tests']
         ),
     test_suite='tests',
