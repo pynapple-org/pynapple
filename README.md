@@ -64,8 +64,6 @@ This procedure will install all the dependencies including
 -   numba
 -   pynwb 2.0
 -   tabulate
--   pyqt5
--   pyqtgraph
 -   h5py
 
 For spyder users, it is recommended to install spyder after installing pynapple with :
@@ -77,7 +75,7 @@ $ pip install pynapple
 $ pip install spyder
 $ spyder
 ```
-> **Warning**
+<!-- > **Warning**
 > note for **Windows** users: on a multi-user Windows, make sure you open the conda prompt with *administrative access*: `run as administrator`; otherwise directory paths for some dependencies may be missing from the PYTHONPATH environment variable. The most common is the error in importing PyQt5. In case of such errors, right click on your conda prompt and select `run as administrator`, activate your pynapple environment, and install the said package again (e.g. pip install PyQt) so that the paths are properly saved by Windows.
 
 > **Warning**
@@ -92,7 +90,7 @@ Open python and try:
 import pynapple as nap
 nap.load_session()
 ```
-The data loader should open in a new window.
+The data loader should open in a new window. -->
 
 Basic Usage
 -----------

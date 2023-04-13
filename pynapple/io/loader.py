@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-04-06 20:05:28
+# @Last Modified time: 2023-04-12 17:40:51
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -48,6 +48,7 @@ class BaseLoader(object):
             app = App()
             window = BaseLoaderGUI(app, path=path)
             app.mainloop()
+            app.update()
 
             # Extracting all the informations from gui loader
             if window.status:

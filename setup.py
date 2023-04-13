@@ -2,7 +2,7 @@
 
 """The setup script."""
 
-from setuptools import setup, find_packages
+from setuptools import setup, find_namespace_packages
 
 with open('README.md') as readme_file:
     readme = readme_file.read()
@@ -53,13 +53,16 @@ setup(
     long_description=readme,
     include_package_data=True,
     keywords='neuroscience',
-    name='pynapple',
-    packages=find_packages(include=['pynapple', 'pynapple.*']),
+    name='pynapple',    
+    packages=find_namespace_packages(
+        include=['pynapple', 'pynapple.io', 'pynapple.core', 'pynapple.process'],
+        exclude=['tests']
+        ),
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/PeyracheLab/pynapple',
-    version='v0.3.1',
+    version='v0.3.2',
     zip_safe=False,
     long_description_content_type='text/markdown',
-    download_url='https://github.com/PeyracheLab/pynapple/archive/refs/tags/v0.3.1.tar.gz'
+    download_url='https://github.com/PeyracheLab/pynapple/archive/refs/tags/v0.3.2.tar.gz'
 )

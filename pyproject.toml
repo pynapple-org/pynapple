@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pynapple"
-version = "0.3.1"
+version = "0.3.2"
 description = "PYthon Neural Analysis Package Pour Laboratoires d’Excellence"
 readme = "README.md"
 authors = [{ name = "Guillaume Viejo", email = "guillaume.viejo@gmail.com" }]
@@ -33,7 +33,7 @@ dependencies = [
 requires-python = ">=3.8"
 
 [tool.setuptools.packages.find]
-include = ["pynapple"]
+include = ["pynapple", "pynapple.*"]
 
 [project.optional-dependencies]
 dev = [

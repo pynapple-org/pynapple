@@ -53,6 +53,7 @@ class Phy(BaseLoader):
             app = App()
             window = EphysGUI(app, path=path, groups=self.channel_map)
             app.mainloop()
+            app.update()
 
             if window.status:
                 self.ephys_information = window.ephys_information

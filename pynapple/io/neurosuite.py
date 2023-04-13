@@ -3,7 +3,7 @@
 # @Author: gviejo
 # @Date:   2022-02-02 20:45:09
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-04-06 18:53:28
+# @Last Modified time: 2023-04-13 10:38:50
 
 """
 Class and functions for loading data processed with the Neurosuite (Klusters, Neuroscope, NDmanager)
@@ -62,6 +62,7 @@ class NeuroSuite(BaseLoader):
             app = App()
             window = EphysGUI(app, path=path, groups=self.group_to_channel)
             app.mainloop()
+            app.update()
 
             # print("GUI DONE")
             if window.status:

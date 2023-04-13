@@ -7,7 +7,7 @@ Support CNMF-E in matlab, inscopix-cnmfe and minian.
 # @Author: gviejo
 # @Date:   2022-02-17 11:07:00
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-04-06 19:17:03
+# @Last Modified time: 2023-04-13 10:40:56
 
 import os
 import sys
@@ -72,6 +72,7 @@ class CNMF_E(BaseLoader):
             app = App()
             window = OphysGUI(app, path=path)
             app.mainloop()
+            app.update()
 
             if window.status:
                 self.ophys_information = window.ophys_information
@@ -275,6 +276,7 @@ class Minian(BaseLoader):
             app = App()
             window = OphysGUI(app, path=path)
             app.mainloop()
+            app.update()
 
             if window.status:
                 self.ophys_information = window.ophys_information
@@ -482,6 +484,7 @@ class InscopixCNMFE(BaseLoader):
             app = App()
             window = OphysGUI(app, path=path)
             app.mainloop()
+            app.update()
 
             if window.status:
                 self.ophys_information = window.ophys_information
