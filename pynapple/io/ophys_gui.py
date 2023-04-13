@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-25 11:34:45
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-04-06 19:13:43
+# @Last Modified time: 2023-04-13 13:34:56
 
 
 import tkinter as tk
@@ -129,4 +129,4 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Calcium Imaging Loader")
-        self.geometry("450x420")
+        self.geometry("650x660")

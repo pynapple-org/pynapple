@@ -41,7 +41,7 @@ class EphysGUI(ttk.Frame):
         midframe.pack(fill="both", pady=10)
         # midframe.columnconfigure(3)
 
-        self.canvas = tk.Canvas(midframe, height=530)
+        self.canvas = tk.Canvas(midframe, height=720, width=600)
         self.canvas.grid(row=0, column=0, sticky="nsew")
 
         frame2 = tk.Frame(self.canvas)
@@ -124,4 +124,4 @@ class App(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Ephys Loader")
-        self.geometry("430x650")
+        self.geometry("650x900")
