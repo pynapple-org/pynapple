@@ -3,7 +3,7 @@
 # @Author: gviejo
 # @Date:   2022-09-09 14:53:21
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-04-13 10:40:08
+# @Last Modified time: 2023-04-17 14:54:55
 
 """
 Loader for Suite2P
@@ -89,7 +89,10 @@ class Suite2P(BaseLoader):
             app = App()
             window = OphysGUI(app, path=path)
             app.mainloop()
-            app.update()
+            try:
+                app.update()
+            except:
+                pass
 
             if window.status:
                 self.ophys_information = window.ophys_information
