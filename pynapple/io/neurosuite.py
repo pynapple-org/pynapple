@@ -3,7 +3,7 @@
 # @Author: gviejo
 # @Date:   2022-02-02 20:45:09
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-04-17 14:54:40
+# @Last Modified time: 2023-04-17 15:13:24
 
 """
 Class and functions for loading data processed with the Neurosuite (Klusters, Neuroscope, NDmanager)
@@ -64,7 +64,7 @@ class NeuroSuite(BaseLoader):
             app.mainloop()
             try:
                 app.update()
-            except:
+            except Exception:
                 pass
 
             # print("GUI DONE")

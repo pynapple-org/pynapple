@@ -3,7 +3,7 @@
 # @Author: gviejo
 # @Date:   2022-09-09 14:53:21
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-04-17 14:54:55
+# @Last Modified time: 2023-04-17 15:13:38
 
 """
 Loader for Suite2P
@@ -91,7 +91,7 @@ class Suite2P(BaseLoader):
             app.mainloop()
             try:
                 app.update()
-            except:
+            except Exception:
                 pass
 
             if window.status:

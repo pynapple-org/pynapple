@@ -72,9 +72,9 @@ $ pip install pynapple
 $ pip install spyder
 $ spyder
 ```
-> **Warning**
+<!-- > **Warning**
 > note for **Windows** users: on a multi-user Windows, make sure you open the conda prompt with *administrative access*: `run as administrator`; otherwise directory paths for some dependencies may be missing from the PYTHONPATH environment variable. The most common is the error in importing PyQt5. In case of such errors, right click on your conda prompt and select `run as administrator`, activate your pynapple environment, and install the said package again (e.g. pip install PyQt) so that the paths are properly saved by Windows.
-
+ -->
 
 
 Basic Usage

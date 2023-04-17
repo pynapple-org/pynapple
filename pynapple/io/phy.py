@@ -55,7 +55,7 @@ class Phy(BaseLoader):
             app.mainloop()
             try:
                 app.update()
-            except:
+            except Exception:
                 pass
 
             if window.status:
