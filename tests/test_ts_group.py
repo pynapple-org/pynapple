@@ -320,5 +320,66 @@ class Test_Ts_Group_1:
             )
         assert tabulate(lines, headers=headers) == tsgroup.__str__()
         
+    def test_to_tsd(self, group):    
+        t = []
+        d = []
+        group = {}
+        for i in range(3):
+            t.append(np.sort(np.random.rand(10)*100))
+            d.append(np.ones(10)*i)
+            group[i] = nap.Ts(t=t[-1])
 
+        times = np.array(t).flatten()
+        data = np.array(d).flatten()
+        idx = np.argsort(times)
+        times = times[idx]
+        data = data[idx]
+
+        tsgroup = nap.TsGroup(group)
+
+        tsd = tsgroup.to_tsd()
+
+        np.testing.assert_array_almost_equal(tsd.index.values, times)
+        np.testing.assert_array_almost_equal(tsd.values, data)
+
+        alpha=np.random.randn(3)
+        tsgroup.set_info(alpha=alpha)
+        tsd2 = tsgroup.to_tsd("alpha")
+        np.testing.assert_array_almost_equal(tsd2.index.values, times)
+        np.testing.assert_array_almost_equal(tsd2.values, np.array([alpha[int(i)] for i in data]))
+
+        tsd3 = tsgroup.to_tsd(alpha)
+        np.testing.assert_array_almost_equal(tsd3.index.values, times)
+        np.testing.assert_array_almost_equal(tsd3.values, np.array([alpha[int(i)] for i in data]))
+
+        beta=pd.Series(index=np.arange(3), data=np.random.randn(3))        
+        tsd4 = tsgroup.to_tsd(beta)
+        np.testing.assert_array_almost_equal(tsd4.index.values, times)
+        np.testing.assert_array_almost_equal(tsd4.values, np.array([beta[int(i)] for i in data]))
+
+
+    def test_to_tsd_runtime_errors(self, group):
+
+        tsgroup = nap.TsGroup(group)
         
+        with pytest.raises(Exception) as e_info:
+            tsgroup.to_tsd(pd.Series(index=np.arange(len(tsgroup)+1), data=np.arange(len(tsgroup)+1)))
+        assert str(e_info.value) == "Index are not equals"
+
+        with pytest.raises(Exception) as e_info:
+            tsgroup.to_tsd(np.arange(len(tsgroup)+1))
+        assert str(e_info.value) == "Values is not the same length."
+
+        with pytest.raises(Exception) as e_info:
+            tsgroup.to_tsd("error")
+        assert str(e_info.value) == "Key error not in metadata of TsGroup"
+
+        with pytest.raises(Exception) as e_info:
+            tsgroup.to_tsd(dict)
+        assert str(e_info.value) == """Unknown argument format. Must be pandas.Series, numpy.ndarray or a string from one of the following values : [rate]"""
+
+        tsgroup.set_info(alpha=np.random.rand(len(tsgroup)))
+
+        with pytest.raises(Exception) as e_info:
+            tsgroup.to_tsd(dict)
+        assert str(e_info.value) == """Unknown argument format. Must be pandas.Series, numpy.ndarray or a string from one of the following values : [rate, alpha]"""

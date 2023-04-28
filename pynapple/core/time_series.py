@@ -4,6 +4,7 @@
 # @Last Modified by:   gviejo
 # @Last Modified time: 2022-12-06 21:22:31
 
+import importlib
 import warnings
 
 import numpy as np
@@ -456,7 +457,6 @@ class Tsd(pd.Series):
         >>> 0   50.5  99.0
 
         """
-
         time_array = self.index.values
         data_array = self.values
         starts = self.time_support.start.values
@@ -469,6 +469,57 @@ class Tsd(pd.Series):
         t, d, ns, ne = jitthreshold(time_array, data_array, starts, ends, thr, method)
         time_support = IntervalSet(start=ns, end=ne)
         return Tsd(t=t, d=d, time_support=time_support)
+
+    def to_tsgroup(self):
+        """
+        Convert Tsd to a TsGroup by grouping timestamps with the same values.
+        By default, the values are converted to integers.
+
+        Example
+        -------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsd = nap.Tsd(t = np.array([0, 1, 2, 3]), d = np.array([0, 2, 0, 1]))
+        Time (s)
+        0.0    0
+        1.0    2
+        2.0    0
+        3.0    1
+        dtype: int64
+
+        >>> tsd.to_tsgroup()
+        Index    rate
+        -------  ------
+            0    0.67
+            1    0.33
+            2    0.33
+
+        The reverse operation can be done with the TsGroup.to_tsd function :
+
+        >>> tsgroup.to_tsd()
+        Time (s)
+        0.0    0.0
+        1.0    2.0
+        2.0    0.0
+        3.0    1.0
+        dtype: float64
+
+        Returns
+        -------
+        TsGroup
+            Grouped timestamps
+
+        """
+        ts_group = importlib.import_module(".ts_group", "pynapple.core")
+        t = self.index.values
+        d = self.values.astype("int")
+        idx = np.unique(d)
+
+        group = {}
+        for k in idx:
+            group[k] = Ts(t=t[d == k], time_support=self.time_support)
+
+        return ts_group.TsGroup(group, time_support=self.time_support)
 
     # def find_gaps(self, min_gap, method="absolute"):
     #     """

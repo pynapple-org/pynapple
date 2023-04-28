@@ -14,7 +14,7 @@ from tabulate import tabulate
 
 from .interval_set import IntervalSet
 from .jitted_functions import jitcount, jitunion, jitunion_isets
-from .time_series import Ts, TsdFrame
+from .time_series import Ts, Tsd, TsdFrame
 from .time_units import format_timestamps
 
 
@@ -93,7 +93,7 @@ class TsGroup(UserDict):
 
         self.index = np.sort(list(data.keys()))
 
-        self._metadata = pd.DataFrame(index=self.index, columns=["rate"])
+        self._metadata = pd.DataFrame(index=self.index, columns=["rate"], dtype="float")
 
         # Transform elements to Ts/Tsd objects
         for k in self.index:
@@ -138,7 +138,7 @@ class TsGroup(UserDict):
         if self._initialized:
             raise RuntimeError("TsGroup object is not mutable.")
 
-        self._metadata.loc[int(key), "rate"] = value.rate
+        self._metadata.loc[int(key), "rate"] = float(value.rate)
         super().__setitem__(int(key), value)
         # if self.__contains__(key):
         #     raise KeyError("Key {} already in group index.".format(key))
@@ -219,6 +219,9 @@ class TsGroup(UserDict):
 
     @property
     def rates(self):
+        """
+        Return the rates of each element of the group in Hz
+        """
         return self._metadata["rate"]
 
     #######################
@@ -492,6 +495,133 @@ class TsGroup(UserDict):
             )[1]
 
         toreturn = TsdFrame(t=time_index, d=count, time_support=ep, columns=self.index)
+        return toreturn
+
+    def to_tsd(self, *args):
+        """
+        Convert TsGroup to a Tsd. The timestamps of the TsGroup are merged together and sorted.
+
+        Parameters
+        ----------
+        *args
+            string, list, numpy.ndarray or pandas.Series
+
+        Example
+        -------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsgroup = nap.TsGroup({0:nap.Ts(t=np.array([0, 1])), 5:nap.Ts(t=np.array([2, 3]))})
+        Index    rate
+        -------  ------
+        0       1
+        5       1
+
+        By default, the values of the Tsd is the index of the timestamp in the TsGroup:
+
+        >>> tsgroup.to_tsd()
+        Time (s)
+        0.0    0.0
+        1.0    0.0
+        2.0    5.0
+        3.0    5.0
+        dtype: float64
+
+        Values can be inherited from the metadata of the TsGroup by giving the key of the corresponding columns.
+
+        >>> tsgroup.set_info( phase=np.array([np.pi, 2*np.pi]) ) # assigning a phase to my 2 elements of the TsGroup
+        >>> tsgroup.to_tsd("phase")
+        Time (s)
+        0.0    3.141593
+        1.0    3.141593
+        2.0    6.283185
+        3.0    6.283185
+        dtype: float64
+
+        Values can also be passed directly to the function from a list, numpy.ndarray or pandas.Series of values as long as the length matches :
+
+        >>> tsgroup.to_tsd([-1, 1])
+        Time (s)
+        0.0   -1.0
+        1.0   -1.0
+        2.0    1.0
+        3.0    1.0
+        dtype: float64
+
+        The reverse operation can be done with the Tsd.to_tsgroup function :
+
+        >>> my_tsd
+        Time (s)
+        0.0    0.0
+        1.0    0.0
+        2.0    5.0
+        3.0    5.0
+        dtype: float64
+        >>> my_tsd.to_tsgroup()
+          Index    rate
+        -------  ------
+              0       1
+              5       1
+
+        Returns
+        -------
+        Tsd
+
+        Raises
+        ------
+        RuntimeError
+            "Index are not equals" : if pandas.Series indexes don't match the TsGroup indexes
+            "Values is not the same length" : if numpy.ndarray/list object is not the same size as the TsGroup object
+            "Key not in metadata of TsGroup" : if string argument does not match any column names of the metadata,
+            "Unknown argument format" ; if argument is not a string, list, numpy.ndarray or pandas.Series
+
+        """
+        if len(args):
+            if isinstance(args[0], pd.Series):
+                if pd.Index.equals(self._metadata.index, args[0].index):
+                    _values = args[0].values.flatten()
+                else:
+                    raise RuntimeError("Index are not equals")
+            elif isinstance(args[0], (np.ndarray, list)):
+                if len(self._metadata) == len(args[0]):
+                    _values = np.array(args[0])
+                else:
+                    raise RuntimeError("Values is not the same length.")
+            elif isinstance(args[0], str):
+                if args[0] in self._metadata.columns:
+                    _values = self._metadata[args[0]].values
+                else:
+                    raise RuntimeError(
+                        "Key {} not in metadata of TsGroup".format(args[0])
+                    )
+            else:
+                possible_keys = []
+                for k, d in self._metadata.dtypes.items():
+                    if "int" in str(d) or "float" in str(d):
+                        possible_keys.append(k)
+                raise RuntimeError(
+                    "Unknown argument format. Must be pandas.Series, numpy.ndarray or a string from one of the following values : [{}]".format(
+                        ", ".join(possible_keys)
+                    )
+                )
+        else:
+            _values = self.index
+
+        nt = 0
+        for n in self.index:
+            nt += self[n].shape[0]
+
+        times = np.zeros(nt)
+        data = np.zeros(nt)
+        k = 0
+        for n, v in zip(self.index, _values):
+            kl = self[n].shape[0]
+            times[k : k + kl] = self[n].index.values
+            data[k : k + kl] = v
+            k += kl
+
+        idx = np.argsort(times)
+        toreturn = Tsd(t=times[idx], d=data[idx], time_support=self.time_support)
+
         return toreturn
 
     """

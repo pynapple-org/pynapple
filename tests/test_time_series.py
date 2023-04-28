@@ -394,6 +394,30 @@ class Test_Time_Series_2:
     def test_repr_(self, tsd):
         assert pd.Series(tsd).__str__() == tsd.__str__()
 
+    def test_to_tsgroup(self, tsd):
+        t = []
+        d = []
+        group = {}
+        for i in range(3):
+            t.append(np.sort(np.random.rand(10)*100))
+            d.append(np.ones(10)*i)
+            group[i] = nap.Ts(t=t[-1])
+
+        times = np.array(t).flatten()
+        data = np.array(d).flatten()
+        idx = np.argsort(times)
+        times = times[idx]
+        data = data[idx]
+
+        tsd = nap.Tsd(t=times, d=data)
+
+        tsgroup = tsd.to_tsgroup()
+
+        assert len(tsgroup) == 3
+        np.testing.assert_array_almost_equal(np.arange(3), tsgroup.index)
+        for i in range(3):
+            np.testing.assert_array_almost_equal(tsgroup[i].index.values, t[i])
+        
 
 ####################################################
 # Test for tsdframe
