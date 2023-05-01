@@ -415,17 +415,17 @@ def compute_2d_tuning_curves_continuous(
     tsdframe, features, nb_bins, ep=None, minmax=None
 ):
     """
-    Computes 1-dimensional tuning curves relative to a feature with continous data.
-
+    Computes 2-dimensional tuning curves relative to a 2d feature with continous data.
+    
     Parameters
     ----------
     tsdframe : Tsd or TsdFrame
-        Input data (e.g. continus calcium data
+        Input data (e.g. continuous calcium data
         where each column is the calcium activity of one neuron)
     features : TsdFrame
         The 2d feature (two columns)
-    nb_bins : int
-        Number of bins in the tuning curves
+    nb_bins : int or tuple
+        Number of bins in the tuning curves (separate for 2 feature dimensions if tuple provided)
     ep : IntervalSet, optional
         The epoch on which tuning curves are computed.
         If None, the epoch is the time support of the feature.
@@ -437,15 +437,15 @@ def compute_2d_tuning_curves_continuous(
     Returns
     -------
     tuple
-        A typle containing : \n
-        tc (dict): Dictionnary of the tuning curves with dimensions (nb_bins, nb_bins). \n
+        A tuple containing: \n
+        tc (dict): Dictionnary of the tuning curves with dimensions (nb_bins, nb_bins).\n
         xy (list): List of bins center in the two dimensions
 
     Raises
     ------
     RuntimeError
-        If tsdframe is not a Tsd or a TsdFrame object.
-
+        If tsdframe is not a Tsd/TsdFrame or if features is not 2 columns
+    
     """
     if not isinstance(tsdframe, (nap.Tsd, nap.TsdFrame)):
         raise RuntimeError("Unknown format for tsdframe.")
@@ -461,6 +461,11 @@ def compute_2d_tuning_curves_continuous(
 
     if features.shape[1] != 2:
         raise RuntimeError("features input is not 2 columns.")
+    
+    if isinstance(nb_bins, int):
+        nb_bins = (nb_bins, nb_bins)
+    elif len(nb_bins) != 2:
+        raise RuntimeError("nb_bins should be int or tuple of 2 ints")
 
     cols = list(features.columns)
 
@@ -469,9 +474,9 @@ def compute_2d_tuning_curves_continuous(
 
     for i, c in enumerate(cols):
         if minmax is None:
-            bins = np.linspace(np.min(features[c]), np.max(features[c]), nb_bins + 1)
+            bins = np.linspace(np.min(features[c]), np.max(features[c]), nb_bins[i] + 1)
         else:
-            bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins + 1)
+            bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins[i] + 1)
 
         align_times = tsdframe.value_from(features[c], ep)
         idxs[c] = np.digitize(align_times.values, bins) - 1
@@ -479,10 +484,10 @@ def compute_2d_tuning_curves_continuous(
 
     idxs = pd.DataFrame(idxs)
 
-    tc_np = np.zeros((tsdframe.shape[1], nb_bins, nb_bins)) * np.nan
+    tc_np = np.zeros((tsdframe.shape[1], nb_bins[0], nb_bins[1])) * np.nan
 
     for k, tmp in idxs.groupby(cols):
-        if (0 <= k[0] < nb_bins) and (0 <= k[1] < nb_bins):
+        if (0 <= k[0] < nb_bins[0]) and (0 <= k[1] < nb_bins[1]):
             tc_np[:, k[0], k[1]] = tsdframe.iloc[tmp.index].mean(0).values
 
     tc_np[np.isnan(tc_np)] = 0.0
