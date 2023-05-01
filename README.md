@@ -7,10 +7,10 @@
 <!-- ========================== -->
 
 [![image](https://img.shields.io/pypi/v/pynapple.svg)](https://pypi.python.org/pypi/pynapple)
-[![pynapple CI](https://github.com/PeyracheLab/pynapple/actions/workflows/main.yml/badge.svg)](https://github.com/PeyracheLab/pynapple/actions/workflows/main.yml)
-[![Coverage Status](https://coveralls.io/repos/github/PeyracheLab/pynapple/badge.svg?branch=main)](https://coveralls.io/github/PeyracheLab/pynapple?branch=main)
-[![GitHub issues](https://img.shields.io/github/issues/PeyracheLab/pynapple)](https://github.com/PeyracheLab/pynapple/issues)
-![GitHub contributors](https://img.shields.io/github/contributors/peyrachelab/pynapple)
+[![pynapple CI](https://github.com/pynapple-org/pynapple/actions/workflows/main.yml/badge.svg)](https://github.com/pynapple-org/pynapple/actions/workflows/main.yml)
+[![Coverage Status](https://coveralls.io/repos/github/pynapple-org/pynapple/badge.svg?branch=main)](https://coveralls.io/github/pynapple-org/pynapple?branch=main)
+[![GitHub issues](https://img.shields.io/github/issues/pynapple-org/pynapple)](https://github.com/pynapple-org/pynapple/issues)
+![GitHub contributors](https://img.shields.io/github/contributors/pynapple-org/pynapple)
 ![Twitter Follow](https://img.shields.io/twitter/follow/thepynapple?style=social)
 
 PYthon Neural Analysis Package.
