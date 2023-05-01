@@ -22,6 +22,31 @@ def test_create_iset():
     np.testing.assert_array_almost_equal(start, ep.start.values)
     np.testing.assert_array_almost_equal(end, ep.end.values)
 
+def test_iset_properties():
+    start = [0, 10, 16, 25]
+    end = [5, 15, 20, 40]
+    ep = nap.IntervalSet(start=start, end=end)    
+    assert isinstance(ep.starts, nap.Ts)
+    assert isinstance(ep.ends, nap.Ts)
+    np.testing.assert_array_almost_equal(np.array(start), ep.starts.index.values)
+    np.testing.assert_array_almost_equal(np.array(end), ep.ends.index.values)
+
+def test_iset_centers():
+    start = np.array([0, 10, 16, 25])
+    end = np.array([5, 15, 20, 40])
+    ep = nap.IntervalSet(start=start, end=end)
+
+    center_ts = ep.get_intervals_center()
+    assert isinstance(center_ts, nap.Ts)
+    np.testing.assert_array_almost_equal(center_ts.index.values, start + (end-start)/2)
+
+    alpha = np.random.rand()
+    center_ts = ep.get_intervals_center(alpha)
+    assert isinstance(center_ts, nap.Ts)
+    np.testing.assert_array_almost_equal(center_ts.index.values, start + (end-start)*alpha)
+
+    with pytest.raises(RuntimeError):
+        ep.get_intervals_center({})
 
 def test_create_iset_from_scalars():
     ep = nap.IntervalSet(start=0, end=10)

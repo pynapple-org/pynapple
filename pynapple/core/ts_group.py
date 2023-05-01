@@ -803,8 +803,8 @@ class TsGroup(UserDict):
         dict
             A dictionnary of TsGroup
 
-        Example
-        -------
+        Examples
+        --------
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),

@@ -6,6 +6,7 @@
 """
 """
 
+import importlib
 import warnings
 
 import numpy as np
@@ -35,9 +36,9 @@ def jitfix_iset(start, end):
 
     Parameters
     ----------
-    start : TYPE
+    start : numpy.ndarray
         Description
-    end : TYPE
+    end : numpy.ndarray
         Description
 
     Returns
@@ -414,6 +415,59 @@ class IntervalSet(pd.DataFrame):
 
         return IntervalSet(start=start, end=end)
 
+    def get_intervals_center(self, alpha=0.5):
+        """
+        Returns by default the centers of each intervals.
+
+        It is possible to bias the midpoint by changing the alpha parameter between [0, 1]
+        For each epoch:
+        t = start + (end-start)*alpha
+
+        Parameters
+        ----------
+        alpha : float, optional
+            The midpoint within each interval.
+
+        Returns
+        -------
+        Ts
+            Timestamps object
+        """
+        time_series = importlib.import_module(".time_series", "pynapple.core")
+        starts = self.values[:, 0]
+        ends = self.values[:, 1]
+
+        if not isinstance(alpha, float):
+            raise RuntimeError("Parameter alpha should be float type")
+
+        alpha = np.clip(alpha, 0, 1)
+        t = starts + (ends - starts) * alpha
+        return time_series.Ts(t=t, time_support=self)
+
     @property
     def _constructor(self):
         return IntervalSet
+
+    @property
+    def starts(self):
+        """Return the starts of the IntervalSet as a Ts object
+
+        Returns
+        -------
+        Ts
+            The starts of the IntervalSet
+        """
+        time_series = importlib.import_module(".time_series", "pynapple.core")
+        return time_series.Ts(t=self.values[:, 0], time_support=self)
+
+    @property
+    def ends(self):
+        """Return the ends of the IntervalSet as a Ts object
+
+        Returns
+        -------
+        Ts
+            The ends of the IntervalSet
+        """
+        time_series = importlib.import_module(".time_series", "pynapple.core")
+        return time_series.Ts(t=self.values[:, 1], time_support=self)
