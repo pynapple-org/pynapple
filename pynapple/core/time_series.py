@@ -19,6 +19,7 @@ from .jitted_functions import (
     jitrestrict,
     jitthreshold,
     jittsrestrict,
+    jittsrestrict_with_count,
     jitvaluefrom,
 )
 from .time_units import format_timestamps, return_timestamps, sort_timestamps
@@ -232,8 +233,8 @@ class Tsd(pd.Series):
         out : Tsd
             Tsd object with the new values
 
-        Example
-        -------
+        Examples
+        --------
         In this example, the ts object will receive the closest values in time from tsd.
 
         >>> import pynapple as nap
@@ -282,8 +283,8 @@ class Tsd(pd.Series):
         out: Tsd
             Tsd object restricted to ep
 
-        Example
-        -------
+        Examples
+        --------
         The Ts object is restrict to the intervals defined by ep.
 
         >>> import pynapple as nap
@@ -307,20 +308,32 @@ class Tsd(pd.Series):
         t, d = jitrestrict(time_array, data_array, starts, ends)
         return Tsd(t=t, d=d, time_support=ep)
 
-    def count(self, bin_size, ep=None, time_units="s"):
+    def count(self, *args, **kwargs):
         """
-        Count occurences of events within bin_size.
+        Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
+        You can call this function in multiple ways :
+
+        1. *tsd.count(bin_size=1, time_units = 'ms')*
+        -> Count occurence of events within a 1 ms bin defined on the time support of the object.
+
+        2. *tsd.count(1, ep=my_epochs)*
+        -> Count occurent of events within a 1 second bin defined on the IntervalSet my_epochs.
+
+        3. *tsd.count(ep=my_bins)*
+        -> Count occurent of events within each epoch of the intervalSet object my_bins
+
+        4. *tsd.count()*
+        -> Count occurent of events within each epoch of the time support.
+
         bin_size should be seconds unless specified.
-        If no epochs is passed, the data will be binned based on the time support.
+        If bin_size is used and no epochs is passed, the data will be binned based on the time support of the object.
 
         Parameters
         ----------
-        bin_size : float
+        bin_size : None or float, optional
             The bin size (default is second)
-
         ep : None or IntervalSet, optional
             IntervalSet to restrict the operation
-
         time_units : str, optional
             Time units of bin size ('us', 'ms', 's' [default])
 
@@ -329,8 +342,8 @@ class Tsd(pd.Series):
         out: Tsd
             A Tsd object indexed by the center of the bins.
 
-        Example
-        -------
+        Examples
+        --------
         This example shows how to count events within bins of 0.1 second.
 
         >>> import pynapple as nap
@@ -350,17 +363,52 @@ class Tsd(pd.Series):
         >>>    start    end
         >>> 0  100.0  800.0
         """
-        if not isinstance(ep, IntervalSet):
-            ep = self.time_support
+        bin_size = None
+        if "bin_size" in kwargs:
+            bin_size = kwargs["bin_size"]
+            if isinstance(bin_size, int):
+                bin_size = float(bin_size)
+            if not isinstance(bin_size, float):
+                raise ValueError("bin_size argument should be float.")
+        else:
+            for a in args:
+                if isinstance(a, (float, int)):
+                    bin_size = float(a)
 
-        bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
+        time_units = "s"
+        if "time_units" in kwargs:
+            time_units = kwargs["time_units"]
+            if not isinstance(time_units, str):
+                raise ValueError("time_units argument should be 's', 'ms' or 'us'.")
+        else:
+            for a in args:
+                if isinstance(a, str) and a in ["s", "ms", "us"]:
+                    time_units = a
+
+        ep = self.time_support
+        if "ep" in kwargs:
+            ep = kwargs["ep"]
+            if not isinstance(ep, IntervalSet):
+                raise ValueError("ep argument should be IntervalSet")
+        else:
+            for a in args:
+                if isinstance(a, IntervalSet):
+                    ep = a
 
         time_array = self.index.values
         starts = ep.start.values
         ends = ep.end.values
-        t, d = jitcount(time_array, starts, ends, bin_size)
-        time_support = IntervalSet(start=starts, end=ends)
-        return Tsd(t=t, d=d, time_support=time_support)
+
+        if isinstance(bin_size, (float, int)):
+            bin_size = float(bin_size)
+            bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
+            t, d = jitcount(time_array, starts, ends, bin_size)
+            time_support = IntervalSet(start=starts, end=ends)
+            return Tsd(t=t, d=d, time_support=time_support)
+        else:
+            _, countin = jittsrestrict_with_count(time_array, starts, ends)
+            t = starts + (ends - starts) / 2
+            return Tsd(t=t, d=countin, time_support=ep)
 
     def bin_average(self, bin_size, ep=None, time_units="s"):
         """
@@ -372,10 +420,8 @@ class Tsd(pd.Series):
         ----------
         bin_size : float
             The bin size (default is second)
-
         ep : None or IntervalSet, optional
             IntervalSet to restrict the operation
-
         time_units : str, optional
             Time units of bin size ('us', 'ms', 's' [default])
 
@@ -384,8 +430,8 @@ class Tsd(pd.Series):
         out: Tsd
             A Tsd object indexed by the center of the bins and holding the averaged data points.
 
-        Example
-        -------
+        Examples
+        --------
         This example shows how to bin data within bins of 0.1 second.
 
         >>> import pynapple as nap
@@ -441,8 +487,8 @@ class Tsd(pd.Series):
         RuntimeError
             Raise an error if thr is too high/low and no epochs is found.
 
-        Example
-        -------
+        Examples
+        --------
         This example finds all epoch above 0.5 within the tsd object.
 
         >>> import pynapple as nap
@@ -475,8 +521,8 @@ class Tsd(pd.Series):
         Convert Tsd to a TsGroup by grouping timestamps with the same values.
         By default, the values are converted to integers.
 
-        Example
-        -------
+        Examples
+        --------
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tsd = nap.Tsd(t = np.array([0, 1, 2, 3]), d = np.array([0, 2, 0, 1]))
@@ -823,8 +869,8 @@ class TsdFrame(pd.DataFrame):
         out: Tsd
             Tsd object with the new values
 
-        Example
-        -------
+        Examples
+        --------
         In this example, the ts object will receive the closest values in time from tsd.
 
         >>> import pynapple as nap
@@ -892,10 +938,8 @@ class TsdFrame(pd.DataFrame):
         ----------
         bin_size : float
             The bin size (default is second)
-
         ep : None or IntervalSet, optional
             IntervalSet to restrict the operation
-
         time_units : str, optional
             Time units of bin size ('us', 'ms', 's' [default])
 
@@ -904,8 +948,8 @@ class TsdFrame(pd.DataFrame):
         out: TsdFrame
             A TsdFrame object indexed by the center of the bins and holding the averaged data points.
 
-        Example
-        -------
+        Examples
+        --------
         This example shows how to bin data within bins of 0.1 second.
 
         >>> import pynapple as nap

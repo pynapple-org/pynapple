@@ -78,7 +78,6 @@ def test_decode_1d_with_time_units():
         decoded, proba = nap.decode_1d(tc, group, ep, 1.0 * t, time_units=tu)
         np.testing.assert_array_almost_equal(feature.values, decoded.values)
 
-
 def test_decoded_1d_raise_errors():
     feature, group, tc, ep = get_testing_set_1d()
     with pytest.raises(Exception) as e_info:

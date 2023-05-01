@@ -239,6 +239,20 @@ class Test_Ts_Group_1:
             count[2].values[0:-1], np.ones(len(count) - 1) * 5
         )
 
+        count = tsgroup.count(1)
+        np.testing.assert_array_almost_equal(
+            count[0].values[0:-1], np.ones(len(count) - 1)
+        )
+        np.testing.assert_array_almost_equal(
+            count[1].values[0:-1], np.ones(len(count) - 1) * 2
+        )
+        np.testing.assert_array_almost_equal(
+            count[2].values[0:-1], np.ones(len(count) - 1) * 5
+        )
+
+        count = tsgroup.count()
+        np.testing.assert_array_almost_equal(count.values, np.array([[101, 201, 501]]))
+
     def test_count_with_ep(self, group):
         ep = nap.IntervalSet(start=0, end=100)
         tsgroup = nap.TsGroup(group)
@@ -252,6 +266,53 @@ class Test_Ts_Group_1:
         np.testing.assert_array_almost_equal(
             count[2].values[0:-1], np.ones(len(count) - 1) * 5
         )
+        count = tsgroup.count(bin_size=1.0, ep=ep)
+        np.testing.assert_array_almost_equal(
+            count[0].values[0:-1], np.ones(len(count) - 1)
+        )
+        np.testing.assert_array_almost_equal(
+            count[1].values[0:-1], np.ones(len(count) - 1) * 2
+        )
+        np.testing.assert_array_almost_equal(
+            count[2].values[0:-1], np.ones(len(count) - 1) * 5
+        )
+        count = tsgroup.count(ep=nap.IntervalSet(0, 50))
+        np.testing.assert_array_almost_equal(count.values, np.array([[51, 101, 251]]))
+
+    def test_count_time_units(self, group):
+        ep = nap.IntervalSet(start=0, end=100)
+        tsgroup = nap.TsGroup(group, time_support =ep)
+        for b, tu in zip([1, 1e3, 1e6],['s', 'ms', 'us']):
+            count = tsgroup.count(b, time_units=tu)
+            np.testing.assert_array_almost_equal(
+                count[0].values[0:-1], np.ones(len(count) - 1)
+            )
+            np.testing.assert_array_almost_equal(
+                count[1].values[0:-1], np.ones(len(count) - 1) * 2
+            )
+            np.testing.assert_array_almost_equal(
+                count[2].values[0:-1], np.ones(len(count) - 1) * 5
+            )
+            count = tsgroup.count(b, tu)
+            np.testing.assert_array_almost_equal(
+                count[0].values[0:-1], np.ones(len(count) - 1)
+            )
+            np.testing.assert_array_almost_equal(
+                count[1].values[0:-1], np.ones(len(count) - 1) * 2
+            )
+            np.testing.assert_array_almost_equal(
+                count[2].values[0:-1], np.ones(len(count) - 1) * 5
+            )
+    def test_count_errors(self, group):
+        tsgroup = nap.TsGroup(group)
+        with pytest.raises(ValueError):
+            tsgroup.count(bin_size = {})
+
+        with pytest.raises(ValueError):
+            tsgroup.count(ep = {})
+
+        with pytest.raises(ValueError):
+            tsgroup.count(time_units = {})
 
     def test_threshold_slicing(self, group):
         sr_info = pd.Series(index=[0, 1, 2], data=[0, 1, 2], name="sr")

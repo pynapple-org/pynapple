@@ -13,7 +13,12 @@ import pandas as pd
 from tabulate import tabulate
 
 from .interval_set import IntervalSet
-from .jitted_functions import jitcount, jitunion, jitunion_isets
+from .jitted_functions import (
+    jitcount,
+    jittsrestrict_with_count,
+    jitunion,
+    jitunion_isets,
+)
 from .time_series import Ts, Tsd, TsdFrame
 from .time_units import format_timestamps
 
@@ -246,8 +251,8 @@ class TsGroup(UserDict):
                 indexes are not equals for a pandas series,
                 not the same length when passing numpy array.
 
-        Example
-        -------
+        Examples
+        --------
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
@@ -339,8 +344,8 @@ class TsGroup(UserDict):
         TsGroup
             TsGroup object restricted to ep
 
-        Example
-        -------
+        Examples
+        --------
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
@@ -386,8 +391,8 @@ class TsGroup(UserDict):
         TsGroup
             TsGroup object with the new values
 
-        Example
-        -------
+        Examples
+        --------
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
@@ -414,29 +419,42 @@ class TsGroup(UserDict):
         cols = self._metadata.columns.drop("rate")
         return TsGroup(newgr, time_support=ep, **self._metadata[cols])
 
-    def count(self, bin_size, ep=None, time_units="s"):
+    def count(self, *args, **kwargs):
         """
-        Count occurences of events within bin_size.
+        Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
+        You can call this function in multiple ways :
+
+        1. *tsgroup.count(bin_size=1, time_units = 'ms')*
+        -> Count occurence of events within a 1 ms bin defined on the time support of the object.
+
+        2. *tsgroup.count(1, ep=my_epochs)*
+        -> Count occurent of events within a 1 second bin defined on the IntervalSet my_epochs.
+
+        3. *tsgroup.count(ep=my_bins)*
+        -> Count occurent of events within each epoch of the intervalSet object my_bins
+
+        4. *tsgroup.count()*
+        -> Count occurent of events within each epoch of the time support.
+
         bin_size should be seconds unless specified.
-        If no epochs is passed, the data will be binned based on the time support.
+        If bin_size is used and no epochs is passed, the data will be binned based on the time support of the object.
 
         Parameters
         ----------
-        bin_size : float
+        bin_size : None or float, optional
             The bin size (default is second)
-        ep : IntervalSet, optional
+        ep : None or IntervalSet, optional
             IntervalSet to restrict the operation
-            If None, the time support of self is used.
         time_units : str, optional
             Time units of bin size ('us', 'ms', 's' [default])
 
         Returns
         -------
-        TsdFrame
+        out: TsdFrame
             A TsdFrame with the columns being the index of each item in the TsGroup.
 
-        Example
-        -------
+        Examples
+        --------
         This example shows how to count events within bins of 0.1 second for the first 100 seconds.
 
         >>> import pynapple as nap
@@ -465,34 +483,62 @@ class TsGroup(UserDict):
         [1000 rows x 3 columns]
 
         """
-        if not isinstance(ep, IntervalSet):
-            ep = self.time_support
+        bin_size = None
+        if "bin_size" in kwargs:
+            bin_size = kwargs["bin_size"]
+            if isinstance(bin_size, int):
+                bin_size = float(bin_size)
+            if not isinstance(bin_size, float):
+                raise ValueError("bin_size argument should be float.")
+        else:
+            for a in args:
+                if isinstance(a, (float, int)):
+                    bin_size = float(a)
 
-        bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
+        time_units = "s"
+        if "time_units" in kwargs:
+            time_units = kwargs["time_units"]
+            if not isinstance(time_units, str):
+                raise ValueError("time_units argument should be 's', 'ms' or 'us'.")
+        else:
+            for a in args:
+                if isinstance(a, str) and a in ["s", "ms", "us"]:
+                    time_units = a
 
-        # time_index = []
-        # for i in ep.index:
-        #     bins = np.arange(ep.start[i], ep.end[i] + bin_size, bin_size)
-        #     t = bins[0:-1] + np.diff(bins) / 2
-        #     t = jittsrestrict(
-        #         t, np.array([ep.loc[i, "start"]]), np.array([ep.loc[i, "end"]])
-        #     )
-        #     time_index.append(t)
-        # time_index = np.hstack(time_index)
+        ep = self.time_support
+        if "ep" in kwargs:
+            ep = kwargs["ep"]
+            if not isinstance(ep, IntervalSet):
+                raise ValueError("ep argument should be IntervalSet")
+        else:
+            for a in args:
+                if isinstance(a, IntervalSet):
+                    ep = a
 
         starts = ep.start.values
         ends = ep.end.values
 
-        time_index, _ = jitcount(np.array([]), starts, ends, bin_size)
+        if isinstance(bin_size, (float, int)):
+            bin_size = float(bin_size)
+            bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
+            time_index, _ = jitcount(np.array([]), starts, ends, bin_size)
+            n = len(self.index)
+            count = np.zeros((time_index.shape[0], n), dtype=np.int64)
 
-        n = len(self.index)
+            for i in range(n):
+                count[:, i] = jitcount(
+                    self.data[self.index[i]].index.values, starts, ends, bin_size
+                )[1]
 
-        count = np.zeros((time_index.shape[0], n), dtype=np.int64)
+        else:
+            time_index = starts + (ends - starts) / 2
+            n = len(self.index)
+            count = np.zeros((time_index.shape[0], n), dtype=np.int64)
 
-        for i in range(n):
-            count[:, i] = jitcount(
-                self.data[self.index[i]].index.values, starts, ends, bin_size
-            )[1]
+            for i in range(n):
+                count[:, i] = jittsrestrict_with_count(
+                    self.data[self.index[i]].index.values, starts, ends
+                )[1]
 
         toreturn = TsdFrame(t=time_index, d=count, time_support=ep, columns=self.index)
         return toreturn
@@ -506,8 +552,8 @@ class TsGroup(UserDict):
         *args
             string, list, numpy.ndarray or pandas.Series
 
-        Example
-        -------
+        Examples
+        --------
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tsgroup = nap.TsGroup({0:nap.Ts(t=np.array([0, 1])), 5:nap.Ts(t=np.array([2, 3]))})
@@ -651,8 +697,8 @@ class TsGroup(UserDict):
         RuntimeError
             Raise eror is operation is not recognized.
 
-        Example
-        -------
+        Examples
+        --------
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
@@ -705,8 +751,8 @@ class TsGroup(UserDict):
         list
             A list of TsGroup
 
-        Example
-        -------
+        Examples
+        --------
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),

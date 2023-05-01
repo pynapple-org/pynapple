@@ -261,13 +261,56 @@ class Test_Time_Series_2:
     def test_count(self, tsd):
         count = tsd.count(1)
         assert len(count) == 99
-        np.testing.assert_array_almost_equal(count.index.values, np.arange(0.5, 99, 1))
+        np.testing.assert_array_almost_equal(count.index.values, np.arange(0.5, 99, 1))        
+        
+        count = tsd.count(bin_size=1)
+        assert len(count) == 99
+        np.testing.assert_array_almost_equal(count.index.values, np.arange(0.5, 99, 1))                
+
+    def test_count_time_units(self, tsd):
+        for b, tu in zip([1, 1e3, 1e6],['s', 'ms', 'us']):
+            count = tsd.count(b, time_units = tu)
+            assert len(count) == 99
+            np.testing.assert_array_almost_equal(count.index.values, np.arange(0.5, 99, 1))
+            
+            count = tsd.count(b, tu)
+            assert len(count) == 99
+            np.testing.assert_array_almost_equal(count.index.values, np.arange(0.5, 99, 1))                
 
     def test_count_with_ep(self, tsd):
         ep = nap.IntervalSet(start=0, end=100)
         count = tsd.count(1, ep)
         assert len(count) == 100
         np.testing.assert_array_almost_equal(count.values, np.ones(100))
+
+        count = tsd.count(1, ep=ep)
+        assert len(count) == 100
+        np.testing.assert_array_almost_equal(count.values, np.ones(100))
+
+    def test_count_with_ep_only(self, tsd):
+        ep = nap.IntervalSet(start=0, end=100)
+        count = tsd.count(ep)
+        assert len(count) == 1
+        np.testing.assert_array_almost_equal(count.values, np.array([100]))
+
+        count = tsd.count(ep=ep)
+        assert len(count) == 1
+        np.testing.assert_array_almost_equal(count.values, np.array([100]))
+
+        count = tsd.count()
+        assert len(count) == 1
+        np.testing.assert_array_almost_equal(count.values, np.array([100]))
+
+
+    def test_count_errors(self, tsd):        
+        with pytest.raises(ValueError):
+            tsd.count(bin_size = {})
+
+        with pytest.raises(ValueError):
+            tsd.count(ep = {})
+
+        with pytest.raises(ValueError):
+            tsd.count(time_units = {})
 
     def test_bin_average(self, tsd):
         meantsd = tsd.bin_average(10)
@@ -286,12 +329,6 @@ class Test_Time_Series_2:
         tsd = tsd.restrict(ep)
         tmp = tsd.groupby(np.digitize(tsd.index.values, bins)).mean()
         np.testing.assert_array_almost_equal(meantsd.values, tmp.loc[np.arange(1,5)].values)
-
-    def test_count_with_ep(self, tsd):
-        ep = nap.IntervalSet(start=0, end=100)
-        count = tsd.count(1, ep)
-        assert len(count) == 100
-        np.testing.assert_array_almost_equal(count.values, np.ones(100))
 
     def test_threshold(self, tsd):
         thrs = tsd.threshold(0.5, "above")
