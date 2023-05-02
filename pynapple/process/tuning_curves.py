@@ -6,7 +6,6 @@
 # @Last Modified by:   gviejo
 # @Last Modified time: 2022-12-06 21:30:23
 
-
 import warnings
 
 import numpy as np
@@ -14,7 +13,6 @@ import pandas as pd
 from scipy.linalg import hankel
 
 from .. import core as nap
-
 
 def compute_discrete_tuning_curves(group, dict_ep):
     """
@@ -72,7 +70,6 @@ def compute_discrete_tuning_curves(group, dict_ep):
 
     return tuning_curves
 
-
 def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     """
     Computes 1-dimensional tuning curves relative to a 1d feature.
@@ -129,7 +126,6 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
         tuning_curves[k] = count * feature.rate
 
     return tuning_curves
-
 
 def compute_2d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     """
@@ -208,7 +204,6 @@ def compute_2d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
 
     return tc, xy
 
-
 def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
     """
     Mutual information as defined in
@@ -273,7 +268,6 @@ def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
         SI = SI / fr
         SI = pd.DataFrame(index=columns, columns=["SI"], data=SI)
         return SI
-
 
 def compute_2d_mutual_info(tc, features, ep=None, minmax=None, bitssec=False):
     """
@@ -352,7 +346,6 @@ def compute_2d_mutual_info(tc, features, ep=None, minmax=None, bitssec=False):
         SI = pd.DataFrame(index=idx, columns=["SI"], data=SI)
         return SI
 
-
 def compute_1d_tuning_curves_continous(
     tsdframe, feature, nb_bins, ep=None, minmax=None
 ):
@@ -410,13 +403,12 @@ def compute_1d_tuning_curves_continous(
 
     return pd.DataFrame(tmp)
 
-
 def compute_2d_tuning_curves_continuous(
     tsdframe, features, nb_bins, ep=None, minmax=None
 ):
     """
     Computes 2-dimensional tuning curves relative to a 2d feature with continous data.
-    
+
     Parameters
     ----------
     tsdframe : Tsd or TsdFrame
@@ -445,7 +437,7 @@ def compute_2d_tuning_curves_continuous(
     ------
     RuntimeError
         If tsdframe is not a Tsd/TsdFrame or if features is not 2 columns
-    
+
     """
     if not isinstance(tsdframe, (nap.Tsd, nap.TsdFrame)):
         raise RuntimeError("Unknown format for tsdframe.")
@@ -461,7 +453,7 @@ def compute_2d_tuning_curves_continuous(
 
     if features.shape[1] != 2:
         raise RuntimeError("features input is not 2 columns.")
-    
+
     if isinstance(nb_bins, int):
         nb_bins = (nb_bins, nb_bins)
     elif len(nb_bins) != 2:
@@ -497,7 +489,6 @@ def compute_2d_tuning_curves_continuous(
     tc = {c: tc_np[i] for i, c in enumerate(tsdframe.columns)}
 
     return tc, xy
-
 
 def compute_1d_poisson_glm(
     group, feature, binsize, windowsize, ep, time_units="s", niter=100, tolerance=1e-5
