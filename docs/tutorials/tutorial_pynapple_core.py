@@ -62,7 +62,7 @@ print(new_tsd)
 # Multiple operations are available for IntervalSet. 
 # For example, IntervalSet can be merged. 
 # See the full documentation of the class at 
-# https://peyrachelab.github.io/pynapple/core.interval_set/#pynapple.core.interval_set.IntervalSet.intersect 
+# https://pynapple-org.github.io/pynapple/core.interval_set/#pynapple.core.interval_set.IntervalSet.intersect 
 # for a list of all the functions that can be used to manipulate IntervalSets.
 
 
@@ -103,17 +103,17 @@ print(count)
 # In this case, we add labels to each Ts object when instantiating the group and after. 
 # We can then use this label to split the group. 
 # See the documentation about TsGroup at 
-# https://peyrachelab.github.io/pynapple/core.ts_group/ 
+# https://pynapple-org.github.io/pynapple/core.ts_group/ 
 # for all the ways to split TsGroup.
 
 tsgroup = nap.TsGroup(my_ts, time_units = 's', label1=[0,1,0])
-tsgroup.set_info(label2=['a', 'a', 'b'])
+tsgroup.set_info(label1=np.array(['a', 'a', 'b']))
 
 print(tsgroup, '\n')
 
 newtsgroup= tsgroup.getby_category('label1')
-print(newtsgroup[0], '\n')
-print(newtsgroup[1])
+print(newtsgroup['a'], '\n')
+print(newtsgroup['b'])
 
 
 # ## Time support

@@ -228,7 +228,7 @@ plt.show()
 tuning_curves_adn = nap.compute_1d_tuning_curves(
     spikes_adn,
     position['ry'],
-    nb_bins=121,
+    nb_bins=61,
     ep=position['ry'].time_support,
     minmax=(0, 2*np.pi))
 
@@ -260,21 +260,33 @@ decoded_sleep, proba_angle_Sleep = nap.decode_1d(tuning_curves=tuning_curves_adn
                                                  group=spikes_adn, 
                                                  feature=position['ry'], 
                                                  ep=epochs['sleep'],
-                                                 bin_size=0.1 # second
+                                                 bin_size=0.03 # second
                                                 )
 
 # Finding quickly max direction of tuning curves
 peaks_adn = tuning_curves_adn.idxmax()
 
+
+# I am adding peaks_adn to the metadata of spikes_adn
+spikes_adn.set_info(order= np.argsort(peaks_adn).values)
+
+
 # Defining a sub epoch during sleep
 subep = nap.IntervalSet(start=0, end=10, time_units='s')
 
 plt.figure(figsize=(16,5))
+plt.subplot(211)
 # create a raster plot
-for n in spikes_adn.keys():
-    plt.plot(spikes_adn[n].restrict(subep).as_units('s').fillna(peaks_adn[n]), '|')
-plt.plot(decoded_sleep.restrict(subep).as_units('s'), label = 'Decoded sleep')
-plt.legend()
+# To create a raster plot, we can convert the tsgroup to a tsd and assing to each spikes the order of the peaks
+spikes_adn_tsd = spikes_adn.to_tsd("order")
+# And plot it
+plt.plot(spikes_adn_tsd.restrict(subep), '|', markersize = 10)
+plt.xlim(subep.values[0])
+plt.subplot(212)
+tmp = proba_angle_Sleep.restrict(subep).values.T
+from scipy.ndimage import gaussian_filter
+tmp = gaussian_filter(tmp, 1)
+plt.imshow(tmp, aspect='auto', origin='lower')
 plt.xlabel("Time (s)")
 plt.ylabel("Head-direction (rad)")
 plt.show()

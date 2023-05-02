@@ -158,7 +158,7 @@ plt.show()
 
 decoded, proba_feature = nap.decode_2d(tuning_curves=tcurves2d, 
                                      group=ts_group, 
-                                     feature=features, 
+                                     features=features, 
                                      ep=epoch,
                                      bin_size=0.1, # second
                                      xy=binsxy
