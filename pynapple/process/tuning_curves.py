@@ -14,6 +14,7 @@ from scipy.linalg import hankel
 
 from .. import core as nap
 
+
 def compute_discrete_tuning_curves(group, dict_ep):
     """
         Compute discrete tuning curves of a TsGroup using a dictionnary of epochs.
@@ -69,6 +70,7 @@ def compute_discrete_tuning_curves(group, dict_ep):
         tuning_curves.loc[k] = tuning_curves.loc[k] / dict_ep[k].tot_length("s")
 
     return tuning_curves
+
 
 def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     """
@@ -126,6 +128,7 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
         tuning_curves[k] = count * feature.rate
 
     return tuning_curves
+
 
 def compute_2d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     """
@@ -204,6 +207,7 @@ def compute_2d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
 
     return tc, xy
 
+
 def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
     """
     Mutual information as defined in
@@ -268,6 +272,7 @@ def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
         SI = SI / fr
         SI = pd.DataFrame(index=columns, columns=["SI"], data=SI)
         return SI
+
 
 def compute_2d_mutual_info(tc, features, ep=None, minmax=None, bitssec=False):
     """
@@ -346,6 +351,7 @@ def compute_2d_mutual_info(tc, features, ep=None, minmax=None, bitssec=False):
         SI = pd.DataFrame(index=idx, columns=["SI"], data=SI)
         return SI
 
+
 def compute_1d_tuning_curves_continous(
     tsdframe, feature, nb_bins, ep=None, minmax=None
 ):
@@ -402,6 +408,7 @@ def compute_1d_tuning_curves_continous(
     tmp = tmp.fillna(0)
 
     return pd.DataFrame(tmp)
+
 
 def compute_2d_tuning_curves_continuous(
     tsdframe, features, nb_bins, ep=None, minmax=None
@@ -489,6 +496,7 @@ def compute_2d_tuning_curves_continuous(
     tc = {c: tc_np[i] for i, c in enumerate(tsdframe.columns)}
 
     return tc, xy
+
 
 def compute_1d_poisson_glm(
     group, feature, binsize, windowsize, ep, time_units="s", niter=100, tolerance=1e-5
