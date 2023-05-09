@@ -444,3 +444,78 @@ class Test_Ts_Group_1:
         with pytest.raises(Exception) as e_info:
             tsgroup.to_tsd(dict)
         assert str(e_info.value) == """Unknown argument format. Must be pandas.Series, numpy.ndarray or a string from one of the following values : [rate, alpha]"""
+
+    def test_save_npz(self, group):
+
+        import os
+
+        group = {
+            0: nap.Tsd(t=np.arange(0, 20), d = np.random.rand(20)),
+            1: nap.Tsd(t=np.arange(0, 20, 0.5), d=np.random.rand(40)),
+            2: nap.Tsd(t=np.arange(0, 10, 0.2), d=np.random.rand(50))
+        }
+
+        tsgroup = nap.TsGroup(group, meta = np.arange(len(group), dtype=np.int64), meta2 = np.array(['a', 'b', 'c']))
+
+        with pytest.raises(RuntimeError) as e:
+            tsgroup.save(dict)
+        assert str(e.value) == "Invalid type; please provide filename as string"
+
+        with pytest.raises(RuntimeError) as e:
+            tsgroup.save('./')
+        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+
+        fake_path = './fake/path'
+        with pytest.raises(RuntimeError) as e:
+            tsgroup.save(fake_path+'/file.npz')
+        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+
+        tsgroup.save("tsgroup.npz")
+        os.listdir('.')
+        assert "tsgroup.npz" in os.listdir(".")
+
+        tsgroup.save("tsgroup2")
+        os.listdir('.')
+        assert "tsgroup2.npz" in os.listdir(".")
+
+        file = np.load("tsgroup.npz")
+
+        keys = list(file.keys())    
+        for k in ['t', 'd', 'start', 'end', 'index', 'meta', 'meta2']:
+            assert k in keys
+
+        times = []
+        index = []
+        data = []
+        for n in group.keys():
+            times.append(group[n].index.values)
+            index.append(np.ones(len(group[n]))*n)
+            data.append(group[n].values)
+        times = np.hstack(times)
+        index = np.hstack(index)
+        data = np.hstack(data)
+        idx = np.argsort(times)
+        times = times[idx]
+        data = data[idx]
+        index = index[idx]
+
+        np.testing.assert_array_almost_equal(file['start'], tsgroup.time_support.start.values)
+        np.testing.assert_array_almost_equal(file['end'], tsgroup.time_support.end.values)
+        np.testing.assert_array_almost_equal(file['t'], times)
+        np.testing.assert_array_almost_equal(file['d'], data)
+        np.testing.assert_array_almost_equal(file['index'], index)
+        np.testing.assert_array_almost_equal(file['meta'], np.arange(len(group), dtype=np.int64))
+        assert np.all(file['meta2']==np.array(['a', 'b', 'c']))
+
+        tsgroup3 = nap.TsGroup({
+                    0: nap.Ts(t=np.arange(0, 20)),
+                })
+        tsgroup3.save("tsgroup3")
+        file = np.load("tsgroup3.npz")
+
+        assert 'd' not in list(file.keys())
+        np.testing.assert_array_almost_equal(file['t'], tsgroup3[0].index.values)
+
+        os.remove("tsgroup.npz")
+        os.remove("tsgroup2.npz")
+        os.remove("tsgroup3.npz")

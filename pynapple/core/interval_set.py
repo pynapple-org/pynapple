@@ -7,6 +7,7 @@
 """
 
 import importlib
+import os
 import warnings
 
 import numpy as np
@@ -443,6 +444,78 @@ class IntervalSet(pd.DataFrame):
         alpha = np.clip(alpha, 0, 1)
         t = starts + (ends - starts) * alpha
         return time_series.Ts(t=t, time_support=self)
+
+    def save(self, filename):
+        """
+        Save IntervalSet object in npz format. The file will contain the starts and ends.
+
+        The main purpose of this function is to save small/medium sized IntervalSet
+        objects. For example, you determined some epochs for one session that you want to save
+        to avoid recomputing them.
+
+        You can load the object with numpy.load. Keys are 'start' and 'end'.
+        See the example below.
+
+        For a more automatic way of reading and writing data from a particular
+        session folder, check the pynapple IO Container class.
+
+        Parameters
+        ----------
+        filename : str
+            The filename
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> ep = nap.IntervalSet(start=[0, 10, 20], end=[5, 12, 33])
+        >>> ep.save("my_ep.npz")
+
+        Here I can retrieve my data with numpy directly:
+
+        >>> file = np.load("my_ep.npz")
+        >>> print(list(file.keys()))
+        ['start', 'end']
+        >>> print(file['start'])
+        [0. 10. 20.]
+
+        It is then easy to recreate the IntervalSet object.
+        >>> nap.IntervalSet(file['start'], file['end'])
+           start   end
+        0    0.0   5.0
+        1   10.0  12.0
+        2   20.0  33.0
+
+        Raises
+        ------
+        RuntimeError
+            If filename is not str, path does not exist or filename is a directory.
+        """
+        if not isinstance(filename, str):
+            raise RuntimeError("Invalid type; please provide filename as string")
+
+        if os.path.isdir(filename):
+            raise RuntimeError(
+                "Invalid filename input. {} is directory.".format(filename)
+            )
+
+        if not filename.lower().endswith(".npz"):
+            filename = filename + ".npz"
+
+        dirname = os.path.dirname(filename)
+
+        if len(dirname) and not os.path.exists(dirname):
+            raise RuntimeError(
+                "Path {} does not exist.".format(os.path.dirname(filename))
+            )
+
+        np.savez(
+            filename,
+            start=self.start.values,
+            end=self.end.values,
+        )
+
+        return
 
     @property
     def _constructor(self):

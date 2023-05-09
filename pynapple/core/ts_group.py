@@ -5,6 +5,7 @@
 # @Last Modified time: 2023-03-29 14:48:42
 
 
+import os
 import warnings
 from collections import UserDict
 
@@ -832,3 +833,148 @@ class TsGroup(UserDict):
         groups = self._metadata.groupby(key).groups
         sliced = {k: self[list(groups[k])] for k in groups.keys()}
         return sliced
+
+    def save(self, filename):
+        """
+        Save TsGroup object in npz format. The file will contain the timestamps,
+        the data (if group of Tsd), group index, the time support and the metadata
+
+        The main purpose of this function is to save small/medium sized TsGroup
+        objects.
+
+        The function will "flatten" the TsGroup by sorting all the timestamps
+        and assigning to each the corresponding index. Typically, a TsGroup like
+        this :
+
+            TsGroup({
+                0 : Tsd(t=[0, 2, 4], d=[1, 2, 3])
+                1 : Tsd(t=[1, 5], d=[5, 6])
+            })
+
+        will be saved as npz with the following keys:
+
+            {
+                't' : [0, 1, 2, 4, 5],
+                'd' : [1, 5, 2, 3, 5],
+                'index' : [0, 1, 0, 0, 1],
+                'start' : [0],
+                'end' : [5]
+            }
+
+        Metadata are saved by columns with the column name as the npz key. To avoid
+        potential conflicts, make sure the columns name of the metadata are different
+        from ['t', 'd', 'start', 'end', 'index']
+
+        You can load the object with numpy.load. Default Keys are 't', 'd'(optional),
+        'start', 'end' and 'index'.
+        See the example below.
+
+        For a more automatic way of reading and writing data from a particular
+        session folder, check the pynapple IO Container class.
+
+        Parameters
+        ----------
+        filename : str
+            The filename
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsgroup = nap.TsGroup({
+            0 : nap.Ts(t=np.array([0.0, 2.0, 4.0])),
+            6 : nap.Ts(t=np.array([1.0, 5.0]))
+            },
+            group = np.array([0, 1]),
+            location = np.array(['right foot', 'left foot'])
+            )
+        >>> tsgroup
+          Index    rate    group  location
+        -------  ------  -------  ----------
+              0     0.6        0  right foot
+              6     0.4        1  left foot
+        >>> tsgroup.save("my_tsgroup.npz")
+
+        Here I can retrieve my data with numpy directly:
+
+        >>> file = np.load("my_tsgroup.npz")
+        >>> print(list(file.keys()))
+        ['rate', 'group', 'location', 't', 'index', 'start', 'end']
+        >>> print(file['index'])
+        [0 6 0 0 6]
+
+        In the case where TsGroup is a set of Ts objects, it is very direct to
+        recreate the TsGroup by using the function to_tsgroup :
+
+        >>> time_support = nap.IntervalSet(file['start'], file['end'])
+        >>> tsd = nap.Tsd(t=file['t'], d=file['index'], time_support = time_support)
+        >>> tsgroup = tsd.to_tsgroup()
+        >>> tsgroup.set_info(group = file['group'], location = file['location'])
+        >>> tsgroup
+          Index    rate    group  location
+        -------  ------  -------  ----------
+              0     0.6        0  right foot
+              6     0.4        1  left foot
+
+        Raises
+        ------
+        RuntimeError
+            If filename is not str, path does not exist or filename is a directory.
+        """
+        if not isinstance(filename, str):
+            raise RuntimeError("Invalid type; please provide filename as string")
+
+        if os.path.isdir(filename):
+            raise RuntimeError(
+                "Invalid filename input. {} is directory.".format(filename)
+            )
+
+        if not filename.lower().endswith(".npz"):
+            filename = filename + ".npz"
+
+        dirname = os.path.dirname(filename)
+
+        if len(dirname) and not os.path.exists(dirname):
+            raise RuntimeError(
+                "Path {} does not exist.".format(os.path.dirname(filename))
+            )
+
+        dicttosave = {}
+        for k in self._metadata.columns:
+            if k not in ["t", "d", "start", "end", "index"]:
+                tmp = self._metadata[k].values
+                if tmp.dtype == np.dtype("O"):
+                    tmp = tmp.astype(np.str_)
+                dicttosave[k] = tmp
+
+        # We can't use to_tsd here in case tsgroup contains Tsd and not only Ts.
+        nt = 0
+        for n in self.index:
+            nt += self[n].shape[0]
+
+        times = np.zeros(nt)
+        data = np.zeros(nt)
+        index = np.zeros(nt, dtype=np.int64)
+        k = 0
+        for n in self.index:
+            kl = self[n].shape[0]
+            times[k : k + kl] = self[n].index.values
+            data[k : k + kl] = self[n].values
+            index[k : k + kl] = int(n)
+            k += kl
+
+        idx = np.argsort(times)
+        times = times[idx]
+        index = index[idx]
+
+        dicttosave["t"] = times
+        dicttosave["index"] = index
+        if not np.all(np.isnan(data)):
+            dicttosave["d"] = data[idx]
+
+        dicttosave["start"] = self.time_support.start.values
+        dicttosave["end"] = self.time_support.end.values
+
+        np.savez(filename, **dicttosave)
+
+        return

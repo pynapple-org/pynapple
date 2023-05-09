@@ -316,6 +316,49 @@ def test_str_():
 
     assert pd.DataFrame(ep).__str__() == ep.__str__()
 
+def test_save_npz():
+    import os
+
+    start = np.around(np.array([0, 10, 16], dtype=np.float64), 9)
+    end = np.around(np.array([5, 15, 20], dtype=np.float64), 9)
+    ep = nap.IntervalSet(start=start,end=end)
+
+    with pytest.raises(RuntimeError) as e:
+        ep.save(dict)
+    assert str(e.value) == "Invalid type; please provide filename as string"
+
+    with pytest.raises(RuntimeError) as e:
+        ep.save('./')
+    assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+
+    fake_path = './fake/path'
+    with pytest.raises(RuntimeError) as e:
+        ep.save(fake_path+'/file.npz')
+    assert str(e.value) == "Path {} does not exist.".format(fake_path)
+
+    ep.save("ep.npz")
+    os.listdir('.')
+    assert "ep.npz" in os.listdir(".")
+
+    ep.save("ep2")
+    os.listdir('.')
+    assert "ep2.npz" in os.listdir(".")
+
+    file = np.load("ep.npz")
+
+    keys = list(file.keys())    
+    assert 'start' in keys
+    assert 'end' in keys
+
+    np.testing.assert_array_almost_equal(file['start'], start)
+    np.testing.assert_array_almost_equal(file['end'], end)
+
+    # Cleaning    
+    os.remove("ep.npz")
+    os.remove("ep2.npz")    
+
+
+
 
 
 

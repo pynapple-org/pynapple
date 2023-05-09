@@ -455,6 +455,45 @@ class Test_Time_Series_2:
         for i in range(3):
             np.testing.assert_array_almost_equal(tsgroup[i].index.values, t[i])
         
+    def test_save_npz(self, tsd):
+        import os
+
+        with pytest.raises(RuntimeError) as e:
+            tsd.save(dict)
+        assert str(e.value) == "Invalid type; please provide filename as string"
+
+        with pytest.raises(RuntimeError) as e:
+            tsd.save('./')
+        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+
+        fake_path = './fake/path'
+        with pytest.raises(RuntimeError) as e:
+            tsd.save(fake_path+'/file.npz')
+        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+
+        tsd.save("tsd.npz")
+        os.listdir('.')
+        assert "tsd.npz" in os.listdir(".")
+
+        tsd.save("tsd2")
+        os.listdir('.')
+        assert "tsd2.npz" in os.listdir(".")
+
+        file = np.load("tsd.npz")
+
+        keys = list(file.keys())
+        assert 't' in keys
+        assert 'd' in keys
+        assert 'start' in keys
+        assert 'end' in keys
+
+        np.testing.assert_array_almost_equal(file['t'], tsd.index.values)
+        np.testing.assert_array_almost_equal(file['d'], tsd.values)
+        np.testing.assert_array_almost_equal(file['start'], tsd.time_support.start.values)
+        np.testing.assert_array_almost_equal(file['end'], tsd.time_support.end.values)
+
+        os.remove("tsd.npz")
+        os.remove("tsd2.npz")
 
 ####################################################
 # Test for tsdframe
@@ -583,6 +622,47 @@ class Test_Time_Series_3:
         tmp = tsdframe.groupby(np.digitize(tsdframe.index.values, bins)).mean()
         np.testing.assert_array_almost_equal(meantsd.values, tmp.loc[np.arange(1,5)].values)
 
+    def test_save_npz(self, tsdframe):
+        import os
+
+        with pytest.raises(RuntimeError) as e:
+            tsdframe.save(dict)
+        assert str(e.value) == "Invalid type; please provide filename as string"
+
+        with pytest.raises(RuntimeError) as e:
+            tsdframe.save('./')
+        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+
+        fake_path = './fake/path'
+        with pytest.raises(RuntimeError) as e:
+            tsdframe.save(fake_path+'/file.npz')
+        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+
+        tsdframe.save("tsdframe.npz")
+        os.listdir('.')
+        assert "tsdframe.npz" in os.listdir(".")
+
+        tsdframe.save("tsdframe2")
+        os.listdir('.')
+        assert "tsdframe2.npz" in os.listdir(".")
+
+        file = np.load("tsdframe.npz")
+
+        keys = list(file.keys())
+        assert 't' in keys
+        assert 'd' in keys
+        assert 'start' in keys
+        assert 'end' in keys
+        assert 'columns' in keys
+
+        np.testing.assert_array_almost_equal(file['t'], tsdframe.index.values)
+        np.testing.assert_array_almost_equal(file['d'], tsdframe.values)
+        np.testing.assert_array_almost_equal(file['start'], tsdframe.time_support.start.values)
+        np.testing.assert_array_almost_equal(file['end'], tsdframe.time_support.end.values)
+        np.testing.assert_array_almost_equal(file['columns'], tsdframe.columns.values)
+
+        os.remove("tsdframe.npz")
+        os.remove("tsdframe2.npz")
 
 ####################################################
 # Test for ts
@@ -600,3 +680,41 @@ class Test_Time_Series_4:
 
     def test_repr_(self, ts):
         assert pd.Series(ts).fillna("").__str__() == ts.__str__()
+
+    def test_save_npz(self, ts):
+        import os
+
+        with pytest.raises(RuntimeError) as e:
+            ts.save(dict)
+        assert str(e.value) == "Invalid type; please provide filename as string"
+
+        with pytest.raises(RuntimeError) as e:
+            ts.save('./')
+        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+
+        fake_path = './fake/path'
+        with pytest.raises(RuntimeError) as e:
+            ts.save(fake_path+'/file.npz')
+        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+
+        ts.save("ts.npz")
+        os.listdir('.')
+        assert "ts.npz" in os.listdir(".")
+
+        ts.save("ts2")
+        os.listdir('.')
+        assert "ts2.npz" in os.listdir(".")
+
+        file = np.load("ts.npz")
+
+        keys = list(file.keys())
+        assert 't' in keys
+        assert 'start' in keys
+        assert 'end' in keys
+
+        np.testing.assert_array_almost_equal(file['t'], ts.index.values)
+        np.testing.assert_array_almost_equal(file['start'], ts.time_support.start.values)
+        np.testing.assert_array_almost_equal(file['end'], ts.time_support.end.values)
+
+        os.remove("ts.npz")
+        os.remove("ts2.npz")

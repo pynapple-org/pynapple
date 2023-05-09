@@ -5,6 +5,7 @@
 # @Last Modified time: 2022-12-06 21:22:31
 
 import importlib
+import os
 import warnings
 
 import numpy as np
@@ -567,6 +568,83 @@ class Tsd(pd.Series):
 
         return ts_group.TsGroup(group, time_support=self.time_support)
 
+    def save(self, filename):
+        """
+        Save Tsd object in npz format. The file will contain the timestamps, the
+        data and the time support.
+
+        The main purpose of this function is to save small/medium sized time series
+        objects. For example, you extracted one channel from your recording and
+        filtered it. You can save the filtered channel as a npz to avoid
+        reprocessing it.
+
+        You can load the object with numpy.load. Keys are 't', 'd', 'start', 'end'
+        See the example below.
+
+        For a more automatic way of reading and writing data from a particular
+        session folder, check the pynapple IO Container class.
+
+        Parameters
+        ----------
+        filename : str
+            The filename
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsd = nap.Tsd(t=np.array([0., 1.]), d = np.array([2, 3]))
+        >>> tsd.save("my_path/my_tsd.npz")
+
+        Here I can retrieve my data with numpy directly:
+
+        >>> file = np.load("my_path/my_tsd.npz")
+        >>> print(list(file.keys()))
+        ['t', 'd', 'start', 'end']
+        >>> print(file['t'])
+        [0. 1.]
+
+        It is then easy to recreate the Tsd object.
+        >>> time_support = nap.IntervalSet(file['start'], file['end'])
+        >>> nap.Tsd(t=file['t'], d=file['d'], time_support=time_support)
+        Time (s)
+        0.0    2
+        1.0    3
+        dtype: int64
+
+        Raises
+        ------
+        RuntimeError
+            If filename is not str, path does not exist or filename is a directory.
+        """
+        if not isinstance(filename, str):
+            raise RuntimeError("Invalid type; please provide filename as string")
+
+        if os.path.isdir(filename):
+            raise RuntimeError(
+                "Invalid filename input. {} is directory.".format(filename)
+            )
+
+        if not filename.lower().endswith(".npz"):
+            filename = filename + ".npz"
+
+        dirname = os.path.dirname(filename)
+
+        if len(dirname) and not os.path.exists(dirname):
+            raise RuntimeError(
+                "Path {} does not exist.".format(os.path.dirname(filename))
+            )
+
+        np.savez(
+            filename,
+            t=self.index.values,
+            d=self.values,
+            start=self.time_support.start.values,
+            end=self.time_support.end.values,
+        )
+
+        return
+
     # def find_gaps(self, min_gap, method="absolute"):
     #     """
     #     finds gaps in a tsd larger than min_gap
@@ -981,6 +1059,89 @@ class TsdFrame(pd.DataFrame):
         time_support = IntervalSet(start=starts, end=ends)
         return TsdFrame(t=t, d=d, time_support=time_support)
 
+    def save(self, filename):
+        """
+        Save TsdFrame object in npz format. The file will contain the timestamps, the
+        data and the time support.
+
+        The main purpose of this function is to save small/medium sized time series
+        objects. For example, you extracted several channels from your recording and
+        filtered them. You can save the filtered channels as a npz to avoid
+        reprocessing it.
+
+        You can load the object with numpy.load. Keys are 't', 'd', 'start', 'end'
+        and 'columns' for columns names.
+
+        For a more automatic way of reading and writing data from a particular
+        session folder, check the pynapple IO Container class.
+
+        Parameters
+        ----------
+        filename : str
+            The filename
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsdframe = nap.TsdFrame(t=np.array([0., 1.]), d = np.array([[2, 3],[4,5]]), columns=['a', 'b'])
+        >>> tsdframe.save("my_path/my_tsdframe.npz")
+
+        Here I can retrieve my data with numpy directly:
+
+        >>> file = np.load("my_path/my_tsdframe.npz")
+        >>> print(list(file.keys()))
+        ['t', 'd', 'start', 'end', 'columns'']
+        >>> print(file['t'])
+        [0. 1.]
+
+        It is then easy to recreate the Tsd object.
+        >>> time_support = nap.IntervalSet(file['start'], file['end'])
+        >>> nap.TsdFrame(t=file['t'], d=file['d'], time_support=time_support, columns=file['columns'])
+                  a  b
+        Time (s)
+        0.0       2  3
+        1.0       4  5
+
+
+        Raises
+        ------
+        RuntimeError
+            If filename is not str, path does not exist or filename is a directory.
+        """
+        if not isinstance(filename, str):
+            raise RuntimeError("Invalid type; please provide filename as string")
+
+        if os.path.isdir(filename):
+            raise RuntimeError(
+                "Invalid filename input. {} is directory.".format(filename)
+            )
+
+        if not filename.lower().endswith(".npz"):
+            filename = filename + ".npz"
+
+        dirname = os.path.dirname(filename)
+
+        if len(dirname) and not os.path.exists(dirname):
+            raise RuntimeError(
+                "Path {} does not exist.".format(os.path.dirname(filename))
+            )
+
+        cols_name = self.columns.values
+        if cols_name.dtype == np.dtype("O"):
+            cols_name = cols_name.astype(str)
+
+        np.savez(
+            filename,
+            t=self.index.values,
+            d=self.values,
+            start=self.time_support.start.values,
+            end=self.time_support.end.values,
+            columns=cols_name,
+        )
+
+        return
+
     # def find_gaps(self, min_gap, time_units='s'):
     #     """
     #     finds gaps in a tsd larger than min_gap. Return an IntervalSet.
@@ -1073,3 +1234,78 @@ class Ts(Tsd):
 
     def __str__(self):
         return self.__repr__()
+
+    def save(self, filename):
+        """
+        Save Ts object in npz format. The file will contain the timestamps and
+        the time support.
+
+        The main purpose of this function is to save small/medium sized timestamps
+        object.
+
+        You can load the object with numpy.load. Keys are 't', 'start' and 'end'.
+        See the example below.
+
+        For a more automatic way of reading and writing data from a particular
+        session folder, check the pynapple IO Container class.
+
+        Parameters
+        ----------
+        filename : str
+            The filename
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> ts = nap.Ts(t=np.array([0., 1., 1.5]))
+        >>> ts.save("my_path/my_ts.npz")
+
+        Here I can retrieve my data with numpy directly:
+
+        >>> file = np.load("my_path/my_ts.npz")
+        >>> print(list(file.keys()))
+        ['t', 'start', 'end']
+        >>> print(file['t'])
+        [0. 1. 1.5]
+
+        It is then easy to recreate the Tsd object.
+        >>> time_support = nap.IntervalSet(file['start'], file['end'])
+        >>> nap.Ts(t=file['t'], time_support=time_support)
+        Time (s)
+        0.0
+        1.0
+        1.5
+
+
+        Raises
+        ------
+        RuntimeError
+            If filename is not str, path does not exist or filename is a directory.
+        """
+        if not isinstance(filename, str):
+            raise RuntimeError("Invalid type; please provide filename as string")
+
+        if os.path.isdir(filename):
+            raise RuntimeError(
+                "Invalid filename input. {} is directory.".format(filename)
+            )
+
+        if not filename.lower().endswith(".npz"):
+            filename = filename + ".npz"
+
+        dirname = os.path.dirname(filename)
+
+        if len(dirname) and not os.path.exists(dirname):
+            raise RuntimeError(
+                "Path {} does not exist.".format(os.path.dirname(filename))
+            )
+
+        np.savez(
+            filename,
+            t=self.index.values,
+            start=self.time_support.start.values,
+            end=self.time_support.end.values,
+        )
+
+        return
