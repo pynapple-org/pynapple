@@ -13,7 +13,7 @@ def shift_timestamps(ts, min_shift=0.0, max_shift=None):
 
     Parameters
     ----------
-    timestamps : Ts or TsGroup
+    ts : Ts or TsGroup
         The timestamps to shift. If TsGroup, shifts all Ts in the group independently.
     min_shift : float, optional
         minimum shift (default: 0 )
@@ -77,7 +77,7 @@ def jitter_timestamps(ts, max_jitter=None, keep_tsupport=False):
 
     Parameters
     ----------
-    timestamps : Ts or TsGroup
+    ts : Ts or TsGroup
         The timestamps to jitter. If TsGroup, jitter is applied to each element of the group.
     max_jitter : float
         maximum jitter
@@ -116,7 +116,7 @@ def resample_timestamps(ts):
 
     Parameters
     ----------
-    timestamps : Ts or TsGroup
+    ts : Ts or TsGroup
         The timestamps to resample. If TsGroup, each Ts object in the group is independently
         resampled, in the time support of the whole group.
 
@@ -149,7 +149,7 @@ def _shift_ts(ts, min_shift=0, max_shift=None):
 
     Parameters
     ----------
-    timestamps : Ts
+    ts : Ts
         The timestamps to shift.
     min_shift : float, optional
         minimum shift (default: 0 )
@@ -177,7 +177,7 @@ def _shift_tsgroup(tsgroup, min_shift=0, max_shift=None):
 
     Parameters
     ----------
-    timestamps : TsGroup
+    tsgroup : TsGroup
         The collection of Ts to shift.
     min_shift : float, optional
         minimum shift (default: 0 )
@@ -208,7 +208,7 @@ def _jitter_ts(ts, max_jitter=None, keep_tsupport=False):
     """
     Parameters
     ----------
-    timestamps : Ts
+    ts : Ts
         The timestamps to jitter.
     max_jitter : float
         maximum jitter
@@ -242,7 +242,7 @@ def _jitter_tsgroup(tsgroup, max_jitter=None, keep_tsupport=False):
 
     Parameters
     ----------
-    timestamps : TsGroup
+    tsgroup : TsGroup
         The timestamps to jitter, the jitter is applied to each element of the group.
     max_jitter : float
         maximum jitter
@@ -280,7 +280,7 @@ def _resample_ts(ts):
 
     Parameters
     ----------
-    timestamps : Ts
+    ts : Ts
         The timestamps to resample.
     Returns
     -------
@@ -300,7 +300,7 @@ def _resample_tsgroup(tsgroup):
 
     Parameters
     ----------
-    timestamps : TsGroup
+    tsgroup : TsGroup
         The TsGroup to resample, each Ts object in the group is independently
         resampled, in the time support of the whole group.
 
@@ -351,7 +351,7 @@ def _shuffle_intervals_tsgroup(tsgroup):
 
     Parameters
     ----------
-    tsGroup : TsGroup
+    tsgroup : TsGroup
         The TsGroup to randomize.
     Returns
     -------

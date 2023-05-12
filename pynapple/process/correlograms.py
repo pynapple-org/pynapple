@@ -266,6 +266,7 @@ def compute_eventcorrelogram(
     time_units : str, optional
         The time units of the parameters. They have to be consistent for binsize and windowsize.
         ('s' [default], 'ms', 'us').
+
     Returns
     -------
     pandas.DataFrame

@@ -578,11 +578,8 @@ class Tsd(pd.Series):
         filtered it. You can save the filtered channel as a npz to avoid
         reprocessing it.
 
-        You can load the object with numpy.load. Keys are 't', 'd', 'start', 'end'
+        You can load the object with numpy.load. Keys are 't', 'd', 'start', 'end'.
         See the example below.
-
-        For a more automatic way of reading and writing data from a particular
-        session folder, check the pynapple IO Container class.
 
         Parameters
         ----------
@@ -1072,9 +1069,6 @@ class TsdFrame(pd.DataFrame):
         You can load the object with numpy.load. Keys are 't', 'd', 'start', 'end'
         and 'columns' for columns names.
 
-        For a more automatic way of reading and writing data from a particular
-        session folder, check the pynapple IO Container class.
-
         Parameters
         ----------
         filename : str
@@ -1245,9 +1239,6 @@ class Ts(Tsd):
 
         You can load the object with numpy.load. Keys are 't', 'start' and 'end'.
         See the example below.
-
-        For a more automatic way of reading and writing data from a particular
-        session folder, check the pynapple IO Container class.
 
         Parameters
         ----------

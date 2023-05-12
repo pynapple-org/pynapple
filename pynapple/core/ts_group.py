@@ -244,6 +244,7 @@ class TsGroup(UserDict):
             pandas.Dataframe or list of pandas.DataFrame
         **kwargs
             Can be either pandas.Series or numpy.ndarray
+
         Raises
         ------
         RuntimeError
@@ -868,9 +869,6 @@ class TsGroup(UserDict):
         You can load the object with numpy.load. Default Keys are 't', 'd'(optional),
         'start', 'end' and 'index'.
         See the example below.
-
-        For a more automatic way of reading and writing data from a particular
-        session folder, check the pynapple IO Container class.
 
         Parameters
         ----------

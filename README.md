@@ -20,7 +20,7 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 -   Free software: GNU General Public License v3
 -   __Documentation__: <https://pynapple-org.github.io/pynapple>
 -   __Notebooks and tutorials__ : <https://pynapple-org.github.io/pynapple/notebooks/pynapple-quick-start/>
--   __Collaborative repository__: <https://github.com/PeyracheLab/pynacollada>
+-   __Collaborative repository__: <https://github.com/pynapple-org/pynacollada>
 
 
 > **Note**
@@ -48,7 +48,7 @@ or directly from the source code:
 $ conda create --name pynapple pip python=3.8
 $ conda activate pynapple
 $ # clone the repository
-$ git clone https://github.com/PeyracheLab/pynapple.git
+$ git clone https://github.com/pynapple-org/pynapple.git
 $ cd pynapple
 $ # Install in editable mode with `-e` or, equivalently, `--editable`
 $ pip install -e .
@@ -102,7 +102,7 @@ $ python
 >>> import pynapple as nap
 ```
 
-You'll find an example of the package below. Click [here](https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1) to download the example dataset. The folder includes a NWB file containing the data (See this [notebook](https://github.com/PeyracheLab/pynapple/blob/main/docs/notebooks/pynapple-io-notebook.ipynb) for more information on the creation of the NWB file).
+You'll find an example of the package below. Click [here](https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1) to download the example dataset. The folder includes a NWB file containing the data (See this [notebook](https://github.com/pynapple-org/pynapple/blob/main/docs/notebooks/pynapple-io-notebook.ipynb) for more information on the creation of the NWB file).
 
 ``` py
 import numpy as np

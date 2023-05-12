@@ -11,7 +11,7 @@ Types of Contributions
 
 ### Report Bugs
 
-Report bugs at <https://github.com/PeyracheLab/pynapple/issues>.
+Report bugs at <https://github.com/pynapple-org/pynapple/issues>.
 
 If you are reporting a bug, please include:
 
@@ -40,7 +40,7 @@ articles, and such.
 ### Submit Feedback
 
 The best way to send feedback is to file an issue at
-<https://github.com/PeyracheLab/pynapple/issues>.
+<https://github.com/pynapple-org/pynapple/issues>.
 
 If you are proposing a feature:
 
@@ -53,10 +53,10 @@ If you are proposing a feature:
 Get Started!
 ------------
 
-Ready to contribute? Here's how to set up [pynapple]{https://github.com/PeyracheLab/pynapple} for
+Ready to contribute? Here's how to set up [pynapple]{https://github.com/pynapple-org/pynapple} for
 local development.
 
-1.  Fork the [pynapple]{https://github.com/PeyracheLab/pynapple} repo on GitHub.
+1.  Fork the [pynapple]{https://github.com/pynapple-org/pynapple} repo on GitHub.
 2.  Clone your fork locally:
 
         $ git clone git@github.com:your_name_here/pynapple.git

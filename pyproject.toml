@@ -46,9 +46,9 @@ dev = [
   ]
 
 [project.urls]
-homepage = "https://github.com/PeyracheLab/pynapple"
-documentation = "https://peyrachelab.github.io/pynapple/"
-repository = "https://github.com/PeyracheLab/pynapple"
+homepage = "https://github.com/pynapple-org/pynapple"
+documentation = "https://pynapple-org.github.io/pynapple/"
+repository = "https://github.com/pynapple-org/pynapple"
 
 ##########################################################################
 # Optional dependencies

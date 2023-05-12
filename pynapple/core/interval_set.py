@@ -456,9 +456,6 @@ class IntervalSet(pd.DataFrame):
         You can load the object with numpy.load. Keys are 'start' and 'end'.
         See the example below.
 
-        For a more automatic way of reading and writing data from a particular
-        session folder, check the pynapple IO Container class.
-
         Parameters
         ----------
         filename : str

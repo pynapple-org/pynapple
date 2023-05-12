@@ -14,7 +14,7 @@ In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuro
 
 - 	TsGroup.to_tsd and Tsd.to_tsgroup transformations
 - 	Count can take IntervalSet
-
+-	Saving to npz functions for all objects.
 
 0.3.3 (2023-04-17)
 ------------------

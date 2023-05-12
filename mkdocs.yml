@@ -38,7 +38,7 @@ theme:
     primary: 'green'
   # features:
   #   - navigation.tabs
-repo_url: https://github.com/PeyracheLab/pynapple
+repo_url: https://github.com/pynapple-org/pynapple
 plugins:
   - mkdocs-jupyter:
       ignore_h1_titles: True      
