@@ -80,7 +80,7 @@ class Phy(BaseLoader):
         Raises
         ------
         RuntimeError
-            If path does not contain the params file or channel_map.npy
+            If path does not contain the params file or channel_map.npy or channel_shanks.npy
         """
         if os.path.isfile(os.path.join(path, "params.py")):
             sys.path.append(path)
@@ -91,20 +91,27 @@ class Phy(BaseLoader):
         else:
             raise RuntimeError("Can't find params.py in path {};".format(path))
 
-        if os.path.isfile(os.path.join(path, "channel_map.npy")):
+        if os.path.isfile(os.path.join(path, "channel_map.npy")) and os.path.isfile(os.path.join(path,"channel_shanks.npy")):
             channel_map = np.load(os.path.join(path, "channel_map.npy"))
-            self.channel_map = {i: channel_map[i] for i in range(len(channel_map))}
+            #channel_map = channel_map.transpose();
+
+            channel_shank = np.load(os.path.join(path,"channel_shanks.npy"))
+            n_shanks = len(np.unique(channel_shank))
+
+            self.channel_map = {i: channel_map[channel_shank == i] for i in range(n_shanks)}
             self.ch_to_sh = pd.Series(
                 index=channel_map.flatten(),
-                data=np.hstack(
-                    [
-                        np.ones(len(channel_map[i]), dtype=int) * i
-                        for i in range(len(channel_map))
-                    ]
-                ),
+                data = channel_shank.flatten(),
+                #data=np.hstack(
+                #    [
+                #        np.ones(len(channel_map[i]), dtype=int) * i
+                #        for i in range(len(channel_map))
+                #    ]
+                #),
             )
+
         else:
-            raise RuntimeError("Can't find channel_map.npy in path {};".format(path))
+            raise RuntimeError("Can't find channel_map.npy or channel_shanks.npy in path {};".format(path))
 
         return
 
