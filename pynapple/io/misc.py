@@ -19,6 +19,23 @@ from .neurosuite import NeuroSuite
 from .phy import Phy
 from .suite2p import Suite2P
 
+from .containers import Project
+
+
+def load_project(path):
+    """Summary
+    
+    Parameters
+    ----------
+    path : TYPE
+        Description
+    
+    Returns
+    -------
+    TYPE
+        Description
+    """
+    return Project(path)
 
 def load_session(path=None, session_type=None):
     """
