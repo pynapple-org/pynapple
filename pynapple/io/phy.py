@@ -92,18 +92,18 @@ class Phy(BaseLoader):
             raise RuntimeError("Can't find params.py in path {};".format(path))
 
         if os.path.isfile(os.path.join(path, "channel_map.npy")):
-
             channel_map = np.load(os.path.join(path, "channel_map.npy"))
 
-            if os.path.isfile(os.path.join(path,"channel_shanks.npy")):
-  
-                channel_shank = np.load(os.path.join(path,"channel_shanks.npy"))
+            if os.path.isfile(os.path.join(path, "channel_shanks.npy")):
+                channel_shank = np.load(os.path.join(path, "channel_shanks.npy"))
                 n_shanks = len(np.unique(channel_shank))
 
-                self.channel_map = {i: channel_map[channel_shank == i] for i in range(n_shanks)}
+                self.channel_map = {
+                    i: channel_map[channel_shank == i] for i in range(n_shanks)
+                }
                 self.ch_to_sh = pd.Series(
                     index=channel_map.flatten(),
-                    data = channel_shank.flatten(),
+                    data=channel_shank.flatten(),
                 )
             else:
                 self.channel_map = {i: channel_map[i] for i in range(len(channel_map))}
