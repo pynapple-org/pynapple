@@ -164,9 +164,11 @@ class Phy(BaseLoader):
                 sep="\t",
                 index_col="cluster_id",
             )
-            cluster_id_good = self.cluster_group[
-                self.cluster_group.group == "good"
-            ].index.values
+            # In my processed data with KiloSort 3.0, the column is named KSLabel
+            if "group" in self.cluster_group.columns:
+                cluster_id_good = self.cluster_group[self.cluster_group.group == 'good'].index.values
+            elif "KSLabel" in self.cluster_group.columns:
+                cluster_id_good = self.cluster_group[self.cluster_group.KSLabel == 'good'].index.values
         else:
             raise RuntimeError(
                 "Can't find cluster_info.tsv or cluster_group.tsv in {};".format(path)
