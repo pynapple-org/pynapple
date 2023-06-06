@@ -50,7 +50,6 @@ class Phy(BaseLoader):
             self.nwb_file = list(self.nwb_path.glob("*.nwb"))[0]
         except IndexError:
             self.nwb_file = None
-        print(self.nwb_file)
 
         # Need to check if nwb file exists and if data are there
         # if self.path is not None:  -> are there any cases where this is None?
