@@ -55,11 +55,12 @@ class Phy(BaseLoader):
         # Need to check if nwb file exists and if data are there
         # if self.path is not None:  -> are there any cases where this is None?
         if self.nwb_file is not None:
-            self.load_nwb_spikes()
-            return
+            loaded_spikes = self.load_nwb_spikes()
+            if loaded_spikes is not None:
+                return
 
         # Bypass if data have already been transferred to nwb
-        self.load_phy_params(path)
+        self.load_phy_params()
 
         app = App()
         window = EphysGUI(app, path=path, groups=self.channel_map)
@@ -71,8 +72,8 @@ class Phy(BaseLoader):
 
         if window.status:
             self.ephys_information = window.ephys_information
-            self.load_phy_spikes(path, self.time_support)
-            self.save_data(path)
+            self.load_phy_spikes(self.time_support)
+            self.save_data()
         app.quit()
 
     def load_phy_params(self):
@@ -97,7 +98,7 @@ class Phy(BaseLoader):
         # I would recommend putting in the folder a file called params.json, or .txt, or .yml, but not .py!
         # In this way we just read the file, and we don't have to add to sys to import...
         # TODO maybe remove this
-        sys.path.append(self.path)
+        sys.path.append(str(self.path))
         import params as params
 
         self.sample_rate = params.sample_rate
@@ -173,13 +174,15 @@ class Phy(BaseLoader):
             )
 
         cluster_info = pd.read_csv(cluster_info_file, sep="\t", index_col="cluster_id")
-        cluster_id_good = cluster_info[cluster_info.group == "good"].index.values
-
         # In my processed data with KiloSort 3.0, the column is named KSLabel
         if "group" in cluster_info.columns:
             cluster_id_good = cluster_info[cluster_info.group == "good"].index.values
         elif "KSLabel" in cluster_info.columns:
             cluster_id_good = cluster_info[cluster_info.KSLabel == "good"].index.values
+        else:
+            raise RuntimeError(
+                "Can't find column group or KSLabel in {};".format(cluster_info_file)
+            )
 
         spike_times = np.load(self.path / "spike_times.npy")
         spike_clusters = np.load(self.path / "spike_clusters.npy")
@@ -303,7 +306,7 @@ class Phy(BaseLoader):
 
         if nwbfile.units is None:
             io.close()
-            return False
+            return None
         else:
             units = nwbfile.units.to_dataframe()
             spikes = {
