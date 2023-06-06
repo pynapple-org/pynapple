@@ -165,9 +165,7 @@ class Phy(BaseLoader):
             cluster_info = pd.read_csv(
                 os.path.join(path, "cluster_info.tsv"), sep="\t", index_col="cluster_id"
             )
-            cluster_id_good = cluster_info[
-                cluster_info.group == "good"
-            ].index.values
+            cluster_id_good = cluster_info[cluster_info.group == "good"].index.values
             has_cluster_info = True
         elif "cluster_group.tsv" in files:
             cluster_info = pd.read_csv(
@@ -177,9 +175,13 @@ class Phy(BaseLoader):
             )
             # In my processed data with KiloSort 3.0, the column is named KSLabel
             if "group" in cluster_info.columns:
-                cluster_id_good = cluster_info[cluster_info.group == 'good'].index.values
+                cluster_id_good = cluster_info[
+                    cluster_info.group == "good"
+                ].index.values
             elif "KSLabel" in cluster_info.columns:
-                cluster_id_good = cluster_info[cluster_info.KSLabel == 'good'].index.values
+                cluster_id_good = cluster_info[
+                    cluster_info.KSLabel == "good"
+                ].index.values
         else:
             raise RuntimeError(
                 "Can't find cluster_info.tsv or cluster_group.tsv in {};".format(path)
