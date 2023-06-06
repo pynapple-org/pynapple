@@ -3,10 +3,9 @@ Class and functions for loading data processed with Phy2
 
 @author: Sara Mahallati, Guillaume Viejo
 """
-import os
-from pathlib import Path
 import re
 import sys
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -364,16 +363,12 @@ class Phy(BaseLoader):
             The lfp in a time series format
         """
         if filename is not None:
-            filepath = os.path.join(self.path, filename)
+            filepath = self.path / filename
         else:
-            listdir = os.listdir(self.path)
-            eegfile = [f for f in listdir if f.endswith(extension)]
-            if not len(eegfile):
-                raise RuntimeError(
-                    "Path {} contains no {} files;".format(self.path, extension)
-                )
-
-            filepath = os.path.join(self.path, eegfile[0])
+            try:
+                filepath = list(self.path.glob(f"*{extension}"))[0]
+            except IndexError:
+                raise RuntimeError(f"Path {self.path} contains no {extension} files;")
 
         # is it possible that this is a leftover from neurosuite data?
         # This is not implemented for this class.
