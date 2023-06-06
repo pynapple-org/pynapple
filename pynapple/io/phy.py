@@ -33,6 +33,17 @@ class Phy(BaseLoader):
         self.basename = os.path.basename(path)
         self.time_support = None
 
+        self.sample_rate = None
+        self.n_channels_dat = None
+        self.channel_map = None
+        self.ch_to_sh = None
+        self.spikes = None
+        self.channel_positions = None
+
+        self.nwb_path = None
+        self.nwbfilename = None
+        self.nwbfilepath = None
+
         super().__init__(path)
 
         # Need to check if nwb file exists and if data are there
@@ -151,24 +162,24 @@ class Phy(BaseLoader):
 
         has_cluster_info = False
         if "cluster_info.tsv" in files:
-            self.cluster_info = pd.read_csv(
+            cluster_info = pd.read_csv(
                 os.path.join(path, "cluster_info.tsv"), sep="\t", index_col="cluster_id"
             )
-            cluster_id_good = self.cluster_info[
-                self.cluster_info.group == "good"
+            cluster_id_good = cluster_info[
+                cluster_info.group == "good"
             ].index.values
             has_cluster_info = True
         elif "cluster_group.tsv" in files:
-            self.cluster_group = pd.read_csv(
+            cluster_info = pd.read_csv(
                 os.path.join(path, "cluster_group.tsv"),
                 sep="\t",
                 index_col="cluster_id",
             )
             # In my processed data with KiloSort 3.0, the column is named KSLabel
-            if "group" in self.cluster_group.columns:
-                cluster_id_good = self.cluster_group[self.cluster_group.group == 'good'].index.values
-            elif "KSLabel" in self.cluster_group.columns:
-                cluster_id_good = self.cluster_group[self.cluster_group.KSLabel == 'good'].index.values
+            if "group" in cluster_info.columns:
+                cluster_id_good = cluster_info[cluster_info.group == 'good'].index.values
+            elif "KSLabel" in cluster_info.columns:
+                cluster_id_good = cluster_info[cluster_info.KSLabel == 'good'].index.values
         else:
             raise RuntimeError(
                 "Can't find cluster_info.tsv or cluster_group.tsv in {};".format(path)
@@ -191,7 +202,7 @@ class Phy(BaseLoader):
 
         # Adding shank group info from cluster_info if present
         if has_cluster_info:
-            group = self.cluster_info.loc[cluster_id_good, "sh"]
+            group = cluster_info.loc[cluster_id_good, "sh"]
             self.spikes.set_info(group=group)
         else:
             template = np.load(os.path.join(path, "templates.npy"))
@@ -392,6 +403,8 @@ class Phy(BaseLoader):
 
             filepath = os.path.join(self.path, eegfile[0])
 
+        # is it possible that this is a leftover from neurosuite data?
+        # This is not implemented for this class.
         self.load_neurosuite_xml(self.path)
 
         n_channels = int(self.nChannels)
