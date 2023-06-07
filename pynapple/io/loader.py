@@ -53,7 +53,7 @@ class BaseLoader(object):
             except Exception:
                 pass
 
-            # Extracting all the informations from gui loader
+            # Extracting all the information from gui loader
             if window.status:
                 self.session_information = window.session_information
                 self.subject_information = window.subject_information
