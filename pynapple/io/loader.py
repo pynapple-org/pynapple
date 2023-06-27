@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-02 23:30:51
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-04-17 15:13:13
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-06-27 17:09:10
 
 """
 BaseLoader is the general class for loading session with pynapple.
@@ -24,6 +24,31 @@ from pynwb.file import Subject
 from .. import core as nap
 from .loader_gui import App, BaseLoaderGUI
 
+import warnings
+warnings.simplefilter('always', DeprecationWarning)
+
+def get_deprecation_text():
+    try:
+        width, _ = os.get_terminal_size()
+    except Exception:
+        width = 50
+    border = "".join(["@"]*width)
+
+    txt1 = """
+    Warning : the current pynapple IO is deprecated. The methods associated with the GUI and the creation of the NWB are being deprecated and will be removed in future versions of pynapple. Helpers to create the NWB can still be found in the nwbmatic package (https://github.com/pynapple-org/nwbmatic).
+    The equivalent code is 
+
+        >>> import nwbmatic as ntm
+        >>> data = ntm.load_session("path/to/my/session", "phy")
+
+    A more advanced project for creating NWB files is neuroconv:
+    https://neuroconv.readthedocs.io/en/main/
+        """
+
+    deprecation_txt = "\n" + border + "\n" + txt1 + "\n" + border
+    return deprecation_txt
+
+ 
 
 class BaseLoader(object):
     """
@@ -44,7 +69,9 @@ class BaseLoader(object):
                     self.load_data(path)
 
         # Starting the GUI
-        if start_gui:
+        if start_gui:            
+            warnings.warn(get_deprecation_text(), category=DeprecationWarning, stacklevel=2)
+
             app = App()
             window = BaseLoaderGUI(app, path=path)
             app.mainloop()
