@@ -24,15 +24,15 @@ from pynwb.file import Subject
 from .. import core as nap
 from .loader_gui import App, BaseLoaderGUI
 
-import warnings
-warnings.simplefilter('always', DeprecationWarning)
+warnings.simplefilter("always", DeprecationWarning)
+
 
 def get_deprecation_text():
     try:
         width, _ = os.get_terminal_size()
     except Exception:
         width = 50
-    border = "".join(["@"]*width)
+    border = "".join(["@"] * width)
 
     txt1 = """
     Warning : the current pynapple IO is deprecated. The methods associated with the GUI and the creation of the NWB are being deprecated and will be removed in future versions of pynapple. Helpers to create the NWB can still be found in the nwbmatic package (https://github.com/pynapple-org/nwbmatic).
@@ -48,7 +48,6 @@ def get_deprecation_text():
     deprecation_txt = "\n" + border + "\n" + txt1 + "\n" + border
     return deprecation_txt
 
- 
 
 class BaseLoader(object):
     """
@@ -69,8 +68,10 @@ class BaseLoader(object):
                     self.load_data(path)
 
         # Starting the GUI
-        if start_gui:            
-            warnings.warn(get_deprecation_text(), category=DeprecationWarning, stacklevel=2)
+        if start_gui:
+            warnings.warn(
+                get_deprecation_text(), category=DeprecationWarning, stacklevel=2
+            )
 
             app = App()
             window = BaseLoaderGUI(app, path=path)
