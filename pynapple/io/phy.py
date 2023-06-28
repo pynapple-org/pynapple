@@ -3,9 +3,9 @@ Class and functions for loading data processed with Phy2
 
 @author: Sara Mahallati, Guillaume Viejo
 """
-import os
 import re
 import sys
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -27,44 +27,55 @@ class Phy(BaseLoader):
 
         Parameters
         ----------
-        path : str
+        path : str or Path object
             The path to the data.
         """
-        self.basename = os.path.basename(path)
+
         self.time_support = None
 
+        self.sample_rate = None
+        self.n_channels_dat = None
+        self.channel_map = None
+        self.ch_to_sh = None
+        self.spikes = None
+        self.channel_positions = None
+
         super().__init__(path)
+        # This path stuff should happen only once in the parent class
+        self.path = Path(path)
+        self.basename = self.path.name
+        self.nwb_path = self.path / "pynapplenwb"
+        # from what I can see in the loading function, only one nwb file per folder:
+        try:
+            self.nwb_file = list(self.nwb_path.glob("*.nwb"))[0]
+        except IndexError:
+            self.nwb_file = None
 
         # Need to check if nwb file exists and if data are there
-        loading_phy = True
-        if self.path is not None:
-            nwb_path = os.path.join(self.path, "pynapplenwb")
-            if os.path.exists(nwb_path):
-                files = os.listdir(nwb_path)
-                if len([f for f in files if f.endswith(".nwb")]):
-                    success = self.load_nwb_spikes(path)
-                    if success:
-                        loading_phy = False
+        # if self.path is not None:  -> are there any cases where this is None?
+        if self.nwb_file is not None:
+            loaded_spikes = self.load_nwb_spikes()
+            if loaded_spikes is not None:
+                return
 
-        # Bypass if data have already been transfered to nwb
-        if loading_phy:
-            self.load_phy_params(path)
+        # Bypass if data have already been transferred to nwb
+        self.load_phy_params()
 
-            app = App()
-            window = EphysGUI(app, path=path, groups=self.channel_map)
-            app.mainloop()
-            try:
-                app.update()
-            except Exception:
-                pass
+        app = App()
+        window = EphysGUI(app, path=path, groups=self.channel_map)
+        app.mainloop()
+        try:
+            app.update()
+        except Exception:
+            pass
 
-            if window.status:
-                self.ephys_information = window.ephys_information
-                self.load_phy_spikes(path, self.time_support)
-                self.save_data(path)
-            app.quit()
+        if window.status:
+            self.ephys_information = window.ephys_information
+            self.load_phy_spikes(self.time_support)
+            self.save_data()
+        app.quit()
 
-    def load_phy_params(self, path):
+    def load_phy_params(self):
         """
         path should be the folder session containing the params.py file
 
@@ -72,27 +83,43 @@ class Phy(BaseLoader):
         1. the number of channels
         2. the sampling frequency of the dat file
 
-        Parameters
-        ----------
-        path: str
-            The path to the data
 
         Raises
         ------
-        RuntimeError
+        AssertionError
             If path does not contain the params file or channel_map.npy
         """
-        if os.path.isfile(os.path.join(path, "params.py")):
-            sys.path.append(path)
-            import params as params
+        assert (
+            self.path / "params.py"
+        ).exists(), f"Can't find params.py in {self.path}"
 
-            self.sample_rate = params.sample_rate
-            self.n_channels_dat = params.n_channels_dat
+        # It is strongly recommended not to conflate parameters and code! Also, there's a library called params.
+        # I would recommend putting in the folder a file called params.json, or .txt, or .yml, but not .py!
+        # In this way we just read the file, and we don't have to add to sys to import...
+        # TODO maybe remove this
+        sys.path.append(str(self.path))
+        import params as params
+
+        self.sample_rate = params.sample_rate
+        self.n_channels_dat = params.n_channels_dat
+
+        assert (
+            self.path / "channel_map.npy"
+        ).exists(), f"Can't find channel_map.npy in {self.path}"
+        channel_map = np.load(self.path / "channel_map.npy")
+
+        if (self.path / "channel_shanks.npy").exists():
+            channel_shank = np.load(self.path / "channel_shanks.npy")
+            n_shanks = len(np.unique(channel_shank))
+
+            self.channel_map = {
+                i: channel_map[channel_shank == i] for i in range(n_shanks)
+            }
+            self.ch_to_sh = pd.Series(
+                index=channel_map.flatten(),
+                data=channel_shank.flatten(),
+            )
         else:
-            raise RuntimeError("Can't find params.py in path {};".format(path))
-
-        if os.path.isfile(os.path.join(path, "channel_map.npy")):
-            channel_map = np.load(os.path.join(path, "channel_map.npy"))
             self.channel_map = {i: channel_map[i] for i in range(len(channel_map))}
             self.ch_to_sh = pd.Series(
                 index=channel_map.flatten(),
@@ -103,12 +130,10 @@ class Phy(BaseLoader):
                     ]
                 ),
             )
-        else:
-            raise RuntimeError("Can't find channel_map.npy in path {};".format(path))
 
         return
 
-    def load_phy_spikes(self, path, time_support=None):
+    def load_phy_spikes(self, time_support=None):
         """
         Load Phy spike times and convert to NWB.
         Instantiate automatically a TsGroup object.
@@ -116,7 +141,7 @@ class Phy(BaseLoader):
 
         Parameters
         ----------
-        path : str
+        path : Path object
             The path to the data
         time_support : IntevalSet, optional
             The time support of the data
@@ -133,33 +158,33 @@ class Phy(BaseLoader):
             - templates.npy
 
         """
-        files = os.listdir(path)
-
+        # Check if cluster_info.tsv or cluster_group.tsv exists. If both exist, cluster_info.tsv is used:
         has_cluster_info = False
-        if "cluster_info.tsv" in files:
-            self.cluster_info = pd.read_csv(
-                os.path.join(path, "cluster_info.tsv"), sep="\t", index_col="cluster_id"
-            )
-            cluster_id_good = self.cluster_info[
-                self.cluster_info.group == "good"
-            ].index.values
+        if (self.path / "cluster_info.tsv").exists():
+            cluster_info_file = self.path / "cluster_info.tsv"
             has_cluster_info = True
-        elif "cluster_group.tsv" in files:
-            self.cluster_group = pd.read_csv(
-                os.path.join(path, "cluster_group.tsv"),
-                sep="\t",
-                index_col="cluster_id",
-            )
-            cluster_id_good = self.cluster_group[
-                self.cluster_group.group == "good"
-            ].index.values
+        elif (self.path / "cluster_group.tsv").exists():
+            cluster_info_file = self.path / "cluster_group.tsv"
         else:
             raise RuntimeError(
-                "Can't find cluster_info.tsv or cluster_group.tsv in {};".format(path)
+                "Can't find cluster_info.tsv or cluster_group.tsv in {};".format(
+                    self.path
+                )
             )
 
-        spike_times = np.load(os.path.join(path, "spike_times.npy"))
-        spike_clusters = np.load(os.path.join(path, "spike_clusters.npy"))
+        cluster_info = pd.read_csv(cluster_info_file, sep="\t", index_col="cluster_id")
+        # In my processed data with KiloSort 3.0, the column is named KSLabel
+        if "group" in cluster_info.columns:
+            cluster_id_good = cluster_info[cluster_info.group == "good"].index.values
+        elif "KSLabel" in cluster_info.columns:
+            cluster_id_good = cluster_info[cluster_info.KSLabel == "good"].index.values
+        else:
+            raise RuntimeError(
+                "Can't find column group or KSLabel in {};".format(cluster_info_file)
+            )
+
+        spike_times = np.load(self.path / "spike_times.npy")
+        spike_clusters = np.load(self.path / "spike_clusters.npy")
 
         spikes = {}
         for n in cluster_id_good:
@@ -171,14 +196,14 @@ class Phy(BaseLoader):
         self.spikes = nap.TsGroup(spikes, time_support=time_support)
 
         # Adding the position of the electrodes in case
-        self.channel_positions = np.load(os.path.join(path, "channel_positions.npy"))
+        self.channel_positions = np.load(self.path / "channel_positions.npy")
 
         # Adding shank group info from cluster_info if present
         if has_cluster_info:
-            group = self.cluster_info.loc[cluster_id_good, "sh"]
+            group = cluster_info.loc[cluster_id_good, "sh"]
             self.spikes.set_info(group=group)
         else:
-            template = np.load(os.path.join(path, "templates.npy"))
+            template = np.load(self.path / "templates.npy")
             template = template[cluster_id_good]
             ch = np.power(template, 2).max(1).argmax(1)
             group = pd.Series(index=cluster_id_good, data=self.ch_to_sh[ch].values)
@@ -202,24 +227,10 @@ class Phy(BaseLoader):
 
         return
 
-    def save_data(self, path):
-        """
-        Save the data to NWB format.
+    def save_data(self):
+        """Save the data to NWB format."""
 
-        Parameters
-        ----------
-        path : str
-            The path to save the data
-
-        """
-        self.nwb_path = os.path.join(path, "pynapplenwb")
-        if not os.path.exists(self.nwb_path):
-            raise RuntimeError("Path {} does not exist.".format(self.nwb_path))
-
-        self.nwbfilename = [f for f in os.listdir(self.nwb_path) if "nwb" in f][0]
-        self.nwbfilepath = os.path.join(self.nwb_path, self.nwbfilename)
-
-        io = NWBHDF5IO(self.nwbfilepath, "r+")
+        io = NWBHDF5IO(self.nwb_file, "r+")
         nwbfile = io.read()
 
         electrode_groups = {}
@@ -280,32 +291,21 @@ class Phy(BaseLoader):
 
         return
 
-    def load_nwb_spikes(self, path):
-        """
-        Read the NWB spikes to extract the spike times.
-
-        Parameters
-        ----------
-        path : str
-            The path to the data
+    def load_nwb_spikes(self):
+        """Read the NWB spikes to extract the spike times.
 
         Returns
         -------
         TYPE
             Description
         """
-        self.nwb_path = os.path.join(path, "pynapplenwb")
-        if not os.path.exists(self.nwb_path):
-            raise RuntimeError("Path {} does not exist.".format(self.nwb_path))
-        self.nwbfilename = [f for f in os.listdir(self.nwb_path) if "nwb" in f][0]
-        self.nwbfilepath = os.path.join(self.nwb_path, self.nwbfilename)
 
-        io = NWBHDF5IO(self.nwbfilepath, "r")
+        io = NWBHDF5IO(self.nwb_file, "r")
         nwbfile = io.read()
 
         if nwbfile.units is None:
             io.close()
-            return False
+            return None
         else:
             units = nwbfile.units.to_dataframe()
             spikes = {
@@ -365,17 +365,15 @@ class Phy(BaseLoader):
             The lfp in a time series format
         """
         if filename is not None:
-            filepath = os.path.join(self.path, filename)
+            filepath = self.path / filename
         else:
-            listdir = os.listdir(self.path)
-            eegfile = [f for f in listdir if f.endswith(extension)]
-            if not len(eegfile):
-                raise RuntimeError(
-                    "Path {} contains no {} files;".format(self.path, extension)
-                )
+            try:
+                filepath = list(self.path.glob(f"*{extension}"))[0]
+            except IndexError:
+                raise RuntimeError(f"Path {self.path} contains no {extension} files;")
 
-            filepath = os.path.join(self.path, eegfile[0])
-
+        # is it possible that this is a leftover from neurosuite data?
+        # This is not implemented for this class.
         self.load_neurosuite_xml(self.path)
 
         n_channels = int(self.nChannels)

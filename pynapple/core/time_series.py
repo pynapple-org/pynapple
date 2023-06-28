@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-12-06 21:22:31
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-06-28 15:14:42
 
 import importlib
 import os
@@ -22,6 +22,7 @@ from .jitted_functions import (
     jittsrestrict,
     jittsrestrict_with_count,
     jitvaluefrom,
+    jitvaluefromtsdframe,
 )
 from .time_units import format_timestamps, return_timestamps, sort_timestamps
 
@@ -217,22 +218,23 @@ class Tsd(pd.Series):
         """
         return self.values
 
-    def value_from(self, tsd, ep=None):
+    def value_from(self, data, ep=None):
         """
-        Replace the value with the closest value from tsd argument
+        Replace the value with the closest value from Tsd/TsdFrame argument
+        If data is TsdFrame, the output is also TsdFrame.
 
         Parameters
         ----------
-        tsd : Tsd
-            The Tsd object holding the values to replace
+        data : Tsd/TsdFrame
+            The Tsd/TsdFrame object holding the values to replace.
         ep : IntervalSet (optional)
             The IntervalSet object to restrict the operation.
             If None, the time support of the tsd input object is used.
 
         Returns
         -------
-        out : Tsd
-            Tsd object with the new values
+        out : Tsd/TsdFrame
+            Object with the new values
 
         Examples
         --------
@@ -255,20 +257,37 @@ class Tsd(pd.Series):
         >>> print(len(ts.restrict(ep)), len(newts))
             52 52
         """
-        if ep is None:
-            ep = tsd.time_support
+        if isinstance(data, Tsd):
+            if ep is None:
+                ep = data.time_support
+            time_array = self.index.values
+            time_target_array = data.index.values
+            data_target_array = data.values
+            starts = ep.start.values
+            ends = ep.end.values
+            t, d, ns, ne = jitvaluefrom(
+                time_array, time_target_array, data_target_array, starts, ends
+            )
+            time_support = IntervalSet(start=ns, end=ne)
 
-        time_array = self.index.values
-        time_target_array = tsd.index.values
-        data_target_array = tsd.values
-        starts = ep.start.values
-        ends = ep.end.values
+            return Tsd(t=t, d=d, time_support=time_support)
 
-        t, d, ns, ne = jitvaluefrom(
-            time_array, time_target_array, data_target_array, starts, ends
-        )
-        time_support = IntervalSet(start=ns, end=ne)
-        return Tsd(t=t, d=d, time_support=time_support)
+        elif isinstance(data, TsdFrame):
+            if ep is None:
+                ep = data.time_support
+            time_array = self.index.values
+            time_target_array = data.index.values
+            data_target_array = data.values
+            starts = ep.start.values
+            ends = ep.end.values
+            t, d, ns, ne = jitvaluefromtsdframe(
+                time_array, time_target_array, data_target_array, starts, ends
+            )
+            time_support = IntervalSet(start=ns, end=ne)
+
+            return TsdFrame(t=t, d=d, time_support=time_support, columns=data.columns)
+        else:
+            raise RuntimeError("The time series to align to should be Tsd/TsdFrame.")
 
     def restrict(self, ep):
         """
@@ -927,22 +946,23 @@ class TsdFrame(pd.DataFrame):
         """
         return self.values
 
-    def value_from(self, tsd, ep=None):
+    def value_from(self, data, ep=None):
         """
-        Replace the value with the closest value from tsd argument
+        Replace the value with the closest value from Tsd/TsdFrame argument
+        If data is TsdFrame, the output is also TsdFrame.
 
         Parameters
         ----------
-        tsd : Tsd
-            The Tsd object holding the values to replace
-        ep : IntervalSet, optional
+        data : Tsd/TsdFrame
+            The Tsd/TsdFrame object holding the values to replace.
+        ep : IntervalSet (optional)
             The IntervalSet object to restrict the operation.
-            If None, ep is taken from the tsd of the time support
+            If None, the time support of the tsd input object is used.
 
         Returns
         -------
-        out: Tsd
-            Tsd object with the new values
+        out : Tsd/TsdFrame
+            Object with the new values
 
         Examples
         --------
@@ -952,7 +972,7 @@ class TsdFrame(pd.DataFrame):
         >>> import numpy as np
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
         >>> ts = nap.Ts(t=t, time_units='s')
-        >>> tsd = nap.TsdFrame(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
+        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
         >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
 
         The variable ts is a time series object containing only nan.
@@ -965,20 +985,37 @@ class TsdFrame(pd.DataFrame):
         >>> print(len(ts.restrict(ep)), len(newts))
             52 52
         """
-        if ep is None:
-            ep = tsd.time_support
+        if isinstance(data, Tsd):
+            if ep is None:
+                ep = data.time_support
+            time_array = self.index.values
+            time_target_array = data.index.values
+            data_target_array = data.values
+            starts = ep.start.values
+            ends = ep.end.values
+            t, d, ns, ne = jitvaluefrom(
+                time_array, time_target_array, data_target_array, starts, ends
+            )
+            time_support = IntervalSet(start=ns, end=ne)
 
-        time_array = self.index.values
-        time_target_array = tsd.index.values
-        data_target_array = tsd.values
-        starts = ep.start.values
-        ends = ep.end.values
+            return Tsd(t=t, d=d, time_support=time_support)
 
-        t, d, ns, ne = jitvaluefrom(
-            time_array, time_target_array, data_target_array, starts, ends
-        )
-        time_support = IntervalSet(start=ns, end=ne)
-        return Tsd(t=t, d=d, time_support=time_support)
+        elif isinstance(data, TsdFrame):
+            if ep is None:
+                ep = data.time_support
+            time_array = self.index.values
+            time_target_array = data.index.values
+            data_target_array = data.values
+            starts = ep.start.values
+            ends = ep.end.values
+            t, d, ns, ne = jitvaluefromtsdframe(
+                time_array, time_target_array, data_target_array, starts, ends
+            )
+            time_support = IntervalSet(start=ns, end=ne)
+
+            return TsdFrame(t=t, d=d, time_support=time_support, columns=data.columns)
+        else:
+            raise RuntimeError("The time series to align to should be Tsd/TsdFrame.")
 
     def restrict(self, iset):
         """
