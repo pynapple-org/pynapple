@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-12-06 20:14:25
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-06-28 14:35:52
 import numpy as np
 from numba import jit
 
@@ -321,6 +321,70 @@ def jitvaluefrom(time_array, time_target_array, data_target_array, starts, ends)
     d = time_target_array.shape[0]
 
     new_data_array = np.zeros(n, dtype=data_target_array.dtype)
+
+    if n > 0 and d > 0:
+        for k in range(m):
+            if count[k] > 0 and count_target[k] > 0:
+                t = np.sum(count[0:k])
+                i = np.sum(count_target[0:k])
+                maxt = t + count[k]
+                maxi = i + count_target[k]
+                while t < maxt:
+                    interval = abs(time_array[t] - time_target_array[i])
+                    new_data_array[t] = data_target_array[i]
+                    i += 1
+                    while i < maxi:
+                        new_interval = abs(time_array[t] - time_target_array[i])
+                        if new_interval > interval:
+                            break
+                        else:
+                            new_data_array[t] = data_target_array[i]
+                            interval = new_interval
+                            i += 1
+                    i -= 1
+                    t += 1
+
+    return (time_array, new_data_array, starts, ends)
+
+
+@jit(nopython=True)
+def jitvaluefromtsdframe(
+    time_array, time_target_array, data_target_array, starts, ends
+):
+    """Summary
+
+    Parameters
+    ----------
+    time_array : TYPE
+        Description
+    time_target_array : TYPE
+        Description
+    data_target_array : TYPE
+        Description
+    starts : TYPE
+        Description
+    ends : TYPE
+        Description
+
+    Returns
+    -------
+    TYPE
+        Description
+    """
+    time_array, _, count = jitrestrict_with_count(
+        time_array, np.zeros(time_array.shape[0]), starts, ends
+    )
+    time_target_array, data_target_array, count_target = jitrestrict_with_count(
+        time_target_array, data_target_array, starts, ends
+    )
+
+    m = starts.shape[0]
+    n = time_array.shape[0]
+    d = time_target_array.shape[0]
+
+    new_data_array = np.zeros(
+        (n, data_target_array.shape[1]), dtype=data_target_array.dtype
+    )
 
     if n > 0 and d > 0:
         for k in range(m):

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-29 23:12:34
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-06-28 15:22:26
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -205,12 +205,22 @@ class Test_Time_Series_1:
         np.testing.assert_approx_equal(tsd.time_support.start[0], tsd.index.values[0])
         np.testing.assert_approx_equal(tsd.time_support.end[0], tsd.index.values[-1])
 
-    def test_value_from(self, tsd):
+    def test_value_from_tsd(self, tsd):
         tsd2 = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.random.rand(1000))
         tsd3 = tsd.value_from(tsd2)
         assert len(tsd) == len(tsd3)
         np.testing.assert_array_almost_equal(tsd2.values[::10], tsd3.values)
 
+    def test_value_from_tsdframe(self, tsd):
+        tsdframe = nap.TsdFrame(t=np.arange(0, 100, 0.1), d=np.random.rand(1000,3))
+        tsdframe2 = tsd.value_from(tsdframe)
+        assert len(tsd) == len(tsdframe2)
+        np.testing.assert_array_almost_equal(tsdframe.values[::10], tsdframe2.values)
+
+    def test_value_from_value_error(self, tsd):
+        with pytest.raises(RuntimeError):
+            tsd.value_from(np.arange(10))
+        
     def test_value_from_with_restrict(self, tsd):
         ep = nap.IntervalSet(start=0, end=50, time_units="s")
         tsd2 = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.random.rand(1000))
@@ -218,6 +228,13 @@ class Test_Time_Series_1:
         assert len(tsd.restrict(ep)) == len(tsd3)
         np.testing.assert_array_almost_equal(
             tsd2.restrict(ep).values[::10], tsd3.values
+        )
+
+        tsdframe = nap.TsdFrame(t=np.arange(0, 100, 0.1), d=np.random.rand(1000,2))
+        tsdframe2 = tsd.value_from(tsdframe, ep)
+        assert len(tsd.restrict(ep)) == len(tsdframe2)
+        np.testing.assert_array_almost_equal(
+            tsdframe.restrict(ep).values[::10], tsdframe2.values
         )
 
     def test_restrict(self, tsd):
