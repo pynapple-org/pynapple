@@ -61,8 +61,8 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/pynapple-org/pynapple',
-    version='v0.3.3',
+    version='v0.3.4',
     zip_safe=False,
     long_description_content_type='text/markdown',
-    download_url='https://github.com/pynapple-org/pynapple/archive/refs/tags/v0.3.3.tar.gz'
+    download_url='https://github.com/pynapple-org/pynapple/archive/refs/tags/v0.3.4.tar.gz'
 )
