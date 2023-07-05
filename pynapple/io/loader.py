@@ -60,14 +60,6 @@ class BaseLoader(object):
                 self.name = self.session_information["name"]
                 self.tracking_frequency = window.tracking_frequency
 
-                self.position = self._make_position(
-                    window.tracking_parameters,
-                    window.tracking_method,
-                    window.tracking_frequency,
-                    window.epochs,
-                    window.time_units_epochs,
-                    window.tracking_alignment,
-                )
                 self.epochs = self._make_epochs(window.epochs, window.time_units_epochs)
                 self.time_support = self._join_epochs(
                     window.epochs, window.time_units_epochs
