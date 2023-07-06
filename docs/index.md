@@ -1,7 +1,5 @@
 <!-- <!-- ![pic1](banner_logo.png) -->
 
-==========================
-
 [![image](https://img.shields.io/pypi/v/pynapple.svg)](https://pypi.python.org/pypi/pynapple)
 [![pynapple CI](https://github.com/pynapple-org/pynapple/actions/workflows/main.yml/badge.svg)](https://github.com/pynapple-org/pynapple/actions/workflows/main.yml)
 [![Coverage Status](https://coveralls.io/repos/github/pynapple-org/pynapple/badge.svg?branch=main)](https://coveralls.io/github/pynapple-org/pynapple?branch=main)
