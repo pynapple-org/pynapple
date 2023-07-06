@@ -5,6 +5,7 @@ channels:
 dependencies:
   - _libgcc_mutex=0.1
   - _openmp_mutex=4.5
+  - allensdk=2.15.1
   - argon2-cffi=20.1.0
   - async_generator=1.10
   - attrs=21.2.0
