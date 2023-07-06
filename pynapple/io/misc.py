@@ -12,11 +12,10 @@ import numpy as np
 from pynwb import NWBHDF5IO
 from pynwb.ecephys import LFP, ElectricalSeries
 
-from .allennp import AllenNP
 from .. import core as nap
+from .allends import AllenDS
 from .cnmfe import CNMF_E, InscopixCNMFE, Minian
 from .loader import BaseLoader
-from .neuropixel import Neuropixel
 from .neurosuite import NeuroSuite
 from .phy import Phy
 from .suite2p import Suite2P
@@ -26,13 +25,13 @@ def load_session(path=None, session_type=None):
     """
     General Loader for
 
-    - Neurosuite\n
-    - Phy\n
-    - Minian\n
-    - Inscopix-cnmfe\n
-    - Matlab-cnmfe\n
+    - Neurosuite
+    - Phy
+    - Minian
+    - Inscopix-cnmfe
+    - Matlab-cnmfe
     - Suite2p
-    - Neuropixel
+    - Allen Brain Atlas
     - None for default session.
 
     Parameters
@@ -75,8 +74,8 @@ def load_session(path=None, session_type=None):
     elif session_type == "suite2p":
         return Suite2P(path)
 
-    elif session_type == "allennp":
-        return AllenNP(path)
+    elif session_type == "allends":
+        return AllenDS(path)
 
     else:
         return BaseLoader(path)
