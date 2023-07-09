@@ -14,28 +14,83 @@ from pynwb.ecephys import LFP, ElectricalSeries
 
 from .. import core as nap
 from .cnmfe import CNMF_E, InscopixCNMFE, Minian
+from .file import NPZFile
+
+# from .tree import Project, Subject, Session
+from .folder import Folder
 from .loader import BaseLoader
 from .neurosuite import NeuroSuite
 from .phy import Phy
 from .suite2p import Suite2P
 
-from .containers import Project
+
+def load_file(path):
+    """Load file. Current format supported is (npz,)
+
+    Parameters
+    ----------
+    path : str
+        Path to the file
+
+    Returns
+    -------
+    (Tsd, TsdFrame, Ts, IntervalSet, TsGroup)
+        One of the 5 pynapple objects
+
+    Raises
+    ------
+    FileNotFoundError
+        If file is missing
+    RuntimeError
+        If the format is not supported
+    """
+    if os.path.isfile(path):
+        if path.endswith(".npz"):
+            return NPZFile(path).load()
+        else:
+            raise RuntimeError(
+                """
+                File format not supported. See documentation :
+                https://pynapple-org.github.io/pynapple/io/
+                """
+            )
+    else:
+        raise FileNotFoundError(
+            """
+            File {} does not exist"
+            """.format(
+                path
+            )
+        )
+
+
+def load_folder(path):
+    return Folder(path)
 
 
 def load_project(path):
     """Summary
-    
+
     Parameters
     ----------
     path : TYPE
         Description
-    
+
     Returns
     -------
     TYPE
         Description
     """
     return Project(path)
+
+
+def load_derivatives(path):
+    return Derivatives(path)
+
+
+def load_subject(path):
+    return Subject(path)
+
 
 def load_session(path=None, session_type=None):
     """
