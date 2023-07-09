@@ -24,8 +24,11 @@ from .phy import Phy
 from .suite2p import Suite2P
 
 
+
 def load_file(path):
     """Load file. Current format supported is (npz,)
+    If the file is compatible with a pynapple format, the function will return a pynapple object.
+    Otherwise, the function will return a the output of numpy.load
 
     Parameters
     ----------
