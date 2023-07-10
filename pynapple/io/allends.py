@@ -148,7 +148,7 @@ class AllenDS(BaseLoader):
             spikes,
             time_support=self.time_support,
             time_units="s",
-            **self.session.units,
+            **self.session.units.sort_index(),
         )
 
     def load_metadata(self):
