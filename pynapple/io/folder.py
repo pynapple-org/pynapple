@@ -8,34 +8,32 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-05-15 15:32:24
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-09 16:25:46
+# @Last Modified time: 2023-07-10 17:06:32
 
 import json
-import os, string
+import os
+import string
 from collections import UserDict
 
-import numpy as np
 from rich import print
 from rich.panel import Panel
-
 # from treelib import Node, Tree
 from rich.tree import Tree
 
-from .. import core as nap
 from .file import NPZFile, NWBFile
-
+from datetime import datetime
 
 
 def _find_files(path, extension=".npz"):
     """Helper to locate files
-    
+
     Parameters
     ----------
     path : TYPE
         Description
     extension : str, optional
         Description
-    
+
     Returns
     -------
     TYPE
@@ -50,14 +48,14 @@ def _find_files(path, extension=".npz"):
                 files[filename] = NPZFile(f.path)
             elif extension == "nwb":
                 filename = os.path.splitext(os.path.basename(f.path))[0]
-                filename.translate({ord(c): None for c in string.whitespace})                
+                filename.translate({ord(c): None for c in string.whitespace})
                 files[filename] = NWBFile(f.path)
     return files
 
 
 def _walk_folder(tree, folder):
     """Summary
-    
+
     Parameters
     ----------
     tree : TYPE
@@ -83,7 +81,7 @@ class Folder(UserDict):
     """
     Base class for all type of folders (i.e. Project, Subject, Sessions, ...).
     Handles files and sub-folders discovery
-    
+
     Attributes
     ----------
     data : TYPE
@@ -98,12 +96,12 @@ class Folder(UserDict):
         Description
     subfolds : dict
         Description
-    
+
     """
 
     def __init__(self, path, exclude=(), max_depth=4):
         """Summary
-        
+
         Parameters
         ----------
         path : TYPE
@@ -136,8 +134,8 @@ class Folder(UserDict):
         self.nwb_files = _find_files(path, "nwb")
 
         for filename, file in self.npz_files.items():
-            self._basic_view.add("[green]" + file.name + " \t|\t " + file.type)            
-            
+            self._basic_view.add("[green]" + file.name + " \t|\t " + file.type)
+
         for file in self.nwb_files.values():
             self._basic_view.add("[magenta]" + file.name + " \t|\t NWB file")
 
@@ -145,10 +143,10 @@ class Folder(UserDict):
         self.data = {**self.npz_files, **self.nwb_files, **self.subfolds}
 
         UserDict.__init__(self, self.data)
-         
+
     def __str__(self):
         """Summary
-        
+
         Returns
         -------
         TYPE
@@ -158,7 +156,7 @@ class Folder(UserDict):
 
     def __repr__(self):
         """Summary
-        
+
         Returns
         -------
         TYPE
@@ -169,17 +167,17 @@ class Folder(UserDict):
 
     def __getitem__(self, key):
         """Summary
-        
+
         Parameters
         ----------
         key : TYPE
             Description
-        
+
         Returns
         -------
         TYPE
             Description
-        
+
         Raises
         ------
         KeyError
@@ -190,7 +188,7 @@ class Folder(UserDict):
                 if isinstance(self.data[key], NPZFile):
                     data = self.data[key].load()
                     self.data[key] = data
-                    #setattr(self, key, data)
+                    # setattr(self, key, data)
                     return data
                 elif isinstance(self.data[key], NWBFile):
                     return self.data[key].load()
@@ -213,7 +211,7 @@ class Folder(UserDict):
 
     def expand(self):
         """Display the full tree view. Equivalent to Folder.view
-        
+
         Returns
         -------
         TYPE
@@ -245,7 +243,7 @@ class Folder(UserDict):
     @property
     def view(self):
         """Summary
-        
+
         Returns
         -------
         TYPE
@@ -253,71 +251,66 @@ class Folder(UserDict):
         """
         return self.expand()
 
-    def save(self, obj, name, description=""):
-        """Save a pynapple object in a single file in uncompressed ``.npz`` format.
+    def save(self, name, obj, description=""):
+        """Save a pynapple object in the folder in a single file in uncompressed ``.npz`` format.
         By default, the save function overwrite previously save file with the same name.
         
         Parameters
         ----------
+        name : str
+            Filename
         obj : Ts, Tsd, TsdFrame, TsGroup or IntervalSet
             Pynapple object.
-        name : str
-            The filename 
         description : str, optional
-            Metainformation added as a json sidecar. 
+            Metainformation added as a json sidecar.
         """
         filepath = os.path.join(self.path, name)
         obj.save(filepath)
         self.npz_files[name] = NPZFile(filepath + ".npz")
-        self.data[name] = self.npz_files[name]
+        self.data[name] = obj
 
-        metadata = {"time": "today", "info": description}
+        metadata = {"time": str(datetime.now()), "info": str(description)}
 
         with open(os.path.join(self.path, name + ".json"), "w") as ff:
-            json.dump(metadata, ff)
+            json.dump(metadata, ff, indent=2)
 
     def load(self):
-        for file in self.npz_files.values():
-            file.load()
-        
-
-    def add_metadata(self):
-        """Summary
+        """Load all compatible NPZ files.
         """
-        pass
+        for k in self.npz_files.keys():
+            self[k] = self.npz_files[k].load()
+
+    # def add_metadata(self):
+    #     """Summary"""
+    #     pass
 
     def info(self, name):
-        """Summary
-        
+        """Display the metadata within the json sidecar of a NPZ file
+
         Parameters
         ----------
-        name : TYPE
-            Description
+        name : str
+            Name of the npz file
         """
         self.metadata(name)
 
     def doc(self, name):
-        """Summary
-        
+        """Display the metadata within the json sidecar of a NPZ file
+
         Parameters
         ----------
-        name : TYPE
-            Description
+        name : str
+            Name of the npz file
         """
         self.metadata(name)
 
     def metadata(self, name):
-        """Summary
-        
+        """Display the metadata within the json sidecar of a NPZ file
+
         Parameters
         ----------
-        name : TYPE
-            Description
-        
-        Returns
-        -------
-        TYPE
-            Description
+        name : str
+            Name of the npz file
         """
         # Search for json first
         json_filename = os.path.join(self.path, name + ".json")
@@ -337,9 +330,8 @@ class Folder(UserDict):
             )
             print(panel)
 
-        return ""
+        return None
 
-    def apply(self):
-        """Summary
-        """
-        pass
+    # def apply(self):
+    #     """Summary"""
+    #     pass

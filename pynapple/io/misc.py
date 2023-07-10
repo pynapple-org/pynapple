@@ -15,7 +15,6 @@ from pynwb.ecephys import LFP, ElectricalSeries
 from .. import core as nap
 from .cnmfe import CNMF_E, InscopixCNMFE, Minian
 from .file import NPZFile
-
 # from .tree import Project, Subject, Session
 from .folder import Folder
 from .loader import BaseLoader
@@ -24,11 +23,10 @@ from .phy import Phy
 from .suite2p import Suite2P
 
 
-
 def load_file(path):
     """Load file. Current format supported is (npz,)
     If the file is compatible with a pynapple format, the function will return a pynapple object.
-    Otherwise, the function will return a the output of numpy.load
+    Otherwise, the function will return the output of numpy.load
 
     Parameters
     ----------
@@ -44,55 +42,50 @@ def load_file(path):
     ------
     FileNotFoundError
         If file is missing
-    RuntimeError
-        If the format is not supported
     """
     if os.path.isfile(path):
         if path.endswith(".npz"):
             return NPZFile(path).load()
         else:
             raise RuntimeError(
-                """
-                File format not supported. See documentation :
-                https://pynapple-org.github.io/pynapple/io/
-                """
-            )
+                "File format not supported"
+                )
     else:
         raise FileNotFoundError(
-            """
-            File {} does not exist"
-            """.format(
+            "File {} does not exist".format(
                 path
             )
         )
 
 
 def load_folder(path):
-    return Folder(path)
-
-
-def load_project(path):
-    """Summary
-
+    """Load folder containing files or other folder. 
+    Pynapple will walk throught the subfolders to detect compatible npz files 
+    or nwb files.
+    
     Parameters
     ----------
-    path : TYPE
-        Description
-
+    path : str
+        Path to the folder
+    
     Returns
     -------
-    TYPE
-        Description
+    Folder
+        A dictionnary-like class containing all the sub-folders and compatible files (i.e. npz, nwb)
+    
+    Raises
+    ------
+    RuntimeError
+        If folder is missing
     """
-    return Project(path)
-
-
-def load_derivatives(path):
-    return Derivatives(path)
-
-
-def load_subject(path):
-    return Subject(path)
+    if os.path.isdir(path):
+        return Folder(path)
+    else:
+        raise RuntimeError(
+            "Folder {} does not exist".format(
+                path
+            )
+        )
 
 
 def load_session(path=None, session_type=None):

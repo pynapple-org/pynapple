@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-28 15:10:48
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-03-29 14:48:42
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-07-10 12:15:57
 
 
 import os
@@ -859,15 +859,16 @@ class TsGroup(UserDict):
                 'd' : [1, 5, 2, 3, 5],
                 'index' : [0, 1, 0, 0, 1],
                 'start' : [0],
-                'end' : [5]
+                'end' : [5],
+                'type' : 'TsGroup'
             }
 
         Metadata are saved by columns with the column name as the npz key. To avoid
         potential conflicts, make sure the columns name of the metadata are different
         from ['t', 'd', 'start', 'end', 'index']
 
-        You can load the object with numpy.load. Default Keys are 't', 'd'(optional),
-        'start', 'end' and 'index'.
+        You can load the object with numpy.load. Default keys are 't', 'd'(optional),
+        'start', 'end', 'index' and 'type'.
         See the example below.
 
         Parameters
@@ -897,7 +898,7 @@ class TsGroup(UserDict):
 
         >>> file = np.load("my_tsgroup.npz")
         >>> print(list(file.keys()))
-        ['rate', 'group', 'location', 't', 'index', 'start', 'end']
+        ['rate', 'group', 'location', 't', 'index', 'start', 'end', 'type']
         >>> print(file['index'])
         [0 6 0 0 6]
 
@@ -937,7 +938,7 @@ class TsGroup(UserDict):
                 "Path {} does not exist.".format(os.path.dirname(filename))
             )
 
-        dicttosave = {}
+        dicttosave = {"type" : np.array(["TsGroup"], dtype=np.str_)}
         for k in self._metadata.columns:
             if k not in ["t", "d", "start", "end", "index"]:
                 tmp = self._metadata[k].values

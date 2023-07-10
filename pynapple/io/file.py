@@ -4,7 +4,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-07-05 16:03:25
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-09 17:44:41
+# @Last Modified time: 2023-07-10 14:54:43
 
 import os
 
@@ -12,10 +12,9 @@ import numpy as np
 
 from .. import core as nap
 
-class NPZFile(object):
-    """
 
-    """
+class NPZFile(object):
+    """ """
 
     def __init__(self, path):
         """Summary
@@ -27,28 +26,29 @@ class NPZFile(object):
         """
         self.path = path
         self.name = os.path.basename(path)
-        self.file = np.load(self.path, allow_pickle=True)        
+        self.file = np.load(self.path, allow_pickle=True)
         self.type = ""
 
         # First check if type is explicitely defined
         possible = ["Ts", "Tsd", "TsdFrame", "TsGroup", "IntervalSet"]
         if "type" in self.file.keys():
-            if isinstance(self.file["type"], "str"):
-                if self.file["type"] in possible:
-                    self.type = self.file
+            if len(self.file["type"])==1:
+                if isinstance(self.file["type"][0], np.str_):
+                    if self.file["type"] in possible:
+                        self.type = self.file["type"][0]
 
-        # Second check manually 
+        # Second check manually
         if self.type == "":
             k = set(self.file.keys())
-            if {'t', 'd', 'start', 'end', 'index'}.issubset(k):
+            if {"t", "start", "end", "index"}.issubset(k):
                 self.type = "TsGroup"
-            elif {'t', 'd', 'start', 'end', "columns"}.issubset(k):
+            elif {"t", "d", "start", "end", "columns"}.issubset(k):
                 self.type = "TsdFrame"
-            elif {'t', 'd', 'start', 'end'}.issubset(k):
+            elif {"t", "d", "start", "end"}.issubset(k):
                 self.type = "Tsd"
-            elif {'t', 'start', 'end'}.issubset(k):
+            elif {"t", "start", "end"}.issubset(k):
                 self.type = "Ts"
-            elif {'start', 'end'}.issubset(k):
+            elif {"start", "end"}.issubset(k):
                 self.type = "IntervalSet"
             else:
                 self.type = "npz"
@@ -63,7 +63,22 @@ class NPZFile(object):
                     t=self.file["t"], d=self.file["index"], time_support=time_support
                 )
                 tsgroup = tsd.to_tsgroup()
-                tsgroup.set_info(group=self.file["group"], location=self.file["location"])
+                if "d" in self.file.keys():
+                    print("TODO")
+
+                metainfo = {}
+                for k in set(self.file.keys()) - {
+                    "start",
+                    "end",
+                    "t",
+                    "index",
+                    "d",
+                    "rate",
+                }:
+                    tmp = self.file[k]
+                    if len(tmp) == len(tsgroup):
+                        metainfo[k] = tmp
+                tsgroup.set_info(**metainfo)
                 return tsgroup
 
             elif self.type == "TsdFrame":
