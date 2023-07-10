@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-07-10 14:38:27
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-10 17:03:39
+# @Last Modified time: 2023-07-10 18:13:50
 
 """Tests of IO folder functions"""
 
@@ -14,12 +14,22 @@ import warnings
 import os
 import json
 
-# look for npzfilestest folder
-path = ""
-for root, dirs, files in os.walk(".", topdown=False):
-    if "npzfilestest" in dirs:
-        path = os.path.join(os.path.abspath(root), "npzfilestest")
-        break
+# look for tests folder
+path = os.getcwd()
+if os.path.basename(path) == 'pynapple':
+    path = os.path.join(path, "tests")
+
+path = os.path.join(path, "npzfilestest")
+if not os.path.isdir(path):
+    os.mkdir(path)
+path2 = os.path.join(path, "sub")
+if not os.path.isdir(path):
+    os.mkdir(path2)
+
+# Cleaning
+for root, dirs, files in os.walk(path):
+    for f in files:        
+        os.remove(os.path.join(root, f))
 
 # Populate the folder
 data = {
@@ -33,10 +43,6 @@ data = {
         }),
     "iset":nap.IntervalSet(start=np.array([0.0, 5.0]), end=np.array([1.0, 6.0]))
     }
-# Cleaning
-for root, dirs, files in os.walk(path, topdown=False):
-    for f in files:
-        os.remove(os.path.join(root, f))
 
 for k, d in data.items():
     d.save(os.path.join(path, k+".npz"))

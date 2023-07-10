@@ -14,14 +14,15 @@ import json
 import os
 import string
 from collections import UserDict
+from datetime import datetime
 
 from rich import print
 from rich.panel import Panel
+
 # from treelib import Node, Tree
 from rich.tree import Tree
 
 from .file import NPZFile, NWBFile
-from datetime import datetime
 
 
 def _find_files(path, extension=".npz"):
@@ -254,7 +255,7 @@ class Folder(UserDict):
     def save(self, name, obj, description=""):
         """Save a pynapple object in the folder in a single file in uncompressed ``.npz`` format.
         By default, the save function overwrite previously save file with the same name.
-        
+
         Parameters
         ----------
         name : str
@@ -275,8 +276,7 @@ class Folder(UserDict):
             json.dump(metadata, ff, indent=2)
 
     def load(self):
-        """Load all compatible NPZ files.
-        """
+        """Load all compatible NPZ files."""
         for k in self.npz_files.keys():
             self[k] = self.npz_files[k].load()
 

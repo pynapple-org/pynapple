@@ -510,7 +510,7 @@ class IntervalSet(pd.DataFrame):
             filename,
             start=self.start.values,
             end=self.end.values,
-            type=np.array(["IntervalSet"], dtype=np.str_)
+            type=np.array(["IntervalSet"], dtype=np.str_),
         )
 
         return

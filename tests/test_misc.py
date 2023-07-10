@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-07-10 12:26:20
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-10 17:09:15
+# @Last Modified time: 2023-07-10 18:14:22
 
 """Tests of IO misc functions"""
 
@@ -13,12 +13,17 @@ import pytest
 import warnings
 import os
 
-# look for npzfilestest folder
-path = ""
-for root, dirs, files in os.walk(".", topdown=False):
-    if "npzfilestest" in dirs:
-        path = os.path.join(os.path.abspath(root), "npzfilestest")
-        break
+# look for tests folder
+path = os.getcwd()
+if os.path.basename(path) == 'pynapple':
+    path = os.path.join(path, "tests")
+
+path = os.path.join(path, "npzfilestest")
+if not os.path.isdir(path):
+    os.mkdir(path)
+path2 = os.path.join(path, "sub")
+if not os.path.isdir(path):
+    os.mkdir(path2)
 
 @pytest.mark.parametrize("path", [path])
 def test_load_file(path):

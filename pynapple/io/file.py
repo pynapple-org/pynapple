@@ -32,7 +32,7 @@ class NPZFile(object):
         # First check if type is explicitely defined
         possible = ["Ts", "Tsd", "TsdFrame", "TsGroup", "IntervalSet"]
         if "type" in self.file.keys():
-            if len(self.file["type"])==1:
+            if len(self.file["type"]) == 1:
                 if isinstance(self.file["type"][0], np.str_):
                     if self.file["type"] in possible:
                         self.type = self.file["type"][0]

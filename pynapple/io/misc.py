@@ -15,6 +15,7 @@ from pynwb.ecephys import LFP, ElectricalSeries
 from .. import core as nap
 from .cnmfe import CNMF_E, InscopixCNMFE, Minian
 from .file import NPZFile
+
 # from .tree import Project, Subject, Session
 from .folder import Folder
 from .loader import BaseLoader
@@ -47,32 +48,26 @@ def load_file(path):
         if path.endswith(".npz"):
             return NPZFile(path).load()
         else:
-            raise RuntimeError(
-                "File format not supported"
-                )
+            raise RuntimeError("File format not supported")
     else:
-        raise FileNotFoundError(
-            "File {} does not exist".format(
-                path
-            )
-        )
+        raise FileNotFoundError("File {} does not exist".format(path))
 
 
 def load_folder(path):
-    """Load folder containing files or other folder. 
-    Pynapple will walk throught the subfolders to detect compatible npz files 
+    """Load folder containing files or other folder.
+    Pynapple will walk throught the subfolders to detect compatible npz files
     or nwb files.
-    
+
     Parameters
     ----------
     path : str
         Path to the folder
-    
+
     Returns
     -------
     Folder
         A dictionnary-like class containing all the sub-folders and compatible files (i.e. npz, nwb)
-    
+
     Raises
     ------
     RuntimeError
@@ -81,11 +76,7 @@ def load_folder(path):
     if os.path.isdir(path):
         return Folder(path)
     else:
-        raise RuntimeError(
-            "Folder {} does not exist".format(
-                path
-            )
-        )
+        raise RuntimeError("Folder {} does not exist".format(path))
 
 
 def load_session(path=None, session_type=None):

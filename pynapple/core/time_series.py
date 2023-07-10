@@ -657,7 +657,7 @@ class Tsd(pd.Series):
             d=self.values,
             start=self.time_support.start.values,
             end=self.time_support.end.values,
-            type=np.array(["Tsd"], dtype=np.str_)
+            type=np.array(["Tsd"], dtype=np.str_),
         )
 
         return
@@ -1170,7 +1170,7 @@ class TsdFrame(pd.DataFrame):
             start=self.time_support.start.values,
             end=self.time_support.end.values,
             columns=cols_name,
-            type=np.array(["TsdFrame"], dtype=np.str_)
+            type=np.array(["TsdFrame"], dtype=np.str_),
         )
 
         return
@@ -1336,7 +1336,7 @@ class Ts(Tsd):
             t=self.index.values,
             start=self.time_support.start.values,
             end=self.time_support.end.values,
-            type=np.array(["Ts"], dtype=np.str_)
+            type=np.array(["Ts"], dtype=np.str_),
         )
 
         return

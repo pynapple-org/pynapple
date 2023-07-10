@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-07-10 17:08:55
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-10 17:25:52
+# @Last Modified time: 2023-07-10 18:14:49
 
 """Tests of NPZ file functions"""
 
@@ -13,15 +13,21 @@ import pytest
 import warnings
 import os
 
-# look for npzfilestest folder
-path = ""
-for root, dirs, files in os.walk(".", topdown=False):
-    if "npzfilestest" in dirs:
-        path = os.path.join(os.path.abspath(root), "npzfilestest")
-        break
+# look for tests folder
+path = os.getcwd()
+if os.path.basename(path) == 'pynapple':
+    path = os.path.join(path, "tests")
+
+path = os.path.join(path, "npzfilestest")
+if not os.path.isdir(path):
+    os.mkdir(path)
+path2 = os.path.join(path, "sub")
+if not os.path.isdir(path):
+    os.mkdir(path2)
+
 # Cleaning
-for root, dirs, files in os.walk(path, topdown=False):
-    for f in files:
+for root, dirs, files in os.walk(path):
+    for f in files:        
         os.remove(os.path.join(root, f))
 
 # Populate the folder

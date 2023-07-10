@@ -938,7 +938,7 @@ class TsGroup(UserDict):
                 "Path {} does not exist.".format(os.path.dirname(filename))
             )
 
-        dicttosave = {"type" : np.array(["TsGroup"], dtype=np.str_)}
+        dicttosave = {"type": np.array(["TsGroup"], dtype=np.str_)}
         for k in self._metadata.columns:
             if k not in ["t", "d", "start", "end", "index"]:
                 tmp = self._metadata[k].values
