@@ -90,8 +90,10 @@ class AllenDS(BaseLoader):
         start = 0
         stop = self.session.optogenetic_stimulation_epochs.iloc[-1]["stop_time"]
         self.epochs = {
-            "recording": nap.IntervalSet(start=start, end=stop, time_units="s")
+            "session": nap.IntervalSet(start=start, end=stop, time_units="s")
         }
+        # global time support of data
+        self.time_support = nap.IntervalSet(start=start, end=stop, time_units="s")
 
     def load_stimulus_epochs(self):
         """
@@ -118,9 +120,6 @@ class AllenDS(BaseLoader):
         stimulus_epochs = stimulus_epochs.drop(labels="label", axis=1)
         stimulus_epochs = stimulus_epochs.rename(columns={"stimulus_block": "label"})
         self.stimulus_epochs_block = self._make_epochs(stimulus_epochs)
-
-        # time support
-        self.time_support = self._join_epochs(stimulus_epochs)
 
     def load_optogenetic_stimulus_epochs(self):
         """
