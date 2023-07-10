@@ -5,7 +5,7 @@ nav:
     - Tutorials:
       - Quick start: notebooks/pynapple-quick-start.ipynb
       - Core: notebooks/pynapple-core-notebook.ipynb
-      - IO: notebooks/pynapple-io-notebook.ipynb
+      - Deprecated IO: notebooks/pynapple-io-notebook.ipynb
       - Process: notebooks/pynapple-process-notebook.ipynb
     - pynacollada: pynacollada.md
   - Modules:
@@ -15,11 +15,14 @@ nav:
       - Time Series Group: core.ts_group.md
     - IO:
       - Miscellaneous: io.md
-      - Basic IO: io.loader.md
-      - Neurosuite: io.neurosuite.md
-      - Phy: io.phy.md
-      - CNMF-E: io.cnmfe.md
-      - Suite2p: io.suite2p.md
+      - Folder: io.folder.md
+      - Files: io.files.md
+      - Deprecated:
+        - Basic IO: io.loader.md
+        - Neurosuite: io.neurosuite.md
+        - Phy: io.phy.md
+        - CNMF-E: io.cnmfe.md
+        - Suite2p: io.suite2p.md
     - Process: 
       - Correlograms: process.correlograms.md
       - Tuning curves: process.tuning_curves.md
