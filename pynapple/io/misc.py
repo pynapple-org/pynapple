@@ -14,6 +14,7 @@ from pynwb.ecephys import LFP, ElectricalSeries
 from .. import core as nap
 from .cnmfe import CNMF_E, InscopixCNMFE, Minian
 from .file import NPZFile
+
 # from .tree import Project, Subject, Session
 from .folder import Folder
 from .loader import BaseLoader
@@ -45,8 +46,10 @@ def load_file(path):
     if os.path.isfile(path):
         if path.endswith(".npz"):
             return NPZFile(path).load()
+        elif path.endswith(".nwb"):
+            print("In construction. Please come back later...")
         else:
-            raise RuntimeError("In construction. Please come back later...")
+            raise RuntimeError("File format not supported")
     else:
         raise FileNotFoundError("File {} does not exist".format(path))
 
