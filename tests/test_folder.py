@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-07-10 14:38:27
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-10 18:13:50
+# @Last Modified time: 2023-07-11 16:00:06
 
 """Tests of IO folder functions"""
 
@@ -22,9 +22,9 @@ if os.path.basename(path) == 'pynapple':
 path = os.path.join(path, "npzfilestest")
 if not os.path.isdir(path):
     os.mkdir(path)
-path2 = os.path.join(path, "sub")
-if not os.path.isdir(path):
-    os.mkdir(path2)
+# path2 = os.path.join(path, "sub")
+# if not os.path.isdir(path):
+#     os.mkdir(path2)
 
 # Cleaning
 for root, dirs, files in os.walk(path):
@@ -46,8 +46,8 @@ data = {
 
 for k, d in data.items():
     d.save(os.path.join(path, k+".npz"))
-for k, d in data.items():
-    d.save(os.path.join(path, "sub", k+".npz"))
+# for k, d in data.items():
+#     d.save(os.path.join(path, "sub", k+".npz"))
 
 @pytest.mark.parametrize("path", [path])
 def test_load_folder(path):

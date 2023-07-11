@@ -19,8 +19,7 @@ from .. import core as nap
 
 
 class NPZFile(object):
-    """ Class that points to a NPZ file that can be loaded as a pynapple object. Data are always lazy-loaded.    
-    """
+    """Class that points to a NPZ file that can be loaded as a pynapple object. Data are always lazy-loaded."""
 
     def __init__(self, path):
         """Initialization of the NPZ file
@@ -61,7 +60,7 @@ class NPZFile(object):
 
     def load(self):
         """Load the NPZ file
-        
+
         Returns
         -------
         (Tsd, Ts, TsdFrame, TsGroup, IntervalSet)
@@ -115,9 +114,7 @@ class NPZFile(object):
 
 
 class NWBFile(object):
-    """ Class for interacting with NWB files
-
-    """
+    """Class for interacting with NWB files"""
 
     def __init__(self, path):
         """Summary

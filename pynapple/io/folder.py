@@ -19,7 +19,6 @@ from datetime import datetime
 
 from rich import print
 from rich.panel import Panel
-
 # from treelib import Node, Tree
 from rich.tree import Tree
 
@@ -101,7 +100,7 @@ class Folder(UserDict):
 
     """
 
-    def __init__(self, path):#, exclude=(), max_depth=4):
+    def __init__(self, path):  # , exclude=(), max_depth=4):
         """Initialize the Folder object
 
         Parameters
@@ -144,13 +143,11 @@ class Folder(UserDict):
         UserDict.__init__(self, self.data)
 
     def __str__(self):
-        """View of the object
-        """
+        """View of the object"""
         return self.__repr__()
 
     def __repr__(self):
-        """View of the object
-        """
+        """View of the object"""
         print(self._basic_view)
         return ""
 
@@ -160,12 +157,12 @@ class Folder(UserDict):
         Parameters
         ----------
         key : str
-            
-    
+
+
         Returns
         -------
         (Ts, Tsd, TsdFrame, TsGroup, IntervalSet, Folder)
-            
+
 
         Raises
         ------
@@ -216,10 +213,8 @@ class Folder(UserDict):
 
         self._full_view = tree
 
-
     def expand(self):
-        """Display the full tree view. Equivalent to Folder.view
-        """
+        """Display the full tree view. Equivalent to Folder.view"""
         if not isinstance(self._full_view, Tree):
             self._generate_tree_view()
 
@@ -228,8 +223,7 @@ class Folder(UserDict):
 
     @property
     def view(self):
-        """Summary
-        """
+        """Summary"""
         return self.expand()
 
     def save(self, name, obj, description=""):
