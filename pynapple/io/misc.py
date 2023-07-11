@@ -46,7 +46,7 @@ def load_file(path):
         if path.endswith(".npz"):
             return NPZFile(path).load()
         else:
-            raise RuntimeError("File format not supported")
+            raise RuntimeError("In construction. Please come back later...")
     else:
         raise FileNotFoundError("File {} does not exist".format(path))
 

@@ -4,7 +4,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-05-15 15:32:24
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-11 15:22:47
+# @Last Modified time: 2023-07-11 16:25:12
 
 """
 The Folder class helps to navigate a hierarchical data tree.
@@ -117,7 +117,11 @@ class Folder(UserDict):
         self._full_view = None
 
         # Search sub-folders
-        subfolds = [f.path for f in os.scandir(path) if f.is_dir()]
+        subfolds = [
+            f.path
+            for f in os.scandir(path)
+            if f.is_dir() and not f.name.startswith(".")
+        ]
         subfolds.sort()
 
         self.subfolds = {}
