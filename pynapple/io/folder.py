@@ -4,7 +4,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-05-15 15:32:24
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-11 16:25:12
+# @Last Modified time: 2023-07-11 16:43:13
 
 """
 The Folder class helps to navigate a hierarchical data tree.
@@ -19,8 +19,6 @@ from datetime import datetime
 
 from rich import print
 from rich.panel import Panel
-
-# from treelib import Node, Tree
 from rich.tree import Tree
 
 from .file import NPZFile, NWBFile
