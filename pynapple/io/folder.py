@@ -1,14 +1,15 @@
 #!/usr/bin/env python
 
-"""
-
-@author: Guillaume Viejo
-"""
 # -*- coding: utf-8 -*-
 # @Author: Guillaume Viejo
 # @Date:   2023-05-15 15:32:24
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-10 17:06:32
+# @Last Modified time: 2023-07-11 15:22:47
+
+"""
+The Folder class helps to navigate a hierarchical data tree.
+"""
+
 
 import json
 import os
@@ -85,33 +86,30 @@ class Folder(UserDict):
 
     Attributes
     ----------
-    data : TYPE
-        Description
-    name : TYPE
-        Description
-    npz_files : TYPE
-        Description
-    nwb_files : TYPE
-        Description
-    path : TYPE
-        Description
+    data : dict
+        Dictionnary holidng all the pynapple objects found in the folder.
+    name : str
+        Name of the folder
+    npz_files : list
+        List of npz files found in the folder
+    nwb_files : list
+        List of nwb files found in the folder
+    path : str
+        Absolute path of the folder
     subfolds : dict
-        Description
+        Dictionnary of all the subfolders
 
     """
 
-    def __init__(self, path, exclude=(), max_depth=4):
-        """Summary
+    def __init__(self, path):#, exclude=(), max_depth=4):
+        """Initialize the Folder object
 
         Parameters
         ----------
-        path : TYPE
-            Description
-        exclude : tuple, optional
-            Description
-        max_depth : int, optional
-            Description
+        path : str
+            Path to the folder
         """
+        path = path.rstrip("/")
         self.path = path
         self.name = os.path.basename(path)
         self._basic_view = Tree(
@@ -146,43 +144,33 @@ class Folder(UserDict):
         UserDict.__init__(self, self.data)
 
     def __str__(self):
-        """Summary
-
-        Returns
-        -------
-        TYPE
-            Description
+        """View of the object
         """
         return self.__repr__()
 
     def __repr__(self):
-        """Summary
-
-        Returns
-        -------
-        TYPE
-            Description
+        """View of the object
         """
         print(self._basic_view)
         return ""
 
     def __getitem__(self, key):
-        """Summary
+        """Get subfolder or load file.
 
         Parameters
         ----------
-        key : TYPE
-            Description
-
+        key : str
+            
+    
         Returns
         -------
-        TYPE
-            Description
+        (Ts, Tsd, TsdFrame, TsGroup, IntervalSet, Folder)
+            
 
         Raises
         ------
         KeyError
-            Description
+            If key is not in the dictionnary
         """
         if key.__hash__:
             if self.__contains__(key):
@@ -210,45 +198,37 @@ class Folder(UserDict):
     #     else:
     #         return value
 
+    def _generate_tree_view(self):
+        tree = Tree(":open_file_folder: {}".format(self.name), guide_style="blue")
+
+        # Folder
+        for fold in self.subfolds.keys():
+            tree.add(":open_file_folder: " + fold)
+            _walk_folder(tree.children[-1], self.subfolds[fold])
+
+        # NPZ files
+        for file in self.npz_files.values():
+            tree.add("[green]" + file.name + " \t|\t " + file.type)
+
+        # NWB files
+        for file in self.nwb_files.values():
+            tree.add("[magenta]" + file.name + " \t|\t NWB file")
+
+        self._full_view = tree
+
+
     def expand(self):
         """Display the full tree view. Equivalent to Folder.view
-
-        Returns
-        -------
-        TYPE
-            Description
         """
-        if isinstance(self._full_view, Tree):
-            print(self._full_view)
-        else:
-            tree = Tree(":open_file_folder: {}".format(self.name), guide_style="blue")
+        if not isinstance(self._full_view, Tree):
+            self._generate_tree_view()
 
-            # Folder
-            for fold in self.subfolds.keys():
-                tree.add(":open_file_folder: " + fold)
-                _walk_folder(tree.children[-1], self.subfolds[fold])
-
-            # NPZ files
-            for file in self.npz_files.values():
-                tree.add("[green]" + file.name + " \t|\t " + file.type)
-
-            # NWB files
-            for file in self.nwb_files.values():
-                tree.add("[magenta]" + file.name + " \t|\t NWB file")
-
-            self._full_view = tree
-
-            print(tree)
+        print(self._full_view)
         return None
 
     @property
     def view(self):
         """Summary
-
-        Returns
-        -------
-        TYPE
-            Description
         """
         return self.expand()
 
@@ -274,6 +254,9 @@ class Folder(UserDict):
 
         with open(os.path.join(self.path, name + ".json"), "w") as ff:
             json.dump(metadata, ff, indent=2)
+
+        # regenerate the tree view
+        self._generate_tree_view()
 
     def load(self):
         """Load all compatible NPZ files."""

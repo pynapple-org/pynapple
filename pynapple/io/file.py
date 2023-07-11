@@ -4,7 +4,12 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-07-05 16:03:25
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-10 14:54:43
+# @Last Modified time: 2023-07-11 15:20:37
+
+"""
+File classes help to validate and load pynapple objects or NWB files.
+"""
+
 
 import os
 
@@ -14,10 +19,11 @@ from .. import core as nap
 
 
 class NPZFile(object):
-    """ """
+    """ Class that points to a NPZ file that can be loaded as a pynapple object. Data are always lazy-loaded.    
+    """
 
     def __init__(self, path):
-        """Summary
+        """Initialization of the NPZ file
 
         Parameters
         ----------
@@ -54,6 +60,13 @@ class NPZFile(object):
                 self.type = "npz"
 
     def load(self):
+        """Load the NPZ file
+        
+        Returns
+        -------
+        (Tsd, Ts, TsdFrame, TsGroup, IntervalSet)
+            A pynapple object
+        """
         if self.type == "npz":
             return self.file
         else:
@@ -102,6 +115,10 @@ class NPZFile(object):
 
 
 class NWBFile(object):
+    """ Class for interacting with NWB files
+
+    """
+
     def __init__(self, path):
         """Summary
 
@@ -113,5 +130,5 @@ class NWBFile(object):
         self.path = path
         self.name = os.path.basename(path)
 
-    def load(self):
-        print("yo")
+    # def load(self):
+    #     print("yo")

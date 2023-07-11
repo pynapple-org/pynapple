@@ -1,8 +1,5 @@
 """
     Minimal working example
-    
-    This example is soon to be deprecated.
-    You can see the new example in main2.py
 
 """
 
@@ -11,14 +8,18 @@ import numpy as np
 
 import pynapple as nap
 
-DATA_DIRECTORY = "your/path/to/A2929-200711"
 
 # LOADING DATA
-data = nap.load_session(DATA_DIRECTORY, "neurosuite")
+DATA_DIRECTORY = "your/path/to/MyProject/"
+data = nap.load_folder(DATA_DIRECTORY)
 
-spikes = data.spikes
-position = data.position
-wake_ep = data.epochs["wake"]
+session = data["sub-A2929"]["A2929-200711"]
+
+spikes = session["derivatives"]["spikes"]
+position = session["derivatives"]["position"]
+wake_ep = session["derivatives"]["wake_ep"]
+sleep_ep = session["derivatives"]["sleep_ep"]
+
 
 # COMPUTING TUNING CURVES
 tuning_curves = nap.compute_1d_tuning_curves(

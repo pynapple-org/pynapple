@@ -3,7 +3,6 @@
 """
 Various io functions
 
-@author: Guillaume Viejo
 """
 import os
 from xml.dom import minidom
