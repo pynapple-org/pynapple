@@ -5,7 +5,8 @@ nav:
     - Tutorials:
       - Quick start: notebooks/pynapple-quick-start.ipynb
       - Core: notebooks/pynapple-core-notebook.ipynb
-      - Deprecated IO: notebooks/pynapple-io-notebook.ipynb
+      - IO: notebooks/pynapple-io-notebook.ipynb
+      - (Deprecated IO): notebooks/pynapple-old-io-notebook.ipynb
       - Process: notebooks/pynapple-process-notebook.ipynb
     - pynacollada: pynacollada.md
   - Modules:
