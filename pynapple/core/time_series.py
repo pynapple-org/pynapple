@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-06-28 15:14:42
+# @Last Modified time: 2023-07-10 17:28:36
 
 import importlib
 import os
@@ -597,7 +597,7 @@ class Tsd(pd.Series):
         filtered it. You can save the filtered channel as a npz to avoid
         reprocessing it.
 
-        You can load the object with numpy.load. Keys are 't', 'd', 'start', 'end'.
+        You can load the object with numpy.load. Keys are 't', 'd', 'start', 'end' and 'type'.
         See the example below.
 
         Parameters
@@ -616,7 +616,7 @@ class Tsd(pd.Series):
 
         >>> file = np.load("my_path/my_tsd.npz")
         >>> print(list(file.keys()))
-        ['t', 'd', 'start', 'end']
+        ['t', 'd', 'start', 'end', 'type']
         >>> print(file['t'])
         [0. 1.]
 
@@ -657,6 +657,7 @@ class Tsd(pd.Series):
             d=self.values,
             start=self.time_support.start.values,
             end=self.time_support.end.values,
+            type=np.array(["Tsd"], dtype=np.str_),
         )
 
         return
@@ -1103,7 +1104,7 @@ class TsdFrame(pd.DataFrame):
         filtered them. You can save the filtered channels as a npz to avoid
         reprocessing it.
 
-        You can load the object with numpy.load. Keys are 't', 'd', 'start', 'end'
+        You can load the object with numpy.load. Keys are 't', 'd', 'start', 'end', 'type'
         and 'columns' for columns names.
 
         Parameters
@@ -1122,7 +1123,7 @@ class TsdFrame(pd.DataFrame):
 
         >>> file = np.load("my_path/my_tsdframe.npz")
         >>> print(list(file.keys()))
-        ['t', 'd', 'start', 'end', 'columns'']
+        ['t', 'd', 'start', 'end', 'columns', 'type']
         >>> print(file['t'])
         [0. 1.]
 
@@ -1169,6 +1170,7 @@ class TsdFrame(pd.DataFrame):
             start=self.time_support.start.values,
             end=self.time_support.end.values,
             columns=cols_name,
+            type=np.array(["TsdFrame"], dtype=np.str_),
         )
 
         return
@@ -1274,7 +1276,7 @@ class Ts(Tsd):
         The main purpose of this function is to save small/medium sized timestamps
         object.
 
-        You can load the object with numpy.load. Keys are 't', 'start' and 'end'.
+        You can load the object with numpy.load. Keys are 't', 'start' and 'end' and 'type'.
         See the example below.
 
         Parameters
@@ -1293,7 +1295,7 @@ class Ts(Tsd):
 
         >>> file = np.load("my_path/my_ts.npz")
         >>> print(list(file.keys()))
-        ['t', 'start', 'end']
+        ['t', 'start', 'end', 'type']
         >>> print(file['t'])
         [0. 1. 1.5]
 
@@ -1334,6 +1336,7 @@ class Ts(Tsd):
             t=self.index.values,
             start=self.time_support.start.values,
             end=self.time_support.end.values,
+            type=np.array(["Ts"], dtype=np.str_),
         )
 
         return

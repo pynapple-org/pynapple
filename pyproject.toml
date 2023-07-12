@@ -29,6 +29,7 @@ dependencies = [
     "h5py",
     "tifffile",
     "zarr",
+    "rich",
 ]
 requires-python = ">=3.8"
 
@@ -55,7 +56,7 @@ repository = "https://github.com/pynapple-org/pynapple"
 ##########################################################################
 
 [tool.black]
-target-version = ['py36', 'py37', 'py38']
+target-version = ['py36', 'py37', 'py38', 'py39']
 skip-string-normalization = false
 exclude = '''
 (

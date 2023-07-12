@@ -3,7 +3,6 @@
 """
 Various io functions
 
-@author: Guillaume Viejo
 """
 import os
 from xml.dom import minidom
@@ -14,10 +13,69 @@ from pynwb.ecephys import LFP, ElectricalSeries
 
 from .. import core as nap
 from .cnmfe import CNMF_E, InscopixCNMFE, Minian
+from .file import NPZFile
+from .folder import Folder
 from .loader import BaseLoader
 from .neurosuite import NeuroSuite
 from .phy import Phy
 from .suite2p import Suite2P
+
+
+def load_file(path):
+    """Load file. Current format supported is (npz,)
+    If the file is compatible with a pynapple format, the function will return a pynapple object.
+    Otherwise, the function will return the output of numpy.load
+
+    Parameters
+    ----------
+    path : str
+        Path to the file
+
+    Returns
+    -------
+    (Tsd, TsdFrame, Ts, IntervalSet, TsGroup)
+        One of the 5 pynapple objects
+
+    Raises
+    ------
+    FileNotFoundError
+        If file is missing
+    """
+    if os.path.isfile(path):
+        if path.endswith(".npz"):
+            return NPZFile(path).load()
+        elif path.endswith(".nwb"):
+            print("In construction. Please come back later...")
+        else:
+            raise RuntimeError("File format not supported")
+    else:
+        raise FileNotFoundError("File {} does not exist".format(path))
+
+
+def load_folder(path):
+    """Load folder containing files or other folder.
+    Pynapple will walk throught the subfolders to detect compatible npz files
+    or nwb files.
+
+    Parameters
+    ----------
+    path : str
+        Path to the folder
+
+    Returns
+    -------
+    Folder
+        A dictionnary-like class containing all the sub-folders and compatible files (i.e. npz, nwb)
+
+    Raises
+    ------
+    RuntimeError
+        If folder is missing
+    """
+    if os.path.isdir(path):
+        return Folder(path)
+    else:
+        raise RuntimeError("Folder {} does not exist".format(path))
 
 
 def load_session(path=None, session_type=None):

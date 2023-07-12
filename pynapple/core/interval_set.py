@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date:   2022-01-25 21:50:48
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-12-06 21:27:08
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-07-10 12:19:27
 
 """
 """
@@ -453,7 +453,7 @@ class IntervalSet(pd.DataFrame):
         objects. For example, you determined some epochs for one session that you want to save
         to avoid recomputing them.
 
-        You can load the object with numpy.load. Keys are 'start' and 'end'.
+        You can load the object with numpy.load. Keys are 'start', 'end' and 'type'.
         See the example below.
 
         Parameters
@@ -472,7 +472,7 @@ class IntervalSet(pd.DataFrame):
 
         >>> file = np.load("my_ep.npz")
         >>> print(list(file.keys()))
-        ['start', 'end']
+        ['start', 'end', 'type']
         >>> print(file['start'])
         [0. 10. 20.]
 
@@ -510,6 +510,7 @@ class IntervalSet(pd.DataFrame):
             filename,
             start=self.start.values,
             end=self.end.values,
+            type=np.array(["IntervalSet"], dtype=np.str_),
         )
 
         return
