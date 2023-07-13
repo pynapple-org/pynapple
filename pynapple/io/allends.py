@@ -126,7 +126,6 @@ class AllenDS(BaseLoader):
         # time support for stimuli
         self.stimulus_time_support = self._join_epochs(stimulus_epochs)
 
-
     def load_stimulus_intervals(self):
         """
         Loads start and stop time for all stimulus presentations for each stimulus type
@@ -137,8 +136,11 @@ class AllenDS(BaseLoader):
             columns={
                 "start_time": "start",
                 "stop_time": "end",
-                "stimulus_name": "label",})
+                "stimulus_name": "label",
+            }
+        )
         self.stimulus_intervals = self._make_epochs(stimulus_intervals)
+
     def load_optogenetic_stimulus_epochs(self):
         """
         Load optogenetic stimulus epochs into IntervalSet.
@@ -167,7 +169,6 @@ class AllenDS(BaseLoader):
             time_units="s",
             **self.session.units.sort_index(),
         )
-
 
     def load_metadata(self):
         """
