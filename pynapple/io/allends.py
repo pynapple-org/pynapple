@@ -76,6 +76,7 @@ class AllenDS(BaseLoader):
         # load data
         self.load_epochs()
         self.load_stimulus_epochs()
+        self.load_stimulus_intervals()
         self.load_optogenetic_stimulus_epochs()
         self.load_spikes()
         self.load_metadata()
@@ -86,17 +87,20 @@ class AllenDS(BaseLoader):
         Epoch in this context is simply the entire recording session, as reference.
         Currently, uses last time for the last stimulus, however this could be refined.
 
+        Add time support based on this epoch
         """
         start = 0
         stop = self.session.optogenetic_stimulation_epochs.iloc[-1]["stop_time"]
         self.epochs = {
-            "recording": nap.IntervalSet(start=start, end=stop, time_units="s")
+            "session": nap.IntervalSet(start=start, end=stop, time_units="s")
         }
+        # global time support of data
+        self.time_support = nap.IntervalSet(start=start, end=stop, time_units="s")
 
     def load_stimulus_epochs(self):
         """
         Loads stimulus epochs labeled by stimulus name and by block
-        from allen database to pynapple workspace
+        from Allen Database to Pynapple workspace
         by converting dataframe to Interval Set
 
         """
@@ -111,16 +115,31 @@ class AllenDS(BaseLoader):
                 "stimulus_name": "label",
             }
         )
-        self.stimulus_epochs_names = self._make_epochs(stimulus_epochs)
+        self.stimulus_epochs_types = self._make_epochs(stimulus_epochs)
 
         # rename columns
         # label is stimulus block
         stimulus_epochs = stimulus_epochs.drop(labels="label", axis=1)
         stimulus_epochs = stimulus_epochs.rename(columns={"stimulus_block": "label"})
-        self.stimulus_epochs_block = self._make_epochs(stimulus_epochs)
+        self.stimulus_epochs_blocks = self._make_epochs(stimulus_epochs)
 
-        # time support
-        self.time_support = self._join_epochs(stimulus_epochs)
+        # time support for stimuli
+        self.stimulus_time_support = self._join_epochs(stimulus_epochs)
+
+    def load_stimulus_intervals(self):
+        """
+        Loads start and stop time for all stimulus presentations for each stimulus type
+        into a dictionary of Interval Sets
+        """
+        stimulus_intervals = self.session.get_stimulus_table()
+        stimulus_intervals = stimulus_intervals.rename(
+            columns={
+                "start_time": "start",
+                "stop_time": "end",
+                "stimulus_name": "label",
+            }
+        )
+        self.stimulus_intervals = self._make_epochs(stimulus_intervals)
 
     def load_optogenetic_stimulus_epochs(self):
         """
@@ -166,6 +185,7 @@ class AllenDS(BaseLoader):
         self.metadata = {
             "stimulus_presentations": self.session.stimulus_presentations,
             "stimulus_conditions": self.session.stimulus_conditions,
+            "stimulus_parameters": self.session.get_stimulus_parameter_values(),
             "probes": self.session.probes,
             "channels": self.session.channels,
         }
