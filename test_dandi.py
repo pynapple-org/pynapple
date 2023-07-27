@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2023-07-25 18:30:04
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-07-26 16:09:17
+# @Last Modified time: 2023-07-27 16:50:38
 import pynwb
 from pynwb import NWBHDF5IO, TimeSeries
 
@@ -50,10 +50,3 @@ io = pynwb.NWBHDF5IO(file=file, load_namespaces=True)
 #####################################
 
 nwb = nap.NWBFile(io.read())
-
-
-# ch_wait = nwb['ch_wait']
-
-# figure()
-# plot(ch_wait)
-# show()
