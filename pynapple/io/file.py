@@ -26,8 +26,6 @@ from .. import core as nap
 # from pynwb import NWBFile, TimeSeries
 
 
-
-
 class NPZFile(object):
     """Class that points to a NPZ file that can be loaded as a pynapple object. Data are always lazy-loaded."""
 
