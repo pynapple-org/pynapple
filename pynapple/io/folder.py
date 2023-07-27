@@ -3,8 +3,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Guillaume Viejo
 # @Date:   2023-05-15 15:32:24
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-11 16:43:13
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-07-24 14:11:10
 
 """
 The Folder class helps to navigate a hierarchical data tree.
@@ -180,7 +180,7 @@ class Folder(UserDict):
                     # setattr(self, key, data)
                     return data
                 elif isinstance(self.data[key], NWBFile):
-                    return self.data[key].load()
+                    return self.data[key]
                 else:
                     return self.data[key]
             else:

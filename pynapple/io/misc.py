@@ -13,7 +13,7 @@ from pynwb.ecephys import LFP, ElectricalSeries
 
 from .. import core as nap
 from .cnmfe import CNMF_E, InscopixCNMFE, Minian
-from .file import NPZFile
+from .file import NPZFile, NWBFile
 from .folder import Folder
 from .loader import BaseLoader
 from .neurosuite import NeuroSuite
@@ -45,7 +45,7 @@ def load_file(path):
         if path.endswith(".npz"):
             return NPZFile(path).load()
         elif path.endswith(".nwb"):
-            print("In construction. Please come back later...")
+            return NWBFile(path)
         else:
             raise RuntimeError("File format not supported")
     else:
