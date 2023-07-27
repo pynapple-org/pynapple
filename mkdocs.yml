@@ -1,13 +1,13 @@
 site_name: pynapple
 nav:  
-  - Overview: index.md
+  - Overview: index.md  
   - Usage:
     - Quick start: notebooks/pynapple-quick-start.ipynb
     - Core: notebooks/pynapple-core-notebook.ipynb
     - IO: notebooks/pynapple-io-notebook.ipynb
+    # - (Deprecated IO): notebooks/pynapple-old-io-notebook.ipynb
     - DANDI+NWB: notebooks/pynapple-dandi-notebook.ipynb
-    - (Deprecated IO): notebooks/pynapple-old-io-notebook.ipynb
-    - Process: notebooks/pynapple-process-notebook.ipynb
+    - Process: notebooks/pynapple-process-notebook.ipynb  
     - pynacollada: pynacollada.md
   - Modules:
     - Core:
