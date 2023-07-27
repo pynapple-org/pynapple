@@ -12,20 +12,20 @@ File classes help to validate and load pynapple objects or NWB files.
 
 
 import os
+from collections import UserDict
 
 import numpy as np
-
-from .. import core as nap
-
-from pynwb import NWBHDF5IO
 import pynwb
-# from hdmf.common import DynamicTable, VectorData
-# from pynwb import NWBFile, TimeSeries
-
+from pynwb import NWBHDF5IO
 from rich.console import Console
 from rich.table import Table
 
-from collections import UserDict
+from .. import core as nap
+
+# from hdmf.common import DynamicTable, VectorData
+# from pynwb import NWBFile, TimeSeries
+
+
 
 
 class NPZFile(object):
@@ -124,34 +124,35 @@ class NPZFile(object):
 
 
 def _extract_compatible_data_from_nwbfile(nwbfile):
-
-    data = {}    
+    data = {}
 
     for oid, obj in nwbfile.objects.items():
-
-        if isinstance(obj, pynwb.misc.DynamicTable) and any([i.name.endswith("_times_index") for i in obj.columns]):
-            data['units'] = {'id':oid, 'type':"TsGroup"}
+        if isinstance(obj, pynwb.misc.DynamicTable) and any(
+            [i.name.endswith("_times_index") for i in obj.columns]
+        ):
+            data["units"] = {"id": oid, "type": "TsGroup"}
 
         elif isinstance(obj, pynwb.epoch.TimeIntervals):
             # Supposedly IntervalsSets
-            data[obj.name] = {'id':oid, "type":"IntervalSet"}
+            data[obj.name] = {"id": oid, "type": "IntervalSet"}
 
-        elif isinstance(obj, pynwb.misc.DynamicTable) and any([i.name.endswith("_times") for i in obj.columns]):
+        elif isinstance(obj, pynwb.misc.DynamicTable) and any(
+            [i.name.endswith("_times") for i in obj.columns]
+        ):
             # Supposedly Timestamps
-            data[obj.name] = {'id':oid, "type":"Ts"}
+            data[obj.name] = {"id": oid, "type": "Ts"}
 
         elif isinstance(obj, pynwb.misc.AnnotationSeries):
             # Old timestamps version
-            data[obj.name] = {'id':oid, "type":"Ts"}
+            data[obj.name] = {"id": oid, "type": "Ts"}
 
         elif isinstance(obj, pynwb.misc.TimeSeries):
-            
             if len(obj.data.shape) == 2:
-                data[obj.name] = {'id':oid, "type":"TsdFrame"}
+                data[obj.name] = {"id": oid, "type": "TsdFrame"}
 
             elif len(obj.data.shape) == 1:
-                data[obj.name] = {'id':oid, "type":"Tsd"}
-                            
+                data[obj.name] = {"id": oid, "type": "Tsd"}
+
     return data
 
 
@@ -160,7 +161,7 @@ class NWBFile(UserDict):
 
     Simple example is :
 
-    
+
     >>> import pynapple as nap
     >>> data = nap.load_file("my_file.nwb")
     >>> data["units"]
@@ -189,7 +190,7 @@ class NWBFile(UserDict):
 
         # self.data = {}
         self.data = _extract_compatible_data_from_nwbfile(self.nwb)
-        self._key_to_id = {k:self.data[k]['id'] for k in self.data.keys()}
+        self._key_to_id = {k: self.data[k]["id"] for k in self.data.keys()}
 
         self._view = Table(title=self.name)
         self._view.add_column("Keys", justify="left", style="cyan", no_wrap=True)
@@ -198,10 +199,10 @@ class NWBFile(UserDict):
 
         for k in self.data.keys():
             self._view.add_row(
-                k, 
-                self.data[k]['type'],
+                k,
+                self.data[k]["type"],
                 # self.data[k]['top_module']
-                )
+            )
 
         UserDict.__init__(self, self.data)
 
@@ -210,8 +211,8 @@ class NWBFile(UserDict):
         return self.__repr__()
 
     def __repr__(self):
-        """View of the object"""        
-        console = Console()        
+        """View of the object"""
+        console = Console()
         console.print(self._view)
         return ""
 
@@ -234,44 +235,47 @@ class NWBFile(UserDict):
             If key is not in the dictionnary
         """
         if key.__hash__:
-
             if self.__contains__(key):
-
                 if isinstance(self.data[key], dict):
-                    
-                    if self.data[key]['type'] == "IntervalSet":
-                        obj = self.nwb.objects[self.data[key]['id']]
+                    if self.data[key]["type"] == "IntervalSet":
+                        obj = self.nwb.objects[self.data[key]["id"]]
                         start_time = obj.start_time.data[:]
                         stop_time = obj.stop_time.data[:]
-                        data = nap.IntervalSet(start=start_time, end = stop_time)
-                        self.data[key] = data                    
-                        return data
-                    
-                    elif self.data[key]['type'] == "Tsd":
-                        obj = self.nwb.objects[self.data[key]['id']]
-                        d = obj.data[:]
-                        if obj.timestamps is not None:
-                            t = obj.timestamps[:]
-                        else:
-                            t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
-
-                        data = nap.Tsd(t = t, d = d)
+                        data = nap.IntervalSet(start=start_time, end=stop_time)
                         self.data[key] = data
                         return data
 
-                    elif self.data[key]['type'] == "TsdFrame":
-                        obj = self.nwb.objects[self.data[key]['id']]
+                    elif self.data[key]["type"] == "Tsd":
+                        obj = self.nwb.objects[self.data[key]["id"]]
                         d = obj.data[:]
                         if obj.timestamps is not None:
                             t = obj.timestamps[:]
                         else:
-                            t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
+                            t = (
+                                obj.starting_time
+                                + np.arange(obj.num_samples) / obj.rate
+                            )
+
+                        data = nap.Tsd(t=t, d=d)
+                        self.data[key] = data
+                        return data
+
+                    elif self.data[key]["type"] == "TsdFrame":
+                        obj = self.nwb.objects[self.data[key]["id"]]
+                        d = obj.data[:]
+                        if obj.timestamps is not None:
+                            t = obj.timestamps[:]
+                        else:
+                            t = (
+                                obj.starting_time
+                                + np.arange(obj.num_samples) / obj.rate
+                            )
 
                         if isinstance(obj, pynwb.behavior.SpatialSeries):
                             if obj.data.shape[1] == 2:
-                                columns = ['x', 'y']
+                                columns = ["x", "y"]
                             elif obj.data.shape[1] == 3:
-                                columns = ['x', 'y', 'z']
+                                columns = ["x", "y", "z"]
                         elif isinstance(obj, pynwb.ecephys.ElectricalSeries):
                             print("TODO")
                             # (channel mapping)
@@ -281,26 +285,28 @@ class NWBFile(UserDict):
                         else:
                             columns = np.arange(obj.data.shape[1])
 
-                        data = nap.TsdFrame(t = t, d = d, columns = columns)
+                        data = nap.TsdFrame(t=t, d=d, columns=columns)
                         self.data[key] = data
                         return data
 
-                    elif self.data[key]['type'] == "TsGroup":
-                        obj = self.nwb.objects[self.data[key]['id']]
+                    elif self.data[key]["type"] == "TsGroup":
+                        obj = self.nwb.objects[self.data[key]["id"]]
                         index = obj.id[:]
-                        tsgroup = {}                   
+                        tsgroup = {}
                         for i, gr in zip(index, obj.spike_times_index[:]):
                             # if np.min(np.diff(gr))<0.0:
                             #     break
-                            tsgroup[i] = nap.Ts(t=gr)                            
+                            tsgroup[i] = nap.Ts(t=gr)
 
                         N = len(tsgroup)
                         metainfo = {}
                         for colname, col in zip(obj.colnames, obj.columns):
-                            if colname not in ['spike_times_index', 'spike_times']:
+                            if colname not in ["spike_times_index", "spike_times"]:
                                 if len(col) > 0:
                                     if len(col) == N:
-                                        if not isinstance(col[0], (np.ndarray, list, tuple, dict, set)):
+                                        if not isinstance(
+                                            col[0], (np.ndarray, list, tuple, dict, set)
+                                        ):
                                             metainfo[colname] = col[:]
 
                         tsgroup = nap.TsGroup(tsgroup, **metainfo)
@@ -309,8 +315,8 @@ class NWBFile(UserDict):
 
                         return tsgroup
 
-                    elif self.data[key]['type'] == "Ts":
-                        obj = self.nwb.objects[self.data[key]['id']]
+                    elif self.data[key]["type"] == "Ts":
+                        obj = self.nwb.objects[self.data[key]["id"]]
 
                         if hasattr(obj, "timestamps"):
                             data = nap.Ts(obj.timestamps[:])
@@ -318,7 +324,7 @@ class NWBFile(UserDict):
                             return data
                         else:
                             return obj
-                
+
                 else:
                     return self.data[key]
             else:
