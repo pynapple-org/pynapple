@@ -233,6 +233,15 @@ class TsGroup(UserDict):
     #######################
     # Metadata
     #######################
+
+    @property
+    def metadata_columns(self):
+        """
+        Returns list of metadata columns
+        -------
+        """
+        return list(self._metadata.columns)
+
     def set_info(self, *args, **kwargs):
         """
         Add metadata informations about the TsGroup.
