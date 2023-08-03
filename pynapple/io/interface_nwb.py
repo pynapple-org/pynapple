@@ -1,17 +1,14 @@
-#!/usr/bin/env python
-
 # -*- coding: utf-8 -*-
 # @Author: Guillaume Viejo
-# @Date:   2023-07-05 16:03:25
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-07-28 17:05:48
+# @Date:   2023-08-01 11:54:45
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-08-03 10:27:55
 
 """
-File classes help to validate and load pynapple objects or NWB files.
+pynapple class to interface with NWB files.
 Data are always lazy-loaded.
-Both classes behaves like dictionnary.
+Object behaves like dictionnary.
 """
-
 
 import errno
 import os
@@ -25,116 +22,6 @@ from rich.console import Console
 from rich.table import Table
 
 from .. import core as nap
-
-
-
-class NPZFile(object):
-    """Class that points to a NPZ file that can be loaded as a pynapple object. 
-    Objects have a save function in npz format as well as the Folder class.
-    
-    Examples
-    --------
-    >>> import pynapple as nap    
-    >>> tsd = nap.load_file("path/to/my_tsd.npz")
-    >>> tsd
-    Time (s)
-    0.0    0
-    0.1    1
-    0.2    2
-    dtype: int64
-
-    """
-
-    def __init__(self, path):
-        """Initialization of the NPZ file
-
-        Parameters
-        ----------
-        path : str
-            Valid path to a NPZ file
-        """
-        self.path = path
-        self.name = os.path.basename(path)
-        self.file = np.load(self.path, allow_pickle=True)
-        self.type = ""
-
-        # First check if type is explicitely defined
-        possible = ["Ts", "Tsd", "TsdFrame", "TsGroup", "IntervalSet"]
-        if "type" in self.file.keys():
-            if len(self.file["type"]) == 1:
-                if isinstance(self.file["type"][0], np.str_):
-                    if self.file["type"] in possible:
-                        self.type = self.file["type"][0]
-
-        # Second check manually
-        if self.type == "":
-            k = set(self.file.keys())
-            if {"t", "start", "end", "index"}.issubset(k):
-                self.type = "TsGroup"
-            elif {"t", "d", "start", "end", "columns"}.issubset(k):
-                self.type = "TsdFrame"
-            elif {"t", "d", "start", "end"}.issubset(k):
-                self.type = "Tsd"
-            elif {"t", "start", "end"}.issubset(k):
-                self.type = "Ts"
-            elif {"start", "end"}.issubset(k):
-                self.type = "IntervalSet"
-            else:
-                self.type = "npz"
-
-    def load(self):
-        """Load the NPZ file
-
-        Returns
-        -------
-        (Tsd, Ts, TsdFrame, TsGroup, IntervalSet)
-            A pynapple object
-        """
-        if self.type == "npz":
-            return self.file
-        else:
-            time_support = nap.IntervalSet(self.file["start"], self.file["end"])
-            if self.type == "TsGroup":
-                tsd = nap.Tsd(
-                    t=self.file["t"], d=self.file["index"], time_support=time_support
-                )
-                tsgroup = tsd.to_tsgroup()
-                if "d" in self.file.keys():
-                    print("TODO")
-
-                metainfo = {}
-                for k in set(self.file.keys()) - {
-                    "start",
-                    "end",
-                    "t",
-                    "index",
-                    "d",
-                    "rate",
-                }:
-                    tmp = self.file[k]
-                    if len(tmp) == len(tsgroup):
-                        metainfo[k] = tmp
-                tsgroup.set_info(**metainfo)
-                return tsgroup
-
-            elif self.type == "TsdFrame":
-                return nap.TsdFrame(
-                    t=self.file["t"],
-                    d=self.file["d"],
-                    time_support=time_support,
-                    columns=self.file["columns"],
-                )
-
-            elif self.type == "Tsd":
-                return nap.Tsd(
-                    t=self.file["t"], d=self.file["d"], time_support=time_support
-                )
-            elif self.type == "Ts":
-                return nap.Ts(t=self.file["t"], time_support=time_support)
-            elif self.type == "IntervalSet":
-                return time_support
-            else:
-                return self.file
 
 
 def _extract_compatible_data_from_nwbfile(nwbfile):
@@ -192,27 +79,40 @@ def _make_interval_set(obj):
 
     Returns
     -------
-    IntervalSet or dict of IntervalSet
+    IntervalSet or dict of IntervalSet or pandas.DataFrame
         If contains multiple epochs, a dictionary of IntervalSet is returned.
+        It too many metadata, the function returns the output of nwbfile.trials.to_dataframe()
     """
-    start_time = obj.start_time.data[:]
-    stop_time = obj.stop_time.data[:]
-    if hasattr(obj, "tags"):
-        tags = obj.tags.data[:]
-        categories = np.unique(tags)
-        if len(categories) > 1:
-            data = {}
-            for c in categories:
-                data[c] = nap.IntervalSet(
-                    start=start_time[tags == c], end=stop_time[tags == c]
-                )
-        else:
-            data = nap.IntervalSet(start=start_time, end=stop_time)
-    else:
-        data = nap.IntervalSet(start=start_time, end=stop_time)
+    if hasattr(obj, "to_dataframe"):
+        df = obj.to_dataframe()
 
-    return data
+        if hasattr(df, "start_time") and hasattr(df, "stop_time"):
 
+            if df.shape[1] == 2:
+                data = nap.IntervalSet(start=df["start_time"], end=df["stop_time"])
+                return data
+
+            group_by_key = None
+            if "tags" in df.columns:
+                group_by_key = "tags"
+
+            elif df.shape[1] == 3: # assuming third column is the tag
+                group_by_key = df.columns[2]
+
+            if group_by_key:
+                for i in df.index:
+                    if isinstance(df.loc[i,group_by_key], (list, tuple)):
+                        df.loc[i,group_by_key] = "-".join([str(j) for j in df.loc[i,group_by_key]])
+
+                data = {}
+                for k, subdf in df.groupby(group_by_key):
+                    data[k] = nap.IntervalSet(start=subdf["start_time"], end=subdf["stop_time"])
+
+                return data            
+
+            else:
+                warnings.warn("Too many metadata. Returning pandas.DataFrame, not IntervalSet", stacklevel=2)
+                return df # Too many metadata to split the epoch
 
 def _make_tsd(obj):
     """Helper function to make Tsd
@@ -264,14 +164,21 @@ def _make_tsd_frame(obj):
             columns = ["x", "y"]
         elif obj.data.shape[1] == 3:
             columns = ["x", "y", "z"]
+
     elif isinstance(obj, pynwb.ecephys.ElectricalSeries):
-        print("TODO")
-        columns = np.arange(obj.data.shape[1])
         # (channel mapping)
+        try:
+            columns = obj.electrodes["id"][:]
+        except:
+            columns = np.arange(obj.data.shape[1])
+
     elif isinstance(obj, pynwb.ophys.RoiResponseSeries):
-        print("TODO")
-        columns = np.arange(obj.data.shape[1])
         # (cell number)
+        try:
+            columns = obj.rois["id"][:]
+        except:
+            columns = np.arange(obj.data.shape[1])
+
     else:
         columns = np.arange(obj.data.shape[1])
 
