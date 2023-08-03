@@ -17,7 +17,8 @@ nav:
     - IO:
       - Miscellaneous: io.md
       - Folder: io.folder.md
-      - Files: io.files.md
+      - NPZ: io.npz.md
+      - NWB: io.nwb.md
       - Deprecated:
         - Basic IO: io.loader.md
         - Neurosuite: io.neurosuite.md

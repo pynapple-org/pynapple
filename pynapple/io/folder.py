@@ -3,8 +3,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Guillaume Viejo
 # @Date:   2023-05-15 15:32:24
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-07-24 14:11:10
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-08-03 16:16:47
 
 """
 The Folder class helps to navigate a hierarchical data tree.
@@ -21,7 +21,8 @@ from rich import print
 from rich.panel import Panel
 from rich.tree import Tree
 
-from .file import NPZFile, NWBFile
+from .interface_npz import NPZFile
+from .interface_nwb import NWBFile
 
 
 def _find_files(path, extension=".npz"):
@@ -161,11 +162,9 @@ class Folder(UserDict):
         ----------
         key : str
 
-
         Returns
         -------
-        (Ts, Tsd, TsdFrame, TsGroup, IntervalSet, Folder)
-
+        (Ts, Tsd, TsdFrame, TsGroup, IntervalSet, Folder or NWBFile)
 
         Raises
         ------

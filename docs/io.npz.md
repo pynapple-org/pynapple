@@ -1,10 +1,9 @@
-::: pynapple.io.file
+::: pynapple.io.interface_npz
 	handler: python
 	selection:
 		docstring_style: numpy
 		members:
 			- NPZFile
-			- NWBFile
 	rendering:
 		show_root_heading: false
 		show_source: true
