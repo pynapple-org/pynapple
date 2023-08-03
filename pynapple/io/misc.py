@@ -23,9 +23,12 @@ from .suite2p import Suite2P
 
 
 def load_file(path):
-    """Load file. Current format supported is (npz,)
-    If the file is compatible with a pynapple format, the function will return a pynapple object.
+    """Load file. Current format supported is (npz,nwb,)
+
+    .npz -> If the file is compatible with a pynapple format, the function will return a pynapple object.
     Otherwise, the function will return the output of numpy.load
+
+    .nwb -> Return the pynapple.io.NWBFile class wrapping the NWBFile
 
     Parameters
     ----------
@@ -34,8 +37,8 @@ def load_file(path):
 
     Returns
     -------
-    (Tsd, TsdFrame, Ts, IntervalSet, TsGroup)
-        One of the 5 pynapple objects
+    (Tsd, TsdFrame, Ts, IntervalSet, TsGroup, pynapple.io.NWBFile)
+        One of the 5 pynapple objects or pynapple.io.NWBFile
 
     Raises
     ------
@@ -81,6 +84,9 @@ def load_folder(path):
 
 def load_session(path=None, session_type=None):
     """
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+    % WARNING : THIS FUNCTION IS DEPRECATED %
+    %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     General Loader for
 
     - Neurosuite\n

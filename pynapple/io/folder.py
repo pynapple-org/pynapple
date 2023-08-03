@@ -4,7 +4,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-05-15 15:32:24
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-08-01 16:45:39
+# @Last Modified time: 2023-08-03 16:16:47
 
 """
 The Folder class helps to navigate a hierarchical data tree.
@@ -162,11 +162,9 @@ class Folder(UserDict):
         ----------
         key : str
 
-
         Returns
         -------
-        (Ts, Tsd, TsdFrame, TsGroup, IntervalSet, Folder)
-
+        (Ts, Tsd, TsdFrame, TsGroup, IntervalSet, Folder or NWBFile)
 
         Raises
         ------

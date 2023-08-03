@@ -2,10 +2,10 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-08-01 11:54:45
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-08-03 15:50:22
+# @Last Modified time: 2023-08-03 16:24:14
 
 """
-pynapple class to interface with NWB files.
+Pynapple class to interface with NWB files.
 Data are always lazy-loaded.
 Object behaves like dictionnary.
 """
@@ -269,6 +269,11 @@ class NWBFile(UserDict):
     >>> import pynapple as nap
     >>> data = nap.load_file("my_file.nwb")
     >>> data["units"]
+      Index    rate  location      group
+    -------  ------  ----------  -------
+          0    1.0  brain        0
+          1    1.0  brain        0
+          2    1.0  brain        0
 
     """
 

@@ -4,7 +4,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-07-05 16:03:25
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-08-03 15:49:00
+# @Last Modified time: 2023-08-03 16:21:45
 
 """
 File classes help to validate and load pynapple objects or NWB files.
