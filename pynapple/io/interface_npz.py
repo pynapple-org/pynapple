@@ -4,7 +4,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-07-05 16:03:25
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-08-01 11:58:19
+# @Last Modified time: 2023-08-03 15:49:00
 
 """
 File classes help to validate and load pynapple objects or NWB files.
@@ -12,29 +12,20 @@ Data are always lazy-loaded.
 Both classes behaves like dictionnary.
 """
 
-
-import errno
 import os
-import warnings
-from collections import UserDict
 
 import numpy as np
-import pynwb
-from pynwb import NWBHDF5IO
-from rich.console import Console
-from rich.table import Table
 
 from .. import core as nap
 
 
-
 class NPZFile(object):
-    """Class that points to a NPZ file that can be loaded as a pynapple object. 
+    """Class that points to a NPZ file that can be loaded as a pynapple object.
     Objects have a save function in npz format as well as the Folder class.
-    
+
     Examples
     --------
-    >>> import pynapple as nap    
+    >>> import pynapple as nap
     >>> tsd = nap.load_file("path/to/my_tsd.npz")
     >>> tsd
     Time (s)
@@ -135,5 +126,3 @@ class NPZFile(object):
                 return time_support
             else:
                 return self.file
-
-

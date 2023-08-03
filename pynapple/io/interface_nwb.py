@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-08-01 11:54:45
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-08-03 10:27:55
+# @Last Modified time: 2023-08-03 15:50:22
 
 """
 pynapple class to interface with NWB files.
@@ -87,7 +87,6 @@ def _make_interval_set(obj):
         df = obj.to_dataframe()
 
         if hasattr(df, "start_time") and hasattr(df, "stop_time"):
-
             if df.shape[1] == 2:
                 data = nap.IntervalSet(start=df["start_time"], end=df["stop_time"])
                 return data
@@ -96,23 +95,33 @@ def _make_interval_set(obj):
             if "tags" in df.columns:
                 group_by_key = "tags"
 
-            elif df.shape[1] == 3: # assuming third column is the tag
+            elif df.shape[1] == 3:  # assuming third column is the tag
                 group_by_key = df.columns[2]
 
             if group_by_key:
                 for i in df.index:
-                    if isinstance(df.loc[i,group_by_key], (list, tuple)):
-                        df.loc[i,group_by_key] = "-".join([str(j) for j in df.loc[i,group_by_key]])
+                    if isinstance(df.loc[i, group_by_key], (list, tuple)):
+                        df.loc[i, group_by_key] = "-".join(
+                            [str(j) for j in df.loc[i, group_by_key]]
+                        )
 
                 data = {}
                 for k, subdf in df.groupby(group_by_key):
-                    data[k] = nap.IntervalSet(start=subdf["start_time"], end=subdf["stop_time"])
+                    data[k] = nap.IntervalSet(
+                        start=subdf["start_time"], end=subdf["stop_time"]
+                    )
 
-                return data            
+                return data
 
             else:
-                warnings.warn("Too many metadata. Returning pandas.DataFrame, not IntervalSet", stacklevel=2)
-                return df # Too many metadata to split the epoch
+                warnings.warn(
+                    "Too many metadata. Returning pandas.DataFrame, not IntervalSet",
+                    stacklevel=2,
+                )
+                return df  # Too many metadata to split the epoch
+    else:
+        return obj
+
 
 def _make_tsd(obj):
     """Helper function to make Tsd
@@ -164,19 +173,21 @@ def _make_tsd_frame(obj):
             columns = ["x", "y"]
         elif obj.data.shape[1] == 3:
             columns = ["x", "y", "z"]
+        else:
+            columns = np.arange(obj.data.shape[1])
 
     elif isinstance(obj, pynwb.ecephys.ElectricalSeries):
         # (channel mapping)
         try:
             columns = obj.electrodes["id"][:]
-        except:
+        except Exception:
             columns = np.arange(obj.data.shape[1])
 
     elif isinstance(obj, pynwb.ophys.RoiResponseSeries):
         # (cell number)
         try:
             columns = obj.rois["id"][:]
-        except:
+        except Exception:
             columns = np.arange(obj.data.shape[1])
 
     else:
@@ -206,16 +217,15 @@ def _make_tsgroup(obj):
     for i, gr in zip(index, obj.spike_times_index[:]):
         # if np.min(np.diff(gr))<0.0:
         #     break
-        tsgroup[i] = nap.Ts(t=gr)
+        tsgroup[i] = nap.Ts(t=np.array(gr))
 
     N = len(tsgroup)
     metainfo = {}
     for colname, col in zip(obj.colnames, obj.columns):
         if colname not in ["spike_times_index", "spike_times"]:
-            if len(col) > 0:
-                if len(col) == N:
-                    if not isinstance(col[0], (np.ndarray, list, tuple, dict, set)):
-                        metainfo[colname] = col[:]
+            if len(col) == N:
+                if not isinstance(col[0], (np.ndarray, list, tuple, dict, set)):
+                    metainfo[colname] = np.array(col[:])
 
     tsgroup = nap.TsGroup(tsgroup, **metainfo)
 
@@ -227,15 +237,26 @@ def _make_ts(obj):
 
     Parameters
     ----------
-    obj : pynwb.misc.AnnotationSeries
+    obj : pynwb.misc.AnnotationSeries or pynwb.misc.DynamicTable
         NWB object
 
     Returns
     -------
-    Ts
+    Ts or dict of Ts
 
     """
-    data = nap.Ts(obj.timestamps[:])
+    if hasattr(obj, "timestamps"):
+        data = nap.Ts(obj.timestamps[:])
+    else:
+        df = obj.to_dataframe()
+        data = {}
+        for k in df.columns:
+            if isinstance(k, str):
+                if k.endswith("_times"):
+                    data[k] = nap.Ts(df[k].values)
+        if len(data) == 1:
+            data = data[list(data.keys())[0]]
+
     return data
 
 
@@ -341,7 +362,7 @@ class NWBFile(UserDict):
                     obj = self.nwb.objects[self.data[key]["id"]]
                     try:
                         data = self._f_eval[self.data[key]["type"]](obj)
-                    except:
+                    except Exception:
                         warnings.warn(
                             "Failed to build {}.\n Returning the NWB object for manual inspection".format(
                                 self.data[key]["type"]

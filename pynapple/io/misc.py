@@ -13,9 +13,9 @@ from pynwb.ecephys import LFP, ElectricalSeries
 
 from .. import core as nap
 from .cnmfe import CNMF_E, InscopixCNMFE, Minian
+from .folder import Folder
 from .interface_npz import NPZFile
 from .interface_nwb import NWBFile
-from .folder import Folder
 from .loader import BaseLoader
 from .neurosuite import NeuroSuite
 from .phy import Phy
