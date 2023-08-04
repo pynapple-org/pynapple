@@ -1,5 +1,5 @@
 """
-    This class deals with conversion between different time units for all neuroseries objects.
+    This class deals with conversion between different time units for all pynapple objects.
     It also provides a context manager that tweaks the default time units to the supported units:
     - 'us': microseconds
     - 'ms': milliseconds
@@ -72,8 +72,8 @@ def sort_timestamps(t, give_warning=True):
 #     """
 #     A class defining a range to restrict analyses.
 
-#     This is used as a context manager, taking a :func:`~neuroseries.interval_set.IntervalSet` as an input.
-#     After that, all neuroseries objects will have a property r set, that will be restricted, for example:
+#     This is used as a context manager, taking a :func:`~pynapple.interval_set.IntervalSet` as an input.
+#     After that, all pynapple objects will have a property r set, that will be restricted, for example:
 
 #     .. code:: python
 
@@ -100,7 +100,7 @@ def sort_timestamps(t, give_warning=True):
 #             end = TimeUnits.format_timestamps(
 #                 np.array((b,), dtype=np.int64).ravel(), time_units
 #             )
-#             from neuroseries.interval_set import IntervalSet
+#             from pynapple.interval_set import IntervalSet
 
 #             Range.interval = IntervalSet(start, end)
 #         else:
@@ -118,7 +118,7 @@ def sort_timestamps(t, give_warning=True):
 
 # class TimeUnits:
 #     """
-#     This class deals with conversion between different time units for all neuroseries objects.
+#     This class deals with conversion between different time units for all pynapple objects.
 #     It also provides a context manager that tweaks the default time units to the supported units:
 #     - 'us': microseconds
 #     - 'ms': milliseconds
@@ -139,7 +139,7 @@ def sort_timestamps(t, give_warning=True):
 #     @staticmethod
 #     def format_timestamps(t, units=None, give_warning=True, sortt=True):
 #         """
-#         Converts numerical types to the type :func:`numpy.float64` that is used for the time index in neuroseries.
+#         Converts numerical types to the type :func:`numpy.float64` that is used for the time index in pynapple.
 
 #         Args:
 #             t: a vector (or scalar) of times
@@ -147,7 +147,7 @@ def sort_timestamps(t, give_warning=True):
 #             give_warning: if True, it will warn when the timestamps are not sored
 
 #         Returns:
-#             ts: times in standard neuroseries format
+#             ts: times in standard pynapple format
 #         """
 
 #         import numbers
@@ -200,7 +200,7 @@ def sort_timestamps(t, give_warning=True):
 #         """
 #         package the times in the desired units
 #         Args:
-#             t: standard neuroseries times
+#             t: standard pynapple times
 #             units: the desired units for the output
 
 #         Returns:

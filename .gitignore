@@ -1,3 +1,5 @@
+*.pickle
+*.py.md5
 *.npz
 
 # Byte-compiled / optimized / DLL files

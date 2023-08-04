@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-08-01 11:54:45
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-08-03 16:24:14
+# @Last Modified time: 2023-08-04 12:05:52
 
 """
 Pynapple class to interface with NWB files.
@@ -100,7 +100,7 @@ def _make_interval_set(obj):
 
             if group_by_key:
                 for i in df.index:
-                    if isinstance(df.loc[i, group_by_key], (list, tuple)):
+                    if isinstance(df.loc[i, group_by_key], (list, tuple, np.ndarray)):
                         df.loc[i, group_by_key] = "-".join(
                             [str(j) for j in df.loc[i, group_by_key]]
                         )

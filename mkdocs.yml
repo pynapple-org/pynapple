@@ -1,54 +1,83 @@
 site_name: pynapple
+repo_url: https://github.com/pynapple-org/pynapple
+
+theme:
+  name: 'material'
+  palette:
+    primary: 'green'
+    features:
+      - navigation.tabs
+
+plugins:
+  - search
+  - gallery:
+        examples_dirs: docs/examples
+        gallery_dirs: docs/generated/gallery
+        conf_script: docs/gallery_conf.py
+  - gen-files:
+      scripts:
+        - docs/gen_ref_pages.py            # Specify the script to generate the code reference pages
+  - literate-nav:
+        nav_file: docs/SUMMARY.md           # Specify the navigation file for literate-style navigation
+  - section-index                           # Enable the section-index plugin for generating a section index
+  - mkdocstrings:
+      handlers:
+        python:
+          options:
+            docstring_style: numpy         
+            show_source: true
+            members_order: source
+
 nav:  
   - Overview: index.md  
-  - Usage:
-    - Quick start: notebooks/pynapple-quick-start.ipynb
-    - Core: notebooks/pynapple-core-notebook.ipynb
-    - IO: notebooks/pynapple-io-notebook.ipynb
-    # - (Deprecated IO): notebooks/pynapple-old-io-notebook.ipynb
-    - DANDI+NWB: notebooks/pynapple-dandi-notebook.ipynb
-    - Process: notebooks/pynapple-process-notebook.ipynb  
-    - pynacollada: pynacollada.md
-  - Modules:
-    - Core:
-      - Time Series: core.time_series.md
-      - Interval Sets: core.interval_set.md
-      - Time Series Group: core.ts_group.md
-    - IO:
-      - Miscellaneous: io.md
-      - Folder: io.folder.md
-      - NPZ: io.npz.md
-      - NWB: io.nwb.md
-      - Deprecated:
-        - Basic IO: io.loader.md
-        - Neurosuite: io.neurosuite.md
-        - Phy: io.phy.md
-        - CNMF-E: io.cnmfe.md
-        - Suite2p: io.suite2p.md
-    - Process: 
-      - Correlograms: process.correlograms.md
-      - Tuning curves: process.tuning_curves.md
-      - Decoding: process.decoding.md
-      - Peri-Stimulus: process.perievent.md
-      - Randomization: process.randomize.md
+  - Usage: generated/gallery
+  #   - Quick start: notebooks/pynapple-quick-start.ipynb
+  #   - Core: notebooks/pynapple-core-notebook.ipynb
+  #   - IO: notebooks/pynapple-io-notebook.ipynb
+  #   # - (Deprecated IO): notebooks/pynapple-old-io-notebook.ipynb
+  #   - DANDI+NWB: notebooks/pynapple-dandi-notebook.ipynb
+  #   - Process: notebooks/pynapple-process-notebook.ipynb  
+  #   - pynacollada: pynacollada.md
+  - Modules : reference/
+  # - Modules:
+  #   - Core:
+  #     - Time Series: core.time_series.md
+  #     - Interval Sets: core.interval_set.md
+  #     - Time Series Group: core.ts_group.md
+  #   - IO:
+  #     - Miscellaneous: io.md
+  #     - Folder: io.folder.md
+  #     - NPZ: io.npz.md
+  #     - NWB: io.nwb.md
+  #     - Deprecated:
+  #       - Basic IO: io.loader.md
+  #       - Neurosuite: io.neurosuite.md
+  #       - Phy: io.phy.md
+  #       - CNMF-E: io.cnmfe.md
+  #       - Suite2p: io.suite2p.md
+  #   - Process: 
+  #     - Correlograms: process.correlograms.md
+  #     - Tuning curves: process.tuning_curves.md
+  #     - Decoding: process.decoding.md
+  #     - Peri-Stimulus: process.perievent.md
+  #     - Randomization: process.randomize.md
   # - Plugins:
   #   - pynalog: pynalog.md
   #   - pynapplesonfire: pynapplesonfire.md
   - Contributing: CONTRIBUTING.md
   - Authors: AUTHORS.md
   - History: HISTORY.md
-theme:
-  name: 'material'
-  palette:
-    primary: 'green'
-  # features:
-  #   - navigation.tabs
-repo_url: https://github.com/pynapple-org/pynapple
-plugins:
-  - mkdocs-jupyter:
-      ignore_h1_titles: True      
-  - search
-  - mkdocstrings
+
+
+extra_javascript:
+  - javascripts/katex.js
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.js
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/contrib/auto-render.min.js
+
+extra_css:
+  - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.css
+
+
 markdown_extensions:
   - pymdownx.highlight:
       anchor_linenums: true
