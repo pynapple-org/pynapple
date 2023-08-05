@@ -1,6 +1,10 @@
 *.pickle
 *.py.md5
 *.npz
+/docs/generated/gallery/*.md
+/docs/generated/gallery/*.ipynb
+/docs/generated/gallery/*.py
+/docs/generated/gallery/*.zip
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

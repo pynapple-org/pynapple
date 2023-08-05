@@ -58,8 +58,8 @@ print(io)
 import pynapple as nap
 import matplotlib.pyplot as plt
 import seaborn as sns
-sns.set_theme(style="darkgrid")
-sns.set(font_scale=1.5)
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(style="ticks", palette = "colorblind", font_scale=1.5, rc=custom_params)
 
 nwb = nap.NWBFile(io.read())
 

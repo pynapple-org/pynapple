@@ -60,7 +60,8 @@ docs = [
     "mkdocs-gen-files",             # Plugin for generating additional files in mkdocs
     "mkdocs-literate-nav",          # Plugin for literate-style navigation in mkdocs
     "mkdocs-gallery",               # Plugin for adding image galleries to mkdocs
-    "mkdocs-material"
+    "mkdocs-material",
+    "seaborn",    
 ]
 
 
