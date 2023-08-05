@@ -10,15 +10,15 @@ This notebook is designed to demonstrate the pynapple IO. It is build around the
 
 - [Hierarchy of folders](https://bids-standard.github.io/bids-starter-kit/folders_and_files/folders.html)
     
-    ![Image title](BIDS_Folders.png){ align=left }
+    ![Image title](../../_static/BIDS_Folders.png){ align=left }
     
 - [Filename template](https://bids-standard.github.io/bids-starter-kit/folders_and_files/files.html)
 
-    ![Image title](BIDS_Files.png){ align=left }
+    ![Image title](../../_static/BIDS_Files.png){ align=left }
 
 - [Metadata files](https://bids-standard.github.io/bids-starter-kit/folders_and_files/metadata.html)
     
-    ![Image title](BIDS_Metadata.png){ align=left }
+    ![Image title](../../_static/BIDS_Metadata.png){ align=left }
 
 """
 
@@ -32,6 +32,7 @@ This notebook is designed to demonstrate the pynapple IO. It is build around the
 
 import numpy as np
 import pynapple as nap
+# mkdocs_gallery_thumbnail_path = '_static/treeview.png'
 
 project_path = '../../your/path/to/MyProject'
 
