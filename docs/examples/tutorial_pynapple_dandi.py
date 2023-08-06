@@ -16,6 +16,16 @@ This script shows how to stream data from the [dandi archive](https://dandiarchi
 
 # %% 
 # ***
+# Prelude
+# -------
+#
+# The data used in this tutorial are hosted by the [DANDI](https://dandiarchive.org/dandiset/000003?page=3&sortOption=0&sortDir=-1&showDrafts=true&showEmpty=false&pos=21) archive and were used in this publication:
+# __Senzai, Yuta, and György Buzsáki. "Physiological properties and behavioral correlates of hippocampal granule cells and mossy cells." Neuron 93.3 (2017): 691-704.__
+#
+
+
+# %% 
+# ***
 # Dandi
 # -----
 # Dandi allows you to stream data without downloading all the files. In this case the data extracted from the NWB file are stored in the nwb-cache folder.
@@ -29,7 +39,7 @@ import h5py
 
 
 # ecephys, Buzsaki Lab (15.2 GB)
-dandiset_id, filepath = "000003", "sub-YutaMouse41/sub-YutaMouse41_ses-YutaMouse41-150831_behavior+ecephys.nwb"
+dandiset_id, filepath = "000003", "sub-YutaMouse42/sub-YutaMouse42_ses-YutaMouse42-151106_behavior+ecephys.nwb"
 
 with DandiAPIClient() as client:
     asset = client.get_dandiset(dandiset_id, "draft").get_asset_by_path(filepath)
@@ -75,8 +85,17 @@ print(units)
 
 
 # %%
-# Let's get the mossy cells.
-mossy = units.getby_category("cell_type")["mossy cell"]
+# 
+# Let's do some cross-corrs during wake and non-REM sleep
+# We start by retrieveing the epochs
+epochs = nwb["states"]
+
+print(epochs)
+
+# In this case, it's a dictionnary of IntervalSet
+wake_ep = epochs["awake"]
+nrem_ep = epochs["nrem"]
+
 
 print(mossy)
 
@@ -106,39 +125,39 @@ print(stim_ts)
 # %%
 
 
-peth = nap.compute_perievent(mossy[19], stim_ts, (-0.04, 0.1))
+# peth = nap.compute_perievent(mossy[19], stim_ts, (-0.04, 0.1))
 
-plt.figure()
-plt.subplot(211)
-plt.plot(peth.count(0.01).as_dataframe().sum(1))
-plt.axvline(0)
-plt.subplot(212)
-plt.plot(peth.to_tsd(), '|')
-plt.axvline(0)
-plt.show()
-
-
-# %%
+# plt.figure()
+# plt.subplot(211)
+# plt.plot(peth.count(0.01).as_dataframe().sum(1))
+# plt.axvline(0)
+# plt.subplot(212)
+# plt.plot(peth.to_tsd(), '|')
+# plt.axvline(0)
+# plt.show()
 
 
-mossy_cell = units.getby_category("cell_type")["mossy cell"]
-granule_cell = units.getby_category("cell_type")["granule cell"]
-
-cc_mossy = nap.compute_eventcorrelogram(mossy_cell, stim_ts, 0.01, 0.4, norm=True)
-cc_granule = nap.compute_eventcorrelogram(granule_cell, stim_ts, 0.01, 0.4, norm=True)
+# # %%
 
 
+# mossy_cell = units.getby_category("cell_type")["mossy cell"]
+# granule_cell = units.getby_category("cell_type")["granule cell"]
 
-plt.figure()
-plt.subplot(121)
-plt.plot(cc_mossy, alpha = 0.1)
-plt.plot(cc_mossy.mean(1))
-plt.xlabel("Time from Opto Stimulation (s)")
-plt.ylabel("Norm. firing rate")
-plt.subplot(122)
-plt.plot(cc_granule, alpha = 0.1)
-plt.plot(cc_granule.mean(1))
-plt.xlabel("Time from Opto Stimulation (s)")
-plt.ylabel("Norm. firing rate")
-plt.show()
+# cc_mossy = nap.compute_eventcorrelogram(mossy_cell, stim_ts, 0.01, 0.4, norm=True)
+# cc_granule = nap.compute_eventcorrelogram(granule_cell, stim_ts, 0.01, 0.4, norm=True)
+
+
+
+# plt.figure()
+# plt.subplot(121)
+# plt.plot(cc_mossy, alpha = 0.1)
+# plt.plot(cc_mossy.mean(1))
+# plt.xlabel("Time from Opto Stimulation (s)")
+# plt.ylabel("Norm. firing rate")
+# plt.subplot(122)
+# plt.plot(cc_granule, alpha = 0.1)
+# plt.plot(cc_granule.mean(1))
+# plt.xlabel("Time from Opto Stimulation (s)")
+# plt.ylabel("Norm. firing rate")
+# plt.show()
 

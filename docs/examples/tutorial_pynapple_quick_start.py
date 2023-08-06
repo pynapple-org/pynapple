@@ -115,6 +115,8 @@ plt.axhline(threshold)
 plt.xlabel("Time (s)")
 plt.ylabel("x")
 plt.title("x > {}".format(threshold))
+plt.tight_layout()
+plt.show()
 
 # %%
 # The epochs above the threshold can be accessed through the **time support** of the Tsd object. The time support is an important concept in the pynapple package. It helps the user to define the epochs for which the time serie should be defined. By default, Ts, Tsd and TsGroup objects possess a time support (defined as an IntervalSet). It is recommended to pass the time support when instantiating one of those objects.
@@ -129,7 +131,7 @@ print(epochs_above_thr)
 # Let's do a more advanced analysis. Neurons from ADn (group 0 in the `spikes` group object) are know to fire for a particular direction. Therefore, we can compute their tuning curves, i.e. their firing rates as a function of the head-direction of the animal in the horizontal plane (*ry*). To do this, we can use the function [`compute_1d_tuning_curves`](https://pynapple-org.github.io/pynapple/process.tuning_curves/#pynapple.process.tuning_curves.compute_1d_tuning_curves). In this case, the tuning curves are computed over 120 bins and between 0 and 2$\pi$.
 
 tuning_curves = nap.compute_1d_tuning_curves(group=spikes, 
-                                             feature=head_direction,
+                                             feature=head_direction,                                             
                                              nb_bins=121, 
                                              minmax=(0, 2*np.pi))
 
@@ -259,7 +261,7 @@ decoded_sleep, proba_angle_Sleep = nap.decode_1d(tuning_curves=tuning_curves_adn
 # Here we are gonna chain the TsGroup function [`set_info`](https://pynapple-org.github.io/pynapple/core.ts_group/#pynapple.core.ts_group.TsGroup.set_info) and the function [`to_tsd`](https://pynapple-org.github.io/pynapple/core.ts_group/#pynapple.core.ts_group.TsGroup.to_tsd) to flatten the TsGroup and quickly assign to each spikes a corresponding value found in the metadata table. Any columns of the metadata table can be assigned to timestamps in a TsGroup.
 # 
 # Here the value assign to the spikes comes from the preferred firing direction of the neurons. The following line is a quick way to sort the neurons based on their preferred firing direction
-order = np.argsort(tuning_curves_adn.idxmax())
+order = np.argsort(np.argmax(tuning_curves_adn.values,0))
 print(order)
 
 # %%
@@ -275,7 +277,7 @@ print(tsd_adn)
 
 #%%
 # Plotting everything
-subep = nap.IntervalSet(start=0, end=4, time_units='s')
+subep = nap.IntervalSet(start=0, end=10, time_units='s')
 
 plt.figure(figsize=(19,10))
 plt.subplot(211)
@@ -294,4 +296,5 @@ plt.xlabel("Time (s)")
 plt.ylabel("Head-direction (deg)")
 plt.legend()
 plt.show()
+
 

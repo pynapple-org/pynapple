@@ -43,7 +43,7 @@ print(project)
 # %%
 # The pynapple IO offers a convenient way of visualizing and navigating a folder based dataset. To visualize the whole hierarchy of Folders, you can call the view property or the expand function.
 
-print(project.view)
+project.view
 
 # %%
 # Here it shows all the subjects (in this case only A2929), all the sessions and all of the derivatives folders. It shows as well all the NPZ files that contains a pynapple object and the NWB files.
