@@ -11,7 +11,7 @@ import numpy as np
 
 import pynapple as nap
 
-DATA_DIRECTORY = "your/path/to/A2929-200711"
+DATA_DIRECTORY = "your/path/to/MyProject/sub-A2929/ses-A2929-200711"
 
 # LOADING DATA
 data = nap.load_session(DATA_DIRECTORY, "neurosuite")

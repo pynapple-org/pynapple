@@ -102,7 +102,7 @@ print(peth0)
 
 plt.figure(figsize = (10, 6))
 plt.subplot(211)
-plt.plot(peth0.count(0.01, time_units = 's').sum(1), linewidth = 3, color = 'red')
+plt.plot(peth0.count(0.01).as_dataframe().sum(1), linewidth = 3, color = 'red')
 plt.xlim(-0.1, 0.2)
 plt.ylabel("Count")
 plt.axvline(0.0)
