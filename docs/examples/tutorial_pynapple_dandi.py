@@ -39,7 +39,8 @@ import h5py
 
 
 # ecephys, Buzsaki Lab (15.2 GB)
-dandiset_id, filepath = "000003", "sub-YutaMouse42/sub-YutaMouse42_ses-YutaMouse42-151106_behavior+ecephys.nwb"
+dandiset_id, filepath = "000003", "sub-YutaMouse56/sub-YutaMouse56_ses-YutaMouse56-160911_behavior+ecephys.nwb"
+
 
 with DandiAPIClient() as client:
     asset = client.get_dandiset(dandiset_id, "draft").get_asset_by_path(filepath)
@@ -76,6 +77,7 @@ nwb = nap.NWBFile(io.read())
 print(nwb)
 
 
+
 # %%
 # We can load the spikes as a TsGroup for inspection.
 
@@ -97,22 +99,28 @@ wake_ep = epochs["awake"]
 nrem_ep = epochs["nrem"]
 
 
+# %%
+# Let's replicate one result of the study. The authors report cross-correlograms between mossy cells and granule cells as a function of brain states (wake_ep vs nrem_ep in this case).
+# First let's retrieve both sub-population
+mossy_cells = units.getby_category("cell_type")["mossy cell"]
+granule_cells = units.getby_category("cell_type")["granule cell"]
 
-
-
+print(mossy_cells)
 
 # %%
-# Let's compute their cross-correlogram
-cc = nap.compute_crosscorrelogram(units, 0.1, 2, norm=True)
+# Let's compute their cross-correlogram during wake.
+# The order in the tuple matters. In this case, granule cell is the reference unit.
+cc_wake = nap.compute_crosscorrelogram((granule_cells, mossy_cells), 0.002, 0.5, ep=wake_ep, norm=True)
 
 
 plt.figure()
-plt.plot(cc)
+plt.plot(cc_wake)
 plt.grid()
 plt.xlabel("Time (s)")
 plt.ylabel("Norm.")
 plt.title("Cross-correlogram of Mossy cells")
 plt.show()
+
 
 
 # %%

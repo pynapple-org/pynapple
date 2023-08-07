@@ -11,7 +11,7 @@ with open('README.md') as readme_file:
 #     history = history_file.read()
 
 requirements = [
-        'pandas>=1.0.3',
+        'pandas>=1.0.3,<2.0.0',
         'numba>=0.46.0',
         'numpy>=1.17.4',
         'scipy>=1.3.2',
