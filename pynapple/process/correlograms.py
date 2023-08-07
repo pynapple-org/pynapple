@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 11:39:55
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-08-07 12:52:37
+# @Last Modified time: 2023-08-07 15:54:42
 
 
 from itertools import combinations, product
@@ -247,21 +247,16 @@ def compute_crosscorrelogram(
         for i, j in pairs:
             spk1 = newgroup[0][i].index.values
             spk2 = newgroup[1][j].index.values
-            auc, times = nap.correlograms.cross_correlogram(spk1, spk2, binsize, windowsize)
+            auc, times = cross_correlogram(spk1, spk2, binsize, windowsize)
+            if norm:
+                auc /= newgroup[1][j].rate
             crosscorrs[(i, j)] = pd.Series(index=times, data=auc, dtype="float")
 
         crosscorrs = pd.DataFrame.from_dict(crosscorrs)
 
-        if norm:
-            freq = newgroup[1].get_info("rate")
-            freq2 = pd.Series(index=pairs, data=list(map(lambda n: freq.loc[n[1]], pairs)))
-            crosscorrs = crosscorrs / freq2
-
-
     else:
         raise RuntimeError("Unknown format for group")
     
-
 
     return crosscorrs.astype("float")
 

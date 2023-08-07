@@ -69,6 +69,7 @@ print(io)
 import pynapple as nap
 import matplotlib.pyplot as plt
 import seaborn as sns
+import numpy as np
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette = "colorblind", font_scale=1.5, rc=custom_params)
 
@@ -84,6 +85,10 @@ print(nwb)
 units = nwb['units']
 
 print(units)
+# %%
+# Let's get all the neurons whose spikes sufficiently
+
+units = units.getby_threshold("rate", 0.5)
 
 
 # %%
@@ -107,66 +112,30 @@ granule_cells = units.getby_category("cell_type")["granule cell"]
 
 print(mossy_cells)
 
+
 # %%
-# Let's compute their cross-correlogram during wake.
+# Let's compute their cross-correlogram during wake and nREM sleep.
 # The order in the tuple matters. In this case, granule cell is the reference unit.
-cc_wake = nap.compute_crosscorrelogram((granule_cells, mossy_cells), 0.002, 0.5, ep=wake_ep, norm=True)
+cc_wake = nap.compute_crosscorrelogram((granule_cells, mossy_cells), 0.002, 0.2, ep=wake_ep, norm=True)
+cc_nrem = nap.compute_crosscorrelogram((granule_cells, mossy_cells), 0.002, 0.2, ep=nrem_ep, norm=True)
 
+plt.figure(figsize=(16,10))
+gs = plt.GridSpec(len(mossy_cells), len(granule_cells))
+for i, n in enumerate(mossy_cells.keys()):
+    for j, k in enumerate(granule_cells.keys()):
+        p = (k,n)
+        plt.subplot(gs[i,j])
+        tidx = cc_wake[p].index.values
+        plt.fill_between(tidx, np.zeros_like(cc_wake[p]), cc_wake[p].values, color = 'lightgrey')
+        plt.plot()
+        plt.grid()
+        plt.title(p)
+        if i == len(mossy_cells)-1: plt.xlabel("Time (s)")
+        if j == 0: plt.ylabel("Norm.")
 
-plt.figure()
-plt.plot(cc_wake)
-plt.grid()
-plt.xlabel("Time (s)")
-plt.ylabel("Norm.")
-plt.title("Cross-correlogram of Mossy cells")
+plt.tight_layout()
 plt.show()
 
-
-
 # %%
-
-
-# stim_ts = nwb['PulseStim_5V_500ms_LD9999']
-
-# print(stim_ts)
-
-
-# %%
-
-
-# peth = nap.compute_perievent(mossy[19], stim_ts, (-0.04, 0.1))
-
-# plt.figure()
-# plt.subplot(211)
-# plt.plot(peth.count(0.01).as_dataframe().sum(1))
-# plt.axvline(0)
-# plt.subplot(212)
-# plt.plot(peth.to_tsd(), '|')
-# plt.axvline(0)
-# plt.show()
-
-
-# # %%
-
-
-# mossy_cell = units.getby_category("cell_type")["mossy cell"]
-# granule_cell = units.getby_category("cell_type")["granule cell"]
-
-# cc_mossy = nap.compute_eventcorrelogram(mossy_cell, stim_ts, 0.01, 0.4, norm=True)
-# cc_granule = nap.compute_eventcorrelogram(granule_cell, stim_ts, 0.01, 0.4, norm=True)
-
-
-
-# plt.figure()
-# plt.subplot(121)
-# plt.plot(cc_mossy, alpha = 0.1)
-# plt.plot(cc_mossy.mean(1))
-# plt.xlabel("Time from Opto Stimulation (s)")
-# plt.ylabel("Norm. firing rate")
-# plt.subplot(122)
-# plt.plot(cc_granule, alpha = 0.1)
-# plt.plot(cc_granule.mean(1))
-# plt.xlabel("Time from Opto Stimulation (s)")
-# plt.ylabel("Norm. firing rate")
-# plt.show()
+# TODO : Run the stats for the connection, find a good example, display NREM
 
