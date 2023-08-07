@@ -4,7 +4,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-05-15 15:32:24
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-08-03 16:16:47
+# @Last Modified time: 2023-08-06 17:37:23
 
 """
 The Folder class helps to navigate a hierarchical data tree.
@@ -17,7 +17,7 @@ import string
 from collections import UserDict
 from datetime import datetime
 
-from rich import print
+from rich.console import Console  # , ConsoleOptions, RenderResult
 from rich.panel import Panel
 from rich.tree import Tree
 
@@ -148,12 +148,13 @@ class Folder(UserDict):
 
     def __str__(self):
         """View of the object"""
-        return self.__repr__()
-
-    def __repr__(self):
-        """View of the object"""
-        print(self._basic_view)
+        with Console() as console:
+            console.print(self._basic_view)
         return ""
+
+    # def __repr__(self):
+    #     """View of the object"""
+    #     print(self._basic_view)
 
     def __getitem__(self, key):
         """Get subfolder or load file.
@@ -220,7 +221,9 @@ class Folder(UserDict):
         if not isinstance(self._full_view, Tree):
             self._generate_tree_view()
 
-        print(self._full_view)
+        with Console() as console:
+            console.print(self._full_view)
+
         return None
 
     @property
@@ -300,14 +303,14 @@ class Folder(UserDict):
             panel = Panel.fit(
                 text, border_style="green", title=os.path.join(self.path, name + ".npz")
             )
-            print(panel)
         else:
             panel = Panel.fit(
                 "No metadata",
                 border_style="red",
                 title=os.path.join(self.path, name + ".npz"),
             )
-            print(panel)
+        with Console() as console:
+            console.print(panel)
 
         return None
 

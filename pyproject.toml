@@ -20,7 +20,7 @@ classifiers = [
 ]
 keywords = ["neuroscience"]
 dependencies = [
-    "pandas>=1.0.3",
+    "pandas>=1.0.3,<2.0.0",
     "numpy>=1.17.4",
     "scipy>=1.3.2",
     "numba>=0.46.0",
@@ -36,16 +36,6 @@ requires-python = ">=3.8"
 [tool.setuptools.packages.find]
 include = ["pynapple", "pynapple.*"]
 
-[project.optional-dependencies]
-dev = [
-  "black",  
-  "isort", 
-  "pip-tools", 
-  "pytest",
-  "flake8",  
-  "coverage"
-  ]
-
 [project.urls]
 homepage = "https://github.com/pynapple-org/pynapple"
 documentation = "https://pynapple-org.github.io/pynapple/"
@@ -54,6 +44,32 @@ repository = "https://github.com/pynapple-org/pynapple"
 ##########################################################################
 # Optional dependencies
 ##########################################################################
+[project.optional-dependencies]
+dev = [
+    "black",                        # Code formatter
+    "isort",                        # Import sorter
+    "pip-tools",                    # Dependency management
+    "pytest",                       # Testing framework
+    "flake8",                       # Code linter
+    "coverage",                     # Test coverage measurement
+]
+docs = [
+    "mkdocs",                       # Documentation generator
+    "mkdocstrings[python]",         # Python-specific plugin for mkdocs
+    "mkdocs-section-index",         # Plugin for generating a section index in mkdocs
+    "mkdocs-gen-files",             # Plugin for generating additional files in mkdocs
+    "mkdocs-literate-nav",          # Plugin for literate-style navigation in mkdocs
+    "mkdocs-gallery",               # Plugin for adding image galleries to mkdocs
+    "mkdocs-material",
+    "matplotlib",
+    "seaborn",
+]
+dandi = [
+    "dandi",                        # Dandi package
+    "fsspec",
+    "requests",
+    "aiohttp",
+]
 
 [tool.black]
 target-version = ['py36', 'py37', 'py38', 'py39']
@@ -89,5 +105,9 @@ omit = [
     "pynapple/io/loader_gui.py",
     "pynapple/io/ephys_gui.py",
     "pynapple/io/ophys_gui.py",
+    "pynapple/io/cnmfe.py",
+    "pynapple/io/neurosuite.py",
+    "pynapple/io/phy.py",
+    "pynapple/io/suite2p.py",
     "pynapple/core/jitted_functions.py" # coverage doesn't work with numba
 ]

@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-02 11:39:55
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-18 17:30:21
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-08-07 15:54:42
 
 
-from itertools import combinations
+from itertools import combinations, product
 
 import numpy as np
 import pandas as pd
@@ -161,17 +161,19 @@ def compute_crosscorrelogram(
     group, binsize, windowsize, ep=None, norm=True, time_units="s", reverse=False
 ):
     """
-    Computes all the pairwise cross-correlograms from a group of Ts/Tsd objects.
-    The group can be passed directly as a TsGroup object.
-    The reference Ts/Tsd and target are chosen based on the builtin itertools.combinations function.
+    Computes all the pairwise cross-correlograms for TsGroup or list/tuple of two TsGroup.
+
+    If input is TsGroup only, the reference Ts/Tsd and target are chosen based on the builtin itertools.combinations function.
     For example if indexes are [0,1,2], the function computes cross-correlograms
     for the pairs (0,1), (0, 2), and (1, 2). The left index gives the reference time series.
     To reverse the order, set reverse=True.
 
+    If input is tuple/list of TsGroup, for example group=(group1, group2), the reference for each pairs comes from group1.
+
     Parameters
     ----------
-    group : TsGroup
-        The group of Ts/Tsd objects to cross-correlate
+    group : TsGroup or tuple/list of two TsGroups
+
     binsize : float
         The bin size. Default is second.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
@@ -188,7 +190,7 @@ def compute_crosscorrelogram(
         The time units of the parameters. They have to be consistent for binsize and windowsize.
         ('s' [default], 'ms', 'us').
     reverse : bool, optional
-        To reverse the pair order
+        To reverse the pair order if input is TsGroup
 
     Returns
     -------
@@ -198,21 +200,9 @@ def compute_crosscorrelogram(
     Raises
     ------
     RuntimeError
-        group must be TsGroup
+        group must be TsGroup or tuple/list of two TsGroups
 
     """
-    if type(group) is nap.TsGroup:
-        if isinstance(ep, nap.IntervalSet):
-            newgroup = group.restrict(ep)
-        else:
-            newgroup = group
-    else:
-        raise RuntimeError("Unknown format for group")
-
-    neurons = list(newgroup.keys())
-    pairs = list(combinations(neurons, 2))
-    if reverse:
-        pairs = list(map(lambda n: (n[1], n[0]), pairs))
     crosscorrs = {}
 
     binsize = nap.format_timestamps(np.array([binsize], dtype=np.float64), time_units)[
@@ -222,18 +212,55 @@ def compute_crosscorrelogram(
         np.array([windowsize], dtype=np.float64), time_units
     )[0]
 
-    for i, j in pairs:
-        spk1 = newgroup[i].index.values
-        spk2 = newgroup[j].index.values
-        auc, times = cross_correlogram(spk1, spk2, binsize, windowsize)
-        crosscorrs[(i, j)] = pd.Series(index=times, data=auc, dtype="float")
+    if isinstance(group, nap.TsGroup):
+        if isinstance(ep, nap.IntervalSet):
+            newgroup = group.restrict(ep)
+        else:
+            newgroup = group
+        neurons = list(newgroup.keys())
+        pairs = list(combinations(neurons, 2))
+        if reverse:
+            pairs = list(map(lambda n: (n[1], n[0]), pairs))
 
-    crosscorrs = pd.DataFrame.from_dict(crosscorrs)
+        for i, j in pairs:
+            spk1 = newgroup[i].index.values
+            spk2 = newgroup[j].index.values
+            auc, times = cross_correlogram(spk1, spk2, binsize, windowsize)
+            crosscorrs[(i, j)] = pd.Series(index=times, data=auc, dtype="float")
 
-    if norm:
-        freq = newgroup.get_info("rate")
-        freq2 = pd.Series(index=pairs, data=list(map(lambda n: freq.loc[n[1]], pairs)))
-        crosscorrs = crosscorrs / freq2
+        crosscorrs = pd.DataFrame.from_dict(crosscorrs)
+
+        if norm:
+            freq = newgroup.get_info("rate")
+            freq2 = pd.Series(
+                index=pairs, data=list(map(lambda n: freq.loc[n[1]], pairs))
+            )
+            crosscorrs = crosscorrs / freq2
+
+    elif (
+        isinstance(group, (tuple, list))
+        and len(group) == 2
+        and all(map(lambda g: isinstance(g, nap.TsGroup), group))
+    ):
+        if isinstance(ep, nap.IntervalSet):
+            newgroup = [group[i].restrict(ep) for i in range(2)]
+        else:
+            newgroup = group
+
+        pairs = product(list(newgroup[0].keys()), list(newgroup[1].keys()))
+
+        for i, j in pairs:
+            spk1 = newgroup[0][i].index.values
+            spk2 = newgroup[1][j].index.values
+            auc, times = cross_correlogram(spk1, spk2, binsize, windowsize)
+            if norm:
+                auc /= newgroup[1][j].rate
+            crosscorrs[(i, j)] = pd.Series(index=times, data=auc, dtype="float")
+
+        crosscorrs = pd.DataFrame.from_dict(crosscorrs)
+
+    else:
+        raise RuntimeError("Unknown format for group")
 
     return crosscorrs.astype("float")
 

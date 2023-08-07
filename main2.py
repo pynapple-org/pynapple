@@ -13,7 +13,7 @@ import pynapple as nap
 DATA_DIRECTORY = "your/path/to/MyProject/"
 data = nap.load_folder(DATA_DIRECTORY)
 
-session = data["sub-A2929"]["A2929-200711"]
+session = data["sub-A2929"]["ses-A2929-200711"]
 
 spikes = session["derivatives"]["spikes"]
 position = session["derivatives"]["position"]

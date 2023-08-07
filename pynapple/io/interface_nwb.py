@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-08-01 11:54:45
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-08-03 16:24:14
+# @Last Modified time: 2023-08-06 17:55:32
 
 """
 Pynapple class to interface with NWB files.
@@ -100,7 +100,7 @@ def _make_interval_set(obj):
 
             if group_by_key:
                 for i in df.index:
-                    if isinstance(df.loc[i, group_by_key], (list, tuple)):
+                    if isinstance(df.loc[i, group_by_key], (list, tuple, np.ndarray)):
                         df.loc[i, group_by_key] = "-".join(
                             [str(j) for j in df.loc[i, group_by_key]]
                         )
@@ -335,13 +335,13 @@ class NWBFile(UserDict):
 
     def __str__(self):
         """View of the object"""
-        return self.__repr__()
-
-    def __repr__(self):
-        """View of the object"""
-        console = Console()
-        console.print(self._view)
+        with Console() as console:
+            console.print(self._view)
         return ""
+
+    # def __repr__(self):
+    #     """View of the object"""
+    #     return ""
 
     def __getitem__(self, key):
         """Get object from NWB
@@ -363,7 +363,7 @@ class NWBFile(UserDict):
         """
         if key.__hash__:
             if self.__contains__(key):
-                if isinstance(self.data[key], dict):
+                if isinstance(self.data[key], dict) and "id" in self.data[key]:
                     obj = self.nwb.objects[self.data[key]["id"]]
                     try:
                         data = self._f_eval[self.data[key]["type"]](obj)
