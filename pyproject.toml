@@ -61,9 +61,15 @@ docs = [
     "mkdocs-literate-nav",          # Plugin for literate-style navigation in mkdocs
     "mkdocs-gallery",               # Plugin for adding image galleries to mkdocs
     "mkdocs-material",
-    "seaborn",    
+    "matplotlib",
+    "seaborn",
 ]
-
+dandi = [
+    "dandi",                        # Dandi package
+    "fsspec",
+    "requests",
+    "aiohttp",
+]
 
 [tool.black]
 target-version = ['py36', 'py37', 'py38', 'py39']

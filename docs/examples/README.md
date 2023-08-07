@@ -1,3 +1,3 @@
 # Examples
 
-Tutorials and examples for the pynapple packages.
+Tutorials and examples for the pynapple package.

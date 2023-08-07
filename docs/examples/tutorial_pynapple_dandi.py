@@ -97,12 +97,13 @@ wake_ep = epochs["awake"]
 nrem_ep = epochs["nrem"]
 
 
-print(mossy)
+
+
 
 
 # %%
 # Let's compute their cross-correlogram
-cc = nap.compute_crosscorrelogram(mossy, 0.1, 2, norm=True)
+cc = nap.compute_crosscorrelogram(units, 0.1, 2, norm=True)
 
 
 plt.figure()
@@ -117,9 +118,9 @@ plt.show()
 # %%
 
 
-stim_ts = nwb['PulseStim_5V_500ms_LD9999']
+# stim_ts = nwb['PulseStim_5V_500ms_LD9999']
 
-print(stim_ts)
+# print(stim_ts)
 
 
 # %%
