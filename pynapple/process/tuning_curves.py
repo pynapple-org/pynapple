@@ -361,7 +361,7 @@ def compute_1d_tuning_curves_continous(
     Parameters
     ----------
     tsdframe : Tsd or TsdFrame
-        Input data (e.g. continus calcium data
+        Input data (e.g. continuous calcium data
         where each column is the calcium activity of one neuron)
     feature : Tsd
         The feature (one column)

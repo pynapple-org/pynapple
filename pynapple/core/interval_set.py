@@ -129,7 +129,7 @@ class IntervalSet(pd.DataFrame):
         time_units : str, optional
             Time unit of the intervals ('us', 'ms', 's' [default])
         **kwargs
-            Additional parameters passed ot pandas.DataFrame
+            Additional parameters passed to pandas.DataFrame
 
         Returns
         -------

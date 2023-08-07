@@ -58,7 +58,7 @@ def load_file(path):
 
 def load_folder(path):
     """Load folder containing files or other folder.
-    Pynapple will walk throught the subfolders to detect compatible npz files
+    Pynapple will walk through the subfolders to detect compatible npz files
     or nwb files.
 
     Parameters

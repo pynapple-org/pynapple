@@ -79,4 +79,4 @@ In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuro
 ------------------
 
 -   First release on PyPI.
-- 	Firt minimal version
+- 	First minimal version
