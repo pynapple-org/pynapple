@@ -7,7 +7,7 @@
 """
 Pynapple class to interface with NWB files.
 Data are always lazy-loaded.
-Object behaves like dictionnary.
+Object behaves like dictionary.
 """
 
 import errno
@@ -35,7 +35,7 @@ def _extract_compatible_data_from_nwbfile(nwbfile):
     Returns
     -------
     dict
-        Dictionnary containing all the object found and their type in pynapple.
+        Dictionary containing all the object found and their type in pynapple.
     """
     data = {}
 
@@ -359,7 +359,7 @@ class NWBFile(UserDict):
         Raises
         ------
         KeyError
-            If key is not in the dictionnary
+            If key is not in the dictionary
         """
         if key.__hash__:
             if self.__contains__(key):

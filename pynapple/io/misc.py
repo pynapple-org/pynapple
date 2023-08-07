@@ -180,7 +180,7 @@ def load_eeg(
     Deleted Parameters
     ------------------
     extension : str, optional
-        The file extenstion (.eeg, .dat, .lfp). Make sure the frequency match
+        The file extension (.eeg, .dat, .lfp). Make sure the frequency match
 
     """
     # Need to check if a xml file exists

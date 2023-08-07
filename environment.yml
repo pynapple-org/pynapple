@@ -148,7 +148,7 @@ dependencies:
   - pip:
     - alabaster==0.7.12
     - arrow==1.2.1
-    - astroid==2.6.6
+    - asteroid==2.6.6
     - astunparse==1.6.3
     - atomicwrites==1.4.0
     - autopep8==1.5.7

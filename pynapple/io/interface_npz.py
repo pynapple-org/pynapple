@@ -9,7 +9,7 @@
 """
 File classes help to validate and load pynapple objects or NWB files.
 Data are always lazy-loaded.
-Both classes behaves like dictionnary.
+Both classes behaves like dictionary.
 """
 
 import os
@@ -49,7 +49,7 @@ class NPZFile(object):
         self.file = np.load(self.path, allow_pickle=True)
         self.type = ""
 
-        # First check if type is explicitely defined
+        # First check if type is explicitly defined
         possible = ["Ts", "Tsd", "TsdFrame", "TsGroup", "IntervalSet"]
         if "type" in self.file.keys():
             if len(self.file["type"]) == 1:

@@ -38,7 +38,7 @@ class MyCustomIO(BaseLoader):
                     if success:
                         loading_my_data = False
 
-        # Bypass if data have already been transfered to nwb
+        # Bypass if data have already been transferred to nwb
         if loading_my_data:
             self.load_my_data(path)
 

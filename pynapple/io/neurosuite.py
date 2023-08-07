@@ -54,7 +54,7 @@ class NeuroSuite(BaseLoader):
                     if success:
                         loading_neurosuite = False
 
-        # Bypass if data have already been transfered to nwb
+        # Bypass if data have already been transferred to nwb
         if loading_neurosuite:
             self.load_neurosuite_xml(path)
             # print("XML loaded")
@@ -352,7 +352,7 @@ class NeuroSuite(BaseLoader):
         channel : int or list of int, optional
             The channel(s) to load. If None return a memory map of the dat file to avoid memory error
         extension : str, optional
-            The file extenstion (.eeg, .dat, .lfp). Make sure the frequency match
+            The file extension (.eeg, .dat, .lfp). Make sure the frequency match
         frequency : float, optional
             Default 1250 Hz for the eeg file
         precision : str, optional

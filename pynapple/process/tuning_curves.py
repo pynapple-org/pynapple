@@ -17,12 +17,12 @@ from .. import core as nap
 
 def compute_discrete_tuning_curves(group, dict_ep):
     """
-        Compute discrete tuning curves of a TsGroup using a dictionnary of epochs.
-    The function returns a pandas DataFrame with each row being a key of the dictionnary of epochs
+        Compute discrete tuning curves of a TsGroup using a dictionary of epochs.
+    The function returns a pandas DataFrame with each row being a key of the dictionary of epochs
     and each column being a neurons.
 
        This function can typically being used for a set of stimulus being presented for multiple epochs.
-    An example of the dictionnary is :
+    An example of the dictionary is :
 
         >>> dict_ep =  {
                 "stim0": nap.IntervalSet(start=0, end=1),
@@ -154,7 +154,7 @@ def compute_2d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     -------
     tuple
         A tuple containing: \n
-        tc (dict): Dictionnary of the tuning curves with dimensions (nb_bins, nb_bins).\n
+        tc (dict): Dictionary of the tuning curves with dimensions (nb_bins, nb_bins).\n
         xy (list): List of bins center in the two dimensions
 
     Raises
@@ -356,7 +356,7 @@ def compute_1d_tuning_curves_continous(
     tsdframe, feature, nb_bins, ep=None, minmax=None
 ):
     """
-    Computes 1-dimensional tuning curves relative to a feature with continous data.
+    Computes 1-dimensional tuning curves relative to a feature with continuous data.
 
     Parameters
     ----------
@@ -414,7 +414,7 @@ def compute_2d_tuning_curves_continuous(
     tsdframe, features, nb_bins, ep=None, minmax=None
 ):
     """
-    Computes 2-dimensional tuning curves relative to a 2d feature with continous data.
+    Computes 2-dimensional tuning curves relative to a 2d feature with continuous data.
 
     Parameters
     ----------
@@ -437,7 +437,7 @@ def compute_2d_tuning_curves_continuous(
     -------
     tuple
         A tuple containing: \n
-        tc (dict): Dictionnary of the tuning curves with dimensions (nb_bins, nb_bins).\n
+        tc (dict): Dictionary of the tuning curves with dimensions (nb_bins, nb_bins).\n
         xy (list): List of bins center in the two dimensions
 
     Raises
@@ -517,7 +517,7 @@ def compute_1d_poisson_glm(
     windowsize : Float
         The window for offsetting the regressors
     ep : IntervalSet, optional
-        On which epoch to perfom the GLM
+        On which epoch to perform the GLM
     time_units : str, optional
         Time units of binsize and windowsize
     niter : int, optional

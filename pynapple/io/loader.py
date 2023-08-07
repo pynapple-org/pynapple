@@ -157,7 +157,7 @@ class BaseLoader(object):
                 cols.append(n)
         if len(order) == 0:
             raise RuntimeError(
-                "Unknow tracking format for csv file {}".format(csv_file)
+                "Unknown tracking format for csv file {}".format(csv_file)
             )
         position = position[cols]
         position.columns = order

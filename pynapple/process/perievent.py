@@ -62,7 +62,7 @@ def compute_perievent(data, tref, minmax, time_unit="s"):
     data : Ts/Tsd/TsGroup
         The data to align to tref.
         If Ts/Tsd, returns a TsGroup.
-        If TsGroup, returns a dictionnary of TsGroup
+        If TsGroup, returns a dictionary of TsGroup
     tref : Ts/Tsd
         The timestamps of the event to align to
     minmax : tuple or int or float
@@ -74,7 +74,7 @@ def compute_perievent(data, tref, minmax, time_unit="s"):
     -------
     dict
         A TsGroup if data is a Ts/Tsd or
-        a dictionnary of TsGroup if data is a TsGroup.
+        a dictionary of TsGroup if data is a TsGroup.
 
     Raises
     ------
@@ -112,7 +112,7 @@ def compute_event_trigger_average(
     """
     Bin the spike train in binsize and compute the Spike Trigger Average (STA) within windowsize.
     If C is the spike count matrix and feature is a Tsd array, the function computes
-    the Hankel matrix H from windowsize=(-t1,+t2) by offseting the Tsd array.
+    the Hankel matrix H from windowsize=(-t1,+t2) by offsetting the Tsd array.
 
     The STA is then defined as the dot product between H and C divided by the number of spikes.
 

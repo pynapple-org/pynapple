@@ -79,17 +79,17 @@ print(epoch)
 # Multiple time series with different time stamps 
 # (.i.e. a group of neurons with different spike times from one session) 
 # can be grouped with the TsGroup object. 
-# The TsGroup behaves like a dictionnary but it is also possible to slice with a list of indexes
+# The TsGroup behaves like a dictionary but it is also possible to slice with a list of indexes
 
 
-my_ts = {0:nap.Ts(t = np.sort(np.random.uniform(0, 100, 1000)), time_units = 's'), # here a simple dictionnary
+my_ts = {0:nap.Ts(t = np.sort(np.random.uniform(0, 100, 1000)), time_units = 's'), # here a simple dictionary
          1:nap.Ts(t = np.sort(np.random.uniform(0, 100, 2000)), time_units = 's'),
          2:nap.Ts(t = np.sort(np.random.uniform(0, 100, 3000)), time_units = 's')}
 
 tsgroup = nap.TsGroup(my_ts)
 
 print(tsgroup, '\n')
-print(tsgroup[0], '\n') # dictionnary like indexing returns directly the Ts object
+print(tsgroup[0], '\n') # dictionary like indexing returns directly the Ts object
 print(tsgroup[[0,2]]) # list like indexing
 
 # Operations such as restrict can thus be directly applied to the TsGroup as well as other operations.
@@ -118,15 +118,15 @@ print(newtsgroup['b'])
 
 # ## Time support
 # A key element of the manipulation of time series by pynapple is the inherent time support defined for Ts, Tsd, TsdFrame and TsGroup objects. 
-# The time support is defined as an IntervalSet that provides the time serie with a context. 
+# The time support is defined as an IntervalSet that provides the time series with a context. 
 # For example,, the restrict operation will update automatically the time support to the new time series. 
 # Ideally the time support should be defined for all time series when instantiating them. 
 # If no time series is given, the time support is inferred from the start and end of the time series. 
-# In this example, a TsGroup is instantiated with and without a time support. Notice how the frequency of each Ts element is changed when the time support is defined explicitely.
+# In this example, a TsGroup is instantiated with and without a time support. Notice how the frequency of each Ts element is changed when the time support is defined explicitly.
 
 time_support = nap.IntervalSet(start = 0, end = 100, time_units = 's')
 
-my_ts = {0:nap.Ts(t = np.sort(np.random.uniform(0, 100, 10)), time_units = 's'), # here a simple dictionnary
+my_ts = {0:nap.Ts(t = np.sort(np.random.uniform(0, 100, 10)), time_units = 's'), # here a simple dictionary
          1:nap.Ts(t = np.sort(np.random.uniform(0, 100, 20)), time_units = 's'),
          2:nap.Ts(t = np.sort(np.random.uniform(0, 100, 30)), time_units = 's')}
 
