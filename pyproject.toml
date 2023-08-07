@@ -91,3 +91,7 @@ omit = [
     "pynapple/io/ophys_gui.py",
     "pynapple/core/jitted_functions.py" # coverage doesn't work with numba
 ]
+[tool.codespell]
+skip = '.git,*.pdf,*.svg'
+#
+# ignore-words-list = ''
