@@ -77,7 +77,7 @@ class TsGroup(UserDict):
         Parameters
         ----------
         data : dict
-            Dictionnary containing Ts/Tsd objects
+            Dictionary containing Ts/Tsd objects
         time_support : IntervalSet, optional
             The time support of the TsGroup. Ts/Tsd objects will be restricted to the time support if passed.
             If no time support is specified, TsGroup will merge time supports from all the Ts/Tsd objects in data.
@@ -88,7 +88,7 @@ class TsGroup(UserDict):
             Useful to speed up initialization of TsGroup when Ts/Tsd objects have already been restricted beforehand
         **kwargs
             Meta-info about the Ts/Tsd objects. Can be either pandas.Series or numpy.ndarray.
-            Note that the index should match the index of the input dictionnary.
+            Note that the index should match the index of the input dictionary.
 
         Raises
         ------
@@ -244,7 +244,7 @@ class TsGroup(UserDict):
 
     def set_info(self, *args, **kwargs):
         """
-        Add metadata informations about the TsGroup.
+        Add metadata information about the TsGroup.
         Metadata are saved as a DataFrame.
 
         Parameters
@@ -432,11 +432,11 @@ class TsGroup(UserDict):
 
     def count(self, *args, **kwargs):
         """
-        Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
+        Count occurrences of events within bin_size or within a set of bins defined as an IntervalSet.
         You can call this function in multiple ways :
 
         1. *tsgroup.count(bin_size=1, time_units = 'ms')*
-        -> Count occurence of events within a 1 ms bin defined on the time support of the object.
+        -> Count occurrence of events within a 1 ms bin defined on the time support of the object.
 
         2. *tsgroup.count(1, ep=my_epochs)*
         -> Count occurent of events within a 1 second bin defined on the IntervalSet my_epochs.
@@ -706,7 +706,7 @@ class TsGroup(UserDict):
         Raises
         ------
         RuntimeError
-            Raise eror is operation is not recognized.
+            Raise error is operation is not recognized.
 
         Examples
         --------
@@ -723,7 +723,7 @@ class TsGroup(UserDict):
               1             2
               2             4
 
-        This exemple shows how to get a new TsGroup with all elements for which the metainfo frequency is above 1.
+        This example shows how to get a new TsGroup with all elements for which the metainfo frequency is above 1.
         >>> newtsgroup = tsgroup.getby_threshold('freq', 1, op = '>')
           Index    Freq. (Hz)
         -------  ------------
@@ -777,7 +777,7 @@ class TsGroup(UserDict):
               1             2        1
               2             4        2
 
-        This exemple shows how to bin the TsGroup according to one metainfo key.
+        This example shows how to bin the TsGroup according to one metainfo key.
         >>> newtsgroup, bincenter = tsgroup.getby_intervals('alpha', [0, 1, 2])
         >>> newtsgroup
         [  Index    Freq. (Hz)    alpha
@@ -812,7 +812,7 @@ class TsGroup(UserDict):
         Returns
         -------
         dict
-            A dictionnary of TsGroup
+            A dictionary of TsGroup
 
         Examples
         --------
@@ -829,7 +829,7 @@ class TsGroup(UserDict):
               1             2        1
               2             4        1
 
-        This exemple shows how to group the TsGroup according to one metainfo key.
+        This example shows how to group the TsGroup according to one metainfo key.
         >>> newtsgroup = tsgroup.getby_category('group')
         >>> newtsgroup
         {0:   Index    Freq. (Hz)    group

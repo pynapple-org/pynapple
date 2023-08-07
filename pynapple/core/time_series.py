@@ -330,11 +330,11 @@ class Tsd(pd.Series):
 
     def count(self, *args, **kwargs):
         """
-        Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
+        Count occurrences of events within bin_size or within a set of bins defined as an IntervalSet.
         You can call this function in multiple ways :
 
         1. *tsd.count(bin_size=1, time_units = 'ms')*
-        -> Count occurence of events within a 1 ms bin defined on the time support of the object.
+        -> Count occurrence of events within a 1 ms bin defined on the time support of the object.
 
         2. *tsd.count(1, ep=my_epochs)*
         -> Count occurent of events within a 1 second bin defined on the IntervalSet my_epochs.

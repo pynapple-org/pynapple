@@ -67,7 +67,7 @@ class CNMF_E(BaseLoader):
                     if success:
                         loading_my_data = False
 
-        # Bypass if data have already been transfered to nwb
+        # Bypass if data have already been transferred to nwb
         if loading_my_data:
             app = App()
             window = OphysGUI(app, path=path)
@@ -274,7 +274,7 @@ class Minian(BaseLoader):
                     if success:
                         loading_my_data = False
 
-        # Bypass if data have already been transfered to nwb
+        # Bypass if data have already been transferred to nwb
         if loading_my_data:
             app = App()
             window = OphysGUI(app, path=path)
@@ -485,7 +485,7 @@ class InscopixCNMFE(BaseLoader):
                     if success:
                         loading_my_data = False
 
-        # Bypass if data have already been transfered to nwb
+        # Bypass if data have already been transferred to nwb
         if loading_my_data:
             app = App()
             window = OphysGUI(app, path=path)

@@ -346,7 +346,7 @@ class Phy(BaseLoader):
         channel : int or list of int, optional
             The channel(s) to load. If None return a memory map of the dat file to avoid memory error
         extension : str, optional
-            The file extenstion (.eeg, .dat, .lfp). Make sure the frequency match
+            The file extension (.eeg, .dat, .lfp). Make sure the frequency match
         frequency : float, optional
             Default 1250 Hz for the eeg file
         precision : str, optional

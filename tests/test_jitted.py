@@ -44,7 +44,7 @@ def get_example_isets(n=100):
 
 def restrict(ep, tsd):
     bins = ep.values.ravel()
-    # Because yes there is no funtion with both bounds closed as an option
+    # Because yes there is no function with both bounds closed as an option
     ix = np.array(
         pd.cut(tsd.index, bins, labels=np.arange(len(bins) - 1, dtype=np.float64))
     )

@@ -42,7 +42,7 @@ data_directory = '../../your/path/to/A2929-200711'
 # The first step is to load the session with the function *load_session*. 
 # When loading a session for the first time, pynapple will show a GUI 
 # in order for the user to provide the information about the session, the subject, the tracking, the epochs and the neuronal data. 
-# When informations has been entered, a [NWB file](https://pynwb.readthedocs.io/en/stable/) is created.
+# When information has been entered, a [NWB file](https://pynwb.readthedocs.io/en/stable/) is created.
 # In this example dataset, the NWB file already exists.
 
 data = nap.load_session(data_directory, 'neurosuite')
@@ -57,10 +57,10 @@ spikes
 
 # *spikes* is a TsGroup object. 
 # It allows to group together time series with different timestamps and associate metainformation about each neuron. 
-# Under the hood, it wraps a dictionnary. 
+# Under the hood, it wraps a dictionary. 
 # In this case, the location of where the neuron was recorded has been added when loading the session for the first time.
 #
-# In this case it holds 15 neurons and it is possible to access, similar to a dictionnary, the spike times of a single neuron: 
+# In this case it holds 15 neurons and it is possible to access, similar to a dictionary, the spike times of a single neuron: 
 
 neuron_0 = spikes[0]
 neuron_0
@@ -112,7 +112,7 @@ plt.ylabel("x")
 
 # The epochs above the threshold can be accessed through the time support of the Tsd object. 
 # The time support is an important concept in the pynapple package. 
-# It helps the user to define the epochs for which the time serie should be defined. 
+# It helps the user to define the epochs for which the time series should be defined. 
 # By default, Ts, Tsd and TsGroup objects possess a time support (defined as an IntervalSet). 
 # It is recommended to pass the time support when instantiating one of those objects.
 
@@ -277,7 +277,7 @@ subep = nap.IntervalSet(start=0, end=10, time_units='s')
 plt.figure(figsize=(16,5))
 plt.subplot(211)
 # create a raster plot
-# To create a raster plot, we can convert the tsgroup to a tsd and assing to each spikes the order of the peaks
+# To create a raster plot, we can convert the tsgroup to a tsd and assign to each spikes the order of the peaks
 spikes_adn_tsd = spikes_adn.to_tsd("order")
 # And plot it
 plt.plot(spikes_adn_tsd.restrict(subep), '|', markersize = 10)

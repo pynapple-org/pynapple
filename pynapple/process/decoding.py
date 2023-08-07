@@ -128,7 +128,7 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
     tuning_curves : dict
         Dictionnay of 2d tuning curves (one for each neuron).
     group : TsGroup or dict of Ts/Tsd object.
-        A group of neurons with the same keys as tuning_curves dictionnary.
+        A group of neurons with the same keys as tuning_curves dictionary.
     ep : IntervalSet
         The epoch on which decoding is computed
     bin_size : float
