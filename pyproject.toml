@@ -93,5 +93,5 @@ omit = [
 ]
 [tool.codespell]
 skip = '.git,*.pdf,*.svg'
-#
-# ignore-words-list = ''
+ignore-regex = '^\s*"image/\S+": ".*'
+ignore-words-list = 'adn'
