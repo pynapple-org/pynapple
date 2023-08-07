@@ -162,7 +162,7 @@ def compute_crosscorrelogram(
 ):
     """
     Computes all the pairwise cross-correlograms for TsGroup or list/tuple of two TsGroup.
-    
+
     If input is TsGroup only, the reference Ts/Tsd and target are chosen based on the builtin itertools.combinations function.
     For example if indexes are [0,1,2], the function computes cross-correlograms
     for the pairs (0,1), (0, 2), and (1, 2). The left index gives the reference time series.
@@ -173,7 +173,7 @@ def compute_crosscorrelogram(
     Parameters
     ----------
     group : TsGroup or tuple/list of two TsGroups
-        
+
     binsize : float
         The bin size. Default is second.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
@@ -232,11 +232,16 @@ def compute_crosscorrelogram(
 
         if norm:
             freq = newgroup.get_info("rate")
-            freq2 = pd.Series(index=pairs, data=list(map(lambda n: freq.loc[n[1]], pairs)))
+            freq2 = pd.Series(
+                index=pairs, data=list(map(lambda n: freq.loc[n[1]], pairs))
+            )
             crosscorrs = crosscorrs / freq2
 
-
-    elif isinstance(group, (tuple, list)) and len(group) == 2 and all(map(lambda g: isinstance(g, nap.TsGroup), group)):
+    elif (
+        isinstance(group, (tuple, list))
+        and len(group) == 2
+        and all(map(lambda g: isinstance(g, nap.TsGroup), group))
+    ):
         if isinstance(ep, nap.IntervalSet):
             newgroup = [group[i].restrict(ep) for i in range(2)]
         else:
@@ -256,7 +261,6 @@ def compute_crosscorrelogram(
 
     else:
         raise RuntimeError("Unknown format for group")
-    
 
     return crosscorrs.astype("float")
 

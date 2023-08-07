@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-03-30 11:16:22
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-12-02 11:31:23
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-08-07 18:55:13
 #!/usr/bin/env python
 
 """Tests of correlograms for `pynapple` package."""
@@ -149,6 +149,21 @@ class Test_Correlograms:
         with pytest.raises(RuntimeError) as e_info:
             nap.compute_crosscorrelogram([1,2,3], 1, 100)
         assert str(e_info.value) == "Unknown format for group"
+
+    def test_crosscorrelogram_with_tuple(self, group):
+        from itertools import product
+        groups = (group[[0,1]], group[[2,3]])
+        cc = nap.compute_crosscorrelogram(groups, 1, 100, norm=False)
+
+        assert isinstance(cc, pd.DataFrame)
+        assert list(cc.keys()) == list(product(groups[0].keys(), groups[1].keys()))
+        np.testing.assert_array_almost_equal(cc.index.values, np.arange(-100, 101, 1))
+
+        cc2 = nap.compute_crosscorrelogram(group[[0,2]], 1, 100, norm=False)
+        np.testing.assert_array_almost_equal(
+            cc[(0, 2)].values,
+            cc2[(0,2)].values
+            )
 
     def test_eventcorrelogram(self, group):
         cc = nap.compute_eventcorrelogram(group, group[0], 1, 100, norm=False)

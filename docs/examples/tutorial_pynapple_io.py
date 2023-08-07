@@ -4,8 +4,6 @@
 IO Tutorial
 ===========
 
-> Warning **This tutorial is still under construction.**
-
 This notebook is designed to demonstrate the pynapple IO. It is build around the specifications of the [BIDS standard](https://bids-standard.github.io/bids-starter-kit/index.html) for sharing datasets. The key ideas are summarized as follow :
 
 - [Hierarchy of folders](https://bids-standard.github.io/bids-starter-kit/folders_and_files/folders.html)
