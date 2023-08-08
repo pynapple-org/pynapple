@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Guillaume Viejo
 # @Date:   2023-08-01 11:54:45
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-08-06 17:55:32
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-08-07 21:38:08
 
 """
 Pynapple class to interface with NWB files.
@@ -110,8 +110,10 @@ def _make_interval_set(obj):
                     data[k] = nap.IntervalSet(
                         start=subdf["start_time"], end=subdf["stop_time"]
                     )
-
-                return data
+                if len(data) == 1:
+                    return data[list(data.keys())[0]]
+                else:
+                    return data
 
             else:
                 warnings.warn(
