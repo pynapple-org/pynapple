@@ -15,7 +15,7 @@ requirements = [
         'numba>=0.46.0',
         'numpy>=1.17.4',
         'scipy>=1.3.2',
-        'pynwb',
+        'pynwb>=2.0.0',
         'tabulate',
         'h5py',
         'tifffile',
