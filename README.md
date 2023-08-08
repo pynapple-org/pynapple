@@ -87,7 +87,7 @@ $ python
 >>> import pynapple as nap
 ```
 
-You'll find an example of the package below. Click [here](https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1) to download the example dataset. The folder includes a NWB file containing the data (See this [notebook](https://github.com/pynapple-org/pynapple/blob/main/docs/notebooks/pynapple-io-notebook.ipynb) for more information on the creation of the NWB file).
+You'll find an example of the package below. Click [here](https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1) to download the example dataset. The folder includes a NWB file containing the data.
 
 ``` py
 import matplotlib.pyplot as plt
