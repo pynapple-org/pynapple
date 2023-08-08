@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-04-04 21:32:10
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-08-03 15:46:24
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-08-07 22:57:50
 
 """Tests of nwb reading for `pynapple` package."""
 
@@ -221,55 +221,58 @@ def test_add_Ecephys():
         mock_SpikeEventSeries,
     )
 
-    nwbfile = mock_NWBFile()
-    nwbfile.add_electrode_group(mock_ElectrodeGroup())
-    nwb = nap.NWBFile(nwbfile)
-    assert len(nwb) == 0
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
 
-    name_generator_registry.clear()
-    nwbfile = mock_NWBFile()
-    nwbfile.add_acquisition(mock_ElectricalSeries())
-    nwb = nap.NWBFile(nwbfile)
-    assert len(nwb) == 1
-    assert "ElectricalSeries" in nwb.keys()
-    data = nwb["ElectricalSeries"]
-    assert isinstance(data, nap.TsdFrame)
-    obj = nwbfile.acquisition["ElectricalSeries"]
-    np.testing.assert_array_almost_equal(data.values, obj.data[:])
-    np.testing.assert_array_almost_equal(
-        data.index.values, obj.starting_time + np.arange(obj.num_samples) / obj.rate
-    )
-    np.testing.assert_array_almost_equal(data.columns.values, obj.electrodes["id"][:])
+        nwbfile = mock_NWBFile()
+        nwbfile.add_electrode_group(mock_ElectrodeGroup())
+        nwb = nap.NWBFile(nwbfile)
+        assert len(nwb) == 0
 
-    # Try ElectrialSeries without channel mapping
-    name_generator_registry.clear()
-    nwbfile = mock_NWBFile()
-    nwbfile.add_acquisition(mock_ElectricalSeries(electrodes=None))
-    nwb = nap.NWBFile(nwbfile)
-    assert len(nwb) == 1
-    assert "ElectricalSeries" in nwb.keys()
-    data = nwb["ElectricalSeries"]
-    assert isinstance(data, nap.TsdFrame)
-    obj = nwbfile.acquisition["ElectricalSeries"]
-    np.testing.assert_array_almost_equal(data.values, obj.data[:])
-    np.testing.assert_array_almost_equal(
-        data.index.values, obj.starting_time + np.arange(obj.num_samples) / obj.rate
-    )
-    np.testing.assert_array_almost_equal(data.columns.values, np.arange(obj.data.shape[1]))
+        name_generator_registry.clear()
+        nwbfile = mock_NWBFile()
+        nwbfile.add_acquisition(mock_ElectricalSeries())
+        nwb = nap.NWBFile(nwbfile)
+        assert len(nwb) == 1
+        assert "ElectricalSeries" in nwb.keys()
+        data = nwb["ElectricalSeries"]
+        assert isinstance(data, nap.TsdFrame)
+        obj = nwbfile.acquisition["ElectricalSeries"]
+        np.testing.assert_array_almost_equal(data.values, obj.data[:])
+        np.testing.assert_array_almost_equal(
+            data.index.values, obj.starting_time + np.arange(obj.num_samples) / obj.rate
+        )
+        np.testing.assert_array_almost_equal(data.columns.values, obj.electrodes["id"][:])
+
+        # Try ElectrialSeries without channel mapping
+        name_generator_registry.clear()
+        nwbfile = mock_NWBFile()
+        nwbfile.add_acquisition(mock_ElectricalSeries(electrodes=None))
+        nwb = nap.NWBFile(nwbfile)
+        assert len(nwb) == 1
+        assert "ElectricalSeries" in nwb.keys()
+        data = nwb["ElectricalSeries"]
+        assert isinstance(data, nap.TsdFrame)
+        obj = nwbfile.acquisition["ElectricalSeries"]
+        np.testing.assert_array_almost_equal(data.values, obj.data[:])
+        np.testing.assert_array_almost_equal(
+            data.index.values, obj.starting_time + np.arange(obj.num_samples) / obj.rate
+        )
+        np.testing.assert_array_almost_equal(data.columns.values, np.arange(obj.data.shape[1]))
 
 
-    name_generator_registry.clear()
-    nwbfile = mock_NWBFile()
-    nwbfile.add_acquisition(mock_SpikeEventSeries())
-    nwb = nap.NWBFile(nwbfile)
-    assert len(nwb) == 1
-    assert "SpikeEventSeries" in nwb.keys()
-    data = nwb["SpikeEventSeries"]
-    assert isinstance(data, nap.TsdFrame)
-    obj = nwbfile.acquisition["SpikeEventSeries"]
-    np.testing.assert_array_almost_equal(data.values, obj.data[:])
-    np.testing.assert_array_almost_equal(data.index.values, obj.timestamps[:])
-    np.testing.assert_array_almost_equal(data.columns.values, obj.electrodes["id"][:])
+        name_generator_registry.clear()
+        nwbfile = mock_NWBFile()
+        nwbfile.add_acquisition(mock_SpikeEventSeries())
+        nwb = nap.NWBFile(nwbfile)
+        assert len(nwb) == 1
+        assert "SpikeEventSeries" in nwb.keys()
+        data = nwb["SpikeEventSeries"]
+        assert isinstance(data, nap.TsdFrame)
+        obj = nwbfile.acquisition["SpikeEventSeries"]
+        np.testing.assert_array_almost_equal(data.values, obj.data[:])
+        np.testing.assert_array_almost_equal(data.index.values, obj.timestamps[:])
+        np.testing.assert_array_almost_equal(data.columns.values, obj.electrodes["id"][:])
 
 
 def test_add_Icephys():
@@ -283,42 +286,45 @@ def test_add_Icephys():
             mock_IZeroClampSeries,
         )
 
-        name_generator_registry.clear()
-        nwbfile = mock_NWBFile()
-        nwbfile.add_icephys_electrode(mock_IntracellularElectrode())
-        nwb = nap.NWBFile(nwbfile)
-        assert len(nwb) == 0
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
 
-        for name, Series in zip(
-            [
-                "VoltageClampStimulusSeries",
-                "VoltageClampSeries",
-                "CurrentClampSeries",
-                "CurrentClampStimulusSeries",
-                "IZeroClampSeries",
-            ],
-            [
-                mock_VoltageClampStimulusSeries,
-                mock_VoltageClampSeries,
-                mock_CurrentClampSeries,
-                mock_CurrentClampStimulusSeries,
-                mock_IZeroClampSeries,
-            ],
-        ):
             name_generator_registry.clear()
             nwbfile = mock_NWBFile()
-            nwbfile.add_acquisition(Series())
+            nwbfile.add_icephys_electrode(mock_IntracellularElectrode())
             nwb = nap.NWBFile(nwbfile)
-            assert len(nwb) == 1
-            assert name in nwb.keys()
-            data = nwb[name]
-            assert isinstance(data, nap.Tsd)
-            obj = nwbfile.acquisition[name]
-            np.testing.assert_array_almost_equal(data.values, obj.data[:])
-            np.testing.assert_array_almost_equal(
-                data.index.values,
-                obj.starting_time + np.arange(obj.num_samples) / obj.rate,
-            )
+            assert len(nwb) == 0
+
+            for name, Series in zip(
+                [
+                    "VoltageClampStimulusSeries",
+                    "VoltageClampSeries",
+                    "CurrentClampSeries",
+                    "CurrentClampStimulusSeries",
+                    "IZeroClampSeries",
+                ],
+                [
+                    mock_VoltageClampStimulusSeries,
+                    mock_VoltageClampSeries,
+                    mock_CurrentClampSeries,
+                    mock_CurrentClampStimulusSeries,
+                    mock_IZeroClampSeries,
+                ],
+            ):
+                name_generator_registry.clear()
+                nwbfile = mock_NWBFile()
+                nwbfile.add_acquisition(Series())
+                nwb = nap.NWBFile(nwbfile)
+                assert len(nwb) == 1
+                assert name in nwb.keys()
+                data = nwb[name]
+                assert isinstance(data, nap.Tsd)
+                obj = nwbfile.acquisition[name]
+                np.testing.assert_array_almost_equal(data.values, obj.data[:])
+                np.testing.assert_array_almost_equal(
+                    data.index.values,
+                    obj.starting_time + np.arange(obj.num_samples) / obj.rate,
+                )
     except:
         # Doesn't work for all versions.
         pass
@@ -363,40 +369,42 @@ def test_add_Ophys():
             mock_DfOverF,
             mock_Fluorescence,
         )
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
 
-        name_generator_registry.clear()
-        nwbfile = mock_NWBFile()
-        nwbfile.add_imaging_plane(mock_ImagingPlane())
-        nwb = nap.NWBFile(nwbfile)
-        assert len(nwb) == 0
-
-        for Series in [
-            # mock_OnePhotonSeries,
-            # mock_TwoPhotonSeries,
-            mock_RoiResponseSeries,
-            mock_DfOverF,
-            mock_Fluorescence,
-        ]:
             name_generator_registry.clear()
             nwbfile = mock_NWBFile()
-            nwbfile.add_acquisition(Series())
+            nwbfile.add_imaging_plane(mock_ImagingPlane())
             nwb = nap.NWBFile(nwbfile)
-            assert len(nwb) == 1
-            assert "RoiResponseSeries" in nwb.keys()
-            data = nwb["RoiResponseSeries"]
-            assert isinstance(data, nap.TsdFrame)
-            if "DfOverF" in nwbfile.acquisition.keys():
-                obj = nwbfile.acquisition["DfOverF"]["RoiResponseSeries"]
-            elif "Fluorescence" in nwbfile.acquisition.keys():
-                obj = nwbfile.acquisition["Fluorescence"]["RoiResponseSeries"]
-            else:
-                obj = nwbfile.acquisition[list(nwbfile.acquisition.keys())[0]]
-            np.testing.assert_array_almost_equal(data.values, obj.data[:])
-            np.testing.assert_array_almost_equal(
-                data.index.values,
-                obj.starting_time + np.arange(obj.num_samples) / obj.rate,
-            )
-            np.testing.assert_array_almost_equal(data.columns.values, obj.rois["id"][:])
+            assert len(nwb) == 0
+
+            for Series in [
+                # mock_OnePhotonSeries,
+                # mock_TwoPhotonSeries,
+                mock_RoiResponseSeries,
+                mock_DfOverF,
+                mock_Fluorescence,
+            ]:
+                name_generator_registry.clear()
+                nwbfile = mock_NWBFile()
+                nwbfile.add_acquisition(Series())
+                nwb = nap.NWBFile(nwbfile)
+                assert len(nwb) == 1
+                assert "RoiResponseSeries" in nwb.keys()
+                data = nwb["RoiResponseSeries"]
+                assert isinstance(data, nap.TsdFrame)
+                if "DfOverF" in nwbfile.acquisition.keys():
+                    obj = nwbfile.acquisition["DfOverF"]["RoiResponseSeries"]
+                elif "Fluorescence" in nwbfile.acquisition.keys():
+                    obj = nwbfile.acquisition["Fluorescence"]["RoiResponseSeries"]
+                else:
+                    obj = nwbfile.acquisition[list(nwbfile.acquisition.keys())[0]]
+                np.testing.assert_array_almost_equal(data.values, obj.data[:])
+                np.testing.assert_array_almost_equal(
+                    data.index.values,
+                    obj.starting_time + np.arange(obj.num_samples) / obj.rate,
+                )
+                np.testing.assert_array_almost_equal(data.columns.values, obj.rois["id"][:])
 
     except:
         pass  # some issues with pynwb version
