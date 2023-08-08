@@ -1,9 +1,6 @@
 """
     Minimal working example
     
-    This example is soon to be deprecated.
-    You can see the new example in main2.py
-
 """
 
 import matplotlib.pyplot as plt
@@ -11,18 +8,16 @@ import numpy as np
 
 import pynapple as nap
 
-DATA_DIRECTORY = "your/path/to/A2929-200711"
+# LOADING DATA FROM NWB
+data = nap.load_file("A2929-200711.nwb")
 
-# LOADING DATA
-data = nap.load_session(DATA_DIRECTORY, "neurosuite")
-
-spikes = data.spikes
-position = data.position
-wake_ep = data.epochs["wake"]
+spikes = data["units"]
+head_direction = data["ry"]
+wake_ep = data["position_time_support"]
 
 # COMPUTING TUNING CURVES
 tuning_curves = nap.compute_1d_tuning_curves(
-    spikes, position["ry"], 120, minmax=(0, 2 * np.pi)
+    spikes, head_direction, 120, minmax=(0, 2 * np.pi)
 )
 
 

@@ -69,22 +69,7 @@ $ pip install pynapple
 $ pip install spyder
 $ spyder
 ```
-<!-- > **Warning**
-> note for **Windows** users: on a multi-user Windows, make sure you open the conda prompt with *administrative access*: `run as administrator`; otherwise directory paths for some dependencies may be missing from the PYTHONPATH environment variable. The most common is the error in importing PyQt5. In case of such errors, right click on your conda prompt and select `run as administrator`, activate your pynapple environment, and install the said package again (e.g. pip install PyQt) so that the paths are properly saved by Windows.
 
-> **Warning**
-> note for **Mac** users with M1/M2 chips: PyQt5 may fail to install. In the Application folder, make a copy of the Terminal app (or any other console you're using), and call the second one, for exampe, 'Terminal-Rosetta'. Right click->Get Info and click on 'Open using Rosetta'. Open this terminal and enter the following instructions (you need to install virtualenv before)
-``` {.sourceCode .shell}
-$ /usr/bin/python3 -m venv pynapple
-$ (pynapple) pip install --upgrade pip
-$ (pynapple) pip install pynapple
-```
-Open python and try:
-``` py
-import pynapple as nap
-nap.load_session()
-```
-The data loader should open in a new window. -->
 
 Basic Usage
 -----------
@@ -96,48 +81,41 @@ $ python
 >>> import pynapple as nap
 ```
 
-You'll find an example of the package below. Click [here](https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1) to download the example dataset. The folder includes a NWB file containing the data (See this [notebook](https://github.com/pynapple-org/pynapple/blob/main/docs/notebooks/pynapple-io-notebook.ipynb) for more information on the creation of the NWB file).
+You'll find an example of the package below. Click [here](https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1) to download the example dataset. The folder includes a NWB file containing the data.
 
 ``` py
+import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
+
 import pynapple as nap
-from matplotlib.pyplot import *
 
-data_directory = '/your/path/to/A2929-200711'
+# LOADING DATA FROM NWB
+data = nap.load_file("A2929-200711.nwb")
 
-# LOADING DATA
-data = nap.load_session(data_directory, 'neurosuite')
-
-
-spikes = data.spikes
-position = data.position
-wake_ep = data.epochs['wake']
+spikes = data["units"]
+head_direction = data["ry"]
+wake_ep = data["position_time_support"]
 
 # COMPUTING TUNING CURVES
-tuning_curves = nap.compute_1d_tuning_curves(group = spikes, 
-                                            feature = position['ry'], 
-                                            ep = position['ry'].time_support, 
-                                            nb_bins = 120,  
-                                            minmax=(0, 2*np.pi) )
-                                                
+tuning_curves = nap.compute_1d_tuning_curves(
+    spikes, head_direction, 120, minmax=(0, 2 * np.pi)
+)
 
-        
+
 # PLOT
-figure()
+plt.figure()
 for i in spikes:
-    subplot(6,7,i+1, projection = 'polar')
-    plot(tuning_curves[i])
-    
+    plt.subplot(3, 5, i + 1, projection="polar")
+    plt.plot(tuning_curves[i])
+    plt.xticks([0, np.pi / 2, np.pi, 3 * np.pi / 2])
 
-show()
-
+plt.show()
 ```
 Shown below, the final figure from the example code displays the firing rate of 15 neurons as a function of the direction of the head of the animal in the horizontal plane.
 
 <!-- ![pic1](readme_figure.png) -->
 <p align="center">
-  <img width="90%" src="readme_figure.png">
+  <img width="80%" src="readme_figure.png">
 </p>
 
 ### Credits
