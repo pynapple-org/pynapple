@@ -15,7 +15,7 @@ requirements = [
         'numba>=0.46.0',
         'numpy>=1.17.4',
         'scipy>=1.3.2',
-        'pynwb',
+        'pynwb>=2.0.0',
         'tabulate',
         'h5py',
         'tifffile',
@@ -39,7 +39,7 @@ setup(
     classifiers=[
         'Development Status :: 3 - Alpha',
         'Intended Audience :: Science/Research',
-        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 3',
         'Programming Language :: Python :: 3.8',
@@ -62,8 +62,8 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/pynapple-org/pynapple',
-    version='v0.3.4',
+    version='v0.3.5',
     zip_safe=False,
     long_description_content_type='text/markdown',
-    download_url='https://github.com/pynapple-org/pynapple/archive/refs/tags/v0.3.4.tar.gz'
+    download_url='https://github.com/pynapple-org/pynapple/archive/refs/tags/v0.3.5.tar.gz'
 )

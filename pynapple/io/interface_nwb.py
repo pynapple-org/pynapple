@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-08-01 11:54:45
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-08-07 21:38:08
+# @Last Modified time: 2023-08-07 22:34:26
 
 """
 Pynapple class to interface with NWB files.
@@ -192,6 +192,11 @@ def _make_tsd_frame(obj):
         except Exception:
             columns = np.arange(obj.data.shape[1])
 
+    else:
+        columns = np.arange(obj.data.shape[1])
+
+    if len(columns) >= d.shape[1]:  # Weird sometimes if background ID added
+        columns = columns[0 : obj.data.shape[1]]
     else:
         columns = np.arange(obj.data.shape[1])
 
