@@ -30,9 +30,10 @@ This notebook is designed to demonstrate the pynapple IO. It is build around the
 
 import numpy as np
 import pynapple as nap
+
 # mkdocs_gallery_thumbnail_path = '_static/treeview.png'
 
-project_path = '../../your/path/to/MyProject'
+project_path = "../../your/path/to/MyProject"
 
 project = nap.load_folder(project_path)
 
@@ -80,20 +81,21 @@ print(session["derivatives"]["spikes"])
 # ***
 # Metadata
 # --------
-# 
-# A good practice for sharing datasets is to write as many metainformation as possible. Following BIDS specifications, any data files should be accompagned by a JSON sidecar file. 
+#
+# A good practice for sharing datasets is to write as many metainformation as possible. Following BIDS specifications, any data files should be accompagned by a JSON sidecar file.
 
 import os
-for f in os.listdir(session['derivatives'].path):
+
+for f in os.listdir(session["derivatives"].path):
     print(f)
 
 # %%
-# To read the metainformation associated with a file, you can use the functions `doc`, `info` or `metadata` : 
+# To read the metainformation associated with a file, you can use the functions `doc`, `info` or `metadata` :
 
-session['derivatives'].doc("spikes")
+session["derivatives"].doc("spikes")
 
 
-session['derivatives'].doc("position")
+session["derivatives"].doc("position")
 
 # %%
 # ***
@@ -102,11 +104,11 @@ session['derivatives'].doc("position")
 #
 # In this case, we define a new Tsd and a new IntervalSet that we would like to save in the session folder.
 
-tsd = position['x'] + position['y']
-epoch = nap.IntervalSet(start=np.array([0, 3]), end = np.array([1, 6]))
+tsd = position["x"] + position["y"]
+epoch = nap.IntervalSet(start=np.array([0, 3]), end=np.array([1, 6]))
 
-session.save("x_plus_y", tsd, description = "Random position")
-session.save("stimulus-fish", epoch, description = "Fish pictures to V1")
+session.save("x_plus_y", tsd, description="Random position")
+session.save("stimulus-fish", epoch, description="Fish pictures to V1")
 
 # %%
 # We can visualize the newly saved objects.
@@ -114,8 +116,7 @@ session.save("stimulus-fish", epoch, description = "Fish pictures to V1")
 session.expand()
 
 # %%
-session.doc('stimulus-fish')
+session.doc("stimulus-fish")
 
 # %%
-session['x_plus_y']
-
+session["x_plus_y"]
