@@ -1,34 +1,35 @@
 # coding: utf-8
 """
-Streaming data from Dandi
+Streaming data from DANDI
 =========================
 
-This script shows how to stream data from the [dandi archive](https://dandiarchive.org/) all the way to pynapple.
+This script shows how to stream data from the [DANDI Archive](https://dandiarchive.org/) all the way to pynapple.
 
 > Warning **This tutorial is still under construction.**
 
 """
 # %%
 # !!! warning
-#     This tutorial uses seaborn and matplotlib for displaying the figure as well as the dandi package
+#     This tutorial uses seaborn and matplotlib for displaying the figure as well as the `dandi` package
 #
-#     You can install all with `pip install matplotlib seaborn dandi dandischema`
+#     You can install all with `pip install matplotlib seaborn dandi`
 
 # %%
 # ***
 # Prelude
 # -------
 #
-# The data used in this tutorial are hosted by the [DANDI](https://dandiarchive.org/dandiset/000582?search=sargolini&pos=1) archive and were used in this publication:
+# The data used in this tutorial were used in this publication:
 # __Sargolini, Francesca, et al. "Conjunctive representation of position, direction, and velocity in entorhinal cortex." Science 312.5774 (2006): 758-762.__
+# The data can be found on the DANDI Archive in [Dandiset 000582](https://dandiarchive.org/dandiset/000582).
 #
 # mkdocs_gallery_thumbnail_number = 2
 
 # %%
 # ***
-# Dandi
+# DANDI
 # -----
-# Dandi allows you to stream data without downloading all the files. In this case the data extracted from the NWB file are stored in the nwb-cache folder.
+# DANDI allows you to stream data without downloading all the files. In this case the data extracted from the NWB file are stored in the nwb-cache folder.
 
 from pynwb import NWBHDF5IO
 
