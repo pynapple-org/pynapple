@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-06-28 15:22:26
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-08-30 14:39:31
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -15,7 +15,7 @@ import pytest
 
 def test_create_tsd():
     tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
-    assert isinstance(tsd, pd.Series)
+    assert isinstance(tsd, nap.Tsd)
 
 def test_create_empty_tsd():
     tsd = nap.Tsd(t=np.array([]), d=np.array([]))
@@ -23,10 +23,10 @@ def test_create_empty_tsd():
 
 def test_create_tsdframe():
     tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 4))
-    assert isinstance(tsdframe, pd.DataFrame)
+    assert isinstance(tsdframe, nap.TsdFrame)
 
     tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 4), columns=['a', 'b', 'c', 'd'])
-    assert isinstance(tsdframe, pd.DataFrame)
+    assert isinstance(tsdframe, nap.TsdFrame)
     assert np.all(tsdframe.columns == np.array(['a', 'b', 'c', 'd']))
 
 def test_create_empty_tsdframe():

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-10 17:28:36
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-08-30 14:47:27
 
 import importlib
 import os
@@ -26,9 +26,13 @@ from .jitted_functions import (
 )
 from .time_units import format_timestamps, return_timestamps, sort_timestamps
 
+from numbers import Number
+from numpy.lib.mixins import NDArrayOperatorsMixin
+from typing import TYPE_CHECKING, Optional, Tuple, Union, Any, SupportsIndex
+import operator
 
-class Tsd(pd.Series):
-    # class Tsd():
+
+class Tsd(NDArrayOperatorsMixin):
     """
     A subclass of pandas.Series specialized for neurophysiology time series.
 
@@ -59,14 +63,14 @@ class Tsd(pd.Series):
         **kwargs
             Arguments that will be passed to the pandas.Series initializer.
         """
-        if isinstance(t, SingleBlockManager):
-            d = t.array
-            t = t.index.values
-            if "index" in kwargs:
-                kwargs.pop("index")
-        elif isinstance(t, pd.Series):
+        if isinstance(t, pd.Series):
             d = t.values
-            t = t.index.values
+            t = t.index
+
+        if isinstance(t, Number): t = np.array([t])
+        if isinstance(d, Number): d = np.array([d])
+
+        if not isinstance(d, np.ndarray): d = np.asarray(d)
 
         t = t.astype(np.float64).flatten()
         t = format_timestamps(t, time_units)
@@ -78,17 +82,17 @@ class Tsd(pd.Series):
                 ends = time_support.end.values
                 if d is not None:
                     t, d = jitrestrict(t, d, starts, ends)
-                    super().__init__(index=t, data=d)
+                    self.index = t
+                    self.values = d
                 else:
                     t = jittsrestrict(t, starts, ends)
-                    super().__init__(index=t, data=None, dtype=np.int8)
+                    self.index = t
+                    self.values = None                    
             else:
                 time_support = IntervalSet(start=t[0], end=t[-1])
-                if d is not None:
-                    super().__init__(index=t, data=d)
-                else:
-                    super().__init__(index=t, data=d, dtype=np.float64)
-
+                self.index = t
+                self.values = d
+            
             self.time_support = time_support
             self.rate = t.shape[0] / np.sum(
                 time_support.values[:, 1] - time_support.values[:, 0]
@@ -96,66 +100,97 @@ class Tsd(pd.Series):
 
         else:
             time_support = IntervalSet(pd.DataFrame(columns=["start", "end"]))
-            super().__init__(index=t, data=d, dtype=np.float64)
-
+            self.index = np.array([])
+            self.values = np.array([])
             self.time_support = time_support
             self.rate = 0.0
-
-        self.index.name = "Time (s)"
-        # self._metadata.append("nap_class")
+        
         self.nap_class = self.__class__.__name__
+        self.dtype = self.values.dtype
 
-    def __add__(self, value):
-        ts = self.time_support
-        return Tsd(self.as_series().__add__(value), time_support=ts)
-
-    def __sub__(self, value):
-        ts = self.time_support
-        return Tsd(self.as_series().__sub__(value), time_support=ts)
-
-    def __truediv__(self, value):
-        ts = self.time_support
-        return Tsd(self.as_series().__truediv__(value), time_support=ts)
-
-    def __floordiv__(self, value):
-        ts = self.time_support
-        return Tsd(self.as_series().__floordiv__(value), time_support=ts)
-
-    def __mul__(self, value):
-        ts = self.time_support
-        return Tsd(self.as_series().__mul__(value), time_support=ts)
-
-    def __mod__(self, value):
-        ts = self.time_support
-        return Tsd(self.as_series().__mod__(value), time_support=ts)
-
-    def __pow__(self, value):
-        ts = self.time_support
-        return Tsd(self.as_series().__pow__(value), time_support=ts)
-
-    def __lt__(self, value):
-        return self.as_series().__lt__(value)
-
-    def __gt__(self, value):
-        return self.as_series().__gt__(value)
-
-    def __le__(self, value):
-        return self.as_series().__le__(value)
-
-    def __ge__(self, value):
-        return self.as_series().__ge__(value)
-
-    def __ne__(self, value):
-        return self.as_series().__ne__(value)
-
-    def __eq__(self, value):
-        return self.as_series().__eq__(value)
-
+    @property
+    def t(self):
+        return self.index
+    
     def __repr__(self):
-        return self.as_series().__repr__()
+        # TODO repr for all dtypes
+        upper = "Time (s)"
+        _str_ = "\n".join([
+            "{:.6f}".format(i)+"    "+"{:.6f}".format(j) for i, j in zip(self.index, self.values)
+            ])
+        bottom = "Length: {}".format(len(self.index)) + ", dtype: {}".format(self.dtype)        
+        return "\n".join((upper, _str_, bottom))
 
     def __str__(self):
         return self.__repr__()
+
+    def __getitem__(self, key):
+        """
+        Performs the operation __getitem__.
+        """        
+        try:
+            data = self.values.__getitem__(key)
+            index = self.index.__getitem__(key)            
+            return Tsd(t=index, d=data)
+        except:
+            raise IndexError
+
+    def __setitem__(self, key, value):
+        """
+        Performs the operation __getitem__.
+        """        
+        try:
+            self.values.__setitem__(key, value)
+        except:
+            raise IndexError
+
+    def __len__(self):
+        return len(self.values)
+
+    def __array__(self, dtype=None):
+        return self.values.astype(dtype)
+
+    def __array_ufunc__(self, ufunc, method, *args, **kwargs):
+        # print("In __array_ufunc__")
+        # print("     ufunc = ", ufunc)
+        # print("     method = ", method)
+        # print("     args = ", args)
+        # for inp in args: print(type(inp))
+        # print("     kwargs = ", kwargs)
+
+        if method == '__call__':
+            new_args = []
+            for a in args:
+                if isinstance(a, Number):
+                    new_args.append(a)
+                elif isinstance(a, self.__class__):
+                    new_args.append(a.values)
+                else:
+                    return NotImplemented
+
+            out = ufunc(*new_args, **kwargs)
+            # print("output = ", out)
+            return self.__class__(self.index, out)
+
+        else:
+            return NotImplemented
+
+    def __array_function__(self, func, types, args, kwargs):
+        # print("In __array_function__")
+        # print("     func = ", func)
+        # print("     types = ", types)
+        # print("     args = ", args)
+        # print("     kwargs = ", kwargs)
+
+        new_args = []
+        for a in args:
+            if isinstance(a, Tsd):
+                new_args.append(a.values)
+            else:
+                new_args.append(a)
+        output = func._implementation(*args, **kwargs)    
+
+        return output
 
     def times(self, units="s"):
         """
@@ -171,7 +206,7 @@ class Tsd(pd.Series):
         out: numpy.ndarray
             the time indexes
         """
-        return return_timestamps(self.index.values, units)
+        return return_timestamps(self.index, units)
 
     def as_series(self):
         """
@@ -182,11 +217,23 @@ class Tsd(pd.Series):
         out: pandas.Series
             _
         """
-        return pd.Series(self, copy=True)
+        return pd.Series(self.index, self.values, copy=True)
+
+    def as_array(self):
+        """
+        Convert the Ts/Tsd object to a numpy.ndarray
+
+        Returns
+        -------
+        out: pandas.Series
+            _
+        """
+        return self.values
+
 
     def as_units(self, units="s"):
         """
-        Returns a Series with time expressed in the desired unit.
+        Returns a pandas Series with time expressed in the desired unit.
 
         Parameters
         ----------
@@ -199,8 +246,8 @@ class Tsd(pd.Series):
             the series object with adjusted times
         """
         ss = self.as_series()
-        t = self.index.values
-        t = return_timestamps(t, units)
+        t = self.index
+        t = return_timestamps(self.index, units)
         if units == "us":
             t = t.astype(np.int64)
         ss.index = t
@@ -260,8 +307,8 @@ class Tsd(pd.Series):
         if isinstance(data, Tsd):
             if ep is None:
                 ep = data.time_support
-            time_array = self.index.values
-            time_target_array = data.index.values
+            time_array = self.index
+            time_target_array = data.index
             data_target_array = data.values
             starts = ep.start.values
             ends = ep.end.values
@@ -275,8 +322,8 @@ class Tsd(pd.Series):
         elif isinstance(data, TsdFrame):
             if ep is None:
                 ep = data.time_support
-            time_array = self.index.values
-            time_target_array = data.index.values
+            time_array = self.index
+            time_target_array = data.index
             data_target_array = data.values
             starts = ep.start.values
             ends = ep.end.values
@@ -321,7 +368,7 @@ class Tsd(pd.Series):
         >>> 0    0.0  500.0
 
         """
-        time_array = self.index.values
+        time_array = self.index
         data_array = self.values
         starts = ep.start.values
         ends = ep.end.values
@@ -415,7 +462,7 @@ class Tsd(pd.Series):
                 if isinstance(a, IntervalSet):
                     ep = a
 
-        time_array = self.index.values
+        time_array = self.index
         starts = ep.start.values
         ends = ep.end.values
 
@@ -475,7 +522,7 @@ class Tsd(pd.Series):
 
         bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
 
-        time_array = self.index.values
+        time_array = self.index
         data_array = self.values
         starts = ep.start.values
         ends = ep.end.values
@@ -523,7 +570,7 @@ class Tsd(pd.Series):
         >>> 0   50.5  99.0
 
         """
-        time_array = self.index.values
+        time_array = self.index
         data_array = self.values
         starts = self.time_support.start.values
         ends = self.time_support.end.values
@@ -577,7 +624,7 @@ class Tsd(pd.Series):
 
         """
         ts_group = importlib.import_module(".ts_group", "pynapple.core")
-        t = self.index.values
+        t = self.index
         d = self.values.astype("int")
         idx = np.unique(d)
 
@@ -653,7 +700,7 @@ class Tsd(pd.Series):
 
         np.savez(
             filename,
-            t=self.index.values,
+            t=self.index,
             d=self.values,
             start=self.time_support.start.values,
             end=self.time_support.end.values,
@@ -727,13 +774,8 @@ class Tsd(pd.Series):
         """
         return self.times(units=units)[-1]
 
-    @property
-    def _constructor(self):
-        return Tsd
 
-
-class TsdFrame(pd.DataFrame):
-    # class TsdFrame():
+class TsdFrame(NDArrayOperatorsMixin):    
     """
     A subclass of pandas.DataFrame specialized for neurophysiological time series.
 
@@ -764,11 +806,7 @@ class TsdFrame(pd.DataFrame):
         **kwargs
             Arguments that will be passed to the pandas.DataFrame initializer.
         """
-        if isinstance(t, BlockManager):
-            d = t.as_array()
-            c = t.axes[0].values
-            t = t.axes[1].values
-        elif isinstance(t, pd.DataFrame):
+        if isinstance(t, pd.DataFrame):
             d = t.values
             c = t.columns.values
             t = t.index.values
@@ -786,6 +824,11 @@ class TsdFrame(pd.DataFrame):
                 else:
                     c = None
 
+        if isinstance(t, Number): t = np.array([t])
+        if isinstance(d, Number): d = np.array([d])
+
+        if not isinstance(d, np.ndarray): d = np.asarray(d)
+
         t = t.astype(np.float64).flatten()
         t = format_timestamps(t, time_units)
         t = sort_timestamps(t)
@@ -796,94 +839,161 @@ class TsdFrame(pd.DataFrame):
                 ends = time_support.end.values
                 if d is not None:
                     t, d = jitrestrict(t, d, starts, ends)
-                    super().__init__(index=t, data=d, columns=c)
+                    self.index = t
+                    self.values = d
                 else:
                     t = jittsrestrict(t, starts, ends)
-                    super().__init__(index=t, data=None, columns=c)
+                    self.index = t
+                    self.values = None
             else:
                 time_support = IntervalSet(start=t[0], end=t[-1])
-                super().__init__(index=t, data=d, columns=c)
+                self.index = t
+                self.values = d
 
+            self.time_support = time_support
             self.rate = t.shape[0] / np.sum(
                 time_support.values[:, 1] - time_support.values[:, 0]
             )
 
         else:
             time_support = IntervalSet(pd.DataFrame(columns=["start", "end"]))
-            super().__init__(index=np.array([]), dtype=np.float64)
-            self.rate = 0.0
-
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
+            self.index = None
+            self.values = None
             self.time_support = time_support
-
-        self.index.name = "Time (s)"
-        # self._metadata.append("nap_class")
+            self.rate = 0.0
+        
         self.nap_class = self.__class__.__name__
+        self.dtype = self.values.dtype
 
+    @property
+    def t(self):
+        return self.index
+    
     def __repr__(self):
-        return self.as_units("s").__repr__()
+        # TODO repr for all dtypes
+        upper = "Time (s)"
+        _str_ = []
+        for i, array in zip(self.index, self.values):
+            _str_.append(
+                "{:.6f}".format(i)+"    "+" ".join(["{:.6f}".format(k) for k in array])
+                )
+            
+        _str_ = "\n".join(_str_)
+        bottom = "dtype: {}".format(self.dtype)
+        return "\n".join((upper, _str_, bottom))
 
     def __str__(self):
         return self.__repr__()
 
     def __getitem__(self, key):
-        result = super().__getitem__(key)
-        time_support = self.time_support
-        if isinstance(result, pd.Series):
-            return Tsd(result, time_support=time_support)
-        elif isinstance(result, pd.DataFrame):
-            return TsdFrame(result, time_support=time_support)
+        """
+        Performs the operation __getitem__.
+        """
+        print(key)
+        try:
+            output = self.values.__getitem__(key)
+            if isinstance(key, tuple):
+                index = self.index.__getitem__(key[0])
+            else:
+                index = self.index.__getitem__(key)
 
-    def __add__(self, value):
-        ts = self.time_support
-        return TsdFrame(self.as_dataframe().__add__(value), time_support=ts)
+            if all(isinstance(a, np.ndarray) for a in [index, output]):
+                if output.shape[0] == index.shape[0]:
+                    if len(output.shape) == 1:
+                        return Tsd(t=index, d=output)
+                    elif len(output.shape) == 2:
+                        return TsdFrame(t=index, d=output)
+                    else:
+                        return output
+            elif isinstance(index, Number):
+                return TsdFrame(t=np.array([index]), d=np.atleast_2d(output))
+            else:
+                return output
+        except:
+            raise IndexError
 
-    def __sub__(self, value):
-        ts = self.time_support
-        return TsdFrame(self.as_dataframe().__sub__(value), time_support=ts)
+    def __setitem__(self, key, value):
+        """
+        Performs the operation __getitem__.
+        """        
+        try:
+            self.values.__setitem__(key, value)
+        except:
+            raise IndexError
 
-    def __truediv__(self, value):
-        ts = self.time_support
-        return TsdFrame(self.as_dataframe().__truediv__(value), time_support=ts)
+    def __len__(self):
+        return len(self.values)         
 
-    def __floordiv__(self, value):
-        ts = self.time_support
-        return TsdFrame(self.as_dataframe().__floordiv__(value), time_support=ts)
+    def __array__(self, dtype=None):
+        return self.values.astype(dtype)
 
-    def __mul__(self, value):
-        ts = self.time_support
-        return TsdFrame(self.as_dataframe().__mul__(value), time_support=ts)
+    def __array_ufunc__(self, ufunc, method, *args, **kwargs):
+        # print("In __array_ufunc__")
+        # print("     ufunc = ", ufunc)
+        # print("     method = ", method)
+        # print("     args = ", args)
+        # for inp in args: print(type(inp))
+        # print("     kwargs = ", kwargs)
 
-    def __mod__(self, value):
-        ts = self.time_support
-        return TsdFrame(self.as_dataframe().__mod__(value), time_support=ts)
+        if method == '__call__':
+            new_args = []
+            for a in args:
+                if isinstance(a, Number):
+                    new_args.append(a)
+                elif isinstance(a, self.__class__):
+                    new_args.append(a.values)
+                else:
+                    return NotImplemented
 
-    def __pow__(self, value):
-        ts = self.time_support
-        return TsdFrame(self.as_dataframe().__pow__(value), time_support=ts)
+            out = ufunc(*new_args, **kwargs)
+            # print("output = ", out)
+            return self.__class__(self.index, out)
 
-    def __lt__(self, value):
-        return self.as_dataframe().__lt__(value)
+        else:
+            return NotImplemented
 
-    def __gt__(self, value):
-        return self.as_dataframe().__gt__(value)
+    def __array_function__(self, func, types, args, kwargs):
+        # print("In __array_function__")
+        # print("     func = ", func)
+        # print("     types = ", types)
+        # print("     args = ", args)
+        # print("     kwargs = ", kwargs)
 
-    def __le__(self, value):
-        return self.as_dataframe().__le__(value)
+        new_args = []
+        for a in args:
+            if isinstance(a, Tsd):
+                new_args.append(a.values)
+            else:
+                new_args.append(a)
 
-    def __ge__(self, value):
-        return self.as_dataframe().__ge__(value)
+        output = func._implementation(*new_args, **kwargs)
 
-    def __ne__(self, value):
-        return self.as_dataframe().__ne__(value)
+        if isinstance(output, np.ndarray):
+            if output.shape[0] == self.index.shape[0]:
+                if len(output.shape) == 1:
+                    return Tsd(t=self.index, d=output)
+                elif len(output.shape) == 2:
+                    return TsdFrame(t=self.index, d=output)
+                else:
+                    return output
+            else:
+                return output
+        else:
+            return output
 
-    def __eq__(self, value):
-        return self.as_dataframe().__eq__(value)
+    def as_dataframe(self):
+        """
+        Convert the TsdFrame object to a pandas.DataFrame object.
 
-    @property
-    def _constructor(self):
-        return TsdFrame
+        Returns
+        -------
+        out: pandas.DataFrame
+            _
+        """        
+        return pd.DataFrame(index=self.index, data=self.values)
+
+    def as_array(self):
+        return self.values
 
     def times(self, units="s"):
         """
@@ -899,18 +1009,7 @@ class TsdFrame(pd.DataFrame):
         out: numpy.ndarray
             _
         """
-        return return_timestamps(self.index.values, units)
-
-    def as_dataframe(self, copy=True):
-        """
-        Convert the TsdFrame object to a pandas.DataFrame object.
-
-        Returns
-        -------
-        out: pandas.DataFrame
-            _
-        """
-        return pd.DataFrame(self, copy=copy)
+        return return_timestamps(self.index, units)
 
     def as_units(self, units="s"):
         """
@@ -926,7 +1025,7 @@ class TsdFrame(pd.DataFrame):
         pandas.DataFrame
             the series object with adjusted times
         """
-        t = self.index.values.copy()
+        t = self.index.copy()
         t = return_timestamps(t, units)
         if units == "us":
             t = t.astype(np.int64)
@@ -989,8 +1088,8 @@ class TsdFrame(pd.DataFrame):
         if isinstance(data, Tsd):
             if ep is None:
                 ep = data.time_support
-            time_array = self.index.values
-            time_target_array = data.index.values
+            time_array = self.index
+            time_target_array = data.index
             data_target_array = data.values
             starts = ep.start.values
             ends = ep.end.values
@@ -1004,8 +1103,8 @@ class TsdFrame(pd.DataFrame):
         elif isinstance(data, TsdFrame):
             if ep is None:
                 ep = data.time_support
-            time_array = self.index.values
-            time_target_array = data.index.values
+            time_array = self.index
+            time_target_array = data.index
             data_target_array = data.values
             starts = ep.start.values
             ends = ep.end.values
@@ -1034,7 +1133,7 @@ class TsdFrame(pd.DataFrame):
 
         """
         c = self.columns.values
-        time_array = self.index.values
+        time_array = self.index
         data_array = self.values
         starts = iset.start.values
         ends = iset.end.values
@@ -1086,7 +1185,7 @@ class TsdFrame(pd.DataFrame):
 
         bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
 
-        time_array = self.index.values
+        time_array = self.index
         data_array = self.values
         starts = ep.start.values
         ends = ep.end.values
@@ -1165,7 +1264,7 @@ class TsdFrame(pd.DataFrame):
 
         np.savez(
             filename,
-            t=self.index.values,
+            t=self.index,
             d=self.values,
             start=self.time_support.start.values,
             end=self.time_support.end.values,
@@ -1189,7 +1288,7 @@ class TsdFrame(pd.DataFrame):
     #     """
     #     min_gap = format_timestamps(np.array([min_gap]), time_units)[0]
 
-    #     time_array = self.index.values
+    #     time_array = self.index
     #     starts = self.time_support.start.values
     #     ends = self.time_support.end.values
 
@@ -1260,10 +1359,16 @@ class Ts(Tsd):
             dtype=np.float64,
             **kwargs,
         )
-        self.nts_class = self.__class__.__name__
+        self.nap_class = self.__class__.__name__
 
     def __repr__(self):
-        return self.as_series().fillna("").__repr__()
+        # TODO repr for all dtypes
+        upper = "Time (s)"
+        _str_ = "\n".join([
+            "{:.6f}".format(i) for i in self.index
+            ])        
+        bottom = "Length: {}".format(len(self.index)) + ", dtype: {}".format(self.dtype)
+        return "\n".join((upper, _str_, bottom))
 
     def __str__(self):
         return self.__repr__()
@@ -1333,7 +1438,7 @@ class Ts(Tsd):
 
         np.savez(
             filename,
-            t=self.index.values,
+            t=self.index,
             start=self.time_support.start.values,
             end=self.time_support.end.values,
             type=np.array(["Ts"], dtype=np.str_),
