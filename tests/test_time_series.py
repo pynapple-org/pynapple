@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-08-30 14:39:31
+# @Last Modified time: 2023-09-01 14:12:57
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -32,47 +32,42 @@ def test_create_tsdframe():
 def test_create_empty_tsdframe():
     tsdframe = nap.TsdFrame(t=np.array([]), d=np.array([]))
     assert len(tsdframe) == 0
-    tsdframe = nap.TsdFrame(t=np.arange(100))
-    assert len(tsdframe) == 100
-    assert isinstance(tsdframe, nap.TsdFrame)
 
+    with pytest.raises(RuntimeError):
+        tsdframe = nap.TsdFrame(t=np.arange(100))
+    
     tsdframe = nap.TsdFrame(t=np.array([]), d = np.empty(()))
     assert isinstance(tsdframe, nap.TsdFrame)
     assert len(tsdframe) == 0
 
-    ep = nap.IntervalSet(start = 0, end = 9)
-    tsdframe = nap.TsdFrame(t=np.arange(100), d = None, time_support=ep)
-    assert len(tsdframe) == 10
-    assert isinstance(tsdframe, nap.TsdFrame)    
-
 def test_create_1d_tsdframe():
     tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100))
-    assert isinstance(tsdframe, pd.DataFrame)
+    assert isinstance(tsdframe, nap.TsdFrame)
 
 def test_create_ts():
     ts = nap.Ts(t=np.arange(100))
-    assert isinstance(ts, pd.Series)
+    assert isinstance(ts, nap.Ts)
 
 
 def test_create_ts_from_us():
     a = np.random.randint(0, 1000, 100)
     a.sort()
     ts = nap.Ts(t=a, time_units="us")
-    np.testing.assert_array_almost_equal(ts.index.values, a / 1000 / 1000)
+    np.testing.assert_array_almost_equal(ts.index, a / 1000 / 1000)
 
 
 def test_create_ts_from_ms():
     a = np.random.randint(0, 1000, 100)
     a.sort()
     ts = nap.Ts(t=a, time_units="ms")
-    np.testing.assert_array_almost_equal(ts.index.values, a / 1000)
+    np.testing.assert_array_almost_equal(ts.index, a / 1000)
 
 
 def test_create_ts_from_s():
     a = np.random.randint(0, 1000, 100)
     a.sort()
     ts = nap.Ts(t=a, time_units="s")
-    np.testing.assert_array_almost_equal(ts.index.values, a)
+    np.testing.assert_array_almost_equal(ts.index, a)
 
 
 def test_create_tsdframe_from_us():
@@ -80,7 +75,7 @@ def test_create_tsdframe_from_us():
     d = np.random.rand(100, 3)
     a.sort()
     tsdframe = nap.TsdFrame(t=a, d=d, time_units="us")
-    np.testing.assert_array_almost_equal(tsdframe.index.values, a / 1000 / 1000)
+    np.testing.assert_array_almost_equal(tsdframe.index, a / 1000 / 1000)
 
 
 def test_create_tsdframe_from_ms():
@@ -88,7 +83,7 @@ def test_create_tsdframe_from_ms():
     d = np.random.rand(100, 3)
     a.sort()
     tsdframe = nap.TsdFrame(t=a, d=d, time_units="ms")
-    np.testing.assert_array_almost_equal(tsdframe.index.values, a / 1000)
+    np.testing.assert_array_almost_equal(tsdframe.index, a / 1000)
 
 
 def test_create_tsdframe_from_s():
@@ -96,7 +91,7 @@ def test_create_tsdframe_from_s():
     d = np.random.rand(100, 3)
     a.sort()
     tsdframe = nap.TsdFrame(t=a, d=d, time_units="s")
-    np.testing.assert_array_almost_equal(tsdframe.index.values, a)
+    np.testing.assert_array_almost_equal(tsdframe.index, a)
 
 
 def test_create_ts_wrong_units():
@@ -105,6 +100,11 @@ def test_create_ts_wrong_units():
     with pytest.raises(ValueError):
         nap.Ts(t=a, time_units="min")
 
+def test_create_tsd_wrong_units():
+    a = np.random.randint(0, 1000, 100)
+    a.sort()
+    with pytest.raises(ValueError):
+        nap.Tsd(t=a, d=a, time_units="min")
 
 def test_create_tsdframe_wrong_units():
     a = np.random.randint(0, 1000, 100)
@@ -118,15 +118,15 @@ def test_create_tsdframe_wrong_units():
 def test_create_ts_from_non_sorted():
     a = np.random.randint(0, 1000, 100)
     ts = nap.Ts(t=a, time_units="s")
-    np.testing.assert_array_almost_equal(ts.index.values, np.sort(a))
+    np.testing.assert_array_almost_equal(ts.index, np.sort(a))
 
 
 @pytest.mark.filterwarnings("ignore")
-def test_create_ts_from_non_sorted():
+def test_create_tsdframe_from_non_sorted():
     a = np.random.randint(0, 1000, 100)
     d = np.random.rand(100, 3)
     tsdframe = nap.TsdFrame(t=a, d=d, time_units="s")
-    np.testing.assert_array_almost_equal(tsdframe.index.values, np.sort(a))
+    np.testing.assert_array_almost_equal(tsdframe.index, np.sort(a))
 
 
 def test_create_ts_with_time_support():
@@ -170,13 +170,13 @@ def test_create_tsdframe_with_time_support():
 )
 class Test_Time_Series_1:
     def test_as_units(self, tsd):
-        tmp2 = tsd.index.values
-        np.testing.assert_array_almost_equal(tsd.as_units("s").index.values, tmp2)
+        tmp2 = tsd.index
+        np.testing.assert_array_almost_equal(tsd.as_units("s").index, tmp2)
         np.testing.assert_array_almost_equal(
-            tsd.as_units("ms").index.values, tmp2 * 1e3
+            tsd.as_units("ms").index, tmp2 * 1e3
         )
         np.testing.assert_array_almost_equal(
-            tsd.as_units("us").index.values, tmp2 * 1e6
+            tsd.as_units("us").index, tmp2 * 1e6
         )
         # np.testing.assert_array_almost_equal(tsd.as_units(units="a").index.values, tmp2)
 
@@ -185,14 +185,14 @@ class Test_Time_Series_1:
         np.testing.assert_approx_equal(tsd.rate, rate)
 
     def test_times(self, tsd):
-        tmp = tsd.index.values
+        tmp = tsd.index
         np.testing.assert_array_almost_equal(tsd.times("s"), tmp)
         np.testing.assert_array_almost_equal(tsd.times("ms"), tmp * 1e3)
         np.testing.assert_array_almost_equal(tsd.times("us"), tmp * 1e6)
 
     def test_start_end(self, tsd):
-        assert tsd.start_time() == tsd.index.values[0]
-        assert tsd.end_time() == tsd.index.values[-1]
+        assert tsd.start_time() == tsd.index[0]
+        assert tsd.end_time() == tsd.index[-1]
 
     def test_time_support_interval_set(self, tsd):
         assert isinstance(tsd.time_support, nap.IntervalSet)
@@ -202,8 +202,8 @@ class Test_Time_Series_1:
         np.testing.assert_approx_equal(tsd.time_support.end[0], 99.0)
 
     def test_time_support_include_tsd(self, tsd):
-        np.testing.assert_approx_equal(tsd.time_support.start[0], tsd.index.values[0])
-        np.testing.assert_approx_equal(tsd.time_support.end[0], tsd.index.values[-1])
+        np.testing.assert_approx_equal(tsd.time_support.start[0], tsd.index[0])
+        np.testing.assert_approx_equal(tsd.time_support.end[0], tsd.index[-1])
 
     def test_value_from_tsd(self, tsd):
         tsd2 = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.random.rand(1000))

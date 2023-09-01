@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-08-30 14:47:27
+# @Last Modified time: 2023-09-01 14:14:33
 
 import importlib
 import os
@@ -70,7 +70,7 @@ class Tsd(NDArrayOperatorsMixin):
         if isinstance(t, Number): t = np.array([t])
         if isinstance(d, Number): d = np.array([d])
 
-        if not isinstance(d, np.ndarray): d = np.asarray(d)
+        # if not isinstance(d, np.ndarray): d = np.asarray(d)
 
         t = t.astype(np.float64).flatten()
         t = format_timestamps(t, time_units)
@@ -87,7 +87,7 @@ class Tsd(NDArrayOperatorsMixin):
                 else:
                     t = jittsrestrict(t, starts, ends)
                     self.index = t
-                    self.values = None                    
+                    self.values = np.array([])
             else:
                 time_support = IntervalSet(start=t[0], end=t[-1])
                 self.index = t
@@ -145,7 +145,7 @@ class Tsd(NDArrayOperatorsMixin):
             raise IndexError
 
     def __len__(self):
-        return len(self.values)
+        return len(self.index)
 
     def __array__(self, dtype=None):
         return self.values.astype(dtype)
@@ -806,28 +806,35 @@ class TsdFrame(NDArrayOperatorsMixin):
         **kwargs
             Arguments that will be passed to the pandas.DataFrame initializer.
         """
+        if isinstance(t, np.ndarray) and d is None:
+            raise RuntimeError("Missing argument d when initializing TsdFrame")
+
         if isinstance(t, pd.DataFrame):
             d = t.values
             c = t.columns.values
             t = t.index.values
         else:
+            if not isinstance(d, np.ndarray): 
+                d = np.asarray(d)
+            if len(d.shape) == 1: 
+                d = d[:,None]
             if "columns" in kwargs:
                 c = kwargs["columns"]
             else:
                 if isinstance(d, np.ndarray):
                     if len(d.shape) == 2:
-                        c = np.arange(d.shape[1])
+                        c = np.arange(d.shape[1], dtype="int")
                     elif len(d.shape) == 1:
-                        c = np.zeros(1)
+                        c = np.zeros(1, dtype="int")
                     else:
                         c = np.array([])
                 else:
                     c = None
 
-        if isinstance(t, Number): t = np.array([t])
-        if isinstance(d, Number): d = np.array([d])
-
-        if not isinstance(d, np.ndarray): d = np.asarray(d)
+        if isinstance(t, Number):
+            t = np.array([t])
+        if isinstance(d, Number):
+            d = np.array([d])
 
         t = t.astype(np.float64).flatten()
         t = format_timestamps(t, time_units)
@@ -844,7 +851,7 @@ class TsdFrame(NDArrayOperatorsMixin):
                 else:
                     t = jittsrestrict(t, starts, ends)
                     self.index = t
-                    self.values = None
+                    self.values = np.array([])
             else:
                 time_support = IntervalSet(start=t[0], end=t[-1])
                 self.index = t
@@ -857,11 +864,12 @@ class TsdFrame(NDArrayOperatorsMixin):
 
         else:
             time_support = IntervalSet(pd.DataFrame(columns=["start", "end"]))
-            self.index = None
-            self.values = None
+            self.index = np.array([])
+            self.values = np.array([])
             self.time_support = time_support
             self.rate = 0.0
         
+        self.columns = c
         self.nap_class = self.__class__.__name__
         self.dtype = self.values.dtype
 
@@ -871,7 +879,10 @@ class TsdFrame(NDArrayOperatorsMixin):
     
     def __repr__(self):
         # TODO repr for all dtypes
-        upper = "Time (s)"
+        columns_str = ""
+        if self.columns is not None and len(self.columns):
+            columns_str += "        ".join([str(k) for k in self.columns])
+        upper = "Time (s)      " + columns_str
         _str_ = []
         for i, array in zip(self.index, self.values):
             _str_.append(
@@ -922,7 +933,7 @@ class TsdFrame(NDArrayOperatorsMixin):
             raise IndexError
 
     def __len__(self):
-        return len(self.values)         
+        return len(self.index)
 
     def __array__(self, dtype=None):
         return self.values.astype(dtype)
@@ -980,6 +991,18 @@ class TsdFrame(NDArrayOperatorsMixin):
                 return output
         else:
             return output
+
+    def get(self):
+        """
+        Get columns for TsdFrame. Similar to pandas df.get
+
+        Returns
+        -------
+        out: Tsd or TsdFrame
+            _
+        """        
+
+        print("TODO")
 
     def as_dataframe(self):
         """
@@ -1132,7 +1155,7 @@ class TsdFrame(NDArrayOperatorsMixin):
             TsdFrame object restricted to ep
 
         """
-        c = self.columns.values
+        c = self.columns
         time_array = self.index
         data_array = self.values
         starts = iset.start.values
