@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-09-05 09:58:34
+# @Last Modified time: 2023-09-05 10:23:49
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -267,8 +267,18 @@ class Test_Time_Series_2:
     def test_as_series(self, tsd):
         assert isinstance(tsd.as_series(), pd.Series)
 
-    def test_SingleBlockManager(self, tsd):
+    def test__getitems__(self, tsd):
         a = tsd[0:10]
+        b = nap.Tsd(t=tsd.index[0:10], d=tsd.values[0:10])
+        assert isinstance(a, nap.Tsd)
+        np.testing.assert_array_almost_equal(a.index, b.index)
+        np.testing.assert_array_almost_equal(a.values, b.values)
+        pd.testing.assert_frame_equal(
+            a.time_support, b.time_support
+            )
+
+    def test_Loc(self, tsd):
+        a = tsd.loc[0:10] # should be 11 elements similar to pandas Series
         b = nap.Tsd(t=tsd.index[0:11], d=tsd.values[0:11])
         assert isinstance(a, nap.Tsd)
         np.testing.assert_array_almost_equal(a.index, b.index)
@@ -280,21 +290,21 @@ class Test_Time_Series_2:
     def test_count(self, tsd):
         count = tsd.count(1)
         assert len(count) == 99
-        np.testing.assert_array_almost_equal(count.index.values, np.arange(0.5, 99, 1))        
+        np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))
         
         count = tsd.count(bin_size=1)
         assert len(count) == 99
-        np.testing.assert_array_almost_equal(count.index.values, np.arange(0.5, 99, 1))                
+        np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))
 
     def test_count_time_units(self, tsd):
         for b, tu in zip([1, 1e3, 1e6],['s', 'ms', 'us']):
             count = tsd.count(b, time_units = tu)
             assert len(count) == 99
-            np.testing.assert_array_almost_equal(count.index.values, np.arange(0.5, 99, 1))
+            np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))
             
             count = tsd.count(b, tu)
             assert len(count) == 99
-            np.testing.assert_array_almost_equal(count.index.values, np.arange(0.5, 99, 1))                
+            np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))                
 
     def test_count_with_ep(self, tsd):
         ep = nap.IntervalSet(start=0, end=100)
