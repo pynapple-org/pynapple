@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-09-01 14:12:57
+# @Last Modified time: 2023-09-05 09:58:34
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -193,6 +193,8 @@ class Test_Time_Series_1:
     def test_start_end(self, tsd):
         assert tsd.start_time() == tsd.index[0]
         assert tsd.end_time() == tsd.index[-1]
+        assert tsd.start == tsd.index[0]
+        assert tsd.end == tsd.index[-1]
 
     def test_time_support_interval_set(self, tsd):
         assert isinstance(tsd.time_support, nap.IntervalSet)
@@ -266,10 +268,10 @@ class Test_Time_Series_2:
         assert isinstance(tsd.as_series(), pd.Series)
 
     def test_SingleBlockManager(self, tsd):
-        a = tsd.loc[0:10]
-        b = nap.Tsd(t=tsd.index.values[0:11], d=tsd.values[0:11])
+        a = tsd[0:10]
+        b = nap.Tsd(t=tsd.index[0:11], d=tsd.values[0:11])
         assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(a.index.values, b.index.values)
+        np.testing.assert_array_almost_equal(a.index, b.index)
         np.testing.assert_array_almost_equal(a.values, b.values)
         pd.testing.assert_frame_equal(
             a.time_support, b.time_support

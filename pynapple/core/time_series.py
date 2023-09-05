@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-09-01 14:14:33
+# @Last Modified time: 2023-09-05 09:57:59
 
 import importlib
 import os
@@ -70,7 +70,7 @@ class Tsd(NDArrayOperatorsMixin):
         if isinstance(t, Number): t = np.array([t])
         if isinstance(d, Number): d = np.array([d])
 
-        # if not isinstance(d, np.ndarray): d = np.asarray(d)
+        if not isinstance(d, np.ndarray): d = np.empty_like(t)
 
         t = t.astype(np.float64).flatten()
         t = format_timestamps(t, time_units)
@@ -105,12 +105,20 @@ class Tsd(NDArrayOperatorsMixin):
             self.time_support = time_support
             self.rate = 0.0
         
-        self.nap_class = self.__class__.__name__
+        self.nap_class = self.__class__.__name__        
         self.dtype = self.values.dtype
 
     @property
     def t(self):
         return self.index
+
+    @property
+    def start(self):
+        return self.start_time()
+
+    @property
+    def end(self):
+        return self.end_time()
     
     def __repr__(self):
         # TODO repr for all dtypes
@@ -217,7 +225,9 @@ class Tsd(NDArrayOperatorsMixin):
         out: pandas.Series
             _
         """
-        return pd.Series(self.index, self.values, copy=True)
+        return pd.Series(
+            index=self.index, data=self.values, copy=True, dtype="float64"
+            )
 
     def as_array(self):
         """
@@ -876,6 +886,14 @@ class TsdFrame(NDArrayOperatorsMixin):
     @property
     def t(self):
         return self.index
+
+    @property
+    def start(self):
+        return self.start_time()
+
+    @property
+    def end(self):
+        return self.end_time()        
     
     def __repr__(self):
         # TODO repr for all dtypes
