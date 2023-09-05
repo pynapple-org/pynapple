@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-09-05 09:57:59
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-05 18:35:49
 
 import importlib
 import os
@@ -119,6 +119,10 @@ class Tsd(NDArrayOperatorsMixin):
     @property
     def end(self):
         return self.end_time()
+
+    @property
+    def shape(self):
+        return self.values.shape
     
     def __repr__(self):
         # TODO repr for all dtypes

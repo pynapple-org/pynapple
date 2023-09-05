@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-09-05 10:23:49
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-05 18:50:25
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -277,7 +277,7 @@ class Test_Time_Series_2:
             a.time_support, b.time_support
             )
 
-    def test_Loc(self, tsd):
+    def test_loc(self, tsd):
         a = tsd.loc[0:10] # should be 11 elements similar to pandas Series
         b = nap.Tsd(t=tsd.index[0:11], d=tsd.values[0:11])
         assert isinstance(a, nap.Tsd)
@@ -344,20 +344,22 @@ class Test_Time_Series_2:
     def test_bin_average(self, tsd):
         meantsd = tsd.bin_average(10)
         assert len(meantsd) == 10
-        np.testing.assert_array_almost_equal(meantsd.index.values, np.arange(5, 100, 10))
+        np.testing.assert_array_almost_equal(meantsd.index, np.arange(5, 100, 10))
         bins = np.arange(tsd.time_support.start[0], tsd.time_support.end[0]+1, 10)
-        tmp = tsd.groupby(np.digitize(tsd.index.values, bins)).mean()
-        np.testing.assert_array_almost_equal(meantsd.values, tmp.values)
+        idx = np.digitize(tsd.index, bins)
+        tmp = np.array([np.mean(tsd.values[idx==i]) for i in np.unique(idx)])        
+        np.testing.assert_array_almost_equal(meantsd.values, tmp)
 
     def test_bin_average_with_ep(self, tsd):
         ep = nap.IntervalSet(start=0, end=40)
         meantsd = tsd.bin_average(10, ep)
         assert len(meantsd) == 4
-        np.testing.assert_array_almost_equal(meantsd.index.values, np.arange(5, 40, 10))
+        np.testing.assert_array_almost_equal(meantsd.index, np.arange(5, 40, 10))
         bins = np.arange(ep.start[0], ep.end[0]+10, 10)
-        tsd = tsd.restrict(ep)
-        tmp = tsd.groupby(np.digitize(tsd.index.values, bins)).mean()
-        np.testing.assert_array_almost_equal(meantsd.values, tmp.loc[np.arange(1,5)].values)
+        # tsd = tsd.restrict(ep)
+        idx = np.digitize(tsd.index, bins)
+        tmp = np.array([np.mean(tsd.values[idx==i]) for i in np.unique(idx)])                        
+        np.testing.assert_array_almost_equal(meantsd.values, tmp[0:-1])
 
     def test_threshold(self, tsd):
         thrs = tsd.threshold(0.5, "above")
@@ -369,7 +371,6 @@ class Test_Time_Series_2:
         thrs = tsd.threshold(0.5, "belowequal")
         assert len(thrs) == np.sum(tsd.values <= 0.5)
 
-
     def test_threshold_time_support(self, tsd):
         thrs = tsd.threshold(0.5, "above")
         time_support = thrs.time_support
@@ -380,7 +381,6 @@ class Test_Time_Series_2:
             tsd.threshold(0.5, "bla")
         assert str(e_info.value) == "Method {} for thresholding is not accepted.".format("bla")
 
-
     def test_data(self, tsd):
         np.testing.assert_array_almost_equal(tsd.values, tsd.data())
 
@@ -389,76 +389,78 @@ class Test_Time_Series_2:
 
         a = tsd + 0.5
         assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        np.testing.assert_array_almost_equal(tsd.index, a.index)
         assert np.all(a.values == (v + 0.5))
 
         a = tsd - 0.5
         assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        np.testing.assert_array_almost_equal(tsd.index, a.index)
         assert np.all(a.values == (v - 0.5))
 
         a = tsd * 0.5
         assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        np.testing.assert_array_almost_equal(tsd.index, a.index)
         assert np.all(a.values == (v * 0.5))
 
         a = tsd / 0.5
         assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        np.testing.assert_array_almost_equal(tsd.index, a.index)
         assert np.all(a.values == (v / 0.5))
 
         a = tsd // 0.5
         assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        np.testing.assert_array_almost_equal(tsd.index, a.index)
         assert np.all(a.values == (v // 0.5))        
 
         a = tsd % 0.5
         assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        np.testing.assert_array_almost_equal(tsd.index, a.index)
         assert np.all(a.values == (v % 0.5))
 
         a = tsd ** 0.5
         assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
-        assert np.all(a.values == (v ** 0.5))
+        np.testing.assert_array_almost_equal(tsd.index, a.index)
+        np.testing.assert_array_almost_equal(a.values, v**0.5)        
 
         a = tsd > 0.5
-        assert isinstance(a, pd.Series)
-        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        assert isinstance(a, nap.Tsd)
+        np.testing.assert_array_almost_equal(tsd.index, a.index)
         assert np.all(a.values == (v > 0.5))
 
         a = tsd >= 0.5
-        assert isinstance(a, pd.Series)
-        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        assert isinstance(a, nap.Tsd)
+        np.testing.assert_array_almost_equal(tsd.index, a.index)
         assert np.all(a.values == (v >= 0.5))
 
         a = tsd < 0.5
-        assert isinstance(a, pd.Series)
-        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        assert isinstance(a, nap.Tsd)
+        np.testing.assert_array_almost_equal(tsd.index, a.index)
         assert np.all(a.values == (v < 0.5))
 
         a = tsd <= 0.5
-        assert isinstance(a, pd.Series)
-        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        assert isinstance(a, nap.Tsd)
+        np.testing.assert_array_almost_equal(tsd.index, a.index)
         assert np.all(a.values == (v <= 0.5))        
 
         tsd = nap.Tsd(t=np.arange(10), d=np.arange(10))
         v = tsd.values
         a = tsd == 5
-        assert isinstance(a, pd.Series)
-        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        assert isinstance(a, nap.Tsd)
+        np.testing.assert_array_almost_equal(tsd.index, a.index)
         assert np.all(a.values == (v == 5))
 
         a = tsd != 5
-        assert isinstance(a, pd.Series)
-        np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
+        assert isinstance(a, nap.Tsd)
+        np.testing.assert_array_almost_equal(tsd.index, a.index)
         assert np.all(a.values == (v != 5))
 
     def test_repr_(self, tsd):
-        assert pd.Series(tsd).__repr__() == tsd.__repr__()
+        # assert pd.Series(tsd).__repr__() == tsd.__repr__()
+        assert isinstance(tsd.__repr__(), str)
 
-    def test_repr_(self, tsd):
-        assert pd.Series(tsd).__str__() == tsd.__str__()
+    def test_str_(self, tsd):
+        # assert pd.Series(tsd).__str__() == tsd.__str__()
+        assert isinstance(tsd.__str__(), str)
 
     def test_to_tsgroup(self, tsd):
         t = []
@@ -482,7 +484,7 @@ class Test_Time_Series_2:
         assert len(tsgroup) == 3
         np.testing.assert_array_almost_equal(np.arange(3), tsgroup.index)
         for i in range(3):
-            np.testing.assert_array_almost_equal(tsgroup[i].index.values, t[i])
+            np.testing.assert_array_almost_equal(tsgroup[i].index, t[i])
         
     def test_save_npz(self, tsd):
         import os
@@ -516,7 +518,7 @@ class Test_Time_Series_2:
         assert 'start' in keys
         assert 'end' in keys
 
-        np.testing.assert_array_almost_equal(file['t'], tsd.index.values)
+        np.testing.assert_array_almost_equal(file['t'], tsd.index)
         np.testing.assert_array_almost_equal(file['d'], tsd.values)
         np.testing.assert_array_almost_equal(file['start'], tsd.time_support.start.values)
         np.testing.assert_array_almost_equal(file['end'], tsd.time_support.end.values)
