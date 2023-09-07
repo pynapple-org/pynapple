@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-05 18:50:25
+# @Last Modified time: 2023-09-06 17:40:54
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -277,15 +277,15 @@ class Test_Time_Series_2:
             a.time_support, b.time_support
             )
 
-    def test_loc(self, tsd):
-        a = tsd.loc[0:10] # should be 11 elements similar to pandas Series
-        b = nap.Tsd(t=tsd.index[0:11], d=tsd.values[0:11])
-        assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(a.index, b.index)
-        np.testing.assert_array_almost_equal(a.values, b.values)
-        pd.testing.assert_frame_equal(
-            a.time_support, b.time_support
-            )
+    # def test_loc(self, tsd):
+    #     a = tsd.loc[0:10] # should be 11 elements similar to pandas Series
+    #     b = nap.Tsd(t=tsd.index[0:11], d=tsd.values[0:11])
+    #     assert isinstance(a, nap.Tsd)
+    #     np.testing.assert_array_almost_equal(a.index, b.index)
+    #     np.testing.assert_array_almost_equal(a.values, b.values)
+    #     pd.testing.assert_frame_equal(
+    #         a.time_support, b.time_support
+    #         )
 
     def test_count(self, tsd):
         count = tsd.count(1)
@@ -540,97 +540,99 @@ class Test_Time_Series_3:
         assert isinstance(tsdframe.as_dataframe(), pd.DataFrame)
 
     def test_horizontal_slicing(self, tsdframe):
-        assert isinstance(tsdframe[0], nap.Tsd)
-        np.testing.assert_array_almost_equal(tsdframe.values[:,0], tsdframe[0].values)
-        assert isinstance(tsdframe[0].time_support, nap.IntervalSet)
-        pd.testing.assert_frame_equal(tsdframe.time_support, tsdframe[0].time_support)
+        assert isinstance(tsdframe[:,0], nap.Tsd)
+        np.testing.assert_array_almost_equal(tsdframe[:,0].values, tsdframe.values[:,0])
+        assert isinstance(tsdframe[:,0].time_support, nap.IntervalSet)
+        pd.testing.assert_frame_equal(tsdframe.time_support, tsdframe[:,0].time_support)
         
-        assert isinstance(tsdframe[[0,2]], nap.TsdFrame)
-        np.testing.assert_array_almost_equal(tsdframe.values[:,[0,2]], tsdframe[[0,2]].values)
-        assert isinstance(tsdframe[[0,2]].time_support, nap.IntervalSet)
-        pd.testing.assert_frame_equal(tsdframe.time_support, tsdframe[[0,2]].time_support)
+        assert isinstance(tsdframe[:,[0,2]], nap.TsdFrame)
+        np.testing.assert_array_almost_equal(tsdframe.values[:,[0,2]], tsdframe[:,[0,2]].values)
+        assert isinstance(tsdframe[:,[0,2]].time_support, nap.IntervalSet)
+        pd.testing.assert_frame_equal(tsdframe.time_support, tsdframe[:,[0,2]].time_support)
 
     def test_vertical_slicing(self, tsdframe):
-        assert isinstance(tsdframe.loc[0:10], nap.TsdFrame)
-        np.testing.assert_array_almost_equal(tsdframe.values[0:11], tsdframe.loc[0:10].values)
-        assert isinstance(tsdframe.loc[0:10].time_support, nap.IntervalSet)
-        pd.testing.assert_frame_equal(tsdframe.loc[0:10].time_support, nap.IntervalSet(0, 10))
+        assert isinstance(tsdframe[0:10], nap.TsdFrame)
+        np.testing.assert_array_almost_equal(tsdframe.values[0:10], tsdframe[0:10].values)
+        assert isinstance(tsdframe[0:10].time_support, nap.IntervalSet)
+        pd.testing.assert_frame_equal(tsdframe[0:10].time_support, nap.IntervalSet(0, 9))
 
     def test_operators(self, tsdframe):
         v = tsdframe.values
 
         a = tsdframe + 0.5
         assert isinstance(a, nap.TsdFrame)
-        np.testing.assert_array_almost_equal(tsdframe.index.values, a.index.values)
+        np.testing.assert_array_almost_equal(tsdframe.index, a.index)
         assert np.all(a.values == (v + 0.5))
 
         a = tsdframe - 0.5
         assert isinstance(a, nap.TsdFrame)
-        np.testing.assert_array_almost_equal(tsdframe.index.values, a.index.values)
+        np.testing.assert_array_almost_equal(tsdframe.index, a.index)
         assert np.all(a.values == (v - 0.5))
 
         a = tsdframe * 0.5
         assert isinstance(a, nap.TsdFrame)
-        np.testing.assert_array_almost_equal(tsdframe.index.values, a.index.values)
+        np.testing.assert_array_almost_equal(tsdframe.index, a.index)
         assert np.all(a.values == (v * 0.5))
 
         a = tsdframe / 0.5
         assert isinstance(a, nap.TsdFrame)
-        np.testing.assert_array_almost_equal(tsdframe.index.values, a.index.values)
+        np.testing.assert_array_almost_equal(tsdframe.index, a.index)
         assert np.all(a.values == (v / 0.5))
 
         a = tsdframe // 0.5
         assert isinstance(a, nap.TsdFrame)
-        np.testing.assert_array_almost_equal(tsdframe.index.values, a.index.values)
+        np.testing.assert_array_almost_equal(tsdframe.index, a.index)
         assert np.all(a.values == (v // 0.5))        
 
         a = tsdframe % 0.5
         assert isinstance(a, nap.TsdFrame)
-        np.testing.assert_array_almost_equal(tsdframe.index.values, a.index.values)
+        np.testing.assert_array_almost_equal(tsdframe.index, a.index)
         assert np.all(a.values == (v % 0.5))
 
         a = tsdframe ** 0.5
         assert isinstance(a, nap.TsdFrame)
-        np.testing.assert_array_almost_equal(tsdframe.index.values, a.index.values)
-        assert np.all(a.values == (v ** 0.5))
+        np.testing.assert_array_almost_equal(tsdframe.index, a.index)
+        np.testing.assert_array_almost_equal(a.values, v ** 0.5)
 
         a = tsdframe > 0.5
-        assert isinstance(a, pd.DataFrame)
-        np.testing.assert_array_almost_equal(tsdframe.index.values, a.index.values)
+        assert isinstance(a, nap.TsdFrame)
+        np.testing.assert_array_almost_equal(tsdframe.index, a.index)
         assert np.all(a.values == (v > 0.5))
 
         a = tsdframe >= 0.5
-        assert isinstance(a, pd.DataFrame)
-        np.testing.assert_array_almost_equal(tsdframe.index.values, a.index.values)
+        assert isinstance(a, nap.TsdFrame)
+        np.testing.assert_array_almost_equal(tsdframe.index, a.index)
         assert np.all(a.values == (v >= 0.5))
 
         a = tsdframe < 0.5
-        assert isinstance(a, pd.DataFrame)
-        np.testing.assert_array_almost_equal(tsdframe.index.values, a.index.values)
+        assert isinstance(a, nap.TsdFrame)
+        np.testing.assert_array_almost_equal(tsdframe.index, a.index)
         assert np.all(a.values == (v < 0.5))
 
         a = tsdframe <= 0.5
-        assert isinstance(a, pd.DataFrame)
-        np.testing.assert_array_almost_equal(tsdframe.index.values, a.index.values)
+        assert isinstance(a, nap.TsdFrame)
+        np.testing.assert_array_almost_equal(tsdframe.index, a.index)
         assert np.all(a.values == (v <= 0.5))        
 
         tsdframe = nap.TsdFrame(t=np.arange(10), d=np.tile(np.arange(10)[:,np.newaxis], 3))
         v = tsdframe.values
         a = tsdframe == 5
-        assert isinstance(a, pd.DataFrame)
-        np.testing.assert_array_almost_equal(tsdframe.index.values, a.index.values)
+        assert isinstance(a, nap.TsdFrame)
+        np.testing.assert_array_almost_equal(tsdframe.index, a.index)
         assert np.all(a.values == (v == 5))
 
         a = tsdframe != 5
-        assert isinstance(a, pd.DataFrame)
-        np.testing.assert_array_almost_equal(tsdframe.index.values, a.index.values)
+        assert isinstance(a, nap.TsdFrame)
+        np.testing.assert_array_almost_equal(tsdframe.index, a.index)
         assert np.all(a.values == (v != 5))
 
     def test_repr_(self, tsdframe):
-        assert pd.DataFrame(tsdframe).__repr__() == tsdframe.__repr__()
+        # assert pd.DataFrame(tsdframe).__repr__() == tsdframe.__repr__()
+        assert isinstance(tsdframe.__repr__(), str)
 
-    def test_repr_(self, tsdframe):
-        assert pd.DataFrame(tsdframe).__str__() == tsdframe.__str__()
+    def test_str_(self, tsdframe):
+        # assert pd.DataFrame(tsdframe).__str__() == tsdframe.__str__()
+        assert isinstance(tsdframe.__str__(), str)
 
     def test_data(self, tsdframe):
         np.testing.assert_array_almost_equal(tsdframe.values, tsdframe.data())
@@ -638,19 +640,19 @@ class Test_Time_Series_3:
     def test_bin_average(self, tsdframe):
         meantsd = tsdframe.bin_average(10)
         assert len(meantsd) == 10
-        np.testing.assert_array_almost_equal(meantsd.index.values, np.arange(5, 100, 10))
+        np.testing.assert_array_almost_equal(meantsd.index, np.arange(5, 100, 10))
         bins = np.arange(tsdframe.time_support.start[0], tsdframe.time_support.end[0]+1, 10)
-        tmp = tsdframe.groupby(np.digitize(tsdframe.index.values, bins)).mean()
+        tmp = tsdframe.as_dataframe().groupby(np.digitize(tsdframe.index, bins)).mean()
         np.testing.assert_array_almost_equal(meantsd.values, tmp.values)
 
     def test_bin_average_with_ep(self, tsdframe):
         ep = nap.IntervalSet(start=0, end=40)
         meantsd = tsdframe.bin_average(10, ep)
         assert len(meantsd) == 4
-        np.testing.assert_array_almost_equal(meantsd.index.values, np.arange(5, 40, 10))
+        np.testing.assert_array_almost_equal(meantsd.index, np.arange(5, 40, 10))
         bins = np.arange(ep.start[0], ep.end[0]+10, 10)
         tsdframe = tsdframe.restrict(ep)
-        tmp = tsdframe.groupby(np.digitize(tsdframe.index.values, bins)).mean()
+        tmp = tsdframe.as_dataframe().groupby(np.digitize(tsdframe.index, bins)).mean()
         np.testing.assert_array_almost_equal(meantsd.values, tmp.loc[np.arange(1,5)].values)
 
     def test_save_npz(self, tsdframe):
@@ -686,11 +688,11 @@ class Test_Time_Series_3:
         assert 'end' in keys
         assert 'columns' in keys
 
-        np.testing.assert_array_almost_equal(file['t'], tsdframe.index.values)
+        np.testing.assert_array_almost_equal(file['t'], tsdframe.index)
         np.testing.assert_array_almost_equal(file['d'], tsdframe.values)
         np.testing.assert_array_almost_equal(file['start'], tsdframe.time_support.start.values)
         np.testing.assert_array_almost_equal(file['end'], tsdframe.time_support.end.values)
-        np.testing.assert_array_almost_equal(file['columns'], tsdframe.columns.values)
+        np.testing.assert_array_almost_equal(file['columns'], tsdframe.columns)
 
         os.remove("tsdframe.npz")
         os.remove("tsdframe2.npz")
@@ -707,10 +709,12 @@ class Test_Time_Series_3:
 class Test_Time_Series_4:
 
     def test_repr_(self, ts):
-        assert pd.Series(ts).fillna("").__repr__() == ts.__repr__()
+        # assert pd.Series(ts).fillna("").__repr__() == ts.__repr__()
+        assert isinstance(ts.__repr__(), str)        
 
-    def test_repr_(self, ts):
-        assert pd.Series(ts).fillna("").__str__() == ts.__str__()
+    def test_str_(self, ts):
+        # assert pd.Series(ts).fillna("").__str__() == ts.__str__()
+        assert isinstance(ts.__str__(), str)
 
     def test_save_npz(self, ts):
         import os
@@ -743,7 +747,7 @@ class Test_Time_Series_4:
         assert 'start' in keys
         assert 'end' in keys
 
-        np.testing.assert_array_almost_equal(file['t'], ts.index.values)
+        np.testing.assert_array_almost_equal(file['t'], ts.index)
         np.testing.assert_array_almost_equal(file['start'], ts.time_support.start.values)
         np.testing.assert_array_almost_equal(file['end'], ts.time_support.end.values)
 

@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-05 18:35:49
+# @Last Modified time: 2023-09-06 17:37:02
 
 import importlib
 import os
@@ -1303,7 +1303,7 @@ class TsdFrame(NDArrayOperatorsMixin):
                 "Path {} does not exist.".format(os.path.dirname(filename))
             )
 
-        cols_name = self.columns.values
+        cols_name = self.columns
         if cols_name.dtype == np.dtype("O"):
             cols_name = cols_name.astype(str)
 
