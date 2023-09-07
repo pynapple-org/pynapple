@@ -104,12 +104,14 @@ def test_wrong_key():
     with pytest.raises(KeyError):
         nwb["a"]
 
+
 def test_failed_to_build():
-    nwbfile = mock_NWBFile()
+    from pynwb.file import Subject
+    nwbfile = mock_NWBFile(subject=Subject(subject_id="mouse1"))
     nwb = nap.NWBFile(nwbfile)    
     for oid, obj in nwbfile.objects.items():                                                                                                                                   
         nwb.key_to_id[obj.name] = oid 
-        nwb[obj.name] = {"id":oid, "type":"Tsd"}
+        nwb[obj.name] = {"id": oid, "type": "Tsd"}
 
     with pytest.warns(UserWarning) as record:
         nwb["subject"]
@@ -530,12 +532,13 @@ def test_add_Units():
     np.testing.assert_array_equal(data._metadata["quality"].values, np.array(["good"]*n_units))
     np.testing.assert_array_equal(data._metadata["alpha"].values, alpha)
 
+
 def test_add_Timestamps():
     from pynwb.misc import AnnotationSeries
     from pynwb.core import DynamicTable, VectorData
 
     nwbfile = mock_NWBFile()
-    nwbfile.add_acquisition(AnnotationSeries("test_ts", data = np.array(["test"]*100), timestamps=np.arange(100)))
+    nwbfile.add_acquisition(AnnotationSeries("test_ts", data=np.array(["test"]*100), timestamps=np.arange(100)))
     nwb = nap.NWBFile(nwbfile)
     assert len(nwb) == 1
     assert "test_ts" in nwb.keys()
