@@ -47,7 +47,7 @@ project.view
 # %%
 # Here it shows all the subjects (in this case only A2929), all the sessions and all of the derivatives folders. It shows as well all the NPZ files that contains a pynapple object and the NWB files.
 #
-# The object project behaves like a nested dictionnary. It is then easy to loop and navigate through a hierarchy of folders when doing analyses. In this case, we are gonna take only the session A2929-200711.
+# The object project behaves like a nested dictionary. It is then easy to loop and navigate through a hierarchy of folders when doing analyses. In this case, we are gonna take only the session A2929-200711.
 
 
 session = project["sub-A2929"]["ses-A2929-200711"]

@@ -170,7 +170,7 @@ class Folder(UserDict):
         Raises
         ------
         KeyError
-            If key is not in the dictionnary
+            If key is not in the dictionary
         """
         if key.__hash__:
             if self.__contains__(key):
