@@ -7,7 +7,7 @@
 """
 Pynapple class to interface with NWB files.
 Data are always lazy-loaded.
-Object behaves like dictionnary.
+Object behaves like dictionary.
 """
 
 import errno
@@ -366,7 +366,7 @@ class NWBFile(UserDict):
         Raises
         ------
         KeyError
-            If key is not in the dictionnary
+            If key is not in the dictionary
         """
         if key.__hash__:
             if self.__contains__(key):

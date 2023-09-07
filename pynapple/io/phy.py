@@ -143,7 +143,7 @@ class Phy(BaseLoader):
         ----------
         path : Path object
             The path to the data
-        time_support : IntevalSet, optional
+        time_support : IntervalSet, optional
             The time support of the data
 
         Raises
