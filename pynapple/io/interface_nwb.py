@@ -35,7 +35,7 @@ def _extract_compatible_data_from_nwbfile(nwbfile):
     Returns
     -------
     dict
-        Dictionnary containing all the object found and their type in pynapple.
+        Dictionary containing all the object found and their type in pynapple.
     """
     data = {}
 

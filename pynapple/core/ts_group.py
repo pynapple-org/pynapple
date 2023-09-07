@@ -77,7 +77,7 @@ class TsGroup(UserDict):
         Parameters
         ----------
         data : dict
-            Dictionnary containing Ts/Tsd objects
+            Dictionary containing Ts/Tsd objects
         time_support : IntervalSet, optional
             The time support of the TsGroup. Ts/Tsd objects will be restricted to the time support if passed.
             If no time support is specified, TsGroup will merge time supports from all the Ts/Tsd objects in data.

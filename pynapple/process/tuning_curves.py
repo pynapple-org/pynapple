@@ -154,7 +154,7 @@ def compute_2d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     -------
     tuple
         A tuple containing: \n
-        tc (dict): Dictionnary of the tuning curves with dimensions (nb_bins, nb_bins).\n
+        tc (dict): Dictionary of the tuning curves with dimensions (nb_bins, nb_bins).\n
         xy (list): List of bins center in the two dimensions
 
     Raises
@@ -437,7 +437,7 @@ def compute_2d_tuning_curves_continuous(
     -------
     tuple
         A tuple containing: \n
-        tc (dict): Dictionnary of the tuning curves with dimensions (nb_bins, nb_bins).\n
+        tc (dict): Dictionary of the tuning curves with dimensions (nb_bins, nb_bins).\n
         xy (list): List of bins center in the two dimensions
 
     Raises
