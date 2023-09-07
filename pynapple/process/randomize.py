@@ -295,7 +295,7 @@ def _resample_ts(ts):
 
 def _resample_tsgroup(tsgroup):
     """
-    Resamples the each timestamp series in the group, with uniform distribution and on the time
+    Resamples each timestamp series in the group, with uniform distribution and on the time
     support of the whole group.
 
     Parameters

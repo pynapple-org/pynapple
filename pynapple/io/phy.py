@@ -342,9 +342,9 @@ class Phy(BaseLoader):
         ----------
         filename : str, optional
             The filename of the lfp file.
-            It can be useful it multiple dat files are present in the data directory
+            It can be useful if multiple dat files are present in the data directory
         channel : int or list of int, optional
-            The channel(s) to load. If None return a memory map of the dat file to avoid memory error
+            The channel(s) to load. If None, return a memory map of the dat file to avoid memory error
         extension : str, optional
             The file extenstion (.eeg, .dat, .lfp). Make sure the frequency match
         frequency : float, optional
