@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-06 17:37:02
+# @Last Modified time: 2023-09-08 10:43:33
 
 import importlib
 import os
@@ -29,7 +29,46 @@ from .time_units import format_timestamps, return_timestamps, sort_timestamps
 from numbers import Number
 from numpy.lib.mixins import NDArrayOperatorsMixin
 from typing import TYPE_CHECKING, Optional, Tuple, Union, Any, SupportsIndex
-import operator
+
+import abc
+
+class _BaseTsd(abc.ABC):
+
+    def __init__(self):
+        pass
+
+    @property
+    def t(self):
+        return self.index
+
+    @property
+    def start(self):
+        return self.start_time()
+
+    @property
+    def end(self):
+        return self.end_time()
+
+    @property
+    def shape(self):
+        return self.values.shape
+
+    def times(self, units="s"):
+        """
+        The time index of the Tsd, returned as np.double in the desired time units.
+
+        Parameters
+        ----------
+        units : str, optional
+            ('us', 'ms', 's' [default])
+
+        Returns
+        -------
+        out: numpy.ndarray
+            the time indexes
+        """
+        return return_timestamps(self.index, units)
+
 
 
 class Tsd(NDArrayOperatorsMixin):
@@ -67,10 +106,13 @@ class Tsd(NDArrayOperatorsMixin):
             d = t.values
             t = t.index
 
-        if isinstance(t, Number): t = np.array([t])
-        if isinstance(d, Number): d = np.array([d])
+        if isinstance(t, Number):
+            t = np.array([t])
+        if isinstance(d, Number):
+            d = np.array([d])
 
-        if not isinstance(d, np.ndarray): d = np.empty_like(t)
+        if not isinstance(d, np.ndarray):
+            d = np.empty_like(t)
 
         t = t.astype(np.float64).flatten()
         t = format_timestamps(t, time_units)
@@ -92,7 +134,7 @@ class Tsd(NDArrayOperatorsMixin):
                 time_support = IntervalSet(start=t[0], end=t[-1])
                 self.index = t
                 self.values = d
-            
+
             self.time_support = time_support
             self.rate = t.shape[0] / np.sum(
                 time_support.values[:, 1] - time_support.values[:, 0]
@@ -104,8 +146,8 @@ class Tsd(NDArrayOperatorsMixin):
             self.values = np.array([])
             self.time_support = time_support
             self.rate = 0.0
-        
-        self.nap_class = self.__class__.__name__        
+
+        self.nap_class = self.__class__.__name__
         self.dtype = self.values.dtype
 
     @property
@@ -123,14 +165,17 @@ class Tsd(NDArrayOperatorsMixin):
     @property
     def shape(self):
         return self.values.shape
-    
+
     def __repr__(self):
         # TODO repr for all dtypes
         upper = "Time (s)"
-        _str_ = "\n".join([
-            "{:.6f}".format(i)+"    "+"{:.6f}".format(j) for i, j in zip(self.index, self.values)
-            ])
-        bottom = "Length: {}".format(len(self.index)) + ", dtype: {}".format(self.dtype)        
+        _str_ = "\n".join(
+            [
+                "{:.6f}".format(i) + "    " + "{:.6f}".format(j)
+                for i, j in zip(self.index, self.values)
+            ]
+        )
+        bottom = "Length: {}".format(len(self.index)) + ", dtype: {}".format(self.dtype)
         return "\n".join((upper, _str_, bottom))
 
     def __str__(self):
@@ -139,10 +184,10 @@ class Tsd(NDArrayOperatorsMixin):
     def __getitem__(self, key):
         """
         Performs the operation __getitem__.
-        """        
+        """
         try:
             data = self.values.__getitem__(key)
-            index = self.index.__getitem__(key)            
+            index = self.index.__getitem__(key)
             return Tsd(t=index, d=data)
         except:
             raise IndexError
@@ -150,7 +195,7 @@ class Tsd(NDArrayOperatorsMixin):
     def __setitem__(self, key, value):
         """
         Performs the operation __getitem__.
-        """        
+        """
         try:
             self.values.__setitem__(key, value)
         except:
@@ -163,14 +208,14 @@ class Tsd(NDArrayOperatorsMixin):
         return self.values.astype(dtype)
 
     def __array_ufunc__(self, ufunc, method, *args, **kwargs):
-        # print("In __array_ufunc__")
-        # print("     ufunc = ", ufunc)
-        # print("     method = ", method)
-        # print("     args = ", args)
-        # for inp in args: print(type(inp))
-        # print("     kwargs = ", kwargs)
+        print("In __array_ufunc__")
+        print("     ufunc = ", ufunc)
+        print("     method = ", method)
+        print("     args = ", args)
+        for inp in args: print(type(inp))
+        print("     kwargs = ", kwargs)
 
-        if method == '__call__':
+        if method == "__call__":
             new_args = []
             for a in args:
                 if isinstance(a, Number):
@@ -188,11 +233,11 @@ class Tsd(NDArrayOperatorsMixin):
             return NotImplemented
 
     def __array_function__(self, func, types, args, kwargs):
-        # print("In __array_function__")
-        # print("     func = ", func)
-        # print("     types = ", types)
-        # print("     args = ", args)
-        # print("     kwargs = ", kwargs)
+        print("In __array_function__")
+        print("     func = ", func)
+        print("     types = ", types)
+        print("     args = ", args)
+        print("     kwargs = ", kwargs)
 
         new_args = []
         for a in args:
@@ -200,7 +245,7 @@ class Tsd(NDArrayOperatorsMixin):
                 new_args.append(a.values)
             else:
                 new_args.append(a)
-        output = func._implementation(*args, **kwargs)    
+        output = func._implementation(*args, **kwargs)
 
         return output
 
@@ -229,9 +274,7 @@ class Tsd(NDArrayOperatorsMixin):
         out: pandas.Series
             _
         """
-        return pd.Series(
-            index=self.index, data=self.values, copy=True, dtype="float64"
-            )
+        return pd.Series(index=self.index, data=self.values, copy=True, dtype="float64")
 
     def as_array(self):
         """
@@ -243,7 +286,6 @@ class Tsd(NDArrayOperatorsMixin):
             _
         """
         return self.values
-
 
     def as_units(self, units="s"):
         """
@@ -789,7 +831,7 @@ class Tsd(NDArrayOperatorsMixin):
         return self.times(units=units)[-1]
 
 
-class TsdFrame(NDArrayOperatorsMixin):    
+class TsdFrame(NDArrayOperatorsMixin):
     """
     A subclass of pandas.DataFrame specialized for neurophysiological time series.
 
@@ -828,10 +870,10 @@ class TsdFrame(NDArrayOperatorsMixin):
             c = t.columns.values
             t = t.index.values
         else:
-            if not isinstance(d, np.ndarray): 
+            if not isinstance(d, np.ndarray):
                 d = np.asarray(d)
-            if len(d.shape) == 1: 
-                d = d[:,None]
+            if len(d.shape) == 1:
+                d = d[:, None]
             if "columns" in kwargs:
                 c = kwargs["columns"]
             else:
@@ -882,7 +924,7 @@ class TsdFrame(NDArrayOperatorsMixin):
             self.values = np.array([])
             self.time_support = time_support
             self.rate = 0.0
-        
+
         self.columns = c
         self.nap_class = self.__class__.__name__
         self.dtype = self.values.dtype
@@ -897,8 +939,8 @@ class TsdFrame(NDArrayOperatorsMixin):
 
     @property
     def end(self):
-        return self.end_time()        
-    
+        return self.end_time()
+
     def __repr__(self):
         # TODO repr for all dtypes
         columns_str = ""
@@ -908,9 +950,11 @@ class TsdFrame(NDArrayOperatorsMixin):
         _str_ = []
         for i, array in zip(self.index, self.values):
             _str_.append(
-                "{:.6f}".format(i)+"    "+" ".join(["{:.6f}".format(k) for k in array])
-                )
-            
+                "{:.6f}".format(i)
+                + "    "
+                + " ".join(["{:.6f}".format(k) for k in array])
+            )
+
         _str_ = "\n".join(_str_)
         bottom = "dtype: {}".format(self.dtype)
         return "\n".join((upper, _str_, bottom))
@@ -948,7 +992,7 @@ class TsdFrame(NDArrayOperatorsMixin):
     def __setitem__(self, key, value):
         """
         Performs the operation __getitem__.
-        """        
+        """
         try:
             self.values.__setitem__(key, value)
         except:
@@ -968,7 +1012,7 @@ class TsdFrame(NDArrayOperatorsMixin):
         # for inp in args: print(type(inp))
         # print("     kwargs = ", kwargs)
 
-        if method == '__call__':
+        if method == "__call__":
             new_args = []
             for a in args:
                 if isinstance(a, Number):
@@ -1022,7 +1066,7 @@ class TsdFrame(NDArrayOperatorsMixin):
         -------
         out: Tsd or TsdFrame
             _
-        """        
+        """
 
         print("TODO")
 
@@ -1034,7 +1078,7 @@ class TsdFrame(NDArrayOperatorsMixin):
         -------
         out: pandas.DataFrame
             _
-        """        
+        """
         return pd.DataFrame(index=self.index, data=self.values)
 
     def as_array(self):
@@ -1409,9 +1453,7 @@ class Ts(Tsd):
     def __repr__(self):
         # TODO repr for all dtypes
         upper = "Time (s)"
-        _str_ = "\n".join([
-            "{:.6f}".format(i) for i in self.index
-            ])        
+        _str_ = "\n".join(["{:.6f}".format(i) for i in self.index])
         bottom = "Length: {}".format(len(self.index)) + ", dtype: {}".format(self.dtype)
         return "\n".join((upper, _str_, bottom))
 
