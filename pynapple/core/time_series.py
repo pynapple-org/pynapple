@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-10 17:28:36
+# @Last Modified time: 2023-09-08 12:28:34
 
 import importlib
 import os
@@ -661,6 +661,45 @@ class Tsd(pd.Series):
         )
 
         return
+
+    def interpolate(self, ts, ep=None, left=None, right=None):
+        """Wrapper of the numpy linear interpolation method. See https://numpy.org/doc/stable/reference/generated/numpy.interp.html for an explanation of the parameters.
+        The argument ts should be Ts, Tsd, TsdFrame to ensure interpolating from sorted timestamps in the right unit,
+
+        Parameters
+        ----------
+        ts : Ts, Tsd or TsdFrame
+            The object holding the timestamps
+        ep : IntervalSet, optional
+            The epochs to use to interpolate. If None, the time support of Tsd is used.
+        left : None, optional
+            Value to return for ts < tsd[0], default is tsd[0].
+        right : None, optional
+            Value to return for ts > tsd[-1], default is tsd[-1].
+        """
+        if not isinstance(ts, (Ts, Tsd, TsdFrame)):
+            raise RuntimeError(
+                "First argument should be an instance of Ts, Tsd or TsdFrame"
+            )
+
+        if not isinstance(ep, IntervalSet):
+            ep = self.time_support
+
+        new_t = ts.restrict(ep).index.values
+        new_d = np.empty(len(new_t))
+        new_d.fill(np.nan)
+
+        start = 0
+        for i in range(len(ep)):
+            t = ts.restrict(ep.loc[[i]])
+            tmp = self.restrict(ep.loc[[i]])
+            if len(t) and len(tmp):
+                new_d[start : start + len(t)] = np.interp(
+                    t.index.values, tmp.index.values, tmp.values, left=left, right=right
+                )
+            start += len(t)
+
+        return Tsd(t=new_t, d=new_d, time_support=ep)
 
     # def find_gaps(self, min_gap, method="absolute"):
     #     """
