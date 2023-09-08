@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-06-28 15:22:26
+# @Last Modified time: 2023-09-08 16:11:22
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -511,6 +511,54 @@ class Test_Time_Series_2:
 
         os.remove("tsd.npz")
         os.remove("tsd2.npz")
+
+    def test_interpolate(self, tsd):
+        
+        y = np.arange(0, 1001)
+
+        tsd = nap.Tsd(t=np.arange(0, 101), d=y[0::10])
+
+        # Ts
+        ts = nap.Ts(t=y/10)
+        tsd2 = tsd.interpolate(ts)
+        np.testing.assert_array_almost_equal(tsd2.values, y)
+
+        # Tsd
+        ts = nap.Tsd(t=y/10, d=np.zeros_like(y))
+        tsd2 = tsd.interpolate(ts)
+        np.testing.assert_array_almost_equal(tsd2.values, y)
+
+        # TsdFrame
+        ts = nap.TsdFrame(t=y/10, d=np.zeros((len(y), 2)))
+        tsd2 = tsd.interpolate(ts)
+        np.testing.assert_array_almost_equal(tsd2.values, y)
+        
+        with pytest.raises(RuntimeError) as e:
+            tsd.interpolate([0, 1, 2])
+        assert str(e.value) == "First argument should be an instance of Ts, Tsd or TsdFrame"
+
+        # Right left
+        ep = nap.IntervalSet(start=0, end=5)
+        tsd = nap.Tsd(t=np.arange(1,4), d=np.arange(3), time_support=ep)
+        ts = nap.Ts(t=np.arange(0, 5))
+        tsd2 = tsd.interpolate(ts, left=1234)
+        assert float(tsd2.values[0]) == 1234.0
+        tsd2 = tsd.interpolate(ts, right=4321)
+        assert float(tsd2.values[-1]) == 4321.0
+
+    def test_interpolate_with_ep(self, tsd):        
+        y = np.arange(0, 1001)
+        tsd = nap.Tsd(t=np.arange(0, 101), d=y[0::10])        
+        ts = nap.Ts(t=y/10)
+        ep = nap.IntervalSet(start=np.arange(0, 100, 20), end=np.arange(10, 110, 20))
+        tsd2 = tsd.interpolate(ts, ep)
+        tmp = ts.restrict(ep).index.values*10
+        np.testing.assert_array_almost_equal(tmp, tsd2.values)
+
+        # Empty ep
+        ep = nap.IntervalSet(start=200, end=300)
+        tsd2 = tsd.interpolate(ts, ep)
+        assert len(tsd2) == 0
 
 ####################################################
 # Test for tsdframe
