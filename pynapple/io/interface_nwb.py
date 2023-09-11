@@ -229,9 +229,19 @@ def _make_tsgroup(obj):
     N = len(tsgroup)
     metainfo = {}
     for coln in obj.colnames:
-        
-        if coln == "electrode_group":            
-            for e in ['location', 'x', 'y', 'z', 'imp', 'filtering', 'rel_x', 'rel_y', 'rel_z', 'reference']:
+        if coln == "electrode_group":
+            for e in [
+                "location",
+                "x",
+                "y",
+                "z",
+                "imp",
+                "filtering",
+                "rel_x",
+                "rel_y",
+                "rel_z",
+                "reference",
+            ]:
                 tmp = [eg.__getattribute__(e) for eg in obj[coln] if hasattr(eg, e)]
                 if len(tmp) == N:
                     metainfo[e] = np.array(tmp)
