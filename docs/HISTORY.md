@@ -8,6 +8,13 @@ Around 2016-2017, Luke Sjulson started *TSToolbox2*, still in Matlab and which i
 In 2018, Francesco started neuroseries, a Python package built on Pandas. It was quickly adopted in Adrien's lab, especially by Guillaume Viejo, a postdoc in the lab. Gradually, the majority of the lab was using it and new functions were constantly added.
 In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuroseries and started *pynapple*. The core of pynapple is largely built upon neuroseries. Some of the original changes to TSToolbox made by Luke were included in this package, especially the *time_support* property of all ts/tsd objects.
 
+0.3.6 (2023-09-11)
+------------------
+
+- Fix issue in NWB reader class with units
+- Implement a linear interpolation function.
+
+
 0.3.5 (2023-08-08)
 ------------------
 
@@ -17,6 +24,7 @@ In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuro
 - Cross-correlograms function can take tuple
 - New doc with mkdocs-gallery
 
+
 0.3.4 (2023-06-29)
 ------------------
 
@@ -25,6 +33,7 @@ In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuro
 -	Saving to npz functions for all objects.
 - 	tsd.value_from can take TsdFrame
 - 	Warning message for deprecating current IO. 
+
 
 0.3.3 (2023-04-17)
 ------------------
