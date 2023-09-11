@@ -376,7 +376,9 @@ class Test_Time_Series_2:
         v = tsd.values
 
         a = tsd + 0.5
+        print(a.head(), tsd.head(), tsd.time_support, a.time_support)
         assert isinstance(a, nap.Tsd)
+        print(tsd.index.values[:5], a.index.values[:5])
         np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
         assert np.all(a.values == (v + 0.5))
 
