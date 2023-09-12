@@ -202,7 +202,7 @@ def test_jitcount():
 
         tsd2 = pd.concat(tsd2)
         tsd2 = nap.Tsd(tsd2)
-
+        
         pd.testing.assert_series_equal(tsd3, tsd2)
 
 def test_jitbin():

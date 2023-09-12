@@ -7,6 +7,7 @@
 
 """Tests of time series for `pynapple` package."""
 
+from multiprocessing import Value
 import pynapple as nap
 import numpy as np
 import pandas as pd
@@ -218,7 +219,7 @@ class Test_Time_Series_1:
         np.testing.assert_array_almost_equal(tsdframe.values[::10], tsdframe2.values)
 
     def test_value_from_value_error(self, tsd):
-        with pytest.raises(RuntimeError):
+        with pytest.raises(ValueError):
             tsd.value_from(np.arange(10))
         
     def test_value_from_with_restrict(self, tsd):
@@ -376,9 +377,7 @@ class Test_Time_Series_2:
         v = tsd.values
 
         a = tsd + 0.5
-        print(a.head(), tsd.head(), tsd.time_support, a.time_support)
         assert isinstance(a, nap.Tsd)
-        print(tsd.index.values[:5], a.index.values[:5])
         np.testing.assert_array_almost_equal(tsd.index.values, a.index.values)
         assert np.all(a.values == (v + 0.5))
 

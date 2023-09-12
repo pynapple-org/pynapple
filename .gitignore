@@ -131,6 +131,9 @@ venv.bak/
 # PyCharm
 .idea/*
 
+# vscode
+.vscode/*
+
 # mypy
 .mypy_cache/
 .dmypy.json
