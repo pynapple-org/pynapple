@@ -17,6 +17,12 @@ def test_create_tsd():
     tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
     assert isinstance(tsd, pd.Series)
 
+def test_create_tsd_from_lists():
+    tsd = nap.Tsd(t=[1,2,3], d=[4,5,6])
+    assert isinstance(tsd, pd.Series)
+    assert tsd.index.values[0] == 1
+    assert tsd.values[0] == 4
+
 def test_create_empty_tsd():
     tsd = nap.Tsd(t=np.array([]), d=np.array([]))
     assert len(tsd) == 0

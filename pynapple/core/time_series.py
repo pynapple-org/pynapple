@@ -31,8 +31,28 @@ from .time_units import format_timestamps, return_timestamps, sort_timestamps
 class TimeDataMixin:
     """Class that implements the common features that we want in Tsd and TsdFrames and
     that can be handled in a single place. This is a mixin class, so it should be used
-    only in conjunction with a subclass of pandas.Series or pandas.DataFrame.
+    only in conjunction with a subclass of pandas.Series or pandas.DataFrame
+    with a time_support attribute.
     """
+
+    _internal_names = pd.DataFrame._internal_names + ["rate"]
+    _metadata = ["time_support"]
+
+    @property
+    def rate(self):
+        """
+        The frequency of the time series (Hz) computed over the time support
+
+        Returns
+        -------
+        out: float
+            _
+        """
+        if len(self.time_support) == 0:
+            return 0
+
+        duration = self.time_support.tot_length()
+        return self.times().shape[0] / duration if duration else 0.0
 
     def times(self, units="s"):
         """
@@ -454,6 +474,8 @@ class Tsd(pd.Series, TimeDataMixin):
         elif "index" in kwargs:  # if we are creating from _constructor
             t = kwargs.pop("index")
 
+        if d is not None:
+            d = np.array(d)
         t = np.array(t).astype(np.float64).flatten()
         t = format_timestamps(t, time_units)
         t = sort_timestamps(t)
@@ -476,15 +498,12 @@ class Tsd(pd.Series, TimeDataMixin):
                     super().__init__(index=t, data=d, dtype=np.float64)
 
             self.time_support = time_support
-            duration = np.sum(time_support.end.values - time_support.start.values)
-            self.rate = t.shape[0] / duration if duration else 0.0
 
         else:
             time_support = IntervalSet(pd.DataFrame(columns=["start", "end"]))
             super().__init__(index=t, data=d, dtype=np.float64)
 
             self.time_support = time_support
-            self.rate = 0.0
 
         self.index.name = "Time (s)"
 
@@ -823,7 +842,9 @@ class TsdFrame(pd.DataFrame, TimeDataMixin):
                 else:
                     c = None
 
-        t = t.astype(np.float64).flatten()
+        if d is not None:
+            d = np.array(d)
+        t = np.array(t).astype(np.float64).flatten()
         t = format_timestamps(t, time_units)
         t = sort_timestamps(t)
 
@@ -841,14 +862,9 @@ class TsdFrame(pd.DataFrame, TimeDataMixin):
                 time_support = IntervalSet(start=t[0], end=t[-1])
                 super().__init__(index=t, data=d, columns=c)
 
-            self.rate = t.shape[0] / np.sum(
-                time_support.values[:, 1] - time_support.values[:, 0]
-            )
-
         else:
             time_support = IntervalSet(pd.DataFrame(columns=["start", "end"]))
             super().__init__(index=np.array([]), dtype=np.float64)
-            self.rate = 0.0
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
