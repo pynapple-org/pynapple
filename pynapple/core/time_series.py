@@ -27,12 +27,13 @@ from .jitted_functions import (
 )
 from .time_units import format_timestamps, return_timestamps, sort_timestamps
 
+
 class TimeDataMixin:
-    """Class that implements the common features that we want in Tsd and TsdFrames and 
+    """Class that implements the common features that we want in Tsd and TsdFrames and
     that can be handled in a single place. This is a mixin class, so it should be used
     only in conjunction with a subclass of pandas.Series or pandas.DataFrame.
     """
-    
+
     def times(self, units="s"):
         """
         The time index of the Tsd, returned as np.double in the desired time units.
@@ -80,7 +81,7 @@ class TimeDataMixin:
             _
         """
         return self.times(units=units)[-1]
-    
+
     def as_units(self, units="s"):
         """
         Returns a Series with time expressed in the desired unit.
@@ -99,7 +100,7 @@ class TimeDataMixin:
             ss = self.as_dataframe()
         elif isinstance(self, Tsd):
             ss = self.as_series()
-        
+
         t = self.index.values
         t = return_timestamps(t, units)
         if units == "us":
@@ -118,7 +119,7 @@ class TimeDataMixin:
             _
         """
         return self.values
-    
+
     def value_from(self, data, ep=None):
         """
         Replace the value with the closest value from Tsd/TsdFrame argument
@@ -160,16 +161,16 @@ class TimeDataMixin:
         """
         if not isinstance(data, (Tsd, TsdFrame)):
             raise ValueError("The time series to align to should be Tsd/TsdFrame.")
-        
+
         time_array = self.index.values
-        
+
         if ep is None:
-            ep = self.time_support    
+            ep = self.time_support
         starts = ep.start.values
         ends = ep.end.values
         time_target_array = data.index.values
         data_target_array = data.values
-       
+
         # TODO those should be refactores as "values_to" methods in the respective
         # classes, confusing to have this typecheck here:
         if isinstance(data, Tsd):
@@ -187,7 +188,7 @@ class TimeDataMixin:
             time_support = IntervalSet(start=ns, end=ne)
 
             return TsdFrame(t=t, d=d, time_support=time_support, columns=data.columns)
-        
+
     def bin_average(self, bin_size, ep=None, time_units="s"):
         """
         Bin the data by averaging points within bin_size
@@ -245,7 +246,7 @@ class TimeDataMixin:
             return Tsd(t=t, d=d, time_support=time_support)
         else:
             raise RuntimeError("The time series to bin should be Tsd/TsdFrame.")
-        
+
     def restrict(self, ep):
         """
         Restricts a Tsd object to a set of time intervals delimited by an IntervalSet object
@@ -353,31 +354,28 @@ class TimeDataMixin:
                 "Path {} does not exist.".format(os.path.dirname(filename))
             )
 
-        saving_kwargs = dict(t=self.index.values,
+        saving_kwargs = dict(
+            t=self.index.values,
             start=self.time_support.start.values,
             end=self.time_support.end.values,
-            type=np.array(["TsdFrame"], dtype=np.str_))
-        
+            type=np.array(["TsdFrame"], dtype=np.str_),
+        )
+
         if isinstance(self, TsdFrame):
             cols_name = self.columns.values
             if cols_name.dtype == np.dtype("O"):
                 cols_name = cols_name.astype(str)
-            saving_kwargs["columns"]=cols_name
+            saving_kwargs["columns"] = cols_name
         if not isinstance(self, Ts):
-            saving_kwargs["d"]=self.values
+            saving_kwargs["d"] = self.values
         saving_kwargs["type"] = np.array([self.__class__.__name__], dtype=np.str_)
-        
-        np.savez(
-            filename,
-        **saving_kwargs
-        )
 
+        np.savez(filename, **saving_kwargs)
 
         return
-    
+
     def __str__(self):
         return self.__repr__()
-        
 
     # def find_gaps(self, min_gap, method="absolute"):
     #     """
@@ -411,7 +409,7 @@ class TimeDataMixin:
     #     """
     #     print("TODO")
     #     return
-    
+
 
 class Tsd(pd.Series, TimeDataMixin):
     """
@@ -444,15 +442,15 @@ class Tsd(pd.Series, TimeDataMixin):
         **kwargs
             Arguments that will be passed to the pandas.Series initializer.
         """
- 
+
         if isinstance(d, SingleBlockManager):
-            t = d.index.values 
+            t = d.index.values
             d = d.array
-            
+
         elif isinstance(d, pd.Series):
             t = d.index.values
             d = d.values
-            
+
         elif "index" in kwargs:  # if we are creating from _constructor
             t = kwargs.pop("index")
 
@@ -503,7 +501,6 @@ class Tsd(pd.Series, TimeDataMixin):
             _
         """
         return pd.Series(self, copy=True)
-
 
     def count(self, *args, **kwargs):
         """
@@ -767,7 +764,7 @@ class Tsd(pd.Series, TimeDataMixin):
     @property
     def _constructor(self):
         return Tsd
-    
+
     @property
     def _constructor_expanddim(self):
         return TsdFrame
@@ -865,7 +862,7 @@ class TsdFrame(pd.DataFrame, TimeDataMixin):
     @property
     def _constructor(self):
         return TsdFrame
-    
+
     @property
     def _constructor_sliced(self):
         return Tsd
