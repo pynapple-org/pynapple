@@ -12,7 +12,7 @@ import warnings
 
 import numpy as np
 import pandas as pd
-from numba import jit
+from numba import njit
 
 from .jitted_functions import jitdiff, jitin_interval, jitintersect, jitunion
 from .time_units import format_timestamps, return_timestamps, sort_timestamps
@@ -27,7 +27,9 @@ all_warnings = np.array(
 )
 
 
-@jit(nopython=True)
+njit
+
+
 def jitfix_iset(start, end):
     """
     0 - > "Some starts and ends are equal. Removing 1 microsecond!",

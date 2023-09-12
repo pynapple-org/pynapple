@@ -4,10 +4,10 @@
 # @Last Modified by:   Guillaume Viejo
 # @Last Modified time: 2023-06-28 14:35:52
 import numpy as np
-from numba import jit
+from numba import njit
 
 
-@jit(nopython=True)
+@njit
 def jitrestrict(time_array, data_array, starts, ends):
     """
     Jitted version of restrict
@@ -66,7 +66,7 @@ def jitrestrict(time_array, data_array, starts, ends):
     return (new_time_array, new_data_array)
 
 
-@jit(nopython=True)
+@njit
 def jittsrestrict(time_array, starts, ends):
     n = len(time_array)
     m = len(starts)
@@ -105,7 +105,7 @@ def jittsrestrict(time_array, starts, ends):
     return new_time_array
 
 
-@jit(nopython=True)
+@njit
 def jitrestrict_with_count(time_array, data_array, starts, ends):
     n = len(time_array)
     m = len(starts)
@@ -148,7 +148,7 @@ def jitrestrict_with_count(time_array, data_array, starts, ends):
     return new_time_array, new_data_array, count
 
 
-@jit(nopython=True)
+@njit
 def jittsrestrict_with_count(time_array, starts, ends):
     n = len(time_array)
     m = len(starts)
@@ -190,7 +190,7 @@ def jittsrestrict_with_count(time_array, starts, ends):
     return new_time_array, count
 
 
-@jit(nopython=True)
+@njit
 def jitthreshold(time_array, data_array, starts, ends, thr, method="above"):
     """Summary
 
@@ -287,7 +287,7 @@ def jitthreshold(time_array, data_array, starts, ends, thr, method="above"):
     return (new_time_array, new_data_array, new_starts, new_ends)
 
 
-@jit(nopython=True)
+@njit
 def jitvaluefrom(time_array, time_target_array, data_target_array, starts, ends):
     """Summary
 
@@ -347,7 +347,7 @@ def jitvaluefrom(time_array, time_target_array, data_target_array, starts, ends)
     return (time_array, new_data_array, starts, ends)
 
 
-@jit(nopython=True)
+@njit
 def jitvaluefromtsdframe(
     time_array, time_target_array, data_target_array, starts, ends
 ):
@@ -411,7 +411,7 @@ def jitvaluefromtsdframe(
     return (time_array, new_data_array, starts, ends)
 
 
-@jit(nopython=True)
+@njit
 def jitcount(time_array, starts, ends, bin_size):
     time_array, countin = jittsrestrict_with_count(time_array, starts, ends)
 
@@ -462,7 +462,7 @@ def jitcount(time_array, starts, ends, bin_size):
     return (new_time_array, new_data_array)
 
 
-@jit(nopython=True)
+@njit
 def jitbin(time_array, data_array, starts, ends, bin_size):
     time_array, data_array, countin = jitrestrict_with_count(
         time_array, data_array, starts, ends
@@ -517,7 +517,7 @@ def jitbin(time_array, data_array, starts, ends, bin_size):
     return (new_time_array, new_data_array)
 
 
-@jit(nopython=True)
+@njit
 def jitbin_array(time_array, data_array, starts, ends, bin_size):
     time_array, data_array, countin = jitrestrict_with_count(
         time_array, data_array, starts, ends
@@ -573,7 +573,7 @@ def jitbin_array(time_array, data_array, starts, ends, bin_size):
     return (new_time_array, new_data_array)
 
 
-@jit(nopython=True)
+@njit
 def jitintersect(start1, end1, start2, end2):
     """Summary
 
@@ -629,7 +629,7 @@ def jitintersect(start1, end1, start2, end2):
     return (newstart, newend)
 
 
-@jit(nopython=True)
+@njit
 def jitunion(start1, end1, start2, end2):
     """Summary
 
@@ -726,7 +726,7 @@ def jitunion(start1, end1, start2, end2):
     return (newstart, newend)
 
 
-@jit(nopython=True)
+@njit
 def jitdiff(start1, end1, start2, end2):
     m = start1.shape[0]
     n = start2.shape[0]
@@ -799,7 +799,7 @@ def jitdiff(start1, end1, start2, end2):
     return (newstart, newend)
 
 
-@jit(nopython=True)
+@njit
 def jitunion_isets(starts, ends):
     idx = np.argsort(starts)
     starts = starts[idx]
@@ -830,7 +830,7 @@ def jitunion_isets(starts, ends):
     return (new_start, new_end)
 
 
-@jit(nopython=True)
+@njit
 def jitin_interval(time_array, starts, ends):
     """
     In_interval
@@ -887,7 +887,7 @@ def jitin_interval(time_array, starts, ends):
     return data
 
 
-@jit(nopython=True)
+@njit
 def jit_poisson_IRLS(X, y, niter=100, tolerance=1e-5):
     """Poisson Iteratively Reweighted Least Square
     for fitting Poisson GLM.
@@ -928,7 +928,7 @@ def jit_poisson_IRLS(X, y, niter=100, tolerance=1e-5):
     return B
 
 
-# @jit(nopython=True)
+# @njit
 # def jitfind_gaps(time_array, starts, ends, min_gap):
 #     """
 #     Jitted version of find_gap

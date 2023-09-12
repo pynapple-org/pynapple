@@ -54,6 +54,32 @@ class TimeDataMixin:
         duration = self.time_support.tot_length()
         return self.times().shape[0] / duration if duration else 0.0
 
+    @staticmethod
+    def _validate_time_and_data(t, d, time_units, time_support):
+        if d is not None:
+            d = np.array(d)
+        t = np.array(t).astype(np.float64).flatten()
+        t = format_timestamps(t, time_units)
+        t = sort_timestamps(t)
+
+        # A bit of data munging depending on the input. We restrict the time data
+        # if we pass a time_support
+        if len(t):
+            if time_support is not None:
+                starts = time_support.start.values
+                ends = time_support.end.values
+                if d is not None:
+                    t, d = jitrestrict(t, d, starts, ends)
+                else:
+                    t = jittsrestrict(t, starts, ends)
+            else:
+                time_support = IntervalSet(start=t[0], end=t[-1])
+        else:
+            time_support = IntervalSet(pd.DataFrame(columns=["start", "end"]))
+            d = []
+
+        return t, d, time_support
+
     def times(self, units="s"):
         """
         The time index of the Tsd, returned as np.double in the desired time units.
@@ -474,36 +500,17 @@ class Tsd(pd.Series, TimeDataMixin):
         elif "index" in kwargs:  # if we are creating from _constructor
             t = kwargs.pop("index")
 
-        if d is not None:
-            d = np.array(d)
-        t = np.array(t).astype(np.float64).flatten()
-        t = format_timestamps(t, time_units)
-        t = sort_timestamps(t)
+        kwargs = dict()
+        if d is None and len(t):  # if there's no data, this is a Ts, keep it small
+            kwargs["dtype"] = np.int8
 
-        if len(t):
-            if time_support is not None:
-                starts = time_support.start.values
-                ends = time_support.end.values
-                if d is not None:
-                    t, d = jitrestrict(t, d, starts, ends)
-                    super().__init__(index=t, data=d)
-                else:
-                    t = jittsrestrict(t, starts, ends)
-                    super().__init__(index=t, data=None, dtype=np.int8)
-            else:
-                time_support = IntervalSet(start=t[0], end=t[-1])
-                if d is not None:
-                    super().__init__(index=t, data=d)
-                else:
-                    super().__init__(index=t, data=d, dtype=np.float64)
+        t, d, time_support = self._validate_time_and_data(
+            t, d, time_units, time_support
+        )
 
-            self.time_support = time_support
+        super().__init__(index=t, data=d, **kwargs)
 
-        else:
-            time_support = IntervalSet(pd.DataFrame(columns=["start", "end"]))
-            super().__init__(index=t, data=d, dtype=np.float64)
-
-            self.time_support = time_support
+        self.time_support = time_support
 
         self.index.name = "Time (s)"
 
@@ -842,30 +849,14 @@ class TsdFrame(pd.DataFrame, TimeDataMixin):
                 else:
                     c = None
 
-        if d is not None:
-            d = np.array(d)
-        t = np.array(t).astype(np.float64).flatten()
-        t = format_timestamps(t, time_units)
-        t = sort_timestamps(t)
+        t, d, time_support = self._validate_time_and_data(
+            t, d, time_units, time_support
+        )
 
-        if len(t):
-            if time_support is not None:
-                starts = time_support.start.values
-                ends = time_support.end.values
-                if d is not None:
-                    t, d = jitrestrict(t, d, starts, ends)
-                    super().__init__(index=t, data=d, columns=c)
-                else:
-                    t = jittsrestrict(t, starts, ends)
-                    super().__init__(index=t, data=None, columns=c)
-            else:
-                time_support = IntervalSet(start=t[0], end=t[-1])
-                super().__init__(index=t, data=d, columns=c)
+        super().__init__(index=t, data=d, columns=c)
 
-        else:
-            time_support = IntervalSet(pd.DataFrame(columns=["start", "end"]))
-            super().__init__(index=np.array([]), dtype=np.float64)
-
+        # TODO: the fact that we have to catch this suggest some misuse of
+        # pandas subclassing. We should probably think of making this
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             self.time_support = time_support
