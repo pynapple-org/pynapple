@@ -7,7 +7,6 @@
 
 """Tests of time series for `pynapple` package."""
 
-from multiprocessing import Value
 import pynapple as nap
 import numpy as np
 import pandas as pd
