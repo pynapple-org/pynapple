@@ -11,26 +11,25 @@ with open('README.md') as readme_file:
 #     history = history_file.read()
 
 requirements = [
-        'pandas>=1.0.3,<2.0.0',
-        'numba>=0.46.0',
-        'numpy>=1.17.4',
-        'scipy>=1.3.2',
-        'pynwb>=2.0.0',
-        'tabulate',
-        'h5py',
-        'tifffile',
-        'zarr',
-        'rich'
-        ]
+    'pandas>=1.0.3,<2.0.0',
+    'numba>=0.46.0',
+    'numpy>=1.17.4',
+    'scipy>=1.3.2',
+    'pynwb>=2.0.0',
+    'tabulate',
+    'h5py',
+    'tifffile',
+    'zarr',
+    'rich'
+]
 
 test_requirements = [
     'pytest',
     'isort',
     'pip-tools',
-    'pytest',
     'flake8',
     'coverage'
-    ]
+]
 
 setup(
     author="Guillaume Viejo",
@@ -62,7 +61,7 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/pynapple-org/pynapple',
-    version='v0.3.5',
+    version='v0.3.6',
     zip_safe=False,
     long_description_content_type='text/markdown',
     download_url='https://github.com/pynapple-org/pynapple/archive/refs/tags/v0.3.5.tar.gz'

@@ -1,13 +1,13 @@
 # -*- coding: utf-8 -*-
 # @Author: Guillaume Viejo
 # @Date:   2023-08-01 11:54:45
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-08-07 22:34:26
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-11 17:55:23
 
 """
 Pynapple class to interface with NWB files.
 Data are always lazy-loaded.
-Object behaves like dictionnary.
+Object behaves like dictionary.
 """
 
 import errno
@@ -35,7 +35,7 @@ def _extract_compatible_data_from_nwbfile(nwbfile):
     Returns
     -------
     dict
-        Dictionnary containing all the object found and their type in pynapple.
+        Dictionary containing all the object found and their type in pynapple.
     """
     data = {}
 
@@ -228,11 +228,29 @@ def _make_tsgroup(obj):
 
     N = len(tsgroup)
     metainfo = {}
-    for colname, col in zip(obj.colnames, obj.columns):
-        if colname not in ["spike_times_index", "spike_times"]:
+    for coln in obj.colnames:
+        if coln == "electrode_group":
+            for e in [
+                "location",
+                "x",
+                "y",
+                "z",
+                "imp",
+                "filtering",
+                "rel_x",
+                "rel_y",
+                "rel_z",
+                "reference",
+            ]:
+                tmp = [eg.__getattribute__(e) for eg in obj[coln] if hasattr(eg, e)]
+                if len(tmp) == N:
+                    metainfo[e] = np.array(tmp)
+
+        if coln not in ["spike_times_index", "spike_times", "electrode_group"]:
+            col = obj[coln]
             if len(col) == N:
                 if not isinstance(col[0], (np.ndarray, list, tuple, dict, set)):
-                    metainfo[colname] = np.array(col[:])
+                    metainfo[coln] = np.array(col[:])
 
     tsgroup = nap.TsGroup(tsgroup, **metainfo)
 
@@ -316,7 +334,7 @@ class NWBFile(UserDict):
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file)
         elif isinstance(file, pynwb.file.NWBFile):
             self.nwb = file
-            self.name = self.nwb.subject.subject_id
+            self.name = self.nwb.session_id
 
         else:
             raise RuntimeError(
@@ -366,7 +384,7 @@ class NWBFile(UserDict):
         Raises
         ------
         KeyError
-            If key is not in the dictionnary
+            If key is not in the dictionary
         """
         if key.__hash__:
             if self.__contains__(key):
