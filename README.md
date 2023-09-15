@@ -19,7 +19,7 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 
 -   Free software: MIT License
 -   __Documentation__: <https://pynapple-org.github.io/pynapple>
--   __Notebooks and tutorials__ : <https://pynapple-org.github.io/pynapple/notebooks/pynapple-quick-start/>
+-   __Notebooks and tutorials__ : <https://pynapple-org.github.io/pynapple/generated/gallery/>
 <!-- -   __Collaborative repository__: <https://github.com/pynapple-org/pynacollada> -->
 
 
