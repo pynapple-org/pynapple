@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-12 10:39:40
+# @Last Modified time: 2023-09-15 16:15:30
 
 import importlib
 import os
@@ -32,10 +32,24 @@ from typing import TYPE_CHECKING, Optional, Tuple, Union, Any, SupportsIndex
 
 import abc
 
-class _BaseTsd(abc.ABC):
+class TsdFrameSliceHelper():
+    def __init__(self, tsdframe):
+        self.tsdframe = tsdframe
 
+    def __getitem__(self, key):
+        index = self.tsdframe.columns.get_indexer(list(key))
+        return self.tsdframe[:,index]
+
+class _AbstractTsd(abc.ABC):
+    """
+    Abstract class for Tsd class.
+    Implement shared functions across concrete classes.
+    """
     def __init__(self):
-        pass
+        self.rate = np.NaN
+        self.index = np.empty(0)
+        self.values = np.empty(0)
+        self.time_support = nap.IntervalSet(start=[], end=[])
 
     @property
     def t(self):
@@ -53,6 +67,36 @@ class _BaseTsd(abc.ABC):
     def shape(self):
         return self.values.shape
 
+    @abc.abstractmethod
+    def __repr__(self):
+        # TODO repr for all dtypes
+        pass
+
+    @abc.abstractmethod
+    def __str__(self):
+        pass
+
+    @abc.abstractmethod
+    def __getitem__(self, key):
+        """
+        Performs the operation __getitem__.
+        """
+        pass
+
+    @abc.abstractmethod
+    def __setitem__(self, key, value):
+        """
+        Performs the operation __getitem__.
+        """
+        pass
+
+    def __len__(self):
+        return len(self.index)
+
+    @abc.abstractmethod
+    def __array__(self, dtype=None):
+        return self.values.astype(dtype)        
+
     def times(self, units="s"):
         """
         The time index of the Tsd, returned as np.double in the desired time units.
@@ -69,6 +113,59 @@ class _BaseTsd(abc.ABC):
         """
         return return_timestamps(self.index, units)
 
+    def as_array(self):
+        """
+        Convert the Ts/Tsd object to a numpy.ndarray
+
+        Returns
+        -------
+        out: pandas.Series
+            _
+        """
+        return self.values
+
+    def data(self):
+        """
+        The data in the Tsd object
+
+        Returns
+        -------
+        out: numpy.ndarray
+            _
+        """
+        return self.values
+
+    def start_time(self, units="s"):
+        """
+        The first time index in the Ts/Tsd object
+
+        Parameters
+        ----------
+        units : str, optional
+            ('us', 'ms', 's' [default])
+
+        Returns
+        -------
+        out: numpy.float64
+            _
+        """
+        return self.times(units=units)[0]
+
+    def end_time(self, units="s"):
+        """
+        The last time index in the Ts/Tsd object
+
+        Parameters
+        ----------
+        units : str, optional
+            ('us', 'ms', 's' [default])
+
+        Returns
+        -------
+        out: numpy.float64
+            _
+        """
+        return self.times(units=units)[-1]
 
 
 class Tsd(NDArrayOperatorsMixin):
@@ -964,7 +1061,7 @@ class TsdFrame(NDArrayOperatorsMixin):
             self.time_support = time_support
             self.rate = 0.0
 
-        self.columns = c
+        self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
         self.dtype = self.values.dtype
 
@@ -979,6 +1076,14 @@ class TsdFrame(NDArrayOperatorsMixin):
     @property
     def end(self):
         return self.end_time()
+
+    @property
+    def loc(self):
+        return TsdFrameSliceHelper(self)
+
+    @property
+    def shape(self):
+        return self.values.shape
 
     def __repr__(self):
         # TODO repr for all dtypes
@@ -1005,24 +1110,27 @@ class TsdFrame(NDArrayOperatorsMixin):
         """
         Performs the operation __getitem__.
         """
-        print(key)
+        # print(key)
         try:
             output = self.values.__getitem__(key)
+            cols = self.columns.values
             if isinstance(key, tuple):
                 index = self.index.__getitem__(key[0])
+                cols = self.columns.values[key[1]]
             else:
                 index = self.index.__getitem__(key)
+                
 
             if all(isinstance(a, np.ndarray) for a in [index, output]):
                 if output.shape[0] == index.shape[0]:
-                    if len(output.shape) == 1:
+                    if output.ndim == 1:
                         return Tsd(t=index, d=output)
-                    elif len(output.shape) == 2:
-                        return TsdFrame(t=index, d=output)
+                    elif output.ndim == 2:
+                        return TsdFrame(t=index, d=output, columns=cols)
                     else:
                         return output
             elif isinstance(index, Number):
-                return TsdFrame(t=np.array([index]), d=np.atleast_2d(output))
+                return TsdFrame(t=np.array([index]), d=np.atleast_2d(output), columns=cols)
             else:
                 return output
         except:
@@ -1041,15 +1149,16 @@ class TsdFrame(NDArrayOperatorsMixin):
         return len(self.index)
 
     def __array__(self, dtype=None):
+        print("In __array__")
         return self.values.astype(dtype)
 
     def __array_ufunc__(self, ufunc, method, *args, **kwargs):
-        # print("In __array_ufunc__")
-        # print("     ufunc = ", ufunc)
-        # print("     method = ", method)
-        # print("     args = ", args)
-        # for inp in args: print(type(inp))
-        # print("     kwargs = ", kwargs)
+        print("In __array_ufunc__")
+        print("     ufunc = ", ufunc)
+        print("     method = ", method)
+        print("     args = ", args)
+        for inp in args: print(type(inp))
+        print("     kwargs = ", kwargs)
 
         if method == "__call__":
             new_args = []
@@ -1069,21 +1178,24 @@ class TsdFrame(NDArrayOperatorsMixin):
             return NotImplemented
 
     def __array_function__(self, func, types, args, kwargs):
-        # print("In __array_function__")
-        # print("     func = ", func)
-        # print("     types = ", types)
-        # print("     args = ", args)
-        # print("     kwargs = ", kwargs)
+        print("In __array_function__")
+        print("     func = ", func)
+        print("     types = ", types)
+        print("     args = ", args)
+        print("     kwargs = ", kwargs)
+
+        if func in [np.hstack, np.vstack, np.concatenate]:
+            return NotImplemented
 
         new_args = []
         for a in args:
-            if isinstance(a, Tsd):
+            if isinstance(a, self.__class__):
                 new_args.append(a.values)
             else:
                 new_args.append(a)
 
         output = func._implementation(*new_args, **kwargs)
-
+        
         if isinstance(output, np.ndarray):
             if output.shape[0] == self.index.shape[0]:
                 if len(output.shape) == 1:
@@ -1096,18 +1208,6 @@ class TsdFrame(NDArrayOperatorsMixin):
                 return output
         else:
             return output
-
-    def get(self):
-        """
-        Get columns for TsdFrame. Similar to pandas df.get
-
-        Returns
-        -------
-        out: Tsd or TsdFrame
-            _
-        """
-
-        print("TODO")
 
     def as_dataframe(self):
         """
