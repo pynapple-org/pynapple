@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-15 18:14:50
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-09-16 14:14:23
 
 import importlib
 import os
@@ -94,7 +94,6 @@ class _AbstractTsd(abc.ABC):
     def __len__(self):
         return len(self.index)
 
-
     def times(self, units="s"):
         """
         The time index of the Tsd, returned as np.double in the desired time units.
@@ -171,6 +170,45 @@ class _AbstractTsd(abc.ABC):
         else:
             return None
 
+    def _restrict(self, iset):
+        """
+        Wrapper of numba call
+        """
+        time_array = self.index
+        data_array = self.values
+        starts = iset.start.values
+        ends = iset.end.values
+        t, d = jitrestrict(time_array, data_array, starts, ends)
+        return t, d
+
+    def _value_from(self, data, ep=None):
+        """
+        Wrapper of numba call
+        """
+        if ep is None:
+            ep = data.time_support
+        time_array = self.index
+        time_target_array = data.index
+        data_target_array = data.values
+        starts = ep.start.values
+        ends = ep.end.values
+        t, d, ns, ne = jitvaluefrom(
+            time_array, time_target_array, data_target_array, starts, ends
+        )
+        return t, d, ns, ne
+
+    def _bin_average(self, bin_size, ep=None):
+        """
+        Wrapper of numba call
+        """
+        time_array = self.index
+        data_array = self.values
+        starts = ep.start.values
+        ends = ep.end.values
+        t, d = jitbin_array(time_array, data_array, starts, ends, bin_size)
+        return t, d
+
+
 class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
     """
     A container around numpy.ndarray specialized for neurophysiological time series.
@@ -183,9 +221,15 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
         Frequency of the time series (Hz) computed over the time support
     time_support : IntervalSet
         The time support of the time series
-    """
+    """    
 
-    def __init__(self, t, d=None, time_units="s", time_support=None, **kwargs):
+    # def __new__(self, )
+        # Check shape to return Ts, Tsd or TsdFrame
+        # if d.ndim < 3:
+        #     raise RuntimeError
+
+
+    def __init__(self, t, d, time_units="s", time_support=None, **kwargs):
         """
         TsdTensor initializer
 
@@ -202,9 +246,6 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
         **kwargs
             Arguments that will be passed to the pandas.DataFrame initializer.
         """
-        if isinstance(t, np.ndarray) and d is None:
-            raise RuntimeError("Missing argument d when initializing TsdTensor")
-
         if not isinstance(d, np.ndarray):
             d = np.asarray(d)
         if isinstance(t, Number):
@@ -212,15 +253,13 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
         if isinstance(d, Number):
             d = np.array([d])
 
-        # Check shape to return Tsd or TsdFrame
-
         # Checking timestamps
         t = t.astype(np.float64).flatten()
         t = format_timestamps(t, time_units)
         t = sort_timestamps(t)
 
         if len(t):
-            if time_support is not None:
+            if isinstance(time_support, IntervalSet):
                 starts = time_support.start.values
                 ends = time_support.end.values
                 if d is not None:
@@ -240,37 +279,45 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
             self.rate = t.shape[0] / np.sum(
                 time_support.values[:, 1] - time_support.values[:, 0]
             )
-
-        else:
-            time_support = IntervalSet(pd.DataFrame(columns=["start", "end"]))
-            self.index = np.array([])
-            self.values = np.array([])
-            self.time_support = time_support
-            self.rate = 0.0
         
         self.nap_class = self.__class__.__name__
         self.dtype = self.values.dtype
 
     def __repr__(self):
-        # TODO repr for all dtypes
         upper = "Time (s)"
         _str_ = []
 
         def create_str(array):
             if array.ndim == 1:
-                return "[ " + "{:.6f}".format(array[0]) + " ... " + str(len(array)) + " ... " + "{:.6f}".format(array[-1]) + " ]"
+                return "[" + array[0].__repr__() + " ... " + array[0].__repr__() + "]"
             else:
-                return "[ " + create_str(array[0]) + " ... " + str(len(array)) + " ... " + create_str(array[-1]) + " ]"
+                return "[" + create_str(array[0]) + " ...]"
 
-        for i, array in zip(self.index, self.values):
-            _str_.append(
-                "{:.6f}".format(i)
-                + "    "
-                + create_str(array)
-            )
+        if self.shape[0] < 100:
+            for i, array in zip(self.index, self.values):
+                _str_.append(
+                    # "{:.6f}".format(i)
+                    i.__repr__()
+                    + "    "
+                    + create_str(array)
+                )
+        else:
+            for i, array in zip(self.index[0:10], self.values[0:10]):
+                _str_.append(
+                    i.__repr__()
+                    + "    "
+                    + create_str(array)
+                )
+            _str_.append("...")
+            for i, array in zip(self.index[-10:], self.values[-10:]):
+                _str_.append(
+                    i.__repr__()
+                    + "    "
+                    + create_str(array)
+                )
 
         _str_ = "\n".join(_str_)
-        bottom = "dtype: {}".format(self.dtype)
+        bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(self.shape)
         return "\n".join((upper, _str_, bottom))
 
     def __str__(self):
@@ -294,11 +341,11 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
             if all(isinstance(a, np.ndarray) for a in [index, output]):
                 if output.shape[0] == index.shape[0]:
                     if output.ndim == 1:
-                        return Tsd(t=index, d=output)
+                        return Tsd(t=index, d=output, time_support=self.time_support)
                     elif output.ndim == 2:
-                        return TsdFrame(t=index, d=output)
+                        return TsdFrame(t=index, d=output, time_support=self.time_support)
                     else:
-                        return TsdTensor(t=index, d=output)
+                        return TsdTensor(t=index, d=output, time_support=self.time_support)
                 else:
                     return output
             else:
@@ -372,40 +419,23 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
         else:
             return output
 
-    def as_dataframe(self):
+    def restrict(self, iset):
         """
-        Convert the TsdFrame object to a pandas.DataFrame object.
-
-        Returns
-        -------
-        out: pandas.DataFrame
-            _
-        """
-        return pd.DataFrame(index=self.index, data=self.values)
-
-    def as_units(self, units="s"):
-        """
-        Returns a DataFrame with time expressed in the desired unit.
+        Restricts a TsdTensor object to a set of time intervals delimited by an IntervalSet object`
 
         Parameters
         ----------
-        units : str, optional
-            ('us', 'ms', 's' [default])
+        iset : IntervalSet
+            the IntervalSet object
 
         Returns
         -------
-        pandas.DataFrame
-            the series object with adjusted times
-        """
-        t = self.index.copy()
-        t = return_timestamps(t, units)
-        if units == "us":
-            t = t.astype(np.int64)
+        TsdFrame
+            TsdFrame object restricted to ep
 
-        df = pd.DataFrame(index=t, data=self.values)
-        df.index.name = "Time (" + str(units) + ")"
-        df.columns = self.columns.copy()
-        return df
+        """
+        t, d = self._restrict(iset)
+        return TsdTensor(t=t, d=d, time_support=iset)    
 
     def value_from(self, data, ep=None):
         """
@@ -446,60 +476,17 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
         >>> print(len(ts.restrict(ep)), len(newts))
             52 52
         """
-        if isinstance(data, Tsd):
-            if ep is None:
-                ep = data.time_support
-            time_array = self.index
-            time_target_array = data.index
-            data_target_array = data.values
-            starts = ep.start.values
-            ends = ep.end.values
-            t, d, ns, ne = jitvaluefrom(
-                time_array, time_target_array, data_target_array, starts, ends
-            )
-            time_support = IntervalSet(start=ns, end=ne)
+        if not isinstance(data, (TsdTensor, TsdFrame, Tsd)):
+            raise RuntimeError("The time series to align to should be Tsd/TsdFrame/TsdTensor.")
 
-            return Tsd(t=t, d=d, time_support=time_support)
+        t, d, ns, ne = self._value_from(data, ep)
 
-        elif isinstance(data, TsdFrame):
-            if ep is None:
-                ep = data.time_support
-            time_array = self.index
-            time_target_array = data.index
-            data_target_array = data.values
-            starts = ep.start.values
-            ends = ep.end.values
-            t, d, ns, ne = jitvaluefromtsdframe(
-                time_array, time_target_array, data_target_array, starts, ends
-            )
-            time_support = IntervalSet(start=ns, end=ne)
+        time_support = IntervalSet(start=ns, end=ne)
 
+        if isinstance(data, TsdFrame):
             return TsdFrame(t=t, d=d, time_support=time_support, columns=data.columns)
         else:
-            raise RuntimeError("The time series to align to should be Tsd/TsdFrame.")
-
-    def restrict(self, iset):
-        """
-        Restricts a TsdFrame object to a set of time intervals delimited by an IntervalSet object`
-
-        Parameters
-        ----------
-        iset : IntervalSet
-            the IntervalSet object
-
-        Returns
-        -------
-        TsdFrame
-            TsdFrame object restricted to ep
-
-        """
-        c = self.columns
-        time_array = self.index
-        data_array = self.values
-        starts = iset.start.values
-        ends = iset.end.values
-        t, d = jitrestrict(time_array, data_array, starts, ends)
-        return TsdFrame(t=t, d=d, columns=c, time_support=iset)
+            return data.__class__(t, d, time_support=time_support)
 
     def bin_average(self, bin_size, ep=None, time_units="s"):
         """
@@ -546,17 +533,13 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
 
         bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
 
-        time_array = self.index
-        data_array = self.values
-        starts = ep.start.values
-        ends = ep.end.values
-        t, d = jitbin_array(time_array, data_array, starts, ends, bin_size)
-        time_support = IntervalSet(start=starts, end=ends)
-        return TsdFrame(t=t, d=d, time_support=time_support)
+        t, d = self._bin_average(bin_size, ep)
+        
+        return TsdTensor(t=t, d=d, time_support=ep)
 
     def save(self, filename):
         """
-        Save TsdFrame object in npz format. The file will contain the timestamps, the
+        Save TsdTensor object in npz format. The file will contain the timestamps, the
         data and the time support.
 
         The main purpose of this function is to save small/medium sized time series
@@ -630,54 +613,12 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
             start=self.time_support.start.values,
             end=self.time_support.end.values,
             columns=cols_name,
-            type=np.array(["TsdFrame"], dtype=np.str_),
+            type=np.array([self.nap_class], dtype=np.str_),
         )
 
         return
 
-    # def find_gaps(self, min_gap, time_units='s'):
-    #     """
-    #     finds gaps in a tsd larger than min_gap. Return an IntervalSet.
-    #     Epochs are defined by adding and removing 1 microsecond to the time index.
-
-    #     Parameters
-    #     ----------
-    #     min_gap : float
-    #         The minimum interval size considered to be a gap (default is second).
-    #     time_units : str, optional
-    #         Time units of min_gap ('us', 'ms', 's' [default])
-    #     """
-    #     min_gap = format_timestamps(np.array([min_gap]), time_units)[0]
-
-    #     time_array = self.index
-    #     starts = self.time_support.start.values
-    #     ends = self.time_support.end.values
-
-    #     s, e = jitfind_gaps(time_array, starts, ends, min_gap)
-
-    #     return nap.IntervalSet(s, e)
-
-    # def find_support(self, min_gap, method="absolute"):
-    #     """
-    #     find the smallest (to a min_gap resolution) IntervalSet containing all the times in the Tsd
-
-    #     Parameters
-    #     ----------
-    #     min_gap : float
-    #         Description
-    #     method : str, optional
-    #         Description
-
-    #     Returns
-    #     -------
-    #     TYPE
-    #         Description
-    #     """
-    #     print("TODO")
-    #     return
-
-
-class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
+class TsdFrame(TsdTensor):
     """
     A container around numpy.ndarray specialized for neurophysiological time series.
 
@@ -691,9 +632,10 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
         The time support of the time series
     """
 
-    def __init__(self, t, d=None, time_units="s", time_support=None, **kwargs):
+    def __init__(self, t, d=None, time_units="s", time_support=None, columns=None):
         """
         TsdFrame initializer
+        A pandas.DataFrame can be passed directly
 
         Parameters
         ----------
@@ -705,75 +647,27 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
             The time units in which times are specified ('us', 'ms', 's' [default]).
         time_support : IntervalSet, optional
             The time support of the TsdFrame object
-        **kwargs
-            Arguments that will be passed to the pandas.DataFrame initializer.
+        columns : iterables
+            Column names
         """
         if isinstance(t, np.ndarray) and d is None:
+            print("Should return a Ts")
             raise RuntimeError("Missing argument d when initializing TsdFrame")
+
+        c = columns            
 
         if isinstance(t, pd.DataFrame):
             d = t.values
             c = t.columns.values
             t = t.index.values
-        else:
-            if not isinstance(d, np.ndarray):
-                d = np.asarray(d)
-            if len(d.shape) == 1:
-                d = d[:, None]
-            if "columns" in kwargs:
-                c = kwargs["columns"]
-            else:
-                if isinstance(d, np.ndarray):
-                    if len(d.shape) == 2:
-                        c = np.arange(d.shape[1], dtype="int")
-                    elif len(d.shape) == 1:
-                        c = np.zeros(1, dtype="int")
-                    else:
-                        c = np.array([])
-                else:
-                    c = None
 
-        if isinstance(t, Number):
-            t = np.array([t])
-        if isinstance(d, Number):
-            d = np.array([d])
+        super().__init__(t, d, time_units, time_support)
 
-        t = t.astype(np.float64).flatten()
-        t = format_timestamps(t, time_units)
-        t = sort_timestamps(t)
-
-        if len(t):
-            if time_support is not None:
-                starts = time_support.start.values
-                ends = time_support.end.values
-                if d is not None:
-                    t, d = jitrestrict(t, d, starts, ends)
-                    self.index = t
-                    self.values = d
-                else:
-                    t = jittsrestrict(t, starts, ends)
-                    self.index = t
-                    self.values = np.array([])
-            else:
-                time_support = IntervalSet(start=t[0], end=t[-1])
-                self.index = t
-                self.values = d
-
-            self.time_support = time_support
-            self.rate = t.shape[0] / np.sum(
-                time_support.values[:, 1] - time_support.values[:, 0]
-            )
-
-        else:
-            time_support = IntervalSet(pd.DataFrame(columns=["start", "end"]))
-            self.index = np.array([])
-            self.values = np.array([])
-            self.time_support = time_support
-            self.rate = 0.0
+        if c is None:
+            c = np.arange(d.shape[1], dtype="int")
 
         self.columns = pd.Index(c)
-        self.nap_class = self.__class__.__name__
-        self.dtype = self.values.dtype
+        self.nap_class = self.__class__.__name__        
 
     @property
     def loc(self):
@@ -800,45 +694,6 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
     def __str__(self):
         return self.__repr__()
 
-    def __getitem__(self, key):
-        """
-        Performs the operation __getitem__.
-        """
-        # print(key)
-        try:
-            output = self.values.__getitem__(key)
-            cols = self.columns.values
-            if isinstance(key, tuple):
-                index = self.index.__getitem__(key[0])
-                cols = self.columns.values[key[1]]
-            else:
-                index = self.index.__getitem__(key)
-                
-
-            if all(isinstance(a, np.ndarray) for a in [index, output]):
-                if output.shape[0] == index.shape[0]:
-                    if output.ndim == 1:
-                        return Tsd(t=index, d=output)
-                    elif output.ndim == 2:
-                        return TsdFrame(t=index, d=output, columns=cols)
-                    else:
-                        return output
-            elif isinstance(index, Number):
-                return TsdFrame(t=np.array([index]), d=np.atleast_2d(output), columns=cols)
-            else:
-                return output
-        except:
-            raise IndexError
-
-    def __setitem__(self, key, value):
-        """
-        Performs the operation __getitem__.
-        """
-        try:
-            self.values.__setitem__(key, value)
-        except:
-            raise IndexError
-
     def __array_ufunc__(self, ufunc, method, *args, **kwargs):
         print("In __array_ufunc__")
         print("     ufunc = ", ufunc)
@@ -859,7 +714,7 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
 
             out = ufunc(*new_args, **kwargs)
             # print("output = ", out)
-            return self.__class__(self.index, out)
+            return self.__class__(self.index, out, columns = self.columns)
 
         else:
             return NotImplemented
@@ -931,80 +786,9 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
         df.columns = self.columns.copy()
         return df
 
-    def value_from(self, data, ep=None):
-        """
-        Replace the value with the closest value from Tsd/TsdFrame argument
-        If data is TsdFrame, the output is also TsdFrame.
-
-        Parameters
-        ----------
-        data : Tsd/TsdFrame
-            The Tsd/TsdFrame object holding the values to replace.
-        ep : IntervalSet (optional)
-            The IntervalSet object to restrict the operation.
-            If None, the time support of the tsd input object is used.
-
-        Returns
-        -------
-        out : Tsd/TsdFrame
-            Object with the new values
-
-        Examples
-        --------
-        In this example, the ts object will receive the closest values in time from tsd.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
-        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
-
-        The variable ts is a time series object containing only nan.
-        The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
-
-        >>> newts = ts.value_from(tsd, ep)
-
-        newts is the same size as ts restrict to ep.
-
-        >>> print(len(ts.restrict(ep)), len(newts))
-            52 52
-        """
-        if isinstance(data, Tsd):
-            if ep is None:
-                ep = data.time_support
-            time_array = self.index
-            time_target_array = data.index
-            data_target_array = data.values
-            starts = ep.start.values
-            ends = ep.end.values
-            t, d, ns, ne = jitvaluefrom(
-                time_array, time_target_array, data_target_array, starts, ends
-            )
-            time_support = IntervalSet(start=ns, end=ne)
-
-            return Tsd(t=t, d=d, time_support=time_support)
-
-        elif isinstance(data, TsdFrame):
-            if ep is None:
-                ep = data.time_support
-            time_array = self.index
-            time_target_array = data.index
-            data_target_array = data.values
-            starts = ep.start.values
-            ends = ep.end.values
-            t, d, ns, ne = jitvaluefromtsdframe(
-                time_array, time_target_array, data_target_array, starts, ends
-            )
-            time_support = IntervalSet(start=ns, end=ne)
-
-            return TsdFrame(t=t, d=d, time_support=time_support, columns=data.columns)
-        else:
-            raise RuntimeError("The time series to align to should be Tsd/TsdFrame.")
-
     def restrict(self, iset):
         """
-        Restricts a TsdFrame object to a set of time intervals delimited by an IntervalSet object`
+        Restricts a TsdTensor object to a set of time intervals delimited by an IntervalSet object`
 
         Parameters
         ----------
@@ -1017,13 +801,8 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
             TsdFrame object restricted to ep
 
         """
-        c = self.columns
-        time_array = self.index
-        data_array = self.values
-        starts = iset.start.values
-        ends = iset.end.values
-        t, d = jitrestrict(time_array, data_array, starts, ends)
-        return TsdFrame(t=t, d=d, columns=c, time_support=iset)
+        t, d = self._restrict(iset)
+        return TsdFrame(t=t, d=d, time_support=iset, columns = self.columns)
 
     def bin_average(self, bin_size, ep=None, time_units="s"):
         """
@@ -1070,13 +849,9 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
 
         bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
 
-        time_array = self.index
-        data_array = self.values
-        starts = ep.start.values
-        ends = ep.end.values
-        t, d = jitbin_array(time_array, data_array, starts, ends, bin_size)
-        time_support = IntervalSet(start=starts, end=ends)
-        return TsdFrame(t=t, d=d, time_support=time_support)
+        t, d = self._bin_average(bin_size, ep)
+        
+        return TsdFrame(t=t, d=d, time_support=ep, columns=self.columns)
 
     def save(self, filename):
         """
@@ -1159,49 +934,7 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
 
         return
 
-    # def find_gaps(self, min_gap, time_units='s'):
-    #     """
-    #     finds gaps in a tsd larger than min_gap. Return an IntervalSet.
-    #     Epochs are defined by adding and removing 1 microsecond to the time index.
-
-    #     Parameters
-    #     ----------
-    #     min_gap : float
-    #         The minimum interval size considered to be a gap (default is second).
-    #     time_units : str, optional
-    #         Time units of min_gap ('us', 'ms', 's' [default])
-    #     """
-    #     min_gap = format_timestamps(np.array([min_gap]), time_units)[0]
-
-    #     time_array = self.index
-    #     starts = self.time_support.start.values
-    #     ends = self.time_support.end.values
-
-    #     s, e = jitfind_gaps(time_array, starts, ends, min_gap)
-
-    #     return nap.IntervalSet(s, e)
-
-    # def find_support(self, min_gap, method="absolute"):
-    #     """
-    #     find the smallest (to a min_gap resolution) IntervalSet containing all the times in the Tsd
-
-    #     Parameters
-    #     ----------
-    #     min_gap : float
-    #         Description
-    #     method : str, optional
-    #         Description
-
-    #     Returns
-    #     -------
-    #     TYPE
-    #         Description
-    #     """
-    #     print("TODO")
-    #     return
-
-
-class Tsd(NDArrayOperatorsMixin, _AbstractTsd):
+class Tsd(TsdTensor):
     """
     A container around numpy.ndarray specialized for neurophysiology time series.
 
@@ -1215,7 +948,7 @@ class Tsd(NDArrayOperatorsMixin, _AbstractTsd):
         The time support of the time series
     """
 
-    def __init__(self, t, d=None, time_units="s", time_support=None, **kwargs):
+    def __init__(self, t, d=None, time_units="s", time_support=None):
         """
         Tsd Initializer.
 
@@ -1236,84 +969,20 @@ class Tsd(NDArrayOperatorsMixin, _AbstractTsd):
             d = t.values
             t = t.index
 
-        if isinstance(t, Number):
-            t = np.array([t])
-        if isinstance(d, Number):
-            d = np.array([d])
+        super().__init__(t, d, time_units, time_support)
 
-        if not isinstance(d, np.ndarray):
-            d = np.empty_like(t)
-
-        t = t.astype(np.float64).flatten()
-        t = format_timestamps(t, time_units)
-        t = sort_timestamps(t)
-
-        if len(t):
-            if time_support is not None:
-                starts = time_support.start.values
-                ends = time_support.end.values
-                if d is not None:
-                    t, d = jitrestrict(t, d, starts, ends)
-                    self.index = t
-                    self.values = d
-                else:
-                    t = jittsrestrict(t, starts, ends)
-                    self.index = t
-                    self.values = np.array([])
-            else:
-                time_support = IntervalSet(start=t[0], end=t[-1])
-                self.index = t
-                self.values = d
-
-            self.time_support = time_support
-            self.rate = t.shape[0] / np.sum(
-                time_support.values[:, 1] - time_support.values[:, 0]
-            )
-
-        else:
-            time_support = IntervalSet(pd.DataFrame(columns=["start", "end"]))
-            self.index = np.array([])
-            self.values = np.array([])
-            self.time_support = time_support
-            self.rate = 0.0
-
-        self.nap_class = self.__class__.__name__
-        self.dtype = self.values.dtype
+        self.nap_class = self.__class__.__name__        
 
     def __repr__(self):
-        # TODO repr for all dtypes
         upper = "Time (s)"
         _str_ = "\n".join(
             [
-                "{:.6f}".format(i) + "    " + "{:.6f}".format(j)
+                i.__repr__() + "    " + j.__repr__()
                 for i, j in zip(self.index, self.values)
             ]
         )
-        bottom = "Length: {}".format(len(self.index)) + ", dtype: {}".format(self.dtype)
+        bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(self.shape)
         return "\n".join((upper, _str_, bottom))
-
-    def __str__(self):
-        return self.__repr__()
-
-    def __getitem__(self, key):
-        """
-        Performs the operation __getitem__.
-        """
-        try:
-            data = self.values.__getitem__(key)
-            index = self.index.__getitem__(key)
-            return Tsd(t=index, d=data)
-        except:
-            raise IndexError
-
-    def __setitem__(self, key, value):
-        """
-        Performs the operation __getitem__.
-        """
-        try:
-            self.values.__setitem__(key, value)
-        except:
-            raise IndexError
 
     def __array_ufunc__(self, ufunc, method, *args, **kwargs):
         print("In __array_ufunc__")
@@ -1874,42 +1543,6 @@ class Tsd(NDArrayOperatorsMixin, _AbstractTsd):
 
         return Tsd(t=new_t, d=new_d, time_support=ep)
 
-    # def find_gaps(self, min_gap, method="absolute"):
-    #     """
-    #     finds gaps in a tsd larger than min_gap
-
-    #     Parameters
-    #     ----------
-    #     min_gap : TYPE
-    #         Description
-    #     method : str, optional
-    #         Description
-    #     """
-    #     print("TODO")
-    #     return
-
-    # def find_support(self, min_gap, method="absolute"):
-    #     """
-    #     find the smallest (to a min_gap resolution) IntervalSet containing all the times in the Tsd
-
-    #     Parameters
-    #     ----------
-    #     min_gap : TYPE
-    #         Description
-    #     method : str, optional
-    #         Description
-
-    #     Returns
-    #     -------
-    #     TYPE
-    #         Description
-    #     """
-    #     print("TODO")
-    #     return
-
-
-
-
 class Ts(Tsd):
     """
     A subclass of the Tsd object for a time series with only time index,
@@ -1924,7 +1557,7 @@ class Ts(Tsd):
         The time support of the time series
     """
 
-    def __init__(self, t, time_units="s", time_support=None, **kwargs):
+    def __init__(self, t, time_units="s", time_support=None):
         """
         Ts Initializer
 
@@ -1943,21 +1576,15 @@ class Ts(Tsd):
             t,
             None,
             time_units=time_units,
-            time_support=time_support,
-            dtype=np.float64,
-            **kwargs,
+            time_support=time_support
         )
         self.nap_class = self.__class__.__name__
 
     def __repr__(self):
-        # TODO repr for all dtypes
         upper = "Time (s)"
-        _str_ = "\n".join(["{:.6f}".format(i) for i in self.index])
-        bottom = "Length: {}".format(len(self.index)) + ", dtype: {}".format(self.dtype)
+        _str_ = "\n".join([i.__repr__() for i in self.index])
+        bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(len(self.index))
         return "\n".join((upper, _str_, bottom))
-
-    def __str__(self):
-        return self.__repr__()
 
     def save(self, filename):
         """
@@ -2031,3 +1658,46 @@ class Ts(Tsd):
         )
 
         return
+
+
+
+    # def find_gaps(self, min_gap, time_units='s'):
+    #     """
+    #     finds gaps in a tsd larger than min_gap. Return an IntervalSet.
+    #     Epochs are defined by adding and removing 1 microsecond to the time index.
+
+    #     Parameters
+    #     ----------
+    #     min_gap : float
+    #         The minimum interval size considered to be a gap (default is second).
+    #     time_units : str, optional
+    #         Time units of min_gap ('us', 'ms', 's' [default])
+    #     """
+    #     min_gap = format_timestamps(np.array([min_gap]), time_units)[0]
+
+    #     time_array = self.index
+    #     starts = self.time_support.start.values
+    #     ends = self.time_support.end.values
+
+    #     s, e = jitfind_gaps(time_array, starts, ends, min_gap)
+
+    #     return nap.IntervalSet(s, e)
+
+    # def find_support(self, min_gap, method="absolute"):
+    #     """
+    #     find the smallest (to a min_gap resolution) IntervalSet containing all the times in the Tsd
+
+    #     Parameters
+    #     ----------
+    #     min_gap : float
+    #         Description
+    #     method : str, optional
+    #         Description
+
+    #     Returns
+    #     -------
+    #     TYPE
+    #         Description
+    #     """
+    #     print("TODO")
+    #     return

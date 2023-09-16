@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-06-28 14:35:52
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-09-16 12:20:12
 import numpy as np
 from numba import jit
 
@@ -524,7 +524,8 @@ def jitbin_array(time_array, data_array, starts, ends, bin_size):
     )
 
     m = starts.shape[0]
-    f = data_array.shape[1]
+    f = data_array.shape[1:]
+
 
     nb_bins = np.zeros(m, dtype=np.int32)
     for k in range(m):
@@ -535,8 +536,8 @@ def jitbin_array(time_array, data_array, starts, ends, bin_size):
 
     nb = np.sum(nb_bins)
     bins = np.zeros(nb, dtype=np.float64)
-    cnt = np.zeros(nb, dtype=np.float64)
-    average = np.zeros((nb, f), dtype=np.float64)
+    cnt = np.zeros((nb, *f), dtype=np.float64)
+    average = np.zeros((nb, *f), dtype=np.float64)
 
     k = 0
     t = 0
@@ -568,7 +569,8 @@ def jitbin_array(time_array, data_array, starts, ends, bin_size):
         k += 1
 
     new_time_array = bins[0:b]
-    new_data_array = average[0:b] / np.expand_dims(cnt[0:b], -1)
+
+    new_data_array = average[0:b] / cnt[0:b]
 
     return (new_time_array, new_data_array)
 
