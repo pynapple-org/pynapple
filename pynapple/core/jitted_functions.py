@@ -2,7 +2,7 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-09-16 12:20:12
+# @Last Modified time: 2023-09-16 21:08:40
 import numpy as np
 from numba import jit
 
@@ -320,7 +320,7 @@ def jitvaluefrom(time_array, time_target_array, data_target_array, starts, ends)
     n = time_array.shape[0]
     d = time_target_array.shape[0]
 
-    new_data_array = np.zeros(n, dtype=data_target_array.dtype)
+    new_data_array = np.zeros(data_target_array.shape, dtype=data_target_array.dtype)
 
     if n > 0 and d > 0:
         for k in range(m):

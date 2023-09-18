@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-28 15:10:48
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-10 12:15:57
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-09-17 22:21:02
 
 
 import os
@@ -538,7 +538,7 @@ class TsGroup(UserDict):
 
             for i in range(n):
                 count[:, i] = jitcount(
-                    self.data[self.index[i]].index.values, starts, ends, bin_size
+                    self.data[self.index[i]].index, starts, ends, bin_size
                 )[1]
 
         else:
@@ -548,7 +548,7 @@ class TsGroup(UserDict):
 
             for i in range(n):
                 count[:, i] = jittsrestrict_with_count(
-                    self.data[self.index[i]].index.values, starts, ends
+                    self.data[self.index[i]].index, starts, ends
                 )[1]
 
         toreturn = TsdFrame(t=time_index, d=count, time_support=ep, columns=self.index)
@@ -958,15 +958,15 @@ class TsGroup(UserDict):
         # We can't use to_tsd here in case tsgroup contains Tsd and not only Ts.
         nt = 0
         for n in self.index:
-            nt += self[n].shape[0]
+            nt += len(self[n])
 
         times = np.zeros(nt)
         data = np.zeros(nt)
         index = np.zeros(nt, dtype=np.int64)
         k = 0
         for n in self.index:
-            kl = self[n].shape[0]
-            times[k : k + kl] = self[n].index.values
+            kl = len(self[n])
+            times[k : k + kl] = self[n].index
             data[k : k + kl] = self[n].values
             index[k : k + kl] = int(n)
             k += kl
