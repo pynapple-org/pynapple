@@ -2,14 +2,16 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-18 17:37:56
+# @Last Modified time: 2023-09-18 18:54:54
 
+import abc
 import importlib
 import os
-import warnings
+from numbers import Number
 
 import numpy as np
 import pandas as pd
+from numpy.lib.mixins import NDArrayOperatorsMixin
 
 from .interval_set import IntervalSet
 from .jitted_functions import (
@@ -25,23 +27,19 @@ from .jitted_functions import (
 )
 from .time_units import format_timestamps, return_timestamps, sort_timestamps
 
-from numbers import Number
-from numpy.lib.mixins import NDArrayOperatorsMixin
-
-import abc
-
 
 class _TsdFrameSliceHelper:
     def __init__(self, tsdframe):
         self.tsdframe = tsdframe
 
     def __getitem__(self, key):
-        if hasattr(key,"__iter__") and not isinstance(key, str):
+        if hasattr(key, "__iter__") and not isinstance(key, str):
             index = self.tsdframe.columns.get_indexer(key)
         else:
             index = self.tsdframe.columns.get_indexer([key])
-            
+
         return self.tsdframe[:, index]
+
 
 class _AbstractTsd(abc.ABC):
     """
@@ -174,7 +172,7 @@ class _AbstractTsd(abc.ABC):
             return self.times(units=units)[-1]
         else:
             return None
-        
+
     def value_from(self, data, ep=None):
         """
         Replace the value with the closest value from Tsd/TsdFrame argument
@@ -218,7 +216,7 @@ class _AbstractTsd(abc.ABC):
             raise RuntimeError(
                 "The time series to align to should be Tsd/TsdFrame/TsdTensor."
             )
-        
+
         if ep is None:
             ep = data.time_support
         time_array = self.index
@@ -230,18 +228,18 @@ class _AbstractTsd(abc.ABC):
         if data_target_array.ndim == 1:
             t, d, ns, ne = jitvaluefrom(
                 time_array, time_target_array, data_target_array, starts, ends
-            )        
+            )
         else:
             t, d, ns, ne = jitvaluefromtensor(
                 time_array, time_target_array, data_target_array, starts, ends
-            )        
+            )
 
         time_support = IntervalSet(start=ns, end=ne)
 
         if isinstance(data, TsdFrame):
             return TsdFrame(t=t, d=d, time_support=time_support, columns=data.columns)
         else:
-            return data.__class__(t, d, time_support=time_support)        
+            return data.__class__(t, d, time_support=time_support)
 
     def count(self, *args, **kwargs):
         """
@@ -332,15 +330,15 @@ class _AbstractTsd(abc.ABC):
 
         time_array = self.index
         starts = ep.start.values
-        ends = ep.end.values        
+        ends = ep.end.values
 
         if isinstance(bin_size, (float, int)):
             bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
-            t, d = jitcount(time_array, starts, ends, bin_size)                        
+            t, d = jitcount(time_array, starts, ends, bin_size)
         else:
             _, d = jittsrestrict_with_count(time_array, starts, ends)
             t = starts + (ends - starts) / 2
-            
+
         return Tsd(t=t, d=d, time_support=ep)
 
     def restrict(self, iset):
@@ -385,7 +383,7 @@ class _AbstractTsd(abc.ABC):
         if isinstance(self.values, np.ndarray):
             data_array = self.values
             t, d = jitrestrict(time_array, data_array, starts, ends)
-            
+
             if hasattr(self, "columns"):
                 return TsdFrame(t=t, d=d, time_support=iset, columns=self.columns)
             else:
@@ -393,6 +391,7 @@ class _AbstractTsd(abc.ABC):
         else:
             t = jittsrestrict(time_array, starts, ends)
             return Ts(t, time_support=iset)
+
 
 class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
     """
@@ -448,7 +447,7 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
                 f"({len(d)}) "
                 "does not match length of index "
                 f"({len(t)})"
-            )        
+            )
 
         if len(t):
             if isinstance(time_support, IntervalSet):
@@ -543,7 +542,7 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
                     return output
             else:
                 return output
-        except:
+        except RuntimeError:
             raise IndexError
 
     def __setitem__(self, key, value):
@@ -552,7 +551,7 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
         """
         try:
             self.values.__setitem__(key, value)
-        except:
+        except IndexError:
             raise IndexError
 
     def __array_ufunc__(self, ufunc, method, *args, **kwargs):
@@ -566,17 +565,23 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
 
         if method == "__call__":
             new_args = []
+            n_object = 0
             for a in args:
                 if isinstance(a, Number):
                     new_args.append(a)
                 elif isinstance(a, self.__class__):
                     new_args.append(a.values)
+                    n_object += 1
                 else:
                     return NotImplemented
 
-            out = ufunc(*new_args, **kwargs)
-            # print("output = ", out)
-            return self.__class__(self.index, out)
+            # Meant to prevent addition of two Tsd for example
+            if n_object > 1:
+                return NotImplemented                
+            else:
+                out = ufunc(*new_args, **kwargs)
+                # print("output = ", out)
+                return self.__class__(self.index, out)
 
         else:
             return NotImplemented
@@ -606,7 +611,7 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
                     return Tsd(t=self.index, d=output)
                 elif output.ndim == 2:
                     if hasattr(self, "columns"):
-                        return TsdFrame(t=self.index, d=output, columns = self.columns)
+                        return TsdFrame(t=self.index, d=output, columns=self.columns)
                     else:
                         return TsdFrame(t=self.index, d=output)
                 else:
@@ -669,7 +674,7 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
             t, d = jitbin_array(time_array, data_array, starts, ends, bin_size)
         else:
             t, d = jitbin(time_array, data_array, starts, ends, bin_size)
-        
+
         if d.ndim == 1:
             return Tsd(t=t, d=d, time_support=ep)
         elif d.ndim == 2:
@@ -750,7 +755,7 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
             t=self.index,
             d=self.values,
             start=self.time_support.start.values,
-            end=self.time_support.end.values,            
+            end=self.time_support.end.values,
             type=np.array([self.nap_class], dtype=np.str_),
         )
 
@@ -789,7 +794,7 @@ class TsdFrame(TsdTensor):
         columns : iterables
             Column names
         """
-        if isinstance(t, np.ndarray) and d is None:            
+        if isinstance(t, np.ndarray) and d is None:
             raise RuntimeError("Missing argument d when initializing TsdFrame")
 
         if isinstance(t, pd.DataFrame):
@@ -801,7 +806,7 @@ class TsdFrame(TsdTensor):
             raise RuntimeError("Data should be 1 or 2 dimensions")
 
         if d.ndim == 1:
-            d = d[:,np.newaxis]
+            d = d[:, np.newaxis]
 
         c = columns
 
@@ -817,34 +822,28 @@ class TsdFrame(TsdTensor):
     def loc(self):
         return _TsdFrameSliceHelper(self)
 
-    def __repr__(self):        
+    def __repr__(self):
         columns_str = ""
         if self.columns is not None and len(self.columns):
             columns_str += "        ".join([str(k) for k in self.columns])
         upper = "Time (s)      " + columns_str
 
         _str_ = []
-        if self.shape[0] < 100:            
+        if self.shape[0] < 100:
             for i, array in zip(self.index, self.values):
                 _str_.append(
-                    i.__repr__()
-                    + "    "
-                    + " ".join([k.__repr__() for k in array])
+                    i.__repr__() + "    " + " ".join([k.__repr__() for k in array])
                 )
         else:
             for i, array in zip(self.index[0:5], self.values[0:5]):
                 _str_.append(
-                    i.__repr__()
-                    + "    "
-                    + " ".join([k.__repr__() for k in array])
-                )                
+                    i.__repr__() + "    " + " ".join([k.__repr__() for k in array])
+                )
             _str_.append("...")
             for i, array in zip(self.index[-5:], self.values[-5:]):
                 _str_.append(
-                    i.__repr__()
-                    + "    "
-                    + " ".join([k.__repr__() for k in array])
-                )                
+                    i.__repr__() + "    " + " ".join([k.__repr__() for k in array])
+                )
 
         _str_ = "\n".join(_str_)
         bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(self.shape)
@@ -1046,12 +1045,12 @@ class Tsd(TsdTensor):
                 [
                     i.__repr__() + "    " + j.__repr__()
                     for i, j in zip(self.index[0:5], self.values[0:5])
-                ] + ["..."] +
-                [
+                ]
+                + ["..."]
+                + [
                     i.__repr__() + "    " + j.__repr__()
                     for i, j in zip(self.index[-5:], self.values[-5:])
                 ]
-
             )
 
         bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(self.shape)
@@ -1352,10 +1351,10 @@ class Ts(_AbstractTsd):
                 starts = time_support.start.values
                 ends = time_support.end.values
                 t = jittsrestrict(t, starts, ends)
-                self.index = t                
+                self.index = t
             else:
                 time_support = IntervalSet(start=t[0], end=t[-1])
-                self.index = t                
+                self.index = t
 
             self.time_support = time_support
             self.rate = t.shape[0] / np.sum(
@@ -1363,9 +1362,9 @@ class Ts(_AbstractTsd):
             )
         else:
             self.rate = np.NaN
-            self.index = np.empty(0)            
+            self.index = np.empty(0)
             self.time_support = IntervalSet(start=[], end=[])
-        
+
         self.values = None
         self.nap_class = self.__class__.__name__
 
@@ -1374,8 +1373,11 @@ class Ts(_AbstractTsd):
         if len(self) < 100:
             _str_ = "\n".join([i.__repr__() for i in self.index])
         else:
-            _str_ = "\n".join([i.__repr__() for i in self.index[0:5]] + 
-                ["..."] + [i.__repr__() for i in self.index[-5:]])
+            _str_ = "\n".join(
+                [i.__repr__() for i in self.index[0:5]]
+                + ["..."]
+                + [i.__repr__() for i in self.index[-5:]]
+            )
 
         bottom = "shape: {}".format(len(self.index))
         return "\n".join((upper, _str_, bottom))
@@ -1401,12 +1403,12 @@ class Ts(_AbstractTsd):
                 return Ts(t=index, time_support=self.time_support)
             else:
                 return None
-        except:
+        except RuntimeError:
             raise IndexError
 
     def __setitem__(self, key):
         pass
-    
+
     def as_series(self):
         """
         Convert the Ts/Tsd object to a pandas.Series object.
@@ -1436,7 +1438,7 @@ class Ts(_AbstractTsd):
         t = return_timestamps(self.index, units)
         if units == "us":
             t = t.astype(np.int64)
-        ss = pd.Series(index=t, dtype='object')
+        ss = pd.Series(index=t, dtype="object")
         ss.index.name = "Time (" + str(units) + ")"
         return ss
 

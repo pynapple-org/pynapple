@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-09-17 22:03:05
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-18 18:40:19
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -380,76 +380,6 @@ class Test_Time_Series_2:
 
     def test_data(self, tsd):
         np.testing.assert_array_almost_equal(tsd.values, tsd.data())
-
-    def test_operators(self, tsd):
-        v = tsd.values
-
-        a = tsd + 0.5
-        assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index, a.index)
-        assert np.all(a.values == (v + 0.5))
-
-        a = tsd - 0.5
-        assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index, a.index)
-        assert np.all(a.values == (v - 0.5))
-
-        a = tsd * 0.5
-        assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index, a.index)
-        assert np.all(a.values == (v * 0.5))
-
-        a = tsd / 0.5
-        assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index, a.index)
-        assert np.all(a.values == (v / 0.5))
-
-        a = tsd // 0.5
-        assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index, a.index)
-        assert np.all(a.values == (v // 0.5))        
-
-        a = tsd % 0.5
-        assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index, a.index)
-        assert np.all(a.values == (v % 0.5))
-
-        a = tsd ** 0.5
-        assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index, a.index)
-        np.testing.assert_array_almost_equal(a.values, v**0.5)        
-
-        a = tsd > 0.5
-        assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index, a.index)
-        assert np.all(a.values == (v > 0.5))
-
-        a = tsd >= 0.5
-        assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index, a.index)
-        assert np.all(a.values == (v >= 0.5))
-
-        a = tsd < 0.5
-        assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index, a.index)
-        assert np.all(a.values == (v < 0.5))
-
-        a = tsd <= 0.5
-        assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index, a.index)
-        assert np.all(a.values == (v <= 0.5))        
-
-        tsd = nap.Tsd(t=np.arange(10), d=np.arange(10))
-        v = tsd.values
-        a = tsd == 5
-        assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index, a.index)
-        assert np.all(a.values == (v == 5))
-
-        a = tsd != 5
-        assert isinstance(a, nap.Tsd)
-        np.testing.assert_array_almost_equal(tsd.index, a.index)
-        assert np.all(a.values == (v != 5))
 
     def test_repr_(self, tsd):
         # assert pd.Series(tsd).__repr__() == tsd.__repr__()

@@ -181,7 +181,9 @@ def compute_2d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     for i, c in enumerate(cols):
         groups_value[c] = group.value_from(feature.loc[c], ep)
         if minmax is None:
-            bins = np.linspace(np.min(feature.loc[c]), np.max(feature.loc[c]), nb_bins + 1)
+            bins = np.linspace(
+                np.min(feature.loc[c]), np.max(feature.loc[c]), nb_bins + 1
+            )
         else:
             bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins + 1)
         binsxy[c] = bins
@@ -319,7 +321,9 @@ def compute_2d_mutual_info(tc, features, ep=None, minmax=None, bitssec=False):
     for i, c in enumerate(cols):
         if minmax is None:
             bins.append(
-                np.linspace(np.min(features.loc[c]), np.max(features.loc[c]), nb_bins[i])
+                np.linspace(
+                    np.min(features.loc[c]), np.max(features.loc[c]), nb_bins[i]
+                )
             )
         else:
             bins.append(
@@ -330,9 +334,9 @@ def compute_2d_mutual_info(tc, features, ep=None, minmax=None, bitssec=False):
         features = features.restrict(ep)
 
     occupancy, _, _ = np.histogram2d(
-        features.loc[cols[0]].values.flatten(), 
-        features.loc[cols[1]].values.flatten(), 
-        [bins[0], bins[1]]
+        features.loc[cols[0]].values.flatten(),
+        features.loc[cols[1]].values.flatten(),
+        [bins[0], bins[1]],
     )
     occupancy = occupancy / occupancy.sum()
 
@@ -475,7 +479,9 @@ def compute_2d_tuning_curves_continuous(
 
     for i, c in enumerate(cols):
         if minmax is None:
-            bins = np.linspace(np.min(features.loc[c]), np.max(features.loc[c]), nb_bins[i] + 1)
+            bins = np.linspace(
+                np.min(features.loc[c]), np.max(features.loc[c]), nb_bins[i] + 1
+            )
         else:
             bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins[i] + 1)
 

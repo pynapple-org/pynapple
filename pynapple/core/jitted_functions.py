@@ -346,9 +346,7 @@ def jitvaluefrom(time_array, time_target_array, data_target_array, starts, ends)
 
 
 @jit(nopython=True)
-def jitvaluefromtensor(
-    time_array, time_target_array, data_target_array, starts, ends
-):
+def jitvaluefromtensor(time_array, time_target_array, data_target_array, starts, ends):
     """Summary
 
     Parameters
@@ -523,7 +521,6 @@ def jitbin_array(time_array, data_array, starts, ends, bin_size):
 
     m = starts.shape[0]
     f = data_array.shape[1:]
-
 
     nb_bins = np.zeros(m, dtype=np.int32)
     for k in range(m):
