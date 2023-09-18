@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 11:39:55
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-08-07 15:54:42
+# @Last Modified time: 2023-09-18 10:23:43
 
 
 from itertools import combinations, product
@@ -141,7 +141,7 @@ def compute_autocorrelogram(
     )[0]
 
     for n in newgroup.keys():
-        spk_time = newgroup[n].index.values
+        spk_time = newgroup[n].index
         auc, times = cross_correlogram(spk_time, spk_time, binsize, windowsize)
         autocorrs[n] = pd.Series(index=np.round(times, 6), data=auc, dtype="float")
 
@@ -151,7 +151,7 @@ def compute_autocorrelogram(
         autocorrs = autocorrs / newgroup.get_info("rate")
 
     # Bug here
-    if 0 in autocorrs.index.values:
+    if 0 in autocorrs.index:
         autocorrs.loc[0] = 0.0
 
     return autocorrs.astype("float")
@@ -223,8 +223,8 @@ def compute_crosscorrelogram(
             pairs = list(map(lambda n: (n[1], n[0]), pairs))
 
         for i, j in pairs:
-            spk1 = newgroup[i].index.values
-            spk2 = newgroup[j].index.values
+            spk1 = newgroup[i].index
+            spk2 = newgroup[j].index
             auc, times = cross_correlogram(spk1, spk2, binsize, windowsize)
             crosscorrs[(i, j)] = pd.Series(index=times, data=auc, dtype="float")
 
@@ -250,8 +250,8 @@ def compute_crosscorrelogram(
         pairs = product(list(newgroup[0].keys()), list(newgroup[1].keys()))
 
         for i, j in pairs:
-            spk1 = newgroup[0][i].index.values
-            spk2 = newgroup[1][j].index.values
+            spk1 = newgroup[0][i].index
+            spk2 = newgroup[1][j].index
             auc, times = cross_correlogram(spk1, spk2, binsize, windowsize)
             if norm:
                 auc /= newgroup[1][j].rate
@@ -307,9 +307,9 @@ def compute_eventcorrelogram(
     """
     if ep is None:
         ep = event.time_support
-        tsd1 = event.index.values
+        tsd1 = event.index
     else:
-        tsd1 = event.restrict(ep).index.values
+        tsd1 = event.restrict(ep).index
 
     if type(group) is nap.TsGroup:
         newgroup = group.restrict(ep)
@@ -326,7 +326,7 @@ def compute_eventcorrelogram(
     )[0]
 
     for n in newgroup.keys():
-        spk_time = newgroup[n].index.values
+        spk_time = newgroup[n].index
         auc, times = cross_correlogram(tsd1, spk_time, binsize, windowsize)
         crosscorrs[n] = pd.Series(index=times, data=auc, dtype="float")
 

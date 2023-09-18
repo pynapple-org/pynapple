@@ -3,8 +3,8 @@
 """
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-12-06 21:30:23
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-18 15:57:29
 
 import warnings
 
@@ -179,24 +179,24 @@ def compute_2d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     binsxy = {}
 
     for i, c in enumerate(cols):
-        groups_value[c] = group.value_from(feature[c], ep)
+        groups_value[c] = group.value_from(feature.loc[c], ep)
         if minmax is None:
-            bins = np.linspace(np.min(feature[c]), np.max(feature[c]), nb_bins + 1)
+            bins = np.linspace(np.min(feature.loc[c]), np.max(feature.loc[c]), nb_bins + 1)
         else:
             bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins + 1)
         binsxy[c] = bins
 
     occupancy, _, _ = np.histogram2d(
-        feature[cols[0]].values,
-        feature[cols[1]].values,
+        feature.loc[cols[0]].values.flatten(),
+        feature.loc[cols[1]].values.flatten(),
         [binsxy[cols[0]], binsxy[cols[1]]],
     )
 
     tc = {}
     for n in group.keys():
         count, _, _ = np.histogram2d(
-            groups_value[cols[0]][n].values,
-            groups_value[cols[1]][n].values,
+            groups_value[cols[0]][n].values.flatten(),
+            groups_value[cols[1]][n].values.flatten(),
             [binsxy[cols[0]], binsxy[cols[1]]],
         )
         count = count / occupancy
@@ -319,7 +319,7 @@ def compute_2d_mutual_info(tc, features, ep=None, minmax=None, bitssec=False):
     for i, c in enumerate(cols):
         if minmax is None:
             bins.append(
-                np.linspace(np.min(features[c]), np.max(features[c]), nb_bins[i])
+                np.linspace(np.min(features.loc[c]), np.max(features.loc[c]), nb_bins[i])
             )
         else:
             bins.append(
@@ -330,7 +330,9 @@ def compute_2d_mutual_info(tc, features, ep=None, minmax=None, bitssec=False):
         features = features.restrict(ep)
 
     occupancy, _, _ = np.histogram2d(
-        features[cols[0]].values, features[cols[1]].values, [bins[0], bins[1]]
+        features.loc[cols[0]].values.flatten(), 
+        features.loc[cols[1]].values.flatten(), 
+        [bins[0], bins[1]]
     )
     occupancy = occupancy / occupancy.sum()
 
@@ -401,7 +403,7 @@ def compute_1d_tuning_curves_continous(
 
     align_times = tsdframe.value_from(feature)
     idx = np.digitize(align_times.values, bins) - 1
-    tmp = pd.DataFrame(tsdframe).groupby(idx).mean()
+    tmp = tsdframe.as_dataframe().groupby(idx).mean()
     tmp = tmp.reindex(np.arange(0, len(bins) - 1))
     tmp.index = pd.Index(bins[0:-1] + np.diff(bins) / 2)
 
@@ -473,12 +475,12 @@ def compute_2d_tuning_curves_continuous(
 
     for i, c in enumerate(cols):
         if minmax is None:
-            bins = np.linspace(np.min(features[c]), np.max(features[c]), nb_bins[i] + 1)
+            bins = np.linspace(np.min(features.loc[c]), np.max(features.loc[c]), nb_bins[i] + 1)
         else:
             bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins[i] + 1)
 
-        align_times = tsdframe.value_from(features[c], ep)
-        idxs[c] = np.digitize(align_times.values, bins) - 1
+        align_times = tsdframe.value_from(features.loc[c], ep)
+        idxs[c] = np.digitize(align_times.values.flatten(), bins) - 1
         binsxy[c] = bins
 
     idxs = pd.DataFrame(idxs)
@@ -487,7 +489,7 @@ def compute_2d_tuning_curves_continuous(
 
     for k, tmp in idxs.groupby(cols):
         if (0 <= k[0] < nb_bins[0]) and (0 <= k[1] < nb_bins[1]):
-            tc_np[:, k[0], k[1]] = tsdframe.iloc[tmp.index].mean(0).values
+            tc_np[:, k[0], k[1]] = np.mean(tsdframe[tmp.index].values, 0)
 
     tc_np[np.isnan(tc_np)] = 0.0
 

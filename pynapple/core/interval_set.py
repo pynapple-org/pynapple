@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date:   2022-01-25 21:50:48
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-10 12:19:27
+# @Last Modified time: 2023-09-18 14:07:32
 
 """
 """
@@ -309,7 +309,7 @@ class IntervalSet(pd.DataFrame):
         out: numpy.ndarray
             an array with the interval index labels for each time stamp (NaN) for timestamps not in IntervalSet
         """
-        times = tsd.index.values
+        times = tsd.index
         starts = self.values[:, 0]
         ends = self.values[:, 1]
 

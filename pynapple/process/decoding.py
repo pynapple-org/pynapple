@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-02 23:34:48
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-12-02 11:54:27
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-18 14:20:36
 
 """
 """
@@ -78,7 +78,7 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
         bins = np.hstack(
             (bins, [bins[-1] + diff[-1], bins[-1] + 2 * diff[-1]])
         )  # assuming the size of the last 2 bins is equal
-        occupancy, _ = np.histogram(feature, bins)
+        occupancy, _ = np.histogram(feature.values, bins)
     else:
         raise RuntimeError("Unknown format for feature in decode_1d")
 
@@ -103,11 +103,11 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
     idxmax = np.argmax(p, 1)
 
     p = nap.TsdFrame(
-        t=count.index.values, d=p, time_support=ep, columns=tuning_curves.index.values
+        t=count.index, d=p, time_support=ep, columns=tuning_curves.index.values
     )
 
     decoded = nap.Tsd(
-        t=count.index.values, d=tuning_curves.index.values[idxmax], time_support=ep
+        t=count.index, d=tuning_curves.index.values[idxmax], time_support=ep
     )
 
     return decoded, p
@@ -232,7 +232,7 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
         cols = np.arange(2)
 
     decoded = nap.TsdFrame(
-        t=count.index.values,
+        t=count.index,
         d=np.vstack((xy[0][idxmax2d[0]], xy[1][idxmax2d[1]])).T,
         time_support=ep,
         columns=cols,

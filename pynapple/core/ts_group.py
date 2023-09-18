@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-28 15:10:48
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-09-17 22:21:02
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-18 17:10:12
 
 
 import os
@@ -665,14 +665,14 @@ class TsGroup(UserDict):
 
         nt = 0
         for n in self.index:
-            nt += self[n].shape[0]
+            nt += len(self[n])
 
         times = np.zeros(nt)
         data = np.zeros(nt)
         k = 0
         for n, v in zip(self.index, _values):
-            kl = self[n].shape[0]
-            times[k : k + kl] = self[n].index.values
+            kl = len(self[n])
+            times[k : k + kl] = self[n].index
             data[k : k + kl] = v
             k += kl
 

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-09-16 21:08:40
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-18 15:20:41
 import numpy as np
 from numba import jit
 
@@ -309,9 +309,7 @@ def jitvaluefrom(time_array, time_target_array, data_target_array, starts, ends)
     TYPE
         Description
     """
-    time_array, _, count = jitrestrict_with_count(
-        time_array, np.zeros(time_array.shape[0]), starts, ends
-    )
+    time_array, count = jittsrestrict_with_count(time_array, starts, ends)
     time_target_array, data_target_array, count_target = jitrestrict_with_count(
         time_target_array, data_target_array, starts, ends
     )
@@ -320,7 +318,7 @@ def jitvaluefrom(time_array, time_target_array, data_target_array, starts, ends)
     n = time_array.shape[0]
     d = time_target_array.shape[0]
 
-    new_data_array = np.zeros(data_target_array.shape, dtype=data_target_array.dtype)
+    new_data_array = np.zeros(n, dtype=data_target_array.dtype)
 
     if n > 0 and d > 0:
         for k in range(m):
@@ -348,7 +346,7 @@ def jitvaluefrom(time_array, time_target_array, data_target_array, starts, ends)
 
 
 @jit(nopython=True)
-def jitvaluefromtsdframe(
+def jitvaluefromtensor(
     time_array, time_target_array, data_target_array, starts, ends
 ):
     """Summary
@@ -383,7 +381,7 @@ def jitvaluefromtsdframe(
     d = time_target_array.shape[0]
 
     new_data_array = np.zeros(
-        (n, data_target_array.shape[1]), dtype=data_target_array.dtype
+        (n, *data_target_array.shape[1:]), dtype=data_target_array.dtype
     )
 
     if n > 0 and d > 0:

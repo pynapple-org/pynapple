@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-09-17 22:25:14
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-18 17:37:56
 
 import importlib
 import os
@@ -21,7 +21,7 @@ from .jitted_functions import (
     jittsrestrict,
     jittsrestrict_with_count,
     jitvaluefrom,
-    jitvaluefromtsdframe,
+    jitvaluefromtensor,
 )
 from .time_units import format_timestamps, return_timestamps, sort_timestamps
 
@@ -36,9 +36,12 @@ class _TsdFrameSliceHelper:
         self.tsdframe = tsdframe
 
     def __getitem__(self, key):
-        index = self.tsdframe.columns.get_indexer(list(key))
+        if hasattr(key,"__iter__") and not isinstance(key, str):
+            index = self.tsdframe.columns.get_indexer(key)
+        else:
+            index = self.tsdframe.columns.get_indexer([key])
+            
         return self.tsdframe[:, index]
-
 
 class _AbstractTsd(abc.ABC):
     """
@@ -171,27 +174,51 @@ class _AbstractTsd(abc.ABC):
             return self.times(units=units)[-1]
         else:
             return None
-
-    def _restrict(self, iset):
-        """
-        Wrapper of numba call
-        """
-        time_array = self.index
-        starts = iset.start.values
-        ends = iset.end.values
-
-        if isinstance(self.values, np.ndarray):
-            data_array = self.values
-            t, d = jitrestrict(time_array, data_array, starts, ends)
-            return t, d
-        else:
-            t = jittsrestrict(time_array, starts, ends)
-            return t
         
-    def _value_from(self, data, ep=None):
+    def value_from(self, data, ep=None):
         """
-        Wrapper of numba call
+        Replace the value with the closest value from Tsd/TsdFrame argument
+        If data is TsdFrame, the output is also TsdFrame.
+
+        Parameters
+        ----------
+        data : Tsd/TsdFrame
+            The Tsd/TsdFrame object holding the values to replace.
+        ep : IntervalSet (optional)
+            The IntervalSet object to restrict the operation.
+            If None, the time support of the tsd input object is used.
+
+        Returns
+        -------
+        out : Tsd/TsdFrame
+            Object with the new values
+
+        Examples
+        --------
+        In this example, the ts object will receive the closest values in time from tsd.
+
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
+        >>> ts = nap.Ts(t=t, time_units='s')
+        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+
+        The variable ts is a time series object containing only nan.
+        The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
+
+        >>> newts = ts.value_from(tsd, ep)
+
+        newts is the same size as ts restrict to ep.
+
+        >>> print(len(ts.restrict(ep)), len(newts))
+            52 52
         """
+        if not isinstance(data, (TsdTensor, TsdFrame, Tsd)):
+            raise RuntimeError(
+                "The time series to align to should be Tsd/TsdFrame/TsdTensor."
+            )
+        
         if ep is None:
             ep = data.time_support
         time_array = self.index
@@ -199,269 +226,22 @@ class _AbstractTsd(abc.ABC):
         data_target_array = data.values
         starts = ep.start.values
         ends = ep.end.values
-        t, d, ns, ne = jitvaluefrom(
-            time_array, time_target_array, data_target_array, starts, ends
-        )
-        return t, d, ns, ne
 
-    def _bin_average(self, bin_size, ep):
-        """
-        Wrapper of numba call
-        """
-        time_array = self.index
-        data_array = self.values
-        starts = ep.start.values
-        ends = ep.end.values
-        if data_array.ndim > 1:
-            t, d = jitbin_array(time_array, data_array, starts, ends, bin_size)
+        if data_target_array.ndim == 1:
+            t, d, ns, ne = jitvaluefrom(
+                time_array, time_target_array, data_target_array, starts, ends
+            )        
         else:
-            t, d = jitbin(time_array, data_array, starts, ends, bin_size)
-        return t, d
+            t, d, ns, ne = jitvaluefromtensor(
+                time_array, time_target_array, data_target_array, starts, ends
+            )        
 
-    def _count(self, bin_size, ep):
-        time_array = self.index
-        starts = ep.start.values
-        ends = ep.end.values
-        t, d = jitcount(time_array, starts, ends, bin_size)
-        return t, d
+        time_support = IntervalSet(start=ns, end=ne)
 
-    def _restrict_count(self, ep):
-        time_array = self.index
-        starts = ep.start.values
-        ends = ep.end.values        
-        _, countin = jittsrestrict_with_count(time_array, starts, ends)
-        t = starts + (ends - starts) / 2
-        return t, countin
-
-
-class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
-    """
-    A container around numpy.ndarray specialized for neurophysiological time series.
-
-    TsdTensor provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.
-
-    Attributes
-    ----------
-    rate : float
-        Frequency of the time series (Hz) computed over the time support
-    time_support : IntervalSet
-        The time support of the time series
-    """
-
-    # def __new__(cls, )
-    #     Check shape to return Ts, Tsd or TsdFrame
-    #     if d.ndim < 3:
-    #         raise RuntimeError
-
-    def __init__(self, t, d, time_units="s", time_support=None, **kwargs):
-        """
-        TsdTensor initializer
-
-        Parameters
-        ----------
-        t : numpy.ndarray
-            the time index t
-        d : numpy.ndarray
-            The data
-        time_units : str, optional
-            The time units in which times are specified ('us', 'ms', 's' [default]).
-        time_support : IntervalSet, optional
-            The time support of the TsdFrame object
-        **kwargs
-            Arguments that will be passed to the pandas.DataFrame initializer.
-        """
-        if not isinstance(d, np.ndarray):
-            d = np.asarray(d)
-        if isinstance(t, Number):
-            t = np.array([t])
-        if isinstance(d, Number):
-            d = np.array([d])
-
-        # Checking timestamps
-        t = t.astype(np.float64).flatten()
-        t = format_timestamps(t, time_units)
-        t = sort_timestamps(t)
-
-        if len(t):
-            if isinstance(time_support, IntervalSet):
-                starts = time_support.start.values
-                ends = time_support.end.values
-                if d is not None:
-                    t, d = jitrestrict(t, d, starts, ends)
-                    self.index = t
-                    self.values = d
-                else:
-                    t = jittsrestrict(t, starts, ends)
-                    self.index = t
-                    self.values = np.array([])
-            else:
-                time_support = IntervalSet(start=t[0], end=t[-1])
-                self.index = t
-                self.values = d
-
-            self.time_support = time_support
-            self.rate = t.shape[0] / np.sum(
-                time_support.values[:, 1] - time_support.values[:, 0]
-            )
+        if isinstance(data, TsdFrame):
+            return TsdFrame(t=t, d=d, time_support=time_support, columns=data.columns)
         else:
-            self.rate = np.NaN
-            self.index = np.empty(0)
-            self.values = np.empty(0)
-            self.time_support = IntervalSet(start=[], end=[])
-
-        self.nap_class = self.__class__.__name__
-        self.dtype = self.values.dtype
-
-    def __repr__(self):
-        upper = "Time (s)"
-        _str_ = []
-
-        def create_str(array):
-            if array.ndim == 1:
-                return "[" + array[0].__repr__() + " ... " + array[0].__repr__() + "]"
-            else:
-                return "[" + create_str(array[0]) + " ...]"
-
-        if self.shape[0] < 100:
-            for i, array in zip(self.index, self.values):
-                _str_.append(
-                    # "{:.6f}".format(i)
-                    i.__repr__()
-                    + "    "
-                    + create_str(array)
-                )
-        else:
-            for i, array in zip(self.index[0:10], self.values[0:10]):
-                _str_.append(i.__repr__() + "    " + create_str(array))
-            _str_.append("...")
-            for i, array in zip(self.index[-10:], self.values[-10:]):
-                _str_.append(i.__repr__() + "    " + create_str(array))
-
-        _str_ = "\n".join(_str_)
-        bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(self.shape)
-        return "\n".join((upper, _str_, bottom))
-
-    def __str__(self):
-        return self.__repr__()
-
-    def __getitem__(self, key):
-        """
-        Performs the operation __getitem__.
-        """
-        # print(key)
-        try:
-            output = self.values.__getitem__(key)
-            if isinstance(key, tuple):
-                index = self.index.__getitem__(key[0])
-            else:
-                index = self.index.__getitem__(key)
-
-            if isinstance(index, Number):
-                index = np.array([index])
-
-            if all(isinstance(a, np.ndarray) for a in [index, output]):
-                if output.shape[0] == index.shape[0]:
-                    if output.ndim == 1:
-                        return Tsd(t=index, d=output, time_support=self.time_support)
-                    elif output.ndim == 2:
-                        return TsdFrame(
-                            t=index, d=output, time_support=self.time_support
-                        )
-                    else:
-                        return TsdTensor(
-                            t=index, d=output, time_support=self.time_support
-                        )
-                else:
-                    return output
-            else:
-                return output
-        except:
-            raise IndexError
-
-    def __setitem__(self, key, value):
-        """
-        Performs the operation __getitem__.
-        """
-        try:
-            self.values.__setitem__(key, value)
-        except:
-            raise IndexError
-
-    def __array_ufunc__(self, ufunc, method, *args, **kwargs):
-        print("In __array_ufunc__")
-        print("     ufunc = ", ufunc)
-        print("     method = ", method)
-        print("     args = ", args)
-        for inp in args:
-            print(type(inp))
-        print("     kwargs = ", kwargs)
-
-        if method == "__call__":
-            new_args = []
-            for a in args:
-                if isinstance(a, Number):
-                    new_args.append(a)
-                elif isinstance(a, self.__class__):
-                    new_args.append(a.values)
-                else:
-                    return NotImplemented
-
-            out = ufunc(*new_args, **kwargs)
-            # print("output = ", out)
-            return self.__class__(self.index, out)
-
-        else:
-            return NotImplemented
-
-    def __array_function__(self, func, types, args, kwargs):
-        print("In __array_function__")
-        print("     func = ", func)
-        print("     types = ", types)
-        print("     args = ", args)
-        print("     kwargs = ", kwargs)
-
-        if func in [np.hstack, np.vstack, np.concatenate]:
-            return NotImplemented
-
-        new_args = []
-        for a in args:
-            if isinstance(a, self.__class__):
-                new_args.append(a.values)
-            else:
-                new_args.append(a)
-
-        output = func._implementation(*new_args, **kwargs)
-
-        if isinstance(output, np.ndarray):
-            if output.shape[0] == self.index.shape[0]:
-                if len(output.shape) == 1:
-                    return Tsd(t=self.index, d=output)
-                elif len(output.shape) == 2:
-                    return TsdFrame(t=self.index, d=output)
-                else:
-                    return output
-            else:
-                return output
-        else:
-            return output
-
-    def restrict(self, iset):
-        """
-        Restricts a TsdTensor object to a set of time intervals delimited by an IntervalSet object`
-
-        Parameters
-        ----------
-        iset : IntervalSet
-            the IntervalSet object
-
-        Returns
-        -------
-        TsdFrame
-            TsdFrame object restricted to ep
-
-        """
-        t, d = self._restrict(iset)
-        return TsdTensor(t=t, d=d, time_support=iset)
+            return data.__class__(t, d, time_support=time_support)        
 
     def count(self, *args, **kwargs):
         """
@@ -550,66 +330,291 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
                 if isinstance(a, IntervalSet):
                     ep = a
 
+        time_array = self.index
+        starts = ep.start.values
+        ends = ep.end.values        
+
         if isinstance(bin_size, (float, int)):
             bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
-            t, d = self._count(bin_size, ep)
-            return Tsd(t=t, d=d, time_support=ep)            
+            t, d = jitcount(time_array, starts, ends, bin_size)                        
         else:
-            t, d = self._restrict_count(ep)
-            return Tsd(t=t, d=d, time_support=ep)
+            _, d = jittsrestrict_with_count(time_array, starts, ends)
+            t = starts + (ends - starts) / 2
+            
+        return Tsd(t=t, d=d, time_support=ep)
 
-    def value_from(self, data, ep=None):
+    def restrict(self, iset):
         """
-        Replace the value with the closest value from Tsd/TsdFrame argument
-        If data is TsdFrame, the output is also TsdFrame.
+        Restricts a Tsd object to a set of time intervals delimited by an IntervalSet object
 
         Parameters
         ----------
-        data : Tsd/TsdFrame
-            The Tsd/TsdFrame object holding the values to replace.
-        ep : IntervalSet (optional)
-            The IntervalSet object to restrict the operation.
-            If None, the time support of the tsd input object is used.
+        ep : IntervalSet
+            the IntervalSet object
 
         Returns
         -------
-        out : Tsd/TsdFrame
-            Object with the new values
+        out: Tsd
+            Tsd object restricted to ep
 
         Examples
         --------
-        In this example, the ts object will receive the closest values in time from tsd.
+        The Ts object is restrict to the intervals defined by ep.
 
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
         >>> ts = nap.Ts(t=t, time_units='s')
-        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
-        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+        >>> ep = nap.IntervalSet(start=0, end=500, time_units='s')
+        >>> newts = ts.restrict(ep)
 
-        The variable ts is a time series object containing only nan.
-        The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
+        The time support of newts automatically inherit the epochs defined by ep.
 
-        >>> newts = ts.value_from(tsd, ep)
+        >>> newts.time_support
+        >>>    start    end
+        >>> 0    0.0  500.0
 
-        newts is the same size as ts restrict to ep.
-
-        >>> print(len(ts.restrict(ep)), len(newts))
-            52 52
         """
-        if not isinstance(data, (TsdTensor, TsdFrame, Tsd)):
-            raise RuntimeError(
-                "The time series to align to should be Tsd/TsdFrame/TsdTensor."
-            )
+        if not isinstance(iset, IntervalSet):
+            raise ValueError("Argument should be IntervalSet")
 
-        t, d, ns, ne = self._value_from(data, ep)
+        time_array = self.index
+        starts = iset.start.values
+        ends = iset.end.values
 
-        time_support = IntervalSet(start=ns, end=ne)
-
-        if isinstance(data, TsdFrame):
-            return TsdFrame(t=t, d=d, time_support=time_support, columns=data.columns)
+        if isinstance(self.values, np.ndarray):
+            data_array = self.values
+            t, d = jitrestrict(time_array, data_array, starts, ends)
+            
+            if hasattr(self, "columns"):
+                return TsdFrame(t=t, d=d, time_support=iset, columns=self.columns)
+            else:
+                return self.__class__(t=t, d=d, time_support=iset)
         else:
-            return data.__class__(t, d, time_support=time_support)
+            t = jittsrestrict(time_array, starts, ends)
+            return Ts(t, time_support=iset)
+
+class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
+    """
+    A container around numpy.ndarray specialized for neurophysiological time series.
+
+    TsdTensor provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.
+
+    Attributes
+    ----------
+    rate : float
+        Frequency of the time series (Hz) computed over the time support
+    time_support : IntervalSet
+        The time support of the time series
+    """
+
+    # def __new__(cls, )
+    #     Check shape to return Ts, Tsd or TsdFrame
+    #     if d.ndim < 3:
+    #         raise RuntimeError
+
+    def __init__(self, t, d, time_units="s", time_support=None, **kwargs):
+        """
+        TsdTensor initializer
+
+        Parameters
+        ----------
+        t : numpy.ndarray
+            the time index t
+        d : numpy.ndarray
+            The data
+        time_units : str, optional
+            The time units in which times are specified ('us', 'ms', 's' [default]).
+        time_support : IntervalSet, optional
+            The time support of the TsdFrame object
+        **kwargs
+            Arguments that will be passed to the pandas.DataFrame initializer.
+        """
+        if not isinstance(d, np.ndarray):
+            d = np.asarray(d)
+        if isinstance(t, Number):
+            t = np.array([t])
+        if isinstance(d, Number):
+            d = np.array([d])
+
+        # Checking timestamps
+        t = t.astype(np.float64).flatten()
+        t = format_timestamps(t, time_units)
+        t = sort_timestamps(t)
+
+        if len(t) != len(d):
+            raise ValueError(
+                "Length of values "
+                f"({len(d)}) "
+                "does not match length of index "
+                f"({len(t)})"
+            )        
+
+        if len(t):
+            if isinstance(time_support, IntervalSet):
+                starts = time_support.start.values
+                ends = time_support.end.values
+                if d is not None:
+                    t, d = jitrestrict(t, d, starts, ends)
+                    self.index = t
+                    self.values = d
+                else:
+                    t = jittsrestrict(t, starts, ends)
+                    self.index = t
+                    self.values = np.array([])
+            else:
+                time_support = IntervalSet(start=t[0], end=t[-1])
+                self.index = t
+                self.values = d
+
+            self.time_support = time_support
+            self.rate = t.shape[0] / np.sum(
+                time_support.values[:, 1] - time_support.values[:, 0]
+            )
+        else:
+            self.rate = np.NaN
+            self.index = np.empty(0)
+            self.values = np.empty(0)
+            self.time_support = IntervalSet(start=[], end=[])
+
+        self.nap_class = self.__class__.__name__
+        self.dtype = self.values.dtype
+
+    def __repr__(self):
+        upper = "Time (s)"
+        _str_ = []
+
+        def create_str(array):
+            if array.ndim == 1:
+                return "[" + array[0].__repr__() + " ... " + array[0].__repr__() + "]"
+            else:
+                return "[" + create_str(array[0]) + " ...]"
+
+        if self.shape[0] < 100:
+            for i, array in zip(self.index, self.values):
+                _str_.append(
+                    # "{:.6f}".format(i)
+                    i.__repr__()
+                    + "    "
+                    + create_str(array)
+                )
+        else:
+            for i, array in zip(self.index[0:5], self.values[0:5]):
+                _str_.append(i.__repr__() + "    " + create_str(array))
+            _str_.append("...")
+            for i, array in zip(self.index[-5:], self.values[-5:]):
+                _str_.append(i.__repr__() + "    " + create_str(array))
+
+        _str_ = "\n".join(_str_)
+        bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(self.shape)
+        return "\n".join((upper, _str_, bottom))
+
+    def __str__(self):
+        return self.__repr__()
+
+    def __getitem__(self, key):
+        """
+        Performs the operation __getitem__.
+        """
+        # print(key)
+        try:
+            output = self.values.__getitem__(key)
+            if isinstance(key, tuple):
+                index = self.index.__getitem__(key[0])
+            else:
+                index = self.index.__getitem__(key)
+
+            if isinstance(index, Number):
+                index = np.array([index])
+
+            if all(isinstance(a, np.ndarray) for a in [index, output]):
+                if output.shape[0] == index.shape[0]:
+                    if output.ndim == 1:
+                        return Tsd(t=index, d=output, time_support=self.time_support)
+                    elif output.ndim == 2:
+                        return TsdFrame(
+                            t=index, d=output, time_support=self.time_support
+                        )
+                    else:
+                        return TsdTensor(
+                            t=index, d=output, time_support=self.time_support
+                        )
+                else:
+                    return output
+            else:
+                return output
+        except:
+            raise IndexError
+
+    def __setitem__(self, key, value):
+        """
+        Performs the operation __getitem__.
+        """
+        try:
+            self.values.__setitem__(key, value)
+        except:
+            raise IndexError
+
+    def __array_ufunc__(self, ufunc, method, *args, **kwargs):
+        # print("In __array_ufunc__")
+        # print("     ufunc = ", ufunc)
+        # print("     method = ", method)
+        # print("     args = ", args)
+        # for inp in args:
+        #     print(type(inp))
+        # print("     kwargs = ", kwargs)
+
+        if method == "__call__":
+            new_args = []
+            for a in args:
+                if isinstance(a, Number):
+                    new_args.append(a)
+                elif isinstance(a, self.__class__):
+                    new_args.append(a.values)
+                else:
+                    return NotImplemented
+
+            out = ufunc(*new_args, **kwargs)
+            # print("output = ", out)
+            return self.__class__(self.index, out)
+
+        else:
+            return NotImplemented
+
+    def __array_function__(self, func, types, args, kwargs):
+        # print("In __array_function__")
+        # print("     func = ", func)
+        # print("     types = ", types)
+        # print("     args = ", args)
+        # print("     kwargs = ", kwargs)
+
+        if func in [np.hstack, np.vstack, np.concatenate]:
+            return NotImplemented
+
+        new_args = []
+        for a in args:
+            if isinstance(a, self.__class__):
+                new_args.append(a.values)
+            else:
+                new_args.append(a)
+
+        output = func._implementation(*new_args, **kwargs)
+
+        if isinstance(output, np.ndarray):
+            if output.shape[0] == self.index.shape[0]:
+                if output.ndim == 1:
+                    return Tsd(t=self.index, d=output)
+                elif output.ndim == 2:
+                    if hasattr(self, "columns"):
+                        return TsdFrame(t=self.index, d=output, columns = self.columns)
+                    else:
+                        return TsdFrame(t=self.index, d=output)
+                else:
+                    return TsdTensor(t=self.index, d=output)
+            else:
+                return output
+        else:
+            return output
 
     def bin_average(self, bin_size, ep=None, time_units="s"):
         """
@@ -628,8 +633,8 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
 
         Returns
         -------
-        out: TsdFrame
-            A TsdFrame object indexed by the center of the bins and holding the averaged data points.
+        out: Tsd
+            A Tsd object indexed by the center of the bins and holding the averaged data points.
 
         Examples
         --------
@@ -637,17 +642,17 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
 
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3))
-        >>> bintsdframe = tsdframe.bin_average(0.1)
+        >>> tsd = nap.Tsd(t=np.arange(100), d=np.random.rand(100))
+        >>> bintsd = tsd.bin_average(0.1)
 
         An epoch can be specified:
 
         >>> ep = nap.IntervalSet(start = 10, end = 80, time_units = 's')
-        >>> bintsdframe = tsdframe.bin_average(0.1, ep=ep)
+        >>> bintsd = tsd.bin_average(0.1, ep=ep)
 
-        And bintsdframe automatically inherit ep as time support:
+        And bintsd automatically inherit ep as time support:
 
-        >>> bintsdframe.time_support
+        >>> bintsd.time_support
         >>>    start    end
         >>> 0  10.0     80.0
         """
@@ -656,9 +661,24 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
 
         bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
 
-        t, d = self._bin_average(bin_size, ep)
-
-        return TsdTensor(t=t, d=d, time_support=ep)
+        time_array = self.index
+        data_array = self.values
+        starts = ep.start.values
+        ends = ep.end.values
+        if data_array.ndim > 1:
+            t, d = jitbin_array(time_array, data_array, starts, ends, bin_size)
+        else:
+            t, d = jitbin(time_array, data_array, starts, ends, bin_size)
+        
+        if d.ndim == 1:
+            return Tsd(t=t, d=d, time_support=ep)
+        elif d.ndim == 2:
+            if hasattr(self, "columns"):
+                return TsdFrame(t=t, d=d, time_support=ep, columns=self.columns)
+            else:
+                return TsdFrame(t=t, d=d, time_support=ep)
+        else:
+            return TsdTensor(t=t, d=d, time_support=ep)
 
     def save(self, filename):
         """
@@ -797,35 +817,47 @@ class TsdFrame(TsdTensor):
     def loc(self):
         return _TsdFrameSliceHelper(self)
 
-    def __repr__(self):
-        # TODO repr for all dtypes
+    def __repr__(self):        
         columns_str = ""
         if self.columns is not None and len(self.columns):
             columns_str += "        ".join([str(k) for k in self.columns])
         upper = "Time (s)      " + columns_str
+
         _str_ = []
-        for i, array in zip(self.index, self.values):
-            _str_.append(
-                "{:.6f}".format(i)
-                + "    "
-                + " ".join(["{:.6f}".format(k) for k in array])
-            )
+        if self.shape[0] < 100:            
+            for i, array in zip(self.index, self.values):
+                _str_.append(
+                    i.__repr__()
+                    + "    "
+                    + " ".join([k.__repr__() for k in array])
+                )
+        else:
+            for i, array in zip(self.index[0:5], self.values[0:5]):
+                _str_.append(
+                    i.__repr__()
+                    + "    "
+                    + " ".join([k.__repr__() for k in array])
+                )                
+            _str_.append("...")
+            for i, array in zip(self.index[-5:], self.values[-5:]):
+                _str_.append(
+                    i.__repr__()
+                    + "    "
+                    + " ".join([k.__repr__() for k in array])
+                )                
 
         _str_ = "\n".join(_str_)
         bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(self.shape)
         return "\n".join((upper, _str_, bottom))
 
-    def __str__(self):
-        return self.__repr__()
-
     def __array_ufunc__(self, ufunc, method, *args, **kwargs):
-        print("In __array_ufunc__")
-        print("     ufunc = ", ufunc)
-        print("     method = ", method)
-        print("     args = ", args)
-        for inp in args:
-            print(type(inp))
-        print("     kwargs = ", kwargs)
+        # print("In __array_ufunc__")
+        # print("     ufunc = ", ufunc)
+        # print("     method = ", method)
+        # print("     args = ", args)
+        # for inp in args:
+        #     print(type(inp))
+        # print("     kwargs = ", kwargs)
 
         if method == "__call__":
             new_args = []
@@ -843,38 +875,6 @@ class TsdFrame(TsdTensor):
 
         else:
             return NotImplemented
-
-    def __array_function__(self, func, types, args, kwargs):
-        print("In __array_function__")
-        print("     func = ", func)
-        print("     types = ", types)
-        print("     args = ", args)
-        print("     kwargs = ", kwargs)
-
-        if func in [np.hstack, np.vstack, np.concatenate]:
-            return NotImplemented
-
-        new_args = []
-        for a in args:
-            if isinstance(a, self.__class__):
-                new_args.append(a.values)
-            else:
-                new_args.append(a)
-
-        output = func._implementation(*new_args, **kwargs)
-
-        if isinstance(output, np.ndarray):
-            if output.shape[0] == self.index.shape[0]:
-                if len(output.shape) == 1:
-                    return Tsd(t=self.index, d=output)
-                elif len(output.shape) == 2:
-                    return TsdFrame(t=self.index, d=output)
-                else:
-                    return output
-            else:
-                return output
-        else:
-            return output
 
     def as_dataframe(self):
         """
@@ -910,73 +910,6 @@ class TsdFrame(TsdTensor):
         df.index.name = "Time (" + str(units) + ")"
         df.columns = self.columns.copy()
         return df
-
-    def restrict(self, iset):
-        """
-        Restricts a TsdTensor object to a set of time intervals delimited by an IntervalSet object`
-
-        Parameters
-        ----------
-        iset : IntervalSet
-            the IntervalSet object
-
-        Returns
-        -------
-        TsdFrame
-            TsdFrame object restricted to ep
-
-        """
-        t, d = self._restrict(iset)
-        return TsdFrame(t=t, d=d, time_support=iset, columns=self.columns)
-
-    def bin_average(self, bin_size, ep=None, time_units="s"):
-        """
-        Bin the data by averaging points within bin_size
-        bin_size should be seconds unless specified.
-        If no epochs is passed, the data will be binned based on the time support.
-
-        Parameters
-        ----------
-        bin_size : float
-            The bin size (default is second)
-        ep : None or IntervalSet, optional
-            IntervalSet to restrict the operation
-        time_units : str, optional
-            Time units of bin size ('us', 'ms', 's' [default])
-
-        Returns
-        -------
-        out: TsdFrame
-            A TsdFrame object indexed by the center of the bins and holding the averaged data points.
-
-        Examples
-        --------
-        This example shows how to bin data within bins of 0.1 second.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3))
-        >>> bintsdframe = tsdframe.bin_average(0.1)
-
-        An epoch can be specified:
-
-        >>> ep = nap.IntervalSet(start = 10, end = 80, time_units = 's')
-        >>> bintsdframe = tsdframe.bin_average(0.1, ep=ep)
-
-        And bintsdframe automatically inherit ep as time support:
-
-        >>> bintsdframe.time_support
-        >>>    start    end
-        >>> 0  10.0     80.0
-        """
-        if not isinstance(ep, IntervalSet):
-            ep = self.time_support
-
-        bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
-
-        t, d = self._bin_average(bin_size, ep)
-
-        return TsdFrame(t=t, d=d, time_support=ep, columns=self.columns)
 
     def save(self, filename):
         """
@@ -1093,7 +1026,7 @@ class Tsd(TsdTensor):
         """
         if isinstance(t, pd.Series):
             d = t.values
-            t = t.index
+            t = t.index.values
 
         super().__init__(t, d, time_units, time_support)
 
@@ -1101,57 +1034,28 @@ class Tsd(TsdTensor):
 
     def __repr__(self):
         upper = "Time (s)"
-        _str_ = "\n".join(
-            [
-                i.__repr__() + "    " + j.__repr__()
-                for i, j in zip(self.index, self.values)
-            ]
-        )
+        if self.shape[0] < 100:
+            _str_ = "\n".join(
+                [
+                    i.__repr__() + "    " + j.__repr__()
+                    for i, j in zip(self.index, self.values)
+                ]
+            )
+        else:
+            _str_ = "\n".join(
+                [
+                    i.__repr__() + "    " + j.__repr__()
+                    for i, j in zip(self.index[0:5], self.values[0:5])
+                ] + ["..."] +
+                [
+                    i.__repr__() + "    " + j.__repr__()
+                    for i, j in zip(self.index[-5:], self.values[-5:])
+                ]
+
+            )
+
         bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(self.shape)
         return "\n".join((upper, _str_, bottom))
-
-    def __array_ufunc__(self, ufunc, method, *args, **kwargs):
-        print("In __array_ufunc__")
-        print("     ufunc = ", ufunc)
-        print("     method = ", method)
-        print("     args = ", args)
-        for inp in args:
-            print(type(inp))
-        print("     kwargs = ", kwargs)
-
-        if method == "__call__":
-            new_args = []
-            for a in args:
-                if isinstance(a, Number):
-                    new_args.append(a)
-                elif isinstance(a, self.__class__):
-                    new_args.append(a.values)
-                else:
-                    return NotImplemented
-
-            out = ufunc(*new_args, **kwargs)
-            # print("output = ", out)
-            return self.__class__(self.index, out)
-
-        else:
-            return NotImplemented
-
-    def __array_function__(self, func, types, args, kwargs):
-        print("In __array_function__")
-        print("     func = ", func)
-        print("     types = ", types)
-        print("     args = ", args)
-        print("     kwargs = ", kwargs)
-
-        new_args = []
-        for a in args:
-            if isinstance(a, Tsd):
-                new_args.append(a.values)
-            else:
-                new_args.append(a)
-        output = func._implementation(*args, **kwargs)
-
-        return output
 
     def as_series(self):
         """
@@ -1186,90 +1090,6 @@ class Tsd(TsdTensor):
         ss.index = t
         ss.index.name = "Time (" + str(units) + ")"
         return ss
-
-    def restrict(self, ep):
-        """
-        Restricts a Tsd object to a set of time intervals delimited by an IntervalSet object
-
-        Parameters
-        ----------
-        ep : IntervalSet
-            the IntervalSet object
-
-        Returns
-        -------
-        out: Tsd
-            Tsd object restricted to ep
-
-        Examples
-        --------
-        The Ts object is restrict to the intervals defined by ep.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> ep = nap.IntervalSet(start=0, end=500, time_units='s')
-        >>> newts = ts.restrict(ep)
-
-        The time support of newts automatically inherit the epochs defined by ep.
-
-        >>> newts.time_support
-        >>>    start    end
-        >>> 0    0.0  500.0
-
-        """
-        t, d = self._restrict(ep)
-        return Tsd(t=t, d=d, time_support=ep)
-
-    def bin_average(self, bin_size, ep=None, time_units="s"):
-        """
-        Bin the data by averaging points within bin_size
-        bin_size should be seconds unless specified.
-        If no epochs is passed, the data will be binned based on the time support.
-
-        Parameters
-        ----------
-        bin_size : float
-            The bin size (default is second)
-        ep : None or IntervalSet, optional
-            IntervalSet to restrict the operation
-        time_units : str, optional
-            Time units of bin size ('us', 'ms', 's' [default])
-
-        Returns
-        -------
-        out: Tsd
-            A Tsd object indexed by the center of the bins and holding the averaged data points.
-
-        Examples
-        --------
-        This example shows how to bin data within bins of 0.1 second.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> tsd = nap.Tsd(t=np.arange(100), d=np.random.rand(100))
-        >>> bintsd = tsd.bin_average(0.1)
-
-        An epoch can be specified:
-
-        >>> ep = nap.IntervalSet(start = 10, end = 80, time_units = 's')
-        >>> bintsd = tsd.bin_average(0.1, ep=ep)
-
-        And bintsd automatically inherit ep as time support:
-
-        >>> bintsd.time_support
-        >>>    start    end
-        >>> 0  10.0     80.0
-        """
-        if not isinstance(ep, IntervalSet):
-            ep = self.time_support
-
-        bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
-
-        t, d = self._bin_average(bin_size, ep)
-
-        return Tsd(t=t, d=d, time_support=ep)
 
     def threshold(self, thr, method="above"):
         """
@@ -1551,7 +1371,12 @@ class Ts(_AbstractTsd):
 
     def __repr__(self):
         upper = "Time (s)"
-        _str_ = "\n".join([i.__repr__() for i in self.index])
+        if len(self) < 100:
+            _str_ = "\n".join([i.__repr__() for i in self.index])
+        else:
+            _str_ = "\n".join([i.__repr__() for i in self.index[0:5]] + 
+                ["..."] + [i.__repr__() for i in self.index[-5:]])
+
         bottom = "shape: {}".format(len(self.index))
         return "\n".join((upper, _str_, bottom))
 
@@ -1582,6 +1407,17 @@ class Ts(_AbstractTsd):
     def __setitem__(self, key):
         pass
     
+    def as_series(self):
+        """
+        Convert the Ts/Tsd object to a pandas.Series object.
+
+        Returns
+        -------
+        out: pandas.Series
+            _
+        """
+        return pd.Series(index=self.index, dtype="object")
+
     def as_units(self, units="s"):
         """
         Returns a pandas Series with time expressed in the desired unit.
@@ -1603,77 +1439,6 @@ class Ts(_AbstractTsd):
         ss = pd.Series(index=t, dtype='object')
         ss.index.name = "Time (" + str(units) + ")"
         return ss
-
-    def value_from(self, data, ep=None):
-        """
-        Replace the value with the closest value from Tsd/TsdFrame argument
-        If data is TsdFrame, the output is also TsdFrame.
-
-        Parameters
-        ----------
-        data : Tsd/TsdFrame
-            The Tsd/TsdFrame object holding the values to replace.
-        ep : IntervalSet (optional)
-            The IntervalSet object to restrict the operation.
-            If None, the time support of the tsd input object is used.
-
-        Returns
-        -------
-        out : Tsd/TsdFrame
-            Object with the new values
-
-        Examples
-        --------
-        In this example, the ts object will receive the closest values in time from tsd.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
-        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
-
-        The variable ts is a time series object containing only nan.
-        The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
-
-        >>> newts = ts.value_from(tsd, ep)
-
-        newts is the same size as ts restrict to ep.
-
-        >>> print(len(ts.restrict(ep)), len(newts))
-            52 52
-        """
-        if not isinstance(data, (TsdTensor, TsdFrame, Tsd)):
-            raise RuntimeError(
-                "The time series to align to should be Tsd/TsdFrame/TsdTensor."
-            )
-
-        t, d, ns, ne = self._value_from(data, ep)
-
-        time_support = IntervalSet(start=ns, end=ne)
-
-        if isinstance(data, TsdFrame):
-            return TsdFrame(t=t, d=d, time_support=time_support, columns=data.columns)
-        else:
-            return data.__class__(t, d, time_support=time_support)        
-
-    def restrict(self, iset):
-        """
-        Restricts a TsdTensor object to a set of time intervals delimited by an IntervalSet object`
-
-        Parameters
-        ----------
-        iset : IntervalSet
-            the IntervalSet object
-
-        Returns
-        -------
-        TsdFrame
-            TsdFrame object restricted to ep
-
-        """
-        t = self._restrict(iset)
-        return Ts(t=t, time_support=iset)
 
     def save(self, filename):
         """
