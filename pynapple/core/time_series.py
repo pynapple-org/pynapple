@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-18 18:54:54
+# @Last Modified time: 2023-09-19 18:42:29
 
 import abc
 import importlib
@@ -38,8 +38,15 @@ class _TsdFrameSliceHelper:
         else:
             index = self.tsdframe.columns.get_indexer([key])
 
-        return self.tsdframe[:, index]
-
+        if len(index) == 1:            
+            return self.tsdframe.__getitem__(
+                (slice(None,None,None), index[0])
+                )
+        else:
+            return self.tsdframe.__getitem__(                
+                (slice(None,None,None), index),
+                columns=key
+                )
 
 class _AbstractTsd(abc.ABC):
     """
@@ -64,10 +71,6 @@ class _AbstractTsd(abc.ABC):
     @property
     def end(self):
         return self.end_time()
-
-    @property
-    def shape(self):
-        return self.values.shape
 
     @abc.abstractmethod
     def __repr__(self):
@@ -479,6 +482,14 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
         self.nap_class = self.__class__.__name__
         self.dtype = self.values.dtype
 
+    @property
+    def shape(self):
+        return self.values.shape
+
+    @property
+    def ndim(self):
+        return self.values.ndim
+
     def __repr__(self):
         upper = "Time (s)"
         _str_ = []
@@ -511,7 +522,7 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
     def __str__(self):
         return self.__repr__()
 
-    def __getitem__(self, key):
+    def __getitem__(self, key, *args, **kwargs):
         """
         Performs the operation __getitem__.
         """
@@ -532,7 +543,7 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
                         return Tsd(t=index, d=output, time_support=self.time_support)
                     elif output.ndim == 2:
                         return TsdFrame(
-                            t=index, d=output, time_support=self.time_support
+                            t=index, d=output, time_support=self.time_support, **kwargs
                         )
                     else:
                         return TsdTensor(
@@ -567,23 +578,34 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
             new_args = []
             n_object = 0
             for a in args:
-                if isinstance(a, Number):
-                    new_args.append(a)
-                elif isinstance(a, self.__class__):
+                if isinstance(a, self.__class__):
                     new_args.append(a.values)
                     n_object += 1
                 else:
-                    return NotImplemented
+                    new_args.append(a)
 
             # Meant to prevent addition of two Tsd for example
             if n_object > 1:
                 return NotImplemented                
             else:
                 out = ufunc(*new_args, **kwargs)
-                # print("output = ", out)
-                return self.__class__(self.index, out)
 
-        else:
+            if isinstance(out, np.ndarray):
+                if out.shape[0] == self.index.shape[0]:
+                    if out.ndim == 1:
+                        return Tsd(t=self.index, d=out)
+                    elif out.ndim == 2:
+                        if hasattr(self, "columns"):
+                            return TsdFrame(t=self.index, d=out, columns=self.columns)
+                        else:
+                            return TsdFrame(t=self.index, d=out)
+                    else:
+                        return TsdTensor(t=self.index, d=out)                    
+                else:
+                    return out
+            else:
+                return out
+        else:            
             return NotImplemented
 
     def __array_function__(self, func, types, args, kwargs):
@@ -593,8 +615,8 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
         # print("     args = ", args)
         # print("     kwargs = ", kwargs)
 
-        if func in [np.hstack, np.vstack, np.concatenate]:
-            return NotImplemented
+        # if func in [np.hstack, np.vstack, np.concatenate]:
+        #     return NotImplemented
 
         new_args = []
         for a in args:
@@ -603,23 +625,26 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
             else:
                 new_args.append(a)
 
-        output = func._implementation(*new_args, **kwargs)
+        out = func._implementation(*new_args, **kwargs)
 
-        if isinstance(output, np.ndarray):
-            if output.shape[0] == self.index.shape[0]:
-                if output.ndim == 1:
-                    return Tsd(t=self.index, d=output)
-                elif output.ndim == 2:
+        if isinstance(out, np.ndarray):
+            # if dims increased in any case, we can't return safely a time series
+            if out.ndim > self.ndim:
+                return out
+            elif out.shape[0] == self.index.shape[0]:
+                if out.ndim == 1:
+                    return Tsd(t=self.index, d=out)
+                elif out.ndim == 2:
                     if hasattr(self, "columns"):
-                        return TsdFrame(t=self.index, d=output, columns=self.columns)
+                        return TsdFrame(t=self.index, d=out, columns=self.columns)
                     else:
-                        return TsdFrame(t=self.index, d=output)
+                        return TsdFrame(t=self.index, d=out)
                 else:
-                    return TsdTensor(t=self.index, d=output)
+                    return TsdTensor(t=self.index, d=out)
             else:
-                return output
+                return out
         else:
-            return output
+            return out
 
     def bin_average(self, bin_size, ep=None, time_units="s"):
         """
@@ -684,6 +709,9 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
                 return TsdFrame(t=t, d=d, time_support=ep)
         else:
             return TsdTensor(t=t, d=d, time_support=ep)
+
+    def copy(self):
+            return self.__class__(t=self.index.copy(), d=self.values.copy())
 
     def save(self, filename):
         """
@@ -760,7 +788,6 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
         )
 
         return
-
 
 class TsdFrame(TsdTensor):
     """
@@ -848,32 +875,6 @@ class TsdFrame(TsdTensor):
         _str_ = "\n".join(_str_)
         bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(self.shape)
         return "\n".join((upper, _str_, bottom))
-
-    def __array_ufunc__(self, ufunc, method, *args, **kwargs):
-        # print("In __array_ufunc__")
-        # print("     ufunc = ", ufunc)
-        # print("     method = ", method)
-        # print("     args = ", args)
-        # for inp in args:
-        #     print(type(inp))
-        # print("     kwargs = ", kwargs)
-
-        if method == "__call__":
-            new_args = []
-            for a in args:
-                if isinstance(a, Number):
-                    new_args.append(a)
-                elif isinstance(a, self.__class__):
-                    new_args.append(a.values)
-                else:
-                    return NotImplemented
-
-            out = ufunc(*new_args, **kwargs)
-            # print("output = ", out)
-            return self.__class__(self.index, out, columns=self.columns)
-
-        else:
-            return NotImplemented
 
     def as_dataframe(self):
         """
