@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-19 18:42:29
+# @Last Modified time: 2023-09-20 17:42:14
 
 import abc
 import importlib
@@ -27,7 +27,24 @@ from .jitted_functions import (
 )
 from .time_units import format_timestamps, return_timestamps, sort_timestamps
 
+import matplotlib.pyplot as plt
 
+def split_tsd(func, tsd, indices_or_sections, axis=0):
+    """
+    Wrappers of numpy split functions
+    """
+    if func in [np.split, np.array_split, np.vsplit] and axis == 0:
+        out = func._implementation(tsd.values, indices_or_sections)
+        index_list = np.split(tsd.index, indices_or_sections)
+        kwargs = {'columns':tsd.columns.values} if hasattr(tsd, "columns") else {}
+        return [tsd.__class__(t=t, d=d, **kwargs) for t,d in zip(index_list, out)]
+    elif func in [np.dsplit, np.hsplit]:
+        out = func._implementation(tsd.values, indices_or_sections)
+        kwargs = {'columns':tsd.columns.values} if hasattr(tsd, "columns") else {}
+        return [tsd.__class__(t=tsd.index, d=d, **kwargs) for d in out]
+    else:
+        return func._implementation(tsd.values, indices_or_sections, axis)
+        
 class _TsdFrameSliceHelper:
     def __init__(self, tsdframe):
         self.tsdframe = tsdframe
@@ -65,6 +82,10 @@ class _AbstractTsd(abc.ABC):
         return self.index
 
     @property
+    def d(self):
+        return self.values
+
+    @property
     def start(self):
         return self.start_time()
 
@@ -94,7 +115,7 @@ class _AbstractTsd(abc.ABC):
         """
         pass
 
-    def __array__(self, dtype=None):
+    def __array__(self, dtype=None):        
         return self.values.astype(dtype)
 
     def __len__(self):
@@ -395,7 +416,6 @@ class _AbstractTsd(abc.ABC):
             t = jittsrestrict(time_array, starts, ends)
             return Ts(t, time_support=iset)
 
-
 class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
     """
     A container around numpy.ndarray specialized for neurophysiological time series.
@@ -455,15 +475,10 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
         if len(t):
             if isinstance(time_support, IntervalSet):
                 starts = time_support.start.values
-                ends = time_support.end.values
-                if d is not None:
-                    t, d = jitrestrict(t, d, starts, ends)
-                    self.index = t
-                    self.values = d
-                else:
-                    t = jittsrestrict(t, starts, ends)
-                    self.index = t
-                    self.values = np.array([])
+                ends = time_support.end.values                
+                t, d = jitrestrict(t, d, starts, ends)
+                self.index = t
+                self.values = d
             else:
                 time_support = IntervalSet(start=t[0], end=t[-1])
                 self.index = t
@@ -593,14 +608,14 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
             if isinstance(out, np.ndarray):
                 if out.shape[0] == self.index.shape[0]:
                     if out.ndim == 1:
-                        return Tsd(t=self.index, d=out)
+                        return Tsd(t=self.index, d=out, time_support = self.time_support)
                     elif out.ndim == 2:
                         if hasattr(self, "columns"):
-                            return TsdFrame(t=self.index, d=out, columns=self.columns)
+                            return TsdFrame(t=self.index, d=out, time_support = self.time_support, columns=self.columns)
                         else:
-                            return TsdFrame(t=self.index, d=out)
+                            return TsdFrame(t=self.index, d=out, time_support = self.time_support)
                     else:
-                        return TsdTensor(t=self.index, d=out)                    
+                        return TsdTensor(t=self.index, d=out, time_support = self.time_support)
                 else:
                     return out
             else:
@@ -615,8 +630,12 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
         # print("     args = ", args)
         # print("     kwargs = ", kwargs)
 
-        # if func in [np.hstack, np.vstack, np.concatenate]:
-        #     return NotImplemented
+        if func in [np.hstack, np.dstack, np.sort, np.lexsort,
+            np.sort_complex, np.partition, np.argpartition]:
+            return NotImplemented
+
+        if func in [np.split, np.array_split, np.dsplit, np.hsplit, np.vsplit]:
+            return split_tsd(func, *args, **kwargs)
 
         new_args = []
         for a in args:
@@ -628,19 +647,19 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
         out = func._implementation(*new_args, **kwargs)
 
         if isinstance(out, np.ndarray):
-            # if dims increased in any case, we can't return safely a time series
-            if out.ndim > self.ndim:
-                return out
-            elif out.shape[0] == self.index.shape[0]:
+            # # if dims increased in any case, we can't return safely a time series
+            # if out.ndim > self.ndim:
+            #     return out
+            if out.shape[0] == self.index.shape[0]:
                 if out.ndim == 1:
-                    return Tsd(t=self.index, d=out)
+                    return Tsd(t=self.index, d=out, time_support = self.time_support)
                 elif out.ndim == 2:
                     if hasattr(self, "columns"):
-                        return TsdFrame(t=self.index, d=out, columns=self.columns)
+                        return TsdFrame(t=self.index, d=out, time_support = self.time_support, columns=self.columns)
                     else:
-                        return TsdFrame(t=self.index, d=out)
+                        return TsdFrame(t=self.index, d=out, time_support = self.time_support)
                 else:
-                    return TsdTensor(t=self.index, d=out)
+                    return TsdTensor(t=self.index, d=out, time_support = self.time_support)
             else:
                 return out
         else:
@@ -711,7 +730,7 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
             return TsdTensor(t=t, d=d, time_support=ep)
 
     def copy(self):
-            return self.__class__(t=self.index.copy(), d=self.values.copy())
+            return self.__class__(t=self.index.copy(), d=self.values.copy(), time_support = self.time_support)
 
     def save(self, filename):
         """
@@ -839,7 +858,7 @@ class TsdFrame(TsdTensor):
 
         super().__init__(t, d, time_units, time_support)
 
-        if c is None:
+        if c is None or len(c) != d.shape[1]:
             c = np.arange(d.shape[1], dtype="int")
 
         self.columns = pd.Index(c)

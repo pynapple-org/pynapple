@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-09-18 18:11:24
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-19 18:43:51
+# @Last Modified time: 2023-09-20 17:49:24
 
 
 
@@ -99,6 +99,110 @@ class Test_Time_Series_1:
                 np.testing.assert_array_almost_equal(out.values, ufunc(tsd.values, 0.2, 0.6))
 
                 a.append(ufunc.__name__)
+
+    def test_funcs(self, tsd):
+        a = np.array(tsd)
+        np.testing.assert_array_almost_equal(a, tsd.values)
+
+        tsd2 = tsd.copy()
+        a = np.copy(tsd.values)
+        tsd2[0] = 1.0
+        np.testing.assert_array_almost_equal(tsd.values, a)
+
+        assert tsd.shape == tsd.values.shape
+
+        if tsd.ndim>1:
+            a = np.reshape(tsd, (np.prod(tsd.shape), 1))
+            assert isinstance(a, np.ndarray)
+
+        if tsd.nap_class == "TsdTensor":
+            a = np.reshape(tsd, (tsd.shape[0], np.prod(tsd.shape[1:])))
+            assert isinstance(a, nap.TsdFrame)
+            np.testing.assert_array_almost_equal(a.index, tsd.index)
+            np.testing.assert_array_almost_equal(a.values, np.reshape(tsd.values, (tsd.shape[0], np.prod(tsd.shape[1:]))))
+
+        a = np.ravel(tsd)
+        np.testing.assert_array_almost_equal(a, np.ravel(tsd))
+
+        a = np.transpose(tsd)
+        np.testing.assert_array_almost_equal(a, np.transpose(tsd))
+
+        a = np.expand_dims(tsd, axis=-1)
+        assert a.ndim == tsd.ndim + 1
+        if a.ndim == 2:
+            assert isinstance(a, nap.TsdFrame)
+        else:
+            assert isinstance(a, nap.TsdTensor)
+
+        a = np.expand_dims(tsd, axis=0)
+        assert isinstance(a, np.ndarray)
+
+        tsd2 = tsd.copy()
+        a = np.concatenate((tsd, tsd2))
+        assert isinstance(a, np.ndarray)
+
+        a = np.vstack((tsd, tsd2))
+        assert isinstance(a, np.ndarray)
+
+        with pytest.raises(TypeError):
+            np.hstack((tsd, tsd2))
+
+        with pytest.raises(TypeError):
+            np.dstack((tsd, tsd2))
+
+        if tsd.nap_class == "TsdFrame":
+            a = np.column_stack((tsd[:,0],tsd[:,1]))
+            assert isinstance(a, nap.TsdFrame)
+            np.testing.assert_array_almost_equal(a.values, tsd.values[:,0:2])
+
+        a = np.isnan(tsd)
+        assert isinstance(a, tsd.__class__)
+        np.testing.assert_array_equal(a.values, np.isnan(tsd.values))
+
+    def test_split(self, tsd):
+        a = np.split(tsd, 4)
+        b = np.split(tsd.values, 4)
+        c = np.split(tsd.index, 4)
+        for i in range(4):
+            np.testing.assert_array_almost_equal(a[i].values, b[i])
+            np.testing.assert_array_almost_equal(a[i].index, c[i])
+
+        if tsd.ndim>1:
+            a = np.split(tsd, 1, 1)
+            assert isinstance(a, list)
+
+        a = np.array_split(tsd, 4)
+        b = np.array_split(tsd.values, 4)
+        c = np.array_split(tsd.index, 4)
+        for i in range(4):
+            np.testing.assert_array_almost_equal(a[i].values, b[i])
+            np.testing.assert_array_almost_equal(a[i].index, c[i])
+        if tsd.ndim>1:            
+            a = np.array_split(tsd, 1, 1)
+            assert isinstance(a, list)
+
+        if tsd.ndim>1:
+            a = np.vsplit(tsd, 4)
+            b = np.vsplit(tsd.values, 4)
+            c = np.split(tsd.index, 4)
+            for i in range(4):
+                np.testing.assert_array_almost_equal(a[i].values, b[i])
+                np.testing.assert_array_almost_equal(a[i].index, c[i])
+
+        if tsd.ndim == 3:
+            a = np.dsplit(tsd, 1)
+            b = np.dsplit(tsd.values, 1)
+            c = np.split(tsd.index, 1)
+            for i in range(1):
+                np.testing.assert_array_almost_equal(a[i].values, b[i])
+                np.testing.assert_array_almost_equal(a[i].index, c[i])
+
+        if tsd.ndim == 2:
+            a = np.hsplit(tsd, 1)
+            b = np.hsplit(tsd.values, 1)
+            for i in range(1):
+                np.testing.assert_array_almost_equal(a[i].values, b[i])
+                np.testing.assert_array_almost_equal(a[i].index, tsd.index)
 
     def test_operators(self, tsd):
         v = tsd.values
@@ -205,3 +309,88 @@ class Test_Time_Series_1:
             assert isinstance(a, nap.TsdFrame)
             np.testing.assert_array_almost_equal(tsd.index, a.index)
             np.testing.assert_array_almost_equal(tsd.values[:,[0,2]], a.values)
+
+    def test_sorting(self, tsd):
+        with pytest.raises(TypeError):
+            np.sort(tsd)
+
+        with pytest.raises(TypeError):
+            np.lexsort(tsd)            
+
+        with pytest.raises(TypeError):
+            np.sort_complex(tsd)
+
+        with pytest.raises(TypeError):
+            np.partition(tsd)            
+
+        with pytest.raises(TypeError):
+            np.argpartition(tsd)            
+
+    def test_searching(self, tsd):
+        for func in [np.argmax, np.nanargmax, np.argmin, np.nanargmin]:
+
+            a = func(tsd)
+            assert a == func(tsd.values)
+
+            if tsd.ndim>1:
+                a = func(tsd, 1)
+                if a.ndim == 1: assert isinstance(a, nap.Tsd)
+                if a.ndim == 2: assert isinstance(a, nap.TsdFrame)
+                np.testing.assert_array_equal(a.values, func(tsd.values, 1))
+                np.testing.assert_array_almost_equal(a.index, tsd.index)
+        
+        for func in [np.argwhere]:
+            a = func(tsd)
+            np.testing.assert_array_equal(a, func(tsd.values))
+
+        a = np.where(tsd>0.5)
+        assert isinstance(a, tuple)
+
+    def test_statistics(self, tsd):
+
+        for func in [np.percentile, np.nanpercentile, np.quantile, np.nanquantile]:
+            a = np.percentile(tsd, 50)
+            assert a == np.percentile(tsd.values, 50)
+
+            if tsd.ndim>1:
+                a = np.percentile(tsd, 50, 1)
+                assert isinstance(a, (nap.Tsd, nap.TsdFrame, nap.TsdTensor))
+
+        for func in [np.median, np.average, np.mean, np.std, np.var, np.nanmedian, np.nanmean, np.nanstd, np.nanvar]:
+            a = np.percentile(tsd, 50)
+            assert a == np.percentile(tsd.values, 50)
+
+            if tsd.ndim>1:
+                a = np.percentile(tsd, 50, 1)
+                assert isinstance(a, (nap.Tsd, nap.TsdFrame, nap.TsdTensor))
+
+        if tsd.ndim == 2:
+            a = np.corrcoef(tsd)
+            assert isinstance(a, nap.TsdFrame)
+            np.testing.assert_array_almost_equal(a.index, tsd.index)
+
+            a = np.cov(tsd)
+            assert isinstance(a, nap.TsdFrame)
+            np.testing.assert_array_almost_equal(a.index, tsd.index)
+        
+            a = np.correlate(tsd[:,0], tsd[:,1])
+            b = np.correlate(tsd[:,0].values, tsd[:,1].values)
+            assert isinstance(a, np.ndarray)
+            np.testing.assert_array_almost_equal(a, b)
+
+            a = np.correlate(tsd[:,0], tsd[:,1], 'same')
+            b = np.correlate(tsd[:,0].values, tsd[:,1].values, 'same')
+            assert isinstance(a, nap.Tsd)
+            np.testing.assert_array_almost_equal(a, b)
+
+            a = np.correlate(tsd[:,0], tsd[:,1], 'full')
+            b = np.correlate(tsd[:,0].values, tsd[:,1].values, 'full')
+            assert isinstance(a, np.ndarray)
+            np.testing.assert_array_almost_equal(a, b)
+
+        a, bins = np.histogram(tsd)
+        assert isinstance(a, np.ndarray)
+
+        if tsd.ndim == 1:
+            a = np.digitize(tsd, np.linspace(0, 1, 10))
+            assert isinstance(a, nap.Tsd)
