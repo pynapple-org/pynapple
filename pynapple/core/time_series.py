@@ -2,11 +2,15 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-21 18:08:35
+# @Last Modified time: 2023-09-21 18:13:44
 
 """
 
     # Pynapple time series
+
+    Pynapple time series are containers specialized for neurophysiological time series.
+
+    They provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.
 
     Multiple time series object are avaible depending on the shape of the data.
 
@@ -14,6 +18,8 @@
     - TsdFrame : for column-based data. It can be easily converted to a pandas.DataFrame. Columns can be labelled and selected similar to pandas.
     - Tsd : One-dimensional time series. It can be converted to a pd.Series.
     - Ts : For timestamps data only.
+
+    Most of the same functions are available through all classes
 """
 
 import abc
@@ -477,9 +483,7 @@ class _AbstractTsd(abc.ABC):
 
 class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
     """
-    A container around numpy.ndarray specialized for neurophysiological time series.
-
-    TsdTensor provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.
+    TsdTensor
 
     Attributes
     ----------
@@ -601,10 +605,6 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
         return self.__repr__()
 
     def __getitem__(self, key, *args, **kwargs):
-        """
-        Performs the operation __getitem__.
-        """
-        # print(key)
         try:
             output = self.values.__getitem__(key)
             if isinstance(key, tuple):
@@ -635,9 +635,6 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
             raise IndexError
 
     def __setitem__(self, key, value):
-        """
-        Performs the operation __getitem__.
-        """
         try:
             self.values.__setitem__(key, value)
         except IndexError:
