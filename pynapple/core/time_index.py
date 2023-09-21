@@ -2,11 +2,12 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-09-21 13:32:03
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-21 15:46:14
+# @Last Modified time: 2023-09-21 17:56:44
 
 """
-    This class deals with conversion between different time units for all pynapple objects.
-    It also provides a context manager that tweaks the default time units to the supported units:
+
+    This class deals with conversion between different time units for all pynapple objects as well
+    as making sure that timestamps are property sorted before initializing any objects.    
     - 'us': microseconds
     - 'ms': milliseconds
     - 's': seconds  (overall default)
@@ -16,25 +17,33 @@ from warnings import warn
 
 import numpy as np
 
-# from .time_units import format_timestamps, return_timestamps, sort_timestamps
-
 
 class TsIndex(np.ndarray):
     """
-    Holder for timestamps. Mimics pandas.Index. Subclass numpy.ndarray
+    Holder for timestamps. Similar to pandas.Index. Subclass numpy.ndarray
     """
 
     @staticmethod
     def format_timestamps(t, units="s"):
         """
         Converts time index in pynapple in a default format
-
-        Args:
-            t: a vector (or scalar) of times
-            units: the units in which times are given
-
-        Returns:
-            t: times in standard pynapple format
+        
+        Parameters
+        ----------
+        t : numpy.ndarray
+            a vector of times
+        units
+            the units in which times are given
+        
+        Returns
+        -------
+        t : np.ndarray
+            times in standard pynapple format
+        
+        Raises
+        ------
+        ValueError
+            Description
         """
         if units == "s":
             t = np.around(t, 9)
@@ -51,13 +60,23 @@ class TsIndex(np.ndarray):
     def return_timestamps(t, units="s"):
         """
         Converts time index in pynapple in a particular format
-
-        Args:
-            t: a vector (or scalar) of times
-            units: the units in which times are given
-
-        Returns:
-            t: times in standard pynapple format
+        
+        Parameters
+        ----------
+        t : numpy.ndarray
+            a vector (or scalar) of times
+        units
+            the units in which times are given
+        
+        Returns
+        -------
+        t : numpy.ndarray
+            times in standard pynapple format
+        
+        Raises
+        ------
+        ValueError
+            IF units is not in ['s', 'ms', 'us']
         """
         if units == "s":
             t = np.around(t, 9)
@@ -74,6 +93,18 @@ class TsIndex(np.ndarray):
     def sort_timestamps(t, give_warning=True):
         """
         Raise warning if timestamps are not sorted
+        
+        Parameters
+        ----------
+        t : numpy.ndarray
+            a vector of times
+        give_warning : bool, optional
+            If timestamps are not sorted
+        
+        Returns
+        -------
+        numpy.ndarray
+            Description
         """
         if not (np.diff(t) >= 0).all():
             if give_warning:
@@ -90,13 +121,34 @@ class TsIndex(np.ndarray):
 
     @property
     def values(self):
+        """Returns the index as a ndarray
+        
+        Returns
+        -------
+        numpy.ndarray
+            The timestamps in seconds
+        """
         return np.asarray(self)
 
     def __setitem__(self):
         raise RuntimeError("TsIndex object is immutable.")
 
     def to_numpy(self):
+        """Return the index as a ndarray
+        
+        Returns
+        -------
+        numpy.ndarray
+            The timestamps in seconds
+        """
         return self.values
 
     def in_units(self, time_units="s"):
+        """Return the index as a ndarray in the desired units
+        
+        Returns
+        -------
+        numpy.ndarray
+            The timestamps in seconds
+        """        
         return TsIndex.return_timestamps(self.values, time_units)

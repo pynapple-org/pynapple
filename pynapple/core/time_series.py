@@ -2,7 +2,19 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-21 17:27:52
+# @Last Modified time: 2023-09-21 18:08:35
+
+"""
+
+    # Pynapple time series
+
+    Multiple time series object are avaible depending on the shape of the data.
+
+    - TsdTensor : for data with of more than 2 dimensions, typically movies.
+    - TsdFrame : for column-based data. It can be easily converted to a pandas.DataFrame. Columns can be labelled and selected similar to pandas.
+    - Tsd : One-dimensional time series. It can be converted to a pd.Series.
+    - Ts : For timestamps data only.
+"""
 
 import abc
 import importlib
@@ -986,9 +998,6 @@ class TsdFrame(TsdTensor):
         return "\n".join((upper, _str_, bottom))
 
     def __getitem__(self, key, *args, **kwargs):
-        """
-        Equivalent to tsdframe.loc["a"]
-        """
         if (
             isinstance(key, str)
             or hasattr(key, "__iter__")
