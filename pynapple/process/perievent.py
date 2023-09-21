@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-18 16:17:10
+# @Last Modified time: 2023-09-21 15:49:34
 
 import numpy as np
 from scipy.linalg import hankel
@@ -87,7 +87,7 @@ def compute_perievent(data, tref, minmax, time_unit="s"):
     if isinstance(minmax, float) or isinstance(minmax, int):
         minmax = np.array([minmax, minmax], dtype=np.float64)
 
-    window = np.abs(nap.format_timestamps(np.array(minmax), time_unit))
+    window = np.abs(nap.TsIndex.format_timestamps(np.array(minmax), time_unit))
 
     time_support = nap.IntervalSet(start=-window[0], end=window[1])
 
@@ -147,18 +147,18 @@ def compute_event_trigger_average(
     if type(group) is not nap.TsGroup:
         raise RuntimeError("Unknown format for group")
 
-    binsize = nap.format_timestamps(np.array([binsize], dtype=np.float64), time_units)[
-        0
-    ]
+    binsize = nap.TsIndex.format_timestamps(
+        np.array([binsize], dtype=np.float64), time_units
+    )[0]
     start = np.abs(
-        nap.format_timestamps(np.array([windowsize[0]], dtype=np.float64), time_units)[
-            0
-        ]
+        nap.TsIndex.format_timestamps(
+            np.array([windowsize[0]], dtype=np.float64), time_units
+        )[0]
     )
     end = np.abs(
-        nap.format_timestamps(np.array([windowsize[1]], dtype=np.float64), time_units)[
-            0
-        ]
+        nap.TsIndex.format_timestamps(
+            np.array([windowsize[1]], dtype=np.float64), time_units
+        )[0]
     )
     idx1 = -np.arange(0, start + binsize, binsize)[::-1][:-1]
     idx2 = np.arange(0, end + binsize, binsize)[1:]

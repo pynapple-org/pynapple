@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-09-18 18:11:24
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-20 17:49:24
+# @Last Modified time: 2023-09-21 17:09:01
 
 
 
@@ -135,13 +135,6 @@ class Test_Time_Series_1:
             assert isinstance(a, nap.TsdTensor)
 
         a = np.expand_dims(tsd, axis=0)
-        assert isinstance(a, np.ndarray)
-
-        tsd2 = tsd.copy()
-        a = np.concatenate((tsd, tsd2))
-        assert isinstance(a, np.ndarray)
-
-        a = np.vstack((tsd, tsd2))
         assert isinstance(a, np.ndarray)
 
         with pytest.raises(TypeError):
@@ -394,3 +387,29 @@ class Test_Time_Series_1:
         if tsd.ndim == 1:
             a = np.digitize(tsd, np.linspace(0, 1, 10))
             assert isinstance(a, nap.Tsd)
+
+    def test_concatenate(self, tsd):
+        tsd2 = tsd.__class__(t=tsd.index+150, d=tsd.values)
+        a = np.concatenate((tsd, tsd2))
+        assert isinstance(a, tsd.__class__)
+        assert len(a) == len(tsd) + len(tsd2)
+        np.testing.assert_array_almost_equal(a.values, np.concatenate((tsd.values, tsd2.values)))
+        time_support = nap.IntervalSet(start=[0, 150], end=[99, 249])
+        np.testing.assert_array_almost_equal(time_support.values, a.time_support.values)
+
+        tsd3 = tsd.__class__(t=tsd.index+300, d=tsd.values)
+        a = np.vstack((tsd, tsd2, tsd3))
+        assert isinstance(a, tsd.__class__)
+        np.testing.assert_array_almost_equal(a.values, np.concatenate((tsd.values, tsd2.values, tsd3.values)))
+        time_support = nap.IntervalSet(start=[0, 150, 300], end=[99, 249, 399])
+        np.testing.assert_array_almost_equal(time_support.values, a.time_support.values)
+
+        with pytest.raises(TypeError):
+            np.concatenate((tsd, tsd2), axis=1)
+    
+        with pytest.raises(AssertionError):
+            np.concatenate((tsd, np.random.randn(10, 1)))
+
+        if tsd.nap_class == "TsdTensor":
+            with pytest.raises(AssertionError):
+                np.concatenate((tsd, nap.Tsd(t=np.arange(200,300), d=np.random.randn(100))))

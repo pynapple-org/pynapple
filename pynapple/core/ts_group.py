@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-28 15:10:48
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-18 17:10:12
+# @Last Modified time: 2023-09-21 15:57:41
 
 
 import os
@@ -20,8 +20,9 @@ from .jitted_functions import (
     jitunion,
     jitunion_isets,
 )
+# from .time_units import format_timestamps
+from .time_index import TsIndex
 from .time_series import Ts, Tsd, TsdFrame
-from .time_units import format_timestamps
 
 
 def union_intervals(i_sets):
@@ -531,7 +532,7 @@ class TsGroup(UserDict):
 
         if isinstance(bin_size, (float, int)):
             bin_size = float(bin_size)
-            bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
+            bin_size = TsIndex.format_timestamps(np.array([bin_size]), time_units)[0]
             time_index, _ = jitcount(np.array([]), starts, ends, bin_size)
             n = len(self.index)
             count = np.zeros((time_index.shape[0], n), dtype=np.int64)

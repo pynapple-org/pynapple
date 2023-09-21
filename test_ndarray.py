@@ -1,19 +1,53 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2023-08-18 17:38:35
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-09-16 14:04:18
 import numpy as np
-import pandas as pd
-import pynapple as nap
+import matplotlib.pyplot as plt
 
-tsdtensor = nap.TsdTensor(t=np.sort(np.random.uniform(0, 100, 100)), d=np.random.rand(100,10,20,5))
+class Index:
+    def __init__(self, index):
+        self.values = index
 
-tsdframe = nap.TsdFrame(t = np.arange(10), d = np.random.rand(10, 3), columns=['a', 'b', 'c'])
+    def to_numpy(self):
+        return np.array(self.values)
 
-tsd = nap.Tsd(t=np.arange(10), d=np.random.rand(10))
+class CustomArray:
+    def __init__(self, data, index=None, name=None):
+        self.data = np.array(data)
+        self.index = Index(index)
+        self.name = name
 
-ts = nap.Ts(t=np.arange(10))
+    def plot(self, kind='line'):
+        if kind == 'line':
+            self._plot_line()
+        elif kind == 'bar':
+            self._plot_bar()
+        # Add more plot types as needed
 
-ep = nap.IntervalSet(start=[0,50], end=[20,60])
+    def _plot_line(self):
+        x = self.index if self.index is not None else np.arange(len(self.data))
+        plt.plot(self.index, self.data)
+        plt.xlabel('X-axis')
+        plt.ylabel('Y-axis')
+        plt.title(self.name if self.name is not None else 'Custom Array Plot')
+        plt.show()
 
+    def _plot_bar(self):
+        x = self.index if self.index is not None else np.arange(len(self.data))
+        plt.bar(x, self.data)
+        plt.xlabel('X-axis')
+        plt.ylabel('Y-axis')
+        plt.title(self.name if self.name is not None else 'Custom Array Bar Plot')
+
+    def __array__(self):
+        return self.data
+
+    def to_numpy(self):
+        return self.data
+
+# Example usage:
+custom_data = np.array([0, 10, 20, 30, 40, 50])
+custom_index = np.array([0, 100, 200, 300, 400, 500])
+custom_name = 'MyCustomArray'
+
+custom_series = CustomArray(custom_data, index=custom_index, name=custom_name)
+plt.plot(custom_series)  # Use plot(custom_series) to create the plot
+
+plt.show()

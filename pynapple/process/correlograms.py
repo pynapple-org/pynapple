@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 11:39:55
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-18 10:23:43
+# @Last Modified time: 2023-09-21 15:48:15
 
 
 from itertools import combinations, product
@@ -133,10 +133,10 @@ def compute_autocorrelogram(
 
     autocorrs = {}
 
-    binsize = nap.format_timestamps(np.array([binsize], dtype=np.float64), time_units)[
-        0
-    ]
-    windowsize = nap.format_timestamps(
+    binsize = nap.TsIndex.format_timestamps(
+        np.array([binsize], dtype=np.float64), time_units
+    )[0]
+    windowsize = nap.TsIndex.format_timestamps(
         np.array([windowsize], dtype=np.float64), time_units
     )[0]
 
@@ -205,10 +205,10 @@ def compute_crosscorrelogram(
     """
     crosscorrs = {}
 
-    binsize = nap.format_timestamps(np.array([binsize], dtype=np.float64), time_units)[
-        0
-    ]
-    windowsize = nap.format_timestamps(
+    binsize = nap.TsIndex.format_timestamps(
+        np.array([binsize], dtype=np.float64), time_units
+    )[0]
+    windowsize = nap.TsIndex.format_timestamps(
         np.array([windowsize], dtype=np.float64), time_units
     )[0]
 
@@ -318,10 +318,10 @@ def compute_eventcorrelogram(
 
     crosscorrs = {}
 
-    binsize = nap.format_timestamps(np.array([binsize], dtype=np.float64), time_units)[
-        0
-    ]
-    windowsize = nap.format_timestamps(
+    binsize = nap.TsIndex.format_timestamps(
+        np.array([binsize], dtype=np.float64), time_units
+    )[0]
+    windowsize = nap.TsIndex.format_timestamps(
         np.array([windowsize], dtype=np.float64), time_units
     )[0]
 

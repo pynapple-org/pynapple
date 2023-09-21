@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:34:48
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-18 14:20:36
+# @Last Modified time: 2023-09-21 15:49:04
 
 """
 """
@@ -86,7 +86,7 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
     tc = tuning_curves.values
     ct = count.values
 
-    bin_size_s = nap.format_timestamps(
+    bin_size_s = nap.TsIndex.format_timestamps(
         np.array([bin_size], dtype=np.float64), time_units
     )[0]
 
@@ -206,7 +206,7 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
 
     ct = count.values
 
-    bin_size_s = nap.format_timestamps(
+    bin_size_s = nap.TsIndex.format_timestamps(
         np.array([bin_size], dtype=np.float64), time_units
     )[0]
 

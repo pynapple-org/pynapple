@@ -4,7 +4,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-18 15:57:29
+# @Last Modified time: 2023-09-21 15:49:51
 
 import warnings
 
@@ -551,8 +551,8 @@ def compute_1d_poisson_glm(
     else:
         raise RuntimeError("Unknown format for group")
 
-    binsize = nap.format_timestamps(binsize, time_units)[0]
-    windowsize = nap.format_timestamps(windowsize, time_units)[0]
+    binsize = nap.TsIndex.format_timestamps(binsize, time_units)[0]
+    windowsize = nap.TsIndex.format_timestamps(windowsize, time_units)[0]
 
     # Bin the spike train
     count = newgroup.count(binsize)

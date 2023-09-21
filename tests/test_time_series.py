@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-18 18:40:19
+# @Last Modified time: 2023-09-21 17:29:26
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -530,6 +530,11 @@ class Test_Time_Series_3:
         np.testing.assert_array_almost_equal(tsdframe.values[0:10], tsdframe[0:10].values)
         assert isinstance(tsdframe[0:10].time_support, nap.IntervalSet)
         pd.testing.assert_frame_equal(tsdframe[0:10].time_support, tsdframe.time_support)
+
+    def test_str_indexing(self, tsdframe):
+        tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), time_units="s", columns=['a', 'b', 'c'])
+        np.testing.assert_array_almost_equal(tsdframe.values[:,0], tsdframe['a'])
+        np.testing.assert_array_almost_equal(tsdframe.values[:,[0,2]], tsdframe[['a', 'c']])
 
     def test_operators(self, tsdframe):
         v = tsdframe.values
