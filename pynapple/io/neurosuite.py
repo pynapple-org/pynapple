@@ -155,7 +155,7 @@ class NeuroSuite(BaseLoader):
 
         Function reads :
         1. the number of channels
-        2. the sampling frequency of the dat file or the eeg file depending of what is present in the folder
+        2. the sampling frequency of the dat file or the eeg file depending on what is present in the folder
             eeg file first if both are present or both are absent
         3. the mappings shanks to channels as a dict
 

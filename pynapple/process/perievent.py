@@ -62,7 +62,7 @@ def compute_perievent(data, tref, minmax, time_unit="s"):
     data : Ts/Tsd/TsGroup
         The data to align to tref.
         If Ts/Tsd, returns a TsGroup.
-        If TsGroup, returns a dictionnary of TsGroup
+        If TsGroup, returns a dictionary of TsGroup
     tref : Ts/Tsd
         The timestamps of the event to align to
     minmax : tuple or int or float
@@ -74,7 +74,7 @@ def compute_perievent(data, tref, minmax, time_unit="s"):
     -------
     dict
         A TsGroup if data is a Ts/Tsd or
-        a dictionnary of TsGroup if data is a TsGroup.
+        a dictionary of TsGroup if data is a TsGroup.
 
     Raises
     ------

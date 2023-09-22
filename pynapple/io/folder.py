@@ -86,7 +86,7 @@ class Folder(UserDict):
     Attributes
     ----------
     data : dict
-        Dictionnary holidng all the pynapple objects found in the folder.
+        Dictionary holding all the pynapple objects found in the folder.
     name : str
         Name of the folder
     npz_files : list
@@ -96,7 +96,7 @@ class Folder(UserDict):
     path : str
         Absolute path of the folder
     subfolds : dict
-        Dictionnary of all the subfolders
+        Dictionary of all the subfolders
 
     """
 
@@ -170,7 +170,7 @@ class Folder(UserDict):
         Raises
         ------
         KeyError
-            If key is not in the dictionnary
+            If key is not in the dictionary
         """
         if key.__hash__:
             if self.__contains__(key):

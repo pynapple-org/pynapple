@@ -53,7 +53,7 @@ class Suite2P(BaseLoader):
     plane_info : pandas.DataFrame
         Contains plane identity of each cell
     stats : dict
-        dictionnay of statistics from stat.npy for each planes only for the neurons that were classified as cells
+        dictionary of statistics from stat.npy for each plane only for the neurons that were classified as cells
         (Can be smaller when loading from the NWB file)
     ops : dict
         Parameters from Suite2p. (Can be smaller when loading from the NWB file)
