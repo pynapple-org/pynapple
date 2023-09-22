@@ -59,7 +59,7 @@ print(spikes_adn)
 # Plot firing rate of ADn units as a function of heading direction, i.e. a head-direction tuning curve 
 
 tuning_curves = nap.compute_1d_tuning_curves(group = spikes_adn, 
-                                             feature = position['ry'],                                              
+                                             feature = position.loc['ry'],                                              
                                              nb_bins = 31, 
                                              minmax = (0, 2*np.pi))
 
