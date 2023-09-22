@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-03-30 11:14:41
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-12-06 14:52:38
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-18 17:05:05
 
 """Tests of ts group for `pynapple` package."""
 
@@ -43,8 +43,8 @@ class Test_Ts_Group_1:
         ep = nap.IntervalSet(start=0, end=100)
         tsgroup = nap.TsGroup(group, time_support=ep)
         pd.testing.assert_frame_equal(tsgroup.time_support, ep)
-        first = [tsgroup[i].index.values[0] for i in tsgroup]
-        last = [tsgroup[i].index.values[-1] for i in tsgroup]
+        first = [tsgroup[i].index[0] for i in tsgroup]
+        last = [tsgroup[i].index[-1] for i in tsgroup]
         assert np.all(first >= ep.loc[0, "start"])
         assert np.all(last <= ep.loc[0, "end"])
 
@@ -65,7 +65,7 @@ class Test_Ts_Group_1:
         }
         tsgroup = nap.TsGroup(tmp, time_support = nap.IntervalSet(0, 100), bypass_check=True)
         for i in tmp.keys():
-            pd.testing.assert_series_equal(tmp[0], tsgroup[0])
+            np.testing.assert_array_almost_equal(tmp[i].index, tsgroup[i].index)
 
         tmp = {
             0: nap.Ts(t=np.arange(0, 100)),
@@ -74,7 +74,7 @@ class Test_Ts_Group_1:
         }
         tsgroup = nap.TsGroup(tmp, bypass_check=True)
         for i in tmp.keys():
-            pd.testing.assert_series_equal(tmp[0], tsgroup[0])
+            np.testing.assert_array_almost_equal(tmp[i].index, tsgroup[i].index)            
 
     def test_create_ts_group_with_metainfo(self, group):
         sr_info = pd.Series(index=[0, 1, 2], data=[0, 0, 0], name="sr")
@@ -160,18 +160,18 @@ class Test_Ts_Group_1:
         items = tsgroup.items()
         assert isinstance(items, list)
         for i,it in items:
-            pd.testing.assert_series_equal(tsgroup[i], it)
+            pd.testing.assert_series_equal(tsgroup[i].as_series(), it.as_series())
 
     def test_items(self, group):
         tsgroup = nap.TsGroup(group)
         values = tsgroup.values()
         assert isinstance(values, list)
         for i,it in enumerate(values):
-            pd.testing.assert_series_equal(tsgroup[i], it)
+            pd.testing.assert_series_equal(tsgroup[i].as_series(), it.as_series())
 
     def test_slicing(self, group):
         tsgroup = nap.TsGroup(group)
-        assert isinstance(tsgroup[0], nap.Tsd)
+        assert isinstance(tsgroup[0], nap.Ts)
         pd.testing.assert_series_equal(group[0].as_series(), tsgroup[0].as_series())
         assert isinstance(tsgroup[[0, 2]], nap.TsGroup)
         assert len(tsgroup[[0, 2]]) == 2
@@ -203,8 +203,8 @@ class Test_Ts_Group_1:
         tsgroup = nap.TsGroup(group)
         ep = nap.IntervalSet(start=0, end=100)
         tsgroup2 = tsgroup.restrict(ep)
-        first = [tsgroup2[i].index.values[0] for i in tsgroup2]
-        last = [tsgroup2[i].index.values[-1] for i in tsgroup2]
+        first = [tsgroup2[i].index[0] for i in tsgroup2]
+        last = [tsgroup2[i].index[-1] for i in tsgroup2]
         assert np.all(first >= ep.loc[0, "start"])
         assert np.all(last <= ep.loc[0, "end"])
 
@@ -230,24 +230,24 @@ class Test_Ts_Group_1:
         tsgroup = nap.TsGroup(group, time_support=ep)
         count = tsgroup.count(1.0)
         np.testing.assert_array_almost_equal(
-            count[0].values[0:-1], np.ones(len(count) - 1)
+            count.loc[0].values[0:-1].flatten(), np.ones(len(count) - 1)
         )
         np.testing.assert_array_almost_equal(
-            count[1].values[0:-1], np.ones(len(count) - 1) * 2
+            count.loc[1].values[0:-1].flatten(), np.ones(len(count) - 1) * 2
         )
         np.testing.assert_array_almost_equal(
-            count[2].values[0:-1], np.ones(len(count) - 1) * 5
+            count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
         )
 
         count = tsgroup.count(1)
         np.testing.assert_array_almost_equal(
-            count[0].values[0:-1], np.ones(len(count) - 1)
+            count.loc[0].values[0:-1].flatten(), np.ones(len(count) - 1)
         )
         np.testing.assert_array_almost_equal(
-            count[1].values[0:-1], np.ones(len(count) - 1) * 2
+            count.loc[1].values[0:-1].flatten(), np.ones(len(count) - 1) * 2
         )
         np.testing.assert_array_almost_equal(
-            count[2].values[0:-1], np.ones(len(count) - 1) * 5
+            count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
         )
 
         count = tsgroup.count()
@@ -258,23 +258,23 @@ class Test_Ts_Group_1:
         tsgroup = nap.TsGroup(group)
         count = tsgroup.count(1.0, ep)
         np.testing.assert_array_almost_equal(
-            count[0].values[0:-1], np.ones(len(count) - 1)
+            count.loc[0].values[0:-1].flatten(), np.ones(len(count) - 1)
         )
         np.testing.assert_array_almost_equal(
-            count[1].values[0:-1], np.ones(len(count) - 1) * 2
+            count.loc[1].values[0:-1].flatten(), np.ones(len(count) - 1) * 2
         )
         np.testing.assert_array_almost_equal(
-            count[2].values[0:-1], np.ones(len(count) - 1) * 5
+            count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
         )
         count = tsgroup.count(bin_size=1.0, ep=ep)
         np.testing.assert_array_almost_equal(
-            count[0].values[0:-1], np.ones(len(count) - 1)
+            count.loc[0].values[0:-1].flatten(), np.ones(len(count) - 1)
         )
         np.testing.assert_array_almost_equal(
-            count[1].values[0:-1], np.ones(len(count) - 1) * 2
+            count.loc[1].values[0:-1].flatten(), np.ones(len(count) - 1) * 2
         )
         np.testing.assert_array_almost_equal(
-            count[2].values[0:-1], np.ones(len(count) - 1) * 5
+            count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
         )
         count = tsgroup.count(ep=nap.IntervalSet(0, 50))
         np.testing.assert_array_almost_equal(count.values, np.array([[51, 101, 251]]))
@@ -285,23 +285,23 @@ class Test_Ts_Group_1:
         for b, tu in zip([1, 1e3, 1e6],['s', 'ms', 'us']):
             count = tsgroup.count(b, time_units=tu)
             np.testing.assert_array_almost_equal(
-                count[0].values[0:-1], np.ones(len(count) - 1)
+                count.loc[0].values[0:-1].flatten(), np.ones(len(count) - 1)
             )
             np.testing.assert_array_almost_equal(
-                count[1].values[0:-1], np.ones(len(count) - 1) * 2
+                count.loc[1].values[0:-1].flatten(), np.ones(len(count) - 1) * 2
             )
             np.testing.assert_array_almost_equal(
-                count[2].values[0:-1], np.ones(len(count) - 1) * 5
+                count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
             )
             count = tsgroup.count(b, tu)
             np.testing.assert_array_almost_equal(
-                count[0].values[0:-1], np.ones(len(count) - 1)
+                count.loc[0].values[0:-1].flatten(), np.ones(len(count) - 1)
             )
             np.testing.assert_array_almost_equal(
-                count[1].values[0:-1], np.ones(len(count) - 1) * 2
+                count.loc[1].values[0:-1].flatten(), np.ones(len(count) - 1) * 2
             )
             np.testing.assert_array_almost_equal(
-                count[2].values[0:-1], np.ones(len(count) - 1) * 5
+                count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
             )
     def test_count_errors(self, group):
         tsgroup = nap.TsGroup(group)
@@ -400,22 +400,22 @@ class Test_Ts_Group_1:
 
         tsd = tsgroup.to_tsd()
 
-        np.testing.assert_array_almost_equal(tsd.index.values, times)
+        np.testing.assert_array_almost_equal(tsd.index, times)
         np.testing.assert_array_almost_equal(tsd.values, data)
 
         alpha=np.random.randn(3)
         tsgroup.set_info(alpha=alpha)
         tsd2 = tsgroup.to_tsd("alpha")
-        np.testing.assert_array_almost_equal(tsd2.index.values, times)
+        np.testing.assert_array_almost_equal(tsd2.index, times)
         np.testing.assert_array_almost_equal(tsd2.values, np.array([alpha[int(i)] for i in data]))
 
         tsd3 = tsgroup.to_tsd(alpha)
-        np.testing.assert_array_almost_equal(tsd3.index.values, times)
+        np.testing.assert_array_almost_equal(tsd3.index, times)
         np.testing.assert_array_almost_equal(tsd3.values, np.array([alpha[int(i)] for i in data]))
 
         beta=pd.Series(index=np.arange(3), data=np.random.randn(3))        
         tsd4 = tsgroup.to_tsd(beta)
-        np.testing.assert_array_almost_equal(tsd4.index.values, times)
+        np.testing.assert_array_almost_equal(tsd4.index, times)
         np.testing.assert_array_almost_equal(tsd4.values, np.array([beta[int(i)] for i in data]))
 
 
@@ -488,7 +488,7 @@ class Test_Ts_Group_1:
         index = []
         data = []
         for n in group.keys():
-            times.append(group[n].index.values)
+            times.append(group[n].index)
             index.append(np.ones(len(group[n]))*n)
             data.append(group[n].values)
         times = np.hstack(times)
@@ -514,7 +514,7 @@ class Test_Ts_Group_1:
         file = np.load("tsgroup3.npz")
 
         assert 'd' not in list(file.keys())
-        np.testing.assert_array_almost_equal(file['t'], tsgroup3[0].index.values)
+        np.testing.assert_array_almost_equal(file['t'], tsgroup3[0].index)
 
         os.remove("tsgroup.npz")
         os.remove("tsgroup2.npz")

@@ -1,13 +1,15 @@
 # -*- coding: utf-8 -*-
 """
+> :warning: **DEPRECATED**: This will be removed in version 1.0.0. Check [nwbmatic](https://github.com/pynapple-org/nwbmatic) or [neuroconv](https://github.com/catalystneuro/neuroconv) instead.
+
 Loaders for calcium imaging data with miniscope.
 Support CNMF-E in matlab, inscopix-cnmfe and minian.
 
 """
 # @Author: gviejo
 # @Date:   2022-02-17 11:07:00
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-04-17 15:13:02
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-22 11:12:29
 
 import os
 import sys

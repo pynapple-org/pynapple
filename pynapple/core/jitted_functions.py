@@ -2,32 +2,13 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-06-28 14:35:52
+# @Last Modified time: 2023-09-21 18:00:13
 import numpy as np
 from numba import jit
 
 
 @jit(nopython=True)
 def jitrestrict(time_array, data_array, starts, ends):
-    """
-    Jitted version of restrict
-
-    Parameters
-    ----------
-    time_array : numpy.ndarray
-        Description
-    data_array : numpy.ndarray
-        Description
-    starts : numpy.ndarray
-        Description
-    ends : numpy.ndarray
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
-    """
     n = len(time_array)
     m = len(starts)
     ix = np.zeros(n, dtype=np.bool_)
@@ -192,29 +173,6 @@ def jittsrestrict_with_count(time_array, starts, ends):
 
 @jit(nopython=True)
 def jitthreshold(time_array, data_array, starts, ends, thr, method="above"):
-    """Summary
-
-    Parameters
-    ----------
-    time_array : TYPE
-        Description
-    data_array : TYPE
-        Description
-    starts : TYPE
-        Description
-    ends : TYPE
-        Description
-    thr : TYPE
-        Description
-    method : str, optional
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
-    """
-
     n = time_array.shape[0]
 
     if method == "above":
@@ -289,29 +247,7 @@ def jitthreshold(time_array, data_array, starts, ends, thr, method="above"):
 
 @jit(nopython=True)
 def jitvaluefrom(time_array, time_target_array, data_target_array, starts, ends):
-    """Summary
-
-    Parameters
-    ----------
-    time_array : TYPE
-        Description
-    time_target_array : TYPE
-        Description
-    data_target_array : TYPE
-        Description
-    starts : TYPE
-        Description
-    ends : TYPE
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
-    """
-    time_array, _, count = jitrestrict_with_count(
-        time_array, np.zeros(time_array.shape[0]), starts, ends
-    )
+    time_array, count = jittsrestrict_with_count(time_array, starts, ends)
     time_target_array, data_target_array, count_target = jitrestrict_with_count(
         time_target_array, data_target_array, starts, ends
     )
@@ -348,29 +284,7 @@ def jitvaluefrom(time_array, time_target_array, data_target_array, starts, ends)
 
 
 @jit(nopython=True)
-def jitvaluefromtsdframe(
-    time_array, time_target_array, data_target_array, starts, ends
-):
-    """Summary
-
-    Parameters
-    ----------
-    time_array : TYPE
-        Description
-    time_target_array : TYPE
-        Description
-    data_target_array : TYPE
-        Description
-    starts : TYPE
-        Description
-    ends : TYPE
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
-    """
+def jitvaluefromtensor(time_array, time_target_array, data_target_array, starts, ends):
     time_array, _, count = jitrestrict_with_count(
         time_array, np.zeros(time_array.shape[0]), starts, ends
     )
@@ -383,7 +297,7 @@ def jitvaluefromtsdframe(
     d = time_target_array.shape[0]
 
     new_data_array = np.zeros(
-        (n, data_target_array.shape[1]), dtype=data_target_array.dtype
+        (n, *data_target_array.shape[1:]), dtype=data_target_array.dtype
     )
 
     if n > 0 and d > 0:
@@ -524,7 +438,7 @@ def jitbin_array(time_array, data_array, starts, ends, bin_size):
     )
 
     m = starts.shape[0]
-    f = data_array.shape[1]
+    f = data_array.shape[1:]
 
     nb_bins = np.zeros(m, dtype=np.int32)
     for k in range(m):
@@ -535,8 +449,8 @@ def jitbin_array(time_array, data_array, starts, ends, bin_size):
 
     nb = np.sum(nb_bins)
     bins = np.zeros(nb, dtype=np.float64)
-    cnt = np.zeros(nb, dtype=np.float64)
-    average = np.zeros((nb, f), dtype=np.float64)
+    cnt = np.zeros((nb, *f), dtype=np.float64)
+    average = np.zeros((nb, *f), dtype=np.float64)
 
     k = 0
     t = 0
@@ -568,31 +482,14 @@ def jitbin_array(time_array, data_array, starts, ends, bin_size):
         k += 1
 
     new_time_array = bins[0:b]
-    new_data_array = average[0:b] / np.expand_dims(cnt[0:b], -1)
+
+    new_data_array = average[0:b] / cnt[0:b]
 
     return (new_time_array, new_data_array)
 
 
 @jit(nopython=True)
 def jitintersect(start1, end1, start2, end2):
-    """Summary
-
-    Parameters
-    ----------
-    start1 : TYPE
-        Description
-    end1 : TYPE
-        Description
-    start2 : TYPE
-        Description
-    end2 : TYPE
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
-    """
     m = start1.shape[0]
     n = start2.shape[0]
 
@@ -631,24 +528,6 @@ def jitintersect(start1, end1, start2, end2):
 
 @jit(nopython=True)
 def jitunion(start1, end1, start2, end2):
-    """Summary
-
-    Parameters
-    ----------
-    start1 : TYPE
-        Description
-    end1 : TYPE
-        Description
-    start2 : TYPE
-        Description
-    end2 : TYPE
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
-    """
     m = start1.shape[0]
     n = start2.shape[0]
 
@@ -832,23 +711,6 @@ def jitunion_isets(starts, ends):
 
 @jit(nopython=True)
 def jitin_interval(time_array, starts, ends):
-    """
-    In_interval
-
-    Parameters
-    ----------
-    time_array : numpy.ndarray
-        Description
-    starts : numpy.ndarray
-        Description
-    ends : numpy.ndarray
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
-    """
     n = len(time_array)
     m = len(starts)
     data = np.ones(n, dtype=np.float64) * np.nan
@@ -889,25 +751,6 @@ def jitin_interval(time_array, starts, ends):
 
 @jit(nopython=True)
 def jit_poisson_IRLS(X, y, niter=100, tolerance=1e-5):
-    """Poisson Iteratively Reweighted Least Square
-    for fitting Poisson GLM.
-
-    Parameters
-    ----------
-    X : numpy.ndarray
-        Predictors
-    y : numpy.ndarray
-        Target
-    niter : int, optional
-        Number of iterations
-    tolerance : float, optional
-        Default is 10^-5
-
-    Returns
-    -------
-    numpy.ndarray
-        Regression coefficients
-    """
     y = y.astype(np.float64)
     X = X.astype(np.float64)
     n, d = X.shape

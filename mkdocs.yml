@@ -24,9 +24,12 @@ plugins:
       handlers:
         python:
           options:
-            docstring_style: numpy         
+            docstring_style: numpy
             show_source: true
             members_order: source
+            inherited_members: true
+            show_root_heading: true
+            separate_signature: true
 
 nav:  
   - Overview: index.md  

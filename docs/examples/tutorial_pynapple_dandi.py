@@ -5,12 +5,11 @@ Streaming data from DANDI
 
 This script shows how to stream data from the [DANDI Archive](https://dandiarchive.org/) all the way to pynapple.
 
-> Warning **This tutorial is still under construction.**
 
 """
 # %%
 # !!! warning
-#     This tutorial uses seaborn and matplotlib for displaying the figure as well as the `dandi` package
+#     This tutorial uses seaborn and matplotlib for displaying the figure as well as the DANDI package
 #
 #     You can install all with `pip install matplotlib seaborn dandi`
 
@@ -115,16 +114,16 @@ plt.show()
 
 # %%
 # Let's plot the spikes of unit 1 who has a nice grid
-# Here I use the function `value_from` to assing to each spike the closest position in time.
+# Here I use the function `value_from` to assign to each spike the closest position in time.
 
 
 plt.figure(figsize=(15, 6))
 plt.subplot(121)
 extent = (
-    position["x"].min(),
-    position["x"].max(),
-    position["y"].min(),
-    position["y"].max(),
+    np.min(position["x"]),
+    np.max(position["x"]),
+    np.min(position["y"]),
+    np.max(position["y"]),
 )
 plt.imshow(tc[1], origin="lower", extent=extent, aspect="auto")
 plt.xlabel("x")

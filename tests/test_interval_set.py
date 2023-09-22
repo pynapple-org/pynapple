@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-03-30 11:15:02
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-28 22:39:56
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-18 10:24:22
 
 """Tests for IntervalSet of `pynapple` package."""
 
@@ -28,8 +28,8 @@ def test_iset_properties():
     ep = nap.IntervalSet(start=start, end=end)    
     assert isinstance(ep.starts, nap.Ts)
     assert isinstance(ep.ends, nap.Ts)
-    np.testing.assert_array_almost_equal(np.array(start), ep.starts.index.values)
-    np.testing.assert_array_almost_equal(np.array(end), ep.ends.index.values)
+    np.testing.assert_array_almost_equal(np.array(start), ep.starts.index)
+    np.testing.assert_array_almost_equal(np.array(end), ep.ends.index)
 
 def test_iset_centers():
     start = np.array([0, 10, 16, 25])
@@ -38,12 +38,12 @@ def test_iset_centers():
 
     center_ts = ep.get_intervals_center()
     assert isinstance(center_ts, nap.Ts)
-    np.testing.assert_array_almost_equal(center_ts.index.values, start + (end-start)/2)
+    np.testing.assert_array_almost_equal(center_ts.index, start + (end-start)/2)
 
     alpha = np.random.rand()
     center_ts = ep.get_intervals_center(alpha)
     assert isinstance(center_ts, nap.Ts)
-    np.testing.assert_array_almost_equal(center_ts.index.values, start + (end-start)*alpha)
+    np.testing.assert_array_almost_equal(center_ts.index, start + (end-start)*alpha)
 
     with pytest.raises(RuntimeError):
         ep.get_intervals_center({})

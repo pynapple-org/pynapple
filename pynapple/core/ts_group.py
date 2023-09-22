@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-28 15:10:48
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-10 12:15:57
+# @Last Modified time: 2023-09-21 15:57:41
 
 
 import os
@@ -20,8 +20,9 @@ from .jitted_functions import (
     jitunion,
     jitunion_isets,
 )
+# from .time_units import format_timestamps
+from .time_index import TsIndex
 from .time_series import Ts, Tsd, TsdFrame
-from .time_units import format_timestamps
 
 
 def union_intervals(i_sets):
@@ -531,14 +532,14 @@ class TsGroup(UserDict):
 
         if isinstance(bin_size, (float, int)):
             bin_size = float(bin_size)
-            bin_size = format_timestamps(np.array([bin_size]), time_units)[0]
+            bin_size = TsIndex.format_timestamps(np.array([bin_size]), time_units)[0]
             time_index, _ = jitcount(np.array([]), starts, ends, bin_size)
             n = len(self.index)
             count = np.zeros((time_index.shape[0], n), dtype=np.int64)
 
             for i in range(n):
                 count[:, i] = jitcount(
-                    self.data[self.index[i]].index.values, starts, ends, bin_size
+                    self.data[self.index[i]].index, starts, ends, bin_size
                 )[1]
 
         else:
@@ -548,7 +549,7 @@ class TsGroup(UserDict):
 
             for i in range(n):
                 count[:, i] = jittsrestrict_with_count(
-                    self.data[self.index[i]].index.values, starts, ends
+                    self.data[self.index[i]].index, starts, ends
                 )[1]
 
         toreturn = TsdFrame(t=time_index, d=count, time_support=ep, columns=self.index)
@@ -665,14 +666,14 @@ class TsGroup(UserDict):
 
         nt = 0
         for n in self.index:
-            nt += self[n].shape[0]
+            nt += len(self[n])
 
         times = np.zeros(nt)
         data = np.zeros(nt)
         k = 0
         for n, v in zip(self.index, _values):
-            kl = self[n].shape[0]
-            times[k : k + kl] = self[n].index.values
+            kl = len(self[n])
+            times[k : k + kl] = self[n].index
             data[k : k + kl] = v
             k += kl
 
@@ -958,15 +959,15 @@ class TsGroup(UserDict):
         # We can't use to_tsd here in case tsgroup contains Tsd and not only Ts.
         nt = 0
         for n in self.index:
-            nt += self[n].shape[0]
+            nt += len(self[n])
 
         times = np.zeros(nt)
         data = np.zeros(nt)
         index = np.zeros(nt, dtype=np.int64)
         k = 0
         for n in self.index:
-            kl = self[n].shape[0]
-            times[k : k + kl] = self[n].index.values
+            kl = len(self[n])
+            times[k : k + kl] = self[n].index
             data[k : k + kl] = self[n].values
             index[k : k + kl] = int(n)
             k += kl

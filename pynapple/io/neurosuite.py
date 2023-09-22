@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-02-02 20:45:09
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-04-17 15:13:24
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-22 11:13:13
 
 """
+> :warning: **DEPRECATED**: This will be removed in version 1.0.0. Check [nwbmatic](https://github.com/pynapple-org/nwbmatic) or [neuroconv](https://github.com/catalystneuro/neuroconv) instead.
+
 Class and functions for loading data processed with the Neurosuite (Klusters, Neuroscope, NDmanager)
 
 @author: Guillaume Viejo

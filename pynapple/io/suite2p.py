@@ -2,10 +2,12 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-09-09 14:53:21
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-04-17 15:13:38
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-22 11:13:31
 
 """
+> :warning: **DEPRECATED**: This will be removed in version 1.0.0. Check [nwbmatic](https://github.com/pynapple-org/nwbmatic) or [neuroconv](https://github.com/catalystneuro/neuroconv) instead.
+
 Loader for Suite2P
 https://github.com/MouseLand/suite2p
 

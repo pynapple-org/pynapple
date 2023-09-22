@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-11-17 17:16:16
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-21 15:49:34
 
 import numpy as np
 from scipy.linalg import hankel
@@ -31,23 +31,23 @@ def _align_tsd(tsd, tref, window, time_support):
     list
         The align times and data
     """
-    lbounds = np.searchsorted(tsd.index.values, tref.index.values - window[0])
-    rbounds = np.searchsorted(tsd.index.values, tref.index.values + window[1])
+    lbounds = np.searchsorted(tsd.index, tref.index - window[0])
+    rbounds = np.searchsorted(tsd.index, tref.index + window[1])
 
     group = {}
 
     if isinstance(tsd, nap.Ts):
-        for i in range(tref.shape[0]):
-            tmp = tsd.index.values[lbounds[i] : rbounds[i]] - tref.index.values[i]
+        for i in range(len(tref)):
+            tmp = tsd.index[lbounds[i] : rbounds[i]] - tref.index[i]
             group[i] = nap.Ts(t=tmp, time_support=time_support)
     else:
-        for i in range(tref.shape[0]):
-            tmp = tsd.index.values[lbounds[i] : rbounds[i]] - tref.index.values[i]
+        for i in range(len(tref)):
+            tmp = tsd.index[lbounds[i] : rbounds[i]] - tref.index[i]
             tmp2 = tsd.values[lbounds[i] : rbounds[i]]
             group[i] = nap.Tsd(t=tmp, d=tmp2, time_support=time_support)
 
     group = nap.TsGroup(group, time_support=time_support, bypass_check=True)
-    group.set_info(ref_times=tref.index.values)
+    group.set_info(ref_times=tref.index)
 
     return group
 
@@ -87,7 +87,7 @@ def compute_perievent(data, tref, minmax, time_unit="s"):
     if isinstance(minmax, float) or isinstance(minmax, int):
         minmax = np.array([minmax, minmax], dtype=np.float64)
 
-    window = np.abs(nap.format_timestamps(np.array(minmax), time_unit))
+    window = np.abs(nap.TsIndex.format_timestamps(np.array(minmax), time_unit))
 
     time_support = nap.IntervalSet(start=-window[0], end=window[1])
 
@@ -147,18 +147,18 @@ def compute_event_trigger_average(
     if type(group) is not nap.TsGroup:
         raise RuntimeError("Unknown format for group")
 
-    binsize = nap.format_timestamps(np.array([binsize], dtype=np.float64), time_units)[
-        0
-    ]
+    binsize = nap.TsIndex.format_timestamps(
+        np.array([binsize], dtype=np.float64), time_units
+    )[0]
     start = np.abs(
-        nap.format_timestamps(np.array([windowsize[0]], dtype=np.float64), time_units)[
-            0
-        ]
+        nap.TsIndex.format_timestamps(
+            np.array([windowsize[0]], dtype=np.float64), time_units
+        )[0]
     )
     end = np.abs(
-        nap.format_timestamps(np.array([windowsize[1]], dtype=np.float64), time_units)[
-            0
-        ]
+        nap.TsIndex.format_timestamps(
+            np.array([windowsize[1]], dtype=np.float64), time_units
+        )[0]
     )
     idx1 = -np.arange(0, start + binsize, binsize)[::-1][:-1]
     idx2 = np.arange(0, end + binsize, binsize)[1:]
@@ -176,7 +176,7 @@ def compute_event_trigger_average(
 
     sta = np.dot(offset_tmp.T, count.values)
 
-    sta = sta / count.sum(0).values
+    sta = sta / np.sum(count, 0)
 
     sta = nap.TsdFrame(t=time_idx, d=sta, columns=group.index)
 
