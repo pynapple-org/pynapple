@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-22 11:44:17
+# @Last Modified time: 2023-09-22 14:44:27
 
 """
 
@@ -264,7 +264,7 @@ class _AbstractTsd(abc.ABC):
 
     def value_from(self, data, ep=None):
         """
-        Replace the value with the closest value from Tsd/TsdFrame/TsdTensor argument    
+        Replace the value with the closest value from Tsd/TsdFrame/TsdTensor argument
 
         Parameters
         ----------
@@ -820,8 +820,7 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
             return TsdTensor(t=t, d=d, time_support=ep)
 
     def copy(self):
-        """Copy the data, index and time support
-        """        
+        """Copy the data, index and time support"""
         return self.__class__(
             t=self.index.copy(), d=self.values.copy(), time_support=self.time_support
         )
@@ -861,7 +860,7 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
 
         It is then easy to recreate the TsdTensor object.
         >>> time_support = nap.IntervalSet(file['start'], file['end'])
-        >>> nap.TsdTensor(t=file['t'], d=file['d'], time_support=time_support)                  
+        >>> nap.TsdTensor(t=file['t'], d=file['d'], time_support=time_support)
         Time (s)
         0.0       [[[0.0 ...]]]
         1.0       [[[0.0 ...]]]
@@ -903,7 +902,7 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
 
 
 class TsdFrame(TsdTensor):
-    """    
+    """
     TsdFrame
 
     Attributes
@@ -1000,6 +999,19 @@ class TsdFrame(TsdTensor):
             return self.loc[key]
         else:
             return super().__getitem__(key, *args, **kwargs)
+
+    def __setitem__(self, key, value):
+        try:
+            if isinstance(key, str):
+                new_key = self.columns.get_indexer([key])
+                self.values.__setitem__((slice(None, None, None), new_key[0]), value)
+            elif hasattr(key, "__iter__") and all([isinstance(k, str) for k in key]):
+                new_key = self.columns.get_indexer(key)
+                self.values.__setitem__((slice(None, None, None), new_key), value)
+            else:
+                self.values.__setitem__(key, value)
+        except IndexError:
+            raise IndexError
 
     def as_dataframe(self):
         """
@@ -1445,7 +1457,7 @@ class Tsd(TsdTensor):
 
 class Ts(_AbstractTsd):
     """
-    Timestamps only object for a time series with only time index,        
+    Timestamps only object for a time series with only time index,
 
     Attributes
     ----------
@@ -1569,23 +1581,22 @@ class Ts(_AbstractTsd):
     def fillna(self, value):
         """
         Similar to pandas fillna function.
-        
+
         Parameters
         ----------
         value : Number
             Value for filling
-        
+
         Returns
         -------
         Tsd
-            
-        
+
+
         """
         assert isinstance(value, Number), "Only a scalar can be passed to fillna"
         d = np.empty(len(self))
         d.fill(value)
-        return Tsd(t = self.index, d=d, time_support = self.time_support)
-
+        return Tsd(t=self.index, d=d, time_support=self.time_support)
 
     def save(self, filename):
         """
@@ -1700,4 +1711,3 @@ class Ts(_AbstractTsd):
     #     """
     #     print("TODO")
     #     return
-7

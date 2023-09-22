@@ -28,19 +28,19 @@ class TsIndex(np.ndarray):
     def format_timestamps(t, units="s"):
         """
         Converts time index in pynapple in a default format
-        
+
         Parameters
         ----------
         t : numpy.ndarray
             a vector of times
         units
             the units in which times are given
-        
+
         Returns
         -------
         t : np.ndarray
             times in standard pynapple format
-        
+
         Raises
         ------
         ValueError
@@ -61,19 +61,19 @@ class TsIndex(np.ndarray):
     def return_timestamps(t, units="s"):
         """
         Converts time index in pynapple in a particular format
-        
+
         Parameters
         ----------
         t : numpy.ndarray
             a vector (or scalar) of times
         units
             the units in which times are given
-        
+
         Returns
         -------
         t : numpy.ndarray
             times in standard pynapple format
-        
+
         Raises
         ------
         ValueError
@@ -94,14 +94,14 @@ class TsIndex(np.ndarray):
     def sort_timestamps(t, give_warning=True):
         """
         Raise warning if timestamps are not sorted
-        
+
         Parameters
         ----------
         t : numpy.ndarray
             a vector of times
         give_warning : bool, optional
             If timestamps are not sorted
-        
+
         Returns
         -------
         numpy.ndarray
@@ -123,7 +123,7 @@ class TsIndex(np.ndarray):
     @property
     def values(self):
         """Returns the index as a ndarray
-        
+
         Returns
         -------
         numpy.ndarray
@@ -136,7 +136,7 @@ class TsIndex(np.ndarray):
 
     def to_numpy(self):
         """Return the index as a ndarray
-        
+
         Returns
         -------
         numpy.ndarray
@@ -146,10 +146,10 @@ class TsIndex(np.ndarray):
 
     def in_units(self, time_units="s"):
         """Return the index as a ndarray in the desired units
-        
+
         Returns
         -------
         numpy.ndarray
             The timestamps in seconds
-        """        
+        """
         return TsIndex.return_timestamps(self.values, time_units)
