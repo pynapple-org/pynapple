@@ -79,7 +79,7 @@ print(crosscorrs, "\n")
 # Peri-Event Time Histogram (PETH)
 # --------------------------------
 #
-# A second way to examine the relationship between spiking and an event (i.e. stimulus) is to compute a PETH. pynapple uses the function `_compute_perievent_` to center spike time around the timestamps of an event within a given window.
+# A second way to examine the relationship between spiking and an event (i.e. stimulus) is to compute a PETH. pynapple uses the function `compute_perievent` to center spike time around the timestamps of an event within a given window.
 
 stim = nap.Tsd(
     t=np.sort(np.random.uniform(0, 1000, 50)), d=np.random.rand(50), time_units="s"
@@ -96,7 +96,7 @@ print(peth0)
 
 plt.figure(figsize=(10, 6))
 plt.subplot(211)
-plt.plot(peth0.count(0.01).sum(1), linewidth=3, color="red")
+plt.plot(np.sum(peth0.count(0.01), 1), linewidth=3, color="red")
 plt.xlim(-0.1, 0.2)
 plt.ylabel("Count")
 plt.axvline(0.0)
@@ -137,12 +137,12 @@ print(features)
 
 plt.figure(figsize=(15, 7))
 plt.subplot(121)
-plt.plot(features.loc[0:10])
+plt.plot(features[0:100])
 plt.title("Features")
 plt.xlabel("Time(s)")
 plt.subplot(122)
 plt.title("Features")
-plt.plot(features["a"].loc[0:10], features["b"].loc[0:10])
+plt.plot(features["a"][0:100], features["b"][0:100])
 plt.xlabel("Feature a")
 plt.ylabel("Feature b")
 
@@ -181,6 +181,7 @@ plt.show()
 # First we generate some artificial "place fields" in 2 dimensions based on the features.
 #
 # This part is just to generate units with a relationship to the features (i.e. "place fields")
+
 times = features.as_units("us").index.values
 ft = features.values
 alpha = np.arctan2(ft[:, 1], ft[:, 0])

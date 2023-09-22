@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:34:48
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-21 15:49:04
+# @Last Modified time: 2023-09-22 12:06:13
 
 """
 """
@@ -195,7 +195,7 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
             binsxy.append(bins)
 
         occupancy, _, _ = np.histogram2d(
-            features.iloc[:, 0], features.iloc[:, 1], [binsxy[0], binsxy[1]]
+            features[:, 0].values, features[:, 1].values, [binsxy[0], binsxy[1]]
         )
         occupancy = occupancy.flatten()
 

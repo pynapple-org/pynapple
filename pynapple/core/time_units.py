@@ -1,9 +1,12 @@
 """
+    __DEPRECATED__
     This class deals with conversion between different time units for all pynapple objects.
     It also provides a context manager that tweaks the default time units to the supported units:
+
     - 'us': microseconds
     - 'ms': milliseconds
     - 's': seconds  (overall default)
+    
 """
 from warnings import warn
 

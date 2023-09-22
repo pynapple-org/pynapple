@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-21 18:13:44
+# @Last Modified time: 2023-09-22 11:44:17
 
 """
 
@@ -14,12 +14,13 @@
 
     Multiple time series object are avaible depending on the shape of the data.
 
-    - TsdTensor : for data with of more than 2 dimensions, typically movies.
-    - TsdFrame : for column-based data. It can be easily converted to a pandas.DataFrame. Columns can be labelled and selected similar to pandas.
-    - Tsd : One-dimensional time series. It can be converted to a pd.Series.
-    - Ts : For timestamps data only.
+    - `TsdTensor` : for data with of more than 2 dimensions, typically movies.
+    - `TsdFrame` : for column-based data. It can be easily converted to a pandas.DataFrame. Columns can be labelled and selected similar to pandas.
+    - `Tsd` : One-dimensional time series. It can be converted to a pandas.Series.
+    - `Ts` : For timestamps data only.
 
-    Most of the same functions are available through all classes
+    Most of the same functions are available through all classes. Objects behaves like numpy.ndarray. Slicing can be done the same way for example 
+    `tsd[0:10]` returns the first 10 rows. Similarly, you can call any numpy functions like `np.mean(tsd, 1)`.
 """
 
 import abc
@@ -181,7 +182,7 @@ class _AbstractTsd(abc.ABC):
 
     def times(self, units="s"):
         """
-        The time index of the Tsd, returned as np.double in the desired time units.
+        The time index of the object, returned as np.double in the desired time units.
 
         Parameters
         ----------
@@ -197,18 +198,18 @@ class _AbstractTsd(abc.ABC):
 
     def as_array(self):
         """
-        Convert the Ts/Tsd object to a numpy.ndarray
+        Return the data as a numpy.ndarray
 
         Returns
         -------
-        out: pandas.Series
+        out: numpy.ndarray
             _
         """
         return self.values
 
     def data(self):
         """
-        The data in the Tsd object
+        Return the data as a numpy.ndarray
 
         Returns
         -------
@@ -219,13 +220,13 @@ class _AbstractTsd(abc.ABC):
 
     def to_numpy(self):
         """
-        The data in the Tsd object. Mostly useful for matplotlib plotting
+        Return the data as a numpy.ndarray. Mostly useful for matplotlib plotting when calling `plot(tsd)`
         """
         return self.values
 
     def start_time(self, units="s"):
         """
-        The first time index in the Ts/Tsd object
+        The first time index in the time series object
 
         Parameters
         ----------
@@ -244,7 +245,7 @@ class _AbstractTsd(abc.ABC):
 
     def end_time(self, units="s"):
         """
-        The last time index in the Ts/Tsd object
+        The last time index in the time series object
 
         Parameters
         ----------
@@ -263,20 +264,19 @@ class _AbstractTsd(abc.ABC):
 
     def value_from(self, data, ep=None):
         """
-        Replace the value with the closest value from Tsd/TsdFrame argument
-        If data is TsdFrame, the output is also TsdFrame.
+        Replace the value with the closest value from Tsd/TsdFrame/TsdTensor argument    
 
         Parameters
         ----------
-        data : Tsd/TsdFrame
-            The Tsd/TsdFrame object holding the values to replace.
+        data : Tsd/TsdFrame/TsdTensor
+            The object holding the values to replace.
         ep : IntervalSet (optional)
             The IntervalSet object to restrict the operation.
             If None, the time support of the tsd input object is used.
 
         Returns
         -------
-        out : Tsd/TsdFrame
+        out : Tsd/TsdFrame/TsdTensor
             Object with the new values
 
         Examples
@@ -431,16 +431,16 @@ class _AbstractTsd(abc.ABC):
 
     def restrict(self, iset):
         """
-        Restricts a Tsd object to a set of time intervals delimited by an IntervalSet object
+        Restricts a time series object to a set of time intervals delimited by an IntervalSet object
 
         Parameters
         ----------
-        ep : IntervalSet
+        iset : IntervalSet
             the IntervalSet object
 
         Returns
         -------
-        out: Tsd
+        out: Ts, Tsd, TsdFrame or TsdTensor
             Tsd object restricted to ep
 
         Examples
@@ -512,8 +512,6 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
             The time units in which times are specified ('us', 'ms', 's' [default]).
         time_support : IntervalSet, optional
             The time support of the TsdFrame object
-        **kwargs
-            Arguments that will be passed to the pandas.DataFrame initializer.
         """
         if isinstance(t, np.ndarray) and d is None:
             raise RuntimeError("Missing argument d when initializing TsdTensor")
@@ -774,7 +772,7 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
 
         Returns
         -------
-        out: Tsd
+        out: Tsd, TsdFrame, TsdTensor
             A Tsd object indexed by the center of the bins and holding the averaged data points.
 
         Examples
@@ -822,6 +820,8 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
             return TsdTensor(t=t, d=d, time_support=ep)
 
     def copy(self):
+        """Copy the data, index and time support
+        """        
         return self.__class__(
             t=self.index.copy(), d=self.values.copy(), time_support=self.time_support
         )
@@ -848,24 +848,23 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
         --------
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> tsdframe = nap.TsdFrame(t=np.array([0., 1.]), d = np.array([[2, 3],[4,5]]), columns=['a', 'b'])
-        >>> tsdframe.save("my_path/my_tsdframe.npz")
+        >>> tsdtensor = nap.TsdTensor(t=np.array([0., 1.]), d = np.zeros((2,3,4)))
+        >>> tsdtensor.save("my_path/my_tsdtensor.npz")
 
         Here I can retrieve my data with numpy directly:
 
-        >>> file = np.load("my_path/my_tsdframe.npz")
+        >>> file = np.load("my_path/my_tsdtensor.npz")
         >>> print(list(file.keys()))
-        ['t', 'd', 'start', 'end', 'columns', 'type']
+        ['t', 'd', 'start', 'end', ''type']
         >>> print(file['t'])
         [0. 1.]
 
-        It is then easy to recreate the Tsd object.
+        It is then easy to recreate the TsdTensor object.
         >>> time_support = nap.IntervalSet(file['start'], file['end'])
-        >>> nap.TsdFrame(t=file['t'], d=file['d'], time_support=time_support, columns=file['columns'])
-                  a  b
+        >>> nap.TsdTensor(t=file['t'], d=file['d'], time_support=time_support)                  
         Time (s)
-        0.0       2  3
-        1.0       4  5
+        0.0       [[[0.0 ...]]]
+        1.0       [[[0.0 ...]]]
 
 
         Raises
@@ -904,10 +903,8 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
 
 
 class TsdFrame(TsdTensor):
-    """
-    A container around numpy.ndarray specialized for neurophysiological time series.
-
-    TsdFrame provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.
+    """    
+    TsdFrame
 
     Attributes
     ----------
@@ -1148,8 +1145,6 @@ class Tsd(TsdTensor):
             The time units in which times are specified ('us', 'ms', 's' [default])
         time_support : IntervalSet, optional
             The time support of the tsd object
-        **kwargs
-            Arguments that will be passed to the pandas.Series initializer.
         """
         if isinstance(t, np.ndarray) and d is None:
             raise RuntimeError("Missing argument d when initializing Tsd")
@@ -1450,9 +1445,7 @@ class Tsd(TsdTensor):
 
 class Ts(_AbstractTsd):
     """
-    A subclass of the Tsd object for a time series with only time index,
-    By default, the values are set to nan.
-    All the functions of a Tsd object are available in a Ts object.
+    Timestamps only object for a time series with only time index,        
 
     Attributes
     ----------
@@ -1474,8 +1467,6 @@ class Ts(_AbstractTsd):
             The time units in which times are specified ('us', 'ms', 's' [default])
         time_support : IntervalSet, optional
             The time support of the Ts object
-        **kwargs
-            Arguments that will be passed to the pandas.Series initializer.
         """
         if isinstance(t, Number):
             t = np.array([t])
@@ -1524,10 +1515,6 @@ class Ts(_AbstractTsd):
         return self.__repr__()
 
     def __getitem__(self, key):
-        """
-        Performs the operation __getitem__.
-        """
-        # print(key)
         try:
             if isinstance(key, tuple):
                 index = self.index.__getitem__(key[0])
@@ -1578,6 +1565,27 @@ class Ts(_AbstractTsd):
         ss = pd.Series(index=t, dtype="object")
         ss.index.name = "Time (" + str(units) + ")"
         return ss
+
+    def fillna(self, value):
+        """
+        Similar to pandas fillna function.
+        
+        Parameters
+        ----------
+        value : Number
+            Value for filling
+        
+        Returns
+        -------
+        Tsd
+            
+        
+        """
+        assert isinstance(value, Number), "Only a scalar can be passed to fillna"
+        d = np.empty(len(self))
+        d.fill(value)
+        return Tsd(t = self.index, d=d, time_support = self.time_support)
+
 
     def save(self, filename):
         """
@@ -1692,3 +1700,4 @@ class Ts(_AbstractTsd):
     #     """
     #     print("TODO")
     #     return
+7

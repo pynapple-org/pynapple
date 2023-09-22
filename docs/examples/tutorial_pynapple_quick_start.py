@@ -72,7 +72,7 @@ neuron_0 = spikes[0]
 print(neuron_0)
 
 # %%
-# *neuron_0* is a [Ts](https://pynapple-org.github.io/pynapple/core.time_series/#pynapple.core.time_series.Ts) object containing the times of the spikes.
+# `neuron_0` is a [Ts](https://pynapple-org.github.io/pynapple/core.time_series/#pynapple.core.time_series.Ts) object containing the times of the spikes.
 
 # %%
 # The other information about the session is contained in `nwb["epochs"]`. In this case, the start and end of the sleep and wake epochs. If the NWB time intervals contains tags of the epochs, pynapple will try to group them together and return a dictionnary of IntervalSet instead of IntervalSet.
