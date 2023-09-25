@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-08-01 11:54:45
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-25 17:11:56
+# @Last Modified time: 2023-09-25 17:30:37
 
 """
 Pynapple class to interface with NWB files.
@@ -18,6 +18,7 @@ from collections import UserDict
 import numpy as np
 import pynwb
 from pynwb import NWBHDF5IO
+
 # from rich.console import Console
 # from rich.table import Table
 from tabulate import tabulate
@@ -61,7 +62,10 @@ def _extract_compatible_data_from_nwbfile(nwbfile):
             data[obj.name] = {"id": oid, "type": "Ts"}
 
         elif isinstance(obj, pynwb.misc.TimeSeries):
-            if len(obj.data.shape) == 2:
+            if len(obj.data.shape) > 2:
+                data[obj.name] = {"id": oid, "type": "TsdTensor"}
+
+            elif len(obj.data.shape) == 2:
                 data[obj.name] = {"id": oid, "type": "TsdFrame"}
 
             elif len(obj.data.shape) == 1:
@@ -147,6 +151,31 @@ def _make_tsd(obj):
         t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
 
     data = nap.Tsd(t=t, d=d)
+
+    return data
+
+
+def _make_tsd_tensor(obj):
+    """Helper function to make TsdTensor
+
+    Parameters
+    ----------
+    obj : pynwb.misc.TimeSeries
+        NWB object
+
+    Returns
+    -------
+    Tsd
+
+    """
+
+    d = obj.data[:]
+    if obj.timestamps is not None:
+        t = obj.timestamps[:]
+    else:
+        t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
+
+    data = nap.TsdTensor(t=t, d=d)
 
     return data
 
@@ -308,6 +337,7 @@ class NWBFile(UserDict):
         "Tsd": _make_tsd,
         "Ts": _make_ts,
         "TsdFrame": _make_tsd_frame,
+        "TsdTensor": _make_tsd_tensor,
         "TsGroup": _make_tsgroup,
     }
 

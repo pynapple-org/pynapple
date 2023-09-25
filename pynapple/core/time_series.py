@@ -995,7 +995,7 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
                         + bottom
                     )
                 else:
-                    table = []                    
+                    table = []
                     for i, array in zip(self.index[0:5], self.values[0:5]):
                         table.append([i] + [k for k in array])
                     table.append(["..."])
@@ -1247,7 +1247,7 @@ class Tsd(NDArrayOperatorsMixin, _AbstractTsd):
                         + bottom
                     )
                 else:
-                    table = []                    
+                    table = []
                     for i, v in zip(self.index[0:5], self.values[0:5]):
                         table.append([i, v])
                     table.append(["..."])
