@@ -28,8 +28,7 @@ dependencies = [
     "tabulate",
     "h5py",
     "tifffile",
-    "zarr",
-    "rich",
+    "zarr",    
 ]
 requires-python = ">=3.8"
 

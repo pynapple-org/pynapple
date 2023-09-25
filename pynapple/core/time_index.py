@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-09-21 13:32:03
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-22 11:01:54
+# @Last Modified time: 2023-09-25 11:28:11
 
 """
 
@@ -131,11 +131,11 @@ class TsIndex(np.ndarray):
         """
         return np.asarray(self)
 
-    def __setitem__(self):
-        raise RuntimeError("TsIndex object is immutable.")
+    def __setitem__(self, *args, **kwargs):
+        raise RuntimeError("TsIndex object is not mutable.")
 
     def to_numpy(self):
-        """Return the index as a ndarray
+        """Return the index as a ndarray. Useful for matplotlib.
 
         Returns
         -------

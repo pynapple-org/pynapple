@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-08-01 11:54:45
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-11 17:55:23
+# @Last Modified time: 2023-09-25 17:11:56
 
 """
 Pynapple class to interface with NWB files.
@@ -18,8 +18,9 @@ from collections import UserDict
 import numpy as np
 import pynwb
 from pynwb import NWBHDF5IO
-from rich.console import Console
-from rich.table import Table
+# from rich.console import Console
+# from rich.table import Table
+from tabulate import tabulate
 
 from .. import core as nap
 
@@ -344,29 +345,31 @@ class NWBFile(UserDict):
         self.data = _extract_compatible_data_from_nwbfile(self.nwb)
         self.key_to_id = {k: self.data[k]["id"] for k in self.data.keys()}
 
-        self._view = Table(title=self.name)
-        self._view.add_column("Keys", justify="left", style="cyan", no_wrap=True)
-        self._view.add_column("Type", style="green")
-        # self._view.add_column("NWB module", justify="right", style="magenta")
-
-        for k in self.data.keys():
-            self._view.add_row(
-                k,
-                self.data[k]["type"],
-                # self.data[k]['top_module']
-            )
-
         UserDict.__init__(self, self.data)
 
     def __str__(self):
-        """View of the object"""
-        with Console() as console:
-            console.print(self._view)
-        return ""
+        title = self.name
+        headers = ["Keys", "Type"]
+        view = [[k, self.data[k]["type"]] for k in self.data.keys()]
+        return title + "\n" + tabulate(view, headers=headers, tablefmt="mixed_outline")
 
-    # def __repr__(self):
-    #     """View of the object"""
-    #     return ""
+        # self._view = Table(title=self.name)
+        # self._view.add_column("Keys", justify="left", style="cyan", no_wrap=True)
+        # self._view.add_column("Type", style="green")
+        # for k in self.data.keys():
+        #     self._view.add_row(
+        #         k,
+        #         self.data[k]["type"],
+        #     )
+
+        # """View of the object"""
+        # with Console() as console:
+        #     console.print(self._view)
+        # return ""
+
+    def __repr__(self):
+        """View of the object"""
+        return self.__str__()
 
     def __getitem__(self, key):
         """Get object from NWB

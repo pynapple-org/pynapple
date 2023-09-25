@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-21 17:29:26
+# @Last Modified time: 2023-09-25 16:01:32
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -153,6 +153,66 @@ def test_create_tsdframe_with_time_support():
     np.testing.assert_array_almost_equal(tsdframe.time_support.start, ep.start)
     np.testing.assert_array_almost_equal(tsdframe.time_support.end, ep.end)
 
+def test_concatenate_tsd():
+
+    func = nap.core.time_series._concatenate_tsd
+
+    tsd1 = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 5), columns = ['a', 'b', 'c', 'd', 'e'])
+    tsd2 = nap.TsdFrame(t=np.arange(100)+100, d=np.random.rand(100, 5))
+    tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
+
+    with pytest.raises(TypeError):
+        func(np.concatenate, 1)
+
+    with pytest.raises(AssertionError, match=r"Inputs should be Tsd, TsdFrame or TsdTensor"):
+        func(np.concatenate, [0, tsd1, 2])
+
+    with pytest.raises(AssertionError, match=r"Objects should all be the same."):
+        func(np.concatenate, [tsd, tsd1])
+
+    with pytest.raises(RuntimeError, match=r"The order of the Tsd index should be strictly increasing and non overlapping."):
+        func(np.concatenate, [tsd2, tsd1])
+
+    new_tsd = func(np.concatenate, (tsd1, tsd2))
+
+    np.testing.assert_array_almost_equal(new_tsd.values, np.concatenate((tsd1.values, tsd2.values)))
+
+    assert np.all(new_tsd.columns == tsd1.columns)
+
+    new_tsd = func(np.concatenate, (tsd,))
+
+    np.testing.assert_array_equal(new_tsd.values, tsd.values)
+
+def test_create_tsdtensor():
+    tsd = nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 3, 2))
+    assert isinstance(tsd, nap.TsdTensor)
+
+    tsd = nap.TsdTensor(t=list(np.arange(100)), d=list(np.random.rand(100, 3, 2)))
+    assert isinstance(tsd, nap.TsdTensor)    
+
+def test_create_empty_tsd():
+    tsd = nap.TsdTensor(t=np.array([]), d=np.array([[[]]]).T)
+    assert len(tsd) == 0
+
+def test_raise_error_tsdtensor_init():
+    with pytest.raises(RuntimeError, match=r"Missing argument d when initializing TsdTensor"):
+        nap.TsdTensor(t=np.arange(100), d=None)
+
+    with pytest.raises(AssertionError, match=r"Data should have more than 2 dimensions. If ndim < 3, use TsdFrame or Tsd object"):
+        nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 10))
+
+    with pytest.raises(ValueError):#, match=r"Length of values (10) does not match length of index (100)"):
+        nap.TsdTensor(t=np.arange(100), d=np.random.rand(10, 10,3))
+
+def test_index_error():
+    tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
+    with pytest.raises(IndexError):
+        tsd[1000] = 0
+
+    ts = nap.Ts(t=np.arange(100))
+    with pytest.raises(IndexError):
+        ts[1000]
+
 
 ####################################################
 # General test for time series
@@ -162,20 +222,22 @@ def test_create_tsdframe_with_time_support():
     [
         nap.Tsd(t=np.arange(100), d=np.arange(100), time_units="s"),
         nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 5), time_units="s"),
+        nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 5, 2), time_units="s"),
         nap.Ts(t=np.arange(100), time_units="s"),
     ],
 )
 class Test_Time_Series_1:
     def test_as_units(self, tsd):
-        tmp2 = tsd.index
-        np.testing.assert_array_almost_equal(tsd.as_units("s").index, tmp2)
-        np.testing.assert_array_almost_equal(
-            tsd.as_units("ms").index, tmp2 * 1e3
-        )
-        np.testing.assert_array_almost_equal(
-            tsd.as_units("us").index, tmp2 * 1e6
-        )
-        # np.testing.assert_array_almost_equal(tsd.as_units(units="a").index.values, tmp2)
+        if hasattr(tsd, "as_units"):
+            tmp2 = tsd.index
+            np.testing.assert_array_almost_equal(tsd.as_units("s").index, tmp2)
+            np.testing.assert_array_almost_equal(
+                tsd.as_units("ms").index, tmp2 * 1e3
+            )
+            np.testing.assert_array_almost_equal(
+                tsd.as_units("us").index, tmp2 * 1e6
+            )
+            # np.testing.assert_array_almost_equal(tsd.as_units(units="a").index.values, tmp2)
 
     def test_rate(self, tsd):
         rate = len(tsd) / tsd.time_support.tot_length("s")
@@ -239,6 +301,10 @@ class Test_Time_Series_1:
     def test_restrict(self, tsd):
         ep = nap.IntervalSet(start=0, end=50)
         assert len(tsd.restrict(ep)) == 51
+
+    def test_restrict_error(self, tsd):        
+        with pytest.raises(AssertionError, match=r"Argument should be IntervalSet"):
+            tsd.restrict([0, 1])
 
     def test_restrict_multiple_epochs(self, tsd):
         ep = nap.IntervalSet(start=[0, 20], end=[10, 30])
@@ -733,3 +799,189 @@ class Test_Time_Series_4:
 
         os.remove("ts.npz")
         os.remove("ts2.npz")
+
+    def test_fillna(self, ts):
+        with pytest.raises(AssertionError):
+            ts.fillna([1])
+
+        tsd = ts.fillna(0)
+
+        assert isinstance(tsd, nap.Tsd)
+
+        np.testing.assert_array_equal(np.zeros(len(ts)), tsd.values)
+        np.testing.assert_array_equal(ts.index.values, tsd.index.values)
+
+    def test_set(self, ts):
+        ts.__setitem__(0, 1)
+
+    def test_get(self, ts):
+        assert isinstance(ts[0], nap.Ts)
+        assert len(ts[0]) == 1
+        assert len(ts[0:10]) == 10
+        assert len(ts[[0,2,5]]) == 3
+
+        np.testing.assert_array_equal(ts[[0,2,5]].index, np.array([0, 2, 5]))
+
+####################################################
+# Test for tsdtensor
+####################################################
+@pytest.mark.parametrize(
+    "tsdtensor",
+    [
+        nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 3,2), time_units="s"),
+    ],
+)
+class Test_Time_Series_5:
+
+    def test_return_ndarray(self, tsdtensor):
+        np.testing.assert_array_equal(tsdtensor[0], tsdtensor.values[0])
+
+    def test_horizontal_slicing(self, tsdtensor):
+        assert isinstance(tsdtensor[:,0], nap.TsdFrame)
+        np.testing.assert_array_almost_equal(tsdtensor[:,0].values, tsdtensor.values[:,0])
+        assert isinstance(tsdtensor[:,0].time_support, nap.IntervalSet)
+        pd.testing.assert_frame_equal(tsdtensor.time_support, tsdtensor[:,0].time_support)
+        
+        assert isinstance(tsdtensor[:,[0,2]], nap.TsdTensor)
+        np.testing.assert_array_almost_equal(tsdtensor.values[:,[0,2]], tsdtensor[:,[0,2]].values)
+        assert isinstance(tsdtensor[:,[0,2]].time_support, nap.IntervalSet)
+        pd.testing.assert_frame_equal(tsdtensor.time_support, tsdtensor[:,[0,2]].time_support)
+
+    def test_vertical_slicing(self, tsdtensor):
+        assert isinstance(tsdtensor[0:10], nap.TsdTensor)
+        np.testing.assert_array_almost_equal(tsdtensor.values[0:10], tsdtensor[0:10].values)
+        assert isinstance(tsdtensor[0:10].time_support, nap.IntervalSet)
+        pd.testing.assert_frame_equal(tsdtensor[0:10].time_support, tsdtensor.time_support)
+
+    def test_operators(self, tsdtensor):
+        v = tsdtensor.values
+
+        a = tsdtensor + 0.5
+        assert isinstance(a, nap.TsdTensor)
+        np.testing.assert_array_almost_equal(tsdtensor.index, a.index)
+        assert np.all(a.values == (v + 0.5))
+
+        a = tsdtensor - 0.5
+        assert isinstance(a, nap.TsdTensor)
+        np.testing.assert_array_almost_equal(tsdtensor.index, a.index)
+        assert np.all(a.values == (v - 0.5))
+
+        a = tsdtensor * 0.5
+        assert isinstance(a, nap.TsdTensor)
+        np.testing.assert_array_almost_equal(tsdtensor.index, a.index)
+        assert np.all(a.values == (v * 0.5))
+
+        a = tsdtensor / 0.5
+        assert isinstance(a, nap.TsdTensor)
+        np.testing.assert_array_almost_equal(tsdtensor.index, a.index)
+        assert np.all(a.values == (v / 0.5))
+
+        a = tsdtensor // 0.5
+        assert isinstance(a, nap.TsdTensor)
+        np.testing.assert_array_almost_equal(tsdtensor.index, a.index)
+        assert np.all(a.values == (v // 0.5))        
+
+        a = tsdtensor % 0.5
+        assert isinstance(a, nap.TsdTensor)
+        np.testing.assert_array_almost_equal(tsdtensor.index, a.index)
+        assert np.all(a.values == (v % 0.5))
+
+        a = tsdtensor ** 0.5
+        assert isinstance(a, nap.TsdTensor)
+        np.testing.assert_array_almost_equal(tsdtensor.index, a.index)
+        np.testing.assert_array_almost_equal(a.values, v ** 0.5)
+
+        a = tsdtensor > 0.5
+        assert isinstance(a, nap.TsdTensor)
+        np.testing.assert_array_almost_equal(tsdtensor.index, a.index)
+        assert np.all(a.values == (v > 0.5))
+
+        a = tsdtensor >= 0.5
+        assert isinstance(a, nap.TsdTensor)
+        np.testing.assert_array_almost_equal(tsdtensor.index, a.index)
+        assert np.all(a.values == (v >= 0.5))
+
+        a = tsdtensor < 0.5
+        assert isinstance(a, nap.TsdTensor)
+        np.testing.assert_array_almost_equal(tsdtensor.index, a.index)
+        assert np.all(a.values == (v < 0.5))
+
+        a = tsdtensor <= 0.5
+        assert isinstance(a, nap.TsdTensor)
+        np.testing.assert_array_almost_equal(tsdtensor.index, a.index)
+        assert np.all(a.values == (v <= 0.5))        
+
+        tsdtensor = nap.TsdTensor(t=np.arange(10), d=np.atleast_3d(np.tile(np.arange(10)[:,np.newaxis], 3)))
+        v = tsdtensor.values
+        a = tsdtensor == 5
+        assert isinstance(a, nap.TsdTensor)
+        np.testing.assert_array_almost_equal(tsdtensor.index, a.index)
+        assert np.all(a.values == (v == 5))
+
+        a = tsdtensor != 5
+        assert isinstance(a, nap.TsdTensor)
+        np.testing.assert_array_almost_equal(tsdtensor.index, a.index)
+        assert np.all(a.values == (v != 5))
+
+    def test_repr_(self, tsdtensor):
+        # assert pd.DataFrame(tsdtensor).__repr__() == tsdtensor.__repr__()
+        assert isinstance(tsdtensor.__repr__(), str)
+
+    def test_str_(self, tsdtensor):
+        # assert pd.DataFrame(tsdtensor).__str__() == tsdtensor.__str__()
+        assert isinstance(tsdtensor.__str__(), str)
+
+    def test_data(self, tsdtensor):
+        np.testing.assert_array_almost_equal(tsdtensor.values, tsdtensor.data())
+
+    def test_bin_average(self, tsdtensor):
+        meantsd = tsdtensor.bin_average(10)
+        assert len(meantsd) == 10
+        np.testing.assert_array_almost_equal(meantsd.index, np.arange(5, 100, 10))
+        bins = np.arange(tsdtensor.time_support.start[0], tsdtensor.time_support.end[0]+1, 10)
+        idx = np.digitize(tsdtensor.index, bins)
+        tmp = []
+        for i in np.unique(idx):
+            tmp.append(np.mean(tsdtensor.values[idx==i],0))
+        tmp = np.array(tmp)
+        np.testing.assert_array_almost_equal(meantsd.values, tmp)
+
+    def test_save_npz(self, tsdtensor):
+        import os
+
+        with pytest.raises(RuntimeError) as e:
+            tsdtensor.save(dict)
+        assert str(e.value) == "Invalid type; please provide filename as string"
+
+        with pytest.raises(RuntimeError) as e:
+            tsdtensor.save('./')
+        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+
+        fake_path = './fake/path'
+        with pytest.raises(RuntimeError) as e:
+            tsdtensor.save(fake_path+'/file.npz')
+        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+
+        tsdtensor.save("tsdtensor.npz")
+        os.listdir('.')
+        assert "tsdtensor.npz" in os.listdir(".")
+
+        tsdtensor.save("tsdtensor2")
+        os.listdir('.')
+        assert "tsdtensor2.npz" in os.listdir(".")
+
+        file = np.load("tsdtensor.npz")
+
+        keys = list(file.keys())
+        assert 't' in keys
+        assert 'd' in keys
+        assert 'start' in keys
+        assert 'end' in keys        
+
+        np.testing.assert_array_almost_equal(file['t'], tsdtensor.index)
+        np.testing.assert_array_almost_equal(file['d'], tsdtensor.values)
+        np.testing.assert_array_almost_equal(file['start'], tsdtensor.time_support.start.values)
+        np.testing.assert_array_almost_equal(file['end'], tsdtensor.time_support.end.values)
+
+        os.remove("tsdtensor.npz")
+        os.remove("tsdtensor2.npz")

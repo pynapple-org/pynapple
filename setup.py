@@ -19,8 +19,7 @@ requirements = [
     'tabulate',
     'h5py',
     'tifffile',
-    'zarr',
-    'rich'
+    'zarr',    
 ]
 
 test_requirements = [
