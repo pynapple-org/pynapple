@@ -34,9 +34,7 @@ data_directory = (
     "/media/DataDhruv/Recordings/Mouse32/Mouse32-140822"  # Path to your data
 )
 
-data = nap.load_session(
-    data_directory, "neurosuite"
-)  # Load the NWB file for this dataset
+data = nap.load_file("Mouse32-140822.nwb")  # Load the NWB file for this dataset
 spikes = data.spikes  # Get spike timings
 epochs = data.epochs  # Get the behavioural epochs (in this case, sleep and wakefulness)
 position = data.position  # Get the tracked position of the animal
