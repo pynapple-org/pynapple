@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-22 14:44:27
+# @Last Modified time: 2023-09-24 16:28:33
 
 """
 
@@ -934,6 +934,8 @@ class TsdFrame(TsdTensor):
         if isinstance(t, np.ndarray) and d is None:
             raise RuntimeError("Missing argument d when initializing TsdFrame")
 
+        c = columns
+
         if isinstance(t, pd.DataFrame):
             d = t.values
             c = t.columns.values
@@ -948,8 +950,6 @@ class TsdFrame(TsdTensor):
 
         if d.ndim == 1:
             d = d[:, np.newaxis]
-
-        c = columns
 
         super().__init__(t, d, time_units, time_support)
 
