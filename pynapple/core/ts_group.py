@@ -20,7 +20,6 @@ from .jitted_functions import (
     jitunion,
     jitunion_isets,
 )
-
 # from .time_units import format_timestamps
 from .time_index import TsIndex
 from .time_series import Ts, Tsd, TsdFrame

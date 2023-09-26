@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-08-01 11:54:45
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-26 10:30:18
+# @Last Modified time: 2023-09-26 12:57:59
 
 """
 Pynapple class to interface with NWB files.
@@ -18,7 +18,6 @@ from collections import UserDict
 import numpy as np
 import pynwb
 from pynwb import NWBHDF5IO
-
 # from rich.console import Console
 # from rich.table import Table
 from tabulate import tabulate
@@ -389,7 +388,7 @@ class NWBFile(UserDict):
         UserDict.__init__(self, self.data)
 
     def __str__(self):
-        title = self.name
+        title = self.name if isinstance(self.name, str) else "-"
         headers = ["Keys", "Type"]
         view = [[k, self.data[k]["type"]] for k in self.data.keys()]
         return title + "\n" + tabulate(view, headers=headers, tablefmt="mixed_outline")

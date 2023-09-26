@@ -15,7 +15,6 @@ import pandas as pd
 from numba import jit
 
 from .jitted_functions import jitdiff, jitin_interval, jitintersect, jitunion
-
 # from .time_units import format_timestamps, return_timestamps, sort_timestamps
 from .time_index import TsIndex
 
