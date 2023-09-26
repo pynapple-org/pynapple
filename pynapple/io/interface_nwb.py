@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-08-01 11:54:45
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-25 17:30:37
+# @Last Modified time: 2023-09-26 10:30:18
 
 """
 Pynapple class to interface with NWB files.
@@ -279,8 +279,16 @@ def _make_tsgroup(obj):
         if coln not in ["spike_times_index", "spike_times", "electrode_group"]:
             col = obj[coln]
             if len(col) == N:
-                if not isinstance(col[0], (np.ndarray, list, tuple, dict, set)):
+                if hasattr(col, "to_dataframe"):
+                    df = col.to_dataframe()
+                    df = df.sort_index()
+                    for k in df.columns:
+                        if not isinstance(df[k].values[0], (list, tuple, dict, set, pynwb.ecephys.ElectrodeGroup)):
+                            metainfo[k] = df[k].values
+                elif not isinstance(col[0], (np.ndarray, list, tuple, dict, set)):
                     metainfo[coln] = np.array(col[:])
+                else:
+                    pass
 
     tsgroup = nap.TsGroup(tsgroup, **metainfo)
 
