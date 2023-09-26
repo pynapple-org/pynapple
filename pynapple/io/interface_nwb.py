@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-08-01 11:54:45
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-26 12:57:59
+# @Last Modified time: 2023-09-26 15:41:04
 
 """
 Pynapple class to interface with NWB files.
@@ -14,6 +14,7 @@ import errno
 import os
 import warnings
 from collections import UserDict
+from numbers import Number
 
 import numpy as np
 import pynwb
@@ -287,7 +288,8 @@ def _make_tsgroup(obj):
                             (list, tuple, dict, set, pynwb.ecephys.ElectrodeGroup),
                         ):
                             metainfo[k] = df[k].values
-                elif not isinstance(col[0], (np.ndarray, list, tuple, dict, set)):
+                # elif not isinstance(col[0], (np.ndarray, list, tuple, dict, set)):
+                elif isinstance(col[0], (Number, str)):
                     metainfo[coln] = np.array(col[:])
                 else:
                     pass
@@ -385,13 +387,18 @@ class NWBFile(UserDict):
         self.data = _extract_compatible_data_from_nwbfile(self.nwb)
         self.key_to_id = {k: self.data[k]["id"] for k in self.data.keys()}
 
+        self._view = [[k, self.data[k]["type"]] for k in self.data.keys()]
+
         UserDict.__init__(self, self.data)
 
     def __str__(self):
         title = self.name if isinstance(self.name, str) else "-"
         headers = ["Keys", "Type"]
-        view = [[k, self.data[k]["type"]] for k in self.data.keys()]
-        return title + "\n" + tabulate(view, headers=headers, tablefmt="mixed_outline")
+        return (
+            title
+            + "\n"
+            + tabulate(self._view, headers=headers, tablefmt="mixed_outline")
+        )
 
         # self._view = Table(title=self.name)
         # self._view.add_column("Keys", justify="left", style="cyan", no_wrap=True)
