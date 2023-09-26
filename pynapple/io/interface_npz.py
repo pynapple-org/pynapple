@@ -4,7 +4,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-07-05 16:03:25
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-08-03 16:21:45
+# @Last Modified time: 2023-09-26 18:00:54
 
 """
 File classes help to validate and load pynapple objects or NWB files.
@@ -50,7 +50,7 @@ class NPZFile(object):
         self.type = ""
 
         # First check if type is explicitely defined
-        possible = ["Ts", "Tsd", "TsdFrame", "TsGroup", "IntervalSet"]
+        possible = ["Ts", "Tsd", "TsdFrame", "TsdTensor", "TsGroup", "IntervalSet"]
         if "type" in self.file.keys():
             if len(self.file["type"]) == 1:
                 if isinstance(self.file["type"][0], np.str_):
@@ -65,7 +65,10 @@ class NPZFile(object):
             elif {"t", "d", "start", "end", "columns"}.issubset(k):
                 self.type = "TsdFrame"
             elif {"t", "d", "start", "end"}.issubset(k):
-                self.type = "Tsd"
+                if self.file['d'].ndim == 1:
+                    self.type = "Tsd"
+                else:
+                    self.type = "TsdTensor"
             elif {"t", "start", "end"}.issubset(k):
                 self.type = "Ts"
             elif {"start", "end"}.issubset(k):
@@ -78,7 +81,7 @@ class NPZFile(object):
 
         Returns
         -------
-        (Tsd, Ts, TsdFrame, TsGroup, IntervalSet)
+        (Tsd, Ts, TsdFrame, TsdTensor, TsGroup, IntervalSet)
             A pynapple object
         """
         if self.type == "npz":
@@ -115,7 +118,10 @@ class NPZFile(object):
                     time_support=time_support,
                     columns=self.file["columns"],
                 )
-
+            elif self.type == "TsdTensor":
+                return nap.TsdTensor(
+                    t=self.file["t"], d=self.file["d"], time_support=time_support
+                )
             elif self.type == "Tsd":
                 return nap.Tsd(
                     t=self.file["t"], d=self.file["d"], time_support=time_support

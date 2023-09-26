@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-26 12:40:26
+# @Last Modified time: 2023-09-26 17:52:42
 
 """
 
@@ -1492,7 +1492,7 @@ class Tsd(NDArrayOperatorsMixin, _AbstractTsd):
 
     def interpolate(self, ts, ep=None, left=None, right=None):
         """Wrapper of the numpy linear interpolation method. See https://numpy.org/doc/stable/reference/generated/numpy.interp.html for an explanation of the parameters.
-        The argument ts should be Ts, Tsd, TsdFrame to ensure interpolating from sorted timestamps in the right unit,
+        The argument ts should be Ts, Tsd, TsdFrame, TsdTensor to ensure interpolating from sorted timestamps in the right unit,
 
         Parameters
         ----------
