@@ -15,72 +15,83 @@ This tutorial was made by Dhruv Mehrotra.
 First, import the necessary libraries:
 
 """
+
 # %%
+# !!! warning
+#     This tutorial uses seaborn and matplotlib for displaying the figure as well as the dandi package
+#
+#     You can install all with `pip install matplotlib seaborn dandi dandischema`
+#
+# Now, import the necessary libraries:
 
 import matplotlib.pyplot as plt
 import numpy as np
-import os
-import pandas as pd
 import pynapple as nap
-import pynwb
+import seaborn as sns
 
 # %%
 # ***
-# Loading the NWB file
+# Stream the data from DANDI
 # ------------------
-#
-# The first step is to load the data from the Neurodata Without Borders (NWB) file. This is done as follows:
-#
 
-data_directory = "/home/dhruv/Code/Projects/Steinmetz/000207/sub-4"  # Path to your data
-nwbfilename = [f for f in os.listdir(data_directory) if "nwb" in f][
-    0
-]  # Find the NWB file in the directory
-nwbfilepath = os.path.join(data_directory, nwbfilename)  # Path to the NWB file
-io = pynwb.NWBHDF5IO(nwbfilepath, "r")  # Create I/O object for NWB files
-nwbfile = io.read()  # Read the NWB file
+from pynwb import NWBHDF5IO
 
-# %%
-# Now let's load the units:
+from dandi.dandiapi import DandiAPIClient
+import fsspec
+from fsspec.implementations.cached import CachingFileSystem
+import h5py
 
-units = nwbfile.units.to_dataframe()  # Make a DataFrame of units
+# Enter the session ID and path to the file
+dandiset_id, filepath = ("000207", "sub-4/sub-4_ses-4_ecephys.nwb")
 
-# What does this look like?
-print(units)
+with DandiAPIClient() as client:
+    asset = client.get_dandiset(dandiset_id, "draft").get_asset_by_path(filepath)
+    s3_url = asset.get_content_url(follow_redirects=1, strip_query=True)
+
+# first, create a virtual filesystem based on the http protocol
+fs = fsspec.filesystem("http")
+
+# create a cache to save downloaded data to disk (optional)
+fs = CachingFileSystem(
+    fs=fs,
+    cache_storage="nwb-cache",  # Local folder for the cache
+)
+
+# next, open the file
+file = h5py.File(fs.open(s3_url, "rb"))
+io = NWBHDF5IO(file=file, load_namespaces=True)
 
 # %%
 # ***
 # Parsing the data
 # ------------------
 #
-# This DataFrame has 3 columns: the unit ID, spike timings, and the electrode locations. Let's extract the spike timings and put them in a Pynapple TsGroup.
+# The first step is to load the data from the Neurodata Without Borders (NWB) file. This is done as follows:
+#
 
-# Create a dictionary of spike timings
-spike_times = {
-    n: nap.Ts(t=units.loc[n, "spike_times"], time_units="s") for n in units.index
-}
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
 
-spikes = nap.TsGroup(spike_times)
+data = nap.NWBFile(io.read())  # Load the NWB file for this dataset
 
+# What does this look like?
+print(data)
+
+# %%
+# Get spike timings
+spikes = data["units"]
+
+# %%
 # What does this look like?
 print(spikes)
 
 # %%
-# The spike times TsGroup has 2 columns: The unit ID, and the firing rate of the units in Hz.
-#
-# Let's also extract the electrode locations:
-
-electrode_location = np.array(nwbfile.units.electrodes.get("location"))
-
-# What does this look like?
-print(electrode_location)
+# This TsGroup has, among other information, the mean firing rate of the unit, the X, Y and Z coordinates, the brain region the unit was recorded from, and the channel number on which the unit was located.
 
 # %%
-# Next, let's get the table of all stimulus times, as shown below:
+# Next, let's get the encoding table of all stimulus times, as shown below:
 
-encoding_table = nwbfile.intervals.get(
-    "encoding_table"
-)  # Get the encoding table for all stimuli
+encoding_table = data["encoding_table"]
 
 # What does this look like?
 print(encoding_table)
@@ -91,7 +102,7 @@ print(encoding_table)
 # There are 3 types of scene boundaries in this data. For the purposes of demonstration, we will use only the "No boundary" (NB) and the "Hard boundary" (HB conditions). The encoding table has a stimCategory field, which tells us the type of boundary corresponding to a given trial.
 
 stimCategory = np.array(
-    encoding_table.stimCategory.data
+    encoding_table.stimCategory
 )  # Get the scene boundary type for all trials
 
 # What does this look like?
@@ -106,9 +117,7 @@ indxHB = np.where(stimCategory == 2)  # HB trial indices
 # %%
 # The encoding table also has 3 types of boundary times. For the purposes of our demonstration, we will focus on boundary1 times, and extract them as shown below:
 
-boundary1_time = np.array(
-    encoding_table.boundary1_time.data
-)  # Get timings of Boundary1
+boundary1_time = np.array(encoding_table.boundary1_time)  # Get timings of Boundary1
 
 # What does this look like?
 print(boundary1_time)
@@ -119,7 +128,6 @@ print(boundary1_time)
 NB = nap.Ts(boundary1_time[indxNB])  # NB timings
 HB = nap.Ts(boundary1_time[indxHB])  # HB timings
 
-io.close()  # Close the I/O object
 
 # %%
 # ***

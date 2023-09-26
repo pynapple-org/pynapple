@@ -12,10 +12,15 @@ See the [documentation](https://pynapple-org.github.io/pynapple/) of Pynapple fo
 
 This tutorial was made by Dhruv Mehrotra.
 
-First, import the necessary libraries:
-    
 """
+
 # %%
+# !!! warning
+#     This tutorial uses seaborn and matplotlib for displaying the figure as well as the dandi package
+#
+#     You can install all with `pip install matplotlib seaborn dandi dandischema`
+#
+# Now, import the necessary libraries:
 
 import numpy as np
 import pandas as pd
@@ -25,19 +30,31 @@ import matplotlib.pyplot as plt
 
 # %%
 # ***
-# Head-Direction Tuning Curves
+# Parsing the data
 # ------------------
 #
 # The first step is to load the data and other relevant variables of interest
 
-data_directory = (
-    "/media/DataDhruv/Recordings/Mouse32/Mouse32-140822"  # Path to your data
-)
+data = nap.load_file(
+    "nwb-files/Mouse32-140822.nwb"
+)  # Load the NWB file for this dataset
 
-data = nap.load_file("Mouse32-140822.nwb")  # Load the NWB file for this dataset
-spikes = data.spikes  # Get spike timings
-epochs = data.epochs  # Get the behavioural epochs (in this case, sleep and wakefulness)
-position = data.position  # Get the tracked position of the animal
+# %%
+# What does this look like ?
+print(data)
+
+# %%
+# ***
+# Head-Direction Tuning Curves
+# ------------------
+#
+# To plot Head-Direction Tuning curves, we need the spike timings and the orientation of the animal. These quantities are stored in the vaiable 'units' and 'ry'.
+
+spikes = data["units"]  # Get spike timings
+epochs = data[
+    "epochs"
+]  # Get the behavioural epochs (in this case, sleep and wakefulness)
+angle = data["ry"]  # Get the tracked orientation of the animal
 spikes_by_location = spikes.getby_category(
     "location"
 )  # Tells you which cells come from which brain region
@@ -47,7 +64,7 @@ spikes_by_location = spikes.getby_category(
 print(spikes_by_location)
 
 # %%
-# Here, index refers to the cluster number, Freq. (Hz) is the mean firing rate of the unit. Group refers to the shank number on which the cell was located, and location indicates the brain region the unit was recorded from.
+# Here, rate is the mean firing rate of the unit. Location indicates the brain region the unit was recorded from, and group refers to the shank number on which the cell was located.
 #
 # This dataset contains units recorded from the anterior thalamus. Head-direction (HD) cells are found in the anterodorsal nucleus of the thalamus (henceforth referred to as ADn). Units were also recorded from nearby thalamic nuclei in this animal. For the purposes of our tutorial, we are interested in the units recorded in ADn. We can restrict ourselves to analysis of these units rather easily, using Pynapple.
 
@@ -63,7 +80,7 @@ print(spikes_adn)
 # Plot firing rate of ADn units as a function of heading direction, i.e. a head-direction tuning curve
 
 tuning_curves = nap.compute_1d_tuning_curves(
-    group=spikes_adn, feature=position.loc["ry"], nb_bins=31, minmax=(0, 2 * np.pi)
+    group=spikes_adn, feature=angle, nb_bins=31, minmax=(0, 2 * np.pi)
 )
 
 # %%
@@ -152,7 +169,7 @@ decoded, proba_feature = nap.decode_1d(
     group=spikes_adn,
     ep=epochs["wake"],
     bin_size=0.1,  # second
-    feature=position["ry"],
+    feature=angle,
 )
 
 # %%
@@ -205,7 +222,7 @@ p_feature = nap.TsdFrame(p_feature)  # Make it a Pynapple TsdFrame
 
 plt.figure()
 plt.plot(
-    position["ry"].restrict(ep), "w", linewidth=2, label="actual HD", zorder=1
+    angle.restrict(ep), "w", linewidth=2, label="actual HD", zorder=1
 )  # Actual HD, in white
 plt.plot(
     decoded.restrict(ep), "--", color="grey", linewidth=2, label="decoded HD", zorder=1
