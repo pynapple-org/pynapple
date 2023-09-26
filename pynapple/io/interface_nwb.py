@@ -283,7 +283,10 @@ def _make_tsgroup(obj):
                     df = col.to_dataframe()
                     df = df.sort_index()
                     for k in df.columns:
-                        if not isinstance(df[k].values[0], (list, tuple, dict, set, pynwb.ecephys.ElectrodeGroup)):
+                        if not isinstance(
+                            df[k].values[0],
+                            (list, tuple, dict, set, pynwb.ecephys.ElectrodeGroup),
+                        ):
                             metainfo[k] = df[k].values
                 elif not isinstance(col[0], (np.ndarray, list, tuple, dict, set)):
                     metainfo[coln] = np.array(col[:])

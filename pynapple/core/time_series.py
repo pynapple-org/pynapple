@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-25 17:16:27
+# @Last Modified time: 2023-09-26 12:40:26
 
 """
 
@@ -980,28 +980,42 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
         headers = ["Time (s)"] + [str(k) for k in self.columns]
         bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(self.shape)
 
+        max_cols = 5
+        try:
+            max_cols = os.get_terminal_size()[0] // 20
+        except Exception:
+            import shutil
+
+            max_cols = shutil.get_terminal_size().columns // 20
+        else:
+            pass
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             if len(self):
-                if len(self) < 51:
+                if len(self) < 51 and self.shape[1] <= max_cols:
                     return (
                         tabulate(
                             self.values,
                             showindex=self.index,
                             headers=headers,
-                            colalign=("left",),
+                            colalign="decimal",
                         )
                         + "\n"
                         + bottom
                     )
                 else:
                     table = []
-                    for i, array in zip(self.index[0:5], self.values[0:5]):
+                    for i, array in zip(self.index[0:5], self.values[0:5, 0:max_cols]):
                         table.append([i] + [k for k in array])
                     table.append(["..."])
-                    for i, array in zip(self.index[-5:], self.values[-5:]):
+                    for i, array in zip(self.index[-5:], self.values[-5:, 0:max_cols]):
                         table.append([i] + [k for k in array])
 
+                    if self.shape[1] > max_cols:
+                        headers = headers[0 : max_cols + 1] + ["..."]
+                        for i in range(len(table)):
+                            table[i].append("...")
                     return (
                         tabulate(table, headers=headers, colalign=("left",))
                         + "\n"
