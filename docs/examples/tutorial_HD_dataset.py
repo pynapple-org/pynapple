@@ -1,24 +1,22 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
+# coding: utf-8
 """
 Peyrache et al (2015) Dataset Tutorial
 ============
 
-This tutorial demonstrates how we use Pynapple on various publicly available datasets in systems neuroscience to streamline analysis. In this tutorial, we will examine the dataset from [Peyrache et al (2015)](https://www.nature.com/articles/nn.3968), which was used to generate Figure 4a in the [publication](https://elifesciences.org/reviewed-preprints/85786).
-
-The NWB file for the example used here is provided in [this](https://github.com/PeyracheLab/pynacollada/tree/main/pynacollada/Pynapple%20Paper%20Figures/Peyrache%202015/Mouse32/Mouse32-140822/pynapplenwb) repository. The entire dataset can be downloaded [here](https://dandiarchive.org/dandiset/000056).
+This tutorial demonstrates how we use Pynapple to generate Figure 4a in the [publication](https://elifesciences.org/reviewed-preprints/85786).
+The NWB file for the example is hosted on [OSF](https://osf.io/jb2gd). We show below how to stream it.
+The entire dataset can be downloaded [here](https://dandiarchive.org/dandiset/000056).
 
 See the [documentation](https://pynapple-org.github.io/pynapple/) of Pynapple for instructions on installing the package.
 
-This tutorial was made by Dhruv Mehrotra.
+This tutorial was made by Dhruv Mehrotra and Guillaume Viejo.
 
 """
-
 # %%
 # !!! warning
-#     This tutorial uses seaborn and matplotlib for displaying the figure as well as the dandi package
+#     This tutorial uses seaborn and matplotlib for displaying the figure
 #
-#     You can install all with `pip install matplotlib seaborn dandi dandischema`
+#     You can install all with `pip install matplotlib seaborn`
 #
 # Now, import the necessary libraries:
 
@@ -27,6 +25,22 @@ import pandas as pd
 import pynapple as nap
 import scipy.ndimage
 import matplotlib.pyplot as plt
+import requests, math, os
+
+# %%
+# ***
+# Downloading the data
+# ------------------
+#
+# It's a small NWB file.
+path = "Mouse32-140822.nwb"
+if path not in os.listdir("."):
+    r = requests.get(f"https://osf.io/jb2gd/download", stream=True)
+    block_size = 1024*1024
+    with open(path, 'wb') as f:
+        for data in tqdm.tqdm(r.iter_content(block_size), unit='MB', unit_scale=True,
+            total=math.ceil(int(r.headers.get('content-length', 0))//block_size)):
+            f.write(data)
 
 # %%
 # ***
@@ -35,9 +49,7 @@ import matplotlib.pyplot as plt
 #
 # The first step is to load the data and other relevant variables of interest
 
-data = nap.load_file(
-    "nwb-files/Mouse32-140822.nwb"
-)  # Load the NWB file for this dataset
+data = nap.load_file("Mouse32-140822.nwb")  # Load the NWB file for this dataset
 
 # %%
 # What does this look like ?
@@ -48,27 +60,23 @@ print(data)
 # Head-Direction Tuning Curves
 # ------------------
 #
-# To plot Head-Direction Tuning curves, we need the spike timings and the orientation of the animal. These quantities are stored in the vaiable 'units' and 'ry'.
+# To plot Head-Direction Tuning curves, we need the spike timings and the orientation of the animal. These quantities are stored in the variables 'units' and 'ry'.
 
 spikes = data["units"]  # Get spike timings
-epochs = data[
-    "epochs"
-]  # Get the behavioural epochs (in this case, sleep and wakefulness)
+epochs = data["epochs"]  # Get the behavioural epochs (in this case, sleep and wakefulness)
 angle = data["ry"]  # Get the tracked orientation of the animal
-spikes_by_location = spikes.getby_category(
-    "location"
-)  # Tells you which cells come from which brain region
+
 
 # %%
 # What does this look like ?
-print(spikes_by_location)
+print(spikes)
 
 # %%
 # Here, rate is the mean firing rate of the unit. Location indicates the brain region the unit was recorded from, and group refers to the shank number on which the cell was located.
 #
 # This dataset contains units recorded from the anterior thalamus. Head-direction (HD) cells are found in the anterodorsal nucleus of the thalamus (henceforth referred to as ADn). Units were also recorded from nearby thalamic nuclei in this animal. For the purposes of our tutorial, we are interested in the units recorded in ADn. We can restrict ourselves to analysis of these units rather easily, using Pynapple.
 
-spikes_adn = spikes_by_location["adn"]  # Select only those units that are in ADn
+spikes_adn = spikes.getby_category("location")["adn"]  # Select only those units that are in ADn
 
 # %%
 # What does this look like ?
@@ -80,77 +88,64 @@ print(spikes_adn)
 # Plot firing rate of ADn units as a function of heading direction, i.e. a head-direction tuning curve
 
 tuning_curves = nap.compute_1d_tuning_curves(
-    group=spikes_adn, feature=angle, nb_bins=31, minmax=(0, 2 * np.pi)
-)
+    group=spikes_adn, 
+    feature=angle, 
+    nb_bins=61, 
+    ep = epochs['wake'],
+    minmax=(0, 2 * np.pi)
+    )
 
 # %%
 # What does this look like ?
 print(tuning_curves)
 
 # %%
-# Each row indicates an angular bin (in radians), and each column corresponds to a single unit. Let's compute the preferred angle as follows:
+# Each row indicates an angular bin (in radians), and each column corresponds to a single unit. Let's compute the preferred angle quickly as follows:
 
-pref_ang = []
+pref_ang = tuning_curves.idxmax()
 
-# Preferred angle is the angular bin with the maximal firing rate
-
-for i in tuning_curves.columns:
-    pref_ang.append(tuning_curves.loc[:, i].idxmax())
 
 # %%
 # For easier visualization, we will colour our plots according to the preferred angle of the cell. To do so, we will normalize the range of angles we have, over a colourmap.
 
 norm = plt.Normalize()  # Normalizes data into the range [0,1]
-color = plt.cm.hsv(
-    norm([i / (2 * np.pi) for i in pref_ang])
-)  # Assigns a colour in the HSV colourmap for each value of preferred angle
+color = plt.cm.hsv(norm([i / (2 * np.pi) for i in pref_ang.values]))  # Assigns a colour in the HSV colourmap for each value of preferred angle
+color = pd.DataFrame(index=pref_ang.index, data = color, columns = ['r', 'g', 'b', 'a'])
 
 # %%
-# To make the tuning curves look nice, we will smoothen them before plotting, using this custom function:
+# To make the tuning curves look nice, we will smooth them before plotting, using this custom function:
 
+from scipy.ndimage import gaussian_filter1d
+def smoothAngularTuningCurves(tuning_curves, sigma=2):
 
-def smoothAngularTuningCurves(tuning_curves, window=20, deviation=3.0):
-    new_tuning_curves = {}
-    for i in tuning_curves.columns:
-        tcurves = tuning_curves[i]
-        offset = np.mean(np.diff(tcurves.index.values))
-        padded = pd.Series(
-            index=np.hstack(
-                (
-                    tcurves.index.values - (2 * np.pi) - offset,
-                    tcurves.index.values,
-                    tcurves.index.values + (2 * np.pi) + offset,
-                )
-            ),
-            data=np.hstack((tcurves.values, tcurves.values, tcurves.values)),
+    tmp = np.concatenate((tuning_curves.values, tuning_curves.values, tuning_curves.values))
+    tmp = gaussian_filter1d(tmp, sigma=sigma, axis=0)
+
+    return pd.DataFrame(index = tuning_curves.index,
+        data = tmp[tuning_curves.shape[0]:tuning_curves.shape[0]*2], 
+        columns = tuning_curves.columns
         )
-        smoothed = padded.rolling(
-            window=window, win_type="gaussian", center=True, min_periods=1
-        ).mean(std=deviation)
-        new_tuning_curves[i] = smoothed.loc[tcurves.index]
 
-    new_tuning_curves = pd.DataFrame.from_dict(new_tuning_curves)
-
-    return new_tuning_curves
 
 
 # %%
 # Therefore, we have:
 
-smoothcurves = smoothAngularTuningCurves(tuning_curves, window=20, deviation=3)
+smoothcurves = smoothAngularTuningCurves(tuning_curves, sigma=3)
 
 # %%
 # What does this look like? Let's plot the tuning curves!
 
 plt.figure(figsize=(12, 9))
-for i, n in enumerate(smoothcurves.columns):
-    plt.subplot(8, 4, i + 1)  # Plot the curves in 8 rows and 4 columns
+for i, n in enumerate(pref_ang.sort_values().index.values):
+    plt.subplot(8, 4, i + 1, projection='polar')  # Plot the curves in 8 rows and 4 columns
     plt.plot(
-        smoothcurves[n], color=color[i]
-    )  # Colour of the curves determined by preferred angle
-    plt.tight_layout()
+        smoothcurves[n], color=color.loc[n]
+    )  # Colour of the curves determined by preferred angle    
     plt.xlabel("Angle (rad)")  # Angle in radian, on the X-axis
     plt.ylabel("Firing Rate (Hz)")  # Firing rate in Hz, on the Y-axis
+    plt.xticks([])
+plt.show()
 
 # %%
 # Awesome!
@@ -160,7 +155,7 @@ for i, n in enumerate(smoothcurves.columns):
 # Decoding
 # ------------------
 #
-# Now that we have HD tuning curves, we can go one step further. Using only the population activity of ADn units, we can decode the direction the animal is looking in. We will then compare this to the real heead direction of the animal, and discover that population activity in the ADn indeed codes for HD.
+# Now that we have HD tuning curves, we can go one step further. Using only the population activity of ADn units, we can decode the direction the animal is looking in. We will then compare this to the real head direction of the animal, and discover that population activity in the ADn indeed codes for HD.
 #
 # To decode the population activity, we will be using a Bayesian Decoder as implemented in Pynapple. Just a single line of code!
 
@@ -180,7 +175,7 @@ print(decoded)
 # %%
 # The variable 'decoded' indicates the most probable angle in which the animal was looking. There is another variable, 'proba_feature' that denotes the probability of a given angular bin at a given time point. We can look at it below:
 
-print(proba_feature)
+print(proba_feature.as_dataframe())
 
 # %%
 # Each row of this pandas DataFrame is a time bin, and each column is an angular bin. The sum of all values in a row add up to 1.
@@ -195,7 +190,7 @@ plt.figure()
 plt.rc("font", size=12)
 for i, n in enumerate(spikes_adn.keys()):
     plt.plot(
-        spikes[n].restrict(ep).as_units("s").fillna(pref_ang[i]), "|", color=color[i]
+        spikes[n].restrict(ep).fillna(pref_ang[n]), "|", color=color.loc[n]
     )  # raster plot for each cell
 plt.plot(
     decoded.restrict(ep), "--", color="grey", linewidth=2, label="decoded HD"

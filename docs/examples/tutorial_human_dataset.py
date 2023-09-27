@@ -150,8 +150,7 @@ HB_peth = nap.compute_perievent(
 # %%
 # Let's plot the PETH
 
-plt.figure()
-plt.rc("font", size=12)
+plt.figure(figsize =(15,8))
 plt.subplot(211)  # Plot the figures in 2 rows
 for i, n in enumerate(NB_peth):
     plt.plot(
@@ -236,7 +235,7 @@ error_HB = fr_HB.sem(axis=1)
 # %%
 # Plot the mean +/- SEM of firing rate for both trial types
 
-plt.figure()
+plt.figure(figsize =(15,8))
 plt.plot(
     meanfr_NB, color=[102 / 255, 204 / 255, 0 / 255], label="NB"
 )  # Plot mean firing rate for NB trials
