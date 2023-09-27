@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-26 17:52:42
+# @Last Modified time: 2023-09-27 15:49:15
 
 """
 
@@ -280,6 +280,9 @@ class _AbstractTsd(abc.ABC):
             np.partition,
             np.argpartition,
         ]:
+            return NotImplemented
+
+        if hasattr(np.fft, func.__name__):
             return NotImplemented
 
         if func in [np.split, np.array_split, np.dsplit, np.hsplit, np.vsplit]:
@@ -982,45 +985,32 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
 
         max_cols = 5
         try:
-            max_cols = os.get_terminal_size()[0] // 20
+            max_cols = os.get_terminal_size()[0] // 16
         except Exception:
             import shutil
-
-            max_cols = shutil.get_terminal_size().columns // 20
+            max_cols = shutil.get_terminal_size().columns // 16
         else:
             pass
+
+        if self.shape[1] > max_cols:
+            headers = headers[0:max_cols+1] + ['...']
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             if len(self):
-                if len(self) < 51 and self.shape[1] <= max_cols:
-                    return (
-                        tabulate(
-                            self.values,
-                            showindex=self.index,
-                            headers=headers,
-                            colalign="decimal",
-                        )
-                        + "\n"
-                        + bottom
-                    )
-                else:
-                    table = []
+                table = []
+                end = ['...'] if self.shape[1] > max_cols else []
+                if len(self)>51:
                     for i, array in zip(self.index[0:5], self.values[0:5, 0:max_cols]):
-                        table.append([i] + [k for k in array])
+                        table.append([i] + [k for k in array] + end)
                     table.append(["..."])
                     for i, array in zip(self.index[-5:], self.values[-5:, 0:max_cols]):
-                        table.append([i] + [k for k in array])
-
-                    if self.shape[1] > max_cols:
-                        headers = headers[0 : max_cols + 1] + ["..."]
-                        for i in range(len(table)):
-                            table[i].append("...")
-                    return (
-                        tabulate(table, headers=headers, colalign=("left",))
-                        + "\n"
-                        + bottom
-                    )
+                        table.append([i] + [k for k in array] + end)
+                    return tabulate(table, headers=headers) + "\n" + bottom
+                else:
+                    for i, array in zip(self.index, self.values[:, 0:max_cols]):
+                        table.append([i] + [k for k in array] + end)
+                    return tabulate(table, headers=headers) + "\n" + bottom
             else:
                 return tabulate([], headers=headers) + "\n" + bottom
 

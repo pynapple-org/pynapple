@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-09-18 18:11:24
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-21 17:09:01
+# @Last Modified time: 2023-09-27 15:03:31
 
 
 
@@ -16,6 +16,8 @@ import numpy.core.umath as _umath
 ufuncs = {k:obj for k, obj in _umath.__dict__.items() if isinstance(obj, _ufunc)}
 
 tsd = nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 5, 3), time_units="s")
+
+tsd = nap.TsdFrame(t=np.arange(100), d=np.random.randn(100, 6))
 
 @pytest.mark.parametrize(
     "tsd",
