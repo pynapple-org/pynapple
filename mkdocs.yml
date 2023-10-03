@@ -34,13 +34,6 @@ plugins:
 nav:  
   - Overview: index.md  
   - Usage: generated/gallery
-  #   - Quick start: notebooks/pynapple-quick-start.ipynb
-  #   - Core: notebooks/pynapple-core-notebook.ipynb
-  #   - IO: notebooks/pynapple-io-notebook.ipynb
-  #   # - (Deprecated IO): notebooks/pynapple-old-io-notebook.ipynb
-  #   - DANDI+NWB: notebooks/pynapple-dandi-notebook.ipynb
-  #   - Process: notebooks/pynapple-process-notebook.ipynb  
-  #   - pynacollada: pynacollada.md
   - Modules : reference/
   # - Modules:
   #   - Core:

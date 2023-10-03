@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-27 15:49:15
+# @Last Modified time: 2023-10-03 17:45:42
 
 """
 
@@ -988,19 +988,20 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
             max_cols = os.get_terminal_size()[0] // 16
         except Exception:
             import shutil
+
             max_cols = shutil.get_terminal_size().columns // 16
         else:
             pass
 
         if self.shape[1] > max_cols:
-            headers = headers[0:max_cols+1] + ['...']
+            headers = headers[0 : max_cols + 1] + ["..."]
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             if len(self):
                 table = []
-                end = ['...'] if self.shape[1] > max_cols else []
-                if len(self)>51:
+                end = ["..."] if self.shape[1] > max_cols else []
+                if len(self) > 51:
                     for i, array in zip(self.index[0:5], self.values[0:5, 0:max_cols]):
                         table.append([i] + [k for k in array] + end)
                     table.append(["..."])
@@ -1046,7 +1047,9 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
         out: pandas.DataFrame
             _
         """
-        return pd.DataFrame(index=self.index.values, data=self.values)
+        return pd.DataFrame(
+            index=self.index.values, data=self.values, columns=self.columns
+        )
 
     def as_units(self, units="s"):
         """

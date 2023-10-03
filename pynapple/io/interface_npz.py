@@ -65,7 +65,7 @@ class NPZFile(object):
             elif {"t", "d", "start", "end", "columns"}.issubset(k):
                 self.type = "TsdFrame"
             elif {"t", "d", "start", "end"}.issubset(k):
-                if self.file['d'].ndim == 1:
+                if self.file["d"].ndim == 1:
                     self.type = "Tsd"
                 else:
                     self.type = "TsdTensor"

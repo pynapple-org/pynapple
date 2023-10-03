@@ -16,7 +16,9 @@ This tutorial was made by Dhruv Mehrotra and Guillaume Viejo.
 # !!! warning
 #     This tutorial uses seaborn and matplotlib for displaying the figure
 #
-#     You can install all with `pip install matplotlib seaborn`
+#     You can install all with `pip install matplotlib seaborn tqdm`
+#
+# mkdocs_gallery_thumbnail_number = 2
 #
 # Now, import the necessary libraries:
 
@@ -26,6 +28,7 @@ import pynapple as nap
 import scipy.ndimage
 import matplotlib.pyplot as plt
 import requests, math, os
+import tqdm
 
 # %%
 # ***
@@ -49,7 +52,7 @@ if path not in os.listdir("."):
 #
 # The first step is to load the data and other relevant variables of interest
 
-data = nap.load_file("Mouse32-140822.nwb")  # Load the NWB file for this dataset
+data = nap.load_file(path)  # Load the NWB file for this dataset
 
 # %%
 # What does this look like ?
