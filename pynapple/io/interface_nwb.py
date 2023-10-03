@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-08-01 11:54:45
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-11 17:55:23
+# @Last Modified time: 2023-09-26 15:41:04
 
 """
 Pynapple class to interface with NWB files.
@@ -14,12 +14,15 @@ import errno
 import os
 import warnings
 from collections import UserDict
+from numbers import Number
 
 import numpy as np
 import pynwb
 from pynwb import NWBHDF5IO
-from rich.console import Console
-from rich.table import Table
+
+# from rich.console import Console
+# from rich.table import Table
+from tabulate import tabulate
 
 from .. import core as nap
 
@@ -60,7 +63,10 @@ def _extract_compatible_data_from_nwbfile(nwbfile):
             data[obj.name] = {"id": oid, "type": "Ts"}
 
         elif isinstance(obj, pynwb.misc.TimeSeries):
-            if len(obj.data.shape) == 2:
+            if len(obj.data.shape) > 2:
+                data[obj.name] = {"id": oid, "type": "TsdTensor"}
+
+            elif len(obj.data.shape) == 2:
                 data[obj.name] = {"id": oid, "type": "TsdFrame"}
 
             elif len(obj.data.shape) == 1:
@@ -146,6 +152,31 @@ def _make_tsd(obj):
         t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
 
     data = nap.Tsd(t=t, d=d)
+
+    return data
+
+
+def _make_tsd_tensor(obj):
+    """Helper function to make TsdTensor
+
+    Parameters
+    ----------
+    obj : pynwb.misc.TimeSeries
+        NWB object
+
+    Returns
+    -------
+    Tsd
+
+    """
+
+    d = obj.data[:]
+    if obj.timestamps is not None:
+        t = obj.timestamps[:]
+    else:
+        t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
+
+    data = nap.TsdTensor(t=t, d=d)
 
     return data
 
@@ -249,8 +280,20 @@ def _make_tsgroup(obj):
         if coln not in ["spike_times_index", "spike_times", "electrode_group"]:
             col = obj[coln]
             if len(col) == N:
-                if not isinstance(col[0], (np.ndarray, list, tuple, dict, set)):
+                if hasattr(col, "to_dataframe"):
+                    df = col.to_dataframe()
+                    df = df.sort_index()
+                    for k in df.columns:
+                        if not isinstance(
+                            df[k].values[0],
+                            (list, tuple, dict, set, pynwb.ecephys.ElectrodeGroup),
+                        ):
+                            metainfo[k] = df[k].values
+                # elif not isinstance(col[0], (np.ndarray, list, tuple, dict, set)):
+                elif isinstance(col[0], (Number, str)):
                     metainfo[coln] = np.array(col[:])
+                else:
+                    pass
 
     tsgroup = nap.TsGroup(tsgroup, **metainfo)
 
@@ -307,6 +350,7 @@ class NWBFile(UserDict):
         "Tsd": _make_tsd,
         "Ts": _make_ts,
         "TsdFrame": _make_tsd_frame,
+        "TsdTensor": _make_tsd_tensor,
         "TsGroup": _make_tsgroup,
     }
 
@@ -344,29 +388,36 @@ class NWBFile(UserDict):
         self.data = _extract_compatible_data_from_nwbfile(self.nwb)
         self.key_to_id = {k: self.data[k]["id"] for k in self.data.keys()}
 
-        self._view = Table(title=self.name)
-        self._view.add_column("Keys", justify="left", style="cyan", no_wrap=True)
-        self._view.add_column("Type", style="green")
-        # self._view.add_column("NWB module", justify="right", style="magenta")
-
-        for k in self.data.keys():
-            self._view.add_row(
-                k,
-                self.data[k]["type"],
-                # self.data[k]['top_module']
-            )
+        self._view = [[k, self.data[k]["type"]] for k in self.data.keys()]
 
         UserDict.__init__(self, self.data)
 
     def __str__(self):
-        """View of the object"""
-        with Console() as console:
-            console.print(self._view)
-        return ""
+        title = self.name if isinstance(self.name, str) else "-"
+        headers = ["Keys", "Type"]
+        return (
+            title
+            + "\n"
+            + tabulate(self._view, headers=headers, tablefmt="mixed_outline")
+        )
 
-    # def __repr__(self):
-    #     """View of the object"""
-    #     return ""
+        # self._view = Table(title=self.name)
+        # self._view.add_column("Keys", justify="left", style="cyan", no_wrap=True)
+        # self._view.add_column("Type", style="green")
+        # for k in self.data.keys():
+        #     self._view.add_row(
+        #         k,
+        #         self.data[k]["type"],
+        #     )
+
+        # """View of the object"""
+        # with Console() as console:
+        #     console.print(self._view)
+        # return ""
+
+    def __repr__(self):
+        """View of the object"""
+        return self.__str__()
 
     def __getitem__(self, key):
         """Get object from NWB

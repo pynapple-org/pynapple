@@ -13,7 +13,7 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 
 -   Free software: MIT License
 -   __Documentation__: <https://pynapple-org.github.io/pynapple>
--   __Notebooks and tutorials__ : <https://pynapple-org.github.io/pynapple/notebooks/pynapple-quick-start/>
+-   __Notebooks and tutorials__ : <https://pynapple-org.github.io/pynapple/generated/gallery/>
 <!-- -   __Collaborative repository__: <https://github.com/PeyracheLab/pynacollada> -->
 
 
@@ -21,6 +21,24 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 > If you are using pynapple, please cite the following [biorxiv paper](https://www.biorxiv.org/content/10.1101/2022.12.06.519376v1)
 
 ------------------------------------------------------------------------
+
+:fire::fire::fire::fire::fire::fire::fire::fire: New release :fire::fire::fire::fire::fire::fire::fire::fire::fire::fire:
+---------------
+The version 0.4 of pynapple will rely on the [numpy array container](https://numpy.org/doc/stable/user/basics.dispatch.html) approach instead of Pandas. Pynapple builtin functions will remain the same except for functions inherited from Pandas. Typically this line of code in `pynapple<=0.3.6` :
+```python
+meantsd = tsdframe.mean(1)
+```
+will now be :
+```python
+meantsd = np.mean(tsdframe, 1)
+```
+in `pynapple>=0.4.0`. This allows for a better handling of returned objects.
+
+Additionaly, it is now possible to define time series objects with more than 2 dimensions with `TsdTensor`. You can also look at this [notebook](https://pynapple-org.github.io/pynapple/generated/gallery/tutorial_pynapple_numpy/) for a demonstration of numpy compatibilities.
+
+
+:fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire:
+---------------
 
 Getting Started
 ---------------

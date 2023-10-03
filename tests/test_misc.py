@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-07-10 12:26:20
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-10 18:14:22
+# @Last Modified time: 2023-09-18 16:05:24
 
 """Tests of IO misc functions"""
 
@@ -33,7 +33,7 @@ def test_load_file(path):
     tsd2 = nap.load_file(file_path)
 
     assert isinstance(tsd2, nap.Tsd)
-    np.testing.assert_array_equal(tsd.index.values, tsd2.index.values)
+    np.testing.assert_array_equal(tsd.index, tsd2.index)
     np.testing.assert_array_equal(tsd.values, tsd2.values)
     np.testing.assert_array_equal(tsd.time_support.values, tsd2.time_support.values)
 

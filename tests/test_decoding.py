@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-03-30 11:16:39
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-12-02 11:56:11
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-18 14:30:10
 #!/usr/bin/env python
 
 """Tests of decoding for `pynapple` package."""
@@ -157,7 +157,7 @@ def test_decode_2d_with_dict():
     tmp[51:100:2, 1] = 1
     np.testing.assert_array_almost_equal(proba[:, :, 1], tmp)
 
-def test_decode_1d_with_feature():
+def test_decode_2d_with_feature():
     features, group, tc, ep, xy = get_testing_set_2d()
     decoded, proba = nap.decode_2d(tc, group, ep, 1, xy)
     np.testing.assert_array_almost_equal(features.values, decoded.values)

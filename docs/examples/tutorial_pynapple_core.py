@@ -26,7 +26,7 @@ sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_par
 # Time series object
 # ------------------
 #
-# Let's create a Tsd object with artificial data. In this example, every time point is 1 second apart. A Tsd object is a wrapper of a [pandas series](https://pandas.pydata.org/docs/reference/series.html).
+# Let's create a Tsd object with artificial data. In this example, every time point is 1 second apart.
 
 
 tsd = nap.Tsd(t=np.arange(100), d=np.random.rand(100), time_units="s")
@@ -54,6 +54,16 @@ tsdframe = nap.TsdFrame(
 )
 
 print(tsdframe)
+
+# %%
+# And if the number of dimension is even larger, we can use the TsdTensor (typically movies).
+
+tsdframe = nap.TsdTensor(
+    t=np.arange(100), d=np.random.rand(100, 3, 4)
+)
+
+print(tsdframe)
+
 
 # %%
 # ***

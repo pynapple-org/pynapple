@@ -104,10 +104,10 @@ session["derivatives"].doc("position")
 #
 # In this case, we define a new Tsd and a new IntervalSet that we would like to save in the session folder.
 
-tsd = position["x"] + position["y"]
+tsd = position["x"] + 1
 epoch = nap.IntervalSet(start=np.array([0, 3]), end=np.array([1, 6]))
 
-session.save("x_plus_y", tsd, description="Random position")
+session.save("x_plus_1", tsd, description="Random position")
 session.save("stimulus-fish", epoch, description="Fish pictures to V1")
 
 # %%
@@ -119,4 +119,4 @@ session.expand()
 session.doc("stimulus-fish")
 
 # %%
-session["x_plus_y"]
+session["x_plus_1"]

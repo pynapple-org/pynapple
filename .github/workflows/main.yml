@@ -24,7 +24,7 @@ jobs:
       - name: Lint
         run: |
           black --check pynapple
-          isort --check pynapple
+          isort --check pynapple --profile black
           flake8 pynapple --max-complexity 10
           
   test:

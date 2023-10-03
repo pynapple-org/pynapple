@@ -11,7 +11,7 @@ with open('README.md') as readme_file:
 #     history = history_file.read()
 
 requirements = [
-    'pandas>=1.0.3,<2.0.0',
+    'pandas>=1.0.3',
     'numba>=0.46.0',
     'numpy>=1.17.4',
     'scipy>=1.3.2',
@@ -61,8 +61,8 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/pynapple-org/pynapple',
-    version='v0.3.6',
+    version='v0.4.0a1',
     zip_safe=False,
     long_description_content_type='text/markdown',
-    download_url='https://github.com/pynapple-org/pynapple/archive/refs/tags/v0.3.5.tar.gz'
+    download_url='https://github.com/pynapple-org/pynapple/archive/refs/tags/v0.4.0a1.tar.gz'
 )

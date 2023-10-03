@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date:   2022-01-25 21:50:48
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-10 12:19:27
+# @Last Modified time: 2023-09-21 16:01:25
 
 """
 """
@@ -15,7 +15,9 @@ import pandas as pd
 from numba import jit
 
 from .jitted_functions import jitdiff, jitin_interval, jitintersect, jitunion
-from .time_units import format_timestamps, return_timestamps, sort_timestamps
+
+# from .time_units import format_timestamps, return_timestamps, sort_timestamps
+from .time_index import TsIndex
 
 all_warnings = np.array(
     [
@@ -153,8 +155,12 @@ class IntervalSet(pd.DataFrame):
             start = df["start"].values.astype(np.float64)
             end = df["end"].values.astype(np.float64)
 
-            start = sort_timestamps(format_timestamps(start.ravel(), time_units))
-            end = sort_timestamps(format_timestamps(end.ravel(), time_units))
+            start = TsIndex.sort_timestamps(
+                TsIndex.format_timestamps(start.ravel(), time_units)
+            )
+            end = TsIndex.sort_timestamps(
+                TsIndex.format_timestamps(end.ravel(), time_units)
+            )
 
             data, to_warn = jitfix_iset(start, end)
             if np.any(to_warn):
@@ -169,8 +175,8 @@ class IntervalSet(pd.DataFrame):
         start = np.array(start).astype(np.float64)
         end = np.array(end).astype(np.float64)
 
-        start = format_timestamps(np.array(start).ravel(), time_units)
-        end = format_timestamps(np.array(end).ravel(), time_units)
+        start = TsIndex.format_timestamps(np.array(start).ravel(), time_units)
+        end = TsIndex.format_timestamps(np.array(end).ravel(), time_units)
 
         if len(start) != len(end):
             raise RuntimeError("Starts end ends are not of the same length")
@@ -228,7 +234,7 @@ class IntervalSet(pd.DataFrame):
             _
         """
         tot_l = (self["end"] - self["start"]).sum()
-        return return_timestamps(np.array([tot_l]), time_units)[0]
+        return TsIndex.return_timestamps(np.array([tot_l]), time_units)[0]
 
     def intersect(self, a):
         """
@@ -309,7 +315,7 @@ class IntervalSet(pd.DataFrame):
         out: numpy.ndarray
             an array with the interval index labels for each time stamp (NaN) for timestamps not in IntervalSet
         """
-        times = tsd.index.values
+        times = tsd.index
         starts = self.values[:, 0]
         ends = self.values[:, 1]
 
@@ -331,7 +337,7 @@ class IntervalSet(pd.DataFrame):
         out: IntervalSet
             A copied IntervalSet with the dropped intervals
         """
-        threshold = format_timestamps(
+        threshold = TsIndex.format_timestamps(
             np.array([threshold], dtype=np.float64), time_units
         )[0]
         return self.loc[(self["end"] - self["start"]) > threshold].reset_index(
@@ -354,7 +360,7 @@ class IntervalSet(pd.DataFrame):
         out: IntervalSet
             A copied IntervalSet with the dropped intervals
         """
-        threshold = format_timestamps(
+        threshold = TsIndex.format_timestamps(
             np.array([threshold], dtype=np.float64), time_units
         )[0]
         return self.loc[(self["end"] - self["start"]) < threshold].reset_index(
@@ -377,7 +383,7 @@ class IntervalSet(pd.DataFrame):
         """
 
         data = self.values.copy()
-        data = return_timestamps(data, units)
+        data = TsIndex.return_timestamps(data, units)
         if units == "us":
             data = data.astype(np.int64)
 
@@ -405,7 +411,7 @@ class IntervalSet(pd.DataFrame):
         if len(self) == 0:
             return IntervalSet(start=[], end=[])
 
-        threshold = format_timestamps(
+        threshold = TsIndex.format_timestamps(
             np.array((threshold,), dtype=np.float64).ravel(), time_units
         )[0]
         start = self["start"].values

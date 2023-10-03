@@ -1,4 +1,6 @@
 """
+> :warning: **DEPRECATED**: This will be removed in version 1.0.0. Check [nwbmatic](https://github.com/pynapple-org/nwbmatic) or [neuroconv](https://github.com/catalystneuro/neuroconv) instead.
+
 Class and functions for loading data processed with Phy2
 
 @author: Sara Mahallati, Guillaume Viejo

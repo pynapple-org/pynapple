@@ -28,6 +28,24 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 
 ------------------------------------------------------------------------
 
+:fire::fire::fire::fire::fire::fire::fire::fire: New release :fire::fire::fire::fire::fire::fire::fire::fire::fire::fire:
+---------------
+The version 0.4 of pynapple will rely on the [numpy array container](https://numpy.org/doc/stable/user/basics.dispatch.html) approach instead of Pandas. Pynapple builtin functions will remain the same except for functions inherited from Pandas. Typically this line of code in `pynapple<=0.3.6` :
+```python
+meantsd = tsdframe.mean(1)
+```
+will now be :
+```python
+meantsd = np.mean(tsdframe, 1)
+```
+in `pynapple>=0.4.0`. This allows for a better handling of returned objects.
+
+Additionaly, it is now possible to define time series objects with more than 2 dimensions with `TsdTensor`. You can also look at this [notebook](https://pynapple-org.github.io/pynapple/generated/gallery/tutorial_pynapple_numpy/) for a demonstration of numpy compatibilities.
+
+
+:fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire:
+---------------
+
 Getting Started
 ---------------
 

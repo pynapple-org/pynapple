@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-04-04 21:32:10
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-08-07 22:57:50
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-18 10:28:42
 
 """Tests of nwb reading for `pynapple` package."""
 
@@ -132,7 +132,7 @@ def test_add_TimeSeries():
     assert "TimeSeries" in nwb.keys()
     assert isinstance(nwb["TimeSeries"], nap.Tsd)
     tsd = nwb["TimeSeries"]
-    np.testing.assert_array_almost_equal(tsd.index.values, np.arange(0, 0.4, 0.1))
+    np.testing.assert_array_almost_equal(tsd.index, np.arange(0, 0.4, 0.1))
     np.testing.assert_array_almost_equal(tsd.values, np.arange(1, 5))
 
     # Tsd with timestamps
@@ -145,7 +145,7 @@ def test_add_TimeSeries():
     assert "TimeSeries" in nwb.keys()
     assert isinstance(nwb["TimeSeries"], nap.Tsd)
     tsd = nwb["TimeSeries"]
-    np.testing.assert_array_almost_equal(tsd.index.values, np.arange(10))
+    np.testing.assert_array_almost_equal(tsd.index, np.arange(10))
     np.testing.assert_array_almost_equal(tsd.values, np.arange(10))
 
 
@@ -159,7 +159,7 @@ def test_add_TimeSeries():
     assert "TimeSeries" in nwb.keys()
     assert isinstance(nwb["TimeSeries"], nap.TsdFrame)
     tsdframe = nwb["TimeSeries"]
-    np.testing.assert_array_almost_equal(tsdframe.index.values, np.arange(0, 1.0, 0.1))
+    np.testing.assert_array_almost_equal(tsdframe.index, np.arange(0, 1.0, 0.1))
     np.testing.assert_array_almost_equal(tsdframe.values, np.zeros((10, 3)))
 
 
@@ -242,7 +242,7 @@ def test_add_Ecephys():
         obj = nwbfile.acquisition["ElectricalSeries"]
         np.testing.assert_array_almost_equal(data.values, obj.data[:])
         np.testing.assert_array_almost_equal(
-            data.index.values, obj.starting_time + np.arange(obj.num_samples) / obj.rate
+            data.index, obj.starting_time + np.arange(obj.num_samples) / obj.rate
         )
         np.testing.assert_array_almost_equal(data.columns.values, obj.electrodes["id"][:])
 
@@ -258,7 +258,7 @@ def test_add_Ecephys():
         obj = nwbfile.acquisition["ElectricalSeries"]
         np.testing.assert_array_almost_equal(data.values, obj.data[:])
         np.testing.assert_array_almost_equal(
-            data.index.values, obj.starting_time + np.arange(obj.num_samples) / obj.rate
+            data.index, obj.starting_time + np.arange(obj.num_samples) / obj.rate
         )
         np.testing.assert_array_almost_equal(data.columns.values, np.arange(obj.data.shape[1]))
 
@@ -273,7 +273,7 @@ def test_add_Ecephys():
         assert isinstance(data, nap.TsdFrame)
         obj = nwbfile.acquisition["SpikeEventSeries"]
         np.testing.assert_array_almost_equal(data.values, obj.data[:])
-        np.testing.assert_array_almost_equal(data.index.values, obj.timestamps[:])
+        np.testing.assert_array_almost_equal(data.index, obj.timestamps[:])
         np.testing.assert_array_almost_equal(data.columns.values, obj.electrodes["id"][:])
 
 
@@ -324,7 +324,7 @@ def test_add_Icephys():
                 obj = nwbfile.acquisition[name]
                 np.testing.assert_array_almost_equal(data.values, obj.data[:])
                 np.testing.assert_array_almost_equal(
-                    data.index.values,
+                    data.index,
                     obj.starting_time + np.arange(obj.num_samples) / obj.rate,
                 )
     except:
@@ -355,7 +355,7 @@ def test_add_Ogen():
     obj = nwbfile.acquisition["OptogeneticSeries"]
     np.testing.assert_array_almost_equal(data.values, obj.data[:])
     np.testing.assert_array_almost_equal(
-        data.index.values, obj.starting_time + np.arange(obj.num_samples) / obj.rate
+        data.index, obj.starting_time + np.arange(obj.num_samples) / obj.rate
     )
 
 
@@ -403,7 +403,7 @@ def test_add_Ophys():
                     obj = nwbfile.acquisition[list(nwbfile.acquisition.keys())[0]]
                 np.testing.assert_array_almost_equal(data.values, obj.data[:])
                 np.testing.assert_array_almost_equal(
-                    data.index.values,
+                    data.index,
                     obj.starting_time + np.arange(obj.num_samples) / obj.rate,
                 )
                 np.testing.assert_array_almost_equal(data.columns.values, obj.rois["id"][:])
@@ -527,7 +527,7 @@ def test_add_Units():
     assert isinstance(data, nap.TsGroup)
     assert len(data) == n_units
     for n in data.keys():
-        np.testing.assert_array_almost_equal(data[n].index.values, spks[n])
+        np.testing.assert_array_almost_equal(data[n].index, spks[n])
 
     np.testing.assert_array_equal(data._metadata["quality"].values, np.array(["good"]*n_units))
     np.testing.assert_array_equal(data._metadata["alpha"].values, alpha)
@@ -545,7 +545,7 @@ def test_add_Timestamps():
     data = nwb['test_ts']
     assert isinstance(data, nap.Ts)
     assert len(data) == 100
-    np.testing.assert_array_almost_equal(data.index.values, np.arange(100))
+    np.testing.assert_array_almost_equal(data.index, np.arange(100))
 
     # One ts only 
     nwbfile = mock_NWBFile()    
@@ -571,7 +571,7 @@ def test_add_Timestamps():
     data = nwb['test_ts']
     assert isinstance(data, nap.Ts)
     assert len(data) == 10
-    np.testing.assert_array_almost_equal(data.index.values, np.arange(10))
+    np.testing.assert_array_almost_equal(data.index, np.arange(10))
 
     # Multiple ts
     nwbfile = mock_NWBFile()
@@ -604,5 +604,5 @@ def test_add_Timestamps():
     assert isinstance(data, dict)
     assert len(data) == 2
     for i, k in enumerate(data.keys()):
-        np.testing.assert_array_almost_equal(data[k].index.values, np.arange(10)+i)
+        np.testing.assert_array_almost_equal(data[k].index, np.arange(10)+i)
 

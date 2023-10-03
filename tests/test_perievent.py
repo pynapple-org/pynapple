@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-03-30 11:16:53
-# @Last Modified by:   gviejo
-# @Last Modified time: 2022-12-02 11:59:56
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-09-18 16:04:02
 #!/usr/bin/env python
 
 """Tests of perievent for `pynapple` package."""
@@ -21,7 +21,7 @@ def test_align_tsd():
     assert len(peth) == len(tref)
     assert isinstance(peth, nap.TsGroup)
     for i, j in zip(peth.keys(), np.arange(0, 100, 10)):
-        np.testing.assert_array_almost_equal(peth[i].index.values, np.arange(-10, 10))
+        np.testing.assert_array_almost_equal(peth[i].index, np.arange(-10, 10))
 
 
 def test_compute_perievent_with_tsd():
@@ -32,10 +32,10 @@ def test_compute_perievent_with_tsd():
     assert isinstance(peth, nap.TsGroup)
     assert len(peth) == len(tref)
     np.testing.assert_array_almost_equal(
-        peth.get_info("ref_times").values, tref.index.values
+        peth.get_info("ref_times").values, tref.index
     )
     for i, j in zip(peth.keys(), np.arange(0, 100, 10)):
-        np.testing.assert_array_almost_equal(peth[i].index.values, np.arange(-10, 10))
+        np.testing.assert_array_almost_equal(peth[i].index, np.arange(-10, 10))
         np.testing.assert_array_almost_equal(peth[i].values, np.arange(j, j + 20))
 
 def test_compute_perievent_minmax():
@@ -46,10 +46,10 @@ def test_compute_perievent_minmax():
     assert isinstance(peth, nap.TsGroup)
     assert len(peth) == len(tref)
     np.testing.assert_array_almost_equal(
-        peth.get_info("ref_times").values, tref.index.values
+        peth.get_info("ref_times").values, tref.index
     )
     for i, j in zip(peth.keys(), np.arange(0, 100, 10)):
-        np.testing.assert_array_almost_equal(peth[i].index.values, np.arange(-10, 10))
+        np.testing.assert_array_almost_equal(peth[i].index, np.arange(-10, 10))
         np.testing.assert_array_almost_equal(peth[i].values, np.arange(j, j + 20))
 
 def test_compute_perievent_raise_error():
@@ -77,11 +77,11 @@ def test_compute_perievent_with_tsgroup():
     for i in peth.keys():
         assert len(peth[i]) == len(tref)
         np.testing.assert_array_almost_equal(
-            peth[i].get_info("ref_times").values, tref.index.values
+            peth[i].get_info("ref_times").values, tref.index
         )
         for j, k in zip(peth[i].keys(), np.arange(0, 100, 10)):
             np.testing.assert_array_almost_equal(
-                peth[i][j].index.values, np.arange(-10, 10)
+                peth[i][j].index, np.arange(-10, 10)
             )
 
 def test_compute_perievent_time_units():
@@ -92,5 +92,5 @@ def test_compute_perievent_time_units():
             tsd, tref, minmax=(-10 * fa, 10 * fa), time_unit=tu
         )
         for i, j in zip(peth.keys(), np.arange(0, 100, 10)):
-            np.testing.assert_array_almost_equal(peth[i].index.values, np.arange(-10, 10))
+            np.testing.assert_array_almost_equal(peth[i].index, np.arange(-10, 10))
             np.testing.assert_array_almost_equal(peth[i].values, np.arange(j, j + 20))
