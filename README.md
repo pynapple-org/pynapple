@@ -42,6 +42,13 @@ in `pynapple>=0.4.0`. This allows for a better handling of returned objects.
 
 Additionaly, it is now possible to define time series objects with more than 2 dimensions with `TsdTensor`. You can also look at this [notebook](https://pynapple-org.github.io/pynapple/generated/gallery/tutorial_pynapple_numpy/) for a demonstration of numpy compatibilities.
 
+To install the pre-release version: 
+
+``` {.sourceCode .shell}
+$ conda create --name pynapple pip python=3.8
+$ conda activate pynapple
+$ pip install --pre pynapple
+```
 
 :fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire::fire:
 ---------------
