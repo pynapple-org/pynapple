@@ -6,11 +6,11 @@ Advanced processing
 
 The pynapple package provides a small set of high-level functions that are widely used in systems neuroscience.
 
-- [Discrete correlograms](https://peyrachelab.github.io/pynapple/process.correlograms/)
-- [Tuning curves](https://peyrachelab.github.io/pynapple/process.tuning_curves/)
-- [Decoding](https://peyrachelab.github.io/pynapple/process.decoding/)
-- [PETH](https://peyrachelab.github.io/pynapple/process.perievent/)
-- [Randomization](https://peyrachelab.github.io/pynapple/process.randomize/)
+- Discrete correlograms
+- Tuning curves
+- Decoding
+- PETH
+- Randomization
 
 This notebook provides few examples with artificial data.
 """
