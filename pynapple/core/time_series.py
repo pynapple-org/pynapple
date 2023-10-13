@@ -138,14 +138,14 @@ class _AbstractTsd(abc.ABC):
     Abstract class for Tsd class.
     Implement shared functions across concrete classes.
     """
-    
+
     _initialized = False
 
-    def __init__(self):        
+    def __init__(self):
         self.rate = np.NaN
         self.index = TsIndex(np.empty(0))
         self.values = np.empty(0)
-        self.time_support = IntervalSet(start=[], end=[])        
+        self.time_support = IntervalSet(start=[], end=[])
 
     @property
     def t(self):
@@ -220,10 +220,13 @@ class _AbstractTsd(abc.ABC):
         return len(self.index)
 
     def __setattr__(self, name, value):
-        """Object is immutable
-        """
+        """Object is immutable"""
         if self._initialized:
-            raise RuntimeError("Changing directly attributes is not permitted for {}.".format(self.nap_class))
+            raise RuntimeError(
+                "Changing directly attributes is not permitted for {}.".format(
+                    self.nap_class
+                )
+            )
         else:
             object.__setattr__(self, name, value)
 
@@ -910,8 +913,8 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
         Frequency of the time series (Hz) computed over the time support
     time_support : IntervalSet
         The time support of the time series
-    """ 
-    
+    """
+
     def __init__(self, t, d=None, time_units="s", time_support=None, columns=None):
         """
         TsdFrame initializer
@@ -929,7 +932,7 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
             The time support of the TsdFrame object
         columns : iterables
             Column names
-        """        
+        """
         if isinstance(t, np.ndarray) and d is None:
             raise RuntimeError("Missing argument d when initializing TsdFrame")
 
