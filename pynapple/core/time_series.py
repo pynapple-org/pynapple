@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-10-03 17:45:42
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-10-13 11:19:12
 
 """
 
@@ -116,8 +116,13 @@ class _TsdFrameSliceHelper:
 
     def __getitem__(self, key):
         if hasattr(key, "__iter__") and not isinstance(key, str):
+            for k in key:
+                if k not in self.tsdframe.columns:
+                    raise IndexError(str(k))
             index = self.tsdframe.columns.get_indexer(key)
         else:
+            if key not in self.tsdframe.columns:
+                raise IndexError(str(key))
             index = self.tsdframe.columns.get_indexer([key])
 
         if len(index) == 1:
@@ -133,12 +138,14 @@ class _AbstractTsd(abc.ABC):
     Abstract class for Tsd class.
     Implement shared functions across concrete classes.
     """
+    
+    _initialized = False
 
-    def __init__(self):
+    def __init__(self):        
         self.rate = np.NaN
         self.index = TsIndex(np.empty(0))
         self.values = np.empty(0)
-        self.time_support = IntervalSet(start=[], end=[])
+        self.time_support = IntervalSet(start=[], end=[])        
 
     @property
     def t(self):
@@ -211,6 +218,14 @@ class _AbstractTsd(abc.ABC):
 
     def __len__(self):
         return len(self.index)
+
+    def __setattr__(self, name, value):
+        """Object is immutable
+        """
+        if self._initialized:
+            raise RuntimeError("Changing directly attributes is not permitted for {}.".format(self.nap_class))
+        else:
+            object.__setattr__(self, name, value)
 
     def __array_ufunc__(self, ufunc, method, *args, **kwargs):
         # print("In __array_ufunc__")
@@ -777,6 +792,7 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
 
         self.nap_class = self.__class__.__name__
         self.dtype = self.values.dtype
+        self._initialized = True
 
     def __repr__(self):
         headers = ["Time (s)", ""]
@@ -894,8 +910,8 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
         Frequency of the time series (Hz) computed over the time support
     time_support : IntervalSet
         The time support of the time series
-    """
-
+    """ 
+    
     def __init__(self, t, d=None, time_units="s", time_support=None, columns=None):
         """
         TsdFrame initializer
@@ -913,7 +929,7 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
             The time support of the TsdFrame object
         columns : iterables
             Column names
-        """
+        """        
         if isinstance(t, np.ndarray) and d is None:
             raise RuntimeError("Missing argument d when initializing TsdFrame")
 
@@ -974,6 +990,7 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
         self.dtype = self.values.dtype
+        self._initialized = True
 
     @property
     def loc(self):
@@ -1235,6 +1252,7 @@ class Tsd(NDArrayOperatorsMixin, _AbstractTsd):
 
         self.nap_class = self.__class__.__name__
         self.dtype = self.values.dtype
+        self._initialized = True
 
     def __repr__(self):
         headers = ["Time (s)", ""]
@@ -1258,7 +1276,7 @@ class Tsd(NDArrayOperatorsMixin, _AbstractTsd):
                     for i, v in zip(self.index[0:5], self.values[0:5]):
                         table.append([i, v])
                     table.append(["..."])
-                    for i, array in zip(self.index[-5:], self.values[-5:]):
+                    for i, v in zip(self.index[-5:], self.values[-5:]):
                         table.append([i, v])
 
                     return (
@@ -1576,6 +1594,7 @@ class Ts(_AbstractTsd):
 
         self.values = None
         self.nap_class = self.__class__.__name__
+        self._initialized = True
 
     def __repr__(self):
         upper = "Time (s)"
