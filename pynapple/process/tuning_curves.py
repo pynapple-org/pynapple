@@ -4,14 +4,12 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-10-13 11:23:31
+# @Last Modified time: 2023-10-13 11:39:37
 
 import warnings
 
 import numpy as np
 import pandas as pd
-
-# from scipy.linalg import hankel
 
 from .. import core as nap
 
