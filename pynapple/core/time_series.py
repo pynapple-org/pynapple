@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-10-13 11:19:12
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-10-13 17:16:22
 
 """
 
@@ -718,6 +718,37 @@ class _AbstractTsd(abc.ABC):
         return self.__class__(
             t=self.index.copy(), d=self.values.copy(), time_support=self.time_support
         )
+
+    def find_support(self, min_gap, time_units = "s"):
+        """
+        find the smallest (to a min_gap resolution) IntervalSet containing all the times in the Tsd
+        
+        Parameters
+        ----------
+        min_gap : float
+            minimal interval between timestamps 
+        time_units : str, optional
+            Time units of min gap
+                
+        Returns
+        -------
+        IntervalSet
+            Description
+        """
+        assert isinstance(min_gap, Number), "min_gap should be a float or int"
+        min_gap = TsIndex.format_timestamps(np.array([min_gap]), time_units)[0]
+        time_array = self.index.values
+
+        starts = [time_array[0]]
+        ends = []        
+        for i in range(len(time_array)-1):
+            if (time_array[i+1] - time_array[i]) > min_gap:
+                ends.append(time_array[i]+1e-6)
+                starts.append(time_array[i+1])
+        
+        ends.append(time_array[-1]+1e-6)
+
+        return IntervalSet(start = starts, end = ends)
 
 
 class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
@@ -1779,22 +1810,3 @@ class Ts(_AbstractTsd):
     #     s, e = jitfind_gaps(time_array, starts, ends, min_gap)
 
     #     return nap.IntervalSet(s, e)
-
-    # def find_support(self, min_gap, method="absolute"):
-    #     """
-    #     find the smallest (to a min_gap resolution) IntervalSet containing all the times in the Tsd
-
-    #     Parameters
-    #     ----------
-    #     min_gap : float
-    #         Description
-    #     method : str, optional
-    #         Description
-
-    #     Returns
-    #     -------
-    #     TYPE
-    #         Description
-    #     """
-    #     print("TODO")
-    #     return
