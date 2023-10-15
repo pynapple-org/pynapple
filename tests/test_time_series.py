@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-25 16:01:32
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-10-15 16:14:49
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -213,6 +213,42 @@ def test_index_error():
     with pytest.raises(IndexError):
         ts[1000]
 
+def test_find_support():
+    tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
+    ep = tsd.find_support(1.0)
+    assert ep.loc[0, 'start'] == 0
+    assert ep.loc[0, 'end'] == 99.0 + 1e-6
+
+    t = np.hstack((np.arange(10), np.arange(20, 30)))
+    tsd = nap.Tsd(t=t, d=np.arange(20))
+    ep = tsd.find_support(1.0)
+    np.testing.assert_array_equal(ep.start.values, np.array([0.0, 20.0]))
+    np.testing.assert_array_equal(ep.end.values, np.array([9.0+1e-6, 29+1e-6]))
+
+def test_properties():
+    t = np.arange(100)
+    d = np.random.rand(100)
+    tsd = nap.Tsd(t=t, d = d)
+
+    assert hasattr(tsd, "t")
+    assert hasattr(tsd, "d")
+    assert hasattr(tsd, "start")
+    assert hasattr(tsd, "end")
+    assert hasattr(tsd, "shape")
+    assert hasattr(tsd, "ndim")
+    assert hasattr(tsd, "size")
+    assert hasattr(tsd, "min")
+    assert hasattr(tsd, "max")
+
+    np.testing.assert_array_equal(tsd.t, t)
+    np.testing.assert_array_equal(tsd.d, d)
+    assert tsd.start == 0.0
+    assert tsd.end == 99.0
+    assert tsd.shape == (100,)
+    assert tsd.ndim == 1
+    assert tsd.size == 100
+    assert tsd.min == d.min()
+    assert tsd.max == d.max()
 
 ####################################################
 # General test for time series

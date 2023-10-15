@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 # @Date:   2022-01-25 21:50:48
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-21 16:01:25
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-10-15 16:18:42
 
 """
 """
@@ -15,8 +15,6 @@ import pandas as pd
 from numba import jit
 
 from .jitted_functions import jitdiff, jitin_interval, jitintersect, jitunion
-
-# from .time_units import format_timestamps, return_timestamps, sort_timestamps
 from .time_index import TsIndex
 
 all_warnings = np.array(

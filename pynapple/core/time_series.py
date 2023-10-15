@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-10-13 17:16:22
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-10-15 15:59:00
 
 """
 
@@ -170,6 +170,18 @@ class _AbstractTsd(abc.ABC):
     @property
     def ndim(self):
         return self.values.ndim
+
+    @property
+    def size(self):
+        return self.values.size
+
+    @property
+    def min(self):
+        return self.values.min()
+
+    @property
+    def max(self):
+        return self.values.max()
 
     def __repr__(self):
         return str(self.__class__)
@@ -719,17 +731,17 @@ class _AbstractTsd(abc.ABC):
             t=self.index.copy(), d=self.values.copy(), time_support=self.time_support
         )
 
-    def find_support(self, min_gap, time_units = "s"):
+    def find_support(self, min_gap, time_units="s"):
         """
         find the smallest (to a min_gap resolution) IntervalSet containing all the times in the Tsd
-        
+
         Parameters
         ----------
         min_gap : float
-            minimal interval between timestamps 
+            minimal interval between timestamps
         time_units : str, optional
             Time units of min gap
-                
+
         Returns
         -------
         IntervalSet
@@ -740,15 +752,15 @@ class _AbstractTsd(abc.ABC):
         time_array = self.index.values
 
         starts = [time_array[0]]
-        ends = []        
-        for i in range(len(time_array)-1):
-            if (time_array[i+1] - time_array[i]) > min_gap:
-                ends.append(time_array[i]+1e-6)
-                starts.append(time_array[i+1])
-        
-        ends.append(time_array[-1]+1e-6)
+        ends = []
+        for i in range(len(time_array) - 1):
+            if (time_array[i + 1] - time_array[i]) > min_gap:
+                ends.append(time_array[i] + 1e-6)
+                starts.append(time_array[i + 1])
 
-        return IntervalSet(start = starts, end = ends)
+        ends.append(time_array[-1] + 1e-6)
+
+        return IntervalSet(start=starts, end=ends)
 
 
 class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
