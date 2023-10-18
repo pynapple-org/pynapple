@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-10-15 16:14:49
+# @Last Modified time: 2023-10-18 11:18:07
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -237,8 +237,6 @@ def test_properties():
     assert hasattr(tsd, "shape")
     assert hasattr(tsd, "ndim")
     assert hasattr(tsd, "size")
-    assert hasattr(tsd, "min")
-    assert hasattr(tsd, "max")
 
     np.testing.assert_array_equal(tsd.t, t)
     np.testing.assert_array_equal(tsd.d, d)
@@ -247,8 +245,6 @@ def test_properties():
     assert tsd.shape == (100,)
     assert tsd.ndim == 1
     assert tsd.size == 100
-    assert tsd.min == d.min()
-    assert tsd.max == d.max()
 
 ####################################################
 # General test for time series

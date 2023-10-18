@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-10-15 15:59:00
+# @Last Modified time: 2023-10-18 11:16:43
 
 """
 
@@ -174,14 +174,6 @@ class _AbstractTsd(abc.ABC):
     @property
     def size(self):
         return self.values.size
-
-    @property
-    def min(self):
-        return self.values.min()
-
-    @property
-    def max(self):
-        return self.values.max()
 
     def __repr__(self):
         return str(self.__class__)
