@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Guillaume Viejo
 # @Date:   2023-08-01 11:54:45
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-26 15:41:04
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-10-19 12:16:55
 
 """
 Pynapple class to interface with NWB files.
@@ -212,7 +212,11 @@ def _make_tsd_frame(obj):
     elif isinstance(obj, pynwb.ecephys.ElectricalSeries):
         # (channel mapping)
         try:
-            columns = obj.electrodes["id"][:]
+            df = obj.electrodes.to_dataframe()
+            if hasattr(df, "label"):
+                columns = df["label"].values
+            else:
+                columns = df.index.values
         except Exception:
             columns = np.arange(obj.data.shape[1])
 
