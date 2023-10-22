@@ -47,7 +47,7 @@ setup(
     ],
     description="PYthon Neural Analysis Package Pour Laboratoires d’Excellence",
     install_requires=requirements,
-    license="GNU General Public License v3",
+    license="MIT License",
     # long_description='pynapple is a Python library for analysing neurophysiological data. It allows to handle time series and epochs but also to use generic functions for neuroscience such as tuning curves and cross-correlogram of spikes. It is heavily based on neuroseries.' 
     # + '\n\n' + history,
     long_description=readme,
@@ -61,8 +61,8 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/pynapple-org/pynapple',
-    version='v0.4.0a1',
+    version='v0.4.0',
     zip_safe=False,
     long_description_content_type='text/markdown',
-    download_url='https://github.com/pynapple-org/pynapple/archive/refs/tags/v0.4.0a1.tar.gz'
+    download_url='https://github.com/pynapple-org/pynapple/archive/refs/tags/v0.4.0.tar.gz'
 )
