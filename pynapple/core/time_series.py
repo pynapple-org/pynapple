@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-10-18 11:16:43
+# @Last Modified time: 2023-10-27 14:26:55
 
 """
 
@@ -729,7 +729,7 @@ class _AbstractTsd(abc.ABC):
 
         Parameters
         ----------
-        min_gap : float
+        min_gap : float or int
             minimal interval between timestamps
         time_units : str, optional
             Time units of min gap
@@ -753,6 +753,27 @@ class _AbstractTsd(abc.ABC):
         ends.append(time_array[-1] + 1e-6)
 
         return IntervalSet(start=starts, end=ends)
+
+    def get(self, start, end, time_units="s"):
+        """Slice the time series from start to end such that all the timestamps satisfy start<=t<=end.
+    
+        By default, the time support doesn't change. If you want to change the 
+
+        Parameters
+        ----------
+        start : float or int
+            The start 
+        end : float or int
+            The end
+        """
+        assert isinstance(start, Number), "start should be a float or int"
+        assert isinstance(end, Number), "end should be a float or int"
+        assert start < end, "Start should not precede end"
+        start, end = TsIndex.format_timestamps(np.array([start, end]), time_units)
+        time_array = self.index.values
+        idx_start = np.searchsorted(time_array, start)
+        idx_end = np.searchsorted(time_array, end, side='right')
+        return self[idx_start:idx_end]
 
 
 class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
@@ -840,9 +861,22 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
 
             def create_str(array):
                 if array.ndim == 1:
-                    return (
-                        "[" + array[0].__repr__() + " ... " + array[0].__repr__() + "]"
-                    )
+                    if len(array) > 2:
+                        return (
+                            "["
+                            + array[0].__repr__()
+                            + " ... "
+                            + array[-1].__repr__()
+                            + "]"
+                        )
+                    elif len(array) == 2:
+                        return (
+                            "[" + array[0].__repr__() + "," + array[1].__repr__() + "]"
+                        )
+                    elif len(array) == 1:
+                        return "[" + array[0].__repr__() + "]"
+                    else:
+                        return "[]"
                 else:
                     return "[" + create_str(array[0]) + " ...]"
 
