@@ -756,13 +756,13 @@ class _AbstractTsd(abc.ABC):
 
     def get(self, start, end, time_units="s"):
         """Slice the time series from start to end such that all the timestamps satisfy start<=t<=end.
-    
-        By default, the time support doesn't change. If you want to change the 
+
+        By default, the time support doesn't change. If you want to change the
 
         Parameters
         ----------
         start : float or int
-            The start 
+            The start
         end : float or int
             The end
         """
@@ -772,7 +772,7 @@ class _AbstractTsd(abc.ABC):
         start, end = TsIndex.format_timestamps(np.array([start, end]), time_units)
         time_array = self.index.values
         idx_start = np.searchsorted(time_array, start)
-        idx_end = np.searchsorted(time_array, end, side='right')
+        idx_end = np.searchsorted(time_array, end, side="right")
         return self[idx_start:idx_end]
 
 
