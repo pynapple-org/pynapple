@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-10-18 11:18:07
+# @Last Modified time: 2023-10-29 16:19:01
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -246,6 +246,25 @@ def test_properties():
     assert tsd.ndim == 1
     assert tsd.size == 100
 
+    with pytest.raises(RuntimeError):
+        tsd.rate = 0
+
+def test_abstract_class():
+    class DummyTsd(nap.core.time_series._AbstractTsd):
+        def __init__(self):
+            super().__init__()
+
+    tsd = DummyTsd()
+    assert np.isnan(tsd.rate)
+    assert isinstance(tsd.index, nap.TsIndex)
+    assert isinstance(tsd.values, np.ndarray)
+
+    # assert tsd.__repr__() == "<class '__main__.DummyTsd'>"
+
+    with pytest.raises(IndexError):
+        tsd['a']
+
+
 ####################################################
 # General test for time series
 ####################################################
@@ -347,6 +366,22 @@ class Test_Time_Series_1:
         tsd2 = tsd.restrict(ep)
         np.testing.assert_approx_equal(tsd2.time_support.start[0], ep.start[0])
         np.testing.assert_approx_equal(tsd2.time_support.end[0], ep.end[0])
+
+    def test_get(self, tsd):
+        tsd2 = tsd.get(10, 20)
+        assert len(tsd2) == 11
+        np.testing.assert_array_equal(tsd2.index.values, tsd.index.values[10:21])
+        if not isinstance(tsd, nap.Ts):
+            np.testing.assert_array_equal(tsd2.values, tsd.values[10:21])
+
+        with pytest.raises(Exception):
+            tsd.get(20, 10)
+
+        with pytest.raises(Exception):
+            tsd.get(10, [20])
+
+        with pytest.raises(Exception):
+            tsd.get([10], 20)
 
 
 ####################################################
@@ -633,6 +668,13 @@ class Test_Time_Series_3:
         tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), time_units="s", columns=['a', 'b', 'c'])
         np.testing.assert_array_almost_equal(tsdframe.values[:,0], tsdframe['a'])
         np.testing.assert_array_almost_equal(tsdframe.values[:,[0,2]], tsdframe[['a', 'c']])
+
+        with pytest.raises(Exception):
+            tsdframe['d']
+
+        with pytest.raises(Exception):
+            tsdframe[['d', 'e']]
+
 
     def test_operators(self, tsdframe):
         v = tsdframe.values
