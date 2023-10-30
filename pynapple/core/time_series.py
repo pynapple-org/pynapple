@@ -782,13 +782,13 @@ class _AbstractTsd(abc.ABC):
                     return self[idx - 1]
                 else:
                     return self[idx]
-        else:                    
+        else:
             assert isinstance(end, Number), "end should be a float or int"
             assert start < end, "Start should not precede end"
             start, end = TsIndex.format_timestamps(np.array([start, end]), time_units)
             idx_start = np.searchsorted(time_array, start)
             idx_end = np.searchsorted(time_array, end, side="right")
-            return self[idx_start:idx_end]        
+            return self[idx_start:idx_end]
 
 
 class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
