@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-10-30 15:33:46
+# @Last Modified time: 2023-10-30 16:43:22
 
 """
 
@@ -756,8 +756,9 @@ class _AbstractTsd(abc.ABC):
 
     def get(self, start, end=None, time_units="s"):
         """Slice the time series from start to end such that all the timestamps satisfy start<=t<=end.
+        If end is None, only the timepoint closest to start is returned.
 
-        By default, the time support doesn't change. If you want to change the
+        By default, the time support doesn't change. If you want to change the time support, use the restrict function.
 
         Parameters
         ----------
@@ -765,21 +766,30 @@ class _AbstractTsd(abc.ABC):
             The start
         end : float or int
             The end
-        """        
+        """
         assert isinstance(start, Number), "start should be a float or int"
         time_array = self.index.values
 
-        if isinstance(end, Number):
+        if end is None:
+            start = TsIndex.format_timestamps(np.array([start]), time_units)[0]
+            idx = np.searchsorted(time_array, start)
+            if idx == 0:
+                return self[idx]
+            elif idx >= self.shape[0]:
+                return self[-1]
+            else:
+                if start - time_array[idx - 1] < time_array[idx] - start:
+                    return self[idx - 1]
+                else:
+                    return self[idx]
+        else:                    
             assert isinstance(end, Number), "end should be a float or int"
             assert start < end, "Start should not precede end"
             start, end = TsIndex.format_timestamps(np.array([start, end]), time_units)
             idx_start = np.searchsorted(time_array, start)
             idx_end = np.searchsorted(time_array, end, side="right")
-            return self[idx_start:idx_end]
-        else:
-            start = TsIndex.format_timestamps(np.array([start]), time_units)[0]
-            idx_start = np.searchsorted(time_array, start)
-            return self[idx_start]
+            return self[idx_start:idx_end]        
+
 
 class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
     """

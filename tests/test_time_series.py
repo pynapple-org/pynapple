@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-10-29 16:19:01
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-10-30 16:39:56
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -367,7 +367,7 @@ class Test_Time_Series_1:
         np.testing.assert_approx_equal(tsd2.time_support.start[0], ep.start[0])
         np.testing.assert_approx_equal(tsd2.time_support.end[0], ep.end[0])
 
-    def test_get(self, tsd):
+    def test_get_interval(self, tsd):
         tsd2 = tsd.get(10, 20)
         assert len(tsd2) == 11
         np.testing.assert_array_equal(tsd2.index.values, tsd.index.values[10:21])
@@ -383,6 +383,15 @@ class Test_Time_Series_1:
         with pytest.raises(Exception):
             tsd.get([10], 20)
 
+    def test_get_timepoint(self, tsd):
+        if not isinstance(tsd, nap.Ts):
+            np.testing.assert_array_equal(tsd.get(-1), tsd[0])
+            np.testing.assert_array_equal(tsd.get(0), tsd[0])
+            np.testing.assert_array_equal(tsd.get(0.1), tsd[0])
+            np.testing.assert_array_equal(tsd.get(0.5), tsd[1])
+            np.testing.assert_array_equal(tsd.get(0.6), tsd[1])
+            np.testing.assert_array_equal(tsd.get(1), tsd[1])
+            np.testing.assert_array_equal(tsd.get(1000), tsd[-1])
 
 ####################################################
 # Test for tsd
