@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-10-30 16:43:22
+# @Last Modified time: 2023-10-31 19:13:54
 
 """
 
@@ -772,7 +772,7 @@ class _AbstractTsd(abc.ABC):
 
         if end is None:
             start = TsIndex.format_timestamps(np.array([start]), time_units)[0]
-            idx = np.searchsorted(time_array, start)
+            idx = int(np.searchsorted(time_array, start))
             if idx == 0:
                 return self[idx]
             elif idx >= self.shape[0]:
@@ -903,7 +903,10 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
                 for i, array in zip(self.index[0:5], self.values[0:5]):
                     _str_.append([i.__repr__(), create_str(array)])
                 _str_.append(["...", ""])
-                for i, array in zip(self.index[-5:], self.values[-5:]):
+                for i, array in zip(
+                    self.index[-5:],
+                    self.values[self.values.shape[0] - 5 : self.values.shape[0]],
+                ):
                     _str_.append([i.__repr__(), create_str(array)])
 
             return tabulate(_str_, headers=headers, colalign=("left",)) + "\n" + bottom
@@ -1109,7 +1112,12 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
                     for i, array in zip(self.index[0:5], self.values[0:5, 0:max_cols]):
                         table.append([i] + [k for k in array] + end)
                     table.append(["..."])
-                    for i, array in zip(self.index[-5:], self.values[-5:, 0:max_cols]):
+                    for i, array in zip(
+                        self.index[-5:],
+                        self.values[
+                            self.values.shape[0] - 5 : self.values.shape[0], 0:max_cols
+                        ],
+                    ):
                         table.append([i] + [k for k in array] + end)
                     return tabulate(table, headers=headers) + "\n" + bottom
                 else:
@@ -1363,7 +1371,10 @@ class Tsd(NDArrayOperatorsMixin, _AbstractTsd):
                     for i, v in zip(self.index[0:5], self.values[0:5]):
                         table.append([i, v])
                     table.append(["..."])
-                    for i, v in zip(self.index[-5:], self.values[-5:]):
+                    for i, v in zip(
+                        self.index[-5:],
+                        self.values[self.values.shape[0] - 5 : self.values.shape[0]],
+                    ):
                         table.append([i, v])
 
                     return (
