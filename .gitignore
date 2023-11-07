@@ -1,3 +1,4 @@
+*.nwb
 *.pickle
 *.py.md5
 *.npz

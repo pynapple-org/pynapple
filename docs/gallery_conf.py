@@ -2,8 +2,10 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-08-04 11:37:58
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-08-04 11:40:07
+# @Last Modified time: 2023-11-07 14:23:36
+from mkdocs_gallery.gen_gallery import DefaultResetArgv
 
 conf = {
-	"filename_pattern": "/tutorial"
+	"reset_argv": DefaultResetArgv(),
+	"filename_pattern": "/tutorial",	
 }

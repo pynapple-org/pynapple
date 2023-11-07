@@ -1,6 +1,6 @@
 # coding: utf-8
 """
-Peyrache et al (2015) Dataset Tutorial
+Peyrache et al (2015) Tutorial
 ============
 
 This tutorial demonstrates how we use Pynapple to generate Figure 4a in the [publication](https://elifesciences.org/reviewed-preprints/85786).
@@ -27,8 +27,13 @@ import pandas as pd
 import pynapple as nap
 import scipy.ndimage
 import matplotlib.pyplot as plt
+import seaborn as sns
 import requests, math, os
 import tqdm
+
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
+
 
 # %%
 # ***
