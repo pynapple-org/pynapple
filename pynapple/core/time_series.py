@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-10-31 19:13:54
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-11-08 18:44:24
 
 """
 
@@ -182,34 +182,31 @@ class _AbstractTsd(abc.ABC):
         return self.__repr__()
 
     def __getitem__(self, key, *args, **kwargs):
-        try:
-            output = self.values.__getitem__(key)
-            if isinstance(key, tuple):
-                index = self.index.__getitem__(key[0])
-            else:
-                index = self.index.__getitem__(key)
+        output = self.values.__getitem__(key)
+        if isinstance(key, tuple):
+            index = self.index.__getitem__(key[0])
+        else:
+            index = self.index.__getitem__(key)
 
-            if isinstance(index, Number):
-                index = np.array([index])
+        if isinstance(index, Number):
+            index = np.array([index])
 
-            if all(isinstance(a, np.ndarray) for a in [index, output]):
-                if output.shape[0] == index.shape[0]:
-                    if output.ndim == 1:
-                        return Tsd(t=index, d=output, time_support=self.time_support)
-                    elif output.ndim == 2:
-                        return TsdFrame(
-                            t=index, d=output, time_support=self.time_support, **kwargs
-                        )
-                    else:
-                        return TsdTensor(
-                            t=index, d=output, time_support=self.time_support
-                        )
+        if all(isinstance(a, np.ndarray) for a in [index, output]):
+            if output.shape[0] == index.shape[0]:
+                if output.ndim == 1:
+                    return Tsd(t=index, d=output, time_support=self.time_support)
+                elif output.ndim == 2:
+                    return TsdFrame(
+                        t=index, d=output, time_support=self.time_support, **kwargs
+                    )
                 else:
-                    return output
+                    return TsdTensor(
+                        t=index, d=output, time_support=self.time_support
+                    )
             else:
                 return output
-        except RuntimeError:
-            raise IndexError
+        else:
+            return output
 
     def __setitem__(self, key, value):
         try:
@@ -264,17 +261,18 @@ class _AbstractTsd(abc.ABC):
                     if out.ndim == 1:
                         return Tsd(t=self.index, d=out, time_support=self.time_support)
                     elif out.ndim == 2:
+                        kwargs = {}
                         if hasattr(self, "columns"):
-                            return TsdFrame(
-                                t=self.index,
-                                d=out,
-                                time_support=self.time_support,
-                                columns=self.columns,
-                            )
-                        else:
-                            return TsdFrame(
-                                t=self.index, d=out, time_support=self.time_support
-                            )
+                            kwargs["columns"] = self.columns
+                        return TsdFrame(
+                            t=self.index,
+                            d=out,
+                            time_support=self.time_support,
+                            **kwargs)                        
+                        # else:
+                        #     return TsdFrame(
+                        #         t=self.index, d=out, time_support=self.time_support
+                        #     )
                     else:
                         return TsdTensor(
                             t=self.index, d=out, time_support=self.time_support
@@ -710,10 +708,10 @@ class _AbstractTsd(abc.ABC):
         if d.ndim == 1:
             return Tsd(t=t, d=d, time_support=ep)
         elif d.ndim == 2:
+            kwargs = {}
             if hasattr(self, "columns"):
-                return TsdFrame(t=t, d=d, time_support=ep, columns=self.columns)
-            else:
-                return TsdFrame(t=t, d=d, time_support=ep)
+                kwargs["columns"] = self.columns            
+            return TsdFrame(t=t, d=d, time_support=ep, **kwargs)
         else:
             return TsdTensor(t=t, d=d, time_support=ep)
 
@@ -1708,22 +1706,16 @@ class Ts(_AbstractTsd):
         bottom = "shape: {}".format(len(self.index))
         return "\n".join((upper, _str_, bottom))
 
-    def __getitem__(self, key):
-        try:
-            if isinstance(key, tuple):
-                index = self.index.__getitem__(key[0])
-            else:
-                index = self.index.__getitem__(key)
+    def __getitem__(self, key):        
+        if isinstance(key, tuple):
+            index = self.index.__getitem__(key[0])
+        else:
+            index = self.index.__getitem__(key)
 
-            if isinstance(index, Number):
-                index = np.array([index])
-
-            if isinstance(index, np.ndarray):
-                return Ts(t=index, time_support=self.time_support)
-            else:
-                return None
-        except RuntimeError:
-            raise IndexError
+        if isinstance(index, Number):
+            index = np.array([index])
+        
+        return Ts(t=index, time_support=self.time_support)
 
     def __setitem__(self, key, value):
         pass

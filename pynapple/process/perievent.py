@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-21 15:49:34
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-11-16 11:34:48
 
 import numpy as np
 from scipy.linalg import hankel
@@ -125,8 +125,8 @@ def compute_event_trigger_average(
     binsize : float
         The bin size. Default is second.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
-    windowsize : float
-        The window size. Default is second.
+    windowsize : tuple or list of float
+        The window size. Default is second. For example (-1, 1).
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
     ep : IntervalSet
         The epoch on which STA are computed

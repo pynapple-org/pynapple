@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Guillaume Viejo
 # @Date:   2023-09-18 18:11:24
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-27 15:03:31
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-11-08 18:14:12
 
 
 
@@ -415,3 +415,7 @@ class Test_Time_Series_1:
         if tsd.nap_class == "TsdTensor":
             with pytest.raises(AssertionError):
                 np.concatenate((tsd, nap.Tsd(t=np.arange(200,300), d=np.random.randn(100))))
+
+    def test_fft(self, tsd):
+        with pytest.raises(TypeError):
+            np.fft.fft(tsd)

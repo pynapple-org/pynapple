@@ -4,7 +4,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-10-13 11:39:37
+# @Last Modified time: 2023-11-10 14:20:44
 
 import warnings
 
@@ -357,7 +357,7 @@ def compute_2d_mutual_info(tc, features, ep=None, minmax=None, bitssec=False):
         return SI
 
 
-def compute_1d_tuning_curves_continous(
+def compute_1d_tuning_curves_continuous(
     tsdframe, feature, nb_bins, ep=None, minmax=None
 ):
     """
