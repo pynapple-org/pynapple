@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-10-30 16:39:56
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-11-08 18:46:52
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -259,7 +259,7 @@ def test_abstract_class():
     assert isinstance(tsd.index, nap.TsIndex)
     assert isinstance(tsd.values, np.ndarray)
 
-    # assert tsd.__repr__() == "<class '__main__.DummyTsd'>"
+    assert isinstance(tsd.__repr__(), str)
 
     with pytest.raises(IndexError):
         tsd['a']
@@ -904,6 +904,9 @@ class Test_Time_Series_4:
         assert len(ts[[0,2,5]]) == 3
 
         np.testing.assert_array_equal(ts[[0,2,5]].index, np.array([0, 2, 5]))
+
+        assert len(ts[0:10,0]) == 10
+
 
 ####################################################
 # Test for tsdtensor

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-11-30 09:29:21
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-25 11:28:01
+# @Last Modified by:   gviejo
+# @Last Modified time: 2023-11-08 17:16:26
 """Tests of time units for `pynapple` package."""
 
 import pynapple as nap
@@ -30,7 +30,7 @@ def test_return_timestamps():
     np.testing.assert_array_almost_equal(t/1e3, nap.TsIndex.return_timestamps(t, 'ms'))
     np.testing.assert_array_almost_equal(t/1e6, nap.TsIndex.return_timestamps(t, 'us'))
 
-    with pytest.raises(ValueError, match=r"unrecognized time units type"):
+    with pytest.raises(ValueError, match="unrecognized time units type"):
         nap.TsIndex.return_timestamps(t, units='aaaa')
 
 def test_return_timestamps():

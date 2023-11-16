@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:16:30
 # @Last Modified by:   gviejo
-# @Last Modified time: 2022-12-02 16:04:27
+# @Last Modified time: 2023-11-16 12:26:48
 
 """Tests of tuning curves for `pynapple` package."""
 
@@ -217,7 +217,7 @@ def test_compute_2d_mutual_info():
 def test_compute_1d_tuning_curves_continuous():
     tsdframe = nap.TsdFrame(t=np.arange(0, 100), d=np.ones((100, 1)))
     feature = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.arange(0, 100, 0.1) % 1.0)
-    tc = nap.compute_1d_tuning_curves_continous(tsdframe, feature, nb_bins=10)
+    tc = nap.compute_1d_tuning_curves_continuous(tsdframe, feature, nb_bins=10)
 
     assert len(tc) == 10
     assert list(tc.columns) == list(tsdframe.columns)
@@ -228,22 +228,22 @@ def test_compute_1d_tuning_curves_continuous_error():
     tsdframe = nap.TsdFrame(t=np.arange(0, 100), d=np.ones((100, 1)))
     feature = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.arange(0, 100, 0.1) % 1.0)
     with pytest.raises(RuntimeError) as e_info:
-        nap.compute_1d_tuning_curves_continous([1,2,3], feature, nb_bins=10)
+        nap.compute_1d_tuning_curves_continuous([1,2,3], feature, nb_bins=10)
     assert str(e_info.value) == "Unknown format for tsdframe."
 
 def test_compute_1d_tuning_curves_continuous_with_ep():
     tsdframe = nap.TsdFrame(t=np.arange(0, 100), d=np.ones((100, 1)))
     feature = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.arange(0, 100, 0.1) % 1.0)
     ep = nap.IntervalSet(start=0, end=50)
-    tc1 = nap.compute_1d_tuning_curves_continous(tsdframe, feature, nb_bins=10)
-    tc2 = nap.compute_1d_tuning_curves_continous(tsdframe, feature, nb_bins=10, ep=ep)
+    tc1 = nap.compute_1d_tuning_curves_continuous(tsdframe, feature, nb_bins=10)
+    tc2 = nap.compute_1d_tuning_curves_continuous(tsdframe, feature, nb_bins=10, ep=ep)
     pd.testing.assert_frame_equal(tc1, tc2)
 
 
 def test_compute_1d_tuning_curves_continuous_with_min_max():
     tsdframe = nap.TsdFrame(t=np.arange(0, 100), d=np.ones((100, 1)))
     feature = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.arange(0, 100, 0.1) % 1.0)
-    tc = nap.compute_1d_tuning_curves_continous(
+    tc = nap.compute_1d_tuning_curves_continuous(
         tsdframe, feature, nb_bins=10, minmax=(0, 1)
     )
     assert len(tc) == 10
