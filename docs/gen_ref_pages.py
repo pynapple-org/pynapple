@@ -8,6 +8,11 @@ import sys
 import mkdocs_gen_files
 nav = mkdocs_gen_files.Nav()
 
+deprecated = ['cnmfe', 'neurosuite', 'suite2p', 'phy', 'loader']
+
+io_orders = ['interface_nwb', 'interface_npz', 'folder', 'misc'] + deprecated
+
+
 for path in sorted(Path("pynapple").rglob("*.py")):
     print(path)
     module_path = path.relative_to("pynapple").with_suffix("")
@@ -35,11 +40,22 @@ for path in sorted(Path("pynapple").rglob("*.py")):
     else:
         this_module_path = Path("pynapple") / path.parent.name
         module_index = ""
-        for module_scripts in sorted(this_module_path.rglob("*.py")):
-            if "__init__" in module_scripts.name:
+        
+        module_order = sorted(this_module_path.rglob("*.py"))
+        module_order = [m.name.replace('.py', '') for m in module_order]
+        
+        if "io" in this_module_path.name:
+            module_order = io_orders
+
+        for m in module_order:
+            if "__init__" in m:
                 continue
-            module_index += f"* [{module_scripts.name.replace('.py', '')}]" \
-                            f"({module_scripts.name.replace('.py', '.md')})\n"
+
+            module_name = m
+            if m in deprecated:
+                module_name += " (deprecated)"
+            module_index += f"* [{module_name}]" \
+                            "("+m+".md)\n"
 
         with mkdocs_gen_files.open(full_doc_path, "w") as fd:
             fd.write(module_index)
@@ -47,5 +63,5 @@ for path in sorted(Path("pynapple").rglob("*.py")):
 
     mkdocs_gen_files.set_edit_path(full_doc_path, path)
 
-with mkdocs_gen_files.open("reference/SUMMARY.md", "w") as nav_file:
+with mkdocs_gen_files.open("reference/index.md", "w") as nav_file:
     nav_file.writelines(nav.build_literate_nav())

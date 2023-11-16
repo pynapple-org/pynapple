@@ -200,9 +200,7 @@ class _AbstractTsd(abc.ABC):
                         t=index, d=output, time_support=self.time_support, **kwargs
                     )
                 else:
-                    return TsdTensor(
-                        t=index, d=output, time_support=self.time_support
-                    )
+                    return TsdTensor(t=index, d=output, time_support=self.time_support)
             else:
                 return output
         else:
@@ -268,7 +266,8 @@ class _AbstractTsd(abc.ABC):
                             t=self.index,
                             d=out,
                             time_support=self.time_support,
-                            **kwargs)                        
+                            **kwargs,
+                        )
                         # else:
                         #     return TsdFrame(
                         #         t=self.index, d=out, time_support=self.time_support
@@ -710,7 +709,7 @@ class _AbstractTsd(abc.ABC):
         elif d.ndim == 2:
             kwargs = {}
             if hasattr(self, "columns"):
-                kwargs["columns"] = self.columns            
+                kwargs["columns"] = self.columns
             return TsdFrame(t=t, d=d, time_support=ep, **kwargs)
         else:
             return TsdTensor(t=t, d=d, time_support=ep)
@@ -1706,7 +1705,7 @@ class Ts(_AbstractTsd):
         bottom = "shape: {}".format(len(self.index))
         return "\n".join((upper, _str_, bottom))
 
-    def __getitem__(self, key):        
+    def __getitem__(self, key):
         if isinstance(key, tuple):
             index = self.index.__getitem__(key[0])
         else:
@@ -1714,7 +1713,7 @@ class Ts(_AbstractTsd):
 
         if isinstance(index, Number):
             index = np.array([index])
-        
+
         return Ts(t=index, time_support=self.time_support)
 
     def __setitem__(self, key, value):

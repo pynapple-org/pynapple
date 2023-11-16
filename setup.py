@@ -18,8 +18,6 @@ requirements = [
     'pynwb>=2.0.0',
     'tabulate',
     'h5py',
-    'tifffile',
-    'zarr',
     'rich'
 ]
 

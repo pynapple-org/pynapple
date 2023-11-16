@@ -17,6 +17,7 @@ classifiers = [
         "Programming Language :: Python :: 3",
         "Programming Language :: Python :: 3.8",
         "Programming Language :: Python :: 3.9",
+        "Programming Language :: Python :: 3.10",
 ]
 keywords = ["neuroscience"]
 dependencies = [
@@ -27,8 +28,6 @@ dependencies = [
     "pynwb>=2.0.0",
     "tabulate",
     "h5py",
-    "tifffile",
-    "zarr",
     "rich"
 ]
 requires-python = ">=3.8"
@@ -102,9 +101,6 @@ include_trailing_comma = true
 
 [tool.coverage.run]
 omit = [    
-    "pynapple/io/loader_gui.py",
-    "pynapple/io/ephys_gui.py",
-    "pynapple/io/ophys_gui.py",
     "pynapple/io/cnmfe.py",
     "pynapple/io/neurosuite.py",
     "pynapple/io/phy.py",
