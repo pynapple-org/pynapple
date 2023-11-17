@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-11-08 18:44:24
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-11-17 16:09:35
 
 """
 
@@ -786,6 +786,44 @@ class _AbstractTsd(abc.ABC):
             idx_start = np.searchsorted(time_array, start)
             idx_end = np.searchsorted(time_array, end, side="right")
             return self[idx_start:idx_end]
+
+    def dropna(self):
+        nant = np.any(np.isnan(self.values), 1)
+        if np.any(nant):
+            starts = []
+            ends = []
+            n = 0
+            if not nant[n]: # start is the time support
+                starts.append(self.time_support.start.values[0])
+            else:
+                while n<len(self):
+                    if nant[n]:
+                        n+=1
+                    else:
+                        starts.append(self.index.values[n])
+                        break
+
+            while n<len(self):
+                if nant[n]:
+                    ends.append(nant[n-1])
+                    break
+                else:
+                    n+=1
+
+            while n<len(self):
+                if not nant[n]:
+                    n+1
+                else:
+                    starts.append(self.index.values[n])
+                    break
+
+            if not nant[-1]: # end is the time support
+                ends.append(self.time_support.end.values[0])
+
+
+        else:
+            return self            
+
 
 
 class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
