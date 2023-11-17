@@ -95,7 +95,7 @@ print(angle.time_support)
 # ---------------------
 # Here we compute the tuning curves of all the neurons
 
-tcurves = nap.compute_1d_tuning_curves_continous(transients, angle, nb_bins = 120)
+tcurves = nap.compute_1d_tuning_curves_continuous(transients, angle, nb_bins = 120)
 
 print(tcurves)
 
@@ -123,8 +123,8 @@ halves = nap.IntervalSet(
 # %%
 # Now we can compute the tuning curves for each half of the recording and plot the tuning curves for the fifth region of interest. 
 
-half1 = nap.compute_1d_tuning_curves_continous(transients, angle, nb_bins = 120, ep = halves.loc[[0]])
-half2 = nap.compute_1d_tuning_curves_continous(transients, angle, nb_bins = 120, ep = halves.loc[[1]])
+half1 = nap.compute_1d_tuning_curves_continuous(transients, angle, nb_bins = 120, ep = halves.loc[[0]])
+half2 = nap.compute_1d_tuning_curves_continuous(transients, angle, nb_bins = 120, ep = halves.loc[[1]])
 
 plt.figure(figsize=(12, 5))
 plt.subplot(1,2,1)
