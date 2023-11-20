@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-10-15 16:05:27
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-11-19 18:27:43
 import numpy as np
 from numba import jit
 
@@ -747,6 +747,31 @@ def jitin_interval(time_array, starts, ends):
             break
 
     return data
+
+
+@jit(nopython=True)
+def jitremove_nan(time_array, index_nan):
+    n = len(time_array)
+    ix_start = np.zeros(n, dtype=np.bool_)
+    ix_end = np.zeros(n, dtype=np.bool_)
+
+    if not index_nan[0]:  # First start
+        ix_start[0] = True
+
+    t = 1
+    while t < n:
+        if index_nan[t - 1] and not index_nan[t]:  # start
+            ix_start[t] = True
+        if not index_nan[t - 1] and index_nan[t]:  # end
+            ix_end[t - 1] = True
+        t += 1
+
+    if not index_nan[-1]:  # Last stop
+        ix_end[-1] = True
+
+    starts = time_array[ix_start]
+    ends = time_array[ix_end]
+    return (starts, ends)
 
 
 @jit(nopython=True)

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-11-08 18:44:24
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-11-19 18:59:08
 
 """
 
@@ -39,6 +39,7 @@ from .jitted_functions import (
     jitbin,
     jitbin_array,
     jitcount,
+    jitremove_nan,
     jitrestrict,
     jitthreshold,
     jittsrestrict,
@@ -786,6 +787,48 @@ class _AbstractTsd(abc.ABC):
             idx_start = np.searchsorted(time_array, start)
             idx_end = np.searchsorted(time_array, end, side="right")
             return self[idx_start:idx_end]
+
+    def dropna(self, update_time_support=True):
+        """Drop every rows containing NaNs. By default, the time support is updated to start and end around the time points that are non NaNs.
+        To change this behavior, you can set update_time_support=False.
+
+        Parameters
+        ----------
+        update_time_support : bool, optional
+
+        Returns
+        -------
+        Tsd, TsdFrame or TsdTensor
+            The time series without the NaNs
+        """
+        index_nan = np.any(np.isnan(self.values), axis=tuple(range(1, self.ndim)))
+        if np.all(index_nan):  # In case it's only NaNs
+            return self.__class__(
+                t=np.array([]), d=np.empty(tuple([0] + [d for d in self.shape[1:]]))
+            )
+
+        elif np.any(index_nan):
+            if update_time_support:
+                time_array = self.index.values
+                starts, ends = jitremove_nan(time_array, index_nan)
+
+                to_fix = starts == ends
+                if np.any(to_fix):
+                    ends[
+                        to_fix
+                    ] += 1e-6  # adding 1 millisecond in case of a single point
+
+                ep = IntervalSet(starts, ends)
+
+                return self.__class__(
+                    t=time_array[~index_nan], d=self.values[~index_nan], time_support=ep
+                )
+
+            else:
+                return self[~index_nan]
+
+        else:
+            return self
 
 
 class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):

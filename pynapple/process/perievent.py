@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-11-16 11:34:48
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-11-19 19:13:24
 
 import numpy as np
 from scipy.linalg import hankel
@@ -167,6 +167,11 @@ def compute_event_trigger_average(
     count = group.count(binsize, ep)
 
     tmp = feature.bin_average(binsize, ep)
+
+    # Check for any NaNs in feature
+    if np.any(np.isnan(tmp)):
+        tmp = tmp.dropna()
+        count = count.restrict(tmp.time_support)
 
     # Build the Hankel matrix
     n_p = len(idx1)
