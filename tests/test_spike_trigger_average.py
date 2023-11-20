@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-08-29 17:27:02
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-18 16:33:39
+# @Last Modified time: 2023-11-20 12:07:53
 #!/usr/bin/env python
 
 """Tests of spike trigger average for `pynapple` package."""
@@ -37,6 +37,12 @@ def test_compute_spike_trigger_average():
     assert sta.shape == output.shape
     np.testing.assert_array_almost_equal(sta, output)
 
+    feature = nap.TsdFrame(
+        t=feature.index.values, d=feature.values[:,None], time_support=ep
+    )
+    sta = nap.compute_event_trigger_average(spikes, feature, 0.2, (0.6, 0.6), ep)
+    np.testing.assert_array_almost_equal(sta, output)
+
 
 def test_compute_spike_trigger_average_raise_error():
     ep = nap.IntervalSet(0, 101)
@@ -50,6 +56,18 @@ def test_compute_spike_trigger_average_raise_error():
     with pytest.raises(Exception) as e_info:
         nap.compute_event_trigger_average(feature, feature, 0.1, (0.5, 0.5), ep)
     assert str(e_info.value) == "Unknown format for group"
+
+    feature = nap.TsdFrame(
+        t=np.arange(0, 101, 0.01), d=np.random.rand(int(101 / 0.01), 3), time_support=ep
+    )
+    spikes = nap.TsGroup(
+        {0: nap.Ts(t1), 1: nap.Ts(t1 - 0.1), 2: nap.Ts(t1 + 0.2)}, time_support=ep
+    )
+    with pytest.raises(Exception) as e_info:
+        nap.compute_event_trigger_average(spikes, feature, 0.1, (0.5, 0.5), ep)
+    assert str(e_info.value) == "Feature should be a Tsd or a TsdFrame with one column"
+
+    
 
 
 def test_compute_spike_trigger_average_time_units():
