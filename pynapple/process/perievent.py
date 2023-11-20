@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-11-19 19:13:24
+# @Last Modified time: 2023-11-20 12:08:15
 
 import numpy as np
 from scipy.linalg import hankel
@@ -121,7 +121,7 @@ def compute_event_trigger_average(
     group : TsGroup
         The group of Ts/Tsd objects that hold the trigger time.
     feature : Tsd
-        The 1-dimensional feature to average
+        The 1-dimensional feature to average. Can be a TsdFrame with one column only.
     binsize : float
         The bin size. Default is second.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
@@ -146,6 +146,13 @@ def compute_event_trigger_average(
     """
     if type(group) is not nap.TsGroup:
         raise RuntimeError("Unknown format for group")
+
+    if isinstance(feature, nap.TsdFrame):
+        if feature.shape[1] == 1:
+            feature = feature[:, 0]
+
+    if type(feature) is not nap.Tsd:
+        raise RuntimeError("Feature should be a Tsd or a TsdFrame with one column")
 
     binsize = nap.TsIndex.format_timestamps(
         np.array([binsize], dtype=np.float64), time_units
