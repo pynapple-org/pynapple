@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-11-08 18:46:52
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-11-19 18:48:57
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -271,7 +271,7 @@ def test_abstract_class():
 @pytest.mark.parametrize(
     "tsd",
     [
-        nap.Tsd(t=np.arange(100), d=np.arange(100), time_units="s"),
+        nap.Tsd(t=np.arange(100), d=np.random.rand(100), time_units="s"),
         nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 5), time_units="s"),
         nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 5, 2), time_units="s"),
         nap.Ts(t=np.arange(100), time_units="s"),
@@ -392,6 +392,35 @@ class Test_Time_Series_1:
             np.testing.assert_array_equal(tsd.get(0.6), tsd[1])
             np.testing.assert_array_equal(tsd.get(1), tsd[1])
             np.testing.assert_array_equal(tsd.get(1000), tsd[-1])
+
+    def test_dropna(self, tsd):
+        if not isinstance(tsd, nap.Ts):
+
+            new_tsd = tsd.dropna()
+            np.testing.assert_array_equal(tsd.index.values, new_tsd.index.values)
+            np.testing.assert_array_equal(tsd.values, new_tsd.values)
+
+            tsd.values[tsd.values>0.9] = np.NaN         
+            new_tsd = tsd.dropna()
+            assert not np.all(np.isnan(new_tsd))
+            tokeep = np.array([~np.any(np.isnan(tsd[i])) for i in range(len(tsd))])            
+            np.testing.assert_array_equal(tsd.index.values[tokeep], new_tsd.index.values)
+            np.testing.assert_array_equal(tsd.values[tokeep], new_tsd.values)
+
+            newtsd2 = tsd.restrict(new_tsd.time_support)
+            np.testing.assert_array_equal(newtsd2.index.values, new_tsd.index.values)
+            np.testing.assert_array_equal(newtsd2.values, new_tsd.values)
+
+            new_tsd = tsd.dropna(update_time_support=False)
+            np.testing.assert_array_equal(tsd.index.values[tokeep], new_tsd.index.values)
+            np.testing.assert_array_equal(tsd.values[tokeep], new_tsd.values)
+            pd.testing.assert_frame_equal(new_tsd.time_support, tsd.time_support)
+
+            tsd.values[:] = np.NaN
+            new_tsd = tsd.dropna()
+            assert len(new_tsd) == 0
+            assert len(new_tsd.time_support) == 0
+
 
 ####################################################
 # Test for tsd

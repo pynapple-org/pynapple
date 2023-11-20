@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Guillaume Viejo
 # @Date:   2023-09-18 18:11:24
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-11-08 18:14:12
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2023-11-19 16:55:26
 
 
 
@@ -17,7 +17,10 @@ ufuncs = {k:obj for k, obj in _umath.__dict__.items() if isinstance(obj, _ufunc)
 
 tsd = nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 5, 3), time_units="s")
 
-tsd = nap.TsdFrame(t=np.arange(100), d=np.random.randn(100, 6))
+# tsd = nap.TsdFrame(t=np.arange(100), d=np.random.randn(100, 6))
+
+tsd.d[tsd.values>0.9] = np.NaN
+
 
 @pytest.mark.parametrize(
     "tsd",
