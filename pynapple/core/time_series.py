@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-11-19 18:59:08
+# @Last Modified time: 2023-11-20 19:35:20
 
 """
 
@@ -33,6 +33,7 @@ import numpy as np
 import pandas as pd
 from numpy.lib.mixins import NDArrayOperatorsMixin
 from tabulate import tabulate
+from scipy import signal
 
 from .interval_set import IntervalSet
 from .jitted_functions import (
@@ -46,6 +47,7 @@ from .jitted_functions import (
     jittsrestrict_with_count,
     jitvaluefrom,
     jitvaluefromtensor,
+    jitconvolve,
 )
 from .time_index import TsIndex
 
@@ -829,6 +831,45 @@ class _AbstractTsd(abc.ABC):
 
         else:
             return self
+
+    def convolve(self, array, ep = None):
+        """Things to assume : constant sampling rate
+                
+        Parameters
+        ----------
+        array : np.ndarray
+            One dimensional input array
+        """
+        assert isinstance(array, np.ndarray)
+        if ep is None:
+            ep = self.time_support
+        time_array = self.index.values        
+        data_array = self.values
+        starts = ep.start.values
+        ends = ep.end.values
+
+        new_data_array = jitconvolve(time_array, data_array, starts, ends, array)        
+
+        return self.__class__(time_array, new_data_array, time_support=self.time_support)
+
+    def smooth(self, std, size):
+        """Smooth with a gaussan kernel
+        
+        Parameters
+        ----------
+        std : TYPE
+            Description
+        size : TYPE
+            Description
+        
+        Returns
+        -------
+        TYPE
+            Description
+        """
+        window = signal.windows.gaussian(size, std=std)
+        window = window/window.sum()
+        return self.convolve(window)
 
 
 class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):

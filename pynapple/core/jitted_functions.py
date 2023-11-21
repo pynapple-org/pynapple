@@ -2,7 +2,7 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-11-19 18:27:43
+# @Last Modified time: 2023-11-20 19:23:47
 import numpy as np
 from numba import jit
 
@@ -773,6 +773,37 @@ def jitremove_nan(time_array, index_nan):
     ends = time_array[ix_end]
     return (starts, ends)
 
+@jit(nopython=True)
+def jitconvolve(time_array, data_array, starts, ends, array):
+    time_array, data_array, countin = jitrestrict_with_count(
+        time_array, data_array, starts, ends
+    )
+
+    m = starts.shape[0]
+    f = data_array.shape[1:]
+    n = time_array.shape[0]    
+    new_data_array = np.zeros((n, *f), dtype=np.float64)
+    wsize = array.shape[0]
+
+    k = 0 # epochs count
+    t = 0 # time points count
+    i = 0 # window position
+
+    while k < m:
+        maxt = t + countin[k]
+        wn = 1
+        i = 0
+        while t < maxt:            
+            new_data_array[t] = np.sum(array[0:i+wn]*data_array[t-wn+1:t+1])
+
+            if wn < wsize:
+                wn += 1
+
+            t += 1
+
+        k += 1
+
+    return new_data_array
 
 @jit(nopython=True)
 def jit_poisson_IRLS(X, y, niter=100, tolerance=1e-5):
