@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-11-20 19:35:20
+# @Last Modified time: 2023-12-05 19:49:28
 
 """
 
@@ -48,6 +48,7 @@ from .jitted_functions import (
     jitvaluefrom,
     jitvaluefromtensor,
     jitconvolve,
+    pjitconvolve
 )
 from .time_index import TsIndex
 
@@ -832,7 +833,7 @@ class _AbstractTsd(abc.ABC):
         else:
             return self
 
-    def convolve(self, array, ep = None):
+    def convolve(self, array, ep = None, trim='both'):
         """Things to assume : constant sampling rate
                 
         Parameters
@@ -843,17 +844,42 @@ class _AbstractTsd(abc.ABC):
         assert isinstance(array, np.ndarray)
         if ep is None:
             ep = self.time_support
+
         time_array = self.index.values        
         data_array = self.values
         starts = ep.start.values
         ends = ep.end.values
 
-        new_data_array = jitconvolve(time_array, data_array, starts, ends, array)        
+        if data_array.ndim == 1:
+            new_data_array = np.zeros(data_array.shape)
+            k = array.shape[0]
+            for s, e in zip(starts, ends):
+                idx_s = np.searchsorted(time_array, s)
+                idx_e = np.searchsorted(time_array, e, side="right")
 
-        return self.__class__(time_array, new_data_array, time_support=self.time_support)
+                t = idx_e - idx_s                
+                if trim=='both':
+                    cut = ((1-k%2)+(k-1)//2, t+k-1-((k-1)//2))
+                elif trim=='left':
+                    cut = (k-1,t+k-1)
+                elif trim=='right':
+                    cut = (0,t)
+                # scipy is actually faster for Tsd
+                new_data_array[idx_s:idx_e] = signal.convolve(data_array[idx_s:idx_e], array)[cut[0]:cut[1]]
+
+            return self.__class__(t=time_array, d=new_data_array, time_support=ep)            
+        else:
+            new_data_array = np.zeros(data_array.shape)
+            for s, e in zip(starts, ends):
+                idx_s = np.searchsorted(time_array, s)
+                idx_e = np.searchsorted(time_array, e, side="right")
+                new_data_array[idx_s : idx_e] = pjitconvolve(data_array[idx_s:idx_e], array, trim=trim)
+
+            return self.__class__(t=time_array, d=new_data_array, time_support=ep)
+
 
     def smooth(self, std, size):
-        """Smooth with a gaussan kernel
+        """Smooth with a gaussian kernel
         
         Parameters
         ----------

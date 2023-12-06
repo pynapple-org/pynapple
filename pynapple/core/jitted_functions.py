@@ -2,9 +2,9 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-11-20 19:23:47
+# @Last Modified time: 2023-12-05 19:45:00
 import numpy as np
-from numba import jit
+from numba import jit, njit, prange
 
 
 @jit(nopython=True)
@@ -773,58 +773,49 @@ def jitremove_nan(time_array, index_nan):
     ends = time_array[ix_end]
     return (starts, ends)
 
+
 @jit(nopython=True)
-def jitconvolve(time_array, data_array, starts, ends, array):
-    time_array, data_array, countin = jitrestrict_with_count(
-        time_array, data_array, starts, ends
-    )
+def jitconvolve(d, a):
+    return np.convolve(d, a)
 
-    m = starts.shape[0]
-    f = data_array.shape[1:]
-    n = time_array.shape[0]    
-    new_data_array = np.zeros((n, *f), dtype=np.float64)
-    wsize = array.shape[0]
+@njit(parallel=True)
+def pjitconvolve(data_array, array, trim='both'):
+    t,c = data_array.shape
+    k = array.shape[0]
+    new_data_array = np.zeros((t,c))
 
-    k = 0 # epochs count
-    t = 0 # time points count
-    i = 0 # window position
-
-    while k < m:
-        maxt = t + countin[k]
-        wn = 1
-        i = 0
-        while t < maxt:            
-            new_data_array[t] = np.sum(array[0:i+wn]*data_array[t-wn+1:t+1])
-
-            if wn < wsize:
-                wn += 1
-
-            t += 1
-
-        k += 1
-
+    if trim=='both':
+        cut = ((1-k%2)+(k-1)//2, t+k-1-((k-1)//2))
+    elif trim=='left':
+        cut = (k-1,t+k-1)
+    elif trim=='right':
+        cut = (0,t)
+    
+    for i in prange(c):
+        new_data_array[:,i] = jitconvolve(data_array[:,i], array)[cut[0]:cut[1]]
+    
     return new_data_array
 
-@jit(nopython=True)
-def jit_poisson_IRLS(X, y, niter=100, tolerance=1e-5):
-    y = y.astype(np.float64)
-    X = X.astype(np.float64)
-    n, d = X.shape
-    W = np.ones(n)
-    iXtWX = np.linalg.inv(np.dot(X.T * W, X))
-    XtWY = np.dot(X.T * W, y)
-    B = np.dot(iXtWX, XtWY)
+# @jit(nopython=True)
+# def jit_poisson_IRLS(X, y, niter=100, tolerance=1e-5):
+#     y = y.astype(np.float64)
+#     X = X.astype(np.float64)
+#     n, d = X.shape
+#     W = np.ones(n)
+#     iXtWX = np.linalg.inv(np.dot(X.T * W, X))
+#     XtWY = np.dot(X.T * W, y)
+#     B = np.dot(iXtWX, XtWY)
 
-    for _ in range(niter):
-        B_ = B
-        L = np.exp(X.dot(B))  # Link function
-        Z = L.reshape((-1, 1)) * X  # partial derivatives
-        delta = np.dot(np.linalg.inv(np.dot(Z.T * W, Z)), np.dot(Z.T * W, y))
-        B = B + delta
-        tol = np.sum(np.abs((B - B_) / B_))
-        if tol < tolerance:
-            return B
-    return B
+#     for _ in range(niter):
+#         B_ = B
+#         L = np.exp(X.dot(B))  # Link function
+#         Z = L.reshape((-1, 1)) * X  # partial derivatives
+#         delta = np.dot(np.linalg.inv(np.dot(Z.T * W, Z)), np.dot(Z.T * W, y))
+#         B = B + delta
+#         tol = np.sum(np.abs((B - B_) / B_))
+#         if tol < tolerance:
+#             return B
+#     return B
 
 
 # @jit(nopython=True)
