@@ -2,7 +2,7 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-12-05 19:45:00
+# @Last Modified time: 2023-12-06 16:03:51
 import numpy as np
 from numba import jit, njit, prange
 
@@ -778,23 +778,30 @@ def jitremove_nan(time_array, index_nan):
 def jitconvolve(d, a):
     return np.convolve(d, a)
 
-@njit(parallel=True)
-def pjitconvolve(data_array, array, trim='both'):
-    t,c = data_array.shape
-    k = array.shape[0]
-    new_data_array = np.zeros((t,c))
 
-    if trim=='both':
-        cut = ((1-k%2)+(k-1)//2, t+k-1-((k-1)//2))
-    elif trim=='left':
-        cut = (k-1,t+k-1)
-    elif trim=='right':
-        cut = (0,t)
-    
-    for i in prange(c):
-        new_data_array[:,i] = jitconvolve(data_array[:,i], array)[cut[0]:cut[1]]
-    
+@njit(parallel=True)
+def pjitconvolve(data_array, array, trim="both"):
+    shape = data_array.shape
+    t = shape[0]
+    k = array.shape[0]
+
+    data_array = data_array.reshape(t, -1)
+    new_data_array = np.zeros(shape)
+
+    if trim == "both":
+        cut = ((1 - k % 2) + (k - 1) // 2, t + k - 1 - ((k - 1) // 2))
+    elif trim == "left":
+        cut = (k - 1, t + k - 1)
+    elif trim == "right":
+        cut = (0, t)
+
+    for i in prange(data_array.shape[1]):
+        new_data_array[:, i] = jitconvolve(data_array[:, i], array)[cut[0] : cut[1]]
+
+    new_data_array = new_data_array.reshape(shape)
+
     return new_data_array
+
 
 # @jit(nopython=True)
 # def jit_poisson_IRLS(X, y, niter=100, tolerance=1e-5):
