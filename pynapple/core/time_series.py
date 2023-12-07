@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-12-06 16:32:49
+# @Last Modified time: 2023-12-07 13:58:06
 
 """
 
@@ -857,8 +857,9 @@ class _AbstractTsd(abc.ABC):
         Tsd, TsdFrame or TsdTensor
             The convolved time series
         """
-        assert isinstance(array, np.ndarray)
+        assert isinstance(array, np.ndarray), "Input should be a 1-d numpy array."
         assert array.ndim == 1, "Input should be a one dimensional array."
+        assert trim in ['both', 'left', 'right'], "Unknow argument. trim should be 'both', 'left' or 'right'."
 
         if ep is None:
             ep = self.time_support
@@ -876,12 +877,12 @@ class _AbstractTsd(abc.ABC):
                 idx_e = np.searchsorted(time_array, e, side="right")
 
                 t = idx_e - idx_s
-                if trim == "both":
-                    cut = ((1 - k % 2) + (k - 1) // 2, t + k - 1 - ((k - 1) // 2))
-                elif trim == "left":
+                if trim == "left":
                     cut = (k - 1, t + k - 1)
                 elif trim == "right":
                     cut = (0, t)
+                else:
+                    cut = ((1 - k % 2) + (k - 1) // 2, t + k - 1 - ((k - 1) // 2))
                 # scipy is actually faster for Tsd
                 new_data_array[idx_s:idx_e] = signal.convolve(
                     data_array[idx_s:idx_e], array
@@ -916,6 +917,8 @@ class _AbstractTsd(abc.ABC):
         Tsd, TsdFrame, TsdTensor
             Time series convolved with a gaussian kernel
         """
+        assert isinstance(std, int), "std should be type int"
+        assert isinstance(size, int), "size should be type int"
         window = signal.windows.gaussian(size, std=std)
         window = window / window.sum()
         return self.convolve(window)

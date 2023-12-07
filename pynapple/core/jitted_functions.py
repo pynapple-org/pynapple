@@ -2,7 +2,7 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-12-06 16:03:51
+# @Last Modified time: 2023-12-06 17:51:35
 import numpy as np
 from numba import jit, njit, prange
 
@@ -786,7 +786,7 @@ def pjitconvolve(data_array, array, trim="both"):
     k = array.shape[0]
 
     data_array = data_array.reshape(t, -1)
-    new_data_array = np.zeros(shape)
+    new_data_array = np.zeros(data_array.shape)
 
     if trim == "both":
         cut = ((1 - k % 2) + (k - 1) // 2, t + k - 1 - ((k - 1) // 2))
