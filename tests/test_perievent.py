@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:16:53
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-18 16:04:02
+# @Last Modified time: 2023-12-11 18:16:58
 #!/usr/bin/env python
 
 """Tests of perievent for `pynapple` package."""
@@ -23,6 +23,13 @@ def test_align_tsd():
     for i, j in zip(peth.keys(), np.arange(0, 100, 10)):
         np.testing.assert_array_almost_equal(peth[i].index, np.arange(-10, 10))
 
+def test_compute_perievent_continuous():
+    tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
+    tref = nap.Ts(t=np.arange(10, 100, 10))
+    pe = nap.compute_perievent_continuous(tsd, tref, minmax=(-10, 10))
+
+    assert isinstance(pe, nap.TsdFrame)
+    assert pe.shape[1] == len(tref)
 
 def test_compute_perievent_with_tsd():
     tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
@@ -57,7 +64,7 @@ def test_compute_perievent_raise_error():
     tref = np.arange(10, 100, 10)
     with pytest.raises(Exception) as e_info:
         nap.compute_perievent(tsd, tref, minmax=(-10, 10))
-    assert str(e_info.value) == "tref should be a Tsd object."
+    assert str(e_info.value) == "tref should be a Ts or Tsd object."
     tsd = t = np.arange(100)
     tref = nap.Ts(t=np.arange(10, 100, 10))
     with pytest.raises(Exception) as e_info:

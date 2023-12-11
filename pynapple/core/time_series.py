@@ -38,7 +38,7 @@ from tabulate import tabulate
 from .interval_set import IntervalSet
 from .jitted_functions import (
     jitbin,
-    jitbin_array,    
+    jitbin_array,
     jitcount,
     jitremove_nan,
     jitrestrict,
@@ -859,7 +859,11 @@ class _AbstractTsd(abc.ABC):
         """
         assert isinstance(array, np.ndarray), "Input should be a 1-d numpy array."
         assert array.ndim == 1, "Input should be a one dimensional array."
-        assert trim in ['both', 'left', 'right'], "Unknow argument. trim should be 'both', 'left' or 'right'."
+        assert trim in [
+            "both",
+            "left",
+            "right",
+        ], "Unknow argument. trim should be 'both', 'left' or 'right'."
 
         if ep is None:
             ep = self.time_support

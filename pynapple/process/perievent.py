@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-11-20 12:08:15
+# @Last Modified time: 2023-12-11 17:41:30
 
 import numpy as np
 from scipy.linalg import hankel
@@ -82,7 +82,7 @@ def compute_perievent(data, tref, minmax, time_unit="s"):
         if tref is not a Ts/Tsd object or if data is not a Ts/Tsd or TsGroup
     """
     if not isinstance(tref, (nap.Ts, nap.Tsd)):
-        raise RuntimeError("tref should be a Tsd object.")
+        raise RuntimeError("tref should be a Ts or Tsd object.")
 
     if isinstance(minmax, float) or isinstance(minmax, int):
         minmax = np.array([minmax, minmax], dtype=np.float64)
@@ -104,6 +104,81 @@ def compute_perievent(data, tref, minmax, time_unit="s"):
 
     else:
         raise RuntimeError("Unknown format for data")
+
+
+def compute_perievent_continuous(data, tref, minmax, ep=None, time_unit="s"):
+    """
+    Center contiunous time series around the timestamps given by the tref argument.
+    minmax indicates the start and end of the window.
+
+    If the input is a n dimensional time series, it returns a n+1 dimensional time series.
+
+    This function assumes a constant sampling rate of the time series.
+
+    Parameters
+    ----------
+    data : Tsd, TsdFrame or TsdTensor
+        The data to align to tref.
+    tref : Ts/Tsd
+        The timestamps of the event to align to
+    minmax : tuple or int or float
+        The window size. Can be unequal on each side i.e. (-500, 1000).
+    time_unit : str, optional
+        Time units of the minmax ('s' [default], 'ms', 'us').
+
+    Returns
+    -------
+    Tsd, TsdFrame, TsdTensor
+
+
+    Raises
+    ------
+    RuntimeError
+        if tref is not a Ts/Tsd object or if data is not a Ts/Tsd/Tensor object.
+    """
+
+    assert isinstance(tref, (nap.Ts, nap.Tsd)), "tref should be a Ts or Tsd object."
+    assert isinstance(
+        data, (nap.Tsd, nap.TsdFrame, nap.TsdTensor)
+    ), "data should be a Tsd, TsdFrame or TsdTensor."
+    assert isinstance(
+        minmax, (float, int, tuple)
+    ), "minmax should be a tuple or int or float."
+    assert isinstance(time_unit, str), "time_unit should be a str."
+    assert time_unit in ["s", "ms", "us"], "time_unit should be 's', 'ms' or 'us')"
+
+    if ep is None:
+        ep = data.time_support
+    else:
+        assert isinstance(ep, (nap.IntervalSet)), "ep should be an IntervalSet object."
+
+    if isinstance(minmax, float) or isinstance(minmax, int):
+        minmax = np.array([minmax, minmax], dtype=np.float64)
+
+    window = np.abs(nap.TsIndex.format_timestamps(np.array(minmax), time_unit))
+
+    time_array = data.index.values
+    data_array = data.values
+    time_target_array = tref.index.values
+    starts = ep.start.values
+    ends = ep.end.values
+
+    binsize = time_array[1] - time_array[0]
+    idx1 = -np.arange(0, window[0] + binsize, binsize)[::-1][:-1]
+    idx2 = np.arange(0, window[1] + binsize, binsize)[1:]
+    time_idx = np.hstack((idx1, np.zeros(1), idx2))
+    windowsize = np.array([idx1.shape[0], idx2.shape[0]])
+
+    new_data_array = nap.jitted_functions.jitcontinuous_perievent(
+        time_array, data_array, time_target_array, starts, ends, windowsize
+    )
+
+    time_support = nap.IntervalSet(start=-window[0], end=window[1])
+
+    if new_data_array.ndim == 2:
+        return nap.TsdFrame(t=time_idx, d=new_data_array, time_support=time_support)
+    else:
+        return nap.TsdTensor(t=time_idx, d=new_data_array, time_support=time_support)
 
 
 def compute_event_trigger_average(
