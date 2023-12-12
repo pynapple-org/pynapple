@@ -85,7 +85,7 @@ This procedure will install all the dependencies including
 -   tabulate
 -   h5py
 
-For spyder users, it is recommended to install spyder after installing pynapple with :
+<!-- For spyder users, it is recommended to install spyder after installing pynapple with :
 
 ``` {.sourceCode .shell}
 $ conda create --name pynapple pip python=3.8
@@ -93,7 +93,7 @@ $ conda activate pynapple
 $ pip install pynapple
 $ pip install spyder
 $ spyder
-```
+``` -->
 
 
 Basic Usage

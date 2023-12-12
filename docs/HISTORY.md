@@ -9,10 +9,13 @@ In 2018, Francesco started neuroseries, a Python package built on Pandas. It was
 In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuroseries and started *pynapple*. The core of pynapple is largely built upon neuroseries. Some of the original changes to TSToolbox made by Luke were included in this package, especially the *time_support* property of all ts/tsd objects.
 
 
-0.4.2 (2023-11-16)
+0.5.0 (2023-12-12)
 ------------------
 
-- Removing GUI stack from pynapple.
+- Removing GUI stack from pynapple. To create a NWB file, users need to install nwbmatic (https://github.com/pynapple-org/nwbmatic)
+- Implementing `compute_perievent_continuous`
+- Implementing `convolve` for Tsd, TsdFrame and TsdTensor
+- Implementing `smooth` for fast gaussian smoothing of time series
 
 
 0.4.1 (2023-10-30)
@@ -48,10 +51,10 @@ In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuro
 0.3.4 (2023-06-29)
 ------------------
 
-- 	TsGroup.to_tsd and Tsd.to_tsgroup transformations
-- 	Count can take IntervalSet
+- 	`TsGroup.to_tsd` and `Tsd.to_tsgroup` transformations
+- 	`count` can take IntervalSet
 -	Saving to npz functions for all objects.
-- 	tsd.value_from can take TsdFrame
+- 	`tsd.value_from` can take TsdFrame
 - 	Warning message for deprecating current IO. 
 
 

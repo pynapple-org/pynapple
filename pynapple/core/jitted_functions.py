@@ -2,9 +2,9 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-11-19 18:27:43
+# @Last Modified time: 2023-12-12 16:50:36
 import numpy as np
-from numba import jit
+from numba import jit, njit, prange
 
 
 @jit(nopython=True)
@@ -775,25 +775,164 @@ def jitremove_nan(time_array, index_nan):
 
 
 @jit(nopython=True)
-def jit_poisson_IRLS(X, y, niter=100, tolerance=1e-5):
-    y = y.astype(np.float64)
-    X = X.astype(np.float64)
-    n, d = X.shape
-    W = np.ones(n)
-    iXtWX = np.linalg.inv(np.dot(X.T * W, X))
-    XtWY = np.dot(X.T * W, y)
-    B = np.dot(iXtWX, XtWY)
+def jitconvolve(d, a):
+    return np.convolve(d, a)
 
-    for _ in range(niter):
-        B_ = B
-        L = np.exp(X.dot(B))  # Link function
-        Z = L.reshape((-1, 1)) * X  # partial derivatives
-        delta = np.dot(np.linalg.inv(np.dot(Z.T * W, Z)), np.dot(Z.T * W, y))
-        B = B + delta
-        tol = np.sum(np.abs((B - B_) / B_))
-        if tol < tolerance:
-            return B
-    return B
+
+@njit(parallel=True)
+def pjitconvolve(data_array, array, trim="both"):
+    shape = data_array.shape
+    t = shape[0]
+    k = array.shape[0]
+
+    data_array = data_array.reshape(t, -1)
+    new_data_array = np.zeros(data_array.shape)
+
+    if trim == "both":
+        cut = ((1 - k % 2) + (k - 1) // 2, t + k - 1 - ((k - 1) // 2))
+    elif trim == "left":
+        cut = (k - 1, t + k - 1)
+    elif trim == "right":
+        cut = (0, t)
+
+    for i in prange(data_array.shape[1]):
+        new_data_array[:, i] = jitconvolve(data_array[:, i], array)[cut[0] : cut[1]]
+
+    new_data_array = new_data_array.reshape(shape)
+
+    return new_data_array
+
+
+@njit(parallel=True)
+def jitcontinuous_perievent(
+    time_array, data_array, time_target_array, starts, ends, windowsize
+):
+    N_samples = len(time_array)
+    N_target = len(time_target_array)
+    N_epochs = len(starts)
+    count = np.zeros((N_epochs, 2), dtype=np.int64)
+    start_t = np.zeros((N_epochs, 2), dtype=np.int64)
+
+    k = 0  # Epochs
+    t = 0  # Samples
+    i = 0  # Target
+
+    while ends[k] < time_array[t] and ends[k] < time_target_array[i]:
+        k += 1
+
+    while k < N_epochs:
+        # Outside
+        while t < N_samples:
+            if time_array[t] >= starts[k]:
+                break
+            t += 1
+
+        while i < N_target:
+            if time_target_array[i] >= starts[k]:
+                break
+            i += 1
+
+        if time_array[t] <= ends[k]:
+            start_t[k, 0] = t
+
+        if time_target_array[i] <= ends[k]:
+            start_t[k, 1] = i
+
+        # Inside
+        while t < N_samples:
+            if time_array[t] > ends[k]:
+                break
+            else:
+                count[k, 0] += 1
+            t += 1
+
+        while i < N_target:
+            if time_target_array[i] > ends[k]:
+                break
+            else:
+                count[k, 1] += 1
+            i += 1
+
+        k += 1
+
+        if k == N_epochs:
+            break
+        if t == N_samples:
+            break
+        if i == N_target:
+            break
+
+    new_data_array = np.full(
+        (np.sum(windowsize) + 1, np.sum(count[:, 1]), *data_array.shape[1:]), np.nan
+    )
+
+    if np.all((count[:, 0] * count[:, 1]) > 0):
+        for k in prange(N_epochs):
+            if count[k, 0] > 0 and count[k, 1] > 0:
+                t = start_t[k, 0]
+                i = start_t[k, 1]
+                maxt = t + count[k, 0]
+                maxi = i + count[k, 1]
+                cnt_i = np.sum(count[0:k, 1])
+
+                while i < maxi:
+                    interval = abs(time_array[t] - time_target_array[i])
+                    t_pos = t
+                    t += 1
+                    while t < maxt:
+                        new_interval = abs(time_array[t] - time_target_array[i])
+                        if new_interval > interval:
+                            break
+                        else:
+                            interval = new_interval
+                            t_pos = t
+                            t += 1
+
+                    left = np.minimum(windowsize[0], t_pos - start_t[k, 0])
+                    right = np.minimum(windowsize[1], maxt - t_pos - 1)
+                    center = windowsize[0] + 1
+                    new_data_array[
+                        center - left - 1 : center + right, cnt_i
+                    ] = data_array[t_pos - left : t_pos + right + 1]
+
+                    t -= 1
+                    i += 1
+                    cnt_i += 1
+
+    return new_data_array
+
+
+# time_array = tsd.t
+# time_target_array = tref.t
+# data_array = tsd.d
+
+# for i,t in enumerate(tref.restrict(ep).t):
+#     plot(time_idx + t, new_data_array[:,i]+i*2.0, 'o')
+#     plot(tsd + i*2.0, color='grey')
+# [axvspan(ep.loc[i,'start'], ep.loc[i,'end'], alpha=0.3) for i in range(len(ep))]
+# [axvline(t) for t in tref.restrict(ep).t]
+
+
+# @jit(nopython=True)
+# def jit_poisson_IRLS(X, y, niter=100, tolerance=1e-5):
+#     y = y.astype(np.float64)
+#     X = X.astype(np.float64)
+#     n, d = X.shape
+#     W = np.ones(n)
+#     iXtWX = np.linalg.inv(np.dot(X.T * W, X))
+#     XtWY = np.dot(X.T * W, y)
+#     B = np.dot(iXtWX, XtWY)
+
+#     for _ in range(niter):
+#         B_ = B
+#         L = np.exp(X.dot(B))  # Link function
+#         Z = L.reshape((-1, 1)) * X  # partial derivatives
+#         delta = np.dot(np.linalg.inv(np.dot(Z.T * W, Z)), np.dot(Z.T * W, y))
+#         B = B + delta
+#         tol = np.sum(np.abs((B - B_) / B_))
+#         if tol < tolerance:
+#             return B
+#     return B
 
 
 # @jit(nopython=True)

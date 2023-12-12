@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-11-19 18:48:57
+# @Last Modified time: 2023-12-07 14:01:09
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -420,6 +420,80 @@ class Test_Time_Series_1:
             new_tsd = tsd.dropna()
             assert len(new_tsd) == 0
             assert len(new_tsd.time_support) == 0
+
+    def test_convolve(self, tsd):
+        array = np.random.randn(10)
+        if not isinstance(tsd, nap.Ts):
+            tsd2 = tsd.convolve(array)
+            tmp = tsd.values.reshape(tsd.shape[0], -1)
+            tmp2 = np.zeros_like(tmp)
+            for i in range(tmp.shape[-1]):
+                tmp2[:,i] = np.convolve(tmp[:,i], array, mode='full')[5:-4]
+            np.testing.assert_array_almost_equal(
+                tmp2, 
+                tsd2.values.reshape(tsd2.shape[0], -1)
+                )
+
+            with pytest.raises(AssertionError) as e_info:
+                tsd.convolve([1,2,3])
+            assert str(e_info.value) == "Input should be a 1-d numpy array."
+
+            with pytest.raises(AssertionError) as e_info:
+                tsd.convolve(np.random.rand(2,3))
+            assert str(e_info.value) == "Input should be a one dimensional array."
+
+            ep = nap.IntervalSet(start=[0, 60], end=[40,100])
+            tsd3 = tsd.convolve(array, ep)
+            
+            for i in range(len(ep)):
+                tmp2 = tsd.restrict(ep.loc[[i]]).values
+                tmp2 = tmp2.reshape(tmp2.shape[0], -1)
+                for j in range(tmp2.shape[-1]):
+                    tmp2[:,j] = np.convolve(tmp2[:,j], array, mode='full')[5:-4]
+                np.testing.assert_array_almost_equal(
+                    tmp2,
+                    tsd3.restrict(ep.loc[[i]]).values.reshape(tmp2.shape[0], -1)
+                    )
+
+            # Trim
+            for trim, sl in zip(['left', 'both', 'right'], [slice(9,None),slice(5,-4),slice(None,-9)]):
+                tsd2 = tsd.convolve(array, trim=trim)
+                tmp = tsd.values.reshape(tsd.shape[0], -1)
+                tmp2 = np.zeros_like(tmp)
+                for i in range(tmp.shape[-1]):
+                    tmp2[:,i] = np.convolve(tmp[:,i], array, mode='full')[sl]
+                np.testing.assert_array_almost_equal(
+                    tmp2, 
+                    tsd2.values.reshape(tsd2.shape[0], -1)
+                    )                        
+
+            with pytest.raises(AssertionError) as e_info:
+                tsd.convolve(array, trim='a')
+            assert str(e_info.value) == "Unknow argument. trim should be 'both', 'left' or 'right'."
+
+    def test_smooth(self, tsd):
+        if not isinstance(tsd, nap.Ts):            
+            from scipy import signal
+            tsd2 = tsd.smooth(2, 20)
+            tmp = tsd.values.reshape(tsd.shape[0], -1)
+            tmp2 = np.zeros_like(tmp)
+            window = signal.windows.gaussian(20, std=2)
+            window = window / window.sum()            
+            for i in range(tmp.shape[-1]):
+                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[10:-9]
+            np.testing.assert_array_almost_equal(
+                tmp2, 
+                tsd2.values.reshape(tsd2.shape[0], -1)
+                )
+
+            with pytest.raises(AssertionError) as e_info:
+                tsd.smooth('a', 20)
+            assert str(e_info.value) == "std should be type int"
+
+            with pytest.raises(AssertionError) as e_info:
+                tsd.smooth(2, 'b')
+            assert str(e_info.value) == "size should be type int"
+
 
 
 ####################################################
