@@ -2,7 +2,7 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-12-11 18:05:36
+# @Last Modified time: 2023-12-12 16:50:36
 import numpy as np
 from numba import jit, njit, prange
 
@@ -890,7 +890,7 @@ def jitcontinuous_perievent(
 
                     left = np.minimum(windowsize[0], t_pos - start_t[k, 0])
                     right = np.minimum(windowsize[1], maxt - t_pos - 1)
-                    center = new_data_array.shape[0] // 2 + 1
+                    center = windowsize[0] + 1
                     new_data_array[
                         center - left - 1 : center + right, cnt_i
                     ] = data_array[t_pos - left : t_pos + right + 1]

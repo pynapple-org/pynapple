@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-12-11 17:41:30
+# @Last Modified time: 2023-12-12 18:17:42
 
 import numpy as np
 from scipy.linalg import hankel
@@ -54,18 +54,21 @@ def _align_tsd(tsd, tref, window, time_support):
 
 def compute_perievent(data, tref, minmax, time_unit="s"):
     """
-    Center ts/tsd/tsgroup object around the timestamps given by the tref argument.
-    minmax indicates the start and end of the window.
+    Center the timestamps of a time series object or a time series group around the timestamps given by the `tref` argument.
+    `minmax` indicates the start and end of the window. If `minmax=(-5, 10)`, the window will be from -5 second to 10 second.
+    If `minmax=10`, the window will be from -10 second to 10 second.
+
+    To center continuous time series around a set of timestamps, you can use `compute_perievent_continuous`.
 
     Parameters
     ----------
-    data : Ts/Tsd/TsGroup
+    data : Ts, Tsd or TsGroup
         The data to align to tref.
         If Ts/Tsd, returns a TsGroup.
         If TsGroup, returns a dictionnary of TsGroup
-    tref : Ts/Tsd
+    tref : Ts or Tsd
         The timestamps of the event to align to
-    minmax : tuple or int or float
+    minmax : tuple, int or float
         The window size. Can be unequal on each side i.e. (-500, 1000).
     time_unit : str, optional
         Time units of the minmax ('s' [default], 'ms', 'us').
@@ -81,8 +84,15 @@ def compute_perievent(data, tref, minmax, time_unit="s"):
     RuntimeError
         if tref is not a Ts/Tsd object or if data is not a Ts/Tsd or TsGroup
     """
-    if not isinstance(tref, (nap.Ts, nap.Tsd)):
-        raise RuntimeError("tref should be a Ts or Tsd object.")
+    assert isinstance(tref, (nap.Ts, nap.Tsd)), "tref should be a Ts or Tsd object."
+    assert isinstance(
+        data, (nap.Ts, nap.Tsd, nap.TsGroup)
+    ), "data should be a Ts, Tsd or TsGroup."
+    assert isinstance(
+        minmax, (float, int, tuple)
+    ), "minmax should be a tuple or int or float."
+    assert isinstance(time_unit, str), "time_unit should be a str."
+    assert time_unit in ["s", "ms", "us"], "time_unit should be 's', 'ms' or 'us'"
 
     if isinstance(minmax, float) or isinstance(minmax, int):
         minmax = np.array([minmax, minmax], dtype=np.float64)
@@ -99,19 +109,17 @@ def compute_perievent(data, tref, minmax, time_unit="s"):
 
         return toreturn
 
-    elif isinstance(data, (nap.Ts, nap.Tsd)):
-        return _align_tsd(data, tref, window, time_support)
-
     else:
-        raise RuntimeError("Unknown format for data")
+        return _align_tsd(data, tref, window, time_support)
 
 
 def compute_perievent_continuous(data, tref, minmax, ep=None, time_unit="s"):
     """
-    Center contiunous time series around the timestamps given by the tref argument.
-    minmax indicates the start and end of the window.
+    Center continuous time series around the timestamps given by the 'tref' argument.
+    `minmax` indicates the start and end of the window. If `minmax=(-5, 10)`, the window will be from -5 second to 10 second.
+    If `minmax=10`, the window will be from -10 second to 10 second.
 
-    If the input is a n dimensional time series, it returns a n+1 dimensional time series.
+    To realign timestamps around a set of timestamps, you can use `compute_perievent_continuous`.
 
     This function assumes a constant sampling rate of the time series.
 
@@ -119,22 +127,25 @@ def compute_perievent_continuous(data, tref, minmax, ep=None, time_unit="s"):
     ----------
     data : Tsd, TsdFrame or TsdTensor
         The data to align to tref.
-    tref : Ts/Tsd
+    tref : Ts or Tsd
         The timestamps of the event to align to
     minmax : tuple or int or float
         The window size. Can be unequal on each side i.e. (-500, 1000).
+    ep : IntervalSet, optional
+        The epochs to perform the operation. If None, the default is the time support of the data.
     time_unit : str, optional
         Time units of the minmax ('s' [default], 'ms', 'us').
 
     Returns
     -------
-    Tsd, TsdFrame, TsdTensor
-
+    TsdFrame, TsdTensor
+        If `data` is a one-dimensional Tsd, the output is a TsdFrame. Each column is one timestamps from `tref`.
+        If `data` is a TsdFrame or TsdTensor, the output is a TsdTensor with one more dimension. The first dimension is always time and the second dimension is the 'tref' timestamps.
 
     Raises
     ------
     RuntimeError
-        if tref is not a Ts/Tsd object or if data is not a Ts/Tsd/Tensor object.
+        if tref is not a Ts/Tsd object or if data is not a Tsd/TsdFrame/TsdTensor object.
     """
 
     assert isinstance(tref, (nap.Ts, nap.Tsd)), "tref should be a Ts or Tsd object."
@@ -145,7 +156,7 @@ def compute_perievent_continuous(data, tref, minmax, ep=None, time_unit="s"):
         minmax, (float, int, tuple)
     ), "minmax should be a tuple or int or float."
     assert isinstance(time_unit, str), "time_unit should be a str."
-    assert time_unit in ["s", "ms", "us"], "time_unit should be 's', 'ms' or 'us')"
+    assert time_unit in ["s", "ms", "us"], "time_unit should be 's', 'ms' or 'us'"
 
     if ep is None:
         ep = data.time_support
@@ -182,14 +193,14 @@ def compute_perievent_continuous(data, tref, minmax, ep=None, time_unit="s"):
 
 
 def compute_event_trigger_average(
-    group, feature, binsize, windowsize, ep, time_units="s"
+    group, feature, binsize, windowsize, ep, time_unit="s"
 ):
     """
-    Bin the spike train in binsize and compute the Spike Trigger Average (STA) within windowsize.
-    If C is the spike count matrix and feature is a Tsd array, the function computes
+    Bin the spike train in binsize and compute the Event Trigger Average (ETA) within windowsize.
+    If C is the spike count matrix and `feature` is a Tsd array, the function computes
     the Hankel matrix H from windowsize=(-t1,+t2) by offseting the Tsd array.
 
-    The STA is then defined as the dot product between H and C divided by the number of spikes.
+    The ETA is then defined as the dot product between H and C divided by the number of events.
 
     Parameters
     ----------
@@ -197,49 +208,56 @@ def compute_event_trigger_average(
         The group of Ts/Tsd objects that hold the trigger time.
     feature : Tsd
         The 1-dimensional feature to average. Can be a TsdFrame with one column only.
-    binsize : float
+    binsize : float or int
         The bin size. Default is second.
-        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
+        If different, specify with the parameter time_unit ('s' [default], 'ms', 'us').
     windowsize : tuple or list of float
         The window size. Default is second. For example (-1, 1).
-        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
+        If different, specify with the parameter time_unit ('s' [default], 'ms', 'us').
     ep : IntervalSet
-        The epoch on which STA are computed
-    time_units : str, optional
-        The time units of the parameters. They have to be consistent for binsize and windowsize.
+        The epoch on which ETA are computed
+    time_unit : str, optional
+        The time unit of the parameters. They have to be consistent for binsize and windowsize.
         ('s' [default], 'ms', 'us').
 
     Returns
     -------
     TsdFrame
-        A TsdFrame of Spike-Trigger Average. Each column is an element from the group.
+        A TsdFrame of Event-Trigger Average. Each column is an element from the group.
 
     Raises
     ------
     RuntimeError
         if group is not a Ts/Tsd or TsGroup
     """
-    if type(group) is not nap.TsGroup:
-        raise RuntimeError("Unknown format for group")
+    assert isinstance(group, nap.TsGroup), "group should be a TsGroup."
+    assert isinstance(
+        windowsize, (float, int, tuple)
+    ), "windowsize should be a tuple or int or float."
+    assert isinstance(binsize, (float, int)), "binsize should be int or float."
+    assert isinstance(time_unit, str), "time_unit should be a str."
+    assert time_unit in ["s", "ms", "us"], "time_unit should be 's', 'ms' or 'us'"
+    assert isinstance(ep, (nap.IntervalSet)), "ep should be an IntervalSet object."
 
     if isinstance(feature, nap.TsdFrame):
         if feature.shape[1] == 1:
             feature = feature[:, 0]
 
-    if type(feature) is not nap.Tsd:
-        raise RuntimeError("Feature should be a Tsd or a TsdFrame with one column")
+    assert isinstance(
+        feature, nap.Tsd
+    ), "Feature should be a Tsd or a TsdFrame with one column"
 
     binsize = nap.TsIndex.format_timestamps(
-        np.array([binsize], dtype=np.float64), time_units
+        np.array([binsize], dtype=np.float64), time_unit
     )[0]
     start = np.abs(
         nap.TsIndex.format_timestamps(
-            np.array([windowsize[0]], dtype=np.float64), time_units
+            np.array([windowsize[0]], dtype=np.float64), time_unit
         )[0]
     )
     end = np.abs(
         nap.TsIndex.format_timestamps(
-            np.array([windowsize[1]], dtype=np.float64), time_units
+            np.array([windowsize[1]], dtype=np.float64), time_unit
         )[0]
     )
     idx1 = -np.arange(0, start + binsize, binsize)[::-1][:-1]
