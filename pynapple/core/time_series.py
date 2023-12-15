@@ -1403,7 +1403,7 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
         )
 
         return
-    
+
     def interpolate(self, ts, ep=None, left=None, right=None):
         """Wrapper of the numpy linear interpolation method. See https://numpy.org/doc/stable/reference/generated/numpy.interp.html for an explanation of the parameters.
         The argument ts should be Ts, Tsd, TsdFrame, TsdTensor to ensure interpolating from sorted timestamps in the right unit,
@@ -1437,9 +1437,10 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
             tmp = self.restrict(ep.loc[[i]])
             if len(t) and len(tmp):
                 interpolated_values = np.apply_along_axis(
-                        lambda row: np.interp(t.index.values, tmp.index.values, row), 
-                        0, 
-                        tmp.values)
+                    lambda row: np.interp(t.index.values, tmp.index.values, row),
+                    0,
+                    tmp.values,
+                )
                 new_d[start : start + len(t), :] = interpolated_values
 
             start += len(t)
