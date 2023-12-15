@@ -1403,6 +1403,62 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
         )
 
         return
+    
+    def interpolate(self, ts, ep=None, left=None, right=None):
+        """Wrapper of the numpy linear interpolation method. See https://numpy.org/doc/stable/reference/generated/numpy.interp.html for an explanation of the parameters.
+        The argument ts should be Ts, Tsd, TsdFrame, TsdTensor to ensure interpolating from sorted timestamps in the right unit,
+
+        Parameters
+        ----------
+        ts : Ts, Tsd or TsdFrame
+            The object holding the timestamps
+        ep : IntervalSet, optional
+            The epochs to use to interpolate. If None, the time support of Tsd is used.
+        left : None, optional
+            Value to return for ts < tsd[0], default is tsd[0].
+        right : None, optional
+            Value to return for ts > tsd[-1], default is tsd[-1].
+        """
+        if not isinstance(ts, (Ts, Tsd, TsdFrame)):
+            raise RuntimeError(
+                "First argument should be an instance of Ts, Tsd or TsdFrame"
+            )
+
+        if not isinstance(ep, IntervalSet):
+            ep = self.time_support
+
+        new_t = ts.restrict(ep).index
+        new_d = np.empty((len(new_t), self.shape[1]))
+        new_d.fill(np.nan)
+
+        start = 0
+        for i in range(len(ep)):
+            t = ts.restrict(ep.loc[[i]])
+            tmp = self.restrict(ep.loc[[i]])
+            if len(t) and len(tmp):
+                # = np.interp(
+                #    t.index.values, tmp.index.values, tmp.values, left=left, right=right
+                #)
+                # print(tmp.index.values.shape, tmp.values.shape, t.index.values.shape)
+                interpolated_values = np.apply_along_axis(
+                        lambda row: np.interp(t.index.values, tmp.index.values, row), 
+                        0, 
+                        tmp.values)
+                new_d[start : start + len(t), :] = interpolated_values
+
+                # Function to apply along each row
+
+                # def _interp_row(row):
+                #     print(row.shape, t.index.values.shape, tmp.index.values.shape)
+                #     return np.interp(t.index.values, tmp.index.values, row, left=left, right=right)
+
+                # # Apply the function along the axis 1 (row-wise)
+                # interpolated_values = np.apply_along_axis(_interp_row, 0, tmp.values)
+                # new_d[start : start + len(t), :] = interpolated_values
+
+            start += len(t)
+
+        return TsdFrame(t=new_t, d=new_d, columns=self.columns, time_support=ep)
 
 
 class Tsd(NDArrayOperatorsMixin, _AbstractTsd):
