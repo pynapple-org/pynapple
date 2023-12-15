@@ -1436,25 +1436,11 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
             t = ts.restrict(ep.loc[[i]])
             tmp = self.restrict(ep.loc[[i]])
             if len(t) and len(tmp):
-                # = np.interp(
-                #    t.index.values, tmp.index.values, tmp.values, left=left, right=right
-                #)
-                # print(tmp.index.values.shape, tmp.values.shape, t.index.values.shape)
                 interpolated_values = np.apply_along_axis(
                         lambda row: np.interp(t.index.values, tmp.index.values, row), 
                         0, 
                         tmp.values)
                 new_d[start : start + len(t), :] = interpolated_values
-
-                # Function to apply along each row
-
-                # def _interp_row(row):
-                #     print(row.shape, t.index.values.shape, tmp.index.values.shape)
-                #     return np.interp(t.index.values, tmp.index.values, row, left=left, right=right)
-
-                # # Apply the function along the axis 1 (row-wise)
-                # interpolated_values = np.apply_along_axis(_interp_row, 0, tmp.values)
-                # new_d[start : start + len(t), :] = interpolated_values
 
             start += len(t)
 
