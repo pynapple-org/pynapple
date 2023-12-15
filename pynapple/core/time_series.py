@@ -926,7 +926,56 @@ class _AbstractTsd(abc.ABC):
         window = signal.windows.gaussian(size, std=std)
         window = window / window.sum()
         return self.convolve(window)
+    
+    def interpolate(self, ts, ep=None, left=None, right=None):
+        """Wrapper of the numpy linear interpolation method. See https://numpy.org/doc/stable/reference/generated/numpy.interp.html for an explanation of the parameters.
+        The argument ts should be Ts, Tsd, TsdFrame, TsdTensor to ensure interpolating from sorted timestamps in the right unit,
 
+        Parameters
+        ----------
+        ts : Ts, Tsd or TsdFrame
+            The object holding the timestamps
+        ep : IntervalSet, optional
+            The epochs to use to interpolate. If None, the time support of Tsd is used.
+        left : None, optional
+            Value to return for ts < tsd[0], default is tsd[0].
+        right : None, optional
+            Value to return for ts > tsd[-1], default is tsd[-1].
+        """
+        if not isinstance(ts, (Ts, Tsd, TsdFrame)):
+            raise RuntimeError(
+                "First argument should be an instance of Ts, Tsd or TsdFrame"
+            )
+
+        if not isinstance(ep, IntervalSet):
+            ep = self.time_support
+
+        new_t = ts.restrict(ep).index
+        
+        new_shape = len(new_t) if self.values.ndim == 1 else (len(new_t),) + self.shape[1:]
+        new_d = np.full(new_shape, np.nan)
+
+        start = 0
+        for i in range(len(ep)):
+            t = ts.restrict(ep.loc[[i]])
+            tmp = self.restrict(ep.loc[[i]])
+            if len(t) and len(tmp):
+                if self.values.ndim == 1:
+                    new_d[start : start + len(t)] = np.interp(
+                        t.index.values, tmp.index.values, tmp.values, left=left, right=right
+                    )
+                else:
+                    interpolated_values = np.apply_along_axis(
+                        lambda row: np.interp(t.index.values, tmp.index.values, row),
+                        0,
+                        tmp.values,
+                        )
+                    new_d[start : start + len(t), ...] = interpolated_values
+
+            start += len(t)
+
+        return self.__class__(t=new_t, d=new_d, time_support=ep)
+    
 
 class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
     """
@@ -1404,48 +1453,48 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
 
         return
 
-    def interpolate(self, ts, ep=None, left=None, right=None):
-        """Wrapper of the numpy linear interpolation method. See https://numpy.org/doc/stable/reference/generated/numpy.interp.html for an explanation of the parameters.
-        The argument ts should be Ts, Tsd, TsdFrame, TsdTensor to ensure interpolating from sorted timestamps in the right unit,
+    # def interpolate(self, ts, ep=None, left=None, right=None):
+    #     """Wrapper of the numpy linear interpolation method. See https://numpy.org/doc/stable/reference/generated/numpy.interp.html for an explanation of the parameters.
+    #     The argument ts should be Ts, Tsd, TsdFrame, TsdTensor to ensure interpolating from sorted timestamps in the right unit,
 
-        Parameters
-        ----------
-        ts : Ts, Tsd or TsdFrame
-            The object holding the timestamps
-        ep : IntervalSet, optional
-            The epochs to use to interpolate. If None, the time support of Tsd is used.
-        left : None, optional
-            Value to return for ts < tsd[0], default is tsd[0].
-        right : None, optional
-            Value to return for ts > tsd[-1], default is tsd[-1].
-        """
-        if not isinstance(ts, (Ts, Tsd, TsdFrame)):
-            raise RuntimeError(
-                "First argument should be an instance of Ts, Tsd or TsdFrame"
-            )
+    #     Parameters
+    #     ----------
+    #     ts : Ts, Tsd or TsdFrame
+    #         The object holding the timestamps
+    #     ep : IntervalSet, optional
+    #         The epochs to use to interpolate. If None, the time support of Tsd is used.
+    #     left : None, optional
+    #         Value to return for ts < tsd[0], default is tsd[0].
+    #     right : None, optional
+    #         Value to return for ts > tsd[-1], default is tsd[-1].
+    #     """
+    #     if not isinstance(ts, (Ts, Tsd, TsdFrame)):
+    #         raise RuntimeError(
+    #             "First argument should be an instance of Ts, Tsd or TsdFrame"
+    #         )
 
-        if not isinstance(ep, IntervalSet):
-            ep = self.time_support
+    #     if not isinstance(ep, IntervalSet):
+    #         ep = self.time_support
 
-        new_t = ts.restrict(ep).index
-        new_d = np.empty((len(new_t), self.shape[1]))
-        new_d.fill(np.nan)
+    #     new_t = ts.restrict(ep).index
+    #     new_d = np.empty((len(new_t), self.shape[1]))
+    #     new_d.fill(np.nan)
 
-        start = 0
-        for i in range(len(ep)):
-            t = ts.restrict(ep.loc[[i]])
-            tmp = self.restrict(ep.loc[[i]])
-            if len(t) and len(tmp):
-                interpolated_values = np.apply_along_axis(
-                    lambda row: np.interp(t.index.values, tmp.index.values, row),
-                    0,
-                    tmp.values,
-                )
-                new_d[start : start + len(t), :] = interpolated_values
+    #     start = 0
+    #     for i in range(len(ep)):
+    #         t = ts.restrict(ep.loc[[i]])
+    #         tmp = self.restrict(ep.loc[[i]])
+    #         if len(t) and len(tmp):
+    #             interpolated_values = np.apply_along_axis(
+    #                 lambda row: np.interp(t.index.values, tmp.index.values, row),
+    #                 0,
+    #                 tmp.values,
+    #             )
+    #             new_d[start : start + len(t), :] = interpolated_values
 
-            start += len(t)
+    #         start += len(t)
 
-        return TsdFrame(t=new_t, d=new_d, columns=self.columns, time_support=ep)
+    #     return TsdFrame(t=new_t, d=new_d, columns=self.columns, time_support=ep)
 
 
 class Tsd(NDArrayOperatorsMixin, _AbstractTsd):
@@ -1778,45 +1827,6 @@ class Tsd(NDArrayOperatorsMixin, _AbstractTsd):
         )
 
         return
-
-    def interpolate(self, ts, ep=None, left=None, right=None):
-        """Wrapper of the numpy linear interpolation method. See https://numpy.org/doc/stable/reference/generated/numpy.interp.html for an explanation of the parameters.
-        The argument ts should be Ts, Tsd, TsdFrame, TsdTensor to ensure interpolating from sorted timestamps in the right unit,
-
-        Parameters
-        ----------
-        ts : Ts, Tsd or TsdFrame
-            The object holding the timestamps
-        ep : IntervalSet, optional
-            The epochs to use to interpolate. If None, the time support of Tsd is used.
-        left : None, optional
-            Value to return for ts < tsd[0], default is tsd[0].
-        right : None, optional
-            Value to return for ts > tsd[-1], default is tsd[-1].
-        """
-        if not isinstance(ts, (Ts, Tsd, TsdFrame)):
-            raise RuntimeError(
-                "First argument should be an instance of Ts, Tsd or TsdFrame"
-            )
-
-        if not isinstance(ep, IntervalSet):
-            ep = self.time_support
-
-        new_t = ts.restrict(ep).index
-        new_d = np.empty(len(new_t))
-        new_d.fill(np.nan)
-
-        start = 0
-        for i in range(len(ep)):
-            t = ts.restrict(ep.loc[[i]])
-            tmp = self.restrict(ep.loc[[i]])
-            if len(t) and len(tmp):
-                new_d[start : start + len(t)] = np.interp(
-                    t.index.values, tmp.index.values, tmp.values, left=left, right=right
-                )
-            start += len(t)
-
-        return Tsd(t=new_t, d=new_d, time_support=ep)
 
 
 class Ts(_AbstractTsd):
