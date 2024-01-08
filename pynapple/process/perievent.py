@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-12-12 18:17:42
+# @Last Modified time: 2024-01-08 17:42:20
 
 import numpy as np
 from scipy.linalg import hankel
@@ -193,7 +193,7 @@ def compute_perievent_continuous(data, tref, minmax, ep=None, time_unit="s"):
 
 
 def compute_event_trigger_average(
-    group, feature, binsize, windowsize, ep, time_unit="s"
+    group, feature, binsize, windowsize, ep, time_unit="s", fill_method="forward"
 ):
     """
     Bin the spike train in binsize and compute the Event Trigger Average (ETA) within windowsize.
@@ -219,6 +219,9 @@ def compute_event_trigger_average(
     time_unit : str, optional
         The time unit of the parameters. They have to be consistent for binsize and windowsize.
         ('s' [default], 'ms', 'us').
+    fill_method : str, optional
+        The method for adding feature values if the resolution determined by the binsize is larger than the feature rate.
+        ('forward' [default], 'backward', 'closest')
 
     Returns
     -------
@@ -232,20 +235,16 @@ def compute_event_trigger_average(
     """
     assert isinstance(group, nap.TsGroup), "group should be a TsGroup."
     assert isinstance(
+        feature, (nap.Tsd, nap.TsdFrame, nap.TsdTensor)
+    ), "Feature should be a Tsd, TsdFrame or TsdTensor"
+    assert isinstance(
         windowsize, (float, int, tuple)
     ), "windowsize should be a tuple or int or float."
     assert isinstance(binsize, (float, int)), "binsize should be int or float."
     assert isinstance(time_unit, str), "time_unit should be a str."
     assert time_unit in ["s", "ms", "us"], "time_unit should be 's', 'ms' or 'us'"
     assert isinstance(ep, (nap.IntervalSet)), "ep should be an IntervalSet object."
-
-    if isinstance(feature, nap.TsdFrame):
-        if feature.shape[1] == 1:
-            feature = feature[:, 0]
-
-    assert isinstance(
-        feature, nap.Tsd
-    ), "Feature should be a Tsd or a TsdFrame with one column"
+    assert fill_method in ["forward", "backward", "closest"], "fill_method should be 'forward', 'backward', 'closest'"
 
     binsize = nap.TsIndex.format_timestamps(
         np.array([binsize], dtype=np.float64), time_unit
@@ -263,26 +262,86 @@ def compute_event_trigger_average(
     idx1 = -np.arange(0, start + binsize, binsize)[::-1][:-1]
     idx2 = np.arange(0, end + binsize, binsize)[1:]
     time_idx = np.hstack((idx1, np.zeros(1), idx2))
+    
+    eta = np.zeros((time_idx.shape[0], len(group), *feature.shape[1:]))
 
-    count = group.count(binsize, ep)
+    if feature.rate > 1/binsize
 
-    tmp = feature.bin_average(binsize, ep)
+        tmp = feature.bin_average(binsize, ep)
 
-    # Check for any NaNs in feature
-    if np.any(np.isnan(tmp)):
-        tmp = tmp.dropna()
-        count = count.restrict(tmp.time_support)
+        # Check for any NaNs in feature
+        if np.any(np.isnan(tmp)):
+            tmp = tmp.dropna()
+            ep = tmp.time_support
 
-    # Build the Hankel matrix
-    n_p = len(idx1)
-    n_f = len(idx2)
-    pad_tmp = np.pad(tmp, (n_p, n_f))
-    offset_tmp = hankel(pad_tmp, pad_tmp[-(n_p + n_f + 1) :])[0 : len(tmp)]
+        # count = group.count(binsize, ep)
+        n_p = len(idx1)
+        n_f = len(idx2)
+        pad_tmp = np.pad(tmp, (n_p, n_f))
+        offset_tmp = hankel(pad_tmp, pad_tmp[-(n_p + n_f + 1) :])[0 : len(tmp)]
 
-    sta = np.dot(offset_tmp.T, count.values)
+        eta = np.dot(offset_tmp.T, count.values)
 
-    sta = sta / np.sum(count, 0)
+        eta = eta / np.sum(count, 0)
 
-    sta = nap.TsdFrame(t=time_idx, d=sta, columns=group.index)
+        eta = nap.TsdFrame(t=time_idx, d=eta, columns=group.index)        
 
-    return sta
+    else:
+        
+        time_array = feature.index.values
+        data_array = feature.values
+        starts = ep.start.values
+        ends = ep.end.values
+        windows = np.hstack((time_idx - binsize/2, [time_idx[-1] + binsize]))
+
+        for i, n in enumerate(group.keys()):
+            
+            time_target_array = group[n].index.values
+
+            eta[:,i] = nap.jitted_functions.jitperievent_trigger_average(
+                time_array, data_array, time_target_array, starts, ends, windows, fill_method
+                )
+
+        eta[:,i] = new_data_array.mean(1)
+
+
+
+    # if tmp.ndim == 1:
+    #     # # Build the Hankel matrix
+    #     # pad_tmp = np.pad(tmp, (n_p, n_f))
+    #     # offset_tmp = hankel(pad_tmp, pad_tmp[-(n_p + n_f + 1) :])[0 : len(tmp)]
+
+    #     # sta = np.dot(offset_tmp.T, count.values)
+
+    #     # sta = sta / np.sum(count, 0)
+
+    #     # sta = nap.TsdFrame(t=time_idx, d=sta, columns=group.index)
+
+
+
+
+    #     eta = jit_compute_eta(tmp.values, count, n_p, n_f)
+    #     eta = nap.TsdFrame(t=time_idx, d=eta, columns=group.index)
+
+    # else:
+        
+    #     tmp = tmp.values.reshape(tmp.shape[0], np.prod(tmp.shape[1:]))
+
+    #     sta = np.zeros((time_idx.shape[0], count.shape[1], tmp.shape[1]))
+
+    #     for i in range(tmp.shape[1]):
+    #         sta[:,:,i] = jit_compute_eta(tmp[:,i], count, n_p, n_f)
+
+    #     # for i in range(n_p, len(count)-n_f-1):
+    #     #     a = tmp[np.maximum(0, i-n_p):np.minimum(tmp.shape[0], i+n_f+1)].values
+    #     #     b = count[np.maximum(0, i-n_p):np.minimum(tmp.shape[0], i+n_f+1)].values
+
+    #     #     sta += np.einsum('ikl,ij->ijkl', a, b)
+
+    if eta.ndim == 2:
+        return nap.TsdFrame(t=time_idx, d=eta, columns=group.index)
+    else:
+        return nap.TsdTensor(t=time_idx, d=eta)
+
+
+    return eta

@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-12-07 13:58:06
+# @Last Modified time: 2024-01-08 16:09:01
 
 """
 
@@ -47,7 +47,7 @@ from .jitted_functions import (
     jittsrestrict_with_count,
     jitvaluefrom,
     jitvaluefromtensor,
-    pjitconvolve,
+    pjitconvolve,    
 )
 from .time_index import TsIndex
 
@@ -926,7 +926,6 @@ class _AbstractTsd(abc.ABC):
         window = signal.windows.gaussian(size, std=std)
         window = window / window.sum()
         return self.convolve(window)
-
 
 class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
     """

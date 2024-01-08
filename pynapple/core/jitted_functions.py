@@ -2,7 +2,7 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-12-12 16:50:36
+# @Last Modified time: 2024-01-08 17:42:45
 import numpy as np
 from numba import jit, njit, prange
 
@@ -901,17 +901,59 @@ def jitcontinuous_perievent(
 
     return new_data_array
 
+@njit(parallel=True)
+def jitperievent_trigger_average(
+    time_array, data_array, time_target_array, starts, ends, windows, fill_method
+):
+    N_epochs = len(starts)
+    count = np.zeros((N_epochs, 2), dtype=np.int64)
 
-# time_array = tsd.t
-# time_target_array = tref.t
-# data_array = tsd.d
+    time_array, data_array, count[:,0] = jitrestrict_with_count(time_array, data_array, starts, ends)
+    time_target_array, count[:,1] = jittsrestrict_with_count(time_target_array, starts, ends)
 
-# for i,t in enumerate(tref.restrict(ep).t):
-#     plot(time_idx + t, new_data_array[:,i]+i*2.0, 'o')
-#     plot(tsd + i*2.0, color='grey')
-# [axvspan(ep.loc[i,'start'], ep.loc[i,'end'], alpha=0.3) for i in range(len(ep))]
-# [axvline(t) for t in tref.restrict(ep).t]
+    N_samples = len(time_array)
+    N_target = len(time_target_array)
+    
+    new_data_array = np.zeros((
+        windows.shape[0] - 1,
+        *data_array.shape[1:]
+        ))
 
+    t = 0
+    i = 0
+
+    if np.all((count[:, 0] * count[:, 1]) > 0):
+        for k in prange(N_epochs):
+            if count[k, 0] > 0 and count[k, 1] > 0:
+                maxt = t + count[k, 0]
+                maxi = i + count[k, 1]
+                cnt_i = np.sum(count[0:k, 1])
+
+                while i < maxi:
+                    interval = abs(time_array[t] - time_target_array[i])
+                    t_pos = t
+                    t += 1
+                    while t < maxt:
+                        new_interval = abs(time_array[t] - time_target_array[i])
+                        if new_interval > interval:
+                            break
+                        else:
+                            interval = new_interval
+                            t_pos = t
+                            t += 1
+
+                    left = np.minimum(windowsize[0], t_pos - start_t[k, 0])
+                    right = np.minimum(windowsize[1], maxt - t_pos - 1)
+                    center = windowsize[0] + 1
+                    new_data_array[
+                        center - left - 1 : center + right, cnt_i
+                    ] = data_array[t_pos - left : t_pos + right + 1]
+
+                    t -= 1
+                    i += 1
+                    cnt_i += 1
+
+    return new_data_array
 
 # @jit(nopython=True)
 # def jit_poisson_IRLS(X, y, niter=100, tolerance=1e-5):
