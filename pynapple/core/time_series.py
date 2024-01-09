@@ -959,8 +959,9 @@ class _AbstractTsd(abc.ABC):
 
         start = 0
         for i in range(len(ep)):
-            t = ts.restrict(ep.loc[[i]])
-            tmp = self.restrict(ep.loc[[i]])
+            t = ts.get(ep.loc[i, "start"], ep.loc[i, "end"])
+            tmp = self.get(ep.loc[i, "start"], ep.loc[i, "end"])
+
             if len(t) and len(tmp):
                 if self.values.ndim == 1:
                     new_d[start : start + len(t)] = np.interp(
@@ -972,11 +973,13 @@ class _AbstractTsd(abc.ABC):
                     )
                 else:
                     interpolated_values = np.apply_along_axis(
-                        lambda row: np.interp(t.index.values, 
-                                              tmp.index.values, 
-                                              row,
-                                              left=left,
-                                              right=right),
+                        lambda row: np.interp(
+                            t.index.values,
+                            tmp.index.values,
+                            row,
+                            left=left,
+                            right=right,
+                        ),
                         0,
                         tmp.values,
                     )
