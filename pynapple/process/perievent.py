@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-08 17:42:20
+# @Last Modified time: 2024-01-09 11:38:11
 
 import numpy as np
 from scipy.linalg import hankel
@@ -265,7 +265,7 @@ def compute_event_trigger_average(
     
     eta = np.zeros((time_idx.shape[0], len(group), *feature.shape[1:]))
 
-    if feature.rate > 1/binsize
+    if feature.rate > 1/binsize:
 
         tmp = feature.bin_average(binsize, ep)
 
