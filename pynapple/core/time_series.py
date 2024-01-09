@@ -942,7 +942,7 @@ class _AbstractTsd(abc.ABC):
         right : None, optional
             Value to return for ts > tsd[-1], default is tsd[-1].
         """
-        if not isinstance(ts, (Ts, Tsd, TsdFrame)):
+        if not isinstance(ts, (Ts, Tsd, TsdFrame, TsdTensor)):
             raise RuntimeError(
                 "First argument should be an instance of Ts, Tsd or TsdFrame"
             )
@@ -972,15 +972,21 @@ class _AbstractTsd(abc.ABC):
                     )
                 else:
                     interpolated_values = np.apply_along_axis(
-                        lambda row: np.interp(t.index.values, tmp.index.values, row),
+                        lambda row: np.interp(t.index.values, 
+                                              tmp.index.values, 
+                                              row,
+                                              left=left,
+                                              right=right),
                         0,
                         tmp.values,
                     )
                     new_d[start : start + len(t), ...] = interpolated_values
 
             start += len(t)
-
-        return self.__class__(t=new_t, d=new_d, time_support=ep)
+        kwargs_dict = dict(time_support=ep)
+        if hasattr(self, "columns"):
+            kwargs_dict["columns"] = self.columns
+        return self.__class__(t=new_t, d=new_d, **kwargs_dict)
 
 
 class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
