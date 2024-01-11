@@ -7,7 +7,6 @@
 
 """Tests of time series for `pynapple` package."""
 
-from turtle import st
 import pynapple as nap
 import numpy as np
 import pandas as pd
