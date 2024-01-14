@@ -2,7 +2,7 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-08 17:42:45
+# @Last Modified time: 2024-01-14 16:44:17
 import numpy as np
 from numba import jit, njit, prange
 
@@ -866,7 +866,7 @@ def jitcontinuous_perievent(
         (np.sum(windowsize) + 1, np.sum(count[:, 1]), *data_array.shape[1:]), np.nan
     )
 
-    if np.all((count[:, 0] * count[:, 1]) > 0):
+    if np.any((count[:, 0] * count[:, 1]) > 0):
         for k in prange(N_epochs):
             if count[k, 0] > 0 and count[k, 1] > 0:
                 t = start_t[k, 0]
@@ -901,7 +901,8 @@ def jitcontinuous_perievent(
 
     return new_data_array
 
-@njit(parallel=True)
+# @njit(parallel=True)
+@jit(nopython=True)
 def jitperievent_trigger_average(
     time_array, data_array, time_target_array, starts, ends, windows, fill_method
 ):
@@ -914,44 +915,63 @@ def jitperievent_trigger_average(
     N_samples = len(time_array)
     N_target = len(time_target_array)
     
-    new_data_array = np.zeros((
-        windows.shape[0] - 1,
-        *data_array.shape[1:]
-        ))
+    new_data_array = np.full(
+        (windows.shape[0] -1, *data_array.shape[1:]), 0.0
+    )
 
     t = 0
-    i = 0
+    i = 0 # target
 
-    if np.all((count[:, 0] * count[:, 1]) > 0):
-        for k in prange(N_epochs):
-            if count[k, 0] > 0 and count[k, 1] > 0:
-                maxt = t + count[k, 0]
-                maxi = i + count[k, 1]
-                cnt_i = np.sum(count[0:k, 1])
+    total = np.zeros((new_data_array.shape[0]))
+    
+    for k in range(N_epochs):
+        if count[k, 0] > 0 and count[k, 1] > 0:
+            maxt = t + count[k, 0]
+            maxi = i + count[k, 1]
 
-                while i < maxi:
-                    interval = abs(time_array[t] - time_target_array[i])
-                    t_pos = t
-                    t += 1
-                    while t < maxt:
-                        new_interval = abs(time_array[t] - time_target_array[i])
-                        if new_interval > interval:
-                            break
-                        else:
-                            interval = new_interval
-                            t_pos = t
-                            t += 1
+            while i < maxi:
+                
+                centered_windows = time_target_array[i] + windows
 
-                    left = np.minimum(windowsize[0], t_pos - start_t[k, 0])
-                    right = np.minimum(windowsize[1], maxt - t_pos - 1)
-                    center = windowsize[0] + 1
-                    new_data_array[
-                        center - left - 1 : center + right, cnt_i
-                    ] = data_array[t_pos - left : t_pos + right + 1]
+                j = 0
 
-                    t -= 1
-                    i += 1
-                    cnt_i += 1
+                while j < centered_windows.shape[0]-1:
+
+                    if time_array[t] < centered_windows[j+1]:
+
+                        t_start = t
+                        t_stop = t
+
+                        while t_stop < maxt:
+                            if time_array[t_stop] > centered_windows[j+1]:
+                                break
+                            t_stop+=1
+
+                        while t_start < t_stop-1:
+                            if time_array[t_start] > centered_windows[j]:
+                                break
+                            t_start+=1
+
+                        new_data_array[j] += data_array[t_start:t_stop].sum(0)
+                        total[j] += float(t_stop - t_start)
+
+                        t = t_stop
+
+                    if t == maxt:
+                        break
+
+                    j += 1
+
+                if t == maxt:
+                    break
+
+                i += 1
+
+
+
+    for i in range(new_data_array.shape[0]):
+        if total[i] > 0:
+            new_data_array[i] /= total[i]    
 
     return new_data_array
 
