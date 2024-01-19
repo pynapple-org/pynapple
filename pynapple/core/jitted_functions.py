@@ -2,7 +2,7 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-14 16:44:17
+# @Last Modified time: 2024-01-19 16:35:56
 import numpy as np
 from numba import jit, njit, prange
 
@@ -943,14 +943,21 @@ def jitperievent_trigger_average(
                         t_stop = t
 
                         while t_stop < maxt:
-                            if time_array[t_stop] > centered_windows[j+1]:
+                            if time_array[t_stop] < centered_windows[j+1]:
+                                t_stop +=1
+                            else:
                                 break
-                            t_stop+=1
+
+                        # while time_array[t_stop] < centered_windows[j+1]:                                                        
+                        #     t_stop += 1
+                        #     if t_stop == maxt:
+                        #         break
 
                         while t_start < t_stop-1:
-                            if time_array[t_start] > centered_windows[j]:
-                                break
-                            t_start+=1
+                            if time_array[t_start] < centered_windows[j]:
+                                t_start += 1
+                            else:
+                                break                            
 
                         new_data_array[j] += data_array[t_start:t_stop].sum(0)
                         total[j] += float(t_stop - t_start)
@@ -971,7 +978,7 @@ def jitperievent_trigger_average(
 
     for i in range(new_data_array.shape[0]):
         if total[i] > 0:
-            new_data_array[i] /= total[i]    
+            new_data_array[i] /= float(total[i])
 
     return new_data_array
 
