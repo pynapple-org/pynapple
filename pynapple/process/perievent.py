@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-23 12:21:10
+# @Last Modified time: 2024-01-24 17:36:00
 
 import numpy as np
 from scipy.linalg import hankel
@@ -278,64 +278,32 @@ def compute_event_trigger_average(
             np.array([windowsize[1]], dtype=np.float64), time_unit
         )[0]
     )
+
     idx1 = -np.arange(0, start + binsize, binsize)[::-1][:-1]
     idx2 = np.arange(0, end + binsize, binsize)[1:]
     time_idx = np.hstack((idx1, np.zeros(1), idx2))
     
     eta = np.zeros((time_idx.shape[0], len(group), *feature.shape[1:]))
 
-    # if edge_offset == "center":
-    #     windows = np.hstack((time_idx - binsize/2, [time_idx[-1] + binsize/2]))
-    # elif edge_offset == "left":
-    #     windows = np.hstack((time_idx - binsize, [time_idx[-1]]))
-    # else: # right
-    #     windows = np.hstack((time_idx, [time_idx[-1] + binsize]))
-
     windows = np.array([len(idx1), len(idx2)])
 
     # Bin the spike train
     count = group.count(binsize, ep)
 
-    time_array = np.round(count.index.values-binsize/2, 9)
+    time_array = np.round(count.index.values-(binsize/2), 9)
     count_array = count.values
     starts = ep.start.values
     ends = ep.end.values    
 
     time_target_array = feature.index.values
     data_target_array = feature.values
-
-    
-    # if feature.rate > 1/binsize:
-    #     tmp = feature.bin_average(binsize, ep)
-
-    #     # Check for any NaNs in feature
-    #     if np.any(np.isnan(tmp)):
-    #         tmp = tmp.dropna()
-    #         ep = tmp.time_support
-
-    #     # count = group.count(binsize, ep)
-    #     n_p = len(idx1)
-    #     n_f = len(idx2)
-    #     pad_tmp = np.pad(tmp, (n_p, n_f))
-    #     offset_tmp = hankel(pad_tmp, pad_tmp[-(n_p + n_f + 1) :])[0 : len(tmp)]
-
-    #     eta = np.dot(offset_tmp.T, count.values)
-
-    #     eta = eta / np.sum(count, 0)
-
-    #     eta = nap.TsdFrame(t=time_idx, d=eta, columns=group.index)        
-
-    # else:        
-
     
     eta = nap.jitted_functions.jitperievent_trigger_average(
-            time_array, count_array, time_target_array, data_target_array, starts, ends, windows
+            time_array, count_array, time_target_array, data_target_array, starts, ends, windows, binsize
             )
         
     if eta.ndim == 2:
         return nap.TsdFrame(t=time_idx, d=eta, columns=group.index)
     else:
-        return nap.TsdTensor(t=time_idx, d=eta)
+        return nap.TsdTensor(t=time_idx, d=eta), hankel1
 
-
-    return eta
