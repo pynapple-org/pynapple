@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-08-29 17:27:02
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-25 11:01:59
+# @Last Modified time: 2024-01-25 11:39:01
 #!/usr/bin/env python
 
 """Tests of spike trigger average for `pynapple` package."""
@@ -215,6 +215,7 @@ def test_compute_spike_trigger_average_time_unit():
         assert sta.shape == output.shape
         np.testing.assert_array_almost_equal(sta.values, output)
 
+@pytest.mark.filterwarnings("ignore")
 def test_compute_spike_trigger_average_no_windows():
     ep = nap.IntervalSet(0, 100)
     feature = pd.Series(index=np.arange(0, 101, 0.01), data=np.zeros(int(101 / 0.01)))

@@ -3,8 +3,8 @@
 """
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-11-10 14:20:44
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2024-01-25 12:12:03
 
 import warnings
 
@@ -57,7 +57,7 @@ def compute_discrete_tuning_curves(group, dict_ep):
 
     idx = np.sort(list(dict_ep.keys()))
 
-    tuning_curves = pd.DataFrame(index=idx, columns=list(group.keys()), data=0)
+    tuning_curves = pd.DataFrame(index=idx, columns=list(group.keys()), data=0.0)
 
     for k in dict_ep.keys():
         if not isinstance(dict_ep[k], nap.IntervalSet):
