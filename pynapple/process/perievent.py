@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-25 12:36:13
+# @Last Modified time: 2024-01-25 16:46:51
 
 import numpy as np
 
@@ -288,16 +288,29 @@ def compute_event_trigger_average(
     time_target_array = feature.index.values
     data_target_array = feature.values
 
-    eta = nap.jitted_functions.jitperievent_trigger_average(
-        time_array,
-        count_array,
-        time_target_array,
-        data_target_array,
-        starts,
-        ends,
-        windows,
-        binsize,
-    )
+    if data_target_array.ndim == 1:
+        eta = nap.jitted_functions.jitperievent_trigger_average(
+            time_array,
+            count_array,
+            time_target_array,
+            np.expand_dims(data_target_array, -1),
+            starts,
+            ends,
+            windows,
+            binsize,
+        )
+        eta = np.squeeze(eta, -1)
+    else:
+        eta = nap.jitted_functions.jitperievent_trigger_average(
+            time_array,
+            count_array,
+            time_target_array,
+            data_target_array,
+            starts,
+            ends,
+            windows,
+            binsize,
+        )
 
     if eta.ndim == 2:
         return nap.TsdFrame(t=time_idx, d=eta, columns=group.index)

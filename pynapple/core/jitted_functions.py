@@ -2,7 +2,7 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-25 12:30:57
+# @Last Modified time: 2024-01-25 16:43:34
 import numpy as np
 from numba import jit, njit, prange
 
@@ -959,7 +959,9 @@ def jitperievent_trigger_average(
                     v = np.sum(data_target_array[i_start:i_stop], 0) / float(
                         i_stop - i_start
                     )
-                    if not np.isnan(v):
+
+                    checknan = np.sum(v)
+                    if not np.isnan(checknan):
                         hankel_array[-1] = v
 
                 if t - t_start >= windows[1]:
