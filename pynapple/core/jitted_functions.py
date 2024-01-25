@@ -2,7 +2,7 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-24 17:55:09
+# @Last Modified time: 2024-01-25 10:35:43
 import numpy as np
 from numba import jit, njit, prange
 
@@ -948,9 +948,9 @@ def jitperievent_trigger_average(
                             i_start += 1
                         else:
                             break            
-
-                    # hankel_array[-1] = np.mean(data_target_array[i_start:i_stop], 0)                    
-                    hankel_array[-1] = np.sum(data_target_array[i_start:i_stop], 0)/float(i_stop-i_start)
+                    v = np.sum(data_target_array[i_start:i_stop], 0)/float(i_stop-i_start)                    
+                    if not np.isnan(v):                        
+                        hankel_array[-1] = v
                 
                 if t-t_start >= windows[1]:
                     for n in range(N):
@@ -964,7 +964,7 @@ def jitperievent_trigger_average(
 
                 i = i_start
 
-                if t == T:
+                if t == T or time_array[t] > ends[k]:
                     if t - t_start > windows[1]:
                         for j in range(windows[1]):    
                             for n in range(N):
@@ -974,11 +974,9 @@ def jitperievent_trigger_average(
                             hankel_array[0:-1] = hankel_array[1:]
                             hankel_array[-1] = 0.0
 
-                    break
-
-                if time_array[t] > ends[k]:
                     hankel_array *= 0.0       
                     break
+
                 
 
     total = np.sum(count_array, 0)

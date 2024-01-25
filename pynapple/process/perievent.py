@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-24 17:36:00
+# @Last Modified time: 2024-01-24 18:03:49
 
 import numpy as np
 from scipy.linalg import hankel
@@ -198,9 +198,7 @@ def compute_event_trigger_average(
     binsize, 
     windowsize=None, 
     ep=None, 
-    time_unit="s", 
-    edge_offset="center",
-    fill_method="forward"
+    time_unit="s",
 ):
     """
     Bin the spike train in binsize and compute the Event Trigger Average (ETA) within windowsize.
@@ -208,35 +206,26 @@ def compute_event_trigger_average(
     the Hankel matrix H from windowsize=(-t1,+t2) by offseting the Tsd array.
     
     The ETA is then defined as the dot product between H and C divided by the number of events.
+
+    The object feature can be any dimensions.
     
     Parameters
     ----------
     group : TsGroup
         The group of Ts/Tsd objects that hold the trigger time.
-    feature : Tsd
-        The 1-dimensional feature to average. Can be a TsdFrame with one column only.
+    feature : Tsd, TsdFrame or TsdTensor
+        The feature to average.
     binsize : float or int
         The bin size. Default is second.
         If different, specify with the parameter time_unit ('s' [default], 'ms', 'us').
-    windowsize : tuple or list of float
-        The window size. Default is second. For example (-1, 1).
+    windowsize : tuple of float/int or float/int
+        The window size. Default is second. For example windowsize = (-1, 1) is equivalent to windowsize = 1
         If different, specify with the parameter time_unit ('s' [default], 'ms', 'us').
     ep : IntervalSet
-        The epoch on which ETA are computed
+        The epochs on which the average is computed
     time_unit : str, optional
         The time unit of the parameters. They have to be consistent for binsize and windowsize.
         ('s' [default], 'ms', 'us').
-    edge_offset : str, optional
-        If t_e is the time of the event, this parameter determine how the bin edges are positionned relative to the event time.
-        If the windows has 3 bins with `b` the bin size, the window edges can be positionned differently relative to the event time:
-        'center' : The edges are [t_e-3b/2, t_e-b/2, t_e+b/2, t_e+3b/2]
-        'right': The edges are [t_e-b, t_e, t_e+b, t_e+2b]
-        'left' : The edges are [t_e-2b, t_e-b, t_e, t_e+b]
-        ('center' [default], 'left', 'right')
-    fill_method : str, optional
-        The method for adding feature values if the resolution determined by the binsize is larger than the feature rate.
-        ('forward' [default], 'backward', 'closest')
-        
     """
     assert isinstance(group, nap.TsGroup), "group should be a TsGroup."    
     assert isinstance(
@@ -244,11 +233,7 @@ def compute_event_trigger_average(
     ), "Feature should be a Tsd, TsdFrame or TsdTensor"
     assert isinstance(binsize, (float, int)), "binsize should be int or float."
     assert isinstance(time_unit, str), "time_unit should be a str."
-    assert isinstance(edge_offset, str), "edge_offset should be a str"   
-    assert isinstance(fill_method, str), "fill_method should be a str"
     assert time_unit in ["s", "ms", "us"], "time_unit should be 's', 'ms' or 'us'"
-    assert edge_offset in ["center", "left", "right"], "edge_offset should be 'center', 'left', 'right'"
-    assert fill_method in ["forward", "backward", "closest"], "fill_method should be 'forward', 'backward', 'closest'"
 
     if windowsize is not None:
         if isinstance(windowsize, tuple):
@@ -305,5 +290,5 @@ def compute_event_trigger_average(
     if eta.ndim == 2:
         return nap.TsdFrame(t=time_idx, d=eta, columns=group.index)
     else:
-        return nap.TsdTensor(t=time_idx, d=eta), hankel1
+        return nap.TsdTensor(t=time_idx, d=eta)
 
