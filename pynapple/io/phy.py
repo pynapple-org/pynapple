@@ -5,6 +5,7 @@ Class and functions for loading data processed with Phy2
 
 @author: Sara Mahallati, Guillaume Viejo
 """
+
 import os
 
 import numpy as np

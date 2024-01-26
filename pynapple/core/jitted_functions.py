@@ -891,9 +891,9 @@ def jitcontinuous_perievent(
                     left = np.minimum(windowsize[0], t_pos - start_t[k, 0])
                     right = np.minimum(windowsize[1], maxt - t_pos - 1)
                     center = windowsize[0] + 1
-                    new_data_array[
-                        center - left - 1 : center + right, cnt_i
-                    ] = data_array[t_pos - left : t_pos + right + 1]
+                    new_data_array[center - left - 1 : center + right, cnt_i] = (
+                        data_array[t_pos - left : t_pos + right + 1]
+                    )
 
                     t -= 1
                     i += 1
