@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-25 16:46:51
+# @Last Modified time: 2024-01-26 15:52:19
 
 import numpy as np
 
@@ -200,8 +200,8 @@ def compute_event_trigger_average(
     time_unit="s",
 ):
     """
-    Bin the spike train in binsize and compute the Event Trigger Average (ETA) within windowsize.
-    If C is the spike count matrix and `feature` is a Tsd array, the function computes
+    Bin the event timestamps within binsize and compute the Event Trigger Average (ETA) within windowsize.
+    If C is the event count matrix and `feature` is a Tsd array, the function computes
     the Hankel matrix H from windowsize=(-t1,+t2) by offseting the Tsd array.
 
     The ETA is then defined as the dot product between H and C divided by the number of events.

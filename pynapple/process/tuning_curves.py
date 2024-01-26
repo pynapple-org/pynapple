@@ -116,7 +116,7 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     if ep is None:
         ep = feature.time_support
     else:
-        assert isinstance(ep, nap.IntervalSet), "ep should be an IntervalSet"        
+        assert isinstance(ep, nap.IntervalSet), "ep should be an IntervalSet"
 
     if minmax is None:
         bins = np.linspace(np.min(feature), np.max(feature), nb_bins + 1)
