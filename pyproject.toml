@@ -45,7 +45,7 @@ repository = "https://github.com/pynapple-org/pynapple"
 ##########################################################################
 [project.optional-dependencies]
 dev = [
-    "black",                        # Code formatter
+    "black>=24.1.0",                # Code formatter
     "isort",                        # Import sorter
     "pip-tools",                    # Dependency management
     "pytest",                       # Testing framework

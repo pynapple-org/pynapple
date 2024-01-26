@@ -2,7 +2,7 @@
 # @Author: guillaume
 # @Date:   2022-10-31 16:44:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-12-12 16:50:36
+# @Last Modified time: 2024-01-25 16:43:34
 import numpy as np
 from numba import jit, njit, prange
 
@@ -866,7 +866,7 @@ def jitcontinuous_perievent(
         (np.sum(windowsize) + 1, np.sum(count[:, 1]), *data_array.shape[1:]), np.nan
     )
 
-    if np.all((count[:, 0] * count[:, 1]) > 0):
+    if np.any((count[:, 0] * count[:, 1]) > 0):
         for k in prange(N_epochs):
             if count[k, 0] > 0 and count[k, 1] > 0:
                 t = start_t[k, 0]
@@ -891,9 +891,9 @@ def jitcontinuous_perievent(
                     left = np.minimum(windowsize[0], t_pos - start_t[k, 0])
                     right = np.minimum(windowsize[1], maxt - t_pos - 1)
                     center = windowsize[0] + 1
-                    new_data_array[
-                        center - left - 1 : center + right, cnt_i
-                    ] = data_array[t_pos - left : t_pos + right + 1]
+                    new_data_array[center - left - 1 : center + right, cnt_i] = (
+                        data_array[t_pos - left : t_pos + right + 1]
+                    )
 
                     t -= 1
                     i += 1
@@ -902,15 +902,103 @@ def jitcontinuous_perievent(
     return new_data_array
 
 
-# time_array = tsd.t
-# time_target_array = tref.t
-# data_array = tsd.d
+@jit(nopython=True)
+def jitperievent_trigger_average(
+    time_array,
+    count_array,
+    time_target_array,
+    data_target_array,
+    starts,
+    ends,
+    windows,
+    binsize,
+):
+    T = time_array.shape[0]
+    N = count_array.shape[1]
+    N_epochs = len(starts)
 
-# for i,t in enumerate(tref.restrict(ep).t):
-#     plot(time_idx + t, new_data_array[:,i]+i*2.0, 'o')
-#     plot(tsd + i*2.0, color='grey')
-# [axvspan(ep.loc[i,'start'], ep.loc[i,'end'], alpha=0.3) for i in range(len(ep))]
-# [axvline(t) for t in tref.restrict(ep).t]
+    time_target_array, data_target_array, count = jitrestrict_with_count(
+        time_target_array, data_target_array, starts, ends
+    )
+    max_count = np.cumsum(count)
+
+    new_data_array = np.full(
+        (int(windows.sum()) + 1, count_array.shape[1], *data_target_array.shape[1:]),
+        0.0,
+    )
+
+    t = 0  # count events
+
+    hankel_array = np.zeros((new_data_array.shape[0], *data_target_array.shape[1:]))
+
+    for k in range(N_epochs):
+        if count[k] > 0:
+            t_start = t
+            maxi = max_count[k]
+            i = maxi - count[k]
+
+            while t < T:
+                lbound = time_array[t]
+                rbound = np.round(lbound + binsize, 9)
+
+                if time_target_array[i] < rbound:
+                    i_start = i
+                    i_stop = i
+
+                    while i_stop < maxi:
+                        if time_target_array[i_stop] < rbound:
+                            i_stop += 1
+                        else:
+                            break
+
+                    while i_start < i_stop - 1:
+                        if time_target_array[i_start] < lbound:
+                            i_start += 1
+                        else:
+                            break
+                    v = np.sum(data_target_array[i_start:i_stop], 0) / float(
+                        i_stop - i_start
+                    )
+
+                    checknan = np.sum(v)
+                    if not np.isnan(checknan):
+                        hankel_array[-1] = v
+
+                if t - t_start >= windows[1]:
+                    for n in range(N):
+                        new_data_array[:, n] += (
+                            hankel_array * count_array[t - windows[1], n]
+                        )
+
+                # hankel_array = np.roll(hankel_array, -1, axis=0)
+                hankel_array[0:-1] = hankel_array[1:]
+                hankel_array[-1] = 0.0
+
+                t += 1
+
+                i = i_start
+
+                if t == T or time_array[t] > ends[k]:
+                    if t - t_start > windows[1]:
+                        for j in range(windows[1]):
+                            for n in range(N):
+                                new_data_array[:, n] += (
+                                    hankel_array * count_array[t - windows[1] + j, n]
+                                )
+
+                            # hankel_array = np.roll(hankel_array, -1, axis=0)
+                            hankel_array[0:-1] = hankel_array[1:]
+                            hankel_array[-1] = 0.0
+
+                    hankel_array *= 0.0
+                    break
+
+    total = np.sum(count_array, 0)
+    for n in range(N):
+        if total[n] > 0.0:
+            new_data_array[:, n] /= total[n]
+
+    return new_data_array
 
 
 # @jit(nopython=True)

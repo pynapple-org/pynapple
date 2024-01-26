@@ -2,10 +2,9 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-12-12 18:17:42
+# @Last Modified time: 2024-01-26 15:52:19
 
 import numpy as np
-from scipy.linalg import hankel
 
 from .. import core as nap
 
@@ -193,59 +192,68 @@ def compute_perievent_continuous(data, tref, minmax, ep=None, time_unit="s"):
 
 
 def compute_event_trigger_average(
-    group, feature, binsize, windowsize, ep, time_unit="s"
+    group,
+    feature,
+    binsize,
+    windowsize=None,
+    ep=None,
+    time_unit="s",
 ):
     """
-    Bin the spike train in binsize and compute the Event Trigger Average (ETA) within windowsize.
-    If C is the spike count matrix and `feature` is a Tsd array, the function computes
+    Bin the event timestamps within binsize and compute the Event Trigger Average (ETA) within windowsize.
+    If C is the event count matrix and `feature` is a Tsd array, the function computes
     the Hankel matrix H from windowsize=(-t1,+t2) by offseting the Tsd array.
 
     The ETA is then defined as the dot product between H and C divided by the number of events.
+
+    The object feature can be any dimensions.
 
     Parameters
     ----------
     group : TsGroup
         The group of Ts/Tsd objects that hold the trigger time.
-    feature : Tsd
-        The 1-dimensional feature to average. Can be a TsdFrame with one column only.
+    feature : Tsd, TsdFrame or TsdTensor
+        The feature to average.
     binsize : float or int
         The bin size. Default is second.
         If different, specify with the parameter time_unit ('s' [default], 'ms', 'us').
-    windowsize : tuple or list of float
-        The window size. Default is second. For example (-1, 1).
+    windowsize : tuple of float/int or float/int
+        The window size. Default is second. For example windowsize = (-1, 1) is equivalent to windowsize = 1
         If different, specify with the parameter time_unit ('s' [default], 'ms', 'us').
     ep : IntervalSet
-        The epoch on which ETA are computed
+        The epochs on which the average is computed
     time_unit : str, optional
         The time unit of the parameters. They have to be consistent for binsize and windowsize.
         ('s' [default], 'ms', 'us').
-
-    Returns
-    -------
-    TsdFrame
-        A TsdFrame of Event-Trigger Average. Each column is an element from the group.
-
-    Raises
-    ------
-    RuntimeError
-        if group is not a Ts/Tsd or TsGroup
     """
     assert isinstance(group, nap.TsGroup), "group should be a TsGroup."
     assert isinstance(
-        windowsize, (float, int, tuple)
-    ), "windowsize should be a tuple or int or float."
+        feature, (nap.Tsd, nap.TsdFrame, nap.TsdTensor)
+    ), "Feature should be a Tsd, TsdFrame or TsdTensor"
     assert isinstance(binsize, (float, int)), "binsize should be int or float."
     assert isinstance(time_unit, str), "time_unit should be a str."
     assert time_unit in ["s", "ms", "us"], "time_unit should be 's', 'ms' or 'us'"
-    assert isinstance(ep, (nap.IntervalSet)), "ep should be an IntervalSet object."
 
-    if isinstance(feature, nap.TsdFrame):
-        if feature.shape[1] == 1:
-            feature = feature[:, 0]
+    if windowsize is not None:
+        if isinstance(windowsize, tuple):
+            assert (
+                len(windowsize) == 2
+            ), "windowsize should be a tuple of 2 elements (-t, +t)"
+            assert all(
+                [isinstance(t, (float, int)) for t in windowsize]
+            ), "windowsize should be a tuple of int/float"
+        else:
+            assert isinstance(
+                windowsize, (float, int)
+            ), "windowsize should be a tuple of int/float or int/float."
+            windowsize = (windowsize, windowsize)
+    else:
+        windowsize = (0.0, 0.0)
 
-    assert isinstance(
-        feature, nap.Tsd
-    ), "Feature should be a Tsd or a TsdFrame with one column"
+    if ep is not None:
+        assert isinstance(ep, (nap.IntervalSet)), "ep should be an IntervalSet object."
+    else:
+        ep = feature.time_support
 
     binsize = nap.TsIndex.format_timestamps(
         np.array([binsize], dtype=np.float64), time_unit
@@ -260,29 +268,51 @@ def compute_event_trigger_average(
             np.array([windowsize[1]], dtype=np.float64), time_unit
         )[0]
     )
+
     idx1 = -np.arange(0, start + binsize, binsize)[::-1][:-1]
     idx2 = np.arange(0, end + binsize, binsize)[1:]
     time_idx = np.hstack((idx1, np.zeros(1), idx2))
 
+    eta = np.zeros((time_idx.shape[0], len(group), *feature.shape[1:]))
+
+    windows = np.array([len(idx1), len(idx2)])
+
+    # Bin the spike train
     count = group.count(binsize, ep)
 
-    tmp = feature.bin_average(binsize, ep)
+    time_array = np.round(count.index.values - (binsize / 2), 9)
+    count_array = count.values
+    starts = ep.start.values
+    ends = ep.end.values
 
-    # Check for any NaNs in feature
-    if np.any(np.isnan(tmp)):
-        tmp = tmp.dropna()
-        count = count.restrict(tmp.time_support)
+    time_target_array = feature.index.values
+    data_target_array = feature.values
 
-    # Build the Hankel matrix
-    n_p = len(idx1)
-    n_f = len(idx2)
-    pad_tmp = np.pad(tmp, (n_p, n_f))
-    offset_tmp = hankel(pad_tmp, pad_tmp[-(n_p + n_f + 1) :])[0 : len(tmp)]
+    if data_target_array.ndim == 1:
+        eta = nap.jitted_functions.jitperievent_trigger_average(
+            time_array,
+            count_array,
+            time_target_array,
+            np.expand_dims(data_target_array, -1),
+            starts,
+            ends,
+            windows,
+            binsize,
+        )
+        eta = np.squeeze(eta, -1)
+    else:
+        eta = nap.jitted_functions.jitperievent_trigger_average(
+            time_array,
+            count_array,
+            time_target_array,
+            data_target_array,
+            starts,
+            ends,
+            windows,
+            binsize,
+        )
 
-    sta = np.dot(offset_tmp.T, count.values)
-
-    sta = sta / np.sum(count, 0)
-
-    sta = nap.TsdFrame(t=time_idx, d=sta, columns=group.index)
-
-    return sta
+    if eta.ndim == 2:
+        return nap.TsdFrame(t=time_idx, d=eta, columns=group.index)
+    else:
+        return nap.TsdTensor(t=time_idx, d=eta)

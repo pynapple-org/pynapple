@@ -8,6 +8,7 @@
     - 's': seconds  (overall default)
     
 """
+
 from warnings import warn
 
 import numpy as np
