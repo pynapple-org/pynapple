@@ -4,7 +4,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-26 15:12:33
+# @Last Modified time: 2024-01-26 15:28:51
 
 import warnings
 
@@ -58,7 +58,7 @@ def compute_discrete_tuning_curves(group, dict_ep):
     for k in idx:
         assert isinstance(
             dict_ep[k], nap.IntervalSet
-        ), "dict_ep argument should contain only IntervalSet. \n Key {} in dict_ep is not an IntervalSet".format(
+        ), "dict_ep argument should contain only IntervalSet. Key {} in dict_ep is not an IntervalSet".format(
             k
         )
 
@@ -112,7 +112,11 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
             feature.shape[1] == 1
         ), "feature should be a Tsd (or TsdFrame with 1 column only)"
     assert isinstance(nb_bins, int)
-    assert isinstance(ep, nap.IntervalSet), "ep should be an IntervalSet"
+
+    if ep is None:
+        ep = feature.time_support
+    else:
+        assert isinstance(ep, nap.IntervalSet), "ep should be an IntervalSet"        
 
     if minmax is None:
         bins = np.linspace(np.min(feature), np.max(feature), nb_bins + 1)

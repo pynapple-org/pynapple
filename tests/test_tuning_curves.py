@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:16:30
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-26 15:09:42
+# @Last Modified time: 2024-01-26 15:23:20
 
 """Tests of tuning curves for `pynapple` package."""
 
@@ -36,7 +36,7 @@ def test_compute_discrete_tuning_curves_with_strings():
 def test_compute_discrete_tuning_curves_error():
     dict_ep = { "0":nap.IntervalSet(start=0, end=50),
                 "1":nap.IntervalSet(start=50, end=100)}
-    with pytest.raises(RuntimeError) as e_info:
+    with pytest.raises(AssertionError) as e_info:
         nap.compute_discrete_tuning_curves([1,2,3], dict_ep)
     assert str(e_info.value) == "group should be a TsGroup."
 
@@ -45,9 +45,9 @@ def test_compute_discrete_tuning_curves_error():
                 "1":nap.IntervalSet(start=50, end=100)}
     k = [1,2,3]
     dict_ep["2"] = k
-    with pytest.raises(RuntimeError) as e_info:
+    with pytest.raises(AssertionError) as e_info:
         nap.compute_discrete_tuning_curves(tsgroup, dict_ep)
-    assert str(e_info.value) == "dict_ep argument should contain only IntervalSet. \n Key 2 in dict_ep is not an IntervalSet"
+    assert str(e_info.value) == "dict_ep argument should contain only IntervalSet. Key 2 in dict_ep is not an IntervalSet"
 
 def test_compute_1d_tuning_curves():
     tsgroup = nap.TsGroup({0: nap.Ts(t=np.arange(0, 100))})
@@ -61,7 +61,7 @@ def test_compute_1d_tuning_curves():
 
 def test_compute_1d_tuning_curves_error():
     feature = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.arange(0, 100, 0.1) % 1.0)
-    with pytest.raises(RuntimeError) as e_info:
+    with pytest.raises(AssertionError) as e_info:
         nap.compute_1d_tuning_curves([1,2,3], feature, nb_bins=10)
     assert str(e_info.value) == "group should be a TsGroup."
 
@@ -110,7 +110,7 @@ def test_compute_2d_tuning_curves_error():
         (np.repeat(np.arange(0, 100), 10), np.tile(np.arange(0, 100), 10))
     ).T
     features = nap.TsdFrame(t=np.arange(0, 200, 0.1), d=np.vstack((tmp, tmp[::-1])))
-    with pytest.raises(RuntimeError) as e_info:
+    with pytest.raises(AssertionError) as e_info:
         nap.compute_2d_tuning_curves([1,2,3], features, 10)
     assert str(e_info.value) == "group should be a TsGroup."
 
@@ -118,7 +118,7 @@ def test_compute_2d_tuning_curves_error():
         {0: nap.Ts(t=np.arange(0, 100, 10)), 1: nap.Ts(t=np.array([50, 149]))}
     )
     features = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3))
-    with pytest.raises(RuntimeError) as e_info:
+    with pytest.raises(AssertionError) as e_info:
         nap.compute_2d_tuning_curves(tsgroup, features, 10)
     assert str(e_info.value) == "feature should have 2 columns only."
 
