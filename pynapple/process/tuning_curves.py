@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
-"""Summary
+"""
 """
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-25 12:12:03
+# @Last Modified time: 2024-01-25 18:34:54
 
 import warnings
 
@@ -16,7 +16,7 @@ from .. import core as nap
 
 def compute_discrete_tuning_curves(group, dict_ep):
     """
-        Compute discrete tuning curves of a TsGroup using a dictionnary of epochs.
+    Compute discrete tuning curves of a TsGroup using a dictionnary of epochs.
     The function returns a pandas DataFrame with each row being a key of the dictionnary of epochs
     and each column being a neurons.
 
@@ -52,17 +52,15 @@ def compute_discrete_tuning_curves(group, dict_ep):
     RuntimeError
         If group is not a TsGroup object.
     """
-    if not isinstance(group, nap.TsGroup):
-        raise RuntimeError("Unknown format for group")
-
+    assert isinstance(group, nap.TsGroup), "group should be a TsGroup."
+    assert isinstance(dict_ep, dict) "dict_ep should be a dictionnary of IntervalSet"
     idx = np.sort(list(dict_ep.keys()))
+    for k in idx:
+        assert isinstance(dict_ep[k], nap.IntervalSet), "dict_ep argument should contain only IntervalSet. \n Key {} in dict_ep is not an IntervalSet".format(k)
 
     tuning_curves = pd.DataFrame(index=idx, columns=list(group.keys()), data=0.0)
 
     for k in dict_ep.keys():
-        if not isinstance(dict_ep[k], nap.IntervalSet):
-            raise RuntimeError("Key {} in dict_ep is not an IntervalSet".format(k))
-
         for n in group.keys():
             tuning_curves.loc[k, n] = float(len(group[n].restrict(dict_ep[k])))
 
@@ -79,7 +77,7 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     ----------
     group : TsGroup
         The group of Ts/Tsd for which the tuning curves will be computed
-    feature : Tsd
+    feature : Tsd (or TsdFrame with 1 column only)
         The 1-dimensional target feature (e.g. head-direction)
     nb_bins : int
         Number of bins in the tuning curve
@@ -101,13 +99,19 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
         If group is not a TsGroup object.
 
     """
-    if not isinstance(group, nap.TsGroup):
-        raise RuntimeError("Unknown format for group")
+    assert isinstance(group, nap.TsGroup), "group should be a TsGroup."
+    assert isinstance(feature, (nap.Tsd, nap.TsdFrame)), "feature should be a Tsd (or TsdFrame with 1 column only)"
+    if isinstance(feature, nap.TsdFrame):
+        assert feature.shape[1] == 1, 
+    assert isinstance(nb_bins, int)
+    assert isinstance(ep, nap.IntervalSet), "ep should be an IntervalSet"
 
     if minmax is None:
         bins = np.linspace(np.min(feature), np.max(feature), nb_bins + 1)
     else:
+        assert isinstance(minmax, tuple), "minmax should be a tuple of boundaries"
         bins = np.linspace(minmax[0], minmax[1], nb_bins + 1)
+
     idx = bins[0:-1] + np.diff(bins) / 2
 
     tuning_curves = pd.DataFrame(index=idx, columns=list(group.keys()))
@@ -162,16 +166,17 @@ def compute_2d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
         If group is not a TsGroup object or if feature is not 2 columns only.
 
     """
-    if feature.shape[1] != 2:
-        raise RuntimeError("feature should have 2 columns only.")
+    assert isinstance(group, nap.TsGroup), "group should be a TsGroup."
+    assert isinstance(feature, nap.TsdFrame), "feature should be a TsdFrame with 2 columns"
+    if isinstance(feature, nap.TsdFrame):
+        assert feature.shape[1] == 2, "feature should have 2 columns only."
+    assert isinstance(nb_bins, int)
 
-    if type(group) is not nap.TsGroup:
-        raise RuntimeError("Unknown format for group")
-
-    if isinstance(ep, nap.IntervalSet):
-        feature = feature.restrict(ep)
-    else:
+    if ep is None:
         ep = feature.time_support
+    else:
+        assert isinstance(ep, nap.IntervalSet), "ep should be an IntervalSet"
+        feature = feature.restrict(ep)
 
     cols = list(feature.columns)
     groups_value = {}
@@ -184,6 +189,7 @@ def compute_2d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
                 np.min(feature.loc[c]), np.max(feature.loc[c]), nb_bins + 1
             )
         else:
+            assert isinstance(minmax, tuple), "minmax should be a tuple of 4 elements"
             bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins + 1)
         binsxy[c] = bins
 
