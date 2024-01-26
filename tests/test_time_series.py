@@ -12,6 +12,8 @@ import numpy as np
 import pandas as pd
 import pytest
 
+from pynapple.core.time_series import TsdTensor
+
 
 def test_create_tsd():
     tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
@@ -929,6 +931,60 @@ class Test_Time_Series_3:
         os.remove("tsdframe.npz")
         os.remove("tsdframe2.npz")
 
+    def test_interpolate(self, tsdframe):
+        
+        y = np.arange(0, 1001)
+        data_stack = np.stack([np.arange(0, 1001),]*4).T
+
+        tsdframe = nap.TsdFrame(t=np.arange(0, 101), d=data_stack[0::10, :])
+
+        # Ts
+        ts = nap.Ts(t=y/10)
+        tsdframe2 = tsdframe.interpolate(ts)
+        np.testing.assert_array_almost_equal(tsdframe2.values, data_stack)
+
+        # Tsd
+        ts = nap.Tsd(t=y/10, d=np.zeros_like(y))
+        tsdframe2 = tsdframe.interpolate(ts)
+        np.testing.assert_array_almost_equal(tsdframe2.values, data_stack)
+
+        # TsdFrame
+        ts = nap.TsdFrame(t=y/10, d=np.zeros((len(y), 2)))
+        tsdframe2 = tsdframe.interpolate(ts)
+        np.testing.assert_array_almost_equal(tsdframe2.values, data_stack)
+        
+        with pytest.raises(RuntimeError) as e:
+            tsdframe.interpolate([0, 1, 2])
+        assert str(e.value) == "First argument should be an instance of Ts, Tsd or TsdFrame"
+
+        # Right left
+        ep = nap.IntervalSet(start=0, end=5)
+        tsdframe = nap.Tsd(t=np.arange(1,4), d=np.arange(3), time_support=ep)
+        ts = nap.Ts(t=np.arange(0, 5))
+        tsdframe2 = tsdframe.interpolate(ts, left=1234)
+        assert float(tsdframe2.values[0]) == 1234.0
+        tsdframe2 = tsdframe.interpolate(ts, right=4321)
+        assert float(tsdframe2.values[-1]) == 4321.0
+
+    def test_interpolate_with_ep(self, tsdframe):        
+        y = np.arange(0, 1001)
+        data_stack = np.stack([np.arange(0, 1001),]*4).T
+
+        tsdframe = nap.TsdFrame(t=np.arange(0, 101), d=data_stack[0::10, :])        
+        ts = nap.Ts(t=y/10)
+        ep = nap.IntervalSet(start=np.arange(0, 100, 20), end=np.arange(10, 110, 20))
+        tsdframe2 = tsdframe.interpolate(ts, ep)
+        tmp = ts.restrict(ep).index * 10
+        print(tmp, tsdframe2.values)
+        print(tmp.shape, tsdframe2.values.shape)
+        print(tmp.mean(0), tsdframe2.values.mean(0))
+        np.testing.assert_array_almost_equal(tmp, tsdframe2.values[:, 0])
+
+        # Empty ep
+        ep = nap.IntervalSet(start=200, end=300)
+        tsdframe2 = tsdframe.interpolate(ts, ep)
+        assert len(tsdframe2) == 0
+
 ####################################################
 # Test for ts
 ####################################################
@@ -1174,3 +1230,59 @@ class Test_Time_Series_5:
 
         os.remove("tsdtensor.npz")
         os.remove("tsdtensor2.npz")
+
+    def test_interpolate(self, tsdtensor):
+        
+        y = np.arange(0, 1001)
+        data_stack = np.stack([np.stack([np.arange(0, 1001),] * 4)] * 3).T
+
+        tsdtensor = nap.TsdTensor(t=np.arange(0, 101), d= data_stack[0::10, ...])
+
+        # Ts
+        ts = nap.Ts(t = y / 10)
+        tsdtensor2 = tsdtensor.interpolate(ts)
+        np.testing.assert_array_almost_equal(tsdtensor2.values, data_stack)
+
+        # Tsd
+        ts = nap.Tsd(t=y/10, d=np.zeros_like(y))
+        tsdtensor2 = tsdtensor.interpolate(ts)
+        np.testing.assert_array_almost_equal(tsdtensor2.values, data_stack)
+
+        # TsdFrame
+        ts = nap.TsdFrame(t=y/10, d=np.zeros((len(y), 2)))
+        tsdtensor2 = tsdtensor.interpolate(ts)
+        np.testing.assert_array_almost_equal(tsdtensor2.values, data_stack)
+        
+        with pytest.raises(RuntimeError) as e:
+            tsdtensor.interpolate([0, 1, 2])
+        assert str(e.value) == "First argument should be an instance of Ts, Tsd or TsdFrame"
+
+        # Right left
+        ep = nap.IntervalSet(start=0, end=5)
+        tsdtensor = nap.Tsd(t=np.arange(1,4), d=np.arange(3), time_support=ep)
+        ts = nap.Ts(t=np.arange(0, 5))
+        tsdtensor2 = tsdtensor.interpolate(ts, left=1234)
+        assert float(tsdtensor2.values[0]) == 1234.0
+        tsdtensor2 = tsdtensor.interpolate(ts, right=4321)
+        assert float(tsdtensor2.values[-1]) == 4321.0
+
+    def test_interpolate_with_ep(self, tsdtensor):        
+        y = np.arange(0, 1001)
+        data_stack = np.stack([np.stack([np.arange(0, 1001),] * 4),] * 3).T
+
+        tsdtensor = nap.TsdTensor(t=np.arange(0, 101), d=data_stack[::10, ...]) 
+        
+        ts = nap.Ts(t=y / 10)
+
+
+        ep = nap.IntervalSet(start=np.arange(0, 100, 20), end=np.arange(10, 110, 20))
+        tsdframe2 = tsdtensor.interpolate(ts, ep)  
+        tmp = ts.restrict(ep).index * 10
+
+        np.testing.assert_array_almost_equal(tmp, tsdframe2.values[:, 0, 0])
+
+        # Empty ep
+        ep = nap.IntervalSet(start=200, end=300)
+        tsdframe2 = tsdtensor.interpolate(ts, ep)
+        assert len(tsdframe2) == 0
+
