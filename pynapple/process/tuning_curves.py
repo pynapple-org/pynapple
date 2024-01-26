@@ -4,7 +4,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 23:33:42
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-25 18:34:54
+# @Last Modified time: 2024-01-26 15:12:33
 
 import warnings
 
@@ -53,10 +53,14 @@ def compute_discrete_tuning_curves(group, dict_ep):
         If group is not a TsGroup object.
     """
     assert isinstance(group, nap.TsGroup), "group should be a TsGroup."
-    assert isinstance(dict_ep, dict) "dict_ep should be a dictionnary of IntervalSet"
+    assert isinstance(dict_ep, dict), "dict_ep should be a dictionnary of IntervalSet"
     idx = np.sort(list(dict_ep.keys()))
     for k in idx:
-        assert isinstance(dict_ep[k], nap.IntervalSet), "dict_ep argument should contain only IntervalSet. \n Key {} in dict_ep is not an IntervalSet".format(k)
+        assert isinstance(
+            dict_ep[k], nap.IntervalSet
+        ), "dict_ep argument should contain only IntervalSet. \n Key {} in dict_ep is not an IntervalSet".format(
+            k
+        )
 
     tuning_curves = pd.DataFrame(index=idx, columns=list(group.keys()), data=0.0)
 
@@ -100,9 +104,13 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
 
     """
     assert isinstance(group, nap.TsGroup), "group should be a TsGroup."
-    assert isinstance(feature, (nap.Tsd, nap.TsdFrame)), "feature should be a Tsd (or TsdFrame with 1 column only)"
+    assert isinstance(
+        feature, (nap.Tsd, nap.TsdFrame)
+    ), "feature should be a Tsd (or TsdFrame with 1 column only)"
     if isinstance(feature, nap.TsdFrame):
-        assert feature.shape[1] == 1, 
+        assert (
+            feature.shape[1] == 1
+        ), "feature should be a Tsd (or TsdFrame with 1 column only)"
     assert isinstance(nb_bins, int)
     assert isinstance(ep, nap.IntervalSet), "ep should be an IntervalSet"
 
@@ -167,7 +175,9 @@ def compute_2d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
 
     """
     assert isinstance(group, nap.TsGroup), "group should be a TsGroup."
-    assert isinstance(feature, nap.TsdFrame), "feature should be a TsdFrame with 2 columns"
+    assert isinstance(
+        feature, nap.TsdFrame
+    ), "feature should be a TsdFrame with 2 columns"
     if isinstance(feature, nap.TsdFrame):
         assert feature.shape[1] == 2, "feature should have 2 columns only."
     assert isinstance(nb_bins, int)
