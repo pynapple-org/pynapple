@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-26 15:52:19
+# @Last Modified time: 2024-01-29 12:47:56
 
 import numpy as np
 
@@ -179,7 +179,7 @@ def compute_perievent_continuous(data, tref, minmax, ep=None, time_unit="s"):
     time_idx = np.hstack((idx1, np.zeros(1), idx2))
     windowsize = np.array([idx1.shape[0], idx2.shape[0]])
 
-    new_data_array = nap.jitted_functions.jitcontinuous_perievent(
+    new_data_array = nap._jitted_functions.jitcontinuous_perievent(
         time_array, data_array, time_target_array, starts, ends, windowsize
     )
 
@@ -289,7 +289,7 @@ def compute_event_trigger_average(
     data_target_array = feature.values
 
     if data_target_array.ndim == 1:
-        eta = nap.jitted_functions.jitperievent_trigger_average(
+        eta = nap._jitted_functions.jitperievent_trigger_average(
             time_array,
             count_array,
             time_target_array,
@@ -301,7 +301,7 @@ def compute_event_trigger_average(
         )
         eta = np.squeeze(eta, -1)
     else:
-        eta = nap.jitted_functions.jitperievent_trigger_average(
+        eta = nap._jitted_functions.jitperievent_trigger_average(
             time_array,
             count_array,
             time_target_array,

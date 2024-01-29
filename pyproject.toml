@@ -105,5 +105,5 @@ omit = [
     "pynapple/io/neurosuite.py",
     "pynapple/io/phy.py",
     "pynapple/io/suite2p.py",
-    "pynapple/core/jitted_functions.py" # coverage doesn't work with numba
+    "pynapple/core/_jitted_functions.py" # coverage doesn't work with numba
 ]

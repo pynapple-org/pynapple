@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-28 15:10:48
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-29 11:23:07
+# @Last Modified time: 2024-01-29 12:16:24
 
 
 import os
@@ -14,7 +14,7 @@ import pandas as pd
 from tabulate import tabulate
 
 from .interval_set import IntervalSet
-from .jitted_functions import (
+from ._jitted_functions import (
     jitcount,
     jittsrestrict_with_count,
     jitunion,
