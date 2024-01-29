@@ -13,13 +13,13 @@ import numpy as np
 import pandas as pd
 from tabulate import tabulate
 
-from .interval_set import IntervalSet
 from ._jitted_functions import (
     jitcount,
     jittsrestrict_with_count,
     jitunion,
     jitunion_isets,
 )
+from .interval_set import IntervalSet
 
 # from .time_units import format_timestamps
 from .time_index import TsIndex

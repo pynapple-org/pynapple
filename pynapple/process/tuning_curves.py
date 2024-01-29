@@ -271,7 +271,7 @@ def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
     if isinstance(feature, nap.TsdFrame):
         assert (
             feature.shape[1] == 1
-        ), "feature should be a Tsd (or TsdFrame with 1 column only)"   
+        ), "feature should be a Tsd (or TsdFrame with 1 column only)"
 
     nb_bins = tc.shape[0] + 1
     if minmax is None:
@@ -344,7 +344,7 @@ def compute_2d_mutual_info(tc, features, ep=None, minmax=None, bitssec=False):
         features, nap.TsdFrame
     ), "features should be a TsdFrame with 2 columns"
     if isinstance(features, nap.TsdFrame):
-        assert features.shape[1] == 2, "features should have 2 columns only."        
+        assert features.shape[1] == 2, "features should have 2 columns only."
 
     nb_bins = (fx.shape[1] + 1, fx.shape[2] + 1)
 
@@ -433,7 +433,7 @@ def compute_1d_tuning_curves_continuous(
     if isinstance(feature, nap.TsdFrame):
         assert (
             feature.shape[1] == 1
-        ), "feature should be a Tsd (or TsdFrame with 1 column only)"          
+        ), "feature should be a Tsd (or TsdFrame with 1 column only)"
         feature = np.squeeze(feature)
 
     if isinstance(ep, nap.IntervalSet):

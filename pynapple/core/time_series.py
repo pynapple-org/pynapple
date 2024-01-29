@@ -35,7 +35,6 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from scipy import signal
 from tabulate import tabulate
 
-from .interval_set import IntervalSet
 from ._jitted_functions import (
     jitbin,
     jitbin_array,
@@ -49,6 +48,7 @@ from ._jitted_functions import (
     jitvaluefromtensor,
     pjitconvolve,
 )
+from .interval_set import IntervalSet
 from .time_index import TsIndex
 
 
