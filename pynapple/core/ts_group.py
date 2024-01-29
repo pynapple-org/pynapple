@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-28 15:10:48
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-21 15:57:41
+# @Last Modified time: 2024-01-29 11:23:07
 
 
 import os
@@ -254,7 +254,7 @@ class TsGroup(UserDict):
         *args
             pandas.Dataframe or list of pandas.DataFrame
         **kwargs
-            Can be either pandas.Series or numpy.ndarray
+            Can be either pandas.Series, numpy.ndarray, list or tuple
 
         Raises
         ------
@@ -286,7 +286,7 @@ class TsGroup(UserDict):
               1             2  pfc
               2             4  ca1
 
-        To add metadata with a pd.Series or numpy.ndarray:
+        To add metadata with a pd.Series, numpy.ndarray, list or tuple:
 
         >>> hd = pd.Series(index = [0,1,2], data = [0,1,1])
         >>> tsgroup.set_info(hd=hd)
@@ -314,9 +314,9 @@ class TsGroup(UserDict):
                         self._metadata[k] = v
                     else:
                         raise RuntimeError("Index are not equals")
-                elif isinstance(v, np.ndarray):
+                elif isinstance(v, (np.ndarray, list, tuple)):
                     if len(self._metadata) == len(v):
-                        self._metadata[k] = v
+                        self._metadata[k] = np.asarray(v)
                     else:
                         raise RuntimeError("Array is not the same length.")
         return

@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:14:41
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-18 17:05:05
+# @Last Modified time: 2024-01-29 11:26:22
 
 """Tests of ts group for `pynapple` package."""
 
@@ -89,11 +89,15 @@ class Test_Ts_Group_1:
         df_info = pd.DataFrame(index=[0, 1, 2], data=[0, 0, 0], columns=["df"])
         sr_info = pd.Series(index=[0, 1, 2], data=[1, 1, 1], name="sr")
         ar_info = np.ones(3) * 3
-        tsgroup.set_info(df_info, sr=sr_info, ar=ar_info)
-        assert tsgroup._metadata.shape == (3, 4)
+        lt_info = [3,4,5]
+        tu_info = (6,8,3)
+        tsgroup.set_info(df_info, sr=sr_info, ar=ar_info, lt=lt_info, tu=tu_info)
+        assert tsgroup._metadata.shape == (3, 6)
         pd.testing.assert_series_equal(tsgroup._metadata["df"], df_info["df"])
         pd.testing.assert_series_equal(tsgroup._metadata["sr"], sr_info)
         np.testing.assert_array_almost_equal(tsgroup._metadata["ar"].values, ar_info)
+        np.testing.assert_array_almost_equal(tsgroup._metadata["lt"].values, lt_info)
+        np.testing.assert_array_almost_equal(tsgroup._metadata["tu"].values, tu_info)
 
     def test_add_metainfo_raise_error(self, group):
         tsgroup = nap.TsGroup(group)
