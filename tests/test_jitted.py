@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-12-02 17:17:03
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-29 12:37:44
+# @Last Modified time: 2024-01-29 14:48:58
 
 """Tests of jitted core functions for `pynapple` package."""
 
@@ -395,7 +395,7 @@ def test_jitunion_isets():
 
         i_sets = [ep1, ep2, ep3, ep4]
 
-        ep6 = nap.core.union_intervals(i_sets)
+        ep6 = nap.core.ts_group.union_intervals(i_sets)
 
         
         time = np.hstack(
