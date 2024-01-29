@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:16:39
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-18 14:30:10
+# @Last Modified time: 2024-01-29 11:15:41
 #!/usr/bin/env python
 
 """Tests of decoding for `pynapple` package."""
@@ -112,7 +112,7 @@ def get_testing_set_2d():
     )
 
     tc, xy = nap.compute_2d_tuning_curves(
-        group=group, feature=features, nb_bins=2, minmax=(-0.5, 1.5, -0.5, 1.5)
+        group=group, features=features, nb_bins=2, minmax=(-0.5, 1.5, -0.5, 1.5)
     )
     ep = nap.IntervalSet(start=0, end=100)
     return features, group, tc, ep, tuple(xy)

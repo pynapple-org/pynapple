@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-27 18:33:31
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-08 16:09:01
+# @Last Modified time: 2024-01-29 14:36:05
 
 """
 
@@ -35,8 +35,7 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from scipy import signal
 from tabulate import tabulate
 
-from .interval_set import IntervalSet
-from .jitted_functions import (
+from ._jitted_functions import (
     jitbin,
     jitbin_array,
     jitcount,
@@ -49,6 +48,7 @@ from .jitted_functions import (
     jitvaluefromtensor,
     pjitconvolve,
 )
+from .interval_set import IntervalSet
 from .time_index import TsIndex
 
 

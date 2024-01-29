@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pynapple"
-version = "0.5.0"
+version = "0.5.1"
 description = "PYthon Neural Analysis Package Pour Laboratoires d’Excellence"
 readme = "README.md"
 authors = [{ name = "Guillaume Viejo", email = "guillaume.viejo@gmail.com" }]
@@ -105,5 +105,5 @@ omit = [
     "pynapple/io/neurosuite.py",
     "pynapple/io/phy.py",
     "pynapple/io/suite2p.py",
-    "pynapple/core/jitted_functions.py" # coverage doesn't work with numba
+    "pynapple/core/_jitted_functions.py" # coverage doesn't work with numba
 ]

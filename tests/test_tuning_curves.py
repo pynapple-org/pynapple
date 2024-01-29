@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:16:30
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-26 15:23:20
+# @Last Modified time: 2024-01-29 11:05:11
 
 """Tests of tuning curves for `pynapple` package."""
 
@@ -120,7 +120,7 @@ def test_compute_2d_tuning_curves_error():
     features = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3))
     with pytest.raises(AssertionError) as e_info:
         nap.compute_2d_tuning_curves(tsgroup, features, 10)
-    assert str(e_info.value) == "feature should have 2 columns only."
+    assert str(e_info.value) == "features should have 2 columns only."
 
 def test_compute_2d_tuning_curves_with_ep():
     tsgroup = nap.TsGroup(
@@ -300,16 +300,16 @@ def test_compute_2d_tuning_curves_continuous_error():
         nap.compute_2d_tuning_curves_continuous([1,2,3], features, 2)
     assert str(e_info.value) == "Unknown format for tsdframe."
 
-    with pytest.raises(RuntimeError) as e_info:
+    with pytest.raises(AssertionError) as e_info:
         nap.compute_2d_tuning_curves_continuous(tsdframe, [1,2,3], 2)
-    assert str(e_info.value) == "Unknown format for features."
+    assert str(e_info.value) == "features should be a TsdFrame with 2 columns"
 
     features = nap.TsdFrame(
         t=np.arange(100), d=np.tile(np.array([[0, 0, 1, 1], [0, 1, 0, 1], [0,0,0,0]]), 25).T
     )    
-    with pytest.raises(RuntimeError) as e_info:
+    with pytest.raises(AssertionError) as e_info:
         nap.compute_2d_tuning_curves_continuous(tsdframe, features, 2)
-    assert str(e_info.value) == "features input is not 2 columns."
+    assert str(e_info.value) == "features should have 2 columns only."
 
 
 @pytest.mark.filterwarnings("ignore")
