@@ -48,8 +48,120 @@ from ._jitted_functions import (
     jitvaluefromtensor,
     pjitconvolve,
 )
+from .config import nap_config
 from .interval_set import IntervalSet
 from .time_index import TsIndex
+
+
+def is_array_like(obj):
+    """
+    Check if an object is array-like.
+
+    This function determines if an object has array-like properties. An object
+    is considered array-like if it has attributes typically associated with arrays
+    (such as `.shape`, `.dtype`, and `.ndim`), supports indexing, and is iterable.
+
+    Parameters
+    ----------
+    obj : object
+        The object to check for array-like properties.
+
+    Returns
+    -------
+    bool
+        True if the object is array-like, False otherwise.
+
+    Notes
+    -----
+    This function uses a combination of checks for attributes (`shape`, `dtype`, `ndim`),
+    indexability, and iterability to determine if the given object behaves like an array.
+    It is designed to be flexible and work with various types of array-like objects, including
+    but not limited to NumPy arrays and JAX arrays. However, it may not be foolproof for all
+    possible array-like types or objects that mimic these properties without being suitable for
+    numerical operations.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> numpy_array = np.array([1, 2, 3])
+    >>> jax_array = jnp.array([1, 2, 3])
+    >>> non_array = "not an array"
+    >>> is_array_like(numpy_array)
+    True
+    >>> is_array_like(non_array)
+    False
+    """
+    # Check for array-like attributes
+    has_shape = hasattr(obj, "shape")
+    has_dtype = hasattr(obj, "dtype")
+    has_ndim = hasattr(obj, "ndim")
+
+    # Check for indexability (try to access the first element)
+    try:
+        obj[0]
+        is_indexable = True
+    except (TypeError, IndexError):
+        is_indexable = False
+
+    # Check for iterable property
+    try:
+        iter(obj)
+        is_iterable = True
+    except TypeError:
+        is_iterable = False
+
+    return has_shape and has_dtype and has_ndim and is_indexable and is_iterable
+
+
+def convert_to_numpy(array, array_name):
+    """
+    Convert an input array-like object to a NumPy array.
+
+    This function attempts to convert an input object to a NumPy array using `np.asarray`.
+    If the input is not already a NumPy ndarray, it issues a warning indicating that a conversion
+    has taken place and shows the original type of the input. This function is useful for
+    ensuring compatibility with Numba operations in cases where the input might come from
+    various array-like sources (for instance, jax.numpy.Array).
+
+    Parameters
+    ----------
+    array : array_like
+        The input object to convert. This can be any object that `np.asarray` is capable of
+        converting to a NumPy array, such as lists, tuples, and other array-like objects,
+        including those from libraries like JAX or TensorFlow that adhere to the array interface.
+    array_name : str
+        The name of the variable that we are converting, printed in the warning message.
+
+    Returns
+    -------
+    ndarray
+        A NumPy ndarray representation of the input `values`. If `values` is already a NumPy
+        ndarray, it is returned unchanged. Otherwise, a new NumPy ndarray is created and returned.
+
+    Warnings
+    --------
+    A warning is issued if the input `values` is not already a NumPy ndarray, indicating
+    that a conversion has taken place and showing the original type of the input.
+
+    Examples
+    --------
+    >>> import jax.numpy as jnp
+    >>> list_int = [1, 2, 3]
+    >>> numpy_array = convert_to_numpy(list_int, "list_int")
+        UserWarning: Converting data to numpy.array. The provided array was of type 'list'.
+    >>> type(numpy_array)
+    <class 'numpy.ndarray'>
+    """
+    if (
+        not isinstance(array, np.ndarray)
+        and not nap_config.suppress_conversion_warnings
+    ):
+        original_type = type(array).__name__
+        warnings.warn(
+            f"Converting '{array_name}' to numpy.array. The provided array was of type '{original_type}'.",
+            UserWarning,
+        )
+    return np.asarray(array)
 
 
 def _split_tsd(func, tsd, indices_or_sections, axis=0):
@@ -641,7 +753,8 @@ class _AbstractTsd(abc.ABC):
         starts = iset.start.values
         ends = iset.end.values
 
-        if isinstance(self.values, np.ndarray):
+        if is_array_like(self.values):
+
             data_array = self.values
             t, d = jitrestrict(time_array, data_array, starts, ends)
 
@@ -1019,13 +1132,17 @@ class TsdTensor(NDArrayOperatorsMixin, _AbstractTsd):
         time_support : IntervalSet, optional
             The time support of the TsdFrame object
         """
-        if isinstance(t, np.ndarray) and d is None:
+        if is_array_like(t) and d is None:
             raise RuntimeError("Missing argument d when initializing TsdTensor")
 
         if isinstance(t, (list, tuple)):
             t = np.array(t)
+        else:
+            t = convert_to_numpy(t, "t")
         if isinstance(d, (list, tuple)):
             d = np.array(d)
+        else:
+            d = convert_to_numpy(d, "d")
 
         assert (
             d.ndim >= 3
@@ -1221,8 +1338,6 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
         columns : iterables
             Column names
         """
-        if isinstance(t, np.ndarray) and d is None:
-            raise RuntimeError("Missing argument d when initializing TsdFrame")
 
         c = columns
 
@@ -1231,10 +1346,18 @@ class TsdFrame(NDArrayOperatorsMixin, _AbstractTsd):
             c = t.columns.values
             t = t.index.values
 
+        if is_array_like(t) and d is None:
+            raise RuntimeError("Missing argument d when initializing TsdFrame")
+
         if isinstance(t, (list, tuple)):
             t = np.array(t)
+        elif is_array_like(t):
+            t = convert_to_numpy(t, "t")
+
         if isinstance(d, (list, tuple)):
             d = np.array(d)
+        elif is_array_like(d):
+            d = convert_to_numpy(d, "d")
 
         assert d.ndim <= 2, "Data should be 1 or 2 dimensional"
 
@@ -1541,17 +1664,22 @@ class Tsd(NDArrayOperatorsMixin, _AbstractTsd):
         time_support : IntervalSet, optional
             The time support of the tsd object
         """
-        if isinstance(t, np.ndarray) and d is None:
-            raise RuntimeError("Missing argument d when initializing Tsd")
-
         if isinstance(t, pd.Series):
-            d = t.values
-            t = t.index.values
+            d = np.asarray(t.values)
+            t = np.asarray(t.index.values)
+
+        if is_array_like(t) and d is None:
+            raise RuntimeError("Missing argument d when initializing Tsd")
 
         if isinstance(t, (list, tuple)):
             t = np.array(t)
+        elif is_array_like(t):
+            t = convert_to_numpy(t, "t")
+
         if isinstance(d, (list, tuple)):
             d = np.array(d)
+        elif is_array_like(d):
+            d = convert_to_numpy(d, "d")
 
         assert d.ndim == 1, "Data should be 1 dimension"
 
@@ -1871,6 +1999,10 @@ class Ts(_AbstractTsd):
         """
         if isinstance(t, Number):
             t = np.array([t])
+        # convert array-like data to numpy.
+        # raise a warning to avoid silent conversion if non-numpy array is provided (jax arrays for instance)
+        elif is_array_like(t):
+            t = convert_to_numpy(t, "t")
 
         if isinstance(t, TsIndex):
             self.index = t
