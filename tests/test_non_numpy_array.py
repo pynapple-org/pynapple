@@ -90,11 +90,28 @@ class TestTsdArray:
             (np.array([1, 2, 3]), MockArray(np.array([1, 2, 3])), does_not_raise()),
         ],
     )
-    def test_tsd_type(self, time, data, expectation):
+    def test_tsd_type_d(self, time, data, expectation):
         """Verify that the data attribute 'd' of a Tsd object is stored as a numpy.ndarray."""
         with expectation:
             ts = nap.Tsd(t=time, d=data)
             assert isinstance(ts.d, np.ndarray)
+
+    @pytest.mark.parametrize(
+        "time, data, expectation",
+        [
+            (np.array([1, 2, 3]), np.array([1, 2, 3]), does_not_raise()),
+            (
+                    MockArray(np.array([1, 2, 3])),
+                    np.array([1, 2, 3]),
+                    does_not_raise(),
+            ),
+        ],
+    )
+    def test_tsd_type_t(self, time, data, expectation):
+        """Verify that the time attribute 't' of a TsdFrame object is stored as a numpy.ndarray."""
+        with expectation:
+            ts = nap.Tsd(t=time, d=data)
+            assert isinstance(ts.t, np.ndarray)
 
     @pytest.mark.parametrize(
         "data, expectation",
@@ -151,6 +168,23 @@ class TestTsdFrameArray:
             assert isinstance(ts.d, np.ndarray)
 
     @pytest.mark.parametrize(
+        "time, data, expectation",
+        [
+            (np.array([1, 2, 3]), np.array([[1], [2], [3]]), does_not_raise()),
+            (
+                    MockArray(np.array([1, 2, 3])),
+                    np.array([[1], [2], [3]]),
+                    does_not_raise(),
+            ),
+        ],
+    )
+    def test_tsdframe_type_t(self, time, data, expectation):
+        """Verify that the time attribute 't' of a TsdFrame object is stored as a numpy.ndarray."""
+        with expectation:
+            ts = nap.TsdFrame(t=time, d=data)
+            assert isinstance(ts.t, np.ndarray)
+
+    @pytest.mark.parametrize(
         "data, expectation",
         [
             (np.array([1, 2, 3]), does_not_raise()),
@@ -204,11 +238,28 @@ class TestTsdTensorArray:
             ),
         ],
     )
-    def test_tsdtensor_type(self, time, data, expectation):
+    def test_tsdtensor_type_d(self, time, data, expectation):
         """Verify that the data attribute 'd' of a TsdTensor object is stored as a numpy.ndarray."""
         with expectation:
             ts = nap.TsdTensor(t=time, d=data)
             assert isinstance(ts.d, np.ndarray)
+
+    @pytest.mark.parametrize(
+        "time, data, expectation",
+        [
+            (np.array([1, 2, 3]), np.array([[[1]], [[2]], [[3]]]), does_not_raise()),
+            (
+                    MockArray(np.array([1, 2, 3])),
+                    np.array([[[1]], [[2]], [[3]]]),
+                    does_not_raise(),
+            ),
+        ],
+    )
+    def test_tsdtensor_type_t(self, time, data, expectation):
+        """Verify that the time attribute 't' of a TsdTensor object is stored as a numpy.ndarray."""
+        with expectation:
+            ts = nap.TsdTensor(t=time, d=data)
+            assert isinstance(ts.t, np.ndarray)
 
     @pytest.mark.parametrize(
         "data, expectation",
