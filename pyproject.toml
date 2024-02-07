@@ -51,6 +51,8 @@ dev = [
     "pytest",                       # Testing framework
     "flake8",                       # Code linter
     "coverage",                     # Test coverage measurement
+    "jax",
+    "jaxlib"
 ]
 docs = [
     "mkdocs",                       # Documentation generator
