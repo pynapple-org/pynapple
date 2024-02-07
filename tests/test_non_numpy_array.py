@@ -216,3 +216,4 @@ class TestTsdTensorArray:
     def test_tsdtensor_warn(self, data, expectation):
         with expectation:
             nap.TsdTensor(t=np.array(data), d=data)
+

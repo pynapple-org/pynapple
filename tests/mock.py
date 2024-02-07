@@ -2,6 +2,7 @@
 import numpy as np
 
 
+
 class MockArray:
     """
     A mock array class designed for testing purposes. It mimics the behavior of array-like objects
