@@ -25,6 +25,7 @@ class TestTsArray:
         ],
     )
     def test_ts_init(self, time, expectation):
+        """Verify the expected behavior of the initialization for Ts objects."""
         with expectation:
             nap.Ts(t=time)
 
@@ -36,6 +37,7 @@ class TestTsArray:
         ],
     )
     def test_ts_type(self, time, expectation):
+        """Verify that the time attribute 't' of a Ts object is stored as a numpy.ndarray."""
         with expectation:
             ts = nap.Ts(t=time)
             assert isinstance(ts.t, np.ndarray)
@@ -55,6 +57,7 @@ class TestTsArray:
         ],
     )
     def test_ts_warn(self, time, expectation):
+        """Check for warnings when the time attribute 't' is automatically converted to numpy.ndarray."""
         with expectation:
             nap.Ts(t=time)
 
@@ -76,6 +79,7 @@ class TestTsdArray:
         ],
     )
     def test_tsd_init(self, time, data, expectation):
+        """Verify the expected behavior of the initialization for Tsd objects."""
         with expectation:
             nap.Tsd(t=time, d=data)
 
@@ -87,6 +91,7 @@ class TestTsdArray:
         ],
     )
     def test_tsd_type(self, time, data, expectation):
+        """Verify that the data attribute 'd' of a Tsd object is stored as a numpy.ndarray."""
         with expectation:
             ts = nap.Tsd(t=time, d=data)
             assert isinstance(ts.d, np.ndarray)
@@ -106,6 +111,7 @@ class TestTsdArray:
         ],
     )
     def test_tsd_warn(self, data, expectation):
+        """Check for warnings when the data attribute 'd' is automatically converted to numpy.ndarray."""
         with expectation:
             nap.Tsd(t=np.array(data), d=data)
 
@@ -127,6 +133,7 @@ class TestTsdFrameArray:
         ],
     )
     def test_tsdframe_init(self, time, data, expectation):
+        """Verify the expected behavior of the initialization for TsdFrame objects."""
         with expectation:
             nap.TsdFrame(t=time, d=data)
 
@@ -138,6 +145,7 @@ class TestTsdFrameArray:
         ],
     )
     def test_tsdframe_type(self, time, data, expectation):
+        """Verify that the data attribute 'd' of a TsdFrame object is stored as a numpy.ndarray."""
         with expectation:
             ts = nap.TsdFrame(t=time, d=data)
             assert isinstance(ts.d, np.ndarray)
@@ -157,6 +165,7 @@ class TestTsdFrameArray:
         ],
     )
     def test_tsdframe_warn(self, data, expectation):
+        """Check for warnings when the data attribute 'd' is automatically converted to numpy.ndarray."""
         with expectation:
             nap.TsdFrame(t=np.array(data), d=data)
 
@@ -180,6 +189,7 @@ class TestTsdTensorArray:
         ],
     )
     def test_tsdtensor_init(self, time, data, expectation):
+        """Verify the expected behavior of the initialization for TsdTensor objects."""
         with expectation:
             nap.TsdTensor(t=time, d=data)
 
@@ -195,6 +205,7 @@ class TestTsdTensorArray:
         ],
     )
     def test_tsdtensor_type(self, time, data, expectation):
+        """Verify that the data attribute 'd' of a TsdTensor object is stored as a numpy.ndarray."""
         with expectation:
             ts = nap.TsdTensor(t=time, d=data)
             assert isinstance(ts.d, np.ndarray)
@@ -214,6 +225,7 @@ class TestTsdTensorArray:
         ],
     )
     def test_tsdtensor_warn(self, data, expectation):
+        """Check for warnings when the data attribute 'd' is automatically converted to numpy.ndarray."""
         with expectation:
             nap.TsdTensor(t=np.array(data), d=data)
 
