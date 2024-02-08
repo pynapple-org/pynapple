@@ -80,16 +80,6 @@ def is_array_like(obj):
     possible array-like types or objects that mimic these properties without being suitable for
     numerical operations.
 
-    Examples
-    --------
-    >>> import numpy as np
-    >>> numpy_array = np.array([1, 2, 3])
-    >>> jax_array = jnp.array([1, 2, 3])
-    >>> non_array = "not an array"
-    >>> is_array_like(numpy_array)
-    True
-    >>> is_array_like(non_array)
-    False
     """
     # Check for array-like attributes
     has_shape = hasattr(obj, "shape")
@@ -143,14 +133,6 @@ def convert_to_numpy(array, array_name):
     A warning is issued if the input `values` is not already a NumPy ndarray, indicating
     that a conversion has taken place and showing the original type of the input.
 
-    Examples
-    --------
-    >>> import jax.numpy as jnp
-    >>> list_int = [1, 2, 3]
-    >>> numpy_array = convert_to_numpy(list_int, "list_int")
-        UserWarning: Converting data to numpy.array. The provided array was of type 'list'.
-    >>> type(numpy_array)
-    <class 'numpy.ndarray'>
     """
     if (
         not isinstance(array, np.ndarray)
