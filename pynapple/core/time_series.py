@@ -57,8 +57,8 @@ def is_array_like(obj):
     """
     Check if an object is array-like.
 
-    This function determines if an object has array-like properties. An object
-    is considered array-like if it has attributes typically associated with arrays
+    This function determines if an object has array-like properties but isn't an _AstractTsd.
+    An object is considered array-like if it has attributes typically associated with arrays
     (such as `.shape`, `.dtype`, and `.ndim`), supports indexing, and is iterable.
 
     Parameters
@@ -100,7 +100,9 @@ def is_array_like(obj):
     except TypeError:
         is_iterable = False
 
-    return has_shape and has_dtype and has_ndim and is_indexable and is_iterable
+    not_tsd_type = not isinstance(obj, _AbstractTsd)
+
+    return has_shape and has_dtype and has_ndim and is_indexable and is_iterable and not_tsd_type
 
 
 def convert_to_numpy(array, array_name):

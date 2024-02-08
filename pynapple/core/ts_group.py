@@ -23,7 +23,7 @@ from .interval_set import IntervalSet
 
 # from .time_units import format_timestamps
 from .time_index import TsIndex
-from .time_series import Ts, Tsd, TsdFrame
+from .time_series import Ts, Tsd, TsdFrame, is_array_like
 
 
 def union_intervals(i_sets):
@@ -105,13 +105,13 @@ class TsGroup(UserDict):
 
         # Transform elements to Ts/Tsd objects
         for k in self.index:
-            if isinstance(data[k], (np.ndarray, list)):
+            if isinstance(data[k], list) or is_array_like(data[k]):
                 warnings.warn(
                     "Elements should not be passed as numpy array. Default time units is seconds when creating the Ts object.",
                     stacklevel=2,
                 )
                 data[k] = Ts(
-                    t=data[k], time_support=time_support, time_units=time_units
+                    t=np.asarray(data[k]), time_support=time_support, time_units=time_units
                 )
 
         # If time_support is passed, all elements of data are restricted prior to init
