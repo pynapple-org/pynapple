@@ -1,6 +1,5 @@
 from contextlib import nullcontext as does_not_raise
 
-import jax.numpy as jnp
 import numpy as np
 import pytest
 
@@ -14,7 +13,6 @@ class TestTsArray:
     @pytest.mark.parametrize(
         "time, expectation",
         [
-            (jnp.array([1, 2, 3]), does_not_raise()),
             (MockArray(np.array([1, 2, 3])), does_not_raise()),
             (
                 "abc",
@@ -32,8 +30,7 @@ class TestTsArray:
     @pytest.mark.parametrize(
         "time, expectation",
         [
-            (jnp.array([1, 2, 3]), does_not_raise()),
-            (MockArray(np.array([1, 2, 3])), does_not_raise()),
+            (MockArray(np.array([1, 2, 3])), does_not_raise())
         ],
     )
     def test_ts_type(self, time, expectation):
@@ -46,10 +43,6 @@ class TestTsArray:
         "time, expectation",
         [
             (np.array([1, 2, 3]), does_not_raise()),
-            (
-                jnp.array([1, 2, 3]),
-                pytest.warns(UserWarning, match="Converting 't' to numpy.array"),
-            ),
             (
                 MockArray(np.array([1, 2, 3])),
                 pytest.warns(UserWarning, match="Converting 't' to numpy.array"),
@@ -67,10 +60,10 @@ class TestTsdArray:
     @pytest.mark.parametrize(
         "time, data, expectation",
         [
-            (jnp.array([1, 2, 3]), jnp.array([1, 2, 3]), does_not_raise()),
-            (jnp.array([1, 2, 3]), MockArray(np.array([1, 2, 3])), does_not_raise()),
+            (MockArray([1, 2, 3]), MockArray([1, 2, 3]), does_not_raise()),
+            (MockArray([1, 2, 3]), MockArray(np.array([1, 2, 3])), does_not_raise()),
             (
-                jnp.array([1, 2, 3]),
+                MockArray([1, 2, 3]),
                 "abc",
                 pytest.raises(
                     AttributeError, match="'str' object has no attribute 'ndim'"
@@ -118,10 +111,6 @@ class TestTsdArray:
         [
             (np.array([1, 2, 3]), does_not_raise()),
             (
-                jnp.array([1, 2, 3]),
-                pytest.warns(UserWarning, match="Converting 'd' to numpy.array"),
-            ),
-            (
                 MockArray(np.array([1, 2, 3])),
                 pytest.warns(UserWarning, match="Converting 'd' to numpy.array"),
             ),
@@ -138,10 +127,9 @@ class TestTsdFrameArray:
     @pytest.mark.parametrize(
         "time, data, expectation",
         [
-            (jnp.array([1, 2, 3]), jnp.array([1, 2, 3]), does_not_raise()),
-            (jnp.array([1, 2, 3]), MockArray(np.array([1, 2, 3])), does_not_raise()),
+            (MockArray([1, 2, 3]), MockArray([1, 2, 3]), does_not_raise()),
             (
-                jnp.array([1, 2, 3]),
+                MockArray([1, 2, 3]),
                 "abc",
                 pytest.raises(
                     AttributeError, match="'str' object has no attribute 'ndim'"
@@ -189,10 +177,6 @@ class TestTsdFrameArray:
         [
             (np.array([1, 2, 3]), does_not_raise()),
             (
-                jnp.array([1, 2, 3]),
-                pytest.warns(UserWarning, match="Converting 'd' to numpy.array"),
-            ),
-            (
                 MockArray(np.array([1, 2, 3])),
                 pytest.warns(UserWarning, match="Converting 'd' to numpy.array"),
             ),
@@ -209,14 +193,13 @@ class TestTsdTensorArray:
     @pytest.mark.parametrize(
         "time, data, expectation",
         [
-            (jnp.array([1, 2, 3]), jnp.array([[[1]], [[2]], [[3]]]), does_not_raise()),
             (
-                jnp.array([1, 2, 3]),
+                MockArray([1, 2, 3]),
                 MockArray(np.array([[[1]], [[2]], [[3]]])),
                 does_not_raise(),
             ),
             (
-                jnp.array([1, 2, 3]),
+                MockArray([1, 2, 3]),
                 "abc",
                 pytest.raises(AssertionError, match="Data should have more than"),
             ),
@@ -265,10 +248,6 @@ class TestTsdTensorArray:
         "data, expectation",
         [
             (np.array([[[1]], [[2]], [[3]]]), does_not_raise()),
-            (
-                jnp.array([[[1]], [[2]], [[3]]]),
-                pytest.warns(UserWarning, match="Converting 'd' to numpy.array"),
-            ),
             (
                 MockArray(np.array([[[1]], [[2]], [[3]]])),
                 pytest.warns(UserWarning, match="Converting 'd' to numpy.array"),

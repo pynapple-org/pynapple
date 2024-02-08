@@ -1665,8 +1665,8 @@ class Tsd(NDArrayOperatorsMixin, _AbstractTsd):
             The time support of the tsd object
         """
         if isinstance(t, pd.Series):
-            d = np.asarray(t.values)
-            t = np.asarray(t.index.values)
+            d = t.values
+            t = t.index.values
 
         if is_array_like(t) and d is None:
             raise RuntimeError("Missing argument d when initializing Tsd")
