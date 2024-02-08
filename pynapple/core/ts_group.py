@@ -111,7 +111,9 @@ class TsGroup(UserDict):
                     stacklevel=2,
                 )
                 data[k] = Ts(
-                    t=np.asarray(data[k]), time_support=time_support, time_units=time_units
+                    t=np.asarray(data[k]),
+                    time_support=time_support,
+                    time_units=time_units,
                 )
 
         # If time_support is passed, all elements of data are restricted prior to init

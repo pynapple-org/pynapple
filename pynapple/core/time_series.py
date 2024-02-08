@@ -102,7 +102,14 @@ def is_array_like(obj):
 
     not_tsd_type = not isinstance(obj, _AbstractTsd)
 
-    return has_shape and has_dtype and has_ndim and is_indexable and is_iterable and not_tsd_type
+    return (
+        has_shape
+        and has_dtype
+        and has_ndim
+        and is_indexable
+        and is_iterable
+        and not_tsd_type
+    )
 
 
 def convert_to_numpy(array, array_name):
