@@ -1,13 +1,5 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-01-27 18:33:31
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-02-13 17:41:21
-
 """
-
-    # pynapple time series
-
+    
     Pynapple time series are containers specialized for neurophysiological time series.
 
     They provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.

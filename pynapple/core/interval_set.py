@@ -1,9 +1,7 @@
-# -*- coding: utf-8 -*-
-# @Date:   2022-01-25 21:50:48
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-29 12:16:38
-
 """
+        
+    The class `IntervalSet` deals with non-overlaping epochs. `IntervalSet` objects can interact with each other or with the time series objects.
+
 """
 
 import importlib

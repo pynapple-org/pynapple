@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: Guillaume Viejo
-# @Date:   2024-02-09 12:09:18
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-02-13 17:26:35
-
 """
     Abstract class for `core` time series.
 

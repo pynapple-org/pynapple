@@ -1,8 +1,8 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-01-28 15:10:48
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-02-13 16:48:21
+"""
+
+    The class `TsGroup` helps group objects with different timestamps (i.e. timestamps of spikes of a population of neurons).
+
+"""
 
 
 import os
@@ -244,7 +244,6 @@ class TsGroup(UserDict):
     def metadata_columns(self):
         """
         Returns list of metadata columns
-        -------
         """
         return list(self._metadata.columns)
 
