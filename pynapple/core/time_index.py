@@ -2,11 +2,11 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-09-21 13:32:03
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-25 11:28:11
+# @Last Modified time: 2024-02-13 16:55:44
 
 """
 
-    Similar to pd.Index, TsIndex holds the timestamps associated with the data of a time series.
+    Similar to pandas.Index, TsIndex holds the timestamps associated with the data of a time series.
     This class deals with conversion between different time units for all pynapple objects as well
     as making sure that timestamps are property sorted before initializing any objects.    
         - `us`: microseconds

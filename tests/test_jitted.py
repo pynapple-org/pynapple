@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-12-02 17:17:03
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-29 14:48:58
+# @Last Modified time: 2024-02-12 12:54:48
 
 """Tests of jitted core functions for `pynapple` package."""
 
@@ -65,7 +65,7 @@ def restrict(ep, tsd):
 
     ix = ix3[:,0]
     idx = ~np.isnan(ix)
-    if tsd.values is None:
+    if not hasattr(tsd, "values"):
         return pd.Series(index=tsd.index[idx], dtype="object")
     else:
         return pd.Series(index=tsd.index[idx], data=tsd.values[idx])

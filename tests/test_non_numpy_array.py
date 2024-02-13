@@ -5,11 +5,58 @@ import pytest
 
 import pynapple as nap
 
-from .mock import MockArray
+class MockArray:
+    """
+    A mock array class designed for testing purposes. It mimics the behavior of array-like objects
+    by providing necessary attributes and supporting indexing and iteration, but it is not a direct
+    instance of numpy.ndarray.
+    """
+
+    def __init__(self, data):
+        """
+        Initializes the MockArray with data.
+
+        Parameters
+        ----------
+        data : Union[numpy.ndarray, List]
+            A list of data elements that the MockArray will contain.
+        """
+        self.data = np.asarray(data)
+        self.shape = self.data.shape # Simplified shape attribute
+        self.dtype = 'float64'  # Simplified dtype; in real scenarios, this should be more dynamic
+        self.ndim = self.data.ndim  # Simplified ndim for a 1-dimensional array
+
+    def __getitem__(self, index):
+        """
+        Supports indexing into the mock array.
+
+        Parameters
+        ----------
+        index : int or slice
+            The index or slice of the data to access.
+
+        Returns
+        -------
+        The element(s) at the specified index.
+        """
+        return self.data[index]
+
+    def __iter__(self):
+        """
+        Supports iteration over the mock array.
+        """
+        return iter(self.data)
+
+    def __len__(self):
+        """
+        Returns the length of the mock array.
+        """
+        return len(self.data)
 
 
 class TestTsArray:
 
+    @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, expectation",
         [
@@ -17,7 +64,7 @@ class TestTsArray:
             (
                 "abc",
                 pytest.raises(
-                    AttributeError, match="'str' object has no attribute 'astype'"
+                    RuntimeError, match="Unknown format for t. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."
                 ),
             ),
         ],
@@ -27,6 +74,7 @@ class TestTsArray:
         with expectation:
             nap.Ts(t=time)
 
+    @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, expectation",
         [
@@ -39,6 +87,7 @@ class TestTsArray:
             ts = nap.Ts(t=time)
             assert isinstance(ts.t, np.ndarray)
 
+    @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, expectation",
         [
@@ -57,6 +106,7 @@ class TestTsArray:
 
 class TestTsdArray:
 
+    @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, data, expectation",
         [
@@ -66,9 +116,16 @@ class TestTsdArray:
                 MockArray([1, 2, 3]),
                 "abc",
                 pytest.raises(
-                    AttributeError, match="'str' object has no attribute 'ndim'"
+                    RuntimeError, match="Unknown format for d. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."
                 ),
             ),
+            (
+                "abc",
+                MockArray([1, 2, 3]),                
+                pytest.raises(
+                    RuntimeError, match="Unknown format for t. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."
+                ),
+            ),            
         ],
     )
     def test_tsd_init(self, time, data, expectation):
@@ -76,6 +133,7 @@ class TestTsdArray:
         with expectation:
             nap.Tsd(t=time, d=data)
 
+    @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, data, expectation",
         [
@@ -89,6 +147,7 @@ class TestTsdArray:
             ts = nap.Tsd(t=time, d=data)
             assert isinstance(ts.d, np.ndarray)
 
+    @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, data, expectation",
         [
@@ -106,6 +165,7 @@ class TestTsdArray:
             ts = nap.Tsd(t=time, d=data)
             assert isinstance(ts.t, np.ndarray)
 
+    @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "data, expectation",
         [
@@ -124,6 +184,7 @@ class TestTsdArray:
 
 class TestTsdFrameArray:
 
+    @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, data, expectation",
         [
@@ -132,7 +193,7 @@ class TestTsdFrameArray:
                 MockArray([1, 2, 3]),
                 "abc",
                 pytest.raises(
-                    AttributeError, match="'str' object has no attribute 'ndim'"
+                    RuntimeError, match="Unknown format for d. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."
                 ),
             ),
         ],
@@ -142,6 +203,7 @@ class TestTsdFrameArray:
         with expectation:
             nap.TsdFrame(t=time, d=data)
 
+    @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, data, expectation",
         [
@@ -155,6 +217,7 @@ class TestTsdFrameArray:
             ts = nap.TsdFrame(t=time, d=data)
             assert isinstance(ts.d, np.ndarray)
 
+    @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, data, expectation",
         [
@@ -172,6 +235,7 @@ class TestTsdFrameArray:
             ts = nap.TsdFrame(t=time, d=data)
             assert isinstance(ts.t, np.ndarray)
 
+    @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "data, expectation",
         [
@@ -190,6 +254,7 @@ class TestTsdFrameArray:
 
 class TestTsdTensorArray:
 
+    @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, data, expectation",
         [
@@ -201,7 +266,7 @@ class TestTsdTensorArray:
             (
                 MockArray([1, 2, 3]),
                 "abc",
-                pytest.raises(AssertionError, match="Data should have more than"),
+                pytest.raises(RuntimeError, match="Unknown format for d. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."),
             ),
         ],
     )
@@ -210,6 +275,7 @@ class TestTsdTensorArray:
         with expectation:
             nap.TsdTensor(t=time, d=data)
 
+    @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, data, expectation",
         [
@@ -227,6 +293,7 @@ class TestTsdTensorArray:
             ts = nap.TsdTensor(t=time, d=data)
             assert isinstance(ts.d, np.ndarray)
 
+    @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, data, expectation",
         [
@@ -244,6 +311,7 @@ class TestTsdTensorArray:
             ts = nap.TsdTensor(t=time, d=data)
             assert isinstance(ts.t, np.ndarray)
 
+    @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "data, expectation",
         [
@@ -257,5 +325,5 @@ class TestTsdTensorArray:
     def test_tsdtensor_warn(self, data, expectation):
         """Check for warnings when the data attribute 'd' is automatically converted to numpy.ndarray."""
         with expectation:
-            nap.TsdTensor(t=np.array(data), d=data)
+            nap.TsdTensor(t=np.ravel(np.array(data)), d=data)
 

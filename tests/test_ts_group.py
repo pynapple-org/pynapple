@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:14:41
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-29 11:26:22
+# @Last Modified time: 2024-02-10 17:33:54
 
 """Tests of ts group for `pynapple` package."""
 
@@ -37,7 +37,7 @@ class Test_Ts_Group_1:
                 1: np.arange(0, 200, 0.5),
                 2: np.arange(0, 300, 0.2),
                 })
-        assert str(w[0].message) == "Elements should not be passed as numpy array. Default time units is seconds when creating the Ts object."
+        assert str(w[0].message) == "Elements should not be passed as <class 'numpy.ndarray'>. Default time units is seconds when creating the Ts object."
 
     def test_create_ts_group_with_time_support(self, group):
         ep = nap.IntervalSet(start=0, end=100)

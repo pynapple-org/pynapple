@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-28 15:10:48
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-29 12:16:24
+# @Last Modified time: 2024-02-13 16:48:21
 
 
 import os
@@ -19,11 +19,10 @@ from ._jitted_functions import (
     jitunion,
     jitunion_isets,
 )
+from .base_class import Base
 from .interval_set import IntervalSet
-
-# from .time_units import format_timestamps
 from .time_index import TsIndex
-from .time_series import Ts, Tsd, TsdFrame, is_array_like
+from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
 
 
 def union_intervals(i_sets):
@@ -105,16 +104,19 @@ class TsGroup(UserDict):
 
         # Transform elements to Ts/Tsd objects
         for k in self.index:
-            if isinstance(data[k], list) or is_array_like(data[k]):
-                warnings.warn(
-                    "Elements should not be passed as numpy array. Default time units is seconds when creating the Ts object.",
-                    stacklevel=2,
-                )
-                data[k] = Ts(
-                    t=np.asarray(data[k]),
-                    time_support=time_support,
-                    time_units=time_units,
-                )
+            if not isinstance(data[k], Base):
+                if isinstance(data[k], list) or is_array_like(data[k]):
+                    warnings.warn(
+                        "Elements should not be passed as {}. Default time units is seconds when creating the Ts object.".format(
+                            type(data[k])
+                        ),
+                        stacklevel=2,
+                    )
+                    data[k] = Ts(
+                        t=np.asarray(data[k]),
+                        time_support=time_support,
+                        time_units=time_units,
+                    )
 
         # If time_support is passed, all elements of data are restricted prior to init
         if isinstance(time_support, IntervalSet):
@@ -965,13 +967,14 @@ class TsGroup(UserDict):
             nt += len(self[n])
 
         times = np.zeros(nt)
-        data = np.zeros(nt)
+        data = np.full(nt, np.nan)
         index = np.zeros(nt, dtype=np.int64)
         k = 0
         for n in self.index:
             kl = len(self[n])
             times[k : k + kl] = self[n].index
-            data[k : k + kl] = self[n].values
+            if isinstance(self[n], BaseTsd):
+                data[k : k + kl] = self[n].values
             index[k : k + kl] = int(n)
             k += kl
 
