@@ -40,10 +40,10 @@ def union_intervals(i_sets):
 
     if n == 2:
         new_start, new_end = jitunion(
-            i_sets[0].start.values,
-            i_sets[0].end.values,
-            i_sets[1].start.values,
-            i_sets[1].end.values,
+            i_sets[0].start,
+            i_sets[0].end,
+            i_sets[1].start,
+            i_sets[1].end,
         )
 
     if n > 2:
@@ -532,8 +532,8 @@ class TsGroup(UserDict):
                 if isinstance(a, IntervalSet):
                     ep = a
 
-        starts = ep.start.values
-        ends = ep.end.values
+        starts = ep.start
+        ends = ep.end
 
         if isinstance(bin_size, (float, int)):
             bin_size = float(bin_size)
@@ -987,8 +987,8 @@ class TsGroup(UserDict):
         if not np.all(np.isnan(data)):
             dicttosave["d"] = data[idx]
 
-        dicttosave["start"] = self.time_support.start.values
-        dicttosave["end"] = self.time_support.end.values
+        dicttosave["start"] = self.time_support.start
+        dicttosave["end"] = self.time_support.end
 
         np.savez(filename, **dicttosave)
 

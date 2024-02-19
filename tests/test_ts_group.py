@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-03-30 11:14:41
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-02-10 17:33:54
+# @Last Modified by:   gviejo
+# @Last Modified time: 2024-02-19 15:11:43
 
 """Tests of ts group for `pynapple` package."""
 
@@ -42,11 +42,11 @@ class Test_Ts_Group_1:
     def test_create_ts_group_with_time_support(self, group):
         ep = nap.IntervalSet(start=0, end=100)
         tsgroup = nap.TsGroup(group, time_support=ep)
-        pd.testing.assert_frame_equal(tsgroup.time_support, ep)
+        np.testing.assert_array_almost_equal(tsgroup.time_support, ep)
         first = [tsgroup[i].index[0] for i in tsgroup]
         last = [tsgroup[i].index[-1] for i in tsgroup]
-        assert np.all(first >= ep.loc[0, "start"])
-        assert np.all(last <= ep.loc[0, "end"])
+        assert np.all(first >= ep[0, 0])
+        assert np.all(last <= ep[0, 1])
 
     def test_create_ts_group_with_empty_time_support(self, group):
         with pytest.raises(RuntimeError) as e_info:
@@ -209,8 +209,8 @@ class Test_Ts_Group_1:
         tsgroup2 = tsgroup.restrict(ep)
         first = [tsgroup2[i].index[0] for i in tsgroup2]
         last = [tsgroup2[i].index[-1] for i in tsgroup2]
-        assert np.all(first >= ep.loc[0, "start"])
-        assert np.all(last <= ep.loc[0, "end"])
+        assert np.all(first >= ep[0, 0])
+        assert np.all(last <= ep[0, 1])
 
     def test_value_from(self, group):
         tsgroup = nap.TsGroup(group)
@@ -503,8 +503,8 @@ class Test_Ts_Group_1:
         data = data[idx]
         index = index[idx]
 
-        np.testing.assert_array_almost_equal(file['start'], tsgroup.time_support.start.values)
-        np.testing.assert_array_almost_equal(file['end'], tsgroup.time_support.end.values)
+        np.testing.assert_array_almost_equal(file['start'], tsgroup.time_support.start)
+        np.testing.assert_array_almost_equal(file['end'], tsgroup.time_support.end)
         np.testing.assert_array_almost_equal(file['t'], times)
         np.testing.assert_array_almost_equal(file['d'], data)
         np.testing.assert_array_almost_equal(file['index'], index)

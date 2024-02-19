@@ -98,8 +98,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         )
 
         if isinstance(time_support, IntervalSet) and len(self.index):
-            starts = time_support.start.values
-            ends = time_support.end.values
+            starts = time_support.start
+            ends = time_support.end
             t, d = jitrestrict(self.index.values, self.values, starts, ends)
             self.index = TsIndex(t)
             self.values = d
@@ -318,8 +318,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
         time_array = self.index.values
         data_array = self.values
-        starts = ep.start.values
-        ends = ep.end.values
+        starts = ep.start
+        ends = ep.end
         if data_array.ndim > 1:
             t, d = jitbin_array(time_array, data_array, starts, ends, bin_size)
         else:
@@ -410,8 +410,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
         time_array = self.index.values
         data_array = self.values
-        starts = ep.start.values
-        ends = ep.end.values
+        starts = ep.start
+        ends = ep.end
 
         if data_array.ndim == 1:
             new_data_array = np.zeros(data_array.shape)
@@ -707,8 +707,8 @@ class TsdTensor(BaseTsd):
             filename,
             t=self.index.values,
             d=self.values,
-            start=self.time_support.start.values,
-            end=self.time_support.end.values,
+            start=self.time_support.start,
+            end=self.time_support.end,
             type=np.array([self.nap_class], dtype=np.str_),
         )
 
@@ -968,8 +968,8 @@ class TsdFrame(BaseTsd):
             filename,
             t=self.index.values,
             d=self.values,
-            start=self.time_support.start.values,
-            end=self.time_support.end.values,
+            start=self.time_support.start,
+            end=self.time_support.end,
             columns=cols_name,
             type=np.array(["TsdFrame"], dtype=np.str_),
         )
@@ -1152,8 +1152,8 @@ class Tsd(BaseTsd):
         """
         time_array = self.index.values
         data_array = self.values
-        starts = self.time_support.start.values
-        ends = self.time_support.end.values
+        starts = self.time_support.start
+        ends = self.time_support.end
         if method not in ["above", "below", "aboveequal", "belowequal"]:
             raise ValueError(
                 "Method {} for thresholding is not accepted.".format(method)
@@ -1282,8 +1282,8 @@ class Tsd(BaseTsd):
             filename,
             t=self.index.values,
             d=self.values,
-            start=self.time_support.start.values,
-            end=self.time_support.end.values,
+            start=self.time_support.start,
+            end=self.time_support.end,
             type=np.array([self.nap_class], dtype=np.str_),
         )
 
@@ -1318,8 +1318,8 @@ class Ts(Base):
         super().__init__(t, time_units, time_support)
 
         if isinstance(time_support, IntervalSet) and len(self.index):
-            starts = time_support.start.values
-            ends = time_support.end.values
+            starts = time_support.start
+            ends = time_support.end
             t = jittsrestrict(self.index.values, starts, ends)
             self.index = TsIndex(t)
             self.rate = self.index.shape[0] / np.sum(
@@ -1518,8 +1518,8 @@ class Ts(Base):
         np.savez(
             filename,
             t=self.index.values,
-            start=self.time_support.start.values,
-            end=self.time_support.end.values,
+            start=self.time_support.start,
+            end=self.time_support.end,
             type=np.array(["Ts"], dtype=np.str_),
         )
 

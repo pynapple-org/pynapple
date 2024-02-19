@@ -210,8 +210,8 @@ class Base(abc.ABC):
         time_array = self.index.values
         time_target_array = data.index.values
         data_target_array = data.values
-        starts = ep.start.values
-        ends = ep.end.values
+        starts = ep.start
+        ends = ep.end
 
         if data_target_array.ndim == 1:
             t, d, ns, ne = jitvaluefrom(
@@ -318,8 +318,8 @@ class Base(abc.ABC):
                     ep = a
 
         time_array = self.index.values
-        starts = ep.start.values
-        ends = ep.end.values
+        starts = ep.start
+        ends = ep.end
 
         if isinstance(bin_size, (float, int)):
             bin_size = TsIndex.format_timestamps(np.array([bin_size]), time_units)[0]
@@ -365,8 +365,8 @@ class Base(abc.ABC):
         assert isinstance(iset, IntervalSet), "Argument should be IntervalSet"
 
         time_array = self.index.values
-        starts = iset.start.values
-        ends = iset.end.values
+        starts = iset.start
+        ends = iset.end
 
         if hasattr(self, "values"):
             data_array = self.values
@@ -468,8 +468,8 @@ class Base(abc.ABC):
     #     min_gap = format_timestamps(np.array([min_gap]), time_units)[0]
 
     #     time_array = self.index
-    #     starts = self.time_support.start.values
-    #     ends = self.time_support.end.values
+    #     starts = self.time_support.start
+    #     ends = self.time_support.end
 
     #     s, e = jitfind_gaps(time_array, starts, ends, min_gap)
 

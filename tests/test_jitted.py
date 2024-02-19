@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-12-02 17:17:03
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-02-12 12:54:48
+# @Last Modified by:   gviejo
+# @Last Modified time: 2024-02-19 15:18:05
 
 """Tests of jitted core functions for `pynapple` package."""
 
@@ -75,7 +75,7 @@ def test_jitrestrict():
         ep, ts, tsd, tsdframe = get_example_dataset()
 
         tsd2 = restrict(ep, tsd)
-        t, d= nap.core._jitted_functions.jitrestrict(tsd.index, tsd.values, ep['start'].values, ep['end'].values)
+        t, d= nap.core._jitted_functions.jitrestrict(tsd.index, tsd.values, ep.start, ep.end)
         tsd3 = pd.Series(index=t, data=d)
         pd.testing.assert_series_equal(tsd2, tsd3)
 
@@ -84,7 +84,7 @@ def test_jittsrestrict():
         ep, ts, tsd, tsdframe = get_example_dataset()
 
         ts2 = restrict(ep, ts)
-        t = nap.core._jitted_functions.jittsrestrict(ts.index, ep['start'].values, ep['end'].values)
+        t = nap.core._jitted_functions.jittsrestrict(ts.index, ep.start, ep.end)
         ts3 = pd.Series(index=t, dtype="object")
         pd.testing.assert_series_equal(ts2, ts3)
 
@@ -93,7 +93,7 @@ def test_jitrestrict_with_count():
         ep, ts, tsd, tsdframe = get_example_dataset()
 
         tsd2 = restrict(ep, tsd)
-        t, d, count = nap.core._jitted_functions.jitrestrict_with_count(tsd.index, tsd.values, ep['start'].values, ep['end'].values)
+        t, d, count = nap.core._jitted_functions.jitrestrict_with_count(tsd.index, tsd.values, ep.start, ep.end)
         tsd3 = pd.Series(index=t, data=d)
         pd.testing.assert_series_equal(tsd2, tsd3)
 
@@ -114,7 +114,7 @@ def test_jittsrestrict_with_count():
         ep, ts, tsd, tsdframe = get_example_dataset()
 
         ts2 = restrict(ep, ts)
-        t, count = nap.core._jitted_functions.jittsrestrict_with_count(ts.index, ep['start'].values, ep['end'].values)
+        t, count = nap.core._jitted_functions.jittsrestrict_with_count(ts.index, ep.start, ep.end)
         ts3 = pd.Series(index=t, dtype="object")
         pd.testing.assert_series_equal(ts2, ts3)
 
@@ -136,25 +136,25 @@ def test_jitthreshold():
 
         thr = np.random.rand()
 
-        t, d, s, e = nap.core._jitted_functions.jitthreshold(tsd.index, tsd.values, ep['start'].values, ep['end'].values, thr)
+        t, d, s, e = nap.core._jitted_functions.jitthreshold(tsd.index, tsd.values, ep.start, ep.end, thr)
 
         assert len(t) == np.sum(tsd.values > thr)
         assert len(d) == np.sum(tsd.values > thr)
         np.testing.assert_array_equal(d, tsd.values[tsd.values > thr])
 
-        t, d, s, e = nap.core._jitted_functions.jitthreshold(tsd.index, tsd.values, ep['start'].values, ep['end'].values, thr, "below")
+        t, d, s, e = nap.core._jitted_functions.jitthreshold(tsd.index, tsd.values, ep.start, ep.end, thr, "below")
 
         assert len(t) == np.sum(tsd.values < thr)
         assert len(d) == np.sum(tsd.values < thr)
         np.testing.assert_array_equal(d, tsd.values[tsd.values < thr])
 
-        t, d, s, e = nap.core._jitted_functions.jitthreshold(tsd.index, tsd.values, ep['start'].values, ep['end'].values, thr, "aboveequal")
+        t, d, s, e = nap.core._jitted_functions.jitthreshold(tsd.index, tsd.values, ep.start, ep.end, thr, "aboveequal")
     
         assert len(t) == np.sum(tsd.values >= thr)
         assert len(d) == np.sum(tsd.values >= thr)
         np.testing.assert_array_equal(d, tsd.values[tsd.values >= thr])
 
-        t, d, s, e = nap.core._jitted_functions.jitthreshold(tsd.index, tsd.values, ep['start'].values, ep['end'].values, thr, "belowequal")
+        t, d, s, e = nap.core._jitted_functions.jitthreshold(tsd.index, tsd.values, ep.start, ep.end, thr, "belowequal")
 
         assert len(t) == np.sum(tsd.values <= thr)
         assert len(d) == np.sum(tsd.values <= thr)
@@ -170,14 +170,14 @@ def test_jitvalue_from():
     for i in range(10):
         ep, ts, tsd, tsdframe = get_example_dataset()
 
-        t, d, s, e = nap.core._jitted_functions.jitvaluefrom(ts.index, tsd.index, tsd.values, ep['start'].values, ep['end'].values)
+        t, d, s, e = nap.core._jitted_functions.jitvaluefrom(ts.index, tsd.index, tsd.values, ep.start, ep.end)
         tsd3 = pd.Series(index=t, data=d)
 
         tsd2 = []
         for j in ep.index.values:
             ix = ts.restrict(ep.loc[[j]]).index
             if len(ix):
-                tsd2.append(tsd.restrict(ep.loc[[j]]).as_series().reindex(ix, method="nearest").fillna(0.0))                
+                tsd2.append(tsd.restrict(ep.loc[[j]]).as_series().reindex(ix, method="nearest").fillna(0.0))
         
         tsd2 = pd.concat(tsd2)
 
@@ -188,8 +188,8 @@ def test_jitcount():
         ep, ts, tsd, tsdframe = get_example_dataset()
 
         time_array = ts.index
-        starts = ep['start'].values
-        ends = ep['end'].values
+        starts = ep.start
+        ends = ep.end
         bin_size = 1.0
         t, d = nap.core._jitted_functions.jitcount(time_array, starts, ends, bin_size)
         tsd3 = nap.Tsd(t=t, d=d, time_support = ep)
@@ -216,8 +216,8 @@ def test_jitbin():
 
         time_array = tsd.index
         data_array = tsd.values
-        starts = ep['start'].values
-        ends = ep['end'].values
+        starts = ep.start
+        ends = ep.end
         bin_size = 1.0
         t, d = nap.core._jitted_functions.jitbin(time_array, data_array, starts, ends, bin_size)
         # tsd3 = nap.Tsd(t=t, d=d, time_support = ep)
@@ -253,8 +253,8 @@ def test_jitbin_array():
 
         time_array = tsdframe.index
         data_array = tsdframe.values
-        starts = ep['start'].values
-        ends = ep['end'].values
+        starts = ep.start
+        ends = ep.end
         bin_size = 1.0
         t, d = nap.core._jitted_functions.jitbin_array(time_array, data_array, starts, ends, bin_size)
         tsd3 = pd.DataFrame(index=t, data=d)
@@ -426,7 +426,7 @@ def test_jitin_interval():
     for i in range(10):
         ep, ts, tsd, tsdframe = get_example_dataset()
 
-        inep = nap.core._jitted_functions.jitin_interval(tsd.index, ep['start'].values, ep['end'].values)
+        inep = nap.core._jitted_functions.jitin_interval(tsd.index, ep.start, ep.end)
         inep[np.isnan(inep)] = -1
 
         bins = ep.values.ravel()        
