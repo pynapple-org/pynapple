@@ -498,8 +498,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
         start = 0
         for i in range(len(ep)):
-            t = ts.get(ep.loc[i, "start"], ep.loc[i, "end"])
-            tmp = self.get(ep.loc[i, "start"], ep.loc[i, "end"])
+            t = ts.get(ep[i, 0], ep[i, 1])
+            tmp = self.get(ep[i, 0], ep[i, 1])
 
             if len(t) and len(tmp):
                 if self.values.ndim == 1:

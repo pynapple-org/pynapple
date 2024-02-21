@@ -11,10 +11,9 @@
 import warnings
 
 import numpy as np
+from numba import jit
 
 from .config import nap_config
-
-from numba import jit
 
 
 def is_array_like(obj):

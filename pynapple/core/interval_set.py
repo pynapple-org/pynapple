@@ -7,8 +7,8 @@
 import importlib
 import os
 import warnings
-
 from numbers import Number
+
 import numpy as np
 import pandas as pd
 from numpy.lib.mixins import NDArrayOperatorsMixin
@@ -16,7 +16,7 @@ from tabulate import tabulate
 
 from ._jitted_functions import jitdiff, jitin_interval, jitintersect, jitunion
 from .time_index import TsIndex
-from .utils import is_array_like, _jitfix_iset, convert_to_numpy
+from .utils import _jitfix_iset, convert_to_numpy, is_array_like
 
 all_warnings = np.array(
     [
@@ -36,15 +36,15 @@ class IntervalSet(NDArrayOperatorsMixin):
     def __init__(self, start, end=None, time_units="s", **kwargs):
         """
         IntervalSet initializer
-        
+
         If start and end and not aligned, meaning that \n
         1. len(start) != len(end)
         2. end[i] > start[i]
         3. start[i+1] > end[i]
         4. start and end are not sorted,
-        
+
         IntervalSet will try to "fix" the data by eliminating some of the start and end data point
-        
+
         Parameters
         ----------
         start : numpy.ndarray or number or pandas.DataFrame or pandas.Series
@@ -53,12 +53,12 @@ class IntervalSet(NDArrayOperatorsMixin):
             Ends of intervals
         time_units : str, optional
             Time unit of the intervals ('us', 'ms', 's' [default])
-        
+
         Raises
         ------
         RuntimeError
             If `start` and `end` arguments are of unknown type
-        
+
         """
         if isinstance(start, pd.DataFrame):
             assert (
@@ -88,7 +88,7 @@ class IntervalSet(NDArrayOperatorsMixin):
                 elif isinstance(data, np.ndarray):
                     args[arg] = np.ravel(data)
                 elif is_array_like(data):
-                    args[arg] = convert_to_numpy(data, arg)                    
+                    args[arg] = convert_to_numpy(data, arg)
                 else:
                     raise RuntimeError(
                         "Unknown format for {}. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.".format(
@@ -145,27 +145,32 @@ class IntervalSet(NDArrayOperatorsMixin):
         )
 
     def __getitem__(self, key, *args, **kwargs):
-        print(key)
-        print(args)
-        print(kwargs)
         if isinstance(key, str):
             if key == "start":
                 return self.values[:, 0]
             elif key == "end":
                 return self.values[:, 1]
             else:
-                raise IndexError
-        else:
+                raise IndexError("Unknown string argument. Should be 'start' or 'end'")
+        elif isinstance(key, Number):
             output = self.values.__getitem__(key)
-
-            if output.ndim == 2:
-                if output.shape[1] == 2:
+            return IntervalSet(start=output[0], end=output[1])
+        elif isinstance(key, (list, slice, np.ndarray)):
+            output = self.values.__getitem__(key)
+            return IntervalSet(start=output[:, 0], end=output[:, 1])
+        elif isinstance(key, tuple):
+            if len(key) == 2:
+                if isinstance(key[1], Number):
+                    return self.values.__getitem__(key)
+                elif key == slice(None, None, None) or key == slice(0, 2, None):
+                    output = self.values.__getitem__(key)
                     return IntervalSet(start=output[:, 0], end=output[:, 1])
                 else:
-                    return output
-            elif output.ndim == 2:
+                    return self.values.__getitem__(key)
             else:
-                return output
+                raise IndexError(
+                    "too many indices for IntervalSet: IntervalSet is 2-dimensional"
+                )
 
     def __array__(self, dtype=None):
         return self.values.astype(dtype)
@@ -537,4 +542,3 @@ class IntervalSet(NDArrayOperatorsMixin):
         )
 
         return
-
