@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-03-30 11:15:02
-# @Last Modified by:   gviejo
-# @Last Modified time: 2024-02-19 14:37:19
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2024-02-21 18:12:04
 
 """Tests for IntervalSet of `pynapple` package."""
 
@@ -12,6 +12,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import warnings
+from .mock import MockArray
 
 
 def test_create_iset():
@@ -30,6 +31,10 @@ def test_iset_properties():
     assert isinstance(ep.ends, nap.Ts)
     np.testing.assert_array_almost_equal(np.array(start), ep.starts.index)
     np.testing.assert_array_almost_equal(np.array(end), ep.ends.index)
+
+    assert ep.shape == ep.values.shape
+    assert ep.ndim == ep.values.ndim
+    assert ep.size == ep.values.size
 
 def test_iset_centers():
     start = np.array([0, 10, 16, 25])
@@ -60,6 +65,26 @@ def test_create_iset_from_df():
     np.testing.assert_array_almost_equal(df.start.values, ep.start)
     np.testing.assert_array_almost_equal(df.end.values, ep.end)
 
+def test_create_iset_from_mock_array():
+    start = np.array([0, 200])
+    end = np.array([100, 300])
+
+    with warnings.catch_warnings(record=True) as w:
+        ep = nap.IntervalSet(MockArray(start), MockArray(end))
+
+    assert str(w[0].message) == "Converting 'start' to numpy.array. The provided array was of type 'MockArray'."
+    assert str(w[1].message) == "Converting 'end' to numpy.array. The provided array was of type 'MockArray'."
+    
+    np.testing.assert_array_almost_equal(ep.start, start)
+    np.testing.assert_array_almost_equal(ep.end, end)
+
+def test_create_iset_from_unknown_format():    
+    with pytest.raises(RuntimeError) as e:
+        nap.IntervalSet(start="abc", end=[1, 2])
+    assert str(e.value) == "Unknown format for start. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."
+    with pytest.raises(RuntimeError) as e:
+        nap.IntervalSet(start=[1,2], end="abc")
+    assert str(e.value) == "Unknown format for end. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."
 
 def test_create_iset_from_s():
     start = np.array([0, 10, 16, 25])
@@ -84,6 +109,109 @@ def test_create_iset_from_us():
     np.testing.assert_array_almost_equal(start * 1e-6, ep.start)
     np.testing.assert_array_almost_equal(end * 1e-6, ep.end)
 
+def test_modify_iset():
+    start = np.around(np.array([0, 10, 16], dtype=np.float64), 9)
+    end = np.around(np.array([5, 15, 20], dtype=np.float64), 9)
+    ep = nap.IntervalSet(start=start,end=end)
+
+    with pytest.raises(RuntimeError) as e:
+        ep[0,0] = 1
+    assert str(e.value) == "IntervalSet is immutable. Starts and ends have been already sorted."
+
+def test_get_iset():
+    start = np.array([0, 10, 16], dtype=np.float64)
+    end = np.array([5, 15, 20], dtype=np.float64)
+    ep = nap.IntervalSet(start=start,end=end)
+
+    assert isinstance(ep['start'], np.ndarray)
+    assert isinstance(ep['end'], np.ndarray)
+    np.testing.assert_array_almost_equal(ep['start'], start)
+    np.testing.assert_array_almost_equal(ep['end'], end)
+
+    with pytest.raises(IndexError) as e:
+        ep['a']
+    assert str(e.value) == "Unknown string argument. Should be 'start' or 'end'"
+
+    # Get a new IntervalSet
+    ep2 = ep[0]
+    assert isinstance(ep2, nap.IntervalSet)
+    np.testing.assert_array_almost_equal(ep2, np.array([[0., 5.]]))
+
+    ep2 = ep[0:2]
+    assert isinstance(ep2, nap.IntervalSet)
+    np.testing.assert_array_almost_equal(ep2, ep.values[0:2])
+
+    ep2 = ep[[0,2]]
+    assert isinstance(ep2, nap.IntervalSet)
+    np.testing.assert_array_almost_equal(ep2, ep.values[[0,2]])
+
+    ep2 = ep[0:2,:]
+    assert isinstance(ep2, nap.IntervalSet)
+    np.testing.assert_array_almost_equal(ep2, ep.values[0:2])
+
+    ep2 = ep[0:2,0:2]
+    assert isinstance(ep2, nap.IntervalSet)
+    np.testing.assert_array_almost_equal(ep2, ep.values[0:2])
+
+    ep2 = ep[:,0]    
+    np.testing.assert_array_almost_equal(ep2, ep.start)
+    ep2 = ep[:,1]
+    np.testing.assert_array_almost_equal(ep2, ep.end)
+
+    with pytest.raises(IndexError) as e:
+        ep[:,0,3]
+    assert str(e.value) == "too many indices for IntervalSet: IntervalSet is 2-dimensional"
+
+def test_array_ufunc():
+    start = np.array([0, 10, 16], dtype=np.float64)
+    end = np.array([5, 15, 20], dtype=np.float64)
+    ep = nap.IntervalSet(start=start,end=end)    
+
+    with warnings.catch_warnings(record=True) as w:
+        out = np.exp(ep)
+    assert str(w[0].message) == "Converting IntervalSet to numpy.array"
+    np.testing.assert_array_almost_equal(out, np.exp(ep.values))
+
+    with warnings.catch_warnings(record=True) as w:
+        out = ep*2
+    assert str(w[0].message) == "Converting IntervalSet to numpy.array"
+    np.testing.assert_array_almost_equal(out, ep.values*2)
+
+    with warnings.catch_warnings(record=True) as w:
+        out = ep + ep
+    assert str(w[0].message) == "Converting IntervalSet to numpy.array"
+    np.testing.assert_array_almost_equal(out, ep.values*2)
+
+    # test warning
+    from contextlib import nullcontext as does_not_raise
+    nap.config.nap_config.suppress_conversion_warnings = True
+    with does_not_raise():
+        np.exp(ep)
+
+    nap.config.nap_config.suppress_conversion_warnings = False
+
+def test_array_func():
+    start = np.array([0, 10, 16], dtype=np.float64)
+    end = np.array([5, 15, 20], dtype=np.float64)
+    ep = nap.IntervalSet(start=start,end=end)
+
+    with warnings.catch_warnings(record=True) as w:
+        out = np.vstack((ep, ep))
+    assert str(w[0].message) == "Converting IntervalSet to numpy.array"
+    np.testing.assert_array_almost_equal(out, np.vstack((ep.values, ep.values)))
+
+    with warnings.catch_warnings(record=True) as w:
+        out = np.ravel(ep)
+    assert str(w[0].message) == "Converting IntervalSet to numpy.array"
+    np.testing.assert_array_almost_equal(out, np.ravel(ep.values))
+
+    # test warning
+    from contextlib import nullcontext as does_not_raise
+    nap.config.nap_config.suppress_conversion_warnings = True
+    with does_not_raise():
+        out = np.ravel(ep)
+
+    nap.config.nap_config.suppress_conversion_warnings = False
 
 def test_timespan():
     start = [0, 10, 16, 25]
@@ -307,7 +435,7 @@ def test_str_():
     start = np.around(np.array([0, 10, 16], dtype=np.float64), 9)
     end = np.around(np.array([5, 15, 20], dtype=np.float64), 9)
     ep = nap.IntervalSet(start=start,end=end)
-    assert isinstance(ep.__repr__(), str)
+    assert isinstance(ep.__str__(), str)
 
 def test_save_npz():
     import os

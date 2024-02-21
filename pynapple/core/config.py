@@ -54,7 +54,7 @@ class PynappleConfig:
     def suppress_conversion_warnings(self):
         """
         Gets or sets the suppression state for conversion warnings. When set to True,
-        warnings for automatic conversions of non-NumPy array-like objects to NumPy arrays
+        warnings for automatic conversions of non-NumPy array-like objects or pynapple objects to NumPy arrays
         are suppressed. Ensures that only boolean values are assigned.
         """
         return self._suppress_conversion_warnings

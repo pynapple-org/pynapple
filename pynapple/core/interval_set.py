@@ -15,6 +15,7 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from tabulate import tabulate
 
 from ._jitted_functions import jitdiff, jitin_interval, jitintersect, jitunion
+from .config import nap_config
 from .time_index import TsIndex
 from .utils import _jitfix_iset, convert_to_numpy, is_array_like
 
@@ -139,7 +140,7 @@ class IntervalSet(NDArrayOperatorsMixin):
     def __len__(self):
         return len(self.values)
 
-    def __setitem__(self):
+    def __setitem__(self, key, value):
         raise RuntimeError(
             "IntervalSet is immutable. Starts and ends have been already sorted."
         )
@@ -162,7 +163,7 @@ class IntervalSet(NDArrayOperatorsMixin):
             if len(key) == 2:
                 if isinstance(key[1], Number):
                     return self.values.__getitem__(key)
-                elif key == slice(None, None, None) or key == slice(0, 2, None):
+                elif key[1] == slice(None, None, None) or key[1] == slice(0, 2, None):
                     output = self.values.__getitem__(key)
                     return IntervalSet(start=output[:, 0], end=output[:, 1])
                 else:
@@ -171,22 +172,45 @@ class IntervalSet(NDArrayOperatorsMixin):
                 raise IndexError(
                     "too many indices for IntervalSet: IntervalSet is 2-dimensional"
                 )
+        else:
+            return self.values.__getitem__(key)
 
     def __array__(self, dtype=None):
         return self.values.astype(dtype)
 
     def __array_ufunc__(self, ufunc, method, *args, **kwargs):
-        # print("In __array_ufunc__")
-        # print("     ufunc = ", ufunc)
-        # print("     method = ", method)
-        # print("     args = ", args)
-        # for inp in args:
-        #     print(type(inp))
-        # print("     kwargs = ", kwargs)
-        pass
+        new_args = []
+        for a in args:
+            if isinstance(a, self.__class__):
+                new_args.append(a.values)
+            else:
+                new_args.append(a)
+
+        out = ufunc(*new_args, **kwargs)
+
+        if not nap_config.suppress_conversion_warnings:
+            warnings.warn(
+                "Converting IntervalSet to numpy.array",
+                UserWarning,
+            )
+        return out
 
     def __array_function__(self, func, types, args, kwargs):
-        pass
+        new_args = []
+        for a in args:
+            if isinstance(a, self.__class__):
+                new_args.append(a.values)
+            else:
+                new_args.append(a)
+
+        out = func._implementation(*new_args, **kwargs)
+
+        if not nap_config.suppress_conversion_warnings:
+            warnings.warn(
+                "Converting IntervalSet to numpy.array",
+                UserWarning,
+            )
+        return out
 
     @property
     def start(self):
