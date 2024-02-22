@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-03-30 11:15:02
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-02-21 18:12:04
+# @Last Modified by:   gviejo
+# @Last Modified time: 2024-02-21 21:30:58
 
 """Tests for IntervalSet of `pynapple` package."""
 
@@ -161,6 +161,18 @@ def test_get_iset():
     with pytest.raises(IndexError) as e:
         ep[:,0,3]
     assert str(e.value) == "too many indices for IntervalSet: IntervalSet is 2-dimensional"
+
+def test_iset_loc():
+    start = np.array([0, 10, 16], dtype=np.float64)
+    end = np.array([5, 15, 20], dtype=np.float64)
+    ep = nap.IntervalSet(start=start,end=end)
+
+    np.testing.assert_array_almost_equal(ep.loc[0], ep.values[0])
+    assert isinstance(ep.loc[[0]], nap.IntervalSet)
+    np.testing.assert_array_almost_equal(ep.loc[[0]], ep[0])
+    np.testing.assert_array_almost_equal(ep.loc['start'], start)
+    np.testing.assert_array_almost_equal(ep.loc['end'], start)
+
 
 def test_array_ufunc():
     start = np.array([0, 10, 16], dtype=np.float64)

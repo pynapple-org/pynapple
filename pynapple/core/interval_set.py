@@ -17,7 +17,12 @@ from tabulate import tabulate
 from ._jitted_functions import jitdiff, jitin_interval, jitintersect, jitunion
 from .config import nap_config
 from .time_index import TsIndex
-from .utils import _jitfix_iset, convert_to_numpy, is_array_like
+from .utils import (
+    _IntervalSetSliceHelper,
+    _jitfix_iset,
+    convert_to_numpy,
+    is_array_like,
+)
 
 all_warnings = np.array(
     [
@@ -255,6 +260,13 @@ class IntervalSet(NDArrayOperatorsMixin):
         """
         time_series = importlib.import_module(".time_series", "pynapple.core")
         return time_series.Ts(t=self.values[:, 1], time_support=self)
+
+    @property
+    def loc(self):
+        """
+        Slicing function to add compatibility with pandas DataFrame after removing it as a super class of IntervalSet
+        """
+        return _IntervalSetSliceHelper(self)
 
     def time_span(self):
         """

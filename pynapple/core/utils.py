@@ -2,13 +2,14 @@
 # @Author: Guillaume Viejo
 # @Date:   2024-02-09 11:45:45
 # @Last Modified by:   gviejo
-# @Last Modified time: 2024-02-19 11:43:39
+# @Last Modified time: 2024-02-21 21:27:04
 
 """
     Utility functions
 """
 
 import warnings
+from numbers import Number
 
 import numpy as np
 from numba import jit
@@ -275,3 +276,26 @@ class _TsdFrameSliceHelper:
             return self.tsdframe.__getitem__(
                 (slice(None, None, None), index), columns=key
             )
+
+
+class _IntervalSetSliceHelper:
+    def __init__(self, intervalset):
+        self.intervalset = intervalset
+
+    def __getitem__(self, key):
+        if key in ["start", "end"]:
+            return self.intervalset[key]
+        elif isinstance(key, list):
+            return self.intervalset[key]
+        elif isinstance(key, Number):
+            return self.intervalset.values[key]
+        else:
+            if isinstance(key, tuple):
+                if len(key) == 2:
+                    if key[1] not in ["start", "end"]:
+                        raise IndexError
+                    return self.intervalset[key[0]][key[1]]
+                else:
+                    raise IndexError
+            else:
+                raise IndexError
