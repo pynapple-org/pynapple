@@ -161,7 +161,7 @@ class IntervalSet(NDArrayOperatorsMixin):
 
     def __repr__(self):
         headers = ["start", "end"]
-        bottom = "shape: {}".format(self.shape)
+        bottom = "shape: {}, time unit: sec.".format(self.shape)
 
         return (
             tabulate(self.values, headers=headers, showindex="always", tablefmt="plain")
