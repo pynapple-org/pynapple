@@ -1,5 +1,37 @@
 """        
     The class `IntervalSet` deals with non-overlaping epochs. `IntervalSet` objects can interact with each other or with the time series objects.
+
+    The `IntervalSet` object behaves like a numpy ndarray with the limitation that the object is not mutable.
+
+    You can still apply any numpy array function to it :
+
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> ep = nap.IntervalSet(start=[0, 10], end=[5,20])
+              start    end
+         0        0      5
+         1       10     20
+        shape: (1, 2)        
+        >>> np.diff(ep, 1)
+        UserWarning: Converting IntervalSet to numpy.array
+        array([[ 5.],
+               [10.]])    
+
+    You can slice :
+
+        >>> ep[:,0]
+        array([ 0., 10.])
+        >>> ep[0]
+              start    end
+         0        0      5
+        shape: (1, 2)
+
+    But modifying the `IntervalSet` with raise an error:
+
+        >>> ep[0,0] = 1
+        RuntimeError: IntervalSet is immutable. Starts and ends have been already sorted.
+
+
 """
 
 import importlib
