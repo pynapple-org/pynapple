@@ -3,7 +3,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:15:02
 # @Last Modified by:   gviejo
-# @Last Modified time: 2024-02-21 21:30:58
+# @Last Modified time: 2024-02-21 21:39:07
 
 """Tests for IntervalSet of `pynapple` package."""
 
@@ -171,7 +171,7 @@ def test_iset_loc():
     assert isinstance(ep.loc[[0]], nap.IntervalSet)
     np.testing.assert_array_almost_equal(ep.loc[[0]], ep[0])
     np.testing.assert_array_almost_equal(ep.loc['start'], start)
-    np.testing.assert_array_almost_equal(ep.loc['end'], start)
+    np.testing.assert_array_almost_equal(ep.loc['end'], end)
 
 
 def test_array_ufunc():
