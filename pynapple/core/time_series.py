@@ -14,6 +14,7 @@
     Most of the same functions are available through all classes. Objects behaves like numpy.ndarray. Slicing can be done the same way for example 
     `tsd[0:10]` returns the first 10 rows. Similarly, you can call any numpy functions like `np.mean(tsd, 1)`.
 """
+
 import abc
 import importlib
 import os

@@ -14,6 +14,7 @@ In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuro
 
 - Refactoring `IntervalSet` to pure numpy ndarray.
 - Implementing new chain of inheritance for time series with abstract base class. `base_class.Base` holds the temporal methods for all time series and `Ts`. `time_series.BaseTsd` inherit `Base` and implements the common methods for `Tsd`, `TsdFrame` and `Tsd`.
+- Automatic conversion to numpy ndarray for all objects that are numpy-like (typically jax).
 
 
 0.5.1 (2024-01-29)

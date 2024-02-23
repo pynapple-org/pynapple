@@ -4,7 +4,6 @@
 
 """
 
-
 import os
 import warnings
 from collections import UserDict
