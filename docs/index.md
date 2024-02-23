@@ -44,7 +44,7 @@ With pynapple>=0.6, the slicing is similar to numpy and it returns an `IntervalS
 new_intervalset = intervalset[0]
 ```
 
-
+See the [documentation](https://pynapple-org.github.io/pynapple/reference/core/interval_set/) for more details.
 
 ### pynapple >= 0.4
 
