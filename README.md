@@ -29,12 +29,32 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 ------------------------------------------------------------------------
 
 New release :fire:
----------------
-Starting with 0.4, pynapple rely on the [numpy array container](https://numpy.org/doc/stable/user/basics.dispatch.html) approach instead of Pandas. Pynapple builtin functions will remain the same except for functions inherited from Pandas. Typically this line of code in `pynapple<=0.3.6` :
+------------------
+
+### pynapple >= 0.6
+
+Starting with 0.6, [`IntervalSet`](https://pynapple-org.github.io/pynapple/reference/core/interval_set/) objects are behaving as immutable numpy ndarray. Before 0.6, you could select an interval within an `IntervalSet` object with:
+
+```python
+new_intervalset = intervalset.loc[[0]] # Selecting first interval
+```
+
+With pynapple>=0.6, the slicing is similar to numpy and it returns an `IntervalSet`
+
+```python
+new_intervalset = intervalset[0]
+```
+
+See the [documentation](https://pynapple-org.github.io/pynapple/reference/core/interval_set/) for more details.
+
+
+### pynapple >= 0.4
+
+Starting with 0.4, pynapple rely on the [numpy array container](https://numpy.org/doc/stable/user/basics.dispatch.html) approach instead of Pandas for the time series. Pynapple builtin functions will remain the same except for functions inherited from Pandas. Typically this line of code in `pynapple<=0.3.6` :
 ```python
 meantsd = tsdframe.mean(1)
 ```
-is now:
+is now :
 ```python
 meantsd = np.mean(tsdframe, 1)
 ```

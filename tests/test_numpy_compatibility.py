@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-09-18 18:11:24
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-11-19 16:55:26
+# @Last Modified time: 2024-02-13 12:48:55
 
 
 
@@ -126,10 +126,10 @@ class Test_Time_Series_1:
             np.testing.assert_array_almost_equal(a.index, tsd.index)
             np.testing.assert_array_almost_equal(a.values, np.reshape(tsd.values, (tsd.shape[0], np.prod(tsd.shape[1:]))))
 
-        a = np.ravel(tsd)
+        a = np.ravel(tsd.values)
         np.testing.assert_array_almost_equal(a, np.ravel(tsd))
 
-        a = np.transpose(tsd)
+        a = np.transpose(tsd.values)
         np.testing.assert_array_almost_equal(a, np.transpose(tsd))
 
         a = np.expand_dims(tsd, axis=-1)

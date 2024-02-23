@@ -85,7 +85,7 @@ print(new_tsd)
 # Multiple operations are available for IntervalSet. For example, IntervalSet can be merged. See the full documentation of the class [here](https://peyrachelab.github.io/pynapple/core.interval_set/#pynapple.core.interval_set.IntervalSet.intersect) for a list of all the functions that can be used to manipulate IntervalSets.
 
 
-epoch1 = nap.IntervalSet(start=[0], end=[10])  # no time units passed. Default is us.
+epoch1 = nap.IntervalSet(start=0, end=10)  # no time units passed. Default is us.
 epoch2 = nap.IntervalSet(start=[5, 30], end=[20, 45])
 
 epoch = epoch1.union(epoch2)

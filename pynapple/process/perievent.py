@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-01-30 22:59:00
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-29 12:47:56
+# @Last Modified by:   gviejo
+# @Last Modified time: 2024-02-20 22:27:23
 
 import numpy as np
 
@@ -170,8 +170,8 @@ def compute_perievent_continuous(data, tref, minmax, ep=None, time_unit="s"):
     time_array = data.index.values
     data_array = data.values
     time_target_array = tref.index.values
-    starts = ep.start.values
-    ends = ep.end.values
+    starts = ep.start
+    ends = ep.end
 
     binsize = time_array[1] - time_array[0]
     idx1 = -np.arange(0, window[0] + binsize, binsize)[::-1][:-1]
@@ -282,8 +282,8 @@ def compute_event_trigger_average(
 
     time_array = np.round(count.index.values - (binsize / 2), 9)
     count_array = count.values
-    starts = ep.start.values
-    ends = ep.end.values
+    starts = ep.start
+    ends = ep.end
 
     time_target_array = feature.index.values
     data_target_array = feature.values

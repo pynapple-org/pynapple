@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-08-29 17:27:02
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-25 11:39:01
+# @Last Modified by:   gviejo
+# @Last Modified time: 2024-02-20 22:45:51
 #!/usr/bin/env python
 
 """Tests of spike trigger average for `pynapple` package."""
@@ -265,8 +265,8 @@ def test_compute_spike_trigger_average_multiple_epochs():
 
     sta2 = []
     for i in range(2):
-        count = group.count(binsize, ep.loc[[i]])
-        tmp = feature.bin_average(binsize, ep.loc[[i]])
+        count = group.count(binsize, ep[i])
+        tmp = feature.bin_average(binsize, ep[i])
     
         # Build the Hankel matrix
         pad_tmp = np.pad(tmp.values, (n_p, n_f))

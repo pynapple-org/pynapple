@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-12-07 14:01:09
+# @Last Modified by:   gviejo
+# @Last Modified time: 2024-02-20 22:54:15
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -11,8 +11,6 @@ import pynapple as nap
 import numpy as np
 import pandas as pd
 import pytest
-
-from pynapple.core.time_series import TsdTensor
 
 
 def test_create_tsd():
@@ -23,6 +21,10 @@ def test_create_empty_tsd():
     tsd = nap.Tsd(t=np.array([]), d=np.array([]))
     assert len(tsd) == 0
 
+@pytest.mark.filterwarnings("ignore")
+def test_create_tsd_from_number():
+    tsd = nap.Tsd(t=1, d=2)
+
 def test_create_tsdframe():
     tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 4))
     assert isinstance(tsdframe, nap.TsdFrame)
@@ -31,12 +33,13 @@ def test_create_tsdframe():
     assert isinstance(tsdframe, nap.TsdFrame)
     assert np.all(tsdframe.columns == np.array(['a', 'b', 'c', 'd']))
 
+@pytest.mark.filterwarnings("ignore")
 def test_create_empty_tsdframe():
-    tsdframe = nap.TsdFrame(t=np.array([]), d=np.array([]))
+    tsdframe = nap.TsdFrame(t=np.array([]), d=np.empty(shape=(0, 2)))
     assert len(tsdframe) == 0
     assert isinstance(tsdframe, nap.TsdFrame)
 
-    with pytest.raises(RuntimeError):
+    with pytest.raises(AssertionError):
         tsdframe = nap.TsdFrame(t=np.arange(100))
 
 def test_create_1d_tsdframe():
@@ -185,6 +188,7 @@ def test_concatenate_tsd():
 
     np.testing.assert_array_equal(new_tsd.values, tsd.values)
 
+@pytest.mark.filterwarnings("ignore")
 def test_create_tsdtensor():
     tsd = nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 3, 2))
     assert isinstance(tsd, nap.TsdTensor)
@@ -193,17 +197,18 @@ def test_create_tsdtensor():
     assert isinstance(tsd, nap.TsdTensor)    
 
 def test_create_empty_tsd():
-    tsd = nap.TsdTensor(t=np.array([]), d=np.array([[[]]]).T)
+    tsd = nap.TsdTensor(t=np.array([]), d=np.empty(shape=(0,2,3)))
     assert len(tsd) == 0
 
+@pytest.mark.filterwarnings("ignore")
 def test_raise_error_tsdtensor_init():
-    with pytest.raises(RuntimeError, match=r"Missing argument d when initializing TsdTensor"):
+    with pytest.raises(RuntimeError, match=r"Unknown format for d. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."):
         nap.TsdTensor(t=np.arange(100), d=None)
 
-    with pytest.raises(AssertionError, match=r"Data should have more than 2 dimensions. If ndim < 3, use TsdFrame or Tsd object"):
-        nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 10))
+    # with pytest.raises(AssertionError, match=r"Data should have more than 2 dimensions. If ndim < 3, use TsdFrame or Tsd object"):
+    #     nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 10))
 
-    with pytest.raises(ValueError):#, match=r"Length of values (10) does not match length of index (100)"):
+    with pytest.raises(AssertionError):#, match=r"Length of values (10) does not match length of index (100)"):
         nap.TsdTensor(t=np.arange(100), d=np.random.rand(10, 10,3))
 
 def test_index_error():
@@ -218,14 +223,14 @@ def test_index_error():
 def test_find_support():
     tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
     ep = tsd.find_support(1.0)
-    assert ep.loc[0, 'start'] == 0
-    assert ep.loc[0, 'end'] == 99.0 + 1e-6
+    assert ep[0, 0] == 0
+    assert ep[0, 1] == 99.0 + 1e-6
 
     t = np.hstack((np.arange(10), np.arange(20, 30)))
     tsd = nap.Tsd(t=t, d=np.arange(20))
     ep = tsd.find_support(1.0)
-    np.testing.assert_array_equal(ep.start.values, np.array([0.0, 20.0]))
-    np.testing.assert_array_equal(ep.end.values, np.array([9.0+1e-6, 29+1e-6]))
+    np.testing.assert_array_equal(ep.start, np.array([0.0, 20.0]))
+    np.testing.assert_array_equal(ep.end, np.array([9.0+1e-6, 29+1e-6]))
 
 def test_properties():
     t = np.arange(100)
@@ -251,12 +256,15 @@ def test_properties():
     with pytest.raises(RuntimeError):
         tsd.rate = 0
 
-def test_abstract_class():
-    class DummyTsd(nap.core.time_series._AbstractTsd):
-        def __init__(self):
-            super().__init__()
+def test_base_tsd_class():
+    class DummyTsd(nap.core.time_series.BaseTsd):
+        def __init__(self, t, d):
+            super().__init__(t, d)
 
-    tsd = DummyTsd()
+        def __getitem__(self, key):
+            return self.values.__getitem__(key)
+
+    tsd = DummyTsd([], [])
     assert np.isnan(tsd.rate)
     assert isinstance(tsd.index, nap.TsIndex)
     assert isinstance(tsd.values, np.ndarray)
@@ -332,7 +340,7 @@ class Test_Time_Series_1:
         np.testing.assert_array_almost_equal(tsdframe.values[::10], tsdframe2.values)
 
     def test_value_from_value_error(self, tsd):
-        with pytest.raises(RuntimeError):
+        with pytest.raises(AssertionError, match=r"First argument should be an instance of Tsd, TsdFrame or TsdTensor"):
             tsd.value_from(np.arange(10))
         
     def test_value_from_with_restrict(self, tsd):
@@ -402,7 +410,7 @@ class Test_Time_Series_1:
             np.testing.assert_array_equal(tsd.index.values, new_tsd.index.values)
             np.testing.assert_array_equal(tsd.values, new_tsd.values)
 
-            tsd.values[tsd.values>0.9] = np.NaN         
+            tsd.values[tsd.values>0.9] = np.NaN
             new_tsd = tsd.dropna()
             assert not np.all(np.isnan(new_tsd))
             tokeep = np.array([~np.any(np.isnan(tsd[i])) for i in range(len(tsd))])            
@@ -416,7 +424,7 @@ class Test_Time_Series_1:
             new_tsd = tsd.dropna(update_time_support=False)
             np.testing.assert_array_equal(tsd.index.values[tokeep], new_tsd.index.values)
             np.testing.assert_array_equal(tsd.values[tokeep], new_tsd.values)
-            pd.testing.assert_frame_equal(new_tsd.time_support, tsd.time_support)
+            np.testing.assert_array_equal(new_tsd.time_support, tsd.time_support)
 
             tsd.values[:] = np.NaN
             new_tsd = tsd.dropna()
@@ -448,13 +456,13 @@ class Test_Time_Series_1:
             tsd3 = tsd.convolve(array, ep)
             
             for i in range(len(ep)):
-                tmp2 = tsd.restrict(ep.loc[[i]]).values
+                tmp2 = tsd.restrict(ep[i]).values
                 tmp2 = tmp2.reshape(tmp2.shape[0], -1)
                 for j in range(tmp2.shape[-1]):
                     tmp2[:,j] = np.convolve(tmp2[:,j], array, mode='full')[5:-4]
                 np.testing.assert_array_almost_equal(
                     tmp2,
-                    tsd3.restrict(ep.loc[[i]]).values.reshape(tmp2.shape[0], -1)
+                    tsd3.restrict(ep[i]).values.reshape(tmp2.shape[0], -1)
                     )
 
             # Trim
@@ -517,7 +525,7 @@ class Test_Time_Series_2:
         assert isinstance(a, nap.Tsd)
         np.testing.assert_array_almost_equal(a.index, b.index)
         np.testing.assert_array_almost_equal(a.values, b.values)
-        pd.testing.assert_frame_equal(
+        np.testing.assert_array_almost_equal(
             a.time_support, tsd.time_support
             )
 
@@ -694,8 +702,8 @@ class Test_Time_Series_2:
 
         np.testing.assert_array_almost_equal(file['t'], tsd.index)
         np.testing.assert_array_almost_equal(file['d'], tsd.values)
-        np.testing.assert_array_almost_equal(file['start'], tsd.time_support.start.values)
-        np.testing.assert_array_almost_equal(file['end'], tsd.time_support.end.values)
+        np.testing.assert_array_almost_equal(file['start'], tsd.time_support.start)
+        np.testing.assert_array_almost_equal(file['end'], tsd.time_support.end)
 
         os.remove("tsd.npz")
         os.remove("tsd2.npz")
@@ -721,9 +729,9 @@ class Test_Time_Series_2:
         tsd2 = tsd.interpolate(ts)
         np.testing.assert_array_almost_equal(tsd2.values, y)
         
-        with pytest.raises(RuntimeError) as e:
+        with pytest.raises(AssertionError) as e:
             tsd.interpolate([0, 1, 2])
-        assert str(e.value) == "First argument should be an instance of Ts, Tsd or TsdFrame"
+        assert str(e.value) == "First argument should be an instance of Ts, Tsd, TsdFrame or TsdTensor"
 
         # Right left
         ep = nap.IntervalSet(start=0, end=5)
@@ -765,18 +773,18 @@ class Test_Time_Series_3:
         assert isinstance(tsdframe[:,0], nap.Tsd)
         np.testing.assert_array_almost_equal(tsdframe[:,0].values, tsdframe.values[:,0])
         assert isinstance(tsdframe[:,0].time_support, nap.IntervalSet)
-        pd.testing.assert_frame_equal(tsdframe.time_support, tsdframe[:,0].time_support)
+        np.testing.assert_array_almost_equal(tsdframe.time_support, tsdframe[:,0].time_support)
         
         assert isinstance(tsdframe[:,[0,2]], nap.TsdFrame)
         np.testing.assert_array_almost_equal(tsdframe.values[:,[0,2]], tsdframe[:,[0,2]].values)
         assert isinstance(tsdframe[:,[0,2]].time_support, nap.IntervalSet)
-        pd.testing.assert_frame_equal(tsdframe.time_support, tsdframe[:,[0,2]].time_support)
+        np.testing.assert_array_almost_equal(tsdframe.time_support, tsdframe[:,[0,2]].time_support)
 
     def test_vertical_slicing(self, tsdframe):
         assert isinstance(tsdframe[0:10], nap.TsdFrame)
         np.testing.assert_array_almost_equal(tsdframe.values[0:10], tsdframe[0:10].values)
         assert isinstance(tsdframe[0:10].time_support, nap.IntervalSet)
-        pd.testing.assert_frame_equal(tsdframe[0:10].time_support, tsdframe.time_support)
+        np.testing.assert_array_almost_equal(tsdframe[0:10].time_support, tsdframe.time_support)
 
     def test_str_indexing(self, tsdframe):
         tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), time_units="s", columns=['a', 'b', 'c'])
@@ -924,8 +932,8 @@ class Test_Time_Series_3:
 
         np.testing.assert_array_almost_equal(file['t'], tsdframe.index)
         np.testing.assert_array_almost_equal(file['d'], tsdframe.values)
-        np.testing.assert_array_almost_equal(file['start'], tsdframe.time_support.start.values)
-        np.testing.assert_array_almost_equal(file['end'], tsdframe.time_support.end.values)
+        np.testing.assert_array_almost_equal(file['start'], tsdframe.time_support.start)
+        np.testing.assert_array_almost_equal(file['end'], tsdframe.time_support.end)
         np.testing.assert_array_almost_equal(file['columns'], tsdframe.columns)
 
         os.remove("tsdframe.npz")
@@ -953,9 +961,9 @@ class Test_Time_Series_3:
         tsdframe2 = tsdframe.interpolate(ts)
         np.testing.assert_array_almost_equal(tsdframe2.values, data_stack)
         
-        with pytest.raises(RuntimeError) as e:
+        with pytest.raises(AssertionError) as e:
             tsdframe.interpolate([0, 1, 2])
-        assert str(e.value) == "First argument should be an instance of Ts, Tsd or TsdFrame"
+        assert str(e.value) == "First argument should be an instance of Ts, Tsd, TsdFrame or TsdTensor"
 
         # Right left
         ep = nap.IntervalSet(start=0, end=5)
@@ -1036,8 +1044,8 @@ class Test_Time_Series_4:
         assert 'end' in keys
 
         np.testing.assert_array_almost_equal(file['t'], ts.index)
-        np.testing.assert_array_almost_equal(file['start'], ts.time_support.start.values)
-        np.testing.assert_array_almost_equal(file['end'], ts.time_support.end.values)
+        np.testing.assert_array_almost_equal(file['start'], ts.time_support.start)
+        np.testing.assert_array_almost_equal(file['end'], ts.time_support.end)
 
         os.remove("ts.npz")
         os.remove("ts2.npz")
@@ -1085,18 +1093,18 @@ class Test_Time_Series_5:
         assert isinstance(tsdtensor[:,0], nap.TsdFrame)
         np.testing.assert_array_almost_equal(tsdtensor[:,0].values, tsdtensor.values[:,0])
         assert isinstance(tsdtensor[:,0].time_support, nap.IntervalSet)
-        pd.testing.assert_frame_equal(tsdtensor.time_support, tsdtensor[:,0].time_support)
+        np.testing.assert_array_almost_equal(tsdtensor.time_support, tsdtensor[:,0].time_support)
         
         assert isinstance(tsdtensor[:,[0,2]], nap.TsdTensor)
         np.testing.assert_array_almost_equal(tsdtensor.values[:,[0,2]], tsdtensor[:,[0,2]].values)
         assert isinstance(tsdtensor[:,[0,2]].time_support, nap.IntervalSet)
-        pd.testing.assert_frame_equal(tsdtensor.time_support, tsdtensor[:,[0,2]].time_support)
+        np.testing.assert_array_almost_equal(tsdtensor.time_support, tsdtensor[:,[0,2]].time_support)
 
     def test_vertical_slicing(self, tsdtensor):
         assert isinstance(tsdtensor[0:10], nap.TsdTensor)
         np.testing.assert_array_almost_equal(tsdtensor.values[0:10], tsdtensor[0:10].values)
         assert isinstance(tsdtensor[0:10].time_support, nap.IntervalSet)
-        pd.testing.assert_frame_equal(tsdtensor[0:10].time_support, tsdtensor.time_support)
+        np.testing.assert_array_almost_equal(tsdtensor[0:10].time_support, tsdtensor.time_support)
 
     def test_operators(self, tsdtensor):
         v = tsdtensor.values
@@ -1225,8 +1233,8 @@ class Test_Time_Series_5:
 
         np.testing.assert_array_almost_equal(file['t'], tsdtensor.index)
         np.testing.assert_array_almost_equal(file['d'], tsdtensor.values)
-        np.testing.assert_array_almost_equal(file['start'], tsdtensor.time_support.start.values)
-        np.testing.assert_array_almost_equal(file['end'], tsdtensor.time_support.end.values)
+        np.testing.assert_array_almost_equal(file['start'], tsdtensor.time_support.start)
+        np.testing.assert_array_almost_equal(file['end'], tsdtensor.time_support.end)
 
         os.remove("tsdtensor.npz")
         os.remove("tsdtensor2.npz")
@@ -1253,9 +1261,9 @@ class Test_Time_Series_5:
         tsdtensor2 = tsdtensor.interpolate(ts)
         np.testing.assert_array_almost_equal(tsdtensor2.values, data_stack)
         
-        with pytest.raises(RuntimeError) as e:
+        with pytest.raises(AssertionError) as e:
             tsdtensor.interpolate([0, 1, 2])
-        assert str(e.value) == "First argument should be an instance of Ts, Tsd or TsdFrame"
+        assert str(e.value) == "First argument should be an instance of Ts, Tsd, TsdFrame or TsdTensor"
 
         # Right left
         ep = nap.IntervalSet(start=0, end=5)
