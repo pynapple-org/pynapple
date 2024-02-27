@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2024-02-09 11:45:45
 # @Last Modified by:   gviejo
-# @Last Modified time: 2024-02-27 09:47:11
+# @Last Modified time: 2024-02-27 11:26:25
 
 """
     Utility functions
@@ -16,6 +16,22 @@ from numba import jit
 
 from .config import nap_config
 
+def not_implemented_in_pynajax(func, which_in, which_out, *args, **kwargs):
+
+    if nap_config.backend == "jax":        
+            import jax
+            import jax.numpy as jnp
+        # def wrapper(*args, **kwargs):
+            arguments, struct = jax.tree_util.tree_flatten((args, kwargs))            
+            arguments[which_in] = jax.tree_map(np.asarray, arguments[which_in])
+            args, kwargs = jax.tree_util.tree_unflatten(struct, arguments)
+            out = func(*args, **kwargs)
+            out = list(out)
+            out[which_out] = jax.tree_map(jnp.asarray, out[which_out])
+            return tuple(out)
+    else:
+        # def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
 
 def convert_to_numpy_array(array, array_name):
     if isinstance(array, Number):

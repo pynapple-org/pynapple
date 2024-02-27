@@ -46,7 +46,8 @@ from .utils import (
     convert_to_numpy_array,
     convert_to_jax_array,
     is_array_like,
-    get_backend
+    get_backend,
+    not_implemented_in_pynajax
 )
 
 
@@ -95,7 +96,9 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         if isinstance(time_support, IntervalSet) and len(self.index):
             starts = time_support.start
             ends = time_support.end
-            t, d = jitrestrict(self.index.values, self.values, starts, ends)
+            t, d = not_implemented_in_pynajax(jitrestrict, 1, 1, 
+                self.index.values, self.values, starts, ends)
+
             self.index = TsIndex(t)
             self.values = d
             self.rate = self.index.shape[0] / np.sum(
@@ -618,7 +621,7 @@ class TsdTensor(BaseTsd):
         if isinstance(index, Number):
             index = np.array([index])
 
-        if all(isinstance(a, np.ndarray) for a in [index, output]):
+        if all(is_array_like(a) for a in [index, output]):
             if output.shape[0] == index.shape[0]:
                 if output.ndim == 1:
                     return Tsd(t=index, d=output, time_support=self.time_support)
@@ -844,7 +847,7 @@ class TsdFrame(BaseTsd):
             if isinstance(index, Number):
                 index = np.array([index])
 
-            if all(isinstance(a, np.ndarray) for a in [index, output]):
+            if all(is_array_like(a) for a in [index, output]):
                 if output.shape[0] == index.shape[0]:
                     return _get_class(output)(
                         t=index, d=output, time_support=self.time_support, **kwargs
@@ -1060,7 +1063,7 @@ class Tsd(BaseTsd):
         if isinstance(index, Number):
             index = np.array([index])
 
-        if all(isinstance(a, np.ndarray) for a in [index, output]):
+        if all(is_array_like(a) for a in [index, output]):
             if output.shape[0] == index.shape[0]:
                 return _get_class(output)(
                     t=index, d=output, time_support=self.time_support, **kwargs
