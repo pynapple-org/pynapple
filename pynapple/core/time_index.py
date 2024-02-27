@@ -1,12 +1,6 @@
-# -*- coding: utf-8 -*-
-# @Author: Guillaume Viejo
-# @Date:   2023-09-21 13:32:03
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-02-13 16:55:44
-
 """
 
-    Similar to pandas.Index, TsIndex holds the timestamps associated with the data of a time series.
+    Similar to pandas.Index, `TsIndex` holds the timestamps associated with the data of a time series.
     This class deals with conversion between different time units for all pynapple objects as well
     as making sure that timestamps are property sorted before initializing any objects.    
         - `us`: microseconds
@@ -17,6 +11,8 @@
 from warnings import warn
 
 import numpy as np
+
+from .config import nap_config
 
 
 class TsIndex(np.ndarray):
@@ -108,7 +104,7 @@ class TsIndex(np.ndarray):
             Description
         """
         if not (np.diff(t) >= 0).all():
-            if give_warning:
+            if give_warning and not nap_config.suppress_time_index_sorting_warnings:
                 warn("timestamps are not sorted", UserWarning)
             t = np.sort(t)
         return t

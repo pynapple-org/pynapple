@@ -49,6 +49,7 @@ class PynappleConfig:
 
     def __init__(self):
         self.suppress_conversion_warnings = False
+        self.suppress_time_index_sorting_warnings = False
 
     @property
     def suppress_conversion_warnings(self):
@@ -65,6 +66,22 @@ class PynappleConfig:
             raise ValueError("suppress_conversion_warnings must be a boolean value.")
         self._suppress_conversion_warnings = value
 
+    @property
+    def suppress_time_index_sorting_warnings(self):
+        """
+        Gets or sets the suppression state for sorting time index. When set to True,
+        warnings for sorting are suppressed. Ensures that only boolean values are assigned.
+        """
+        return self._suppress_time_index_sorting_warnings
+
+    @suppress_time_index_sorting_warnings.setter
+    def suppress_time_index_sorting_warnings(self, value):
+        if not isinstance(value, bool):
+            raise ValueError(
+                "suppress_time_index_sorting_warnings must be a boolean value."
+            )
+        self._suppress_time_index_sorting_warnings = value
+
     def restore_defaults(self):
         """
         Set all configuration settings to their default values.
@@ -73,6 +90,7 @@ class PynappleConfig:
         to its initial, default configuration.
         """
         self.suppress_conversion_warnings = False
+        self.suppress_time_index_sorting_warnings = False
 
 
 # Initialize a config instance
