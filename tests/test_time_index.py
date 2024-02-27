@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-11-30 09:29:21
 # @Last Modified by:   gviejo
-# @Last Modified time: 2023-11-08 17:16:26
+# @Last Modified time: 2024-02-26 13:14:41
 """Tests of time units for `pynapple` package."""
 
 import pynapple as nap
@@ -27,13 +27,13 @@ def test_return_timestamps():
     t = np.random.rand(100)
 
     np.testing.assert_array_almost_equal(t, nap.TsIndex.return_timestamps(t))
-    np.testing.assert_array_almost_equal(t/1e3, nap.TsIndex.return_timestamps(t, 'ms'))
-    np.testing.assert_array_almost_equal(t/1e6, nap.TsIndex.return_timestamps(t, 'us'))
+    np.testing.assert_array_almost_equal(t*1e3, nap.TsIndex.return_timestamps(t, 'ms'))
+    np.testing.assert_array_almost_equal(t*1e6, nap.TsIndex.return_timestamps(t, 'us'))
 
     with pytest.raises(ValueError, match="unrecognized time units type"):
         nap.TsIndex.return_timestamps(t, units='aaaa')
 
-def test_return_timestamps():
+def test_sort_timestamps():
     t = np.random.rand(100)
 
     np.testing.assert_array_almost_equal(np.sort(t), nap.TsIndex.sort_timestamps(t, False))
