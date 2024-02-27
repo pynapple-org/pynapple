@@ -45,11 +45,27 @@ class PynappleConfig:
         array-like objects to NumPy arrays. This is useful for users who frequently work with array-like objects from other
         libraries (e.g., JAX, TensorFlow) and prefer not to receive warnings for automatic
         conversions. Defaults to False, which means warnings will be shown.
+    suppress_time_index_sorting_warnings : boolean
+        Control the warning raised when passing a non-sorted array for time index.
+        It can be useful to catch data where timestamps are not properly sorted before using pynapple.
+    time_index_precision : int
+        Precision for the time index is set to nanoseconds. It's a fixed parameter in pynapple and cannot be changed.
     """
 
     def __init__(self):
         self.suppress_conversion_warnings = False
         self.suppress_time_index_sorting_warnings = False
+
+    @property
+    def time_index_precision(self):
+        """Precision for the time index
+
+        Returns
+        -------
+        Int
+            Parameter for the `numpy.around` function when rounding time index
+        """
+        return 9
 
     @property
     def suppress_conversion_warnings(self):

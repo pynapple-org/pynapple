@@ -43,11 +43,11 @@ class TsIndex(np.ndarray):
             Description
         """
         if units == "s":
-            t = np.around(t, 9)
+            t = np.around(t, nap_config.time_index_precision)
         elif units == "ms":
-            t = np.around(t / 1.0e3, 9)
+            t = np.around(t / 1.0e3, nap_config.time_index_precision)
         elif units == "us":
-            t = np.around(t / 1.0e6, 9)
+            t = np.around(t / 1.0e6, nap_config.time_index_precision)
         else:
             raise ValueError("unrecognized time units type")
 
@@ -76,11 +76,11 @@ class TsIndex(np.ndarray):
             IF units is not in ['s', 'ms', 'us']
         """
         if units == "s":
-            t = np.around(t, 9)
+            t = np.around(t, nap_config.time_index_precision)
         elif units == "ms":
-            t = np.around(t * 1.0e3, 9)
+            t = np.around(t * 1.0e3, nap_config.time_index_precision)
         elif units == "us":
-            t = np.around(t * 1.0e6, 9)
+            t = np.around(t * 1.0e6, nap_config.time_index_precision)
         else:
             raise ValueError("unrecognized time units type")
 

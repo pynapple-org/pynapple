@@ -130,3 +130,7 @@ def test_config_supress_warning_d(cls, t, d, conf, expectation):
             cls(t=t, d=MockArray(d))
     finally:
         nap.config.nap_config.restore_defaults()
+
+
+def test_get_time_index_precision():
+    assert nap.config.nap_config.time_index_precision == 9
