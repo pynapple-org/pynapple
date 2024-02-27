@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2024-02-09 11:45:45
 # @Last Modified by:   gviejo
-# @Last Modified time: 2024-02-21 21:27:04
+# @Last Modified time: 2024-02-27 09:47:11
 
 """
     Utility functions
@@ -16,6 +16,41 @@ from numba import jit
 
 from .config import nap_config
 
+
+def convert_to_numpy_array(array, array_name):
+    if isinstance(array, Number):
+        return np.array([d])
+    elif isinstance(array, (list, tuple)):
+        return np.array(array)
+    elif isinstance(array, np.ndarray):
+        return array
+    elif is_array_like(array):
+        return cast_to_numpy(array, array_name)
+    else:
+        raise RuntimeError(
+            "Unknown format for d. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."
+        )
+
+def convert_to_jax_array(array, array_name):
+    import jax.numpy as jnp
+    if isinstance(array, Number):
+        return jnp.array([d])
+    elif isinstance(array, (list, tuple)):
+        return jnp.array(array)
+    elif isinstance(array, jnp.ndarray):
+        return array
+    elif isinstance(array, np.ndarray):
+        return jnp.asarray(array)
+    else:
+        raise RuntimeError(
+            "Unknown format for d. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."
+        )
+
+def get_backend():
+    """
+    Return the current backend of pynapple
+    """
+    return nap_config.backend
 
 def is_array_like(obj):
     """
@@ -75,8 +110,7 @@ def is_array_like(obj):
         # and not_tsd_type
     )
 
-
-def convert_to_numpy(array, array_name):
+def cast_to_numpy(array, array_name):
     """
     Convert an input array-like object to a NumPy array.
 
@@ -118,7 +152,6 @@ def convert_to_numpy(array, array_name):
         )
     return np.asarray(array)
 
-
 def _split_tsd(func, tsd, indices_or_sections, axis=0):
     """
     Wrappers of numpy split functions
@@ -134,7 +167,6 @@ def _split_tsd(func, tsd, indices_or_sections, axis=0):
         return [tsd.__class__(t=tsd.index, d=d, **kwargs) for d in out]
     else:
         return func._implementation(tsd.values, indices_or_sections, axis)
-
 
 def _concatenate_tsd(func, tsds):
     """
@@ -178,7 +210,6 @@ def _concatenate_tsd(func, tsds):
             return tsds[0]
     else:
         raise TypeError
-
 
 @jit(nopython=True)
 def _jitfix_iset(start, end):
@@ -254,7 +285,6 @@ def _jitfix_iset(start, end):
 
     return (data, to_warn)
 
-
 class _TsdFrameSliceHelper:
     def __init__(self, tsdframe):
         self.tsdframe = tsdframe
@@ -276,7 +306,6 @@ class _TsdFrameSliceHelper:
             return self.tsdframe.__getitem__(
                 (slice(None, None, None), index), columns=key
             )
-
 
 class _IntervalSetSliceHelper:
     def __init__(self, intervalset):

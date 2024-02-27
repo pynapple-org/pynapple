@@ -18,7 +18,7 @@ from ._jitted_functions import (
 )
 from .interval_set import IntervalSet
 from .time_index import TsIndex
-from .utils import convert_to_numpy, is_array_like
+from .utils import cast_to_numpy, is_array_like
 
 
 class Base(abc.ABC):
@@ -43,7 +43,7 @@ class Base(abc.ABC):
         # convert array-like data to numpy.
         # raise a warning to avoid silent conversion if non-numpy array is provided (jax arrays for instance)
         elif is_array_like(t):
-            t = convert_to_numpy(t, "t")
+            t = cast_to_numpy(t, "t")
             self.index = TsIndex(t, time_units)
         else:
             raise RuntimeError(

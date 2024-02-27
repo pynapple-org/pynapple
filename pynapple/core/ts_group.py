@@ -22,7 +22,7 @@ from .base_class import Base
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
-from .utils import convert_to_numpy
+from .utils import cast_to_numpy
 
 
 def union_intervals(i_sets):

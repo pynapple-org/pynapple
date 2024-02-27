@@ -43,8 +43,10 @@ from .utils import (
     _concatenate_tsd,
     _split_tsd,
     _TsdFrameSliceHelper,
-    convert_to_numpy,
+    convert_to_numpy_array,
+    convert_to_jax_array,
     is_array_like,
+    get_backend
 )
 
 
@@ -78,19 +80,11 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
     def __init__(self, t, d, time_units="s", time_support=None):
         super().__init__(t, time_units, time_support)
 
-        # Converting d to numpy array
-        if isinstance(d, Number):
-            self.values = np.array([d])
-        elif isinstance(d, (list, tuple)):
-            self.values = np.array(d)
-        elif isinstance(d, np.ndarray):
-            self.values = d
-        elif is_array_like(d):
-            self.values = convert_to_numpy(d, "d")
+        # Check if jax backend
+        if get_backend() == "jax":
+            self.values = convert_to_jax_array(d, "d")
         else:
-            raise RuntimeError(
-                "Unknown format for d. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."
-            )
+            self.values = convert_to_numpy_array(d, "d")
 
         assert len(self.index) == len(
             self.values

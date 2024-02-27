@@ -50,7 +50,7 @@ from .time_index import TsIndex
 from .utils import (
     _IntervalSetSliceHelper,
     _jitfix_iset,
-    convert_to_numpy,
+    cast_to_numpy,
     is_array_like,
 )
 
