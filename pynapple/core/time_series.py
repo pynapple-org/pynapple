@@ -395,52 +395,58 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         Tsd, TsdFrame or TsdTensor
             The convolved time series
         """
-        assert isinstance(array, np.ndarray), "Input should be a 1-d numpy array."
-        assert array.ndim == 1, "Input should be a one dimensional array."
-        assert trim in [
-            "both",
-            "left",
-            "right",
-        ], "Unknow argument. trim should be 'both', 'left' or 'right'."
-
-        if ep is None:
-            ep = self.time_support
-
-        time_array = self.index.values
-        data_array = self.values
-        starts = ep.start
-        ends = ep.end
-
-        if data_array.ndim == 1:
-            new_data_array = np.zeros(data_array.shape)
-            k = array.shape[0]
-            for s, e in zip(starts, ends):
-                idx_s = np.searchsorted(time_array, s)
-                idx_e = np.searchsorted(time_array, e, side="right")
-
-                t = idx_e - idx_s
-                if trim == "left":
-                    cut = (k - 1, t + k - 1)
-                elif trim == "right":
-                    cut = (0, t)
-                else:
-                    cut = ((1 - k % 2) + (k - 1) // 2, t + k - 1 - ((k - 1) // 2))
-                # scipy is actually faster for Tsd
-                new_data_array[idx_s:idx_e] = signal.convolve(
-                    data_array[idx_s:idx_e], array
-                )[cut[0] : cut[1]]
-
-            return self.__class__(t=time_array, d=new_data_array, time_support=ep)
+        # Check if jax backend
+        if get_backend() == "jax":
+            from pynajax.jax_core import convolve_epoch            
+            return convolve_epoch(self, array)
         else:
-            new_data_array = np.zeros(data_array.shape)
-            for s, e in zip(starts, ends):
-                idx_s = np.searchsorted(time_array, s)
-                idx_e = np.searchsorted(time_array, e, side="right")
-                new_data_array[idx_s:idx_e] = pjitconvolve(
-                    data_array[idx_s:idx_e], array, trim=trim
-                )
 
-            return self.__class__(t=time_array, d=new_data_array, time_support=ep)
+            assert isinstance(array, np.ndarray), "Input should be a 1-d numpy array."
+            assert array.ndim == 1, "Input should be a one dimensional array."
+            assert trim in [
+                "both",
+                "left",
+                "right",
+            ], "Unknow argument. trim should be 'both', 'left' or 'right'."
+
+            if ep is None:
+                ep = self.time_support
+
+            time_array = self.index.values
+            data_array = self.values
+            starts = ep.start
+            ends = ep.end
+
+            if data_array.ndim == 1:
+                new_data_array = np.zeros(data_array.shape)
+                k = array.shape[0]
+                for s, e in zip(starts, ends):
+                    idx_s = np.searchsorted(time_array, s)
+                    idx_e = np.searchsorted(time_array, e, side="right")
+
+                    t = idx_e - idx_s
+                    if trim == "left":
+                        cut = (k - 1, t + k - 1)
+                    elif trim == "right":
+                        cut = (0, t)
+                    else:
+                        cut = ((1 - k % 2) + (k - 1) // 2, t + k - 1 - ((k - 1) // 2))
+                    # scipy is actually faster for Tsd
+                    new_data_array[idx_s:idx_e] = signal.convolve(
+                        data_array[idx_s:idx_e], array
+                    )[cut[0] : cut[1]]
+
+                return self.__class__(t=time_array, d=new_data_array, time_support=ep)
+            else:
+                new_data_array = np.zeros(data_array.shape)
+                for s, e in zip(starts, ends):
+                    idx_s = np.searchsorted(time_array, s)
+                    idx_e = np.searchsorted(time_array, e, side="right")
+                    new_data_array[idx_s:idx_e] = pjitconvolve(
+                        data_array[idx_s:idx_e], array, trim=trim
+                    )
+
+                return self.__class__(t=time_array, d=new_data_array, time_support=ep)
 
     def smooth(self, std, size):
         """Smooth a time series with a gaussian kernel. std is the standard deviation and size is the number of point of the window.

@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2024-02-09 11:45:45
 # @Last Modified by:   gviejo
-# @Last Modified time: 2024-02-27 11:26:25
+# @Last Modified time: 2024-02-27 11:34:40
 
 """
     Utility functions
@@ -15,6 +15,7 @@ import numpy as np
 from numba import jit
 
 from .config import nap_config
+
 
 def not_implemented_in_pynajax(func, which_in, which_out, *args, **kwargs):
 
