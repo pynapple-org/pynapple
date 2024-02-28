@@ -398,9 +398,9 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         # Check if jax backend
         if get_backend() == "jax":
             from pynajax.jax_core import convolve
-            return convolve(self, array)
+            new_data_array = convolve(self, array)
+            return self.__class__(t=self.index, d=new_data_array, time_support=self.time_support) 
         else:
-
             assert isinstance(array, np.ndarray), "Input should be a 1-d numpy array."
             assert array.ndim == 1, "Input should be a one dimensional array."
             assert trim in [
