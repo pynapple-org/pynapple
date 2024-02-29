@@ -3,6 +3,8 @@ repo_url: https://github.com/pynapple-org/pynapple
 
 theme:
   name: 'material'
+  logo: images/Icon/Pynapple_final_icon_2.png
+  favicon: images/Icon/Pynapple_final_icon.png
   palette:
     primary: 'green'
     features:
