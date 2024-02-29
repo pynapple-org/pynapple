@@ -1433,6 +1433,64 @@ class Ts(Base):
 
         return data.__class__(t, d, time_support=time_support, **kwargs)
 
+    def count(self, *args, **kwargs):
+        """
+        Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
+        You can call this function in multiple ways :
+
+        1. *tsd.count(bin_size=1, time_units = 'ms')*
+        -> Count occurence of events within a 1 ms bin defined on the time support of the object.
+
+        2. *tsd.count(1, ep=my_epochs)*
+        -> Count occurent of events within a 1 second bin defined on the IntervalSet my_epochs.
+
+        3. *tsd.count(ep=my_bins)*
+        -> Count occurent of events within each epoch of the intervalSet object my_bins
+
+        4. *tsd.count()*
+        -> Count occurent of events within each epoch of the time support.
+
+        bin_size should be seconds unless specified.
+        If bin_size is used and no epochs is passed, the data will be binned based on the time support of the object.
+
+        Parameters
+        ----------
+        bin_size : None or float, optional
+            The bin size (default is second)
+        ep : None or IntervalSet, optional
+            IntervalSet to restrict the operation
+        time_units : str, optional
+            Time units of bin size ('us', 'ms', 's' [default])
+
+        Returns
+        -------
+        out: Tsd
+            A Tsd object indexed by the center of the bins.
+
+        Examples
+        --------
+        This example shows how to count events within bins of 0.1 second.
+
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
+        >>> ts = nap.Ts(t=t, time_units='s')
+        >>> bincount = ts.count(0.1)
+
+        An epoch can be specified:
+
+        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
+        >>> bincount = ts.count(0.1, ep=ep)
+
+        And bincount automatically inherit ep as time support:
+
+        >>> bincount.time_support
+        >>>    start    end
+        >>> 0  100.0  800.0
+        """        
+        t, d, ep = super().count(*args, **kwargs)
+        return Tsd(t=t, d=d, time_support=ep)        
+
     def fillna(self, value):
         """
         Similar to pandas fillna function.
