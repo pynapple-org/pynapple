@@ -1487,9 +1487,9 @@ class Ts(Base):
         >>> bincount.time_support
         >>>    start    end
         >>> 0  100.0  800.0
-        """        
+        """
         t, d, ep = super().count(*args, **kwargs)
-        return Tsd(t=t, d=d, time_support=ep)        
+        return Tsd(t=t, d=d, time_support=ep)
 
     def fillna(self, value):
         """
