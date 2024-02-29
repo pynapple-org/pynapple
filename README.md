@@ -1,6 +1,6 @@
 <!-- ![pic1](banner_logo.png) -->
 <p align="center">
-  <img width="60%" src="images/banner_logo.png">
+  <img width="60%" src="docs/images/banner_logo.png">
 </p>
 
 
