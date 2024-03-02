@@ -18,7 +18,7 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 
 
 > **Note**
-> If you are using pynapple, please cite the following [biorxiv paper](https://www.biorxiv.org/content/10.1101/2022.12.06.519376v1)
+> :page_with_curl: If you are using pynapple, please cite the following [paper](https://elifesciences.org/reviewed-preprints/85786)
 
 ------------------------------------------------------------------------
 
@@ -168,4 +168,4 @@ the latter constituting the core of *pynapple*.
 This package was developped by Guillaume Viejo
 (<https://github.com/gviejo>) and other members of the Peyrache Lab.
 
-Logo: Sofia Skromne Carrasco, 2021.
+<!-- Logo: Sofia Skromne Carrasco, 2021. -->
