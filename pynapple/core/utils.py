@@ -2,14 +2,13 @@
 # @Author: Guillaume Viejo
 # @Date:   2024-02-09 11:45:45
 # @Last Modified by:   gviejo
-# @Last Modified time: 2024-02-21 21:27:04
+# @Last Modified time: 2024-03-03 06:28:59
 
 """
     Utility functions
 """
 
 import warnings
-from numbers import Number
 
 import numpy as np
 from numba import jit
@@ -279,22 +278,57 @@ class _TsdFrameSliceHelper:
 
 
 class _IntervalSetSliceHelper:
+    """
+    This class helps `IntervalSet` behaves like pandas.DataFrame for the `loc` function.
+
+    Attributes
+    ----------
+    intervalset : `IntervalSet` to slice
+
+    """
+
     def __init__(self, intervalset):
+        """Class for `loc` slicing function
+
+        Parameters
+        ----------
+        intervalset : IntervalSet
+
+        """
         self.intervalset = intervalset
 
     def __getitem__(self, key):
+        """Getters for `IntervalSet.loc`. Mimics pandas.DataFrame.
+
+        Parameters
+        ----------
+        key : int, list or tuple
+
+        Returns
+        -------
+        IntervalSet or Number or numpy.ndarray
+
+        Raises
+        ------
+        IndexError
+
+        """
         if key in ["start", "end"]:
             return self.intervalset[key]
         elif isinstance(key, list):
             return self.intervalset[key]
-        elif isinstance(key, Number):
+        elif isinstance(key, int):
             return self.intervalset.values[key]
         else:
             if isinstance(key, tuple):
                 if len(key) == 2:
                     if key[1] not in ["start", "end"]:
                         raise IndexError
-                    return self.intervalset[key[0]][key[1]]
+                    out = self.intervalset[key[0]][key[1]]
+                    if len(out) == 1:
+                        return out[0]
+                    else:
+                        return out
                 else:
                     raise IndexError
             else:

@@ -539,6 +539,17 @@ class IntervalSet(NDArrayOperatorsMixin):
         t = starts + (ends - starts) * alpha
         return time_series.Ts(t=t, time_support=self)
 
+    def as_dataframe(self):
+        """
+        Convert the `IntervalSet` object to a pandas.DataFrame object.
+
+        Returns
+        -------
+        out: pandas.DataFrame
+            _
+        """
+        return pd.DataFrame(data=self.values, columns=["start", "end"])
+
     def save(self, filename):
         """
         Save IntervalSet object in npz format. The file will contain the starts and ends.

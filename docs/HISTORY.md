@@ -9,6 +9,12 @@ In 2018, Francesco started neuroseries, a Python package built on Pandas. It was
 In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuroseries and started *pynapple*. The core of pynapple is largely built upon neuroseries. Some of the original changes to TSToolbox made by Luke were included in this package, especially the *time_support* property of all ts/tsd objects.
 
 
+0.6.1 (2024-03-03)
+------------------
+
+- Fixed pynapple `loc` method for new `IntervalSet`
+
+
 0.6.0 (2024-03-02)
 ------------------
 
