@@ -27,15 +27,7 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from scipy import signal
 from tabulate import tabulate
 
-from ._jitted_functions import (
-    jitbin,
-    jitbin_array,
-    jitremove_nan,
-    jitrestrict,
-    jitthreshold,
-    jittsrestrict,
-    pjitconvolve,
-)
+from .core_function import _convolve
 from .base_class import Base
 from .interval_set import IntervalSet
 from .time_index import TsIndex
@@ -383,8 +375,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
         Parameters
         ----------
-        array : np.ndarray
-            One dimensional input array
+        array : array-like
+            
         ep : None, optional
             The epochs to apply the convolution
         trim : str, optional
@@ -395,58 +387,25 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         Tsd, TsdFrame or TsdTensor
             The convolved time series
         """
-        # Check if jax backend
-        if get_backend() == "jax":
-            from pynajax.jax_core import convolve
-            new_data_array = convolve(self, array)
-            return self.__class__(t=self.index, d=new_data_array, time_support=self.time_support) 
-        else:
-            assert isinstance(array, np.ndarray), "Input should be a 1-d numpy array."
-            assert array.ndim == 1, "Input should be a one dimensional array."
-            assert trim in [
-                "both",
-                "left",
-                "right",
-            ], "Unknow argument. trim should be 'both', 'left' or 'right'."
+        assert is_array_like(array), "Input should be a numpy array (or jax array if pynajax is installed)."
+        assert array.ndim in [1,2], "Input should be one or two dimensional array."
+        assert trim in [
+            "both",
+            "left",
+            "right",
+        ], "Unknow argument. trim should be 'both', 'left' or 'right'."
 
-            if ep is None:
-                ep = self.time_support
+        if ep is None:
+            ep = self.time_support
 
-            time_array = self.index.values
-            data_array = self.values
-            starts = ep.start
-            ends = ep.end
+        time_array = self.index.values
+        data_array = self.values
+        starts = ep.start
+        ends = ep.end
 
-            if data_array.ndim == 1:
-                new_data_array = np.zeros(data_array.shape)
-                k = array.shape[0]
-                for s, e in zip(starts, ends):
-                    idx_s = np.searchsorted(time_array, s)
-                    idx_e = np.searchsorted(time_array, e, side="right")
+        new_data_array = _convolve(time_array, data_array, kernel, ep, trim)
 
-                    t = idx_e - idx_s
-                    if trim == "left":
-                        cut = (k - 1, t + k - 1)
-                    elif trim == "right":
-                        cut = (0, t)
-                    else:
-                        cut = ((1 - k % 2) + (k - 1) // 2, t + k - 1 - ((k - 1) // 2))
-                    # scipy is actually faster for Tsd
-                    new_data_array[idx_s:idx_e] = signal.convolve(
-                        data_array[idx_s:idx_e], array
-                    )[cut[0] : cut[1]]
-
-                return self.__class__(t=time_array, d=new_data_array, time_support=ep)
-            else:
-                new_data_array = np.zeros(data_array.shape)
-                for s, e in zip(starts, ends):
-                    idx_s = np.searchsorted(time_array, s)
-                    idx_e = np.searchsorted(time_array, e, side="right")
-                    new_data_array[idx_s:idx_e] = pjitconvolve(
-                        data_array[idx_s:idx_e], array, trim=trim
-                    )
-
-                return self.__class__(t=time_array, d=new_data_array, time_support=ep)
+        return self.__class__(t=time_array, d=new_data_array, time_support=ep)
 
     def smooth(self, std, size):
         """Smooth a time series with a gaussian kernel. std is the standard deviation and size is the number of point of the window.

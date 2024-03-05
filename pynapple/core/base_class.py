@@ -8,14 +8,7 @@ from numbers import Number
 
 import numpy as np
 
-from ._jitted_functions import (
-    jitcount,
-    jitrestrict,
-    jittsrestrict,
-    jittsrestrict_with_count,
-    jitvaluefrom,
-    jitvaluefromtensor,
-)
+from .core_function import _restrict
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .utils import cast_to_numpy, is_array_like
@@ -365,21 +358,22 @@ class Base(abc.ABC):
         assert isinstance(iset, IntervalSet), "Argument should be IntervalSet"
 
         time_array = self.index.values
+        data_array = None
         starts = iset.start
         ends = iset.end
 
         if hasattr(self, "values"):
             data_array = self.values
-            t, d = jitrestrict(time_array, data_array, starts, ends)
 
-            kwargs = {}
-            if hasattr(self, "columns"):
-                kwargs["columns"] = self.columns
+        t, d = _restrict(time_array, data_array, starts, ends)
 
+        kwargs = {}
+        if hasattr(self, "columns"):
+            kwargs["columns"] = self.columns
+
+        if hasattr(self, "values"):
             return self.__class__(t=t, d=d, time_support=iset, **kwargs)
-
         else:
-            t = jittsrestrict(time_array, starts, ends)
             return self.__class__(t=t, time_support=iset)
 
     def copy(self):
