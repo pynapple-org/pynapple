@@ -1,6 +1,6 @@
 <!-- ![pic1](banner_logo.png) -->
 <p align="center">
-  <img width="60%" src="banner_logo.png">
+  <img width="60%" src="docs/images/banner_logo.png">
 </p>
 
 
@@ -160,7 +160,7 @@ Shown below, the final figure from the example code displays the firing rate of 
 
 <!-- ![pic1](readme_figure.png) -->
 <p align="center">
-  <img width="80%" src="readme_figure.png">
+  <img width="80%" src="docs/images/readme_figure.png">
 </p>
 
 
@@ -175,4 +175,4 @@ the latter constituting the core of *pynapple*.
 This package was developped by Guillaume Viejo
 (<https://github.com/gviejo>) and other members of the Peyrache Lab.
 
-Logo: Sofia Skromne Carrasco, 2021.
+<!-- Logo: Sofia Skromne Carrasco, 2021. -->

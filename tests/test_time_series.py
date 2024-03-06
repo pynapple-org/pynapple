@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
 # @Last Modified by:   gviejo
-# @Last Modified time: 2024-02-20 22:54:15
+# @Last Modified time: 2024-02-29 10:34:07
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -1073,6 +1073,60 @@ class Test_Time_Series_4:
         np.testing.assert_array_equal(ts[[0,2,5]].index, np.array([0, 2, 5]))
 
         assert len(ts[0:10,0]) == 10
+
+    def test_count(self, ts):
+        count = ts.count(1)
+        assert len(count) == 99
+        np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))
+        
+        count = ts.count(bin_size=1)
+        assert len(count) == 99
+        np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))
+
+    def test_count_time_units(self, ts):
+        for b, tu in zip([1, 1e3, 1e6],['s', 'ms', 'us']):
+            count = ts.count(b, time_units = tu)
+            assert len(count) == 99
+            np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))
+            
+            count = ts.count(b, tu)
+            assert len(count) == 99
+            np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))                
+
+    def test_count_with_ep(self, ts):
+        ep = nap.IntervalSet(start=0, end=100)
+        count = ts.count(1, ep)
+        assert len(count) == 100
+        np.testing.assert_array_almost_equal(count.values, np.ones(100))
+
+        count = ts.count(1, ep=ep)
+        assert len(count) == 100
+        np.testing.assert_array_almost_equal(count.values, np.ones(100))
+
+    def test_count_with_ep_only(self, ts):
+        ep = nap.IntervalSet(start=0, end=100)
+        count = ts.count(ep)
+        assert len(count) == 1
+        np.testing.assert_array_almost_equal(count.values, np.array([100]))
+
+        count = ts.count(ep=ep)
+        assert len(count) == 1
+        np.testing.assert_array_almost_equal(count.values, np.array([100]))
+
+        count = ts.count()
+        assert len(count) == 1
+        np.testing.assert_array_almost_equal(count.values, np.array([100]))
+
+
+    def test_count_errors(self, ts):        
+        with pytest.raises(ValueError):
+            ts.count(bin_size = {})
+
+        with pytest.raises(ValueError):
+            ts.count(ep = {})
+
+        with pytest.raises(ValueError):
+            ts.count(time_units = {})
 
 
 ####################################################
