@@ -24,24 +24,34 @@ from numbers import Number
 import numpy as np
 import pandas as pd
 from numpy.lib.mixins import NDArrayOperatorsMixin
-from scipy import signal
 from tabulate import tabulate
 
-from .core_function import _convolve
 from .base_class import Base
+from .core_function import _convolve, _restrict
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .utils import (
     _concatenate_tsd,
     _split_tsd,
     _TsdFrameSliceHelper,
-    convert_to_numpy_array,
     convert_to_jax_array,
-    is_array_like,
+    convert_to_numpy_array,
     get_backend,
-    not_implemented_in_pynajax
+    is_array_like,
+    not_implemented_in_pynajax,
 )
 
+# to remove
+from ._jitted_functions import (
+    jitbin,
+    jitbin_array,
+    jitremove_nan,
+    jitrestrict,
+    jitthreshold,
+    jittsrestrict,
+    pjitconvolve,
+)
+from scipy import signal
 
 def _get_class(data):
     """Select the right time series object and return the class
@@ -88,8 +98,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         if isinstance(time_support, IntervalSet) and len(self.index):
             starts = time_support.start
             ends = time_support.end
-            t, d = not_implemented_in_pynajax(jitrestrict, 1, 1, 
-                self.index.values, self.values, starts, ends)
+            t, d = _restrict(self.index.values, self.values, starts, ends)
 
             self.index = TsIndex(t)
             self.values = d
@@ -376,7 +385,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         Parameters
         ----------
         array : array-like
-            
+
         ep : None, optional
             The epochs to apply the convolution
         trim : str, optional
@@ -387,8 +396,10 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         Tsd, TsdFrame or TsdTensor
             The convolved time series
         """
-        assert is_array_like(array), "Input should be a numpy array (or jax array if pynajax is installed)."
-        assert array.ndim in [1,2], "Input should be one or two dimensional array."
+        assert is_array_like(
+            array
+        ), "Input should be a numpy array (or jax array if pynajax is installed)."
+        assert array.ndim == 1, "Input should be a one dimensional array."
         assert trim in [
             "both",
             "left",
@@ -403,7 +414,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         starts = ep.start
         ends = ep.end
 
-        new_data_array = _convolve(time_array, data_array, kernel, ep, trim)
+        new_data_array = _convolve(time_array, data_array, starts, ends, array, trim)
 
         return self.__class__(t=time_array, d=new_data_array, time_support=ep)
 
@@ -1283,7 +1294,7 @@ class Ts(Base):
         if isinstance(time_support, IntervalSet) and len(self.index):
             starts = time_support.start
             ends = time_support.end
-            t = jittsrestrict(self.index.values, starts, ends)
+            t = _restrict(self.index.values, None, starts, ends)
             self.index = TsIndex(t)
             self.rate = self.index.shape[0] / np.sum(
                 time_support.values[:, 1] - time_support.values[:, 0]

@@ -11,8 +11,23 @@ import numpy as np
 from .core_function import _restrict
 from .interval_set import IntervalSet
 from .time_index import TsIndex
-from .utils import cast_to_numpy, is_array_like
+from .utils import (
+    cast_to_numpy,
+    convert_to_jax_array,
+    convert_to_numpy_array,
+    get_backend,
+    is_array_like,
+)
 
+# to remove
+from ._jitted_functions import (
+    jitcount,
+    jitrestrict,
+    jittsrestrict,
+    jittsrestrict_with_count,
+    jitvaluefrom,
+    jitvaluefromtensor,
+)
 
 class Base(abc.ABC):
     """
@@ -23,25 +38,14 @@ class Base(abc.ABC):
     _initialized = False
 
     def __init__(self, t, time_units="s", time_support=None):
-        # Converting t to TsIndex array
+
         if isinstance(t, TsIndex):
             self.index = t
-        elif isinstance(t, Number):
-            self.index = TsIndex(np.array([t]), time_units)
-        elif isinstance(t, (list, tuple)):
-            self.index = TsIndex(np.array(t).flatten(), time_units)
-        elif isinstance(t, np.ndarray):
-            assert t.ndim == 1, "t should be 1 dimensional"
-            self.index = TsIndex(t, time_units)
-        # convert array-like data to numpy.
-        # raise a warning to avoid silent conversion if non-numpy array is provided (jax arrays for instance)
-        elif is_array_like(t):
-            t = cast_to_numpy(t, "t")
-            self.index = TsIndex(t, time_units)
         else:
-            raise RuntimeError(
-                "Unknown format for t. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."
-            )
+            if get_backend() == "jax":
+                self.index = TsIndex(convert_to_jax_array(t, "t"), time_units)
+            else:
+                self.index = TsIndex(convert_to_numpy_array(t, "t"), time_units)
 
         if time_support is not None:
             assert isinstance(
@@ -365,16 +369,16 @@ class Base(abc.ABC):
         if hasattr(self, "values"):
             data_array = self.values
 
-        t, d = _restrict(time_array, data_array, starts, ends)
+        out = _restrict(time_array, data_array, starts, ends)
 
         kwargs = {}
         if hasattr(self, "columns"):
             kwargs["columns"] = self.columns
 
         if hasattr(self, "values"):
-            return self.__class__(t=t, d=d, time_support=iset, **kwargs)
+            return self.__class__(t=out[0], d=out[1], time_support=iset, **kwargs)
         else:
-            return self.__class__(t=t, time_support=iset)
+            return self.__class__(t=out, time_support=iset)
 
     def copy(self):
         """Copy the data, index and time support"""

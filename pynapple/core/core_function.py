@@ -7,7 +7,9 @@
     Otherwise the module will call the functions within `_jitted_functions.py`.
 
 """
+
 import numpy as np
+
 from ._jitted_functions import (
     jitbin,
     jitbin_array,
@@ -18,12 +20,13 @@ from ._jitted_functions import (
     pjitconvolve,
 )
 from .utils import get_backend
+from scipy import signal
 
-def _convolve(time_array, data_array, starts, ends, array, trim="both"):    
+def _convolve(time_array, data_array, starts, ends, array, trim="both"):
     if get_backend() == "jax":
-        # Todo convert to jax if numpy
         from pynajax.jax_core_convolve import convolve
-        return convolve(time_array, data_array, starts, ends, array)        
+
+        return convolve(time_array, data_array, starts, ends, array)
     else:
         if data_array.ndim == 1:
             new_data_array = np.zeros(data_array.shape)
@@ -56,28 +59,34 @@ def _convolve(time_array, data_array, starts, ends, array, trim="both"):
 
             return new_data_array
 
+
 def _restrict(time_array, data_array, starts, ends):
     if get_backend() == "jax":
-        # Todo convert to jax if numpy        
         from pynajax.jax_core_restrict import restrict
+
         return restrict(time_array, data_array, starts, ends)
     else:
         if data_array is not None:
             return jitrestrict(time_array, data_array, starts, ends)
         else:
-            return (jittsrestrict(time_array, starts, ends), None)
+            return jittsrestrict(time_array, starts, ends)
+
 
 def _value_from():
     pass
 
+
 def _count():
     pass
+
 
 def _bin_average():
     pass
 
+
 def _interpolate():
     pass
+
 
 def _threshold():
     pass

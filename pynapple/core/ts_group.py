@@ -113,7 +113,7 @@ class TsGroup(UserDict):
                         stacklevel=2,
                     )
                     data[k] = Ts(
-                        t=convert_to_numpy(data[k], "key {}".format(k)),
+                        t=cast_to_numpy(data[k], "key {}".format(k)),
                         time_support=time_support,
                         time_units=time_units,
                     )
