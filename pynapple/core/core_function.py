@@ -9,6 +9,7 @@
 """
 
 import numpy as np
+from scipy import signal
 
 from ._jitted_functions import (
     jitbin,
@@ -18,9 +19,13 @@ from ._jitted_functions import (
     jitthreshold,
     jittsrestrict,
     pjitconvolve,
+    jitcount,
+    jittsrestrict_with_count,    
+    jitvaluefrom,
+    jitvaluefromtensor,    
 )
 from .utils import get_backend
-from scipy import signal
+
 
 def _convolve(time_array, data_array, starts, ends, array, trim="both"):
     if get_backend() == "jax":
@@ -63,7 +68,6 @@ def _convolve(time_array, data_array, starts, ends, array, trim="both"):
 def _restrict(time_array, data_array, starts, ends):
     if get_backend() == "jax":
         from pynajax.jax_core_restrict import restrict
-
         return restrict(time_array, data_array, starts, ends)
     else:
         if data_array is not None:
@@ -72,13 +76,32 @@ def _restrict(time_array, data_array, starts, ends):
             return jittsrestrict(time_array, starts, ends)
 
 
-def _value_from():
-    pass
+def _count(time_array, starts, ends, bin_size=None):
+    if get_backend() == "jax":
+        from pynajax.jax_core_count import count
+        return count(time_array, starts, ends, bin_size)
+    else:
+        if isinstance(bin_size, (float, int)):
+            return jitcount(time_array, starts, ends, bin_size)            
+        else:
+            _, d = jittsrestrict_with_count(time_array, starts, ends)
+            t = starts + (ends - starts) / 2
+            return t, d
 
-
-def _count():
-    pass
-
+def _value_from(time_array, time_target_array, data_target_array, starts, ends):
+    if get_backend() == "jax":
+        from pynajax.jax_core_value_from import value_from
+        return value_from(time_array, time_target_array, data_target_array, starts, ends)
+    else:
+        if data_target_array.ndim == 1:
+            t, d, ns, ne = jitvaluefrom(
+                time_array, time_target_array, data_target_array, starts, ends
+            )
+        else:
+            t, d, ns, ne = jitvaluefromtensor(
+                time_array, time_target_array, data_target_array, starts, ends
+            )
+        return t, d, ns, ne
 
 def _bin_average():
     pass

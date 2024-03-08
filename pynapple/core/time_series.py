@@ -24,8 +24,16 @@ from numbers import Number
 import numpy as np
 import pandas as pd
 from numpy.lib.mixins import NDArrayOperatorsMixin
+from scipy import signal
 from tabulate import tabulate
 
+# to remove
+from ._jitted_functions import (
+    jitbin,
+    jitbin_array,
+    jitremove_nan,    
+    jitthreshold,
+)
 from .base_class import Base
 from .core_function import _convolve, _restrict
 from .interval_set import IntervalSet
@@ -41,17 +49,6 @@ from .utils import (
     not_implemented_in_pynajax,
 )
 
-# to remove
-from ._jitted_functions import (
-    jitbin,
-    jitbin_array,
-    jitremove_nan,
-    jitrestrict,
-    jitthreshold,
-    jittsrestrict,
-    pjitconvolve,
-)
-from scipy import signal
 
 def _get_class(data):
     """Select the right time series object and return the class

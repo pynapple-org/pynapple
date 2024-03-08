@@ -76,7 +76,6 @@ class PynappleConfig:
         if backend == "jax":
             try:
                 import pynajax as nax
-
                 self._backend = "jax"
             except ImportError:
                 warnings.warn(
@@ -91,7 +90,6 @@ class PynappleConfig:
     def get_pynajax_backend_status(self):
         try:
             import pynajax
-
             self.backend = "jax"
         except:
             self.backend = "numba"

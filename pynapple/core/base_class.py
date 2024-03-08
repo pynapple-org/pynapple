@@ -8,26 +8,15 @@ from numbers import Number
 
 import numpy as np
 
-from .core_function import _restrict
+from .core_function import _restrict, _count, _value_from
 from .interval_set import IntervalSet
 from .time_index import TsIndex
-from .utils import (
-    cast_to_numpy,
+from .utils import (    
     convert_to_jax_array,
     convert_to_numpy_array,
     get_backend,
-    is_array_like,
 )
 
-# to remove
-from ._jitted_functions import (
-    jitcount,
-    jitrestrict,
-    jittsrestrict,
-    jittsrestrict_with_count,
-    jitvaluefrom,
-    jitvaluefromtensor,
-)
 
 class Base(abc.ABC):
     """
@@ -210,14 +199,7 @@ class Base(abc.ABC):
         starts = ep.start
         ends = ep.end
 
-        if data_target_array.ndim == 1:
-            t, d, ns, ne = jitvaluefrom(
-                time_array, time_target_array, data_target_array, starts, ends
-            )
-        else:
-            t, d, ns, ne = jitvaluefromtensor(
-                time_array, time_target_array, data_target_array, starts, ends
-            )
+        t, d, ns, ne = _value_from(time_array, time_target_array, data_target_array, starts, ends)
 
         time_support = IntervalSet(start=ns, end=ne)
 
@@ -304,6 +286,9 @@ class Base(abc.ABC):
                 if isinstance(a, str) and a in ["s", "ms", "us"]:
                     time_units = a
 
+        if isinstance(bin_size, (float, int)):
+            bin_size = TsIndex.format_timestamps(np.array([bin_size]), time_units)[0]
+
         ep = self.time_support
         if "ep" in kwargs:
             ep = kwargs["ep"]
@@ -318,12 +303,7 @@ class Base(abc.ABC):
         starts = ep.start
         ends = ep.end
 
-        if isinstance(bin_size, (float, int)):
-            bin_size = TsIndex.format_timestamps(np.array([bin_size]), time_units)[0]
-            t, d = jitcount(time_array, starts, ends, bin_size)
-        else:
-            _, d = jittsrestrict_with_count(time_array, starts, ends)
-            t = starts + (ends - starts) / 2
+        t, d = _count(time_array, starts, ends, bin_size)
 
         return t, d, ep
 
