@@ -2,18 +2,81 @@
 # @Author: Guillaume Viejo
 # @Date:   2024-02-09 11:45:45
 # @Last Modified by:   gviejo
-# @Last Modified time: 2024-03-03 06:28:59
+# @Last Modified time: 2024-03-06 16:34:07
 
 """
     Utility functions
 """
 
 import warnings
+from numbers import Number
 
 import numpy as np
 from numba import jit
 
 from .config import nap_config
+
+
+def not_implemented_in_pynajax(func, which_in, which_out, *args, **kwargs):
+
+    if nap_config.backend == "jax":
+        import jax
+        import jax.numpy as jnp
+
+        # def wrapper(*args, **kwargs):
+        arguments, struct = jax.tree_util.tree_flatten((args, kwargs))
+        arguments[which_in] = jax.tree_map(np.asarray, arguments[which_in])
+        args, kwargs = jax.tree_util.tree_unflatten(struct, arguments)
+        out = func(*args, **kwargs)
+        out = list(out)
+        out[which_out] = jax.tree_map(jnp.asarray, out[which_out])
+        return tuple(out)
+    else:
+        # def wrapper(*args, **kwargs):
+        return func(*args, **kwargs)
+
+
+def convert_to_numpy_array(array, array_name):
+    if isinstance(array, Number):
+        return np.array([array])
+    elif isinstance(array, (list, tuple)):
+        return np.array(array)
+    elif isinstance(array, np.ndarray):
+        return array
+    elif is_array_like(array):
+        return cast_to_numpy(array, array_name)
+    else:
+        raise RuntimeError(
+            "Unknown format for {}. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.".format(
+                array_name
+            )
+        )
+
+
+def convert_to_jax_array(array, array_name):
+    import jax.numpy as jnp
+
+    if isinstance(array, Number):
+        return jnp.array([array])
+    elif isinstance(array, (list, tuple)):
+        return jnp.array(array)
+    elif isinstance(array, jnp.ndarray):
+        return array
+    elif isinstance(array, np.ndarray):
+        return jnp.asarray(array)
+    else:
+        raise RuntimeError(
+            "Unknown format for {}. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.".format(
+                array_name
+            )
+        )
+
+
+def get_backend():
+    """
+    Return the current backend of pynapple
+    """
+    return nap_config.backend
 
 
 def is_array_like(obj):
@@ -75,7 +138,7 @@ def is_array_like(obj):
     )
 
 
-def convert_to_numpy(array, array_name):
+def cast_to_numpy(array, array_name):
     """
     Convert an input array-like object to a NumPy array.
 

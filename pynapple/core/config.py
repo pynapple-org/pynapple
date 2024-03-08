@@ -55,6 +55,44 @@ class PynappleConfig:
     def __init__(self):
         self.suppress_conversion_warnings = False
         self.suppress_time_index_sorting_warnings = False
+        self.backend = "numba"
+
+    @property
+    def backend(self):
+        """
+        Pynapple backend. Can be "jax" or "numpy".
+        """
+        return self._backend
+
+    @backend.setter
+    def backend(self, backend):
+        self.set_backend(backend)
+
+    def set_backend(self, backend):
+
+        assert backend in ["numba", "jax"], "Options for backend are 'jax' or 'numba'"
+
+        # Try to import pynajax
+        if backend == "jax":
+            try:
+                import pynajax as nax
+                self._backend = "jax"
+            except ImportError:
+                warnings.warn(
+                    "Importing pynajax failed. Falling back to numba. To use the jax backend for pynapple, please install pynajax",
+                    UserWarning,
+                )
+                self._backend = "numba"
+        else:
+            self._backend = "numba"
+
+    @property
+    def get_pynajax_backend_status(self):
+        try:
+            import pynajax
+            self.backend = "jax"
+        except:
+            self.backend = "numba"
 
     @property
     def time_index_precision(self):
