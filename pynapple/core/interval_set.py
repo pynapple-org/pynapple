@@ -1,21 +1,58 @@
-# -*- coding: utf-8 -*-
-# @Date:   2022-01-25 21:50:48
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-29 12:16:38
+"""        
+    The class `IntervalSet` deals with non-overlaping epochs. `IntervalSet` objects can interact with each other or with the time series objects.
 
-"""
+    The `IntervalSet` object behaves like a numpy ndarray with the limitation that the object is not mutable.
+
+    You can still apply any numpy array function to it :
+
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> ep = nap.IntervalSet(start=[0, 10], end=[5,20])
+              start    end
+         0        0      5
+         1       10     20
+        shape: (1, 2)        
+        >>> np.diff(ep, 1)
+        UserWarning: Converting IntervalSet to numpy.array
+        array([[ 5.],
+               [10.]])    
+
+    You can slice :
+
+        >>> ep[:,0]
+        array([ 0., 10.])
+        >>> ep[0]
+              start    end
+         0        0      5
+        shape: (1, 2)
+
+    But modifying the `IntervalSet` with raise an error:
+
+        >>> ep[0,0] = 1
+        RuntimeError: IntervalSet is immutable. Starts and ends have been already sorted.
+
+
 """
 
 import importlib
 import os
 import warnings
+from numbers import Number
 
 import numpy as np
 import pandas as pd
-from numba import jit
+from numpy.lib.mixins import NDArrayOperatorsMixin
+from tabulate import tabulate
 
 from ._jitted_functions import jitdiff, jitin_interval, jitintersect, jitunion
+from .config import nap_config
 from .time_index import TsIndex
+from .utils import (
+    _IntervalSetSliceHelper,
+    _jitfix_iset,
+    convert_to_numpy,
+    is_array_like,
+)
 
 all_warnings = np.array(
     [
@@ -27,85 +64,9 @@ all_warnings = np.array(
 )
 
 
-@jit(nopython=True)
-def jitfix_iset(start, end):
+class IntervalSet(NDArrayOperatorsMixin):
     """
-    0 - > "Some starts and ends are equal. Removing 1 microsecond!",
-    1 - > "Some ends precede the relative start. Dropping them!",
-    2 - > "Some starts precede the previous end. Joining them!",
-    3 - > "Some epochs have no duration"
-
-    Parameters
-    ----------
-    start : numpy.ndarray
-        Description
-    end : numpy.ndarray
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
-    """
-    to_warn = np.zeros(4, dtype=np.bool_)
-
-    m = start.shape[0]
-
-    data = np.zeros((m, 2), dtype=np.float64)
-
-    i = 0
-    ct = 0
-
-    while i < m:
-        newstart = start[i]
-        newend = end[i]
-
-        while i < m:
-            if end[i] == start[i]:
-                to_warn[3] = True
-                i += 1
-            else:
-                newstart = start[i]
-                newend = end[i]
-                break
-
-        while i < m:
-            if end[i] < start[i]:
-                to_warn[1] = True
-                i += 1
-            else:
-                newstart = start[i]
-                newend = end[i]
-                break
-
-        while i < m - 1:
-            if start[i + 1] < end[i]:
-                to_warn[2] = True
-                i += 1
-                newend = max(end[i - 1], end[i])
-            else:
-                break
-
-        if i < m - 1:
-            if newend == start[i + 1]:
-                to_warn[0] = True
-                newend -= 1.0e-6
-
-        data[ct, 0] = newstart
-        data[ct, 1] = newend
-
-        ct += 1
-        i += 1
-
-    data = data[0:ct]
-
-    return (data, to_warn)
-
-
-class IntervalSet(pd.DataFrame):
-    # class IntervalSet():
-    """
-    A subclass of pandas.DataFrame representing a (irregular) set of time intervals in elapsed time, with relative operations
+    A class representing a (irregular) set of time intervals in elapsed time, with relative operations
     """
 
     def __init__(self, start, end=None, time_units="s", **kwargs):
@@ -122,87 +83,220 @@ class IntervalSet(pd.DataFrame):
 
         Parameters
         ----------
-        start : numpy.ndarray or number or pandas.DataFrame
+        start : numpy.ndarray or number or pandas.DataFrame or pandas.Series
             Beginning of intervals
-        end : numpy.ndarray or number, optional
+        end : numpy.ndarray or number or pandas.Series, optional
             Ends of intervals
         time_units : str, optional
             Time unit of the intervals ('us', 'ms', 's' [default])
-        **kwargs
-            Additional parameters passed ot pandas.DataFrame
-
-        Returns
-        -------
-        IntervalSet
-            _
 
         Raises
         ------
         RuntimeError
-            Description
-        ValueError
-            If a pandas.DataFrame is passed, it should contains
-            a column 'start' and a column 'end'.
+            If `start` and `end` arguments are of unknown type
 
         """
+        if isinstance(start, pd.DataFrame):
+            assert (
+                "start" in start.columns
+                and "end" in start.columns
+                and start.shape[-1] == 2
+            ), """
+                Wrong dataframe format. Expected format if passing a pandas dataframe is :
+                    - 2 columns
+                    - column names are ["start", "end"]                    
+                """
+            end = start["end"].values.astype(np.float64)
+            start = start["start"].values.astype(np.float64)
 
-        if end is None:
-            df = pd.DataFrame(start)
-            if "start" not in df.columns or "end" not in df.columns:
-                raise ValueError("wrong columns name")
-            start = df["start"].values.astype(np.float64)
-            end = df["end"].values.astype(np.float64)
+        else:
+            assert end is not None, "Missing end argument when initializing IntervalSet"
 
-            start = TsIndex.sort_timestamps(
-                TsIndex.format_timestamps(start.ravel(), time_units)
-            )
-            end = TsIndex.sort_timestamps(
-                TsIndex.format_timestamps(end.ravel(), time_units)
-            )
+            args = {"start": start, "end": end}
 
-            data, to_warn = jitfix_iset(start, end)
-            if np.any(to_warn):
-                msg = "\n".join(all_warnings[to_warn])
-                warnings.warn(msg, stacklevel=2)
-            super().__init__(data=data, columns=("start", "end"), **kwargs)
-            self.r_cache = None
-            self._metadata = ["nap_class"]
-            self.nap_class = self.__class__.__name__
-            return
+            for arg, data in args.items():
+                if isinstance(data, Number):
+                    args[arg] = np.array([data])
+                elif isinstance(data, (list, tuple)):
+                    args[arg] = np.ravel(np.array(data))
+                elif isinstance(data, pd.Series):
+                    args[arg] = data.values
+                elif isinstance(data, np.ndarray):
+                    args[arg] = np.ravel(data)
+                elif is_array_like(data):
+                    args[arg] = convert_to_numpy(data, arg)
+                else:
+                    raise RuntimeError(
+                        "Unknown format for {}. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.".format(
+                            arg
+                        )
+                    )
 
-        start = np.array(start).astype(np.float64)
-        end = np.array(end).astype(np.float64)
+            start = args["start"]
+            end = args["end"]
 
-        start = TsIndex.format_timestamps(np.array(start).ravel(), time_units)
-        end = TsIndex.format_timestamps(np.array(end).ravel(), time_units)
+            assert len(start) == len(end), "Starts end ends are not of the same length"
 
-        if len(start) != len(end):
-            raise RuntimeError("Starts end ends are not of the same length")
+        start = TsIndex.format_timestamps(start, time_units)
+        end = TsIndex.format_timestamps(end, time_units)
 
         if not (np.diff(start) > 0).all():
-            warnings.warn("start is not sorted.", stacklevel=2)
+            warnings.warn("start is not sorted. Sorting it.", stacklevel=2)
             start = np.sort(start)
 
         if not (np.diff(end) > 0).all():
-            warnings.warn("end is not sorted.", stacklevel=2)
+            warnings.warn("end is not sorted. Sorting it.", stacklevel=2)
             end = np.sort(end)
 
-        data, to_warn = jitfix_iset(start, end)
+        data, to_warn = _jitfix_iset(start, end)
 
         if np.any(to_warn):
             msg = "\n".join(all_warnings[to_warn])
             warnings.warn(msg, stacklevel=2)
 
-        super().__init__(data=data, columns=("start", "end"), **kwargs)
-        self.r_cache = None
-        # self._metadata = ["nap_class"]
+        self.values = data
+        self.index = np.arange(data.shape[0], dtype="int")
+        self.columns = np.array(["start", "end"])
         self.nap_class = self.__class__.__name__
 
     def __repr__(self):
-        return self.as_units("s").__repr__()
+        headers = ["start", "end"]
+        bottom = "shape: {}, time unit: sec.".format(self.shape)
+
+        return (
+            tabulate(self.values, headers=headers, showindex="always", tablefmt="plain")
+            + "\n"
+            + bottom
+        )
 
     def __str__(self):
         return self.__repr__()
+
+    def __len__(self):
+        return len(self.values)
+
+    def __setitem__(self, key, value):
+        raise RuntimeError(
+            "IntervalSet is immutable. Starts and ends have been already sorted."
+        )
+
+    def __getitem__(self, key, *args, **kwargs):
+        if isinstance(key, str):
+            if key == "start":
+                return self.values[:, 0]
+            elif key == "end":
+                return self.values[:, 1]
+            else:
+                raise IndexError("Unknown string argument. Should be 'start' or 'end'")
+        elif isinstance(key, Number):
+            output = self.values.__getitem__(key)
+            return IntervalSet(start=output[0], end=output[1])
+        elif isinstance(key, (list, slice, np.ndarray)):
+            output = self.values.__getitem__(key)
+            return IntervalSet(start=output[:, 0], end=output[:, 1])
+        elif isinstance(key, tuple):
+            if len(key) == 2:
+                if isinstance(key[1], Number):
+                    return self.values.__getitem__(key)
+                elif key[1] == slice(None, None, None) or key[1] == slice(0, 2, None):
+                    output = self.values.__getitem__(key)
+                    return IntervalSet(start=output[:, 0], end=output[:, 1])
+                else:
+                    return self.values.__getitem__(key)
+            else:
+                raise IndexError(
+                    "too many indices for IntervalSet: IntervalSet is 2-dimensional"
+                )
+        else:
+            return self.values.__getitem__(key)
+
+    def __array__(self, dtype=None):
+        return self.values.astype(dtype)
+
+    def __array_ufunc__(self, ufunc, method, *args, **kwargs):
+        new_args = []
+        for a in args:
+            if isinstance(a, self.__class__):
+                new_args.append(a.values)
+            else:
+                new_args.append(a)
+
+        out = ufunc(*new_args, **kwargs)
+
+        if not nap_config.suppress_conversion_warnings:
+            warnings.warn(
+                "Converting IntervalSet to numpy.array",
+                UserWarning,
+            )
+        return out
+
+    def __array_function__(self, func, types, args, kwargs):
+        new_args = []
+        for a in args:
+            if isinstance(a, self.__class__):
+                new_args.append(a.values)
+            else:
+                new_args.append(a)
+
+        out = func._implementation(*new_args, **kwargs)
+
+        if not nap_config.suppress_conversion_warnings:
+            warnings.warn(
+                "Converting IntervalSet to numpy.array",
+                UserWarning,
+            )
+        return out
+
+    @property
+    def start(self):
+        return self.values[:, 0]
+
+    @property
+    def end(self):
+        return self.values[:, 1]
+
+    @property
+    def shape(self):
+        return self.values.shape
+
+    @property
+    def ndim(self):
+        return self.values.ndim
+
+    @property
+    def size(self):
+        return self.values.size
+
+    @property
+    def starts(self):
+        """Return the starts of the IntervalSet as a Ts object
+
+        Returns
+        -------
+        Ts
+            The starts of the IntervalSet
+        """
+        time_series = importlib.import_module(".time_series", "pynapple.core")
+        return time_series.Ts(t=self.values[:, 0], time_support=self)
+
+    @property
+    def ends(self):
+        """Return the ends of the IntervalSet as a Ts object
+
+        Returns
+        -------
+        Ts
+            The ends of the IntervalSet
+        """
+        time_series = importlib.import_module(".time_series", "pynapple.core")
+        return time_series.Ts(t=self.values[:, 1], time_support=self)
+
+    @property
+    def loc(self):
+        """
+        Slicing function to add compatibility with pandas DataFrame after removing it as a super class of IntervalSet
+        """
+        return _IntervalSetSliceHelper(self)
 
     def time_span(self):
         """
@@ -213,8 +307,8 @@ class IntervalSet(pd.DataFrame):
         out: IntervalSet
             an IntervalSet with a single interval encompassing the whole IntervalSet
         """
-        s = self["start"][0]
-        e = self["end"].iloc[-1]
+        s = self.values[0, 0]
+        e = self.values[-1, 1]
         return IntervalSet(s, e)
 
     def tot_length(self, time_units="s"):
@@ -231,12 +325,12 @@ class IntervalSet(pd.DataFrame):
         out: float
             _
         """
-        tot_l = (self["end"] - self["start"]).sum()
+        tot_l = np.sum(self.values[:, 1] - self.values[:, 0])
         return TsIndex.return_timestamps(np.array([tot_l]), time_units)[0]
 
     def intersect(self, a):
         """
-        set intersection of IntervalSet
+        Set intersection of IntervalSet
 
         Parameters
         ----------
@@ -313,7 +407,7 @@ class IntervalSet(pd.DataFrame):
         out: numpy.ndarray
             an array with the interval index labels for each time stamp (NaN) for timestamps not in IntervalSet
         """
-        times = tsd.index
+        times = tsd.index.values
         starts = self.values[:, 0]
         ends = self.values[:, 1]
 
@@ -321,7 +415,7 @@ class IntervalSet(pd.DataFrame):
 
     def drop_short_intervals(self, threshold, time_units="s"):
         """
-        Drops the short intervals in the interval set.
+        Drops the short intervals in the interval set with duration shorter than `threshold`.
 
         Parameters
         ----------
@@ -338,13 +432,11 @@ class IntervalSet(pd.DataFrame):
         threshold = TsIndex.format_timestamps(
             np.array([threshold], dtype=np.float64), time_units
         )[0]
-        return self.loc[(self["end"] - self["start"]) > threshold].reset_index(
-            drop=True
-        )
+        return self[(self.values[:, 1] - self.values[:, 0]) > threshold]
 
     def drop_long_intervals(self, threshold, time_units="s"):
         """
-        Drops the long intervals in the interval set.
+        Drops the long intervals in the interval set with duration longer than `threshold`.
 
         Parameters
         ----------
@@ -361,13 +453,11 @@ class IntervalSet(pd.DataFrame):
         threshold = TsIndex.format_timestamps(
             np.array([threshold], dtype=np.float64), time_units
         )[0]
-        return self.loc[(self["end"] - self["start"]) < threshold].reset_index(
-            drop=True
-        )
+        return self[(self.values[:, 1] - self.values[:, 0]) < threshold]
 
     def as_units(self, units="s"):
         """
-        returns a DataFrame with time expressed in the desired unit
+        returns a pandas DataFrame with time expressed in the desired unit
 
         Parameters
         ----------
@@ -385,7 +475,7 @@ class IntervalSet(pd.DataFrame):
         if units == "us":
             data = data.astype(np.int64)
 
-        df = pd.DataFrame(index=self.index.values, data=data, columns=self.columns)
+        df = pd.DataFrame(index=self.index, data=data, columns=self.columns)
 
         return df
 
@@ -412,8 +502,8 @@ class IntervalSet(pd.DataFrame):
         threshold = TsIndex.format_timestamps(
             np.array((threshold,), dtype=np.float64).ravel(), time_units
         )[0]
-        start = self["start"].values
-        end = self["end"].values
+        start = self.values[:, 0]
+        end = self.values[:, 1]
         tojoin = (start[1:] - end[0:-1]) > threshold
         start = np.hstack((start[0], start[1:][tojoin]))
         end = np.hstack((end[0:-1][tojoin], end[-1]))
@@ -448,6 +538,17 @@ class IntervalSet(pd.DataFrame):
         alpha = np.clip(alpha, 0, 1)
         t = starts + (ends - starts) * alpha
         return time_series.Ts(t=t, time_support=self)
+
+    def as_dataframe(self):
+        """
+        Convert the `IntervalSet` object to a pandas.DataFrame object.
+
+        Returns
+        -------
+        out: pandas.DataFrame
+            _
+        """
+        return pd.DataFrame(data=self.values, columns=["start", "end"])
 
     def save(self, filename):
         """
@@ -512,37 +613,9 @@ class IntervalSet(pd.DataFrame):
 
         np.savez(
             filename,
-            start=self.start.values,
-            end=self.end.values,
+            start=self.values[:, 0],
+            end=self.values[:, 1],
             type=np.array(["IntervalSet"], dtype=np.str_),
         )
 
         return
-
-    @property
-    def _constructor(self):
-        return IntervalSet
-
-    @property
-    def starts(self):
-        """Return the starts of the IntervalSet as a Ts object
-
-        Returns
-        -------
-        Ts
-            The starts of the IntervalSet
-        """
-        time_series = importlib.import_module(".time_series", "pynapple.core")
-        return time_series.Ts(t=self.values[:, 0], time_support=self)
-
-    @property
-    def ends(self):
-        """Return the ends of the IntervalSet as a Ts object
-
-        Returns
-        -------
-        Ts
-            The ends of the IntervalSet
-        """
-        time_series = importlib.import_module(".time_series", "pynapple.core")
-        return time_series.Ts(t=self.values[:, 1], time_support=self)

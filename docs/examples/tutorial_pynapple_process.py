@@ -49,7 +49,7 @@ ts1_time_array = ts1.as_units("s").index.values
 ts2_time_array = ts2.as_units("s").index.values
 
 binsize = 0.1  # second
-cc12, xt = nap.cross_correlogram(
+cc12, xt = nap.process.correlograms.cross_correlogram(
     t1=ts1_time_array, t2=ts2_time_array, binsize=binsize, windowsize=1  # second
 )
 
@@ -152,7 +152,7 @@ plt.ylabel("Feature b")
 # To check the accuracy of the tuning curves, we will display the spikes aligned to the features with the function `value_from` which assign to each spikes the corresponding feature value for neuron 0.
 
 tcurves2d, binsxy = nap.compute_2d_tuning_curves(
-    group=ts_group, feature=features, nb_bins=10
+    group=ts_group, features=features, nb_bins=10
 )
 
 ts_to_features = ts_group[1].value_from(features)
@@ -203,7 +203,7 @@ warnings.filterwarnings("ignore")
 
 tcurves2d, binsxy = nap.compute_2d_tuning_curves(
     group=ts_group,
-    feature=features,
+    features=features,
     nb_bins=10,
     ep=epoch,
     minmax=(-1.0, 1.0, -1.0, 1.0),

@@ -1,9 +1,8 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-01-28 15:10:48
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-29 12:16:24
+"""
 
+    The class `TsGroup` helps group objects with different timestamps (i.e. timestamps of spikes of a population of neurons).
+
+"""
 
 import os
 import warnings
@@ -19,11 +18,11 @@ from ._jitted_functions import (
     jitunion,
     jitunion_isets,
 )
+from .base_class import Base
 from .interval_set import IntervalSet
-
-# from .time_units import format_timestamps
 from .time_index import TsIndex
-from .time_series import Ts, Tsd, TsdFrame
+from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
+from .utils import convert_to_numpy
 
 
 def union_intervals(i_sets):
@@ -40,10 +39,10 @@ def union_intervals(i_sets):
 
     if n == 2:
         new_start, new_end = jitunion(
-            i_sets[0].start.values,
-            i_sets[0].end.values,
-            i_sets[1].start.values,
-            i_sets[1].end.values,
+            i_sets[0].start,
+            i_sets[0].end,
+            i_sets[1].start,
+            i_sets[1].end,
         )
 
     if n > 2:
@@ -105,14 +104,19 @@ class TsGroup(UserDict):
 
         # Transform elements to Ts/Tsd objects
         for k in self.index:
-            if isinstance(data[k], (np.ndarray, list)):
-                warnings.warn(
-                    "Elements should not be passed as numpy array. Default time units is seconds when creating the Ts object.",
-                    stacklevel=2,
-                )
-                data[k] = Ts(
-                    t=data[k], time_support=time_support, time_units=time_units
-                )
+            if not isinstance(data[k], Base):
+                if isinstance(data[k], list) or is_array_like(data[k]):
+                    warnings.warn(
+                        "Elements should not be passed as {}. Default time units is seconds when creating the Ts object.".format(
+                            type(data[k])
+                        ),
+                        stacklevel=2,
+                    )
+                    data[k] = Ts(
+                        t=convert_to_numpy(data[k], "key {}".format(k)),
+                        time_support=time_support,
+                        time_units=time_units,
+                    )
 
         # If time_support is passed, all elements of data are restricted prior to init
         if isinstance(time_support, IntervalSet):
@@ -240,7 +244,6 @@ class TsGroup(UserDict):
     def metadata_columns(self):
         """
         Returns list of metadata columns
-        -------
         """
         return list(self._metadata.columns)
 
@@ -528,8 +531,8 @@ class TsGroup(UserDict):
                 if isinstance(a, IntervalSet):
                     ep = a
 
-        starts = ep.start.values
-        ends = ep.end.values
+        starts = ep.start
+        ends = ep.end
 
         if isinstance(bin_size, (float, int)):
             bin_size = float(bin_size)
@@ -963,13 +966,14 @@ class TsGroup(UserDict):
             nt += len(self[n])
 
         times = np.zeros(nt)
-        data = np.zeros(nt)
+        data = np.full(nt, np.nan)
         index = np.zeros(nt, dtype=np.int64)
         k = 0
         for n in self.index:
             kl = len(self[n])
             times[k : k + kl] = self[n].index
-            data[k : k + kl] = self[n].values
+            if isinstance(self[n], BaseTsd):
+                data[k : k + kl] = self[n].values
             index[k : k + kl] = int(n)
             k += kl
 
@@ -982,8 +986,8 @@ class TsGroup(UserDict):
         if not np.all(np.isnan(data)):
             dicttosave["d"] = data[idx]
 
-        dicttosave["start"] = self.time_support.start.values
-        dicttosave["end"] = self.time_support.end.values
+        dicttosave["start"] = self.time_support.start
+        dicttosave["end"] = self.time_support.end
 
         np.savez(filename, **dicttosave)
 

@@ -9,6 +9,20 @@ In 2018, Francesco started neuroseries, a Python package built on Pandas. It was
 In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuroseries and started *pynapple*. The core of pynapple is largely built upon neuroseries. Some of the original changes to TSToolbox made by Luke were included in this package, especially the *time_support* property of all ts/tsd objects.
 
 
+0.6.1 (2024-03-03)
+------------------
+
+- Fixed pynapple `loc` method for new `IntervalSet`
+
+
+0.6.0 (2024-03-02)
+------------------
+
+- Refactoring `IntervalSet` to pure numpy ndarray.
+- Implementing new chain of inheritance for time series with abstract base class. `base_class.Base` holds the temporal methods for all time series and `Ts`. `time_series.BaseTsd` inherit `Base` and implements the common methods for `Tsd`, `TsdFrame` and `Tsd`.
+- Automatic conversion to numpy ndarray for all objects that are numpy-like (typically jax).
+
+
 0.5.1 (2024-01-29)
 ------------------
 

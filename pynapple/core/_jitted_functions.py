@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: guillaume
-# @Date:   2022-10-31 16:44:31
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-25 16:43:34
 import numpy as np
 from numba import jit, njit, prange
 

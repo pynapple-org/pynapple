@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pynapple"
-version = "0.5.1"
+version = "0.6.1"
 description = "PYthon Neural Analysis Package Pour Laboratoires d’Excellence"
 readme = "README.md"
 authors = [{ name = "Guillaume Viejo", email = "guillaume.viejo@gmail.com" }]
@@ -45,7 +45,7 @@ repository = "https://github.com/pynapple-org/pynapple"
 ##########################################################################
 [project.optional-dependencies]
 dev = [
-    "black>=24.1.0",                # Code formatter
+    "black>=24.2.0",                # Code formatter
     "isort",                        # Import sorter
     "pip-tools",                    # Dependency management
     "pytest",                       # Testing framework
