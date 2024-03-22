@@ -19,8 +19,8 @@ def decode_1d(
     bin_size,
     time_units="s",
     feature=None,
-    smoothing_windowsize=1,
-    smoothing_std=1,
+    smoothing_windowsize=None,
+    smoothing_std=None,
     norm=True,
 ):
     """
@@ -138,8 +138,8 @@ def decode_2d(
     xy,
     time_units="s",
     features=None,
-    smoothing_windowsize=1,
-    smoothing_std=1,
+    smoothing_windowsize=None,
+    smoothing_std=None,
     norm=True,
 ):
     """
