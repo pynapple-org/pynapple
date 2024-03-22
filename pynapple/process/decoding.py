@@ -12,7 +12,17 @@ import numpy as np
 from .. import core as nap
 
 
-def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
+def decode_1d(
+    tuning_curves,
+    group,
+    ep,
+    bin_size,
+    time_units="s",
+    feature=None,
+    smoothing_windowsize=1,
+    smoothing_std=1,
+    norm=True,
+):
     """
     Performs Bayesian decoding over a one dimensional feature.
     See:
@@ -38,6 +48,12 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
     feature : Tsd, optional
         The 1d feature used to compute the tuning curves. Used to correct for occupancy.
         If feature is not passed, the occupancy is uniform.
+    smoothing_windowsize : int
+        Size of the Gaussian window to be used for smoothing the data. Default value is 1.
+    smoothing_std : float
+        Standard deviation of the Gaussian kernel for smoothing. Default value is 1.
+    norm : bool
+        To toggle between having a normalized Gaussian kernel or not. Default value is True.
 
     Returns
     -------
@@ -68,6 +84,7 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
 
     # Bin spikes
     count = newgroup.count(bin_size, ep, time_units)
+    count = count.smooth(smoothing_std, smoothing_windowsize, norm)
 
     # Occupancy
     if feature is None:
@@ -113,7 +130,18 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
     return decoded, p
 
 
-def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=None):
+def decode_2d(
+    tuning_curves,
+    group,
+    ep,
+    bin_size,
+    xy,
+    time_units="s",
+    features=None,
+    smoothing_windowsize=1,
+    smoothing_std=1,
+    norm=True,
+):
     """
     Performs Bayesian decoding over a two dimensional feature.
     See:
@@ -140,6 +168,12 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
     features : TsdFrame
         The 2 columns features used to compute the tuning curves. Used to correct for occupancy.
         If feature is not passed, the occupancy is uniform.
+     smoothing_windowsize : int
+         size of the Gaussian window to be used for smoothing the data. Default value is 1.
+     smoothing_std : float
+         Standard deviation of the Gaussian kernel for smoothing. Default value is 1.
+     norm : bool
+         To toggle between having a normalized Gaussian kernel or not. Default value is True.
 
     Returns
     -------
@@ -175,6 +209,7 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
     # Bin spikes
     # if type(newgroup) is not nap.TsdFrame:
     count = newgroup.count(bin_size, ep, time_units)
+    count = count.smooth(smoothing_std, smoothing_windowsize, norm)
     # else:
     #     #Spikes already "binned" with continuous TsdFrame input
     #     count = newgroup
