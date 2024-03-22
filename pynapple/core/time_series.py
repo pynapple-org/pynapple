@@ -445,7 +445,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
             return self.__class__(t=time_array, d=new_data_array, time_support=ep)
 
-    def smooth(self, std, size):
+    def smooth(self, std, size, norm=False):
         """Smooth a time series with a gaussian kernel. std is the standard deviation and size is the number of point of the window.
 
         See the scipy documentation : https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.windows.gaussian.html
@@ -455,7 +455,9 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         std : int
             Standard deviation
         size : int
-            Description
+            Size of the Gaussian window
+        norm : bool
+            To toggle between having a normalized Gaussian kernel or not. Default value is false.
 
         Returns
         -------
@@ -465,7 +467,10 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         assert isinstance(std, int), "std should be type int"
         assert isinstance(size, int), "size should be type int"
         window = signal.windows.gaussian(size, std=std)
-        window = window / window.sum()
+
+        if norm is True:
+            window = window / window.sum()
+
         return self.convolve(window)
 
     def interpolate(self, ts, ep=None, left=None, right=None):
