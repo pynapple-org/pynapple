@@ -20,7 +20,7 @@ def decode_1d(
     time_units="s",
     feature=None,
     smoothing_windowsize=None,
-    smoothing_std=None,
+    smoothing_std=0,
     norm=True,
 ):
     """
@@ -49,9 +49,9 @@ def decode_1d(
         The 1d feature used to compute the tuning curves. Used to correct for occupancy.
         If feature is not passed, the occupancy is uniform.
     smoothing_windowsize : int
-        Size of the Gaussian window to be used for smoothing the data. Default value is 1.
+        Size of the Gaussian window to be used for smoothing the data. Default value is None.
     smoothing_std : float
-        Standard deviation of the Gaussian kernel for smoothing. Default value is 1.
+        Standard deviation of the Gaussian kernel for smoothing. Default value is 0.
     norm : bool
         To toggle between having a normalized Gaussian kernel or not. Default value is True.
 
@@ -139,7 +139,7 @@ def decode_2d(
     time_units="s",
     features=None,
     smoothing_windowsize=None,
-    smoothing_std=None,
+    smoothing_std=0,
     norm=True,
 ):
     """
@@ -169,9 +169,9 @@ def decode_2d(
         The 2 columns features used to compute the tuning curves. Used to correct for occupancy.
         If feature is not passed, the occupancy is uniform.
      smoothing_windowsize : int
-         size of the Gaussian window to be used for smoothing the data. Default value is 1.
+         size of the Gaussian window to be used for smoothing the data. Default value is None.
      smoothing_std : float
-         Standard deviation of the Gaussian kernel for smoothing. Default value is 1.
+         Standard deviation of the Gaussian kernel for smoothing. Default value is 0.
      norm : bool
          To toggle between having a normalized Gaussian kernel or not. Default value is True.
 
