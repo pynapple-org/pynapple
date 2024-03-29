@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-03-30 11:14:41
-# @Last Modified by:   gviejo
-# @Last Modified time: 2024-02-19 15:11:43
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2024-03-29 12:08:48
 
 """Tests of ts group for `pynapple` package."""
 
@@ -112,14 +112,14 @@ class Test_Ts_Group_1:
 
         with pytest.raises(RuntimeError) as e_info:
             tsgroup.set_info(sr_info)
-        assert str(e_info.value) == "Columns needs to be labelled for metadata"
+        assert str(e_info.value) == "Argument should be passed as keyword argument."
 
         tsgroup = nap.TsGroup(group)
         ar_info = np.ones(3) * 3
 
         with pytest.raises(RuntimeError) as e_info:
             tsgroup.set_info(ar_info)
-        assert str(e_info.value) == "Columns needs to be labelled for metadata"
+        assert str(e_info.value) == "Argument should be passed as keyword argument."
 
 
     def test_add_metainfo_test_runtime_errors(self, group):
@@ -127,15 +127,17 @@ class Test_Ts_Group_1:
         sr_info = pd.Series(index=[1, 2, 3], data=[1, 1, 1], name="sr")
         with pytest.raises(Exception) as e_info:
             tsgroup.set_info(sr=sr_info)
-        assert str(e_info.value) == "Index are not equals"
+        assert str(e_info.value) == "Index are not equals for argument sr"
         df_info = pd.DataFrame(index=[1, 2, 3], data=[1, 1, 1], columns=["df"])
         with pytest.raises(Exception) as e_info:
             tsgroup.set_info(df_info)
         assert str(e_info.value) == "Index are not equals"
+
         sr_info = pd.Series(index=[1, 2, 3], data=[1, 1, 1], name="sr")
         with pytest.raises(Exception) as e_info:
             tsgroup.set_info(sr_info)
-        assert str(e_info.value) == "Columns needs to be labelled for metadata"
+        assert str(e_info.value) == "Argument should be passed as keyword argument."
+
         ar_info = np.ones(4)
         with pytest.raises(Exception) as e_info:
             tsgroup.set_info(ar=ar_info)

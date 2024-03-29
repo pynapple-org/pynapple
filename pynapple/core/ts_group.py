@@ -88,8 +88,8 @@ class TsGroup(UserDict):
             To avoid checking that each element is within time_support.
             Useful to speed up initialization of TsGroup when Ts/Tsd objects have already been restricted beforehand
         **kwargs
-            Meta-info about the Ts/Tsd objects. Can be either pandas.Series or numpy.ndarray.
-            Note that the index should match the index of the input dictionnary.
+            Meta-info about the Ts/Tsd objects. Can be either pandas.Series, numpy.ndarray, list or tuple
+            Note that the index should match the index of the input dictionnary if pandas Series
 
         Raises
         ------
@@ -264,7 +264,7 @@ class TsGroup(UserDict):
         RuntimeError
             Raise an error if
                 no column labels are found when passing simple arguments,
-                indexes are not equals for a pandas series,
+                indexes are not equals for a pandas series,+
                 not the same length when passing numpy array.
 
         Examples
@@ -308,15 +308,17 @@ class TsGroup(UserDict):
                         self._metadata = self._metadata.join(arg)
                     else:
                         raise RuntimeError("Index are not equals")
-                elif isinstance(arg, (pd.Series, np.ndarray)):
-                    raise RuntimeError("Columns needs to be labelled for metadata")
+                elif isinstance(arg, (pd.Series, np.ndarray, list)):
+                    raise RuntimeError("Argument should be passed as keyword argument.")
         if len(kwargs):
             for k, v in kwargs.items():
                 if isinstance(v, pd.Series):
                     if pd.Index.equals(self._metadata.index, v.index):
                         self._metadata[k] = v
                     else:
-                        raise RuntimeError("Index are not equals")
+                        raise RuntimeError(
+                            "Index are not equals for argument {}".format(k)
+                        )
                 elif isinstance(v, (np.ndarray, list, tuple)):
                     if len(self._metadata) == len(v):
                         self._metadata[k] = np.asarray(v)
