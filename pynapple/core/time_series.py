@@ -117,6 +117,20 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         except IndexError:
             raise IndexError
 
+    def __getattr__(self, name):
+        """Allow numpy functions to be attached as attributes of Tsd objects"""
+        if hasattr(np, name):
+            np_func = getattr(np, name)
+
+            def method(*args, **kwargs):
+                return np_func(self, *args, **kwargs)
+
+            return method
+
+        raise AttributeError(
+            "Time series object does not have the attribute {}".format(name)
+        )
+
     @property
     def d(self):
         return self.values
