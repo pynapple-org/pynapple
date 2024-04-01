@@ -1212,6 +1212,7 @@ class Tsd(BaseTsd):
         TsGroup
             Grouped timestamps
 
+
         """
         ts_group = importlib.import_module(".ts_group", "pynapple.core")
         t = self.index.values
@@ -1222,7 +1223,9 @@ class Tsd(BaseTsd):
         for k in idx:
             group[k] = Ts(t=t[d == k], time_support=self.time_support)
 
-        return ts_group.TsGroup(group, time_support=self.time_support)
+        return ts_group.TsGroup(
+            group, time_support=self.time_support, bypass_check=True
+        )
 
     def save(self, filename):
         """
