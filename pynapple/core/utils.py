@@ -9,13 +9,13 @@
 """
 
 import warnings
+from itertools import combinations
 
 import numpy as np
 from numba import jit
 
 from .config import nap_config
 
-from itertools import combinations
 
 def is_array_like(obj):
     """
@@ -75,6 +75,7 @@ def is_array_like(obj):
         # and not_tsd_type
     )
 
+
 def convert_to_numpy(array, array_name):
     """
     Convert an input array-like object to a NumPy array.
@@ -117,31 +118,32 @@ def convert_to_numpy(array, array_name):
         )
     return np.asarray(array)
 
+
 def _check_time_equals(time_arrays):
     """
     Check if a list of time arrays are all equal.
     This is typically use to compare time index arrays or starts and ends of `IntervalSet`
-    
+
     Parameters
     ----------
     time_arrays : list
         The time arrays to compare to each other
-    
+
     Returns
     -------
     bool
         True if all equal else False
-    
+
     """
     return all(
         map(
             lambda x: np.allclose(
-                *x, 
-                rtol = 0, 
-                atol = 1/(10**nap_config.time_index_precision)), 
-            combinations(time_arrays, 2)
-            )
+                *x, rtol=0, atol=1 / (10**nap_config.time_index_precision)
+            ),
+            combinations(time_arrays, 2),
         )
+    )
+
 
 def _split_tsd(func, tsd, indices_or_sections, axis=0):
     """
@@ -171,15 +173,20 @@ def _concatenate_tsd(func, *args, **kwargs):
     columns = []
     nap_class = None
 
-    if func == np.concatenate: # search for axis
-        if "axis" not in kwargs and len(args) >= 2: # assume second arg is axis
+    if func == np.concatenate:  # search for axis
+        if "axis" not in kwargs and len(args) >= 2:  # assume second arg is axis
             if isinstance(args[1], int):
                 kwargs["axis"] = args[1]
             else:
                 kwargs["axis"] = 0
-    
+
     for arg in args[0]:
-        if all(map(lambda x: hasattr(arg, x), ['values', 'index', 'time_support', 'nap_class'])):
+        if all(
+            map(
+                lambda x: hasattr(arg, x),
+                ["values", "index", "time_support", "nap_class"],
+            )
+        ):
             arrays.append(arg.values)
             time_indexes.append(arg.index.values)
             time_supports.append(arg.time_support)
@@ -188,10 +195,10 @@ def _concatenate_tsd(func, *args, **kwargs):
             if hasattr(arg, "columns"):
                 columns.append(arg.columns)
         else:
-            arrays.append(arg)                
+            arrays.append(arg)
 
     output = func._implementation(arrays, **kwargs)
-        
+
     # dimension increased in the first axis
     if output.shape[0] > arrays[0].shape[0]:
         if len(time_indexes) == len(arrays) and len(time_supports) == len(arrays):
@@ -215,10 +222,8 @@ def _concatenate_tsd(func, *args, **kwargs):
             return output
     # dimension increased in other axis
     else:
-        if len(time_indexes) == 1:            
-            return nap_class(
-                t=time_indexes[0], d=output, time_support=time_supports[0]
-            )
+        if len(time_indexes) == 1:
+            return nap_class(t=time_indexes[0], d=output, time_support=time_supports[0])
         else:
             time_equal = _check_time_equals(time_indexes)
             support_equal = _check_time_equals([x.values for x in time_supports])
@@ -227,7 +232,7 @@ def _concatenate_tsd(func, *args, **kwargs):
                 return nap_class(
                     t=time_indexes[0], d=output, time_support=time_supports[0]
                 )
-            else:                
+            else:
                 if not time_equal and not support_equal:
                     msg = "Time indexes and time supports are not all equals up to pynapple precision. Returning numpy array!"
                 elif not time_equal and support_equal:
@@ -235,8 +240,9 @@ def _concatenate_tsd(func, *args, **kwargs):
                 else:
                     msg = "Time supports are not all equals up to pynapple precision. Returning numpy array!"
 
-                warnings.warn(msg,stacklevel=2)
+                warnings.warn(msg, stacklevel=2)
                 return output
+
 
 @jit(nopython=True)
 def _jitfix_iset(start, end):

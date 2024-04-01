@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-09-18 18:11:24
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-01 16:49:33
+# @Last Modified time: 2024-04-01 17:09:04
 
 
 
@@ -150,6 +150,9 @@ class Test_Time_Series_1:
         a = np.isnan(tsd)
         assert isinstance(a, tsd.__class__)
         np.testing.assert_array_equal(a.values, np.isnan(tsd.values))
+
+    def test_attributes(self, tsd):
+        assert tsd.min() == tsd.values.min()
 
     def test_split(self, tsd):
         a = np.split(tsd, 4)
