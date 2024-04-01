@@ -47,6 +47,7 @@ from .utils import (
     is_array_like,
 )
 
+import pdb
 
 def _get_class(data):
     """Select the right time series object and return the class
@@ -118,18 +119,14 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
             raise IndexError
 
     def __getattr__(self, name):
-        """Allow numpy functions to be attached as attributes of Tsd objects"""
+        """ Allow numpy functions to be attached as attributes of Tsd objects"""
         if hasattr(np, name):
             np_func = getattr(np, name)
-
             def method(*args, **kwargs):
                 return np_func(self, *args, **kwargs)
-
             return method
-
-        raise AttributeError(
-            "Time series object does not have the attribute {}".format(name)
-        )
+        
+        raise AttributeError("Time series object does not have the attribute {}".format(name))
 
     @property
     def d(self):
@@ -192,8 +189,6 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
     def __array_function__(self, func, types, args, kwargs):
         if func in [
-            np.hstack,
-            np.dstack,
             np.sort,
             np.lexsort,
             np.sort_complex,
@@ -207,13 +202,9 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
         if func in [np.split, np.array_split, np.dsplit, np.hsplit, np.vsplit]:
             return _split_tsd(func, *args, **kwargs)
-
-        if func in [np.vstack, np.concatenate]:
-            if func == np.concatenate:
-                if "axis" in kwargs:
-                    if kwargs["axis"] != 0:
-                        return NotImplemented
-            return _concatenate_tsd(func, *args)
+        
+        if func in [np.concatenate, np.vstack, np.hstack, np.dstack]:
+            return _concatenate_tsd(func, *args, **kwargs)
 
         new_args = []
         for a in args:
