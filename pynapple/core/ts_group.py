@@ -25,7 +25,7 @@ from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
 from .utils import convert_to_numpy
 
 
-def union_intervals(i_sets):
+def _union_intervals(i_sets):
     """
     Helper to merge intervals from ts_group
     """
@@ -125,7 +125,7 @@ class TsGroup(UserDict):
                 data = {k: data[k].restrict(self.time_support) for k in self.index}
         else:
             # Otherwise do the union of all time supports
-            time_support = union_intervals([data[k].time_support for k in self.index])
+            time_support = _union_intervals([data[k].time_support for k in self.index])
             if len(time_support) == 0:
                 raise RuntimeError(
                     "Union of time supports is empty. Consider passing a time support as argument."
@@ -688,9 +688,34 @@ class TsGroup(UserDict):
 
         return toreturn
 
-    """
-    Special slicing of metadata
-    """
+    def get(self, start, end=None, time_units="s"):
+        """Slice the `TsGroup` object from `start` to `end` such that all the timestamps within the group satisfy `start<=t<=end`.
+        If `end` is None, only the timepoint closest to `start` is returned.
+
+        By default, the time support doesn't change. If you want to change the time support, use the `restrict` function.
+
+        Parameters
+        ----------
+        start : float or int
+            The start (or closest time point if `end` is None)
+        end : float or int or None
+            The end
+        """
+        newgr = {}
+        for k in self.index:
+            newgr[k] = self.data[k].get(start, end, time_units)
+        cols = self._metadata.columns.drop("rate")
+
+        return TsGroup(
+            newgr,
+            time_support=self.time_support,
+            bypass_check=True,
+            **self._metadata[cols],
+        )
+
+    #################################
+    # Special slicing of metadata
+    #################################
 
     def getby_threshold(self, key, thr, op=">"):
         """

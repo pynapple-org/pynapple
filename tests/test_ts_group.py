@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:14:41
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-03-29 12:08:48
+# @Last Modified time: 2024-04-01 18:07:53
 
 """Tests of ts group for `pynapple` package."""
 
@@ -309,6 +309,7 @@ class Test_Ts_Group_1:
             np.testing.assert_array_almost_equal(
                 count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
             )
+
     def test_count_errors(self, group):
         tsgroup = nap.TsGroup(group)
         with pytest.raises(ValueError):
@@ -319,6 +320,41 @@ class Test_Ts_Group_1:
 
         with pytest.raises(ValueError):
             tsgroup.count(time_units = {})
+
+    def test_get_interval(self, group):
+        tsgroup = nap.TsGroup(group)
+        tsgroup2 = tsgroup.get(10, 20)
+
+        assert isinstance(tsgroup2, nap.TsGroup)
+
+        assert all(map(lambda x: len(x[0]) == x[1], zip(tsgroup2.values(), [11, 21, 51])))
+
+        for a, b in zip(tsgroup.values(), tsgroup2.values()):
+            np.testing.assert_array_almost_equal(
+                a.t[np.searchsorted(a.t, 10):np.searchsorted(a.t, 20, 'right')],
+                b.t)
+
+        np.testing.assert_array_almost_equal(
+            tsgroup.time_support.values,
+            tsgroup2.time_support.values,
+            )            
+
+        tsgroup3 = tsgroup.get(10)
+
+        assert isinstance(tsgroup2, nap.TsGroup)
+
+        assert all(map(lambda x: len(x) == 1, tsgroup3.values()))
+
+        assert all(map(lambda x: x.t[0] == 10.0, tsgroup3.values()))
+
+        with pytest.raises(Exception):
+            tsgroup.get(20, 10)
+
+        with pytest.raises(Exception):
+            tsgroup.get(10, [20])
+
+        with pytest.raises(Exception):
+            tsgroup.get([10], 20)
 
     def test_threshold_slicing(self, group):
         sr_info = pd.Series(index=[0, 1, 2], data=[0, 1, 2], name="sr")
@@ -525,3 +561,5 @@ class Test_Ts_Group_1:
         os.remove("tsgroup.npz")
         os.remove("tsgroup2.npz")
         os.remove("tsgroup3.npz")
+
+
