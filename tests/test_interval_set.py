@@ -2,8 +2,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-03-30 11:15:02
-# @Last Modified by:   gviejo
-# @Last Modified time: 2024-02-21 21:39:07
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2024-03-29 11:04:32
 
 """Tests for IntervalSet of `pynapple` package."""
 
@@ -58,6 +58,13 @@ def test_create_iset_from_scalars():
     np.testing.assert_approx_equal(ep.start[0], 0)
     np.testing.assert_approx_equal(ep.end[0], 10)
 
+def test_create_iset_from_iset():
+    start = np.array([0, 10, 16, 25])
+    end = np.array([5, 15, 20, 40])
+    ep = nap.IntervalSet(start=start, end=end)
+    ep2 = nap.IntervalSet(ep)
+    np.testing.assert_array_almost_equal(ep.start, ep2.start)
+    np.testing.assert_array_almost_equal(ep.end, ep2.end)
 
 def test_create_iset_from_df():
     df = pd.DataFrame(data=[[16, 100]], columns=["start", "end"])

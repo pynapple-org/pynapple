@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-09-18 18:11:24
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-02-13 12:48:55
+# @Last Modified time: 2024-04-01 17:09:04
 
 
 
@@ -142,12 +142,6 @@ class Test_Time_Series_1:
         a = np.expand_dims(tsd, axis=0)
         assert isinstance(a, np.ndarray)
 
-        with pytest.raises(TypeError):
-            np.hstack((tsd, tsd2))
-
-        with pytest.raises(TypeError):
-            np.dstack((tsd, tsd2))
-
         if tsd.nap_class == "TsdFrame":
             a = np.column_stack((tsd[:,0],tsd[:,1]))
             assert isinstance(a, nap.TsdFrame)
@@ -156,6 +150,9 @@ class Test_Time_Series_1:
         a = np.isnan(tsd)
         assert isinstance(a, tsd.__class__)
         np.testing.assert_array_equal(a.values, np.isnan(tsd.values))
+
+    def test_attributes(self, tsd):
+        assert tsd.min() == tsd.values.min()
 
     def test_split(self, tsd):
         a = np.split(tsd, 4)
@@ -394,7 +391,12 @@ class Test_Time_Series_1:
             assert isinstance(a, nap.Tsd)
 
     def test_concatenate(self, tsd):
+
+        with pytest.raises(RuntimeError, match=r"The order of the time series indexes should be strictly increasing and non overlapping."):
+            np.concatenate((tsd, tsd), 0)
+
         tsd2 = tsd.__class__(t=tsd.index+150, d=tsd.values)
+
         a = np.concatenate((tsd, tsd2))
         assert isinstance(a, tsd.__class__)
         assert len(a) == len(tsd) + len(tsd2)
@@ -402,22 +404,59 @@ class Test_Time_Series_1:
         time_support = nap.IntervalSet(start=[0, 150], end=[99, 249])
         np.testing.assert_array_almost_equal(time_support.values, a.time_support.values)
 
-        tsd3 = tsd.__class__(t=tsd.index+300, d=tsd.values)
-        a = np.vstack((tsd, tsd2, tsd3))
-        assert isinstance(a, tsd.__class__)
-        np.testing.assert_array_almost_equal(a.values, np.concatenate((tsd.values, tsd2.values, tsd3.values)))
-        time_support = nap.IntervalSet(start=[0, 150, 300], end=[99, 249, 399])
-        np.testing.assert_array_almost_equal(time_support.values, a.time_support.values)
+        b = np.concatenate((tsd, tsd2), axis=0)
+        np.testing.assert_array_almost_equal(a.values, b.values)
+        np.testing.assert_array_almost_equal(a.index.values, b.index.values)
 
-        with pytest.raises(TypeError):
-            np.concatenate((tsd, tsd2), axis=1)
-    
-        with pytest.raises(AssertionError):
-            np.concatenate((tsd, np.random.randn(10, 1)))
+        c = np.concatenate((tsd, tsd2), 0)
+        np.testing.assert_array_almost_equal(a.values, c.values)
+        np.testing.assert_array_almost_equal(a.index.values, c.index.values)
 
-        if tsd.nap_class == "TsdTensor":
-            with pytest.raises(AssertionError):
-                np.concatenate((tsd, nap.Tsd(t=np.arange(200,300), d=np.random.randn(100))))
+        d = np.concatenate((tsd, tsd2))
+        np.testing.assert_array_almost_equal(a.values, d.values)
+        np.testing.assert_array_almost_equal(a.index.values, d.index.values)
+
+        e = np.concatenate((tsd, tsd.values), 0)
+        assert isinstance(e, np.ndarray)
+
+        if tsd.ndim >= 2:
+            out = np.concatenate((tsd, tsd), 1)
+            assert isinstance(out, tsd.__class__)
+            np.testing.assert_array_almost_equal(
+                out.values,
+                np.concatenate((tsd.values, tsd.values), 1)
+                )
+
+            out = np.concatenate((tsd.values, tsd), 1)
+            assert isinstance(out, tsd.__class__)
+            np.testing.assert_array_almost_equal(out.values,np.concatenate((tsd.values, tsd.values), 1))
+            np.testing.assert_array_almost_equal(tsd.index.values,out.index.values)
+
+            msg = 'Time indexes and time supports are not all equals up to pynapple precision. Returning numpy array!'
+            with pytest.warns(match = msg):
+                out = np.concatenate((tsd, tsd2), 1)
+            assert isinstance(out, np.ndarray)
+
+            iset = nap.IntervalSet(start = 0, end = 500)
+            msg = "Time indexes are not all equals up to pynapple precision. Returning numpy array!"
+            with pytest.warns(match=msg):                
+                out = np.concatenate((tsd.restrict(iset), tsd2.restrict(iset)), 1)
+
+            msg = "Time supports are not all equals up to pynapple precision. Returning numpy array!"
+            with pytest.warns(match=msg):                
+                out = np.concatenate((tsd, tsd.restrict(iset)), 1)        
+
+        if tsd.ndim == 3:
+            out = np.concatenate((tsd, tsd), 2)
+            assert isinstance(out, tsd.__class__)
+            np.testing.assert_array_almost_equal(
+                out.values,
+                np.concatenate((tsd.values, tsd.values), 2)
+                )
+            out = np.concatenate((tsd.values, tsd), 2)
+            assert isinstance(out, tsd.__class__)
+            np.testing.assert_array_almost_equal(out.values,np.concatenate((tsd.values, tsd.values), 2))
+            np.testing.assert_array_almost_equal(tsd.index.values,out.index.values)
 
     def test_fft(self, tsd):
         with pytest.raises(TypeError):
