@@ -562,7 +562,7 @@ class IntervalSet(NDArrayOperatorsMixin):
         objects. For example, you determined some epochs for one session that you want to save
         to avoid recomputing them.
 
-        You can load the object with numpy.load. Keys are 'start', 'end' and 'type'.
+        You can load the object with `nap.load_file`. Keys are 'start', 'end' and 'type'.
         See the example below.
 
         Parameters
@@ -577,16 +577,10 @@ class IntervalSet(NDArrayOperatorsMixin):
         >>> ep = nap.IntervalSet(start=[0, 10, 20], end=[5, 12, 33])
         >>> ep.save("my_ep.npz")
 
-        Here I can retrieve my data with numpy directly:
+        To load you file, you can use the `nap.load_file` function :
 
-        >>> file = np.load("my_ep.npz")
-        >>> print(list(file.keys()))
-        ['start', 'end', 'type']
-        >>> print(file['start'])
-        [0. 10. 20.]
-
-        It is then easy to recreate the IntervalSet object.
-        >>> nap.IntervalSet(file['start'], file['end'])
+        >>> ep = nap.load_file("my_path/my_ep.npz")
+        >>> ep
            start   end
         0    0.0   5.0
         1   10.0  12.0
