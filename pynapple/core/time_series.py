@@ -453,8 +453,23 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
             return self.__class__(t=time_array, d=new_data_array, time_support=ep)
 
-    def smooth(self, std, size):
-        """Smooth a time series with a gaussian kernel. std is the standard deviation and size is the number of point of the window.
+    def smooth(self, kernel_size, time_units='s', norm=True, std=None, size=None):
+        """Smooth a time series with a gaussian kernel. There are multiple ways to 
+        define the shape of the gaussian kernel.
+        
+        `kernel_size` is the standard deviation of the gaussian kernel in units of time.
+        If only `kernel_size` is passed, the function will compute the standard deviation 
+        `std` and `size` of the kernel automatically. For example, if the time series has 
+        a sample rate of 100 Hz and `kernel_size` is 20 ms, the standard deviation will be 
+        `std = 100 * 0.02 = 2`. By default, the function will select a kernel size as 
+        `size = std * 100`.
+
+        If both arguments `std` and `size` are passed, they are directly used to compute
+        the gaussian kernel. 
+
+
+
+        
 
         See the scipy documentation : https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.windows.gaussian.html
 
