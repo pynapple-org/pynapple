@@ -91,7 +91,11 @@ class IntervalSet(NDArrayOperatorsMixin):
             If `start` and `end` arguments are of unknown type
 
         """
-        if isinstance(start, pd.DataFrame):
+        if isinstance(start, IntervalSet):
+            end = start.values[:, 1].astype(np.float64)
+            start = start.values[:, 0].astype(np.float64)
+
+        elif isinstance(start, pd.DataFrame):
             assert (
                 "start" in start.columns
                 and "end" in start.columns

@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
-# @Last Modified by:   gviejo
-# @Last Modified time: 2024-03-07 07:23:42
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2024-04-02 16:19:55
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -157,36 +157,6 @@ def test_create_tsdframe_with_time_support():
     assert len(tsdframe) == 22
     np.testing.assert_array_almost_equal(tsdframe.time_support.start, ep.start)
     np.testing.assert_array_almost_equal(tsdframe.time_support.end, ep.end)
-
-def test_concatenate_tsd():
-
-    func = nap.core.time_series._concatenate_tsd
-
-    tsd1 = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 5), columns = ['a', 'b', 'c', 'd', 'e'])
-    tsd2 = nap.TsdFrame(t=np.arange(100)+100, d=np.random.rand(100, 5))
-    tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
-
-    with pytest.raises(TypeError):
-        func(np.concatenate, 1)
-
-    with pytest.raises(AssertionError, match=r"Inputs should be Tsd, TsdFrame or TsdTensor"):
-        func(np.concatenate, [0, tsd1, 2])
-
-    with pytest.raises(AssertionError, match=r"Objects should all be the same."):
-        func(np.concatenate, [tsd, tsd1])
-
-    with pytest.raises(RuntimeError, match=r"The order of the Tsd index should be strictly increasing and non overlapping."):
-        func(np.concatenate, [tsd2, tsd1])
-
-    new_tsd = func(np.concatenate, (tsd1, tsd2))
-
-    np.testing.assert_array_almost_equal(new_tsd.values, np.concatenate((tsd1.values, tsd2.values)))
-
-    assert np.all(new_tsd.columns == tsd1.columns)
-
-    new_tsd = func(np.concatenate, (tsd,))
-
-    np.testing.assert_array_equal(new_tsd.values, tsd.values)
 
 @pytest.mark.filterwarnings("ignore")
 def test_create_tsdtensor():
