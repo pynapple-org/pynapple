@@ -117,6 +117,20 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         except IndexError:
             raise IndexError
 
+    def __getattr__(self, name):
+        """Allow numpy functions to be attached as attributes of Tsd objects"""
+        if hasattr(np, name):
+            np_func = getattr(np, name)
+
+            def method(*args, **kwargs):
+                return np_func(self, *args, **kwargs)
+
+            return method
+
+        raise AttributeError(
+            "Time series object does not have the attribute {}".format(name)
+        )
+
     @property
     def d(self):
         return self.values
@@ -178,8 +192,6 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
     def __array_function__(self, func, types, args, kwargs):
         if func in [
-            np.hstack,
-            np.dstack,
             np.sort,
             np.lexsort,
             np.sort_complex,
@@ -194,12 +206,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         if func in [np.split, np.array_split, np.dsplit, np.hsplit, np.vsplit]:
             return _split_tsd(func, *args, **kwargs)
 
-        if func in [np.vstack, np.concatenate]:
-            if func == np.concatenate:
-                if "axis" in kwargs:
-                    if kwargs["axis"] != 0:
-                        return NotImplemented
-            return _concatenate_tsd(func, *args)
+        if func in [np.concatenate, np.vstack, np.hstack, np.dstack]:
+            return _concatenate_tsd(func, *args, **kwargs)
 
         new_args = []
         for a in args:
@@ -655,7 +663,7 @@ class TsdTensor(BaseTsd):
         filtered them. You can save the filtered channels as a npz to avoid
         reprocessing it.
 
-        You can load the object with numpy.load. Keys are 't', 'd', 'start', 'end', 'type'
+        You can load the object with `nap.load_file`. Keys are 't', 'd', 'start', 'end', 'type'
         and 'columns' for columns names.
 
         Parameters
@@ -670,21 +678,9 @@ class TsdTensor(BaseTsd):
         >>> tsdtensor = nap.TsdTensor(t=np.array([0., 1.]), d = np.zeros((2,3,4)))
         >>> tsdtensor.save("my_path/my_tsdtensor.npz")
 
-        Here I can retrieve my data with numpy directly:
+        To load you file, you can use the `nap.load_file` function :
 
-        >>> file = np.load("my_path/my_tsdtensor.npz")
-        >>> print(list(file.keys()))
-        ['t', 'd', 'start', 'end', ''type']
-        >>> print(file['t'])
-        [0. 1.]
-
-        It is then easy to recreate the TsdTensor object.
-        >>> time_support = nap.IntervalSet(file['start'], file['end'])
-        >>> nap.TsdTensor(t=file['t'], d=file['d'], time_support=time_support)
-        Time (s)
-        0.0       [[[0.0 ...]]]
-        1.0       [[[0.0 ...]]]
-
+        >>> tsdtensor = nap.load_file("my_path/my_tsdtensor.npz")
 
         Raises
         ------
@@ -911,7 +907,7 @@ class TsdFrame(BaseTsd):
         filtered them. You can save the filtered channels as a npz to avoid
         reprocessing it.
 
-        You can load the object with numpy.load. Keys are 't', 'd', 'start', 'end', 'type'
+        You can load the object with `nap.load_file`. Keys are 't', 'd', 'start', 'end', 'type'
         and 'columns' for columns names.
 
         Parameters
@@ -926,17 +922,10 @@ class TsdFrame(BaseTsd):
         >>> tsdframe = nap.TsdFrame(t=np.array([0., 1.]), d = np.array([[2, 3],[4,5]]), columns=['a', 'b'])
         >>> tsdframe.save("my_path/my_tsdframe.npz")
 
-        Here I can retrieve my data with numpy directly:
+        To load you file, you can use the `nap.load_file` function :
 
-        >>> file = np.load("my_path/my_tsdframe.npz")
-        >>> print(list(file.keys()))
-        ['t', 'd', 'start', 'end', 'columns', 'type']
-        >>> print(file['t'])
-        [0. 1.]
-
-        It is then easy to recreate the Tsd object.
-        >>> time_support = nap.IntervalSet(file['start'], file['end'])
-        >>> nap.TsdFrame(t=file['t'], d=file['d'], time_support=time_support, columns=file['columns'])
+        >>> tsdframe = nap.load_file("my_path/my_tsdframe.npz")
+        >>> tsdframe
                   a  b
         Time (s)
         0.0       2  3
@@ -1208,6 +1197,7 @@ class Tsd(BaseTsd):
         TsGroup
             Grouped timestamps
 
+
         """
         ts_group = importlib.import_module(".ts_group", "pynapple.core")
         t = self.index.values
@@ -1218,7 +1208,9 @@ class Tsd(BaseTsd):
         for k in idx:
             group[k] = Ts(t=t[d == k], time_support=self.time_support)
 
-        return ts_group.TsGroup(group, time_support=self.time_support)
+        return ts_group.TsGroup(
+            group, time_support=self.time_support, bypass_check=True
+        )
 
     def save(self, filename):
         """
@@ -1230,7 +1222,7 @@ class Tsd(BaseTsd):
         filtered it. You can save the filtered channel as a npz to avoid
         reprocessing it.
 
-        You can load the object with numpy.load. Keys are 't', 'd', 'start', 'end' and 'type'.
+        You can load the object with `nap.load_file`. Keys are 't', 'd', 'start', 'end' and 'type'.
         See the example below.
 
         Parameters
@@ -1245,17 +1237,10 @@ class Tsd(BaseTsd):
         >>> tsd = nap.Tsd(t=np.array([0., 1.]), d = np.array([2, 3]))
         >>> tsd.save("my_path/my_tsd.npz")
 
-        Here I can retrieve my data with numpy directly:
+        To load you file, you can use the `nap.load_file` function :
 
-        >>> file = np.load("my_path/my_tsd.npz")
-        >>> print(list(file.keys()))
-        ['t', 'd', 'start', 'end', 'type']
-        >>> print(file['t'])
-        [0. 1.]
-
-        It is then easy to recreate the Tsd object.
-        >>> time_support = nap.IntervalSet(file['start'], file['end'])
-        >>> nap.Tsd(t=file['t'], d=file['d'], time_support=time_support)
+        >>> tsd = nap.load_file("my_path/my_tsd.npz")
+        >>> tsd
         Time (s)
         0.0    2
         1.0    3
@@ -1524,7 +1509,7 @@ class Ts(Base):
         The main purpose of this function is to save small/medium sized timestamps
         object.
 
-        You can load the object with numpy.load. Keys are 't', 'start' and 'end' and 'type'.
+        You can load the object with `nap.load_file`. Keys are 't', 'start' and 'end' and 'type'.
         See the example below.
 
         Parameters
@@ -1539,22 +1524,14 @@ class Ts(Base):
         >>> ts = nap.Ts(t=np.array([0., 1., 1.5]))
         >>> ts.save("my_path/my_ts.npz")
 
-        Here I can retrieve my data with numpy directly:
+        To load you file, you can use the `nap.load_file` function :
 
-        >>> file = np.load("my_path/my_ts.npz")
-        >>> print(list(file.keys()))
-        ['t', 'start', 'end', 'type']
-        >>> print(file['t'])
-        [0. 1. 1.5]
-
-        It is then easy to recreate the Tsd object.
-        >>> time_support = nap.IntervalSet(file['start'], file['end'])
-        >>> nap.Ts(t=file['t'], time_support=time_support)
+        >>> ts = nap.load_file("my_path/my_ts.npz")
+        >>> ts
         Time (s)
         0.0
         1.0
         1.5
-
 
         Raises
         ------

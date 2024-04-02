@@ -426,8 +426,8 @@ class Base(abc.ABC):
         Parameters
         ----------
         start : float or int
-            The start
-        end : float or int
+            The start (or closest time point if `end` is None)
+        end : float or int or None
             The end
         """
         assert isinstance(start, Number), "start should be a float or int"

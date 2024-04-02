@@ -25,7 +25,7 @@ from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
 from .utils import convert_to_numpy
 
 
-def union_intervals(i_sets):
+def _union_intervals(i_sets):
     """
     Helper to merge intervals from ts_group
     """
@@ -88,8 +88,8 @@ class TsGroup(UserDict):
             To avoid checking that each element is within time_support.
             Useful to speed up initialization of TsGroup when Ts/Tsd objects have already been restricted beforehand
         **kwargs
-            Meta-info about the Ts/Tsd objects. Can be either pandas.Series or numpy.ndarray.
-            Note that the index should match the index of the input dictionnary.
+            Meta-info about the Ts/Tsd objects. Can be either pandas.Series, numpy.ndarray, list or tuple
+            Note that the index should match the index of the input dictionnary if pandas Series
 
         Raises
         ------
@@ -125,7 +125,7 @@ class TsGroup(UserDict):
                 data = {k: data[k].restrict(self.time_support) for k in self.index}
         else:
             # Otherwise do the union of all time supports
-            time_support = union_intervals([data[k].time_support for k in self.index])
+            time_support = _union_intervals([data[k].time_support for k in self.index])
             if len(time_support) == 0:
                 raise RuntimeError(
                     "Union of time supports is empty. Consider passing a time support as argument."
@@ -264,7 +264,7 @@ class TsGroup(UserDict):
         RuntimeError
             Raise an error if
                 no column labels are found when passing simple arguments,
-                indexes are not equals for a pandas series,
+                indexes are not equals for a pandas series,+
                 not the same length when passing numpy array.
 
         Examples
@@ -308,15 +308,17 @@ class TsGroup(UserDict):
                         self._metadata = self._metadata.join(arg)
                     else:
                         raise RuntimeError("Index are not equals")
-                elif isinstance(arg, (pd.Series, np.ndarray)):
-                    raise RuntimeError("Columns needs to be labelled for metadata")
+                elif isinstance(arg, (pd.Series, np.ndarray, list)):
+                    raise RuntimeError("Argument should be passed as keyword argument.")
         if len(kwargs):
             for k, v in kwargs.items():
                 if isinstance(v, pd.Series):
                     if pd.Index.equals(self._metadata.index, v.index):
                         self._metadata[k] = v
                     else:
-                        raise RuntimeError("Index are not equals")
+                        raise RuntimeError(
+                            "Index are not equals for argument {}".format(k)
+                        )
                 elif isinstance(v, (np.ndarray, list, tuple)):
                     if len(self._metadata) == len(v):
                         self._metadata[k] = np.asarray(v)
@@ -686,9 +688,34 @@ class TsGroup(UserDict):
 
         return toreturn
 
-    """
-    Special slicing of metadata
-    """
+    def get(self, start, end=None, time_units="s"):
+        """Slice the `TsGroup` object from `start` to `end` such that all the timestamps within the group satisfy `start<=t<=end`.
+        If `end` is None, only the timepoint closest to `start` is returned.
+
+        By default, the time support doesn't change. If you want to change the time support, use the `restrict` function.
+
+        Parameters
+        ----------
+        start : float or int
+            The start (or closest time point if `end` is None)
+        end : float or int or None
+            The end
+        """
+        newgr = {}
+        for k in self.index:
+            newgr[k] = self.data[k].get(start, end, time_units)
+        cols = self._metadata.columns.drop("rate")
+
+        return TsGroup(
+            newgr,
+            time_support=self.time_support,
+            bypass_check=True,
+            **self._metadata[cols],
+        )
+
+    #################################
+    # Special slicing of metadata
+    #################################
 
     def getby_threshold(self, key, thr, op=">"):
         """
@@ -861,28 +888,33 @@ class TsGroup(UserDict):
         and assigning to each the corresponding index. Typically, a TsGroup like
         this :
 
-            TsGroup({
-                0 : Tsd(t=[0, 2, 4], d=[1, 2, 3])
-                1 : Tsd(t=[1, 5], d=[5, 6])
-            })
+        ``` py
+        TsGroup({
+            0 : Tsd(t=[0, 2, 4], d=[1, 2, 3])
+            1 : Tsd(t=[1, 5], d=[5, 6])
+        })
+        ```
 
         will be saved as npz with the following keys:
 
-            {
-                't' : [0, 1, 2, 4, 5],
-                'd' : [1, 5, 2, 3, 5],
-                'index' : [0, 1, 0, 0, 1],
-                'start' : [0],
-                'end' : [5],
-                'type' : 'TsGroup'
-            }
+        ``` py
+        {
+            't' : [0, 1, 2, 4, 5],
+            'd' : [1, 5, 2, 3, 5],
+            'index' : [0, 1, 0, 0, 1],
+            'start' : [0],
+            'end' : [5],
+            'keys' : [0, 1],
+            'type' : 'TsGroup'
+        }
+        ```
 
         Metadata are saved by columns with the column name as the npz key. To avoid
         potential conflicts, make sure the columns name of the metadata are different
-        from ['t', 'd', 'start', 'end', 'index']
+        from ['t', 'd', 'start', 'end', 'index', 'keys']
 
-        You can load the object with numpy.load. Default keys are 't', 'd'(optional),
-        'start', 'end', 'index' and 'type'.
+        You can load the object with `nap.load_file`. Default keys are 't', 'd'(optional),
+        'start', 'end', 'index', 'keys' and 'type'.
         See the example below.
 
         Parameters
@@ -908,21 +940,9 @@ class TsGroup(UserDict):
               6     0.4        1  left foot
         >>> tsgroup.save("my_tsgroup.npz")
 
-        Here I can retrieve my data with numpy directly:
+        To get back to pynapple, you can use the `nap.load_file` function :
 
-        >>> file = np.load("my_tsgroup.npz")
-        >>> print(list(file.keys()))
-        ['rate', 'group', 'location', 't', 'index', 'start', 'end', 'type']
-        >>> print(file['index'])
-        [0 6 0 0 6]
-
-        In the case where TsGroup is a set of Ts objects, it is very direct to
-        recreate the TsGroup by using the function to_tsgroup :
-
-        >>> time_support = nap.IntervalSet(file['start'], file['end'])
-        >>> tsd = nap.Tsd(t=file['t'], d=file['index'], time_support = time_support)
-        >>> tsgroup = tsd.to_tsgroup()
-        >>> tsgroup.set_info(group = file['group'], location = file['location'])
+        >>> tsgroup = nap.load_file("my_tsgroup.npz")
         >>> tsgroup
           Index    rate    group  location
         -------  ------  -------  ----------
@@ -954,7 +974,7 @@ class TsGroup(UserDict):
 
         dicttosave = {"type": np.array(["TsGroup"], dtype=np.str_)}
         for k in self._metadata.columns:
-            if k not in ["t", "d", "start", "end", "index"]:
+            if k not in ["t", "d", "start", "end", "index", "keys"]:
                 tmp = self._metadata[k].values
                 if tmp.dtype == np.dtype("O"):
                     tmp = tmp.astype(np.str_)
@@ -985,7 +1005,7 @@ class TsGroup(UserDict):
         dicttosave["index"] = index
         if not np.all(np.isnan(data)):
             dicttosave["d"] = data[idx]
-
+        dicttosave["keys"] = np.array(self.keys())
         dicttosave["start"] = self.time_support.start
         dicttosave["end"] = self.time_support.end
 
