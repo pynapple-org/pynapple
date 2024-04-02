@@ -144,7 +144,7 @@ print(np.concatenate((tsd1, tsd2, tsd3)))
 
 tsdframe = nap.TsdFrame(t=np.arange(5), d=np.random.randn(5, 3))
 
-print(np.concatenate(tsdframe, tsdframe), 1)
+print(np.concatenate((tsdframe, tsdframe), 1))
 
 # %%
 # Spliting
