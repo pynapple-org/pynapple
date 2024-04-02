@@ -888,28 +888,33 @@ class TsGroup(UserDict):
         and assigning to each the corresponding index. Typically, a TsGroup like
         this :
 
-            TsGroup({
-                0 : Tsd(t=[0, 2, 4], d=[1, 2, 3])
-                1 : Tsd(t=[1, 5], d=[5, 6])
-            })
+        ``` py
+        TsGroup({
+            0 : Tsd(t=[0, 2, 4], d=[1, 2, 3])
+            1 : Tsd(t=[1, 5], d=[5, 6])
+        })
+        ```
 
         will be saved as npz with the following keys:
 
-            {
-                't' : [0, 1, 2, 4, 5],
-                'd' : [1, 5, 2, 3, 5],
-                'index' : [0, 1, 0, 0, 1],
-                'start' : [0],
-                'end' : [5],
-                'type' : 'TsGroup'
-            }
+        ``` py
+        {
+            't' : [0, 1, 2, 4, 5],
+            'd' : [1, 5, 2, 3, 5],
+            'index' : [0, 1, 0, 0, 1],
+            'start' : [0],
+            'end' : [5],
+            'keys' : [0, 1],
+            'type' : 'TsGroup'
+        }
+        ```
 
         Metadata are saved by columns with the column name as the npz key. To avoid
         potential conflicts, make sure the columns name of the metadata are different
-        from ['t', 'd', 'start', 'end', 'index']
+        from ['t', 'd', 'start', 'end', 'index', 'keys']
 
-        You can load the object with numpy.load. Default keys are 't', 'd'(optional),
-        'start', 'end', 'index' and 'type'.
+        You can load the object with `nap.load_file`. Default keys are 't', 'd'(optional),
+        'start', 'end', 'index', 'keys' and 'type'.
         See the example below.
 
         Parameters
@@ -935,21 +940,9 @@ class TsGroup(UserDict):
               6     0.4        1  left foot
         >>> tsgroup.save("my_tsgroup.npz")
 
-        Here I can retrieve my data with numpy directly:
+        To get back to pynapple, you can use the `nap.load_file` function :
 
-        >>> file = np.load("my_tsgroup.npz")
-        >>> print(list(file.keys()))
-        ['rate', 'group', 'location', 't', 'index', 'start', 'end', 'type']
-        >>> print(file['index'])
-        [0 6 0 0 6]
-
-        In the case where TsGroup is a set of Ts objects, it is very direct to
-        recreate the TsGroup by using the function to_tsgroup :
-
-        >>> time_support = nap.IntervalSet(file['start'], file['end'])
-        >>> tsd = nap.Tsd(t=file['t'], d=file['index'], time_support = time_support)
-        >>> tsgroup = tsd.to_tsgroup()
-        >>> tsgroup.set_info(group = file['group'], location = file['location'])
+        >>> tsgroup = nap.load_file("my_tsgroup.npz")
         >>> tsgroup
           Index    rate    group  location
         -------  ------  -------  ----------
@@ -981,7 +974,7 @@ class TsGroup(UserDict):
 
         dicttosave = {"type": np.array(["TsGroup"], dtype=np.str_)}
         for k in self._metadata.columns:
-            if k not in ["t", "d", "start", "end", "index"]:
+            if k not in ["t", "d", "start", "end", "index", "keys"]:
                 tmp = self._metadata[k].values
                 if tmp.dtype == np.dtype("O"):
                     tmp = tmp.astype(np.str_)
@@ -1012,7 +1005,7 @@ class TsGroup(UserDict):
         dicttosave["index"] = index
         if not np.all(np.isnan(data)):
             dicttosave["d"] = data[idx]
-
+        dicttosave["keys"] = np.array(self.keys())
         dicttosave["start"] = self.time_support.start
         dicttosave["end"] = self.time_support.end
 
