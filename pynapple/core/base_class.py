@@ -261,8 +261,8 @@ class Base(abc.ABC):
         And bincount automatically inherit ep as time support:
 
         >>> bincount.time_support
-        >>>    start    end
-        >>> 0  100.0  800.0
+            start    end
+        0  100.0  800.0
         """
         bin_size = None
         if "bin_size" in kwargs:
@@ -335,8 +335,8 @@ class Base(abc.ABC):
         The time support of newts automatically inherit the epochs defined by ep.
 
         >>> newts.time_support
-        >>>    start    end
-        >>> 0    0.0  500.0
+            start    end
+        0    0.0  500.0
 
         """
         assert isinstance(iset, IntervalSet), "Argument should be IntervalSet"

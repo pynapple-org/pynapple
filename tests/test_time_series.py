@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-02 16:19:55
+# @Last Modified time: 2024-04-03 11:13:14
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -454,25 +454,59 @@ class Test_Time_Series_1:
     def test_smooth(self, tsd):
         if not isinstance(tsd, nap.Ts):            
             from scipy import signal
-            tsd2 = tsd.smooth(2, 20)
+            tsd2 = tsd.smooth(1)
+
             tmp = tsd.values.reshape(tsd.shape[0], -1)
             tmp2 = np.zeros_like(tmp)
-            window = signal.windows.gaussian(20, std=2)
+            std = int(tsd.rate * 1)
+            M = std*100
+            window = signal.windows.gaussian(M, std=std)
             window = window / window.sum()            
             for i in range(tmp.shape[-1]):
-                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[10:-9]
+                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[M//2:1-M//2]
             np.testing.assert_array_almost_equal(
                 tmp2, 
                 tsd2.values.reshape(tsd2.shape[0], -1)
                 )
 
+            tsd2 = tsd.smooth(1000, time_units='ms')
+            np.testing.assert_array_almost_equal(tmp2, 
+                tsd2.values.reshape(tsd2.shape[0], -1))
+
+            tsd2 = tsd.smooth(1000000, time_units='us')
+            np.testing.assert_array_almost_equal(tmp2, 
+                tsd2.values.reshape(tsd2.shape[0], -1))
+
+            tsd2 = tsd.smooth(1, size_factor=200, norm=False)
+            tmp = tsd.values.reshape(tsd.shape[0], -1)
+            tmp2 = np.zeros_like(tmp)
+            std = int(tsd.rate * 1)
+            M = std*200
+            window = signal.windows.gaussian(M, std=std)            
+            for i in range(tmp.shape[-1]):
+                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[M//2:1-M//2]
+            np.testing.assert_array_almost_equal(
+                tmp2, 
+                tsd2.values.reshape(tsd2.shape[0], -1)
+                )
+
+    def test_smooth_raise_error(self, tsd):
+        if not isinstance(tsd, nap.Ts):
             with pytest.raises(AssertionError) as e_info:
-                tsd.smooth('a', 20)
-            assert str(e_info.value) == "std should be type int"
+                tsd.smooth('a')
+            assert str(e_info.value) == "std should be type int or float"
 
             with pytest.raises(AssertionError) as e_info:
-                tsd.smooth(2, 'b')
-            assert str(e_info.value) == "size should be type int"
+                tsd.smooth(1, size_factor='b')
+            assert str(e_info.value) == "size_factor should be of type int"
+
+            with pytest.raises(AssertionError) as e_info:
+                tsd.smooth(1, norm=1)
+            assert str(e_info.value) == "norm should be of type boolean"
+
+            with pytest.raises(AssertionError) as e_info:
+                tsd.smooth(1, time_units = 0)
+            assert str(e_info.value) == "time_units should be of type str"
 
 
 
