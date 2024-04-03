@@ -516,7 +516,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         return self.convolve(window)
 
     def interpolate(self, ts, ep=None, left=None, right=None):
-        """Wrapper of the numpy linear interpolation method. See [numpy interpolate](https://numpy.org/doc/stable/reference/generated/numpy.interp.html) 
+        """Wrapper of the numpy linear interpolation method. See [numpy interpolate](https://numpy.org/doc/stable/reference/generated/numpy.interp.html)
         for an explanation of the parameters.
         The argument ts should be Ts, Tsd, TsdFrame, TsdTensor to ensure interpolating from sorted timestamps in the right unit,
 
