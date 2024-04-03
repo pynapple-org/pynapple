@@ -426,6 +426,8 @@ def compute_1d_tuning_curves_continuous(
     """
     if not isinstance(tsdframe, (nap.Tsd, nap.TsdFrame)):
         raise RuntimeError("Unknown format for tsdframe.")
+    elif isinstance(tsdframe, nap.Tsd):
+        tsdframe = tsdframe[:, np.newaxis]
 
     assert isinstance(
         feature, (nap.Tsd, nap.TsdFrame)
@@ -496,6 +498,8 @@ def compute_2d_tuning_curves_continuous(
     """
     if not isinstance(tsdframe, (nap.Tsd, nap.TsdFrame)):
         raise RuntimeError("Unknown format for tsdframe.")
+    elif isinstance(tsdframe, nap.Tsd):
+        tsdframe = tsdframe[:, np.newaxis]
 
     assert isinstance(
         features, nap.TsdFrame
