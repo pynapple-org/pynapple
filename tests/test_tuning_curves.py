@@ -237,7 +237,10 @@ def test_compute_1d_tuning_curves_continuous(tsd, expected_columns):
     [
         (nap.TsdFrame(t=np.arange(0, 100), d=np.ones((100, 1))), does_not_raise()),
         ([1, 2, 3], pytest.raises(RuntimeError, match="Unknown format for tsdframe.")),
-        (nap.TsdTensor(t=np.arange(0, 100), d=np.ones((100, 1, 1))), pytest.raises(RuntimeError, match="Unknown format for tsdframe.")),
+        (
+                nap.TsdTensor(t=np.arange(0, 100), d=np.ones((100, 1, 1))),
+                pytest.raises(RuntimeError, match="Unknown format for tsdframe.")
+        ),
     ]
 )
 @pytest.mark.parametrize(
@@ -257,7 +260,9 @@ def test_compute_1d_tuning_curves_continuous_error_tsdframe(tsdframe, expectatio
     [
         (nap.Tsd(t=np.arange(0, 100, 0.1), d=np.arange(0, 100, 0.1) % 1.0), does_not_raise()),
         (nap.TsdFrame(t=np.arange(0, 100, 0.1), d=np.arange(0, 100, 0.1)[:, None] % 1.0), does_not_raise()),
-        (nap.TsdFrame(t=np.arange(0, 100, 0.1), d=np.arange(0, 200, 0.1).reshape(1000, 2) % 1.0), pytest.raises(AssertionError, match=r"feature should be a Tsd \(or TsdFrame with 1 column only\)"))
+        (
+                nap.TsdFrame(t=np.arange(0, 100, 0.1), d=np.arange(0, 200, 0.1).reshape(1000, 2) % 1.0),
+                pytest.raises(AssertionError, match=r"feature should be a Tsd \(or TsdFrame with 1 column only\)"))
     ]
 )
 @pytest.mark.parametrize(
@@ -296,7 +301,11 @@ def test_compute_1d_tuning_curves_continuous_with_min_max():
     "tsdframe, expected_columns",
     [
         (nap.TsdFrame(t=np.arange(0, 100), d=np.hstack((np.ones((100, 1)), np.ones((100, 1)) * 2))), [0, 1]),
-        (nap.TsdFrame(t=np.arange(0, 100), d=np.hstack((np.ones((100, 1)), np.ones((100, 1)) * 2)), columns=["x", "y"]), ["x", "y"]),
+        (
+                nap.TsdFrame(t=np.arange(0, 100), d=np.hstack((np.ones((100, 1)), np.ones((100, 1)) * 2)),
+                             columns=["x", "y"]),
+                ["x", "y"]
+        ),
         (nap.Tsd(t=np.arange(0, 100), d=np.hstack((np.ones((100, )) * 2))), [0])
 
     ]
