@@ -19,9 +19,6 @@ from numbers import Number
 import numpy as np
 import pynwb
 from pynwb import NWBHDF5IO
-
-# from rich.console import Console
-# from rich.table import Table
 from tabulate import tabulate
 
 from .. import core as nap
