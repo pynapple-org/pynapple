@@ -366,10 +366,14 @@ def test_compute_2d_tuning_curves_continuous_error_tsdframe():
     ]
 
 )
-def test_compute_2d_tuning_curves_continuous_error_feature(features, expectation):
-    tsdframe = nap.TsdFrame(
-        t=np.arange(0, 100), d=np.hstack((np.ones((100, 1)), np.ones((100, 1)) * 2))
-    )
+@pytest.mark.parametrize(
+    "tsdframe",
+    [
+        nap.TsdFrame(t=np.arange(0, 100), d=np.hstack((np.ones((100, 1)), np.ones((100, 1)) * 2))),
+        nap.Tsd(t=np.arange(0, 100), d=np.ones((100, )))
+    ]
+)
+def test_compute_2d_tuning_curves_continuous_error_feature(tsdframe, features, expectation):
     with expectation:
         nap.compute_2d_tuning_curves_continuous(tsdframe, features, 2)
 
