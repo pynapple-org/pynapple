@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-03 10:23:28
+# @Last Modified time: 2024-04-03 11:13:14
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -416,7 +416,7 @@ class Test_Time_Series_1:
 
             with pytest.raises(AssertionError) as e_info:
                 tsd.convolve([1,2,3])
-            assert str(e_info.value) == "Input should be a 1-d numpy array."
+            assert str(e_info.value) == "Input should be a numpy array (or jax array if pynajax is installed)."
 
             with pytest.raises(AssertionError) as e_info:
                 tsd.convolve(np.random.rand(2,3))
