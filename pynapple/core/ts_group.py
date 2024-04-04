@@ -78,7 +78,8 @@ class TsGroup(UserDict):
         Parameters
         ----------
         data : dict
-            Dictionnary containing Ts/Tsd objects
+            Dictionary containing Ts/Tsd objects, keys should contain integer values or should be convertible
+            to integer.
         time_support : IntervalSet, optional
             The time support of the TsGroup. Ts/Tsd objects will be restricted to the time support if passed.
             If no time support is specified, TsGroup will merge time supports from all the Ts/Tsd objects in data.
@@ -95,10 +96,33 @@ class TsGroup(UserDict):
         ------
         RuntimeError
             Raise error if the union of time support of Ts/Tsd object is empty.
+        ValueError
+            - If a key cannot be converted to integer.
+            - If a key was a floating point with non-negligible decimal part.
+            - If the converted keys are not unique, i.e. {1: ts_2, "2":ts_2} is valid,
+            {1: ts_2, "1":ts_2}  is invalid.
         """
         self._initialized = False
 
-        self.index = np.sort(list(data.keys()))
+        # convert all keys to integer
+        try:
+            keys = [int(k) for k in data.keys()]
+        except Exception:
+            raise ValueError("keys must be convertible to integer.")
+
+        # check that there were no floats with decimal points in keys.i
+        # i.e. 0.5 is not a valid key
+        if not all(np.allclose(keys[j], float(k)) for j, k in enumerate(data.keys())):
+            raise ValueError("All keys must have integer value!}")
+
+        # check that we have the same num of unique keys
+        # {"0":val, 0:val} would be a problem...
+        if len(keys) != len(np.unique(keys)):
+            raise ValueError("Two dictionary keys contain the same integer value!")
+
+
+        data = {keys[j]: data[k] for j, k in enumerate(data.keys())}
+        self.index = np.sort(keys)
 
         self._metadata = pd.DataFrame(index=self.index, columns=["rate"], dtype="float")
 
