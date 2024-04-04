@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2024-02-09 11:45:45
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-03 11:54:27
+# @Last Modified time: 2024-04-04 17:48:48
 
 """
     Utility functions
@@ -366,11 +366,8 @@ def _jitfix_iset(start, end):
         Description
     """
     to_warn = np.zeros(4, dtype=np.bool_)
-
     m = start.shape[0]
-
     data = np.zeros((m, 2), dtype=np.float64)
-
     i = 0
     ct = 0
 
@@ -395,6 +392,9 @@ def _jitfix_iset(start, end):
                 newstart = start[i]
                 newend = end[i]
                 break
+
+        if i >= m:
+            break
 
         while i < m - 1:
             if start[i + 1] < end[i]:

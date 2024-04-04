@@ -3,7 +3,8 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:15:02
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-04 10:33:04
+# @Last Modified time: 2024-04-04 17:49:05
+
 
 """Tests for IntervalSet of `pynapple` package."""
 
@@ -411,6 +412,18 @@ def test_jitfix_iset_error3():
     with warnings.catch_warnings(record=True) as w:
         nap.IntervalSet(start=start, end=end)
     assert str(w[0].message) == "Some epochs have no duration"
+
+def test_jitfix_iset_random():
+    for i in range(10):
+        np.random.seed(42)
+        start = np.sort(np.random.uniform(0, 1000, 100))
+        end = np.sort(np.random.uniform(0, 1000, 100))
+
+        ep, to_warn = nap.core.utils._jitfix_iset(start, end)
+
+        if len(ep):
+            assert np.all(ep[:,1] - ep[:,0] > 0)
+            assert np.all(np.diff(ep.flatten())>0)
 
 def test_raise_warning():
     start = np.around(np.array([0, 15, 16], dtype=np.float64), 9)
