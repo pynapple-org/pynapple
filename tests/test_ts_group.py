@@ -12,25 +12,59 @@ import pandas as pd
 import pytest
 from collections import UserDict
 import warnings
+from contextlib import nullcontext as does_not_raise
 
 
-@pytest.mark.parametrize(
-    "group",
-    [
-        {
-            0: nap.Ts(t=np.arange(0, 200)),
-            1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
-            2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
-        }
-    ],
-)
-class Test_Ts_Group_1:
+@pytest.fixture
+def group():
+    """Fixture to be used in all tests."""
+    return {
+        0: nap.Ts(t=np.arange(0, 200)),
+        1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
+        2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
+    }
+
+
+class TestTsGroup1:
+
     def test_create_ts_group(self, group):
         tsgroup = nap.TsGroup(group)
         assert isinstance(tsgroup, UserDict)
         assert len(tsgroup) == 3
 
-    def test_create_ts_group_from_array(self, group):
+    @pytest.mark.parametrize(
+        "test_dict, expectation",
+        [
+            ({"1": nap.Ts(np.arange(10)), "2":nap.Ts(np.arange(10))}, does_not_raise()),
+            ({"1": nap.Ts(np.arange(10)), 2: nap.Ts(np.arange(10))}, does_not_raise()),
+            ({"1": nap.Ts(np.arange(10)), 1: nap.Ts(np.arange(10))},
+             pytest.raises(ValueError, match="Two dictionary keys contain the same integer")),
+            ({"1.": nap.Ts(np.arange(10)), 2: nap.Ts(np.arange(10))},
+             pytest.raises(ValueError, match="All keys must be convertible")),
+            ({-1: nap.Ts(np.arange(10)), 1: nap.Ts(np.arange(10))}, does_not_raise()),
+            ({1.5: nap.Ts(np.arange(10)), 1: nap.Ts(np.arange(10))},
+             pytest.raises(ValueError, match="All keys must have integer value"))
+
+        ]
+    )
+    def test_initialize_from_dict(self, test_dict, expectation):
+        with expectation:
+            nap.TsGroup(test_dict)
+
+    @pytest.mark.parametrize(
+        "tsgroup",
+        [
+            nap.TsGroup({"1": nap.Ts(np.arange(10)), "2": nap.Ts(np.arange(10))}),
+            nap.TsGroup({"1": nap.Ts(np.arange(10)), 2: nap.Ts(np.arange(10))}),
+            nap.TsGroup({-1: nap.Ts(np.arange(10)), 1: nap.Ts(np.arange(10))})
+
+        ]
+    )
+    def test_metadata_len_match(self, tsgroup):
+        assert len(tsgroup._metadata) == len(tsgroup)
+
+
+    def test_create_ts_group_from_array(self):
         with warnings.catch_warnings(record=True) as w:
             nap.TsGroup({
                 0: np.arange(0, 200),
@@ -48,7 +82,7 @@ class Test_Ts_Group_1:
         assert np.all(first >= ep[0, 0])
         assert np.all(last <= ep[0, 1])
 
-    def test_create_ts_group_with_empty_time_support(self, group):
+    def test_create_ts_group_with_empty_time_support(self):
         with pytest.raises(RuntimeError) as e_info:
             tmp = nap.TsGroup({
                 0: nap.Ts(t=np.array([])),
@@ -57,7 +91,7 @@ class Test_Ts_Group_1:
                 })
         assert str(e_info.value) == "Union of time supports is empty. Consider passing a time support as argument."
 
-    def test_create_ts_group_with_bypass_check(self, group):
+    def test_create_ts_group_with_bypass_check(self):
         tmp = {
             0: nap.Ts(t=np.arange(0, 100)),
             1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
@@ -373,7 +407,6 @@ class Test_Ts_Group_1:
             tsgroup.getby_threshold("sr", 1, op)
         assert str(e_info.value) == "Operation {} not recognized.".format(op)
 
-
     def test_intervals_slicing(self, group):
         sr_info = pd.Series(index=[0, 1, 2], data=[0, 1, 2], name="sr")
         tsgroup = nap.TsGroup(group, sr=sr_info)
@@ -459,7 +492,6 @@ class Test_Ts_Group_1:
         tsd4 = tsgroup.to_tsd(beta)
         np.testing.assert_array_almost_equal(tsd4.index, times)
         np.testing.assert_array_almost_equal(tsd4.values, np.array([beta[int(i)] for i in data]))
-
 
     def test_to_tsd_runtime_errors(self, group):
 
