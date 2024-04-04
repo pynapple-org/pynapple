@@ -614,3 +614,62 @@ class TestTsGroup1:
         with expectation:
             out = ts_group[keys]
 
+    @pytest.mark.parametrize(
+        "name, expectation",
+        [
+            ("a", does_not_raise()),
+            ("ab", does_not_raise()),
+            ("__1", does_not_raise()),
+            (1, pytest.raises(ValueError, match="Metadata keys must be strings")),
+            (1.1, pytest.raises(ValueError, match="Metadata keys must be strings")),
+            (np.arange(1), pytest.raises(ValueError, match="Metadata keys must be strings")),
+            (np.arange(2), pytest.raises(ValueError, match="Metadata keys must be strings"))
+        ]
+    )
+    def test_setitem_metadata_key(self, group, name, expectation):
+        group = nap.TsGroup(group)
+        with expectation:
+            group[name] = np.arange(len(group))
+
+    @pytest.mark.parametrize(
+        "val, expectation",
+        [
+            (np.arange(3), does_not_raise()),
+            (pd.Series(range(3)), does_not_raise()),
+            ([1, 2, 3], does_not_raise()),
+            ((1, 2, 3), does_not_raise()),
+            (1, pytest.raises(TypeError, match="Metadata columns provided must be")),
+            (1.1, pytest.raises(TypeError, match="Metadata columns provided must be")),
+            (np.arange(1), pytest.raises(RuntimeError, match="Array is not the same length")),
+            (np.arange(2), pytest.raises(RuntimeError, match="Array is not the same length"))
+        ]
+    )
+    def test_setitem_metadata_key(self, group, val, expectation):
+        group = nap.TsGroup(group)
+        with expectation:
+            group["a"] = val
+
+    def test_setitem_metadata_vals(self, group):
+        group = nap.TsGroup(group)
+        group["a"] = np.arange(len(group))
+        assert all(group._metadata["a"] == np.arange(len(group)))
+
+    def test_setitem_metadata_twice(self, group):
+        group = nap.TsGroup(group)
+        group["a"] = np.arange(len(group))
+        group["a"] = np.arange(len(group)) + 10
+        assert all(group._metadata["a"] == np.arange(len(group)) + 10)
+
+    def test_setitem_metadata_twice_fail(self, group):
+        group = nap.TsGroup(group)
+        group["a"] = np.arange(len(group))
+        raised = False
+        try:
+            group["a"] = np.arange(1)
+        except:
+            raised = True
+            # check no changes have been made
+            assert all(group._metadata["a"] == np.arange(len(group)))
+
+        if not raised:
+            raise ValueError
