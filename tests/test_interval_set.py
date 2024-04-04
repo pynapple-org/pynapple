@@ -3,7 +3,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:15:02
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-03-29 11:04:32
+# @Last Modified time: 2024-04-04 10:33:04
 
 """Tests for IntervalSet of `pynapple` package."""
 
@@ -203,11 +203,11 @@ def test_array_ufunc():
 
     # test warning
     from contextlib import nullcontext as does_not_raise
-    nap.config.nap_config.suppress_conversion_warnings = True
+    nap.nap_config.suppress_conversion_warnings = True
     with does_not_raise():
         np.exp(ep)
 
-    nap.config.nap_config.suppress_conversion_warnings = False
+    nap.nap_config.suppress_conversion_warnings = False
 
 def test_array_func():
     start = np.array([0, 10, 16], dtype=np.float64)
@@ -226,11 +226,11 @@ def test_array_func():
 
     # test warning
     from contextlib import nullcontext as does_not_raise
-    nap.config.nap_config.suppress_conversion_warnings = True
+    nap.nap_config.suppress_conversion_warnings = True
     with does_not_raise():
         out = np.ravel(ep)
 
-    nap.config.nap_config.suppress_conversion_warnings = False
+    nap.nap_config.suppress_conversion_warnings = False
 
 def test_timespan():
     start = [0, 10, 16, 25]

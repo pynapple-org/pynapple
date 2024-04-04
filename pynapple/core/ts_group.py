@@ -537,7 +537,6 @@ class TsGroup(UserDict):
         ends = ep.end
 
         if isinstance(bin_size, (float, int)):
-            bin_size = float(bin_size)
             bin_size = TsIndex.format_timestamps(np.array([bin_size]), time_units)[0]
             time_index, _ = jitcount(np.array([]), starts, ends, bin_size)
             n = len(self.index)

@@ -2,42 +2,60 @@
 # @Author: Guillaume Viejo
 # @Date:   2024-02-09 11:45:45
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-02 16:19:08
+# @Last Modified time: 2024-04-03 11:54:27
 
 """
     Utility functions
 """
 
 import warnings
-from numbers import Number
 from itertools import combinations
+from numbers import Number
 
 import numpy as np
 from numba import jit
 
 from .config import nap_config
 
+# def not_implemented_in_pynajax(func, which_in, which_out, *args, **kwargs):
 
-def not_implemented_in_pynajax(func, which_in, which_out, *args, **kwargs):
+#     if nap_config.backend == "jax":
+#         import jax
+#         import jax.numpy as jnp
 
-    if nap_config.backend == "jax":
-        import jax
-        import jax.numpy as jnp
-
-        # def wrapper(*args, **kwargs):
-        arguments, struct = jax.tree_util.tree_flatten((args, kwargs))
-        arguments[which_in] = jax.tree_map(np.asarray, arguments[which_in])
-        args, kwargs = jax.tree_util.tree_unflatten(struct, arguments)
-        out = func(*args, **kwargs)
-        out = list(out)
-        out[which_out] = jax.tree_map(jnp.asarray, out[which_out])
-        return tuple(out)
-    else:
-        # def wrapper(*args, **kwargs):
-        return func(*args, **kwargs)
+#         # def wrapper(*args, **kwargs):
+#         arguments, struct = jax.tree_util.tree_flatten((args, kwargs))
+#         arguments[which_in] = jax.tree_map(np.asarray, arguments[which_in])
+#         args, kwargs = jax.tree_util.tree_unflatten(struct, arguments)
+#         out = func(*args, **kwargs)
+#         out = list(out)
+#         out[which_out] = jax.tree_map(jnp.asarray, out[which_out])
+#         return tuple(out)
+#     else:
+#         # def wrapper(*args, **kwargs):
+#         return func(*args, **kwargs)
 
 
 def convert_to_numpy_array(array, array_name):
+    """Convert any array like object to numpy ndarray.
+
+    Parameters
+    ----------
+    array : ArrayLike
+
+    array_name : str
+        Array name if RuntimeError is raised
+
+    Returns
+    -------
+    numpy.ndarray
+        Numpy array object
+
+    Raises
+    ------
+    RuntimeError
+        If input can't be converted to numpy array
+    """
     if isinstance(array, Number):
         return np.array([array])
     elif isinstance(array, (list, tuple)):
@@ -55,6 +73,25 @@ def convert_to_numpy_array(array, array_name):
 
 
 def convert_to_jax_array(array, array_name):
+    """Convert any array like object to jax Array.
+
+    Parameters
+    ----------
+    array : ArrayLike
+
+    array_name : str
+        Array name if RuntimeError is raised or object is casted to numpy
+
+    Returns
+    -------
+    jax.Array
+        Jax array object
+
+    Raises
+    ------
+    RuntimeError
+        If input can't be converted to jax array
+    """
     import jax.numpy as jnp
 
     if isinstance(array, Number):
@@ -75,7 +112,8 @@ def convert_to_jax_array(array, array_name):
 
 def get_backend():
     """
-    Return the current backend of pynapple
+    Return the current backend of pynapple. Possible backends are
+    'numba' or 'jax'.
     """
     return nap_config.backend
 
@@ -189,7 +227,7 @@ def _check_time_equals(time_arrays):
 
     Parameters
     ----------
-    time_arrays : list
+    time_arrays : list of arrays
         The time arrays to compare to each other
 
     Returns

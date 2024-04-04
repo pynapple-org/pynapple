@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:16:22
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-29 15:06:58
+# @Last Modified time: 2024-04-04 10:46:31
 #!/usr/bin/env python
 
 """Tests of correlograms for `pynapple` package."""
@@ -17,19 +17,19 @@ from itertools import combinations
 def test_cross_correlogram():
     t1 = np.array([0])
     t2 = np.array([1])
-    cc, bincenter = nap.process.correlograms.cross_correlogram(t1, t2, 1, 100)
+    cc, bincenter = nap.process.correlograms._cross_correlogram(t1, t2, 1, 100)
     np.testing.assert_approx_equal(cc[101], 1.0)
 
-    cc, bincenter = nap.process.correlograms.cross_correlogram(t2, t1, 1, 100)
+    cc, bincenter = nap.process.correlograms._cross_correlogram(t2, t1, 1, 100)
     np.testing.assert_approx_equal(cc[99], 1.0)
 
     t1 = np.array([0])
     t2 = np.array([100])
-    cc, bincenter = nap.process.correlograms.cross_correlogram(t1, t2, 1, 100)
+    cc, bincenter = nap.process.correlograms._cross_correlogram(t1, t2, 1, 100)
     np.testing.assert_approx_equal(cc[200], 1.0)
 
     t1 = np.array([0, 10])
-    cc, bincenter = nap.process.correlograms.cross_correlogram(t1, t1, 1, 100)
+    cc, bincenter = nap.process.correlograms._cross_correlogram(t1, t1, 1, 100)
     np.testing.assert_approx_equal(cc[100], 1.0)
     np.testing.assert_approx_equal(cc[90], 0.5)
     np.testing.assert_approx_equal(cc[110], 0.5)
@@ -38,7 +38,7 @@ def test_cross_correlogram():
 
     for t in [100, 200, 1000]:
         np.testing.assert_array_almost_equal(
-            nap.process.correlograms.cross_correlogram(np.arange(0, t), np.arange(0, t), 1, t)[0],
+            nap.process.correlograms._cross_correlogram(np.arange(0, t), np.arange(0, t), 1, t)[0],
             np.hstack(
                 (np.arange(0, 1, 1 / t), np.ones(1), np.arange(0, 1, 1 / t)[::-1])
             ),

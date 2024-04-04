@@ -1,5 +1,61 @@
-"""This module deals with package configurations. For now it includes only warning configurations.
+"""This module controls the pynapple configurations.
+
+## Backend configuration
+
+By default, pynapple core functions are compiled with [Numba](https://numba.pydata.org/). 
+It is possible to change the backend to [Jax](https://jax.readthedocs.io/en/latest/index.html) 
+through the [pynajax package](https://github.com/pynapple-org/pynajax).
+
+While numba core functions runs on CPU, the `jax` backend allows pynapple to use GPU accelerated core functions.
+For some core functions, the `jax` backend offers speed gains (provided that Jax runs on the GPU). 
+
+See the example below to update the backend. Don't forget to install [pynajax](https://github.com/pynapple-org/pynajax).
+
+``` py
+import pynapple as nap
+import numpy as np
+nap.nap_config.set_backend("jax") # Default option is 'numba'.
+```
+
+You can view the current backend with 
+``` py
+>>> print(nap.nap_config.backend)
+'jax'
+```
+
+## Warnings configuration
+
+pynapple gives warnings that can be helpful to debug. For example when passing time indexes that are not sorted:
+
+``` py
+>>> import pynapple as nap
+>>> t = [0, 2, 1]
+>>> nap.Ts(t)
+UserWarning: timestamps are not sorted
+  warn("timestamps are not sorted", UserWarning)
+Time (s)
+0.0
+1.0
+2.0
+shape: 3
+```
+
+pynapple's warnings can be suppressed :
+
+``` py
+>>> nap.nap_config.suppress_time_index_sorting_warnings = True
+>>> nap.Ts(t=t)
+Time (s)
+0.0
+1.0
+2.0
+shape: 3
+```
+
 """
+
+import importlib.util
+import warnings
 
 
 class PynappleConfig:
@@ -9,37 +65,10 @@ class PynappleConfig:
     This class includes all configuration settings that control the behavior of
     pynapple. It offers a structured way to access and modify settings.
 
-    Examples
-    --------
-    >>> import pynapple as nap
-    >>> import jax.numpy as jnp
-    >>> t = jnp.arange(3)
-    >>> print(t)
-    Array([0, 1, 2], dtype=int32)
-
-    >>> # Suppress warnings when converting a non-numpy array to numpy array
-    >>> nap.config.nap_config.suppress_conversion_warnings = True
-    >>> nap.Ts(t=t)
-    Time (s)
-    0.0
-    1.0
-    2.0
-    shape: 3
-
-    >>> # Restore to defaults
-    >>> nap.config.nap_config.restore_defaults()
-    >>> nap.Ts(t=t)
-    /mnt/home/gviejo/pynapple/pynapple/core/time_series.py:151: UserWarning: Converting 't' to n
-    umpy.array. The provided array was of type 'ArrayImpl'.
-      warnings.warn(
-    Time (s)
-    0.0
-    1.0
-    2.0
-    shape: 3
-
     Attributes
     ----------
+    backend : str
+        Current pynapple backend. Options are ('numba' [default], 'jax')
     suppress_conversion_warnings : boolean
         Determines whether to suppress warnings when automatically converting non-NumPy
         array-like objects to NumPy arrays. This is useful for users who frequently work with array-like objects from other
@@ -49,7 +78,7 @@ class PynappleConfig:
         Control the warning raised when passing a non-sorted array for time index.
         It can be useful to catch data where timestamps are not properly sorted before using pynapple.
     time_index_precision : int
-        Precision for the time index is set to nanoseconds. It's a fixed parameter in pynapple and cannot be changed.
+        Number of decimal places to round time index. Pynapple's precision is set by default to 9.
     """
 
     def __init__(self):
@@ -74,25 +103,17 @@ class PynappleConfig:
 
         # Try to import pynajax
         if backend == "jax":
-            try:
-                import pynajax as nax
-                self._backend = "jax"
-            except ImportError:
+            spec = importlib.util.find_spec("pynajax")
+            if spec is None:
                 warnings.warn(
-                    "Importing pynajax failed. Falling back to numba. To use the jax backend for pynapple, please install pynajax",
-                    UserWarning,
+                    "Package pynajax is not found. Falling back to numba backend. To use the jax backend for pynapple, please install pynajax",
+                    stacklevel=2,
                 )
                 self._backend = "numba"
+            else:
+                self._backend = "jax"
         else:
             self._backend = "numba"
-
-    @property
-    def get_pynajax_backend_status(self):
-        try:
-            import pynajax
-            self.backend = "jax"
-        except:
-            self.backend = "numba"
 
     @property
     def time_index_precision(self):

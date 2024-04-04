@@ -27,15 +27,8 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from scipy import signal
 from tabulate import tabulate
 
-# to remove
-from ._jitted_functions import (
-    jitbin,
-    jitbin_array,
-    jitremove_nan,    
-    jitthreshold,
-)
 from .base_class import Base
-from .core_function import _convolve, _restrict
+from .core_function import _bin_average, _convolve, _dropna, _restrict, _threshold
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .utils import (
@@ -46,7 +39,6 @@ from .utils import (
     convert_to_numpy_array,
     get_backend,
     is_array_like,
-    not_implemented_in_pynajax,
 )
 
 
@@ -264,6 +256,43 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         )
 
     def value_from(self, data, ep=None):
+        """
+        Replace the value with the closest value from Tsd/TsdFrame/TsdTensor argument
+
+        Parameters
+        ----------
+        data : Tsd, TsdFrame or TsdTensor
+            The object holding the values to replace.
+        ep : IntervalSet (optional)
+            The IntervalSet object to restrict the operation.
+            If None, the time support of the tsd input object is used.
+
+        Returns
+        -------
+        out : Tsd, TsdFrame or TsdTensor
+            Object with the new values
+
+        Examples
+        --------
+        In this example, the ts object will receive the closest values in time from tsd.
+
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
+        >>> ts = nap.Ts(t=t, time_units='s')
+        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+
+        The variable ts is a time series object containing only nan.
+        The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
+
+        >>> newts = ts.value_from(tsd, ep)
+
+        newts is the same size as ts restrict to ep.
+
+        >>> print(len(ts.restrict(ep)), len(newts))
+            52 52
+        """
         assert isinstance(
             data, BaseTsd
         ), "First argument should be an instance of Tsd, TsdFrame or TsdTensor"
@@ -272,6 +301,60 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         return data.__class__(t=t, d=d, time_support=time_support, **kwargs)
 
     def count(self, *args, **kwargs):
+        """
+        Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
+        You can call this function in multiple ways :
+
+        1. *tsd.count(bin_size=1, time_units = 'ms')*
+        -> Count occurence of events within a 1 ms bin defined on the time support of the object.
+
+        2. *tsd.count(1, ep=my_epochs)*
+        -> Count occurent of events within a 1 second bin defined on the IntervalSet my_epochs.
+
+        3. *tsd.count(ep=my_bins)*
+        -> Count occurent of events within each epoch of the intervalSet object my_bins
+
+        4. *tsd.count()*
+        -> Count occurent of events within each epoch of the time support.
+
+        bin_size should be seconds unless specified.
+        If bin_size is used and no epochs is passed, the data will be binned based on the time support of the object.
+
+        Parameters
+        ----------
+        bin_size : None or float, optional
+            The bin size (default is second)
+        ep : None or IntervalSet, optional
+            IntervalSet to restrict the operation
+        time_units : str, optional
+            Time units of bin size ('us', 'ms', 's' [default])
+
+        Returns
+        -------
+        out: Tsd
+            A Tsd object indexed by the center of the bins.
+
+        Examples
+        --------
+        This example shows how to count events within bins of 0.1 second.
+
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
+        >>> ts = nap.Ts(t=t, time_units='s')
+        >>> bincount = ts.count(0.1)
+
+        An epoch can be specified:
+
+        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
+        >>> bincount = ts.count(0.1, ep=ep)
+
+        And bincount automatically inherit ep as time support:
+
+        >>> bincount.time_support
+            start    end
+        0  100.0  800.0
+        """
         t, d, ep = super().count(*args, **kwargs)
         return Tsd(t=t, d=d, time_support=ep)
 
@@ -324,14 +407,13 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         data_array = self.values
         starts = ep.start
         ends = ep.end
-        if data_array.ndim > 1:
-            t, d = jitbin_array(time_array, data_array, starts, ends, bin_size)
-        else:
-            t, d = jitbin(time_array, data_array, starts, ends, bin_size)
+
+        t, d = _bin_average(time_array, data_array, starts, ends, bin_size)
 
         kwargs = {}
         if hasattr(self, "columns"):
             kwargs["columns"] = self.columns
+
         return self.__class__(t=t, d=d, time_support=ep, **kwargs)
 
     def dropna(self, update_time_support=True):
@@ -347,34 +429,30 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         Tsd, TsdFrame or TsdTensor
             The time series without the NaNs
         """
-        index_nan = np.any(np.isnan(self.values), axis=tuple(range(1, self.ndim)))
-        if np.all(index_nan):  # In case it's only NaNs
-            return self.__class__(
-                t=np.array([]), d=np.empty(tuple([0] + [d for d in self.shape[1:]]))
-            )
+        assert isinstance(update_time_support, bool)
 
-        elif np.any(index_nan):
-            if update_time_support:
-                time_array = self.index.values
-                starts, ends = jitremove_nan(time_array, index_nan)
+        time_array = self.index.values
+        data_array = self.values
+        starts = self.time_support.start
+        ends = self.time_support.end
 
-                to_fix = starts == ends
-                if np.any(to_fix):
-                    ends[
-                        to_fix
-                    ] += 1e-6  # adding 1 millisecond in case of a single point
+        t, d, starts, ends = _dropna(
+            time_array, data_array, starts, ends, update_time_support, self.ndim
+        )
 
+        if update_time_support:
+            if is_array_like(starts) and is_array_like(ends):
                 ep = IntervalSet(starts, ends)
-
-                return self.__class__(
-                    t=time_array[~index_nan], d=self.values[~index_nan], time_support=ep
-                )
-
             else:
-                return self[~index_nan]
-
+                ep = None
         else:
-            return self
+            ep = self.time_support
+
+        kwargs = {}
+        if hasattr(self, "columns"):
+            kwargs["columns"] = self.columns
+
+        return self.__class__(t=t, d=d, time_support=ep)
 
     def convolve(self, array, ep=None, trim="both"):
         """Return the discrete linear convolution of the time series with a one dimensional sequence.
@@ -1150,16 +1228,17 @@ class Tsd(BaseTsd):
         >>> 0   50.5  99.0
 
         """
-        time_array = self.index.values
-        data_array = self.values
-        starts = self.time_support.start
-        ends = self.time_support.end
         if method not in ["above", "below", "aboveequal", "belowequal"]:
             raise ValueError(
                 "Method {} for thresholding is not accepted.".format(method)
             )
 
-        t, d, ns, ne = jitthreshold(time_array, data_array, starts, ends, thr, method)
+        time_array = self.index.values
+        data_array = self.values
+        starts = self.time_support.start
+        ends = self.time_support.end
+
+        t, d, ns, ne = _threshold(time_array, data_array, starts, ends, thr, method)
         time_support = IntervalSet(start=ns, end=ne)
         return Tsd(t=t, d=d, time_support=time_support)
 

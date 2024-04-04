@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-01-02 11:39:55
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-21 15:48:15
+# @Last Modified time: 2024-04-04 10:46:03
 
 
 from itertools import combinations, product
@@ -18,7 +18,7 @@ from .. import core as nap
 # CORRELATION
 #########################################################
 @jit(nopython=True)
-def cross_correlogram(t1, t2, binsize, windowsize):
+def _cross_correlogram(t1, t2, binsize, windowsize):
     """
     Performs the discrete cross-correlogram of two time series.
     The units should be in s for all arguments.
@@ -142,7 +142,7 @@ def compute_autocorrelogram(
 
     for n in newgroup.keys():
         spk_time = newgroup[n].index
-        auc, times = cross_correlogram(spk_time, spk_time, binsize, windowsize)
+        auc, times = _cross_correlogram(spk_time, spk_time, binsize, windowsize)
         autocorrs[n] = pd.Series(index=np.round(times, 6), data=auc, dtype="float")
 
     autocorrs = pd.DataFrame.from_dict(autocorrs)
@@ -225,7 +225,7 @@ def compute_crosscorrelogram(
         for i, j in pairs:
             spk1 = newgroup[i].index
             spk2 = newgroup[j].index
-            auc, times = cross_correlogram(spk1, spk2, binsize, windowsize)
+            auc, times = _cross_correlogram(spk1, spk2, binsize, windowsize)
             crosscorrs[(i, j)] = pd.Series(index=times, data=auc, dtype="float")
 
         crosscorrs = pd.DataFrame.from_dict(crosscorrs)
@@ -252,7 +252,7 @@ def compute_crosscorrelogram(
         for i, j in pairs:
             spk1 = newgroup[0][i].index
             spk2 = newgroup[1][j].index
-            auc, times = cross_correlogram(spk1, spk2, binsize, windowsize)
+            auc, times = _cross_correlogram(spk1, spk2, binsize, windowsize)
             if norm:
                 auc /= newgroup[1][j].rate
             crosscorrs[(i, j)] = pd.Series(index=times, data=auc, dtype="float")
@@ -327,7 +327,7 @@ def compute_eventcorrelogram(
 
     for n in newgroup.keys():
         spk_time = newgroup[n].index
-        auc, times = cross_correlogram(tsd1, spk_time, binsize, windowsize)
+        auc, times = _cross_correlogram(tsd1, spk_time, binsize, windowsize)
         crosscorrs[n] = pd.Series(index=times, data=auc, dtype="float")
 
     crosscorrs = pd.DataFrame.from_dict(crosscorrs)

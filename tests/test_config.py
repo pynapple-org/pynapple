@@ -6,6 +6,8 @@ import pynapple as nap
 
 import numpy as np
 
+import warnings
+
 class MockArray:
     """
     A mock array class designed for testing purposes. It mimics the behavior of array-like objects
@@ -54,7 +56,40 @@ class MockArray:
         """
         return len(self.data)
 
+##################################
+# Test for backend
+##################################
 
+def test_change_backend():
+    nap.nap_config.set_backend("numba")
+
+    assert nap.core.utils.get_backend() == "numba"
+    assert nap.nap_config.backend == "numba"
+
+    with pytest.raises(AssertionError, match="Options for backend are 'jax' or 'numba'"):
+        nap.nap_config.set_backend("blabla")
+
+    # For local tests.
+    # Should not be installed for github actions    
+    try:
+        import pynajax
+        
+        nap.nap_config.set_backend("jax")
+        assert nap.core.utils.get_backend() == "jax"
+        assert nap.nap_config.backend == "jax"
+
+    except ModuleNotFoundError:        
+
+        with warnings.catch_warnings(record=True) as w:
+            nap.nap_config.set_backend("jax")
+
+        assert str(w[0].message) == 'Package pynajax is not found. Falling back to numba backend. To use the jax backend for pynapple, please install pynajax'
+        assert nap.core.utils.get_backend() == "numba"
+        assert nap.nap_config.backend == "numba"
+    
+##################################
+# Tests for warnings
+##################################
 @pytest.mark.parametrize("param, expectation",
                          [
                              (True, does_not_raise()),
@@ -65,20 +100,20 @@ class MockArray:
 def test_config_setter_input_validity(param, expectation):
     """Test setting suppress_conversion_warnings with various inputs to validate type checking."""
     with expectation:
-        nap.config.nap_config.suppress_conversion_warnings = param
+        nap.nap_config.suppress_conversion_warnings = param
 
 
 def test_config_setter_output():
     """Test if suppress_conversion_warnings property correctly retains a True value after being set."""
-    nap.config.nap_config.suppress_conversion_warnings = True
-    assert nap.config.nap_config.suppress_conversion_warnings
+    nap.nap_config.suppress_conversion_warnings = True
+    assert nap.nap_config.suppress_conversion_warnings
 
 
 def test_config_restore_default():
     """Test if the restore_defaults method correctly resets suppress_conversion_warnings to its default."""
-    nap.config.nap_config.suppress_conversion_warnings = True
-    nap.config.nap_config.restore_defaults()
-    assert not nap.config.nap_config.suppress_conversion_warnings
+    nap.nap_config.suppress_conversion_warnings = True
+    nap.nap_config.restore_defaults()
+    assert not nap.nap_config.suppress_conversion_warnings
 
 
 @pytest.mark.parametrize("cls, t, d, conf, expectation",
@@ -99,7 +134,7 @@ def test_config_restore_default():
                          ])
 def test_config_supress_warning_t(cls, t, d, conf, expectation):
     """Test if the restore_defaults method correctly resets suppress_conversion_warnings to its default."""
-    nap.config.nap_config.suppress_conversion_warnings = conf
+    nap.nap_config.suppress_conversion_warnings = conf
     try:
         with expectation:
             if d is None:
@@ -107,7 +142,7 @@ def test_config_supress_warning_t(cls, t, d, conf, expectation):
             else:
                 cls(t=MockArray(t), d=d)
     finally:
-        nap.config.nap_config.restore_defaults()
+        nap.nap_config.restore_defaults()
 
 @pytest.mark.parametrize("cls, t, d, conf, expectation",
                          [
@@ -124,13 +159,13 @@ def test_config_supress_warning_t(cls, t, d, conf, expectation):
                          ])
 def test_config_supress_warning_d(cls, t, d, conf, expectation):
     """Test if the restore_defaults method correctly resets suppress_conversion_warnings to its default."""
-    nap.config.nap_config.suppress_conversion_warnings = conf
+    nap.nap_config.suppress_conversion_warnings = conf
     try:
         with expectation:
             cls(t=t, d=MockArray(d))
     finally:
-        nap.config.nap_config.restore_defaults()
+        nap.nap_config.restore_defaults()
 
 
 def test_get_time_index_precision():
-    assert nap.config.nap_config.time_index_precision == 9
+    assert nap.nap_config.time_index_precision == 9

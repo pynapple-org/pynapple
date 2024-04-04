@@ -14,15 +14,15 @@ from scipy import signal
 from ._jitted_functions import (
     jitbin,
     jitbin_array,
+    jitcount,
     jitremove_nan,
     jitrestrict,
     jitthreshold,
     jittsrestrict,
-    pjitconvolve,
-    jitcount,
-    jittsrestrict_with_count,    
+    jittsrestrict_with_count,
     jitvaluefrom,
-    jitvaluefromtensor,    
+    jitvaluefromtensor,
+    pjitconvolve,
 )
 from .utils import get_backend
 
@@ -68,6 +68,7 @@ def _convolve(time_array, data_array, starts, ends, array, trim="both"):
 def _restrict(time_array, data_array, starts, ends):
     if get_backend() == "jax":
         from pynajax.jax_core_restrict import restrict
+
         return restrict(time_array, data_array, starts, ends)
     else:
         if data_array is not None:
@@ -79,19 +80,24 @@ def _restrict(time_array, data_array, starts, ends):
 def _count(time_array, starts, ends, bin_size=None):
     if get_backend() == "jax":
         from pynajax.jax_core_count import count
+
         return count(time_array, starts, ends, bin_size)
     else:
         if isinstance(bin_size, (float, int)):
-            return jitcount(time_array, starts, ends, bin_size)            
+            return jitcount(time_array, starts, ends, bin_size)
         else:
             _, d = jittsrestrict_with_count(time_array, starts, ends)
             t = starts + (ends - starts) / 2
             return t, d
 
+
 def _value_from(time_array, time_target_array, data_target_array, starts, ends):
     if get_backend() == "jax":
         from pynajax.jax_core_value_from import value_from
-        return value_from(time_array, time_target_array, data_target_array, starts, ends)
+
+        return value_from(
+            time_array, time_target_array, data_target_array, starts, ends
+        )
     else:
         if data_target_array.ndim == 1:
             t, d, ns, ne = jitvaluefrom(
@@ -103,13 +109,59 @@ def _value_from(time_array, time_target_array, data_target_array, starts, ends):
             )
         return t, d, ns, ne
 
-def _bin_average():
-    pass
+
+def _bin_average(time_array, data_array, starts, ends, bin_size):
+    if get_backend() == "jax":
+        from pynajax.jax_core_bin_average import bin_average
+
+        return bin_average(time_array, data_array, starts, ends, bin_size)
+    else:
+        if data_array.ndim > 1:
+            t, d = jitbin_array(time_array, data_array, starts, ends, bin_size)
+        else:
+            t, d = jitbin(time_array, data_array, starts, ends, bin_size)
+
+        return t, d
 
 
-def _interpolate():
-    pass
+def _threshold(time_array, data_array, starts, ends, thr, method):
+    if get_backend() == "jax":
+        from pynajax.jax_core_threshold import threshold
+
+        return threshold(time_array, data_array, starts, ends, thr, method)
+    else:
+        return jitthreshold(time_array, data_array, starts, ends, thr, method)
 
 
-def _threshold():
-    pass
+def _dropna(time_array, data_array, starts, ends, update_time_support, ndim):
+    if get_backend() == "jax":
+        from pynajax.jax_core_dropna import dropna
+
+        return dropna(time_array, data_array, starts, ends, update_time_support)
+    else:
+        index_nan = np.any(np.isnan(data_array), axis=tuple(range(1, ndim)))
+        if np.all(index_nan):  # In case it's only NaNs
+            if update_time_support:
+                starts = None
+                ends = None
+            return (
+                np.array([]),
+                np.empty(tuple([0] + [d for d in data_array.shape[1:]])),
+                starts,
+                ends,
+            )
+        elif np.any(index_nan):
+            if update_time_support:
+                starts, ends = jitremove_nan(time_array, index_nan)
+
+                to_fix = starts == ends
+                if np.any(to_fix):
+                    ends[
+                        to_fix
+                    ] += 1e-6  # adding 1 millisecond in case of a single point
+
+                return (time_array[~index_nan], data_array[~index_nan], starts, ends)
+            else:
+                return (time_array[~index_nan], data_array[~index_nan], starts, ends)
+        else:
+            return (time_array, data_array, starts, ends)
