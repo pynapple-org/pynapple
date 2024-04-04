@@ -12,6 +12,7 @@ import pandas as pd
 import pytest
 from collections import UserDict
 import warnings
+from contextlib import nullcontext as does_not_raise
 
 
 @pytest.mark.parametrize(
@@ -562,4 +563,23 @@ class Test_Ts_Group_1:
         os.remove("tsgroup2.npz")
         os.remove("tsgroup3.npz")
 
+    @pytest.mark.parametrize(
+        "keys, expectation",
+        [
+            (1, does_not_raise()),
+            ([1, 2], does_not_raise()),
+            ([1, 2], does_not_raise()),
+            (np.array([1, 2]), does_not_raise()),
+            (np.array([False, True, True]), does_not_raise()),
+            ([False, True, True], does_not_raise()),
+            (True, does_not_raise()),
+            (4, pytest.raises(KeyError, match="Can't find key")),
+            ([3, 4], pytest.raises(KeyError, match= r"None of \[Index\(\[3, 4\]")),
+            ([2, 3], pytest.raises(KeyError, match=r"\[3\] not in index"))
+        ]
+    )
+    def test_indexing_type(self, group, keys, expectation):
+        ts_group = nap.TsGroup(group)
+        with expectation:
+            out = ts_group[keys]
 

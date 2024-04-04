@@ -7,6 +7,7 @@
 import os
 import warnings
 from collections import UserDict
+from collections.abc import Hashable
 
 import numpy as np
 import pandas as pd
@@ -170,15 +171,31 @@ class TsGroup(UserDict):
         #     raise ValueError("Value with key {} is not an iterable.".format(key))
 
     def __getitem__(self, key):
-        if key.__hash__:
+        # Standard dict keys are Hashable
+        if isinstance(key, Hashable):
             if self.__contains__(key):
                 return self.data[key]
             else:
                 raise KeyError("Can't find key {} in group index.".format(key))
-        else:
-            metadata = self._metadata.loc[key, self._metadata.columns.drop("rate")]
-            return TsGroup(
-                {k: self[k] for k in key}, time_support=self.time_support, **metadata
+
+        # array boolean are transformed into indices
+        # note that raw boolean are hashable, and won't be
+        # tsd == tsg.to_tsd()
+        elif np.asarray(key).dtype == bool:
+            key = np.asarray(key)
+            if key.ndim != 1:
+                raise KeyError("Only 1-dimensional boolean indices are allowed!")
+            if len(key) != self.__len__():
+                raise IndexError("Boolean index length must be equal to the number of Ts in the group! "
+                                 f"The number of Ts is {self.__len__()}, but the bolean array"
+                                 f"has length {len(key)} instead!")
+            key = np.asarray(self.keys())[key]
+        return self._ts_group_from_keys(key)
+
+    def _ts_group_from_keys(self, keys):
+        metadata = self._metadata.loc[keys, self._metadata.columns.drop("rate")]
+        return TsGroup(
+                {k: self[k] for k in keys}, time_support=self.time_support, **metadata
             )
 
     def __repr__(self):
