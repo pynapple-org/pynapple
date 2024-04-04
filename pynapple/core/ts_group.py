@@ -99,8 +99,8 @@ class TsGroup(UserDict):
         ValueError
             - If a key cannot be converted to integer.
             - If a key was a floating point with non-negligible decimal part.
-            - If the converted keys are not unique, i.e. {1: ts_2, "2":ts_2} is valid,
-            {1: ts_2, "1":ts_2}  is invalid.
+            - If the converted keys are not unique, i.e. {1: ts_2, "2": ts_2} is valid,
+            {1: ts_2, "1": ts_2}  is invalid.
         """
         self._initialized = False
 
