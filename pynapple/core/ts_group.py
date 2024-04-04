@@ -9,6 +9,7 @@ import warnings
 from collections import UserDict
 from collections.abc import Hashable
 
+import numpy
 import numpy as np
 import pandas as pd
 from tabulate import tabulate
@@ -170,34 +171,58 @@ class TsGroup(UserDict):
     Base functions
     """
 
-    def __setitem__(self, key, value):
-        if self._initialized:
-            raise RuntimeError("TsGroup object is not mutable.")
+    def __getattr__(self, name):
+        """
+        Allows dynamic access to metadata columns as properties.
 
-        self._metadata.loc[int(key), "rate"] = float(value.rate)
-        super().__setitem__(int(key), value)
-        # if self.__contains__(key):
-        #     raise KeyError("Key {} already in group index.".format(key))
-        # else:
-        # if isinstance(value, (Ts, Tsd)):
-        #     self._metadata.loc[int(key), "rate"] = value.rate
-        #     super().__setitem__(int(key), value)
-        # elif isinstance(value, (np.ndarray, list)):
-        #     warnings.warn(
-        #         "Elements should not be passed as numpy array. Default time units is seconds when creating the Ts object.",
-        #         stacklevel=2,
-        #     )
-        #     tmp = Ts(t=value, time_units="s")
-        #     self._metadata.loc[int(key), "rate"] = tmp.rate
-        #     super().__setitem__(int(key), tmp)
-        # else:
-        #     raise ValueError("Value with key {} is not an iterable.".format(key))
+        Parameters
+        ----------
+        name : str
+            The name of the metadata column to access.
+
+        Returns
+        -------
+        pandas.Series
+            The series of values for the requested metadata column.
+
+        Raises
+        ------
+        AttributeError
+            If the requested attribute is not a metadata column.
+        """
+        # Check if the requested attribute is part of the metadata
+        if name in self._metadata.columns:
+            return self._metadata[name]
+        else:
+            # If the attribute is not part of the metadata, raise AttributeError
+            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+
+    def __setitem__(self, key, value):
+        if not self._initialized:
+            self._metadata.loc[int(key), "rate"] = float(value.rate)
+            super().__setitem__(int(key), value)
+        else:
+            if not isinstance(key, str):
+                raise ValueError("Metadata keys must be strings!")
+            # replicate pandas behavior of over-writing cols
+            if key in self._metadata.columns:
+                old_meta = self._metadata.copy()
+                self._metadata.pop(key)
+                try:
+                    self.set_info(**{key: value})
+                except Exception:
+                    self._metadata = old_meta
+                    raise
+            else:
+                self.set_info(**{key: value})
 
     def __getitem__(self, key):
         # Standard dict keys are Hashable
         if isinstance(key, Hashable):
             if self.__contains__(key):
                 return self.data[key]
+            elif key in self._metadata.columns:
+                return self.get_info(key)
             else:
                 raise KeyError("Can't find key {} in group index.".format(key))
 
@@ -287,9 +312,25 @@ class TsGroup(UserDict):
         """
         return list(self._metadata.columns)
 
+    def _check_metadata_colum_names(self, *args, **kwargs):
+        invalid_cols = []
+        for arg in args:
+            if isinstance(arg, pd.DataFrame):
+                invalid_cols += [col for col in arg.columns if hasattr(self, col)]
+
+        for k, v in kwargs.items():
+            if isinstance(v, pd.Series) and hasattr(self, k):
+                invalid_cols += [k]
+            elif isinstance(v, (list, numpy.ndarray)) and hasattr(self, k):
+                invalid_cols += [k]
+
+        if invalid_cols:
+            raise ValueError(f"Invalid metadata name(s) {invalid_cols}. Metadata name must differ from "
+                             f"TsGroup attribute names!")
+
     def set_info(self, *args, **kwargs):
         """
-        Add metadata informations about the TsGroup.
+        Add metadata information about the TsGroup.
         Metadata are saved as a DataFrame.
 
         Parameters
@@ -306,6 +347,8 @@ class TsGroup(UserDict):
                 no column labels are found when passing simple arguments,
                 indexes are not equals for a pandas series,+
                 not the same length when passing numpy array.
+        TypeError
+            If some of the provided metadata could not be set.
 
         Examples
         --------
@@ -341,6 +384,10 @@ class TsGroup(UserDict):
               2             4  ca1          1
 
         """
+        # check for duplicate names, otherwise "self.metadata_name"
+        # syntax would behave unexpectedly.
+        self._check_metadata_colum_names(*args, **kwargs)
+        not_set = []
         if len(args):
             for arg in args:
                 if isinstance(arg, pd.DataFrame):
@@ -350,6 +397,8 @@ class TsGroup(UserDict):
                         raise RuntimeError("Index are not equals")
                 elif isinstance(arg, (pd.Series, np.ndarray, list)):
                     raise RuntimeError("Argument should be passed as keyword argument.")
+                else:
+                    not_set.append(arg)
         if len(kwargs):
             for k, v in kwargs.items():
                 if isinstance(v, pd.Series):
@@ -364,7 +413,11 @@ class TsGroup(UserDict):
                         self._metadata[k] = np.asarray(v)
                     else:
                         raise RuntimeError("Array is not the same length.")
-        return
+                else:
+                    not_set.append({k: v})
+        if not_set:
+            raise TypeError(f"Cannot set the following metadata:\n{not_set}.\nMetadata columns provided must be  "
+                            f"of type `panda.Series`, `tuple`, `list`, or `numpy.ndarray`.")
 
     def get_info(self, key):
         """
