@@ -14,8 +14,10 @@ from collections import UserDict
 import warnings
 from contextlib import nullcontext as does_not_raise
 
+
 @pytest.fixture
 def group():
+    """Fixture to be used in all tests."""
     return {
         0: nap.Ts(t=np.arange(0, 200)),
         1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
@@ -70,6 +72,7 @@ class TestTsGroup1:
                 2: np.arange(0, 300, 0.2),
                 })
         assert str(w[0].message) == "Elements should not be passed as <class 'numpy.ndarray'>. Default time units is seconds when creating the Ts object."
+
     def test_create_ts_group_with_time_support(self, group):
         ep = nap.IntervalSet(start=0, end=100)
         tsgroup = nap.TsGroup(group, time_support=ep)
@@ -404,7 +407,6 @@ class TestTsGroup1:
             tsgroup.getby_threshold("sr", 1, op)
         assert str(e_info.value) == "Operation {} not recognized.".format(op)
 
-
     def test_intervals_slicing(self, group):
         sr_info = pd.Series(index=[0, 1, 2], data=[0, 1, 2], name="sr")
         tsgroup = nap.TsGroup(group, sr=sr_info)
@@ -490,7 +492,6 @@ class TestTsGroup1:
         tsd4 = tsgroup.to_tsd(beta)
         np.testing.assert_array_almost_equal(tsd4.index, times)
         np.testing.assert_array_almost_equal(tsd4.values, np.array([beta[int(i)] for i in data]))
-
 
     def test_to_tsd_runtime_errors(self, group):
 
