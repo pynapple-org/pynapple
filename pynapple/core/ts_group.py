@@ -73,7 +73,7 @@ class TsGroup(UserDict):
         self, data, time_support=None, time_units="s", bypass_check=False, **kwargs
     ):
         """
-        TsGroup Initializer
+        TsGroup Initializer.
 
         Parameters
         ----------
@@ -90,7 +90,7 @@ class TsGroup(UserDict):
             Useful to speed up initialization of TsGroup when Ts/Tsd objects have already been restricted beforehand
         **kwargs
             Meta-info about the Ts/Tsd objects. Can be either pandas.Series, numpy.ndarray, list or tuple
-            Note that the index should match the index of the input dictionnary if pandas Series
+            Note that the index should match the index of the input dictionary if pandas Series
 
         Raises
         ------
@@ -108,7 +108,7 @@ class TsGroup(UserDict):
         try:
             keys = [int(k) for k in data.keys()]
         except Exception:
-            raise ValueError("keys must be convertible to integer.")
+            raise ValueError("All keys must be convertible to integer.")
 
         # check that there were no floats with decimal points in keys.i
         # i.e. 0.5 is not a valid key
@@ -119,7 +119,6 @@ class TsGroup(UserDict):
         # {"0":val, 0:val} would be a problem...
         if len(keys) != len(np.unique(keys)):
             raise ValueError("Two dictionary keys contain the same integer value!")
-
 
         data = {keys[j]: data[k] for j, k in enumerate(data.keys())}
         self.index = np.sort(keys)
