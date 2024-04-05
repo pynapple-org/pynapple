@@ -318,16 +318,14 @@ class TsGroup(UserDict):
         """
         return list(self._metadata.columns)
 
-    def _check_metadata_colum_names(self, *args, **kwargs):
+    def _check_metadata_column_names(self, *args, **kwargs):
         invalid_cols = []
         for arg in args:
             if isinstance(arg, pd.DataFrame):
                 invalid_cols += [col for col in arg.columns if hasattr(self, col)]
 
         for k, v in kwargs.items():
-            if isinstance(v, pd.Series) and hasattr(self, k):
-                invalid_cols += [k]
-            elif isinstance(v, (list, numpy.ndarray)) and hasattr(self, k):
+            if isinstance(v, (list, numpy.ndarray, pd.Series)) and hasattr(self, k):
                 invalid_cols += [k]
 
         if invalid_cols:
@@ -394,7 +392,7 @@ class TsGroup(UserDict):
         """
         # check for duplicate names, otherwise "self.metadata_name"
         # syntax would behave unexpectedly.
-        self._check_metadata_colum_names(*args, **kwargs)
+        self._check_metadata_column_names(*args, **kwargs)
         not_set = []
         if len(args):
             for arg in args:
