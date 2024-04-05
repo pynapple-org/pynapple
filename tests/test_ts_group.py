@@ -25,6 +25,15 @@ def group():
     }
 
 
+@pytest.fixture
+def ts_group():
+    # Placeholder setup for Ts and Tsd objects. Adjust as necessary.
+    ts1 = nap.Ts(t=np.arange(10))
+    ts2 = nap.Ts(t=np.arange(5))
+    data = {1: ts1, 2: ts2}
+    group = nap.TsGroup(data, meta=[10, 11])
+    return group
+
 class TestTsGroup1:
 
     def test_create_ts_group(self, group):
@@ -649,6 +658,10 @@ class TestTsGroup1:
         group["a"] = np.arange(len(group)) + 10
         assert all(group._metadata["a"] == np.arange(len(group)) + 10)
 
+    def test_prevent_overwriting_existing_methods(self, ts_group):
+        with pytest.raises(ValueError, match=r"Invalid metadata name\(s\)"):
+            ts_group["set_info"] = np.arange(2)
+
     def test_setitem_metadata_twice_fail(self, group):
         group = nap.TsGroup(group)
         group["a"] = np.arange(len(group))
@@ -662,3 +675,72 @@ class TestTsGroup1:
 
         if not raised:
             raise ValueError
+
+    def test_getitem_ts_object(self, ts_group):
+        assert isinstance(ts_group[1], nap.Ts)
+
+    def test_getitem_metadata(self, ts_group):
+        assert np.all(ts_group.meta == np.array([10, 11]))
+        assert np.all(ts_group["meta"] == np.array([10, 11]))
+
+    @pytest.mark.parametrize(
+        "bool_idx",
+        [
+            [True, False],
+            [False, True],
+            [True, True],
+            np.array([True, False], dtype=bool),
+            np.array([False, True], dtype=bool),
+            np.array([True, True], dtype=bool),
+        ]
+    )
+    def test_getitem_bool_indexing(self, bool_idx, ts_group):
+        out = ts_group[bool_idx]
+        assert isinstance(out, nap.TsGroup)
+        assert len(out) == sum(bool_idx)
+        idx = np.where(bool_idx)[0]
+        if len(idx) == 1:
+            slc = slice(idx[0], idx[0]+1)
+        else:
+            slc = slice(0, 2)
+        assert all(out.keys()[i] == ts_group.keys()[slc][i] for i in range(len(idx)))
+        for key_i in np.where(bool_idx)[0]:
+            key = ts_group.keys()[key_i]
+            assert np.all(out[[key]].rates == ts_group.rates[[key]])
+            assert np.all(out[[key]].meta == ts_group.meta[[key]])
+            assert np.all(out[key].t == ts_group[key].t)
+       
+    @pytest.mark.parametrize(
+        "idx", 
+        [
+            [1], 
+            [2], 
+            [1, 2], 
+            [2, 1], 
+            np.array([1]), 
+            np.array([2]), 
+            np.array([1, 2]), 
+            np.array([2, 1])
+        ]
+    )
+    def test_getitem_int_indexing(self, idx, ts_group):
+        out = ts_group[idx]
+        # check that sorting keys doesn't make a diff
+        srt_idx = np.sort(idx)
+        assert isinstance(out, nap.TsGroup)
+        assert np.all(out.rates == ts_group[srt_idx].rates)
+        assert np.all(out.meta == ts_group[srt_idx].meta)
+        for k in idx:
+            assert np.all(out[k].t == ts_group[k].t)
+
+
+    def test_getitem_metadata_direct(self, ts_group):
+        assert np.all(ts_group.rates == np.array([10/9, 5/9]))
+
+    def test_getitem_key_error(self, ts_group):
+        with pytest.raises(KeyError, match="Can\'t find key nonexistent"):
+            _ = ts_group['nonexistent']
+
+    def test_getitem_attribute_error(self, ts_group):
+        with pytest.raises(AttributeError, match="'TsGroup' object has no attribute"):
+            _ = ts_group.nonexistent_metadata

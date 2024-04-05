@@ -224,7 +224,7 @@ class TsGroup(UserDict):
             elif key in self._metadata.columns:
                 return self.get_info(key)
             else:
-                raise KeyError("Can't find key {} in group index.".format(key))
+                raise KeyError(f"Can't find key {key} in group index.")
 
         # array boolean are transformed into indices
         # note that raw boolean are hashable, and won't be
@@ -241,7 +241,7 @@ class TsGroup(UserDict):
         return self._ts_group_from_keys(key)
 
     def _ts_group_from_keys(self, keys):
-        metadata = self._metadata.loc[keys, self._metadata.columns.drop("rate")]
+        metadata = self._metadata.loc[np.sort(keys), self._metadata.columns.drop("rate")]
         return TsGroup(
                 {k: self[k] for k in keys}, time_support=self.time_support, **metadata
             )
