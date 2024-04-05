@@ -744,3 +744,15 @@ class TestTsGroup1:
     def test_getitem_attribute_error(self, ts_group):
         with pytest.raises(AttributeError, match="'TsGroup' object has no attribute"):
             _ = ts_group.nonexistent_metadata
+
+    @pytest.mark.parametrize(
+        "bool_idx, expectation",
+        [
+            (np.ones((3,), dtype=bool), pytest.raises(IndexError, match="Boolean index length must be equal")),
+            (np.ones((2, 1), dtype=bool), pytest.raises(IndexError, match="Only 1-dimensional boolean indices")),
+            (np.array(True), pytest.raises(IndexError, match="Only 1-dimensional boolean indices"))
+        ]
+    )
+    def test_getitem_boolean_fail(self, ts_group, bool_idx, expectation):
+        with expectation:
+            out = ts_group[bool_idx]

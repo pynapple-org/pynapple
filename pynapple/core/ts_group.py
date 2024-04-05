@@ -232,7 +232,7 @@ class TsGroup(UserDict):
         elif np.asarray(key).dtype == bool:
             key = np.asarray(key)
             if key.ndim != 1:
-                raise KeyError("Only 1-dimensional boolean indices are allowed!")
+                raise IndexError("Only 1-dimensional boolean indices are allowed!")
             if len(key) != self.__len__():
                 raise IndexError("Boolean index length must be equal to the number of Ts in the group! "
                                  f"The number of Ts is {self.__len__()}, but the bolean array"
