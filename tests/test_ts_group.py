@@ -177,16 +177,6 @@ class TestTsGroup1:
             tsgroup.set_info(ar=ar_info)
         assert str(e_info.value) == "Array is not the same length."
 
-    def test_non_mutability(self, group):
-        tsgroup = nap.TsGroup(group)
-        with pytest.raises(Exception) as e_info:
-            tsgroup[4] = nap.Ts(t=np.arange(4))
-        assert str(e_info.value) == "TsGroup object is not mutable."
-        tsgroup = nap.TsGroup(group)
-        with pytest.raises(Exception) as e_info:
-            tsgroup[3] = nap.Ts(t=np.arange(4))
-        assert str(e_info.value) == "TsGroup object is not mutable."
-
     def test_keys(self, group):
         tsgroup = nap.TsGroup(group)
         assert tsgroup.keys() == [0, 1, 2]

@@ -56,12 +56,63 @@ def test_init(path):
     assert file.type == "Tsd"
 
 @pytest.mark.parametrize("path", [path])
-def test_load(path):
-    for k in data.keys():
-        file_path = os.path.join(path, k+".npz")
-        file = nap.NPZFile(file_path)
-        tmp = file.load()
-        assert type(tmp) == type(data[k])       
+@pytest.mark.parametrize("k", ['tsd', 'ts', 'tsdframe', 'tsgroup', 'iset'])
+def test_load(path, k):
+    file_path = os.path.join(path, k+".npz")
+    file = nap.NPZFile(file_path)
+    tmp = file.load()
+    assert type(tmp) == type(data[k])
+
+@pytest.mark.parametrize("path", [path])
+@pytest.mark.parametrize("k", ['tsgroup'])
+def test_load_tsgroup(path, k):
+    file_path = os.path.join(path, k+".npz")
+    file = nap.NPZFile(file_path)
+    tmp = file.load()
+    assert type(tmp) == type(data[k])
+    assert tmp.keys() == data[k].keys()
+    assert np.all(tmp._metadata == data[k]._metadata)
+    assert np.all(tmp[neu] == data[k][neu] for neu in tmp.keys())
+    assert np.all(tmp.time_support == data[k].time_support)
+
+
+@pytest.mark.parametrize("path", [path])
+@pytest.mark.parametrize("k", ['tsd'])
+def test_load_tsd(path, k):
+    file_path = os.path.join(path, k+".npz")
+    file = nap.NPZFile(file_path)
+    tmp = file.load()
+    assert type(tmp) == type(data[k])
+    assert np.all(tmp.d == data[k].d)
+    assert np.all(tmp.t == data[k].t)
+    assert np.all(tmp.time_support == data[k].time_support)
+
+
+@pytest.mark.parametrize("path", [path])
+@pytest.mark.parametrize("k", ['ts'])
+def test_load_ts(path, k):
+    file_path = os.path.join(path, k+".npz")
+    file = nap.NPZFile(file_path)
+    tmp = file.load()
+    assert type(tmp) == type(data[k])
+    assert np.all(tmp.t == data[k].t)
+    assert np.all(tmp.time_support == data[k].time_support)
+
+
+
+@pytest.mark.parametrize("path", [path])
+@pytest.mark.parametrize("k", ['tsdframe'])
+def test_load_tsdframe(path, k):
+    file_path = os.path.join(path, k+".npz")
+    file = nap.NPZFile(file_path)
+    tmp = file.load()
+    assert type(tmp) == type(data[k])
+    assert np.all(tmp.t == data[k].t)
+    assert np.all(tmp.time_support == data[k].time_support)
+    assert np.all(tmp.columns == data[k].columns)
+    assert np.all(tmp.d == data[k].d)
+
+
 
 @pytest.mark.parametrize("path", [path])
 def test_load_non_npz(path):
