@@ -195,7 +195,9 @@ class TsGroup(UserDict):
             return self._metadata[name]
         else:
             # If the attribute is not part of the metadata, raise AttributeError
-            raise AttributeError(f"'{type(self).__name__}' object has no attribute '{name}'")
+            raise AttributeError(
+                f"'{type(self).__name__}' object has no attribute '{name}'"
+            )
 
     def __setitem__(self, key, value):
         if not self._initialized:
@@ -234,17 +236,21 @@ class TsGroup(UserDict):
             if key.ndim != 1:
                 raise IndexError("Only 1-dimensional boolean indices are allowed!")
             if len(key) != self.__len__():
-                raise IndexError("Boolean index length must be equal to the number of Ts in the group! "
-                                 f"The number of Ts is {self.__len__()}, but the bolean array"
-                                 f"has length {len(key)} instead!")
+                raise IndexError(
+                    "Boolean index length must be equal to the number of Ts in the group! "
+                    f"The number of Ts is {self.__len__()}, but the bolean array"
+                    f"has length {len(key)} instead!"
+                )
             key = np.asarray(self.keys())[key]
         return self._ts_group_from_keys(key)
 
     def _ts_group_from_keys(self, keys):
-        metadata = self._metadata.loc[np.sort(keys), self._metadata.columns.drop("rate")]
+        metadata = self._metadata.loc[
+            np.sort(keys), self._metadata.columns.drop("rate")
+        ]
         return TsGroup(
-                {k: self[k] for k in keys}, time_support=self.time_support, **metadata
-            )
+            {k: self[k] for k in keys}, time_support=self.time_support, **metadata
+        )
 
     def __repr__(self):
         cols = self._metadata.columns.drop("rate")
@@ -325,8 +331,10 @@ class TsGroup(UserDict):
                 invalid_cols += [k]
 
         if invalid_cols:
-            raise ValueError(f"Invalid metadata name(s) {invalid_cols}. Metadata name must differ from "
-                             f"TsGroup attribute names!")
+            raise ValueError(
+                f"Invalid metadata name(s) {invalid_cols}. Metadata name must differ from "
+                f"TsGroup attribute names!"
+            )
 
     def set_info(self, *args, **kwargs):
         """
@@ -416,8 +424,10 @@ class TsGroup(UserDict):
                 else:
                     not_set.append({k: v})
         if not_set:
-            raise TypeError(f"Cannot set the following metadata:\n{not_set}.\nMetadata columns provided must be  "
-                            f"of type `panda.Series`, `tuple`, `list`, or `numpy.ndarray`.")
+            raise TypeError(
+                f"Cannot set the following metadata:\n{not_set}.\nMetadata columns provided must be  "
+                f"of type `panda.Series`, `tuple`, `list`, or `numpy.ndarray`."
+            )
 
     def get_info(self, key):
         """

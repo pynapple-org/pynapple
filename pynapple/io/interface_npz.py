@@ -127,7 +127,7 @@ class NPZFile(object):
                     "index",
                     "d",
                     "rate",
-                    "keys"
+                    "keys",
                 }:
                     tmp = self.file[k]
                     if len(tmp) == len(tsgroup):
