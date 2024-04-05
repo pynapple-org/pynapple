@@ -241,7 +241,7 @@ class TsGroup(UserDict):
                     f"The number of Ts is {self.__len__()}, but the bolean array"
                     f"has length {len(key)} instead!"
                 )
-            key = np.asarray(self.keys())[key]
+            key = self.index[key]
         return self._ts_group_from_keys(key)
 
     def _ts_group_from_keys(self, keys):
