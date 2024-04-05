@@ -155,7 +155,6 @@ class TestTsGroup1:
             tsgroup.set_info(ar_info)
         assert str(e_info.value) == "Argument should be passed as keyword argument."
 
-
     def test_add_metainfo_test_runtime_errors(self, group):
         tsgroup = nap.TsGroup(group)
         sr_info = pd.Series(index=[1, 2, 3], data=[1, 1, 1], name="sr")
