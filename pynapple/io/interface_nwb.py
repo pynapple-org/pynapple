@@ -142,9 +142,9 @@ def _make_tsd(obj):
 
     """
 
-    d = obj.data[:]
+    d = obj.data
     if obj.timestamps is not None:
-        t = obj.timestamps[:]
+        t = obj.timestamps
     else:
         t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
 
@@ -167,9 +167,9 @@ def _make_tsd_tensor(obj):
 
     """
 
-    d = obj.data[:]
+    d = obj.data
     if obj.timestamps is not None:
-        t = obj.timestamps[:]
+        t = obj.timestamps
     else:
         t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
 
@@ -192,9 +192,9 @@ def _make_tsd_frame(obj):
 
     """
 
-    d = obj.data[:]
+    d = obj.data
     if obj.timestamps is not None:
-        t = obj.timestamps[:]
+        t = obj.timestamps
     else:
         t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
 
