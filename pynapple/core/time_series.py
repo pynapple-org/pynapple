@@ -75,7 +75,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
     Implement most of the shared functions across concrete classes `Tsd`, `TsdFrame`, `TsdTensor`
     """
 
-    def __init__(self, t, d, time_units="s", time_support=None):
+    def __init__(self, t, d, time_units="s", time_support=None, lazy=False):
         super().__init__(t, time_units, time_support)
 
         # Converting d to numpy array
@@ -86,7 +86,10 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         elif isinstance(d, np.ndarray):
             self.values = d
         elif is_array_like(d):
-            self.values = convert_to_numpy(d, "d")
+            if lazy:
+                self.values = d
+            else:
+                self.values = convert_to_numpy(d, "d")
         else:
             raise RuntimeError(
                 "Unknown format for d. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."
@@ -592,7 +595,7 @@ class TsdTensor(BaseTsd):
         The time support of the time series
     """
 
-    def __init__(self, t, d, time_units="s", time_support=None, **kwargs):
+    def __init__(self, t, d, time_units="s", time_support=None, lazy=False, **kwargs):
         """
         TsdTensor initializer
 
@@ -607,7 +610,7 @@ class TsdTensor(BaseTsd):
         time_support : IntervalSet, optional
             The time support of the TsdFrame object
         """
-        super().__init__(t, d, time_units, time_support)
+        super().__init__(t, d, time_units, time_support, lazy)
 
         assert (
             self.values.ndim >= 3
@@ -764,7 +767,7 @@ class TsdFrame(BaseTsd):
         The time support of the time series
     """
 
-    def __init__(self, t, d=None, time_units="s", time_support=None, columns=None):
+    def __init__(self, t, d=None, time_units="s", time_support=None, columns=None, lazy=False):
         """
         TsdFrame initializer
         A pandas.DataFrame can be passed directly
@@ -792,7 +795,7 @@ class TsdFrame(BaseTsd):
         else:
             assert d is not None, "Missing argument d when initializing TsdFrame"
 
-        super().__init__(t, d, time_units, time_support)
+        super().__init__(t, d, time_units, time_support, lazy)
 
         assert self.values.ndim <= 2, "Data should be 1 or 2 dimensional."
 
@@ -1021,7 +1024,7 @@ class Tsd(BaseTsd):
         The time support of the time series
     """
 
-    def __init__(self, t, d=None, time_units="s", time_support=None, **kwargs):
+    def __init__(self, t, d=None, time_units="s", time_support=None, lazy=False, **kwargs):
         """
         Tsd Initializer.
 
@@ -1042,7 +1045,7 @@ class Tsd(BaseTsd):
         else:
             assert d is not None, "Missing argument d when initializing Tsd"
 
-        super().__init__(t, d, time_units, time_support)
+        super().__init__(t, d, time_units, time_support, lazy)
 
         assert self.values.ndim == 1, "Data should be 1 dimensional"
 
