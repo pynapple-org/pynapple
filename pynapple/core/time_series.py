@@ -767,7 +767,9 @@ class TsdFrame(BaseTsd):
         The time support of the time series
     """
 
-    def __init__(self, t, d=None, time_units="s", time_support=None, columns=None, lazy=False):
+    def __init__(
+        self, t, d=None, time_units="s", time_support=None, columns=None, lazy=False
+    ):
         """
         TsdFrame initializer
         A pandas.DataFrame can be passed directly
@@ -1024,7 +1026,9 @@ class Tsd(BaseTsd):
         The time support of the time series
     """
 
-    def __init__(self, t, d=None, time_units="s", time_support=None, lazy=False, **kwargs):
+    def __init__(
+        self, t, d=None, time_units="s", time_support=None, lazy=False, **kwargs
+    ):
         """
         Tsd Initializer.
 
