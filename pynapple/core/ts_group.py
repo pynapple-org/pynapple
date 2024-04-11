@@ -226,7 +226,7 @@ class TsGroup(UserDict):
             elif key in self._metadata.columns:
                 return self.get_info(key)
             else:
-                raise KeyError(f"Can't find key {key} in group index.")
+                raise KeyError(r"Key {} not in group index.".format(key))
 
         # array boolean are transformed into indices
         # note that raw boolean are hashable, and won't be
@@ -242,6 +242,12 @@ class TsGroup(UserDict):
                     f"has length {len(key)} instead!"
                 )
             key = self.index[key]
+
+        keys_not_in = list(filter(lambda x: x not in self.index, key))
+
+        if len(keys_not_in):
+            raise KeyError(r"Key {} not in group index.".format(keys_not_in))
+            
         return self._ts_group_from_keys(key)
 
     def _ts_group_from_keys(self, keys):

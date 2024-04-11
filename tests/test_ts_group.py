@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:14:41
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-11 11:42:01
+# @Last Modified time: 2024-04-11 14:42:50
 
 """Tests of ts group for `pynapple` package."""
 
@@ -599,9 +599,9 @@ class TestTsGroup1:
             (np.array([False, True, True]), does_not_raise()),
             ([False, True, True], does_not_raise()),
             (True, does_not_raise()),
-            (4, pytest.raises(KeyError, match="Can't find key")),
-            ([3, 4], pytest.raises(KeyError, match= r"None of \[Index\(\[3, 4\]")),
-            ([2, 3], pytest.raises(KeyError, match=r"\[3\] not in index"))
+            (4, pytest.raises(KeyError, match="Key 4 not in group index.")),
+            ([3, 4], pytest.raises(KeyError, match= r"Key \[3, 4\] not in group index.")),
+            ([2, 3], pytest.raises(KeyError, match= r"Key \[3\] not in group index."))
         ]
     )
     def test_indexing_type(self, group, keys, expectation):
@@ -735,7 +735,7 @@ class TestTsGroup1:
         assert np.all(ts_group.rates == np.array([10/9, 5/9]))
 
     def test_getitem_key_error(self, ts_group):
-        with pytest.raises(KeyError, match="Can\'t find key nonexistent"):
+        with pytest.raises(KeyError, match="Key nonexistent not in group index."):
             _ = ts_group['nonexistent']
 
     def test_getitem_attribute_error(self, ts_group):
