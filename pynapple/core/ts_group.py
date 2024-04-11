@@ -247,7 +247,7 @@ class TsGroup(UserDict):
 
         if len(keys_not_in):
             raise KeyError(r"Key {} not in group index.".format(keys_not_in))
-            
+
         return self._ts_group_from_keys(key)
 
     def _ts_group_from_keys(self, keys):
