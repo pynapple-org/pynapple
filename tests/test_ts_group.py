@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:14:41
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-01 18:07:53
+# @Last Modified time: 2024-04-11 14:42:50
 
 """Tests of ts group for `pynapple` package."""
 
@@ -426,33 +426,30 @@ class TestTsGroup1:
         from tabulate import tabulate
 
         tsgroup = nap.TsGroup(group)
+        tsgroup.set_info(abc = ['a']*len(tsgroup))
+        tsgroup.set_info(bbb = [1]*len(tsgroup))
+        tsgroup.set_info(ccc = [np.pi]*len(tsgroup))
 
         cols = tsgroup._metadata.columns.drop("rate")
         headers = ["Index", "rate"] + [c for c in cols]
         lines = []
 
+        def round_if_float(x):
+            if isinstance(x, float):
+                return np.round(x, 5)
+            else:
+                return x
+
         for i in tsgroup.index:
             lines.append(
-                [str(i), "%.2f" % tsgroup._metadata.loc[i, "rate"]]
-                + [tsgroup._metadata.loc[i, c] for c in cols]
+                [str(i), np.round(tsgroup._metadata.loc[i, "rate"], 5)]
+                + [round_if_float(tsgroup._metadata.loc[i, c]) for c in cols]
             )
         assert tabulate(lines, headers=headers) == tsgroup.__repr__()
 
     def test_str_(self, group):
-        from tabulate import tabulate
-
-        tsgroup = nap.TsGroup(group)
-
-        cols = tsgroup._metadata.columns.drop("rate")
-        headers = ["Index", "rate"] + [c for c in cols]
-        lines = []
-
-        for i in tsgroup.index:
-            lines.append(
-                [str(i), "%.2f" % tsgroup._metadata.loc[i, "rate"]]
-                + [tsgroup._metadata.loc[i, c] for c in cols]
-            )
-        assert tabulate(lines, headers=headers) == tsgroup.__str__()
+        tsgroup = nap.TsGroup(group)        
+        assert tsgroup.__str__() == tsgroup.__repr__()
         
     def test_to_tsd(self, group):    
         t = []
@@ -602,9 +599,9 @@ class TestTsGroup1:
             (np.array([False, True, True]), does_not_raise()),
             ([False, True, True], does_not_raise()),
             (True, does_not_raise()),
-            (4, pytest.raises(KeyError, match="Can't find key")),
-            ([3, 4], pytest.raises(KeyError, match= r"None of \[Index\(\[3, 4\]")),
-            ([2, 3], pytest.raises(KeyError, match=r"\[3\] not in index"))
+            (4, pytest.raises(KeyError, match="Key 4 not in group index.")),
+            ([3, 4], pytest.raises(KeyError, match= r"Key \[3, 4\] not in group index.")),
+            ([2, 3], pytest.raises(KeyError, match= r"Key \[3\] not in group index."))
         ]
     )
     def test_indexing_type(self, group, keys, expectation):
@@ -738,7 +735,7 @@ class TestTsGroup1:
         assert np.all(ts_group.rates == np.array([10/9, 5/9]))
 
     def test_getitem_key_error(self, ts_group):
-        with pytest.raises(KeyError, match="Can\'t find key nonexistent"):
+        with pytest.raises(KeyError, match="Key nonexistent not in group index."):
             _ = ts_group['nonexistent']
 
     def test_getitem_attribute_error(self, ts_group):

@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-07-10 17:08:55
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-07-10 18:14:49
+# @Last Modified time: 2024-04-11 13:13:37
 
 """Tests of NPZ file functions"""
 
@@ -73,7 +73,7 @@ def test_load_tsgroup(path, k):
     assert tmp.keys() == data[k].keys()
     assert np.all(tmp._metadata == data[k]._metadata)
     assert np.all(tmp[neu] == data[k][neu] for neu in tmp.keys())
-    assert np.all(tmp.time_support == data[k].time_support)
+    np.testing.assert_array_almost_equal(tmp.time_support.values, data[k].time_support.values)
 
 
 @pytest.mark.parametrize("path", [path])
@@ -85,7 +85,7 @@ def test_load_tsd(path, k):
     assert type(tmp) == type(data[k])
     assert np.all(tmp.d == data[k].d)
     assert np.all(tmp.t == data[k].t)
-    assert np.all(tmp.time_support == data[k].time_support)
+    np.testing.assert_array_almost_equal(tmp.time_support.values, data[k].time_support.values)
 
 
 @pytest.mark.parametrize("path", [path])
@@ -96,7 +96,7 @@ def test_load_ts(path, k):
     tmp = file.load()
     assert type(tmp) == type(data[k])
     assert np.all(tmp.t == data[k].t)
-    assert np.all(tmp.time_support == data[k].time_support)
+    np.testing.assert_array_almost_equal(tmp.time_support.values, data[k].time_support.values)
 
 
 
@@ -108,7 +108,7 @@ def test_load_tsdframe(path, k):
     tmp = file.load()
     assert type(tmp) == type(data[k])
     assert np.all(tmp.t == data[k].t)
-    assert np.all(tmp.time_support == data[k].time_support)
+    np.testing.assert_array_almost_equal(tmp.time_support.values, data[k].time_support.values)
     assert np.all(tmp.columns == data[k].columns)
     assert np.all(tmp.d == data[k].d)
 

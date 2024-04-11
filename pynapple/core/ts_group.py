@@ -226,7 +226,7 @@ class TsGroup(UserDict):
             elif key in self._metadata.columns:
                 return self.get_info(key)
             else:
-                raise KeyError(f"Can't find key {key} in group index.")
+                raise KeyError(r"Key {} not in group index.".format(key))
 
         # array boolean are transformed into indices
         # note that raw boolean are hashable, and won't be
@@ -242,6 +242,12 @@ class TsGroup(UserDict):
                     f"has length {len(key)} instead!"
                 )
             key = self.index[key]
+
+        keys_not_in = list(filter(lambda x: x not in self.index, key))
+
+        if len(keys_not_in):
+            raise KeyError(r"Key {} not in group index.".format(keys_not_in))
+
         return self._ts_group_from_keys(key)
 
     def _ts_group_from_keys(self, keys):
@@ -255,13 +261,73 @@ class TsGroup(UserDict):
     def __repr__(self):
         cols = self._metadata.columns.drop("rate")
         headers = ["Index", "rate"] + [c for c in cols]
+
+        max_cols = 6
+        max_rows = 2
+
+        try:
+            max_cols, max_rows = os.get_terminal_size()
+            max_cols = max_cols // 12
+            max_rows = max_rows - 10
+        except Exception:
+            import shutil
+
+            max_cols, max_rows = shutil.get_terminal_size()
+            max_cols = max_cols // 12
+            max_rows = max_rows - 10
+        else:
+            pass
+
+        max_rows = np.maximum(max_rows, 2)
+        max_cols = np.maximum(max_cols, 6)
+
+        end_line = []
         lines = []
 
-        for i in self.data.keys():
-            lines.append(
-                [str(i), "%.2f" % self._metadata.loc[i, "rate"]]
-                + [self._metadata.loc[i, c] for c in cols]
-            )
+        def round_if_float(x):
+            if isinstance(x, float):
+                return np.round(x, 5)
+            else:
+                return x
+
+        if len(headers) > max_cols:
+            headers = headers[0:max_cols] + ["..."]
+            end_line.append("...")
+
+        if len(self) > max_rows:
+            n_rows = max_rows // 2
+            index = self.keys()
+
+            for i in index[0:n_rows]:
+                lines.append(
+                    [i, np.round(self._metadata.loc[i, "rate"], 5)]
+                    + [
+                        round_if_float(self._metadata.loc[i, c])
+                        for c in cols[0 : max_cols - 2]
+                    ]
+                    + end_line
+                )
+            lines.append(["..." for _ in range(len(headers))])
+            for i in index[-n_rows:]:
+                lines.append(
+                    [i, np.round(self._metadata.loc[i, "rate"], 5)]
+                    + [
+                        round_if_float(self._metadata.loc[i, c])
+                        for c in cols[0 : max_cols - 2]
+                    ]
+                    + end_line
+                )
+        else:
+            for i in self.data.keys():
+                lines.append(
+                    [i, np.round(self._metadata.loc[i, "rate"], 5)]
+                    + [
+                        round_if_float(self._metadata.loc[i, c])
+                        for c in cols[0 : max_cols - 2]
+                    ]
+                    + end_line
+                )
+
         return tabulate(lines, headers=headers)
 
     def __str__(self):
