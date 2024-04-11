@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:14:41
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-01 18:07:53
+# @Last Modified time: 2024-04-11 11:42:01
 
 """Tests of ts group for `pynapple` package."""
 
@@ -426,33 +426,30 @@ class TestTsGroup1:
         from tabulate import tabulate
 
         tsgroup = nap.TsGroup(group)
+        tsgroup.set_info(abc = ['a']*len(tsgroup))
+        tsgroup.set_info(bbb = [1]*len(tsgroup))
+        tsgroup.set_info(ccc = [np.pi]*len(tsgroup))
 
         cols = tsgroup._metadata.columns.drop("rate")
         headers = ["Index", "rate"] + [c for c in cols]
         lines = []
 
+        def round_if_float(x):
+            if isinstance(x, float):
+                return np.round(x, 5)
+            else:
+                return x
+
         for i in tsgroup.index:
             lines.append(
-                [str(i), "%.2f" % tsgroup._metadata.loc[i, "rate"]]
-                + [tsgroup._metadata.loc[i, c] for c in cols]
+                [str(i), np.round(tsgroup._metadata.loc[i, "rate"], 5)]
+                + [round_if_float(tsgroup._metadata.loc[i, c]) for c in cols]
             )
         assert tabulate(lines, headers=headers) == tsgroup.__repr__()
 
     def test_str_(self, group):
-        from tabulate import tabulate
-
-        tsgroup = nap.TsGroup(group)
-
-        cols = tsgroup._metadata.columns.drop("rate")
-        headers = ["Index", "rate"] + [c for c in cols]
-        lines = []
-
-        for i in tsgroup.index:
-            lines.append(
-                [str(i), "%.2f" % tsgroup._metadata.loc[i, "rate"]]
-                + [tsgroup._metadata.loc[i, c] for c in cols]
-            )
-        assert tabulate(lines, headers=headers) == tsgroup.__str__()
+        tsgroup = nap.TsGroup(group)        
+        assert tsgroup.__str__() == tsgroup.__repr__()
         
     def test_to_tsd(self, group):    
         t = []
