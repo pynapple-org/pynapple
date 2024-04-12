@@ -165,3 +165,9 @@ def _dropna(time_array, data_array, starts, ends, update_time_support, ndim):
                 return (time_array[~index_nan], data_array[~index_nan], starts, ends)
         else:
             return (time_array, data_array, starts, ends)
+
+
+# def _sta():
+
+
+# def _interp

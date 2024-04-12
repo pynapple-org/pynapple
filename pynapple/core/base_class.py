@@ -11,7 +11,7 @@ import numpy as np
 from .core_function import _count, _restrict, _value_from
 from .interval_set import IntervalSet
 from .time_index import TsIndex
-from .utils import convert_to_jax_array, convert_to_numpy_array, get_backend
+from .utils import convert_to_numpy_array
 
 
 class Base(abc.ABC):
@@ -27,10 +27,7 @@ class Base(abc.ABC):
         if isinstance(t, TsIndex):
             self.index = t
         else:
-            if get_backend() == "jax":
-                self.index = TsIndex(convert_to_jax_array(t, "t"), time_units)
-            else:
-                self.index = TsIndex(convert_to_numpy_array(t, "t"), time_units)
+            self.index = TsIndex(convert_to_numpy_array(t, "t"), time_units)
 
         if time_support is not None:
             assert isinstance(
