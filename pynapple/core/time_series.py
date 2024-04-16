@@ -454,29 +454,33 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
             return self.__class__(t=time_array, d=new_data_array, time_support=ep)
 
-    def smooth(self, std, time_units="s", size_factor=100, norm=True):
+    def smooth(self, std, windowsize=None, time_units="s", size_factor=100, norm=True):
         """Smooth a time series with a gaussian kernel.
 
         `std` is the standard deviation of the gaussian kernel in units of time.
         If only `std` is passed, the function will compute the standard deviation and size in number
         of time points automatically based on the sampling rate of the time series.
-        For example, if the time series `tsd` has a sample rate of 100 Hz and `std` is 20 ms,
+        For example, if the time series `tsd` has a sample rate of 100 Hz and `std` is 50 ms,
         the standard deviation will be converted to an integer through
         `tsd.rate * std = int(100 * 0.05) = 5`.
-        By default, the function will select a kernel size as 100 times the std in number of time points.
-        `size_factor` can be used to resize the gaussian kernel.
+
+        If `windowsize` is None, the function will select a kernel size as 100 times
+        the std in number of time points. This behavior can be controlled with the
+        parameter `size_factor`.
 
         `norm` set to True normalizes the gaussian kernel to sum to 1.
 
         In the following example, a time series `tsd` with a sampling rate of 100 Hz
-        is convolved with a 50 ms non-normalized gaussian kernel.
+        is convolved with a non-normalized gaussian kernel. The standard deviation is
+        0.05 second and the windowsize is 2 second. When instantiating the gaussian kernel
+        from scipy, it corresponds to parameters `M = 200` and `std=5`
 
-            >>> tsd.smooth(50, time_units='ms', norm=False)
+            >>> tsd.smooth(std=0.05, windowsize=2, time_units='s', norm=False)
 
         This line is equivalent to :
 
             >>> from scipy.signal.windows import gaussian
-            >>> kernel = gaussian(M = 500, std=int(tsd.rate*0.05))
+            >>> kernel = gaussian(M = 200, std=5)
             >>> tsd.convolve(window)
 
         It is generally a good idea to visualize the kernel before applying any convolution.
@@ -487,10 +491,13 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         ----------
         std : Number
             Standard deviation in units of time
+        windowsize : Number
+            Size of the gaussian window in units of time.
         time_units : str, optional
-            The time units in which std is specified ('us', 'ms', 's' [default]).
+            The time units in which std and windowsize are specified ('us', 'ms', 's' [default]).
         size_factor : int, optional
             How long should be the kernel size as a function of the standard deviation. Default is 100.
+            Bypassed if windowsize is used.
         norm : bool, optional
             Whether to normalized the gaussian kernel or not. Default is `True`.
 
@@ -506,9 +513,19 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         assert isinstance(time_units, str), "time_units should be of type str"
 
         std = TsIndex.format_timestamps(np.array([std]), time_units)[0]
-
         std_size = int(self.rate * std)
-        M = std_size * size_factor
+
+        if windowsize is not None:
+            assert isinstance(
+                windowsize, (int, float)
+            ), "windowsize should be type int or float"
+            windowsize = TsIndex.format_timestamps(np.array([windowsize]), time_units)[
+                0
+            ]
+            M = int(self.rate * windowsize)
+        else:
+            M = std_size * size_factor
+
         window = signal.windows.gaussian(M=M, std=std_size)
 
         if norm:

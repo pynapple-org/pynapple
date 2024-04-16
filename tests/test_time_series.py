@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-16 10:07:56
+# @Last Modified time: 2024-04-16 17:18:08
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -496,6 +496,19 @@ class Test_Time_Series_1:
                 tsd2.values.reshape(tsd2.shape[0], -1)
                 )
 
+            tsd2 = tsd.smooth(1, windowsize = 10, norm=False)
+            tmp = tsd.values.reshape(tsd.shape[0], -1)
+            tmp2 = np.zeros_like(tmp)
+            std = int(tsd.rate * 1)
+            M = int(tsd.rate * 10)
+            window = signal.windows.gaussian(M, std=std)            
+            for i in range(tmp.shape[-1]):
+                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[M//2:1-M//2]
+            np.testing.assert_array_almost_equal(
+                tmp2, 
+                tsd2.values.reshape(tsd2.shape[0], -1)
+                )
+
     def test_smooth_raise_error(self, tsd):
         if not isinstance(tsd, nap.Ts):
             with pytest.raises(AssertionError) as e_info:
@@ -514,7 +527,9 @@ class Test_Time_Series_1:
                 tsd.smooth(1, time_units = 0)
             assert str(e_info.value) == "time_units should be of type str"
 
-
+            with pytest.raises(AssertionError) as e_info:
+                tsd.smooth(1, windowsize='a')
+            assert str(e_info.value) == "windowsize should be type int or float"
 
 ####################################################
 # Test for tsd
