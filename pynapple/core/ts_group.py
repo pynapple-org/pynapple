@@ -24,7 +24,7 @@ from .base_class import Base
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
-from .utils import convert_to_numpy
+from .utils import _get_terminal_size, convert_to_numpy
 
 
 def _union_intervals(i_sets):
@@ -259,27 +259,14 @@ class TsGroup(UserDict):
         )
 
     def __repr__(self):
-        cols = self._metadata.columns.drop("rate")
-        headers = ["Index", "rate"] + [c for c in cols]
+        col_names = self._metadata.columns.drop("rate")
+        headers = ["Index", "rate"] + [c for c in col_names]
 
         max_cols = 6
         max_rows = 2
-
-        try:
-            max_cols, max_rows = os.get_terminal_size()
-            max_cols = max_cols // 12
-            max_rows = max_rows - 10
-        except Exception:
-            import shutil
-
-            max_cols, max_rows = shutil.get_terminal_size()
-            max_cols = max_cols // 12
-            max_rows = max_rows - 10
-        else:
-            pass
-
-        max_rows = np.maximum(max_rows, 2)
-        max_cols = np.maximum(max_cols, 6)
+        cols, rows = _get_terminal_size()
+        max_cols = np.maximum(cols // 12, 6)
+        max_rows = np.maximum(rows - 10, 2)
 
         end_line = []
         lines = []
@@ -303,7 +290,7 @@ class TsGroup(UserDict):
                     [i, np.round(self._metadata.loc[i, "rate"], 5)]
                     + [
                         round_if_float(self._metadata.loc[i, c])
-                        for c in cols[0 : max_cols - 2]
+                        for c in col_names[0 : max_cols - 2]
                     ]
                     + end_line
                 )
@@ -313,7 +300,7 @@ class TsGroup(UserDict):
                     [i, np.round(self._metadata.loc[i, "rate"], 5)]
                     + [
                         round_if_float(self._metadata.loc[i, c])
-                        for c in cols[0 : max_cols - 2]
+                        for c in col_names[0 : max_cols - 2]
                     ]
                     + end_line
                 )
@@ -323,7 +310,7 @@ class TsGroup(UserDict):
                     [i, np.round(self._metadata.loc[i, "rate"], 5)]
                     + [
                         round_if_float(self._metadata.loc[i, c])
-                        for c in cols[0 : max_cols - 2]
+                        for c in col_names[0 : max_cols - 2]
                     ]
                     + end_line
                 )

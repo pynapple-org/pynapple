@@ -41,6 +41,7 @@ from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .utils import (
     _concatenate_tsd,
+    _get_terminal_size,
     _split_tsd,
     _TsdFrameSliceHelper,
     convert_to_numpy,
@@ -620,41 +621,38 @@ class TsdTensor(BaseTsd):
         headers = ["Time (s)", ""]
         bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(self.shape)
 
+        max_rows = 2
+        rows = _get_terminal_size()[1]
+        max_rows = np.maximum(rows - 10, 2)
+
         if len(self):
 
             def create_str(array):
                 if array.ndim == 1:
                     if len(array) > 2:
-                        return (
-                            "["
-                            + array[0].__repr__()
-                            + " ... "
-                            + array[-1].__repr__()
-                            + "]"
+                        return np.array2string(
+                            np.array([array[0], array[-1]]),
+                            precision=6,
+                            separator=" ... ",
                         )
-                    elif len(array) == 2:
-                        return (
-                            "[" + array[0].__repr__() + "," + array[1].__repr__() + "]"
-                        )
-                    elif len(array) == 1:
-                        return "[" + array[0].__repr__() + "]"
                     else:
-                        return "[]"
+                        return np.array2string(array, precision=6, separator=", ")
                 else:
                     return "[" + create_str(array[0]) + " ...]"
 
             _str_ = []
-            if self.shape[0] < 100:
-                for i, array in zip(self.index, self.values):
-                    _str_.append([i.__repr__(), create_str(array)])
-            else:
-                for i, array in zip(self.index[0:5], self.values[0:5]):
+            if self.shape[0] > max_rows:
+                n_rows = max_rows // 2
+                for i, array in zip(self.index[0:n_rows], self.values[0:n_rows]):
                     _str_.append([i.__repr__(), create_str(array)])
                 _str_.append(["...", ""])
                 for i, array in zip(
-                    self.index[-5:],
-                    self.values[self.values.shape[0] - 5 : self.values.shape[0]],
+                    self.index[-n_rows:],
+                    self.values[self.values.shape[0] - n_rows : self.values.shape[0]],
                 ):
+                    _str_.append([i.__repr__(), create_str(array)])
+            else:
+                for i, array in zip(self.index, self.values):
                     _str_.append([i.__repr__(), create_str(array)])
 
             return tabulate(_str_, headers=headers, colalign=("left",)) + "\n" + bottom
@@ -818,40 +816,52 @@ class TsdFrame(BaseTsd):
         headers = ["Time (s)"] + [str(k) for k in self.columns]
         bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(self.shape)
 
-        max_cols = 5
-        try:
-            max_cols = os.get_terminal_size()[0] // 16
-        except Exception:
-            import shutil
-
-            max_cols = shutil.get_terminal_size().columns // 16
-        else:
-            pass
+        cols, rows = _get_terminal_size()
+        max_cols = np.maximum(cols // 100, 5)
+        max_rows = np.maximum(rows - 10, 2)
 
         if self.shape[1] > max_cols:
             headers = headers[0 : max_cols + 1] + ["..."]
+
+        def round_if_float(x):
+            if isinstance(x, float):
+                return np.round(x, 5)
+            else:
+                return x
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             if len(self):
                 table = []
                 end = ["..."] if self.shape[1] > max_cols else []
-                if len(self) > 51:
-                    for i, array in zip(self.index[0:5], self.values[0:5, 0:max_cols]):
-                        table.append([i] + [k for k in array] + end)
+                if len(self) > max_rows:
+                    n_rows = max_rows // 2
+                    for i, array in zip(
+                        self.index[0:n_rows], self.values[0:n_rows, 0:max_cols]
+                    ):
+                        table.append([i] + [round_if_float(k) for k in array] + end)
                     table.append(["..."])
                     for i, array in zip(
-                        self.index[-5:],
+                        self.index[-n_rows:],
                         self.values[
-                            self.values.shape[0] - 5 : self.values.shape[0], 0:max_cols
+                            self.values.shape[0] - n_rows : self.values.shape[0],
+                            0:max_cols,
                         ],
                     ):
-                        table.append([i] + [k for k in array] + end)
-                    return tabulate(table, headers=headers) + "\n" + bottom
+                        table.append([i] + [round_if_float(k) for k in array] + end)
+                    return (
+                        tabulate(table, headers=headers, colalign=("left",))
+                        + "\n"
+                        + bottom
+                    )
                 else:
                     for i, array in zip(self.index, self.values[:, 0:max_cols]):
-                        table.append([i] + [k for k in array] + end)
-                    return tabulate(table, headers=headers) + "\n" + bottom
+                        table.append([i] + [round_if_float(k) for k in array] + end)
+                    return (
+                        tabulate(table, headers=headers, colalign=("left",))
+                        + "\n"
+                        + bottom
+                    )
             else:
                 return tabulate([], headers=headers) + "\n" + bottom
 
@@ -1053,32 +1063,39 @@ class Tsd(BaseTsd):
         headers = ["Time (s)", ""]
         bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(self.shape)
 
+        max_rows = 2
+        rows = _get_terminal_size()[1]
+        max_rows = np.maximum(rows - 10, 2)
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             if len(self):
-                if len(self) < 51:
+                if len(self) > max_rows:
+                    n_rows = max_rows // 2
+                    table = []
+                    for i, v in zip(self.index[0:n_rows], self.values[0:n_rows]):
+                        table.append([i, v])
+                    table.append(["..."])
+                    for i, v in zip(
+                        self.index[-n_rows:],
+                        self.values[
+                            self.values.shape[0] - n_rows : self.values.shape[0]
+                        ],
+                    ):
+                        table.append([i, v])
+
+                    return (
+                        tabulate(table, headers=headers, colalign=("left",))
+                        + "\n"
+                        + bottom
+                    )
+                else:
                     return (
                         tabulate(
                             np.vstack((self.index, self.values)).T,
                             headers=headers,
                             colalign=("left",),
                         )
-                        + "\n"
-                        + bottom
-                    )
-                else:
-                    table = []
-                    for i, v in zip(self.index[0:5], self.values[0:5]):
-                        table.append([i, v])
-                    table.append(["..."])
-                    for i, v in zip(
-                        self.index[-5:],
-                        self.values[self.values.shape[0] - 5 : self.values.shape[0]],
-                    ):
-                        table.append([i, v])
-
-                    return (
-                        tabulate(table, headers=headers, colalign=("left",))
                         + "\n"
                         + bottom
                     )
@@ -1357,14 +1374,20 @@ class Ts(Base):
 
     def __repr__(self):
         upper = "Time (s)"
-        if len(self) < 50:
-            _str_ = "\n".join([i.__repr__() for i in self.index])
-        else:
+
+        max_rows = 2
+        rows = _get_terminal_size()[1]
+        max_rows = np.maximum(rows - 10, 2)
+
+        if len(self) > max_rows:
+            n_rows = max_rows // 2
             _str_ = "\n".join(
-                [i.__repr__() for i in self.index[0:5]]
+                [i.__repr__() for i in self.index[0:n_rows]]
                 + ["..."]
-                + [i.__repr__() for i in self.index[-5:]]
+                + [i.__repr__() for i in self.index[-n_rows:]]
             )
+        else:
+            _str_ = "\n".join([i.__repr__() for i in self.index])
 
         bottom = "shape: {}".format(len(self.index))
         return "\n".join((upper, _str_, bottom))
