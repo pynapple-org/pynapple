@@ -2,12 +2,13 @@
 # @Author: Guillaume Viejo
 # @Date:   2024-02-09 11:45:45
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-04 17:04:38
+# @Last Modified time: 2024-04-15 12:25:49
 
 """
     Utility functions
 """
 
+import os
 import warnings
 from itertools import combinations
 
@@ -15,6 +16,26 @@ import numpy as np
 from numba import jit
 
 from .config import nap_config
+
+
+def _get_terminal_size():
+    """Helper to get terminal size for __repr__
+
+    Returns
+    -------
+    tuple
+
+    """
+    cols = 100  # Default
+    rows = 2
+    try:
+        cols, rows = os.get_terminal_size()
+    except Exception:
+        import shutil
+
+        cols, rows = shutil.get_terminal_size()
+
+    return (cols, rows)
 
 
 def is_array_like(obj):

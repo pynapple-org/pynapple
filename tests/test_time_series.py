@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-04-01 09:57:55
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-03 10:23:28
+# @Last Modified time: 2024-04-16 10:07:56
 #!/usr/bin/env python
 
 """Tests of time series for `pynapple` package."""
@@ -11,6 +11,12 @@ import pynapple as nap
 import numpy as np
 import pandas as pd
 import pytest
+
+
+# tsd1 = nap.Tsd(t=np.arange(100), d=np.random.rand(100), time_units="s")
+# tsd2 = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 10), time_units="s")
+# tsd3 = nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 5, 4), time_units="s")
+# tsd4 = nap.Ts(t=np.arange(100), time_units="s")
 
 
 def test_create_tsd():
