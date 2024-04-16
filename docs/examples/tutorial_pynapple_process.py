@@ -36,43 +36,40 @@ sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_par
 # Discrete correlograms
 # ---------------------
 #
-# The function to compute cross-correlogram is [*cross_correlogram*](https://peyrachelab.github.io/pynapple/process.correlograms/#pynapple.process.correlograms.cross_correlogram).
+# First let's generate some data. Here we have two neurons recorded together. We can group them in a `TsGroup`.
 #
-#
-# The function is compiled with [numba](https://numba.pydata.org/) to improve performances. This means it only accepts pure numpy arrays as input arguments.
 
-
-ts1 = nap.Ts(t=np.sort(np.random.uniform(0, 1000, 1000)), time_units="s")
-ts2 = nap.Ts(t=np.sort(np.random.uniform(0, 1000, 10)), time_units="s")
-
-ts1_time_array = ts1.as_units("s").index.values
-ts2_time_array = ts2.as_units("s").index.values
-
-binsize = 0.1  # second
-cc12, xt = nap.process.correlograms.cross_correlogram(
-    t1=ts1_time_array, t2=ts2_time_array, binsize=binsize, windowsize=1  # second
-)
-
-plt.figure(figsize=(10, 6))
-plt.bar(xt, cc12, binsize)
-plt.xlabel("Time t1 (us)")
-plt.ylabel("CC")
-
-# %%
-# To simplify converting to a numpy.ndarray, pynapple provides wrappers for computing autocorrelogram and crosscorrelogram for TsGroup. The function is then called for each unit or each pairs of units. It returns directly a pandas.DataFrame holding all the correlograms. In this example, autocorrelograms and cross-correlograms are computed for the same TsGroup.
-
+ts1 = nap.Ts(t=np.sort(np.random.uniform(0, 1000, 2000)), time_units="s")
+ts2 = nap.Ts(t=np.sort(np.random.uniform(0, 1000, 1000)), time_units="s")
 epoch = nap.IntervalSet(start=0, end=1000, time_units="s")
 ts_group = nap.TsGroup({0: ts1, 1: ts2}, time_support=epoch)
 
+print(ts_group)
+
+# %%
+# First we can compute their autocorrelograms meaning the number of spikes of a neuron observed in a time windows centered around its own spikes.
+# For this we can use the function `compute_autocorrelogram`.
+# We need to specifiy the `binsize` and `windowsize` to bin the spike train.
+
 autocorrs = nap.compute_autocorrelogram(
-    group=ts_group, binsize=100, windowsize=1000, time_units="ms", ep=epoch  # ms  # ms
+    group=ts_group, binsize=100, windowsize=1000, time_units="ms", ep=epoch  # ms
 )
+print(autocorrs, "\n")
+
+# %%
+# The variable `autocorrs` is a pandas DataFrame with the center of the bins for the index and each columns is a neuron.
+#
+# Similarly, we can compute crosscorrelograms meaning how many spikes of neuron 1 do I observe whenever neuron 0 fires. Here the function
+# is called `compute_crosscorrelogram` and takes a `TsGroup` as well.
+
 crosscorrs = nap.compute_crosscorrelogram(
-    group=ts_group, binsize=100, windowsize=1000, time_units="ms"  # ms  # ms
+    group=ts_group, binsize=100, windowsize=1000, time_units="ms"  # ms
 )
 
-print(autocorrs, "\n")
 print(crosscorrs, "\n")
+
+# %%
+# Column name (0, 1) is read as cross-correlogram of neuron 0 and 1 with neuron 0 being the reference time.
 
 # %%
 # ***
