@@ -471,7 +471,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         `norm` set to True normalizes the gaussian kernel to sum to 1.
 
         In the following example, a time series `tsd` with a sampling rate of 100 Hz
-        is convolved with a non-normalized gaussian kernel. The standard deviation is
+        is convolved with a gaussian kernel. The standard deviation is
         0.05 second and the windowsize is 2 second. When instantiating the gaussian kernel
         from scipy, it corresponds to parameters `M = 200` and `std=5`
 

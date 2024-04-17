@@ -9,6 +9,15 @@ In 2018, Francesco started neuroseries, a Python package built on Pandas. It was
 In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuroseries and started *pynapple*. The core of pynapple is largely built upon neuroseries. Some of the original changes to TSToolbox made by Luke were included in this package, especially the *time_support* property of all ts/tsd objects.
 
 
+0.6.3 (2024-04-17)
+------------------
+
+- Improving `__repr__` for all objects.
+- TsGroup `__getattr__` and `__setattr__` added to access metadata columns directly
+- TsGroup `__setitem__` now allows changes directly to metadata
+- TsGroup `__getitem__` returns column of metadata if passed as string
+
+
 0.6.2 (2024-04-04)
 ------------------
 
