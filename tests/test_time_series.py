@@ -1,16 +1,15 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-04-01 09:57:55
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-03 11:13:14
-#!/usr/bin/env python
-
 """Tests of time series for `pynapple` package."""
 
 import pynapple as nap
 import numpy as np
 import pandas as pd
 import pytest
+
+
+# tsd1 = nap.Tsd(t=np.arange(100), d=np.random.rand(100), time_units="s")
+# tsd2 = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 10), time_units="s")
+# tsd3 = nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 5, 4), time_units="s")
+# tsd4 = nap.Ts(t=np.arange(100), time_units="s")
 
 
 def test_create_tsd():
@@ -490,6 +489,19 @@ class Test_Time_Series_1:
                 tsd2.values.reshape(tsd2.shape[0], -1)
                 )
 
+            tsd2 = tsd.smooth(1, windowsize = 10, norm=False)
+            tmp = tsd.values.reshape(tsd.shape[0], -1)
+            tmp2 = np.zeros_like(tmp)
+            std = int(tsd.rate * 1)
+            M = int(tsd.rate * 10)
+            window = signal.windows.gaussian(M, std=std)            
+            for i in range(tmp.shape[-1]):
+                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[M//2:1-M//2]
+            np.testing.assert_array_almost_equal(
+                tmp2, 
+                tsd2.values.reshape(tsd2.shape[0], -1)
+                )
+
     def test_smooth_raise_error(self, tsd):
         if not isinstance(tsd, nap.Ts):
             with pytest.raises(AssertionError) as e_info:
@@ -508,7 +520,9 @@ class Test_Time_Series_1:
                 tsd.smooth(1, time_units = 0)
             assert str(e_info.value) == "time_units should be of type str"
 
-
+            with pytest.raises(AssertionError) as e_info:
+                tsd.smooth(1, windowsize='a')
+            assert str(e_info.value) == "windowsize should be type int or float"
 
 ####################################################
 # Test for tsd
