@@ -1,4 +1,4 @@
-__version__ = "0.6.3"
+__version__ = "0.6.4"
 from .core import IntervalSet, Ts, Tsd, TsdFrame, TsdTensor, TsGroup, TsIndex, config
 from .io import *
 from .process import *
