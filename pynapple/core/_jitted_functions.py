@@ -82,6 +82,49 @@ def jittsrestrict(time_array, starts, ends):
 
 
 @jit(nopython=True)
+def jitrestrict2(time_array, starts, ends):
+    n = len(time_array)
+    m = len(starts)
+    ix = np.zeros(n, dtype=np.bool_)
+
+    k = 0
+    t = 0
+
+    while ends[k] < time_array[t]:
+        k += 1
+
+    while k < m:
+        # Outside
+        while t < n:
+            if time_array[t] >= starts[k]:
+                # ix[t] = True
+                # t += 1
+                break
+            t += 1
+
+        # Inside
+        while t < n:
+            if time_array[t] > ends[k]:
+                k += 1
+                break
+            else:
+                ix[t] = True
+            t += 1
+
+        if k == m:
+            break
+        if t == n:
+            break
+
+    # new_time_array = time_array[ix]
+    return ix
+
+
+def restrict(time_array, starts, ends):
+    return time_array[jitrestrict2(time_array, starts, ends)]
+
+
+@jit(nopython=True)
 def jitrestrict_with_count(time_array, data_array, starts, ends):
     n = len(time_array)
     m = len(starts)

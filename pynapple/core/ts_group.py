@@ -24,7 +24,7 @@ from .base_class import Base
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
-from .utils import _get_terminal_size, convert_to_numpy
+from .utils import _get_terminal_size, convert_to_numpy_array
 
 
 def _union_intervals(i_sets):
@@ -138,7 +138,7 @@ class TsGroup(UserDict):
                         stacklevel=2,
                     )
                     data[k] = Ts(
-                        t=cast_to_numpy(data[k], "key {}".format(k)),
+                        t=convert_to_numpy_array(data[k], "key {}".format(k)),
                         time_support=time_support,
                         time_units=time_units,
                     )

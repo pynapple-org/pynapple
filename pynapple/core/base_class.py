@@ -314,7 +314,7 @@ class Base(abc.ABC):
 
         Returns
         -------
-        out: Ts, Tsd, TsdFrame or TsdTensor
+        Ts, Tsd, TsdFrame or TsdTensor
             Tsd object restricted to ep
 
         Examples
