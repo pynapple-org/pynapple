@@ -170,7 +170,7 @@ class IntervalSet(NDArrayOperatorsMixin):
         self.nap_class = self.__class__.__name__
 
     def __repr__(self):
-        headers = ["start", "end"]
+        headers = [" " * 6, "start", "end"]
         bottom = "shape: {}, time unit: sec.".format(self.shape)
 
         rows = _get_terminal_size()[1]
@@ -182,17 +182,27 @@ class IntervalSet(NDArrayOperatorsMixin):
                 warnings.simplefilter("ignore")
                 return (
                     tabulate(
-                        self.values[0:n_rows],
+                        np.hstack(
+                            (self.index[0:n_rows][:, None], self.values[0:n_rows])
+                        ),
                         headers=headers,
-                        showindex=self.index[0:n_rows],
                         tablefmt="plain",
+                        colalign=("left", "center", "center"),
                     )
-                    + "\n\n...\n"
+                    + "\n"
+                    + " " * 10
+                    + "..."
                     + tabulate(
-                        self.values[-n_rows:],
-                        headers=[" " * 5, " " * 3],  # To align properly the columns
-                        showindex=self.index[-n_rows:],
+                        np.hstack(
+                            (self.index[-n_rows:][:, None], self.values[-n_rows:])
+                        ),
+                        headers=[
+                            " " * 6,
+                            " " * 5,
+                            " " * 3,
+                        ],  # To align properly the columns
                         tablefmt="plain",
+                        colalign=("left", "center", "center"),
                     )
                     + "\n"
                     + bottom
