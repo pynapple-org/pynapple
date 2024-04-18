@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-12-02 17:17:03
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-01 17:37:20
+# @Last Modified time: 2024-04-18 17:23:42
 
 """Tests of jitted core functions for `pynapple` package."""
 
@@ -75,8 +75,8 @@ def test_jitrestrict():
         ep, ts, tsd, tsdframe = get_example_dataset()
 
         tsd2 = restrict(ep, tsd)
-        t, d= nap.core._jitted_functions.jitrestrict(tsd.index, tsd.values, ep.start, ep.end)
-        tsd3 = pd.Series(index=t, data=d)
+        ix = nap.core._jitted_functions.jitrestrict(tsd.index, ep.start, ep.end)
+        tsd3 = pd.Series(index=tsd.index[ix], data=tsd.values[ix])
         pd.testing.assert_series_equal(tsd2, tsd3)
 
 def test_jittsrestrict():
@@ -84,8 +84,8 @@ def test_jittsrestrict():
         ep, ts, tsd, tsdframe = get_example_dataset()
 
         ts2 = restrict(ep, ts)
-        t = nap.core._jitted_functions.jittsrestrict(ts.index, ep.start, ep.end)
-        ts3 = pd.Series(index=t, dtype="object")
+        idx = nap.core._jitted_functions.jitrestrict(ts.index, ep.start, ep.end)
+        ts3 = pd.Series(index=ts.index[idx], dtype="object")
         pd.testing.assert_series_equal(ts2, ts3)
 
 def test_jitrestrict_with_count():
@@ -170,8 +170,8 @@ def test_jitvalue_from():
     for i in range(10):
         ep, ts, tsd, tsdframe = get_example_dataset()
 
-        t, d, s, e = nap.core._jitted_functions.jitvaluefrom(ts.index, tsd.index, tsd.values, ep.start, ep.end)
-        tsd3 = pd.Series(index=t, data=d)
+        t, idx = nap.core._jitted_functions.jitvaluefrom(ts.index, tsd.index, ep.start, ep.end)
+        tsd3 = pd.Series(index=t, data=tsd.values[idx])
 
         tsd2 = []
         for j in ep.index:
@@ -219,7 +219,7 @@ def test_jitbin():
         starts = ep.start
         ends = ep.end
         bin_size = 1.0
-        t, d = nap.core._jitted_functions.jitbin(time_array, data_array, starts, ends, bin_size)
+        t, d = nap.core._jitted_functions.jitbin_array(time_array, data_array, starts, ends, bin_size)
         # tsd3 = nap.Tsd(t=t, d=d, time_support = ep)
         tsd3 = pd.Series(index=t, data=d)
         tsd3 = tsd3.fillna(0.0)

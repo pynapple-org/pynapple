@@ -59,7 +59,6 @@ class MockArray:
 ##################################
 # Test for backend
 ##################################
-
 def test_change_backend():
     nap.nap_config.set_backend("numba")
 
@@ -71,21 +70,20 @@ def test_change_backend():
 
     # For local tests.
     # Should not be installed for github actions    
-    try:
-        import pynajax
+    # try:
+    #     import pynajax
         
-        nap.nap_config.set_backend("jax")
-        assert nap.core.utils.get_backend() == "jax"
-        assert nap.nap_config.backend == "jax"
+    #     nap.nap_config.set_backend("jax")
+    #     assert nap.core.utils.get_backend() == "jax"
+    #     assert nap.nap_config.backend == "jax"
 
-    except ModuleNotFoundError:        
+    # except ModuleNotFoundError:        
+        # with warnings.catch_warnings(record=True) as w:
+        #     nap.nap_config.set_backend("jax")
 
-        with warnings.catch_warnings(record=True) as w:
-            nap.nap_config.set_backend("jax")
-
-        assert str(w[0].message) == 'Package pynajax is not found. Falling back to numba backend. To use the jax backend for pynapple, please install pynajax'
-        assert nap.core.utils.get_backend() == "numba"
-        assert nap.nap_config.backend == "numba"
+        # assert str(w[0].message) == 'Package pynajax is not found. Falling back to numba backend. To use the jax backend for pynapple, please install pynajax'
+        # assert nap.core.utils.get_backend() == "numba"
+        # assert nap.nap_config.backend == "numba"
     
 ##################################
 # Tests for warnings

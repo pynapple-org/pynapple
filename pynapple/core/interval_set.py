@@ -49,14 +49,19 @@ import pandas as pd
 from numpy.lib.mixins import NDArrayOperatorsMixin
 from tabulate import tabulate
 
-from ._jitted_functions import jitdiff, jitin_interval, jitintersect, jitunion
+from ._jitted_functions import (
+    jitdiff,
+    jitin_interval,
+    jitintersect,
+    jitunion,
+    _jitfix_iset,
+)
 from .config import nap_config
 from .time_index import TsIndex
 from .utils import (
     _get_terminal_size,
     _IntervalSetSliceHelper,
-    _jitfix_iset,
-    convert_to_numpy,
+    convert_to_numpy_array,
     is_array_like,
 )
 
@@ -134,7 +139,7 @@ class IntervalSet(NDArrayOperatorsMixin):
                 elif isinstance(data, np.ndarray):
                     args[arg] = np.ravel(data)
                 elif is_array_like(data):
-                    args[arg] = cast_to_numpy(data, arg)
+                    args[arg] = convert_to_numpy_array(data, arg)
                 else:
                     raise RuntimeError(
                         "Unknown format for {}. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.".format(

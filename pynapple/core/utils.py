@@ -8,27 +8,8 @@ from itertools import combinations
 from numbers import Number
 
 import numpy as np
-from numba import jit
 
 from .config import nap_config
-
-# def not_implemented_in_pynajax(func, which_in, which_out, *args, **kwargs):
-
-#     if nap_config.backend == "jax":
-#         import jax
-#         import jax.numpy as jnp
-
-#         # def wrapper(*args, **kwargs):
-#         arguments, struct = jax.tree_util.tree_flatten((args, kwargs))
-#         arguments[which_in] = jax.tree_map(np.asarray, arguments[which_in])
-#         args, kwargs = jax.tree_util.tree_unflatten(struct, arguments)
-#         out = func(*args, **kwargs)
-#         out = list(out)
-#         out[which_out] = jax.tree_map(jnp.asarray, out[which_out])
-#         return tuple(out)
-#     else:
-#         # def wrapper(*args, **kwargs):
-#         return func(*args, **kwargs)
 
 
 def convert_to_numpy_array(array, array_name):
@@ -397,81 +378,6 @@ def _concatenate_tsd(func, *args, **kwargs):
 
                 warnings.warn(msg, stacklevel=2)
                 return output
-
-
-@jit(nopython=True)
-def _jitfix_iset(start, end):
-    """
-    0 - > "Some starts and ends are equal. Removing 1 microsecond!",
-    1 - > "Some ends precede the relative start. Dropping them!",
-    2 - > "Some starts precede the previous end. Joining them!",
-    3 - > "Some epochs have no duration"
-
-    Parameters
-    ----------
-    start : numpy.ndarray
-        Description
-    end : numpy.ndarray
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
-    """
-    to_warn = np.zeros(4, dtype=np.bool_)
-    m = start.shape[0]
-    data = np.zeros((m, 2), dtype=np.float64)
-    i = 0
-    ct = 0
-
-    while i < m:
-        newstart = start[i]
-        newend = end[i]
-
-        while i < m:
-            if end[i] == start[i]:
-                to_warn[3] = True
-                i += 1
-            else:
-                newstart = start[i]
-                newend = end[i]
-                break
-
-        while i < m:
-            if end[i] < start[i]:
-                to_warn[1] = True
-                i += 1
-            else:
-                newstart = start[i]
-                newend = end[i]
-                break
-
-        if i >= m:
-            break
-
-        while i < m - 1:
-            if start[i + 1] < end[i]:
-                to_warn[2] = True
-                i += 1
-                newend = max(end[i - 1], end[i])
-            else:
-                break
-
-        if i < m - 1:
-            if newend == start[i + 1]:
-                to_warn[0] = True
-                newend -= 1.0e-6
-
-        data[ct, 0] = newstart
-        data[ct, 1] = newend
-
-        ct += 1
-        i += 1
-
-    data = data[0:ct]
-
-    return (data, to_warn)
 
 
 class _TsdFrameSliceHelper:

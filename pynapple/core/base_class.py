@@ -174,7 +174,7 @@ class Base(abc.ABC):
         >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
         >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
 
-        The variable ts is a time series object containing only nan.
+        The variable ts is a timestamp object.
         The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
 
         >>> newts = ts.value_from(tsd, ep)
@@ -192,11 +192,11 @@ class Base(abc.ABC):
         starts = ep.start
         ends = ep.end
 
-        t, d, ns, ne = _value_from(
+        t, d = _value_from(
             time_array, time_target_array, data_target_array, starts, ends
         )
 
-        time_support = IntervalSet(start=ns, end=ne)
+        time_support = IntervalSet(start=starts, end=ends)
 
         kwargs = {}
         if hasattr(data, "columns"):
@@ -338,23 +338,22 @@ class Base(abc.ABC):
         assert isinstance(iset, IntervalSet), "Argument should be IntervalSet"
 
         time_array = self.index.values
-        data_array = None
         starts = iset.start
         ends = iset.end
 
-        if hasattr(self, "values"):
-            data_array = self.values
-
-        out = _restrict(time_array, data_array, starts, ends)
+        idx = _restrict(time_array, starts, ends)
 
         kwargs = {}
         if hasattr(self, "columns"):
             kwargs["columns"] = self.columns
 
         if hasattr(self, "values"):
-            return self.__class__(t=out[0], d=out[1], time_support=iset, **kwargs)
+            data_array = self.values
+            return self.__class__(
+                t=time_array[idx], d=data_array[idx], time_support=iset, **kwargs
+            )
         else:
-            return self.__class__(t=out, time_support=iset)
+            return self.__class__(t=time_array[idx], time_support=iset)
 
     def copy(self):
         """Copy the data, index and time support"""

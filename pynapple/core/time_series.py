@@ -88,7 +88,9 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         if isinstance(time_support, IntervalSet) and len(self.index):
             starts = time_support.start
             ends = time_support.end
-            t, d = _restrict(self.index.values, self.values, starts, ends)
+            idx = _restrict(self.index.values, starts, ends)
+            t = self.index.values[idx]
+            d = self.values[idx]
 
             self.index = TsIndex(t)
             self.values = d
@@ -1429,8 +1431,8 @@ class Ts(Base):
         if isinstance(time_support, IntervalSet) and len(self.index):
             starts = time_support.start
             ends = time_support.end
-            t = _restrict(self.index.values, None, starts, ends)
-            self.index = TsIndex(t)
+            idx = _restrict(self.index.values, starts, ends)        
+            self.index = TsIndex(self.index.values[idx])
             self.rate = self.index.shape[0] / np.sum(
                 time_support.values[:, 1] - time_support.values[:, 0]
             )
