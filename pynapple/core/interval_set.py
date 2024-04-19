@@ -50,11 +50,11 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from tabulate import tabulate
 
 from ._jitted_functions import (
+    _jitfix_iset,
     jitdiff,
     jitin_interval,
     jitintersect,
     jitunion,
-    _jitfix_iset,
 )
 from .config import nap_config
 from .time_index import TsIndex

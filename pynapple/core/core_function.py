@@ -11,13 +11,13 @@
 import numpy as np
 from scipy import signal
 
-from ._jitted_functions import (    
+from ._jitted_functions import (
     jitbin_array,
     jitcount,
     jitremove_nan,
     jitrestrict,
+    jitrestrict_with_count,
     jitthreshold,
-    jittsrestrict_with_count,
     jitvaluefrom,
     pjitconvolve,
 )
@@ -32,14 +32,33 @@ def _count(time_array, starts, ends, bin_size=None):
     if isinstance(bin_size, (float, int)):
         return jitcount(time_array, starts, ends, bin_size)
     else:
-        _, d = jittsrestrict_with_count(time_array, starts, ends)
+        _, d = jitrestrict_with_count(time_array, starts, ends)
         t = starts + (ends - starts) / 2
         return t, d
 
 
 def _value_from(time_array, time_target_array, data_target_array, starts, ends):
-    t, idx = jitvaluefrom(time_array, time_target_array, starts, ends)
-    return t, data_target_array[idx]
+    idx_t, count = jitrestrict_with_count(time_array, starts, ends)
+    idx_target, count_target = jitrestrict_with_count(time_target_array, starts, ends)
+    idx = jitvaluefrom(
+        time_array[idx_t],
+        time_target_array[idx_target],
+        count,
+        count_target,
+        starts,
+        ends,
+    )
+
+    new_time_array = time_array[idx_t]
+
+    new_data_array = np.zeros(
+        (len(new_time_array), *data_target_array.shape[1:]),
+        dtype=data_target_array.dtype,
+    )
+    idx2 = ~np.isnan(idx)
+    new_data_array[idx2] = data_target_array[idx_target][idx[idx2].astype(int)]
+
+    return new_time_array, new_data_array
 
 
 def _dropna(time_array, data_array, starts, ends, update_time_support, ndim):
@@ -115,6 +134,7 @@ def _convolve(time_array, data_array, starts, ends, array, trim="both"):
 def _bin_average(time_array, data_array, starts, ends, bin_size):
     if get_backend() == "jax":
         from pynajax.jax_core_bin_average import bin_average
+
         return bin_average(time_array, data_array, starts, ends, bin_size)
     else:
         return jitbin_array(time_array, data_array, starts, ends, bin_size)
@@ -123,13 +143,11 @@ def _bin_average(time_array, data_array, starts, ends, bin_size):
 def _threshold(time_array, data_array, starts, ends, thr, method):
     if get_backend() == "jax":
         from pynajax.jax_core_threshold import threshold
+
         return threshold(time_array, data_array, starts, ends, thr, method)
     else:
         return jitthreshold(time_array, data_array, starts, ends, thr, method)
 
-# def perievent
 
-# def _sta():
-
-
-# def _interp
+def _event_trigger_average():
+    pass

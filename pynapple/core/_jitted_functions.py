@@ -44,7 +44,7 @@ def jitrestrict(time_array, starts, ends):
 
 
 @jit(nopython=True)
-def jittsrestrict_with_count(time_array, starts, ends):
+def jitrestrict_with_count(time_array, starts, ends):
     n = len(time_array)
     m = len(starts)
     ix = np.zeros(n, dtype=np.bool_)
@@ -81,22 +81,16 @@ def jittsrestrict_with_count(time_array, starts, ends):
         if t == n:
             break
 
-    new_time_array = time_array[ix]
-    return new_time_array, count
+    return ix, count
 
 
 @jit(nopython=True)
-def jitvaluefrom(time_array, time_target_array, starts, ends):
-    time_array, count = jittsrestrict_with_count(time_array, starts, ends)
-    time_target_array, count_target = jittsrestrict_with_count(
-        time_target_array, starts, ends
-    )
-
+def jitvaluefrom(time_array, time_target_array, count, count_target, starts, ends):
     m = starts.shape[0]
     n = time_array.shape[0]
     d = time_target_array.shape[0]
 
-    idx = np.zeros(n, dtype=np.int_)
+    idx = np.full(n, np.nan)
 
     if n > 0 and d > 0:
         for k in range(m):
@@ -107,7 +101,7 @@ def jitvaluefrom(time_array, time_target_array, starts, ends):
                 maxi = i + count_target[k]
                 while t < maxt:
                     interval = abs(time_array[t] - time_target_array[i])
-                    idx[t] = i
+                    idx[t] = float(i)
 
                     i += 1
                     while i < maxi:
@@ -115,18 +109,19 @@ def jitvaluefrom(time_array, time_target_array, starts, ends):
                         if new_interval > interval:
                             break
                         else:
-                            idx[t] = i
+                            idx[t] = float(i)
                             interval = new_interval
                             i += 1
                     i -= 1
                     t += 1
 
-    return (time_array, idx)
+    return idx
 
 
 @jit(nopython=True)
 def jitcount(time_array, starts, ends, bin_size):
-    time_array, countin = jittsrestrict_with_count(time_array, starts, ends)
+    idx, countin = jitrestrict_with_count(time_array, starts, ends)
+    time_array = time_array[idx]
 
     m = starts.shape[0]
 
@@ -318,53 +313,10 @@ def jitthreshold(time_array, data_array, starts, ends, thr, method="above"):
 
 
 @jit(nopython=True)
-def jitrestrict_with_count(time_array, data_array, starts, ends):
-    n = len(time_array)
-    m = len(starts)
-    ix = np.zeros(n, dtype=np.bool_)
-    count = np.zeros(m, dtype=np.int64)
-
-    k = 0
-    t = 0
-
-    while ends[k] < time_array[t]:
-        k += 1
-
-    while k < m:
-        # Outside
-        while t < n:
-            if time_array[t] >= starts[k]:
-                # ix[t] = True
-                # count[k] += 1
-                # t += 1
-                break
-            t += 1
-
-        # Inside
-        while t < n:
-            if time_array[t] > ends[k]:
-                k += 1
-                break
-            else:
-                ix[t] = True
-                count[k] += 1
-            t += 1
-
-        if k == m:
-            break
-        if t == n:
-            break
-
-    new_time_array = time_array[ix]
-    new_data_array = data_array[ix]
-    return new_time_array, new_data_array, count
-
-
-@jit(nopython=True)
 def jitbin_array(time_array, data_array, starts, ends, bin_size):
-    time_array, data_array, countin = jitrestrict_with_count(
-        time_array, data_array, starts, ends
-    )
+    idx, countin = jitrestrict_with_count(time_array, starts, ends)
+    time_array = time_array[idx]
+    data_array = data_array[idx]
 
     m = starts.shape[0]
     f = data_array.shape[1:]
@@ -560,9 +512,10 @@ def jitperievent_trigger_average(
     N = count_array.shape[1]
     N_epochs = len(starts)
 
-    time_target_array, data_target_array, count = jitrestrict_with_count(
-        time_target_array, data_target_array, starts, ends
-    )
+    idx, count = jitrestrict_with_count(time_target_array, starts, ends)
+    time_target_array = time_target_array[idx]
+    data_target_array = data_target_array[idx]
+
     max_count = np.cumsum(count)
 
     new_data_array = np.full(
