@@ -226,7 +226,7 @@ def _perievent_trigger_average(
     binsize,
 ):
     if nap.utils.get_backend() == "jax":
-        from pynajax.jax_process_perievent import event_trigger_average
+        from pynajax.jax_process_perievent import event_trigger_average, fill_forward
 
         return event_trigger_average(
             time_array,
