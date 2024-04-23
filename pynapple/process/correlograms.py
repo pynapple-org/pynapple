@@ -4,10 +4,10 @@ from itertools import combinations, product
 
 import numpy as np
 import pandas as pd
+from numba import jit
 
 from .. import core as nap
 
-from numba import jit
 
 #########################################################
 # CORRELATION
