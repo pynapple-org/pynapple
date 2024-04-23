@@ -98,7 +98,9 @@ def _jitperievent_trigger_average(
     N = count_array.shape[1]
     N_epochs = len(starts)
 
-    idx, count = nap._jitted_functions.jitrestrict_with_count(time_target_array, starts, ends)
+    idx, count = nap._jitted_functions.jitrestrict_with_count(
+        time_target_array, starts, ends
+    )
     time_target_array = time_target_array[idx]
     data_target_array = data_target_array[idx]
 
