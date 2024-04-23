@@ -27,8 +27,8 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from scipy import signal
 from tabulate import tabulate
 
+from ._core_functions import _bin_average, _convolve, _dropna, _restrict, _threshold
 from .base_class import Base
-from .core_function import _bin_average, _convolve, _dropna, _restrict, _threshold
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .utils import (
@@ -492,13 +492,20 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
             "right",
         ], "Unknow argument. trim should be 'both', 'left' or 'right'."
 
-        if ep is None:
-            ep = self.time_support
-
         time_array = self.index.values
         data_array = self.values
-        starts = ep.start
-        ends = ep.end
+
+        if ep is None:
+            ep = self.time_support
+            starts = ep.start
+            ends = ep.end
+        else:
+            assert isinstance(ep, IntervalSet)
+            starts = ep.start
+            ends = ep.end
+            idx = _restrict(time_array, starts, ends)
+            time_array = time_array[idx]
+            data_array = data_array[idx]
 
         new_data_array = _convolve(time_array, data_array, starts, ends, array, trim)
 

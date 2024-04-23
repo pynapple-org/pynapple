@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-12-02 17:17:03
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-19 17:54:34
+# @Last Modified time: 2024-04-22 17:30:35
 
 """Tests of jitted core functions for `pynapple` package."""
 
@@ -140,7 +140,7 @@ def test_jitvalue_from():
     for i in range(100):
         ep, ts, tsd, tsdframe = get_example_dataset()
 
-        t, d = nap.core.core_function._value_from(ts.t, tsd.t, tsd.d, ep.start, ep.end)
+        t, d = nap.core._core_functions._value_from(ts.t, tsd.t, tsd.d, ep.start, ep.end)
         
         tsd3 = pd.Series(index=t, data=d)
 

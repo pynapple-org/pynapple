@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-08-29 17:27:02
-# @Last Modified by:   gviejo
-# @Last Modified time: 2024-02-20 22:45:51
 #!/usr/bin/env python
 
 """Tests of spike trigger average for `pynapple` package."""
@@ -188,14 +183,16 @@ def test_compute_spike_trigger_average_raise_error():
 
 def test_compute_spike_trigger_average_time_unit():
     ep = nap.IntervalSet(0, 100)
-    feature = pd.Series(index=np.arange(0, 101, 0.01), data=np.zeros(int(101 / 0.01)))
+    t = np.arange(0, 101, 0.01)
+    d = np.zeros(int(101 / 0.01))
     t1 = np.arange(1, 100)
-    feature.loc[t1] = 1.0
+    for i in range(len(t1)):
+        d[t==t1[i]] = 1.0
+    feature = nap.Tsd(t=t, d=d, time_support=ep)
+    
     spikes = nap.TsGroup(
         {0: nap.Ts(t1), 1: nap.Ts(t1 - 0.1), 2: nap.Ts(t1 + 0.2)}, time_support=ep
     )
-
-    feature = nap.Tsd(feature, time_support=ep)
 
     sta = nap.compute_event_trigger_average(spikes, feature, 0.2, (0.6, 0.6), ep)
 

@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-01-30 22:59:00
-# @Last Modified by:   gviejo
-# @Last Modified time: 2024-02-20 22:27:23
+"""Perievent functions
+
+"""
 
 import numpy as np
 
 from .. import core as nap
+from ._process_functions import _perievent_trigger_average
 
 
 def _align_tsd(tsd, tref, window, time_support):
@@ -288,29 +287,16 @@ def compute_event_trigger_average(
     time_target_array = feature.index.values
     data_target_array = feature.values
 
-    if data_target_array.ndim == 1:
-        eta = nap._jitted_functions.jitperievent_trigger_average(
-            time_array,
-            count_array,
-            time_target_array,
-            np.expand_dims(data_target_array, -1),
-            starts,
-            ends,
-            windows,
-            binsize,
-        )
-        eta = np.squeeze(eta, -1)
-    else:
-        eta = nap._jitted_functions.jitperievent_trigger_average(
-            time_array,
-            count_array,
-            time_target_array,
-            data_target_array,
-            starts,
-            ends,
-            windows,
-            binsize,
-        )
+    eta = _perievent_trigger_average(
+        time_array,
+        count_array,
+        time_target_array,
+        data_target_array,
+        starts,
+        ends,
+        windows,
+        binsize,
+    )
 
     if eta.ndim == 2:
         return nap.TsdFrame(t=time_idx, d=eta, columns=group.index)

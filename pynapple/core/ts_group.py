@@ -14,9 +14,9 @@ import numpy as np
 import pandas as pd
 from tabulate import tabulate
 
+from ._core_functions import _count
 from ._jitted_functions import jitunion, jitunion_isets
 from .base_class import Base
-from .core_function import _count
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like

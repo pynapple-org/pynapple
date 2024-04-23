@@ -8,7 +8,7 @@ from numbers import Number
 
 import numpy as np
 
-from .core_function import _count, _restrict, _value_from
+from ._core_functions import _count, _restrict, _value_from
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .utils import convert_to_numpy_array

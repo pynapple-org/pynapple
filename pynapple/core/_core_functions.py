@@ -147,7 +147,3 @@ def _threshold(time_array, data_array, starts, ends, thr, method):
         return threshold(time_array, data_array, starts, ends, thr, method)
     else:
         return jitthreshold(time_array, data_array, starts, ends, thr, method)
-
-
-def _event_trigger_average():
-    pass
