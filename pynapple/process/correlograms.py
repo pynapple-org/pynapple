@@ -1,9 +1,4 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-01-02 11:39:55
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-22 17:23:27
-
+"""Cross-correlograms """
 
 from itertools import combinations, product
 
@@ -11,11 +6,79 @@ import numpy as np
 import pandas as pd
 
 from .. import core as nap
-from ._process_functions import _cross_correlogram
+
+from numba import jit
 
 #########################################################
 # CORRELATION
 #########################################################
+@jit(nopython=True)
+def _cross_correlogram(t1, t2, binsize, windowsize):
+    """
+    Performs the discrete cross-correlogram of two time series.
+    The units should be in s for all arguments.
+    Return the firing rate of the series t2 relative to the timings of t1.
+    See compute_crosscorrelogram, compute_autocorrelogram and compute_eventcorrelogram
+    for wrappers of this function.
+
+    Parameters
+    ----------
+    t1 : numpy.ndarray
+        The timestamps of the reference time series (in seconds)
+    t2 : numpy.ndarray
+        The timestamps of the target time series (in seconds)
+    binsize : float
+        The bin size (in seconds)
+    windowsize : float
+        The window size (in seconds)
+
+    Returns
+    -------
+    numpy.ndarray
+        The cross-correlogram
+    numpy.ndarray
+        Center of the bins (in s)
+
+    """
+    # nbins = ((windowsize//binsize)*2)
+
+    nt1 = len(t1)
+    nt2 = len(t2)
+
+    nbins = int((windowsize * 2) // binsize)
+    if np.floor(nbins / 2) * 2 == nbins:
+        nbins = nbins + 1
+
+    w = (nbins / 2) * binsize
+    C = np.zeros(nbins)
+    i2 = 0
+
+    for i1 in range(nt1):
+        lbound = t1[i1] - w
+        while i2 < nt2 and t2[i2] < lbound:
+            i2 = i2 + 1
+        while i2 > 0 and t2[i2 - 1] > lbound:
+            i2 = i2 - 1
+
+        rbound = lbound
+        leftb = i2
+        for j in range(nbins):
+            k = 0
+            rbound = rbound + binsize
+            while leftb < nt2 and t2[leftb] < rbound:
+                leftb = leftb + 1
+                k = k + 1
+
+            C[j] += k
+
+    C = C / (nt1 * binsize)
+
+    m = -w + binsize / 2
+    B = np.zeros(nbins)
+    for j in range(nbins):
+        B[j] = m + j * binsize
+
+    return C, B
 
 
 def compute_autocorrelogram(

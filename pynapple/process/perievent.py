@@ -5,7 +5,7 @@
 import numpy as np
 
 from .. import core as nap
-from ._process_functions import _perievent_trigger_average
+from ._process_functions import _perievent_trigger_average, _perievent_continuous
 
 
 def _align_tsd(tsd, tref, window, time_support):
@@ -178,7 +178,7 @@ def compute_perievent_continuous(data, tref, minmax, ep=None, time_unit="s"):
     time_idx = np.hstack((idx1, np.zeros(1), idx2))
     windowsize = np.array([idx1.shape[0], idx2.shape[0]])
 
-    new_data_array = nap._jitted_functions.jitcontinuous_perievent(
+    new_data_array = _perievent_continuous(
         time_array, data_array, time_target_array, starts, ends, windowsize
     )
 

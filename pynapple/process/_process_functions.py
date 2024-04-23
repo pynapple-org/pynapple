@@ -9,78 +9,108 @@
 """
 
 import numpy as np
-from numba import jit
+from numba import jit, njit, prange
 
 from .. import core as nap
 
 
-@jit(nopython=True)
-def _cross_correlogram(t1, t2, binsize, windowsize):
-    """
-    Performs the discrete cross-correlogram of two time series.
-    The units should be in s for all arguments.
-    Return the firing rate of the series t2 relative to the timings of t1.
-    See compute_crosscorrelogram, compute_autocorrelogram and compute_eventcorrelogram
-    for wrappers of this function.
+@njit(parallel=True)
+def _jitcontinuous_perievent(
+    time_array, data_array, time_target_array, starts, ends, windowsize
+):
+    N_samples = len(time_array)
+    N_target = len(time_target_array)
+    N_epochs = len(starts)
+    count = np.zeros((N_epochs, 2), dtype=np.int64)
+    start_t = np.zeros((N_epochs, 2), dtype=np.int64)
 
-    Parameters
-    ----------
-    t1 : numpy.ndarray
-        The timestamps of the reference time series (in seconds)
-    t2 : numpy.ndarray
-        The timestamps of the target time series (in seconds)
-    binsize : float
-        The bin size (in seconds)
-    windowsize : float
-        The window size (in seconds)
+    k = 0  # Epochs
+    t = 0  # Samples
+    i = 0  # Target
 
-    Returns
-    -------
-    numpy.ndarray
-        The cross-correlogram
-    numpy.ndarray
-        Center of the bins (in s)
+    while ends[k] < time_array[t] and ends[k] < time_target_array[i]:
+        k += 1
 
-    """
-    # nbins = ((windowsize//binsize)*2)
+    while k < N_epochs:
+        # Outside
+        while t < N_samples:
+            if time_array[t] >= starts[k]:
+                break
+            t += 1
 
-    nt1 = len(t1)
-    nt2 = len(t2)
+        while i < N_target:
+            if time_target_array[i] >= starts[k]:
+                break
+            i += 1
 
-    nbins = int((windowsize * 2) // binsize)
-    if np.floor(nbins / 2) * 2 == nbins:
-        nbins = nbins + 1
+        if time_array[t] <= ends[k]:
+            start_t[k, 0] = t
 
-    w = (nbins / 2) * binsize
-    C = np.zeros(nbins)
-    i2 = 0
+        if time_target_array[i] <= ends[k]:
+            start_t[k, 1] = i
 
-    for i1 in range(nt1):
-        lbound = t1[i1] - w
-        while i2 < nt2 and t2[i2] < lbound:
-            i2 = i2 + 1
-        while i2 > 0 and t2[i2 - 1] > lbound:
-            i2 = i2 - 1
+        # Inside
+        while t < N_samples:
+            if time_array[t] > ends[k]:
+                break
+            else:
+                count[k, 0] += 1
+            t += 1
 
-        rbound = lbound
-        leftb = i2
-        for j in range(nbins):
-            k = 0
-            rbound = rbound + binsize
-            while leftb < nt2 and t2[leftb] < rbound:
-                leftb = leftb + 1
-                k = k + 1
+        while i < N_target:
+            if time_target_array[i] > ends[k]:
+                break
+            else:
+                count[k, 1] += 1
+            i += 1
 
-            C[j] += k
+        k += 1
 
-    C = C / (nt1 * binsize)
+        if k == N_epochs:
+            break
+        if t == N_samples:
+            break
+        if i == N_target:
+            break
 
-    m = -w + binsize / 2
-    B = np.zeros(nbins)
-    for j in range(nbins):
-        B[j] = m + j * binsize
+    new_data_array = np.full(
+        (np.sum(windowsize) + 1, np.sum(count[:, 1]), *data_array.shape[1:]), np.nan
+    )
 
-    return C, B
+    if np.any((count[:, 0] * count[:, 1]) > 0):
+        for k in prange(N_epochs):
+            if count[k, 0] > 0 and count[k, 1] > 0:
+                t = start_t[k, 0]
+                i = start_t[k, 1]
+                maxt = t + count[k, 0]
+                maxi = i + count[k, 1]
+                cnt_i = np.sum(count[0:k, 1])
+
+                while i < maxi:
+                    interval = abs(time_array[t] - time_target_array[i])
+                    t_pos = t
+                    t += 1
+                    while t < maxt:
+                        new_interval = abs(time_array[t] - time_target_array[i])
+                        if new_interval > interval:
+                            break
+                        else:
+                            interval = new_interval
+                            t_pos = t
+                            t += 1
+
+                    left = np.minimum(windowsize[0], t_pos - start_t[k, 0])
+                    right = np.minimum(windowsize[1], maxt - t_pos - 1)
+                    center = windowsize[0] + 1
+                    new_data_array[center - left - 1 : center + right, cnt_i] = (
+                        data_array[t_pos - left : t_pos + right + 1]
+                    )
+
+                    t -= 1
+                    i += 1
+                    cnt_i += 1
+
+    return new_data_array
 
 
 @jit(nopython=True)
@@ -196,7 +226,7 @@ def _perievent_trigger_average(
     binsize,
 ):
     if nap.utils.get_backend() == "jax":
-        from pynajax.jax_process_eta import event_trigger_average
+        from pynajax.jax_process_perievent import event_trigger_average
 
         return event_trigger_average(
             time_array,
@@ -233,3 +263,18 @@ def _perievent_trigger_average(
                 windows,
                 binsize,
             )
+
+
+def _perievent_continuous(
+    time_array, data_array, time_target_array, starts, ends, windowsize
+):
+    if nap.utils.get_backend() == "jax":
+        from pynajax.jax_process_perievent import perievent_continuous
+
+        return perievent_continuous(
+            time_array, data_array, time_target_array, starts, ends, windowsize
+        )
+    else:
+        return _jitcontinuous_perievent(
+            time_array, data_array, time_target_array, starts, ends, windowsize
+        )
