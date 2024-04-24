@@ -1241,7 +1241,7 @@ class Tsd(BaseTsd):
         thr : float
             The threshold value
         method : str, optional
-            The threshold method (above/below/aboveequal/belowequal)
+            The threshold method ("above"[default], "below", "aboveequal", "belowequal")
 
         Returns
         -------
@@ -1251,7 +1251,7 @@ class Tsd(BaseTsd):
         Raises
         ------
         ValueError
-            Raise an error if method is not 'below' or 'above'
+            Raise an error if method is unknown.
         RuntimeError
             Raise an error if thr is too high/low and no epochs is found.
 
