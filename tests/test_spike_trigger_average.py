@@ -11,15 +11,65 @@ import pytest
 
 def test_compute_spike_trigger_average_tsd():
     ep = nap.IntervalSet(0, 100)
-    feature = nap.Tsd(
-        t=np.arange(0, 101, 0.01), d=np.zeros(int(101 / 0.01)), time_support=ep
-    )
+    d = np.zeros(int(101 / 0.01))
     t1 = np.arange(1, 100)
     x = np.arange(100, 10000, 100)
-    feature[x] = 1.0
+    d[x] = 1.0    
+    feature = nap.Tsd(
+        t=np.arange(0, 101, 0.01), d=d, time_support=ep
+    )
     spikes = nap.TsGroup(
         {0: nap.Ts(t1), 1: nap.Ts(t1 - 0.1), 2: nap.Ts(t1 + 0.2)}, time_support=ep
     )
+    
+    # #################
+    group = spikes
+    binsize = 0.2
+    windowsize = (0.6, 0.6)
+    count = spikes.count(binsize, ep)
+    
+    start, end = windowsize    
+
+    idx1 = -np.arange(0, start + binsize, binsize)[::-1][:-1]
+    idx2 = np.arange(0, end + binsize, binsize)[1:]
+    time_idx = np.hstack((idx1, np.zeros(1), idx2))
+
+    eta = np.zeros((time_idx.shape[0], len(group), *feature.shape[1:]))
+
+    windows = np.array([len(idx1), len(idx2)])
+
+    # Bin the spike train
+    count = group.count(binsize, ep)
+
+    time_target_array = count.index.values
+    count_array = count.values
+    starts = ep.start
+    ends = ep.end
+    time_array = feature.index.values
+    data_array = feature.values
+    batch_size = 61
+
+    from pynajax.utils import _get_idxs, _get_slicing, _get_shifted_indices
+    from pynajax.jax_core_bin_average import bin_average
+    import jax.numpy as jnp
+    import jax
+    from matplotlib.pyplot import *
+
+    time_array, data_array = bin_average(time_array, data_array, starts, ends, binsize)
+
+    figure()
+    ax = subplot(211)
+    plot(spikes.to_tsd(), "o", ms = 5)
+    [axvline(t) for t in np.arange(0, 100, binsize)]
+    subplot(212, sharex = ax)
+    plot(time_target_array, count_array[:,0], label="count")
+    # plot(time_array, data_array.flatten(), label="feature")
+    legend()
+    show()
+
+    # ################
+    
+    
 
     sta = nap.compute_event_trigger_average(spikes, feature, 0.2, (0.6, 0.6), ep)
 

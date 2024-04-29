@@ -97,7 +97,7 @@ def _convolve(time_array, data_array, starts, ends, array, trim="both"):
     if get_backend() == "jax":
         from pynajax.jax_core_convolve import convolve
 
-        return convolve(time_array, data_array, starts, ends, array)
+        return convolve(time_array, data_array, starts, ends, array, trim)
     else:
         if data_array.ndim == 1:
             new_data_array = np.zeros(data_array.shape)
@@ -112,7 +112,7 @@ def _convolve(time_array, data_array, starts, ends, array, trim="both"):
                 elif trim == "right":
                     cut = (0, t)
                 else:
-                    cut = ((1 - k % 2) + (k - 1) // 2, t + k - 1 - ((k - 1) // 2))
+                    cut = ((k - 1) // 2, t + k - 1 - ((k - 1) // 2) - (1 - k % 2))
                 # scipy is actually faster for Tsd
                 new_data_array[idx_s:idx_e] = signal.convolve(
                     data_array[idx_s:idx_e], array

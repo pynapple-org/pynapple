@@ -279,19 +279,19 @@ def compute_event_trigger_average(
     # Bin the spike train
     count = group.count(binsize, ep)
 
-    time_array = np.round(count.index.values - (binsize / 2), 9)
+    time_target_array = np.round(count.index.values - (binsize / 2), 9)
     count_array = count.values
     starts = ep.start
     ends = ep.end
 
-    time_target_array = feature.index.values
-    data_target_array = feature.values
+    time_array = feature.index.values
+    data_array = feature.values
 
     eta = _perievent_trigger_average(
-        time_array,
-        count_array,
         time_target_array,
-        data_target_array,
+        count_array,
+        time_array,
+        data_array,
         starts,
         ends,
         windows,

@@ -216,10 +216,10 @@ def _jitperievent_trigger_average(
 
 
 def _perievent_trigger_average(
-    time_array,
-    count_array,
     time_target_array,
-    data_target_array,
+    count_array,
+    time_array,
+    data_array,
     starts,
     ends,
     windows,
@@ -230,10 +230,10 @@ def _perievent_trigger_average(
         from pynajax.jax_process_perievent import event_trigger_average
 
         return event_trigger_average(
-            time_array,
-            count_array,
             time_target_array,
-            np.expand_dims(data_target_array, -1),
+            count_array,
+            time_array,
+            np.expand_dims(data_array, -1),
             starts,
             ends,
             windows,
@@ -242,12 +242,12 @@ def _perievent_trigger_average(
         )
 
     else:
-        if data_target_array.ndim == 1:
+        if data_array.ndim == 1:
             eta = _jitperievent_trigger_average(
-                time_array,
-                count_array,
                 time_target_array,
-                np.expand_dims(data_target_array, -1),
+                count_array,
+                time_array,
+                np.expand_dims(data_array, -1),
                 starts,
                 ends,
                 windows,
@@ -256,10 +256,10 @@ def _perievent_trigger_average(
             return np.squeeze(eta, -1)
         else:
             return _jitperievent_trigger_average(
-                time_array,
-                count_array,
                 time_target_array,
-                data_target_array,
+                count_array,
+                time_array,
+                data_array,
                 starts,
                 ends,
                 windows,

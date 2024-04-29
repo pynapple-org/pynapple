@@ -165,7 +165,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
             else:
                 out = ufunc(*new_args, **kwargs)
 
-            if isinstance(out, np.ndarray):
+            if isinstance(out, np.ndarray) or is_array_like(out):
                 if out.shape[0] == self.index.shape[0]:
                     kwargs = {}
                     if hasattr(self, "columns"):
@@ -181,6 +181,14 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
             return NotImplemented
 
     def __array_function__(self, func, types, args, kwargs):
+        # print("In __array_function__")
+        # print("     func = ", func)
+        # print("     types = ", types)
+        # print("     args = ", args)
+        # for inp in args:
+        #     print(type(inp))
+        # print("     kwargs = ", kwargs)
+
         if func in [
             np.sort,
             np.lexsort,
@@ -208,7 +216,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
         out = func._implementation(*new_args, **kwargs)
 
-        if isinstance(out, np.ndarray):
+        if isinstance(out, np.ndarray) or is_array_like(out):
             # # if dims increased in any case, we can't return safely a time series
             # if out.ndim > self.ndim:
             #     return out

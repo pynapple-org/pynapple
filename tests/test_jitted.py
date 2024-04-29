@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-12-02 17:17:03
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-22 17:30:35
-
 """Tests of jitted core functions for `pynapple` package."""
 
 import pynapple as nap
@@ -11,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import warnings
+
 
 def get_example_dataset(n=100):
     with warnings.catch_warnings():

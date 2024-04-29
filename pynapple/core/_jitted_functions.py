@@ -384,7 +384,7 @@ def pjitconvolve(data_array, array, trim="both"):
     new_data_array = np.zeros(data_array.shape)
 
     if trim == "both":
-        cut = ((1 - k % 2) + (k - 1) // 2, t + k - 1 - ((k - 1) // 2))
+        cut = ((k - 1) // 2, t + k - 1 - ((k - 1) // 2) - (1 - k % 2))
     elif trim == "left":
         cut = (k - 1, t + k - 1)
     elif trim == "right":
