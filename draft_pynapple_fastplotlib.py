@@ -35,7 +35,7 @@ import sys
 # mkdocs_gallery_thumbnail_path = '../_static/fastplotlib_demo.png'
 
 #nwb = nap.load_file("/Users/gviejo/pynapple/Mouse32-220101.nwb")
-nwb = nap.load_file("your/path/to/MyProject/sub-A2929/ses-A2929-200711/pynapplenwb/A2929-200711.nwb")
+nwb = nap.load_file("your/path/to/MyProject/sub-A2929/A2929-200711/pynapplenwb/A2929-200711.nwb")
 
 units = nwb['units']#.getby_category("location")['adn']
 

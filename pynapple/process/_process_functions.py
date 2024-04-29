@@ -233,7 +233,7 @@ def _perievent_trigger_average(
             time_target_array,
             count_array,
             time_array,
-            np.expand_dims(data_array, -1),
+            data_array,
             starts,
             ends,
             windows,
