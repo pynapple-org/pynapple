@@ -44,6 +44,9 @@ repository = "https://github.com/pynapple-org/pynapple"
 # Optional dependencies
 ##########################################################################
 [project.optional-dependencies]
+jax = [
+    "pynajax"
+]
 dev = [
     "black>=24.2.0",                # Code formatter
     "isort",                        # Import sorter
@@ -69,6 +72,8 @@ dandi = [
     "requests",
     "aiohttp",
 ]
+
+
 
 [tool.black]
 target-version = ['py36', 'py37', 'py38', 'py39']
