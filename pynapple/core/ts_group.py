@@ -1111,8 +1111,8 @@ class TsGroup(UserDict):
         -------  ------
               0     0.3
              10     0.3
-                    start    end
-            0       -5      5
+                start    end
+        0       -5      5
         shape: (1, 2), time unit: sec.
 
         """
