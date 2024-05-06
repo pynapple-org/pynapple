@@ -78,6 +78,8 @@ def convert_to_jax_array(array, array_name):
         return array
     elif isinstance(array, np.ndarray):
         return cast_to_jax(array, array_name)
+    elif is_array_like(array):
+        return cast_to_jax(array, array_name)
     else:
         raise RuntimeError(
             "Unknown format for {}. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.".format(

@@ -99,7 +99,8 @@ class TestTsdArray:
         """Verify that the data attribute 'd' of a Tsd object is stored as a numpy.ndarray."""
         with expectation:
             ts = nap.Tsd(t=time, d=data)
-            assert isinstance(ts.d, np.ndarray)
+            if nap.nap_config.backend == "numba":
+                assert isinstance(ts.d, np.ndarray)
 
     @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
@@ -132,8 +133,9 @@ class TestTsdArray:
     )
     def test_tsd_warn(self, data, expectation):
         """Check for warnings when the data attribute 'd' is automatically converted to numpy.ndarray."""
-        with expectation:
-            nap.Tsd(t=np.array(data), d=data)
+        if nap.nap_config.backend == "numba":
+            with expectation:
+                nap.Tsd(t=np.array(data), d=data)
 
 
 class TestTsdFrameArray:
@@ -169,7 +171,8 @@ class TestTsdFrameArray:
         """Verify that the data attribute 'd' of a TsdFrame object is stored as a numpy.ndarray."""
         with expectation:
             ts = nap.TsdFrame(t=time, d=data)
-            assert isinstance(ts.d, np.ndarray)
+            if nap.nap_config.backend == "numba":
+                assert isinstance(ts.d, np.ndarray)
 
     @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
@@ -202,8 +205,9 @@ class TestTsdFrameArray:
     )
     def test_tsdframe_warn(self, data, expectation):
         """Check for warnings when the data attribute 'd' is automatically converted to numpy.ndarray."""
-        with expectation:
-            nap.TsdFrame(t=np.array(data), d=data)
+        if nap.nap_config.backend == "numba":
+            with expectation:
+                nap.TsdFrame(t=np.array(data), d=data)
 
 
 class TestTsdTensorArray:
@@ -245,7 +249,8 @@ class TestTsdTensorArray:
         """Verify that the data attribute 'd' of a TsdTensor object is stored as a numpy.ndarray."""
         with expectation:
             ts = nap.TsdTensor(t=time, d=data)
-            assert isinstance(ts.d, np.ndarray)
+            if nap.nap_config.backend == "numba":
+                assert isinstance(ts.d, np.ndarray)
 
     @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
@@ -278,6 +283,7 @@ class TestTsdTensorArray:
     )
     def test_tsdtensor_warn(self, data, expectation):
         """Check for warnings when the data attribute 'd' is automatically converted to numpy.ndarray."""
-        with expectation:
-            nap.TsdTensor(t=np.ravel(np.array(data)), d=data)
+        if nap.nap_config.backend == "numba":
+            with expectation:
+                nap.TsdTensor(t=np.ravel(np.array(data)), d=data)
 

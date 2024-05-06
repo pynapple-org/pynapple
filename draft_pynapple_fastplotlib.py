@@ -55,11 +55,11 @@ tmp = np.vstack((tmp.index.values, tmp.values)).T
 
 
 
-fig = fpl.Figure(shape=(2,1))
+fig = fpl.Figure(canvas="glfw", shape=(2,1))
 fig[0,0].add_line(data=lfp2, thickness=1, cmap="autumn")
 fig[1,0].add_scatter(tmp)
-fig.show()
-
+fig.show(maintain_aspect=False)
+# fpl.run()
 
 
 
@@ -68,6 +68,37 @@ fig.show()
 # grid_plot['lfp'].add_line(lfp.t, lfp[:,14].d)
 
 
+import numpy as np
+import fastplotlib as fpl
+
+fig = fpl.Figure(canvas="glfw")#, shape=(2,1), controller_ids="sync")
+fig[0,0].add_line(data=np.random.randn(1000))
+fig.show(maintain_aspect=False)
+
+fig2 = fpl.Figure(canvas="glfw", controllers=fig.controllers)#, shape=(2,1), controller_ids="sync")
+fig2[0,0].add_line(data=np.random.randn(1000)*1000)
+fig2.show(maintain_aspect=False)
+
+
+
+# Not sure about this :
+fig[1,0].controller.controls["mouse1"] = "pan", "drag", (1.0, 0.0)
+
+fig[1,0].controller.controls.pop("mouse2")
+fig[1,0].controller.controls.pop("mouse4")
+fig[1,0].controller.controls.pop("wheel")
+
+import pygfx
+
+controller = pygfx.PanZoomController()
+controller.controls.pop("mouse1")
+controller.add_camera(fig[0, 0].camera)
+controller.register_events(fig[0, 0].viewport)
+
+controller2 = pygfx.PanZoomController()
+controller2.add_camera(fig[1, 0].camera)
+controller2.controls.pop("mouse1")
+controller2.register_events(fig[1, 0].viewport)
 
 
 
