@@ -1179,10 +1179,8 @@ class TsGroup(UserDict):
         Merge the TsGroup object with other TsGroup objects
         See `TsGroup.merge_group` for more details
         """
-        tsgroups = list(tsgroups)
-        tsgroups.insert(0, self)
         return TsGroup.merge_group(
-            *tsgroups, reset_index=reset_index, reset_time_support=reset_time_support, ignore_metadata=ignore_metadata)
+            self, *tsgroups, reset_index=reset_index, reset_time_support=reset_time_support, ignore_metadata=ignore_metadata)
 
     def save(self, filename):
         """
