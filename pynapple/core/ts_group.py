@@ -14,17 +14,13 @@ import numpy as np
 import pandas as pd
 from tabulate import tabulate
 
-from ._jitted_functions import (
-    jitcount,
-    jittsrestrict_with_count,
-    jitunion,
-    jitunion_isets,
-)
+from ._core_functions import _count
+from ._jitted_functions import jitunion, jitunion_isets
 from .base_class import Base
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
-from .utils import _get_terminal_size, convert_to_numpy
+from .utils import _get_terminal_size, convert_to_numpy_array
 
 
 def _union_intervals(i_sets):
@@ -138,7 +134,7 @@ class TsGroup(UserDict):
                         stacklevel=2,
                     )
                     data[k] = Ts(
-                        t=convert_to_numpy(data[k], "key {}".format(k)),
+                        t=convert_to_numpy_array(data[k], "key {}".format(k)),
                         time_support=time_support,
                         time_units=time_units,
                     )
@@ -693,27 +689,27 @@ class TsGroup(UserDict):
         if isinstance(bin_size, (float, int)):
             bin_size = float(bin_size)
             bin_size = TsIndex.format_timestamps(np.array([bin_size]), time_units)[0]
-            time_index, _ = jitcount(np.array([]), starts, ends, bin_size)
-            n = len(self.index)
-            count = np.zeros((time_index.shape[0], n), dtype=np.int64)
 
-            for i in range(n):
-                count[:, i] = jitcount(
-                    self.data[self.index[i]].index, starts, ends, bin_size
+        # Call it on first element to pre-allocate the array
+        if len(self) >= 1:
+            time_index, d = _count(
+                self.data[self.index[0]].index.values, starts, ends, bin_size
+            )
+
+            count = np.zeros((len(time_index), len(self.index)), dtype=np.int64)
+            count[:, 0] = d
+
+            for i in range(1, len(self.index)):
+                count[:, i] = _count(
+                    self.data[self.index[i]].index.values, starts, ends, bin_size
                 )[1]
 
+            return TsdFrame(t=time_index, d=count, time_support=ep, columns=self.index)
         else:
-            time_index = starts + (ends - starts) / 2
-            n = len(self.index)
-            count = np.zeros((time_index.shape[0], n), dtype=np.int64)
-
-            for i in range(n):
-                count[:, i] = jittsrestrict_with_count(
-                    self.data[self.index[i]].index, starts, ends
-                )[1]
-
-        toreturn = TsdFrame(t=time_index, d=count, time_support=ep, columns=self.index)
-        return toreturn
+            time_index, _ = _count(np.array([]), starts, ends, bin_size)
+            return TsdFrame(
+                t=time_index, d=np.empty((len(time_index), 0)), time_support=ep
+            )
 
     def to_tsd(self, *args):
         """

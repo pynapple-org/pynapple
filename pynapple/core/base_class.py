@@ -8,17 +8,10 @@ from numbers import Number
 
 import numpy as np
 
-from ._jitted_functions import (
-    jitcount,
-    jitrestrict,
-    jittsrestrict,
-    jittsrestrict_with_count,
-    jitvaluefrom,
-    jitvaluefromtensor,
-)
+from ._core_functions import _count, _restrict, _value_from
 from .interval_set import IntervalSet
 from .time_index import TsIndex
-from .utils import convert_to_numpy, is_array_like
+from .utils import convert_to_numpy_array
 
 
 class Base(abc.ABC):
@@ -30,25 +23,11 @@ class Base(abc.ABC):
     _initialized = False
 
     def __init__(self, t, time_units="s", time_support=None):
-        # Converting t to TsIndex array
+
         if isinstance(t, TsIndex):
             self.index = t
-        elif isinstance(t, Number):
-            self.index = TsIndex(np.array([t]), time_units)
-        elif isinstance(t, (list, tuple)):
-            self.index = TsIndex(np.array(t).flatten(), time_units)
-        elif isinstance(t, np.ndarray):
-            assert t.ndim == 1, "t should be 1 dimensional"
-            self.index = TsIndex(t, time_units)
-        # convert array-like data to numpy.
-        # raise a warning to avoid silent conversion if non-numpy array is provided (jax arrays for instance)
-        elif is_array_like(t):
-            t = convert_to_numpy(t, "t")
-            self.index = TsIndex(t, time_units)
         else:
-            raise RuntimeError(
-                "Unknown format for t. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."
-            )
+            self.index = TsIndex(convert_to_numpy_array(t, "t"), time_units)
 
         if time_support is not None:
             assert isinstance(
@@ -195,7 +174,7 @@ class Base(abc.ABC):
         >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
         >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
 
-        The variable ts is a time series object containing only nan.
+        The variable ts is a timestamp object.
         The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
 
         >>> newts = ts.value_from(tsd, ep)
@@ -213,16 +192,11 @@ class Base(abc.ABC):
         starts = ep.start
         ends = ep.end
 
-        if data_target_array.ndim == 1:
-            t, d, ns, ne = jitvaluefrom(
-                time_array, time_target_array, data_target_array, starts, ends
-            )
-        else:
-            t, d, ns, ne = jitvaluefromtensor(
-                time_array, time_target_array, data_target_array, starts, ends
-            )
+        t, d = _value_from(
+            time_array, time_target_array, data_target_array, starts, ends
+        )
 
-        time_support = IntervalSet(start=ns, end=ne)
+        time_support = IntervalSet(start=starts, end=ends)
 
         kwargs = {}
         if hasattr(data, "columns"):
@@ -317,16 +291,15 @@ class Base(abc.ABC):
                 if isinstance(a, IntervalSet):
                     ep = a
 
-        time_array = self.index.values
         starts = ep.start
         ends = ep.end
 
         if isinstance(bin_size, (float, int)):
             bin_size = TsIndex.format_timestamps(np.array([bin_size]), time_units)[0]
-            t, d = jitcount(time_array, starts, ends, bin_size)
-        else:
-            _, d = jittsrestrict_with_count(time_array, starts, ends)
-            t = starts + (ends - starts) / 2
+
+        time_array = self.index.values
+
+        t, d = _count(time_array, starts, ends, bin_size)
 
         return t, d, ep
 
@@ -341,7 +314,7 @@ class Base(abc.ABC):
 
         Returns
         -------
-        out: Ts, Tsd, TsdFrame or TsdTensor
+        Ts, Tsd, TsdFrame or TsdTensor
             Tsd object restricted to ep
 
         Examples
@@ -368,19 +341,19 @@ class Base(abc.ABC):
         starts = iset.start
         ends = iset.end
 
+        idx = _restrict(time_array, starts, ends)
+
+        kwargs = {}
+        if hasattr(self, "columns"):
+            kwargs["columns"] = self.columns
+
         if hasattr(self, "values"):
             data_array = self.values
-            t, d = jitrestrict(time_array, data_array, starts, ends)
-
-            kwargs = {}
-            if hasattr(self, "columns"):
-                kwargs["columns"] = self.columns
-
-            return self.__class__(t=t, d=d, time_support=iset, **kwargs)
-
+            return self.__class__(
+                t=time_array[idx], d=data_array[idx], time_support=iset, **kwargs
+            )
         else:
-            t = jittsrestrict(time_array, starts, ends)
-            return self.__class__(t=t, time_support=iset)
+            return self.__class__(t=time_array[idx], time_support=iset)
 
     def copy(self):
         """Copy the data, index and time support"""

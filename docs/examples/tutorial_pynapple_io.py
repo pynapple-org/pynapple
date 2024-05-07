@@ -50,7 +50,7 @@ project.view
 # The object project behaves like a nested dictionnary. It is then easy to loop and navigate through a hierarchy of folders when doing analyses. In this case, we are gonna take only the session A2929-200711.
 
 
-session = project["sub-A2929"]["ses-A2929-200711"]
+session = project["sub-A2929"]["A2929-200711"]
 
 print(session)
 

@@ -54,7 +54,7 @@ data.view
 # The object `data` is a [`Folder`](https://pynapple-org.github.io/pynapple/io.folder/) object that allows easy navigation and interaction with a dataset.
 # In this case, we want to load the NWB file in the folder `/pynapplenwb`. Data are always lazy loaded. No time series is loaded until it's actually called.
 # When calling the NWB file, the object `nwb` is an interface to the NWB file. All the data inside the NWB file that are compatible with one of the pynapple objects are shown with their corresponding keys.
-nwb = data["sub-A2929"]["ses-A2929-200711"]["pynapplenwb"]["A2929-200711"]
+nwb = data["sub-A2929"]["A2929-200711"]["pynapplenwb"]["A2929-200711"]
 print(nwb)
 
 

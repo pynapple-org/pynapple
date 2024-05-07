@@ -111,7 +111,8 @@ class TsIndex(np.ndarray):
         return t
 
     def __new__(cls, t, time_units="s"):
-        t = t.astype(np.float64).flatten()
+        assert t.ndim == 1, "t should be 1 dimensional"
+        t = t.astype(np.float64)
         t = TsIndex.format_timestamps(t, time_units)
         t = TsIndex.sort_timestamps(t)
         obj = np.asarray(t).view(cls)
