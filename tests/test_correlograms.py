@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-03-30 11:16:22
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-04 10:46:31
-#!/usr/bin/env python
 
 """Tests of correlograms for `pynapple` package."""
 

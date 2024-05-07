@@ -12,6 +12,16 @@ import numpy as np
 from .config import nap_config
 
 
+def convert_to_array(array, array_name):
+    # Check if jax backend
+    if get_backend() == "jax":
+        from pynajax.utils import convert_to_jax_array
+
+        return convert_to_jax_array(array, array_name)
+    else:
+        return convert_to_numpy_array(array, array_name)
+
+
 def convert_to_numpy_array(array, array_name):
     """Convert any array like object to numpy ndarray.
 
@@ -40,46 +50,6 @@ def convert_to_numpy_array(array, array_name):
         return array
     elif is_array_like(array):
         return cast_to_numpy(array, array_name)
-    else:
-        raise RuntimeError(
-            "Unknown format for {}. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.".format(
-                array_name
-            )
-        )
-
-
-def convert_to_jax_array(array, array_name):
-    """Convert any array like object to jax Array.
-
-    Parameters
-    ----------
-    array : ArrayLike
-
-    array_name : str
-        Array name if RuntimeError is raised or object is casted to numpy
-
-    Returns
-    -------
-    jax.Array
-        Jax array object
-
-    Raises
-    ------
-    RuntimeError
-        If input can't be converted to jax array
-    """
-    import jax.numpy as jnp
-
-    if isinstance(array, Number):
-        return jnp.array([array])
-    elif isinstance(array, (list, tuple)):
-        return jnp.array(array)
-    elif isinstance(array, jnp.ndarray):
-        return array
-    elif isinstance(array, np.ndarray):
-        return cast_to_jax(array, array_name)
-    elif is_array_like(array):
-        return cast_to_jax(array, array_name)
     else:
         raise RuntimeError(
             "Unknown format for {}. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.".format(

@@ -36,9 +36,7 @@ from .utils import (
     _get_terminal_size,
     _split_tsd,
     _TsdFrameSliceHelper,
-    convert_to_jax_array,
-    convert_to_numpy_array,
-    get_backend,
+    convert_to_array,    
     is_array_like,
 )
 
@@ -73,11 +71,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
     def __init__(self, t, d, time_units="s", time_support=None):
         super().__init__(t, time_units, time_support)
 
-        # Check if jax backend
-        if get_backend() == "jax":
-            self.values = convert_to_jax_array(d, "d")
-        else:
-            self.values = convert_to_numpy_array(d, "d")
+        self.values = convert_to_array(d, "d")
 
         assert len(self.index) == len(
             self.values
@@ -455,7 +449,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         if hasattr(self, "columns"):
             kwargs["columns"] = self.columns
 
-        return self.__class__(t=t, d=d, time_support=ep)
+        return self.__class__(t=t, d=d, time_support=ep, **kwargs)
 
     def convolve(self, array, ep=None, trim="both"):
         """Return the discrete linear convolution of the time series with a one dimensional sequence.
@@ -472,7 +466,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         ----------
         array : array-like
             One dimensional input array-like.
-            
+
         ep : None, optional
             The epochs to apply the convolution
         trim : str, optional

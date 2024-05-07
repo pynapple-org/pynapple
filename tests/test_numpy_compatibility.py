@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: Guillaume Viejo
-# @Date:   2023-09-18 18:11:24
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-04 11:34:35
-
-
-
 import pynapple as nap
 import numpy as np
 import pytest
