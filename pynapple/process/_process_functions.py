@@ -28,7 +28,7 @@ def _jitcontinuous_perievent(time_array, time_target_array, starts, ends, window
         time_array, starts, ends
     )
     time_array = time_array[idx]
-    
+
     N_target = len(time_target_array)
 
     slice_idx = np.zeros((N_target, 2), dtype=np.int64)
