@@ -291,7 +291,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
         >>> newts = ts.value_from(tsd, ep)
 
-        newts is the same size as ts restrict to ep.
+        newts has the same size of ts restrict to ep.
 
         >>> print(len(ts.restrict(ep)), len(newts))
             52 52
