@@ -36,7 +36,7 @@ from .utils import (
     _get_terminal_size,
     _split_tsd,
     _TsdFrameSliceHelper,
-    convert_to_array,    
+    convert_to_array,
     is_array_like,
 )
 

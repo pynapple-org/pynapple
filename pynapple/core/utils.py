@@ -17,7 +17,9 @@ def convert_to_array(array, array_name):
     if get_backend() == "jax":
         from pynajax.utils import convert_to_jax_array
 
-        return convert_to_jax_array(array, array_name)
+        return convert_to_jax_array(
+            array, array_name, nap_config.suppress_conversion_warnings
+        )
     else:
         return convert_to_numpy_array(array, array_name)
 
@@ -186,45 +188,6 @@ def cast_to_numpy(array, array_name):
             UserWarning,
         )
     return np.asarray(array)
-
-
-def cast_to_jax(array, array_name):
-    """
-    Convert an input array-like object to a jax Array.
-
-
-    Parameters
-    ----------
-    array : array_like
-        The input object to convert. This can be any object that `np.asarray` is capable of
-        converting to a jax array, such as lists, tuples, and other array-like objects.
-    array_name : str
-        The name of the variable that we are converting, printed in the warning message.
-
-    Returns
-    -------
-    ndarray
-        A jax Array representation of the input `values`. If `values` is already a jax
-        Array, it is returned unchanged. Otherwise, a new jax Array is created and returned.
-
-    Warnings
-    --------
-    A warning is issued if the input `values` is not already a jax Array, indicating
-    that a conversion has taken place and showing the original type of the input.
-
-    """
-    import jax.numpy as jnp
-
-    if (
-        not isinstance(array, jnp.ndarray)
-        and not nap_config.suppress_conversion_warnings
-    ):
-        original_type = type(array).__name__
-        warnings.warn(
-            f"Converting '{array_name}' to jax.ndarray. The provided array was of type '{original_type}'.",
-            UserWarning,
-        )
-    return jnp.asarray(array)
 
 
 def _check_time_equals(time_arrays):
