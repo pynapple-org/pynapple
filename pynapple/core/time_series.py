@@ -471,7 +471,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         Parameters
         ----------
         array : array-like
-
+            One dimensional input array-like.
+            
         ep : None, optional
             The epochs to apply the convolution
         trim : str, optional
