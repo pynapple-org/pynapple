@@ -1120,7 +1120,7 @@ class TsGroup(UserDict):
         is_tsgroup = [isinstance(tsg, TsGroup) for tsg in tsgroups]
         if not all(is_tsgroup):
             not_tsgroup_index = [i+1 for i, boo in enumerate(is_tsgroup) if not boo]
-            raise TypeError(f"Passed variables at positions {not_tsgroup_index} are not TsGroup")
+            raise TypeError(f"Input at positions {not_tsgroup_index} are not TsGroup!")
 
         if len(tsgroups) == 1:
             print('Only one TsGroup object provided, no merge needed')
