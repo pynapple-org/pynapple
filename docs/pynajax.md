@@ -60,6 +60,6 @@ Support for installing `JAX` for GPU users can be found in the [jax documentatio
 ### Typical use-case
 
 
-In addition to providing high performance numerical computing, jax can be used a the backbone of a large scale machine learning model. Thus, pynajax can offer full compatibility between pynapple's time series representation and computational neuroscience models constructed using jax.
+In addition to providing high performance numerical computing, jax can be used as a the backbone for a large scale machine learning model. Thus, pynajax can offer full compatibility between pynapple's time series representation and computational neuroscience models constructed using jax.
 
 An example of a python package using both pynapple and jax is [NeMOs](https://nemos.readthedocs.io/en/stable/).
