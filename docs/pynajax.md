@@ -54,7 +54,7 @@ To check if jax is using the GPU, you can run the following python commands :
 	[cuda(id=0)]
 	```
 
-Support for installing with GPU can be found in the [jax documentation](https://jax.readthedocs.io/en/latest/installation.html)
+Support for installing `JAX` for GPU users can be found in the [jax documentation](https://jax.readthedocs.io/en/latest/installation.html)
 
 
 ### Typical use-case
