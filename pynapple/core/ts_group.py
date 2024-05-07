@@ -1135,7 +1135,7 @@ class TsGroup(UserDict):
             if not ignore_metadata:
                 if tsg1.metadata_columns != tsg.metadata_columns:
                     raise ValueError(f"TsGroup at position {i+2} has different metadata columns from previous TsGroup objects. "
-                                    "Pass ignore_metadata=True to bypass")
+                                    "Set `ignore_metadata=True` to bypass the check.")
                 metadata = pd.concat([metadata, tsg._metadata], axis=0)
             
             if not reset_index:
