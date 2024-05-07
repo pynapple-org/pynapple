@@ -181,14 +181,6 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
             return NotImplemented
 
     def __array_function__(self, func, types, args, kwargs):
-        # print("In __array_function__")
-        # print("     func = ", func)
-        # print("     types = ", types)
-        # print("     args = ", args)
-        # for inp in args:
-        #     print(type(inp))
-        # print("     kwargs = ", kwargs)
-
         if func in [
             np.sort,
             np.lexsort,
