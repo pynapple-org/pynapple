@@ -132,7 +132,7 @@ def is_array_like(obj):
     try:
         iter(obj)
         is_iterable = True
-    except TypeError:
+    except Exception:
         is_iterable = False
 
     # not_tsd_type = not isinstance(obj, _AbstractTsd)
