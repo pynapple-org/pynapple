@@ -125,7 +125,7 @@ def is_array_like(obj):
     try:
         obj[0]
         is_indexable = True
-    except (TypeError, IndexError):
+    except Exception:
         is_indexable = False
 
     # Check for iterable property
