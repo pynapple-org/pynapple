@@ -955,10 +955,13 @@ class TsdFrame(BaseTsd):
         ):
             return self.loc[key]
         else:
-            # return super().__getitem__(key, *args, **kwargs)
             output = self.values.__getitem__(key)
+            columns = self.columns
+
             if isinstance(key, tuple):
                 index = self.index.__getitem__(key[0])
+                if len(key) == 2:
+                    columns = self.columns.__getitem__(key[1])
             else:
                 index = self.index.__getitem__(key)
 
@@ -967,6 +970,11 @@ class TsdFrame(BaseTsd):
 
             if all(is_array_like(a) for a in [index, output]):
                 if output.shape[0] == index.shape[0]:
+
+                    if isinstance(columns, pd.Index):
+                        if not columns.is_integer():
+                            kwargs["columns"] = columns
+
                     return _get_class(output)(
                         t=index, d=output, time_support=self.time_support, **kwargs
                     )
