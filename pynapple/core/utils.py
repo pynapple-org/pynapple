@@ -125,14 +125,14 @@ def is_array_like(obj):
     try:
         obj[0]
         is_indexable = True
-    except (TypeError, IndexError):
+    except Exception:
         is_indexable = False
 
     # Check for iterable property
     try:
         iter(obj)
         is_iterable = True
-    except TypeError:
+    except Exception:
         is_iterable = False
 
     # not_tsd_type = not isinstance(obj, _AbstractTsd)
