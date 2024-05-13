@@ -27,7 +27,7 @@ tsd = nap.Tsd(t=np.arange(100), d=np.random.randn(100))
 tsd.convolve(np.ones(11)) 
 ```
 
-This documentation page keeps tracks of the list of pynapple functions that can be jax-accelerated as well as their performances compared to pure numba.
+This [documentation page](https://pynapple-org.github.io/pynajax/generated/gallery/) keeps tracks of the list of pynapple functions that can be jax-accelerated as well as their performances compared to pure numba.
 
 ### Installation issues
 
