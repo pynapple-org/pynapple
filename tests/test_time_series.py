@@ -7,7 +7,7 @@ import pytest
 
 
 # tsd1 = nap.Tsd(t=np.arange(100), d=np.random.rand(100), time_units="s")
-# tsd2 = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 10), time_units="s")
+# tsd2 = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), columns = ['a', 'b', 'c'])
 # tsd3 = nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 5, 4), time_units="s")
 # tsd4 = nap.Ts(t=np.arange(100), time_units="s")
 
