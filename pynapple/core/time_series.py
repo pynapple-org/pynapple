@@ -972,7 +972,7 @@ class TsdFrame(BaseTsd):
                 if output.shape[0] == index.shape[0]:
 
                     if isinstance(columns, pd.Index):
-                        if not columns.is_integer():
+                        if not pd.api.types.is_integer_dtype(columns):
                             kwargs["columns"] = columns
 
                     return _get_class(output)(
