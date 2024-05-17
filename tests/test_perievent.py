@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:16:53
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-12-12 17:45:38
+# @Last Modified time: 2024-05-07 15:22:24
 #!/usr/bin/env python
 
 """Tests of perievent for `pynapple` package."""
@@ -109,7 +109,21 @@ def test_compute_perievent_continuous():
     tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
     tref = nap.Ts(t=np.array([20, 60]))
     minmax=(-5, 10)
+    
+    # time_array = tsd.t
+    # data_array = tsd.d
+    # time_target_array = tref.t
+    # starts = tsd.time_support.start
+    # ends = tsd.time_support.end
+    # window = np.abs(minmax)
+    # binsize = time_array[1] - time_array[0]
+    # idx1 = -np.arange(0, window[0] + binsize, binsize)[::-1][:-1]
+    # idx2 = np.arange(0, window[1] + binsize, binsize)[1:]
+    # time_idx = np.hstack((idx1, np.zeros(1), idx2))
+    # windowsize = np.array([idx1.shape[0], idx2.shape[0]])    
+
     pe = nap.compute_perievent_continuous(tsd, tref, minmax=minmax)    
+
     assert isinstance(pe, nap.TsdFrame)
     assert pe.shape[1] == len(tref)
     np.testing.assert_array_almost_equal(pe.index.values, np.arange(minmax[0], minmax[-1]+1))
@@ -182,6 +196,20 @@ def test_compute_perievent_continuous_with_ep():
     np.testing.assert_array_almost_equal(pe.values, tmp)
     
     tref = ep.starts
+
+    # time_array = tsd.t
+    # data_array = tsd.d
+    # time_target_array = tref.t
+    # starts = ep.start
+    # ends = ep.end
+    # window = np.abs(minmax)
+    # binsize = time_array[1] - time_array[0]
+    # idx1 = -np.arange(0, window[0] + binsize, binsize)[::-1][:-1]
+    # idx2 = np.arange(0, window[1] + binsize, binsize)[1:]
+    # time_idx = np.hstack((idx1, np.zeros(1), idx2))
+    # windowsize = np.array([idx1.shape[0], idx2.shape[0]])    
+
+
     pe = nap.compute_perievent_continuous(tsd, tref, minmax=minmax, ep=ep)
     tmp = np.array([np.arange(t, t+minmax[1]+1) for t in tref.restrict(ep).t]).T
     np.testing.assert_array_almost_equal(pe.values[abs(minmax[0]):], tmp)

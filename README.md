@@ -1,6 +1,6 @@
 <!-- ![pic1](banner_logo.png) -->
 <p align="center">
-  <img width="60%" src="banner_logo.png">
+  <img width="60%" src="docs/images/banner_logo.png">
 </p>
 
 
@@ -29,12 +29,32 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 ------------------------------------------------------------------------
 
 New release :fire:
----------------
-Starting with 0.4, pynapple rely on the [numpy array container](https://numpy.org/doc/stable/user/basics.dispatch.html) approach instead of Pandas. Pynapple builtin functions will remain the same except for functions inherited from Pandas. Typically this line of code in `pynapple<=0.3.6` :
+------------------
+
+### pynapple >= 0.6
+
+Starting with 0.6, [`IntervalSet`](https://pynapple-org.github.io/pynapple/reference/core/interval_set/) objects are behaving as immutable numpy ndarray. Before 0.6, you could select an interval within an `IntervalSet` object with:
+
+```python
+new_intervalset = intervalset.loc[[0]] # Selecting first interval
+```
+
+With pynapple>=0.6, the slicing is similar to numpy and it returns an `IntervalSet`
+
+```python
+new_intervalset = intervalset[0]
+```
+
+See the [documentation](https://pynapple-org.github.io/pynapple/reference/core/interval_set/) for more details.
+
+
+### pynapple >= 0.4
+
+Starting with 0.4, pynapple rely on the [numpy array container](https://numpy.org/doc/stable/user/basics.dispatch.html) approach instead of Pandas for the time series. Pynapple builtin functions will remain the same except for functions inherited from Pandas. Typically this line of code in `pynapple<=0.3.6` :
 ```python
 meantsd = tsdframe.mean(1)
 ```
-is now:
+is now :
 ```python
 meantsd = np.mean(tsdframe, 1)
 ```
@@ -140,7 +160,7 @@ Shown below, the final figure from the example code displays the firing rate of 
 
 <!-- ![pic1](readme_figure.png) -->
 <p align="center">
-  <img width="80%" src="readme_figure.png">
+  <img width="80%" src="docs/images/readme_figure.png">
 </p>
 
 
@@ -155,4 +175,4 @@ the latter constituting the core of *pynapple*.
 This package was developped by Guillaume Viejo
 (<https://github.com/gviejo>) and other members of the Peyrache Lab.
 
-Logo: Sofia Skromne Carrasco, 2021.
+<!-- Logo: Sofia Skromne Carrasco, 2021. -->

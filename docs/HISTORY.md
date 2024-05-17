@@ -9,6 +9,52 @@ In 2018, Francesco started neuroseries, a Python package built on Pandas. It was
 In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuroseries and started *pynapple*. The core of pynapple is largely built upon neuroseries. Some of the original changes to TSToolbox made by Luke were included in this package, especially the *time_support* property of all ts/tsd objects.
 
 
+0.6.5 (2024-05-14)
+------------------
+
+- Full `pynajax` backend compatibility
+- Fixed `TsdFrame` column slicing
+
+
+0.6.4 (2024-04-18)
+------------------
+
+- Fixing IntervalSet `__repr__`. Tabulate conflict with numpy 1.26.
+
+
+0.6.3 (2024-04-17)
+------------------
+
+- Improving `__repr__` for all objects.
+- TsGroup `__getattr__` and `__setattr__` added to access metadata columns directly
+- TsGroup `__setitem__` now allows changes directly to metadata
+- TsGroup `__getitem__` returns column of metadata if passed as string
+
+
+0.6.2 (2024-04-04)
+------------------
+
+- `smooth` now takes standard deviation in time units
+- Fixed `TsGroup` saving method.
+- `__getattr__` of `BaseTsd` allow numpy functions to be attached as attributes of Tsd objects
+- Added `get` method for `TsGroup`
+- Tsds can be concatenate vertically if time indexes matches.
+
+
+0.6.1 (2024-03-03)
+------------------
+
+- Fixed pynapple `loc` method for new `IntervalSet`
+
+
+0.6.0 (2024-03-02)
+------------------
+
+- Refactoring `IntervalSet` to pure numpy ndarray.
+- Implementing new chain of inheritance for time series with abstract base class. `base_class.Base` holds the temporal methods for all time series and `Ts`. `time_series.BaseTsd` inherit `Base` and implements the common methods for `Tsd`, `TsdFrame` and `Tsd`.
+- Automatic conversion to numpy ndarray for all objects that are numpy-like (typically jax).
+
+
 0.5.1 (2024-01-29)
 ------------------
 

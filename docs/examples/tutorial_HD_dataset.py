@@ -236,7 +236,7 @@ plt.imshow(
     np.transpose(p_feature.restrict(ep).values),
     aspect="auto",
     interpolation="bilinear",
-    extent=[ep["start"].values[0], ep["end"].values[0], 0, 2 * np.pi],
+    extent=[ep["start"][0], ep["end"][0], 0, 2 * np.pi],
     origin="lower",
     cmap="viridis",
 )

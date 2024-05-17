@@ -4,7 +4,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-07-05 16:03:25
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-26 18:00:54
+# @Last Modified time: 2024-04-02 14:32:25
 
 """
 File classes help to validate and load pynapple objects or NWB files.
@@ -89,12 +89,35 @@ class NPZFile(object):
         else:
             time_support = nap.IntervalSet(self.file["start"], self.file["end"])
             if self.type == "TsGroup":
-                tsd = nap.Tsd(
-                    t=self.file["t"], d=self.file["index"], time_support=time_support
-                )
-                tsgroup = tsd.to_tsgroup()
+
+                times = self.file["t"]
+                index = self.file["index"]
+                has_data = False
                 if "d" in self.file.keys():
-                    print("TODO")
+                    data = self.file["data"]
+                    has_data = True
+
+                if "keys" in self.file.keys():
+                    keys = self.file["keys"]
+                else:
+                    keys = np.unique(index)
+
+                group = {}
+                for k in keys:
+                    if has_data:
+                        group[k] = nap.Tsd(
+                            t=times[index == k],
+                            d=data[index == k],
+                            time_support=time_support,
+                        )
+                    else:
+                        group[k] = nap.Ts(
+                            t=times[index == k], time_support=time_support
+                        )
+
+                tsgroup = nap.TsGroup(
+                    group, time_support=time_support, bypass_check=True
+                )
 
                 metainfo = {}
                 for k in set(self.file.keys()) - {
@@ -104,6 +127,7 @@ class NPZFile(object):
                     "index",
                     "d",
                     "rate",
+                    "keys",
                 }:
                     tmp = self.file[k]
                     if len(tmp) == len(tsgroup):

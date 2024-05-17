@@ -4,29 +4,26 @@
 
 """
 
-
 import os
 import warnings
 from collections import UserDict
+from collections.abc import Hashable
 
+import numpy
 import numpy as np
 import pandas as pd
 from tabulate import tabulate
 
-from ._jitted_functions import (
-    jitcount,
-    jittsrestrict_with_count,
-    jitunion,
-    jitunion_isets,
-)
+from ._core_functions import _count
+from ._jitted_functions import jitunion, jitunion_isets
 from .base_class import Base
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
-from .utils import convert_to_numpy
+from .utils import _get_terminal_size, convert_to_numpy_array
 
 
-def union_intervals(i_sets):
+def _union_intervals(i_sets):
     """
     Helper to merge intervals from ts_group
     """
@@ -40,10 +37,10 @@ def union_intervals(i_sets):
 
     if n == 2:
         new_start, new_end = jitunion(
-            i_sets[0].start.values,
-            i_sets[0].end.values,
-            i_sets[1].start.values,
-            i_sets[1].end.values,
+            i_sets[0].start,
+            i_sets[0].end,
+            i_sets[1].start,
+            i_sets[1].end,
         )
 
     if n > 2:
@@ -74,12 +71,13 @@ class TsGroup(UserDict):
         self, data, time_support=None, time_units="s", bypass_check=False, **kwargs
     ):
         """
-        TsGroup Initializer
+        TsGroup Initializer.
 
         Parameters
         ----------
         data : dict
-            Dictionnary containing Ts/Tsd objects
+            Dictionary containing Ts/Tsd objects, keys should contain integer values or should be convertible
+            to integer.
         time_support : IntervalSet, optional
             The time support of the TsGroup. Ts/Tsd objects will be restricted to the time support if passed.
             If no time support is specified, TsGroup will merge time supports from all the Ts/Tsd objects in data.
@@ -89,17 +87,39 @@ class TsGroup(UserDict):
             To avoid checking that each element is within time_support.
             Useful to speed up initialization of TsGroup when Ts/Tsd objects have already been restricted beforehand
         **kwargs
-            Meta-info about the Ts/Tsd objects. Can be either pandas.Series or numpy.ndarray.
-            Note that the index should match the index of the input dictionnary.
+            Meta-info about the Ts/Tsd objects. Can be either pandas.Series, numpy.ndarray, list or tuple
+            Note that the index should match the index of the input dictionary if pandas Series
 
         Raises
         ------
         RuntimeError
             Raise error if the union of time support of Ts/Tsd object is empty.
+        ValueError
+            - If a key cannot be converted to integer.
+            - If a key was a floating point with non-negligible decimal part.
+            - If the converted keys are not unique, i.e. {1: ts_2, "2": ts_2} is valid,
+            {1: ts_2, "1": ts_2}  is invalid.
         """
         self._initialized = False
 
-        self.index = np.sort(list(data.keys()))
+        # convert all keys to integer
+        try:
+            keys = [int(k) for k in data.keys()]
+        except Exception:
+            raise ValueError("All keys must be convertible to integer.")
+
+        # check that there were no floats with decimal points in keys.i
+        # i.e. 0.5 is not a valid key
+        if not all(np.allclose(keys[j], float(k)) for j, k in enumerate(data.keys())):
+            raise ValueError("All keys must have integer value!}")
+
+        # check that we have the same num of unique keys
+        # {"0":val, 0:val} would be a problem...
+        if len(keys) != len(np.unique(keys)):
+            raise ValueError("Two dictionary keys contain the same integer value!")
+
+        data = {keys[j]: data[k] for j, k in enumerate(data.keys())}
+        self.index = np.sort(keys)
 
         self._metadata = pd.DataFrame(index=self.index, columns=["rate"], dtype="float")
 
@@ -114,7 +134,7 @@ class TsGroup(UserDict):
                         stacklevel=2,
                     )
                     data[k] = Ts(
-                        t=convert_to_numpy(data[k], "key {}".format(k)),
+                        t=convert_to_numpy_array(data[k], "key {}".format(k)),
                         time_support=time_support,
                         time_units=time_units,
                     )
@@ -126,7 +146,7 @@ class TsGroup(UserDict):
                 data = {k: data[k].restrict(self.time_support) for k in self.index}
         else:
             # Otherwise do the union of all time supports
-            time_support = union_intervals([data[k].time_support for k in self.index])
+            time_support = _union_intervals([data[k].time_support for k in self.index])
             if len(time_support) == 0:
                 raise RuntimeError(
                     "Union of time supports is empty. Consider passing a time support as argument."
@@ -147,51 +167,150 @@ class TsGroup(UserDict):
     Base functions
     """
 
-    def __setitem__(self, key, value):
-        if self._initialized:
-            raise RuntimeError("TsGroup object is not mutable.")
+    def __getattr__(self, name):
+        """
+        Allows dynamic access to metadata columns as properties.
 
-        self._metadata.loc[int(key), "rate"] = float(value.rate)
-        super().__setitem__(int(key), value)
-        # if self.__contains__(key):
-        #     raise KeyError("Key {} already in group index.".format(key))
-        # else:
-        # if isinstance(value, (Ts, Tsd)):
-        #     self._metadata.loc[int(key), "rate"] = value.rate
-        #     super().__setitem__(int(key), value)
-        # elif isinstance(value, (np.ndarray, list)):
-        #     warnings.warn(
-        #         "Elements should not be passed as numpy array. Default time units is seconds when creating the Ts object.",
-        #         stacklevel=2,
-        #     )
-        #     tmp = Ts(t=value, time_units="s")
-        #     self._metadata.loc[int(key), "rate"] = tmp.rate
-        #     super().__setitem__(int(key), tmp)
-        # else:
-        #     raise ValueError("Value with key {} is not an iterable.".format(key))
+        Parameters
+        ----------
+        name : str
+            The name of the metadata column to access.
+
+        Returns
+        -------
+        pandas.Series
+            The series of values for the requested metadata column.
+
+        Raises
+        ------
+        AttributeError
+            If the requested attribute is not a metadata column.
+        """
+        # Check if the requested attribute is part of the metadata
+        if name in self._metadata.columns:
+            return self._metadata[name]
+        else:
+            # If the attribute is not part of the metadata, raise AttributeError
+            raise AttributeError(
+                f"'{type(self).__name__}' object has no attribute '{name}'"
+            )
+
+    def __setitem__(self, key, value):
+        if not self._initialized:
+            self._metadata.loc[int(key), "rate"] = float(value.rate)
+            super().__setitem__(int(key), value)
+        else:
+            if not isinstance(key, str):
+                raise ValueError("Metadata keys must be strings!")
+            # replicate pandas behavior of over-writing cols
+            if key in self._metadata.columns:
+                old_meta = self._metadata.copy()
+                self._metadata.pop(key)
+                try:
+                    self.set_info(**{key: value})
+                except Exception:
+                    self._metadata = old_meta
+                    raise
+            else:
+                self.set_info(**{key: value})
 
     def __getitem__(self, key):
-        if key.__hash__:
+        # Standard dict keys are Hashable
+        if isinstance(key, Hashable):
             if self.__contains__(key):
                 return self.data[key]
+            elif key in self._metadata.columns:
+                return self.get_info(key)
             else:
-                raise KeyError("Can't find key {} in group index.".format(key))
-        else:
-            metadata = self._metadata.loc[key, self._metadata.columns.drop("rate")]
-            return TsGroup(
-                {k: self[k] for k in key}, time_support=self.time_support, **metadata
-            )
+                raise KeyError(r"Key {} not in group index.".format(key))
+
+        # array boolean are transformed into indices
+        # note that raw boolean are hashable, and won't be
+        # tsd == tsg.to_tsd()
+        elif np.asarray(key).dtype == bool:
+            key = np.asarray(key)
+            if key.ndim != 1:
+                raise IndexError("Only 1-dimensional boolean indices are allowed!")
+            if len(key) != self.__len__():
+                raise IndexError(
+                    "Boolean index length must be equal to the number of Ts in the group! "
+                    f"The number of Ts is {self.__len__()}, but the bolean array"
+                    f"has length {len(key)} instead!"
+                )
+            key = self.index[key]
+
+        keys_not_in = list(filter(lambda x: x not in self.index, key))
+
+        if len(keys_not_in):
+            raise KeyError(r"Key {} not in group index.".format(keys_not_in))
+
+        return self._ts_group_from_keys(key)
+
+    def _ts_group_from_keys(self, keys):
+        metadata = self._metadata.loc[
+            np.sort(keys), self._metadata.columns.drop("rate")
+        ]
+        return TsGroup(
+            {k: self[k] for k in keys}, time_support=self.time_support, **metadata
+        )
 
     def __repr__(self):
-        cols = self._metadata.columns.drop("rate")
-        headers = ["Index", "rate"] + [c for c in cols]
+        col_names = self._metadata.columns.drop("rate")
+        headers = ["Index", "rate"] + [c for c in col_names]
+
+        max_cols = 6
+        max_rows = 2
+        cols, rows = _get_terminal_size()
+        max_cols = np.maximum(cols // 12, 6)
+        max_rows = np.maximum(rows - 10, 2)
+
+        end_line = []
         lines = []
 
-        for i in self.data.keys():
-            lines.append(
-                [str(i), "%.2f" % self._metadata.loc[i, "rate"]]
-                + [self._metadata.loc[i, c] for c in cols]
-            )
+        def round_if_float(x):
+            if isinstance(x, float):
+                return np.round(x, 5)
+            else:
+                return x
+
+        if len(headers) > max_cols:
+            headers = headers[0:max_cols] + ["..."]
+            end_line.append("...")
+
+        if len(self) > max_rows:
+            n_rows = max_rows // 2
+            index = self.keys()
+
+            for i in index[0:n_rows]:
+                lines.append(
+                    [i, np.round(self._metadata.loc[i, "rate"], 5)]
+                    + [
+                        round_if_float(self._metadata.loc[i, c])
+                        for c in col_names[0 : max_cols - 2]
+                    ]
+                    + end_line
+                )
+            lines.append(["..." for _ in range(len(headers))])
+            for i in index[-n_rows:]:
+                lines.append(
+                    [i, np.round(self._metadata.loc[i, "rate"], 5)]
+                    + [
+                        round_if_float(self._metadata.loc[i, c])
+                        for c in col_names[0 : max_cols - 2]
+                    ]
+                    + end_line
+                )
+        else:
+            for i in self.data.keys():
+                lines.append(
+                    [i, np.round(self._metadata.loc[i, "rate"], 5)]
+                    + [
+                        round_if_float(self._metadata.loc[i, c])
+                        for c in col_names[0 : max_cols - 2]
+                    ]
+                    + end_line
+                )
+
         return tabulate(lines, headers=headers)
 
     def __str__(self):
@@ -248,9 +367,25 @@ class TsGroup(UserDict):
         """
         return list(self._metadata.columns)
 
+    def _check_metadata_column_names(self, *args, **kwargs):
+        invalid_cols = []
+        for arg in args:
+            if isinstance(arg, pd.DataFrame):
+                invalid_cols += [col for col in arg.columns if hasattr(self, col)]
+
+        for k, v in kwargs.items():
+            if isinstance(v, (list, numpy.ndarray, pd.Series)) and hasattr(self, k):
+                invalid_cols += [k]
+
+        if invalid_cols:
+            raise ValueError(
+                f"Invalid metadata name(s) {invalid_cols}. Metadata name must differ from "
+                f"TsGroup attribute names!"
+            )
+
     def set_info(self, *args, **kwargs):
         """
-        Add metadata informations about the TsGroup.
+        Add metadata information about the TsGroup.
         Metadata are saved as a DataFrame.
 
         Parameters
@@ -265,8 +400,10 @@ class TsGroup(UserDict):
         RuntimeError
             Raise an error if
                 no column labels are found when passing simple arguments,
-                indexes are not equals for a pandas series,
+                indexes are not equals for a pandas series,+
                 not the same length when passing numpy array.
+        TypeError
+            If some of the provided metadata could not be set.
 
         Examples
         --------
@@ -302,6 +439,10 @@ class TsGroup(UserDict):
               2             4  ca1          1
 
         """
+        # check for duplicate names, otherwise "self.metadata_name"
+        # syntax would behave unexpectedly.
+        self._check_metadata_column_names(*args, **kwargs)
+        not_set = []
         if len(args):
             for arg in args:
                 if isinstance(arg, pd.DataFrame):
@@ -309,21 +450,31 @@ class TsGroup(UserDict):
                         self._metadata = self._metadata.join(arg)
                     else:
                         raise RuntimeError("Index are not equals")
-                elif isinstance(arg, (pd.Series, np.ndarray)):
-                    raise RuntimeError("Columns needs to be labelled for metadata")
+                elif isinstance(arg, (pd.Series, np.ndarray, list)):
+                    raise RuntimeError("Argument should be passed as keyword argument.")
+                else:
+                    not_set.append(arg)
         if len(kwargs):
             for k, v in kwargs.items():
                 if isinstance(v, pd.Series):
                     if pd.Index.equals(self._metadata.index, v.index):
                         self._metadata[k] = v
                     else:
-                        raise RuntimeError("Index are not equals")
+                        raise RuntimeError(
+                            "Index are not equals for argument {}".format(k)
+                        )
                 elif isinstance(v, (np.ndarray, list, tuple)):
                     if len(self._metadata) == len(v):
                         self._metadata[k] = np.asarray(v)
                     else:
                         raise RuntimeError("Array is not the same length.")
-        return
+                else:
+                    not_set.append({k: v})
+        if not_set:
+            raise TypeError(
+                f"Cannot set the following metadata:\n{not_set}.\nMetadata columns provided must be  "
+                f"of type `panda.Series`, `tuple`, `list`, or `numpy.ndarray`."
+            )
 
     def get_info(self, key):
         """
@@ -532,33 +683,33 @@ class TsGroup(UserDict):
                 if isinstance(a, IntervalSet):
                     ep = a
 
-        starts = ep.start.values
-        ends = ep.end.values
+        starts = ep.start
+        ends = ep.end
 
         if isinstance(bin_size, (float, int)):
             bin_size = float(bin_size)
             bin_size = TsIndex.format_timestamps(np.array([bin_size]), time_units)[0]
-            time_index, _ = jitcount(np.array([]), starts, ends, bin_size)
-            n = len(self.index)
-            count = np.zeros((time_index.shape[0], n), dtype=np.int64)
 
-            for i in range(n):
-                count[:, i] = jitcount(
-                    self.data[self.index[i]].index, starts, ends, bin_size
+        # Call it on first element to pre-allocate the array
+        if len(self) >= 1:
+            time_index, d = _count(
+                self.data[self.index[0]].index.values, starts, ends, bin_size
+            )
+
+            count = np.zeros((len(time_index), len(self.index)), dtype=np.int64)
+            count[:, 0] = d
+
+            for i in range(1, len(self.index)):
+                count[:, i] = _count(
+                    self.data[self.index[i]].index.values, starts, ends, bin_size
                 )[1]
 
+            return TsdFrame(t=time_index, d=count, time_support=ep, columns=self.index)
         else:
-            time_index = starts + (ends - starts) / 2
-            n = len(self.index)
-            count = np.zeros((time_index.shape[0], n), dtype=np.int64)
-
-            for i in range(n):
-                count[:, i] = jittsrestrict_with_count(
-                    self.data[self.index[i]].index, starts, ends
-                )[1]
-
-        toreturn = TsdFrame(t=time_index, d=count, time_support=ep, columns=self.index)
-        return toreturn
+            time_index, _ = _count(np.array([]), starts, ends, bin_size)
+            return TsdFrame(
+                t=time_index, d=np.empty((len(time_index), 0)), time_support=ep
+            )
 
     def to_tsd(self, *args):
         """
@@ -687,9 +838,34 @@ class TsGroup(UserDict):
 
         return toreturn
 
-    """
-    Special slicing of metadata
-    """
+    def get(self, start, end=None, time_units="s"):
+        """Slice the `TsGroup` object from `start` to `end` such that all the timestamps within the group satisfy `start<=t<=end`.
+        If `end` is None, only the timepoint closest to `start` is returned.
+
+        By default, the time support doesn't change. If you want to change the time support, use the `restrict` function.
+
+        Parameters
+        ----------
+        start : float or int
+            The start (or closest time point if `end` is None)
+        end : float or int or None
+            The end
+        """
+        newgr = {}
+        for k in self.index:
+            newgr[k] = self.data[k].get(start, end, time_units)
+        cols = self._metadata.columns.drop("rate")
+
+        return TsGroup(
+            newgr,
+            time_support=self.time_support,
+            bypass_check=True,
+            **self._metadata[cols],
+        )
+
+    #################################
+    # Special slicing of metadata
+    #################################
 
     def getby_threshold(self, key, thr, op=">"):
         """
@@ -862,28 +1038,33 @@ class TsGroup(UserDict):
         and assigning to each the corresponding index. Typically, a TsGroup like
         this :
 
-            TsGroup({
-                0 : Tsd(t=[0, 2, 4], d=[1, 2, 3])
-                1 : Tsd(t=[1, 5], d=[5, 6])
-            })
+        ``` py
+        TsGroup({
+            0 : Tsd(t=[0, 2, 4], d=[1, 2, 3])
+            1 : Tsd(t=[1, 5], d=[5, 6])
+        })
+        ```
 
         will be saved as npz with the following keys:
 
-            {
-                't' : [0, 1, 2, 4, 5],
-                'd' : [1, 5, 2, 3, 5],
-                'index' : [0, 1, 0, 0, 1],
-                'start' : [0],
-                'end' : [5],
-                'type' : 'TsGroup'
-            }
+        ``` py
+        {
+            't' : [0, 1, 2, 4, 5],
+            'd' : [1, 5, 2, 3, 5],
+            'index' : [0, 1, 0, 0, 1],
+            'start' : [0],
+            'end' : [5],
+            'keys' : [0, 1],
+            'type' : 'TsGroup'
+        }
+        ```
 
         Metadata are saved by columns with the column name as the npz key. To avoid
         potential conflicts, make sure the columns name of the metadata are different
-        from ['t', 'd', 'start', 'end', 'index']
+        from ['t', 'd', 'start', 'end', 'index', 'keys']
 
-        You can load the object with numpy.load. Default keys are 't', 'd'(optional),
-        'start', 'end', 'index' and 'type'.
+        You can load the object with `nap.load_file`. Default keys are 't', 'd'(optional),
+        'start', 'end', 'index', 'keys' and 'type'.
         See the example below.
 
         Parameters
@@ -909,21 +1090,9 @@ class TsGroup(UserDict):
               6     0.4        1  left foot
         >>> tsgroup.save("my_tsgroup.npz")
 
-        Here I can retrieve my data with numpy directly:
+        To get back to pynapple, you can use the `nap.load_file` function :
 
-        >>> file = np.load("my_tsgroup.npz")
-        >>> print(list(file.keys()))
-        ['rate', 'group', 'location', 't', 'index', 'start', 'end', 'type']
-        >>> print(file['index'])
-        [0 6 0 0 6]
-
-        In the case where TsGroup is a set of Ts objects, it is very direct to
-        recreate the TsGroup by using the function to_tsgroup :
-
-        >>> time_support = nap.IntervalSet(file['start'], file['end'])
-        >>> tsd = nap.Tsd(t=file['t'], d=file['index'], time_support = time_support)
-        >>> tsgroup = tsd.to_tsgroup()
-        >>> tsgroup.set_info(group = file['group'], location = file['location'])
+        >>> tsgroup = nap.load_file("my_tsgroup.npz")
         >>> tsgroup
           Index    rate    group  location
         -------  ------  -------  ----------
@@ -955,7 +1124,7 @@ class TsGroup(UserDict):
 
         dicttosave = {"type": np.array(["TsGroup"], dtype=np.str_)}
         for k in self._metadata.columns:
-            if k not in ["t", "d", "start", "end", "index"]:
+            if k not in ["t", "d", "start", "end", "index", "keys"]:
                 tmp = self._metadata[k].values
                 if tmp.dtype == np.dtype("O"):
                     tmp = tmp.astype(np.str_)
@@ -986,9 +1155,9 @@ class TsGroup(UserDict):
         dicttosave["index"] = index
         if not np.all(np.isnan(data)):
             dicttosave["d"] = data[idx]
-
-        dicttosave["start"] = self.time_support.start.values
-        dicttosave["end"] = self.time_support.end.values
+        dicttosave["keys"] = np.array(self.keys())
+        dicttosave["start"] = self.time_support.start
+        dicttosave["end"] = self.time_support.end
 
         np.savez(filename, **dicttosave)
 

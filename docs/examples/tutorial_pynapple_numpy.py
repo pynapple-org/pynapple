@@ -139,6 +139,13 @@ tsd3 = nap.Tsd(t=np.arange(5)+20, d=np.ones(5)*3)
 
 print(np.concatenate((tsd1, tsd2, tsd3)))
 
+#%%
+# It's also possible to concatenate vertically if time indexes matches up to pynapple float precision
+
+tsdframe = nap.TsdFrame(t=np.arange(5), d=np.random.randn(5, 3))
+
+print(np.concatenate((tsdframe, tsdframe), 1))
+
 # %%
 # Spliting
 # --------

@@ -3,6 +3,8 @@ repo_url: https://github.com/pynapple-org/pynapple
 
 theme:
   name: 'material'
+  logo: images/Icon/Pynapple_final_icon_2.png
+  favicon: images/Icon/Pynapple_final_icon.png
   palette:
     primary: 'green'
     features:
@@ -34,6 +36,8 @@ plugins:
 nav:  
   - Overview: index.md  
   - Usage: generated/gallery
+  - External projects: external.md
+  - Pynajax - GPU acceleration: pynajax.md
   - Modules : reference/
   - Contributing: CONTRIBUTING.md
   - Authors: AUTHORS.md

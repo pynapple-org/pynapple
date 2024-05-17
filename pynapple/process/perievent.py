@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-01-30 22:59:00
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-29 12:47:56
+"""Perievent functions
+
+"""
 
 import numpy as np
 
 from .. import core as nap
+from ._process_functions import _perievent_continuous, _perievent_trigger_average
 
 
 def _align_tsd(tsd, tref, window, time_support):
@@ -170,8 +169,8 @@ def compute_perievent_continuous(data, tref, minmax, ep=None, time_unit="s"):
     time_array = data.index.values
     data_array = data.values
     time_target_array = tref.index.values
-    starts = ep.start.values
-    ends = ep.end.values
+    starts = ep.start
+    ends = ep.end
 
     binsize = time_array[1] - time_array[0]
     idx1 = -np.arange(0, window[0] + binsize, binsize)[::-1][:-1]
@@ -179,7 +178,7 @@ def compute_perievent_continuous(data, tref, minmax, ep=None, time_unit="s"):
     time_idx = np.hstack((idx1, np.zeros(1), idx2))
     windowsize = np.array([idx1.shape[0], idx2.shape[0]])
 
-    new_data_array = nap._jitted_functions.jitcontinuous_perievent(
+    new_data_array = _perievent_continuous(
         time_array, data_array, time_target_array, starts, ends, windowsize
     )
 
@@ -280,37 +279,24 @@ def compute_event_trigger_average(
     # Bin the spike train
     count = group.count(binsize, ep)
 
-    time_array = np.round(count.index.values - (binsize / 2), 9)
+    time_target_array = np.round(count.index.values - (binsize / 2), 9)
     count_array = count.values
-    starts = ep.start.values
-    ends = ep.end.values
+    starts = ep.start
+    ends = ep.end
 
-    time_target_array = feature.index.values
-    data_target_array = feature.values
+    time_array = feature.index.values
+    data_array = feature.values
 
-    if data_target_array.ndim == 1:
-        eta = nap._jitted_functions.jitperievent_trigger_average(
-            time_array,
-            count_array,
-            time_target_array,
-            np.expand_dims(data_target_array, -1),
-            starts,
-            ends,
-            windows,
-            binsize,
-        )
-        eta = np.squeeze(eta, -1)
-    else:
-        eta = nap._jitted_functions.jitperievent_trigger_average(
-            time_array,
-            count_array,
-            time_target_array,
-            data_target_array,
-            starts,
-            ends,
-            windows,
-            binsize,
-        )
+    eta = _perievent_trigger_average(
+        time_target_array,
+        count_array,
+        time_array,
+        data_array,
+        starts,
+        ends,
+        windows,
+        binsize,
+    )
 
     if eta.ndim == 2:
         return nap.TsdFrame(t=time_idx, d=eta, columns=group.index)

@@ -5,7 +5,7 @@
 # @Last Modified time: 2024-01-29 11:05:11
 
 """Tests of tuning curves for `pynapple` package."""
-
+from contextlib import nullcontext as does_not_raise
 import pynapple as nap
 import numpy as np
 import pandas as pd
@@ -214,22 +214,69 @@ def test_compute_2d_mutual_info():
     np.testing.assert_approx_equal(si.loc[0, "SI"], 2.0)
 
 
-def test_compute_1d_tuning_curves_continuous():
-    tsdframe = nap.TsdFrame(t=np.arange(0, 100), d=np.ones((100, 1)))
+@pytest.mark.parametrize(
+    "tsd, expected_columns",
+    [
+        (nap.TsdFrame(t=np.arange(0, 100), d=np.ones((100, 1))), [0]),
+        (nap.TsdFrame(t=np.arange(0, 100), d=np.ones((100, 2))), [0, 1]),
+        (nap.Tsd(t=np.arange(0, 100), d=np.ones((100, ))), [0])
+    ]
+)
+def test_compute_1d_tuning_curves_continuous(tsd, expected_columns):
     feature = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.arange(0, 100, 0.1) % 1.0)
-    tc = nap.compute_1d_tuning_curves_continuous(tsdframe, feature, nb_bins=10)
+    tc = nap.compute_1d_tuning_curves_continuous(tsd, feature, nb_bins=10)
 
     assert len(tc) == 10
-    assert list(tc.columns) == list(tsdframe.columns)
+    assert list(tc.columns) == expected_columns
     np.testing.assert_array_almost_equal(tc[0].values[1:], np.zeros(9))
     assert int(tc[0].values[0]) == 1.0
 
-def test_compute_1d_tuning_curves_continuous_error():
-    tsdframe = nap.TsdFrame(t=np.arange(0, 100), d=np.ones((100, 1)))
-    feature = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.arange(0, 100, 0.1) % 1.0)
-    with pytest.raises(RuntimeError) as e_info:
-        nap.compute_1d_tuning_curves_continuous([1,2,3], feature, nb_bins=10)
-    assert str(e_info.value) == "Unknown format for tsdframe."
+
+@pytest.mark.parametrize(
+    "tsdframe, expectation",
+    [
+        (nap.TsdFrame(t=np.arange(0, 100), d=np.ones((100, 1))), does_not_raise()),
+        ([1, 2, 3], pytest.raises(RuntimeError, match="Unknown format for tsdframe.")),
+        (
+                nap.TsdTensor(t=np.arange(0, 100), d=np.ones((100, 1, 1))),
+                pytest.raises(RuntimeError, match="Unknown format for tsdframe.")
+        ),
+    ]
+)
+@pytest.mark.parametrize(
+    "feature",
+    [
+        nap.Tsd(t=np.arange(0, 100, 0.1), d=np.arange(0, 100, 0.1) % 1.0),
+        nap.TsdFrame(t=np.arange(0, 100, 0.1), d=np.arange(0, 100, 0.1)[:, None] % 1.0)
+    ]
+)
+def test_compute_1d_tuning_curves_continuous_error_tsdframe(tsdframe, expectation, feature):
+    with expectation:
+        nap.compute_1d_tuning_curves_continuous(tsdframe, feature, nb_bins=10)
+
+
+@pytest.mark.parametrize(
+    "feature, expectation",
+    [
+        (nap.Tsd(t=np.arange(0, 100, 0.1), d=np.arange(0, 100, 0.1) % 1.0), does_not_raise()),
+        (nap.TsdFrame(t=np.arange(0, 100, 0.1), d=np.arange(0, 100, 0.1)[:, None] % 1.0), does_not_raise()),
+        (
+                nap.TsdFrame(t=np.arange(0, 100, 0.1), d=np.arange(0, 200, 0.1).reshape(1000, 2) % 1.0),
+                pytest.raises(AssertionError, match=r"feature should be a Tsd \(or TsdFrame with 1 column only\)"))
+    ]
+)
+@pytest.mark.parametrize(
+    "tsd",
+    [
+        nap.TsdFrame(t=np.arange(0, 100), d=np.ones((100, 1))),
+        nap.TsdFrame(t=np.arange(0, 100), d=np.ones((100, 2))),
+        nap.Tsd(t=np.arange(0, 100), d=np.ones((100, )))
+    ]
+)
+def test_compute_1d_tuning_curves_continuous_error_featues(tsd, feature, expectation):
+    with expectation:
+        nap.compute_1d_tuning_curves_continuous(tsd, feature, nb_bins=10)
+
 
 def test_compute_1d_tuning_curves_continuous_with_ep():
     tsdframe = nap.TsdFrame(t=np.arange(0, 100), d=np.ones((100, 1)))
@@ -250,29 +297,49 @@ def test_compute_1d_tuning_curves_continuous_with_min_max():
     np.testing.assert_array_almost_equal(tc[0].values[1:], np.zeros(9))
     assert tc[0].values[0] == 1.0
 
+@pytest.mark.parametrize(
+    "tsdframe, expected_columns",
+    [
+        (nap.TsdFrame(t=np.arange(0, 100), d=np.hstack((np.ones((100, 1)), np.ones((100, 1)) * 2))), [0, 1]),
+        (
+                nap.TsdFrame(t=np.arange(0, 100), d=np.hstack((np.ones((100, 1)), np.ones((100, 1)) * 2)),
+                             columns=["x", "y"]),
+                ["x", "y"]
+        ),
+        (nap.Tsd(t=np.arange(0, 100), d=np.hstack((np.ones((100, )) * 2))), [0])
 
-def test_compute_2d_tuning_curves_continuous():
-    tsdframe = nap.TsdFrame(
-        t=np.arange(0, 100), d=np.hstack((np.ones((100, 1)), np.ones((100, 1)) * 2))
-    )
+    ]
+)
+@pytest.mark.parametrize("nb_bins", [1, 2, 3])
+def test_compute_2d_tuning_curves_continuous(nb_bins, tsdframe, expected_columns):
+
     features = nap.TsdFrame(
         t=np.arange(100), d=np.tile(np.array([[0, 0, 1, 1], [0, 1, 0, 1]]), 25).T
     )
-    tc, xy = nap.compute_2d_tuning_curves_continuous(tsdframe, features, 2)
+    tc, xy = nap.compute_2d_tuning_curves_continuous(tsdframe, features, nb_bins)
 
     assert isinstance(tc, dict)
-    assert list(tc.keys()) == list(tsdframe.columns)
+    assert list(tc.keys()) == expected_columns
     for i in tc.keys():
-        assert tc[i].shape == (2, 2)
-    tmp = np.zeros((2, 2, 2))
-    tmp[:, 0, 0] = [1, 2]
-    for i in range(2):
-        np.testing.assert_array_almost_equal(tc[i], tmp[i])
+        assert tc[i].shape == (nb_bins, nb_bins)
+
     assert isinstance(xy, list)
     assert len(xy) == 2
     for i in range(2):
         assert np.min(xy) > 0
         assert np.max(xy) < 1
+
+
+def test_compute_2d_tuning_curves_continuous_output_value():
+    tsdframe = nap.TsdFrame(t=np.arange(0, 100), d=np.hstack((np.ones((100, 1)), np.ones((100, 1)) * 2)))
+    features = nap.TsdFrame(
+        t=np.arange(100), d=np.tile(np.array([[0, 0, 1, 1], [0, 1, 0, 1]]), 25).T
+    )
+    tc, xy = nap.compute_2d_tuning_curves_continuous(tsdframe, features, 2)
+    tmp = np.zeros((2, 2, 2))
+    tmp[:, 0, 0] = [1, 2]
+    for i in range(2):
+        np.testing.assert_array_almost_equal(tc[i], tmp[i])
 
 
 def test_compute_2d_tuning_curves_continuous_with_ep():
@@ -289,10 +356,8 @@ def test_compute_2d_tuning_curves_continuous_with_ep():
     for i in tc1.keys():
         np.testing.assert_array_almost_equal(tc1[i], tc2[i])
 
-def test_compute_2d_tuning_curves_continuous_error():
-    tsdframe = nap.TsdFrame(
-        t=np.arange(0, 100), d=np.hstack((np.ones((100, 1)), np.ones((100, 1)) * 2))
-    )
+
+def test_compute_2d_tuning_curves_continuous_error_tsdframe():
     features = nap.TsdFrame(
         t=np.arange(100), d=np.tile(np.array([[0, 0, 1, 1], [0, 1, 0, 1]]), 25).T
     )    
@@ -300,17 +365,26 @@ def test_compute_2d_tuning_curves_continuous_error():
         nap.compute_2d_tuning_curves_continuous([1,2,3], features, 2)
     assert str(e_info.value) == "Unknown format for tsdframe."
 
-    with pytest.raises(AssertionError) as e_info:
-        nap.compute_2d_tuning_curves_continuous(tsdframe, [1,2,3], 2)
-    assert str(e_info.value) == "features should be a TsdFrame with 2 columns"
+@pytest.mark.parametrize(
+    "features, expectation",
+    [
+        ([1, 2, 3], pytest.raises(AssertionError, match="features should be a TsdFrame with 2 columns")),
+        (nap.TsdFrame(t=np.arange(100), d=np.tile(np.array([[0, 0, 1, 1], [0, 1, 0, 1], [0,0,0,0]]), 25).T),
+         pytest.raises(AssertionError, match="features should have 2 columns only")),
 
-    features = nap.TsdFrame(
-        t=np.arange(100), d=np.tile(np.array([[0, 0, 1, 1], [0, 1, 0, 1], [0,0,0,0]]), 25).T
-    )    
-    with pytest.raises(AssertionError) as e_info:
+    ]
+
+)
+@pytest.mark.parametrize(
+    "tsdframe",
+    [
+        nap.TsdFrame(t=np.arange(0, 100), d=np.hstack((np.ones((100, 1)), np.ones((100, 1)) * 2))),
+        nap.Tsd(t=np.arange(0, 100), d=np.ones((100, )))
+    ]
+)
+def test_compute_2d_tuning_curves_continuous_error_feature(tsdframe, features, expectation):
+    with expectation:
         nap.compute_2d_tuning_curves_continuous(tsdframe, features, 2)
-    assert str(e_info.value) == "features should have 2 columns only."
-
 
 @pytest.mark.filterwarnings("ignore")
 def test_compute_2d_tuning_curves_with_minmax():
