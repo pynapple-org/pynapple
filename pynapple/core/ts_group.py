@@ -21,7 +21,7 @@ from ._jitted_functions import (
     jitunion_isets,
 )
 from .base_class import Base
-from .config import time_index_precision
+from .config import nap_config
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
@@ -1158,7 +1158,7 @@ class TsGroup(UserDict):
                 if not np.allclose(
                     tsg1.time_support.as_units("s").to_numpy(),
                     tsg.time_support.as_units("s").to_numpy(),
-                    atol=10 ** (-time_index_precision),
+                    atol=10 ** (-nap_config.time_index_precision),
                     rtol=0,
                 ):
                     raise ValueError(
