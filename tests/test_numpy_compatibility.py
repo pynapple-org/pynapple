@@ -1,11 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: Guillaume Viejo
-# @Date:   2023-09-18 18:11:24
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-01 17:09:04
-
-
-
 import pynapple as nap
 import numpy as np
 import pytest
@@ -153,6 +145,11 @@ class Test_Time_Series_1:
 
     def test_attributes(self, tsd):
         assert tsd.min() == tsd.values.min()
+
+        with pytest.raises(AttributeError) as e_info:
+            tsd.blabla()
+
+        assert str(e_info.value) == "Time series object does not have the attribute blabla"
 
     def test_split(self, tsd):
         a = np.split(tsd, 4)

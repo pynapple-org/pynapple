@@ -36,6 +36,8 @@ plugins:
 nav:  
   - Overview: index.md  
   - Usage: generated/gallery
+  - External projects: external.md
+  - Pynajax - GPU acceleration: pynajax.md
   - Modules : reference/
   - Contributing: CONTRIBUTING.md
   - Authors: AUTHORS.md

@@ -1,8 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-08-29 17:27:02
-# @Last Modified by:   gviejo
-# @Last Modified time: 2024-02-20 22:45:51
 #!/usr/bin/env python
 
 """Tests of spike trigger average for `pynapple` package."""
@@ -16,16 +11,17 @@ import pytest
 
 def test_compute_spike_trigger_average_tsd():
     ep = nap.IntervalSet(0, 100)
-    feature = nap.Tsd(
-        t=np.arange(0, 101, 0.01), d=np.zeros(int(101 / 0.01)), time_support=ep
-    )
+    d = np.zeros(int(101 / 0.01))
     t1 = np.arange(1, 100)
     x = np.arange(100, 10000, 100)
-    feature[x] = 1.0
+    d[x] = 1.0    
+    feature = nap.Tsd(
+        t=np.arange(0, 101, 0.01), d=d, time_support=ep
+    )
     spikes = nap.TsGroup(
         {0: nap.Ts(t1), 1: nap.Ts(t1 - 0.1), 2: nap.Ts(t1 + 0.2)}, time_support=ep
     )
-
+    
     sta = nap.compute_event_trigger_average(spikes, feature, 0.2, (0.6, 0.6), ep)
 
     output = np.zeros((7, 3))
@@ -35,16 +31,17 @@ def test_compute_spike_trigger_average_tsd():
 
     assert isinstance(sta, nap.TsdFrame)
     assert sta.shape == output.shape
-    np.testing.assert_array_almost_equal(sta, output)
+    np.testing.assert_array_almost_equal(sta.values, output)
 
 def test_compute_spike_trigger_average_tsdframe():
     ep = nap.IntervalSet(0, 100)
-    feature = nap.TsdFrame(
-        t=np.arange(0, 101, 0.01), d=np.zeros((int(101 / 0.01),1)), time_support=ep
-    )
-    t1 = np.arange(1, 100)
+    d = np.zeros((int(101 / 0.01),1))
     x = np.arange(100, 10000, 100)
-    feature[x] = 1.0
+    d[x] = 1.0
+    feature = nap.TsdFrame(
+        t=np.arange(0, 101, 0.01), d=d, time_support=ep
+    )
+    t1 = np.arange(1, 100)    
     spikes = nap.TsGroup(
         {0: nap.Ts(t1), 1: nap.Ts(t1 - 0.1), 2: nap.Ts(t1 + 0.2)}, time_support=ep
     )
@@ -58,16 +55,17 @@ def test_compute_spike_trigger_average_tsdframe():
 
     assert isinstance(sta, nap.TsdTensor)
     assert sta.shape == (*output.shape, 1)
-    np.testing.assert_array_almost_equal(sta, np.expand_dims(output, 2))
+    np.testing.assert_array_almost_equal(sta.values, np.expand_dims(output, 2))
 
 def test_compute_spike_trigger_average_tsdtensor():
     ep = nap.IntervalSet(0, 100)
-    feature = nap.TsdTensor(
-        t=np.arange(0, 101, 0.01), d=np.zeros((int(101 / 0.01),1,1)), time_support=ep
-    )
-    t1 = np.arange(1, 100)
+    d=np.zeros((int(101 / 0.01),1,1))
     x = np.arange(100, 10000, 100)
-    feature[x] = 1.0
+    d[x] = 1.0
+    feature = nap.TsdTensor(
+        t=np.arange(0, 101, 0.01), d=d, time_support=ep
+    )
+    t1 = np.arange(1, 100)    
     spikes = nap.TsGroup(
         {0: nap.Ts(t1), 1: nap.Ts(t1 - 0.1), 2: nap.Ts(t1 + 0.2)}, time_support=ep
     )
@@ -81,7 +79,7 @@ def test_compute_spike_trigger_average_tsdtensor():
 
     assert isinstance(sta, nap.TsdTensor)
     assert sta.shape == output.shape
-    np.testing.assert_array_almost_equal(sta, output)
+    np.testing.assert_array_almost_equal(sta.values, output)
 
 def test_compute_spike_trigger_average_random_feature():
     ep = nap.IntervalSet(0, 100)
@@ -118,17 +116,18 @@ def test_compute_spike_trigger_average_random_feature():
 
 def test_compute_spike_trigger_average_add_nan():
     ep = nap.IntervalSet(0, 110)
+    d=np.zeros(int(110 / 0.01))
+    x = np.arange(100, 10000, 100)
+    d[x] = 1.0
+    d[-1001:] = np.nan    
     feature = nap.Tsd(
-        t=np.arange(0, 110, 0.01), d=np.zeros(int(110 / 0.01)), time_support=ep
+        t=np.arange(0, 110, 0.01), d=d, time_support=ep
     )
     t1 = np.arange(1, 100)
-    x = np.arange(100, 10000, 100)
-    feature[x] = 1.0
+    
     spikes = nap.TsGroup(
         {0: nap.Ts(t1), 1: nap.Ts(t1 - 0.1), 2: nap.Ts(t1 + 0.2)}, time_support=ep
     )
-
-    feature[-1001:] = np.nan
 
     sta = nap.compute_event_trigger_average(spikes, feature, 0.2, (0.6, 0.6), ep)
 
@@ -139,16 +138,17 @@ def test_compute_spike_trigger_average_add_nan():
 
     assert isinstance(sta, nap.TsdFrame)
     assert sta.shape == output.shape
-    np.testing.assert_array_almost_equal(sta, output)
+    np.testing.assert_array_almost_equal(sta.values, output)
 
 def test_compute_spike_trigger_average_raise_error():
     ep = nap.IntervalSet(0, 101)
+    d=np.zeros(int(101 / 0.01))
+    x = np.arange(100, 10000, 100)+1
+    d[x] = 1.0
     feature = nap.Tsd(
-        t=np.arange(0, 101, 0.01), d=np.zeros(int(101 / 0.01)), time_support=ep
+        t=np.arange(0, 101, 0.01), d=d , time_support=ep
     )
     t1 = np.arange(1, 101) + 0.01
-    x = np.arange(100, 10000, 100)+1
-    feature[x] = 1.0
     spikes = nap.TsGroup(
         {0: nap.Ts(t1), 1: nap.Ts(t1 - 0.1), 2: nap.Ts(t1 + 0.2)}, time_support=ep
     )
@@ -188,14 +188,16 @@ def test_compute_spike_trigger_average_raise_error():
 
 def test_compute_spike_trigger_average_time_unit():
     ep = nap.IntervalSet(0, 100)
-    feature = pd.Series(index=np.arange(0, 101, 0.01), data=np.zeros(int(101 / 0.01)))
+    t = np.arange(0, 101, 0.01)
+    d = np.zeros(int(101 / 0.01))
     t1 = np.arange(1, 100)
-    feature.loc[t1] = 1.0
+    for i in range(len(t1)):
+        d[t==t1[i]] = 1.0
+    feature = nap.Tsd(t=t, d=d, time_support=ep)
+    
     spikes = nap.TsGroup(
         {0: nap.Ts(t1), 1: nap.Ts(t1 - 0.1), 2: nap.Ts(t1 + 0.2)}, time_support=ep
     )
-
-    feature = nap.Tsd(feature, time_support=ep)
 
     sta = nap.compute_event_trigger_average(spikes, feature, 0.2, (0.6, 0.6), ep)
 
@@ -234,7 +236,7 @@ def test_compute_spike_trigger_average_no_windows():
 
     assert isinstance(sta, nap.TsdFrame)
     assert sta.shape == output.shape
-    np.testing.assert_array_almost_equal(sta, output)
+    np.testing.assert_array_almost_equal(sta.values, output)
 
 
 def test_compute_spike_trigger_average_multiple_epochs():

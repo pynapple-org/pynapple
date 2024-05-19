@@ -1,10 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-03-30 11:15:02
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-16 11:35:35
-
 """Tests for IntervalSet of `pynapple` package."""
 
 import pynapple as nap
@@ -215,11 +208,11 @@ def test_array_ufunc():
 
     # test warning
     from contextlib import nullcontext as does_not_raise
-    nap.config.nap_config.suppress_conversion_warnings = True
+    nap.nap_config.suppress_conversion_warnings = True
     with does_not_raise():
         np.exp(ep)
 
-    nap.config.nap_config.suppress_conversion_warnings = False
+    nap.nap_config.suppress_conversion_warnings = False
 
 def test_array_func():
     start = np.array([0, 10, 16], dtype=np.float64)
@@ -238,11 +231,11 @@ def test_array_func():
 
     # test warning
     from contextlib import nullcontext as does_not_raise
-    nap.config.nap_config.suppress_conversion_warnings = True
+    nap.nap_config.suppress_conversion_warnings = True
     with does_not_raise():
         out = np.ravel(ep)
 
-    nap.config.nap_config.suppress_conversion_warnings = False
+    nap.nap_config.suppress_conversion_warnings = False
 
 def test_timespan():
     start = [0, 10, 16, 25]
@@ -352,7 +345,7 @@ def test_jitfix_iset():
     starts = np.array([0, 10, 16])
     ends = np.array([5, 15, 20])
 
-    ep, to_warn = nap.core.utils._jitfix_iset(starts, ends)
+    ep, to_warn = nap.core._jitted_functions._jitfix_iset(starts, ends)
     np.testing.assert_array_almost_equal(starts, ep[:,0])
     np.testing.assert_array_almost_equal(ends, ep[:,1])
     np.testing.assert_array_almost_equal(to_warn, np.zeros(4))
@@ -361,7 +354,7 @@ def test_jitfix_iset_error0():
     start = np.around(np.array([0, 10, 15], dtype=np.float64), 9)
     end = np.around(np.array([10, 15, 20], dtype=np.float64), 9)
 
-    ep, to_warn = nap.core.utils._jitfix_iset(start, end)
+    ep, to_warn = nap.core._jitted_functions._jitfix_iset(start, end)
 
     end[1:] -= 1e-6
 
@@ -380,7 +373,7 @@ def test_jitfix_iset_error1():
     start = np.around(np.array([0, 15, 16], dtype=np.float64), 9)
     end = np.around(np.array([5, 10, 20], dtype=np.float64), 9)
 
-    ep, to_warn = nap.core.utils._jitfix_iset(start, end)
+    ep, to_warn = nap.core._jitted_functions._jitfix_iset(start, end)
 
     np.testing.assert_array_almost_equal(start[[0,2]], ep[:,0])
     np.testing.assert_array_almost_equal(end[[0,2]], ep[:,1])
@@ -397,7 +390,7 @@ def test_jitfix_iset_error2():
     start = np.around(np.array([0, 10, 16], dtype=np.float64), 9)
     end = np.around(np.array([11, 15, 20], dtype=np.float64), 9)
 
-    ep, to_warn = nap.core.utils._jitfix_iset(start, end)
+    ep, to_warn = nap.core._jitted_functions._jitfix_iset(start, end)
 
     np.testing.assert_array_almost_equal(start[[0,2]], ep[:,0])
     np.testing.assert_array_almost_equal(end[[1,2]], ep[:,1])
@@ -414,7 +407,7 @@ def test_jitfix_iset_error3():
     start = np.around(np.array([0, 15, 16], dtype=np.float64), 9)
     end = np.around(np.array([5, 15, 20], dtype=np.float64), 9)
 
-    ep, to_warn = nap.core.utils._jitfix_iset(start, end)
+    ep, to_warn = nap.core._jitted_functions._jitfix_iset(start, end)
 
     np.testing.assert_array_almost_equal(start[[0,2]], ep[:,0])
     np.testing.assert_array_almost_equal(end[[0,2]], ep[:,1])
@@ -430,7 +423,7 @@ def test_jitfix_iset_random():
         start = np.sort(np.random.uniform(0, 1000, 100))
         end = np.sort(np.random.uniform(0, 1000, 100))
 
-        ep, to_warn = nap.core.utils._jitfix_iset(start, end)
+        ep, to_warn = nap.core._jitted_functions._jitfix_iset(start, end)
 
         if len(ep):
             assert np.all(ep[:,1] - ep[:,0] > 0)
