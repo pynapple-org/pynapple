@@ -87,7 +87,8 @@ def test_lazy_load_hdf5_apply_func(time, data, func,cls):
         ("interpolate", nap.Ts(t=np.linspace(0, 12, 50))),
         ("convolve", np.ones(3)),
         ("smooth", 2),
-        ("dropna", True)
+        ("dropna", True),
+        ("value_from", nap.Tsd(t=np.linspace(0, 12, 20), d=np.random.normal(size=20)))
     ]
 )
 def test_lazy_load_hdf5_apply_func(time, data, method_name, args, cls):
@@ -104,7 +105,8 @@ def test_lazy_load_hdf5_apply_func(time, data, method_name, args, cls):
         # lazy load and apply function
         tsd = cls(t=time, d=h5_data, conv_to_array=False)
         func = getattr(tsd, method_name)
-        res = func(args)
+        out = func(args)
+        assert isinstance(out.d, np.ndarray)
     finally:
         # delete file
         if file_path.exists():
