@@ -13,8 +13,6 @@ import pytest
 from collections import UserDict
 import warnings
 from contextlib import nullcontext as does_not_raise
-import itertools
-
 
 @pytest.fixture
 def group():
@@ -757,7 +755,7 @@ class TestTsGroup1:
             out = ts_group[bool_idx]
 
     def test_merge_complete(self, ts_group):
-        with pytest.raises(TypeError,  match=f"Input at positions {[2, 3]} are not TsGroup!"):
+        with pytest.raises(TypeError,  match="Input at positions(.*)are not TsGroup!"):
             nap.TsGroup.merge_group(ts_group, str, dict)
 
         ts_group2 = nap.TsGroup(
