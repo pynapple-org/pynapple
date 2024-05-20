@@ -1,16 +1,15 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-04-01 09:57:55
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-03 10:23:28
-#!/usr/bin/env python
-
 """Tests of time series for `pynapple` package."""
 
 import pynapple as nap
 import numpy as np
 import pandas as pd
 import pytest
+
+
+# tsd1 = nap.Tsd(t=np.arange(100), d=np.random.rand(100), time_units="s")
+# tsd2 = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 10), time_units="s")
+# tsd3 = nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 5, 4), time_units="s")
+# tsd4 = nap.Ts(t=np.arange(100), time_units="s")
 
 
 def test_create_tsd():
@@ -183,12 +182,14 @@ def test_raise_error_tsdtensor_init():
 
 def test_index_error():
     tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
-    with pytest.raises(IndexError):
-        tsd[1000] = 0
-
     ts = nap.Ts(t=np.arange(100))
-    with pytest.raises(IndexError):
-        ts[1000]
+
+    if isinstance(tsd.d, np.ndarray):
+        with pytest.raises(IndexError):
+            tsd[1000] = 0
+
+        with pytest.raises(IndexError):
+            ts[1000]
 
 def test_find_support():
     tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
@@ -204,7 +205,7 @@ def test_find_support():
 
 def test_properties():
     t = np.arange(100)
-    d = np.random.rand(100)
+    d = np.random.rand(100).astype(np.float32) # to match pynajax
     tsd = nap.Tsd(t=t, d = d)
 
     assert hasattr(tsd, "t")
@@ -234,14 +235,17 @@ def test_base_tsd_class():
         def __getitem__(self, key):
             return self.values.__getitem__(key)
 
-    tsd = DummyTsd([], [])
-    assert np.isnan(tsd.rate)
+    tsd = DummyTsd([0, 1], [1, 2])
+    assert isinstance(tsd.rate, float)
     assert isinstance(tsd.index, nap.TsIndex)
-    assert isinstance(tsd.values, np.ndarray)
+    try:
+        assert isinstance(tsd.values, np.ndarray)
+    except AssertionError:
+        assert nap.core.utils.is_array_like(tsd.values) # for pynajax
 
     assert isinstance(tsd.__repr__(), str)
 
-    with pytest.raises(IndexError):
+    with pytest.raises((IndexError, TypeError)):
         tsd['a']
 
 
@@ -380,9 +384,12 @@ class Test_Time_Series_1:
             np.testing.assert_array_equal(tsd.index.values, new_tsd.index.values)
             np.testing.assert_array_equal(tsd.values, new_tsd.values)
 
-            tsd.values[tsd.values>0.9] = np.NaN
+            tmp = np.random.rand(*tsd.shape)
+            tmp[tmp>0.9] = np.NaN
+            tsd = tsd.__class__(t=tsd.t, d=tmp)
+            
             new_tsd = tsd.dropna()
-            assert not np.all(np.isnan(new_tsd))
+            assert not np.all(np.isnan(new_tsd.values))
             tokeep = np.array([~np.any(np.isnan(tsd[i])) for i in range(len(tsd))])            
             np.testing.assert_array_equal(tsd.index.values[tokeep], new_tsd.index.values)
             np.testing.assert_array_equal(tsd.values[tokeep], new_tsd.values)
@@ -396,7 +403,7 @@ class Test_Time_Series_1:
             np.testing.assert_array_equal(tsd.values[tokeep], new_tsd.values)
             np.testing.assert_array_equal(new_tsd.time_support, tsd.time_support)
 
-            tsd.values[:] = np.NaN
+            tsd = tsd.__class__(t=tsd.t, d=np.ones(tsd.shape)*np.NaN)            
             new_tsd = tsd.dropna()
             assert len(new_tsd) == 0
             assert len(new_tsd.time_support) == 0
@@ -408,7 +415,7 @@ class Test_Time_Series_1:
             tmp = tsd.values.reshape(tsd.shape[0], -1)
             tmp2 = np.zeros_like(tmp)
             for i in range(tmp.shape[-1]):
-                tmp2[:,i] = np.convolve(tmp[:,i], array, mode='full')[5:-4]
+                tmp2[:,i] = np.convolve(tmp[:,i], array, mode='full')[4:-5]
             np.testing.assert_array_almost_equal(
                 tmp2, 
                 tsd2.values.reshape(tsd2.shape[0], -1)
@@ -416,7 +423,7 @@ class Test_Time_Series_1:
 
             with pytest.raises(AssertionError) as e_info:
                 tsd.convolve([1,2,3])
-            assert str(e_info.value) == "Input should be a 1-d numpy array."
+            assert str(e_info.value) == "Input should be a numpy array (or jax array if pynajax is installed)."
 
             with pytest.raises(AssertionError) as e_info:
                 tsd.convolve(np.random.rand(2,3))
@@ -425,18 +432,20 @@ class Test_Time_Series_1:
             ep = nap.IntervalSet(start=[0, 60], end=[40,100])
             tsd3 = tsd.convolve(array, ep)
             
+            tmp3 = []
             for i in range(len(ep)):
                 tmp2 = tsd.restrict(ep[i]).values
-                tmp2 = tmp2.reshape(tmp2.shape[0], -1)
+                tmp2 = np.array(tmp2.reshape(tmp2.shape[0], -1)) # for pynajax
                 for j in range(tmp2.shape[-1]):
-                    tmp2[:,j] = np.convolve(tmp2[:,j], array, mode='full')[5:-4]
+                    tmp2[:,j] = np.convolve(tmp2[:,j], array, mode='full')[4:-5]                    
+                tmp3.append(tmp2)
                 np.testing.assert_array_almost_equal(
                     tmp2,
                     tsd3.restrict(ep[i]).values.reshape(tmp2.shape[0], -1)
                     )
 
             # Trim
-            for trim, sl in zip(['left', 'both', 'right'], [slice(9,None),slice(5,-4),slice(None,-9)]):
+            for trim, sl in zip(['left', 'both', 'right'], [slice(9,None),slice(4,-5),slice(None,-9)]):
                 tsd2 = tsd.convolve(array, trim=trim)
                 tmp = tsd.values.reshape(tsd.shape[0], -1)
                 tmp2 = np.zeros_like(tmp)
@@ -463,7 +472,7 @@ class Test_Time_Series_1:
             window = signal.windows.gaussian(M, std=std)
             window = window / window.sum()            
             for i in range(tmp.shape[-1]):
-                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[M//2:1-M//2]
+                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[M//2-1:1-M//2-1]
             np.testing.assert_array_almost_equal(
                 tmp2, 
                 tsd2.values.reshape(tsd2.shape[0], -1)
@@ -484,7 +493,20 @@ class Test_Time_Series_1:
             M = std*200
             window = signal.windows.gaussian(M, std=std)            
             for i in range(tmp.shape[-1]):
-                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[M//2:1-M//2]
+                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[M//2-1:1-M//2-1]
+            np.testing.assert_array_almost_equal(
+                tmp2, 
+                tsd2.values.reshape(tsd2.shape[0], -1)
+                )
+
+            tsd2 = tsd.smooth(1, windowsize = 10, norm=False)
+            tmp = tsd.values.reshape(tsd.shape[0], -1)
+            tmp2 = np.zeros_like(tmp)
+            std = int(tsd.rate * 1)
+            M = int(tsd.rate * 10)
+            window = signal.windows.gaussian(M, std=std)            
+            for i in range(tmp.shape[-1]):
+                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[M//2-1:1-M//2-1]
             np.testing.assert_array_almost_equal(
                 tmp2, 
                 tsd2.values.reshape(tsd2.shape[0], -1)
@@ -508,7 +530,9 @@ class Test_Time_Series_1:
                 tsd.smooth(1, time_units = 0)
             assert str(e_info.value) == "time_units should be of type str"
 
-
+            with pytest.raises(AssertionError) as e_info:
+                tsd.smooth(1, windowsize='a')
+            assert str(e_info.value) == "windowsize should be type int or float"
 
 ####################################################
 # Test for tsd
@@ -619,13 +643,13 @@ class Test_Time_Series_2:
 
     def test_threshold(self, tsd):
         thrs = tsd.threshold(0.5, "above")
-        assert len(thrs) == np.sum(tsd.values > 0.5)
+        assert len(thrs) == int(np.sum(tsd.values > 0.5))
         thrs = tsd.threshold(0.5, "below")
-        assert len(thrs) == np.sum(tsd.values < 0.5)
+        assert len(thrs) == int(np.sum(tsd.values < 0.5))
         thrs = tsd.threshold(0.5, "aboveequal")
-        assert len(thrs) == np.sum(tsd.values >= 0.5)
+        assert len(thrs) == int(np.sum(tsd.values >= 0.5))
         thrs = tsd.threshold(0.5, "belowequal")
-        assert len(thrs) == np.sum(tsd.values <= 0.5)
+        assert len(thrs) == int(np.sum(tsd.values <= 0.5))
 
     def test_threshold_time_support(self, tsd):
         thrs = tsd.threshold(0.5, "above")
@@ -792,8 +816,8 @@ class Test_Time_Series_3:
 
     def test_str_indexing(self, tsdframe):
         tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), time_units="s", columns=['a', 'b', 'c'])
-        np.testing.assert_array_almost_equal(tsdframe.values[:,0], tsdframe['a'])
-        np.testing.assert_array_almost_equal(tsdframe.values[:,[0,2]], tsdframe[['a', 'c']])
+        np.testing.assert_array_almost_equal(tsdframe.values[:,0], tsdframe['a'].values)
+        np.testing.assert_array_almost_equal(tsdframe.values[:,[0,2]], tsdframe[['a', 'c']].values)
 
         with pytest.raises(Exception):
             tsdframe['d']

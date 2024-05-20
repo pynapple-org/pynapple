@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "pynapple"
-version = "0.6.2"
+version = "0.6.4"
 description = "PYthon Neural Analysis Package Pour Laboratoires d’Excellence"
 readme = "README.md"
 authors = [{ name = "Guillaume Viejo", email = "guillaume.viejo@gmail.com" }]
@@ -44,6 +44,9 @@ repository = "https://github.com/pynapple-org/pynapple"
 # Optional dependencies
 ##########################################################################
 [project.optional-dependencies]
+jax = [
+    "pynajax"
+]
 dev = [
     "black>=24.2.0",                # Code formatter
     "isort",                        # Import sorter
@@ -69,6 +72,8 @@ dandi = [
     "requests",
     "aiohttp",
 ]
+
+
 
 [tool.black]
 target-version = ['py36', 'py37', 'py38', 'py39']

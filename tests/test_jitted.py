@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-12-02 17:17:03
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-01 17:37:20
-
 """Tests of jitted core functions for `pynapple` package."""
 
 import pynapple as nap
@@ -11,6 +5,7 @@ import numpy as np
 import pandas as pd
 import pytest
 import warnings
+
 
 def get_example_dataset(n=100):
     with warnings.catch_warnings():
@@ -75,52 +70,22 @@ def test_jitrestrict():
         ep, ts, tsd, tsdframe = get_example_dataset()
 
         tsd2 = restrict(ep, tsd)
-        t, d= nap.core._jitted_functions.jitrestrict(tsd.index, tsd.values, ep.start, ep.end)
-        tsd3 = pd.Series(index=t, data=d)
+        ix = nap.core._jitted_functions.jitrestrict(tsd.index, ep.start, ep.end)
+        tsd3 = pd.Series(index=tsd.index[ix], data=tsd.values[ix])
         pd.testing.assert_series_equal(tsd2, tsd3)
-
-def test_jittsrestrict():
-    for i in range(100):        
-        ep, ts, tsd, tsdframe = get_example_dataset()
-
-        ts2 = restrict(ep, ts)
-        t = nap.core._jitted_functions.jittsrestrict(ts.index, ep.start, ep.end)
-        ts3 = pd.Series(index=t, dtype="object")
-        pd.testing.assert_series_equal(ts2, ts3)
 
 def test_jitrestrict_with_count():
     for i in range(100):
         ep, ts, tsd, tsdframe = get_example_dataset()
 
         tsd2 = restrict(ep, tsd)
-        t, d, count = nap.core._jitted_functions.jitrestrict_with_count(tsd.index, tsd.values, ep.start, ep.end)
-        tsd3 = pd.Series(index=t, data=d)
+        ix, count = nap.core._jitted_functions.jitrestrict_with_count(tsd.index, ep.start, ep.end)
+        tsd3 = pd.Series(index=tsd.index[ix], data=tsd.values[ix])
         pd.testing.assert_series_equal(tsd2, tsd3)
 
         bins = ep.values.ravel()
         ix = np.array(pd.cut(tsd.index, bins, labels=np.arange(len(bins) - 1, dtype=np.float64)))
         ix2 = np.array(pd.cut(tsd.index,bins,labels=np.arange(len(bins) - 1, dtype=np.float64),right=False,))
-        ix3 = np.vstack((ix, ix2)).T
-        ix3[np.floor(ix3 / 2) * 2 != ix3] = np.NaN
-        ix3 = np.floor(ix3 / 2)
-        ix3[np.isnan(ix3[:, 0]), 0] = ix3[np.isnan(ix3[:, 0]), 1]
-        ix = ix3[:,0]
-        count2 = np.array([np.sum(ix==j) for j in range(len(ep))])
-
-        np.testing.assert_array_equal(count, count2)
-
-def test_jittsrestrict_with_count():
-    for i in range(100):
-        ep, ts, tsd, tsdframe = get_example_dataset()
-
-        ts2 = restrict(ep, ts)
-        t, count = nap.core._jitted_functions.jittsrestrict_with_count(ts.index, ep.start, ep.end)
-        ts3 = pd.Series(index=t, dtype="object")
-        pd.testing.assert_series_equal(ts2, ts3)
-
-        bins = ep.values.ravel()
-        ix = np.array(pd.cut(ts.index, bins, labels=np.arange(len(bins) - 1, dtype=np.float64)))
-        ix2 = np.array(pd.cut(ts.index,bins,labels=np.arange(len(bins) - 1, dtype=np.float64),right=False,))
         ix3 = np.vstack((ix, ix2)).T
         ix3[np.floor(ix3 / 2) * 2 != ix3] = np.NaN
         ix3 = np.floor(ix3 / 2)
@@ -167,10 +132,11 @@ def test_jitthreshold():
         # new_tsd = restrict(new_ep, tsd)
 
 def test_jitvalue_from():
-    for i in range(10):
+    for i in range(100):
         ep, ts, tsd, tsdframe = get_example_dataset()
 
-        t, d, s, e = nap.core._jitted_functions.jitvaluefrom(ts.index, tsd.index, tsd.values, ep.start, ep.end)
+        t, d = nap.core._core_functions._value_from(ts.t, tsd.t, tsd.d, ep.start, ep.end)
+        
         tsd3 = pd.Series(index=t, data=d)
 
         tsd2 = []
@@ -219,7 +185,7 @@ def test_jitbin():
         starts = ep.start
         ends = ep.end
         bin_size = 1.0
-        t, d = nap.core._jitted_functions.jitbin(time_array, data_array, starts, ends, bin_size)
+        t, d = nap.core._jitted_functions.jitbin_array(time_array, data_array, starts, ends, bin_size)
         # tsd3 = nap.Tsd(t=t, d=d, time_support = ep)
         tsd3 = pd.Series(index=t, data=d)
         tsd3 = tsd3.fillna(0.0)

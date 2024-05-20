@@ -541,7 +541,7 @@ def compute_2d_tuning_curves_continuous(
 
     for k, tmp in idxs.groupby(cols):
         if (0 <= k[0] < nb_bins[0]) and (0 <= k[1] < nb_bins[1]):
-            tc_np[:, k[0], k[1]] = np.mean(tsdframe[tmp.index].values, 0)
+            tc_np[:, k[0], k[1]] = np.mean(tsdframe[tmp.index.values].values, 0)
 
     tc_np[np.isnan(tc_np)] = 0.0
 
@@ -550,97 +550,3 @@ def compute_2d_tuning_curves_continuous(
     tc = {c: tc_np[i] for i, c in enumerate(tsdframe.columns)}
 
     return tc, xy
-
-
-# def compute_1d_poisson_glm(
-#     group, feature, binsize, windowsize, ep, time_units="s", niter=100, tolerance=1e-5
-# ):
-#     """
-#     Poisson GLM
-
-#     Warning : this function is still experimental!
-
-#     Parameters
-#     ----------
-#     group : TsGroup
-#         Spike trains
-#     feature : Tsd
-#         The regressors
-#     binsize : float
-#         Bin size
-#     windowsize : Float
-#         The window for offsetting the regressors
-#     ep : IntervalSet, optional
-#         On which epoch to perfom the GLM
-#     time_units : str, optional
-#         Time units of binsize and windowsize
-#     niter : int, optional
-#         Number of iteration for fitting the GLM
-#     tolerance : float, optional
-#         Tolerance for stopping the IRLS
-
-#     Returns
-#     -------
-#     tuple
-#         regressors : TsdFrame\n
-#         offset : pandas.Series\n
-#         prediction : TsdFrame\n
-
-#     Raises
-#     ------
-#     RuntimeError
-#         if group is not a TsGroup
-
-#     """
-#     if type(group) is nap.TsGroup:
-#         newgroup = group.restrict(ep)
-#     else:
-#         raise RuntimeError("Unknown format for group")
-
-#     binsize = nap.TsIndex.format_timestamps(binsize, time_units)[0]
-#     windowsize = nap.TsIndex.format_timestamps(windowsize, time_units)[0]
-
-#     # Bin the spike train
-#     count = newgroup.count(binsize)
-
-#     # Downsample the feature to binsize
-#     tidx = []
-#     dfeat = []
-#     for i in ep.index:
-#         bins = np.arange(ep.start[i], ep.end[i] + binsize, binsize)
-#         idx = np.digitize(feature.index.values, bins) - 1
-#         tmp = feature.groupby(idx).mean()
-#         tidx.append(bins[0:-1] + np.diff(bins) / 2)
-#         dfeat.append(tmp)
-#     dfeat = nap.Tsd(t=np.hstack(tidx), d=np.hstack(dfeat), time_support=ep)
-
-#     # Build the Hankel matrix
-#     nt = np.abs(windowsize // binsize).astype("int") + 1
-#     X = hankel(
-#         np.hstack((np.zeros(nt - 1), dfeat.values))[: -nt + 1], dfeat.values[-nt:]
-#     )
-#     X = np.hstack((np.ones((len(dfeat), 1)), X))
-
-#     # Fitting GLM for each neuron
-#     regressors = []
-#     for i, n in enumerate(group.keys()):
-#         print("Fitting Poisson GLM for unit %i" % n)
-#         b = nap.jitted_functions.jit_poisson_IRLS(
-#             X, count[n].values, niter=niter, tolerance=tolerance
-#         )
-#         regressors.append(b)
-
-#     regressors = np.array(regressors).T
-#     offset = regressors[0]
-#     regressors = regressors[1:]
-#     regressors = nap.TsdFrame(
-#         t=np.arange(-nt + 1, 1) * binsize, d=regressors, columns=list(group.keys())
-#     )
-#     offset = pd.Series(index=group.keys(), data=offset)
-
-#     prediction = nap.TsdFrame(
-#         t=dfeat.index.values,
-#         d=np.exp(np.dot(X[:, 1:], regressors.values) + offset.values) * binsize,
-#     )
-
-#     return (regressors, offset, prediction)

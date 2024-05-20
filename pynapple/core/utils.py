@@ -1,20 +1,91 @@
-# -*- coding: utf-8 -*-
-# @Author: Guillaume Viejo
-# @Date:   2024-02-09 11:45:45
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-04 17:04:38
-
 """
     Utility functions
 """
 
+import os
 import warnings
 from itertools import combinations
+from numbers import Number
 
 import numpy as np
-from numba import jit
 
 from .config import nap_config
+
+
+def convert_to_array(array, array_name):
+    # Check if jax backend
+    if get_backend() == "jax":
+        from pynajax.utils import convert_to_jax_array
+
+        return convert_to_jax_array(
+            array, array_name, nap_config.suppress_conversion_warnings
+        )
+    else:
+        return convert_to_numpy_array(array, array_name)
+
+
+def convert_to_numpy_array(array, array_name):
+    """Convert any array like object to numpy ndarray.
+
+    Parameters
+    ----------
+    array : ArrayLike
+
+    array_name : str
+        Array name if RuntimeError is raised
+
+    Returns
+    -------
+    numpy.ndarray
+        Numpy array object
+
+    Raises
+    ------
+    RuntimeError
+        If input can't be converted to numpy array
+    """
+    if isinstance(array, Number):
+        return np.array([array])
+    elif isinstance(array, (list, tuple)):
+        return np.array(array)
+    elif isinstance(array, np.ndarray):
+        return array
+    elif is_array_like(array):
+        return cast_to_numpy(array, array_name)
+    else:
+        raise RuntimeError(
+            "Unknown format for {}. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.".format(
+                array_name
+            )
+        )
+
+
+def get_backend():
+    """
+    Return the current backend of pynapple. Possible backends are
+    'numba' or 'jax'.
+    """
+    return nap_config.backend
+
+
+def _get_terminal_size():
+    """Helper to get terminal size for __repr__
+
+    Returns
+    -------
+    tuple
+
+    """
+    cols = 100  # Default
+    rows = 2
+    try:
+        cols, rows = os.get_terminal_size()
+    except Exception:
+        import shutil
+
+        cols, rows = shutil.get_terminal_size()
+
+    return (cols, rows)
 
 
 def is_array_like(obj):
@@ -76,7 +147,7 @@ def is_array_like(obj):
     )
 
 
-def convert_to_numpy(array, array_name):
+def cast_to_numpy(array, array_name):
     """
     Convert an input array-like object to a NumPy array.
 
@@ -126,7 +197,7 @@ def _check_time_equals(time_arrays):
 
     Parameters
     ----------
-    time_arrays : list
+    time_arrays : list of arrays
         The time arrays to compare to each other
 
     Returns
@@ -242,81 +313,6 @@ def _concatenate_tsd(func, *args, **kwargs):
 
                 warnings.warn(msg, stacklevel=2)
                 return output
-
-
-@jit(nopython=True)
-def _jitfix_iset(start, end):
-    """
-    0 - > "Some starts and ends are equal. Removing 1 microsecond!",
-    1 - > "Some ends precede the relative start. Dropping them!",
-    2 - > "Some starts precede the previous end. Joining them!",
-    3 - > "Some epochs have no duration"
-
-    Parameters
-    ----------
-    start : numpy.ndarray
-        Description
-    end : numpy.ndarray
-        Description
-
-    Returns
-    -------
-    TYPE
-        Description
-    """
-    to_warn = np.zeros(4, dtype=np.bool_)
-    m = start.shape[0]
-    data = np.zeros((m, 2), dtype=np.float64)
-    i = 0
-    ct = 0
-
-    while i < m:
-        newstart = start[i]
-        newend = end[i]
-
-        while i < m:
-            if end[i] == start[i]:
-                to_warn[3] = True
-                i += 1
-            else:
-                newstart = start[i]
-                newend = end[i]
-                break
-
-        while i < m:
-            if end[i] < start[i]:
-                to_warn[1] = True
-                i += 1
-            else:
-                newstart = start[i]
-                newend = end[i]
-                break
-
-        if i >= m:
-            break
-
-        while i < m - 1:
-            if start[i + 1] < end[i]:
-                to_warn[2] = True
-                i += 1
-                newend = max(end[i - 1], end[i])
-            else:
-                break
-
-        if i < m - 1:
-            if newend == start[i + 1]:
-                to_warn[0] = True
-                newend -= 1.0e-6
-
-        data[ct, 0] = newstart
-        data[ct, 1] = newend
-
-        ct += 1
-        i += 1
-
-    data = data[0:ct]
-
-    return (data, to_warn)
 
 
 class _TsdFrameSliceHelper:

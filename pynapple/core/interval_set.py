@@ -49,13 +49,19 @@ import pandas as pd
 from numpy.lib.mixins import NDArrayOperatorsMixin
 from tabulate import tabulate
 
-from ._jitted_functions import jitdiff, jitin_interval, jitintersect, jitunion
+from ._jitted_functions import (
+    _jitfix_iset,
+    jitdiff,
+    jitin_interval,
+    jitintersect,
+    jitunion,
+)
 from .config import nap_config
 from .time_index import TsIndex
 from .utils import (
+    _get_terminal_size,
     _IntervalSetSliceHelper,
-    _jitfix_iset,
-    convert_to_numpy,
+    convert_to_numpy_array,
     is_array_like,
 )
 
@@ -133,7 +139,7 @@ class IntervalSet(NDArrayOperatorsMixin):
                 elif isinstance(data, np.ndarray):
                     args[arg] = np.ravel(data)
                 elif is_array_like(data):
-                    args[arg] = convert_to_numpy(data, arg)
+                    args[arg] = convert_to_numpy_array(data, arg)
                 else:
                     raise RuntimeError(
                         "Unknown format for {}. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.".format(
@@ -169,14 +175,52 @@ class IntervalSet(NDArrayOperatorsMixin):
         self.nap_class = self.__class__.__name__
 
     def __repr__(self):
-        headers = ["start", "end"]
+        headers = [" " * 6, "start", "end"]
         bottom = "shape: {}, time unit: sec.".format(self.shape)
 
-        return (
-            tabulate(self.values, headers=headers, showindex="always", tablefmt="plain")
-            + "\n"
-            + bottom
-        )
+        rows = _get_terminal_size()[1]
+        max_rows = np.maximum(rows - 10, 6)
+
+        if len(self) > max_rows:
+            n_rows = max_rows // 2
+            with warnings.catch_warnings():
+                warnings.simplefilter("ignore")
+                return (
+                    tabulate(
+                        np.hstack(
+                            (self.index[0:n_rows][:, None], self.values[0:n_rows])
+                        ),
+                        headers=headers,
+                        tablefmt="plain",
+                        colalign=("left", "center", "center"),
+                    )
+                    + "\n"
+                    + " " * 10
+                    + "..."
+                    + tabulate(
+                        np.hstack(
+                            (self.index[-n_rows:][:, None], self.values[-n_rows:])
+                        ),
+                        headers=[
+                            " " * 6,
+                            " " * 5,
+                            " " * 3,
+                        ],  # To align properly the columns
+                        tablefmt="plain",
+                        colalign=("left", "center", "center"),
+                    )
+                    + "\n"
+                    + bottom
+                )
+
+        else:
+            return (
+                tabulate(
+                    self.values, headers=headers, showindex="always", tablefmt="plain"
+                )
+                + "\n"
+                + bottom
+            )
 
     def __str__(self):
         return self.__repr__()
@@ -201,6 +245,9 @@ class IntervalSet(NDArrayOperatorsMixin):
             output = self.values.__getitem__(key)
             return IntervalSet(start=output[0], end=output[1])
         elif isinstance(key, (list, slice, np.ndarray)):
+            output = self.values.__getitem__(key)
+            return IntervalSet(start=output[:, 0], end=output[:, 1])
+        elif isinstance(key, pd.Series):
             output = self.values.__getitem__(key)
             return IntervalSet(start=output[:, 0], end=output[:, 1])
         elif isinstance(key, tuple):
