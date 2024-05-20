@@ -1,0 +1,53 @@
+import h5py
+import pynapple as nap
+import numpy as np
+import pytest
+from contextlib import nullcontext as does_not_raise
+from pathlib import Path
+
+
+@pytest.mark.parametrize(
+    "time, data, expectation",
+    [
+        (np.arange(12), np.arange(12), does_not_raise()),
+        (np.arange(12), "not_an_array", pytest.raises(TypeError, match="Data should be array-like"))
+    ]
+)
+def test_lazy_load_hdf5_is_array(time, data, expectation):
+    file_path = Path('data.h5')
+    try:
+        with h5py.File(file_path, 'w') as f:
+            f.create_dataset('data', data=data)
+        h5_data = h5py.File(file_path, 'r')["data"]
+        with expectation:
+            nap.Tsd(t=time, d=h5_data, conv_to_array=False)
+    finally:
+        # delete file
+        if file_path.exists():
+            file_path.unlink()
+
+
+@pytest.mark.parametrize(
+    "time, data",
+    [
+        (np.arange(12), np.arange(12)),
+    ]
+)
+@pytest.mark.parametrize("convert_flag", [True, False])
+def test_lazy_load_hdf5_is_array(time, data, convert_flag):
+    file_path = Path('data.h5')
+    try:
+        with h5py.File(file_path, 'w') as f:
+            f.create_dataset('data', data=data)
+        # get the tsd
+        h5_data = h5py.File(file_path, 'r')["data"]
+        tsd = nap.Tsd(t=time, d=h5_data, conv_to_array=convert_flag)
+        if convert_flag:
+            assert isinstance(tsd.d, np.ndarray)
+        else:
+            assert isinstance(tsd.d, h5py.Dataset)
+    finally:
+        # delete file
+        if file_path.exists():
+            file_path.unlink()
+

@@ -76,7 +76,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         else:
             if not is_array_like(d):
                 raise TypeError("Data should be array-like, i.e. be indexable, iterable and, have attributes "
-                                 "`shape`, `ndim` and, `dtype`).")
+                                "`shape`, `ndim` and, `dtype`).")
             self.values = d
 
         assert len(self.index) == len(
