@@ -195,3 +195,4 @@ def test_lazy_load_nwb():
 
     tsd = nwb["z"]
     assert isinstance(tsd.d, h5py.Dataset)
+    nwb.io.close()
