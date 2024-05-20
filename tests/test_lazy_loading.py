@@ -91,7 +91,8 @@ def test_lazy_load_hdf5_apply_func(time, data, func,cls):
         ("smooth", [2]),
         ("dropna", [True]),
         ("value_from", [nap.Tsd(t=np.linspace(0, 12, 20), d=np.random.normal(size=20))]),
-        ("copy", [])
+        ("copy", []),
+        ("get", [2, 7])
     ]
 )
 def test_lazy_load_hdf5_apply_method(time, data, method_name, args, cls):
