@@ -68,14 +68,16 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
     Implement most of the shared functions across concrete classes `Tsd`, `TsdFrame`, `TsdTensor`
     """
 
-    def __init__(self, t, d, time_units="s", time_support=None, lazy=False):
+    def __init__(self, t, d, time_units="s", time_support=None, conv_to_array=True):
         super().__init__(t, time_units, time_support)
 
-        if lazy:
-            self.values = d
-        else:
+        if conv_to_array:
             self.values = convert_to_array(d, "d")
-
+        else:
+            if not is_array_like(d):
+                raise TypeError("Data should be array-like, i.e. be indexable, iterable and, have attributes "
+                                 "`shape`, `ndim` and, `dtype`).")
+            self.values = d
 
         assert len(self.index) == len(
             self.values
@@ -666,7 +668,7 @@ class TsdTensor(BaseTsd):
         The time support of the time series
     """
 
-    def __init__(self, t, d, time_units="s", time_support=None, lazy=False, **kwargs):
+    def __init__(self, t, d, time_units="s", time_support=None, conv_to_array=False, **kwargs):
         """
         TsdTensor initializer
 
@@ -681,7 +683,7 @@ class TsdTensor(BaseTsd):
         time_support : IntervalSet, optional
             The time support of the TsdFrame object
         """
-        super().__init__(t, d, time_units, time_support, lazy)
+        super().__init__(t, d, time_units, time_support, conv_to_array)
 
         assert (
             self.values.ndim >= 3
@@ -836,7 +838,7 @@ class TsdFrame(BaseTsd):
     """
 
     def __init__(
-        self, t, d=None, time_units="s", time_support=None, columns=None, lazy=False
+        self, t, d=None, time_units="s", time_support=None, columns=None, conv_to_array=False
     ):
         """
         TsdFrame initializer
@@ -865,7 +867,7 @@ class TsdFrame(BaseTsd):
         else:
             assert d is not None, "Missing argument d when initializing TsdFrame"
 
-        super().__init__(t, d, time_units, time_support, lazy)
+        super().__init__(t, d, time_units, time_support, conv_to_array)
 
         assert self.values.ndim <= 2, "Data should be 1 or 2 dimensional."
 
@@ -1107,7 +1109,7 @@ class Tsd(BaseTsd):
     """
 
     def __init__(
-        self, t, d=None, time_units="s", time_support=None, lazy=False, **kwargs
+        self, t, d=None, time_units="s", time_support=None, conv_to_array=False, **kwargs
     ):
         """
         Tsd Initializer.
@@ -1129,7 +1131,7 @@ class Tsd(BaseTsd):
         else:
             assert d is not None, "Missing argument d when initializing Tsd"
 
-        super().__init__(t, d, time_units, time_support, lazy)
+        super().__init__(t, d, time_units, time_support, conv_to_array)
 
         assert self.values.ndim == 1, "Data should be 1 dimensional"
 
