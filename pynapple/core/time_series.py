@@ -75,8 +75,10 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
             self.values = convert_to_array(d, "d")
         else:
             if not is_array_like(d):
-                raise TypeError("Data should be array-like, i.e. be indexable, iterable and, have attributes "
-                                "`shape`, `ndim` and, `dtype`).")
+                raise TypeError(
+                    "Data should be array-like, i.e. be indexable, iterable and, have attributes "
+                    "`shape`, `ndim` and, `dtype`)."
+                )
             self.values = d
 
         assert len(self.index) == len(
@@ -668,7 +670,9 @@ class TsdTensor(BaseTsd):
         The time support of the time series
     """
 
-    def __init__(self, t, d, time_units="s", time_support=None, conv_to_array=False, **kwargs):
+    def __init__(
+        self, t, d, time_units="s", time_support=None, conv_to_array=True, **kwargs
+    ):
         """
         TsdTensor initializer
 
@@ -838,7 +842,13 @@ class TsdFrame(BaseTsd):
     """
 
     def __init__(
-        self, t, d=None, time_units="s", time_support=None, columns=None, conv_to_array=False
+        self,
+        t,
+        d=None,
+        time_units="s",
+        time_support=None,
+        columns=None,
+        conv_to_array=True,
     ):
         """
         TsdFrame initializer
@@ -1117,7 +1127,7 @@ class Tsd(BaseTsd):
     """
 
     def __init__(
-        self, t, d=None, time_units="s", time_support=None, conv_to_array=False, **kwargs
+        self, t, d=None, time_units="s", time_support=None, conv_to_array=True, **kwargs
     ):
         """
         Tsd Initializer.

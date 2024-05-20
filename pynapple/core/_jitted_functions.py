@@ -315,7 +315,9 @@ def jitthreshold(time_array, data_array, starts, ends, thr, method="above"):
 def jitbin_array(time_array, data_array, starts, ends, bin_size):
     """Slice first for compatibility with lazy loading."""
     idx, countin = jitrestrict_with_count(time_array, starts, ends)
-    return _jitbin_array(countin, time_array[idx], data_array[idx], starts, ends, bin_size)
+    return _jitbin_array(
+        countin, time_array[idx], data_array[idx], starts, ends, bin_size
+    )
 
 
 @jit(nopython=True)
