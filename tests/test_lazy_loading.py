@@ -188,6 +188,10 @@ def test_lazy_load_hdf5_tsdframe_loc():
 
 
 def test_lazy_load_nwb():
-    file_path = 'tests/nwbfilestest/basic/pynapplenwb/A2929-200711.nwb'
-    tsd = nap.load_file(file_path)["z"]
+    try:
+        nwb = nap.NWBFile("tests/nwbfilestest/basic/pynapplenwb/A2929-200711.nwb")
+    except:
+        nwb = nap.NWBFile("nwbfilestest/basic/pynapplenwb/A2929-200711.nwb")
+
+    tsd = nwb["z"]
     assert isinstance(tsd.d, h5py.Dataset)
