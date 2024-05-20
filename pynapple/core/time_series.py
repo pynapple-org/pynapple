@@ -1092,7 +1092,7 @@ class TsdFrame(BaseTsd):
         np.savez(
             filename,
             t=self.index.values,
-            d=self.values,
+            d=self.values[:],
             start=self.time_support.start,
             end=self.time_support.end,
             columns=cols_name,

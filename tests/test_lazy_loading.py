@@ -141,3 +141,46 @@ def test_lazy_load_hdf5_apply_method_tsd_specific(time, data, method_name, args,
         # delete file
         if file_path.exists():
             file_path.unlink()
+
+
+@pytest.mark.parametrize("time, data", [(np.arange(12), np.arange(12))])
+@pytest.mark.parametrize(
+    "method_name, args, expected_out_type",
+    [
+        ("as_dataframe", [], pd.DataFrame),
+    ]
+)
+def test_lazy_load_hdf5_apply_method_tsdframe_specific(time, data, method_name, args, expected_out_type):
+    file_path = Path('data.h5')
+    try:
+        with h5py.File(file_path, 'w') as f:
+            f.create_dataset('data', data=data[:, None])
+        # get the tsd
+        h5_data = h5py.File(file_path, 'r')["data"]
+        # lazy load and apply function
+        tsd = nap.TsdFrame(t=time, d=h5_data, conv_to_array=False)
+        func = getattr(tsd, method_name)
+        assert isinstance(func(*args), expected_out_type)
+    finally:
+        # delete file
+        if file_path.exists():
+            file_path.unlink()
+
+
+def test_lazy_load_hdf5_tsdframe_loc():
+    file_path = Path('data.h5')
+    data = np.arange(10).reshape(5, 2)
+    try:
+        with h5py.File(file_path, 'w') as f:
+            f.create_dataset('data', data=data)
+        # get the tsd
+        h5_data = h5py.File(file_path, 'r')["data"]
+        # lazy load and apply function
+        tsd = nap.TsdFrame(t=np.arange(data.shape[0]), d=h5_data, conv_to_array=False).loc[1]
+        assert isinstance(tsd, nap.Tsd)
+        assert all(tsd.d == np.array([1, 3, 5, 7, 9]))
+
+    finally:
+        # delete file
+        if file_path.exists():
+            file_path.unlink()
