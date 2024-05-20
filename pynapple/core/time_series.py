@@ -250,7 +250,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         """
         Return the data as a numpy.ndarray. Mostly useful for matplotlib plotting when calling `plot(tsd)`
         """
-        return self.values
+        return np.asarray(self.values)
 
     def copy(self):
         """Copy the data, index and time support"""
