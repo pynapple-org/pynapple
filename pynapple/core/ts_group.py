@@ -1188,37 +1188,37 @@ class TsGroup(UserDict):
 
         >>> tsgroup_12 = tsgroup1.merge(tsgroup2)
         >>> tsgroup_12
-            Index    rate
-            -------  ------
-                0     1.5
-                10     1.5
+        Index    rate
+        -------  ------
+             0     1.5
+            10     1.5
 
         Set `reset_index=True` if indexes are overlapping:
 
         >>> tsgroup_13 = tsgroup1.merge(tsgroup3, reset_index=True)
         >>> tsgroup_13
-
-            Index    rate
-            -------  ------
-                  0     1.5
-                  1     1.5
+        Index    rate
+        -------  ------
+              0     1.5
+              1     1.5
 
         Set `reset_time_support=True` if time supports are different:
 
         >>> tsgroup_14 = tsgroup1.merge(tsgroup4, reset_time_support=True)
         >>> tsgroup_14
         >>> tsgroup_14.time_support
-
-            Index    rate
-            -------  ------
-                  0     0.3
-                 10     0.3
+        Index    rate
+        -------  ------
+              0     0.3
+             10     0.3
 
                     start    end
             0       -5      5
             shape: (1, 2), time unit: sec.
 
-        See Also `TsGroup.merge_group`
+        See Also
+        --------
+        [`TsGroup.merge_group`](./#pynapple.core.ts_group.TsGroup.merge_group)
         """
         return TsGroup.merge_group(
             self,
