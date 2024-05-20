@@ -1095,10 +1095,10 @@ class TsGroup(UserDict):
         >>> tsgroup_13 = nap.TsGroup.merge_group(tsgroup1, tsgroup3, reset_index=True)
         >>> tsgroup_13
 
-        Index    rate
-        -------  ------
-              0     1.5
-              1     1.5
+            Index    rate
+            -------  ------
+                  0     1.5
+                  1     1.5
 
         Set `reset_time_support=True` if time supports are different:
 
