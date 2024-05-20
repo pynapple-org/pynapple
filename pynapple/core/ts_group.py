@@ -1062,59 +1062,6 @@ class TsGroup(UserDict):
             If `reset_index=False` but keys overlap
             If `reset_time_support=False` but time supports are not the same
 
-        Examples
-        --------
-
-        >>> import pynapple as nap
-        >>> time_support_a = nap.IntervalSet(start=-1, end=1, time_units='s')
-        >>> time_support_b = nap.IntervalSet(start=-5, end=5, time_units='s')
-
-        >>> dict1 = {0: nap.Ts(t=[-1, 0, 1], time_units='s')}
-        >>> tsgroup1 = nap.TsGroup(dict1, time_support=time_support_a)
-
-        >>> dict2 = {10: nap.Ts(t=[-1, 0, 1], time_units='s')}
-        >>> tsgroup2 = nap.TsGroup(dict2, time_support=time_support_a)
-
-        >>> dict3 = {0: nap.Ts(t=[-.1, 0, .1], time_units='s')}
-        >>> tsgroup3 = nap.TsGroup(dict3, time_support=time_support_a)
-
-        >>> dict4 = {10: nap.Ts(t=[-1, 0, 1], time_units='s')}
-        >>> tsgroup4 = nap.TsGroup(dict2, time_support=time_support_b)
-
-        Merge with default options if have the same time support and non-overlapping indexes:
-
-        >>> tsgroup_12 = nap.TsGroup.merge_group(tsgroup1, tsgroup2)
-        >>> tsgroup_12
-        Index    rate
-        -------  ------
-              0     1.5
-             10     1.5
-
-        Set `reset_index=True` if indexes are overlapping:
-
-        >>> tsgroup_13 = nap.TsGroup.merge_group(tsgroup1, tsgroup3, reset_index=True)
-        >>> tsgroup_13
-
-            Index    rate
-            -------  ------
-                  0     1.5
-                  1     1.5
-
-        Set `reset_time_support=True` if time supports are different:
-
-        >>> tsgroup_14 = nap.TsGroup.merge_group(tsgroup1, tsgroup4, reset_time_support=True)
-        >>> tsgroup_14
-        >>> tsgroup_14.time_support
-
-            Index    rate
-            -------  ------
-                  0     0.3
-                 10     0.3
-
-                start    end
-        0       -5      5
-        shape: (1, 2), time unit: sec.
-
         """
         is_tsgroup = [isinstance(tsg, TsGroup) for tsg in tsgroups]
         if not all(is_tsgroup):
@@ -1187,8 +1134,91 @@ class TsGroup(UserDict):
         ignore_metadata=False,
     ):
         """
-        Merge the TsGroup object with other TsGroup objects
-        See `TsGroup.merge_group` for more details
+        Merge the TsGroup object with other TsGroup objects.
+        Common uses include adding more neurons/channels (supposing each Ts/Tsd corresponds to data from a neuron/channel) or adding more trials (supposing each Ts/Tsd corresponds to data from a trial).
+
+        Parameters
+        ----------
+        *tsgroups : TsGroup
+            The TsGroup objects to merge with
+        reset_index : bool, optional
+            If True, the keys will be reset to range(len(data))
+            If False, the keys of the TsGroup objects should be non-overlapping and will be preserved
+        reset_time_support : bool, optional
+            If True, the merged TsGroup will merge time supports from all the Ts/Tsd objects in data
+            If False, the time support of the TsGroup objects should be the same and will be preserved
+        ignore_metadata : bool, optional
+            If True, the merged TsGroup will not have any metadata columns other than 'rate'
+            If False, all metadata columns should be the same and all metadata will be concatenated
+
+        Returns
+        -------
+        TsGroup
+            A TsGroup of merged objects
+
+        Raises
+        ------
+        TypeError
+            If the input objects are not TsGroup objects
+        ValueError
+            If `ignore_metadata=False` but metadata columns are not the same
+            If `reset_index=False` but keys overlap
+            If `reset_time_support=False` but time supports are not the same
+
+        Examples
+        --------
+
+        >>> import pynapple as nap
+        >>> time_support_a = nap.IntervalSet(start=-1, end=1, time_units='s')
+        >>> time_support_b = nap.IntervalSet(start=-5, end=5, time_units='s')
+
+        >>> dict1 = {0: nap.Ts(t=[-1, 0, 1], time_units='s')}
+        >>> tsgroup1 = nap.TsGroup(dict1, time_support=time_support_a)
+
+        >>> dict2 = {10: nap.Ts(t=[-1, 0, 1], time_units='s')}
+        >>> tsgroup2 = nap.TsGroup(dict2, time_support=time_support_a)
+
+        >>> dict3 = {0: nap.Ts(t=[-.1, 0, .1], time_units='s')}
+        >>> tsgroup3 = nap.TsGroup(dict3, time_support=time_support_a)
+
+        >>> dict4 = {10: nap.Ts(t=[-1, 0, 1], time_units='s')}
+        >>> tsgroup4 = nap.TsGroup(dict2, time_support=time_support_b)
+
+        Merge with default options if have the same time support and non-overlapping indexes:
+
+        >>> tsgroup_12 = tsgroup1.merge(tsgroup2)
+        >>> tsgroup_12
+            Index    rate
+            -------  ------
+                0     1.5
+                10     1.5
+
+        Set `reset_index=True` if indexes are overlapping:
+
+        >>> tsgroup_13 = tsgroup1.merge(tsgroup3, reset_index=True)
+        >>> tsgroup_13
+
+            Index    rate
+            -------  ------
+                  0     1.5
+                  1     1.5
+
+        Set `reset_time_support=True` if time supports are different:
+
+        >>> tsgroup_14 = tsgroup1.merge(tsgroup4, reset_time_support=True)
+        >>> tsgroup_14
+        >>> tsgroup_14.time_support
+
+            Index    rate
+            -------  ------
+                  0     0.3
+                 10     0.3
+
+                    start    end
+            0       -5      5
+            shape: (1, 2), time unit: sec.
+
+        See Also `TsGroup.merge_group`
         """
         return TsGroup.merge_group(
             self,
