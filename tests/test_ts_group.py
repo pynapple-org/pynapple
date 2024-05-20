@@ -757,9 +757,8 @@ class TestTsGroup1:
             out = ts_group[bool_idx]
 
     def test_merge_complete(self, ts_group):
-        with pytest.raises(TypeError) as e_info:
+        with pytest.raises(TypeError,  match=f"Input at positions {[2, 3]} are not TsGroup!"):
             nap.TsGroup.merge_group(ts_group, str, dict)
-            assert str(e_info.value) == f"Input at positions {[2, 3]} are not TsGroup!"
 
         ts_group2 = nap.TsGroup(
             {
