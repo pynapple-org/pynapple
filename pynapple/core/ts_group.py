@@ -1106,10 +1106,10 @@ class TsGroup(UserDict):
         >>> tsgroup_14
         >>> tsgroup_14.time_support
 
-        Index    rate
-        -------  ------
-              0     0.3
-             10     0.3
+            Index    rate
+            -------  ------
+                  0     0.3
+                 10     0.3
 
                 start    end
         0       -5      5
