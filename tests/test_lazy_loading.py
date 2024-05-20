@@ -1,4 +1,6 @@
 import h5py
+import pandas as pd
+
 import pynapple as nap
 import numpy as np
 import pytest
@@ -82,16 +84,17 @@ def test_lazy_load_hdf5_apply_func(time, data, func,cls):
 @pytest.mark.parametrize(
     "method_name, args",
     [
-        ("bin_average", 0.1),
-        ("count", 0.1),
-        ("interpolate", nap.Ts(t=np.linspace(0, 12, 50))),
-        ("convolve", np.ones(3)),
-        ("smooth", 2),
-        ("dropna", True),
-        ("value_from", nap.Tsd(t=np.linspace(0, 12, 20), d=np.random.normal(size=20)))
+        ("bin_average", [0.1]),
+        ("count", [0.1]),
+        ("interpolate", [nap.Ts(t=np.linspace(0, 12, 50))]),
+        ("convolve", [np.ones(3)]),
+        ("smooth", [2]),
+        ("dropna", [True]),
+        ("value_from", [nap.Tsd(t=np.linspace(0, 12, 20), d=np.random.normal(size=20))]),
+        ("copy", [])
     ]
 )
-def test_lazy_load_hdf5_apply_func(time, data, method_name, args, cls):
+def test_lazy_load_hdf5_apply_method(time, data, method_name, args, cls):
     file_path = Path('data.h5')
     try:
         if cls is nap.TsdFrame:
@@ -105,8 +108,35 @@ def test_lazy_load_hdf5_apply_func(time, data, method_name, args, cls):
         # lazy load and apply function
         tsd = cls(t=time, d=h5_data, conv_to_array=False)
         func = getattr(tsd, method_name)
-        out = func(args)
+        out = func(*args)
         assert isinstance(out.d, np.ndarray)
+    finally:
+        # delete file
+        if file_path.exists():
+            file_path.unlink()
+
+
+@pytest.mark.parametrize("time, data", [(np.arange(12), np.arange(12))])
+@pytest.mark.parametrize(
+    "method_name, args, expected_out_type",
+    [
+        ("threshold", [3], nap.Tsd),
+        ("as_series", [], pd.Series),
+        ("as_units", ['ms'], pd.Series),
+        ("to_tsgroup", [], nap.TsGroup)
+    ]
+)
+def test_lazy_load_hdf5_apply_method_tsd_specific(time, data, method_name, args, expected_out_type):
+    file_path = Path('data.h5')
+    try:
+        with h5py.File(file_path, 'w') as f:
+            f.create_dataset('data', data=data)
+        # get the tsd
+        h5_data = h5py.File(file_path, 'r')["data"]
+        # lazy load and apply function
+        tsd = nap.Tsd(t=time, d=h5_data, conv_to_array=False)
+        func = getattr(tsd, method_name)
+        assert isinstance(func(*args), expected_out_type)
     finally:
         # delete file
         if file_path.exists():

@@ -255,7 +255,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
     def copy(self):
         """Copy the data, index and time support"""
         return self.__class__(
-            t=self.index.copy(), d=self.values.copy(), time_support=self.time_support
+            t=self.index.copy(), d=self.values[:].copy(), time_support=self.time_support
         )
 
     def value_from(self, data, ep=None):
