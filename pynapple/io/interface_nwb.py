@@ -72,13 +72,15 @@ def _extract_compatible_data_from_nwbfile(nwbfile):
     return data
 
 
-def _make_interval_set(obj):
+def _make_interval_set(obj, lazy_loading=True):
     """Helper function to make IntervalSet
 
     Parameters
     ----------
     obj : pynwb.epoch.TimeIntervals
         NWB object
+     lazy_loading: bool
+            If True return a memory-view of the data, load otherwise.
 
     Returns
     -------
@@ -128,13 +130,15 @@ def _make_interval_set(obj):
         return obj
 
 
-def _make_tsd(obj):
+def _make_tsd(obj, lazy_loading=True):
     """Helper function to make Tsd
 
     Parameters
     ----------
     obj : pynwb.misc.TimeSeries
         NWB object
+    lazy_loading: bool
+        If True return a memory-view of the data, load otherwise.
 
     Returns
     -------
@@ -143,23 +147,28 @@ def _make_tsd(obj):
     """
 
     d = obj.data
+    if not lazy_loading:
+        d = d[:]
+
     if obj.timestamps is not None:
         t = obj.timestamps[:]
     else:
         t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
 
-    data = nap.Tsd(t=t, d=d, load_array=False)
+    data = nap.Tsd(t=t, d=d, load_array=not lazy_loading)
 
     return data
 
 
-def _make_tsd_tensor(obj):
+def _make_tsd_tensor(obj, lazy_loading=True):
     """Helper function to make TsdTensor
 
     Parameters
     ----------
     obj : pynwb.misc.TimeSeries
         NWB object
+    lazy_loading: bool
+        If True return a memory-view of the data, load otherwise.
 
     Returns
     -------
@@ -168,23 +177,28 @@ def _make_tsd_tensor(obj):
     """
 
     d = obj.data
+    if not lazy_loading:
+        d = d[:]
+
     if obj.timestamps is not None:
         t = obj.timestamps
     else:
         t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
 
-    data = nap.TsdTensor(t=t, d=d, load_array=False)
+    data = nap.TsdTensor(t=t, d=d, load_array=not lazy_loading)
 
     return data
 
 
-def _make_tsd_frame(obj):
+def _make_tsd_frame(obj, lazy_loading=True):
     """Helper function to make TsdFrame
 
     Parameters
     ----------
     obj : pynwb.misc.TimeSeries
         NWB object
+    lazy_loading: bool
+        If True return a memory-view of the data, load otherwise.
 
     Returns
     -------
@@ -193,6 +207,9 @@ def _make_tsd_frame(obj):
     """
 
     d = obj.data
+    if not lazy_loading:
+        d = d[:]
+
     if obj.timestamps is not None:
         t = obj.timestamps
     else:
@@ -232,12 +249,12 @@ def _make_tsd_frame(obj):
     else:
         columns = np.arange(obj.data.shape[1])
 
-    data = nap.TsdFrame(t=t, d=d, columns=columns, load_array=False)
+    data = nap.TsdFrame(t=t, d=d, columns=columns, load_array=not lazy_loading)
 
     return data
 
 
-def _make_tsgroup(obj):
+def _make_tsgroup(obj, **kwargs):
     """Helper function to make TsGroup
 
     Parameters
@@ -301,7 +318,7 @@ def _make_tsgroup(obj):
     return tsgroup
 
 
-def _make_ts(obj):
+def _make_ts(obj, **kwargs):
     """Helper function to make Ts
 
     Parameters
@@ -355,12 +372,14 @@ class NWBFile(UserDict):
         "TsGroup": _make_tsgroup,
     }
 
-    def __init__(self, file):
+    def __init__(self, file, lazy_loading=True):
         """
         Parameters
         ----------
         file : str or pynwb.file.NWBFile
             Valid file to a NWB file
+        lazy_loading: bool
+            If True return a memory-view of the data, load otherwise.
 
         Raises
         ------
@@ -390,6 +409,8 @@ class NWBFile(UserDict):
         self.key_to_id = {k: self.data[k]["id"] for k in self.data.keys()}
 
         self._view = [[k, self.data[k]["type"]] for k in self.data.keys()]
+
+        self._lazy_loading = lazy_loading
 
         UserDict.__init__(self, self.data)
 
@@ -443,7 +464,7 @@ class NWBFile(UserDict):
                 if isinstance(self.data[key], dict) and "id" in self.data[key]:
                     obj = self.nwb.objects[self.data[key]["id"]]
                     try:
-                        data = self._f_eval[self.data[key]["type"]](obj)
+                        data = self._f_eval[self.data[key]["type"]](obj, lazy_loading=self._lazy_loading)
                     except Exception:
                         warnings.warn(
                             "Failed to build {}.\n Returning the NWB object for manual inspection".format(

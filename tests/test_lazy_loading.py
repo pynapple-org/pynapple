@@ -186,13 +186,19 @@ def test_lazy_load_hdf5_tsdframe_loc():
         if file_path.exists():
             file_path.unlink()
 
-
-def test_lazy_load_nwb():
+@pytest.mark.parametrize(
+    "lazy, expected_type",
+    [
+        (True, h5py.Dataset),
+        (False, np.ndarray),
+    ]
+)
+def test_lazy_load_nwb(lazy, expected_type):
     try:
-        nwb = nap.NWBFile("tests/nwbfilestest/basic/pynapplenwb/A2929-200711.nwb")
+        nwb = nap.NWBFile("tests/nwbfilestest/basic/pynapplenwb/A2929-200711.nwb", lazy_loading=lazy)
     except:
-        nwb = nap.NWBFile("nwbfilestest/basic/pynapplenwb/A2929-200711.nwb")
+        nwb = nap.NWBFile("nwbfilestest/basic/pynapplenwb/A2929-200711.nwb", lazy_loading=lazy)
 
     tsd = nwb["z"]
-    assert isinstance(tsd.d, h5py.Dataset)
+    assert isinstance(tsd.d, expected_type)
     nwb.io.close()
