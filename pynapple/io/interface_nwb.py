@@ -72,15 +72,13 @@ def _extract_compatible_data_from_nwbfile(nwbfile):
     return data
 
 
-def _make_interval_set(obj, lazy_loading=True):
+def _make_interval_set(obj, **kwargs):
     """Helper function to make IntervalSet
 
     Parameters
     ----------
     obj : pynwb.epoch.TimeIntervals
         NWB object
-     lazy_loading: bool
-            If True return a memory-view of the data, load otherwise.
 
     Returns
     -------
