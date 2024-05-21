@@ -462,7 +462,9 @@ class NWBFile(UserDict):
                 if isinstance(self.data[key], dict) and "id" in self.data[key]:
                     obj = self.nwb.objects[self.data[key]["id"]]
                     try:
-                        data = self._f_eval[self.data[key]["type"]](obj, lazy_loading=self._lazy_loading)
+                        data = self._f_eval[self.data[key]["type"]](
+                            obj, lazy_loading=self._lazy_loading
+                        )
                     except Exception:
                         warnings.warn(
                             "Failed to build {}.\n Returning the NWB object for manual inspection".format(
