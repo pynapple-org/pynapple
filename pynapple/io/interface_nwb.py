@@ -148,7 +148,7 @@ def _make_tsd(obj):
     else:
         t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
 
-    data = nap.Tsd(t=t, d=d, to_numpy_array=False)
+    data = nap.Tsd(t=t, d=d, load_array=False)
 
     return data
 
@@ -173,7 +173,7 @@ def _make_tsd_tensor(obj):
     else:
         t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
 
-    data = nap.TsdTensor(t=t, d=d, to_numpy_array=False)
+    data = nap.TsdTensor(t=t, d=d, load_array=False)
 
     return data
 
@@ -232,7 +232,7 @@ def _make_tsd_frame(obj):
     else:
         columns = np.arange(obj.data.shape[1])
 
-    data = nap.TsdFrame(t=t, d=d, columns=columns, to_numpy_array=False)
+    data = nap.TsdFrame(t=t, d=d, columns=columns, load_array=False)
 
     return data
 

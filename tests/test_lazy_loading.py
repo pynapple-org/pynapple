@@ -22,7 +22,7 @@ def test_lazy_load_hdf5_is_array(time, data, expectation):
             f.create_dataset('data', data=data)
         h5_data = h5py.File(file_path, 'r')["data"]
         with expectation:
-            nap.Tsd(t=time, d=h5_data, to_numpy_array=False)
+            nap.Tsd(t=time, d=h5_data, load_array=False)
     finally:
         # delete file
         if file_path.exists():
@@ -43,7 +43,7 @@ def test_lazy_load_hdf5_is_array(time, data, convert_flag):
             f.create_dataset('data', data=data)
         # get the tsd
         h5_data = h5py.File(file_path, 'r')["data"]
-        tsd = nap.Tsd(t=time, d=h5_data, to_numpy_array=convert_flag)
+        tsd = nap.Tsd(t=time, d=h5_data, load_array=convert_flag)
         if convert_flag:
             assert isinstance(tsd.d, np.ndarray)
         else:
@@ -70,7 +70,7 @@ def test_lazy_load_hdf5_apply_func(time, data, func,cls):
         # get the tsd
         h5_data = h5py.File(file_path, 'r')["data"]
         # lazy load and apply function
-        res = func(cls(t=time, d=h5_data, to_numpy_array=False))
+        res = func(cls(t=time, d=h5_data, load_array=False))
         assert isinstance(res, cls)
         assert isinstance(res.d, np.ndarray)
     finally:
@@ -107,7 +107,7 @@ def test_lazy_load_hdf5_apply_method(time, data, method_name, args, cls):
         # get the tsd
         h5_data = h5py.File(file_path, 'r')["data"]
         # lazy load and apply function
-        tsd = cls(t=time, d=h5_data, to_numpy_array=False)
+        tsd = cls(t=time, d=h5_data, load_array=False)
         func = getattr(tsd, method_name)
         out = func(*args)
         assert isinstance(out.d, np.ndarray)
@@ -135,7 +135,7 @@ def test_lazy_load_hdf5_apply_method_tsd_specific(time, data, method_name, args,
         # get the tsd
         h5_data = h5py.File(file_path, 'r')["data"]
         # lazy load and apply function
-        tsd = nap.Tsd(t=time, d=h5_data, to_numpy_array=False)
+        tsd = nap.Tsd(t=time, d=h5_data, load_array=False)
         func = getattr(tsd, method_name)
         assert isinstance(func(*args), expected_out_type)
     finally:
@@ -159,7 +159,7 @@ def test_lazy_load_hdf5_apply_method_tsdframe_specific(time, data, method_name, 
         # get the tsd
         h5_data = h5py.File(file_path, 'r')["data"]
         # lazy load and apply function
-        tsd = nap.TsdFrame(t=time, d=h5_data, to_numpy_array=False)
+        tsd = nap.TsdFrame(t=time, d=h5_data, load_array=False)
         func = getattr(tsd, method_name)
         assert isinstance(func(*args), expected_out_type)
     finally:
@@ -177,7 +177,7 @@ def test_lazy_load_hdf5_tsdframe_loc():
         # get the tsd
         h5_data = h5py.File(file_path, 'r')["data"]
         # lazy load and apply function
-        tsd = nap.TsdFrame(t=np.arange(data.shape[0]), d=h5_data, to_numpy_array=False).loc[1]
+        tsd = nap.TsdFrame(t=np.arange(data.shape[0]), d=h5_data, load_array=False).loc[1]
         assert isinstance(tsd, nap.Tsd)
         assert all(tsd.d == np.array([1, 3, 5, 7, 9]))
 
