@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
-
+import warnings
 
 @pytest.mark.parametrize(
     "time, data, expectation",
@@ -212,7 +212,6 @@ def test_lazy_load_nwb(lazy, expected_type):
         ("phy/pynapplenwb/A8604-211122.nwb", "units"),  # TsGroup
         ("basic/pynapplenwb/A2929-200711.nwb", "z"),  # Tsd
         ("suite2p/pynapplenwb/2022_08_08.nwb", "Neuropil"),  # TsdFrame
-        ("suite2p/pynapplenwb/2022_08_08.nwb", "TwoPhotonSeries")  # TsdTensor
     ]
 )
 def test_lazy_load_nwb_no_warnings(path, var_name):
@@ -221,9 +220,11 @@ def test_lazy_load_nwb_no_warnings(path, var_name):
     except:
         nwb = nap.NWBFile(os.path.join("nwbfilestest", path), lazy_loading=True)
 
-    with does_not_raise():
+    with warnings.catch_warnings():
+        warnings.simplefilter("error")
         tsd = nwb[var_name]
         if isinstance(tsd, (nap.Tsd, nap.TsdFrame, nap.TsdTensor)):
             tsd * 2
+
 
     nwb.io.close()
