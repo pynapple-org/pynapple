@@ -52,14 +52,12 @@ jobs:
       - name: Test
         run: |
           coverage run --source=pynapple --branch -m pytest tests/
-          coverage report -m          
+          coverage report -m
 
-      - name: Coveralls
-        env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-            pip install coveralls
-            coveralls --service=github
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+            token: ${{ secrets.CODECOV_TOKEN }}
   check:
     if: always()
     needs:
