@@ -1,3 +1,5 @@
+import os.path
+
 import h5py
 import pandas as pd
 
@@ -201,4 +203,27 @@ def test_lazy_load_nwb(lazy, expected_type):
 
     tsd = nwb["z"]
     assert isinstance(tsd.d, expected_type)
+    nwb.io.close()
+
+
+@pytest.mark.parametrize(
+    "path, var_name",
+    [
+        ("phy/pynapplenwb/A8604-211122.nwb", "units"),  # TsGroup
+        ("basic/pynapplenwb/A2929-200711.nwb", "z"),  # Tsd
+        ("suite2p/pynapplenwb/2022_08_08.nwb", "Neuropil"),  # TsdFrame
+        ("suite2p/pynapplenwb/2022_08_08.nwb", "TwoPhotonSeries")  # TsdTensor
+    ]
+)
+def test_lazy_load_nwb_no_warnings(path, var_name):
+    try:
+        nwb = nap.NWBFile(os.path.join("tests/nwbfilestest", path), lazy_loading=True)
+    except:
+        nwb = nap.NWBFile(os.path.join("nwbfilestest", path), lazy_loading=True)
+
+    with does_not_raise():
+        tsd = nwb[var_name]
+        if isinstance(tsd, (nap.Tsd, nap.TsdFrame, nap.TsdTensor)):
+            tsd * 2
+
     nwb.io.close()
