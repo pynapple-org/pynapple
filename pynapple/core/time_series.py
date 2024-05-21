@@ -228,29 +228,31 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
     def as_array(self):
         """
-        Return the data as a numpy.ndarray
+        Return the data.
 
         Returns
         -------
-        out: numpy.ndarray
+        out: array-like
             _
         """
         return self.values
 
     def data(self):
         """
-        Return the data as a numpy.ndarray
+        Return the data.
 
         Returns
         -------
-        out: numpy.ndarray
+        out: array-like
             _
         """
         return self.values
 
     def to_numpy(self):
         """
-        Return the data as a numpy.ndarray. Mostly useful for matplotlib plotting when calling `plot(tsd)`
+        Return the data as a numpy.ndarray.
+
+        Mostly useful for matplotlib plotting when calling `plot(tsd)`.
         """
         return np.asarray(self.values)
 
