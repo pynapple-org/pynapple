@@ -1,14 +1,15 @@
 import os.path
-
-import h5py
-import pandas as pd
-
-import pynapple as nap
-import numpy as np
-import pytest
+import warnings
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
-import warnings
+
+import h5py
+import numpy as np
+import pandas as pd
+import pytest
+
+import pynapple as nap
+
 
 @pytest.mark.parametrize(
     "time, data, expectation",
@@ -225,6 +226,5 @@ def test_lazy_load_nwb_no_warnings(path, var_name):
         tsd = nwb[var_name]
         if isinstance(tsd, (nap.Tsd, nap.TsdFrame, nap.TsdTensor)):
             tsd * 2
-
 
     nwb.io.close()
