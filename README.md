@@ -31,6 +31,28 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 New release :fire:
 ------------------
 
+### pynapple >= 0.6.3
+
+Starting from 0.6.3 you can access, modify, and filter the `TsGroup` metadata columns more flexibly.
+
+1. **Accessing Metadata Columns:**
+You can access a metadata column with the following syntax,
+```python
+metadata = tsgroup.column_name
+```
+
+2. **Adding New Metadata:**
+To add a new metadata column, use the following syntax,
+```python
+tsgroup["new_column"] = metadata
+```
+
+3. **Filtering Metadata:**
+You can filter TsGroup instances based on metadata values using boolean indexing:,
+```python
+tsgroup[tsgroup.column == value]
+```
+
 ### pynapple >= 0.6
 
 Starting with 0.6, [`IntervalSet`](https://pynapple-org.github.io/pynapple/reference/core/interval_set/) objects are behaving as immutable numpy ndarray. Before 0.6, you could select an interval within an `IntervalSet` object with:
@@ -47,18 +69,11 @@ new_intervalset = intervalset[0]
 
 See the [documentation](https://pynapple-org.github.io/pynapple/reference/core/interval_set/) for more details.
 
-
 ### pynapple >= 0.4
 
-Starting with 0.4, pynapple rely on the [numpy array container](https://numpy.org/doc/stable/user/basics.dispatch.html) approach instead of Pandas for the time series. Pynapple builtin functions will remain the same except for functions inherited from Pandas. Typically this line of code in `pynapple<=0.3.6` :
-```python
-meantsd = tsdframe.mean(1)
-```
-is now :
-```python
-meantsd = np.mean(tsdframe, 1)
-```
-in `pynapple>=0.4.0`. This allows for a better handling of returned objects.
+Starting with 0.4, pynapple rely on the [numpy array container](https://numpy.org/doc/stable/user/basics.dispatch.html) approach instead of Pandas for the time series. Pynapple builtin functions will remain the same except for functions inherited from Pandas. 
+
+This allows for a better handling of returned objects.
 
 Additionaly, it is now possible to define time series objects with more than 2 dimensions with `TsdTensor`. You can also look at this [notebook](https://pynapple-org.github.io/pynapple/generated/gallery/tutorial_pynapple_numpy/) for a demonstration of numpy compatibilities.
 
