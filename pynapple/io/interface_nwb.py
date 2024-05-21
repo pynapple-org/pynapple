@@ -1,8 +1,8 @@
 # -*- coding: utf-8 -*-
 # @Author: Guillaume Viejo
 # @Date:   2023-08-01 11:54:45
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-10-19 12:16:55
+# @Last Modified by:   Guillaume Viejo
+# @Last Modified time: 2024-05-21 15:28:27
 
 """
 Pynapple class to interface with NWB files.
@@ -179,7 +179,7 @@ def _make_tsd_tensor(obj, lazy_loading=True):
         d = d[:]
 
     if obj.timestamps is not None:
-        t = obj.timestamps
+        t = obj.timestamps[:]
     else:
         t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
 
@@ -209,7 +209,7 @@ def _make_tsd_frame(obj, lazy_loading=True):
         d = d[:]
 
     if obj.timestamps is not None:
-        t = obj.timestamps
+        t = obj.timestamps[:]
     else:
         t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
 
