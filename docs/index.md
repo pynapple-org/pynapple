@@ -49,7 +49,7 @@ tsgroup["new_column"] = metadata
 3. **Filtering Metadata:**
 You can filter TsGroup instances based on metadata values using boolean indexing:,
 ```python
-tsgroup[tsgroup.column == value]
+tsgroup[tsgroup.column_name == value]
 ```
 
 ### pynapple >= 0.6
