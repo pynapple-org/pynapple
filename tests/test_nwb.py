@@ -519,11 +519,11 @@ def test_add_Units():
         nwbfile.add_unit(spike_times=spike_times, quality="good", alpha=alpha[n_units_per_shank])
         spks[n_units_per_shank] = spike_times
 
-    nwb = nap.NWBFile(nwbfile)
-    assert len(nwb) == 1
-    assert "units" in nwb.keys()
+    nwb_tsgroup = nap.NWBFile(nwbfile)
+    assert len(nwb_tsgroup) == 1
+    assert "units" in nwb_tsgroup.keys()
     
-    data = nwb['units']    
+    data = nwb_tsgroup['units']
     assert isinstance(data, nap.TsGroup)
     assert len(data) == n_units
     for n in data.keys():
