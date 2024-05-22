@@ -30,28 +30,6 @@ To ask any questions or get support for using pynapple, please consider joining 
 New releases :fire:
 ------------------
 
-### pynapple >= 0.6.3
-
-Starting from 0.6.3 you can access, modify, and filter the `TsGroup` metadata columns more flexibly.
-
-1. **Accessing Metadata Columns:**
-You can access a metadata column with the following syntax,
-```python
-metadata = tsgroup.column_name
-```
-
-2. **Adding New Metadata:**
-To add a new metadata column, use the following syntax,
-```python
-tsgroup["new_column"] = metadata
-```
-
-3. **Filtering Metadata:**
-You can filter TsGroup instances based on metadata values using boolean indexing:,
-```python
-tsgroup[tsgroup.column_name == value]
-```
-
 ### pynapple >= 0.6
 
 Starting with 0.6, [`IntervalSet`](https://pynapple-org.github.io/pynapple/reference/core/interval_set/) objects are behaving as immutable numpy ndarray. Before 0.6, you could select an interval within an `IntervalSet` object with:

@@ -111,8 +111,14 @@ my_ts = {
 tsgroup = nap.TsGroup(my_ts)
 
 print(tsgroup, "\n")
-print(tsgroup[0], "\n")  # dictionary like indexing returns directly the Ts object
-print(tsgroup[[0, 2]])  # list like indexing
+
+# %%
+# Dictionary like indexing returns directly the Ts object
+print(tsgroup[0], "\n")  
+
+# %%
+# List like indexing
+print(tsgroup[[0, 2]])  
 
 # %%
 # Operations such as restrict can thus be directly applied to the TsGroup as well as other operations.
@@ -126,20 +132,82 @@ count = tsgroup.count(
 print(count)
 
 # %%
-# One advantage of grouping time series is that metainformation can be appended directly on an element-wise basis. In this case, we add labels to each Ts object when instantiating the group and after. We can then use this label to split the group. See the [TsGroup](https://peyrachelab.github.io/pynapple/core.ts_group/) documentation for a complete methodology for splitting TsGroup objects.
-
+# One advantage of grouping time series is that metainformation can be added directly on an element-wise basis. In this case, we add labels to each Ts object when instantiating the group and after. We can then use this label to split the group. See the [TsGroup](https://peyrachelab.github.io/pynapple/core.ts_group/) documentation for a complete methodology for splitting TsGroup objects.
+#
+# First we create a pandas Series for the label.
 
 label1 = pd.Series(index=list(my_ts.keys()), data=[0, 1, 0])
 
-tsgroup = nap.TsGroup(my_ts, time_units="s", label1=label1)
-tsgroup.set_info(label2=np.array(["a", "a", "b"]))
+print(label1)
 
-print(tsgroup, "\n")
+# %%
+# We can pass `label1` at the initialization step.
 
-newtsgroup = tsgroup.getby_category("label1")
-print(newtsgroup[0], "\n")
-print(newtsgroup[1])
+tsgroup = nap.TsGroup(my_ts, time_units="s", my_label1=label1)
 
+print(tsgroup)
+
+# %%
+# Notice how the label has been added as one column when printing `tsgroup`.
+#
+# We can also add a label for each items in 2 different ways after initializing the `TsGroup` object.
+# First with `set_info` :
+tsgroup.set_info(my_label2=np.array(["a", "a", "b"])) 
+
+print(tsgroup)
+
+# %%
+# Notice that you can pass directly a numpy array as long as it is the same size as the `TsGroup`.
+# 
+# We can also add new metadata by passing it as an item of the dictionnary.
+tsgroup["my_label3"] = np.random.randn(len(tsgroup))
+
+print(tsgroup)
+
+# %%
+# Metadata columns can be viewed as attributes of `TsGroup`.
+
+tsgroup.my_label1
+
+# %%
+# or with the `get_info` method.
+
+tsgroup.get_info("my_label3")
+
+
+# %%
+# Finally you can use the metadata to slice through the `TsGroup` object.
+#
+# There are multiple methods for it. You can use the `TsGroup` getter functions :
+#
+#   - `getby_category(col_name)` : categorized the metadata column and return a `TsGroup` for each category.
+#
+#   - `getby_threshold(col_name, value)` : threshold the metadata column and return a single `TsGroup`.
+#
+#   - `getby_intervals(col_name, bins)` : digitize the metadata column and return a `TsGroup` for each bin.
+#
+# In this example we categorized `tsgroup` with `my_label2`.
+
+dict_of_tsgroup = tsgroup.getby_category("my_label2")
+
+print(dict_of_tsgroup["a"], "\n")
+print(dict_of_tsgroup["b"])
+
+# %%
+# Notice that `getby_threshold` return directly a TsGroup.
+
+tsgroup.getby_threshold("my_label1", 0.5)
+
+# %%
+# Similar operations can be performed using directly the attributes of `TsGroup`.
+# For example, the previous line is equivalent to :
+
+tsgroup[tsgroup.my_label1>0.5]
+
+# %%
+# You can also chain queries with attributes.
+
+tsgroup[(tsgroup.my_label1==0) & (tsgroup.my_label2=="a")]
 
 # %%
 # ***
@@ -165,11 +233,15 @@ tsgroup = nap.TsGroup(my_ts)
 
 tsgroup_with_time_support = nap.TsGroup(my_ts, time_support=time_support)
 
+# %%
 print(tsgroup, "\n")
 
+# %%
 print(tsgroup_with_time_support, "\n")
 
-print(tsgroup_with_time_support.time_support)  # acceding the time support
+# %%
+# acceding the time support is an important feature of pynapple
+print(tsgroup_with_time_support.time_support)  
 
 # %%
 # We can use value_from which as it indicates assign to every timestamps the closed value in time from another time series.
