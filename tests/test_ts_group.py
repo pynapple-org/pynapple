@@ -14,7 +14,6 @@ from collections import UserDict
 import warnings
 from contextlib import nullcontext as does_not_raise
 
-
 @pytest.fixture
 def group():
     """Fixture to be used in all tests."""
@@ -575,15 +574,16 @@ class TestTsGroup1:
         np.testing.assert_array_almost_equal(file['index'], index)
         np.testing.assert_array_almost_equal(file['meta'], np.arange(len(group), dtype=np.int64))
         assert np.all(file['meta2']==np.array(['a', 'b', 'c']))
+        file.close()
 
         tsgroup3 = nap.TsGroup({
                     0: nap.Ts(t=np.arange(0, 20)),
                 })
         tsgroup3.save("tsgroup3")
-        file = np.load("tsgroup3.npz")
 
-        assert 'd' not in list(file.keys())
-        np.testing.assert_array_almost_equal(file['t'], tsgroup3[0].index)
+        with np.load("tsgroup3.npz") as file:
+            assert 'd' not in list(file.keys())
+            np.testing.assert_array_almost_equal(file['t'], tsgroup3[0].index)
 
         os.remove("tsgroup.npz")
         os.remove("tsgroup2.npz")
@@ -753,3 +753,105 @@ class TestTsGroup1:
     def test_getitem_boolean_fail(self, ts_group, bool_idx, expectation):
         with expectation:
             out = ts_group[bool_idx]
+
+    def test_merge_complete(self, ts_group):
+        with pytest.raises(TypeError,  match="Input at positions(.*)are not TsGroup!"):
+            nap.TsGroup.merge_group(ts_group, str, dict)
+
+        ts_group2 = nap.TsGroup(
+            {
+                3: nap.Ts(t=np.arange(15)),
+                4: nap.Ts(t=np.arange(20)),
+            },
+            time_support=ts_group.time_support,
+            meta=np.array([12, 13])
+        )
+        merged = ts_group.merge(ts_group2)
+        assert len(merged) == 4
+        assert np.all(merged.keys() == np.array([1, 2, 3, 4]))
+        assert np.all(merged.meta == np.array([10, 11, 12, 13]))
+        np.testing.assert_equal(merged.metadata_columns, ts_group.metadata_columns)
+
+    @pytest.mark.parametrize(
+            'col_name, ignore_metadata, expectation',
+            [
+                ('meta', False, does_not_raise()),
+                ('meta', True,  does_not_raise()),
+                ('wrong_name', False, pytest.raises(ValueError, match="TsGroup at position 2 has different metadata columns.*")),
+                ('wrong_name', True,  does_not_raise())
+                ]
+                )
+    def test_merge_metadata(self, ts_group, col_name, ignore_metadata, expectation):
+        metadata = pd.DataFrame([12, 13], index=[3, 4], columns=[col_name])
+        ts_group2 = nap.TsGroup(
+            {
+                3: nap.Ts(t=np.arange(15)),
+                4: nap.Ts(t=np.arange(20)),
+            },
+            time_support=ts_group.time_support,
+            **metadata
+            )
+
+        with expectation:
+            merged = ts_group.merge(ts_group2, ignore_metadata=ignore_metadata)
+        
+        if ignore_metadata:
+            assert merged.metadata_columns[0] == 'rate'
+        elif col_name == 'meta':
+            np.testing.assert_equal(merged.metadata_columns, ts_group.metadata_columns)
+
+    @pytest.mark.parametrize(
+        'index, reset_index, expectation',
+        [
+            (np.array([1, 2]), False, pytest.raises(ValueError, match="TsGroup at position 2 has overlapping keys.*")),
+            (np.array([1, 2]), True, does_not_raise()),
+            (np.array([3, 4]), False, does_not_raise()),
+            (np.array([3, 4]), True, does_not_raise())
+        ]
+    )
+    def test_merge_index(self, ts_group, index, reset_index, expectation):
+        ts_group2 = nap.TsGroup(
+            dict(zip(index, [nap.Ts(t=np.arange(15)), nap.Ts(t=np.arange(20))])),
+            time_support=ts_group.time_support,
+            meta=np.array([12, 13])
+        )
+
+        with expectation:
+            merged = ts_group.merge(ts_group2, reset_index=reset_index)
+        
+        if reset_index:
+            assert np.all(merged.keys() == np.arange(4))
+        elif np.all(index == np.array([3, 4])):
+            assert np.all(merged.keys() == np.array([1, 2, 3, 4]))
+
+    @pytest.mark.parametrize(
+        'time_support, reset_time_support, expectation',
+        [
+            (None, False, does_not_raise()),
+            (None, True,  does_not_raise()),
+            (nap.IntervalSet(start=0, end=1), False,
+             pytest.raises(ValueError, match="TsGroup at position 2 has different time support.*")),
+            (nap.IntervalSet(start=0, end=1), True,  does_not_raise())
+        ]
+    )
+    def test_merge_time_support(self, ts_group, time_support, reset_time_support, expectation):
+        if time_support is None:
+            time_support = ts_group.time_support
+
+        ts_group2 = nap.TsGroup(
+            {
+                3: nap.Ts(t=np.arange(15)),
+                4: nap.Ts(t=np.arange(20)),
+            },
+            time_support=time_support,
+            meta=np.array([12, 13])
+        )
+
+        with expectation:
+            merged = ts_group.merge(ts_group2, reset_time_support=reset_time_support)
+        
+        if reset_time_support:
+            np.testing.assert_array_almost_equal(
+                ts_group.time_support.as_units("s").to_numpy(),
+                merged.time_support.as_units("s").to_numpy()
+                )
