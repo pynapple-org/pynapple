@@ -7,6 +7,8 @@ import h5py
 import numpy as np
 import pandas as pd
 import pytest
+from pynwb.testing.mock.base import mock_TimeSeries
+from pynwb.testing.mock.file import mock_NWBFile
 
 import pynapple as nap
 
@@ -207,24 +209,49 @@ def test_lazy_load_nwb(lazy, expected_type):
     nwb.io.close()
 
 
-@pytest.mark.parametrize(
-    "path, var_name",
-    [
-        ("phy/pynapplenwb/A8604-211122.nwb", "units"),  # TsGroup
-        ("basic/pynapplenwb/A2929-200711.nwb", "z"),  # Tsd
-        ("suite2p/pynapplenwb/2022_08_08.nwb", "Neuropil"),  # TsdFrame
-    ]
-)
-def test_lazy_load_nwb_no_warnings(path, var_name):
+@pytest.mark.parametrize("data", [np.ones(10), np.ones((10, 2)), np.ones((10, 2, 2))])
+def test_lazy_load_nwb_no_warnings(data):
+    file_path = Path('data.h5')
+
     try:
-        nwb = nap.NWBFile(os.path.join("tests/nwbfilestest", path), lazy_loading=True)
-    except:
-        nwb = nap.NWBFile(os.path.join("nwbfilestest", path), lazy_loading=True)
+        with h5py.File(file_path, 'w') as f:
+            f.create_dataset('data', data=data)
+            time_series = mock_TimeSeries(name="TimeSeries", data=f["data"])
+            nwbfile = mock_NWBFile()
+            nwbfile.add_acquisition(time_series)
+            nwb = nap.NWBFile(nwbfile)
 
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        tsd = nwb[var_name]
-        if isinstance(tsd, (nap.Tsd, nap.TsdFrame, nap.TsdTensor)):
-            tsd * 2
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                tsd = nwb["TimeSeries"]
+                tsd.count(0.1)
+                assert isinstance(tsd.d, h5py.Dataset)
 
-    nwb.io.close()
+    finally:
+        if file_path.exists():
+            file_path.unlink()
+
+
+def test_tsgroup_no_warinings():
+    n_units = 2
+    try:
+        for k in range(n_units):
+            file_path = Path(f'data_{k}.h5')
+            with h5py.File(file_path, 'w') as f:
+                f.create_dataset('spks', data=np.sort(np.random.uniform(0, 10, size=20)))
+        with warnings.catch_warnings():
+            nwbfile = mock_NWBFile()
+
+            for k in range(n_units):
+                file_path = Path(f'data_{k}.h5')
+                spike_times = h5py.File(file_path, "r")['spks']
+                nwbfile.add_unit(spike_times=spike_times)
+                nwb = nap.NWBFile(nwbfile)
+            warnings.simplefilter("error")
+            tsgroup = nwb["units"]
+            tsgroup.count(0.1)
+    finally:
+        for k in range(n_units):
+            file_path = Path(f'data_{k}.h5')
+            if file_path.exists():
+                file_path.unlink()
