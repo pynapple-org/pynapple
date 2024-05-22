@@ -232,7 +232,7 @@ def test_lazy_load_nwb_no_warnings(data):
             file_path.unlink()
 
 
-def test_tsgroup_no_warinings():
+def test_tsgroup_no_warnings():
     n_units = 2
     try:
         for k in range(n_units):
@@ -240,16 +240,19 @@ def test_tsgroup_no_warinings():
             with h5py.File(file_path, 'w') as f:
                 f.create_dataset('spks', data=np.sort(np.random.uniform(0, 10, size=20)))
         with warnings.catch_warnings():
+            warnings.simplefilter("error")
+
             nwbfile = mock_NWBFile()
 
             for k in range(n_units):
                 file_path = Path(f'data_{k}.h5')
                 spike_times = h5py.File(file_path, "r")['spks']
                 nwbfile.add_unit(spike_times=spike_times)
-                nwb = nap.NWBFile(nwbfile)
-            warnings.simplefilter("error")
+            
+            nwb = nap.NWBFile(nwbfile)
             tsgroup = nwb["units"]
             tsgroup.count(0.1)
+
     finally:
         for k in range(n_units):
             file_path = Path(f'data_{k}.h5')
