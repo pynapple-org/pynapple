@@ -5,7 +5,7 @@ on:
   push:
     branches: [ main ]
   pull_request:
-    branches: [ main ]
+    branches: [ main, dev ]
 
 jobs:
   lint:
@@ -40,9 +40,9 @@ jobs:
         #   - os: windows-latest
         #     python-version: 3.7
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
           python-version: ${{ matrix.python-version }}
       - name: Install dependencies
@@ -52,14 +52,12 @@ jobs:
       - name: Test
         run: |
           coverage run --source=pynapple --branch -m pytest tests/
-          coverage report -m          
+          coverage report -m
 
-      - name: Coveralls
-        env:
-            GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-            pip install coveralls
-            coveralls --service=github
+      - name: Upload coverage reports to Codecov
+        uses: codecov/codecov-action@v4.0.1
+        with:
+            token: ${{ secrets.CODECOV_TOKEN }}
   check:
     if: always()
     needs:

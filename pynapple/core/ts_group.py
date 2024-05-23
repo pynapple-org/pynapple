@@ -17,6 +17,7 @@ from tabulate import tabulate
 from ._core_functions import _count
 from ._jitted_functions import jitunion, jitunion_isets
 from .base_class import Base
+from .config import nap_config
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
@@ -1025,6 +1026,207 @@ class TsGroup(UserDict):
         groups = self._metadata.groupby(key).groups
         sliced = {k: self[list(groups[k])] for k in groups.keys()}
         return sliced
+
+    @staticmethod
+    def merge_group(
+        *tsgroups, reset_index=False, reset_time_support=False, ignore_metadata=False
+    ):
+        """
+        Merge multiple TsGroup objects into a single TsGroup object.
+
+        Parameters
+        ----------
+        *tsgroups : TsGroup
+            The TsGroup objects to merge
+        reset_index : bool, optional
+            If True, the keys will be reset to range(len(data))
+            If False, the keys of the TsGroup objects should be non-overlapping and will be preserved
+        reset_time_support : bool, optional
+            If True, the merged TsGroup will merge time supports from all the Ts/Tsd objects in data
+            If False, the time support of the TsGroup objects should be the same and will be preserved
+        ignore_metadata : bool, optional
+            If True, the merged TsGroup will not have any metadata columns other than 'rate'
+            If False, all metadata columns should be the same and all metadata will be concatenated
+
+        Returns
+        -------
+        TsGroup
+            A TsGroup of merged objects
+
+        Raises
+        ------
+        TypeError
+            If the input objects are not TsGroup objects
+        ValueError
+            If `ignore_metadata=False` but metadata columns are not the same
+            If `reset_index=False` but keys overlap
+            If `reset_time_support=False` but time supports are not the same
+
+        """
+        is_tsgroup = [isinstance(tsg, TsGroup) for tsg in tsgroups]
+        if not all(is_tsgroup):
+            not_tsgroup_index = [i + 1 for i, boo in enumerate(is_tsgroup) if not boo]
+            raise TypeError(f"Input at positions {not_tsgroup_index} are not TsGroup!")
+
+        if len(tsgroups) == 1:
+            print("Only one TsGroup object provided, no merge needed.")
+            return tsgroups[0]
+
+        tsg1 = tsgroups[0]
+        items = tsg1.items()
+        keys = set(tsg1.keys())
+        metadata = tsg1._metadata
+
+        for i, tsg in enumerate(tsgroups[1:]):
+            if not ignore_metadata:
+                if tsg1.metadata_columns != tsg.metadata_columns:
+                    raise ValueError(
+                        f"TsGroup at position {i+2} has different metadata columns from previous TsGroup objects. "
+                        "Set `ignore_metadata=True` to bypass the check."
+                    )
+                metadata = pd.concat([metadata, tsg._metadata], axis=0)
+
+            if not reset_index:
+                key_overlap = keys.intersection(tsg.keys())
+                if key_overlap:
+                    raise ValueError(
+                        f"TsGroup at position {i+2} has overlapping keys {key_overlap} with previous TsGroup objects. "
+                        "Set `reset_index=True` to bypass the check."
+                    )
+                keys.update(tsg.keys())
+
+            if reset_time_support:
+                time_support = None
+            else:
+                if not np.allclose(
+                    tsg1.time_support.as_units("s").to_numpy(),
+                    tsg.time_support.as_units("s").to_numpy(),
+                    atol=10 ** (-nap_config.time_index_precision),
+                    rtol=0,
+                ):
+                    raise ValueError(
+                        f"TsGroup at position {i+2} has different time support from previous TsGroup objects. "
+                        "Set `reset_time_support=True` to bypass the check."
+                    )
+                time_support = tsg1.time_support
+
+            items.extend(tsg.items())
+
+        if reset_index:
+            metadata.index = range(len(metadata))
+            data = {i: ts[1] for i, ts in enumerate(items)}
+        else:
+            data = dict(items)
+
+        if ignore_metadata:
+            return TsGroup(data, time_support=time_support, bypass_check=False)
+        else:
+            cols = metadata.columns.drop("rate")
+            return TsGroup(
+                data, time_support=time_support, bypass_check=False, **metadata[cols]
+            )
+
+    def merge(
+        self,
+        *tsgroups,
+        reset_index=False,
+        reset_time_support=False,
+        ignore_metadata=False,
+    ):
+        """
+        Merge the TsGroup object with other TsGroup objects.
+        Common uses include adding more neurons/channels (supposing each Ts/Tsd corresponds to data from a neuron/channel) or adding more trials (supposing each Ts/Tsd corresponds to data from a trial).
+
+        Parameters
+        ----------
+        *tsgroups : TsGroup
+            The TsGroup objects to merge with
+        reset_index : bool, optional
+            If True, the keys will be reset to range(len(data))
+            If False, the keys of the TsGroup objects should be non-overlapping and will be preserved
+        reset_time_support : bool, optional
+            If True, the merged TsGroup will merge time supports from all the Ts/Tsd objects in data
+            If False, the time support of the TsGroup objects should be the same and will be preserved
+        ignore_metadata : bool, optional
+            If True, the merged TsGroup will not have any metadata columns other than 'rate'
+            If False, all metadata columns should be the same and all metadata will be concatenated
+
+        Returns
+        -------
+        TsGroup
+            A TsGroup of merged objects
+
+        Raises
+        ------
+        TypeError
+            If the input objects are not TsGroup objects
+        ValueError
+            If `ignore_metadata=False` but metadata columns are not the same
+            If `reset_index=False` but keys overlap
+            If `reset_time_support=False` but time supports are not the same
+
+        Examples
+        --------
+
+        >>> import pynapple as nap
+        >>> time_support_a = nap.IntervalSet(start=-1, end=1, time_units='s')
+        >>> time_support_b = nap.IntervalSet(start=-5, end=5, time_units='s')
+
+        >>> dict1 = {0: nap.Ts(t=[-1, 0, 1], time_units='s')}
+        >>> tsgroup1 = nap.TsGroup(dict1, time_support=time_support_a)
+
+        >>> dict2 = {10: nap.Ts(t=[-1, 0, 1], time_units='s')}
+        >>> tsgroup2 = nap.TsGroup(dict2, time_support=time_support_a)
+
+        >>> dict3 = {0: nap.Ts(t=[-.1, 0, .1], time_units='s')}
+        >>> tsgroup3 = nap.TsGroup(dict3, time_support=time_support_a)
+
+        >>> dict4 = {10: nap.Ts(t=[-1, 0, 1], time_units='s')}
+        >>> tsgroup4 = nap.TsGroup(dict2, time_support=time_support_b)
+
+        Merge with default options if have the same time support and non-overlapping indexes:
+
+        >>> tsgroup_12 = tsgroup1.merge(tsgroup2)
+        >>> tsgroup_12
+        Index    rate
+        -------  ------
+             0     1.5
+            10     1.5
+
+        Set `reset_index=True` if indexes are overlapping:
+
+        >>> tsgroup_13 = tsgroup1.merge(tsgroup3, reset_index=True)
+        >>> tsgroup_13
+        Index    rate
+        -------  ------
+              0     1.5
+              1     1.5
+
+        Set `reset_time_support=True` if time supports are different:
+
+        >>> tsgroup_14 = tsgroup1.merge(tsgroup4, reset_time_support=True)
+        >>> tsgroup_14
+        >>> tsgroup_14.time_support
+        Index    rate
+        -------  ------
+              0     0.3
+             10     0.3
+
+                    start    end
+            0       -5      5
+            shape: (1, 2), time unit: sec.
+
+        See Also
+        --------
+        [`TsGroup.merge_group`](./#pynapple.core.ts_group.TsGroup.merge_group)
+        """
+        return TsGroup.merge_group(
+            self,
+            *tsgroups,
+            reset_index=reset_index,
+            reset_time_support=reset_time_support,
+            ignore_metadata=ignore_metadata,
+        )
 
     def save(self, filename):
         """

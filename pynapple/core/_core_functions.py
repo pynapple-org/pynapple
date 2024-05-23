@@ -144,6 +144,6 @@ def _threshold(time_array, data_array, starts, ends, thr, method):
     if get_backend() == "jax":
         from pynajax.jax_core_threshold import threshold
 
-        return threshold(time_array, data_array, starts, ends, thr, method)
+        return threshold(time_array, data_array[:], starts, ends, thr, method)
     else:
-        return jitthreshold(time_array, data_array, starts, ends, thr, method)
+        return jitthreshold(time_array, data_array[:], starts, ends, thr, method)
