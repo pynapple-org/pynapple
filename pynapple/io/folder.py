@@ -86,7 +86,7 @@ class Folder(UserDict):
     Attributes
     ----------
     data : dict
-        dictionary holidng all the pynapple objects found in the folder.
+        Dictionary holidng all the pynapple objects found in the folder.
     name : str
         Name of the folder
     npz_files : list
