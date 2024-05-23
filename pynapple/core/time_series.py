@@ -71,15 +71,14 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
     def __init__(self, t, d, time_units="s", time_support=None, load_array=True):
         super().__init__(t, time_units, time_support)
 
-        if not is_array_like(d):
-            raise TypeError(
-                "Data should be array-like, i.e. be indexable, iterable and, have attributes "
-                "`shape`, `ndim` and, `dtype`)."
-            )
-
         if load_array:
             self.values = convert_to_array(d, "d")
         else:
+            if not is_array_like(d):
+                raise TypeError(
+                    "Data should be array-like, i.e. be indexable, iterable and, have attributes "
+                    "`shape`, `ndim` and, `dtype`)."
+                )
             self.values = d
 
         assert len(self.index) == len(
