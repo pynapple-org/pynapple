@@ -159,7 +159,7 @@ print(tsgroup)
 # %%
 # Notice that you can pass directly a numpy array as long as it is the same size as the `TsGroup`.
 # 
-# We can also add new metadata by passing it as an item of the dictionnary.
+# We can also add new metadata by passing it as an item of the dictionary.
 tsgroup["my_label3"] = np.random.randn(len(tsgroup))
 
 print(tsgroup)
@@ -224,7 +224,7 @@ time_support = nap.IntervalSet(start=0, end=200, time_units="s")
 my_ts = {
     0: nap.Ts(
         t=np.sort(np.random.uniform(0, 100, 10)), time_units="s"
-    ),  # here a simple dictionnary
+    ),  # here a simple dictionary
     1: nap.Ts(t=np.sort(np.random.uniform(0, 100, 20)), time_units="s"),
     2: nap.Ts(t=np.sort(np.random.uniform(0, 100, 30)), time_units="s"),
 }
