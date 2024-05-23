@@ -363,6 +363,7 @@ def _jitbin_array(countin, time_array, data_array, starts, ends, bin_size):
                         break
 
                 lbound += bin_size
+                lbound = np.round(lbound, 9)
                 b += 1
         t = maxt
         k += 1
