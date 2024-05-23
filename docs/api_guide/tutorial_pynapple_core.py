@@ -159,7 +159,7 @@ print(tsgroup)
 # %%
 # Notice that you can pass directly a numpy array as long as it is the same size as the `TsGroup`.
 # 
-# We can also add new metadata by passing it as an item of the dictionary.
+# We can also add new metadata by passing it as an item of the dictionary with a string key.
 tsgroup["my_label3"] = np.random.randn(len(tsgroup))
 
 print(tsgroup)

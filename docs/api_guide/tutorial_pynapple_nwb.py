@@ -79,6 +79,9 @@ tc = nap.compute_1d_tuning_curves(data['units'], data['y'], 10)
 
 print(tc)
 
+# %%
+#   !!! warning
+#       Carefulness should still apply when calling any pynapple function on a memory map. Pynapple does not implement any batching function internally. Calling a high level function of pynapple on a dataset that do not fit in memory will likely cause a memory error.
 
 # %%
 # To change this behavior, you can pass `lazy_loading=False` when instantiating the `NWBClass`.
@@ -171,7 +174,3 @@ sta = nap.compute_event_trigger_average(group, tsdframe, 1, (-2, 3))
 print(type(tsdframe.values))
 print("\n")
 print(sta)
-
-# %%
-#   !!! warning
-#       Carefulness should still apply when calling any pynapple function on a memory map. Pynapple does not implement any batching function internally. Calling a high level function of pynapple on a dataset that do not fit in memory will likely cause a memory error.
