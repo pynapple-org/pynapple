@@ -96,7 +96,7 @@ class Folder(UserDict):
     path : str
         Absolute path of the folder
     subfolds : dict
-        dictionary of all the subfolders
+        Dictionary of all the subfolders
 
     """
 
