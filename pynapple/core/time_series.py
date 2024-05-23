@@ -71,7 +71,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
     def __init__(self, t, d, time_units="s", time_support=None, load_array=True):
         super().__init__(t, time_units, time_support)
 
-        if load_array:
+        if load_array or isinstance(d, np.ndarray):
             self.values = convert_to_array(d, "d")
         else:
             if not is_array_like(d):
