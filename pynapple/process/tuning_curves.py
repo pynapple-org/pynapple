@@ -487,7 +487,7 @@ def compute_2d_tuning_curves_continuous(
     -------
     tuple
         A tuple containing: \n
-        tc (dict): dictionary of the tuning curves with dimensions (nb_bins, nb_bins).\n
+        tc (dict): Dictionary of the tuning curves with dimensions (nb_bins, nb_bins).\n
         xy (list): List of bins center in the two dimensions
 
     Raises
