@@ -58,7 +58,7 @@ def _union_intervals(i_sets):
 
 class TsGroup(UserDict):
     """
-    The TsGroup is a dictionnary-like object to hold multiple [`Ts`][pynapple.core.time_series.Ts] or [`Tsd`][pynapple.core.time_series.Tsd] objects with different time index.
+    The TsGroup is a dictionary-like object to hold multiple [`Ts`][pynapple.core.time_series.Ts] or [`Tsd`][pynapple.core.time_series.Tsd] objects with different time index.
 
     Attributes
     ----------
@@ -995,7 +995,7 @@ class TsGroup(UserDict):
         Returns
         -------
         dict
-            A dictionnary of TsGroup
+            A dictionary of TsGroup
 
         Examples
         --------

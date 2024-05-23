@@ -71,7 +71,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
     def __init__(self, t, d, time_units="s", time_support=None, load_array=True):
         super().__init__(t, time_units, time_support)
 
-        if load_array:
+        if load_array or isinstance(d, np.ndarray):
             self.values = convert_to_array(d, "d")
         else:
             if not is_array_like(d):
@@ -688,6 +688,10 @@ class TsdTensor(BaseTsd):
             The time units in which times are specified ('us', 'ms', 's' [default]).
         time_support : IntervalSet, optional
             The time support of the TsdFrame object
+        load_array : bool, optional
+            Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
+            Default is True. Does not apply if `d` is already a numpy array.
+
         """
         super().__init__(t, d, time_units, time_support, load_array)
 
@@ -868,6 +872,9 @@ class TsdFrame(BaseTsd):
             The time support of the TsdFrame object
         columns : iterables
             Column names
+        load_array : bool, optional
+            Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
+            Default is True. Does not apply if `d` is already a numpy array.
         """
 
         c = columns
@@ -1144,6 +1151,9 @@ class Tsd(BaseTsd):
             The time units in which times are specified ('us', 'ms', 's' [default])
         time_support : IntervalSet, optional
             The time support of the tsd object
+        load_array : bool, optional
+            Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
+            Default is True. Does not apply if `d` is already a numpy array.
         """
         if isinstance(t, pd.Series):
             d = t.values

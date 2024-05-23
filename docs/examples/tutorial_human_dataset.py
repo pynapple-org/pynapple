@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Zheng et al (2022) Dataset Tutorial
+Zheng et al (2022) Tutorial
 ============
 
 This tutorial demonstrates how we use Pynapple on various publicly available datasets in systems neuroscience to streamline analysis. In this tutorial, we will examine the dataset from [Zheng et al (2022)](https://www.nature.com/articles/s41593-022-01020-w), which was used to generate Figure 4c in the [publication](https://elifesciences.org/reviewed-preprints/85786).

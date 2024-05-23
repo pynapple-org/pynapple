@@ -69,7 +69,7 @@ def load_folder(path):
     Returns
     -------
     Folder
-        A dictionnary-like class containing all the sub-folders and compatible files (i.e. npz, nwb)
+        A dictionary-like class containing all the sub-folders and compatible files (i.e. npz, nwb)
 
     Raises
     ------

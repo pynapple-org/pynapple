@@ -74,16 +74,16 @@ def _dropna(time_array, data_array, starts, ends, update_time_support, ndim):
             ends,
         )
     elif np.any(index_nan):
+        tokeep = np.where(~index_nan)[0]
         if update_time_support:
             starts, ends = jitremove_nan(time_array, index_nan)
 
             to_fix = starts == ends
             if np.any(to_fix):
                 ends[to_fix] += 1e-6  # adding 1 millisecond in case of a single point
-
-            return (time_array[~index_nan], data_array[~index_nan], starts, ends)
+            return (time_array[tokeep], data_array[tokeep], starts, ends)
         else:
-            return (time_array[~index_nan], data_array[~index_nan], starts, ends)
+            return (time_array[tokeep], data_array[tokeep], starts, ends)
     else:
         return (time_array, data_array, starts, ends)
 

@@ -9,7 +9,7 @@
 """
 File classes help to validate and load pynapple objects or NWB files.
 Data are always lazy-loaded.
-Both classes behaves like dictionnary.
+Both classes behaves like dictionary.
 """
 
 import os

@@ -16,12 +16,12 @@ from .. import core as nap
 
 def compute_discrete_tuning_curves(group, dict_ep):
     """
-    Compute discrete tuning curves of a TsGroup using a dictionnary of epochs.
-    The function returns a pandas DataFrame with each row being a key of the dictionnary of epochs
+    Compute discrete tuning curves of a TsGroup using a dictionary of epochs.
+    The function returns a pandas DataFrame with each row being a key of the dictionary of epochs
     and each column being a neurons.
 
        This function can typically being used for a set of stimulus being presented for multiple epochs.
-    An example of the dictionnary is :
+    An example of the dictionary is :
 
         >>> dict_ep =  {
                 "stim0": nap.IntervalSet(start=0, end=1),
@@ -53,7 +53,7 @@ def compute_discrete_tuning_curves(group, dict_ep):
         If group is not a TsGroup object.
     """
     assert isinstance(group, nap.TsGroup), "group should be a TsGroup."
-    assert isinstance(dict_ep, dict), "dict_ep should be a dictionnary of IntervalSet"
+    assert isinstance(dict_ep, dict), "dict_ep should be a dictionary of IntervalSet"
     idx = np.sort(list(dict_ep.keys()))
     for k in idx:
         assert isinstance(
@@ -169,7 +169,7 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
     -------
     tuple
         A tuple containing: \n
-        tc (dict): Dictionnary of the tuning curves with dimensions (nb_bins, nb_bins).\n
+        tc (dict): Dictionary of the tuning curves with dimensions (nb_bins, nb_bins).\n
         xy (list): List of bins center in the two dimensions
 
     Raises
@@ -487,7 +487,7 @@ def compute_2d_tuning_curves_continuous(
     -------
     tuple
         A tuple containing: \n
-        tc (dict): Dictionnary of the tuning curves with dimensions (nb_bins, nb_bins).\n
+        tc (dict): Dictionary of the tuning curves with dimensions (nb_bins, nb_bins).\n
         xy (list): List of bins center in the two dimensions
 
     Raises

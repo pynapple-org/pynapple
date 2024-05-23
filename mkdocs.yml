@@ -13,8 +13,12 @@ theme:
 plugins:
   - search
   - gallery:
-        examples_dirs: docs/examples
-        gallery_dirs: docs/generated/gallery
+        examples_dirs:
+          - docs/api_guide
+          - docs/examples
+        gallery_dirs:          
+          - docs/generated/api_guide
+          - docs/generated/examples
         conf_script: docs/gallery_conf.py
   - gen-files:
       scripts:
@@ -35,7 +39,8 @@ plugins:
 
 nav:  
   - Overview: index.md  
-  - Usage: generated/gallery
+  - Application guide: generated/api_guide
+  - Analysis examples: generated/examples
   - External projects: external.md
   - Pynajax - GPU acceleration: pynajax.md
   - Modules : reference/
