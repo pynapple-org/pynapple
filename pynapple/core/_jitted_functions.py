@@ -9,10 +9,11 @@ from numba import jit, njit, prange
 def jitrestrict(time_array, starts, ends):
     n = len(time_array)
     m = len(starts)
-    ix = np.zeros(n, dtype=np.bool_)
+    ix = np.zeros(n, dtype="int")
 
     k = 0
     t = 0
+    x = 0
 
     while ends[k] < time_array[t]:
         k += 1
@@ -21,8 +22,6 @@ def jitrestrict(time_array, starts, ends):
         # Outside
         while t < n:
             if time_array[t] >= starts[k]:
-                # ix[t] = True
-                # t += 1
                 break
             t += 1
 
@@ -32,7 +31,8 @@ def jitrestrict(time_array, starts, ends):
                 k += 1
                 break
             else:
-                ix[t] = True
+                ix[x] = t
+                x += 1
             t += 1
 
         if k == m:
@@ -40,7 +40,7 @@ def jitrestrict(time_array, starts, ends):
         if t == n:
             break
 
-    return ix
+    return ix[0:x]
 
 
 @jit(nopython=True)

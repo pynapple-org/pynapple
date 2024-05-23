@@ -14,21 +14,18 @@ This notebook focuses on the NWB format. Additionaly it demonstrates the capabil
 The dataset in this example can be found [here](https://www.dropbox.com/s/pr1ze1nuiwk8kw9/MyProject.zip?dl=1).
 """
 # %%
-# !!! warning
-#     This tutorial uses seaborn and matplotlib for displaying the figure.
 #
-#     You can install both with `pip install matplotlib seaborn`
 
 import numpy as np
 import pynapple as nap
 
 # %%
-# # NWB
-# 
+# NWB
+# --------------
 # When loading a NWB file, pynapple will walk through it and test the compatibility of each data structure with a pynapple objects. If the data structure is incompatible, pynapple will ignore it. The class that deals with reading NWB file is [`nap.NWBFile`](../../../reference/io/interface_nwb/). You can pass the path to a NWB file or directly an opened NWB file. Alternatively you can use the function [`nap.load_file`](../../../reference/io/misc/#pynapple.io.misc.load_file).
 #
 # 
-# !!! warning
+# !!! note
 # 	Creating the NWB file is outside the scope of pynapple. The NWB file used here has already been created before.
 # 	Multiple tools exists to create NWB file automatically. You can check [neuroconv](https://neuroconv.readthedocs.io/en/main/), [NWBGuide](https://nwb-guide.readthedocs.io/en/latest/) or even [NWBmatic](https://github.com/pynapple-org/nwbmatic).
 
@@ -45,11 +42,11 @@ data.key_to_id
 
 
 # %%
-#Loading an entry will get pynapple to read the data.
+# Loading an entry will get pynapple to read the data.
 
 z = data['z']
 
-print(z)
+print(data['z'])
 
 # %%
 # Internally, the `NWBClass` has replaced the pointer to the data with the actual data.
@@ -75,6 +72,13 @@ print(z_chunk)
 
 print(type(z_chunk.values))
 
+# %%
+# You can still apply any high level function of pynapple. For example here, we compute some tuning curves without preloading the dataset.
+
+tc = nap.compute_1d_tuning_curves(data['units'], data['y'], 10)
+
+print(tc)
+
 
 # %%
 # To change this behavior, you can pass `lazy_loading=False` when instantiating the `NWBClass`.
@@ -87,8 +91,10 @@ print(type(z.d))
 
 
 # %%
-# # Numpy memory map
-# In fact, pynapple can work with any type of memory map. Here we read a binary file with `np.memmap`.
+# Numpy memory map
+# ----------------
+#
+# In fact, pynapple can work with any type of memory map. Here we read a binary file with [`np.memmap`](https://numpy.org/doc/stable/reference/generated/numpy.memmap.html).
 
 eeg_path = "../../your/path/to/MyProject/sub-A2929/A2929-200711/A2929-200711.eeg"
 frequency = 1250 # Hz
@@ -108,7 +114,7 @@ timestep = np.arange(0, n_samples)/frequency
 print(type(fp))
 
 # %%
-# Instantiating a pynapple `TsdFrame` with `load_array=False` will not load the data into memory
+# Instantiating a pynapple `TsdFrame` will keep the data as a memory map.
 
 eeg = nap.TsdFrame(t=timestep, d=fp)
 
@@ -121,4 +127,51 @@ print(type(eeg.values))
 
 
 # %%
-# # Zarr / h5py
+# Zarr
+# --------------
+#
+# It is also possible to use Higher level library like [zarr](https://zarr.readthedocs.io/en/stable/index.html) also not directly.
+
+import zarr
+data = zarr.zeros((10000, 5), chunks=(1000, 5), dtype='i4')
+timestep = np.arange(len(data))
+
+tsdframe = nap.TsdFrame(t=timestep, d=data)
+
+# %%
+# As the warning suggest, `data` is converted to numpy array.
+
+print(type(tsdframe.d))
+
+# %%
+# To maintain a zarr array, you can change the argument `load_array` to False.
+
+tsdframe = nap.TsdFrame(t=timestep, d=data, load_array=False)
+
+print(type(tsdframe.d))
+
+# %%
+# Within pynapple, numpy memory map are recognized as numpy array while zarr array are not.
+
+print(type(fp), "Is np.ndarray? ", isinstance(fp, np.ndarray))
+print(type(data), "Is np.ndarray? ", isinstance(data, np.ndarray))
+
+
+# %%
+# Similar to numpy memory map, you can use pynapple functions directly.
+
+ep = nap.IntervalSet(0, 10)
+tsdframe.restrict(ep)
+
+# %%
+group = nap.TsGroup({0:nap.Ts(t=[10, 20, 30])})
+
+sta = nap.compute_event_trigger_average(group, tsdframe, 1, (-2, 3))
+
+print(type(tsdframe.values))
+print("\n")
+print(sta)
+
+# %%
+#   !!! warning
+#       Carefulness should still apply when calling any pynapple function on a memory map. Pynapple does not implement any batching function internally. Calling a high level function of pynapple on a dataset that do not fit in memory will likely cause a memory error.

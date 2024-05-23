@@ -65,6 +65,7 @@ docs = [
     "mkdocs-material",
     "matplotlib",
     "seaborn",
+    "zarr"
 ]
 dandi = [
     "dandi",                        # Dandi package
