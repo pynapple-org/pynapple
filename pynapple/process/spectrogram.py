@@ -9,7 +9,7 @@ from jax import jit
 from jax.scipy.signal import stft as jax_stft
 
 @jit
-def spectrogram(signal, fs, n_fft=2048, hop_length=512, window='hann', time_units='s'):
+def spectrogram(signal, fs, n_fft=2048, hop_length=512, window='hann'):
     """
     Computes the spectrogram of a signal using the JAX library for performance efficiency.
 
@@ -33,13 +33,8 @@ def spectrogram(signal, fs, n_fft=2048, hop_length=512, window='hann', time_unit
     tuple
         A tuple containing the frequency bins array, time bins array, and the STFT magnitude in dB as a JAX numpy array.
 
-    Raises
-    ------
-    ValueError
-        If the time_units parameter is not one of 's', 'ms', 'us'.
     """
-    if time_units not in ['s', 'ms', 'us']:
-        raise ValueError("time_units must be 's', 'ms', or 'us'.")
+
 
     # Compute STFT
     f, t, Zxx = jax_stft(signal, fs=fs, window=window, nperseg=n_fft, noverlap=n_fft-hop_length)
@@ -49,7 +44,7 @@ def spectrogram(signal, fs, n_fft=2048, hop_length=512, window='hann', time_unit
     return (f, t, Zxx_dB)
 
 
-def compute_spectrogram(fp, timestep, channel, frequency=20000):
+def compute_spectrogram(fp, timestep, channel, frequency=20000,time_units='s'):
     """
     Computes the spectrograms for specified channels within the signal data, leveraging the JAX backend for efficient computation.
 
@@ -63,13 +58,23 @@ def compute_spectrogram(fp, timestep, channel, frequency=20000):
         The specific channel index to compute the spectrogram for.
     frequency : int, optional
         The sampling rate of the signal in Hz. Default is 20000 Hz.
+    time_units : str, optional
+        The time units of the signal ('s' for seconds [default], 'ms' for milliseconds, 'us' for microseconds).
+
 
     Returns
     -------
     list of tuples
         A list of tuples where each tuple contains (frequency bins, time bins, STFT magnitude in dB).
+    
+    Raises
+    ------
+    ValueError
+        If the time_units parameter is not one of 's', 'ms', 'us'.
 
     """
+    if time_units not in ['s', 'ms', 'us']:
+        raise ValueError("time_units must be 's', 'ms', or 'us'.")
 
     nap.nap_config.set_backend("jax")
 
@@ -87,7 +92,7 @@ def compute_spectrogram(fp, timestep, channel, frequency=20000):
     for idx, s in enumerate(starts):
         print(f"Processing batch {idx+1}/{total_batches}...")
         # Define the batch for the current channel
-        batch_lfp = nap.Tsd(t=timestep[s:s+batch_size], d = jnp.array(fp[s:s+batch_size,channel][:]))
+        batch_lfp = nap.Tsd(t=timestep[s:s+batch_size], d = jnp.array(fp[s:s+batch_size,channel][:]),time_units=time_units)
 
         # Compute the STFT using JAX's stft function
         f, t, Zxx_dB = spectrogram(batch_lfp.d, fs=frequency)
