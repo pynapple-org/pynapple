@@ -47,18 +47,11 @@ new_intervalset = intervalset[0]
 
 See the [documentation](https://pynapple-org.github.io/pynapple/reference/core/interval_set/) for more details.
 
-
 ### pynapple >= 0.4
 
-Starting with 0.4, pynapple rely on the [numpy array container](https://numpy.org/doc/stable/user/basics.dispatch.html) approach instead of Pandas for the time series. Pynapple builtin functions will remain the same except for functions inherited from Pandas. Typically this line of code in `pynapple<=0.3.6` :
-```python
-meantsd = tsdframe.mean(1)
-```
-is now :
-```python
-meantsd = np.mean(tsdframe, 1)
-```
-in `pynapple>=0.4.0`. This allows for a better handling of returned objects.
+Starting with 0.4, pynapple rely on the [numpy array container](https://numpy.org/doc/stable/user/basics.dispatch.html) approach instead of Pandas for the time series. Pynapple builtin functions will remain the same except for functions inherited from Pandas. 
+
+This allows for a better handling of returned objects.
 
 Additionaly, it is now possible to define time series objects with more than 2 dimensions with `TsdTensor`. You can also look at this [notebook](https://pynapple-org.github.io/pynapple/generated/gallery/tutorial_pynapple_numpy/) for a demonstration of numpy compatibilities.
 
