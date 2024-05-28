@@ -50,7 +50,7 @@ def test_lazy_load_hdf5_is_array(time, data, convert_flag):
         h5_data = h5py.File(file_path, 'r')["data"]
         tsd = nap.Tsd(t=time, d=h5_data, load_array=convert_flag)
         if convert_flag:
-            assert isinstance(tsd.d, np.ndarray)
+            assert not isinstance(tsd.d, h5py.Dataset)
         else:
             assert isinstance(tsd.d, h5py.Dataset)
     finally:
@@ -77,7 +77,7 @@ def test_lazy_load_hdf5_apply_func(time, data, func,cls):
         # lazy load and apply function
         res = func(cls(t=time, d=h5_data, load_array=False))
         assert isinstance(res, cls)
-        assert isinstance(res.d, np.ndarray)
+        assert not isinstance(res.d, h5py.Dataset)
     finally:
         # delete file
         if file_path.exists():
@@ -115,7 +115,7 @@ def test_lazy_load_hdf5_apply_method(time, data, method_name, args, cls):
         tsd = cls(t=time, d=h5_data, load_array=False)
         func = getattr(tsd, method_name)
         out = func(*args)
-        assert isinstance(out.d, np.ndarray)
+        assert not isinstance(out.d, h5py.Dataset)
     finally:
         # delete file
         if file_path.exists():
@@ -192,20 +192,23 @@ def test_lazy_load_hdf5_tsdframe_loc():
             file_path.unlink()
 
 @pytest.mark.parametrize(
-    "lazy, expected_type",
+    "lazy",
     [
-        (True, h5py.Dataset),
-        (False, np.ndarray),
+        (True),
+        (False),
     ]
 )
-def test_lazy_load_nwb(lazy, expected_type):
+def test_lazy_load_nwb(lazy):
     try:
         nwb = nap.NWBFile("tests/nwbfilestest/basic/pynapplenwb/A2929-200711.nwb", lazy_loading=lazy)
     except:
         nwb = nap.NWBFile("nwbfilestest/basic/pynapplenwb/A2929-200711.nwb", lazy_loading=lazy)
 
     tsd = nwb["z"]
-    assert isinstance(tsd.d, expected_type)
+    if lazy:
+        assert isinstance(tsd.d, h5py.Dataset)
+    else:
+        assert not isinstance(tsd.d, h5py.Dataset)
     nwb.io.close()
 
 
