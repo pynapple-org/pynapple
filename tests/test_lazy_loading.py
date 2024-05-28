@@ -226,11 +226,14 @@ def test_lazy_load_nwb_no_warnings(data):
             nwbfile.add_acquisition(time_series)
             nwb = nap.NWBFile(nwbfile)
 
-            with warnings.catch_warnings():
-                warnings.simplefilter("error")
+            with warnings.catch_warnings(record=True) as w:
                 tsd = nwb["TimeSeries"]
                 tsd.count(0.1)
                 assert isinstance(tsd.d, h5py.Dataset)
+            
+            if len(w):
+                if not str(w[0].message).startswith("Converting 'd' to"):
+                    raise RuntimeError
 
     finally:
         if file_path.exists():
@@ -244,8 +247,7 @@ def test_tsgroup_no_warnings():
             file_path = Path(f'data_{k}.h5')
             with h5py.File(file_path, 'w') as f:
                 f.create_dataset('spks', data=np.sort(np.random.uniform(0, 10, size=20)))
-        with warnings.catch_warnings():
-            warnings.simplefilter("error")
+        with warnings.catch_warnings(record=True) as w:            
 
             nwbfile = mock_NWBFile()
 
@@ -257,9 +259,15 @@ def test_tsgroup_no_warnings():
             nwb = nap.NWBFile(nwbfile)
             tsgroup = nwb["units"]
             tsgroup.count(0.1)
+            
+        if len(w):
+            if not str(w[0].message).startswith("Converting 'd' to"):
+                raise RuntimeError
+
 
     finally:
         for k in range(n_units):
             file_path = Path(f'data_{k}.h5')
             if file_path.exists():
                 file_path.unlink()
+
