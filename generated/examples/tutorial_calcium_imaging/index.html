@@ -1,0 +1,1905 @@
+
+<!doctype html>
+<html lang="en" class="no-js">
+  <head>
+    
+      <meta charset="utf-8">
+      <meta name="viewport" content="width=device-width,initial-scale=1">
+      
+      
+      
+      
+        <link rel="prev" href="../">
+      
+      
+        <link rel="next" href="../tutorial_pynapple_dandi/">
+      
+      
+      <link rel="icon" href="../../../images/Icon/Pynapple_final_icon.png">
+      <meta name="generator" content="mkdocs-1.5.3, mkdocs-material-9.4.7">
+    
+    
+      
+        <title>Calcium Imaging - pynapple</title>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/stylesheets/main.4b4a2bd9.min.css">
+      
+        
+        <link rel="stylesheet" href="../../../assets/stylesheets/palette.356b1318.min.css">
+      
+      
+
+
+    
+    
+      
+    
+    
+      
+        
+        
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300i,400,400i,700,700i%7CRoboto+Mono:400,400i,700,700i&display=fallback">
+        <style>:root{--md-text-font:"Roboto";--md-code-font:"Roboto Mono"}</style>
+      
+    
+    
+      <link rel="stylesheet" href="../../../assets/_mkdocstrings.css">
+    
+      <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.css">
+    
+      <link rel="stylesheet" href="../../../sg_gallery-dataframe.css">
+    
+      <link rel="stylesheet" href="../../../sg_gallery-rendered-html.css">
+    
+      <link rel="stylesheet" href="../../../sg_gallery.css">
+    
+      <link rel="stylesheet" href="../../../sg_gallery-binder.css">
+    
+    <script>__md_scope=new URL("../../..",location),__md_hash=e=>[...e].reduce((e,_)=>(e<<5)-e+_.charCodeAt(0),0),__md_get=(e,_=localStorage,t=__md_scope)=>JSON.parse(_.getItem(t.pathname+"."+e)),__md_set=(e,_,t=localStorage,a=__md_scope)=>{try{t.setItem(a.pathname+"."+e,JSON.stringify(_))}catch(e){}}</script>
+    
+      
+
+    
+    
+    
+  </head>
+  
+  
+    
+    
+    
+    
+    
+    <body dir="ltr" data-md-color-scheme="default" data-md-color-primary="green" data-md-color-accent="indigo">
+  
+    
+    
+    <input class="md-toggle" data-md-toggle="drawer" type="checkbox" id="__drawer" autocomplete="off">
+    <input class="md-toggle" data-md-toggle="search" type="checkbox" id="__search" autocomplete="off">
+    <label class="md-overlay" for="__drawer"></label>
+    <div data-md-component="skip">
+      
+        
+        <a href="#calcium-imaging" class="md-skip">
+          Skip to content
+        </a>
+      
+    </div>
+    <div data-md-component="announce">
+      
+    </div>
+    
+    
+      
+
+  
+
+<header class="md-header md-header--shadow" data-md-component="header">
+  <nav class="md-header__inner md-grid" aria-label="Header">
+    <a href="../../.." title="pynapple" class="md-header__button md-logo" aria-label="pynapple" data-md-component="logo">
+      
+  <img src="../../../images/Icon/Pynapple_final_icon_2.png" alt="logo">
+
+    </a>
+    <label class="md-header__button md-icon" for="__drawer">
+      
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M3 6h18v2H3V6m0 5h18v2H3v-2m0 5h18v2H3v-2Z"/></svg>
+    </label>
+    <div class="md-header__title" data-md-component="header-title">
+      <div class="md-header__ellipsis">
+        <div class="md-header__topic">
+          <span class="md-ellipsis">
+            pynapple
+          </span>
+        </div>
+        <div class="md-header__topic" data-md-component="header-topic">
+          <span class="md-ellipsis">
+            
+              Calcium Imaging
+            
+          </span>
+        </div>
+      </div>
+    </div>
+    
+      
+    
+    
+    
+      <label class="md-header__button md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+      </label>
+      <div class="md-search" data-md-component="search" role="dialog">
+  <label class="md-search__overlay" for="__search"></label>
+  <div class="md-search__inner" role="search">
+    <form class="md-search__form" name="search">
+      <input type="text" class="md-search__input" name="query" aria-label="Search" placeholder="Search" autocapitalize="off" autocorrect="off" autocomplete="off" spellcheck="false" data-md-component="search-query" required>
+      <label class="md-search__icon md-icon" for="__search">
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M9.5 3A6.5 6.5 0 0 1 16 9.5c0 1.61-.59 3.09-1.56 4.23l.27.27h.79l5 5-1.5 1.5-5-5v-.79l-.27-.27A6.516 6.516 0 0 1 9.5 16 6.5 6.5 0 0 1 3 9.5 6.5 6.5 0 0 1 9.5 3m0 2C7 5 5 7 5 9.5S7 14 9.5 14 14 12 14 9.5 12 5 9.5 5Z"/></svg>
+        
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M20 11v2H8l5.5 5.5-1.42 1.42L4.16 12l7.92-7.92L13.5 5.5 8 11h12Z"/></svg>
+      </label>
+      <nav class="md-search__options" aria-label="Search">
+        
+        <button type="reset" class="md-search__icon md-icon" title="Clear" aria-label="Clear" tabindex="-1">
+          
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M19 6.41 17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12 19 6.41Z"/></svg>
+        </button>
+      </nav>
+      
+    </form>
+    <div class="md-search__output">
+      <div class="md-search__scrollwrap" data-md-scrollfix>
+        <div class="md-search-result" data-md-component="search-result">
+          <div class="md-search-result__meta">
+            Initializing search
+          </div>
+          <ol class="md-search-result__list" role="presentation"></ol>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+    
+    
+      <div class="md-header__source">
+        <a href="https://github.com/pynapple-org/pynapple" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+      </div>
+    
+  </nav>
+  
+</header>
+    
+    <div class="md-container" data-md-component="container">
+      
+      
+        
+          
+        
+      
+      <main class="md-main" data-md-component="main">
+        <div class="md-main__inner md-grid">
+          
+            
+              
+              <div class="md-sidebar md-sidebar--primary" data-md-component="sidebar" data-md-type="navigation" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+
+
+<nav class="md-nav md-nav--primary" aria-label="Navigation" data-md-level="0">
+  <label class="md-nav__title" for="__drawer">
+    <a href="../../.." title="pynapple" class="md-nav__button md-logo" aria-label="pynapple" data-md-component="logo">
+      
+  <img src="../../../images/Icon/Pynapple_final_icon_2.png" alt="logo">
+
+    </a>
+    pynapple
+  </label>
+  
+    <div class="md-nav__source">
+      <a href="https://github.com/pynapple-org/pynapple" title="Go to repository" class="md-source" data-md-component="source">
+  <div class="md-source__icon md-icon">
+    
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 448 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M439.55 236.05 244 40.45a28.87 28.87 0 0 0-40.81 0l-40.66 40.63 51.52 51.52c27.06-9.14 52.68 16.77 43.39 43.68l49.66 49.66c34.23-11.8 61.18 31 35.47 56.69-26.49 26.49-70.21-2.87-56-37.34L240.22 199v121.85c25.3 12.54 22.26 41.85 9.08 55a34.34 34.34 0 0 1-48.55 0c-17.57-17.6-11.07-46.91 11.25-56v-123c-20.8-8.51-24.6-30.74-18.64-45L142.57 101 8.45 235.14a28.86 28.86 0 0 0 0 40.81l195.61 195.6a28.86 28.86 0 0 0 40.8 0l194.69-194.69a28.86 28.86 0 0 0 0-40.81z"/></svg>
+  </div>
+  <div class="md-source__repository">
+    GitHub
+  </div>
+</a>
+    </div>
+  
+  <ul class="md-nav__list" data-md-scrollfix>
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../.." class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Overview
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_2" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../api_guide/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Application guide
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_2" id="__nav_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_2">
+            <span class="md-nav__icon md-icon"></span>
+            Application guide
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_guide/tutorial_pynapple_io/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    IO Tutorial
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_guide/tutorial_pynapple_numpy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Numpy tutorial
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_guide/tutorial_pynapple_nwb/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    NWB & Lazy-loading
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_guide/tutorial_pynapple_core/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Core Tutorial
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_guide/tutorial_pynapple_quick_start/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Quick start
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../api_guide/tutorial_pynapple_process/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Advanced processing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+    
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--active md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_3" checked>
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Analysis examples
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_3" id="__nav_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_3_label" aria-expanded="true">
+          <label class="md-nav__title" for="__nav_3">
+            <span class="md-nav__icon md-icon"></span>
+            Analysis examples
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+            
+              
+                
+  
+  
+    
+  
+  
+    <li class="md-nav__item md-nav__item--active">
+      
+      <input class="md-nav__toggle md-toggle" type="checkbox" id="__toc">
+      
+      
+        
+      
+      
+        <label class="md-nav__link md-nav__link--active" for="__toc">
+          
+  
+  <span class="md-ellipsis">
+    Calcium Imaging
+  </span>
+  
+
+          <span class="md-nav__icon md-icon"></span>
+        </label>
+      
+      <a href="./" class="md-nav__link md-nav__link--active">
+        
+  
+  <span class="md-ellipsis">
+    Calcium Imaging
+  </span>
+  
+
+      </a>
+      
+        
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#downloading-the-data" class="md-nav__link">
+    Downloading the data
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parsing-the-data" class="md-nav__link">
+    Parsing the data
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plotting-the-activity-of-one-neuron" class="md-nav__link">
+    Plotting the activity of one neuron
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#calcium-tuning-curves" class="md-nav__link">
+    Calcium tuning curves
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial_pynapple_dandi/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Streaming data from DANDI
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial_HD_dataset/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Peyrache et al (2015) Tutorial
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../tutorial_human_dataset/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Zheng et al (2022) Tutorial
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../external/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    External projects
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../pynajax/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Pynajax - GPU acceleration
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    
+    
+      
+        
+          
+        
+      
+        
+          
+        
+      
+        
+          
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../reference/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Modules
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6" id="__nav_6_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="1" aria-labelledby="__nav_6_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6">
+            <span class="md-nav__icon md-icon"></span>
+            Modules
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_1" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../reference/core/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Core
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_1" id="__nav_6_1_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_1_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_1">
+            <span class="md-nav__icon md-icon"></span>
+            Core
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/core/_core_functions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+     core functions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/core/base_class/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Base class
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/core/config/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Config
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/core/interval_set/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interval set
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/core/time_index/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Time index
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/core/time_series/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Time series
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/core/ts_group/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Ts group
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/core/utils/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Utils
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_2" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../reference/io/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Io
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_2" id="__nav_6_2_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_2_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_2">
+            <span class="md-nav__icon md-icon"></span>
+            Io
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io/cnmfe/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Cnmfe
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io/folder/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Folder
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io/interface_npz/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interface npz
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io/interface_nwb/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Interface nwb
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io/loader/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Loader
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io/misc/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Misc
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io/neurosuite/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Neurosuite
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io/phy/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Phy
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/io/suite2p/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Suite2p
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    
+    
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+        
+      
+    
+    
+    
+    
+    <li class="md-nav__item md-nav__item--nested">
+      
+        
+        
+        
+        <input class="md-nav__toggle md-toggle " type="checkbox" id="__nav_6_3" >
+        
+          
+          
+          <div class="md-nav__link md-nav__container">
+            <a href="../../../reference/process/" class="md-nav__link ">
+              
+  
+  <span class="md-ellipsis">
+    Process
+  </span>
+  
+
+            </a>
+            
+              
+              <label class="md-nav__link " for="__nav_6_3" id="__nav_6_3_label" tabindex="0">
+                <span class="md-nav__icon md-icon"></span>
+              </label>
+            
+          </div>
+        
+        <nav class="md-nav" data-md-level="2" aria-labelledby="__nav_6_3_label" aria-expanded="false">
+          <label class="md-nav__title" for="__nav_6_3">
+            <span class="md-nav__icon md-icon"></span>
+            Process
+          </label>
+          <ul class="md-nav__list" data-md-scrollfix>
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/process/_process_functions/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+     process functions
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/process/correlograms/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Correlograms
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/process/decoding/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Decoding
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/process/perievent/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Perievent
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/process/randomize/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Randomize
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+              
+                
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../reference/process/tuning_curves/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Tuning curves
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+              
+            
+          </ul>
+        </nav>
+      
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../CONTRIBUTING/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Contributing
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../AUTHORS/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    Authors
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
+  
+    <li class="md-nav__item">
+      <a href="../../../HISTORY/" class="md-nav__link">
+        
+  
+  <span class="md-ellipsis">
+    History
+  </span>
+  
+
+      </a>
+    </li>
+  
+
+    
+  </ul>
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+            
+              
+              <div class="md-sidebar md-sidebar--secondary" data-md-component="sidebar" data-md-type="toc" >
+                <div class="md-sidebar__scrollwrap">
+                  <div class="md-sidebar__inner">
+                    
+
+<nav class="md-nav md-nav--secondary" aria-label="Table of contents">
+  
+  
+  
+    
+  
+  
+    <label class="md-nav__title" for="__toc">
+      <span class="md-nav__icon md-icon"></span>
+      Table of contents
+    </label>
+    <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
+      
+        <li class="md-nav__item">
+  <a href="#downloading-the-data" class="md-nav__link">
+    Downloading the data
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#parsing-the-data" class="md-nav__link">
+    Parsing the data
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#plotting-the-activity-of-one-neuron" class="md-nav__link">
+    Plotting the activity of one neuron
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
+  <a href="#calcium-tuning-curves" class="md-nav__link">
+    Calcium tuning curves
+  </a>
+  
+</li>
+      
+    </ul>
+  
+</nav>
+                  </div>
+                </div>
+              </div>
+            
+          
+          
+            <div class="md-content" data-md-component="content">
+              <article class="md-content__inner md-typeset">
+                
+                  
+
+  
+  
+
+
+<!--
+ DO NOT EDIT.
+ THIS FILE WAS AUTOMATICALLY GENERATED BY mkdocs-gallery.
+ TO MAKE CHANGES, EDIT THE SOURCE PYTHON FILE:
+ "docs/examples/tutorial_calcium_imaging.py"
+ LINE NUMBERS ARE GIVEN BELOW.
+-->
+
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Click <a href="#download_links">here</a>
+to download the full example code</p>
+</div>
+<h1 id="calcium-imaging">Calcium Imaging</h1>
+<p>Working with calcium data.</p>
+<p>For the example dataset, we will be working with a recording of a freely-moving mouse imaged with a Miniscope (1-photon imaging). The area recorded for this experiment is the postsubiculum - a region that is known to contain head-direction cells, or cells that fire when the animal's head is pointing in a specific direction.</p>
+<p>The NWB file for the example is hosted on <a href="https://osf.io/sbnaw">OSF</a>. We show below how to stream it.</p>
+<p>See the <a href="https://pynapple-org.github.io/pynapple/">documentation</a> of Pynapple for instructions on installing the package.</p>
+<p>This tutorial was made by Sofia Skromne Carrasco and Guillaume Viejo.</p>
+<!-- GENERATED FROM PYTHON SOURCE LINES 18-26 -->
+
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>This tutorial uses seaborn and matplotlib for displaying the figure</p>
+<p>You can install all with <code>pip install matplotlib seaborn tqdm</code></p>
+</div>
+<p>mkdocs_gallery_thumbnail_number = 1</p>
+<p>Now, import the necessary libraries:</p>
+<!-- GENERATED FROM PYTHON SOURCE LINES 26-39 -->
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">pd</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="kn">import</span> <span class="nn">sys</span><span class="o">,</span> <span class="nn">os</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="kn">import</span> <span class="nn">requests</span><span class="o">,</span> <span class="nn">math</span>
+</span><span id="__span-0-7"><a id="__codelineno-0-7" name="__codelineno-0-7" href="#__codelineno-0-7"></a><span class="kn">import</span> <span class="nn">tqdm</span>
+</span><span id="__span-0-8"><a id="__codelineno-0-8" name="__codelineno-0-8" href="#__codelineno-0-8"></a>
+</span><span id="__span-0-9"><a id="__codelineno-0-9" name="__codelineno-0-9" href="#__codelineno-0-9"></a><span class="n">custom_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;axes.spines.right&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;axes.spines.top&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+</span><span id="__span-0-10"><a id="__codelineno-0-10" name="__codelineno-0-10" href="#__codelineno-0-10"></a><span class="n">sns</span><span class="o">.</span><span class="n">set_theme</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s2">&quot;ticks&quot;</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="s2">&quot;colorblind&quot;</span><span class="p">,</span> <span class="n">font_scale</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">rc</span><span class="o">=</span><span class="n">custom_params</span><span class="p">)</span>
+</span></code></pre></div>
+<!-- GENERATED FROM PYTHON SOURCE LINES 40-44 -->
+
+<hr />
+<h2 id="downloading-the-data">Downloading the data</h2>
+<p>First things first: Let's find our file</p>
+<!-- GENERATED FROM PYTHON SOURCE LINES 44-53 -->
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a><span class="n">path</span> <span class="o">=</span> <span class="s2">&quot;A0670-221213.nwb&quot;</span>
+</span><span id="__span-1-2"><a id="__codelineno-1-2" name="__codelineno-1-2" href="#__codelineno-1-2"></a><span class="k">if</span> <span class="n">path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">):</span>
+</span><span id="__span-1-3"><a id="__codelineno-1-3" name="__codelineno-1-3" href="#__codelineno-1-3"></a>  <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;https://osf.io/sbnaw/download&quot;</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</span><span id="__span-1-4"><a id="__codelineno-1-4" name="__codelineno-1-4" href="#__codelineno-1-4"></a>  <span class="n">block_size</span> <span class="o">=</span> <span class="mi">1024</span><span class="o">*</span><span class="mi">1024</span>
+</span><span id="__span-1-5"><a id="__codelineno-1-5" name="__codelineno-1-5" href="#__codelineno-1-5"></a>  <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+</span><span id="__span-1-6"><a id="__codelineno-1-6" name="__codelineno-1-6" href="#__codelineno-1-6"></a>    <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">iter_content</span><span class="p">(</span><span class="n">block_size</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;MB&#39;</span><span class="p">,</span> <span class="n">unit_scale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+</span><span id="__span-1-7"><a id="__codelineno-1-7" name="__codelineno-1-7" href="#__codelineno-1-7"></a>      <span class="n">total</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;content-length&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span><span class="o">//</span><span class="n">block_size</span><span class="p">)):</span>
+</span><span id="__span-1-8"><a id="__codelineno-1-8" name="__codelineno-1-8" href="#__codelineno-1-8"></a>      <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span></code></pre></div>
+<!-- GENERATED FROM PYTHON SOURCE LINES 54-58 -->
+
+<hr />
+<h2 id="parsing-the-data">Parsing the data</h2>
+<p>Now that we have the file, let's load the data</p>
+<!-- GENERATED FROM PYTHON SOURCE LINES 58-61 -->
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-2-1"><a id="__codelineno-2-1" name="__codelineno-2-1" href="#__codelineno-2-1"></a><span class="n">data</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+</span><span id="__span-2-2"><a id="__codelineno-2-2" name="__codelineno-2-2" href="#__codelineno-2-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</span></code></pre></div>
+<p class="mkd-glr-script-out">Out:</p>
+<div class="language-shell mkd-glr-script-out-disp highlight"><pre><span></span><code><span id="__span-3-1"><a id="__codelineno-3-1" name="__codelineno-3-1" href="#__codelineno-3-1"></a>A0670-221213
+</span><span id="__span-3-2"><a id="__codelineno-3-2" name="__codelineno-3-2" href="#__codelineno-3-2"></a>┍━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━┑
+</span><span id="__span-3-3"><a id="__codelineno-3-3" name="__codelineno-3-3" href="#__codelineno-3-3"></a>│<span class="w"> </span>Keys<span class="w">                  </span>│<span class="w"> </span>Type<span class="w">        </span>│
+</span><span id="__span-3-4"><a id="__codelineno-3-4" name="__codelineno-3-4" href="#__codelineno-3-4"></a>┝━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━┥
+</span><span id="__span-3-5"><a id="__codelineno-3-5" name="__codelineno-3-5" href="#__codelineno-3-5"></a>│<span class="w"> </span>position_time_support<span class="w"> </span>│<span class="w"> </span>IntervalSet<span class="w"> </span>│
+</span><span id="__span-3-6"><a id="__codelineno-3-6" name="__codelineno-3-6" href="#__codelineno-3-6"></a>│<span class="w"> </span>RoiResponseSeries<span class="w">     </span>│<span class="w"> </span>TsdFrame<span class="w">    </span>│
+</span><span id="__span-3-7"><a id="__codelineno-3-7" name="__codelineno-3-7" href="#__codelineno-3-7"></a>│<span class="w"> </span>z<span class="w">                     </span>│<span class="w"> </span>Tsd<span class="w">         </span>│
+</span><span id="__span-3-8"><a id="__codelineno-3-8" name="__codelineno-3-8" href="#__codelineno-3-8"></a>│<span class="w"> </span>y<span class="w">                     </span>│<span class="w"> </span>Tsd<span class="w">         </span>│
+</span><span id="__span-3-9"><a id="__codelineno-3-9" name="__codelineno-3-9" href="#__codelineno-3-9"></a>│<span class="w"> </span>x<span class="w">                     </span>│<span class="w"> </span>Tsd<span class="w">         </span>│
+</span><span id="__span-3-10"><a id="__codelineno-3-10" name="__codelineno-3-10" href="#__codelineno-3-10"></a>│<span class="w"> </span>rz<span class="w">                    </span>│<span class="w"> </span>Tsd<span class="w">         </span>│
+</span><span id="__span-3-11"><a id="__codelineno-3-11" name="__codelineno-3-11" href="#__codelineno-3-11"></a>│<span class="w"> </span>ry<span class="w">                    </span>│<span class="w"> </span>Tsd<span class="w">         </span>│
+</span><span id="__span-3-12"><a id="__codelineno-3-12" name="__codelineno-3-12" href="#__codelineno-3-12"></a>│<span class="w"> </span>rx<span class="w">                    </span>│<span class="w"> </span>Tsd<span class="w">         </span>│
+</span><span id="__span-3-13"><a id="__codelineno-3-13" name="__codelineno-3-13" href="#__codelineno-3-13"></a>┕━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━┙
+</span></code></pre></div>
+<!-- GENERATED FROM PYTHON SOURCE LINES 62-63 -->
+
+<p>Let's save the RoiResponseSeries as a variable called 'transients' and print it</p>
+<!-- GENERATED FROM PYTHON SOURCE LINES 63-66 -->
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-4-1"><a id="__codelineno-4-1" name="__codelineno-4-1" href="#__codelineno-4-1"></a><span class="n">transients</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;RoiResponseSeries&#39;</span><span class="p">]</span>
+</span><span id="__span-4-2"><a id="__codelineno-4-2" name="__codelineno-4-2" href="#__codelineno-4-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">transients</span><span class="p">)</span>
+</span></code></pre></div>
+<p class="mkd-glr-script-out">Out:</p>
+<div class="language-shell mkd-glr-script-out-disp highlight"><pre><span></span><code><span id="__span-5-1"><a id="__codelineno-5-1" name="__codelineno-5-1" href="#__codelineno-5-1"></a>Time<span class="w"> </span><span class="o">(</span>s<span class="o">)</span><span class="w">          </span><span class="m">0</span><span class="w">        </span><span class="m">1</span><span class="w">        </span><span class="m">2</span><span class="w">        </span><span class="m">3</span><span class="w">        </span><span class="m">4</span><span class="w">  </span>...
+</span><span id="__span-5-2"><a id="__codelineno-5-2" name="__codelineno-5-2" href="#__codelineno-5-2"></a>----------<span class="w">  </span>-------<span class="w">  </span>-------<span class="w">  </span>-------<span class="w">  </span>-------<span class="w">  </span>-------<span class="w">  </span>-----
+</span><span id="__span-5-3"><a id="__codelineno-5-3" name="__codelineno-5-3" href="#__codelineno-5-3"></a><span class="m">3</span>.1187<span class="w">      </span><span class="m">0</span>.27546<span class="w">  </span><span class="m">0</span>.79973<span class="w">  </span><span class="m">0</span>.16383<span class="w">  </span><span class="m">0</span>.20118<span class="w">  </span><span class="m">0</span>.02926<span class="w">  </span>...
+</span><span id="__span-5-4"><a id="__codelineno-5-4" name="__codelineno-5-4" href="#__codelineno-5-4"></a><span class="m">3</span>.15225<span class="w">     </span><span class="m">0</span>.26665<span class="w">  </span><span class="m">0</span>.86751<span class="w">  </span><span class="m">0</span>.15879<span class="w">  </span><span class="m">0</span>.23682<span class="w">  </span><span class="m">0</span>.02719<span class="w">  </span>...
+</span><span id="__span-5-5"><a id="__codelineno-5-5" name="__codelineno-5-5" href="#__codelineno-5-5"></a><span class="m">3</span>.18585<span class="w">     </span><span class="m">0</span>.25796<span class="w">  </span><span class="m">0</span>.89419<span class="w">  </span><span class="m">0</span>.15352<span class="w">  </span><span class="m">0</span>.25074<span class="w">  </span><span class="m">0</span>.03651<span class="w">  </span>...
+</span><span id="__span-5-6"><a id="__codelineno-5-6" name="__codelineno-5-6" href="#__codelineno-5-6"></a><span class="m">3</span>.2194<span class="w">      </span><span class="m">0</span>.24943<span class="w">  </span><span class="m">0</span>.89513<span class="w">  </span><span class="m">0</span>.14812<span class="w">  </span><span class="m">0</span>.25215<span class="w">  </span><span class="m">0</span>.05627<span class="w">  </span>...
+</span><span id="__span-5-7"><a id="__codelineno-5-7" name="__codelineno-5-7" href="#__codelineno-5-7"></a><span class="m">3</span>.253<span class="w">       </span><span class="m">0</span>.24111<span class="w">  </span><span class="m">0</span>.88023<span class="w">  </span><span class="m">0</span>.14898<span class="w">  </span><span class="m">0</span>.24651<span class="w">  </span><span class="m">0</span>.07095<span class="w">  </span>...
+</span><span id="__span-5-8"><a id="__codelineno-5-8" name="__codelineno-5-8" href="#__codelineno-5-8"></a><span class="m">3</span>.28655<span class="w">     </span><span class="m">0</span>.233<span class="w">    </span><span class="m">0</span>.85584<span class="w">  </span><span class="m">0</span>.14858<span class="w">  </span><span class="m">0</span>.23706<span class="w">  </span><span class="m">0</span>.08147<span class="w">  </span>...
+</span><span id="__span-5-9"><a id="__codelineno-5-9" name="__codelineno-5-9" href="#__codelineno-5-9"></a><span class="m">3</span>.32015<span class="w">     </span><span class="m">0</span>.22513<span class="w">  </span><span class="m">1</span>.0996<span class="w">   </span><span class="m">0</span>.14715<span class="w">  </span><span class="m">0</span>.22572<span class="w">  </span><span class="m">0</span>.08859<span class="w">  </span>...
+</span><span id="__span-5-10"><a id="__codelineno-5-10" name="__codelineno-5-10" href="#__codelineno-5-10"></a><span class="m">3</span>.35375<span class="w">     </span><span class="m">0</span>.2175<span class="w">   </span><span class="m">1</span>.3521<span class="w">   </span><span class="m">0</span>.1449<span class="w">   </span><span class="m">0</span>.2136<span class="w">   </span><span class="m">0</span>.09296<span class="w">  </span>...
+</span><span id="__span-5-11"><a id="__codelineno-5-11" name="__codelineno-5-11" href="#__codelineno-5-11"></a><span class="m">3</span>.3873<span class="w">      </span><span class="m">0</span>.21011<span class="w">  </span><span class="m">1</span>.484<span class="w">    </span><span class="m">0</span>.14201<span class="w">  </span><span class="m">0</span>.20137<span class="w">  </span><span class="m">0</span>.09512<span class="w">  </span>...
+</span><span id="__span-5-12"><a id="__codelineno-5-12" name="__codelineno-5-12" href="#__codelineno-5-12"></a><span class="m">3</span>.42085<span class="w">     </span><span class="m">0</span>.20296<span class="w">  </span><span class="m">1</span>.5394<span class="w">   </span><span class="m">0</span>.13861<span class="w">  </span><span class="m">0</span>.18938<span class="w">  </span><span class="m">0</span>.09552<span class="w">  </span>...
+</span><span id="__span-5-13"><a id="__codelineno-5-13" name="__codelineno-5-13" href="#__codelineno-5-13"></a><span class="m">3</span>.45445<span class="w">     </span><span class="m">0</span>.19837<span class="w">  </span><span class="m">1</span>.5469<span class="w">   </span><span class="m">0</span>.13482<span class="w">  </span><span class="m">0</span>.17783<span class="w">  </span><span class="m">0</span>.09456<span class="w">  </span>...
+</span><span id="__span-5-14"><a id="__codelineno-5-14" name="__codelineno-5-14" href="#__codelineno-5-14"></a><span class="m">3</span>.488<span class="w">       </span><span class="m">0</span>.19323<span class="w">  </span><span class="m">1</span>.5248<span class="w">   </span><span class="m">0</span>.13076<span class="w">  </span><span class="m">0</span>.21747<span class="w">  </span><span class="m">0</span>.09252<span class="w">  </span>...
+</span><span id="__span-5-15"><a id="__codelineno-5-15" name="__codelineno-5-15" href="#__codelineno-5-15"></a><span class="m">3</span>.5216<span class="w">      </span><span class="m">0</span>.18776<span class="w">  </span><span class="m">1</span>.4848<span class="w">   </span><span class="m">0</span>.1265<span class="w">   </span><span class="m">0</span>.23413<span class="w">  </span><span class="m">0</span>.08969<span class="w">  </span>...
+</span><span id="__span-5-16"><a id="__codelineno-5-16" name="__codelineno-5-16" href="#__codelineno-5-16"></a><span class="m">3</span>.55515<span class="w">     </span><span class="m">0</span>.18213<span class="w">  </span><span class="m">1</span>.4345<span class="w">   </span><span class="m">0</span>.1221<span class="w">   </span><span class="m">0</span>.23749<span class="w">  </span><span class="m">0</span>.08627<span class="w">  </span>...
+</span><span id="__span-5-17"><a id="__codelineno-5-17" name="__codelineno-5-17" href="#__codelineno-5-17"></a><span class="m">3</span>.58875<span class="w">     </span><span class="m">0</span>.17646<span class="w">  </span><span class="m">1</span>.3788<span class="w">   </span><span class="m">0</span>.11764<span class="w">  </span><span class="m">0</span>.23332<span class="w">  </span><span class="m">0</span>.08244<span class="w">  </span>...
+</span><span id="__span-5-18"><a id="__codelineno-5-18" name="__codelineno-5-18" href="#__codelineno-5-18"></a><span class="m">3</span>.6223<span class="w">      </span><span class="m">0</span>.1708<span class="w">   </span><span class="m">1</span>.3206<span class="w">   </span><span class="m">0</span>.11315<span class="w">  </span><span class="m">0</span>.22503<span class="w">  </span><span class="m">0</span>.07833<span class="w">  </span>...
+</span><span id="__span-5-19"><a id="__codelineno-5-19" name="__codelineno-5-19" href="#__codelineno-5-19"></a><span class="m">3</span>.6559<span class="w">      </span><span class="m">0</span>.16523<span class="w">  </span><span class="m">1</span>.262<span class="w">    </span><span class="m">0</span>.10867<span class="w">  </span><span class="m">0</span>.21464<span class="w">  </span><span class="m">0</span>.07406<span class="w">  </span>...
+</span><span id="__span-5-20"><a id="__codelineno-5-20" name="__codelineno-5-20" href="#__codelineno-5-20"></a><span class="m">3</span>.68945<span class="w">     </span><span class="m">0</span>.15976<span class="w">  </span><span class="m">1</span>.2042<span class="w">   </span><span class="m">0</span>.10424<span class="w">  </span><span class="m">0</span>.20335<span class="w">  </span><span class="m">0</span>.06973<span class="w">  </span>...
+</span><span id="__span-5-21"><a id="__codelineno-5-21" name="__codelineno-5-21" href="#__codelineno-5-21"></a><span class="m">3</span>.72305<span class="w">     </span><span class="m">0</span>.15443<span class="w">  </span><span class="m">1</span>.1477<span class="w">   </span><span class="m">0</span>.09987<span class="w">  </span><span class="m">0</span>.19183<span class="w">  </span><span class="m">0</span>.06886<span class="w">  </span>...
+</span><span id="__span-5-22"><a id="__codelineno-5-22" name="__codelineno-5-22" href="#__codelineno-5-22"></a><span class="m">3</span>.7566<span class="w">      </span><span class="m">0</span>.14924<span class="w">  </span><span class="m">1</span>.0932<span class="w">   </span><span class="m">0</span>.09559<span class="w">  </span><span class="m">0</span>.18049<span class="w">  </span><span class="m">0</span>.06837<span class="w">  </span>...
+</span><span id="__span-5-23"><a id="__codelineno-5-23" name="__codelineno-5-23" href="#__codelineno-5-23"></a>...
+</span><span id="__span-5-24"><a id="__codelineno-5-24" name="__codelineno-5-24" href="#__codelineno-5-24"></a><span class="m">1202</span>.953<span class="w">    </span><span class="m">0</span>.14054<span class="w">  </span><span class="m">0</span>.18209<span class="w">  </span><span class="m">0</span>.05769<span class="w">  </span><span class="m">0</span>.08317<span class="w">  </span><span class="m">0</span>.00751<span class="w">  </span>...
+</span><span id="__span-5-25"><a id="__codelineno-5-25" name="__codelineno-5-25" href="#__codelineno-5-25"></a><span class="m">1202</span>.9866<span class="w">   </span><span class="m">0</span>.14841<span class="w">  </span><span class="m">0</span>.17342<span class="w">  </span><span class="m">0</span>.07786<span class="w">  </span><span class="m">0</span>.07791<span class="w">  </span><span class="m">0</span>.00682<span class="w">  </span>...
+</span><span id="__span-5-26"><a id="__codelineno-5-26" name="__codelineno-5-26" href="#__codelineno-5-26"></a><span class="m">1203</span>.02015<span class="w">  </span><span class="m">0</span>.15216<span class="w">  </span><span class="m">0</span>.16509<span class="w">  </span><span class="m">0</span>.09362<span class="w">  </span><span class="m">0</span>.07298<span class="w">  </span><span class="m">0</span>.00619<span class="w">  </span>...
+</span><span id="__span-5-27"><a id="__codelineno-5-27" name="__codelineno-5-27" href="#__codelineno-5-27"></a><span class="m">1203</span>.05375<span class="w">  </span><span class="m">0</span>.15309<span class="w">  </span><span class="m">0</span>.15711<span class="w">  </span><span class="m">0</span>.10571<span class="w">  </span><span class="m">0</span>.06835<span class="w">  </span><span class="m">0</span>.00562<span class="w">  </span>...
+</span><span id="__span-5-28"><a id="__codelineno-5-28" name="__codelineno-5-28" href="#__codelineno-5-28"></a><span class="m">1203</span>.0873<span class="w">   </span><span class="m">0</span>.15212<span class="w">  </span><span class="m">0</span>.14948<span class="w">  </span><span class="m">0</span>.11472<span class="w">  </span><span class="m">0</span>.06401<span class="w">  </span><span class="m">0</span>.00509<span class="w">  </span>...
+</span><span id="__span-5-29"><a id="__codelineno-5-29" name="__codelineno-5-29" href="#__codelineno-5-29"></a><span class="m">1203</span>.12085<span class="w">  </span><span class="m">0</span>.18472<span class="w">  </span><span class="m">0</span>.14221<span class="w">  </span><span class="m">0</span>.12117<span class="w">  </span><span class="m">0</span>.05995<span class="w">  </span><span class="m">0</span>.00461<span class="w">  </span>...
+</span><span id="__span-5-30"><a id="__codelineno-5-30" name="__codelineno-5-30" href="#__codelineno-5-30"></a><span class="m">1203</span>.15445<span class="w">  </span><span class="m">0</span>.2047<span class="w">   </span><span class="m">0</span>.13527<span class="w">  </span><span class="m">0</span>.1255<span class="w">   </span><span class="m">0</span>.05614<span class="w">  </span><span class="m">0</span>.00417<span class="w">  </span>...
+</span><span id="__span-5-31"><a id="__codelineno-5-31" name="__codelineno-5-31" href="#__codelineno-5-31"></a><span class="m">1203</span>.18805<span class="w">  </span><span class="m">0</span>.21599<span class="w">  </span><span class="m">0</span>.153<span class="w">    </span><span class="m">0</span>.12807<span class="w">  </span><span class="m">0</span>.05258<span class="w">  </span><span class="m">0</span>.00378<span class="w">  </span>...
+</span><span id="__span-5-32"><a id="__codelineno-5-32" name="__codelineno-5-32" href="#__codelineno-5-32"></a><span class="m">1203</span>.2216<span class="w">   </span><span class="m">0</span>.22132<span class="w">  </span><span class="m">0</span>.17387<span class="w">  </span><span class="m">0</span>.12921<span class="w">  </span><span class="m">0</span>.08098<span class="w">  </span><span class="m">0</span>.00342<span class="w">  </span>...
+</span><span id="__span-5-33"><a id="__codelineno-5-33" name="__codelineno-5-33" href="#__codelineno-5-33"></a><span class="m">1203</span>.25515<span class="w">  </span><span class="m">0</span>.2226<span class="w">   </span><span class="m">0</span>.1837<span class="w">   </span><span class="m">0</span>.12918<span class="w">  </span><span class="m">0</span>.09482<span class="w">  </span><span class="m">0</span>.01982<span class="w">  </span>...
+</span><span id="__span-5-34"><a id="__codelineno-5-34" name="__codelineno-5-34" href="#__codelineno-5-34"></a><span class="m">1203</span>.28875<span class="w">  </span><span class="m">0</span>.22113<span class="w">  </span><span class="m">0</span>.18657<span class="w">  </span><span class="m">0</span>.12819<span class="w">  </span><span class="m">0</span>.10015<span class="w">  </span><span class="m">0</span>.05878<span class="w">  </span>...
+</span><span id="__span-5-35"><a id="__codelineno-5-35" name="__codelineno-5-35" href="#__codelineno-5-35"></a><span class="m">1203</span>.3223<span class="w">   </span><span class="m">0</span>.21785<span class="w">  </span><span class="m">0</span>.1851<span class="w">   </span><span class="m">0</span>.12644<span class="w">  </span><span class="m">0</span>.10059<span class="w">  </span><span class="m">0</span>.25022<span class="w">  </span>...
+</span><span id="__span-5-36"><a id="__codelineno-5-36" name="__codelineno-5-36" href="#__codelineno-5-36"></a><span class="m">1203</span>.3559<span class="w">   </span><span class="m">0</span>.21338<span class="w">  </span><span class="m">0</span>.181<span class="w">    </span><span class="m">0</span>.12409<span class="w">  </span><span class="m">0</span>.09827<span class="w">  </span><span class="m">0</span>.44659<span class="w">  </span>...
+</span><span id="__span-5-37"><a id="__codelineno-5-37" name="__codelineno-5-37" href="#__codelineno-5-37"></a><span class="m">1203</span>.38945<span class="w">  </span><span class="m">0</span>.20815<span class="w">  </span><span class="m">0</span>.17535<span class="w">  </span><span class="m">0</span>.12126<span class="w">  </span><span class="m">0</span>.09446<span class="w">  </span><span class="m">0</span>.87427<span class="w">  </span>...
+</span><span id="__span-5-38"><a id="__codelineno-5-38" name="__codelineno-5-38" href="#__codelineno-5-38"></a><span class="m">1203</span>.42305<span class="w">  </span><span class="m">0</span>.20247<span class="w">  </span><span class="m">0</span>.17243<span class="w">  </span><span class="m">0</span>.11807<span class="w">  </span><span class="m">0</span>.08992<span class="w">  </span><span class="m">1</span>.2578<span class="w">   </span>...
+</span><span id="__span-5-39"><a id="__codelineno-5-39" name="__codelineno-5-39" href="#__codelineno-5-39"></a><span class="m">1203</span>.4566<span class="w">   </span><span class="m">0</span>.19654<span class="w">  </span><span class="m">0</span>.17056<span class="w">  </span><span class="m">0</span>.11461<span class="w">  </span><span class="m">0</span>.08508<span class="w">  </span><span class="m">1</span>.62<span class="w">     </span>...
+</span><span id="__span-5-40"><a id="__codelineno-5-40" name="__codelineno-5-40" href="#__codelineno-5-40"></a><span class="m">1203</span>.4902<span class="w">   </span><span class="m">0</span>.19052<span class="w">  </span><span class="m">0</span>.16645<span class="w">  </span><span class="m">0</span>.11096<span class="w">  </span><span class="m">0</span>.0802<span class="w">   </span><span class="m">1</span>.8811<span class="w">   </span>...
+</span><span id="__span-5-41"><a id="__codelineno-5-41" name="__codelineno-5-41" href="#__codelineno-5-41"></a><span class="m">1203</span>.52375<span class="w">  </span><span class="m">0</span>.18449<span class="w">  </span><span class="m">0</span>.16105<span class="w">  </span><span class="m">0</span>.10717<span class="w">  </span><span class="m">0</span>.07542<span class="w">  </span><span class="m">2</span>.0599<span class="w">   </span>...
+</span><span id="__span-5-42"><a id="__codelineno-5-42" name="__codelineno-5-42" href="#__codelineno-5-42"></a><span class="m">1203</span>.55735<span class="w">  </span><span class="m">0</span>.17851<span class="w">  </span><span class="m">0</span>.15494<span class="w">  </span><span class="m">0</span>.10331<span class="w">  </span><span class="m">0</span>.07081<span class="w">  </span><span class="m">2</span>.2176<span class="w">   </span>...
+</span><span id="__span-5-43"><a id="__codelineno-5-43" name="__codelineno-5-43" href="#__codelineno-5-43"></a><span class="m">1203</span>.5909<span class="w">   </span><span class="m">0</span>.17264<span class="w">  </span><span class="m">0</span>.14851<span class="w">  </span><span class="m">0</span>.09942<span class="w">  </span><span class="m">0</span>.06643<span class="w">  </span><span class="m">2</span>.311<span class="w">    </span>...
+</span><span id="__span-5-44"><a id="__codelineno-5-44" name="__codelineno-5-44" href="#__codelineno-5-44"></a>dtype:<span class="w"> </span>float64,<span class="w"> </span>shape:<span class="w"> </span><span class="o">(</span><span class="m">35757</span>,<span class="w"> </span><span class="m">65</span><span class="o">)</span>
+</span></code></pre></div>
+<!-- GENERATED FROM PYTHON SOURCE LINES 67-72 -->
+
+<hr />
+<h2 id="plotting-the-activity-of-one-neuron">Plotting the activity of one neuron</h2>
+<p>Our transients are saved as a (35757, 65) TsdFrame. Looking at the printed object, you can see that we have 35757 data points for each of our 65 regions of interest. We want to see which of these are head-direction cells, so we need to plot a tuning curve of fluorescence vs head-direction of the animal.</p>
+<!-- GENERATED FROM PYTHON SOURCE LINES 72-80 -->
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-6-1"><a id="__codelineno-6-1" name="__codelineno-6-1" href="#__codelineno-6-1"></a><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+</span><span id="__span-6-2"><a id="__codelineno-6-2" name="__codelineno-6-2" href="#__codelineno-6-2"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">transients</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">2000</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</span><span id="__span-6-3"><a id="__codelineno-6-3" name="__codelineno-6-3" href="#__codelineno-6-3"></a><span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+</span><span id="__span-6-4"><a id="__codelineno-6-4" name="__codelineno-6-4" href="#__codelineno-6-4"></a><span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Fluorescence&quot;</span><span class="p">)</span>
+</span><span id="__span-6-5"><a id="__codelineno-6-5" name="__codelineno-6-5" href="#__codelineno-6-5"></a><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span></code></pre></div>
+<p><img alt="tutorial calcium imaging" class="mkd-glr-single-img" src="../images/mkd_glr_tutorial_calcium_imaging_001.png" srcset="../images/mkd_glr_tutorial_calcium_imaging_001.png" /></p>
+<!-- GENERATED FROM PYTHON SOURCE LINES 81-82 -->
+
+<p>Here we extract the head-direction as a variable called angle</p>
+<!-- GENERATED FROM PYTHON SOURCE LINES 82-86 -->
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-7-1"><a id="__codelineno-7-1" name="__codelineno-7-1" href="#__codelineno-7-1"></a><span class="n">angle</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s1">&#39;ry&#39;</span><span class="p">]</span>
+</span><span id="__span-7-2"><a id="__codelineno-7-2" name="__codelineno-7-2" href="#__codelineno-7-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+</span></code></pre></div>
+<p class="mkd-glr-script-out">Out:</p>
+<div class="language-shell mkd-glr-script-out-disp highlight"><pre><span></span><code><span id="__span-8-1"><a id="__codelineno-8-1" name="__codelineno-8-1" href="#__codelineno-8-1"></a>Time<span class="w"> </span><span class="o">(</span>s<span class="o">)</span>
+</span><span id="__span-8-2"><a id="__codelineno-8-2" name="__codelineno-8-2" href="#__codelineno-8-2"></a>----------<span class="w">  </span>-------
+</span><span id="__span-8-3"><a id="__codelineno-8-3" name="__codelineno-8-3" href="#__codelineno-8-3"></a><span class="m">3</span>.0994<span class="w">      </span><span class="m">2</span>.58326
+</span><span id="__span-8-4"><a id="__codelineno-8-4" name="__codelineno-8-4" href="#__codelineno-8-4"></a><span class="m">3</span>.10775<span class="w">     </span><span class="m">2</span>.5864
+</span><span id="__span-8-5"><a id="__codelineno-8-5" name="__codelineno-8-5" href="#__codelineno-8-5"></a><span class="m">3</span>.11605<span class="w">     </span><span class="m">2</span>.5905
+</span><span id="__span-8-6"><a id="__codelineno-8-6" name="__codelineno-8-6" href="#__codelineno-8-6"></a><span class="m">3</span>.1244<span class="w">      </span><span class="m">2</span>.59191
+</span><span id="__span-8-7"><a id="__codelineno-8-7" name="__codelineno-8-7" href="#__codelineno-8-7"></a><span class="m">3</span>.13275<span class="w">     </span><span class="m">2</span>.59263
+</span><span id="__span-8-8"><a id="__codelineno-8-8" name="__codelineno-8-8" href="#__codelineno-8-8"></a><span class="m">3</span>.14105<span class="w">     </span><span class="m">2</span>.59306
+</span><span id="__span-8-9"><a id="__codelineno-8-9" name="__codelineno-8-9" href="#__codelineno-8-9"></a><span class="m">3</span>.1494<span class="w">      </span><span class="m">2</span>.59404
+</span><span id="__span-8-10"><a id="__codelineno-8-10" name="__codelineno-8-10" href="#__codelineno-8-10"></a><span class="m">3</span>.15775<span class="w">     </span><span class="m">2</span>.59442
+</span><span id="__span-8-11"><a id="__codelineno-8-11" name="__codelineno-8-11" href="#__codelineno-8-11"></a><span class="m">3</span>.16605<span class="w">     </span><span class="m">2</span>.59358
+</span><span id="__span-8-12"><a id="__codelineno-8-12" name="__codelineno-8-12" href="#__codelineno-8-12"></a><span class="m">3</span>.1744<span class="w">      </span><span class="m">2</span>.59316
+</span><span id="__span-8-13"><a id="__codelineno-8-13" name="__codelineno-8-13" href="#__codelineno-8-13"></a><span class="m">3</span>.18275<span class="w">     </span><span class="m">2</span>.59375
+</span><span id="__span-8-14"><a id="__codelineno-8-14" name="__codelineno-8-14" href="#__codelineno-8-14"></a><span class="m">3</span>.19105<span class="w">     </span><span class="m">2</span>.59247
+</span><span id="__span-8-15"><a id="__codelineno-8-15" name="__codelineno-8-15" href="#__codelineno-8-15"></a><span class="m">3</span>.1994<span class="w">      </span><span class="m">2</span>.58917
+</span><span id="__span-8-16"><a id="__codelineno-8-16" name="__codelineno-8-16" href="#__codelineno-8-16"></a><span class="m">3</span>.20775<span class="w">     </span><span class="m">2</span>.58861
+</span><span id="__span-8-17"><a id="__codelineno-8-17" name="__codelineno-8-17" href="#__codelineno-8-17"></a><span class="m">3</span>.21605<span class="w">     </span><span class="m">2</span>.58742
+</span><span id="__span-8-18"><a id="__codelineno-8-18" name="__codelineno-8-18" href="#__codelineno-8-18"></a><span class="m">3</span>.2244<span class="w">      </span><span class="m">2</span>.58352
+</span><span id="__span-8-19"><a id="__codelineno-8-19" name="__codelineno-8-19" href="#__codelineno-8-19"></a><span class="m">3</span>.23275<span class="w">     </span><span class="m">2</span>.58511
+</span><span id="__span-8-20"><a id="__codelineno-8-20" name="__codelineno-8-20" href="#__codelineno-8-20"></a><span class="m">3</span>.24105<span class="w">     </span><span class="m">2</span>.58455
+</span><span id="__span-8-21"><a id="__codelineno-8-21" name="__codelineno-8-21" href="#__codelineno-8-21"></a><span class="m">3</span>.2494<span class="w">      </span><span class="m">2</span>.58384
+</span><span id="__span-8-22"><a id="__codelineno-8-22" name="__codelineno-8-22" href="#__codelineno-8-22"></a><span class="m">3</span>.25775<span class="w">     </span><span class="m">2</span>.58475
+</span><span id="__span-8-23"><a id="__codelineno-8-23" name="__codelineno-8-23" href="#__codelineno-8-23"></a>...
+</span><span id="__span-8-24"><a id="__codelineno-8-24" name="__codelineno-8-24" href="#__codelineno-8-24"></a><span class="m">1206</span>.0645<span class="w">   </span><span class="m">3</span>.09176
+</span><span id="__span-8-25"><a id="__codelineno-8-25" name="__codelineno-8-25" href="#__codelineno-8-25"></a><span class="m">1206</span>.0728<span class="w">   </span><span class="m">3</span>.13887
+</span><span id="__span-8-26"><a id="__codelineno-8-26" name="__codelineno-8-26" href="#__codelineno-8-26"></a><span class="m">1206</span>.08115<span class="w">  </span><span class="m">3</span>.19664
+</span><span id="__span-8-27"><a id="__codelineno-8-27" name="__codelineno-8-27" href="#__codelineno-8-27"></a><span class="m">1206</span>.0895<span class="w">   </span><span class="m">3</span>.26156
+</span><span id="__span-8-28"><a id="__codelineno-8-28" name="__codelineno-8-28" href="#__codelineno-8-28"></a><span class="m">1206</span>.0978<span class="w">   </span><span class="m">3</span>.31936
+</span><span id="__span-8-29"><a id="__codelineno-8-29" name="__codelineno-8-29" href="#__codelineno-8-29"></a><span class="m">1206</span>.10615<span class="w">  </span><span class="m">3</span>.37761
+</span><span id="__span-8-30"><a id="__codelineno-8-30" name="__codelineno-8-30" href="#__codelineno-8-30"></a><span class="m">1206</span>.1145<span class="w">   </span><span class="m">3</span>.4264
+</span><span id="__span-8-31"><a id="__codelineno-8-31" name="__codelineno-8-31" href="#__codelineno-8-31"></a><span class="m">1206</span>.1228<span class="w">   </span><span class="m">3</span>.46681
+</span><span id="__span-8-32"><a id="__codelineno-8-32" name="__codelineno-8-32" href="#__codelineno-8-32"></a><span class="m">1206</span>.13115<span class="w">  </span><span class="m">3</span>.51726
+</span><span id="__span-8-33"><a id="__codelineno-8-33" name="__codelineno-8-33" href="#__codelineno-8-33"></a><span class="m">1206</span>.1395<span class="w">   </span><span class="m">3</span>.58739
+</span><span id="__span-8-34"><a id="__codelineno-8-34" name="__codelineno-8-34" href="#__codelineno-8-34"></a><span class="m">1206</span>.1478<span class="w">   </span><span class="m">3</span>.64066
+</span><span id="__span-8-35"><a id="__codelineno-8-35" name="__codelineno-8-35" href="#__codelineno-8-35"></a><span class="m">1206</span>.15615<span class="w">  </span><span class="m">3</span>.68839
+</span><span id="__span-8-36"><a id="__codelineno-8-36" name="__codelineno-8-36" href="#__codelineno-8-36"></a><span class="m">1206</span>.1645<span class="w">   </span><span class="m">3</span>.70594
+</span><span id="__span-8-37"><a id="__codelineno-8-37" name="__codelineno-8-37" href="#__codelineno-8-37"></a><span class="m">1206</span>.1728<span class="w">   </span><span class="m">3</span>.70308
+</span><span id="__span-8-38"><a id="__codelineno-8-38" name="__codelineno-8-38" href="#__codelineno-8-38"></a><span class="m">1206</span>.18115<span class="w">  </span><span class="m">3</span>.6908
+</span><span id="__span-8-39"><a id="__codelineno-8-39" name="__codelineno-8-39" href="#__codelineno-8-39"></a><span class="m">1206</span>.18945<span class="w">  </span><span class="m">3</span>.69804
+</span><span id="__span-8-40"><a id="__codelineno-8-40" name="__codelineno-8-40" href="#__codelineno-8-40"></a><span class="m">1206</span>.1978<span class="w">   </span><span class="m">3</span>.6728
+</span><span id="__span-8-41"><a id="__codelineno-8-41" name="__codelineno-8-41" href="#__codelineno-8-41"></a><span class="m">1206</span>.20615<span class="w">  </span><span class="m">3</span>.65452
+</span><span id="__span-8-42"><a id="__codelineno-8-42" name="__codelineno-8-42" href="#__codelineno-8-42"></a><span class="m">1206</span>.21445<span class="w">  </span><span class="m">3</span>.61199
+</span><span id="__span-8-43"><a id="__codelineno-8-43" name="__codelineno-8-43" href="#__codelineno-8-43"></a><span class="m">1206</span>.2228<span class="w">   </span><span class="m">3</span>.5495
+</span><span id="__span-8-44"><a id="__codelineno-8-44" name="__codelineno-8-44" href="#__codelineno-8-44"></a>dtype:<span class="w"> </span>float64,<span class="w"> </span>shape:<span class="w"> </span><span class="o">(</span><span class="m">144382</span>,<span class="o">)</span>
+</span></code></pre></div>
+<!-- GENERATED FROM PYTHON SOURCE LINES 87-88 -->
+
+<p>As you can see, we have a longer recording for our tracking of the animal's head than we do for our calcium imaging - something to keep in mind.</p>
+<!-- GENERATED FROM PYTHON SOURCE LINES 88-92 -->
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-9-1"><a id="__codelineno-9-1" name="__codelineno-9-1" href="#__codelineno-9-1"></a><span class="nb">print</span><span class="p">(</span><span class="n">transients</span><span class="o">.</span><span class="n">time_support</span><span class="p">)</span>
+</span><span id="__span-9-2"><a id="__codelineno-9-2" name="__codelineno-9-2" href="#__codelineno-9-2"></a><span class="nb">print</span><span class="p">(</span><span class="n">angle</span><span class="o">.</span><span class="n">time_support</span><span class="p">)</span>
+</span></code></pre></div>
+<p class="mkd-glr-script-out">Out:</p>
+<div class="language-shell mkd-glr-script-out-disp highlight"><pre><span></span><code><span id="__span-10-1"><a id="__codelineno-10-1" name="__codelineno-10-1" href="#__codelineno-10-1"></a><span class="w">            </span>start<span class="w">      </span>end
+</span><span id="__span-10-2"><a id="__codelineno-10-2" name="__codelineno-10-2" href="#__codelineno-10-2"></a><span class="w">       </span><span class="m">0</span><span class="w">   </span><span class="m">3</span>.1187<span class="w">  </span><span class="m">1203</span>.59
+</span><span id="__span-10-3"><a id="__codelineno-10-3" name="__codelineno-10-3" href="#__codelineno-10-3"></a>shape:<span class="w"> </span><span class="o">(</span><span class="m">1</span>,<span class="w"> </span><span class="m">2</span><span class="o">)</span>,<span class="w"> </span><span class="nb">time</span><span class="w"> </span>unit:<span class="w"> </span>sec.
+</span><span id="__span-10-4"><a id="__codelineno-10-4" name="__codelineno-10-4" href="#__codelineno-10-4"></a><span class="w">            </span>start<span class="w">      </span>end
+</span><span id="__span-10-5"><a id="__codelineno-10-5" name="__codelineno-10-5" href="#__codelineno-10-5"></a><span class="w">       </span><span class="m">0</span><span class="w">   </span><span class="m">3</span>.0994<span class="w">  </span><span class="m">1206</span>.22
+</span><span id="__span-10-6"><a id="__codelineno-10-6" name="__codelineno-10-6" href="#__codelineno-10-6"></a>shape:<span class="w"> </span><span class="o">(</span><span class="m">1</span>,<span class="w"> </span><span class="m">2</span><span class="o">)</span>,<span class="w"> </span><span class="nb">time</span><span class="w"> </span>unit:<span class="w"> </span>sec.
+</span></code></pre></div>
+<!-- GENERATED FROM PYTHON SOURCE LINES 93-97 -->
+
+<hr />
+<h2 id="calcium-tuning-curves">Calcium tuning curves</h2>
+<p>Here we compute the tuning curves of all the neurons</p>
+<!-- GENERATED FROM PYTHON SOURCE LINES 97-102 -->
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-11-1"><a id="__codelineno-11-1" name="__codelineno-11-1" href="#__codelineno-11-1"></a><span class="n">tcurves</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_1d_tuning_curves_continuous</span><span class="p">(</span><span class="n">transients</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">nb_bins</span> <span class="o">=</span> <span class="mi">120</span><span class="p">)</span>
+</span><span id="__span-11-2"><a id="__codelineno-11-2" name="__codelineno-11-2" href="#__codelineno-11-2"></a>
+</span><span id="__span-11-3"><a id="__codelineno-11-3" name="__codelineno-11-3" href="#__codelineno-11-3"></a><span class="nb">print</span><span class="p">(</span><span class="n">tcurves</span><span class="p">)</span>
+</span></code></pre></div>
+<p class="mkd-glr-script-out">Out:</p>
+<div class="language-shell mkd-glr-script-out-disp highlight"><pre><span></span><code><span id="__span-12-1"><a id="__codelineno-12-1" name="__codelineno-12-1" href="#__codelineno-12-1"></a><span class="w">                </span><span class="m">0</span><span class="w">         </span><span class="m">1</span><span class="w">   </span>...<span class="w">        </span><span class="m">63</span><span class="w">        </span><span class="m">64</span>
+</span><span id="__span-12-2"><a id="__codelineno-12-2" name="__codelineno-12-2" href="#__codelineno-12-2"></a><span class="m">0</span>.026195<span class="w">  </span><span class="m">0</span>.395699<span class="w">  </span><span class="m">0</span>.055843<span class="w">  </span>...<span class="w">  </span><span class="m">0</span>.090393<span class="w">  </span><span class="m">0</span>.090931
+</span><span id="__span-12-3"><a id="__codelineno-12-3" name="__codelineno-12-3" href="#__codelineno-12-3"></a><span class="m">0</span>.078555<span class="w">  </span><span class="m">0</span>.279695<span class="w">  </span><span class="m">0</span>.052430<span class="w">  </span>...<span class="w">  </span><span class="m">0</span>.112558<span class="w">  </span><span class="m">0</span>.101200
+</span><span id="__span-12-4"><a id="__codelineno-12-4" name="__codelineno-12-4" href="#__codelineno-12-4"></a><span class="m">0</span>.130915<span class="w">  </span><span class="m">0</span>.398603<span class="w">  </span><span class="m">0</span>.044422<span class="w">  </span>...<span class="w">  </span><span class="m">0</span>.092577<span class="w">  </span><span class="m">0</span>.127856
+</span><span id="__span-12-5"><a id="__codelineno-12-5" name="__codelineno-12-5" href="#__codelineno-12-5"></a><span class="m">0</span>.183274<span class="w">  </span><span class="m">0</span>.379213<span class="w">  </span><span class="m">0</span>.043964<span class="w">  </span>...<span class="w">  </span><span class="m">0</span>.071661<span class="w">  </span><span class="m">0</span>.144850
+</span><span id="__span-12-6"><a id="__codelineno-12-6" name="__codelineno-12-6" href="#__codelineno-12-6"></a><span class="m">0</span>.235634<span class="w">  </span><span class="m">0</span>.266577<span class="w">  </span><span class="m">0</span>.038920<span class="w">  </span>...<span class="w">  </span><span class="m">0</span>.070615<span class="w">  </span><span class="m">0</span>.177883
+</span><span id="__span-12-7"><a id="__codelineno-12-7" name="__codelineno-12-7" href="#__codelineno-12-7"></a>...<span class="w">            </span>...<span class="w">       </span>...<span class="w">  </span>...<span class="w">       </span>...<span class="w">       </span>...
+</span><span id="__span-12-8"><a id="__codelineno-12-8" name="__codelineno-12-8" href="#__codelineno-12-8"></a><span class="m">6</span>.047557<span class="w">  </span><span class="m">0</span>.390266<span class="w">  </span><span class="m">0</span>.072893<span class="w">  </span>...<span class="w">  </span><span class="m">0</span>.108395<span class="w">  </span><span class="m">0</span>.080172
+</span><span id="__span-12-9"><a id="__codelineno-12-9" name="__codelineno-12-9" href="#__codelineno-12-9"></a><span class="m">6</span>.099916<span class="w">  </span><span class="m">0</span>.266773<span class="w">  </span><span class="m">0</span>.065594<span class="w">  </span>...<span class="w">  </span><span class="m">0</span>.103724<span class="w">  </span><span class="m">0</span>.081672
+</span><span id="__span-12-10"><a id="__codelineno-12-10" name="__codelineno-12-10" href="#__codelineno-12-10"></a><span class="m">6</span>.152276<span class="w">  </span><span class="m">0</span>.268866<span class="w">  </span><span class="m">0</span>.060269<span class="w">  </span>...<span class="w">  </span><span class="m">0</span>.099209<span class="w">  </span><span class="m">0</span>.083993
+</span><span id="__span-12-11"><a id="__codelineno-12-11" name="__codelineno-12-11" href="#__codelineno-12-11"></a><span class="m">6</span>.204636<span class="w">  </span><span class="m">0</span>.281763<span class="w">  </span><span class="m">0</span>.064460<span class="w">  </span>...<span class="w">  </span><span class="m">0</span>.098601<span class="w">  </span><span class="m">0</span>.088175
+</span><span id="__span-12-12"><a id="__codelineno-12-12" name="__codelineno-12-12" href="#__codelineno-12-12"></a><span class="m">6</span>.256995<span class="w">  </span><span class="m">0</span>.293497<span class="w">  </span><span class="m">0</span>.048092<span class="w">  </span>...<span class="w">  </span><span class="m">0</span>.084487<span class="w">  </span><span class="m">0</span>.100030
+</span><span id="__span-12-13"><a id="__codelineno-12-13" name="__codelineno-12-13" href="#__codelineno-12-13"></a>
+</span><span id="__span-12-14"><a id="__codelineno-12-14" name="__codelineno-12-14" href="#__codelineno-12-14"></a><span class="o">[</span><span class="m">120</span><span class="w"> </span>rows<span class="w"> </span>x<span class="w"> </span><span class="m">65</span><span class="w"> </span>columns<span class="o">]</span>
+</span></code></pre></div>
+<!-- GENERATED FROM PYTHON SOURCE LINES 103-104 -->
+
+<p>We now have a DataFrame, where our index is the angle of the animal's head in radians, and each column represents the tuning curve of each region of interest. We can plot one neuron.</p>
+<!-- GENERATED FROM PYTHON SOURCE LINES 104-111 -->
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-13-1"><a id="__codelineno-13-1" name="__codelineno-13-1" href="#__codelineno-13-1"></a><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+</span><span id="__span-13-2"><a id="__codelineno-13-2" name="__codelineno-13-2" href="#__codelineno-13-2"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">tcurves</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+</span><span id="__span-13-3"><a id="__codelineno-13-3" name="__codelineno-13-3" href="#__codelineno-13-3"></a><span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Angle&quot;</span><span class="p">)</span>
+</span><span id="__span-13-4"><a id="__codelineno-13-4" name="__codelineno-13-4" href="#__codelineno-13-4"></a><span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Fluorescence&quot;</span><span class="p">)</span>
+</span><span id="__span-13-5"><a id="__codelineno-13-5" name="__codelineno-13-5" href="#__codelineno-13-5"></a><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span></code></pre></div>
+<p><img alt="tutorial calcium imaging" class="mkd-glr-single-img" src="../images/mkd_glr_tutorial_calcium_imaging_002.png" srcset="../images/mkd_glr_tutorial_calcium_imaging_002.png" /></p>
+<!-- GENERATED FROM PYTHON SOURCE LINES 112-115 -->
+
+<p>It looks like this could be a head-direction cell. One important property of head-directions cells however, is that their firing with respect to head-direction is stable. To check for their stability, we can split our recording in two and compute a tuning curve for each half of the recording.</p>
+<p>We start by finding the midpoint of the recording, using the function <code>get_intervals_center</code>. Using this, then create one new IntervalSet with two rows, one for each half of the recording.</p>
+<!-- GENERATED FROM PYTHON SOURCE LINES 115-123 -->
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-14-1"><a id="__codelineno-14-1" name="__codelineno-14-1" href="#__codelineno-14-1"></a><span class="n">center</span> <span class="o">=</span> <span class="n">transients</span><span class="o">.</span><span class="n">time_support</span><span class="o">.</span><span class="n">get_intervals_center</span><span class="p">()</span>
+</span><span id="__span-14-2"><a id="__codelineno-14-2" name="__codelineno-14-2" href="#__codelineno-14-2"></a>
+</span><span id="__span-14-3"><a id="__codelineno-14-3" name="__codelineno-14-3" href="#__codelineno-14-3"></a><span class="n">halves</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span>
+</span><span id="__span-14-4"><a id="__codelineno-14-4" name="__codelineno-14-4" href="#__codelineno-14-4"></a>    <span class="n">start</span> <span class="o">=</span> <span class="p">[</span><span class="n">transients</span><span class="o">.</span><span class="n">time_support</span><span class="o">.</span><span class="n">start</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">center</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+</span><span id="__span-14-5"><a id="__codelineno-14-5" name="__codelineno-14-5" href="#__codelineno-14-5"></a>    <span class="n">end</span> <span class="o">=</span> <span class="p">[</span><span class="n">center</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">transients</span><span class="o">.</span><span class="n">time_support</span><span class="o">.</span><span class="n">end</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+</span><span id="__span-14-6"><a id="__codelineno-14-6" name="__codelineno-14-6" href="#__codelineno-14-6"></a>    <span class="p">)</span>
+</span></code></pre></div>
+<!-- GENERATED FROM PYTHON SOURCE LINES 124-125 -->
+
+<p>Now we can compute the tuning curves for each half of the recording and plot the tuning curves for the fifth region of interest. </p>
+<!-- GENERATED FROM PYTHON SOURCE LINES 125-140 -->
+
+<div class="language-python highlight"><pre><span></span><code><span id="__span-15-1"><a id="__codelineno-15-1" name="__codelineno-15-1" href="#__codelineno-15-1"></a><span class="n">half1</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_1d_tuning_curves_continuous</span><span class="p">(</span><span class="n">transients</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">nb_bins</span> <span class="o">=</span> <span class="mi">120</span><span class="p">,</span> <span class="n">ep</span> <span class="o">=</span> <span class="n">halves</span><span class="o">.</span><span class="n">loc</span><span class="p">[[</span><span class="mi">0</span><span class="p">]])</span>
+</span><span id="__span-15-2"><a id="__codelineno-15-2" name="__codelineno-15-2" href="#__codelineno-15-2"></a><span class="n">half2</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_1d_tuning_curves_continuous</span><span class="p">(</span><span class="n">transients</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">nb_bins</span> <span class="o">=</span> <span class="mi">120</span><span class="p">,</span> <span class="n">ep</span> <span class="o">=</span> <span class="n">halves</span><span class="o">.</span><span class="n">loc</span><span class="p">[[</span><span class="mi">1</span><span class="p">]])</span>
+</span><span id="__span-15-3"><a id="__codelineno-15-3" name="__codelineno-15-3" href="#__codelineno-15-3"></a>
+</span><span id="__span-15-4"><a id="__codelineno-15-4" name="__codelineno-15-4" href="#__codelineno-15-4"></a><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+</span><span id="__span-15-5"><a id="__codelineno-15-5" name="__codelineno-15-5" href="#__codelineno-15-5"></a><span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">)</span>
+</span><span id="__span-15-6"><a id="__codelineno-15-6" name="__codelineno-15-6" href="#__codelineno-15-6"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">half1</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+</span><span id="__span-15-7"><a id="__codelineno-15-7" name="__codelineno-15-7" href="#__codelineno-15-7"></a><span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;First half&quot;</span><span class="p">)</span>
+</span><span id="__span-15-8"><a id="__codelineno-15-8" name="__codelineno-15-8" href="#__codelineno-15-8"></a><span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Angle&quot;</span><span class="p">)</span>
+</span><span id="__span-15-9"><a id="__codelineno-15-9" name="__codelineno-15-9" href="#__codelineno-15-9"></a><span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Fluorescence&quot;</span><span class="p">)</span>
+</span><span id="__span-15-10"><a id="__codelineno-15-10" name="__codelineno-15-10" href="#__codelineno-15-10"></a><span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">2</span><span class="p">)</span>
+</span><span id="__span-15-11"><a id="__codelineno-15-11" name="__codelineno-15-11" href="#__codelineno-15-11"></a><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">half2</span><span class="p">[</span><span class="mi">4</span><span class="p">])</span>
+</span><span id="__span-15-12"><a id="__codelineno-15-12" name="__codelineno-15-12" href="#__codelineno-15-12"></a><span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Second half&quot;</span><span class="p">)</span>
+</span><span id="__span-15-13"><a id="__codelineno-15-13" name="__codelineno-15-13" href="#__codelineno-15-13"></a><span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</span></code></pre></div>
+<p><img alt="First half, Second half" class="mkd-glr-single-img" src="../images/mkd_glr_tutorial_calcium_imaging_003.png" srcset="../images/mkd_glr_tutorial_calcium_imaging_003.png" /></p>
+<p><strong>Total running time of the script:</strong> ( 0 minutes  1.041 seconds)</p>
+<div id="download_links"></div>
+
+<p><a class="md-button center" href="../tutorial_calcium_imaging.py"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32v242.7l-73.4-73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l128 128c12.5 12.5 32.8 12.5 45.3 0l128-128c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 274.7V32zM64 352c-35.3 0-64 28.7-64 64v32c0 35.3 28.7 64 64 64h384c35.3 0 64-28.7 64-64v-32c0-35.3-28.7-64-64-64H346.5l-45.3 45.3c-25 25-65.5 25-90.5 0L165.5 352H64zm368 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/></svg></span> Download Python source code: tutorial_calcium_imaging.py</a></p>
+<p><a class="md-button center" href="../tutorial_calcium_imaging.ipynb"><span class="twemoji"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license/free (Icons: CC BY 4.0, Fonts: SIL OFL 1.1, Code: MIT License) Copyright 2023 Fonticons, Inc.--><path d="M288 32c0-17.7-14.3-32-32-32s-32 14.3-32 32v242.7l-73.4-73.4c-12.5-12.5-32.8-12.5-45.3 0s-12.5 32.8 0 45.3l128 128c12.5 12.5 32.8 12.5 45.3 0l128-128c12.5-12.5 12.5-32.8 0-45.3s-32.8-12.5-45.3 0L288 274.7V32zM64 352c-35.3 0-64 28.7-64 64v32c0 35.3 28.7 64 64 64h384c35.3 0 64-28.7 64-64v-32c0-35.3-28.7-64-64-64H346.5l-45.3 45.3c-25 25-65.5 25-90.5 0L165.5 352H64zm368 56a24 24 0 1 1 0 48 24 24 0 1 1 0-48z"/></svg></span> Download Jupyter notebook: tutorial_calcium_imaging.ipynb</a></p>
+<p><a class="mkd-glr-signature" href="https://mkdocs-gallery.github.io">Gallery generated by mkdocs-gallery</a></p>
+
+
+
+
+
+                
+              </article>
+            </div>
+          
+          
+        </div>
+        
+      </main>
+      
+        <footer class="md-footer">
+  
+  <div class="md-footer-meta md-typeset">
+    <div class="md-footer-meta__inner md-grid">
+      <div class="md-copyright">
+  
+  
+    Made with
+    <a href="https://squidfunk.github.io/mkdocs-material/" target="_blank" rel="noopener">
+      Material for MkDocs
+    </a>
+  
+</div>
+      
+    </div>
+  </div>
+</footer>
+      
+    </div>
+    <div class="md-dialog" data-md-component="dialog">
+      <div class="md-dialog__inner md-typeset"></div>
+    </div>
+    
+    
+    <script id="__config" type="application/json">{"base": "../../..", "features": ["navigation.indexes"], "search": "../../../assets/javascripts/workers/search.f886a092.min.js", "translations": {"clipboard.copied": "Copied to clipboard", "clipboard.copy": "Copy to clipboard", "search.result.more.one": "1 more on this page", "search.result.more.other": "# more on this page", "search.result.none": "No matching documents", "search.result.one": "1 matching document", "search.result.other": "# matching documents", "search.result.placeholder": "Type to start searching", "search.result.term.missing": "Missing", "select.version": "Select version"}}</script>
+    
+    
+      <script src="../../../assets/javascripts/bundle.aecac24b.min.js"></script>
+      
+        <script src="../../../javascripts/katex.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.js"></script>
+      
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/contrib/auto-render.min.js"></script>
+      
+    
+  </body>
+</html>
