@@ -1,5 +1,10 @@
 ### Motivation
 
+
+!!! warning
+
+    New in `0.6.6`
+
 Multiple python packages exist for high-performance computing. Internally, pynapple makes extensive use of [numba](https://numba.pydata.org/) for accelerating some functions. Numba is a stable package that provide speed gains with minimal installation issues when running on CPUs.
 
 Another high-performance toolbox for numerical analysis is 

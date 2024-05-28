@@ -49,9 +49,13 @@ z = data['z']
 print(data['z'])
 
 # %%
+#
 # Internally, the `NWBClass` has replaced the pointer to the data with the actual data.
 #
 # While it looks like pynapple has loaded the data, in fact it did not. By default, calling the NWB object will return an HDF5 dataset.
+# !!! warning
+# 
+#     New in `0.6.6`
 
 print(type(z.values))
 
