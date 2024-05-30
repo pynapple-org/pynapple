@@ -283,7 +283,7 @@ def append_NWB_LFP(path, lfp, channel=None):
         raise RuntimeError("Can't find nwb file in {}".format(path))
 
     if isinstance(lfp, nap.TsdFrame):
-        channels = lfp.columns.values
+        channels = list(lfp.columns.values)
     elif isinstance(lfp, nap.Tsd):
         if isinstance(channel, int):
             channels = [channel]
