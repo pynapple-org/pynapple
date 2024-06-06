@@ -24,3 +24,4 @@ from .tuning_curves import (
     compute_2d_tuning_curves_continuous,
     compute_discrete_tuning_curves,
 )
+from .signal_processing import *
