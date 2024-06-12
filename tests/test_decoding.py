@@ -65,6 +65,20 @@ def test_decode_1d_with_feature():
     tmp[50:, 0] = 0.0
     tmp[0:50, 1] = 0.0
     np.testing.assert_array_almost_equal(proba.values, tmp)
+    
+def test_decode_1d_with_smoothing():
+    feature, group, tc, ep = get_testing_set_1d()
+    decoded, proba = nap.decode_1d(tc, group, ep, bin_size=1, std=None)
+    np.testing.assert_array_almost_equal(feature.values, decoded.values)
+    assert isinstance(decoded, nap.Tsd)
+    assert isinstance(proba, nap.TsdFrame)
+    np.testing.assert_array_almost_equal(feature.values, decoded.values)
+    assert len(decoded) == 100
+    assert len(proba) == 100
+    tmp = np.ones((100, 2))
+    tmp[50:, 0] = 0.0
+    tmp[0:50, 1] = 0.0
+    np.testing.assert_array_almost_equal(proba.values, tmp)
 
 def test_decode_1d_with_wrong_feature():
     feature, group, tc, ep = get_testing_set_1d()
@@ -94,7 +108,7 @@ def test_decoded_1d_raise_errors():
     tc.columns = [0, 2]
     with pytest.raises(Exception) as e_info:
         nap.decode_1d(tc, group, ep, 1)
-    assert str(e_info.value) == "Difference indexes for tuning curves and group keys"
+    assert str(e_info.value) == "Different indices for tuning curves and group keys"
 
 
 def get_testing_set_2d():
@@ -162,13 +176,16 @@ def test_decode_2d_with_feature():
     decoded, proba = nap.decode_2d(tc, group, ep, 1, xy)
     np.testing.assert_array_almost_equal(features.values, decoded.values)
 
+def test_decode_2d_with_smoothing():
+    features, group, tc, ep, xy = get_testing_set_2d()
+    decoded, proba = nap.decode_2d(tc, group, ep, 1, xy, std=None)
+    np.testing.assert_array_almost_equal(features.values, decoded.values)
 
 def test_decode_2d_with_time_units():
     features, group, tc, ep, xy = get_testing_set_2d()
     for t, tu in zip([1, 1e3, 1e6], ["s", "ms", "us"]):
         decoded, proba = nap.decode_2d(tc, group, ep, 1.0 * t, xy, time_units=tu)
         np.testing.assert_array_almost_equal(features.values, decoded.values)
-
 
 def test_decoded_2d_raise_errors():
     features, group, tc, ep, xy = get_testing_set_2d()
@@ -186,4 +203,4 @@ def test_decoded_2d_raise_errors():
     tc = {k: tc[i] for k, i in zip(np.arange(0, 40, 10), tc.keys())}
     with pytest.raises(Exception) as e_info:
         nap.decode_2d(tc, group, ep, 1, xy)
-    assert str(e_info.value) == "Difference indexes for tuning curves and group keys"
+    assert str(e_info.value) == "Different indices for tuning curves and group keys"

@@ -12,7 +12,17 @@ import numpy as np
 from .. import core as nap
 
 
-def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
+def decode_1d(
+    tuning_curves,
+    group,
+    ep,
+    bin_size,
+    time_units="s",
+    feature=None,
+    std=None,
+    size=None,
+    norm=False,
+):
     """
     Performs Bayesian decoding over a one dimensional feature.
     See:
@@ -38,6 +48,14 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
     feature : Tsd, optional
         The 1d feature used to compute the tuning curves. Used to correct for occupancy.
         If feature is not passed, the occupancy is uniform.
+    std : Number
+        Standard deviation of the Gaussian kernel for smoothing. Default value is None, indicating no smoothing.
+    size : int, optional
+        Size of the Gaussian window to be used for smoothing the data.
+        In other words, how long should the kernel size be as a function of the standard deviation?
+        Default is None, indicating no smoothing.
+    norm : bool, optional
+        Whether to normalized the gaussian kernel or not. Default is `False`.
 
     Returns
     -------
@@ -57,6 +75,7 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
         newgroup = nap.TsGroup(group, time_support=ep)
     elif isinstance(group, nap.TsGroup):
         newgroup = group.restrict(ep)
+
     else:
         raise RuntimeError("Unknown format for group")
 
@@ -64,10 +83,13 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
         raise RuntimeError("Different shapes for tuning_curves and group")
 
     if not np.all(tuning_curves.columns.values == np.array(newgroup.keys())):
-        raise RuntimeError("Difference indexes for tuning curves and group keys")
+        raise RuntimeError("Different indices for tuning curves and group keys")
 
     # Bin spikes
     count = newgroup.count(bin_size, ep, time_units)
+
+    if isinstance(std, (int, float)):
+        count = count.smooth(std, size_factor=100, time_units="s")
 
     # Occupancy
     if feature is None:
@@ -113,7 +135,18 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
     return decoded, p
 
 
-def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=None):
+def decode_2d(
+    tuning_curves,
+    group,
+    ep,
+    bin_size,
+    xy,
+    time_units="s",
+    features=None,
+    std=None,
+    size=None,
+    norm=False,
+):
     """
     Performs Bayesian decoding over a two dimensional feature.
     See:
@@ -140,6 +173,14 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
     features : TsdFrame
         The 2 columns features used to compute the tuning curves. Used to correct for occupancy.
         If feature is not passed, the occupancy is uniform.
+    std : Number
+        Standard deviation of the Gaussian kernel for smoothing. Default value is None, indicating no smoothing.
+    size : int, optional
+        Size of the Gaussian window to be used for smoothing the data.
+        In other words, how long should the kernel size be as a function of the standard deviation?
+        Default is None, indicating no smoothing.
+    norm : bool, optional
+        Whether to normalized the gaussian kernel or not. Default is `False`.
 
     Returns
     -------
@@ -170,11 +211,15 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
         raise RuntimeError("Different shapes for tuning_curves and group")
 
     if not np.all(np.array(list(tuning_curves.keys())) == np.array(newgroup.keys())):
-        raise RuntimeError("Difference indexes for tuning curves and group keys")
+        raise RuntimeError("Different indices for tuning curves and group keys")
 
     # Bin spikes
     # if type(newgroup) is not nap.TsdFrame:
     count = newgroup.count(bin_size, ep, time_units)
+
+    if isinstance(std, (int, float)):
+        count = count.smooth(std, size_factor=100, time_units="s")
+
     # else:
     #     #Spikes already "binned" with continuous TsdFrame input
     #     count = newgroup
