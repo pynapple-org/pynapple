@@ -124,6 +124,14 @@ class TsGroup(UserDict):
 
         self._metadata = pd.DataFrame(index=self.index, columns=["rate"], dtype="float")
 
+        # If time_support is passed, all elements of data are restricted prior to init
+        if time_support is not None and not isinstance(time_support, IntervalSet):
+            try:
+                time_support = IntervalSet(time_support)
+            except Exception:
+                warnings.warn("time_support could not be converted to IntervalSet. Ignoring it.", stacklevel=2)
+                time_support = None
+
         # Transform elements to Ts/Tsd objects
         for k in self.index:
             if not isinstance(data[k], Base):

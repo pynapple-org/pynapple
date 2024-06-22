@@ -90,6 +90,15 @@ class TestTsGroup1:
         assert np.all(first >= ep[0, 0])
         assert np.all(last <= ep[0, 1])
 
+    def test_create_ts_group_with_time_support_tuple(self, group):
+        ep = (0, 100)
+        tsgroup = nap.TsGroup(group, time_support=ep)
+        np.testing.assert_array_almost_equal(tsgroup.time_support, nap.IntervalSet(ep))
+        first = [tsgroup[i].index[0] for i in tsgroup]
+        last = [tsgroup[i].index[-1] for i in tsgroup]
+        assert np.all(first >= np.float64(ep[0]))
+        assert np.all(last <= np.float64(ep[1]))
+
     def test_create_ts_group_with_empty_time_support(self):
         with pytest.raises(RuntimeError) as e_info:
             tmp = nap.TsGroup({
