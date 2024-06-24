@@ -78,6 +78,23 @@ def test_create_iset_from_mock_array():
     np.testing.assert_array_almost_equal(ep.start, start)
     np.testing.assert_array_almost_equal(ep.end, end)
 
+def test_create_iset_from_tuple():
+    start = 0
+    end = 5
+    ep = nap.IntervalSet((start, end))
+    assert isinstance(ep, nap.core.interval_set.IntervalSet)
+    np.testing.assert_array_almost_equal(start, ep.start[0])
+    np.testing.assert_array_almost_equal(end, ep.end[0])
+
+def test_create_iset_from_tuple_iter():
+    start = [0, 10, 16, 25]
+    end = [5, 15, 20, 40]
+    pairs = zip(start, end)
+    ep = nap.IntervalSet(pairs)
+    assert isinstance(ep, nap.core.interval_set.IntervalSet)
+    np.testing.assert_array_almost_equal(start, ep.start)
+    np.testing.assert_array_almost_equal(end, ep.end)
+
 def test_create_iset_from_unknown_format():    
     with pytest.raises(RuntimeError) as e:
         nap.IntervalSet(start="abc", end=[1, 2])
