@@ -124,6 +124,7 @@ class TsGroup(UserDict):
 
         data = {keys[j]: data[k] for j, k in enumerate(data.keys())}
         self.index = np.sort(keys)
+        data = {k: data[k] for k in self.index}  # Make sure data dict and index are ordered the same
 
         self._metadata = pd.DataFrame(index=self.index, columns=["rate"], dtype="float")
 
