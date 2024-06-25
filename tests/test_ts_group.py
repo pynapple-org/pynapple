@@ -40,10 +40,19 @@ class TestTsGroup1:
         assert isinstance(tsgroup, UserDict)
         assert len(tsgroup) == 3
 
+    def test_create_ts_group_from_iter(self, group):
+        tsgroup = nap.TsGroup(group.values())
+        assert isinstance(tsgroup, UserDict)
+        assert len(tsgroup) == 3
+
+    def test_create_ts_group_from_invalid(self):
+        with pytest.raises(AttributeError):
+            tsgroup = nap.TsGroup(np.arange(0, 200))
+
     @pytest.mark.parametrize(
         "test_dict, expectation",
         [
-            ({"1": nap.Ts(np.arange(10)), "2":nap.Ts(np.arange(10))}, does_not_raise()),
+            ({"1": nap.Ts(np.arange(10)), "2": nap.Ts(np.arange(10))}, does_not_raise()),
             ({"1": nap.Ts(np.arange(10)), 2: nap.Ts(np.arange(10))}, does_not_raise()),
             ({"1": nap.Ts(np.arange(10)), 1: nap.Ts(np.arange(10))},
              pytest.raises(ValueError, match="Two dictionary keys contain the same integer")),
@@ -70,7 +79,6 @@ class TestTsGroup1:
     )
     def test_metadata_len_match(self, tsgroup):
         assert len(tsgroup._metadata) == len(tsgroup)
-
 
     def test_create_ts_group_from_array(self):
         with warnings.catch_warnings(record=True) as w:

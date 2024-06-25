@@ -76,9 +76,9 @@ class TsGroup(UserDict):
 
         Parameters
         ----------
-        data : dict
-            Dictionary containing Ts/Tsd objects, keys should contain integer values or should be convertible
-            to integer.
+        data : dict or iterable
+            Dictionary or iterable of Ts/Tsd objects. The keys should be integer-convertible; if a non-dict iterator is
+            passed, its values will be used to create a dict with integer keys.
         time_support : IntervalSet, optional
             The time support of the TsGroup. Ts/Tsd objects will be restricted to the time support if passed.
             If no time support is specified, TsGroup will merge time supports from all the Ts/Tsd objects in data.
@@ -103,13 +103,16 @@ class TsGroup(UserDict):
         """
         self._initialized = False
 
+        if not isinstance(data, dict):
+            data = dict(enumerate(data))
+
         # convert all keys to integer
         try:
             keys = [int(k) for k in data.keys()]
         except Exception:
             raise ValueError("All keys must be convertible to integer.")
 
-        # check that there were no floats with decimal points in keys.i
+        # check that there were no floats with decimal points in keys.
         # i.e. 0.5 is not a valid key
         if not all(np.allclose(keys[j], float(k)) for j, k in enumerate(data.keys())):
             raise ValueError("All keys must have integer value!}")
