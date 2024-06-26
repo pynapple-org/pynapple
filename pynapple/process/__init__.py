@@ -24,4 +24,8 @@ from .tuning_curves import (
     compute_2d_tuning_curves_continuous,
     compute_discrete_tuning_curves,
 )
-from .signal_processing import *
+from .signal_processing import (
+    compute_wavelet_transform,
+    compute_spectrum,
+    compute_welch_spectrum
+)
