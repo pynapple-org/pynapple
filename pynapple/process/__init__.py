@@ -26,6 +26,7 @@ from .tuning_curves import (
 )
 from .signal_processing import (
     compute_wavelet_transform,
+    compute_wavelet_transform_og,
     compute_spectrum,
     compute_welch_spectrum
 )
