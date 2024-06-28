@@ -22,9 +22,8 @@ This tutorial was made by Kipp Freud.
 
 import numpy as np
 import pynapple as nap
-import pandas as pd
 import os
-#import requests
+import requests
 from zipfile import ZipFile
 import matplotlib.pyplot as plt
 import matplotlib
@@ -35,20 +34,20 @@ matplotlib.use("TkAgg")
 # Downloading the data
 # ------------------
 # First things first: Let's download and extract the data
-# path = "data/A2929-200711"
-# extract_to = "data"
-# if extract_to not in os.listdir("."):
-#     os.mkdir(extract_to)
-# if path not in os.listdir("."):
-# # Download the file
-#     response = requests.get("https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1")
-#     zip_path = os.path.join(extract_to, '/downloaded_file.zip')
-#     # Write the zip file to disk
-#     with open(zip_path, 'wb') as f:
-#         f.write(response.content)
-#     # Unzip the file
-#     with ZipFile(zip_path, 'r') as zip_ref:
-#         zip_ref.extractall(extract_to)
+path = "data/A2929-200711"
+extract_to = "data"
+if extract_to not in os.listdir("."):
+    os.mkdir(extract_to)
+if path not in os.listdir("."):
+# Download the file
+    response = requests.get("https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1")
+    zip_path = os.path.join(extract_to, '/downloaded_file.zip')
+    # Write the zip file to disk
+    with open(zip_path, 'wb') as f:
+        f.write(response.content)
+    # Unzip the file
+    with ZipFile(zip_path, 'r') as zip_ref:
+        zip_ref.extractall(extract_to)
 
 
 # %%
@@ -56,22 +55,22 @@ matplotlib.use("TkAgg")
 # Parsing the data
 # ------------------
 # Now that we have the data, we must append the 2kHz LFP recording to the .nwb file
-# eeg_path = "data/A2929-200711/A2929-200711.dat"
-# frequency = 20000 # Hz
-# n_channels = 16
-# f = open(eeg_path, 'rb')
-# startoffile = f.seek(0, 0)
-# endoffile = f.seek(0, 2)
-# f.close()
-# bytes_size = 2
-# n_samples = int((endoffile-startoffile)/n_channels/bytes_size)
-# duration = n_samples/frequency
-# interval = 1/frequency
-# fp = np.memmap(eeg_path, np.int16, 'r', shape = (n_samples, n_channels))
-# timestep = np.arange(0, n_samples)/frequency
-# eeg = nap.TsdFrame(t=timestep, d=fp)
-# nap.append_NWB_LFP("data/A2929-200711/",
-#                    eeg)
+eeg_path = "data/A2929-200711/A2929-200711.dat"
+frequency = 20000 # Hz
+n_channels = 16
+f = open(eeg_path, 'rb')
+startoffile = f.seek(0, 0)
+endoffile = f.seek(0, 2)
+f.close()
+bytes_size = 2
+n_samples = int((endoffile-startoffile)/n_channels/bytes_size)
+duration = n_samples/frequency
+interval = 1/frequency
+fp = np.memmap(eeg_path, np.int16, 'r', shape = (n_samples, n_channels))
+timestep = np.arange(0, n_samples)/frequency
+eeg = nap.TsdFrame(t=timestep, d=fp)
+nap.append_NWB_LFP("data/A2929-200711/",
+                   eeg)
 
 
 # %%
@@ -80,17 +79,13 @@ FS = 1250
 # data = nap.load_file("data/A2929-200711/pynapplenwb/A2929-200711.nwb")
 data = nap.load_file("data/stable.nwb")
 print(data["ElectricalSeries"])
-# normed_electrical_series = data["ElectricalSeries"].values
-# normed_electrical_series = normed_electrical_series[:, :]
-# normed_electrical_series[:, :10] = normed_electrical_series[:, :10] - np.expand_dims(np.mean(normed_electrical_series[:, :10], axis=1), axis=1)
-# normed_electrical_series[:, 10:] = normed_electrical_series[:, 10:] - np.expand_dims(np.mean(normed_electrical_series[:, 10:], axis=1), axis=1)
-NES = nap.TsdFrame(t=data["ElectricalSeries"].index.values, d=data["ElectricalSeries"].values, time_support=data["ElectricalSeries"].time_support)
 
 # %%
 # ***
 # Selecting slices
 # -----------------------------------
 # Let's consider a two 1-second slices of data, one from the sleep epoch and one from wake
+NES = nap.TsdFrame(t=data["ElectricalSeries"].index.values, d=data["ElectricalSeries"].values, time_support=data["ElectricalSeries"].time_support)
 wake_minute = NES.value_from(NES, nap.IntervalSet(900,960))
 sleep_minute = NES.value_from(NES, nap.IntervalSet(0,60))
 
