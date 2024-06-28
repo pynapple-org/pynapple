@@ -20,14 +20,14 @@ This tutorial was made by Kipp Freud.
 #
 # Now, import the necessary libraries:
 
-import numpy as np
-import pynapple as nap
 import os
-import requests
 from zipfile import ZipFile
+
 import matplotlib.pyplot as plt
-import matplotlib
-matplotlib.use("TkAgg")
+import numpy as np
+import requests
+
+import pynapple as nap
 
 # %%
 # ***
@@ -39,14 +39,16 @@ extract_to = "data"
 if extract_to not in os.listdir("."):
     os.mkdir(extract_to)
 if path not in os.listdir("."):
-# Download the file
-    response = requests.get("https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1")
-    zip_path = os.path.join(extract_to, '/downloaded_file.zip')
+    # Download the file
+    response = requests.get(
+        "https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1"
+    )
+    zip_path = os.path.join(extract_to, "/downloaded_file.zip")
     # Write the zip file to disk
-    with open(zip_path, 'wb') as f:
+    with open(zip_path, "wb") as f:
         f.write(response.content)
     # Unzip the file
-    with ZipFile(zip_path, 'r') as zip_ref:
+    with ZipFile(zip_path, "r") as zip_ref:
         zip_ref.extractall(extract_to)
 
 
@@ -56,21 +58,20 @@ if path not in os.listdir("."):
 # ------------------
 # Now that we have the data, we must append the 2kHz LFP recording to the .nwb file
 eeg_path = "data/A2929-200711/A2929-200711.dat"
-frequency = 20000 # Hz
+frequency = 20000  # Hz
 n_channels = 16
-f = open(eeg_path, 'rb')
+f = open(eeg_path, "rb")
 startoffile = f.seek(0, 0)
 endoffile = f.seek(0, 2)
 f.close()
 bytes_size = 2
-n_samples = int((endoffile-startoffile)/n_channels/bytes_size)
-duration = n_samples/frequency
-interval = 1/frequency
-fp = np.memmap(eeg_path, np.int16, 'r', shape = (n_samples, n_channels))
-timestep = np.arange(0, n_samples)/frequency
+n_samples = int((endoffile - startoffile) / n_channels / bytes_size)
+duration = n_samples / frequency
+interval = 1 / frequency
+fp = np.memmap(eeg_path, np.int16, "r", shape=(n_samples, n_channels))
+timestep = np.arange(0, n_samples) / frequency
 eeg = nap.TsdFrame(t=timestep, d=fp)
-nap.append_NWB_LFP("data/A2929-200711/",
-                   eeg)
+nap.append_NWB_LFP("data/A2929-200711/", eeg)
 
 
 # %%
@@ -85,9 +86,13 @@ print(data["ElectricalSeries"])
 # Selecting slices
 # -----------------------------------
 # Let's consider a two 1-second slices of data, one from the sleep epoch and one from wake
-NES = nap.TsdFrame(t=data["ElectricalSeries"].index.values, d=data["ElectricalSeries"].values, time_support=data["ElectricalSeries"].time_support)
-wake_minute = NES.value_from(NES, nap.IntervalSet(900,960))
-sleep_minute = NES.value_from(NES, nap.IntervalSet(0,60))
+NES = nap.TsdFrame(
+    t=data["ElectricalSeries"].index.values,
+    d=data["ElectricalSeries"].values,
+    time_support=data["ElectricalSeries"].time_support,
+)
+wake_minute = NES.value_from(NES, nap.IntervalSet(900, 960))
+sleep_minute = NES.value_from(NES, nap.IntervalSet(0, 60))
 
 # %%
 # ***
@@ -96,10 +101,17 @@ sleep_minute = NES.value_from(NES, nap.IntervalSet(0,60))
 # Let's plot
 fig, ax = plt.subplots(2)
 for channel in range(sleep_minute.shape[1]):
-    ax[0].plot(sleep_minute.index.values, sleep_minute[:, channel], alpha=0.5, label="Sleep Data")
+    ax[0].plot(
+        sleep_minute.index.values,
+        sleep_minute[:, channel],
+        alpha=0.5,
+        label="Sleep Data",
+    )
 ax[0].set_title("Sleep ephys")
 for channel in range(wake_minute.shape[1]):
-    ax[1].plot(wake_minute.index.values, wake_minute[:, channel], alpha=0.5, label="Wake Data")
+    ax[1].plot(
+        wake_minute.index.values, wake_minute[:, channel], alpha=0.5, label="Wake Data"
+    )
 ax[1].set_title("Wake ephys")
 plt.show()
 
@@ -109,12 +121,10 @@ plt.show()
 # Let's take the Fourier transforms of one channel for both and see if differences are present
 channel = 1
 fig, ax = plt.subplots(1)
-fft_sig, fft_freqs = nap.compute_spectrum(sleep_minute[:, channel],
-                                     fs=int(FS))
+fft_sig, fft_freqs = nap.compute_spectrum(sleep_minute[:, channel], fs=int(FS))
 ax.plot(fft_freqs, np.abs(fft_sig), alpha=0.5, label="Sleep Data")
-ax.set_xlim((0, FS/2 ))
-fft_sig, fft_freqs = nap.compute_spectrum(wake_minute[:, channel],
-                                     fs=int(FS))
+ax.set_xlim((0, FS / 2))
+fft_sig, fft_freqs = nap.compute_spectrum(wake_minute[:, channel], fs=int(FS))
 ax.plot(fft_freqs, np.abs(fft_sig), alpha=0.5, label="Wake Data")
 ax.set_title(f"Fourier Decomposition for channel {channel}")
 ax.legend()
@@ -125,13 +135,14 @@ plt.show()
 # There seems to be some differences presenting themselves - a bump in higher frequencies for waking data?
 # Let's explore further with a wavelet decomposition
 
+
 def plot_timefrequency(times, freqs, powers, x_ticks=5, y_ticks=5, ax=None, **kwargs):
     if np.iscomplexobj(powers):
         powers = abs(powers)
-    ax.imshow(powers, aspect='auto', **kwargs)
+    ax.imshow(powers, aspect="auto", **kwargs)
     ax.invert_yaxis()
-    ax.set_xlabel('Time (s)')
-    ax.set_ylabel('Frequency (Hz)')
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Frequency (Hz)")
     if isinstance(x_ticks, int):
         x_tick_pos = np.linspace(0, times.size, x_ticks)
         x_ticks = np.round(np.linspace(times[0], times[-1], x_ticks), 2)
@@ -145,22 +156,43 @@ def plot_timefrequency(times, freqs, powers, x_ticks=5, y_ticks=5, ax=None, **kw
         y_ticks_pos = [np.argmin(np.abs(freqs - val)) for val in y_ticks]
     ax.set(yticks=y_ticks_pos, yticklabels=y_ticks)
 
+
 fig, ax = plt.subplots(2)
-freqs = np.array([2.59, 3.66, 5.18, 8.0, 10.36, 14.65, 20.72, 29.3, 41.44, 58.59, 82.88, 117.19,
-                  165.75, 234.38, 331.5, 468.75, 624., ])
+freqs = np.array(
+    [
+        2.59,
+        3.66,
+        5.18,
+        8.0,
+        10.36,
+        14.65,
+        20.72,
+        29.3,
+        41.44,
+        58.59,
+        82.88,
+        117.19,
+        165.75,
+        234.38,
+        331.5,
+        468.75,
+        624.0,
+    ]
+)
 mwt_sleep = nap.compute_wavelet_transform(
-            sleep_minute[:, channel],
-            fs=None,
-            freqs=freqs
-        )
-plot_timefrequency(sleep_minute.index.values[:], freqs[:], np.transpose(mwt_sleep[:,:].values), ax=ax[0])
+    sleep_minute[:, channel], fs=None, freqs=freqs
+)
+plot_timefrequency(
+    sleep_minute.index.values[:],
+    freqs[:],
+    np.transpose(mwt_sleep[:, :].values),
+    ax=ax[0],
+)
 ax[0].set_title(f"Sleep Data Wavelet Decomposition: Channel {channel}")
-mwt_wake = nap.compute_wavelet_transform(
-            wake_minute[:, channel],
-            fs=None,
-            freqs=freqs
-        )
-plot_timefrequency(wake_minute.index.values[:], freqs[:], np.transpose(mwt_wake[:,:].values), ax=ax[1])
+mwt_wake = nap.compute_wavelet_transform(wake_minute[:, channel], fs=None, freqs=freqs)
+plot_timefrequency(
+    wake_minute.index.values[:], freqs[:], np.transpose(mwt_wake[:, :].values), ax=ax[1]
+)
 ax[1].set_title(f"Wake Data Wavelet Decomposition: Channel {channel}")
 plt.margins(0)
 plt.show()
@@ -169,11 +201,18 @@ plt.show()
 # Let's focus on the waking data. Let's see if we can isolate the theta oscillations from the data
 freq = 3
 interval = (937, 939)
-wake_second = wake_minute.value_from(wake_minute, nap.IntervalSet(interval[0],interval[1]))
+wake_second = wake_minute.value_from(
+    wake_minute, nap.IntervalSet(interval[0], interval[1])
+)
 fig, ax = plt.subplots(1)
 ax.plot(wake_second.index.values, wake_second[:, channel], alpha=0.5, label="Wake Data")
-ax.plot(wake_second.index.values,
-        mwt_wake.value_from(mwt_wake, nap.IntervalSet(interval[0],interval[1]))[:, freq].values.real, label="Theta oscillations")
+ax.plot(
+    wake_second.index.values,
+    mwt_wake.value_from(mwt_wake, nap.IntervalSet(interval[0], interval[1]))[
+        :, freq
+    ].values.real,
+    label="Theta oscillations",
+)
 ax.set_title(f"{freqs[freq]}Hz oscillation power.")
 plt.show()
 
@@ -183,11 +222,20 @@ plt.show()
 freq = 0
 # interval = (10, 15)
 interval = (20, 25)
-sleep_second = sleep_minute.value_from(sleep_minute, nap.IntervalSet(interval[0],interval[1]))
+sleep_second = sleep_minute.value_from(
+    sleep_minute, nap.IntervalSet(interval[0], interval[1])
+)
 _, ax = plt.subplots(1)
-ax.plot(sleep_second.index.values, sleep_second[:, channel], alpha=0.5, label="Wake Data")
-ax.plot(sleep_second.index.values,
-        mwt_sleep.value_from(mwt_sleep, nap.IntervalSet(interval[0],interval[1]))[:, freq].values.real, label="Slow Wave Oscillations")
+ax.plot(
+    sleep_second.index.values, sleep_second[:, channel], alpha=0.5, label="Wake Data"
+)
+ax.plot(
+    sleep_second.index.values,
+    mwt_sleep.value_from(mwt_sleep, nap.IntervalSet(interval[0], interval[1]))[
+        :, freq
+    ].values.real,
+    label="Slow Wave Oscillations",
+)
 ax.set_title(f"{freqs[freq]}Hz oscillation power")
 plt.show()
 
@@ -195,7 +243,9 @@ plt.show()
 # Let's plot spike phase, time scatter plots to see if spikes display phase characteristics during slow wave sleep
 
 _, ax = plt.subplots(20, figsize=(10, 50))
-mwt_sleep = np.transpose(mwt_sleep.value_from(mwt_sleep, nap.IntervalSet(interval[0],interval[1])))
+mwt_sleep = np.transpose(
+    mwt_sleep.value_from(mwt_sleep, nap.IntervalSet(interval[0], interval[1]))
+)
 ax[0].plot(sleep_second.index, sleep_second.values[:, 0])
 plot_timefrequency(sleep_second.index, freqs, np.abs(mwt_sleep[:, :]), ax=ax[1])
 
@@ -210,13 +260,19 @@ ax[4].plot(sleep_second.index, np.angle(mwt_sleep[freq, :]))
 spikes = {}
 for i in data["units"].index:
     spikes[i] = data["units"][i].times()[
-        (data["units"][i].times() > interval[0]) & (data["units"][i].times() < interval[1])]
+        (data["units"][i].times() > interval[0])
+        & (data["units"][i].times() < interval[1])
+    ]
 
 phase = {}
 for i in spikes.keys():
     phase_i = []
     for spike in spikes[i]:
-        phase_i.append(np.angle(mwt_sleep[freq, np.argmin(np.abs(sleep_second.index.values - spike))]))
+        phase_i.append(
+            np.angle(
+                mwt_sleep[freq, np.argmin(np.abs(sleep_second.index.values - spike))]
+            )
+        )
     phase[i] = np.array(phase_i)
 
 for i in range(15):

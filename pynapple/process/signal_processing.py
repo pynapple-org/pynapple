@@ -4,21 +4,23 @@ Signal processing tools for Pynapple.
 Contains functionality for signal processing pynapple object; fourier transforms and wavelet decomposition.
 """
 
-import numpy as np
-import pynapple as nap
-from math import ceil, floor
 import json
-from scipy.signal import welch
 from itertools import repeat
+from math import ceil, floor
 
-with open('wavelets.json') as f:
+import numpy as np
+from scipy.signal import welch
+
+import pynapple as nap
+
+with open("wavelets.json") as f:
     WAVELET_DICT = json.load(f)
 
 
 def compute_spectrum(sig, fs=None):
-    """  
-    Performs numpy fft on sig, returns output  
-    ..todo: Make sig handle TsdFrame, TsdTensor  
+    """
+    Performs numpy fft on sig, returns output
+    ..todo: Make sig handle TsdFrame, TsdTensor
 
     ----------
     sig : pynapple.Tsd or pynapple.TsdFrame
@@ -29,7 +31,7 @@ def compute_spectrum(sig, fs=None):
     if not isinstance(sig, nap.Tsd):
         raise TypeError("Currently compute_fft is only implemented for Tsd")
     if fs is None:
-        fs = sig.index.shape[0]/(sig.index.max() - sig.index.min())
+        fs = sig.index.shape[0] / (sig.index.max() - sig.index.min())
     fft_result = np.fft.fft(sig.values)
     fft_freq = np.fft.fftfreq(len(sig.values), 1 / fs)
     return fft_result, fft_freq
@@ -49,7 +51,7 @@ def compute_welch_spectrum(sig, fs=None):
     if not isinstance(sig, nap.Tsd):
         raise TypeError("Currently compute_fft is only implemented for Tsd")
     if fs is None:
-        fs = sig.index.shape[0]/(sig.index.max() - sig.index.min())
+        fs = sig.index.shape[0] / (sig.index.max() - sig.index.min())
     freqs, spectogram = welch(sig.values, fs=fs)
     return spectogram, freqs
 
@@ -75,7 +77,12 @@ def morlet(M=1024, ncycles=1.5, scaling=1.0, precision=8):
         Morelet wavelet kernel
     """
     x = np.linspace(-precision, precision, M)
-    return ((np.pi*ncycles) ** (-0.25)) * np.exp(-x**2 / ncycles) * np.exp(1j * 2*np.pi * scaling * x)
+    return (
+        ((np.pi * ncycles) ** (-0.25))
+        * np.exp(-(x**2) / ncycles)
+        * np.exp(1j * 2 * np.pi * scaling * x)
+    )
+
 
 def _check_n_cycles(n_cycles, len_cycles=None):
     """
@@ -172,18 +179,15 @@ def compute_wavelet_transform(sig, fs, freqs, n_cycles=1.5, scaling=1.0, norm="a
     if isinstance(freqs, (tuple, list)):
         freqs = _create_freqs(*freqs)
     if fs is None:
-        fs = sig.index.shape[0]/(sig.index.max() - sig.index.min())
+        fs = sig.index.shape[0] / (sig.index.max() - sig.index.min())
     n_cycles = _check_n_cycles(n_cycles, len(freqs))
     if isinstance(sig, nap.Tsd):
         mwt = np.zeros([len(freqs), len(sig)], dtype=complex)
         for ind, (freq, n_cycle) in enumerate(zip(freqs, n_cycles)):
-            mwt[ind, :] = _convolve_wavelet(sig,
-                                            fs,
-                                            freq,
-                                            n_cycle,
-                                            scaling,
-                                            norm=norm)
-        return nap.TsdFrame(t=sig.index, d=np.transpose(mwt), time_support=sig.time_support)
+            mwt[ind, :] = _convolve_wavelet(sig, fs, freq, n_cycle, scaling, norm=norm)
+        return nap.TsdFrame(
+            t=sig.index, d=np.transpose(mwt), time_support=sig.time_support
+        )
     else:
         mwt = np.zeros(
             [sig.values.shape[0], len(freqs), sig.values.shape[1]], dtype=complex
@@ -237,22 +241,22 @@ def _convolve_wavelet(
     morlet_f = morlet(int(2**precision), ncycles=n_cycles, scaling=scaling)
     x = np.linspace(-8, 8, int(2**precision))
     int_psi = np.conj(_integrate(morlet_f, x[1] - x[0]))
-    scale = scaling / (freq/fs)
+    scale = scaling / (freq / fs)
     j = np.arange(scale * (x[-1] - x[0]) + 1) / (scale * (x[1] - x[0]))
     j = j.astype(int)  # floor
     if j[-1] >= int_psi.size:
         j = np.extract(j < int_psi.size, j)
     int_psi_scale = int_psi[j][::-1]
     conv = np.convolve(sig, int_psi_scale)
-    coef = - np.sqrt(scale) * np.diff(conv, axis=-1)
+    coef = -np.sqrt(scale) * np.diff(conv, axis=-1)
     # transform axis is always -1 due to the data reshape above
-    d = (coef.shape[-1] - sig.shape[-1]) / 2.
+    d = (coef.shape[-1] - sig.shape[-1]) / 2.0
     if d > 0:
-        coef = coef[..., floor(d):-ceil(d)]
+        coef = coef[..., floor(d) : -ceil(d)]
     elif d < 0:
-        raise ValueError(
-            f"Selected scale of {scale} too small.")
+        raise ValueError(f"Selected scale of {scale} too small.")
     return coef
+
 
 def _integrate(arr, step):
     integral = np.cumsum(arr)
