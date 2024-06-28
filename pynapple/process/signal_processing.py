@@ -53,7 +53,7 @@ def compute_welch_spectrum(sig, fs=None):
     return spectogram, freqs
 
 
-def morlet(M=1024, ncycles=1.5, scaling=1.0, precision=8):
+def _morlet(M=1024, ncycles=1.5, scaling=1.0, precision=8):
     """
     Defines the complex Morelet wavelet kernel
 
@@ -235,7 +235,7 @@ def _convolve_wavelet(
     """
     if norm not in ["sss", "amp"]:
         raise ValueError("Given `norm` must be `sss` or `amp`")
-    morlet_f = morlet(int(2**precision), ncycles=n_cycles, scaling=scaling)
+    morlet_f = _morlet(int(2**precision), ncycles=n_cycles, scaling=scaling)
     x = np.linspace(-8, 8, int(2**precision))
     int_psi = np.conj(_integrate(morlet_f, x[1] - x[0]))
     scale = scaling / (freq / fs)
