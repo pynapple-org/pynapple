@@ -13,9 +13,6 @@ from scipy.signal import welch
 
 import pynapple as nap
 
-with open("wavelets.json") as f:
-    WAVELET_DICT = json.load(f)
-
 
 def compute_spectrum(sig, fs=None):
     """
