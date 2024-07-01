@@ -4,7 +4,6 @@ Signal processing tools for Pynapple.
 Contains functionality for signal processing pynapple object; fourier transforms and wavelet decomposition.
 """
 
-import json
 from itertools import repeat
 from math import ceil, floor
 
