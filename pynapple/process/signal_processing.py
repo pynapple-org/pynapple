@@ -8,6 +8,7 @@ from itertools import repeat
 from math import ceil, floor
 
 import numpy as np
+import pandas as pd
 from scipy.signal import welch
 
 import pynapple as nap
@@ -16,7 +17,7 @@ import pynapple as nap
 def compute_spectrum(sig, fs=None):
     """
     Performs numpy fft on sig, returns output
-    ..todo: Make sig handle TsdFrame, TsdTensor
+    ..todo: Make sig handle TsdTensor
 
     ----------
     sig : pynapple.Tsd or pynapple.TsdFrame
@@ -24,13 +25,13 @@ def compute_spectrum(sig, fs=None):
     fs : float, optional
         Sampling rate, in Hz. If None, will be calculated from the given signal
     """
-    if not isinstance(sig, nap.Tsd):
-        raise TypeError("Currently compute_fft is only implemented for Tsd")
+    if not isinstance(sig, (nap.Tsd, nap.TsdFrame)):
+        raise TypeError("Currently compute_fft is only implemented for Tsd or TsdFrame")
     if fs is None:
         fs = sig.index.shape[0] / (sig.index.max() - sig.index.min())
-    fft_result = np.fft.fft(sig.values)
+    fft_result = np.fft.fft(sig.values, axis=0)
     fft_freq = np.fft.fftfreq(len(sig.values), 1 / fs)
-    return fft_result, fft_freq
+    return pd.DataFrame(fft_result, fft_freq)
 
 
 def compute_welch_spectrum(sig, fs=None):
