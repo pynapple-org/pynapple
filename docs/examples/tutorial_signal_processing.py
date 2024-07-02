@@ -57,21 +57,21 @@ if path not in os.listdir("."):
 # Parsing the data
 # ------------------
 # Now that we have the data, we must append the 2kHz LFP recording to the .nwb file
-eeg_path = "data/A2929-200711/A2929-200711.dat"
-frequency = 20000  # Hz
-n_channels = 16
-f = open(eeg_path, "rb")
-startoffile = f.seek(0, 0)
-endoffile = f.seek(0, 2)
-f.close()
-bytes_size = 2
-n_samples = int((endoffile - startoffile) / n_channels / bytes_size)
-duration = n_samples / frequency
-interval = 1 / frequency
-fp = np.memmap(eeg_path, np.int16, "r", shape=(n_samples, n_channels))
-timestep = np.arange(0, n_samples) / frequency
-eeg = nap.TsdFrame(t=timestep, d=fp)
-nap.append_NWB_LFP("data/A2929-200711/", eeg)
+# eeg_path = "data/A2929-200711/A2929-200711.dat"
+# frequency = 20000  # Hz
+# n_channels = 16
+# f = open(eeg_path, "rb")
+# startoffile = f.seek(0, 0)
+# endoffile = f.seek(0, 2)
+# f.close()
+# bytes_size = 2
+# n_samples = int((endoffile - startoffile) / n_channels / bytes_size)
+# duration = n_samples / frequency
+# interval = 1 / frequency
+# fp = np.memmap(eeg_path, np.int16, "r", shape=(n_samples, n_channels))
+# timestep = np.arange(0, n_samples) / frequency
+# eeg = nap.TsdFrame(t=timestep, d=fp)
+# nap.append_NWB_LFP("data/A2929-200711/", eeg)
 
 
 # %%
@@ -91,8 +91,9 @@ NES = nap.TsdFrame(
     d=data["ElectricalSeries"].values,
     time_support=data["ElectricalSeries"].time_support,
 )
-wake_minute = NES.value_from(NES, nap.IntervalSet(900, 960))
-sleep_minute = NES.value_from(NES, nap.IntervalSet(0, 60))
+wake_minute = NES.restrict(nap.IntervalSet(900, 960))
+sleep_minute = NES.restrict(nap.IntervalSet(0, 60))
+channel = 1
 
 # %%
 # ***
@@ -102,7 +103,6 @@ sleep_minute = NES.value_from(NES, nap.IntervalSet(0, 60))
 fig, ax = plt.subplots(2)
 for channel in range(sleep_minute.shape[1]):
     ax[0].plot(
-        sleep_minute.index.values,
         sleep_minute[:, channel],
         alpha=0.5,
         label="Sleep Data",
@@ -110,7 +110,9 @@ for channel in range(sleep_minute.shape[1]):
 ax[0].set_title("Sleep ephys")
 for channel in range(wake_minute.shape[1]):
     ax[1].plot(
-        wake_minute.index.values, wake_minute[:, channel], alpha=0.5, label="Wake Data"
+        wake_minute[:, channel],
+        alpha=0.5,
+        label="Wake Data"
     )
 ax[1].set_title("Wake ephys")
 plt.show()
@@ -119,7 +121,6 @@ plt.show()
 # %%
 # There is much shared information between channels, and wake and sleep don't seem visibly different.
 # Let's take the Fourier transforms of one channel for both and see if differences are present
-channel = 1
 fig, ax = plt.subplots(1)
 fft_sig, fft_freqs = nap.compute_spectrum(sleep_minute[:, channel], fs=int(FS))
 ax.plot(fft_freqs, np.abs(fft_sig), alpha=0.5, label="Sleep Data")
@@ -201,14 +202,13 @@ plt.show()
 # Let's focus on the waking data. Let's see if we can isolate the theta oscillations from the data
 freq = 3
 interval = (937, 939)
-wake_second = wake_minute.value_from(
-    wake_minute, nap.IntervalSet(interval[0], interval[1])
-)
+wake_second = wake_minute.restrict(nap.IntervalSet(interval[0], interval[1]))
+mwt_wake_second = mwt_wake.restrict(nap.IntervalSet(interval[0], interval[1]))
 fig, ax = plt.subplots(1)
 ax.plot(wake_second.index.values, wake_second[:, channel], alpha=0.5, label="Wake Data")
 ax.plot(
     wake_second.index.values,
-    mwt_wake.value_from(mwt_wake, nap.IntervalSet(interval[0], interval[1]))[
+    mwt_wake_second[
         :, freq
     ].values.real,
     label="Theta oscillations",
@@ -222,16 +222,15 @@ plt.show()
 freq = 0
 # interval = (10, 15)
 interval = (20, 25)
-sleep_second = sleep_minute.value_from(
-    sleep_minute, nap.IntervalSet(interval[0], interval[1])
-)
+sleep_second = sleep_minute.restrict(nap.IntervalSet(interval[0], interval[1]))
+mwt_sleep_second = mwt_sleep.restrict(nap.IntervalSet(interval[0], interval[1]))
 _, ax = plt.subplots(1)
 ax.plot(
-    sleep_second.index.values, sleep_second[:, channel], alpha=0.5, label="Wake Data"
+    sleep_second[:, channel], alpha=0.5, label="Wake Data"
 )
 ax.plot(
     sleep_second.index.values,
-    mwt_sleep.value_from(mwt_sleep, nap.IntervalSet(interval[0], interval[1]))[
+    mwt_sleep_second[
         :, freq
     ].values.real,
     label="Slow Wave Oscillations",
@@ -244,7 +243,7 @@ plt.show()
 
 _, ax = plt.subplots(20, figsize=(10, 50))
 mwt_sleep = np.transpose(
-    mwt_sleep.value_from(mwt_sleep, nap.IntervalSet(interval[0], interval[1]))
+    mwt_sleep_second
 )
 ax[0].plot(sleep_second.index, sleep_second.values[:, 0])
 plot_timefrequency(sleep_second.index, freqs, np.abs(mwt_sleep[:, :]), ax=ax[1])
