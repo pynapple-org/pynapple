@@ -14,7 +14,7 @@ from scipy.signal import welch
 import pynapple as nap
 
 
-def compute_spectrum(sig, fs=None):
+def compute_spectogram(sig, fs=None):
     """
     Performs numpy fft on sig, returns output
     ..todo: Make sig handle TsdTensor
@@ -34,7 +34,7 @@ def compute_spectrum(sig, fs=None):
     return pd.DataFrame(fft_result, fft_freq)
 
 
-def compute_welch_spectrum(sig, fs=None):
+def compute_welch_spectogram(sig, fs=None):
     """
     Performs scipy Welch's decomposition on sig, returns output
     ..todo: Make sig handle TsdFrame, TsdTensor
@@ -45,12 +45,12 @@ def compute_welch_spectrum(sig, fs=None):
     fs : float, optional
         Sampling rate, in Hz. If None, will be calculated from the given signal
     """
-    if not isinstance(sig, nap.Tsd):
+    if not isinstance(sig, (nap.Tsd, nap.TsdFrame)):
         raise TypeError("Currently compute_fft is only implemented for Tsd")
     if fs is None:
         fs = sig.index.shape[0] / (sig.index.max() - sig.index.min())
-    freqs, spectogram = welch(sig.values, fs=fs)
-    return spectogram, freqs
+    freqs, spectogram = welch(sig.values, fs=fs, axis=0)
+    return pd.DataFrame(spectogram, freqs)
 
 
 def _morlet(M=1024, ncycles=1.5, scaling=1.0, precision=8):
@@ -145,7 +145,7 @@ def compute_wavelet_transform(sig, fs, freqs, n_cycles=1.5, scaling=1.0, norm="a
     ----------
     sig : pynapple.Tsd or pynapple.TsdFrame
         Time series.
-    fs : float
+    fs : float or None
         Sampling rate, in Hz.
     freqs : 1d array or list of float
         If array, frequency values to estimate with morlet wavelets.

@@ -16,9 +16,9 @@ from .randomize import (
     shuffle_ts_intervals,
 )
 from .signal_processing import (
-    compute_spectrum,
+    compute_spectogram,
     compute_wavelet_transform,
-    compute_welch_spectrum,
+    compute_welch_spectogram,
 )
 from .tuning_curves import (
     compute_1d_mutual_info,

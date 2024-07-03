@@ -20,12 +20,8 @@ This tutorial was made by Kipp Freud.
 #
 # Now, import the necessary libraries:
 
-import os
-from zipfile import ZipFile
-
 import matplotlib.pyplot as plt
 import numpy as np
-import requests
 
 import pynapple as nap
 
@@ -33,51 +29,28 @@ import pynapple as nap
 # ***
 # Downloading the data
 # ------------------
-# First things first: Let's download and extract the data
-path = "data/A2929-200711"
-extract_to = "data"
-if extract_to not in os.listdir("."):
-    os.mkdir(extract_to)
-if path not in os.listdir("."):
-    # Download the file
-    response = requests.get(
-        "https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1"
-    )
-    zip_path = os.path.join(extract_to, "/downloaded_file.zip")
-    # Write the zip file to disk
-    with open(zip_path, "wb") as f:
-        f.write(response.content)
-    # Unzip the file
-    with ZipFile(zip_path, "r") as zip_ref:
-        zip_ref.extractall(extract_to)
-
-
-# %%
-# ***
-# Parsing the data
-# ------------------
-# Now that we have the data, we must append the 2kHz LFP recording to the .nwb file
-# eeg_path = "data/A2929-200711/A2929-200711.dat"
-# frequency = 20000  # Hz
-# n_channels = 16
-# f = open(eeg_path, "rb")
-# startoffile = f.seek(0, 0)
-# endoffile = f.seek(0, 2)
-# f.close()
-# bytes_size = 2
-# n_samples = int((endoffile - startoffile) / n_channels / bytes_size)
-# duration = n_samples / frequency
-# interval = 1 / frequency
-# fp = np.memmap(eeg_path, np.int16, "r", shape=(n_samples, n_channels))
-# timestep = np.arange(0, n_samples) / frequency
-# eeg = nap.TsdFrame(t=timestep, d=fp)
-# nap.append_NWB_LFP("data/A2929-200711/", eeg)
+# First things first: Let's download and extract the data - currently commented as correct NWB is not online
+# path = "data/A2929-200711"
+# extract_to = "data"
+# if extract_to not in os.listdir("."):
+#     os.mkdir(extract_to)
+# if path not in os.listdir("."):
+#     # Download the file
+#     response = requests.get(
+#         "https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1"
+#     )
+#     zip_path = os.path.join(extract_to, "/downloaded_file.zip")
+#     # Write the zip file to disk
+#     with open(zip_path, "wb") as f:
+#         f.write(response.content)
+#     # Unzip the file
+#     with ZipFile(zip_path, "r") as zip_ref:
+#         zip_ref.extractall(extract_to)
 
 
 # %%
 # Let's save the RoiResponseSeries as a variable called 'transients' and print it
 FS = 1250
-# data = nap.load_file("data/A2929-200711/pynapplenwb/A2929-200711.nwb")
 data = nap.load_file("data/stable.nwb")
 print(data["ElectricalSeries"])
 
@@ -109,28 +82,65 @@ for channel in range(sleep_minute.shape[1]):
     )
 ax[0].set_title("Sleep ephys")
 for channel in range(wake_minute.shape[1]):
-    ax[1].plot(
-        wake_minute[:, channel],
-        alpha=0.5,
-        label="Wake Data"
-    )
+    ax[1].plot(wake_minute[:, channel], alpha=0.5, label="Wake Data")
 ax[1].set_title("Wake ephys")
 plt.show()
 
 
 # %%
-# There is much shared information between channels, and wake and sleep don't seem visibly different.
-# Let's take the Fourier transforms of one channel for both and see if differences are present
-fig, ax = plt.subplots(1)
-fft_sig, fft_freqs = nap.compute_spectrum(sleep_minute[:, channel], fs=int(FS))
-ax.plot(fft_freqs, np.abs(fft_sig), alpha=0.5, label="Sleep Data")
-ax.set_xlim((0, FS / 2))
-fft_sig, fft_freqs = nap.compute_spectrum(wake_minute[:, channel], fs=int(FS))
-ax.plot(fft_freqs, np.abs(fft_sig), alpha=0.5, label="Wake Data")
-ax.set_title(f"Fourier Decomposition for channel {channel}")
-ax.legend()
+# Let's take the Fourier transforms of one channel for both waking and sleeping and see if differences are present
+channel = 1
+fig, ax = plt.subplots(2)
+fft = nap.compute_spectogram(sleep_minute, fs=int(FS))
+ax[0].plot(
+    fft.index, np.abs(fft.iloc[:, channel]), alpha=0.5, label="Sleep Data", c="blue"
+)
+ax[0].set_xlim((0, FS / 2))
+ax[0].set_xlabel("Freq (Hz)")
+ax[0].set_ylabel("Frequency Power")
+
+ax[0].set_title("Sleep LFP Decomposition")
+fft = nap.compute_spectogram(wake_minute, fs=int(FS))
+ax[1].plot(
+    fft.index, np.abs(fft.iloc[:, channel]), alpha=0.5, label="Wake Data", c="orange"
+)
+ax[1].set_xlim((0, FS / 2))
+fig.suptitle(f"Fourier Decomposition for channel {channel}")
+ax[1].set_title("Sleep LFP Decomposition")
+ax[1].set_xlabel("Freq (Hz)")
+ax[1].set_ylabel("Frequency Power")
+
+# ax.legend()
 plt.show()
 
+
+# %%
+# Let's now consider the Welch spectograms of waking and sleeping data...
+
+fig, ax = plt.subplots(2)
+fft = nap.compute_welch_spectogram(sleep_minute, fs=int(FS))
+ax[0].plot(
+    fft.index, np.abs(fft.iloc[:, channel]), alpha=0.5, label="Sleep Data", color="blue"
+)
+ax[0].set_xlim((0, FS / 2))
+ax[0].set_title("Sleep LFP Decomposition")
+ax[0].set_xlabel("Freq (Hz)")
+ax[0].set_ylabel("Frequency Power")
+welch = nap.compute_welch_spectogram(wake_minute, fs=int(FS))
+ax[1].plot(
+    welch.index,
+    np.abs(welch.iloc[:, channel]),
+    alpha=0.5,
+    label="Wake Data",
+    color="orange",
+)
+ax[1].set_xlim((0, FS / 2))
+fig.suptitle(f"Welch Decomposition for channel {channel}")
+ax[1].set_title("Sleep LFP Decomposition")
+ax[1].set_xlabel("Freq (Hz)")
+ax[1].set_ylabel("Frequency Power")
+# ax.legend()
+plt.show()
 
 # %%
 # There seems to be some differences presenting themselves - a bump in higher frequencies for waking data?
@@ -208,9 +218,7 @@ fig, ax = plt.subplots(1)
 ax.plot(wake_second.index.values, wake_second[:, channel], alpha=0.5, label="Wake Data")
 ax.plot(
     wake_second.index.values,
-    mwt_wake_second[
-        :, freq
-    ].values.real,
+    mwt_wake_second[:, freq].values.real,
     label="Theta oscillations",
 )
 ax.set_title(f"{freqs[freq]}Hz oscillation power.")
@@ -225,14 +233,10 @@ interval = (20, 25)
 sleep_second = sleep_minute.restrict(nap.IntervalSet(interval[0], interval[1]))
 mwt_sleep_second = mwt_sleep.restrict(nap.IntervalSet(interval[0], interval[1]))
 _, ax = plt.subplots(1)
-ax.plot(
-    sleep_second[:, channel], alpha=0.5, label="Wake Data"
-)
+ax.plot(sleep_second[:, channel], alpha=0.5, label="Wake Data")
 ax.plot(
     sleep_second.index.values,
-    mwt_sleep_second[
-        :, freq
-    ].values.real,
+    mwt_sleep_second[:, freq].values.real,
     label="Slow Wave Oscillations",
 )
 ax.set_title(f"{freqs[freq]}Hz oscillation power")
@@ -242,9 +246,7 @@ plt.show()
 # Let's plot spike phase, time scatter plots to see if spikes display phase characteristics during slow wave sleep
 
 _, ax = plt.subplots(20, figsize=(10, 50))
-mwt_sleep = np.transpose(
-    mwt_sleep_second
-)
+mwt_sleep = np.transpose(mwt_sleep_second)
 ax[0].plot(sleep_second.index, sleep_second.values[:, 0])
 plot_timefrequency(sleep_second.index, freqs, np.abs(mwt_sleep[:, :]), ax=ax[1])
 
