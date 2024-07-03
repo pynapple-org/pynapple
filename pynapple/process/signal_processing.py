@@ -26,7 +26,9 @@ def compute_spectogram(sig, fs=None):
         Sampling rate, in Hz. If None, will be calculated from the given signal
     """
     if not isinstance(sig, (nap.Tsd, nap.TsdFrame)):
-        raise TypeError("Currently compute_fft is only implemented for Tsd or TsdFrame")
+        raise TypeError(
+            "Currently compute_spectogram is only implemented for Tsd or TsdFrame"
+        )
     if fs is None:
         fs = sig.index.shape[0] / (sig.index.max() - sig.index.min())
     fft_result = np.fft.fft(sig.values, axis=0)
@@ -46,7 +48,9 @@ def compute_welch_spectogram(sig, fs=None):
         Sampling rate, in Hz. If None, will be calculated from the given signal
     """
     if not isinstance(sig, (nap.Tsd, nap.TsdFrame)):
-        raise TypeError("Currently compute_fft is only implemented for Tsd")
+        raise TypeError(
+            "Currently compute_welch_spectogram is only implemented for Tsd or TsdFrame"
+        )
     if fs is None:
         fs = sig.index.shape[0] / (sig.index.max() - sig.index.min())
     freqs, spectogram = welch(sig.values, fs=fs, axis=0)
