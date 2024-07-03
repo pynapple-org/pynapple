@@ -1,6 +1,7 @@
 """Tests of `signal_processing` for pynapple"""
 
 import numpy as np
+import pandas as pd
 import pytest
 
 import pynapple as nap
@@ -10,18 +11,15 @@ def test_compute_spectogram():
     t = np.linspace(0, 1, 1024)
     sig = nap.Tsd(d=np.random.random(1024), t=t)
     r = nap.compute_spectogram(sig)
-    assert len(r[1]) == 1024
-    assert len(r[0]) == 1024
-    assert r[0].dtype == np.complex128
-    assert r[1].dtype == np.float64
+    assert isinstance(r, pd.DataFrame)
+    assert r.shape[0] == 1024
 
 
-def test_ccompute_welch_spectogram():
+def test_compute_welch_spectogram():
     t = np.linspace(0, 1, 1024)
     sig = nap.Tsd(d=np.random.random(1024), t=t)
     r = nap.compute_welch_spectogram(sig)
-    assert r[0].dtype == np.float64
-    assert r[1].dtype == np.float64
+    assert isinstance(r, pd.DataFrame)
 
 
 def test_compute_wavelet_transform():
