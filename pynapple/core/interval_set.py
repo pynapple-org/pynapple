@@ -80,7 +80,7 @@ class IntervalSet(NDArrayOperatorsMixin):
     A class representing a (irregular) set of time intervals in elapsed time, with relative operations
     """
 
-    def __init__(self, start, end=None, time_units="s", **kwargs):
+    def __init__(self, start, end=None, time_units="s"):
         """
         IntervalSet initializer
 

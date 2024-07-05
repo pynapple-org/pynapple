@@ -514,7 +514,11 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
         new_data_array = _convolve(time_array, data_array, starts, ends, array, trim)
 
-        return self.__class__(t=time_array, d=new_data_array, time_support=ep)
+        kwargs_dict = dict(time_support=ep)
+        if hasattr(self, "columns"):
+            kwargs_dict["columns"] = self.columns
+
+        return self.__class__(t=time_array, d=new_data_array, **kwargs_dict)
 
     def smooth(self, std, windowsize=None, time_units="s", size_factor=100, norm=True):
         """Smooth a time series with a gaussian kernel.
