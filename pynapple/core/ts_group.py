@@ -107,10 +107,14 @@ class TsGroup(UserDict):
         if not isinstance(bypass_check, bool):
             raise TypeError("Argument bypass_check should be of type bool")
         passed_time_support = False
-        if time_support is not None and not isinstance(time_support, IntervalSet):
-            raise TypeError("Argument time_support should be of type IntervalSet")
-        else:
+
+        if isinstance(time_support, IntervalSet):
             passed_time_support = True
+        else:
+            if time_support is not None:
+                raise TypeError("Argument time_support should be of type IntervalSet")
+            else:
+                passed_time_support = False
 
         self._initialized = False
 

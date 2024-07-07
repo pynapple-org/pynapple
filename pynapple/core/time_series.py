@@ -1002,9 +1002,9 @@ class TsdFrame(BaseTsd):
             if all(is_array_like(a) for a in [index, output]):
                 if output.shape[0] == index.shape[0]:
 
-                    if isinstance(columns, pd.Index):
-                        if not pd.api.types.is_integer_dtype(columns):
-                            kwargs["columns"] = columns
+                    # if isinstance(columns, pd.Index):
+                    #     if not pd.api.types.is_integer_dtype(columns):
+                    kwargs["columns"] = columns
 
                     return _get_class(output)(
                         t=index, d=output, time_support=self.time_support, **kwargs

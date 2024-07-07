@@ -335,6 +335,7 @@ class Base(abc.ABC):
         0    0.0  500.0
 
         """
+
         assert isinstance(iset, IntervalSet), "Argument should be IntervalSet"
 
         time_array = self.index.values
