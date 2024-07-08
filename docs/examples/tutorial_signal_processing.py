@@ -20,6 +20,7 @@ This tutorial was made by Kipp Freud.
 #
 # Now, import the necessary libraries:
 import matplotlib
+
 matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import numpy as np
@@ -50,12 +51,12 @@ print(data)
 # Let's consider two 60-second slices of data, one from the sleep epoch and one from wake
 
 wake_minute_interval = nap.IntervalSet(
-        data["epochs"]["MazeEpoch"]["start"] + 60.,
-        data["epochs"]["MazeEpoch"]["start"] + 120.,
+    data["epochs"]["MazeEpoch"]["start"] + 60.0,
+    data["epochs"]["MazeEpoch"]["start"] + 120.0,
 )
 sleep_minute_interval = nap.IntervalSet(
-        data["epochs"]["POSTEpoch"]["start"] + 60.,
-        data["epochs"]["POSTEpoch"]["start"] + 120.,
+    data["epochs"]["POSTEpoch"]["start"] + 60.0,
+    data["epochs"]["POSTEpoch"]["start"] + 120.0,
 )
 wake_minute = nap.TsdFrame(
     t=data["LFP"].restrict(wake_minute_interval).index.values,
@@ -212,10 +213,7 @@ plt.show()
 # %%
 # Let's focus on the waking data. Let's see if we can isolate the theta oscillations from the data
 freq = 3
-interval = (
-    wake_minute_interval["start"],
-    wake_minute_interval["start"]+2
-)
+interval = (wake_minute_interval["start"], wake_minute_interval["start"] + 2)
 wake_second = wake_minute.restrict(nap.IntervalSet(interval[0], interval[1]))
 mwt_wake_second = mwt_wake.restrict(nap.IntervalSet(interval[0], interval[1]))
 fig, ax = plt.subplots(1)
@@ -233,10 +231,7 @@ plt.show()
 # Let's focus on the sleeping data. Let's see if we can isolate the slow wave oscillations from the data
 freq = 0
 # interval = (10, 15)
-interval = (
-    sleep_minute_interval["start"]+30,
-    sleep_minute_interval["start"]+35
-)
+interval = (sleep_minute_interval["start"] + 30, sleep_minute_interval["start"] + 35)
 sleep_second = sleep_minute.restrict(nap.IntervalSet(interval[0], interval[1]))
 mwt_sleep_second = mwt_sleep.restrict(nap.IntervalSet(interval[0], interval[1]))
 _, ax = plt.subplots(1)
@@ -283,8 +278,8 @@ for i in spikes.keys():
         )
     phase[i] = np.array(phase_i)
 
-spikes = {k: v for k,v in spikes.items() if len(v) > 0}
-phase = {k: v for k,v in phase.items() if len(v) > 0}
+spikes = {k: v for k, v in spikes.items() if len(v) > 0}
+phase = {k: v for k, v in phase.items() if len(v) > 0}
 
 for i in range(15):
     ax[5 + i].scatter(spikes[list(spikes.keys())[i]], phase[list(phase.keys())[i]])

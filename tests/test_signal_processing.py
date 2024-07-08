@@ -47,6 +47,14 @@ def test_compute_welch_spectogram():
 
 
 def test_compute_wavelet_transform():
+
+    ##..todo put there
+    t = np.linspace(0, 1, 1024) # can remove this when we move it
+    sig = nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=t)
+    freqs = np.linspace(1, 600, 10)
+    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
+    assert mwt.shape == (1024, 10, 4, 2)
+
     t = np.linspace(0, 1, 1024)
     sig = nap.Tsd(d=np.random.random(1024), t=t)
     freqs = np.linspace(1, 600, 10)
@@ -71,6 +79,8 @@ def test_compute_wavelet_transform():
     mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
     assert mwt.shape == (1024, 10, 4)
 
+    #..todo: here
+
     with pytest.raises(ValueError) as e_info:
         nap.compute_wavelet_transform(sig, fs=None, freqs=freqs, n_cycles=-1.5)
     assert str(e_info.value) == "Number of cycles must be a positive number."
@@ -89,3 +99,7 @@ def test_compute_wavelet_transform():
         str(e_info.value)
         == "The length of number of cycles does not match other inputs."
     )
+
+
+if __name__ == "__main__":
+    test_compute_wavelet_transform()

@@ -173,30 +173,34 @@ def compute_wavelet_transform(sig, fs, freqs, n_cycles=1.5, scaling=1.0, norm="a
     -----
     This computes the continuous wavelet transform at specified frequencies across time.
     """
-    if not isinstance(sig, nap.Tsd) and not isinstance(sig, nap.TsdFrame):
-        raise TypeError("`sig` must be instance of Tsd or TsdFrame")
+    if not isinstance(sig, (nap.Tsd, nap.TsdFrame, nap.TsdTensor)):
+        raise TypeError("`sig` must be instance of Tsd, TsdFrame, or TsdTensor")
     if isinstance(freqs, (tuple, list)):
         freqs = _create_freqs(*freqs)
     if fs is None:
         fs = sig.index.shape[0] / (sig.index.max() - sig.index.min())
     n_cycles = _check_n_cycles(n_cycles, len(freqs))
     if isinstance(sig, nap.Tsd):
-        mwt = np.zeros([len(freqs), len(sig)], dtype=complex)
-        for ind, (freq, n_cycle) in enumerate(zip(freqs, n_cycles)):
-            mwt[ind, :] = _convolve_wavelet(sig, fs, freq, n_cycle, scaling, norm=norm)
-        return nap.TsdFrame(
-            t=sig.index, d=np.transpose(mwt), time_support=sig.time_support
-        )
+        sig = sig.reshape((sig.shape[0], 1))
+        output_shape = (sig.shape[0], len(freqs))
     else:
-        mwt = np.zeros(
-            [sig.values.shape[0], len(freqs), sig.values.shape[1]], dtype=complex
+        output_shape = (sig.shape[0], len(freqs), *sig.shape[1:])
+        sig = sig.reshape((sig.shape[0], np.prod(sig.shape[1:])))
+    mwt = np.zeros(
+        [sig.values.shape[0], len(freqs), sig.values.shape[1]], dtype=complex
+    )
+    for channel_i in range(sig.values.shape[1]):
+        for ind, (freq, n_cycle) in enumerate(zip(freqs, n_cycles)):
+            mwt[:, ind, channel_i] = _convolve_wavelet(
+                sig[:, channel_i], fs, freq, n_cycle, scaling, norm=norm
+            )
+    if len(output_shape) == 2:
+        return nap.TsdFrame(
+            t=sig.index, d=mwt.reshape(output_shape), time_support=sig.time_support
         )
-        for channel_i in range(sig.values.shape[1]):
-            for ind, (freq, n_cycle) in enumerate(zip(freqs, n_cycles)):
-                mwt[:, ind, channel_i] = _convolve_wavelet(
-                    sig[:, channel_i], fs, freq, n_cycle, scaling, norm=norm
-                )
-        return nap.TsdTensor(t=sig.index, d=mwt, time_support=sig.time_support)
+    return nap.TsdTensor(
+        t=sig.index, d=mwt.reshape(output_shape), time_support=sig.time_support
+    )
 
 
 def _convolve_wavelet(
