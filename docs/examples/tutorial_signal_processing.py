@@ -19,53 +19,54 @@ This tutorial was made by Kipp Freud.
 # mkdocs_gallery_thumbnail_number = 1
 #
 # Now, import the necessary libraries:
-
+import matplotlib
+matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import numpy as np
 
 import pynapple as nap
+from examples_utils import data, plotting
 
 # %%
 # ***
 # Downloading the data
 # ------------------
-# First things first: Let's download and extract the data - currently commented as correct NWB is not online
-# path = "data/A2929-200711"
-# extract_to = "data"
-# if extract_to not in os.listdir("."):
-#     os.mkdir(extract_to)
-# if path not in os.listdir("."):
-#     # Download the file
-#     response = requests.get(
-#         "https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1"
-#     )
-#     zip_path = os.path.join(extract_to, "/downloaded_file.zip")
-#     # Write the zip file to disk
-#     with open(zip_path, "wb") as f:
-#         f.write(response.content)
-#     # Unzip the file
-#     with ZipFile(zip_path, "r") as zip_ref:
-#         zip_ref.extractall(extract_to)
+# First things first: Let's download and extract the data - download section currently commented as correct NWB
+# is not online
 
+# path = data.download_data(
+#     "Achilles_10252013.nwb", "https://osf.io/hu5ma/download", "../data"
+# )
+# data = nap.load_file(path)
 
-# %%
-# Let's save the RoiResponseSeries as a variable called 'transients' and print it
-FS = 1250
-data = nap.load_file("data/stable.nwb")
-print(data["ElectricalSeries"])
+data = nap.load_file("../data/Achillies_ephys.nwb")
+FS = len(data["LFP"].index[:]) / (data["LFP"].index[-1] - data["LFP"].index[0])
+print(data)
 
 # %%
 # ***
 # Selecting slices
 # -----------------------------------
-# Let's consider a two 1-second slices of data, one from the sleep epoch and one from wake
-NES = nap.TsdFrame(
-    t=data["ElectricalSeries"].index.values,
-    d=data["ElectricalSeries"].values,
-    time_support=data["ElectricalSeries"].time_support,
+# Let's consider two 60-second slices of data, one from the sleep epoch and one from wake
+
+wake_minute_interval = nap.IntervalSet(
+        data["epochs"]["MazeEpoch"]["start"] + 60.,
+        data["epochs"]["MazeEpoch"]["start"] + 120.,
 )
-wake_minute = NES.restrict(nap.IntervalSet(900, 960))
-sleep_minute = NES.restrict(nap.IntervalSet(0, 60))
+sleep_minute_interval = nap.IntervalSet(
+        data["epochs"]["POSTEpoch"]["start"] + 60.,
+        data["epochs"]["POSTEpoch"]["start"] + 120.,
+)
+wake_minute = nap.TsdFrame(
+    t=data["LFP"].restrict(wake_minute_interval).index.values,
+    d=data["LFP"].restrict(wake_minute_interval).values,
+    time_support=data["LFP"].restrict(wake_minute_interval).time_support,
+)
+sleep_minute = nap.TsdFrame(
+    t=data["LFP"].restrict(sleep_minute_interval).index.values,
+    d=data["LFP"].restrict(sleep_minute_interval).values,
+    time_support=data["LFP"].restrict(sleep_minute_interval).time_support,
+)
 channel = 1
 
 # %%
@@ -211,7 +212,10 @@ plt.show()
 # %%
 # Let's focus on the waking data. Let's see if we can isolate the theta oscillations from the data
 freq = 3
-interval = (937, 939)
+interval = (
+    wake_minute_interval["start"],
+    wake_minute_interval["start"]+2
+)
 wake_second = wake_minute.restrict(nap.IntervalSet(interval[0], interval[1]))
 mwt_wake_second = mwt_wake.restrict(nap.IntervalSet(interval[0], interval[1]))
 fig, ax = plt.subplots(1)
@@ -229,7 +233,10 @@ plt.show()
 # Let's focus on the sleeping data. Let's see if we can isolate the slow wave oscillations from the data
 freq = 0
 # interval = (10, 15)
-interval = (20, 25)
+interval = (
+    sleep_minute_interval["start"]+30,
+    sleep_minute_interval["start"]+35
+)
 sleep_second = sleep_minute.restrict(nap.IntervalSet(interval[0], interval[1]))
 mwt_sleep_second = mwt_sleep.restrict(nap.IntervalSet(interval[0], interval[1]))
 _, ax = plt.subplots(1)
@@ -276,8 +283,11 @@ for i in spikes.keys():
         )
     phase[i] = np.array(phase_i)
 
+spikes = {k: v for k,v in spikes.items() if len(v) > 0}
+phase = {k: v for k,v in phase.items() if len(v) > 0}
+
 for i in range(15):
-    ax[5 + i].scatter(spikes[i], phase[i])
+    ax[5 + i].scatter(spikes[list(spikes.keys())[i]], phase[list(phase.keys())[i]])
     ax[5 + i].set_xlim(interval[0], interval[1])
     ax[5 + i].set_ylim(-np.pi, np.pi)
     ax[5 + i].set_xlabel("time (s)")

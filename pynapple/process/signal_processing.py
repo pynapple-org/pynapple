@@ -17,7 +17,6 @@ import pynapple as nap
 def compute_spectogram(sig, fs=None):
     """
     Performs numpy fft on sig, returns output
-    ..todo: Make sig handle TsdTensor
 
     ----------
     sig : pynapple.Tsd or pynapple.TsdFrame
@@ -39,7 +38,6 @@ def compute_spectogram(sig, fs=None):
 def compute_welch_spectogram(sig, fs=None):
     """
     Performs scipy Welch's decomposition on sig, returns output
-    ..todo: Make sig handle TsdFrame, TsdTensor
 
     ----------
     sig : pynapple.Tsd or pynapple.TsdFrame
