@@ -475,8 +475,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         Parameters
         ----------
         array : array-like
-            One dimensional input array-like.
-
+            1-D or 2-D array with kernel(s) to be used for convolution.
+            First dimension is assumed to be time.
         ep : None, optional
             The epochs to apply the convolution
         trim : str, optional
@@ -488,14 +488,13 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
             The convolved time series
         """
         if not is_array_like(array):
-            raise RuntimeError("Input should be a numpy array (or jax array if pynajax is installed).")
-            
-        assert array.ndim == 1, "Input should be a one dimensional array."
-        assert trim in [
-            "both",
-            "left",
-            "right",
-        ], "Unknow argument. trim should be 'both', 'left' or 'right'."
+            raise IOError("Input should be a numpy array (or jax array if pynajax is installed).")
+
+        if array.ndim == 0:
+            raise IOError("Provide a kernel with at least 1 dimension, current kernel has 0 dimensions")
+
+        if trim not in ["both","left","right"]:
+            raise IOError("Unknow argument. trim should be 'both', 'left' or 'right'.")
 
         time_array = self.index.values
         data_array = self.values
@@ -505,7 +504,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
             starts = ep.start
             ends = ep.end
         else:
-            assert isinstance(ep, IntervalSet)
+            if not isinstance(ep, IntervalSet):
+                raise IOError("ep should be an object of type IntervalSet")            
             starts = ep.start
             ends = ep.end
             idx = _restrict(time_array, starts, ends)
