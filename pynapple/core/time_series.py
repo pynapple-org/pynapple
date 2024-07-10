@@ -487,9 +487,9 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         Tsd, TsdFrame or TsdTensor
             The convolved time series
         """
-        assert is_array_like(
-            array
-        ), "Input should be a numpy array (or jax array if pynajax is installed)."
+        if not is_array_like(array):
+            raise RuntimeError("Input should be a numpy array (or jax array if pynajax is installed).")
+            
         assert array.ndim == 1, "Input should be a one dimensional array."
         assert trim in [
             "both",
