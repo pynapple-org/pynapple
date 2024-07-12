@@ -122,11 +122,20 @@ def is_array_like(obj):
     has_ndim = hasattr(obj, "ndim")
 
     # Check for indexability (try to access the first element)
+
     try:
         obj[0]
         is_indexable = True
     except Exception:
         is_indexable = False
+
+    if not is_indexable:
+        if hasattr(obj, "__len__"):
+            try:
+                if len(obj) == 0:
+                    is_indexable = True  # Could be an empty array
+            except Exception:
+                is_indexable = False
 
     # Check for iterable property
     try:

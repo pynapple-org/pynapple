@@ -408,7 +408,31 @@ class Test_Time_Series_1:
             assert len(new_tsd) == 0
             assert len(new_tsd.time_support) == 0
 
-    def test_convolve(self, tsd):
+    def test_convolve_raise_errors(self, tsd):
+        if not isinstance(tsd, nap.Ts):
+
+            with pytest.raises(IOError) as e_info:
+                tsd.convolve([1,2,3])
+            assert str(e_info.value) == "Input should be a numpy array (or jax array if pynajax is installed)."
+
+            with pytest.raises(IOError) as e_info:
+                tsd.convolve(np.array([]))
+            assert str(e_info.value) == "Input array is length 0"
+
+            with pytest.raises(IOError) as e_info:
+                tsd.convolve(np.ones(3), trim='a')
+            assert str(e_info.value) == "Unknow argument. trim should be 'both', 'left' or 'right'."
+
+            with pytest.raises(IOError) as e_info:
+                tsd.convolve(np.ones((2,3,4)))
+            assert str(e_info.value) == "Array should be 1 or 2 dimension."
+
+            with pytest.raises(IOError) as e_info:
+                tsd.convolve(np.ones(3), ep=[1,2,3,4])
+            assert str(e_info.value) == "ep should be an object of type IntervalSet"
+
+
+    def test_convolve_1d_kernel(self, tsd):
         array = np.random.randn(10)
         if not isinstance(tsd, nap.Ts):
             tsd2 = tsd.convolve(array)
@@ -420,14 +444,6 @@ class Test_Time_Series_1:
                 tmp2, 
                 tsd2.values.reshape(tsd2.shape[0], -1)
                 )
-
-            with pytest.raises(AssertionError) as e_info:
-                tsd.convolve([1,2,3])
-            assert str(e_info.value) == "Input should be a numpy array (or jax array if pynajax is installed)."
-
-            with pytest.raises(AssertionError) as e_info:
-                tsd.convolve(np.random.rand(2,3))
-            assert str(e_info.value) == "Input should be a one dimensional array."
 
             ep = nap.IntervalSet(start=[0, 60], end=[40,100])
             tsd3 = tsd.convolve(array, ep)
@@ -456,9 +472,41 @@ class Test_Time_Series_1:
                     tsd2.values.reshape(tsd2.shape[0], -1)
                     )                        
 
-            with pytest.raises(AssertionError) as e_info:
-                tsd.convolve(array, trim='a')
-            assert str(e_info.value) == "Unknow argument. trim should be 'both', 'left' or 'right'."
+    def test_convolve_2d_kernel(self, tsd):
+        array = np.random.randn(10, 3)
+        if not isinstance(tsd, nap.Ts):
+            # no epochs
+            tsd2 = tsd.convolve(array)
+            tmp = tsd.values.reshape(tsd.shape[0], -1)
+            
+            output = []
+
+            for i in range(tmp.shape[1]):
+                for j in range(array.shape[1]):
+                    output.append(
+                        np.convolve(tmp[:,i], array[:,j], mode='full')[4:-5]
+                        )
+
+            output = np.array(output).T            
+            np.testing.assert_array_almost_equal(output,tsd2.values.reshape(tsd.shape[0], -1))
+
+            # epochs
+            ep = nap.IntervalSet(start=[0, 60], end=[40,100])
+            tsd2 = tsd.convolve(array, ep)
+                        
+            for k in range(len(ep)):
+                tmp = tsd.restrict(ep[k])
+                tmp2 = tmp.values.reshape(tmp.shape[0], -1)
+                output = []
+                for i in range(tmp2.shape[1]):
+                    for j in range(array.shape[1]):
+                        output.append(
+                            np.convolve(tmp2[:,i], array[:,j], mode='full')[4:-5]
+                            )
+                output = np.array(output).T            
+                np.testing.assert_array_almost_equal(
+                    output,tsd2.restrict(ep[k]).values.reshape(tmp.shape[0], -1)
+                    )
 
     def test_smooth(self, tsd):
         if not isinstance(tsd, nap.Ts):            
@@ -514,23 +562,23 @@ class Test_Time_Series_1:
 
     def test_smooth_raise_error(self, tsd):
         if not isinstance(tsd, nap.Ts):
-            with pytest.raises(AssertionError) as e_info:
+            with pytest.raises(IOError) as e_info:
                 tsd.smooth('a')
             assert str(e_info.value) == "std should be type int or float"
 
-            with pytest.raises(AssertionError) as e_info:
+            with pytest.raises(IOError) as e_info:
                 tsd.smooth(1, size_factor='b')
             assert str(e_info.value) == "size_factor should be of type int"
 
-            with pytest.raises(AssertionError) as e_info:
+            with pytest.raises(IOError) as e_info:
                 tsd.smooth(1, norm=1)
             assert str(e_info.value) == "norm should be of type boolean"
 
-            with pytest.raises(AssertionError) as e_info:
+            with pytest.raises(IOError) as e_info:
                 tsd.smooth(1, time_units = 0)
             assert str(e_info.value) == "time_units should be of type str"
 
-            with pytest.raises(AssertionError) as e_info:
+            with pytest.raises(IOError) as e_info:
                 tsd.smooth(1, windowsize='a')
             assert str(e_info.value) == "windowsize should be type int or float"
 
@@ -757,9 +805,21 @@ class Test_Time_Series_2:
         tsd2 = tsd.interpolate(ts)
         np.testing.assert_array_almost_equal(tsd2.values, y)
         
-        with pytest.raises(AssertionError) as e:
+        with pytest.raises(IOError) as e:
             tsd.interpolate([0, 1, 2])
         assert str(e.value) == "First argument should be an instance of Ts, Tsd, TsdFrame or TsdTensor"
+
+        with pytest.raises(IOError) as e:
+            tsd.interpolate(ts, left='a')
+        assert str(e.value) == "Argument left should be of type float or int"
+
+        with pytest.raises(IOError) as e:
+            tsd.interpolate(ts, right='a')
+        assert str(e.value) == "Argument right should be of type float or int"
+
+        with pytest.raises(IOError) as e:
+            tsd.interpolate(ts, ep=[1,2,3,4])
+        assert str(e.value) == "ep should be an object of type IntervalSet"
 
         # Right left
         ep = nap.IntervalSet(start=0, end=5)
@@ -989,7 +1049,7 @@ class Test_Time_Series_3:
         tsdframe2 = tsdframe.interpolate(ts)
         np.testing.assert_array_almost_equal(tsdframe2.values, data_stack)
         
-        with pytest.raises(AssertionError) as e:
+        with pytest.raises(IOError) as e:
             tsdframe.interpolate([0, 1, 2])
         assert str(e.value) == "First argument should be an instance of Ts, Tsd, TsdFrame or TsdTensor"
 
@@ -1020,6 +1080,14 @@ class Test_Time_Series_3:
         ep = nap.IntervalSet(start=200, end=300)
         tsdframe2 = tsdframe.interpolate(ts, ep)
         assert len(tsdframe2) == 0
+
+    def test_convolve_keep_columns(self, tsdframe):
+        array = np.random.randn(10)
+        tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), time_units="s", columns=['a', 'b', 'c'])        
+        tsd2 = tsdframe.convolve(array)
+
+        assert isinstance(tsd2, nap.TsdFrame)
+        np.testing.assert_array_equal(tsd2.columns, tsdframe.columns)
 
 ####################################################
 # Test for ts
@@ -1343,7 +1411,7 @@ class Test_Time_Series_5:
         tsdtensor2 = tsdtensor.interpolate(ts)
         np.testing.assert_array_almost_equal(tsdtensor2.values, data_stack)
         
-        with pytest.raises(AssertionError) as e:
+        with pytest.raises(IOError) as e:
             tsdtensor.interpolate([0, 1, 2])
         assert str(e.value) == "First argument should be an instance of Ts, Tsd, TsdFrame or TsdTensor"
 

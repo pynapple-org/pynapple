@@ -101,6 +101,21 @@ class TsGroup(UserDict):
             - If the converted keys are not unique, i.e. {1: ts_2, "2": ts_2} is valid,
             {1: ts_2, "1": ts_2}  is invalid.
         """
+        # Check input type
+        if time_units not in ["s", "ms", "us"]:
+            raise ValueError("Argument time_units should be 's', 'ms' or 'us'")
+        if not isinstance(bypass_check, bool):
+            raise TypeError("Argument bypass_check should be of type bool")
+        passed_time_support = False
+
+        if isinstance(time_support, IntervalSet):
+            passed_time_support = True
+        else:
+            if time_support is not None:
+                raise TypeError("Argument time_support should be of type IntervalSet")
+            else:
+                passed_time_support = False
+
         self._initialized = False
 
         # convert all keys to integer
@@ -141,7 +156,7 @@ class TsGroup(UserDict):
                     )
 
         # If time_support is passed, all elements of data are restricted prior to init
-        if isinstance(time_support, IntervalSet):
+        if passed_time_support:
             self.time_support = time_support
             if not bypass_check:
                 data = {k: data[k].restrict(self.time_support) for k in self.index}

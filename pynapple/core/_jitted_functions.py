@@ -1,5 +1,5 @@
 import numpy as np
-from numba import jit, njit, prange
+from numba import jit  # , njit, prange
 
 
 ################################
@@ -375,33 +375,33 @@ def _jitbin_array(countin, time_array, data_array, starts, ends, bin_size):
     return (new_time_array, new_data_array)
 
 
-@jit(nopython=True)
-def jitconvolve(d, a):
-    return np.convolve(d, a)
+# @jit(nopython=True)
+# def jitconvolve(d, a):
+#     return np.convolve(d, a)
 
 
-@njit(parallel=True)
-def pjitconvolve(data_array, array, trim="both"):
-    shape = data_array.shape
-    t = shape[0]
-    k = array.shape[0]
+# @njit(parallel=True)
+# def pjitconvolve(data_array, array, trim="both"):
+#     shape = data_array.shape
+#     t = shape[0]
+#     k = array.shape[0]
 
-    data_array = data_array.reshape(t, -1)
-    new_data_array = np.zeros(data_array.shape)
+#     data_array = data_array.reshape(t, -1)
+#     new_data_array = np.zeros(data_array.shape)
 
-    if trim == "both":
-        cut = ((k - 1) // 2, t + k - 1 - ((k - 1) // 2) - (1 - k % 2))
-    elif trim == "left":
-        cut = (k - 1, t + k - 1)
-    elif trim == "right":
-        cut = (0, t)
+#     if trim == "both":
+#         cut = ((k - 1) // 2, t + k - 1 - ((k - 1) // 2) - (1 - k % 2))
+#     elif trim == "left":
+#         cut = (k - 1, t + k - 1)
+#     elif trim == "right":
+#         cut = (0, t)
 
-    for i in prange(data_array.shape[1]):
-        new_data_array[:, i] = jitconvolve(data_array[:, i], array)[cut[0] : cut[1]]
+#     for i in prange(data_array.shape[1]):
+#         new_data_array[:, i] = jitconvolve(data_array[:, i], array)[cut[0] : cut[1]]
 
-    new_data_array = new_data_array.reshape(shape)
+#     new_data_array = new_data_array.reshape(shape)
 
-    return new_data_array
+#     return new_data_array
 
 
 ################################

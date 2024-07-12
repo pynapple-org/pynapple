@@ -10,6 +10,9 @@ See the [documentation](https://pynapple-org.github.io/pynapple/) of Pynapple fo
 This tutorial was made by Kipp Freud.
 
 """
+import math
+import os
+
 # %%
 # !!! warning
 #     This tutorial uses matplotlib for displaying the figure
@@ -19,16 +22,13 @@ This tutorial was made by Kipp Freud.
 # mkdocs_gallery_thumbnail_number = 1
 #
 # Now, import the necessary libraries:
-import matplotlib
-matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 import requests
-import tqdm
-import math
-import pynapple as nap
 import scipy
+import tqdm
+
+import pynapple as nap
 
 # %%
 # ***
@@ -38,12 +38,16 @@ import scipy
 
 path = "Achilles_10252013_EEG.nwb"
 if path not in os.listdir("."):
-  r = requests.get(f"https://osf.io/2dfvp/download", stream=True)
-  block_size = 1024*1024
-  with open(path, 'wb') as f:
-    for data in tqdm.tqdm(r.iter_content(block_size), unit='MB', unit_scale=True,
-      total=math.ceil(int(r.headers.get('content-length', 0))//block_size)):
-      f.write(data)
+    r = requests.get(f"https://osf.io/2dfvp/download", stream=True)
+    block_size = 1024 * 1024
+    with open(path, "wb") as f:
+        for data in tqdm.tqdm(
+            r.iter_content(block_size),
+            unit="MB",
+            unit_scale=True,
+            total=math.ceil(int(r.headers.get("content-length", 0)) // block_size),
+        ):
+            f.write(data)
 
 
 # %%
@@ -74,8 +78,8 @@ SWS_minute_interval = nap.IntervalSet(
 )
 
 RUN_minute_interval = nap.IntervalSet(
-    data["forward_ep"]["start"][-18] + 0.,
-    data["forward_ep"]["start"][-18] + 60.,
+    data["forward_ep"]["start"][-18] + 0.0,
+    data["forward_ep"]["start"][-18] + 60.0,
 )
 
 REM_minute = nap.TsdFrame(
@@ -95,14 +99,10 @@ RUN_minute = nap.TsdFrame(
     d=data["eeg"].restrict(RUN_minute_interval).values,
     time_support=data["eeg"].restrict(RUN_minute_interval).time_support,
 )
-# RUN_position = nap.TsdFrame(
-#     t=data["position"].restrict(RUN_minute_interval).index.values[1:],
-#     d=np.diff(data['position'].restrict(RUN_minute_interval)),
-#     time_support=data["position"].restrict(RUN_minute_interval).time_support,
-# )
+
 RUN_position = nap.TsdFrame(
     t=data["position"].restrict(RUN_minute_interval).index.values[:],
-    d=data['position'].restrict(RUN_minute_interval),
+    d=data["position"].restrict(RUN_minute_interval),
     time_support=data["position"].restrict(RUN_minute_interval).time_support,
 )
 
@@ -188,7 +188,7 @@ ax[0].plot(
     np.abs(welch.iloc[:, channel]),
     alpha=0.5,
     label="non-REM Data",
-    color="blue"
+    color="blue",
 )
 ax[0].set_xlim((0, FS / 2))
 ax[0].set_title("non-REM LFP Decomposition")
@@ -229,7 +229,9 @@ plt.show()
 # Let's explore further with a wavelet decomposition
 
 
-def plot_timefrequency(times, freqs, powers, x_ticks=5, y_ticks=None, ax=None, **kwargs):
+def plot_timefrequency(
+    times, freqs, powers, x_ticks=5, y_ticks=None, ax=None, **kwargs
+):
     if np.iscomplexobj(powers):
         powers = abs(powers)
     ax.imshow(powers, aspect="auto", **kwargs)
@@ -250,6 +252,7 @@ def plot_timefrequency(times, freqs, powers, x_ticks=5, y_ticks=None, ax=None, *
         y_ticks_pos = [np.argmin(np.abs(freqs - val)) for val in y_ticks]
     ax.set(yticks=y_ticks_pos, yticklabels=y_ticks)
 
+
 fig = plt.figure(constrained_layout=True, figsize=(10, 50))
 num_cells = 10
 axd = fig.subplot_mosaic(
@@ -260,9 +263,9 @@ axd = fig.subplot_mosaic(
         ["lfp_rem"],
         ["wd_run"],
         ["lfp_run"],
-        ["pos_run"]
+        ["pos_run"],
     ],
-    height_ratios=[1, .2, 1, .2, 1, .2, .2]
+    height_ratios=[1, 0.2, 1, 0.2, 1, 0.2, 0.2],
 )
 freqs = np.array(
     [
@@ -290,9 +293,7 @@ freqs = np.array(
         # 624.0,
     ]
 )
-mwt_SWS = nap.compute_wavelet_transform(
-    SWS_minute[:, channel], fs=None, freqs=freqs
-)
+mwt_SWS = nap.compute_wavelet_transform(SWS_minute[:, channel], fs=None, freqs=freqs)
 plot_timefrequency(
     SWS_minute.index.values[:],
     freqs[:],
@@ -303,13 +304,19 @@ axd["wd_sws"].set_title(f"non-REM Data Wavelet Decomposition: Channel {channel}"
 
 mwt_REM = nap.compute_wavelet_transform(REM_minute[:, channel], fs=None, freqs=freqs)
 plot_timefrequency(
-    REM_minute.index.values[:], freqs[:], np.transpose(mwt_REM[:, :].values), ax=axd["wd_rem"]
+    REM_minute.index.values[:],
+    freqs[:],
+    np.transpose(mwt_REM[:, :].values),
+    ax=axd["wd_rem"],
 )
 axd["wd_rem"].set_title(f"REM Data Wavelet Decomposition: Channel {channel}")
 
 mwt_RUN = nap.compute_wavelet_transform(RUN_minute[:, channel], fs=None, freqs=freqs)
 plot_timefrequency(
-    RUN_minute.index.values[:], freqs[:], np.transpose(mwt_RUN[:, :].values), ax=axd["wd_run"]
+    RUN_minute.index.values[:],
+    freqs[:],
+    np.transpose(mwt_RUN[:, :].values),
+    ax=axd["wd_run"],
 )
 axd["wd_run"].set_title(f"Running Data Wavelet Decomposition: Channel {channel}")
 
@@ -322,10 +329,10 @@ for k in ["lfp_sws", "lfp_rem", "lfp_run"]:
     axd[k].margins(0)
     axd[k].set_ylabel("LFP (v)")
     axd[k].get_xaxis().set_visible(False)
-    axd[k].spines['top'].set_visible(False)
-    axd[k].spines['right'].set_visible(False)
-    axd[k].spines['bottom'].set_visible(False)
-    axd[k].spines['left'].set_visible(False)
+    axd[k].spines["top"].set_visible(False)
+    axd[k].spines["right"].set_visible(False)
+    axd[k].spines["bottom"].set_visible(False)
+    axd[k].spines["left"].set_visible(False)
 plt.show()
 
 # %%g
@@ -350,12 +357,13 @@ fig = plt.figure(constrained_layout=True, figsize=(10, 50))
 num_cells = 10
 axd = fig.subplot_mosaic(
     [
-        ["raw_lfp"]*2,
-        ["wavelet"]*2,
-        ["fit_wavelet"]*2,
-        ["wavelet_power"]*2,
-        ["wavelet_phase"]*2
-    ] + [[f"spikes_phasetime_{i}", f"spikephase_hist_{i}"] for i in range(num_cells)],
+        ["raw_lfp"] * 2,
+        ["wavelet"] * 2,
+        ["fit_wavelet"] * 2,
+        ["wavelet_power"] * 2,
+        ["wavelet_phase"] * 2,
+    ]
+    + [[f"spikes_phasetime_{i}", f"spikephase_hist_{i}"] for i in range(num_cells)],
 )
 
 
@@ -388,27 +396,32 @@ for i in spikes.keys():
     phase_i = []
     for spike in spikes[i]:
         phase_i.append(
-            np.angle(
-                mwt_REM[freq, np.argmin(np.abs(REM_second.index.values - spike))]
-            )
+            np.angle(mwt_REM[freq, np.argmin(np.abs(REM_second.index.values - spike))])
         )
     phase[i] = np.array(phase_i)
 
 spikes = {k: v for k, v in spikes.items() if len(v) > 20}
 phase = {k: v for k, v in phase.items() if len(v) > 20}
 
-variances = {key: scipy.stats.circvar(value, low=-np.pi, high=np.pi) for key, value in phase.items()}
+variances = {
+    key: scipy.stats.circvar(value, low=-np.pi, high=np.pi)
+    for key, value in phase.items()
+}
 spikes = dict(sorted(spikes.items(), key=lambda item: variances[item[0]]))
 phase = dict(sorted(phase.items(), key=lambda item: variances[item[0]]))
 
 for i in range(num_cells):
-    axd[f"spikes_phasetime_{i}"].scatter(spikes[list(spikes.keys())[i]], phase[list(phase.keys())[i]])
+    axd[f"spikes_phasetime_{i}"].scatter(
+        spikes[list(spikes.keys())[i]], phase[list(phase.keys())[i]]
+    )
     axd[f"spikes_phasetime_{i}"].set_xlim(interval[0], interval[1])
     axd[f"spikes_phasetime_{i}"].set_ylim(-np.pi, np.pi)
     axd[f"spikes_phasetime_{i}"].set_xlabel("time (s)")
     axd[f"spikes_phasetime_{i}"].set_ylabel("phase")
 
-    axd[f"spikephase_hist_{i}"].hist(phase[list(phase.keys())[i]], bins=np.linspace(-np.pi, np.pi, 10))
+    axd[f"spikephase_hist_{i}"].hist(
+        phase[list(phase.keys())[i]], bins=np.linspace(-np.pi, np.pi, 10)
+    )
     axd[f"spikephase_hist_{i}"].set_xlim(-np.pi, np.pi)
 
 plt.tight_layout()
@@ -417,7 +430,7 @@ plt.show()
 
 # %%
 # Let's focus on the sleeping data. Let's see if we can isolate the slow wave oscillations from the data
-freq = 0
+freq = 12
 # interval = (10, 15)
 interval = (SWS_minute_interval["start"] + 30, SWS_minute_interval["start"] + 50)
 SWS_second = SWS_minute.restrict(nap.IntervalSet(interval[0], interval[1]))
@@ -439,12 +452,13 @@ fig = plt.figure(constrained_layout=True, figsize=(10, 50))
 num_cells = 5
 axd = fig.subplot_mosaic(
     [
-        ["raw_lfp"]*2,
-        ["wavelet"]*2,
-        ["fit_wavelet"]*2,
-        ["wavelet_power"]*2,
-        ["wavelet_phase"]*2
-    ] + [[f"spikes_phasetime_{i}", f"spikephase_hist_{i}"] for i in range(num_cells)],
+        ["raw_lfp"] * 2,
+        ["wavelet"] * 2,
+        ["fit_wavelet"] * 2,
+        ["wavelet_power"] * 2,
+        ["wavelet_phase"] * 2,
+    ]
+    + [[f"spikes_phasetime_{i}", f"spikephase_hist_{i}"] for i in range(num_cells)],
 )
 
 
@@ -477,9 +491,7 @@ for i in spikes.keys():
     phase_i = []
     for spike in spikes[i]:
         phase_i.append(
-            np.angle(
-                mwt_SWS[freq, np.argmin(np.abs(SWS_second.index.values - spike))]
-            )
+            np.angle(mwt_SWS[freq, np.argmin(np.abs(SWS_second.index.values - spike))])
         )
     phase[i] = np.array(phase_i)
 
@@ -487,13 +499,17 @@ spikes = {k: v for k, v in spikes.items() if len(v) > 0}
 phase = {k: v for k, v in phase.items() if len(v) > 0}
 
 for i in range(num_cells):
-    axd[f"spikes_phasetime_{i}"].scatter(spikes[list(spikes.keys())[i]], phase[list(phase.keys())[i]])
+    axd[f"spikes_phasetime_{i}"].scatter(
+        spikes[list(spikes.keys())[i]], phase[list(phase.keys())[i]]
+    )
     axd[f"spikes_phasetime_{i}"].set_xlim(interval[0], interval[1])
     axd[f"spikes_phasetime_{i}"].set_ylim(-np.pi, np.pi)
     axd[f"spikes_phasetime_{i}"].set_xlabel("time (s)")
     axd[f"spikes_phasetime_{i}"].set_ylabel("phase")
 
-    axd[f"spikephase_hist_{i}"].hist(phase[list(phase.keys())[i]], bins=np.linspace(-np.pi, np.pi, 10))
+    axd[f"spikephase_hist_{i}"].hist(
+        phase[list(phase.keys())[i]], bins=np.linspace(-np.pi, np.pi, 10)
+    )
     axd[f"spikephase_hist_{i}"].set_xlim(-np.pi, np.pi)
 
 plt.tight_layout()
@@ -503,31 +519,8 @@ plt.show()
 # Let's focus on the sleeping data. Let's see if we can isolate the slow wave oscillations from the data
 # interval = (10, 15)
 
-# for run in [-16, -15, -13, -20]:
-#     interval = (
-#         data["forward_ep"]["start"][run],
-#         data["forward_ep"]["end"][run]+3.,
-#     )
-#     print(interval)
-#     RUN_second_r = RUN_minute.restrict(nap.IntervalSet(interval[0], interval[1]))
-#     RUN_position_r = RUN_position.restrict(nap.IntervalSet(interval[0], interval[1]))
-#     mwt_RUN_second_r = mwt_RUN.restrict(nap.IntervalSet(interval[0], interval[1]))
-#     _, ax = plt.subplots(3)
-#     plot_timefrequency(
-#         RUN_second_r.index.values[:], freqs[:], np.transpose(mwt_RUN_second_r[:, :].values), ax=ax[0]
-#     )
-#     ax[1].plot(RUN_second_r[:, channel], alpha=0.5, label="Wake Data")
-#     ax[1].margins(0)
-#
-#     ax[2].plot(RUN_position, alpha=0.5, label="Wake Data")
-#     ax[2].set_xlim(RUN_second_r[:, channel].index.min(), RUN_second_r[:, channel].index.max())
-#     ax[2].margins(0)
-#     plt.show()
-
-
 RUN_minute_interval = nap.IntervalSet(
-    data["forward_ep"]["start"][0],
-    data["forward_ep"]["end"][-1]
+    data["forward_ep"]["start"][0], data["forward_ep"]["end"][-1]
 )
 
 RUN_minute = nap.TsdFrame(
@@ -538,21 +531,18 @@ RUN_minute = nap.TsdFrame(
 
 RUN_position = nap.TsdFrame(
     t=data["position"].restrict(RUN_minute_interval).index.values[:],
-    d=data['position'].restrict(RUN_minute_interval),
+    d=data["position"].restrict(RUN_minute_interval),
     time_support=data["position"].restrict(RUN_minute_interval).time_support,
 )
 
-mwt_RUN = nap.compute_wavelet_transform(RUN_minute[:, channel],
-                                        freqs=freqs,
-                                        fs=None,
-                                        norm=None,
-                                        n_cycles=3.5,
-                                        scaling=1)
+mwt_RUN = nap.compute_wavelet_transform(
+    RUN_minute[:, channel], freqs=freqs, fs=None, norm=None, n_cycles=3.5, scaling=1
+)
 
 for run in range(len(data["forward_ep"]["start"])):
     interval = (
         data["forward_ep"]["start"][run],
-        data["forward_ep"]["end"][run]+5.,
+        data["forward_ep"]["end"][run] + 5.0,
     )
     if interval[1] - interval[0] < 6:
         continue
@@ -562,12 +552,17 @@ for run in range(len(data["forward_ep"]["start"])):
     mwt_RUN_second_r = mwt_RUN.restrict(nap.IntervalSet(interval[0], interval[1]))
     _, ax = plt.subplots(3)
     plot_timefrequency(
-        RUN_second_r.index.values[:], freqs[:], np.transpose(mwt_RUN_second_r[:, :].values), ax=ax[0]
+        RUN_second_r.index.values[:],
+        freqs[:],
+        np.transpose(mwt_RUN_second_r[:, :].values),
+        ax=ax[0],
     )
     ax[1].plot(RUN_second_r[:, channel], alpha=0.5, label="Wake Data")
     ax[1].margins(0)
 
     ax[2].plot(RUN_position, alpha=0.5, label="Wake Data")
-    ax[2].set_xlim(RUN_second_r[:, channel].index.min(), RUN_second_r[:, channel].index.max())
+    ax[2].set_xlim(
+        RUN_second_r[:, channel].index.min(), RUN_second_r[:, channel].index.max()
+    )
     ax[2].margins(0)
     plt.show()

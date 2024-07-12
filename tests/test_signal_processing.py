@@ -111,7 +111,3 @@ def test_compute_wavelet_transform():
         str(e_info.value)
         == "The length of number of cycles does not match other inputs."
     )
-
-
-if __name__ == "__main__":
-    test_compute_wavelet_transform()
