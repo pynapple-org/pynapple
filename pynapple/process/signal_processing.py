@@ -4,8 +4,6 @@ Signal processing tools for Pynapple.
 Contains functionality for signal processing pynapple object; fourier transforms and wavelet decomposition.
 """
 
-from itertools import repeat
-
 import numpy as np
 import pandas as pd
 from scipy.signal import welch
