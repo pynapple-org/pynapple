@@ -11,7 +11,7 @@
 import numpy as np
 from scipy import signal
 
-from ._jitted_functions import (
+from ._jitted_functions import (  # pjitconvolve,
     jitbin_array,
     jitcount,
     jitremove_nan,
@@ -19,7 +19,6 @@ from ._jitted_functions import (
     jitrestrict_with_count,
     jitthreshold,
     jitvaluefrom,
-    pjitconvolve,
 )
 from .utils import get_backend
 
@@ -99,36 +98,37 @@ def _convolve(time_array, data_array, starts, ends, array, trim="both"):
 
         return convolve(time_array, data_array, starts, ends, array, trim)
     else:
-        if data_array.ndim == 1:
-            new_data_array = np.zeros(data_array.shape)
-            k = array.shape[0]
-            for s, e in zip(starts, ends):
-                idx_s = np.searchsorted(time_array, s)
-                idx_e = np.searchsorted(time_array, e, side="right")
+        # reshape to 2d
+        shape = data_array.shape
+        data_array = np.reshape(data_array, (shape[0], -1))
 
-                t = idx_e - idx_s
-                if trim == "left":
-                    cut = (k - 1, t + k - 1)
-                elif trim == "right":
-                    cut = (0, t)
-                else:
-                    cut = ((k - 1) // 2, t + k - 1 - ((k - 1) // 2) - (1 - k % 2))
-                # scipy is actually faster for Tsd
-                new_data_array[idx_s:idx_e] = signal.convolve(
-                    data_array[idx_s:idx_e], array
-                )[cut[0] : cut[1]]
+        kshape = array.shape
+        k = kshape[0]
+        array = array.reshape(k, -1)
 
-            return new_data_array
-        else:
-            new_data_array = np.zeros(data_array.shape)
-            for s, e in zip(starts, ends):
-                idx_s = np.searchsorted(time_array, s)
-                idx_e = np.searchsorted(time_array, e, side="right")
-                new_data_array[idx_s:idx_e] = pjitconvolve(
-                    data_array[idx_s:idx_e], array, trim=trim
-                )
+        new_data_array = np.zeros((shape[0], int(np.prod(shape[1:])), *array.shape[1:]))
 
-            return new_data_array
+        for s, e in zip(starts, ends):
+            idx_s = np.searchsorted(time_array, s)
+            idx_e = np.searchsorted(time_array, e, side="right")
+
+            t = idx_e - idx_s
+            if trim == "left":
+                cut = (k - 1, t + k - 1)
+            elif trim == "right":
+                cut = (0, t)
+            else:
+                cut = ((k - 1) // 2, t + k - 1 - ((k - 1) // 2) - (1 - k % 2))
+
+            for i in range(data_array.shape[1]):
+                for j in range(array.shape[1]):
+                    new_data_array[idx_s:idx_e, i, j] = signal.convolve(
+                        data_array[idx_s:idx_e, i], array[:, j]
+                    )[cut[0] : cut[1]]
+
+        new_data_array = new_data_array.reshape((*shape, *kshape[1:]))
+
+        return new_data_array
 
 
 def _bin_average(time_array, data_array, starts, ends, bin_size):

@@ -488,12 +488,19 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
             The convolved time series
         """
         if not is_array_like(array):
-            raise IOError("Input should be a numpy array (or jax array if pynajax is installed).")
+            raise IOError(
+                "Input should be a numpy array (or jax array if pynajax is installed)."
+            )
 
-        if array.ndim == 0:
-            raise IOError("Provide a kernel with at least 1 dimension, current kernel has 0 dimensions")
+        if len(array) == 0:
+            raise IOError(
+                "Input array is length 0"
+                )
 
-        if trim not in ["both","left","right"]:
+        if array.ndim > 2:
+            raise IOError("Array should be 1 or 2 dimension.")
+
+        if trim not in ["both", "left", "right"]:
             raise IOError("Unknow argument. trim should be 'both', 'left' or 'right'.")
 
         time_array = self.index.values
@@ -505,7 +512,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
             ends = ep.end
         else:
             if not isinstance(ep, IntervalSet):
-                raise IOError("ep should be an object of type IntervalSet")            
+                raise IOError("ep should be an object of type IntervalSet")
             starts = ep.start
             ends = ep.end
             idx = _restrict(time_array, starts, ends)
@@ -515,10 +522,14 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         new_data_array = _convolve(time_array, data_array, starts, ends, array, trim)
 
         kwargs_dict = dict(time_support=ep)
-        if hasattr(self, "columns"):
+
+        nap_class = _get_class(new_data_array)
+
+        if isinstance(self, TsdFrame) and array.ndim==1: # keep columns
             kwargs_dict["columns"] = self.columns
 
-        return self.__class__(t=time_array, d=new_data_array, **kwargs_dict)
+        return nap_class(t=time_array, d=new_data_array, **kwargs_dict)
+
 
     def smooth(self, std, windowsize=None, time_units="s", size_factor=100, norm=True):
         """Smooth a time series with a gaussian kernel.
@@ -573,18 +584,21 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
             Time series convolved with a gaussian kernel
 
         """
-        assert isinstance(std, (int, float)), "std should be type int or float"
-        assert isinstance(size_factor, int), "size_factor should be of type int"
-        assert isinstance(norm, bool), "norm should be of type boolean"
-        assert isinstance(time_units, str), "time_units should be of type str"
+        if not isinstance(std, (int, float)):
+            raise IOError("std should be type int or float")
+        if not isinstance(size_factor, int):
+            raise IOError("size_factor should be of type int")
+        if not isinstance(norm, bool):
+            raise IOError("norm should be of type boolean")
+        if not isinstance(time_units, str):
+            raise IOError("time_units should be of type str")
 
         std = TsIndex.format_timestamps(np.array([std]), time_units)[0]
         std_size = int(self.rate * std)
 
         if windowsize is not None:
-            assert isinstance(
-                windowsize, (int, float)
-            ), "windowsize should be type int or float"
+            if not isinstance(windowsize, Number):
+                raise IOError("windowsize should be type int or float")
             windowsize = TsIndex.format_timestamps(np.array([windowsize]), time_units)[
                 0
             ]
@@ -615,12 +629,22 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         right : None, optional
             Value to return for ts > tsd[-1], default is tsd[-1].
         """
-        assert isinstance(
-            ts, Base
-        ), "First argument should be an instance of Ts, Tsd, TsdFrame or TsdTensor"
+        if not isinstance(ts, Base):
+            raise IOError(
+                "First argument should be an instance of Ts, Tsd, TsdFrame or TsdTensor"
+            )
 
-        if not isinstance(ep, IntervalSet):
+        if left is not None and not isinstance(left, Number):
+            raise IOError("Argument left should be of type float or int")
+
+        if right is not None and not isinstance(right, Number):
+            raise IOError("Argument right should be of type float or int")
+
+        if ep is None:
             ep = self.time_support
+        else:
+            if not isinstance(ep, IntervalSet):
+                raise IOError("ep should be an object of type IntervalSet")
 
         new_t = ts.restrict(ep).index
 
