@@ -8,16 +8,31 @@ import pynapple as nap
 
 
 def test_compute_spectogram():
-    t = np.linspace(0, 1, 1024)
-    sig = nap.Tsd(d=np.random.random(1024), t=t)
-    r = nap.compute_spectogram(sig)
-    assert isinstance(r, pd.DataFrame)
-    assert r.shape[0] == 1024
+    with pytest.raises(ValueError) as e_info:
+        t = np.linspace(0, 1, 1000)
+        sig = nap.Tsd(d=np.random.random(1000), t=t,
+                      time_support=nap.IntervalSet(start=[0.1, 0.6], end=[0.2, 0.81]))
+        r = nap.compute_spectogram(sig)
+    assert (
+        str(e_info.value)
+        == "Given epoch (or signal time_support) must have length 1"
+    )
 
-    sig = nap.TsdFrame(d=np.random.random((1024, 4)), t=t)
+    t = np.linspace(0, 1, 1000)
+    sig = nap.Tsd(d=np.random.random(1000), t=t)
     r = nap.compute_spectogram(sig)
     assert isinstance(r, pd.DataFrame)
-    assert r.shape == (1024, 4)
+    assert r.shape[0] == 500
+
+    sig = nap.TsdFrame(d=np.random.random((1000, 4)), t=t)
+    r = nap.compute_spectogram(sig)
+    assert isinstance(r, pd.DataFrame)
+    assert r.shape == (500, 4)
+
+    sig = nap.TsdFrame(d=np.random.random((1000, 4)), t=t)
+    r = nap.compute_spectogram(sig, full_range=True)
+    assert isinstance(r, pd.DataFrame)
+    assert r.shape == (1000, 4)
 
     with pytest.raises(TypeError) as e_info:
         nap.compute_spectogram("a_string")
@@ -48,13 +63,6 @@ def test_compute_welch_spectogram():
 
 def test_compute_wavelet_transform():
 
-    ##..todo put there
-    t = np.linspace(0, 1, 1024) # can remove this when we move it
-    sig = nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=t)
-    freqs = np.linspace(1, 600, 10)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
-    assert mwt.shape == (1024, 10, 4, 2)
-
     t = np.linspace(0, 1, 1024)
     sig = nap.Tsd(d=np.random.random(1024), t=t)
     freqs = np.linspace(1, 600, 10)
@@ -79,7 +87,11 @@ def test_compute_wavelet_transform():
     mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
     assert mwt.shape == (1024, 10, 4)
 
-    #..todo: here
+    t = np.linspace(0, 1, 1024)  # can remove this when we move it
+    sig = nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=t)
+    freqs = np.linspace(1, 600, 10)
+    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
+    assert mwt.shape == (1024, 10, 4, 2)
 
     with pytest.raises(ValueError) as e_info:
         nap.compute_wavelet_transform(sig, fs=None, freqs=freqs, n_cycles=-1.5)
@@ -102,4 +114,4 @@ def test_compute_wavelet_transform():
 
 
 if __name__ == "__main__":
-    test_compute_wavelet_transform()
+    test_compute_spectogram()
