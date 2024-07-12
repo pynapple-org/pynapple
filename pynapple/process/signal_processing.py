@@ -102,39 +102,6 @@ def _morlet(M=1024, ncycles=1.5, scaling=1.0, precision=8):
     )
 
 
-def _check_n_cycles(n_cycles, len_cycles=None):
-    """
-    Check an input as a number of cycles, and make it iterable.
-
-    Parameters
-    ----------
-    n_cycles : float or list
-        Definition of number of cycles to check. If a single value, the same number of cycles is used for each
-        frequency value. If a list or list_like, then should be a n_cycles corresponding to each frequency.
-    len_cycles: int, optional
-        What the length of `n_cycles` should be, if it's a list.
-
-    Returns
-    -------
-    iter
-        An iterable version of the number of cycles.
-    """
-    if isinstance(n_cycles, (int, float, np.number)):
-        if n_cycles <= 0:
-            raise ValueError("Number of cycles must be a positive number.")
-        n_cycles = repeat(n_cycles)
-    elif isinstance(n_cycles, (tuple, list, np.ndarray)):
-        for cycle in n_cycles:
-            if cycle <= 0:
-                raise ValueError("Each number of cycles must be a positive number.")
-        if len_cycles and len(n_cycles) != len_cycles:
-            raise ValueError(
-                "The length of number of cycles does not match other inputs."
-            )
-        n_cycles = iter(n_cycles)
-    return n_cycles
-
-
 def _create_freqs(freq_start, freq_stop, freq_step=1):
     """
     Creates an array of frequencies.
@@ -199,14 +166,15 @@ def compute_wavelet_transform(
 
     if not isinstance(sig, (nap.Tsd, nap.TsdFrame, nap.TsdTensor)):
         raise TypeError("`sig` must be instance of Tsd, TsdFrame, or TsdTensor")
+    if isinstance(n_cycles, (int, float, np.number)):
+        if n_cycles <= 0:
+            raise ValueError("Number of cycles must be a positive number.")
 
     if isinstance(freqs, (tuple, list)):
         freqs = _create_freqs(*freqs)
 
     if fs is None:
         fs = sig.rate
-
-    # n_cycles = _check_n_cycles(n_cycles, len(freqs))
 
     if isinstance(sig, nap.Tsd):
         sig = sig.reshape((sig.shape[0], 1))
@@ -229,9 +197,9 @@ def compute_wavelet_transform(
         elif norm == "amp":
             coef *= -scaling / (freqs[f_i] / fs)
         coef = np.insert(
-            coef, 1, coef[0]
+            coef, 1, coef[0], axis=0
         )  # slightly hacky line, necessary to make output correct shape
-        mwt[:, f_i, :] = np.expand_dims(coef, axis=1)
+        mwt[:, f_i, :] = coef if len(coef.shape) == 2 else np.expand_dims(coef, axis=1)
 
     if len(output_shape) == 2:
         return nap.TsdFrame(

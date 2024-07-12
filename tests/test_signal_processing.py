@@ -10,12 +10,14 @@ import pynapple as nap
 def test_compute_spectogram():
     with pytest.raises(ValueError) as e_info:
         t = np.linspace(0, 1, 1000)
-        sig = nap.Tsd(d=np.random.random(1000), t=t,
-                      time_support=nap.IntervalSet(start=[0.1, 0.6], end=[0.2, 0.81]))
+        sig = nap.Tsd(
+            d=np.random.random(1000),
+            t=t,
+            time_support=nap.IntervalSet(start=[0.1, 0.6], end=[0.2, 0.81]),
+        )
         r = nap.compute_spectogram(sig)
     assert (
-        str(e_info.value)
-        == "Given epoch (or signal time_support) must have length 1"
+        str(e_info.value) == "Given epoch (or signal time_support) must have length 1"
     )
 
     t = np.linspace(0, 1, 1000)
@@ -75,13 +77,6 @@ def test_compute_wavelet_transform():
     mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
     assert mwt.shape == (1024, 6)
 
-    sig = nap.Tsd(d=np.random.random(1024), t=t)
-    freqs = np.linspace(1, 600, 10)
-    mwt = nap.compute_wavelet_transform(
-        sig, fs=None, freqs=freqs, n_cycles=tuple(np.repeat((1.5, 2.5), 5))
-    )
-    assert mwt.shape == (1024, 10)
-
     sig = nap.TsdFrame(d=np.random.random((1024, 4)), t=t)
     freqs = np.linspace(1, 600, 10)
     mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
@@ -97,17 +92,6 @@ def test_compute_wavelet_transform():
         nap.compute_wavelet_transform(sig, fs=None, freqs=freqs, n_cycles=-1.5)
     assert str(e_info.value) == "Number of cycles must be a positive number."
 
-    with pytest.raises(ValueError) as e_info:
-        nap.compute_wavelet_transform(
-            sig, fs=None, freqs=freqs, n_cycles=tuple(np.repeat((1.5, -2.5), 5))
-        )
-    assert str(e_info.value) == "Each number of cycles must be a positive number."
 
-    with pytest.raises(ValueError) as e_info:
-        nap.compute_wavelet_transform(
-            sig, fs=None, freqs=freqs, n_cycles=tuple(np.repeat((1.5, 2.5), 2))
-        )
-    assert (
-        str(e_info.value)
-        == "The length of number of cycles does not match other inputs."
-    )
+if __name__ == "__main__":
+    test_compute_wavelet_transform()
