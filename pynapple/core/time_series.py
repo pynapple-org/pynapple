@@ -493,9 +493,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
             )
 
         if len(array) == 0:
-            raise IOError(
-                "Input array is length 0"
-                )
+            raise IOError("Input array is length 0")
 
         if array.ndim > 2:
             raise IOError("Array should be 1 or 2 dimension.")
@@ -525,11 +523,10 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
         nap_class = _get_class(new_data_array)
 
-        if isinstance(self, TsdFrame) and array.ndim==1: # keep columns
+        if isinstance(self, TsdFrame) and array.ndim == 1:  # keep columns
             kwargs_dict["columns"] = self.columns
 
         return nap_class(t=time_array, d=new_data_array, **kwargs_dict)
-
 
     def smooth(self, std, windowsize=None, time_units="s", size_factor=100, norm=True):
         """Smooth a time series with a gaussian kernel.

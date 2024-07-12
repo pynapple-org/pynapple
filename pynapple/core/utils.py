@@ -133,8 +133,8 @@ def is_array_like(obj):
         if hasattr(obj, "__len__"):
             try:
                 if len(obj) == 0:
-                    is_indexable = True # Could be an empty array
-            except:
+                    is_indexable = True  # Could be an empty array
+            except Exception:
                 is_indexable = False
 
     # Check for iterable property
