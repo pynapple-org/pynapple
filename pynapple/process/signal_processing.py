@@ -199,7 +199,7 @@ def compute_wavelet_transform(sig, freqs, fs=None, n_cycles=1.5, scaling=1.0, pr
         freqs = _create_freqs(*freqs)
     if fs is None:
         fs = sig.rate
-    n_cycles = _check_n_cycles(n_cycles, len(freqs))
+    # n_cycles = _check_n_cycles(n_cycles, len(freqs))
     if isinstance(sig, nap.Tsd):
         sig = sig.reshape((sig.shape[0], 1))
         output_shape = (sig.shape[0], len(freqs))
@@ -209,6 +209,18 @@ def compute_wavelet_transform(sig, freqs, fs=None, n_cycles=1.5, scaling=1.0, pr
     mwt = np.zeros(
         [sig.values.shape[0], len(freqs), sig.values.shape[1]], dtype=complex
     )
+
+    filter_bank = _generate_morelet_filterbank(freqs, fs, n_cycles, scaling, precision)
+    #
+    import matplotlib
+    matplotlib.use("TkAgg")
+    import matplotlib.pyplot as plt
+    plt.clf()
+    for f in filter_bank:
+        plt.plot(f)
+    plt.show()
+    conv = np.convolve(sig, filter_bank)
+
     for channel_i in range(sig.values.shape[1]):
         for ind, (freq, n_cycle) in enumerate(zip(freqs, n_cycles)):
             mwt[:, ind, channel_i] = _convolve_wavelet(
@@ -221,6 +233,30 @@ def compute_wavelet_transform(sig, freqs, fs=None, n_cycles=1.5, scaling=1.0, pr
     return nap.TsdTensor(
         t=sig.index, d=mwt.reshape(output_shape), time_support=sig.time_support
     )
+
+def _generate_morelet_filterbank(freqs, fs, n_cycles, scaling, precision):
+    """
+    Make docsting #..todo:
+    
+    :param freqs: 
+    :param n_cycles: 
+    :param scaling: 
+    :param precision: 
+    :return: 
+    """
+    filter_bank = []
+    morlet_f = _morlet(int(2 ** precision), ncycles=n_cycles, scaling=scaling)
+    x = np.linspace(-8, 8, int(2 ** precision))
+    int_psi = np.conj(_integrate(morlet_f, x[1] - x[0]))
+    for freq in freqs:
+        scale = scaling / (freq / fs)
+        j = np.arange(scale * (x[-1] - x[0]) + 1) / (scale * (x[1] - x[0]))
+        j = j.astype(int)  # floor
+        if j[-1] >= int_psi.size:
+            j = np.extract(j < int_psi.size, j)
+        int_psi_scale = int_psi[j][::-1]
+        filter_bank.append(int_psi_scale)
+    return filter_bank
 
 
 def _convolve_wavelet(
@@ -256,7 +292,6 @@ def _convolve_wavelet(
     array
         Complex-valued time series.
 
-    ..todo: fix scaling
     Notes
     -----
 
@@ -276,6 +311,7 @@ def _convolve_wavelet(
     if j[-1] >= int_psi.size:
         j = np.extract(j < int_psi.size, j)
     int_psi_scale = int_psi[j][::-1]
+    print(len(int_psi_scale))
 
     conv = np.convolve(sig, int_psi_scale)
     if norm  == "sss":

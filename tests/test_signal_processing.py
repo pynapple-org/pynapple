@@ -114,4 +114,4 @@ def test_compute_wavelet_transform():
 
 
 if __name__ == "__main__":
-    test_compute_spectogram()
+    test_compute_wavelet_transform()
