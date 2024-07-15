@@ -104,6 +104,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
     def __setitem__(self, key, value):
         """setter for time series"""
+        if isinstance(key, Tsd):
+            key = key.d
         try:
             self.values.__setitem__(key, value)
         except IndexError:
@@ -1237,14 +1239,18 @@ class Tsd(BaseTsd):
                 return tabulate([], headers=headers) + "\n" + bottom
 
     def __getitem__(self, key, *args, **kwargs):
+        if isinstance(key, Tsd):
+            key = key.d
+        
         output = self.values.__getitem__(key)
+        
         if isinstance(key, tuple):
             index = self.index.__getitem__(key[0])
+        elif isinstance(index, Number):
+            index = np.array([index])
         else:
             index = self.index.__getitem__(key)
-
-        if isinstance(index, Number):
-            index = np.array([index])
+            
 
         if all(is_array_like(a) for a in [index, output]):
             if output.shape[0] == index.shape[0]:
