@@ -22,7 +22,7 @@ from .phy import Phy
 from .suite2p import Suite2P
 
 
-def load_file(path):
+def load_file(path, lazy_loading=True):
     """Load file. Current format supported is (npz,nwb,)
 
     .npz -> If the file is compatible with a pynapple format, the function will return a pynapple object.
@@ -34,6 +34,8 @@ def load_file(path):
     ----------
     path : str
         Path to the file
+    lazy_loading : bool
+        Lazy loading of the data, used only for NWB files
 
     Returns
     -------
@@ -49,7 +51,7 @@ def load_file(path):
         if path.endswith(".npz"):
             return NPZFile(path).load()
         elif path.endswith(".nwb"):
-            return NWBFile(path)
+            return NWBFile(path, lazy_loading=lazy_loading)
         else:
             raise RuntimeError("File format not supported")
     else:
