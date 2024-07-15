@@ -204,7 +204,7 @@ class TsGroup(UserDict):
         """
         # avoid infinite recursion when pickling due to
         # self._metadata.column having attributes '__reduce__', '__reduce_ex__'
-        if name in ('__getstate__', '__setstate__', '__reduce__', '__reduce_ex__'):
+        if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
             raise AttributeError(name)
         # Check if the requested attribute is part of the metadata
         if name in self._metadata.columns:
