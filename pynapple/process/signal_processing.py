@@ -48,7 +48,7 @@ def compute_spectogram(sig, fs=None, ep=None, full_range=False):
 
 def compute_welch_spectogram(sig, fs=None):
     """
-    Performs scipy Welch's decomposition on sig, returns output.
+    Performs Welch's decomposition on sig, returns output.
     Estimates the power spectral density of a signal by segmenting it into overlapping sections, applying a
     window function to each segment, computing their FFTs, and averaging the resulting periodograms to reduce noise.
 
@@ -100,11 +100,9 @@ def _morlet(M=1024, ncycles=1.5, scaling=1.0, precision=8):
     )
 
 
-def _create_freqs(freq_start, freq_stop, freq_step=1):
+def _create_freqs(freq_start, freq_stop, log_scaling=False, freq_step=1, log_base=np.e):
     """
     Creates an array of frequencies.
-
-    ..todo:: Implement log scaling
 
     Parameters
     ----------
@@ -112,15 +110,22 @@ def _create_freqs(freq_start, freq_stop, freq_step=1):
         Starting value for the frequency definition.
     freq_stop: float
         Stopping value for the frequency definition, inclusive.
+    log_scaling: Bool
+        If True, will use log spacing with base log_base for frequency spacing. Default False.
     freq_step: float, optional
         Step value, for linearly spaced values between start and stop.
+    log_base: float
+        If log_scaling==True, this defines the base of the log to use.
 
     Returns
     -------
     freqs: 1d array
         Frequency indices.
     """
-    return np.arange(freq_start, freq_stop + freq_step, freq_step)
+    if not log_scaling:
+        return np.arange(freq_start, freq_stop + freq_step, freq_step)
+    else:
+        return np.logspace(freq_start, freq_stop, base=log_base)
 
 
 def compute_wavelet_transform(

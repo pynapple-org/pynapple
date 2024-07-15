@@ -45,6 +45,16 @@ def test_compute_spectogram():
 
 
 def test_compute_welch_spectogram():
+    t = np.linspace(0, 1, 10000)
+    sig = nap.TsdFrame(
+        d=np.random.random((10000, 4)),
+        t=t,
+        time_support=nap.IntervalSet(start=[0.1, 0.4], end=[0.2, 0.525]),
+    )
+    r = nap.compute_welch_spectogram(sig)
+    assert isinstance(r, pd.DataFrame)
+    assert r.shape[1] == 4
+
     t = np.linspace(0, 1, 1024)
     sig = nap.Tsd(d=np.random.random(1024), t=t)
     r = nap.compute_welch_spectogram(sig)
@@ -94,4 +104,4 @@ def test_compute_wavelet_transform():
 
 
 if __name__ == "__main__":
-    test_compute_wavelet_transform()
+    test_compute_welch_spectogram()
