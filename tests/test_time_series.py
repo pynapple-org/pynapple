@@ -1,10 +1,12 @@
 """Tests of time series for `pynapple` package."""
 
-import pynapple as nap
+import pickle
+
 import numpy as np
 import pandas as pd
 import pytest
 
+import pynapple as nap
 
 # tsd1 = nap.Tsd(t=np.arange(100), d=np.random.rand(100), time_units="s")
 # tsd2 = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), columns = ['a', 'b', 'c'])
@@ -1444,3 +1446,25 @@ class Test_Time_Series_5:
         tsdframe2 = tsdtensor.interpolate(ts, ep)
         assert len(tsdframe2) == 0
 
+@pytest.mark.parametrize("obj",
+                         [
+                             nap.Tsd(t=np.arange(10), d=np.random.rand(10), time_units="s"),
+                             nap.TsdFrame(
+                                 t=np.arange(10), d=np.random.rand(10, 3), time_units="s", columns=["a","b","c"]
+                             ),
+                             nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 3, 2), time_units="s"),
+                         ])
+def test_pickling(obj):
+    """Test that pikling works as expected."""
+    # pickle and unpickle ts_group
+    pickled_obj = pickle.dumps(obj)
+    unpickled_obj = pickle.loads(pickled_obj)
+
+    # Ensure time is the same
+    assert np.all(obj.t == unpickled_obj.t)
+
+    # Ensure data is the same
+    assert np.all(obj.d == unpickled_obj.d)
+
+    # Ensure time support is the same
+    assert np.all(obj.time_support == unpickled_obj.time_support)
