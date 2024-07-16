@@ -322,7 +322,6 @@ def jitbin_array(time_array, data_array, starts, ends, bin_size):
 
 @jit(nopython=True)
 def _jitbin_array(countin, time_array, data_array, starts, ends, bin_size):
-
     m = starts.shape[0]
     f = data_array.shape[1:]
 

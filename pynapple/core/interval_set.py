@@ -669,7 +669,7 @@ class IntervalSet(NDArrayOperatorsMixin):
         )
 
         return
-    
+
     @classmethod
     def _from_npz_reader(cls, file):
         """

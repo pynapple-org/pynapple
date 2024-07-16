@@ -858,7 +858,7 @@ class TsdTensor(BaseTsd):
         )
 
         return
-    
+
     @classmethod
     def _from_npz_reader(cls, file):
         """
@@ -874,7 +874,11 @@ class TsdTensor(BaseTsd):
         Tsd
             The Tsd object
         """
-        return cls(t=file["t"], d=file["d"], time_support=IntervalSet(start=file["start"], end=file["end"]))
+        return cls(
+            t=file["t"],
+            d=file["d"],
+            time_support=IntervalSet(start=file["start"], end=file["end"]),
+        )
 
 
 class TsdFrame(BaseTsd):
@@ -1039,7 +1043,6 @@ class TsdFrame(BaseTsd):
 
             if all(is_array_like(a) for a in [index, output]):
                 if output.shape[0] == index.shape[0]:
-
                     # if isinstance(columns, pd.Index):
                     #     if not pd.api.types.is_integer_dtype(columns):
                     kwargs["columns"] = columns
@@ -1161,7 +1164,7 @@ class TsdFrame(BaseTsd):
         )
 
         return
-    
+
     @classmethod
     def _from_npz_reader(cls, file):
         """
@@ -1177,7 +1180,12 @@ class TsdFrame(BaseTsd):
         Tsd
             The Tsd object
         """
-        return cls(t=file["t"], d=file["d"], columns=file["columns"], time_support=IntervalSet(start=file["start"], end=file["end"]))
+        return cls(
+            t=file["t"],
+            d=file["d"],
+            columns=file["columns"],
+            time_support=IntervalSet(start=file["start"], end=file["end"]),
+        )
 
 
 class Tsd(BaseTsd):
@@ -1500,7 +1508,7 @@ class Tsd(BaseTsd):
         )
 
         return
-    
+
     @classmethod
     def _from_npz_reader(cls, file):
         """
@@ -1516,7 +1524,11 @@ class Tsd(BaseTsd):
         Tsd
             The Tsd object
         """
-        return cls(t=file["t"], d=file["d"], time_support=IntervalSet(start=file["start"], end=file["end"]))
+        return cls(
+            t=file["t"],
+            d=file["d"],
+            time_support=IntervalSet(start=file["start"], end=file["end"]),
+        )
 
 
 class Ts(Base):
@@ -1809,7 +1821,7 @@ class Ts(Base):
         )
 
         return
-    
+
     @classmethod
     def _from_npz_reader(cls, file):
         """
@@ -1825,4 +1837,6 @@ class Ts(Base):
         Tsd
             The Ts object
         """
-        return cls(t=file["t"], time_support=IntervalSet(start=file["start"], end=file["end"]))
+        return cls(
+            t=file["t"], time_support=IntervalSet(start=file["start"], end=file["end"])
+        )

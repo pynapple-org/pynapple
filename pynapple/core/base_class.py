@@ -23,7 +23,6 @@ class Base(abc.ABC):
     _initialized = False
 
     def __init__(self, t, time_units="s", time_support=None):
-
         if isinstance(t, TsIndex):
             self.index = t
         else:

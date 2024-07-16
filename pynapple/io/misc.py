@@ -36,7 +36,7 @@ def load_file(path, lazy_loading=None):
         Path to the file
     lazy_loading : bool, optional
         Lazy loading of the data. If not specified, the function will use the defaults
-        True for nwb and False for npz. 
+        True for nwb and False for npz.
 
     Returns
     -------
@@ -52,7 +52,7 @@ def load_file(path, lazy_loading=None):
         if path.endswith(".npz"):
             lazy_loading = False if lazy_loading is None else lazy_loading
             return NPZFile(path, lazy_loading=lazy_loading).load()
-        
+
         elif path.endswith(".nwb"):
             lazy_loading = True if lazy_loading is None else lazy_loading
             return NWBFile(path, lazy_loading=lazy_loading)

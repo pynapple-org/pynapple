@@ -1383,7 +1383,7 @@ class TsGroup(UserDict):
         np.savez(filename, **dicttosave)
 
         return
-    
+
     @classmethod
     def _from_npz_reader(cls, file):
         """
@@ -1405,7 +1405,6 @@ class TsGroup(UserDict):
         has_data = "d" in file.keys()
         time_support = IntervalSet(file["start"], file["end"])
 
-        
         if has_data:
             data = file["data"]
 
@@ -1426,23 +1425,17 @@ class TsGroup(UserDict):
                     time_support=time_support,
                 )
             else:
-                group[key] = Ts(
-                    t=t, time_support=time_support
-                )
+                group[key] = Ts(t=t, time_support=time_support)
 
-        tsgroup = cls(
-            group, time_support=time_support, bypass_check=True
-        )
+        tsgroup = cls(group, time_support=time_support, bypass_check=True)
 
         metainfo = {}
         not_info_keys = {"start", "end", "t", "index", "d", "rate", "keys"}
-        
+
         for k in set(file.keys()) - not_info_keys:
             tmp = file[k]
             if len(tmp) == len(tsgroup):
                 metainfo[k] = tmp
-        
+
         tsgroup.set_info(**metainfo)
         return tsgroup
-
-
