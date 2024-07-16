@@ -61,7 +61,7 @@ def test_load(path, k):
     file_path = os.path.join(path, k+".npz")
     file = nap.NPZFile(file_path)
     tmp = file.load()
-    assert isinstance(tmp, data[k])
+    assert isinstance(tmp, type(data[k]))
 
 @pytest.mark.parametrize("path", [path])
 @pytest.mark.parametrize("k", ['tsgroup'])
@@ -69,7 +69,7 @@ def test_load_tsgroup(path, k):
     file_path = os.path.join(path, k+".npz")
     file = nap.NPZFile(file_path)
     tmp = file.load()
-    assert isinstance(tmp, data[k])
+    assert isinstance(tmp, type(data[k]))
     assert tmp.keys() == data[k].keys()
     assert np.all(tmp._metadata == data[k]._metadata)
     assert np.all(tmp[neu] == data[k][neu] for neu in tmp.keys())
@@ -82,7 +82,7 @@ def test_load_tsd(path, k):
     file_path = os.path.join(path, k+".npz")
     file = nap.NPZFile(file_path)
     tmp = file.load()
-    assert isinstance(tmp, data[k])
+    assert isinstance(tmp, type(data[k]))
     assert np.all(tmp.d == data[k].d)
     assert np.all(tmp.t == data[k].t)
     np.testing.assert_array_almost_equal(tmp.time_support.values, data[k].time_support.values)
@@ -94,7 +94,7 @@ def test_load_ts(path, k):
     file_path = os.path.join(path, k+".npz")
     file = nap.NPZFile(file_path)
     tmp = file.load()
-    assert isinstance(tmp, data[k])
+    assert isinstance(tmp, type(data[k]))
     assert np.all(tmp.t == data[k].t)
     np.testing.assert_array_almost_equal(tmp.time_support.values, data[k].time_support.values)
 
@@ -106,7 +106,7 @@ def test_load_tsdframe(path, k):
     file_path = os.path.join(path, k+".npz")
     file = nap.NPZFile(file_path)
     tmp = file.load()
-    assert isinstance(tmp, data[k])
+    assert isinstance(tmp, type(data[k]))
     assert np.all(tmp.t == data[k].t)
     np.testing.assert_array_almost_equal(tmp.time_support.values, data[k].time_support.values)
     assert np.all(tmp.columns == data[k].columns)
@@ -118,7 +118,7 @@ def test_load_tsdframe(path, k):
 def test_load_non_npz(path):
     file_path = os.path.join(path, "random.npz")
     tmp = np.random.rand(100)
-    np.savez(file_path, a = tmp)
+    np.savez(file_path, a=tmp)
     file = nap.NPZFile(file_path)    
 
     assert file.type == "npz"
