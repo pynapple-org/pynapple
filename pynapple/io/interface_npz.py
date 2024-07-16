@@ -6,17 +6,65 @@
 # @Last Modified by:   Guillaume Viejo
 # @Last Modified time: 2024-04-02 14:32:25
 
-"""
-File classes help to validate and load pynapple objects or NWB files.
-Data are always lazy-loaded.
-Both classes behaves like dictionary.
-"""
 
 import os
 
 import numpy as np
 
 from .. import core as nap
+
+# 
+EXPECTED_ENTRIES = {"TsGroup": {"t", "start", "end", "index"},
+                    "TsdFrame": {"t", "d", "start", "end", "columns"},
+                    "TsdTensor": {"t", "d", "start", "end"},
+                    "Tsd": {"t", "d", "start", "end"},
+                    "Ts": {"t", "start", "end"},
+                    "IntervalSet": {"start", "end"}}
+
+
+def _find_class_from_variables(file_variables, data_ndims=None):
+
+    if data_ndims is not None:
+        # either TsdTensor or Tsd:
+        assert EXPECTED_ENTRIES["Tsd"].issubset(file_variables)
+
+        return "Tsd" if data_ndims == 1 else "TsdTensor"
+    
+    for possible_type, espected_variables in EXPECTED_ENTRIES.items():
+        if espected_variables.issubset(file_variables):
+            return possible_type
+
+    return "npz"
+
+
+class LazyNPZLoader:
+    """Class that lazily loads an NPZ file.
+    """
+    def __init__(self, file_path, lazy_loading=False):
+        self.lazy_loading = lazy_loading
+        self.file_path = file_path
+        self.npz_file = np.load(file_path, allow_pickle=True, mmap_mode='r' if lazy_loading else None)
+        self.data = {key: None for key in self.npz_file.keys()}
+
+    def __getitem__(self, key):
+        if key not in self.data:
+            raise KeyError(f"{key} not found in the NPZ file")
+        
+        if self.data[key] is None:
+            self.data[key] = self._load_array(key)
+        
+        return self.data[key]
+
+    def _load_array(self, key):
+        if self.lazy_loading:
+            array_info = self.npz_file.zip.read(self.npz_file.zip.NameToInfo[key].filename)
+            np_array = np.frombuffer(array_info, dtype=self.npz_file[key].dtype).reshape(self.npz_file[key].shape)
+            return np.memmap(self.npz_file.filename, dtype=np_array.dtype, mode='r', shape=np_array.shape)
+        else:
+            return self.npz_file[key]
+
+    def keys(self):
+        return self.npz_file.keys()
 
 
 class NPZFile(object):
@@ -35,8 +83,10 @@ class NPZFile(object):
     dtype: int64
 
     """
+    # valid_types = ["Ts", "Tsd", "TsdFrame", "TsdTensor", "TsGroup", "IntervalSet"]
+    
 
-    def __init__(self, path):
+    def __init__(self, path, lazy_loading=False):
         """Initialization of the NPZ file
 
         Parameters
@@ -46,35 +96,22 @@ class NPZFile(object):
         """
         self.path = path
         self.name = os.path.basename(path)
-        self.file = np.load(self.path, allow_pickle=True)
-        self.type = ""
+        self.file = LazyNPZLoader(path, lazy_loading=lazy_loading) # np.load(self.path, allow_pickle=True)
+        type_ = ""
 
-        # First check if type is explicitely defined
-        possible = ["Ts", "Tsd", "TsdFrame", "TsdTensor", "TsGroup", "IntervalSet"]
-        if "type" in self.file.keys():
-            if len(self.file["type"]) == 1:
-                if isinstance(self.file["type"][0], np.str_):
-                    if self.file["type"] in possible:
-                        self.type = self.file["type"][0]
+        # First check if type is explicitely defined in the file:
+        try:
+            type_ = self.file["type"][0]
+            assert type_ in EXPECTED_ENTRIES.keys()
 
-        # Second check manually
-        if self.type == "":
-            k = set(self.file.keys())
-            if {"t", "start", "end", "index"}.issubset(k):
-                self.type = "TsGroup"
-            elif {"t", "d", "start", "end", "columns"}.issubset(k):
-                self.type = "TsdFrame"
-            elif {"t", "d", "start", "end"}.issubset(k):
-                if self.file["d"].ndim == 1:
-                    self.type = "Tsd"
-                else:
-                    self.type = "TsdTensor"
-            elif {"t", "start", "end"}.issubset(k):
-                self.type = "Ts"
-            elif {"start", "end"}.issubset(k):
-                self.type = "IntervalSet"
-            else:
-                self.type = "npz"
+        # if not, use heuristics:
+        except (KeyError, IndexError, AssertionError):
+            file_variables = set(self.file.keys())
+            data_ndims = self.file["d"].ndim if "d" in file_variables else None
+
+            type_ = _find_class_from_variables(file_variables, data_ndims)
+
+        self.type = type_
 
     def load(self):
         """Load the NPZ file
@@ -85,74 +122,7 @@ class NPZFile(object):
             A pynapple object
         """
         if self.type == "npz":
-            return self.file
-        else:
-            time_support = nap.IntervalSet(self.file["start"], self.file["end"])
-            if self.type == "TsGroup":
-
-                times = self.file["t"]
-                index = self.file["index"]
-                has_data = False
-                if "d" in self.file.keys():
-                    data = self.file["data"]
-                    has_data = True
-
-                if "keys" in self.file.keys():
-                    keys = self.file["keys"]
-                else:
-                    keys = np.unique(index)
-
-                group = {}
-                for k in keys:
-                    if has_data:
-                        group[k] = nap.Tsd(
-                            t=times[index == k],
-                            d=data[index == k],
-                            time_support=time_support,
-                        )
-                    else:
-                        group[k] = nap.Ts(
-                            t=times[index == k], time_support=time_support
-                        )
-
-                tsgroup = nap.TsGroup(
-                    group, time_support=time_support, bypass_check=True
-                )
-
-                metainfo = {}
-                for k in set(self.file.keys()) - {
-                    "start",
-                    "end",
-                    "t",
-                    "index",
-                    "d",
-                    "rate",
-                    "keys",
-                }:
-                    tmp = self.file[k]
-                    if len(tmp) == len(tsgroup):
-                        metainfo[k] = tmp
-                tsgroup.set_info(**metainfo)
-                return tsgroup
-
-            elif self.type == "TsdFrame":
-                return nap.TsdFrame(
-                    t=self.file["t"],
-                    d=self.file["d"],
-                    time_support=time_support,
-                    columns=self.file["columns"],
-                )
-            elif self.type == "TsdTensor":
-                return nap.TsdTensor(
-                    t=self.file["t"], d=self.file["d"], time_support=time_support
-                )
-            elif self.type == "Tsd":
-                return nap.Tsd(
-                    t=self.file["t"], d=self.file["d"], time_support=time_support
-                )
-            elif self.type == "Ts":
-                return nap.Ts(t=self.file["t"], time_support=time_support)
-            elif self.type == "IntervalSet":
-                return time_support
-            else:
-                return self.file
+            return self.file.npz_file
+        
+        return getattr(nap, self.type)._from_npz_reader(self.file) 
+    
