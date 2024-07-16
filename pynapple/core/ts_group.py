@@ -1416,7 +1416,7 @@ class TsGroup(UserDict):
             t = times[filtering_index]
 
             if has_data:
-                group[key] = nap.Tsd(
+                group[key] = Tsd(
                     t=t,
                     d=data[filtering_index],
                     time_support=time_support,
