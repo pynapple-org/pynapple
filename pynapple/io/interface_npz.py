@@ -38,47 +38,6 @@ def _find_class_from_variables(file_variables, data_ndims=None):
     return "npz"
 
 
-class LazyNPZLoader:
-    """Class that lazily loads an NPZ file."""
-
-    def __init__(self, file_path, lazy_loading=False):
-        self.lazy_loading = lazy_loading
-        self.file_path = file_path
-        self.npz_file = np.load(
-            file_path, allow_pickle=True, mmap_mode="r" if lazy_loading else None
-        )
-        self.data = {key: None for key in self.npz_file.keys()}
-
-    def __getitem__(self, key):
-        if key not in self.data:
-            raise KeyError(f"{key} not found in the NPZ file")
-
-        if self.data[key] is None:
-            self.data[key] = self._load_array(key)
-
-        return self.data[key]
-
-    def _load_array(self, key):
-        if self.lazy_loading:
-            array_info = self.npz_file.zip.read(
-                self.npz_file.zip.NameToInfo[key].filename
-            )
-            np_array = np.frombuffer(
-                array_info, dtype=self.npz_file[key].dtype
-            ).reshape(self.npz_file[key].shape)
-            return np.memmap(
-                self.npz_file.filename,
-                dtype=np_array.dtype,
-                mode="r",
-                shape=np_array.shape,
-            )
-        else:
-            return self.npz_file[key]
-
-    def keys(self):
-        return self.npz_file.keys()
-
-
 class NPZFile(object):
     """Class that points to a NPZ file that can be loaded as a pynapple object.
     Objects have a save function in npz format as well as the Folder class.
@@ -98,7 +57,7 @@ class NPZFile(object):
 
     # valid_types = ["Ts", "Tsd", "TsdFrame", "TsdTensor", "TsGroup", "IntervalSet"]
 
-    def __init__(self, path, lazy_loading=False):
+    def __init__(self, path):
         """Initialization of the NPZ file
 
         Parameters
@@ -108,9 +67,7 @@ class NPZFile(object):
         """
         self.path = path
         self.name = os.path.basename(path)
-        self.file = LazyNPZLoader(
-            path, lazy_loading=lazy_loading
-        )  # np.load(self.path, allow_pickle=True)
+        self.file = np.load(self.path, allow_pickle=True)
         type_ = ""
 
         # First check if type is explicitely defined in the file:
@@ -136,6 +93,6 @@ class NPZFile(object):
             A pynapple object
         """
         if self.type == "npz":
-            return self.file.npz_file
+            return self.file
 
         return getattr(nap, self.type)._from_npz_reader(self.file)

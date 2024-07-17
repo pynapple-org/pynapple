@@ -20,6 +20,7 @@ from .loader import BaseLoader
 from .neurosuite import NeuroSuite
 from .phy import Phy
 from .suite2p import Suite2P
+import warnings
 
 
 def load_file(path, lazy_loading=None):
@@ -34,9 +35,9 @@ def load_file(path, lazy_loading=None):
     ----------
     path : str
         Path to the file
-    lazy_loading : bool, optional
+    lazy_loading : bool, optional default True
         Lazy loading of the data. If not specified, the function will use the defaults
-        True for nwb and False for npz.
+        True. Works only with NWB files.
 
     Returns
     -------
@@ -50,12 +51,17 @@ def load_file(path, lazy_loading=None):
     """
     if os.path.isfile(path):
         if path.endswith(".npz"):
-            lazy_loading = False if lazy_loading is None else lazy_loading
-            return NPZFile(path, lazy_loading=lazy_loading).load()
+            if lazy_loading:
+                warnings.warn("Lazy loading is not supported for NPZ files")
+            return NPZFile(path).load()
 
         elif path.endswith(".nwb"):
-            lazy_loading = True if lazy_loading is None else lazy_loading
-            return NWBFile(path, lazy_loading=lazy_loading)
+            # preserves class init default:
+            kwargs_for_lazyloading = (
+                {} if lazy_loading is None else {"lazy_loading": lazy_loading}
+            )
+
+            return NWBFile(path, **kwargs_for_lazyloading)
         else:
             raise RuntimeError("File format not supported")
     else:

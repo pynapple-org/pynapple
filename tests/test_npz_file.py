@@ -125,8 +125,3 @@ def test_load_non_npz(path):
     a = file.load()
     assert isinstance(a, np.lib.npyio.NpzFile)
     np.testing.assert_array_equal(tmp, a['a'])
-
-
-
-
-
