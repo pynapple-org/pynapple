@@ -31,8 +31,8 @@ def _find_class_from_variables(file_variables, data_ndims=None):
 
         return "Tsd" if data_ndims == 1 else "TsdTensor"
 
-    for possible_type, espected_variables in EXPECTED_ENTRIES.items():
-        if espected_variables.issubset(file_variables):
+    for possible_type, expected_variables in EXPECTED_ENTRIES.items():
+        if expected_variables.issubset(file_variables):
             return possible_type
 
     return "npz"
