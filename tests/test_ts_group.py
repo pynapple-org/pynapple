@@ -520,8 +520,6 @@ class TestTsGroup1:
 
     def test_save_npz(self, group):
 
-        import os
-
         group = {
             0: nap.Tsd(t=np.arange(0, 20), d = np.random.rand(20)),
             1: nap.Tsd(t=np.arange(0, 20, 0.5), d=np.random.rand(40)),
@@ -543,12 +541,10 @@ class TestTsGroup1:
         assert str(e.value) == "Path {} does not exist.".format(Path(fake_path).resolve())
 
         tsgroup.save("tsgroup.npz")
-        os.listdir('.')
-        assert "tsgroup.npz" in os.listdir(".")
+        assert "tsgroup.npz" in [f.name for f in Path('.').iterdir()]
 
         tsgroup.save("tsgroup2")
-        os.listdir('.')
-        assert "tsgroup2.npz" in os.listdir(".")
+        assert "tsgroup2.npz" in [f.name for f in Path('.').iterdir()]
 
         file = np.load("tsgroup.npz")
 
@@ -589,9 +585,9 @@ class TestTsGroup1:
             assert 'd' not in list(file.keys())
             np.testing.assert_array_almost_equal(file['t'], tsgroup3[0].index)
 
-        os.remove("tsgroup.npz")
-        os.remove("tsgroup2.npz")
-        os.remove("tsgroup3.npz")
+        Path("tsgroup.npz").unlink()
+        Path("tsgroup2.npz").unlink()
+        Path("tsgroup3.npz").unlink()
 
     @pytest.mark.parametrize(
         "keys, expectation",

@@ -475,7 +475,6 @@ def test_str_():
     assert isinstance(ep.__str__(), str)
 
 def test_save_npz():
-    import os
 
     start = np.around(np.array([0, 10, 16], dtype=np.float64), 9)
     end = np.around(np.array([5, 15, 20], dtype=np.float64), 9)
@@ -494,12 +493,10 @@ def test_save_npz():
     assert str(e.value) == "Path {} does not exist.".format(Path(fake_path).resolve())
 
     ep.save("ep.npz")
-    os.listdir('.')
-    assert "ep.npz" in os.listdir(".")
+    assert "ep.npz" in [f.name for f in Path('.').iterdir()]
 
     ep.save("ep2")
-    os.listdir('.')
-    assert "ep2.npz" in os.listdir(".")
+    assert "ep2.npz" in [f.name for f in Path('.').iterdir()]
 
     file = np.load("ep.npz")
 
@@ -511,8 +508,8 @@ def test_save_npz():
     np.testing.assert_array_almost_equal(file['end'], end)
 
     # Cleaning    
-    os.remove("ep.npz")
-    os.remove("ep2.npz")    
+    Path("ep.npz").unlink()
+    Path("ep2.npz").unlink()  
 
 
 
