@@ -6,8 +6,7 @@ Class and functions for loading data processed with Phy2
 @author: Sara Mahallati, Guillaume Viejo
 """
 
-import os
-
+from pathlib import Path
 import numpy as np
 from pynwb import NWBHDF5IO
 
@@ -29,14 +28,16 @@ class Phy(BaseLoader):
         path : str or Path object
             The path to the data.
         """
-        self.basename = os.path.basename(path)
+        path = Path(path)
+
+        self.basename = path.name
         self.time_support = None
 
         super().__init__(path)
 
-        self.load_nwb_spikes(path)
+        self.load_nwb_spikes()
 
-    def load_nwb_spikes(self, path):
+    def load_nwb_spikes(self):
         """Read the NWB spikes to extract the spike times.
 
         Returns
@@ -44,11 +45,6 @@ class Phy(BaseLoader):
         TYPE
             Description
         """
-        self.nwb_path = os.path.join(path, "pynapplenwb")
-        if not os.path.exists(self.nwb_path):
-            raise RuntimeError("Path {} does not exist.".format(self.nwb_path))
-        self.nwbfilename = [f for f in os.listdir(self.nwb_path) if "nwb" in f][0]
-        self.nwbfilepath = os.path.join(self.nwb_path, self.nwbfilename)
 
         io = NWBHDF5IO(self.nwbfilepath, "r")
         nwbfile = io.read()
