@@ -432,8 +432,8 @@ class Base(abc.ABC):
 
         Parameters
         ----------
-        file : npz file interface
-            The file interface to read from
+        file : NPZFile object
+            opened npz file interface.
 
         Returns
         -------
@@ -445,25 +445,3 @@ class Base(abc.ABC):
         }
         iset = IntervalSet(start=file["start"], end=file["end"])
         return cls(time_support=iset, **kwargs)
-
-    # def find_gaps(self, min_gap, time_units='s'):
-    #     """
-    #     finds gaps in a tsd larger than min_gap. Return an IntervalSet.
-    #     Epochs are defined by adding and removing 1 microsecond to the time index.
-
-    #     Parameters
-    #     ----------
-    #     min_gap : float
-    #         The minimum interval size considered to be a gap (default is second).
-    #     time_units : str, optional
-    #         Time units of min_gap ('us', 'ms', 's' [default])
-    #     """
-    #     min_gap = format_timestamps(np.array([min_gap]), time_units)[0]
-
-    #     time_array = self.index
-    #     starts = self.time_support.start
-    #     ends = self.time_support.end
-
-    #     s, e = jitfind_gaps(time_array, starts, ends, min_gap)
-
-    #     return nap.IntervalSet(s, e)
