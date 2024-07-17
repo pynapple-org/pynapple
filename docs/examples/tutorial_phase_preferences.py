@@ -27,8 +27,6 @@ This tutorial was made by Kipp Freud.
 import math
 import os
 
-# ..todo: remove
-import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 import requests
@@ -36,8 +34,6 @@ import scipy
 import tqdm
 
 import pynapple as nap
-
-matplotlib.use("TkAgg")
 
 # %%
 # ***
