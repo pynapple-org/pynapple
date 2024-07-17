@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Grosmark & Buzsáki (2016) Tutorial
+Grosmark & Buzsáki (2016) Tutorial 1
 ============
 This tutorial demonstrates how we can use the signal processing tools within Pynapple to aid with data analysis.
 We will examine the dataset from [Grosmark & Buzsáki (2016)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4919122/).
