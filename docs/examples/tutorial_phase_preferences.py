@@ -78,23 +78,16 @@ REM_minute_interval = nap.IntervalSet(
     data["rem"]["start"][0] + 90.0,
     data["rem"]["start"][0] + 100.0,
 )
-REM_Tsd = nap.TsdFrame(
-    t=data["eeg"].restrict(REM_minute_interval).index.values
-    - data["eeg"].restrict(REM_minute_interval).index.values.min(),
-    d=data["eeg"].restrict(REM_minute_interval).values,
-)
+REM_Tsd = data["eeg"].restrict(REM_minute_interval)
 
 # We will also extract spike times from all units in our dataset
 # which occur during our specified interval
 spikes = {}
 for i in data["units"].index:
-    spikes[i] = (
-        data["units"][i].times()[
-            (data["units"][i].times() > REM_minute_interval["start"][0])
-            & (data["units"][i].times() < REM_minute_interval["end"][0])
-        ]
-        - data["eeg"].restrict(REM_minute_interval).index.values.min()
-    )
+    spikes[i] = data["units"][i].times()[
+        (data["units"][i].times() > REM_minute_interval["start"][0])
+        & (data["units"][i].times() < REM_minute_interval["end"][0])
+    ]
 
 # The given dataset has only one channel, so we set channel = 0 here
 channel = 0

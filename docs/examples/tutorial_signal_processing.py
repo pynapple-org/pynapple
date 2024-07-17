@@ -76,16 +76,9 @@ RUN_interval = nap.IntervalSet(
     data["forward_ep"]["start"][run_index],
     data["forward_ep"]["end"][run_index] + 4.0,
 )
-RUN_Tsd = nap.TsdFrame(
-    t=data["eeg"].restrict(RUN_interval).index.values
-    - data["forward_ep"]["start"][run_index],
-    d=data["eeg"].restrict(RUN_interval).values,
-)
-RUN_pos = nap.TsdFrame(
-    t=data["position"].restrict(RUN_interval).index.values
-    - data["forward_ep"]["start"][run_index],
-    d=data["position"].restrict(RUN_interval).asarray(),
-)
+RUN_Tsd = data["eeg"].restrict(RUN_interval)
+RUN_pos = data["position"].restrict(RUN_interval)
+
 # The given dataset has only one channel, so we set channel = 0 here
 channel = 0
 
@@ -103,9 +96,7 @@ axd = fig.subplot_mosaic(
 axd["ephys"].plot(
     RUN_Tsd[:, channel].restrict(
         nap.IntervalSet(
-            0.0,
-            data["forward_ep"]["end"][run_index]
-            - data["forward_ep"]["start"][run_index],
+            data["forward_ep"]["start"][run_index], data["forward_ep"]["end"][run_index]
         )
     ),
     label="Traversal LFP Data",
@@ -114,11 +105,8 @@ axd["ephys"].plot(
 axd["ephys"].plot(
     RUN_Tsd[:, channel].restrict(
         nap.IntervalSet(
-            data["forward_ep"]["end"][run_index]
-            - data["forward_ep"]["start"][run_index],
-            data["forward_ep"]["end"][run_index]
-            - data["forward_ep"]["start"][run_index]
-            + 5.0,
+            data["forward_ep"]["end"][run_index],
+            data["forward_ep"]["end"][run_index] + 5.0,
         )
     ),
     label="Post Traversal LFP Data",
