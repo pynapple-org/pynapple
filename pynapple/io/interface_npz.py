@@ -55,8 +55,6 @@ class NPZFile(object):
 
     """
 
-    # valid_types = ["Ts", "Tsd", "TsdFrame", "TsdTensor", "TsGroup", "IntervalSet"]
-
     def __init__(self, path):
         """Initialization of the NPZ file
 
