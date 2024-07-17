@@ -224,7 +224,7 @@ def generate_morlet_filterbank(freqs, fs, n_cycles=1.5, scaling=1.0, precision=1
         If array, frequency values to estimate with morlet wavelets.
         If list, define the frequency range, as [freq_start, freq_stop, freq_step].
         The `freq_step` is optional, and defaults to 1. Range is inclusive of `freq_stop` value.
-    fs : float or None
+    fs : float
         Sampling rate, in Hz.
     n_cycles : float or 1d array
         Length of the filter, as the number of cycles for each frequency.
@@ -236,8 +236,8 @@ def generate_morlet_filterbank(freqs, fs, n_cycles=1.5, scaling=1.0, precision=1
 
     Returns
     -------
-    filter_bank : list[np.ndarray]
-        list of morlet wavelet filters of the frequencies given
+    filter_bank : np.ndarray
+        list of Morlet wavelet filters of the frequencies given
     """
     filter_bank = []
     morlet_f = _morlet(int(2**precision), ncycles=n_cycles, scaling=scaling)

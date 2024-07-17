@@ -19,6 +19,7 @@ from .signal_processing import (
     compute_spectogram,
     compute_wavelet_transform,
     compute_welch_spectogram,
+    generate_morlet_filterbank
 )
 from .tuning_curves import (
     compute_1d_mutual_info,
