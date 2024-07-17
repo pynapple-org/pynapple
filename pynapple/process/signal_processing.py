@@ -191,23 +191,19 @@ def compute_wavelet_transform(
         output_shape = (sig.shape[0], len(freqs), *sig.shape[1:])
         sig = sig.reshape((sig.shape[0], np.prod(sig.shape[1:])))
 
-    cwt = np.zeros(
-        [sig.values.shape[0], len(freqs), sig.values.shape[1]], dtype=complex
-    )
-
     filter_bank = generate_morlet_filterbank(freqs, fs, n_cycles, scaling, precision)
-    for f_i, filter in enumerate(filter_bank):
-        convolved = sig.convolve(np.transpose(np.asarray([filter.real, filter.imag])))
-        convolved = convolved[:, :, 0].values + convolved[:, :, 1].values * 1j
-        coef = -np.diff(convolved, axis=0)
-        if norm == "sss":
-            coef *= -np.sqrt(scaling) / (freqs[f_i] / fs)
-        elif norm == "amp":
-            coef *= -scaling / (freqs[f_i] / fs)
-        coef = np.insert(
-            coef, 1, coef[0], axis=0
-        )  # slightly hacky line, necessary to make output correct shape
-        cwt[:, f_i, :] = coef if len(coef.shape) == 2 else np.expand_dims(coef, axis=1)
+    convolved_real = sig.convolve(np.transpose(filter_bank.real))
+    convolved_imag = sig.convolve(np.transpose(filter_bank.imag))
+    convolved = convolved_real.values + convolved_imag.values * 1j
+    coef = -np.diff(convolved, axis=0)
+    if norm == "sss":
+        coef *= coef * (-np.sqrt(scaling) / (freqs / fs))
+    elif norm == "amp":
+        coef *= -scaling / (freqs / fs)
+    coef = np.insert(
+        coef, 1, coef[0, :], axis=0
+    )  # slightly hacky line, necessary to make output correct shape
+    cwt = np.swapaxes(coef, 1, 2)
 
     if len(output_shape) == 2:
         return nap.TsdFrame(

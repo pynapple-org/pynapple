@@ -92,6 +92,22 @@ def test_compute_wavelet_transform():
     assert mwt.shape == (1000, 10)
 
     t = np.linspace(0, 1, 1000)
+    sig = nap.Tsd(d=np.sin(t * 20 * np.pi * 2), t=t)
+    freqs = np.linspace(10, 100, 10)
+    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs, norm="sss")
+    mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
+    assert mpf == 20
+    assert mwt.shape == (1000, 10)
+
+    t = np.linspace(0, 1, 1000)
+    sig = nap.Tsd(d=np.sin(t * 20 * np.pi * 2), t=t)
+    freqs = np.linspace(10, 100, 10)
+    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs, norm="amp")
+    mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
+    assert mpf == 20
+    assert mwt.shape == (1000, 10)
+
+    t = np.linspace(0, 1, 1000)
     sig = nap.Tsd(d=np.sin(t * 70 * np.pi * 2), t=t)
     freqs = np.linspace(10, 100, 10)
     mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
@@ -125,8 +141,3 @@ def test_compute_wavelet_transform():
     with pytest.raises(ValueError) as e_info:
         nap.compute_wavelet_transform(sig, fs=None, freqs=freqs, n_cycles=-1.5)
     assert str(e_info.value) == "Number of cycles must be a positive number."
-
-
-if __name__ == "__main__":
-    test_compute_wavelet_transform()
-    # test_compute_welch_spectogram()
