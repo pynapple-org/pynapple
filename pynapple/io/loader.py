@@ -10,6 +10,7 @@ BaseLoader is the general class for loading session with pynapple.
 @author: Guillaume Viejo
 """
 import os
+from pathlib import Path
 import warnings
 
 import pandas as pd
@@ -56,23 +57,26 @@ class BaseLoader(object):
     """
 
     def __init__(self, path=None):
-        self.path = path
+        self.path = Path(path)
 
-        file_found = False
         # Check if a pynapplenwb folder exist
-        if self.path is not None:
-            nwb_path = os.path.join(self.path, "pynapplenwb")
-            if os.path.exists(nwb_path):
-                files = os.listdir(nwb_path)
-                if len([f for f in files if f.endswith(".nwb")]):
-                    file_found = True
-                    self.load_data(path)
-
-        # Starting the GUI
-        if not file_found:
+        nwb_path = self.path / "pynapplenwb"
+        files = list(nwb_path.glob("*.nwb"))
+        
+        if len(files) > 0:
+            self.load_data()
+        else:
             raise RuntimeError(get_error_text(path))
+        
+    @property
+    def nwbfilepath(self):
+        try:
+            nwbfilepath = next(self.path.glob("pynapplenwb/*nwb"))
+        except StopIteration:
+            raise FileNotFoundError("No NWB file found in {}".format(self.path / "pynapplenwb"))
+        return nwbfilepath
 
-    def load_data(self, path):
+    def load_data(self):
         """
         Load NWB data saved with pynapple in the pynapplenwb folder
 
@@ -81,11 +85,6 @@ class BaseLoader(object):
         path : str
             Path to the session folder
         """
-        self.nwb_path = os.path.join(path, "pynapplenwb")
-        if not os.path.exists(self.nwb_path):
-            raise RuntimeError("Path {} does not exist.".format(self.nwb_path))
-        self.nwbfilename = [f for f in os.listdir(self.nwb_path) if "nwb" in f][0]
-        self.nwbfilepath = os.path.join(self.nwb_path, self.nwbfilename)
 
         io = NWBHDF5IO(self.nwbfilepath, "r+")
         nwbfile = io.read()
