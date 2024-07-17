@@ -859,27 +859,6 @@ class TsdTensor(BaseTsd):
 
         return
 
-    @classmethod
-    def _from_npz_reader(cls, file):
-        """
-        Load a TsdTensor object from a npz file.
-
-        Parameters
-        ----------
-        file : str
-            The opened npz file
-
-        Returns
-        -------
-        Tsd
-            The Tsd object
-        """
-        return cls(
-            t=file["t"],
-            d=file["d"],
-            time_support=IntervalSet(start=file["start"], end=file["end"]),
-        )
-
 
 class TsdFrame(BaseTsd):
     """
@@ -1164,28 +1143,6 @@ class TsdFrame(BaseTsd):
         )
 
         return
-
-    @classmethod
-    def _from_npz_reader(cls, file):
-        """
-        Load a Tsd object from a npz file.
-
-        Parameters
-        ----------
-        file : str
-            The opened npz file
-
-        Returns
-        -------
-        Tsd
-            The Tsd object
-        """
-        return cls(
-            t=file["t"],
-            d=file["d"],
-            columns=file["columns"],
-            time_support=IntervalSet(start=file["start"], end=file["end"]),
-        )
 
 
 class Tsd(BaseTsd):
@@ -1509,27 +1466,6 @@ class Tsd(BaseTsd):
 
         return
 
-    @classmethod
-    def _from_npz_reader(cls, file):
-        """
-        Load a Tsd object from a npz file.
-
-        Parameters
-        ----------
-        file : str
-            The opened npz file
-
-        Returns
-        -------
-        Tsd
-            The Tsd object
-        """
-        return cls(
-            t=file["t"],
-            d=file["d"],
-            time_support=IntervalSet(start=file["start"], end=file["end"]),
-        )
-
 
 class Ts(Base):
     """
@@ -1821,22 +1757,3 @@ class Ts(Base):
         )
 
         return
-
-    @classmethod
-    def _from_npz_reader(cls, file):
-        """
-        Load a Ts object from a npz file.
-
-        Parameters
-        ----------
-        file : str
-            The opened npz file
-
-        Returns
-        -------
-        Tsd
-            The Ts object
-        """
-        return cls(
-            t=file["t"], time_support=IntervalSet(start=file["start"], end=file["end"])
-        )

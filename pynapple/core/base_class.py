@@ -426,6 +426,26 @@ class Base(abc.ABC):
             idx_end = np.searchsorted(time_array, end, side="right")
             return self[idx_start:idx_end]
 
+    @classmethod
+    def _from_npz_reader(cls, file):
+        """Load a time series object from a npz file interface.
+
+        Parameters
+        ----------
+        file : npz file interface
+            The file interface to read from
+
+        Returns
+        -------
+        out : Ts or Tsd or TsdFrame or TsdTensor
+            The time series object
+        """
+        kwargs = {
+            key: file[key] for key in file.keys() if key not in ["start", "end", "type"]
+        }
+        iset = IntervalSet(start=file["start"], end=file["end"])
+        return cls(time_support=iset, **kwargs)
+
     # def find_gaps(self, min_gap, time_units='s'):
     #     """
     #     finds gaps in a tsd larger than min_gap. Return an IntervalSet.
