@@ -27,13 +27,7 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from scipy import signal
 from tabulate import tabulate
 
-from ._core_functions import (
-    _bin_average,
-    _convolve,
-    _dropna,
-    _restrict,
-    _threshold,
-)
+from ._core_functions import _bin_average, _convolve, _dropna, _restrict, _threshold
 from .base_class import Base
 from .interval_set import IntervalSet
 from .time_index import TsIndex
