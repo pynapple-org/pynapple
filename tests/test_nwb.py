@@ -96,7 +96,7 @@ def test_NWBFile_missing_file():
 
 
 def test_NWBFile_wrong_input():
-    with pytest.raises(RuntimeError):
+    with pytest.raises(TypeError):
         nap.NWBFile(1)
 
 def test_wrong_key():

@@ -7,6 +7,7 @@ Class and functions for loading data processed with Phy2
 """
 
 from pathlib import Path
+
 import numpy as np
 from pynwb import NWBHDF5IO
 

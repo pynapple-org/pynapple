@@ -14,6 +14,7 @@ from contextlib import nullcontext as does_not_raise
 import numpy as np
 import pandas as pd
 import pytest
+from pathlib import Path
 
 import pynapple as nap
 
@@ -529,18 +530,17 @@ class TestTsGroup1:
 
         tsgroup = nap.TsGroup(group, meta = np.arange(len(group), dtype=np.int64), meta2 = np.array(['a', 'b', 'c']))
 
-        with pytest.raises(RuntimeError) as e:
+        with pytest.raises(TypeError) as e:
             tsgroup.save(dict)
-        assert str(e.value) == "Invalid type; please provide filename as string"
 
         with pytest.raises(RuntimeError) as e:
             tsgroup.save('./')
-        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+        assert str(e.value) == "Invalid filename input. {} is directory.".format(Path("./").resolve())
 
         fake_path = './fake/path'
         with pytest.raises(RuntimeError) as e:
             tsgroup.save(fake_path+'/file.npz')
-        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+        assert str(e.value) == "Path {} does not exist.".format(Path(fake_path).resolve())
 
         tsgroup.save("tsgroup.npz")
         os.listdir('.')

@@ -7,7 +7,7 @@
 # @Last Modified time: 2024-04-02 14:32:25
 
 
-import os
+from pathlib import Path
 
 import numpy as np
 
@@ -63,8 +63,9 @@ class NPZFile(object):
         path : str
             Valid path to a NPZ file
         """
+        path = Path(path)
         self.path = path
-        self.name = os.path.basename(path)
+        self.name = path.name
         self.file = np.load(self.path, allow_pickle=True)
         type_ = ""
 

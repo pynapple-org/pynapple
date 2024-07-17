@@ -12,9 +12,8 @@ Class and functions for loading data processed with the Neurosuite (Klusters, Ne
 
 @author: Guillaume Viejo
 """
-# import os
-from pathlib import Path
 import sys
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -197,10 +196,10 @@ class NeuroSuite(BaseLoader):
             isets = self.load_nwb_intervals(name)
             if isinstance(isets, nap.IntervalSet):
                 return isets
-        
+
         if name is not None and path2file is None:
             path2file = self.path / self.basename + "." + name + ".evt"
-        if path2file is not None:  #TODO maybe useless conditional?
+        if path2file is not None:  # TODO maybe useless conditional?
             try:
                 # df = pd.read_csv(path2file, delimiter=' ', usecols = [0], header = None)
                 tmp = np.genfromtxt(path2file)[:, 0]
@@ -302,8 +301,8 @@ class NeuroSuite(BaseLoader):
                 epend = int(epoch.as_units("s")["end"].values[0] * fs)
 
         # Find dat file
-        #files = os.listdir(self.path)
-       #  dat_files = np.sort([f for f in files if "dat" in f and f[0] != "."])
+        # files = os.listdir(self.path)
+        #  dat_files = np.sort([f for f in files if "dat" in f and f[0] != "."])
 
         # Need n_samples collected in the entire recording from dat file to load
         # file = self.path / dat_files[0]

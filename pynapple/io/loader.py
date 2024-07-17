@@ -10,8 +10,8 @@ BaseLoader is the general class for loading session with pynapple.
 @author: Guillaume Viejo
 """
 import os
-from pathlib import Path
 import warnings
+from pathlib import Path
 
 import pandas as pd
 from pynwb import NWBHDF5IO, TimeSeries
@@ -62,18 +62,20 @@ class BaseLoader(object):
         # Check if a pynapplenwb folder exist
         nwb_path = self.path / "pynapplenwb"
         files = list(nwb_path.glob("*.nwb"))
-        
+
         if len(files) > 0:
             self.load_data()
         else:
             raise RuntimeError(get_error_text(path))
-        
+
     @property
     def nwbfilepath(self):
         try:
             nwbfilepath = next(self.path.glob("pynapplenwb/*nwb"))
         except StopIteration:
-            raise FileNotFoundError("No NWB file found in {}".format(self.path / "pynapplenwb"))
+            raise FileNotFoundError(
+                "No NWB file found in {}".format(self.path / "pynapplenwb")
+            )
         return nwbfilepath
 
     def load_data(self):

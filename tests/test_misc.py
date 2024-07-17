@@ -62,7 +62,7 @@ def test_load_folder(path):
     assert isinstance(folder, nap.io.Folder)
 
 def test_load_folder_foldernotfound():
-    with pytest.raises(RuntimeError) as e:
+    with pytest.raises(FileNotFoundError) as e:
         nap.load_folder("MissingFolder")
 
     assert str(e.value) == "Folder MissingFolder does not exist"

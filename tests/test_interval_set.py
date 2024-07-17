@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 import warnings
 from .mock import MockArray
+from pathlib import Path
 
 
 def test_create_iset():
@@ -480,18 +481,17 @@ def test_save_npz():
     end = np.around(np.array([5, 15, 20], dtype=np.float64), 9)
     ep = nap.IntervalSet(start=start,end=end)
 
-    with pytest.raises(RuntimeError) as e:
+    with pytest.raises(TypeError) as e:
         ep.save(dict)
-    assert str(e.value) == "Invalid type; please provide filename as string"
 
     with pytest.raises(RuntimeError) as e:
         ep.save('./')
-    assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+    assert str(e.value) == "Invalid filename input. {} is directory.".format(Path("./").resolve())
 
     fake_path = './fake/path'
     with pytest.raises(RuntimeError) as e:
         ep.save(fake_path+'/file.npz')
-    assert str(e.value) == "Path {} does not exist.".format(fake_path)
+    assert str(e.value) == "Path {} does not exist.".format(Path(fake_path).resolve())
 
     ep.save("ep.npz")
     os.listdir('.')

@@ -1,7 +1,7 @@
 """Tests of time series for `pynapple` package."""
 
 import pickle
-
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
@@ -749,18 +749,17 @@ class Test_Time_Series_2:
     def test_save_npz(self, tsd):
         import os
 
-        with pytest.raises(RuntimeError) as e:
+        with pytest.raises(TypeError) as e:
             tsd.save(dict)
-        assert str(e.value) == "Invalid type; please provide filename as string"
 
         with pytest.raises(RuntimeError) as e:
             tsd.save('./')
-        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+        assert str(e.value) == "Invalid filename input. {} is directory.".format(Path("./").resolve())
 
         fake_path = './fake/path'
         with pytest.raises(RuntimeError) as e:
             tsd.save(fake_path+'/file.npz')
-        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+        assert str(e.value) == "Path {} does not exist.".format(Path(fake_path).resolve())
 
         tsd.save("tsd.npz")
         os.listdir('.')
@@ -990,18 +989,17 @@ class Test_Time_Series_3:
     def test_save_npz(self, tsdframe):
         import os
 
-        with pytest.raises(RuntimeError) as e:
+        with pytest.raises(TypeError) as e:
             tsdframe.save(dict)
-        assert str(e.value) == "Invalid type; please provide filename as string"
 
         with pytest.raises(RuntimeError) as e:
             tsdframe.save('./')
-        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+        assert str(e.value) == "Invalid filename input. {} is directory.".format(Path("./").resolve())
 
         fake_path = './fake/path'
         with pytest.raises(RuntimeError) as e:
             tsdframe.save(fake_path+'/file.npz')
-        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+        assert str(e.value) == "Path {} does not exist.".format(Path(fake_path).resolve())
 
         tsdframe.save("tsdframe.npz")
         os.listdir('.')
@@ -1113,18 +1111,17 @@ class Test_Time_Series_4:
     def test_save_npz(self, ts):
         import os
 
-        with pytest.raises(RuntimeError) as e:
+        with pytest.raises(TypeError) as e:
             ts.save(dict)
-        assert str(e.value) == "Invalid type; please provide filename as string"
 
         with pytest.raises(RuntimeError) as e:
             ts.save('./')
-        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+        assert str(e.value) == "Invalid filename input. {} is directory.".format(Path("./").resolve())
 
         fake_path = './fake/path'
         with pytest.raises(RuntimeError) as e:
             ts.save(fake_path+'/file.npz')
-        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+        assert str(e.value) == "Path {} does not exist.".format(Path(fake_path).resolve())
 
         ts.save("ts.npz")
         os.listdir('.')
@@ -1354,18 +1351,17 @@ class Test_Time_Series_5:
     def test_save_npz(self, tsdtensor):
         import os
 
-        with pytest.raises(RuntimeError) as e:
+        with pytest.raises(TypeError) as e:
             tsdtensor.save(dict)
-        assert str(e.value) == "Invalid type; please provide filename as string"
 
         with pytest.raises(RuntimeError) as e:
             tsdtensor.save('./')
-        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+        assert str(e.value) == "Invalid filename input. {} is directory.".format(Path("./").resolve())
 
         fake_path = './fake/path'
         with pytest.raises(RuntimeError) as e:
             tsdtensor.save(fake_path+'/file.npz')
-        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+        assert str(e.value) == "Path {} does not exist.".format(Path(fake_path).resolve())
 
         tsdtensor.save("tsdtensor.npz")
         os.listdir('.')
