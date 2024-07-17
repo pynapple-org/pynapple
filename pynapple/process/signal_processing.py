@@ -258,7 +258,14 @@ def generate_morlet_filterbank(freqs, fs, n_cycles=1.5, scaling=1.0, precision=1
         if len(int_psi_scale) > max_len:
             max_len = len(int_psi_scale)
         filter_bank.append(int_psi_scale)
-    filter_bank = [np.pad(arr, ((max_len - len(arr)) // 2, (max_len - len(arr) + 1) // 2), constant_values=0.0) for arr in filter_bank]
+    filter_bank = [
+        np.pad(
+            arr,
+            ((max_len - len(arr)) // 2, (max_len - len(arr) + 1) // 2),
+            constant_values=0.0,
+        )
+        for arr in filter_bank
+    ]
     return np.array(filter_bank)
 
 

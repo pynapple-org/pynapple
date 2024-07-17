@@ -77,13 +77,13 @@ RUN_interval = nap.IntervalSet(
     data["forward_ep"]["end"][run_index] + 4.0,
 )
 RUN_Tsd = nap.TsdFrame(
-    t=data["eeg"].restrict(RUN_interval).index.values -
-      data["forward_ep"]["start"][run_index],
+    t=data["eeg"].restrict(RUN_interval).index.values
+    - data["forward_ep"]["start"][run_index],
     d=data["eeg"].restrict(RUN_interval).values,
 )
 RUN_pos = nap.TsdFrame(
-    t=data["position"].restrict(RUN_interval).index.values -
-      data["forward_ep"]["start"][run_index],
+    t=data["position"].restrict(RUN_interval).index.values
+    - data["forward_ep"]["start"][run_index],
     d=data["position"].restrict(RUN_interval).asarray(),
 )
 # The given dataset has only one channel, so we set channel = 0 here
@@ -96,10 +96,7 @@ channel = 0
 
 fig = plt.figure(constrained_layout=True, figsize=(10, 6))
 axd = fig.subplot_mosaic(
-    [
-        ["ephys"],
-        ["pos"]
-    ],
+    [["ephys"], ["pos"]],
     height_ratios=[1, 0.2],
 )
 
@@ -107,24 +104,25 @@ axd["ephys"].plot(
     RUN_Tsd[:, channel].restrict(
         nap.IntervalSet(
             0.0,
-            data["forward_ep"]["end"][run_index] -
-            data["forward_ep"]["start"][run_index]
+            data["forward_ep"]["end"][run_index]
+            - data["forward_ep"]["start"][run_index],
         )
     ),
     label="Traversal LFP Data",
-    color="green"
+    color="green",
 )
 axd["ephys"].plot(
     RUN_Tsd[:, channel].restrict(
         nap.IntervalSet(
-            data["forward_ep"]["end"][run_index] -
-            data["forward_ep"]["start"][run_index],
-            data["forward_ep"]["end"][run_index] -
-            data["forward_ep"]["start"][run_index] + 5.0,
+            data["forward_ep"]["end"][run_index]
+            - data["forward_ep"]["start"][run_index],
+            data["forward_ep"]["end"][run_index]
+            - data["forward_ep"]["start"][run_index]
+            + 5.0,
         )
     ),
     label="Post Traversal LFP Data",
-    color="blue"
+    color="blue",
 )
 axd["ephys"].set_title("Traversal & Post Traversal LFP")
 axd["ephys"].set_ylabel("LFP (v)")
@@ -149,8 +147,12 @@ fft = nap.compute_spectogram(RUN_Tsd, fs=int(FS))
 # Now we will plot it
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
 ax.plot(
-    fft.index, np.abs(fft.iloc[:, channel]), alpha=0.5,
-    label="LFP Frequency Power", c="blue", linewidth=2
+    fft.index,
+    np.abs(fft.iloc[:, channel]),
+    alpha=0.5,
+    label="LFP Frequency Power",
+    c="blue",
+    linewidth=2,
 )
 ax.set_xlabel("Freq (Hz)")
 ax.set_ylabel("Frequency Power")
@@ -175,16 +177,31 @@ ax.legend()
 # could also be defined as a linspace or logspace
 freqs = np.array(
     [
-        2.59, 3.66, 5.18, 8.0, 10.36, 20.72, 29.3, 41.44, 58.59, 82.88,
-        117.19, 152.35, 192.19, 200., 234.38, 270.00, 331.5, 390.00,
+        2.59,
+        3.66,
+        5.18,
+        8.0,
+        10.36,
+        20.72,
+        29.3,
+        41.44,
+        58.59,
+        82.88,
+        117.19,
+        152.35,
+        192.19,
+        200.0,
+        234.38,
+        270.00,
+        331.5,
+        390.00,
     ]
 )
 mwt_RUN = nap.compute_wavelet_transform(RUN_Tsd[:, channel], fs=None, freqs=freqs)
 
-#Define wavelet decomposition plotting function
-def plot_timefrequency(
-    times, freqs, powers, x_ticks=5, ax=None, **kwargs
-):
+
+# Define wavelet decomposition plotting function
+def plot_timefrequency(times, freqs, powers, x_ticks=5, ax=None, **kwargs):
     if np.iscomplexobj(powers):
         powers = abs(powers)
     ax.imshow(powers, aspect="auto", **kwargs)
@@ -200,7 +217,8 @@ def plot_timefrequency(
     y_ticks = freqs
     y_ticks_pos = [np.argmin(np.abs(freqs - val)) for val in y_ticks]
     ax.set(yticks=y_ticks_pos, yticklabels=y_ticks)
-    
+
+
 # And plot
 fig = plt.figure(constrained_layout=True, figsize=(10, 6))
 axd = fig.subplot_mosaic(
@@ -250,9 +268,9 @@ axd = fig.subplot_mosaic(
     height_ratios=[1, 0.3],
 )
 
-axd["lfp_run"].plot(RUN_Tsd.index.values, RUN_Tsd[:, channel],
-                    alpha=0.5,
-                    label="LFP Data")
+axd["lfp_run"].plot(
+    RUN_Tsd.index.values, RUN_Tsd[:, channel], alpha=0.5, label="LFP Data"
+)
 axd["lfp_run"].plot(
     RUN_Tsd.index.values,
     theta_band_reconstruction,
@@ -269,7 +287,10 @@ axd["lfp_run"].set_xlabel("Time (s)")
 axd["lfp_run"].set_title(f"{freqs[theta_freq_index]}Hz oscillation power.")
 axd["pos_run"].plot(RUN_pos)
 [axd[k].margins(0) for k in ["lfp_run", "pos_run"]]
-[axd["pos_run"].spines[sp].set_visible(False) for sp in ["top", "right", "bottom", "left"]]
+[
+    axd["pos_run"].spines[sp].set_visible(False)
+    for sp in ["top", "right", "bottom", "left"]
+]
 axd["pos_run"].get_xaxis().set_visible(False)
 axd["pos_run"].set_xlim(RUN_Tsd.index.min(), RUN_Tsd.index.max())
 axd["pos_run"].set_ylabel("Lin. Position (cm)")
@@ -299,9 +320,7 @@ axd["lfp_run"].set_ylabel("LFP (v)")
 axd["lfp_run"].set_xlabel("Time (s)")
 axd["lfp_run"].margins(0)
 axd["lfp_run"].set_title(f"Traversal & Post-Traversal LFP")
-axd["rip_pow"].plot(RUN_Tsd.index.values,
-                    ripple_power
-                    )
+axd["rip_pow"].plot(RUN_Tsd.index.values, ripple_power)
 axd["rip_pow"].margins(0)
 axd["rip_pow"].get_xaxis().set_visible(False)
 axd["rip_pow"].spines["top"].set_visible(False)
@@ -323,7 +342,9 @@ threshold = 100
 # smooth our wavelet power
 window_size = 51
 window = np.ones(window_size) / window_size
-smoother_swr_power = np.convolve(np.abs(mwt_RUN[:, ripple_freq_idx].values), window, mode='same')
+smoother_swr_power = np.convolve(
+    np.abs(mwt_RUN[:, ripple_freq_idx].values), window, mode="same"
+)
 # isolate our ripple periods
 is_ripple = smoother_swr_power > threshold
 start_idx = None
@@ -332,8 +353,13 @@ for i in range(len(RUN_Tsd.index.values)):
     if is_ripple[i] and start_idx is None:
         start_idx = i
     elif not is_ripple[i] and start_idx is not None:
-        axd["rip_pow"].plot(RUN_Tsd.index.values[start_idx:i], smoother_swr_power[start_idx:i], color='red', linewidth=2)
-        ripple_periods.append( (start_idx, i) )
+        axd["rip_pow"].plot(
+            RUN_Tsd.index.values[start_idx:i],
+            smoother_swr_power[start_idx:i],
+            color="red",
+            linewidth=2,
+        )
+        ripple_periods.append((start_idx, i))
         start_idx = None
 
 # plot of captured ripple periods
@@ -346,11 +372,14 @@ axd = fig.subplot_mosaic(
     height_ratios=[1, 0.4],
 )
 axd["lfp_run"].plot(RUN_Tsd.index.values, RUN_Tsd[:, channel], label="LFP Data")
-axd["rip_pow"].plot(RUN_Tsd.index.values,
-                    smoother_swr_power
-                    )
+axd["rip_pow"].plot(RUN_Tsd.index.values, smoother_swr_power)
 for r in ripple_periods:
-    axd["rip_pow"].plot(RUN_Tsd.index.values[r[0]:r[1]], smoother_swr_power[r[0]:r[1]], color='red', linewidth=2)
+    axd["rip_pow"].plot(
+        RUN_Tsd.index.values[r[0] : r[1]],
+        smoother_swr_power[r[0] : r[1]],
+        color="red",
+        linewidth=2,
+    )
 axd["lfp_run"].set_ylabel("LFP (v)")
 axd["lfp_run"].set_xlabel("Time (s)")
 axd["lfp_run"].set_title(f"{freqs[ripple_freq_idx]}Hz oscillation power.")
@@ -368,23 +397,23 @@ axd["rip_pow"].set_ylabel(f"{freqs[ripple_freq_idx]}Hz Power")
 # Let's zoom in on out detected ripples and have a closer look!
 
 # Filter out ripples which do not last long enough
-ripple_periods = [r for r in ripple_periods if r[1]-r[0] > 20]
+ripple_periods = [r for r in ripple_periods if r[1] - r[0] > 20]
 
 # And plot!
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
 buffer = 200
 ax.plot(
-    RUN_Tsd.index.values[r[0]-buffer:r[1]+buffer],
-    RUN_Tsd[r[0]-buffer:r[1]+buffer],
+    RUN_Tsd.index.values[r[0] - buffer : r[1] + buffer],
+    RUN_Tsd[r[0] - buffer : r[1] + buffer],
     color="blue",
-    label="Non-SWR LFP"
+    label="Non-SWR LFP",
 )
 ax.plot(
-    RUN_Tsd.index.values[r[0]:r[1]],
-    RUN_Tsd[r[0]:r[1]],
+    RUN_Tsd.index.values[r[0] : r[1]],
+    RUN_Tsd[r[0] : r[1]],
     color="red",
     label="SWR",
-    linewidth=2
+    linewidth=2,
 )
 ax.margins(0)
 ax.set_xlabel("Time (s)")

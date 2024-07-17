@@ -76,7 +76,7 @@ def test_compute_welch_spectogram():
 def test_compute_wavelet_transform():
 
     t = np.linspace(0, 1, 1000)
-    sig = nap.Tsd(d=np.sin(t*50*np.pi*2), t=t)
+    sig = nap.Tsd(d=np.sin(t * 50 * np.pi * 2), t=t)
     freqs = np.linspace(10, 100, 10)
     mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
     mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
