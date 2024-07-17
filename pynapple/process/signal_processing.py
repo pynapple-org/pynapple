@@ -13,7 +13,7 @@ import pynapple as nap
 
 def compute_spectogram(sig, fs=None, ep=None, full_range=False):
     """
-    Performs numpy fft on sig, returns output
+    Performs numpy fft on sig, returns output. Pynapple assumes a constant sampling rate for sig.
 
     ----------
     sig : pynapple.Tsd or pynapple.TsdFrame
@@ -24,6 +24,11 @@ def compute_spectogram(sig, fs=None, ep=None, full_range=False):
         The epoch to calculate the fft on. Must be length 1.
     full_range : bool, optional
         If true, will return full fft frequency range, otherwise will return only positive values
+
+    Notes
+    -----
+    compute_spectogram computes fft on only a single epoch of data. This epoch be given with the ep
+    parameter otherwise will be sig.time_support, but it must only be a single epoch.
     """
     if not isinstance(sig, (nap.Tsd, nap.TsdFrame)):
         raise TypeError(
@@ -100,7 +105,7 @@ def _morlet(M=1024, ncycles=1.5, scaling=1.0, precision=8):
     )
 
 
-def _create_freqs(freq_start, freq_stop, log_scaling=False, freq_step=1, log_base=np.e):
+def _create_freqs(freq_start, freq_stop, freq_step=1, log_scaling=False, log_base=np.e):
     """
     Creates an array of frequencies.
 
@@ -110,10 +115,10 @@ def _create_freqs(freq_start, freq_stop, log_scaling=False, freq_step=1, log_bas
         Starting value for the frequency definition.
     freq_stop: float
         Stopping value for the frequency definition, inclusive.
-    log_scaling: Bool
-        If True, will use log spacing with base log_base for frequency spacing. Default False.
     freq_step: float, optional
         Step value, for linearly spaced values between start and stop.
+    log_scaling: Bool
+        If True, will use log spacing with base log_base for frequency spacing. Default False.
     log_base: float
         If log_scaling==True, this defines the base of the log to use.
 
@@ -136,7 +141,7 @@ def compute_wavelet_transform(
 
     Parameters
     ----------
-    sig : pynapple.Tsd or pynapple.TsdFrame
+    sig : pynapple.Tsd, pynapple.TsdFrame or pynapple.TsdTensor
         Time series.
     freqs : 1d array or list of float
         If array, frequency values to estimate with morlet wavelets.
@@ -159,7 +164,7 @@ def compute_wavelet_transform(
 
     Returns
     -------
-    mwt : 2d array
+    pynapple.TsdFrame or pynapple.TsdTensor : 2d array
         Time frequency representation of the input signal.
 
     Notes
@@ -186,11 +191,11 @@ def compute_wavelet_transform(
         output_shape = (sig.shape[0], len(freqs), *sig.shape[1:])
         sig = sig.reshape((sig.shape[0], np.prod(sig.shape[1:])))
 
-    mwt = np.zeros(
+    cwt = np.zeros(
         [sig.values.shape[0], len(freqs), sig.values.shape[1]], dtype=complex
     )
 
-    filter_bank = _generate_morlet_filterbank(freqs, fs, n_cycles, scaling, precision)
+    filter_bank = generate_morlet_filterbank(freqs, fs, n_cycles, scaling, precision)
     for f_i, filter in enumerate(filter_bank):
         convolved = sig.convolve(np.transpose(np.asarray([filter.real, filter.imag])))
         convolved = convolved[:, :, 0].values + convolved[:, :, 1].values * 1j
@@ -202,19 +207,19 @@ def compute_wavelet_transform(
         coef = np.insert(
             coef, 1, coef[0], axis=0
         )  # slightly hacky line, necessary to make output correct shape
-        mwt[:, f_i, :] = coef if len(coef.shape) == 2 else np.expand_dims(coef, axis=1)
+        cwt[:, f_i, :] = coef if len(coef.shape) == 2 else np.expand_dims(coef, axis=1)
 
     if len(output_shape) == 2:
         return nap.TsdFrame(
-            t=sig.index, d=mwt.reshape(output_shape), time_support=sig.time_support
+            t=sig.index, d=cwt.reshape(output_shape), time_support=sig.time_support
         )
 
     return nap.TsdTensor(
-        t=sig.index, d=mwt.reshape(output_shape), time_support=sig.time_support
+        t=sig.index, d=cwt.reshape(output_shape), time_support=sig.time_support
     )
 
 
-def _generate_morlet_filterbank(freqs, fs, n_cycles, scaling, precision):
+def generate_morlet_filterbank(freqs, fs, n_cycles=1.5, scaling=1.0, precision=10):
     """
 
     Parameters
@@ -253,7 +258,8 @@ def _generate_morlet_filterbank(freqs, fs, n_cycles, scaling, precision):
         if len(int_psi_scale) > max_len:
             max_len = len(int_psi_scale)
         filter_bank.append(int_psi_scale)
-    return filter_bank
+    filter_bank = [np.pad(arr, ((max_len - len(arr)) // 2, (max_len - len(arr) + 1) // 2), constant_values=0.0) for arr in filter_bank]
+    return np.array(filter_bank)
 
 
 def _integrate(arr, step):

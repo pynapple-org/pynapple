@@ -75,6 +75,30 @@ def test_compute_welch_spectogram():
 
 def test_compute_wavelet_transform():
 
+    t = np.linspace(0, 1, 1000)
+    sig = nap.Tsd(d=np.sin(t*50*np.pi*2), t=t)
+    freqs = np.linspace(10, 100, 10)
+    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
+    mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
+    assert mpf == 50
+    assert mwt.shape == (1000, 10)
+
+    t = np.linspace(0, 1, 1000)
+    sig = nap.Tsd(d=np.sin(t * 20 * np.pi * 2), t=t)
+    freqs = np.linspace(10, 100, 10)
+    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
+    mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
+    assert mpf == 20
+    assert mwt.shape == (1000, 10)
+
+    t = np.linspace(0, 1, 1000)
+    sig = nap.Tsd(d=np.sin(t * 70 * np.pi * 2), t=t)
+    freqs = np.linspace(10, 100, 10)
+    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
+    mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
+    assert mpf == 70
+    assert mwt.shape == (1000, 10)
+
     t = np.linspace(0, 1, 1024)
     sig = nap.Tsd(d=np.random.random(1024), t=t)
     freqs = np.linspace(1, 600, 10)
@@ -104,4 +128,5 @@ def test_compute_wavelet_transform():
 
 
 if __name__ == "__main__":
-    test_compute_welch_spectogram()
+    test_compute_wavelet_transform()
+    # test_compute_welch_spectogram()
