@@ -5,6 +5,7 @@ Various io functions
 
 """
 import os
+import warnings
 from xml.dom import minidom
 
 import numpy as np
@@ -20,7 +21,6 @@ from .loader import BaseLoader
 from .neurosuite import NeuroSuite
 from .phy import Phy
 from .suite2p import Suite2P
-import warnings
 
 
 def load_file(path, lazy_loading=None):
