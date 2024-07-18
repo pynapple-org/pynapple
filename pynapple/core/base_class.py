@@ -23,7 +23,6 @@ class Base(abc.ABC):
     _initialized = False
 
     def __init__(self, t, time_units="s", time_support=None):
-
         if isinstance(t, TsIndex):
             self.index = t
         else:
@@ -427,24 +426,22 @@ class Base(abc.ABC):
             idx_end = np.searchsorted(time_array, end, side="right")
             return self[idx_start:idx_end]
 
-    # def find_gaps(self, min_gap, time_units='s'):
-    #     """
-    #     finds gaps in a tsd larger than min_gap. Return an IntervalSet.
-    #     Epochs are defined by adding and removing 1 microsecond to the time index.
+    @classmethod
+    def _from_npz_reader(cls, file):
+        """Load a time series object from a npz file interface.
 
-    #     Parameters
-    #     ----------
-    #     min_gap : float
-    #         The minimum interval size considered to be a gap (default is second).
-    #     time_units : str, optional
-    #         Time units of min_gap ('us', 'ms', 's' [default])
-    #     """
-    #     min_gap = format_timestamps(np.array([min_gap]), time_units)[0]
+        Parameters
+        ----------
+        file : NPZFile object
+            opened npz file interface.
 
-    #     time_array = self.index
-    #     starts = self.time_support.start
-    #     ends = self.time_support.end
-
-    #     s, e = jitfind_gaps(time_array, starts, ends, min_gap)
-
-    #     return nap.IntervalSet(s, e)
+        Returns
+        -------
+        out : Ts or Tsd or TsdFrame or TsdTensor
+            The time series object
+        """
+        kwargs = {
+            key: file[key] for key in file.keys() if key not in ["start", "end", "type"]
+        }
+        iset = IntervalSet(start=file["start"], end=file["end"])
+        return cls(time_support=iset, **kwargs)

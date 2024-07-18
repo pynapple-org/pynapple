@@ -5,6 +5,7 @@ Various io functions
 
 """
 import os
+import warnings
 from xml.dom import minidom
 
 import numpy as np
@@ -22,7 +23,7 @@ from .phy import Phy
 from .suite2p import Suite2P
 
 
-def load_file(path):
+def load_file(path, lazy_loading=None):
     """Load file. Current format supported is (npz,nwb,)
 
     .npz -> If the file is compatible with a pynapple format, the function will return a pynapple object.
@@ -34,6 +35,9 @@ def load_file(path):
     ----------
     path : str
         Path to the file
+    lazy_loading : bool, optional default True
+        Lazy loading of the data. If not specified, the function will use the defaults
+        True. Works only with NWB files.
 
     Returns
     -------
@@ -47,9 +51,17 @@ def load_file(path):
     """
     if os.path.isfile(path):
         if path.endswith(".npz"):
+            if lazy_loading:
+                warnings.warn("Lazy loading is not supported for NPZ files")
             return NPZFile(path).load()
+
         elif path.endswith(".nwb"):
-            return NWBFile(path)
+            # preserves class init default:
+            kwargs_for_lazyloading = (
+                {} if lazy_loading is None else {"lazy_loading": lazy_loading}
+            )
+
+            return NWBFile(path, **kwargs_for_lazyloading)
         else:
             raise RuntimeError("File format not supported")
     else:

@@ -206,12 +206,25 @@ def test_lazy_load_nwb(lazy):
     except:
         nwb = nap.NWBFile("nwbfilestest/basic/pynapplenwb/A2929-200711.nwb", lazy_loading=lazy)
 
-    tsd = nwb["z"]
-    if lazy:
-        assert isinstance(tsd.d, h5py.Dataset)
-    else:
-        assert not isinstance(tsd.d, h5py.Dataset)
-    nwb.io.close()
+    assert isinstance(nwb["z"].d, h5py.Dataset) is lazy
+    nwb.close()
+
+
+@pytest.mark.parametrize(
+    "lazy",
+    [
+        (True),
+        (False),
+    ]
+)
+def test_lazy_load_function(lazy):
+    try:
+        nwb = nap.load_file("tests/nwbfilestest/basic/pynapplenwb/A2929-200711.nwb", lazy_loading=lazy)
+    except:
+        nwb = nap.load_file("nwbfilestest/basic/pynapplenwb/A2929-200711.nwb", lazy_loading=lazy)
+
+    assert isinstance(nwb["z"].d, h5py.Dataset) is lazy
+    nwb.close()
 
 
 @pytest.mark.parametrize("data", [np.ones(10), np.ones((10, 2)), np.ones((10, 2, 2))])

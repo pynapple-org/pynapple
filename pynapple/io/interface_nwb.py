@@ -480,3 +480,7 @@ class NWBFile(UserDict):
                     return self.data[key]
             else:
                 raise KeyError("Can't find key {} in group index.".format(key))
+
+    def close(self):
+        """Close the NWB file"""
+        self.io.close()

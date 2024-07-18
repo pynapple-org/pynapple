@@ -1383,3 +1383,59 @@ class TsGroup(UserDict):
         np.savez(filename, **dicttosave)
 
         return
+
+    @classmethod
+    def _from_npz_reader(cls, file):
+        """
+        Load a Tsd object from a npz file.
+
+        Parameters
+        ----------
+        file : str
+            The opened npz file
+
+        Returns
+        -------
+        Tsd
+            The Tsd object
+        """
+
+        times = file["t"]
+        index = file["index"]
+        has_data = "d" in file.keys()
+        time_support = IntervalSet(file["start"], file["end"])
+
+        if has_data:
+            data = file["data"]
+
+        if "keys" in file.keys():
+            keys = file["keys"]
+        else:
+            keys = np.unique(index)
+
+        group = {}
+        for key in keys:
+            filtering_index = index == key
+            t = times[filtering_index]
+
+            if has_data:
+                group[key] = Tsd(
+                    t=t,
+                    d=data[filtering_index],
+                    time_support=time_support,
+                )
+            else:
+                group[key] = Ts(t=t, time_support=time_support)
+
+        tsgroup = cls(group, time_support=time_support, bypass_check=True)
+
+        metainfo = {}
+        not_info_keys = {"start", "end", "t", "index", "d", "rate", "keys"}
+
+        for k in set(file.keys()) - not_info_keys:
+            tmp = file[k]
+            if len(tmp) == len(tsgroup):
+                metainfo[k] = tmp
+
+        tsgroup.set_info(**metainfo)
+        return tsgroup

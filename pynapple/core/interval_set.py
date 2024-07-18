@@ -669,3 +669,22 @@ class IntervalSet(NDArrayOperatorsMixin):
         )
 
         return
+
+    @classmethod
+    def _from_npz_reader(cls, file):
+        """Load an IntervalSet object from a npz file.
+
+        The file should contain the keys 'start', 'end' and 'type'.
+        The 'type' key should be 'IntervalSet'.
+
+        Parameters
+        ----------
+        file : NPZFile object
+            opened npz file interface.
+
+        Returns
+        -------
+        IntervalSet
+            The IntervalSet object
+        """
+        return cls(start=file["start"], end=file["end"])
