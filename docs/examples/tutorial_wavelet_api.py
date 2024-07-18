@@ -19,9 +19,6 @@ This tutorial was made by Kipp Freud.
 #
 # Now, import the necessary libraries:
 
-import matplotlib
-
-matplotlib.use("TkAgg")
 import matplotlib.pyplot as plt
 import numpy as np
 
