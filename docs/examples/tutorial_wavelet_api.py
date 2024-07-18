@@ -34,12 +34,14 @@ import pynapple as nap
 # with a sinusoid which increases frequency from 5 to 15 Hz throughout the signal.
 
 Fs = 2000
-t = np.linspace(0, 5, Fs*5)
+t = np.linspace(0, 5, Fs * 5)
 two_hz_phase = t * 2 * np.pi * 2
 two_hz_component = np.sin(two_hz_phase)
-increasing_freq_component = np.sin(t * (5+t) * np.pi * 2)
-sig = nap.Tsd(d=two_hz_component + increasing_freq_component +
-                np.random.normal(0,0.1,10000), t=t)
+increasing_freq_component = np.sin(t * (5 + t) * np.pi * 2)
+sig = nap.Tsd(
+    d=two_hz_component + increasing_freq_component + np.random.normal(0, 0.1, 10000),
+    t=t,
+)
 
 # %%
 # Lets plot it.
@@ -51,11 +53,11 @@ ax[0].set_title("2Hz Component")
 ax[1].set_title("Increasing Frequency Component")
 ax[2].set_title("Dummy Signal")
 [ax[i].margins(0) for i in range(3)]
-[ax[i].set_ylim(-2.5,2.5) for i in range(3)]
+[ax[i].set_ylim(-2.5, 2.5) for i in range(3)]
 [ax[i].spines[sp].set_visible(False) for sp in ["right", "top"] for i in range(3)]
 [ax[i].set_xlabel("Time (s)") for i in range(3)]
 [ax[i].set_ylabel("Signal") for i in range(3)]
-[ax[i].set_ylim(-2.5,2.5) for i in range(3)]
+[ax[i].set_ylim(-2.5, 2.5) for i in range(3)]
 plt.show()
 
 
@@ -74,6 +76,7 @@ filter_bank = nap.generate_morlet_filterbank(
     freqs, Fs, n_cycles=1.5, scaling=1.0, precision=20
 )
 
+
 # %%
 # Lets plot it.
 def plot_filterbank(filter_bank, freqs, title):
@@ -82,9 +85,11 @@ def plot_filterbank(filter_bank, freqs, title):
     for f_i in range(filter_bank.shape[0]):
         ax.plot(
             np.linspace(-8, 8, filter_bank.shape[1]),
-            filter_bank[f_i, :].real + offset * f_i
+            filter_bank[f_i, :].real + offset * f_i,
         )
-        ax.text(-2.3, offset * f_i, f"{np.round(freqs[f_i], 2)}Hz", va="center", ha="left")
+        ax.text(
+            -2.3, offset * f_i, f"{np.round(freqs[f_i], 2)}Hz", va="center", ha="left"
+        )
     ax.margins(0)
     ax.yaxis.set_visible(False)
     [ax.spines[sp].set_visible(False) for sp in ["left", "right", "top"]]
@@ -92,6 +97,7 @@ def plot_filterbank(filter_bank, freqs, title):
     ax.set_xlabel("Time (s)")
     ax.set_title(title)
     plt.show()
+
 
 title = "Morlet Wavelet Filter Bank (Real Components): n_cycles=1.5, scaling=1.0"
 plot_filterbank(filter_bank, freqs, title)
@@ -109,6 +115,7 @@ plot_filterbank(filter_bank, freqs, title)
 mwt = nap.compute_wavelet_transform(
     sig, fs=Fs, freqs=freqs, n_cycles=1.5, scaling=1.0, precision=20
 )
+
 
 # %%
 # Lets plot it.
@@ -149,7 +156,7 @@ plt.show()
 # and see how it compares to the original section.
 
 # Get the index of the 2Hz frequency
-two_hz_freq_idx = np.where(freqs == 2.)[0]
+two_hz_freq_idx = np.where(freqs == 2.0)[0]
 # The 2Hz component is the real component of the wavelet decomposition at this index
 slow_oscillation = mwt[:, two_hz_freq_idx].values.real
 # The 2Hz wavelet phase is the angle of the wavelet decomposition at this index
@@ -169,11 +176,15 @@ axd["phase"].plot(t, slow_oscillation_phase, alpha=0.5)
 axd["phase"].set_ylabel("Phase (rad)")
 axd["signal"].set_ylabel("Signal")
 axd["phase"].set_xlabel("Time (s)")
-[axd[f].spines[sp].set_visible(False) for sp in ["right", "top"] for f in ["phase", "signal"]]
+[
+    axd[f].spines[sp].set_visible(False)
+    for sp in ["right", "top"]
+    for f in ["phase", "signal"]
+]
 axd["signal"].get_xaxis().set_visible(False)
 axd["signal"].spines["bottom"].set_visible(False)
 [axd[k].margins(0) for k in ["signal", "phase"]]
-axd["signal"].set_ylim(-2.5,2.5)
+axd["signal"].set_ylim(-2.5, 2.5)
 axd["phase"].set_ylim(-np.pi, np.pi)
 plt.show()
 
@@ -189,7 +200,7 @@ plt.show()
 # signal.
 
 # Get the index of the 15 Hz frequency
-fifteen_hz_freq_idx = np.where(freqs == 15.)[0]
+fifteen_hz_freq_idx = np.where(freqs == 15.0)[0]
 # The 15 Hz component is the real component of the wavelet decomposition at this index
 fifteenHz_oscillation = mwt[:, fifteen_hz_freq_idx].values.real
 # The 15 Hz poser is the absolute value of the wavelet decomposition at this index
@@ -201,8 +212,10 @@ fig, ax = plt.subplots(2, constrained_layout=True, figsize=(10, 6))
 ax[0].plot(t, fifteenHz_oscillation, label="15Hz Reconstruction")
 ax[0].plot(t, fifteenHz_oscillation_power, label="15Hz Power")
 ax[1].plot(sig, label="Raw Signal", alpha=0.5)
-ax[1].plot(t, slow_oscillation+fifteenHz_oscillation, label="2Hz + 15Hz Reconstruction")
-[ax[i].set_ylim(-2.5,2.5) for i in range(2)]
+ax[1].plot(
+    t, slow_oscillation + fifteenHz_oscillation, label="2Hz + 15Hz Reconstruction"
+)
+[ax[i].set_ylim(-2.5, 2.5) for i in range(2)]
 [ax[i].margins(0) for i in range(2)]
 [ax[i].legend() for i in range(2)]
 [ax[i].spines[sp].set_visible(False) for sp in ["right", "top"] for i in range(2)]
@@ -234,7 +247,6 @@ ax.legend()
 plt.show()
 
 
-
 # %%
 # ***
 # Effect of n_cycles
@@ -245,8 +257,11 @@ filter_bank = nap.generate_morlet_filterbank(
     freqs, 1000, n_cycles=7.5, scaling=1.0, precision=20
 )
 
-plot_filterbank(filter_bank, freqs,
-                "Morlet Wavelet Filter Bank (Real Components): n_cycles=7.5, scaling=1.0")
+plot_filterbank(
+    filter_bank,
+    freqs,
+    "Morlet Wavelet Filter Bank (Real Components): n_cycles=7.5, scaling=1.0",
+)
 
 # %%
 # ***
@@ -293,8 +308,11 @@ filter_bank = nap.generate_morlet_filterbank(
     freqs, 1000, n_cycles=1.5, scaling=2.0, precision=20
 )
 
-plot_filterbank(filter_bank, freqs,
-                "Morlet Wavelet Filter Bank (Real Components): n_cycles=1.5, scaling=2.0")
+plot_filterbank(
+    filter_bank,
+    freqs,
+    "Morlet Wavelet Filter Bank (Real Components): n_cycles=1.5, scaling=2.0",
+)
 
 # %%
 # ***
