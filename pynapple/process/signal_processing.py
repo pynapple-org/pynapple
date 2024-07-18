@@ -197,7 +197,7 @@ def compute_wavelet_transform(
     convolved = convolved_real.values + convolved_imag.values * 1j
     coef = -np.diff(convolved, axis=0)
     if norm == "sss":
-        coef *= coef * (-np.sqrt(scaling) / (freqs / fs))
+        coef *= (-np.sqrt(scaling) / (freqs / fs))
     elif norm == "amp":
         coef *= -scaling / (freqs / fs)
     coef = np.insert(
