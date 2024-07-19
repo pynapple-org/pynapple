@@ -291,6 +291,11 @@ phase_var = {
 }
 phase_var = dict(sorted(phase_var.items(), key=lambda item: item[1]))
 
+# %%
+# ***
+# And now we plot the phase preference histograms of the 6 units with the least variance in the phase of their
+# spiking behaviour.
+
 fig, axd = plt.subplot_mosaic(
     [["phase_0", "phase_1", "phase_2"], ["phase_3", "phase_4", "phase_5"]],
     constrained_layout=True,
