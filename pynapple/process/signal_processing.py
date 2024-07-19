@@ -6,7 +6,6 @@ Contains functionality for signal processing pynapple object; fourier transforms
 
 import numpy as np
 import pandas as pd
-from scipy.signal import welch
 
 import pynapple as nap
 
