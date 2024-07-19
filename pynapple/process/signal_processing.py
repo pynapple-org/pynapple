@@ -51,35 +51,9 @@ def compute_spectogram(sig, fs=None, ep=None, full_range=False):
     return ret
 
 
-def compute_welch_spectogram(sig, fs=None):
-    """
-    Performs Welch's decomposition on sig, returns output.
-    Estimates the power spectral density of a signal by segmenting it into overlapping sections, applying a
-    window function to each segment, computing their FFTs, and averaging the resulting periodograms to reduce noise.
-
-    ..todo: remove this or add binsize parameter
-    ..todo: be careful of border artifacts
-
-    Parameters
-    ----------
-    sig : pynapple.Tsd or pynapple.TsdFrame
-        Time series.
-    fs : float, optional
-        Sampling rate, in Hz. If None, will be calculated from the given signal
-    """
-    if not isinstance(sig, (nap.Tsd, nap.TsdFrame)):
-        raise TypeError(
-            "Currently compute_welch_spectogram is only implemented for Tsd or TsdFrame"
-        )
-    if fs is None:
-        fs = sig.index.shape[0] / (sig.index.max() - sig.index.min())
-    freqs, spectogram = welch(sig.values, fs=fs, axis=0)
-    return pd.DataFrame(spectogram, freqs)
-
-
 def _morlet(M=1024, ncycles=1.5, scaling=1.0, precision=8):
     """
-    Defines the complex Morlet wavelet kernel
+    Defines the complex Morlet wavelet kernel.
 
     Parameters
     ----------
@@ -137,7 +111,7 @@ def compute_wavelet_transform(
     sig, freqs, fs=None, n_cycles=1.5, scaling=1.0, precision=10, norm=None
 ):
     """
-    Compute the time-frequency representation of a signal using morlet wavelets.
+    Compute the time-frequency representation of a signal using Morlet wavelets.
 
     Parameters
     ----------
@@ -192,8 +166,8 @@ def compute_wavelet_transform(
         sig = sig.reshape((sig.shape[0], np.prod(sig.shape[1:])))
 
     filter_bank = generate_morlet_filterbank(freqs, fs, n_cycles, scaling, precision)
-    convolved_real = sig.convolve(np.transpose(filter_bank.real))
-    convolved_imag = sig.convolve(np.transpose(filter_bank.imag))
+    convolved_real = sig.convolve(filter_bank.real().values)
+    convolved_imag = sig.convolve(filter_bank.imag().values)
     convolved = convolved_real.values + convolved_imag.values * 1j
     coef = -np.diff(convolved, axis=0)
     if norm == "sss":
@@ -217,6 +191,8 @@ def compute_wavelet_transform(
 
 def generate_morlet_filterbank(freqs, fs, n_cycles=1.5, scaling=1.0, precision=10):
     """
+    Generates a Morlet filterbank using the given frequencies and parameters. Can be used purely for visualization,
+    or to convolve with a pynapple Tsd, TsdFrame, or TsdTensor as part of a wavelet decomposition process.
 
     Parameters
     ----------
@@ -236,14 +212,17 @@ def generate_morlet_filterbank(freqs, fs, n_cycles=1.5, scaling=1.0, precision=1
 
     Returns
     -------
-    filter_bank : np.ndarray
+    filter_bank : pynapple.TsdFrame
         list of Morlet wavelet filters of the frequencies given
     """
+    if len(freqs) == 0:
+        raise ValueError("Given list of freqs cannot be empty.")
     filter_bank = []
+    time_cutoff = 8
     morlet_f = _morlet(int(2**precision), ncycles=n_cycles, scaling=scaling)
-    x = np.linspace(-8, 8, int(2**precision))
+    x = np.linspace(-time_cutoff, time_cutoff, int(2**precision))
     int_psi = np.conj(_integrate(morlet_f, x[1] - x[0]))
-    max_len = 0
+    max_len = -1
     for freq in freqs:
         scale = scaling / (freq / fs)
         j = np.arange(scale * (x[-1] - x[0]) + 1) / (scale * (x[1] - x[0]))
@@ -253,6 +232,9 @@ def generate_morlet_filterbank(freqs, fs, n_cycles=1.5, scaling=1.0, precision=1
         int_psi_scale = int_psi[j][::-1]
         if len(int_psi_scale) > max_len:
             max_len = len(int_psi_scale)
+            time = np.linspace(
+                -time_cutoff * scaling / freq, time_cutoff * scaling / freq, max_len
+            )
         filter_bank.append(int_psi_scale)
     filter_bank = [
         np.pad(
@@ -262,7 +244,7 @@ def generate_morlet_filterbank(freqs, fs, n_cycles=1.5, scaling=1.0, precision=1
         )
         for arr in filter_bank
     ]
-    return np.array(filter_bank)
+    return nap.TsdFrame(d=np.array(filter_bank).transpose(), t=time)
 
 
 def _integrate(arr, step):

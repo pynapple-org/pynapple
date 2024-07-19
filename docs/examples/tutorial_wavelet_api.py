@@ -3,7 +3,7 @@
 Wavelet API tutorial
 ============
 
-Working with Wavelets.
+Working with Wavelets!
 
 See the [documentation](https://pynapple-org.github.io/pynapple/) of Pynapple for instructions on installing the package.
 
@@ -72,9 +72,7 @@ plt.show()
 # Define the frequency of the wavelets in our filter bank
 freqs = np.linspace(1, 25, num=25)
 # Get the filter bank
-filter_bank = nap.generate_morlet_filterbank(
-    freqs, Fs, n_cycles=1.5, scaling=1.0, precision=20
-)
+filter_bank = nap.generate_morlet_filterbank(freqs, Fs, n_cycles=1.5, scaling=1.0)
 
 
 # %%
@@ -82,11 +80,8 @@ filter_bank = nap.generate_morlet_filterbank(
 def plot_filterbank(filter_bank, freqs, title):
     fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 6))
     offset = 0.2
-    for f_i in range(filter_bank.shape[0]):
-        ax.plot(
-            np.linspace(-8, 8, filter_bank.shape[1]),
-            filter_bank[f_i, :].real + offset * f_i,
-        )
+    for f_i in range(filter_bank.shape[1]):
+        ax.plot(filter_bank[:, f_i] + offset * f_i)
         ax.text(
             -2.3, offset * f_i, f"{np.round(freqs[f_i], 2)}Hz", va="center", ha="left"
         )
@@ -112,9 +107,7 @@ plot_filterbank(filter_bank, freqs, title)
 # scalogram.
 
 # Compute the wavelet transform using the parameters above
-mwt = nap.compute_wavelet_transform(
-    sig, fs=Fs, freqs=freqs, n_cycles=1.5, scaling=1.0, precision=20
-)
+mwt = nap.compute_wavelet_transform(sig, fs=Fs, freqs=freqs, n_cycles=1.5, scaling=1.0)
 
 
 # %%
@@ -237,11 +230,12 @@ combined_oscillations = mwt.values.real.sum(axis=1)
 # Lets plot it.
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
 ax.plot(sig, alpha=0.5, label="Signal")
-ax.plot(t, combined_oscillations, label="Wavelet Reconstruction")
+ax.plot(t, combined_oscillations, label="Wavelet Reconstruction", alpha=0.5)
 [ax.spines[sp].set_visible(False) for sp in ["right", "top"]]
 ax.set_xlabel("Time (s)")
 ax.set_ylabel("Signal")
 ax.set_title("Wavelet Reconstruction of Signal")
+ax.set_ylim(-6, 6)
 ax.margins(0)
 ax.legend()
 plt.show()
@@ -249,13 +243,64 @@ plt.show()
 
 # %%
 # ***
+# Parametrization
+# ------------------
+# Our reconstruction seems to get the amplitude modulations of our signal correct, but the amplitude is overestimated,
+# in particular towards the end of the time period. Often, this is due to a suboptimal choice of parameters, which
+# can lead to a low spatial or temporal resolution. Let's explore what changing our parameters does to the
+# underlying wavelets.
+
+freqs = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
+scales = [1.0, 2.0, 3.0]
+cycles = [1.0, 2.0, 3.0]
+
+fig, ax = plt.subplots(
+    len(scales), len(cycles), constrained_layout=True, figsize=(10, 5)
+)
+for row_i, sc in enumerate(scales):
+    for col_i, cyc in enumerate(cycles):
+        filter_bank = nap.generate_morlet_filterbank(
+            freqs, 1000, n_cycles=cyc, scaling=sc
+        )
+        ax[row_i, col_i].plot(filter_bank[:, 0])
+        ax[row_i, col_i].set_xlim(-15, 15)
+        ax[row_i, col_i].set_xlabel("Time (s)")
+        ax[row_i, col_i].set_ylabel("Signal")
+        [
+            ax[row_i, col_i].spines[sp].set_visible(False)
+            for sp in ["top", "right", "left"]
+        ]
+        ax[row_i, col_i].get_yaxis().set_visible(False)
+        fig.text(
+            0.01,
+            0.6 / len(scales) + row_i / len(scales),
+            f"scaling={sc}",
+            ha="center",
+            va="center",
+            rotation="vertical",
+            fontsize=8,
+        )
+for col_i, cyc in enumerate(cycles):
+    ax[0, col_i].set_title(f"n_cycles={cyc}", fontsize=8)
+fig.suptitle("Parametrization Visualization")
+plt.show()
+
+# %%
+# Increasing n_cycles increases the number of wavelet cycles present in the oscillations (cycles) within the
+# Gaussian window of the Morlet wavelet. It essentially controls the trade-off between time resolution
+# and frequency resolution.
+#
+# The scale parameter determines the dilation or compression of the wavelet. It controls the size of the wavelet in
+# time, affecting the overall shape of the wavelet.
+
+# %%
+# ***
 # Effect of n_cycles
 # ------------------
+# Let's increase n_cycles to 7.5 and see the effect on the resultant filter bank.
 
 freqs = np.linspace(1, 25, num=25)
-filter_bank = nap.generate_morlet_filterbank(
-    freqs, 1000, n_cycles=7.5, scaling=1.0, precision=20
-)
+filter_bank = nap.generate_morlet_filterbank(freqs, 1000, n_cycles=7.5, scaling=1.0)
 
 plot_filterbank(
     filter_bank,
@@ -266,9 +311,7 @@ plot_filterbank(
 # %%
 # ***
 # Let's see what effect this has on the Wavelet Scalogram which is generated...
-mwt = nap.compute_wavelet_transform(
-    sig, fs=Fs, freqs=freqs, n_cycles=7.5, scaling=1.0, precision=20
-)
+mwt = nap.compute_wavelet_transform(sig, fs=Fs, freqs=freqs, n_cycles=7.5, scaling=1.0)
 
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 6))
 plot_timefrequency(
@@ -277,6 +320,7 @@ plot_timefrequency(
     np.transpose(mwt[:, :].values),
     ax=ax,
 )
+ax.set_title("Wavelet Decomposition Scalogram")
 
 # %%
 # ***
@@ -288,45 +332,47 @@ combined_oscillations = mwt.values.real.sum(axis=1)
 # Lets plot it.
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
 ax.plot(sig, alpha=0.5, label="Signal")
-ax.plot(t, combined_oscillations, label="Wavelet Reconstruction")
+ax.plot(t, combined_oscillations, label="Wavelet Reconstruction", alpha=0.5)
 [ax.spines[sp].set_visible(False) for sp in ["right", "top"]]
 ax.set_xlabel("Time (s)")
 ax.set_ylabel("Signal")
 ax.set_title("Wavelet Reconstruction of Signal")
+ax.set_ylim(-6, 6)
 ax.margins(0)
 ax.legend()
 plt.show()
+
+# %%
+# There's a small improvement, but perhaps we can do better.
 
 
 # %%
 # ***
 # Effect of scaling
 # ------------------
+# Let's increase scaling to 2.0 and see the effect on the resultant filter bank.
 
 freqs = np.linspace(1, 25, num=25)
-filter_bank = nap.generate_morlet_filterbank(
-    freqs, 1000, n_cycles=1.5, scaling=2.0, precision=20
-)
+filter_bank = nap.generate_morlet_filterbank(freqs, 1000, n_cycles=7.5, scaling=2.0)
 
 plot_filterbank(
     filter_bank,
     freqs,
-    "Morlet Wavelet Filter Bank (Real Components): n_cycles=1.5, scaling=2.0",
+    "Morlet Wavelet Filter Bank (Real Components): n_cycles=7.5, scaling=2.0",
 )
 
 # %%
 # ***
 # Let's see what effect this has on the Wavelet Scalogram which is generated...
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 6))
-mwt = nap.compute_wavelet_transform(
-    sig, fs=Fs, freqs=freqs, n_cycles=1.5, scaling=2.0, precision=20
-)
+mwt = nap.compute_wavelet_transform(sig, fs=Fs, freqs=freqs, n_cycles=7.5, scaling=2.0)
 plot_timefrequency(
     mwt.index.values[:],
     freqs[:],
     np.transpose(mwt[:, :].values),
     ax=ax,
 )
+ax.set_title("Wavelet Decomposition Scalogram")
 
 # %%
 # ***
@@ -338,11 +384,12 @@ combined_oscillations = mwt.values.real.sum(axis=1)
 # Lets plot it.
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
 ax.plot(sig, alpha=0.5, label="Signal")
-ax.plot(t, combined_oscillations, label="Wavelet Reconstruction")
+ax.plot(t, combined_oscillations, label="Wavelet Reconstruction", alpha=0.5)
 [ax.spines[sp].set_visible(False) for sp in ["right", "top"]]
 ax.set_xlabel("Time (s)")
 ax.set_ylabel("Signal")
 ax.set_title("Wavelet Reconstruction of Signal")
 ax.margins(0)
+ax.set_ylim(-6, 6)
 ax.legend()
 plt.show()
