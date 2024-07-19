@@ -86,13 +86,7 @@ REM_Tsd = data["eeg"].restrict(REM_minute_interval)
 
 # We will also extract spike times from all units in our dataset
 # which occur during our specified interval
-spikes = {}
-for i in data["units"].index:
-    spikes[i] = data["units"][i].times()[
-        (data["units"][i].times() > REM_minute_interval["start"][0])
-        & (data["units"][i].times() < REM_minute_interval["end"][0])
-    ]
-spikes_tsdg = data["units"].restrict(REM_minute_interval)
+spikes = data["units"].restrict(REM_minute_interval)
 
 # %%
 # ***
@@ -230,10 +224,10 @@ axd["phase"].get_xaxis().set_visible(False)
 # We will start by throwing away cells which do not have a high enough firing rate during our interval.
 
 # Filter units based on firing rate
-spikes_tsdg = spikes_tsdg[spikes_tsdg.rate > 5.0]
+spikes = spikes[spikes.rate > 5.0]
 # Calculate theta phase firing preferences
 tuning_curves = nap.compute_1d_tuning_curves(
-    group=spikes_tsdg, feature=theta_band_phase, nb_bins=61, minmax=(-np.pi, np.pi)
+    group=spikes, feature=theta_band_phase, nb_bins=61, minmax=(-np.pi, np.pi)
 )
 
 # %%
@@ -285,10 +279,10 @@ fig.suptitle("Phase Preference Histograms of First 6 Units")
 
 # Get phase of each spike
 phase = {}
-for i in spikes_tsdg:
+for i in spikes:
     phase_i = [
         theta_band_phase[np.argmin(np.abs(REM_Tsd.index.values - s.index))]
-        for s in spikes_tsdg[i]
+        for s in spikes[i]
     ]
     phase[i] = np.array(phase_i)
 phase_var = {
@@ -349,7 +343,7 @@ axd["lfp_run"].legend()
 for i in range(3):
     axd[f"phase_{i}"].plot(REM_Tsd.index.values, theta_band_phase, alpha=0.2)
     axd[f"phase_{i}"].scatter(
-        spikes[list(phase_var.keys())[i]], phase[list(phase_var.keys())[i]]
+        spikes[list(phase_var.keys())[i]].index, phase[list(phase_var.keys())[i]]
     )
     axd[f"phase_{i}"].set_ylabel("Phase")
     axd[f"phase_{i}"].set_title(f"Unit {list(phase_var.keys())[i]}")
