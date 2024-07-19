@@ -15,12 +15,15 @@ This tutorial was made by Kipp Freud.
 # !!! warning
 #     This tutorial uses matplotlib for displaying the figure
 #
-#     You can install all with `pip install matplotlib requests tqdm`
+#     You can install all with `pip install matplotlib requests tqdm seaborn`
 #
 # Now, import the necessary libraries:
 
 import matplotlib.pyplot as plt
 import numpy as np
+import seaborn
+
+seaborn.set_theme()
 
 import pynapple as nap
 
@@ -58,7 +61,6 @@ ax[2].set_title("Dummy Signal")
 [ax[i].set_xlabel("Time (s)") for i in range(3)]
 [ax[i].set_ylabel("Signal") for i in range(3)]
 [ax[i].set_ylim(-2.5, 2.5) for i in range(3)]
-plt.show()
 
 
 # %%
@@ -66,7 +68,7 @@ plt.show()
 # Getting our Morlet Wavelet Filter Bank
 # ------------------
 # We will be decomposing our dummy signal using wavelets of different frequencies. These wavelets
-# can be examined using the `generate_morlet_filterbank' function. Here we will use the default parameters
+# can be examined using the `generate_morlet_filterbank` function. Here we will use the default parameters
 # to define a Morlet filter bank with which we will later use to deconstruct the signal.
 
 # Define the frequency of the wavelets in our filter bank
@@ -78,7 +80,7 @@ filter_bank = nap.generate_morlet_filterbank(freqs, Fs, n_cycles=1.5, scaling=1.
 # %%
 # Lets plot it.
 def plot_filterbank(filter_bank, freqs, title):
-    fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 6))
+    fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 7))
     offset = 0.2
     for f_i in range(filter_bank.shape[1]):
         ax.plot(filter_bank[:, f_i] + offset * f_i)
@@ -91,7 +93,6 @@ def plot_filterbank(filter_bank, freqs, title):
     ax.set_xlim(-2, 2)
     ax.set_xlabel("Time (s)")
     ax.set_title(title)
-    plt.show()
 
 
 title = "Morlet Wavelet Filter Bank (Real Components): n_cycles=1.5, scaling=1.0"
@@ -101,7 +102,7 @@ plot_filterbank(filter_bank, freqs, title)
 # ***
 # Decomposing the Dummy Signal
 # ------------------
-# Here we will use the `compute_wavelet_transform' function to decompose our signal using the filter bank shown
+# Here we will use the `compute_wavelet_transform` function to decompose our signal using the filter bank shown
 # above. Wavelet decomposition breaks down a signal into its constituent wavelets, capturing both time and
 # frequency information for analysis. We will calculate this decomposition and plot it's corresponding
 # scalogram.
@@ -128,9 +129,10 @@ def plot_timefrequency(times, freqs, powers, x_ticks=5, ax=None, **kwargs):
     y_ticks = freqs
     y_ticks_pos = [np.argmin(np.abs(freqs - val)) for val in y_ticks]
     ax.set(yticks=y_ticks_pos, yticklabels=y_ticks)
+    ax.grid(False)
 
 
-fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
+fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 6))
 plot_timefrequency(
     mwt.index.values[:],
     freqs[:],
@@ -138,7 +140,6 @@ plot_timefrequency(
     ax=ax,
 )
 ax.set_title("Wavelet Decomposition Scalogram")
-plt.show()
 
 # %%
 # ***
@@ -179,7 +180,6 @@ axd["signal"].spines["bottom"].set_visible(False)
 [axd[k].margins(0) for k in ["signal", "phase"]]
 axd["signal"].set_ylim(-2.5, 2.5)
 axd["phase"].set_ylim(-np.pi, np.pi)
-plt.show()
 
 # %%
 # ***
@@ -216,7 +216,6 @@ ax[0].get_xaxis().set_visible(False)
 ax[0].spines["bottom"].set_visible(False)
 ax[1].set_xlabel("Time (s)")
 [ax[i].set_ylabel("Signal") for i in range(2)]
-plt.show()
 
 # %%
 # ***
@@ -224,7 +223,7 @@ plt.show()
 # ------------------
 # Let's now add together the real components of all frequency bands to recreate a version of the original signal.
 
-combined_oscillations = mwt.values.real.sum(axis=1)
+combined_oscillations = mwt.sum(axis=1)
 
 # %%
 # Lets plot it.
@@ -238,7 +237,6 @@ ax.set_title("Wavelet Reconstruction of Signal")
 ax.set_ylim(-6, 6)
 ax.margins(0)
 ax.legend()
-plt.show()
 
 
 # %%
@@ -265,25 +263,18 @@ for row_i, sc in enumerate(scales):
         ax[row_i, col_i].plot(filter_bank[:, 0])
         ax[row_i, col_i].set_xlim(-15, 15)
         ax[row_i, col_i].set_xlabel("Time (s)")
-        ax[row_i, col_i].set_ylabel("Signal")
+        ax[row_i, col_i].set_yticks([])
         [
             ax[row_i, col_i].spines[sp].set_visible(False)
             for sp in ["top", "right", "left"]
         ]
-        ax[row_i, col_i].get_yaxis().set_visible(False)
-        fig.text(
-            0.01,
-            0.6 / len(scales) + row_i / len(scales),
-            f"scaling={sc}",
-            ha="center",
-            va="center",
-            rotation="vertical",
-            fontsize=8,
-        )
+        if col_i != 0:
+            ax[row_i, col_i].get_yaxis().set_visible(False)
 for col_i, cyc in enumerate(cycles):
-    ax[0, col_i].set_title(f"n_cycles={cyc}", fontsize=8)
+    ax[0, col_i].set_title(f"n_cycles={cyc}", fontsize=10)
+for row_i, scl in enumerate(scales):
+    ax[row_i, 0].set_ylabel(f"scaling={scl}", fontsize=10)
 fig.suptitle("Parametrization Visualization")
-plt.show()
 
 # %%
 # Increasing n_cycles increases the number of wavelet cycles present in the oscillations (cycles) within the
@@ -326,7 +317,7 @@ ax.set_title("Wavelet Decomposition Scalogram")
 # ***
 # And let's see if that has an effect on the reconstructed version of the signal
 
-combined_oscillations = mwt.values.real.sum(axis=1)
+combined_oscillations = mwt.sum(axis=1)
 
 # %%
 # Lets plot it.
@@ -340,7 +331,6 @@ ax.set_title("Wavelet Reconstruction of Signal")
 ax.set_ylim(-6, 6)
 ax.margins(0)
 ax.legend()
-plt.show()
 
 # %%
 # There's a small improvement, but perhaps we can do better.
@@ -378,7 +368,7 @@ ax.set_title("Wavelet Decomposition Scalogram")
 # ***
 # And let's see if that has an effect on the reconstructed version of the signal
 
-combined_oscillations = mwt.values.real.sum(axis=1)
+combined_oscillations = mwt.sum(axis=1)
 
 # %%
 # Lets plot it.
@@ -392,4 +382,3 @@ ax.set_title("Wavelet Reconstruction of Signal")
 ax.margins(0)
 ax.set_ylim(-6, 6)
 ax.legend()
-plt.show()

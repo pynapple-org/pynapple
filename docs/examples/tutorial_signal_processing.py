@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Grosmark & Buzsáki (2016) Tutorial 1
+Computing Wavelet Transform
 ============
 This tutorial demonstrates how we can use the signal processing tools within Pynapple to aid with data analysis.
 We will examine the dataset from [Grosmark & Buzsáki (2016)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4919122/).
@@ -16,7 +16,7 @@ This tutorial was made by Kipp Freud.
 # !!! warning
 #     This tutorial uses matplotlib for displaying the figure
 #
-#     You can install all with `pip install matplotlib requests tqdm`
+#     You can install all with `pip install matplotlib requests tqdm seaborn`
 #
 # First, import the necessary libraries:
 
@@ -26,7 +26,10 @@ import os
 import matplotlib.pyplot as plt
 import numpy as np
 import requests
+import seaborn
 import tqdm
+
+seaborn.set_theme()
 
 import pynapple as nap
 
@@ -57,7 +60,7 @@ if path not in os.listdir("."):
 # Let's load and print the full dataset.
 
 data = nap.load_file(path)
-FS = len(data["eeg"].index[:]) / (data["eeg"].index[-1] - data["eeg"].index[0])
+FS = 1250
 print(data)
 
 
@@ -78,9 +81,7 @@ RUN_interval = nap.IntervalSet(
 )
 RUN_Tsd = data["eeg"].restrict(RUN_interval)
 RUN_pos = data["position"].restrict(RUN_interval)
-
-# The given dataset has only one channel, so we set channel = 0 here
-channel = 0
+print(RUN_Tsd)
 
 # %%
 # ***
@@ -90,11 +91,11 @@ channel = 0
 fig = plt.figure(constrained_layout=True, figsize=(10, 6))
 axd = fig.subplot_mosaic(
     [["ephys"], ["pos"]],
-    height_ratios=[1, 0.2],
+    height_ratios=[1, 0.4],
 )
 
 axd["ephys"].plot(
-    RUN_Tsd[:, channel].restrict(
+    RUN_Tsd[:, 0].restrict(
         nap.IntervalSet(
             data["forward_ep"]["start"][run_index], data["forward_ep"]["end"][run_index]
         )
@@ -103,7 +104,7 @@ axd["ephys"].plot(
     color="green",
 )
 axd["ephys"].plot(
-    RUN_Tsd[:, channel].restrict(
+    RUN_Tsd[:, 0].restrict(
         nap.IntervalSet(
             data["forward_ep"]["end"][run_index],
             data["forward_ep"]["end"][run_index] + 5.0,
@@ -126,17 +127,23 @@ axd["pos"].set_xlim(RUN_Tsd.index.min(), RUN_Tsd.index.max())
 
 # %%
 # ***
-# Getting the LFP Spectogram
+# Getting the LFP Spectrogram
 # -----------------------------------
-# Let's take the Fourier transforms of one channel for both waking and sleeping and see if differences are present
+# Let's take the Fourier transform of our data to get an initial insight into the dominant frequencies.
 
 fft = nap.compute_spectogram(RUN_Tsd, fs=int(FS))
+print(fft)
 
-# Now we will plot it
+# %%
+# ***
+# The returned object is a pandas dataframe which uses frequencies as indexes and spectral power as values.
+#
+# Now let's plot it
+
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
 ax.plot(
     fft.index,
-    np.abs(fft.iloc[:, channel]),
+    np.abs(fft.iloc[:, 0]),
     alpha=0.5,
     label="LFP Frequency Power",
     c="blue",
@@ -160,32 +167,14 @@ ax.legend()
 # LFP characteristics may be different while the animal is running along the track, and when it is finished.
 # Let's generate a wavelet decomposition to look more closely at the changing frequency powers over time.
 
-# We must define the frequency set that we'd like to use for our decomposition; these
-# have been manually selected based on  the frequencies used in Frey et. al (2021), but
-# could also be defined as a linspace or logspace
-freqs = np.array(
-    [
-        2.59,
-        3.66,
-        5.18,
-        8.0,
-        10.36,
-        20.72,
-        29.3,
-        41.44,
-        58.59,
-        82.88,
-        117.19,
-        152.35,
-        192.19,
-        200.0,
-        234.38,
-        270.00,
-        331.5,
-        390.00,
-    ]
-)
-mwt_RUN = nap.compute_wavelet_transform(RUN_Tsd[:, channel], fs=None, freqs=freqs)
+# We must define the frequency set that we'd like to use for our decomposition
+freqs = np.geomspace(5, 250, 25)
+# Compute and print the wavelet transform on our LFP data
+mwt_RUN = nap.compute_wavelet_transform(RUN_Tsd[:, 0], fs=FS, freqs=freqs)
+
+# %%
+# ***
+# Now let's plot it.
 
 
 # Define wavelet decomposition plotting function
@@ -202,20 +191,21 @@ def plot_timefrequency(times, freqs, powers, x_ticks=5, ax=None, **kwargs):
     else:
         x_tick_pos = [np.argmin(np.abs(times - val)) for val in x_ticks]
     ax.set(xticks=x_tick_pos, xticklabels=x_ticks)
-    y_ticks = freqs
+    y_ticks = [np.round(f, 2) for f in freqs]
     y_ticks_pos = [np.argmin(np.abs(freqs - val)) for val in y_ticks]
     ax.set(yticks=y_ticks_pos, yticklabels=y_ticks)
+    ax.grid(False)
 
 
 # And plot
-fig = plt.figure(constrained_layout=True, figsize=(10, 6))
+fig = plt.figure(constrained_layout=True, figsize=(10, 8))
 axd = fig.subplot_mosaic(
     [
         ["wd_run"],
         ["lfp_run"],
         ["pos_run"],
     ],
-    height_ratios=[1, 0.2, 0.4],
+    height_ratios=[1.2, 0.2, 0.6],
 )
 plot_timefrequency(
     RUN_Tsd.index.values[:],
@@ -243,9 +233,17 @@ for k in ["lfp_run", "pos_run"]:
 # There seems to be a strong theta frequency present in the data during the maze traversal.
 # Let's plot the estimated 8Hz component of the wavelet decomposition on top of our data, and see how well
 # they match up
-theta_freq_index = 3
+
+# Find the index of the frequency closest to theta band
+theta_freq_index = np.argmin(np.abs(10 - freqs))
+# Extract its real component, as well as its power envelope
 theta_band_reconstruction = mwt_RUN[:, theta_freq_index].values.real
 theta_band_power_envelope = np.abs(mwt_RUN[:, theta_freq_index].values)
+
+
+# %%
+# ***
+# Now let's visualise the theta band component of the signal over time.
 
 fig = plt.figure(constrained_layout=True, figsize=(10, 6))
 axd = fig.subplot_mosaic(
@@ -253,26 +251,24 @@ axd = fig.subplot_mosaic(
         ["lfp_run"],
         ["pos_run"],
     ],
-    height_ratios=[1, 0.3],
+    height_ratios=[1, 0.4],
 )
 
-axd["lfp_run"].plot(
-    RUN_Tsd.index.values, RUN_Tsd[:, channel], alpha=0.5, label="LFP Data"
-)
+axd["lfp_run"].plot(RUN_Tsd.index.values, RUN_Tsd[:, 0], alpha=0.5, label="LFP Data")
 axd["lfp_run"].plot(
     RUN_Tsd.index.values,
     theta_band_reconstruction,
-    label=f"{freqs[theta_freq_index]}Hz oscillations",
+    label=f"{np.round(freqs[theta_freq_index], 2)}Hz oscillations",
 )
 axd["lfp_run"].plot(
     RUN_Tsd.index.values,
     theta_band_power_envelope,
-    label=f"{freqs[theta_freq_index]}Hz power envelope",
+    label=f"{np.round(freqs[theta_freq_index], 2)}Hz power envelope",
 )
 
 axd["lfp_run"].set_ylabel("LFP (v)")
 axd["lfp_run"].set_xlabel("Time (s)")
-axd["lfp_run"].set_title(f"{freqs[theta_freq_index]}Hz oscillation power.")
+axd["lfp_run"].set_title(f"{np.round(freqs[theta_freq_index], 2)}Hz oscillation power.")
 axd["pos_run"].plot(RUN_pos)
 [axd[k].margins(0) for k in ["lfp_run", "pos_run"]]
 [
@@ -292,8 +288,15 @@ axd["lfp_run"].legend()
 # Let's plot the LFP, along with the 200Hz frequency power, to see if we can isolate these peaks and
 # see what's going on.
 
-ripple_freq_idx = 13
+# Find the index of the frequency closest to sharp wave ripple oscillations
+ripple_freq_idx = np.argmin(np.abs(200 - freqs))
+# Extract its power envelope
 ripple_power = np.abs(mwt_RUN[:, ripple_freq_idx].values)
+
+
+# %%
+# ***
+# Now let's visualise the 200Hz component of the signal over time.
 
 fig = plt.figure(constrained_layout=True, figsize=(10, 5))
 axd = fig.subplot_mosaic(
@@ -303,7 +306,7 @@ axd = fig.subplot_mosaic(
     ],
     height_ratios=[1, 0.4],
 )
-axd["lfp_run"].plot(RUN_Tsd.index.values, RUN_Tsd[:, channel], label="LFP Data")
+axd["lfp_run"].plot(RUN_Tsd.index.values, RUN_Tsd[:, 0], label="LFP Data")
 axd["lfp_run"].set_ylabel("LFP (v)")
 axd["lfp_run"].set_xlabel("Time (s)")
 axd["lfp_run"].margins(0)
@@ -316,7 +319,7 @@ axd["rip_pow"].spines["right"].set_visible(False)
 axd["rip_pow"].spines["bottom"].set_visible(False)
 axd["rip_pow"].spines["left"].set_visible(False)
 axd["rip_pow"].set_xlim(RUN_Tsd.index.min(), RUN_Tsd.index.max())
-axd["rip_pow"].set_ylabel(f"{freqs[ripple_freq_idx]}Hz Power")
+axd["rip_pow"].set_ylabel(f"{np.round(freqs[ripple_freq_idx], 2)}Hz Power")
 
 # %%
 # ***
@@ -325,32 +328,22 @@ axd["rip_pow"].set_ylabel(f"{freqs[ripple_freq_idx]}Hz Power")
 # We can see one significant peak in the 200Hz frequency power. Let's smooth the power curve and threshold
 # to try to isolate this event.
 
-# define our threshold
-threshold = 100
-# smooth our wavelet power
-window_size = 51
-window = np.ones(window_size) / window_size
-smoother_swr_power = np.convolve(
-    np.abs(mwt_RUN[:, ripple_freq_idx].values), window, mode="same"
+# Define threshold
+threshold = 6000
+# Smooth wavelet power TsdFrame at the SWR frequency
+smoother_swr_power = (
+    mwt_RUN[:, ripple_freq_idx]
+    .abs()
+    .smooth(std=0.025, windowsize=0.2, time_units="s", norm=False)
 )
-# isolate our ripple periods
-is_ripple = smoother_swr_power > threshold
-start_idx = None
-ripple_periods = []
-for i in range(len(RUN_Tsd.index.values)):
-    if is_ripple[i] and start_idx is None:
-        start_idx = i
-    elif not is_ripple[i] and start_idx is not None:
-        axd["rip_pow"].plot(
-            RUN_Tsd.index.values[start_idx:i],
-            smoother_swr_power[start_idx:i],
-            color="red",
-            linewidth=2,
-        )
-        ripple_periods.append((start_idx, i))
-        start_idx = None
+# Threshold our TsdFrame
+is_ripple = smoother_swr_power.threshold(threshold)
 
-# plot of captured ripple periods
+
+# %%
+# ***
+# Now let's plot the threshold ripple power over time.
+
 fig = plt.figure(constrained_layout=True, figsize=(10, 5))
 axd = fig.subplot_mosaic(
     [
@@ -359,24 +352,18 @@ axd = fig.subplot_mosaic(
     ],
     height_ratios=[1, 0.4],
 )
-axd["lfp_run"].plot(RUN_Tsd.index.values, RUN_Tsd[:, channel], label="LFP Data")
-axd["rip_pow"].plot(RUN_Tsd.index.values, smoother_swr_power)
-for r in ripple_periods:
-    axd["rip_pow"].plot(
-        RUN_Tsd.index.values[r[0] : r[1]],
-        smoother_swr_power[r[0] : r[1]],
-        color="red",
-        linewidth=2,
-    )
+axd["lfp_run"].plot(RUN_Tsd[:, 0], label="LFP Data")
+axd["rip_pow"].plot(smoother_swr_power)
+axd["rip_pow"].plot(is_ripple, color="red", linewidth=2)
 axd["lfp_run"].set_ylabel("LFP (v)")
 axd["lfp_run"].set_xlabel("Time (s)")
-axd["lfp_run"].set_title(f"{freqs[ripple_freq_idx]}Hz oscillation power.")
+axd["lfp_run"].set_title(f"{np.round(freqs[ripple_freq_idx], 2)}Hz oscillation power.")
 axd["rip_pow"].axhline(threshold)
 [axd[k].margins(0) for k in ["lfp_run", "rip_pow"]]
 [axd["rip_pow"].spines[sp].set_visible(False) for sp in ["top", "left", "right"]]
 axd["rip_pow"].get_xaxis().set_visible(False)
 axd["rip_pow"].set_xlim(RUN_Tsd.index.min(), RUN_Tsd.index.max())
-axd["rip_pow"].set_ylabel(f"{freqs[ripple_freq_idx]}Hz Power")
+axd["rip_pow"].set_ylabel(f"{np.round(freqs[ripple_freq_idx], 2)}Hz Power")
 
 # %%
 # ***
@@ -384,21 +371,21 @@ axd["rip_pow"].set_ylabel(f"{freqs[ripple_freq_idx]}Hz Power")
 # -----------------------------------
 # Let's zoom in on out detected ripples and have a closer look!
 
-# Filter out ripples which do not last long enough
-ripple_periods = [r for r in ripple_periods if r[1] - r[0] > 20]
-
-# And plot!
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
-buffer = 200
+buffer = 0.1
 ax.plot(
-    RUN_Tsd.index.values[r[0] - buffer : r[1] + buffer],
-    RUN_Tsd[r[0] - buffer : r[1] + buffer],
+    RUN_Tsd.restrict(
+        nap.IntervalSet(
+            start=is_ripple.index.min() - buffer, end=is_ripple.index.max() + buffer
+        )
+    ),
     color="blue",
     label="Non-SWR LFP",
 )
 ax.plot(
-    RUN_Tsd.index.values[r[0] : r[1]],
-    RUN_Tsd[r[0] : r[1]],
+    RUN_Tsd.restrict(
+        nap.IntervalSet(start=is_ripple.index.min(), end=is_ripple.index.max())
+    ),
     color="red",
     label="SWR",
     linewidth=2,

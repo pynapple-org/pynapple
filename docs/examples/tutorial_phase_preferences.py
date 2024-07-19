@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Grosmark & Buzsáki (2016) Tutorial 2
+Computing Phase Preferences
 ============
 
 In the previous [Grosmark & Buzsáki (2016)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4919122/) tutorial,
@@ -20,7 +20,7 @@ This tutorial was made by Kipp Freud.
 # !!! warning
 #     This tutorial uses matplotlib for displaying the figure
 #
-#     You can install all with `pip install matplotlib requests tqdm`
+#     You can install all with `pip install matplotlib requests tqdm seaborn`
 #
 # First, import the necessary libraries:
 
@@ -29,9 +29,13 @@ import os
 
 import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 import requests
 import scipy
+import seaborn
 import tqdm
+
+seaborn.set_theme()
 
 import pynapple as nap
 
@@ -62,7 +66,7 @@ if path not in os.listdir("."):
 # Let's load and print the full dataset.
 
 data = nap.load_file(path)
-FS = len(data["eeg"].index[:]) / (data["eeg"].index[-1] - data["eeg"].index[0])
+FS = 1250  # We know from the methods of the paper
 print(data)
 
 
@@ -75,7 +79,7 @@ print(data)
 # Define the IntervalSet for this run and instantiate both LFP and
 # Position TsdFrame objects
 REM_minute_interval = nap.IntervalSet(
-    data["rem"]["start"][0] + 90.0,
+    data["rem"]["start"][0] + 95.0,
     data["rem"]["start"][0] + 100.0,
 )
 REM_Tsd = data["eeg"].restrict(REM_minute_interval)
@@ -88,9 +92,7 @@ for i in data["units"].index:
         (data["units"][i].times() > REM_minute_interval["start"][0])
         & (data["units"][i].times() < REM_minute_interval["end"][0])
     ]
-
-# The given dataset has only one channel, so we set channel = 0 here
-channel = 0
+spikes_tsdg = data["units"].restrict(REM_minute_interval)
 
 # %%
 # ***
@@ -98,19 +100,17 @@ channel = 0
 # -----------------------------------
 # We should first plot our REM Local Field Potential data.
 
-fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 6))
-
+fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 3))
 ax.plot(
-    REM_Tsd[:, channel],
+    REM_Tsd,
     label="REM LFP Data",
-    color="green",
+    color="blue",
 )
 ax.set_title("REM Local Field Potential")
 ax.set_ylabel("LFP (v)")
 ax.set_xlabel("time (s)")
 ax.margins(0)
 ax.legend()
-plt.show()
 
 # %%
 # ***
@@ -121,32 +121,15 @@ plt.show()
 # as we did in the last tutorial, to see get a more informative breakdown of the
 # frequencies present in the data.
 
-# We must define the frequency set that we'd like to use for our decomposition;
-# these have been manually selected based on  the frequencies used in
-# Frey et. al (2021), but could also be defined as a linspace or logspace
-freqs = np.array(
-    [
-        2.59,
-        3.66,
-        5.18,
-        8.0,
-        10.36,
-        20.72,
-        29.3,
-        41.44,
-        58.59,
-        82.88,
-        117.19,
-        152.35,
-        192.19,
-        200.0,
-        234.38,
-        270.00,
-        331.5,
-        390.00,
-    ]
-)
-mwt_REM = nap.compute_wavelet_transform(REM_Tsd[:, channel], fs=None, freqs=freqs)
+
+# We must define the frequency set that we'd like to use for our decomposition
+freqs = np.geomspace(5, 200, 25)
+# Compute the wavelet transform on our LFP data
+mwt_REM = nap.compute_wavelet_transform(REM_Tsd[:, 0], fs=FS, freqs=freqs)
+
+# %%
+# ***
+# Now let's plot the calculated wavelet scalogram.
 
 
 # Define wavelet decomposition plotting function
@@ -163,9 +146,10 @@ def plot_timefrequency(times, freqs, powers, x_ticks=5, ax=None, **kwargs):
     else:
         x_tick_pos = [np.argmin(np.abs(times - val)) for val in x_ticks]
     ax.set(xticks=x_tick_pos, xticklabels=x_ticks)
-    y_ticks = freqs
+    y_ticks = [np.round(f, 2) for f in freqs]
     y_ticks_pos = [np.argmin(np.abs(freqs - val)) for val in y_ticks]
     ax.set(yticks=y_ticks_pos, yticklabels=y_ticks)
+    ax.grid(False)
 
 
 # And plot it
@@ -190,19 +174,24 @@ axd["lfp_rem"].set_ylabel("LFP (v)")
 axd["lfp_rem"].get_xaxis().set_visible(False)
 for spine in ["top", "right", "bottom", "left"]:
     axd["lfp_rem"].spines[spine].set_visible(False)
-plt.show()
 
 # %%
 # ***
 # Visualizing Theta Band Power and Phase
 # -----------------------------------
 # There seems to be a strong theta frequency present in the data during the maze traversal.
-# Let's plot the estimated 8Hz component of the wavelet decomposition on top of our data, and see how well
-# they match up. We will also extract and plot the phase of the 8Hz wavelet from the decomposition.
-theta_freq_index = 3
+# Let's plot the estimated 7Hz component of the wavelet decomposition on top of our data, and see how well
+# they match up. We will also extract and plot the phase of the 7Hz wavelet from the decomposition.
+theta_freq_index = np.argmin(np.abs(7 - freqs))
 theta_band_reconstruction = mwt_REM[:, theta_freq_index].values.real
 # calculating phase here
-theta_band_phase = np.angle(mwt_REM[:, theta_freq_index].values)
+theta_band_phase = nap.Tsd(
+    t=mwt_REM.index, d=np.angle(mwt_REM[:, theta_freq_index].values)
+)
+
+# %%
+# ***
+# Now let's plot the theta power and phase, along with the LFP.
 
 fig = plt.figure(constrained_layout=True, figsize=(10, 5))
 axd = fig.subplot_mosaic(
@@ -213,63 +202,78 @@ axd = fig.subplot_mosaic(
     height_ratios=[0.4, 0.2],
 )
 
-axd["theta_pow"].plot(
-    REM_Tsd.index.values, REM_Tsd[:, channel], alpha=0.5, label="LFP Data - REM"
-)
+axd["theta_pow"].plot(REM_Tsd, alpha=0.5, label="LFP Data - REM")
 axd["theta_pow"].plot(
     REM_Tsd.index.values,
     theta_band_reconstruction,
-    label=f"{freqs[theta_freq_index]}Hz oscillations",
+    label=f"{np.round(freqs[theta_freq_index], 2)}Hz oscillations",
 )
 axd["theta_pow"].set_ylabel("LFP (v)")
 axd["theta_pow"].set_xlabel("Time (s)")
-axd["theta_pow"].set_title(f"{freqs[theta_freq_index]}Hz oscillation power.")  #
+axd["theta_pow"].set_title(
+    f"{np.round(freqs[theta_freq_index],2)}Hz oscillation power."
+)  #
 axd["theta_pow"].legend()
-axd["phase"].plot(theta_band_phase)
+axd["phase"].plot(REM_Tsd.index.values, theta_band_phase, alpha=0.5)
 [axd[k].margins(0) for k in ["theta_pow", "phase"]]
 axd["phase"].set_ylabel("Phase")
-plt.show()
+axd["phase"].get_xaxis().set_visible(False)
 
 
 # %%
 # ***
 # Finding Phase of Spikes
 # -----------------------------------
-# Now that we have the phase of our theta wavelet, and our spike times, we can find the theta phase at which every
-# spike occurs
+# Now that we have the phase of our theta wavelet, and our spike times, we can find the phase firing preferences
+# of each of the units using the compute_1d_tuning_curves function.
+#
+# We will start by throwing away cells which do not have a high enough firing rate during our interval.
 
-# We will start by throwing away cells which do not have enough
-# spikes during our interval
-spikes = {k: v for k, v in spikes.items() if len(v) > 20}
-# Get phase of each spike
-phase = {}
-for i in spikes.keys():
-    phase_i = []
-    for spike in spikes[i]:
-        phase_i.append(
-            np.angle(
-                mwt_REM[
-                    np.argmin(np.abs(REM_Tsd.index.values - spike)), theta_freq_index
-                ]
-            )
-        )
-    phase[i] = np.array(phase_i)
+# Filter units based on firing rate
+spikes_tsdg = spikes_tsdg[spikes_tsdg.rate > 5.0]
+# Calculate theta phase firing preferences
+tuning_curves = nap.compute_1d_tuning_curves(
+    group=spikes_tsdg, feature=theta_band_phase, nb_bins=61, minmax=(-np.pi, np.pi)
+)
 
-# Let's plot phase histograms for the first six units to see if there's
-# any obvious preferences
-fig, ax = plt.subplots(2, 3, constrained_layout=True, figsize=(10, 6))
-for ri in range(2):
-    for ci in range(3):
-        ax[ri, ci].hist(
-            phase[list(phase.keys())[ri * 3 + ci]],
-            bins=np.linspace(-np.pi, np.pi, 10),
-            density=True,
-        )
-        ax[ri, ci].set_xlabel("Phase (rad)")
-        ax[ri, ci].set_ylabel("Density")
-        ax[ri, ci].set_title(f"Unit {list(phase.keys())[ri*3 + ci]}")
+# %%
+# ***
+# Now we will plot these preferences as smoothed angular histograms. We will select the first 6 units
+# to plot.
+
+
+def smoothAngularTuningCurves(tuning_curves, sigma=2):
+    tmp = np.concatenate(
+        (tuning_curves.values, tuning_curves.values, tuning_curves.values)
+    )
+    tmp = scipy.ndimage.gaussian_filter1d(tmp, sigma=sigma, axis=0)
+    return pd.DataFrame(
+        index=tuning_curves.index,
+        data=tmp[tuning_curves.shape[0] : tuning_curves.shape[0] * 2],
+        columns=tuning_curves.columns,
+    )
+
+
+smoothcurves = smoothAngularTuningCurves(tuning_curves, sigma=2)
+fig, axd = plt.subplot_mosaic(
+    [["phase_0", "phase_1", "phase_2"], ["phase_3", "phase_4", "phase_5"]],
+    constrained_layout=True,
+    figsize=(10, 6),
+    subplot_kw={"projection": "polar"},
+)
+for pl_i, sc_i in enumerate(list(smoothcurves)[:6]):
+    axd[f"phase_{pl_i}"].plot(
+        list(smoothcurves[sc_i].index) + list([smoothcurves[sc_i].index[0]]),
+        list(smoothcurves[sc_i].values) + list([smoothcurves[sc_i].values[0]]),
+    )
+    axd[f"phase_{pl_i}"].set_xlabel("Phase (rad)")  # Angle in radian, on the X-axis
+    axd[f"phase_{pl_i}"].set_ylabel(
+        "Firing Rate (Hz)"
+    )  # Firing rate in Hz, on the Y-axis
+    axd[f"phase_{pl_i}"].set_xticks([])
+    axd[f"phase_{pl_i}"].set_title(f"Unit {sc_i}")
 fig.suptitle("Phase Preference Histograms of First 6 Units")
-plt.show()
+
 
 # %%
 # ***
@@ -279,30 +283,38 @@ plt.show()
 # Now that we have our phases of firing for each unit, we can sort the units by the circular variance of the phase
 # of their spikes, to isolate the cells with the strongest phase preferences without manual inspection.
 
-variances = {
+# Get phase of each spike
+phase = {}
+for i in spikes_tsdg:
+    phase_i = [
+        theta_band_phase[np.argmin(np.abs(REM_Tsd.index.values - s.index))]
+        for s in spikes_tsdg[i]
+    ]
+    phase[i] = np.array(phase_i)
+phase_var = {
     key: scipy.stats.circvar(value, low=-np.pi, high=np.pi)
     for key, value in phase.items()
 }
-spikes = dict(sorted(spikes.items(), key=lambda item: variances[item[0]]))
-phase = dict(sorted(phase.items(), key=lambda item: variances[item[0]]))
+phase_var = dict(sorted(phase_var.items(), key=lambda item: item[1]))
 
-# Now let's plot phase histograms for the six units with the least
-# varied phase of spikes.
-fig, ax = plt.subplots(2, 3, constrained_layout=True, figsize=(10, 6))
-for ri in range(2):
-    for ci in range(3):
-        ax[ri, ci].hist(
-            phase[list(phase.keys())[ri * 3 + ci]],
-            bins=np.linspace(-np.pi, np.pi, 10),
-            density=True,
-        )
-        ax[ri, ci].set_xlabel("Phase (rad)")
-        ax[ri, ci].set_ylabel("Density")
-        ax[ri, ci].set_title(f"Unit {list(phase.keys())[ri*3 + ci]}")
-fig.suptitle(
-    "Phase Preference Histograms of 6 Units with " + "Highest Phase Preference"
+fig, axd = plt.subplot_mosaic(
+    [["phase_0", "phase_1", "phase_2"], ["phase_3", "phase_4", "phase_5"]],
+    constrained_layout=True,
+    figsize=(10, 6),
+    subplot_kw={"projection": "polar"},
 )
-plt.show()
+for pl_i, sc_i in enumerate(list(phase_var.keys())[:6]):
+    axd[f"phase_{pl_i}"].plot(
+        list(smoothcurves[sc_i].index) + list([smoothcurves[sc_i].index[0]]),
+        list(smoothcurves[sc_i].values) + list([smoothcurves[sc_i].values[0]]),
+    )
+    axd[f"phase_{pl_i}"].set_xlabel("Phase (rad)")  # Angle in radian, on the X-axis
+    axd[f"phase_{pl_i}"].set_ylabel(
+        "Firing Rate (Hz)"
+    )  # Firing rate in Hz, on the Y-axis
+    axd[f"phase_{pl_i}"].set_xticks([])
+    axd[f"phase_{pl_i}"].set_title(f"Unit {sc_i}")
+fig.suptitle("Phase Preference Histograms of 6 Units with Highest Phase Preference ")
 
 # %%
 # ***
@@ -311,38 +323,34 @@ plt.show()
 # There is definitely some strong phase preferences happening here. Let's visualize the firing preferences
 # of the 6 cells we've isolated to get an impression of just how striking these preferences are.
 
-fig = plt.figure(constrained_layout=True, figsize=(10, 12))
+fig = plt.figure(constrained_layout=True, figsize=(10, 8))
 axd = fig.subplot_mosaic(
     [
         ["lfp_run"],
         ["phase_0"],
         ["phase_1"],
         ["phase_2"],
-        ["phase_3"],
-        ["phase_4"],
-        ["phase_5"],
     ],
-    height_ratios=[0.4, 0.2, 0.2, 0.2, 0.2, 0.2, 0.2],
+    height_ratios=[0.4, 0.2, 0.2, 0.2],
 )
-[axd[k].margins(0) for k in ["lfp_run"] + [f"phase_{i}" for i in range(6)]]
+[axd[k].margins(0) for k in ["lfp_run"] + [f"phase_{i}" for i in range(3)]]
 axd["lfp_run"].plot(
-    REM_Tsd.index.values, REM_Tsd[:, channel], alpha=0.5, label="LFP Data - REM"
+    REM_Tsd.index.values, REM_Tsd[:, 0], alpha=0.5, label="LFP Data - REM"
 )
 axd["lfp_run"].plot(
     REM_Tsd.index.values,
     theta_band_reconstruction,
-    label=f"{freqs[theta_freq_index]}Hz oscillations",
+    label=f"{np.round(freqs[theta_freq_index],2)}Hz oscillations",
 )
 axd["lfp_run"].set_ylabel("LFP (v)")
 axd["lfp_run"].set_xlabel("Time (s)")
-axd["lfp_run"].set_title(f"{freqs[theta_freq_index]}Hz oscillation power.")
+axd["lfp_run"].set_title(f"{np.round(freqs[theta_freq_index],2)}Hz oscillation power.")
 axd["lfp_run"].legend()
-for i in range(6):
+for i in range(3):
     axd[f"phase_{i}"].plot(REM_Tsd.index.values, theta_band_phase, alpha=0.2)
     axd[f"phase_{i}"].scatter(
-        spikes[list(spikes.keys())[i]], phase[list(spikes.keys())[i]]
+        spikes[list(phase_var.keys())[i]], phase[list(phase_var.keys())[i]]
     )
     axd[f"phase_{i}"].set_ylabel("Phase")
-    axd[f"phase_{i}"].set_title(f"Unit {list(spikes.keys())[i]}")
+    axd[f"phase_{i}"].set_title(f"Unit {list(phase_var.keys())[i]}")
 fig.suptitle("Phase Preference Visualizations")
-plt.show()
