@@ -94,18 +94,3 @@ def test_load(path):
     folder.load()
     for k in data.keys():
         assert type(folder[k]) == type(data[k])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
