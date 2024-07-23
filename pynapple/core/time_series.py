@@ -104,7 +104,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
     def __setitem__(self, key, value):
         """setter for time series"""
-        if isinstance(key, Tsd):
+        if isinstance(key, BaseTsd):
             key = key.d
         try:
             self.values.__setitem__(key, value)
