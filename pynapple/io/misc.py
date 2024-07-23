@@ -4,8 +4,8 @@
 Various io functions
 
 """
-import os
 import warnings
+from pathlib import Path
 from xml.dom import minidom
 
 import numpy as np
@@ -49,23 +49,23 @@ def load_file(path, lazy_loading=None):
     FileNotFoundError
         If file is missing
     """
-    if os.path.isfile(path):
-        if path.endswith(".npz"):
-            if lazy_loading:
-                warnings.warn("Lazy loading is not supported for NPZ files")
-            return NPZFile(path).load()
+    path = Path(path)
+    if not path.exists():
+        raise FileNotFoundError(f"File {path} does not exist")
 
-        elif path.endswith(".nwb"):
-            # preserves class init default:
-            kwargs_for_lazyloading = (
-                {} if lazy_loading is None else {"lazy_loading": lazy_loading}
-            )
+    if path.suffix == ".npz":
+        if lazy_loading:
+            warnings.warn("Lazy loading is not supported for NPZ files")
+        return NPZFile(path).load()
 
-            return NWBFile(path, **kwargs_for_lazyloading)
-        else:
-            raise RuntimeError("File format not supported")
+    elif path.suffix == ".nwb":
+        # preserves class init default:
+        kwargs_for_lazyloading = (
+            {} if lazy_loading is None else {"lazy_loading": lazy_loading}
+        )
+        return NWBFile(path, **kwargs_for_lazyloading)
     else:
-        raise FileNotFoundError("File {} does not exist".format(path))
+        raise RuntimeError("File format not supported")
 
 
 def load_folder(path):
@@ -88,13 +88,13 @@ def load_folder(path):
     RuntimeError
         If folder is missing
     """
-    if os.path.isdir(path):
-        return Folder(path)
-    else:
-        raise RuntimeError("Folder {} does not exist".format(path))
+    path = Path(path)
+    if not path.exists():
+        raise FileNotFoundError(f"Folder {path} does not exist")
+    return Folder(path)
 
 
-def load_session(path=None, session_type=None):
+def load_session(path, session_type=None):
     """
     %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
     % WARNING : THIS FUNCTION IS DEPRECATED %
@@ -124,9 +124,8 @@ def load_session(path=None, session_type=None):
         A class holding all the data from the session.
 
     """
-    if path:
-        if not os.path.isdir(path):
-            raise RuntimeError("Path {} is not found.".format(path))
+    path = Path(path)
+    assert path.exists(), f"Folder {path} does not exist"
 
     if isinstance(session_type, str):
         session_type = session_type.lower()
@@ -196,13 +195,14 @@ def load_eeg(
 
     """
     # Need to check if a xml file exists
-    path = os.path.dirname(filepath)
-    basename = os.path.basename(filepath).split(".")[0]
-    listdir = os.listdir(path)
+    filepath = Path(filepath)
+    path = filepath.parent
+    basename = filepath.name.split(".")[0]
+    listdir = list(path.glob("*"))
 
     if frequency is None or n_channels is None:
         if basename + ".xml" in listdir:
-            xmlpath = os.path.join(path, basename + ".xml")
+            xmlpath = path / (basename + ".xml")
             xmldoc = minidom.parse(xmlpath)
         else:
             raise RuntimeError(
@@ -280,18 +280,12 @@ def append_NWB_LFP(path, lfp, channel=None):
         If no channel is specify when passing a Tsd
 
     """
-    new_path = os.path.join(path, "pynapplenwb")
+    path = Path(path)
+    new_path = path / "pynapplenwb"
     nwb_path = ""
-    if os.path.exists(new_path):
-        nwbfilename = [f for f in os.listdir(new_path) if f.endswith(".nwb")]
-        if len(nwbfilename):
-            nwb_path = os.path.join(path, "pynapplenwb", nwbfilename[0])
-    else:
-        nwbfilename = [f for f in os.listdir(path) if f.endswith(".nwb")]
-        if len(nwbfilename):
-            nwb_path = os.path.join(path, "pynapplenwb", nwbfilename[0])
-
-    if len(nwb_path) == 0:
+    try:
+        nwb_path = next(new_path.glob("*.nwb"))
+    except StopIteration:
         raise RuntimeError("Can't find nwb file in {}".format(path))
 
     if isinstance(lfp, nap.TsdFrame):

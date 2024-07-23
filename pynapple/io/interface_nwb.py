@@ -15,6 +15,7 @@ import os
 import warnings
 from collections import UserDict
 from numbers import Number
+from pathlib import Path
 
 import numpy as np
 import pynwb
@@ -386,22 +387,21 @@ class NWBFile(UserDict):
         RuntimeError
             If file is not an instance of NWBFile
         """
-        if isinstance(file, str):
-            if os.path.exists(file):
-                self.path = file
-                self.name = os.path.basename(file).split(".")[0]
-                self.io = NWBHDF5IO(file, "r")
+        # TODO: do we really need to have instantiation from file and object in the same place?
+
+        if isinstance(file, pynwb.file.NWBFile):
+            self.nwb = file
+            self.name = self.nwb.session_id
+        else:
+            path = Path(file)
+
+            if path.exists():
+                self.path = path
+                self.name = path.stem
+                self.io = NWBHDF5IO(path, "r")
                 self.nwb = self.io.read()
             else:
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file)
-        elif isinstance(file, pynwb.file.NWBFile):
-            self.nwb = file
-            self.name = self.nwb.session_id
-
-        else:
-            raise RuntimeError(
-                "unrecognized argument. Please provide path to a valid NWB file or open NWB file."
-            )
 
         self.data = _extract_compatible_data_from_nwbfile(self.nwb)
         self.key_to_id = {k: self.data[k]["id"] for k in self.data.keys()}

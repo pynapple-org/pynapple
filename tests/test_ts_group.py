@@ -14,6 +14,7 @@ from contextlib import nullcontext as does_not_raise
 import numpy as np
 import pandas as pd
 import pytest
+from pathlib import Path
 
 import pynapple as nap
 
@@ -519,8 +520,6 @@ class TestTsGroup1:
 
     def test_save_npz(self, group):
 
-        import os
-
         group = {
             0: nap.Tsd(t=np.arange(0, 20), d = np.random.rand(20)),
             1: nap.Tsd(t=np.arange(0, 20, 0.5), d=np.random.rand(40)),
@@ -529,26 +528,23 @@ class TestTsGroup1:
 
         tsgroup = nap.TsGroup(group, meta = np.arange(len(group), dtype=np.int64), meta2 = np.array(['a', 'b', 'c']))
 
-        with pytest.raises(RuntimeError) as e:
+        with pytest.raises(TypeError) as e:
             tsgroup.save(dict)
-        assert str(e.value) == "Invalid type; please provide filename as string"
 
         with pytest.raises(RuntimeError) as e:
             tsgroup.save('./')
-        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+        assert str(e.value) == "Invalid filename input. {} is directory.".format(Path("./").resolve())
 
         fake_path = './fake/path'
         with pytest.raises(RuntimeError) as e:
             tsgroup.save(fake_path+'/file.npz')
-        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+        assert str(e.value) == "Path {} does not exist.".format(Path(fake_path).resolve())
 
         tsgroup.save("tsgroup.npz")
-        os.listdir('.')
-        assert "tsgroup.npz" in os.listdir(".")
+        assert "tsgroup.npz" in [f.name for f in Path('.').iterdir()]
 
         tsgroup.save("tsgroup2")
-        os.listdir('.')
-        assert "tsgroup2.npz" in os.listdir(".")
+        assert "tsgroup2.npz" in [f.name for f in Path('.').iterdir()]
 
         file = np.load("tsgroup.npz")
 
@@ -589,9 +585,9 @@ class TestTsGroup1:
             assert 'd' not in list(file.keys())
             np.testing.assert_array_almost_equal(file['t'], tsgroup3[0].index)
 
-        os.remove("tsgroup.npz")
-        os.remove("tsgroup2.npz")
-        os.remove("tsgroup3.npz")
+        Path("tsgroup.npz").unlink()
+        Path("tsgroup2.npz").unlink()
+        Path("tsgroup3.npz").unlink()
 
     @pytest.mark.parametrize(
         "keys, expectation",

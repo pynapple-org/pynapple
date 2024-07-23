@@ -11,24 +11,22 @@ import numpy as np
 import pandas as pd
 import pytest
 import warnings
-import os
+from pathlib import Path
+import shutil
 
 # look for tests folder
-path = os.getcwd()
-if os.path.basename(path) == 'pynapple':
-    path = os.path.join(path, "tests")
+path = Path(__file__).parent
+if path.name == 'pynapple':
+    path = path / "tests" 
+path = path / "npzfilestest"
 
-path = os.path.join(path, "npzfilestest")
-if not os.path.isdir(path):
-    os.mkdir(path)
-path2 = os.path.join(path, "sub")
-if not os.path.isdir(path):
-    os.mkdir(path2)
+# Recursively remove the folder:
+shutil.rmtree(path, ignore_errors=True)
+path.mkdir(exist_ok=True, parents=True)
 
-# Cleaning
-for root, dirs, files in os.walk(path):
-    for f in files:        
-        os.remove(os.path.join(root, f))
+path2 = path.parent / "sub"
+path2.mkdir(exist_ok=True, parents=True)
+
 
 # Populate the folder
 data = {
@@ -43,12 +41,12 @@ data = {
     "iset":nap.IntervalSet(start=np.array([0.0, 5.0]), end=np.array([1.0, 6.0]))
     }
 for k, d in data.items():
-    d.save(os.path.join(path, k+".npz"))
+    d.save(path / (k+".npz"))
 
 @pytest.mark.parametrize("path", [path])
 def test_init(path):
     tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))   
-    file_path = os.path.join(path, "tsd.npz")
+    file_path = path / "tsd.npz"
     tsd.save(file_path)
     file = nap.NPZFile(file_path)
     assert isinstance(file, nap.NPZFile)
@@ -58,7 +56,7 @@ def test_init(path):
 @pytest.mark.parametrize("path", [path])
 @pytest.mark.parametrize("k", ['tsd', 'ts', 'tsdframe', 'tsgroup', 'iset'])
 def test_load(path, k):
-    file_path = os.path.join(path, k+".npz")
+    file_path = path / (k+".npz")
     file = nap.NPZFile(file_path)
     tmp = file.load()
     assert isinstance(tmp, type(data[k]))
@@ -66,7 +64,7 @@ def test_load(path, k):
 @pytest.mark.parametrize("path", [path])
 @pytest.mark.parametrize("k", ['tsgroup'])
 def test_load_tsgroup(path, k):
-    file_path = os.path.join(path, k+".npz")
+    file_path = path / (k+".npz")
     file = nap.NPZFile(file_path)
     tmp = file.load()
     assert isinstance(tmp, type(data[k]))
@@ -79,7 +77,7 @@ def test_load_tsgroup(path, k):
 @pytest.mark.parametrize("path", [path])
 @pytest.mark.parametrize("k", ['tsd'])
 def test_load_tsd(path, k):
-    file_path = os.path.join(path, k+".npz")
+    file_path = path / (k+".npz")
     file = nap.NPZFile(file_path)
     tmp = file.load()
     assert isinstance(tmp, type(data[k]))
@@ -91,7 +89,7 @@ def test_load_tsd(path, k):
 @pytest.mark.parametrize("path", [path])
 @pytest.mark.parametrize("k", ['ts'])
 def test_load_ts(path, k):
-    file_path = os.path.join(path, k+".npz")
+    file_path = path / (k+".npz")
     file = nap.NPZFile(file_path)
     tmp = file.load()
     assert isinstance(tmp, type(data[k]))
@@ -103,7 +101,7 @@ def test_load_ts(path, k):
 @pytest.mark.parametrize("path", [path])
 @pytest.mark.parametrize("k", ['tsdframe'])
 def test_load_tsdframe(path, k):
-    file_path = os.path.join(path, k+".npz")
+    file_path = path / (k+".npz")
     file = nap.NPZFile(file_path)
     tmp = file.load()
     assert isinstance(tmp, type(data[k]))
@@ -116,7 +114,7 @@ def test_load_tsdframe(path, k):
 
 @pytest.mark.parametrize("path", [path])
 def test_load_non_npz(path):
-    file_path = os.path.join(path, "random.npz")
+    file_path = path / "random.npz"
     tmp = np.random.rand(100)
     np.savez(file_path, a=tmp)
     file = nap.NPZFile(file_path)    

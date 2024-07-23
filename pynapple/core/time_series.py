@@ -17,7 +17,6 @@
 
 import abc
 import importlib
-import os
 import warnings
 from numbers import Number
 
@@ -830,23 +829,7 @@ class TsdTensor(BaseTsd):
         RuntimeError
             If filename is not str, path does not exist or filename is a directory.
         """
-        if not isinstance(filename, str):
-            raise RuntimeError("Invalid type; please provide filename as string")
-
-        if os.path.isdir(filename):
-            raise RuntimeError(
-                "Invalid filename input. {} is directory.".format(filename)
-            )
-
-        if not filename.lower().endswith(".npz"):
-            filename = filename + ".npz"
-
-        dirname = os.path.dirname(filename)
-
-        if len(dirname) and not os.path.exists(dirname):
-            raise RuntimeError(
-                "Path {} does not exist.".format(os.path.dirname(filename))
-            )
+        filename = self._get_filename(filename)
 
         np.savez(
             filename,
@@ -1110,23 +1093,7 @@ class TsdFrame(BaseTsd):
         RuntimeError
             If filename is not str, path does not exist or filename is a directory.
         """
-        if not isinstance(filename, str):
-            raise RuntimeError("Invalid type; please provide filename as string")
-
-        if os.path.isdir(filename):
-            raise RuntimeError(
-                "Invalid filename input. {} is directory.".format(filename)
-            )
-
-        if not filename.lower().endswith(".npz"):
-            filename = filename + ".npz"
-
-        dirname = os.path.dirname(filename)
-
-        if len(dirname) and not os.path.exists(dirname):
-            raise RuntimeError(
-                "Path {} does not exist.".format(os.path.dirname(filename))
-            )
+        filename = self._get_filename(filename)
 
         cols_name = self.columns
         if cols_name.dtype == np.dtype("O"):
@@ -1437,24 +1404,7 @@ class Tsd(BaseTsd):
         RuntimeError
             If filename is not str, path does not exist or filename is a directory.
         """
-        if not isinstance(filename, str):
-            raise RuntimeError("Invalid type; please provide filename as string")
-
-        if os.path.isdir(filename):
-            raise RuntimeError(
-                "Invalid filename input. {} is directory.".format(filename)
-            )
-
-        if not filename.lower().endswith(".npz"):
-            filename = filename + ".npz"
-
-        dirname = os.path.dirname(filename)
-
-        if len(dirname) and not os.path.exists(dirname):
-            raise RuntimeError(
-                "Path {} does not exist.".format(os.path.dirname(filename))
-            )
-
+        filename = self._get_filename(filename)
         np.savez(
             filename,
             t=self.index.values,
@@ -1730,23 +1680,7 @@ class Ts(Base):
         RuntimeError
             If filename is not str, path does not exist or filename is a directory.
         """
-        if not isinstance(filename, str):
-            raise RuntimeError("Invalid type; please provide filename as string")
-
-        if os.path.isdir(filename):
-            raise RuntimeError(
-                "Invalid filename input. {} is directory.".format(filename)
-            )
-
-        if not filename.lower().endswith(".npz"):
-            filename = filename + ".npz"
-
-        dirname = os.path.dirname(filename)
-
-        if len(dirname) and not os.path.exists(dirname):
-            raise RuntimeError(
-                "Path {} does not exist.".format(os.path.dirname(filename))
-            )
+        filename = self._get_filename(filename)
 
         np.savez(
             filename,

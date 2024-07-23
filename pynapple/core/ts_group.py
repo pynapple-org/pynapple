@@ -4,7 +4,6 @@
 
 """
 
-import os
 import warnings
 from collections import UserDict
 from collections.abc import Hashable
@@ -21,7 +20,7 @@ from .config import nap_config
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
-from .utils import _get_terminal_size, convert_to_numpy_array
+from .utils import _get_terminal_size, check_filename, convert_to_numpy_array
 
 
 def _union_intervals(i_sets):
@@ -1325,23 +1324,7 @@ class TsGroup(UserDict):
         RuntimeError
             If filename is not str, path does not exist or filename is a directory.
         """
-        if not isinstance(filename, str):
-            raise RuntimeError("Invalid type; please provide filename as string")
-
-        if os.path.isdir(filename):
-            raise RuntimeError(
-                "Invalid filename input. {} is directory.".format(filename)
-            )
-
-        if not filename.lower().endswith(".npz"):
-            filename = filename + ".npz"
-
-        dirname = os.path.dirname(filename)
-
-        if len(dirname) and not os.path.exists(dirname):
-            raise RuntimeError(
-                "Path {} does not exist.".format(os.path.dirname(filename))
-            )
+        filename = check_filename(filename)
 
         dicttosave = {"type": np.array(["TsGroup"], dtype=np.str_)}
         for k in self._metadata.columns:

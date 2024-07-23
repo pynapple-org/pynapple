@@ -11,7 +11,7 @@ import numpy as np
 from ._core_functions import _count, _restrict, _value_from
 from .interval_set import IntervalSet
 from .time_index import TsIndex
-from .utils import convert_to_numpy_array
+from .utils import check_filename, convert_to_numpy_array
 
 
 class Base(abc.ABC):
@@ -425,6 +425,27 @@ class Base(abc.ABC):
             idx_start = np.searchsorted(time_array, start)
             idx_end = np.searchsorted(time_array, end, side="right")
             return self[idx_start:idx_end]
+
+    def _get_filename(self, filename):
+        """Check if the filename is valid and return the path
+
+        Parameters
+        ----------
+        filename : str or Path
+            The filename
+
+        Returns
+        -------
+        Path
+            The path to the file
+
+        Raises
+        ------
+        RuntimeError
+            If the filename is a directory or the parent does not exist
+        """
+
+        return check_filename(filename)
 
     @classmethod
     def _from_npz_reader(cls, file):
