@@ -11,25 +11,19 @@ import numpy as np
 import pandas as pd
 import pytest
 import warnings
-import os
+from pathlib import Path
+import shutil
 import json
 
 # look for tests folder
-path = os.getcwd()
-if os.path.basename(path) == 'pynapple':
-    path = os.path.join(path, "tests")
+path = Path(__file__).parent
+if path.name == 'pynapple':
+    path = path / "tests" 
+path = path / "npzfilestest"
 
-path = os.path.join(path, "npzfilestest")
-if not os.path.isdir(path):
-    os.mkdir(path)
-# path2 = os.path.join(path, "sub")
-# if not os.path.isdir(path):
-#     os.mkdir(path2)
-
-# Cleaning
-for root, dirs, files in os.walk(path):
-    for f in files:        
-        os.remove(os.path.join(root, f))
+# Recursively remove the folder:
+shutil.rmtree(path, ignore_errors=True)
+path.mkdir(exist_ok=True, parents=True)
 
 # Populate the folder
 data = {
@@ -45,9 +39,7 @@ data = {
     }
 
 for k, d in data.items():
-    d.save(os.path.join(path, k+".npz"))
-# for k, d in data.items():
-#     d.save(os.path.join(path, "sub", k+".npz"))
+    d.save(path / (k+".npz"))
 
 @pytest.mark.parametrize("path", [path])
 def test_load_folder(path):
@@ -78,11 +70,11 @@ def test_save(folder):
 
     assert isinstance(folder['tsd2'], nap.Tsd)
 
-    files = os.listdir(folder.path)
+    files = [f.name for f in path.iterdir()]
     assert "tsd2.json" in files
 
     # check json
-    metadata = json.load(open(os.path.join(path, "tsd2.json"), "r"))
+    metadata = json.load(open(path / "tsd2.json", "r"))
     assert "time" in metadata.keys()
     assert "info" in metadata.keys()
     assert "Test description" == metadata["info"]
@@ -102,18 +94,3 @@ def test_load(path):
     folder.load()
     for k in data.keys():
         assert type(folder[k]) == type(data[k])
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

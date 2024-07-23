@@ -6,13 +6,18 @@
 
 """Tests of ts group for `pynapple` package."""
 
-import pynapple as nap
+import pickle
+import warnings
+from collections import UserDict
+from contextlib import nullcontext as does_not_raise
+
 import numpy as np
 import pandas as pd
 import pytest
-from collections import UserDict
-import warnings
-from contextlib import nullcontext as does_not_raise
+from pathlib import Path
+
+import pynapple as nap
+
 
 @pytest.fixture
 def group():
@@ -515,8 +520,6 @@ class TestTsGroup1:
 
     def test_save_npz(self, group):
 
-        import os
-
         group = {
             0: nap.Tsd(t=np.arange(0, 20), d = np.random.rand(20)),
             1: nap.Tsd(t=np.arange(0, 20, 0.5), d=np.random.rand(40)),
@@ -525,26 +528,23 @@ class TestTsGroup1:
 
         tsgroup = nap.TsGroup(group, meta = np.arange(len(group), dtype=np.int64), meta2 = np.array(['a', 'b', 'c']))
 
-        with pytest.raises(RuntimeError) as e:
+        with pytest.raises(TypeError) as e:
             tsgroup.save(dict)
-        assert str(e.value) == "Invalid type; please provide filename as string"
 
         with pytest.raises(RuntimeError) as e:
             tsgroup.save('./')
-        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+        assert str(e.value) == "Invalid filename input. {} is directory.".format(Path("./").resolve())
 
         fake_path = './fake/path'
         with pytest.raises(RuntimeError) as e:
             tsgroup.save(fake_path+'/file.npz')
-        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+        assert str(e.value) == "Path {} does not exist.".format(Path(fake_path).resolve())
 
         tsgroup.save("tsgroup.npz")
-        os.listdir('.')
-        assert "tsgroup.npz" in os.listdir(".")
+        assert "tsgroup.npz" in [f.name for f in Path('.').iterdir()]
 
         tsgroup.save("tsgroup2")
-        os.listdir('.')
-        assert "tsgroup2.npz" in os.listdir(".")
+        assert "tsgroup2.npz" in [f.name for f in Path('.').iterdir()]
 
         file = np.load("tsgroup.npz")
 
@@ -585,9 +585,9 @@ class TestTsGroup1:
             assert 'd' not in list(file.keys())
             np.testing.assert_array_almost_equal(file['t'], tsgroup3[0].index)
 
-        os.remove("tsgroup.npz")
-        os.remove("tsgroup2.npz")
-        os.remove("tsgroup3.npz")
+        Path("tsgroup.npz").unlink()
+        Path("tsgroup2.npz").unlink()
+        Path("tsgroup3.npz").unlink()
 
     @pytest.mark.parametrize(
         "keys, expectation",
@@ -855,3 +855,28 @@ class TestTsGroup1:
                 ts_group.time_support.as_units("s").to_numpy(),
                 merged.time_support.as_units("s").to_numpy()
                 )
+
+
+def test_pickling(ts_group):
+    """Test that pikling works as expected."""
+    # pickle and unpickle ts_group
+    pickled_obj = pickle.dumps(ts_group)
+    unpickled_obj = pickle.loads(pickled_obj)
+
+    # Ensure the type is the same
+    assert type(ts_group) is type(unpickled_obj), "Types are different"
+
+    # Ensure that TsGroup have same len
+    assert len(ts_group) == len(unpickled_obj)
+
+    # Ensure that metadata content is the same
+    assert np.all(unpickled_obj._metadata == ts_group._metadata)
+
+    # Ensure that metadata columns are the same
+    assert np.all(unpickled_obj._metadata.columns == ts_group._metadata.columns)
+
+    # Ensure that the Ts are the same
+    assert all([np.all(ts_group[key].t == unpickled_obj[key].t) for key in unpickled_obj.keys()])
+
+    # Ensure time support is the same
+    assert np.all(ts_group.time_support == unpickled_obj.time_support)
