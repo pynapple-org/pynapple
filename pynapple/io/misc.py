@@ -23,7 +23,6 @@ from .phy import Phy
 from .suite2p import Suite2P
 
 
-
 def load_file(path, lazy_loading=None):
     """Load file. Current format supported is (npz,nwb,)
 

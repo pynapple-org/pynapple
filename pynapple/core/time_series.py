@@ -1207,16 +1207,15 @@ class Tsd(BaseTsd):
     def __getitem__(self, key, *args, **kwargs):
         if isinstance(key, Tsd):
             key = key.d
-        
+
         output = self.values.__getitem__(key)
-        
+
         if isinstance(key, tuple):
             index = self.index.__getitem__(key[0])
         elif isinstance(index, Number):
             index = np.array([index])
         else:
             index = self.index.__getitem__(key)
-            
 
         if all(is_array_like(a) for a in [index, output]):
             if output.shape[0] == index.shape[0]:
