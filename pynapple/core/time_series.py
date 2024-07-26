@@ -1205,7 +1205,7 @@ class Tsd(BaseTsd):
                 return tabulate([], headers=headers) + "\n" + bottom
 
     def __getitem__(self, key, *args, **kwargs):
-        if isinstance(key, Tsd):
+        if isinstance(key, BaseTsd):
             key = key.d
 
         output = self.values.__getitem__(key)
