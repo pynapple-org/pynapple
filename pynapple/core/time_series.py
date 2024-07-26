@@ -1212,8 +1212,8 @@ class Tsd(BaseTsd):
 
         if isinstance(key, tuple):
             index = self.index.__getitem__(key[0])
-        elif isinstance(index, Number):
-            index = np.array([index])
+        elif isinstance(key, Number):
+            index = np.array([key])
         else:
             index = self.index.__getitem__(key)
 
