@@ -12,20 +12,20 @@ authors:
     given-name: Sofia
     orcid: "https://orcid.org/0000-0001-5813-3218"
   - family-names: Mehrotra
-    given-name: Dhruv
+    given-names: Dhruv
     orcid: "https://orcid.org/0000-0001-5813-3218"
   - family-names: Mahallati
-    given-name: Sara
+    given-names: Sara
   - family-name: Vite
-    given-name: Gilberto R
+    given-names: Gilberto R
   - family-name: Denny
-    given-name: Henry
+    given-names: Henry
   - family-name: Sjulson
-    given-name: Lucas
+    given-names: Lucas
   - family-name: Battaglia
-    given-name: Francesco P
+    given-names: Francesco P
   - family-name: Peyrache
-    given-name: Adrien
+    given-names: Adrien
     orcid: "https://orcid.org/0000-0001-9708-309X"
 doi: https://doi.org/10.7554/eLife.85786.3
 repository-code: "https://github.com/pynapple-org/pynapple"
