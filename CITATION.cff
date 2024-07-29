@@ -1,0 +1,37 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it using the preferred-citation metadata."
+title: "Pynapple, a toolbox for data analysis in neuroscience"
+authors:
+  - family-names: Viejo
+    given-names: Guillaume
+    orcid: "https://orcid.org/0000-0002-2450-7397"
+  - family-names: Levenstein
+    given-names: Daniel
+    orcid: "https://orcid.org/0000-0002-5507-9145"
+  - family-names: Skromne Carrasco
+    given-names: Sofia
+    orcid: "https://orcid.org/0000-0001-5813-3218"
+  - family-names: Mehrotra
+    given-names: Dhruv
+    orcid: "https://orcid.org/0000-0001-5813-3218"
+  - family-names: Mahallati
+    given-names: Sara
+  - family-names: Vite
+    given-names: Gilberto R
+  - family-names: Denny
+    given-names: Henry
+  - family-names: Sjulson
+    given-names: Lucas
+  - family-names: Battaglia
+    given-names: Francesco P
+  - family-names: Peyrache
+    given-names: Adrien
+    orcid: "https://orcid.org/0000-0001-9708-309X"
+doi: https://doi.org/10.7554/eLife.85786.3
+repository-code: "https://github.com/pynapple-org/pynapple"
+url: "https://pynapple-org.github.io/pynapple/"
+license: MIT
+keywords:
+  - neuroscience
+  - data analysis
+  - time series
