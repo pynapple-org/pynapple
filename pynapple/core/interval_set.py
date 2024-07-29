@@ -354,6 +354,25 @@ class IntervalSet(NDArrayOperatorsMixin):
         """
         return _IntervalSetSliceHelper(self)
 
+    @classmethod
+    def _from_npz_reader(cls, file):
+        """Load an IntervalSet object from a npz file.
+
+        The file should contain the keys 'start', 'end' and 'type'.
+        The 'type' key should be 'IntervalSet'.
+
+        Parameters
+        ----------
+        file : NPZFile object
+            opened npz file interface.
+
+        Returns
+        -------
+        IntervalSet
+            The IntervalSet object
+        """
+        return cls(start=file["start"], end=file["end"])
+
     def time_span(self):
         """
         Time span of the interval set.
@@ -652,21 +671,64 @@ class IntervalSet(NDArrayOperatorsMixin):
 
         return
 
-    @classmethod
-    def _from_npz_reader(cls, file):
-        """Load an IntervalSet object from a npz file.
+    def split(self, interval_size, time_units="s"):
+        """Split `IntervalSet` to a new `IntervalSet` with each interval being of size `interval_size`.
+        
+        Used mostly for chunking very large dataset or looping throught multiple epoch of same duration.
 
-        The file should contain the keys 'start', 'end' and 'type'.
-        The 'type' key should be 'IntervalSet'.
-
+        This function skips the epochs that are shorter than `interval_size`.
+        
         Parameters
         ----------
-        file : NPZFile object
-            opened npz file interface.
-
+        interval_size : Number
+            Description
+        time_units : str, optional
+            time units for the `interval_size` ('us', 'ms', 's' [default])
+        
         Returns
         -------
         IntervalSet
-            The IntervalSet object
+            New `IntervalSet` with equal sized intervals
+        
+        Raises
+        ------
+        IOError
+        Description
         """
-        return cls(start=file["start"], end=file["end"])
+        if not isinstance(interval_size, Number):
+            raise IOError("Argument interval_size should of type float or int")
+
+        if not isinstance(time_units, str):
+            raise IOError("Argument time_units should be of type float or int")
+
+        if len(self) == 0:
+            return IntervalSet(start=[], end=[])
+
+        interval_size = TsIndex.format_timestamps(
+            np.array((interval_size,), dtype=np.float64).ravel(), time_units
+        )[0]
+
+        durations = self.end - self.start
+
+        new_starts = []
+        new_ends = []
+
+        for i in range(len(self)):
+            if durations[i] > interval_size:                
+                tmp = np.arange(self.start[i], self.end[i], interval_size)
+                tmp = np.hstack((tmp, np.array([self.end[i]])))
+                
+                new_starts.append(tmp[0:-1])
+                new_ends.append(tmp[1:])
+        
+        new_starts = np.hstack(new_starts)
+        new_ends = np.hstack(new_ends)
+
+        tokeep = np.round(new_ends - new_starts, nap_config.time_index_precision)
+
+        new_iset = IntervalSet(new_starts, new_ends).drop_short_intervals(interval_size-1e-6)
+
+        return new_iset
+
+
+
