@@ -3,11 +3,6 @@
 Computing Phase Preferences
 ============
 
-In the previous [Grosmark & Buzsáki (2016)](https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4919122/) tutorial,
-we learned how to use Pynapple's signal processing tools with Local Field Potential data. Specifically, we
-used wavelet decompositions to isolate Theta band activity during active traversal of a linear track,
-as well as to find Sharp Wave Ripples which occurred after traversal.
-
 In this tutorial we will learn how to isolate phase information from our wavelet decomposition and combine it
 with spiking data, to find phase preferences of spiking units.
 

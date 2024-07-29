@@ -3,6 +3,7 @@
 import numpy as np
 import pandas as pd
 import pytest
+import pywt
 
 import pynapple as nap
 
@@ -45,6 +46,35 @@ def test_compute_spectogram():
 
 
 def test_compute_wavelet_transform():
+    t = np.linspace(0, 1, 1000)
+    sig = nap.Tsd(
+        d=np.sin(t * 50 * np.pi * 2)
+        * np.interp(np.linspace(0, 1, 1000), [0, 0.5, 1], [0, 1, 0]),
+        t=t,
+    )
+    freqs = np.linspace(10, 100, 10)
+    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
+    mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
+    assert mpf == 50
+    assert (
+        np.unravel_index(np.abs(mwt.values).argmax(), np.abs(mwt.values).shape)[0]
+        == 500
+    )
+
+    t = np.linspace(0, 1, 1000)
+    sig = nap.Tsd(
+        d=np.sin(t * 10 * np.pi * 2)
+        * np.interp(np.linspace(0, 1, 1000), [0, 0.5, 1], [0, 1, 0]),
+        t=t,
+    )
+    freqs = np.linspace(10, 100, 10)
+    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
+    mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
+    assert mpf == 10
+    assert (
+        np.unravel_index(np.abs(mwt.values).argmax(), np.abs(mwt.values).shape)[0]
+        == 500
+    )
 
     t = np.linspace(0, 1, 1000)
     sig = nap.Tsd(d=np.sin(t * 50 * np.pi * 2), t=t)

@@ -14,6 +14,7 @@ def compute_spectogram(sig, fs=None, ep=None, full_range=False):
     """
     Performs numpy fft on sig, returns output. Pynapple assumes a constant sampling rate for sig.
 
+    Parameters
     ----------
     sig : pynapple.Tsd or pynapple.TsdFrame
         Time series.
@@ -23,6 +24,12 @@ def compute_spectogram(sig, fs=None, ep=None, full_range=False):
         The epoch to calculate the fft on. Must be length 1.
     full_range : bool, optional
         If true, will return full fft frequency range, otherwise will return only positive values
+
+    Returns
+    -------
+    pandas.DataFrame
+        Time frequency representation of the input signal, indexes are frequencies, values
+        are powers.
 
     Notes
     -----
@@ -40,7 +47,7 @@ def compute_spectogram(sig, fs=None, ep=None, full_range=False):
     if len(ep) != 1:
         raise ValueError("Given epoch (or signal time_support) must have length 1")
     if fs is None:
-        fs = sig.index.shape[0] / (sig.index.max() - sig.index.min())
+        fs = sig.rate
     fft_result = np.fft.fft(sig.restrict(ep).values, axis=0)
     fft_freq = np.fft.fftfreq(len(sig.restrict(ep).values), 1 / fs)
     ret = pd.DataFrame(fft_result, fft_freq)
@@ -107,7 +114,7 @@ def _create_freqs(freq_start, freq_stop, freq_step=1, log_scaling=False, log_bas
 
 
 def compute_wavelet_transform(
-    sig, freqs, fs=None, n_cycles=1.5, scaling=1.0, precision=10, norm=None
+    sig, freqs, fs=None, n_cycles=1.5, scaling=1.0, precision=16, norm=None
 ):
     """
     Compute the time-frequency representation of a signal using Morlet wavelets.
@@ -128,7 +135,8 @@ def compute_wavelet_transform(
     scaling : float
         Scaling factor.
     precision: int.
-        Precision of wavelet to use. Default is 8
+        Precision of wavelet to use. . Defines the number of timepoints to evaluate the Morlet wavelet at.
+        Default is 16
     norm : {None, 'sss', 'amp'}, optional
         Normalization method:
         * None - no normalization
@@ -137,8 +145,17 @@ def compute_wavelet_transform(
 
     Returns
     -------
-    pynapple.TsdFrame or pynapple.TsdTensor : 2d array
+    pynapple.TsdFrame or pynapple.TsdTensor
         Time frequency representation of the input signal.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import pynapple as nap
+    >>> t = np.linspace(0, 1, 1000)
+    >>> signal = nap.Tsd(d=np.sin(t * 50 * np.pi * 2), t=t)
+    >>> freqs = np.linspace(10, 100, 10)
+    >>> mwt = nap.compute_wavelet_transform(signal, fs=None, freqs=freqs)
 
     Notes
     -----
@@ -158,7 +175,6 @@ def compute_wavelet_transform(
         fs = sig.rate
 
     if isinstance(sig, nap.Tsd):
-        sig = sig.reshape((sig.shape[0], 1))
         output_shape = (sig.shape[0], len(freqs))
     else:
         output_shape = (sig.shape[0], len(freqs), *sig.shape[1:])
@@ -176,7 +192,7 @@ def compute_wavelet_transform(
     coef = np.insert(
         coef, 1, coef[0, :], axis=0
     )  # slightly hacky line, necessary to make output correct shape
-    cwt = np.swapaxes(coef, 1, 2)
+    cwt = np.expand_dims(coef, -1) if len(coef.shape) == 2 else coef
 
     if len(output_shape) == 2:
         return nap.TsdFrame(
@@ -188,7 +204,7 @@ def compute_wavelet_transform(
     )
 
 
-def generate_morlet_filterbank(freqs, fs, n_cycles=1.5, scaling=1.0, precision=10):
+def generate_morlet_filterbank(freqs, fs, n_cycles=1.5, scaling=1.0, precision=16):
     """
     Generates a Morlet filterbank using the given frequencies and parameters. Can be used purely for visualization,
     or to convolve with a pynapple Tsd, TsdFrame, or TsdTensor as part of a wavelet decomposition process.
@@ -207,7 +223,7 @@ def generate_morlet_filterbank(freqs, fs, n_cycles=1.5, scaling=1.0, precision=1
     scaling : float
         Scaling factor.
     precision: int.
-        Precision of wavelet to use.
+        Precision of wavelet to use. Defines the number of timepoints to evaluate the Morlet wavelet at.
 
     Returns
     -------
