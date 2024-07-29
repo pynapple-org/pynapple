@@ -1,10 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-02-02 20:45:09
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-11-16 13:21:34
-
 """
 > :warning: **DEPRECATED**: This will be removed in version 1.0.0. Check [nwbmatic](https://github.com/pynapple-org/nwbmatic) or [neuroconv](https://github.com/catalystneuro/neuroconv) instead.
 
@@ -12,6 +5,7 @@ Class and functions for loading data processed with the Neurosuite (Klusters, Ne
 
 @author: Guillaume Viejo
 """
+
 import sys
 from pathlib import Path
 
@@ -192,13 +186,13 @@ class NeuroSuite(BaseLoader):
             Contains two columns corresponding to the start and end of the intervals.
 
         """
-        if name:
-            isets = self.load_nwb_intervals(name)
-            if isinstance(isets, nap.IntervalSet):
-                return isets
+        # if name:
+        #     isets = self.load_nwb_intervals(name)
+        #     if isinstance(isets, nap.IntervalSet):
+        #         return isets
 
         if name is not None and path2file is None:
-            path2file = self.path / self.basename + "." + name + ".evt"
+            path2file = self.path / (self.basename + "." + name + ".evt")
         if path2file is not None:  # TODO maybe useless conditional?
             try:
                 # df = pd.read_csv(path2file, delimiter=' ', usecols = [0], header = None)
@@ -210,7 +204,7 @@ class NeuroSuite(BaseLoader):
             if name is None:
                 name = path2file.split(".")[-2]
                 print("*** saving file in the nwb as", name)
-            self.save_nwb_intervals(isets, name)
+            # self.save_nwb_intervals(isets, name)
         else:
             raise ValueError("specify a valid path")
         return isets
