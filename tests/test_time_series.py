@@ -1,11 +1,11 @@
 """Tests of time series for `pynapple` package."""
 
 import pickle
-from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
 from pathlib import Path
+from contextlib import nullcontext as does_not_raise
 
 import pynapple as nap
 
@@ -1449,3 +1449,75 @@ def test_pickling(obj):
 
     # Ensure time support is the same
     assert np.all(obj.time_support == unpickled_obj.time_support)
+
+@pytest.mark.parametrize(
+    "start, end, expectation",
+    [
+        (1, 3, does_not_raise()),
+        (3, 1, pytest.raises(ValueError, match="'start' should not precede 'end'")),
+        (1., 3., does_not_raise()),
+        (1., None, does_not_raise()),
+        (None, 3,  pytest.raises(ValueError, match="'start' must be an int or a float")),
+        ("a", 3,  pytest.raises(ValueError, match="'start' must be an int or a float")),
+        (2, "a",  pytest.raises(ValueError, match="'end' must be an int or a float")),
+
+    ]
+)
+@pytest.mark.parametrize("time_unit", ["s", "ms",  "us"])
+def test_get_index_value_types(start, end, time_unit, expectation):
+    ts = nap.Ts(t=np.array([1, 2, 3, 4]))
+    with expectation:
+        ts.get_slice(start, end, time_unit=time_unit)
+
+
+@pytest.mark.parametrize(
+    "start, end, mode, expected_slice, expected_array",
+    [
+        (1, 3, "forward", slice(0, 2), np.array([1, 2])),
+        (1, 3, "backward", slice(0, 2), np.array([1, 2])),
+        (1, 3, "closest", slice(0, 2), np.array([1, 2])),
+        (1, 2.7, "forward", slice(0, 2), np.array([1, 2])),
+        (1, 2.7, "backward", slice(0, 1), np.array([1])),
+        (1, 2.7, "closest", slice(0, 2), np.array([1, 2])),
+        (1, 2.4, "forward", slice(0, 2), np.array([1, 2])),
+        (1, 2.4, "backward", slice(0, 1), np.array([1])),
+        (1, 2.4, "closest", slice(0, 1), np.array([1])),
+        (1.1, 3, "forward", slice(1, 2), np.array([2])),
+        (1.1, 3, "backward", slice(0, 2), np.array([1, 2])),
+        (1.1, 3, "closest", slice(0, 2), np.array([1, 2])),
+        (1.6, 3, "forward", slice(1, 2), np.array([2])),
+        (1.6, 3, "backward", slice(0, 2), np.array([1, 2])),
+        (1.6, 3, "closest", slice(1, 2), np.array([2])),
+        (3, 3, "forward", slice(2, 2), np.array([])),
+        (3, 3, "backward", slice(2, 2), np.array([])),
+        (3, 3, "closest", slice(2, 2), np.array([])),
+        (0, 3, "forward", slice(0, 2), np.array([1, 2])),
+        (0, 3, "backward", slice(0, 2), np.array([1, 2])),
+        (0, 3, "closest", slice(0, 2), np.array([1, 2])),
+        (4, 4, "forward", slice(3, 3), np.array([])),
+        (4, 4, "backward", slice(3, 3), np.array([])),
+        (4, 4, "closest", slice(3, 3), np.array([])),
+        (4, 5, "forward", slice(3, 4), np.array([4])),
+        (4, 5, "backward", slice(3, 3), np.array([])),
+        (4, 5, "closest", slice(3, 3), np.array([])),
+        (0, 1, "forward", slice(0, 0), np.array([])),
+        (0, 1, "backward", slice(0, 1), np.array([1])),
+        (0, 1, "closest", slice(0, 0), np.array([])),
+        (0, None, "forward", slice(0, 1), np.array([1])),
+        (0, None, "backward", slice(0, 0), np.array([])),
+        (0, None, "closest", slice(0, 1), np.array([1])),
+        (1, None, "forward", slice(0, 1), np.array([1])),
+        (1, None, "backward", slice(0, 1), np.array([1])),
+        (1, None, "closest", slice(0, 1), np.array([1])),
+        (5, None, "forward", slice(3, 3), np.array([])),
+        (5, None, "backward", slice(3, 4), np.array([4])),
+        (5, None, "closest", slice(3, 4), np.array([4]))
+    ]
+)
+def test_get_index_value_types(start, end, mode, expected_slice, expected_array):
+    ts = nap.Ts(t=np.array([1, 2, 3, 4]))
+    out_slice = ts.get_slice(start, end=end, mode=mode)
+    out_array = ts.t[out_slice]
+    assert out_slice == expected_slice
+    assert np.all(out_array == expected_array)
+

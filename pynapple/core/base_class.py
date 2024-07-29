@@ -466,3 +466,57 @@ class Base(abc.ABC):
         }
         iset = IntervalSet(start=file["start"], end=file["end"])
         return cls(time_support=iset, **kwargs)
+
+    def get_slice(self, start, end=None, mode="closest", time_unit="s"):
+        if not isinstance(start, Number):
+            raise ValueError(f"'start' must be an int or a float. Type {type(start)} provided instead!")
+        # convert and get index for start
+        start = TsIndex.format_timestamps(np.array([start]), time_unit)[0]
+
+        # check end
+        if end is not None and not isinstance(end, Number):
+            raise ValueError(f"'end' must be an int or a float. Type {type(end)} provided instead!")
+
+        # get index of preceding time value
+        idx_start = np.searchsorted(self.t, start, side="left")
+        if idx_start == len(self.t):
+            idx_start -= 1
+
+        if mode == "backward":
+            # subtract one except if self.t[idx_start] is equal to start
+            idx_start -= (self.t[idx_start] > start)
+        elif mode == "closest":
+            di = np.argmin([self.t[idx_start] - start, np.abs(self.t[idx_start - 1] - start)])
+            idx_start -= di
+
+        if end is None:
+            if idx_start < 0:  # happens only on backwards
+                return slice(0, 0)
+            elif idx_start == len(self.t) - 1 and mode == "forward":
+                return slice(idx_start, idx_start)
+            return slice(idx_start, idx_start + 1)
+        else:
+            idx_start = max([0, idx_start])
+
+        # convert and get index for end
+        end = TsIndex.format_timestamps(np.array([end]), time_unit)[0]
+        if start > end:
+            raise ValueError("'start' should not precede 'end'.")
+
+        idx_end = np.searchsorted(self.t, end, side="left")
+        add_if_forward = 0
+        if idx_end == len(self.t):
+            add_if_forward = idx_start < len(self.t)
+            idx_end -= 1
+
+        if mode == "backward":
+            # remove 1 if self.t[idx_end] is larger than end, except if idx_end is already 0
+            idx_end -= (self.t[idx_end] > end) - int(idx_end == 0)
+        elif mode == "closest":
+            di = np.argmin([self.t[idx_end] - end, np.abs(self.t[idx_end - 1] - end)])
+            idx_end -= di
+        elif mode == "forward" and idx_end == len(self.t) - 1:
+            idx_end += add_if_forward  # add one if idx_start < len(self.t)
+
+        return slice(idx_start, idx_end)
+
