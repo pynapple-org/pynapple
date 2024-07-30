@@ -468,6 +468,51 @@ class Base(abc.ABC):
         return cls(time_support=iset, **kwargs)
 
     def get_slice(self, start, end=None, mode="closest", time_unit="s"):
+        """
+        Get a slice from the time series data based on the start and end values with the specified mode.
+
+        Parameters
+        ----------
+        start : int or float
+            The starting value for the slice.
+        end : int or float, optional
+            The ending value for the slice. Defaults to None.
+        mode : str, optional
+            The mode for slicing. Can be "forward", "backward", or "closest". Defaults to "closest".
+        time_unit : str, optional
+            The time unit for the start and end values. Defaults to "s" (seconds).
+
+        Returns
+        -------
+        slice : slice
+            If end is not provided:
+                - For mode == "backward":
+                    - An empty slice for start < self.t[0]
+                    - slice(idx, idx+1) with self.t[idx] <= start < self.t[idx+1]
+                - For mode == "forward":
+                    - An empty slice for start >= self.t[-1]
+                    - slice(idx, idx+1) with self.t[idx-1] < start <= self.t[idx]
+                - For mode == "closest":
+                    - slice(idx, idx+1) with the closest index to start
+            If end is provided:
+                - For mode == "backward":
+                    - An empty slice if end < self.t[0]
+                    - slice(idx_start, idx_end) with self.t[idx_start] <= start < self.t[idx_start+1] and
+                    self.t[idx_end] <= end < self.t[idx_end+1]
+                - For mode == "forward":
+                    - An empty slice if start > self.t[-1]
+                     - slice(idx_start, idx_end) with self.t[idx_start-1] <= start < self.t[idx_start] and
+                    self.t[idx_end-1] <= end < self.t[idx_end]
+                - For mode == "closest":
+                    - slice(idx_start, idx_end) with the closest indices to start and end
+
+        Raises
+        ------
+        ValueError
+            - If start or end is not a number.
+            - If start is greater than end.
+
+        """
         if not isinstance(start, Number):
             raise ValueError(f"'start' must be an int or a float. Type {type(start)} provided instead!")
         # convert and get index for start
@@ -522,4 +567,3 @@ class Base(abc.ABC):
             idx_end += add_if_forward  # add one if idx_start < len(self.t)
 
         return slice(idx_start, idx_end)
-
