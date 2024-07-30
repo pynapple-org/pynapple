@@ -608,16 +608,6 @@ class Test_Time_Series_2:
             a.time_support, tsd.time_support
             )
 
-    # def test_loc(self, tsd):
-    #     a = tsd.loc[0:10] # should be 11 elements similar to pandas Series
-    #     b = nap.Tsd(t=tsd.index[0:11], d=tsd.values[0:11])
-    #     assert isinstance(a, nap.Tsd)
-    #     np.testing.assert_array_almost_equal(a.index, b.index)
-    #     np.testing.assert_array_almost_equal(a.values, b.values)
-    #     pd.testing.assert_frame_equal(
-    #         a.time_support, b.time_support
-    #         )
-
     def test_count(self, tsd):
         count = tsd.count(1)
         assert len(count) == 99

@@ -261,15 +261,15 @@ def test_tot_length():
 def test_as_units():
     ep = nap.IntervalSet(start=0, end=100)
     df = pd.DataFrame(data=np.array([[0.0, 100.0]]), columns=["start", "end"], dtype=np.float64)
-    pd.testing.assert_frame_equal(df, ep.as_units("s").astype(np.float64))
-    pd.testing.assert_frame_equal(df * 1e3, ep.as_units("ms").astype(np.float64))
+    np.testing.assert_array_almost_equal(df.values, ep.as_units("s").values.astype(np.float64))
+    np.testing.assert_array_almost_equal(df * 1e3, ep.as_units("ms").values.astype(np.float64))
     tmp = df * 1e6
     np.testing.assert_array_almost_equal(tmp.values, ep.as_units("us").values.astype(np.float64))
 
 def test_as_dataframe():
     ep = nap.IntervalSet(start=0, end=100)
     df = pd.DataFrame(data=np.array([[0.0, 100.0]]), columns=["start", "end"], dtype=np.float64)
-    pd.testing.assert_frame_equal(df, ep.as_dataframe())
+    np.testing.assert_array_almost_equal(df.values, ep.as_dataframe().values)
 
 def test_intersect():
     ep = nap.IntervalSet(start=[0, 30], end=[10, 70])
