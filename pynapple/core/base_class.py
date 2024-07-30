@@ -624,10 +624,9 @@ class Base(abc.ABC):
         Examples
         --------
         >>> import pynapple as nap
-        >>> import numpy as np
 
-        >>> ts = nap.Ts(t = np.arange(1, 5))
-        >>> start, end = 2.2, 3.6
+        >>> ts = nap.Ts(t = [0, 1, 2, 3])
+        >>> start, end = 1.2, 2.6
 
         >>> # slice over a range
         >>> print(ts.get_slice(start, end, mode="closest"))  # returns `slice(1, 3, None)`
