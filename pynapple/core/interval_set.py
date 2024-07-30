@@ -40,7 +40,6 @@
 """
 
 import importlib
-import os
 import warnings
 from numbers import Number
 
@@ -61,6 +60,7 @@ from .time_index import TsIndex
 from .utils import (
     _get_terminal_size,
     _IntervalSetSliceHelper,
+    check_filename,
     convert_to_numpy_array,
     is_array_like,
 )
@@ -643,29 +643,30 @@ class IntervalSet(NDArrayOperatorsMixin):
         RuntimeError
             If filename is not str, path does not exist or filename is a directory.
         """
-        if not isinstance(filename, str):
-            raise RuntimeError("Invalid type; please provide filename as string")
-
-        if os.path.isdir(filename):
-            raise RuntimeError(
-                "Invalid filename input. {} is directory.".format(filename)
-            )
-
-        if not filename.lower().endswith(".npz"):
-            filename = filename + ".npz"
-
-        dirname = os.path.dirname(filename)
-
-        if len(dirname) and not os.path.exists(dirname):
-            raise RuntimeError(
-                "Path {} does not exist.".format(os.path.dirname(filename))
-            )
-
         np.savez(
-            filename,
+            check_filename(filename),
             start=self.values[:, 0],
             end=self.values[:, 1],
             type=np.array(["IntervalSet"], dtype=np.str_),
         )
 
         return
+
+    @classmethod
+    def _from_npz_reader(cls, file):
+        """Load an IntervalSet object from a npz file.
+
+        The file should contain the keys 'start', 'end' and 'type'.
+        The 'type' key should be 'IntervalSet'.
+
+        Parameters
+        ----------
+        file : NPZFile object
+            opened npz file interface.
+
+        Returns
+        -------
+        IntervalSet
+            The IntervalSet object
+        """
+        return cls(start=file["start"], end=file["end"])

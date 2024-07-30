@@ -4,7 +4,6 @@
 
 """
 
-import os
 import warnings
 from collections import UserDict
 from collections.abc import Hashable
@@ -21,7 +20,7 @@ from .config import nap_config
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
-from .utils import _get_terminal_size, convert_to_numpy_array
+from .utils import _get_terminal_size, check_filename, convert_to_numpy_array
 
 
 def _union_intervals(i_sets):
@@ -202,6 +201,10 @@ class TsGroup(UserDict):
         AttributeError
             If the requested attribute is not a metadata column.
         """
+        # avoid infinite recursion when pickling due to
+        # self._metadata.column having attributes '__reduce__', '__reduce_ex__'
+        if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
+            raise AttributeError(name)
         # Check if the requested attribute is part of the metadata
         if name in self._metadata.columns:
             return self._metadata[name]
@@ -1321,23 +1324,7 @@ class TsGroup(UserDict):
         RuntimeError
             If filename is not str, path does not exist or filename is a directory.
         """
-        if not isinstance(filename, str):
-            raise RuntimeError("Invalid type; please provide filename as string")
-
-        if os.path.isdir(filename):
-            raise RuntimeError(
-                "Invalid filename input. {} is directory.".format(filename)
-            )
-
-        if not filename.lower().endswith(".npz"):
-            filename = filename + ".npz"
-
-        dirname = os.path.dirname(filename)
-
-        if len(dirname) and not os.path.exists(dirname):
-            raise RuntimeError(
-                "Path {} does not exist.".format(os.path.dirname(filename))
-            )
+        filename = check_filename(filename)
 
         dicttosave = {"type": np.array(["TsGroup"], dtype=np.str_)}
         for k in self._metadata.columns:
@@ -1379,3 +1366,59 @@ class TsGroup(UserDict):
         np.savez(filename, **dicttosave)
 
         return
+
+    @classmethod
+    def _from_npz_reader(cls, file):
+        """
+        Load a Tsd object from a npz file.
+
+        Parameters
+        ----------
+        file : str
+            The opened npz file
+
+        Returns
+        -------
+        Tsd
+            The Tsd object
+        """
+
+        times = file["t"]
+        index = file["index"]
+        has_data = "d" in file.keys()
+        time_support = IntervalSet(file["start"], file["end"])
+
+        if has_data:
+            data = file["data"]
+
+        if "keys" in file.keys():
+            keys = file["keys"]
+        else:
+            keys = np.unique(index)
+
+        group = {}
+        for key in keys:
+            filtering_index = index == key
+            t = times[filtering_index]
+
+            if has_data:
+                group[key] = Tsd(
+                    t=t,
+                    d=data[filtering_index],
+                    time_support=time_support,
+                )
+            else:
+                group[key] = Ts(t=t, time_support=time_support)
+
+        tsgroup = cls(group, time_support=time_support, bypass_check=True)
+
+        metainfo = {}
+        not_info_keys = {"start", "end", "t", "index", "d", "rate", "keys"}
+
+        for k in set(file.keys()) - not_info_keys:
+            tmp = file[k]
+            if len(tmp) == len(tsgroup):
+                metainfo[k] = tmp
+
+        tsgroup.set_info(**metainfo)
+        return tsgroup

@@ -6,6 +6,7 @@ import os
 import warnings
 from itertools import combinations
 from numbers import Number
+from pathlib import Path
 
 import numpy as np
 
@@ -403,3 +404,35 @@ class _IntervalSetSliceHelper:
                     raise IndexError
             else:
                 raise IndexError
+
+
+def check_filename(filename):
+    """Check if the filename is valid and return the path
+
+    Parameters
+    ----------
+    filename : str or Path
+        The filename
+
+    Returns
+    -------
+    Path
+        The path to the file
+
+    Raises
+    ------
+    RuntimeError
+        If the filename is a directory or the parent does not exist
+    """
+    filename = Path(filename).resolve()
+
+    if filename.is_dir():
+        raise RuntimeError("Invalid filename input. {} is directory.".format(filename))
+
+    filename = filename.with_suffix(".npz")
+
+    parent_folder = filename.parent
+    if not parent_folder.exists():
+        raise RuntimeError("Path {} does not exist.".format(parent_folder))
+
+    return filename

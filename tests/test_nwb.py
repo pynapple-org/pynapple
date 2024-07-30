@@ -86,6 +86,7 @@ def test_NWBFile():
 
     assert nwb.name == "A2929-200711"
     assert isinstance(nwb.io, pynwb.NWBHDF5IO)
+    nwb.close()
 
 
 def test_NWBFile_missing_file():
@@ -95,7 +96,7 @@ def test_NWBFile_missing_file():
 
 
 def test_NWBFile_wrong_input():
-    with pytest.raises(RuntimeError):
+    with pytest.raises(TypeError):
         nap.NWBFile(1)
 
 def test_wrong_key():

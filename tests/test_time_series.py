@@ -1,10 +1,13 @@
 """Tests of time series for `pynapple` package."""
 
-import pynapple as nap
+import pickle
+from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from pathlib import Path
 
+import pynapple as nap
 
 # tsd1 = nap.Tsd(t=np.arange(100), d=np.random.rand(100), time_units="s")
 # tsd2 = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), columns = ['a', 'b', 'c'])
@@ -745,28 +748,23 @@ class Test_Time_Series_2:
             np.testing.assert_array_almost_equal(tsgroup[i].index, t[i])
         
     def test_save_npz(self, tsd):
-        import os
-
-        with pytest.raises(RuntimeError) as e:
+        with pytest.raises(TypeError) as e:
             tsd.save(dict)
-        assert str(e.value) == "Invalid type; please provide filename as string"
 
         with pytest.raises(RuntimeError) as e:
             tsd.save('./')
-        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+        assert str(e.value) == "Invalid filename input. {} is directory.".format(Path("./").resolve())
 
         fake_path = './fake/path'
         with pytest.raises(RuntimeError) as e:
             tsd.save(fake_path+'/file.npz')
-        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+        assert str(e.value) == "Path {} does not exist.".format(Path(fake_path).resolve())
 
         tsd.save("tsd.npz")
-        os.listdir('.')
-        assert "tsd.npz" in os.listdir(".")
+        assert "tsd.npz" in [f.name for f in Path('.').iterdir()]
 
         tsd.save("tsd2")
-        os.listdir('.')
-        assert "tsd2.npz" in os.listdir(".")
+        assert "tsd2.npz" in [f.name for f in Path('.').iterdir()]
 
         file = np.load("tsd.npz")
 
@@ -781,8 +779,8 @@ class Test_Time_Series_2:
         np.testing.assert_array_almost_equal(file['start'], tsd.time_support.start)
         np.testing.assert_array_almost_equal(file['end'], tsd.time_support.end)
 
-        os.remove("tsd.npz")
-        os.remove("tsd2.npz")
+        Path("tsd.npz").unlink()
+        Path("tsd2.npz").unlink()
 
     def test_interpolate(self, tsd):
         
@@ -986,28 +984,23 @@ class Test_Time_Series_3:
         np.testing.assert_array_almost_equal(meantsd.values, tmp.loc[np.arange(1,5)].values)
 
     def test_save_npz(self, tsdframe):
-        import os
-
-        with pytest.raises(RuntimeError) as e:
+        with pytest.raises(TypeError) as e:
             tsdframe.save(dict)
-        assert str(e.value) == "Invalid type; please provide filename as string"
 
         with pytest.raises(RuntimeError) as e:
             tsdframe.save('./')
-        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+        assert str(e.value) == "Invalid filename input. {} is directory.".format(Path("./").resolve())
 
         fake_path = './fake/path'
         with pytest.raises(RuntimeError) as e:
             tsdframe.save(fake_path+'/file.npz')
-        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+        assert str(e.value) == "Path {} does not exist.".format(Path(fake_path).resolve())
 
         tsdframe.save("tsdframe.npz")
-        os.listdir('.')
-        assert "tsdframe.npz" in os.listdir(".")
+        assert "tsdframe.npz" in [f.name for f in Path('.').iterdir()]
 
         tsdframe.save("tsdframe2")
-        os.listdir('.')
-        assert "tsdframe2.npz" in os.listdir(".")
+        assert "tsdframe2.npz" in [f.name for f in Path('.').iterdir()]
 
         file = np.load("tsdframe.npz")
 
@@ -1024,8 +1017,8 @@ class Test_Time_Series_3:
         np.testing.assert_array_almost_equal(file['end'], tsdframe.time_support.end)
         np.testing.assert_array_almost_equal(file['columns'], tsdframe.columns)
 
-        os.remove("tsdframe.npz")
-        os.remove("tsdframe2.npz")
+        Path("tsdframe.npz").unlink()
+        Path("tsdframe2.npz").unlink()
 
     def test_interpolate(self, tsdframe):
         
@@ -1109,28 +1102,23 @@ class Test_Time_Series_4:
         assert isinstance(ts.__str__(), str)
 
     def test_save_npz(self, ts):
-        import os
-
-        with pytest.raises(RuntimeError) as e:
+        with pytest.raises(TypeError) as e:
             ts.save(dict)
-        assert str(e.value) == "Invalid type; please provide filename as string"
 
         with pytest.raises(RuntimeError) as e:
             ts.save('./')
-        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+        assert str(e.value) == "Invalid filename input. {} is directory.".format(Path("./").resolve())
 
         fake_path = './fake/path'
         with pytest.raises(RuntimeError) as e:
             ts.save(fake_path+'/file.npz')
-        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+        assert str(e.value) == "Path {} does not exist.".format(Path(fake_path).resolve())
 
         ts.save("ts.npz")
-        os.listdir('.')
-        assert "ts.npz" in os.listdir(".")
+        assert "ts.npz" in [f.name for f in Path('.').iterdir()]
 
         ts.save("ts2")
-        os.listdir('.')
-        assert "ts2.npz" in os.listdir(".")
+        assert "ts2.npz" in [f.name for f in Path('.').iterdir()]
 
         file = np.load("ts.npz")
 
@@ -1143,8 +1131,8 @@ class Test_Time_Series_4:
         np.testing.assert_array_almost_equal(file['start'], ts.time_support.start)
         np.testing.assert_array_almost_equal(file['end'], ts.time_support.end)
 
-        os.remove("ts.npz")
-        os.remove("ts2.npz")
+        Path("ts.npz").unlink()
+        Path("ts2.npz").unlink()
 
     def test_fillna(self, ts):
         with pytest.raises(AssertionError):
@@ -1350,28 +1338,23 @@ class Test_Time_Series_5:
         np.testing.assert_array_almost_equal(meantsd.values, tmp)
 
     def test_save_npz(self, tsdtensor):
-        import os
-
-        with pytest.raises(RuntimeError) as e:
+        with pytest.raises(TypeError) as e:
             tsdtensor.save(dict)
-        assert str(e.value) == "Invalid type; please provide filename as string"
 
         with pytest.raises(RuntimeError) as e:
             tsdtensor.save('./')
-        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+        assert str(e.value) == "Invalid filename input. {} is directory.".format(Path("./").resolve())
 
         fake_path = './fake/path'
         with pytest.raises(RuntimeError) as e:
             tsdtensor.save(fake_path+'/file.npz')
-        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+        assert str(e.value) == "Path {} does not exist.".format(Path(fake_path).resolve())
 
         tsdtensor.save("tsdtensor.npz")
-        os.listdir('.')
-        assert "tsdtensor.npz" in os.listdir(".")
+        assert "tsdtensor.npz" in [f.name for f in Path('.').iterdir()]
 
         tsdtensor.save("tsdtensor2")
-        os.listdir('.')
-        assert "tsdtensor2.npz" in os.listdir(".")
+        assert "tsdtensor2.npz" in [f.name for f in Path('.').iterdir()]
 
         file = np.load("tsdtensor.npz")
 
@@ -1386,8 +1369,8 @@ class Test_Time_Series_5:
         np.testing.assert_array_almost_equal(file['start'], tsdtensor.time_support.start)
         np.testing.assert_array_almost_equal(file['end'], tsdtensor.time_support.end)
 
-        os.remove("tsdtensor.npz")
-        os.remove("tsdtensor2.npz")
+        Path("tsdtensor.npz").unlink()
+        Path("tsdtensor2.npz").unlink()
 
     def test_interpolate(self, tsdtensor):
         
@@ -1444,3 +1427,25 @@ class Test_Time_Series_5:
         tsdframe2 = tsdtensor.interpolate(ts, ep)
         assert len(tsdframe2) == 0
 
+@pytest.mark.parametrize("obj",
+                         [
+                             nap.Tsd(t=np.arange(10), d=np.random.rand(10), time_units="s"),
+                             nap.TsdFrame(
+                                 t=np.arange(10), d=np.random.rand(10, 3), time_units="s", columns=["a","b","c"]
+                             ),
+                             nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 3, 2), time_units="s"),
+                         ])
+def test_pickling(obj):
+    """Test that pikling works as expected."""
+    # pickle and unpickle ts_group
+    pickled_obj = pickle.dumps(obj)
+    unpickled_obj = pickle.loads(pickled_obj)
+
+    # Ensure time is the same
+    assert np.all(obj.t == unpickled_obj.t)
+
+    # Ensure data is the same
+    assert np.all(obj.d == unpickled_obj.d)
+
+    # Ensure time support is the same
+    assert np.all(obj.time_support == unpickled_obj.time_support)

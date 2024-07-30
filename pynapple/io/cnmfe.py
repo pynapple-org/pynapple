@@ -11,7 +11,7 @@ Support CNMF-E in matlab, inscopix-cnmfe and minian.
 # @Last Modified by:   gviejo
 # @Last Modified time: 2023-11-16 13:14:54
 
-import os
+from pathlib import Path
 
 from pynwb import NWBHDF5IO
 
@@ -43,13 +43,14 @@ class CNMF_E(BaseLoader):
         path : str
             The path to the data.
         """
-        self.basename = os.path.basename(path)
+        path = Path(path)
+        self.basename = path.name
 
         super().__init__(path)
 
-        self.load_cnmfe_nwb(path)
+        self.load_cnmfe_nwb()
 
-    def load_cnmfe_nwb(self, path):
+    def load_cnmfe_nwb(self):
         """
         Load the calcium transient and spatial footprint from nwb
 
@@ -58,13 +59,6 @@ class CNMF_E(BaseLoader):
         path : str
             Path to the session
         """
-        self.nwb_path = os.path.join(path, "pynapplenwb")
-        if not os.path.exists(self.nwb_path):
-            raise RuntimeError("Path {} does not exist.".format(self.nwb_path))
-
-        self.nwbfilename = [f for f in os.listdir(self.nwb_path) if "nwb" in f][0]
-        self.nwbfilepath = os.path.join(self.nwb_path, self.nwbfilename)
-
         io = NWBHDF5IO(self.nwbfilepath, "r")
         nwbfile = io.read()
 
@@ -110,13 +104,14 @@ class Minian(BaseLoader):
         path : str
             The path to the data.
         """
-        self.basename = os.path.basename(path)
+        path = Path(path)
+        self.basename = path.name
 
         super().__init__(path)
 
-        self.load_cnmfe_nwb(path)
+        self.load_cnmfe_nwb()
 
-    def load_cnmfe_nwb(self, path):
+    def load_cnmfe_nwb(self):
         """
         Load the calcium transient and spatial footprint from nwb
 
@@ -125,13 +120,6 @@ class Minian(BaseLoader):
         path : str
             Path to the session
         """
-        self.nwb_path = os.path.join(path, "pynapplenwb")
-        if not os.path.exists(self.nwb_path):
-            raise RuntimeError("Path {} does not exist.".format(self.nwb_path))
-
-        self.nwbfilename = [f for f in os.listdir(self.nwb_path) if "nwb" in f][0]
-        self.nwbfilepath = os.path.join(self.nwb_path, self.nwbfilename)
-
         io = NWBHDF5IO(self.nwbfilepath, "r")
         nwbfile = io.read()
 
@@ -178,13 +166,14 @@ class InscopixCNMFE(BaseLoader):
         path : str
             The path to the data.
         """
-        self.basename = os.path.basename(path)
+        path = Path(path)
+        self.basename = path.name
 
         super().__init__(path)
 
-        self.load_cnmfe_nwb(path)
+        self.load_cnmfe_nwb()
 
-    def load_cnmfe_nwb(self, path):
+    def load_cnmfe_nwb(self):
         """
         Load the calcium transient and spatial footprint from nwb
 
@@ -193,13 +182,6 @@ class InscopixCNMFE(BaseLoader):
         path : str
             Path to the session
         """
-        self.nwb_path = os.path.join(path, "pynapplenwb")
-        if not os.path.exists(self.nwb_path):
-            raise RuntimeError("Path {} does not exist.".format(self.nwb_path))
-
-        self.nwbfilename = [f for f in os.listdir(self.nwb_path) if "nwb" in f][0]
-        self.nwbfilepath = os.path.join(self.nwb_path, self.nwbfilename)
-
         io = NWBHDF5IO(self.nwbfilepath, "r")
         nwbfile = io.read()
 

@@ -1,11 +1,13 @@
 *.nwb
 *.pickle
 *.py.md5
-*.npz
+#*.npz
 /docs/generated/gallery/*.md
 /docs/generated/gallery/*.ipynb
 /docs/generated/gallery/*.py
 /docs/generated/gallery/*.zip
+
+/tests/npzfilestest
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

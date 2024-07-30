@@ -1,10 +1,3 @@
-#!/usr/bin/env python
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-02-02 20:45:09
-# @Last Modified by:   gviejo
-# @Last Modified time: 2023-11-16 13:21:34
-
 """
 > :warning: **DEPRECATED**: This will be removed in version 1.0.0. Check [nwbmatic](https://github.com/pynapple-org/nwbmatic) or [neuroconv](https://github.com/catalystneuro/neuroconv) instead.
 
@@ -12,8 +5,9 @@ Class and functions for loading data processed with the Neurosuite (Klusters, Ne
 
 @author: Guillaume Viejo
 """
-import os
+
 import sys
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -37,14 +31,15 @@ class NeuroSuite(BaseLoader):
         path : str
             The path to the data.
         """
-        self.basename = os.path.basename(path)
+        path = Path(path)
+        self.basename = path.name
         self.time_support = None
 
         super().__init__(path)
 
-        self.load_nwb_spikes(path)
+        self.load_nwb_spikes()
 
-    def load_nwb_spikes(self, path):
+    def load_nwb_spikes(self):
         """
         Read the NWB spikes to extract the spike times.
 
@@ -58,11 +53,6 @@ class NeuroSuite(BaseLoader):
         TYPE
             Description
         """
-        self.nwb_path = os.path.join(path, "pynapplenwb")
-        if not os.path.exists(self.nwb_path):
-            raise RuntimeError("Path {} does not exist.".format(self.nwb_path))
-        self.nwbfilename = [f for f in os.listdir(self.nwb_path) if "nwb" in f][0]
-        self.nwbfilepath = os.path.join(self.nwb_path, self.nwbfilename)
 
         io = NWBHDF5IO(self.nwbfilepath, "r")
         nwbfile = io.read()
@@ -129,16 +119,16 @@ class NeuroSuite(BaseLoader):
             The lfp in a time series format
         """
         if filename is not None:
-            filepath = os.path.join(self.path, filename)
+            filepath = self.path / filename
         else:
-            listdir = os.listdir(self.path)
-            eegfile = [f for f in listdir if f.endswith(extension)]
+            eegfile = list(filepath.glob(f"*{extension}"))
+
             if not len(eegfile):
                 raise RuntimeError(
                     "Path {} contains no {} files;".format(self.path, extension)
                 )
 
-            filepath = os.path.join(self.path, eegfile[0])
+            filepath = eegfile[0]
 
         self.load_neurosuite_xml(self.path)
 
@@ -196,13 +186,14 @@ class NeuroSuite(BaseLoader):
             Contains two columns corresponding to the start and end of the intervals.
 
         """
-        if name:
-            isets = self.load_nwb_intervals(name)
-            if isinstance(isets, nap.IntervalSet):
-                return isets
+        # if name:
+        #     isets = self.load_nwb_intervals(name)
+        #     if isinstance(isets, nap.IntervalSet):
+        #         return isets
+
         if name is not None and path2file is None:
-            path2file = os.path.join(self.path, self.basename + "." + name + ".evt")
-        if path2file is not None:
+            path2file = self.path / (self.basename + "." + name + ".evt")
+        if path2file is not None:  # TODO maybe useless conditional?
             try:
                 # df = pd.read_csv(path2file, delimiter=' ', usecols = [0], header = None)
                 tmp = np.genfromtxt(path2file)[:, 0]
@@ -213,7 +204,7 @@ class NeuroSuite(BaseLoader):
             if name is None:
                 name = path2file.split(".")[-2]
                 print("*** saving file in the nwb as", name)
-            self.save_nwb_intervals(isets, name)
+            # self.save_nwb_intervals(isets, name)
         else:
             raise ValueError("specify a valid path")
         return isets
@@ -244,7 +235,7 @@ class NeuroSuite(BaseLoader):
             )
         ).T.flatten()
 
-        evt_file = os.path.join(self.path, self.basename + extension)
+        evt_file = self.path / (self.basename + extension)
 
         f = open(evt_file, "w")
         for t, n in zip(datatowrite, texttowrite):
@@ -281,7 +272,7 @@ class NeuroSuite(BaseLoader):
             waveform_window = nap.IntervalSet(start=-0.5, end=1, time_units="ms")
 
         spikes = self.spikes
-        if not os.path.exists(self.path):  # check if path exists
+        if not self.path.exists():  # check if path exists
             print("The path " + self.path + " doesn't exist; Exiting ...")
             sys.exit()
 
@@ -304,11 +295,12 @@ class NeuroSuite(BaseLoader):
                 epend = int(epoch.as_units("s")["end"].values[0] * fs)
 
         # Find dat file
-        files = os.listdir(self.path)
-        dat_files = np.sort([f for f in files if "dat" in f and f[0] != "."])
+        # files = os.listdir(self.path)
+        #  dat_files = np.sort([f for f in files if "dat" in f and f[0] != "."])
 
         # Need n_samples collected in the entire recording from dat file to load
-        file = os.path.join(self.path, dat_files[0])
+        # file = self.path / dat_files[0]
+        file = next(self.path.glob("^[^.][^.]*.dat"))
         f = open(
             file, "rb"
         )  # open file to get number of samples collected in the entire recording
