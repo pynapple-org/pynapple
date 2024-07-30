@@ -480,23 +480,25 @@ class Base(abc.ABC):
         # get index of preceding time value
         idx_start = np.searchsorted(self.t, start, side="left")
         if idx_start == len(self.t):
-            idx_start -= 1
+            idx_start -= 1  # make sure the index is not out of bound
 
         if mode == "backward":
-            # subtract one except if self.t[idx_start] is equal to start
-            idx_start -= (self.t[idx_start] > start)
+            # in order to get the index preceding start
+            # subtract one except if self.t[idx_start] is exactly equal to start
+            idx_start -= self.t[idx_start] > start
         elif mode == "closest":
+            # subtract 1 if start is closer to the previous index
             di = np.argmin([self.t[idx_start] - start, np.abs(self.t[idx_start - 1] - start)])
             idx_start -= di
 
         if end is None:
-            if idx_start < 0:  # happens only on backwards
+            if idx_start < 0:  # happens only on backwards if start < self.t[0]
                 return slice(0, 0)
-            elif idx_start == len(self.t) - 1 and mode == "forward":
+            elif idx_start == len(self.t) - 1 and mode == "forward":  # happens only on forward if start >= self.t[-1]
                 return slice(idx_start, idx_start)
             return slice(idx_start, idx_start + 1)
         else:
-            idx_start = max([0, idx_start])
+            idx_start = max([0, idx_start])  # if taking a range set slice index to 0
 
         # convert and get index for end
         end = TsIndex.format_timestamps(np.array([end]), time_unit)[0]
@@ -506,13 +508,14 @@ class Base(abc.ABC):
         idx_end = np.searchsorted(self.t, end, side="left")
         add_if_forward = 0
         if idx_end == len(self.t):
-            add_if_forward = idx_start < len(self.t)
-            idx_end -= 1
+            idx_end -= 1  # make sure the index is not out of bound
+            add_if_forward = 1  # add back the index if forward
 
         if mode == "backward":
-            # remove 1 if self.t[idx_end] is larger than end, except if idx_end is already 0
+            # remove 1 if self.t[idx_end] is larger than end, except if idx_end is 0
             idx_end -= (self.t[idx_end] > end) - int(idx_end == 0)
         elif mode == "closest":
+            # subtract 1 if end is closer to self.t[idx_end - 1]
             di = np.argmin([self.t[idx_end] - end, np.abs(self.t[idx_end - 1] - end)])
             idx_end -= di
         elif mode == "forward" and idx_end == len(self.t) - 1:
