@@ -264,7 +264,7 @@ def test_tsgroup_no_warnings(tmp_path):  # default fixture
             nwbfile = mock_NWBFile()
 
             for k in range(n_units):
-                file_path = Path(f'data_{k}.h5')
+                file_path = tmp_path / Path(f'data_{k}.h5')
                 spike_times = h5py.File(file_path, "r")['spks']
                 nwbfile.add_unit(spike_times=spike_times)
             
