@@ -728,19 +728,18 @@ class IntervalSet(NDArrayOperatorsMixin):
 
         durations = np.round(self.end - self.start, nap_config.time_index_precision)
 
-        new_starts = []
-        new_ends = []
-
-        for i in range(len(self)):
-            if durations[i] > interval_size:
-                tmp = np.arange(self.start[i], self.end[i], interval_size)
-                tmp = np.hstack((tmp, np.array([self.end[i]])))
-                tmp = np.round(tmp, nap_config.time_index_precision)
-                new_starts.append(tmp[0:-1])
-                new_ends.append(tmp[1:])
-
-        new_starts = np.hstack(new_starts)
-        new_ends = np.hstack(new_ends)
+        idxs = np.where(durations > interval_size)[0]
+        size_tmp = (np.ceil((self.end[idxs] - self.start[idxs]) / interval_size)).astype(int) + 1
+        new_starts = np.full(size_tmp.sum() - size_tmp.shape[0], np.nan)
+        new_ends = np.full(size_tmp.sum() - size_tmp.shape[0], np.nan)
+        i0 = 0
+        for cnt, idx in enumerate(idxs):
+            new_starts[i0:i0 + size_tmp[cnt] - 1] = np.arange(self.start[idx], self.end[idx], interval_size)
+            new_ends[i0:i0 + size_tmp[cnt] - 2] = new_starts[i0 + 1: i0 + size_tmp[cnt] - 1]
+            new_ends[i0 + size_tmp[cnt] - 2] = self.end[idx]
+            i0 += size_tmp[cnt] - 1
+        new_starts = np.round(new_starts, nap_config.time_index_precision)
+        new_ends = np.round(new_ends, nap_config.time_index_precision)
 
         durations = np.round(new_ends - new_starts, nap_config.time_index_precision)
         tokeep = durations >= interval_size
