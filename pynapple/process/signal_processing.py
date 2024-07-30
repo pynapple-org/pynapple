@@ -57,7 +57,7 @@ def compute_spectogram(sig, fs=None, ep=None, full_range=False):
     return ret
 
 
-def _morlet(M=1024, ncycles=1.5, scaling=1.0, precision=8):
+def _morlet(M=1024, gaussian_width=1.5, window_length=1.0, precision=8):
     """
     Defines the complex Morlet wavelet kernel.
 
@@ -65,10 +65,10 @@ def _morlet(M=1024, ncycles=1.5, scaling=1.0, precision=8):
     ----------
     M : int
         Length of the wavelet
-    ncycles : float
-        number of wavelet cycles to use. Default is 1.5
-    scaling: float
-        Scaling factor. Default is 1.0
+    gaussian_width : float
+        Defines width of Gaussian to be used in wavelet creation.
+    window_length : float
+        The length of window to be used for wavelet creation.
     precision: int.
         Precision of wavelet to use. Default is 8
 
@@ -79,9 +79,9 @@ def _morlet(M=1024, ncycles=1.5, scaling=1.0, precision=8):
     """
     x = np.linspace(-precision, precision, M)
     return (
-        ((np.pi * ncycles) ** (-0.25))
-        * np.exp(-(x**2) / ncycles)
-        * np.exp(1j * 2 * np.pi * scaling * x)
+        ((np.pi * gaussian_width) ** (-0.25))
+        * np.exp(-(x**2) / gaussian_width)
+        * np.exp(1j * 2 * np.pi * window_length * x)
     )
 
 
@@ -114,7 +114,7 @@ def _create_freqs(freq_start, freq_stop, freq_step=1, log_scaling=False, log_bas
 
 
 def compute_wavelet_transform(
-    sig, freqs, fs=None, n_cycles=1.5, scaling=1.0, precision=16, norm=None
+    sig, freqs, fs=None, gaussian_width=1.5, window_length=1.0, precision=16, norm="l1"
 ):
     """
     Compute the time-frequency representation of a signal using Morlet wavelets.
@@ -129,19 +129,18 @@ def compute_wavelet_transform(
         The `freq_step` is optional, and defaults to 1. Range is inclusive of `freq_stop` value.
     fs : float or None
         Sampling rate, in Hz. Defaults to sig.rate if None is given.
-    n_cycles : float or 1d array
-        Length of the filter, as the number of cycles for each frequency.
-        If 1d array, this defines n_cycles for each frequency.
-    scaling : float
-        Scaling factor.
+    gaussian_width : float
+        Defines width of Gaussian to be used in wavelet creation.
+    window_length : float
+        The length of window to be used for wavelet creation.
     precision: int.
         Precision of wavelet to use. . Defines the number of timepoints to evaluate the Morlet wavelet at.
         Default is 16
-    norm : {None, 'sss', 'amp'}, optional
+    norm : {None, 'l1', 'l2'}, optional
         Normalization method:
         * None - no normalization
-        * 'sss' - divide by the square root of the sum of squares
-        * 'amp' - divide by the sum of amplitudes
+        * 'l1' - divide by the sum of amplitudes
+        * 'l2' - divide by the square root of the sum of squares
 
     Returns
     -------
@@ -164,9 +163,11 @@ def compute_wavelet_transform(
 
     if not isinstance(sig, (nap.Tsd, nap.TsdFrame, nap.TsdTensor)):
         raise TypeError("`sig` must be instance of Tsd, TsdFrame, or TsdTensor")
-    if isinstance(n_cycles, (int, float, np.number)):
-        if n_cycles <= 0:
-            raise ValueError("Number of cycles must be a positive number.")
+    if isinstance(gaussian_width, (int, float, np.number)):
+        if gaussian_width <= 0:
+            raise ValueError("gaussian_width must be a positive number.")
+    if norm is not None and norm not in ["l1", "l2"]:
+        raise ValueError("norm parameter must be 'l1', 'l2', or None.")
 
     if isinstance(freqs, (tuple, list)):
         freqs = _create_freqs(*freqs)
@@ -180,18 +181,18 @@ def compute_wavelet_transform(
         output_shape = (sig.shape[0], len(freqs), *sig.shape[1:])
         sig = sig.reshape((sig.shape[0], np.prod(sig.shape[1:])))
 
-    filter_bank = generate_morlet_filterbank(freqs, fs, n_cycles, scaling, precision)
+    filter_bank = generate_morlet_filterbank(
+        freqs, fs, gaussian_width, window_length, precision
+    )
     convolved_real = sig.convolve(filter_bank.real().values)
     convolved_imag = sig.convolve(filter_bank.imag().values)
     convolved = convolved_real.values + convolved_imag.values * 1j
-    coef = -np.diff(convolved, axis=0)
-    if norm == "sss":
-        coef *= -np.sqrt(scaling) / (freqs / fs)
-    elif norm == "amp":
-        coef *= -scaling / (freqs / fs)
-    coef = np.insert(
-        coef, 1, coef[0, :], axis=0
-    )  # slightly hacky line, necessary to make output correct shape
+    if norm == "l1":
+        coef = convolved / (fs / freqs)
+    elif norm == "l2":
+        coef = convolved / (fs / np.sqrt(freqs))
+    else:
+        coef = convolved
     cwt = np.expand_dims(coef, -1) if len(coef.shape) == 2 else coef
 
     if len(output_shape) == 2:
@@ -204,7 +205,9 @@ def compute_wavelet_transform(
     )
 
 
-def generate_morlet_filterbank(freqs, fs, n_cycles=1.5, scaling=1.0, precision=16):
+def generate_morlet_filterbank(
+    freqs, fs, gaussian_width=1.5, window_length=1.0, precision=16
+):
     """
     Generates a Morlet filterbank using the given frequencies and parameters. Can be used purely for visualization,
     or to convolve with a pynapple Tsd, TsdFrame, or TsdTensor as part of a wavelet decomposition process.
@@ -217,11 +220,10 @@ def generate_morlet_filterbank(freqs, fs, n_cycles=1.5, scaling=1.0, precision=1
         The `freq_step` is optional, and defaults to 1. Range is inclusive of `freq_stop` value.
     fs : float
         Sampling rate, in Hz.
-    n_cycles : float or 1d array
-        Length of the filter, as the number of cycles for each frequency.
-        If 1d array, this defines n_cycles for each frequency.
-    scaling : float
-        Scaling factor.
+    gaussian_width : float
+        Defines width of Gaussian to be used in wavelet creation.
+    window_length : float
+        The length of window to be used for wavelet creation.
     precision: int.
         Precision of wavelet to use. Defines the number of timepoints to evaluate the Morlet wavelet at.
 
@@ -233,13 +235,15 @@ def generate_morlet_filterbank(freqs, fs, n_cycles=1.5, scaling=1.0, precision=1
     if len(freqs) == 0:
         raise ValueError("Given list of freqs cannot be empty.")
     filter_bank = []
-    time_cutoff = 8
-    morlet_f = _morlet(int(2**precision), ncycles=n_cycles, scaling=scaling)
-    x = np.linspace(-time_cutoff, time_cutoff, int(2**precision))
-    int_psi = np.conj(_integrate(morlet_f, x[1] - x[0]))
+    cutoff = 8
+    morlet_f = _morlet(
+        int(2**precision), gaussian_width=gaussian_width, window_length=window_length
+    )
+    x = np.linspace(-cutoff, cutoff, int(2**precision))
+    int_psi = np.conj(morlet_f)
     max_len = -1
     for freq in freqs:
-        scale = scaling / (freq / fs)
+        scale = window_length / (freq / fs)
         j = np.arange(scale * (x[-1] - x[0]) + 1) / (scale * (x[1] - x[0]))
         j = j.astype(int)  # floor
         if j[-1] >= int_psi.size:
@@ -248,7 +252,7 @@ def generate_morlet_filterbank(freqs, fs, n_cycles=1.5, scaling=1.0, precision=1
         if len(int_psi_scale) > max_len:
             max_len = len(int_psi_scale)
             time = np.linspace(
-                -time_cutoff * scaling / freq, time_cutoff * scaling / freq, max_len
+                -cutoff * window_length / freq, cutoff * window_length / freq, max_len
             )
         filter_bank.append(int_psi_scale)
     filter_bank = [
@@ -271,7 +275,7 @@ def _integrate(arr, step):
     arr : np.ndarray
         wave function to be integrated
     step : float
-        Step size of vgiven wave function array
+        Step size of given wave function array
 
     Returns
     -------

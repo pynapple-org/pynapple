@@ -74,16 +74,18 @@ ax[2].set_title("Dummy Signal")
 # Define the frequency of the wavelets in our filter bank
 freqs = np.linspace(1, 25, num=25)
 # Get the filter bank
-filter_bank = nap.generate_morlet_filterbank(freqs, Fs, n_cycles=1.5, scaling=1.0)
+filter_bank = nap.generate_morlet_filterbank(
+    freqs, Fs, gaussian_width=1.5, window_length=1.0
+)
 
 
 # %%
 # Lets plot it.
 def plot_filterbank(filter_bank, freqs, title):
     fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 7))
-    offset = 0.2
+    offset = 1.0
     for f_i in range(filter_bank.shape[1]):
-        ax.plot(filter_bank[:, f_i] + offset * f_i)
+        ax.plot(filter_bank[:, f_i].real() + offset * f_i)
         ax.text(
             -2.3, offset * f_i, f"{np.round(freqs[f_i], 2)}Hz", va="center", ha="left"
         )
@@ -95,7 +97,7 @@ def plot_filterbank(filter_bank, freqs, title):
     ax.set_title(title)
 
 
-title = "Morlet Wavelet Filter Bank (Real Components): n_cycles=1.5, scaling=1.0"
+title = "Morlet Wavelet Filter Bank (Real Components): gaussian_width=1.5, window_length=1.0"
 plot_filterbank(filter_bank, freqs, title)
 
 # %%
@@ -108,7 +110,9 @@ plot_filterbank(filter_bank, freqs, title)
 # scalogram.
 
 # Compute the wavelet transform using the parameters above
-mwt = nap.compute_wavelet_transform(sig, fs=Fs, freqs=freqs, n_cycles=1.5, scaling=1.0)
+mwt = nap.compute_wavelet_transform(
+    sig, fs=Fs, freqs=freqs, gaussian_width=1.5, window_length=1.0
+)
 
 
 # %%
@@ -217,13 +221,14 @@ ax[0].spines["bottom"].set_visible(False)
 ax[1].set_xlabel("Time (s)")
 [ax[i].set_ylabel("Signal") for i in range(2)]
 
+
 # %%
 # ***
 # Adding ALL the Oscillations!
 # ------------------
 # Let's now add together the real components of all frequency bands to recreate a version of the original signal.
 
-combined_oscillations = mwt.sum(axis=1)
+combined_oscillations = mwt.sum(axis=1).real()
 
 # %%
 # Lets plot it.
@@ -249,19 +254,18 @@ ax.legend()
 # underlying wavelets.
 
 freqs = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
-scales = [1.0, 2.0, 3.0]
-cycles = [1.0, 2.0, 3.0]
+window_lengths = [1.0, 2.0, 3.0]
+gaussian_width = [1.0, 2.0, 3.0]
 
 fig, ax = plt.subplots(
-    len(scales), len(cycles), constrained_layout=True, figsize=(10, 5)
+    len(window_lengths), len(gaussian_width), constrained_layout=True, figsize=(10, 8)
 )
-for row_i, sc in enumerate(scales):
-    for col_i, cyc in enumerate(cycles):
+for row_i, wl in enumerate(window_lengths):
+    for col_i, gw in enumerate(gaussian_width):
         filter_bank = nap.generate_morlet_filterbank(
-            freqs, 1000, n_cycles=cyc, scaling=sc
+            freqs, 1000, gaussian_width=gw, window_length=wl, precision=12
         )
-        ax[row_i, col_i].plot(filter_bank[:, 0])
-        ax[row_i, col_i].set_xlim(-15, 15)
+        ax[row_i, col_i].plot(filter_bank[:, 0].real())
         ax[row_i, col_i].set_xlabel("Time (s)")
         ax[row_i, col_i].set_yticks([])
         [
@@ -270,14 +274,15 @@ for row_i, sc in enumerate(scales):
         ]
         if col_i != 0:
             ax[row_i, col_i].get_yaxis().set_visible(False)
-for col_i, cyc in enumerate(cycles):
-    ax[0, col_i].set_title(f"n_cycles={cyc}", fontsize=10)
-for row_i, scl in enumerate(scales):
-    ax[row_i, 0].set_ylabel(f"scaling={scl}", fontsize=10)
+for col_i, gw in enumerate(gaussian_width):
+    ax[0, col_i].set_title(f"gaussian_width={gw}", fontsize=10)
+for row_i, wl in enumerate(window_lengths):
+    ax[row_i, 0].set_ylabel(f"window_length={wl}", fontsize=10)
 fig.suptitle("Parametrization Visualization")
 
+
 # %%
-# Increasing n_cycles increases the number of wavelet cycles present in the oscillations (cycles) within the
+# Increasing time_decay increases the number of wavelet cycles present in the oscillations (cycles) within the
 # Gaussian window of the Morlet wavelet. It essentially controls the trade-off between time resolution
 # and frequency resolution.
 #
@@ -286,23 +291,27 @@ fig.suptitle("Parametrization Visualization")
 
 # %%
 # ***
-# Effect of n_cycles
+# Effect of time_decay
 # ------------------
-# Let's increase n_cycles to 7.5 and see the effect on the resultant filter bank.
+# Let's increase time_decay to 7.5 and see the effect on the resultant filter bank.
 
 freqs = np.linspace(1, 25, num=25)
-filter_bank = nap.generate_morlet_filterbank(freqs, 1000, n_cycles=7.5, scaling=1.0)
+filter_bank = nap.generate_morlet_filterbank(
+    freqs, 1000, gaussian_width=7.5, window_length=1.0
+)
 
 plot_filterbank(
     filter_bank,
     freqs,
-    "Morlet Wavelet Filter Bank (Real Components): n_cycles=7.5, scaling=1.0",
+    "Morlet Wavelet Filter Bank (Real Components): gaussian_width=7.5, center_frequency=1.0",
 )
 
 # %%
 # ***
 # Let's see what effect this has on the Wavelet Scalogram which is generated...
-mwt = nap.compute_wavelet_transform(sig, fs=Fs, freqs=freqs, n_cycles=7.5, scaling=1.0)
+mwt = nap.compute_wavelet_transform(
+    sig, fs=Fs, freqs=freqs, gaussian_width=7.5, window_length=1.0
+)
 
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 6))
 plot_timefrequency(
@@ -317,7 +326,7 @@ ax.set_title("Wavelet Decomposition Scalogram")
 # ***
 # And let's see if that has an effect on the reconstructed version of the signal
 
-combined_oscillations = mwt.sum(axis=1)
+combined_oscillations = mwt.sum(axis=1).real()
 
 # %%
 # Lets plot it.
@@ -343,19 +352,23 @@ ax.legend()
 # Let's increase scaling to 2.0 and see the effect on the resultant filter bank.
 
 freqs = np.linspace(1, 25, num=25)
-filter_bank = nap.generate_morlet_filterbank(freqs, 1000, n_cycles=7.5, scaling=2.0)
+filter_bank = nap.generate_morlet_filterbank(
+    freqs, 1000, gaussian_width=7.5, window_length=2.0
+)
 
 plot_filterbank(
     filter_bank,
     freqs,
-    "Morlet Wavelet Filter Bank (Real Components): n_cycles=7.5, scaling=2.0",
+    "Morlet Wavelet Filter Bank (Real Components): gaussian_width=7.5, center_frequency=2.0",
 )
 
 # %%
 # ***
 # Let's see what effect this has on the Wavelet Scalogram which is generated...
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 6))
-mwt = nap.compute_wavelet_transform(sig, fs=Fs, freqs=freqs, n_cycles=7.5, scaling=2.0)
+mwt = nap.compute_wavelet_transform(
+    sig, fs=Fs, freqs=freqs, gaussian_width=7.5, window_length=2.0
+)
 plot_timefrequency(
     mwt.index.values[:],
     freqs[:],
@@ -368,7 +381,7 @@ ax.set_title("Wavelet Decomposition Scalogram")
 # ***
 # And let's see if that has an effect on the reconstructed version of the signal
 
-combined_oscillations = mwt.sum(axis=1)
+combined_oscillations = mwt.sum(axis=1).real()
 
 # %%
 # Lets plot it.

@@ -45,10 +45,10 @@ def test_compute_spectogram():
 
 
 def test_compute_wavelet_transform():
-    t = np.linspace(0, 1, 1000)
+    t = np.linspace(0, 1, 1001)
     sig = nap.Tsd(
         d=np.sin(t * 50 * np.pi * 2)
-        * np.interp(np.linspace(0, 1, 1000), [0, 0.5, 1], [0, 1, 0]),
+        * np.interp(np.linspace(0, 1, 1001), [0, 0.5, 1], [0, 1, 0]),
         t=t,
     )
     freqs = np.linspace(10, 100, 10)
@@ -60,10 +60,10 @@ def test_compute_wavelet_transform():
         == 500
     )
 
-    t = np.linspace(0, 1, 1000)
+    t = np.linspace(0, 1, 1001)
     sig = nap.Tsd(
         d=np.sin(t * 10 * np.pi * 2)
-        * np.interp(np.linspace(0, 1, 1000), [0, 0.5, 1], [0, 1, 0]),
+        * np.interp(np.linspace(0, 1, 1001), [0, 0.5, 1], [0, 1, 0]),
         t=t,
     )
     freqs = np.linspace(10, 100, 10)
@@ -94,7 +94,7 @@ def test_compute_wavelet_transform():
     t = np.linspace(0, 1, 1000)
     sig = nap.Tsd(d=np.sin(t * 20 * np.pi * 2), t=t)
     freqs = np.linspace(10, 100, 10)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs, norm="sss")
+    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs, norm="l1")
     mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
     assert mpf == 20
     assert mwt.shape == (1000, 10)
@@ -102,7 +102,15 @@ def test_compute_wavelet_transform():
     t = np.linspace(0, 1, 1000)
     sig = nap.Tsd(d=np.sin(t * 20 * np.pi * 2), t=t)
     freqs = np.linspace(10, 100, 10)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs, norm="amp")
+    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs, norm="l2")
+    mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
+    assert mpf == 20
+    assert mwt.shape == (1000, 10)
+
+    t = np.linspace(0, 1, 1000)
+    sig = nap.Tsd(d=np.sin(t * 20 * np.pi * 2), t=t)
+    freqs = np.linspace(10, 100, 10)
+    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs, norm=None)
     mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
     assert mpf == 20
     assert mwt.shape == (1000, 10)
@@ -139,5 +147,9 @@ def test_compute_wavelet_transform():
     assert mwt.shape == (1024, 10, 4, 2)
 
     with pytest.raises(ValueError) as e_info:
-        nap.compute_wavelet_transform(sig, fs=None, freqs=freqs, n_cycles=-1.5)
-    assert str(e_info.value) == "Number of cycles must be a positive number."
+        nap.compute_wavelet_transform(sig, fs=None, freqs=freqs, gaussian_width=-1.5)
+    assert str(e_info.value) == "gaussian_width must be a positive number."
+
+
+if __name__ == "__main__":
+    test_compute_wavelet_transform()
