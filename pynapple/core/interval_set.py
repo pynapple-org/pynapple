@@ -332,6 +332,11 @@ class IntervalSet(NDArrayOperatorsMixin):
         Ts
             The starts of the IntervalSet
         """
+        warnings.warn(
+            "starts is a deprecated function. It will be removed in future versions",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         time_series = importlib.import_module(".time_series", "pynapple.core")
         return time_series.Ts(t=self.values[:, 0])
 
@@ -344,6 +349,11 @@ class IntervalSet(NDArrayOperatorsMixin):
         Ts
             The ends of the IntervalSet
         """
+        warnings.warn(
+            "ends is a deprecated function. It will be removed in future versions",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         time_series = importlib.import_module(".time_series", "pynapple.core")
         return time_series.Ts(t=self.values[:, 1])
 
@@ -701,7 +711,7 @@ class IntervalSet(NDArrayOperatorsMixin):
         if not isinstance(interval_size, Number):
             raise IOError("Argument interval_size should of type float or int")
 
-        if not interval_size>0:
+        if not interval_size > 0:
             raise IOError("Argument interval_size should be strictly larger than 0")
 
         if not isinstance(time_units, str):
