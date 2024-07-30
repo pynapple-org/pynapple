@@ -514,13 +514,17 @@ class Base(abc.ABC):
 
         """
         if not isinstance(start, Number):
-            raise ValueError(f"'start' must be an int or a float. Type {type(start)} provided instead!")
+            raise ValueError(
+                f"'start' must be an int or a float. Type {type(start)} provided instead!"
+            )
         # convert and get index for start
         start = TsIndex.format_timestamps(np.array([start]), time_unit)[0]
 
         # check end
         if end is not None and not isinstance(end, Number):
-            raise ValueError(f"'end' must be an int or a float. Type {type(end)} provided instead!")
+            raise ValueError(
+                f"'end' must be an int or a float. Type {type(end)} provided instead!"
+            )
 
         # get index of preceding time value
         idx_start = np.searchsorted(self.t, start, side="left")
@@ -533,13 +537,17 @@ class Base(abc.ABC):
             idx_start -= self.t[idx_start] > start
         elif mode == "closest":
             # subtract 1 if start is closer to the previous index
-            di = np.argmin([self.t[idx_start] - start, np.abs(self.t[idx_start - 1] - start)])
+            di = np.argmin(
+                [self.t[idx_start] - start, np.abs(self.t[idx_start - 1] - start)]
+            )
             idx_start -= di
 
         if end is None:
             if idx_start < 0:  # happens only on backwards if start < self.t[0]
                 return slice(0, 0)
-            elif idx_start == len(self.t) - 1 and mode == "forward":  # happens only on forward if start >= self.t[-1]
+            elif (
+                idx_start == len(self.t) - 1 and mode == "forward"
+            ):  # happens only on forward if start >= self.t[-1]
                 return slice(idx_start, idx_start)
             return slice(idx_start, idx_start + 1)
         else:
