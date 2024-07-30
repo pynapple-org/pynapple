@@ -548,9 +548,8 @@ def test_split_errors():
     end = [5, 15, 20, 40]
     ep = nap.IntervalSet(start=start, end=end)
 
-    with pytest.raises(IOError) as e:
+    with pytest.raises(IOError,  match="Argument interval_size should of type float or int"):
         ep.split('a')
-    assert str(e.value) == "Argument interval_size should of type float or int"
 
     with pytest.raises(IOError) as e:
         ep.split(0)
