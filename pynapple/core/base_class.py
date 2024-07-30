@@ -481,7 +481,7 @@ class Base(abc.ABC):
             The mode for slicing. Can be "forward", "backward", or "closest". Defaults to "closest".
         time_unit : str, optional
             The time unit for the start and end values. Defaults to "s" (seconds).
-        n_points : int
+        n_points : int, optional
             Max number of time point per the slice. This will be used to calculate a step size for the slice.
 
         Returns
@@ -587,3 +587,40 @@ class Base(abc.ABC):
                 idx_end -= rounding
 
         return slice(idx_start, idx_end, step)
+
+    def get_slice(self, start, end=None, mode="closest", time_unit="s"):
+        """
+        Get a slice from the time series data based on the start and end values with the specified mode.
+
+        Parameters
+        ----------
+        start : int or float
+            The starting value for the slice.
+        end : int or float, optional
+            The ending value for the slice. Defaults to None.
+        mode : str, optional
+            The mode for slicing. Can be "forward", "backward", or "closest". Defaults to "closest".
+        time_unit : str, optional
+            The time unit for the start and end values. Defaults to "s" (seconds).
+
+        Returns
+        -------
+        slice : slice
+            - If mode = "closest":
+                the default mode, starts/ends the slice with indices closest to the start/end time provided
+            - If mode = "backward":
+                starts/ends the slice with the indices preceding the start/end time provided
+            - If mode = "forward":
+                starts/ends the slice with the indices following the start/end time provided
+
+
+        Raises
+        ------
+        ValueError
+            - If start or end is not a number.
+            - If start is greater than end.
+
+        """
+        return self._get_slice(
+            start, end=end, mode=mode, n_points=None, time_unit=time_unit
+        )
