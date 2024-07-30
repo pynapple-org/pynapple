@@ -333,7 +333,7 @@ class IntervalSet(NDArrayOperatorsMixin):
             The starts of the IntervalSet
         """
         time_series = importlib.import_module(".time_series", "pynapple.core")
-        return time_series.Ts(t=self.values[:, 0], time_support=self)
+        return time_series.Ts(t=self.values[:, 0])
 
     @property
     def ends(self):
@@ -345,7 +345,7 @@ class IntervalSet(NDArrayOperatorsMixin):
             The ends of the IntervalSet
         """
         time_series = importlib.import_module(".time_series", "pynapple.core")
-        return time_series.Ts(t=self.values[:, 1], time_support=self)
+        return time_series.Ts(t=self.values[:, 1])
 
     @property
     def loc(self):
@@ -673,33 +673,39 @@ class IntervalSet(NDArrayOperatorsMixin):
 
     def split(self, interval_size, time_units="s"):
         """Split `IntervalSet` to a new `IntervalSet` with each interval being of size `interval_size`.
-        
+
         Used mostly for chunking very large dataset or looping throught multiple epoch of same duration.
 
         This function skips the epochs that are shorter than `interval_size`.
-        
+
+        Note that intervals are strictly non-overlapping in pynapple. One microsecond is removed from contiguous intervals.
+
         Parameters
         ----------
         interval_size : Number
             Description
         time_units : str, optional
             time units for the `interval_size` ('us', 'ms', 's' [default])
-        
+
         Returns
         -------
         IntervalSet
             New `IntervalSet` with equal sized intervals
-        
+
         Raises
         ------
         IOError
-        Description
+            If `interval_size` is not a Number or is below 0
+            If `time_units` is not a string
         """
         if not isinstance(interval_size, Number):
             raise IOError("Argument interval_size should of type float or int")
 
+        if not interval_size>0:
+            raise IOError("Argument interval_size should be strictly larger than 0")
+
         if not isinstance(time_units, str):
-            raise IOError("Argument time_units should be of type float or int")
+            raise IOError("Argument time_units should be of type str")
 
         if len(self) == 0:
             return IntervalSet(start=[], end=[])
@@ -708,27 +714,30 @@ class IntervalSet(NDArrayOperatorsMixin):
             np.array((interval_size,), dtype=np.float64).ravel(), time_units
         )[0]
 
-        durations = self.end - self.start
+        interval_size = np.round(interval_size, nap_config.time_index_precision)
+
+        durations = np.round(self.end - self.start, nap_config.time_index_precision)
 
         new_starts = []
         new_ends = []
 
         for i in range(len(self)):
-            if durations[i] > interval_size:                
+            if durations[i] > interval_size:
                 tmp = np.arange(self.start[i], self.end[i], interval_size)
                 tmp = np.hstack((tmp, np.array([self.end[i]])))
-                
+                tmp = np.round(tmp, nap_config.time_index_precision)
                 new_starts.append(tmp[0:-1])
                 new_ends.append(tmp[1:])
-        
+
         new_starts = np.hstack(new_starts)
         new_ends = np.hstack(new_ends)
 
-        tokeep = np.round(new_ends - new_starts, nap_config.time_index_precision)
+        durations = np.round(new_ends - new_starts, nap_config.time_index_precision)
+        tokeep = durations >= interval_size
+        new_starts = new_starts[tokeep]
+        new_ends = new_ends[tokeep]
 
-        new_iset = IntervalSet(new_starts, new_ends).drop_short_intervals(interval_size-1e-6)
+        # Removing 1 microsecond to have strictly non-overlapping intervals for intervals coming from the same epoch
+        new_ends -= 1e-6
 
-        return new_iset
-
-
-
+        return IntervalSet(new_starts, new_ends)
