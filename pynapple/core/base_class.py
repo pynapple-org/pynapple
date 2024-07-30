@@ -482,7 +482,8 @@ class Base(abc.ABC):
         time_unit : str, optional
             The time unit for the start and end values. Defaults to "s" (seconds).
         n_points : int, optional
-            Max number of time point per the slice. This will be used to calculate a step size for the slice.
+            Number of time point that will result from applying the slice. This parameter is used to
+            calculate a step size for the slice.
 
         Returns
         -------
