@@ -1465,10 +1465,10 @@ def test_pickling(obj):
     ]
 )
 @pytest.mark.parametrize("time_unit", ["s", "ms",  "us"])
-def test_get_index_value_types(start, end, time_unit, expectation):
+def test_get_slice_value_types(start, end, time_unit, expectation):
     ts = nap.Ts(t=np.array([1, 2, 3, 4]))
     with expectation:
-        ts.get_slice(start, end, time_unit=time_unit)
+        ts._get_slice(start, end, time_unit=time_unit)
 
 
 @pytest.mark.parametrize(
@@ -1526,9 +1526,67 @@ def test_get_index_value_types(start, end, time_unit, expectation):
                              nap.TsdFrame(t=np.array([1, 2, 3, 4]), d=np.array([1, 2, 3, 4])[:, None]),
                              nap.TsdTensor(t=np.array([1, 2, 3, 4]), d=np.array([1, 2, 3, 4])[:, None, None])
                          ])
-def test_get_index_value(start, end, mode, expected_slice, expected_array, ts):
-    out_slice = ts.get_slice(start, end=end, mode=mode)
+def test_get_slice_value(start, end, mode, expected_slice, expected_array, ts):
+    out_slice = ts._get_slice(start, end=end, mode=mode)
     out_array = ts.t[out_slice]
     assert out_slice == expected_slice
     assert np.all(out_array == expected_array)
 
+@pytest.mark.parametrize(
+    "end, n_points, expectation",
+    [
+        (1, 3, does_not_raise()),
+        (None, 3, pytest.raises(ValueError, match="'n_points' can be used only when")),
+
+    ]
+)
+@pytest.mark.parametrize("time_unit", ["s", "ms",  "us"])
+@pytest.mark.parametrize("mode", ["closest", "backward",  "forward"])
+def test_get_slice_n_points(end, n_points, expectation, time_unit, mode):
+    ts = nap.Ts(t=np.array([1, 2, 3, 4]))
+    with expectation:
+        ts._get_slice(1, end, n_points=n_points, mode=mode)
+
+
+
+@pytest.mark.parametrize(
+    "start, end, n_points, mode, expected_slice, expected_array",
+    [
+        # smaller than n_points
+        (1, 2, 2, "forward", slice(0, 1), np.array([1])),
+        (1, 2, 2, "backward", slice(0, 1), np.array([1])),
+        (1, 2, 2, "closest", slice(0, 1), np.array([1])),
+        # larger than n_points
+        (1, 5, 2, "forward", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5, 2, "backward", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5, 2, "closest", slice(0, 4, 2), np.array([1, 3])),
+        # larger than n_points with rounding down
+        (1, 5.2, 2, "forward", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5.2, 2, "backward", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5.2, 2, "closest", slice(0, 4, 2), np.array([1, 3])),
+        # larger than n_points with rounding down
+        (1, 6.2, 2, "forward", slice(0, 6, 3), np.array([1, 4])),
+        (1, 6.2, 2, "backward", slice(0, 4, 2), np.array([1, 3])),
+        (1, 6.2, 2, "closest", slice(0, 4, 2), np.array([1, 3])),
+        # larger than n_points with rounding up
+        (1, 5.6, 2, "forward", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5.6, 2, "backward", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5.6, 2, "closest", slice(0, 4, 2), np.array([1, 3])),
+        # larger than n_points with rounding up
+        (1, 6.6, 2, "forward", slice(0, 6, 3), np.array([1, 4])),
+        (1, 6.6, 2, "backward", slice(0, 4, 2), np.array([1, 3])),
+        (1, 6.6, 2, "closest", slice(0, 6, 3), np.array([1, 4])),
+    ]
+)
+@pytest.mark.parametrize("ts",
+                         [
+                             nap.Ts(t=np.arange(1, 10)),
+                             nap.Tsd(t=np.arange(1, 10), d=np.arange(1, 10)),
+                             nap.TsdFrame(t=np.arange(1, 10), d=np.arange(1, 10)[:, None]),
+                             nap.TsdTensor(t=np.arange(1, 10), d=np.arange(1, 10)[:, None, None])
+                         ])
+def test_get_slice_value(start, end, n_points, mode, expected_slice, expected_array, ts):
+    out_slice = ts._get_slice(start, end=end, mode=mode, n_points=n_points)
+    out_array = ts.t[out_slice]
+    assert out_slice == expected_slice
+    assert np.all(out_array == expected_array)

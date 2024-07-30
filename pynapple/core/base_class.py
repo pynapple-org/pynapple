@@ -467,7 +467,7 @@ class Base(abc.ABC):
         iset = IntervalSet(start=file["start"], end=file["end"])
         return cls(time_support=iset, **kwargs)
 
-    def get_slice(self, start, end=None, mode="closest", time_unit="s"):
+    def _get_slice(self, start, end=None, mode="closest", n_points=None, time_unit="s"):
         """
         Get a slice from the time series data based on the start and end values with the specified mode.
 
@@ -481,6 +481,8 @@ class Base(abc.ABC):
             The mode for slicing. Can be "forward", "backward", or "closest". Defaults to "closest".
         time_unit : str, optional
             The time unit for the start and end values. Defaults to "s" (seconds).
+        n_points : int
+            Max number of time point per the slice. This will be used to calculate a step size for the slice.
 
         Returns
         -------
@@ -517,6 +519,10 @@ class Base(abc.ABC):
             raise ValueError(
                 f"'start' must be an int or a float. Type {type(start)} provided instead!"
             )
+
+        if end is None and n_points:
+            raise ValueError("'n_points' can be used only when 'end' is specified!")
+
         # convert and get index for start
         start = TsIndex.format_timestamps(np.array([start]), time_unit)[0]
 
@@ -572,4 +578,12 @@ class Base(abc.ABC):
         elif mode == "forward" and idx_end == len(self.t) - 1:
             idx_end += add_if_forward  # add one if idx_start < len(self.t)
 
-        return slice(idx_start, idx_end)
+        step = None
+        if n_points:
+            tot_tps = idx_end - idx_start
+            if tot_tps > n_points:
+                rounding = tot_tps % n_points
+                step = tot_tps // n_points
+                idx_end -= rounding
+
+        return slice(idx_start, idx_end, step)
