@@ -621,6 +621,23 @@ class Base(abc.ABC):
             - If start or end is not a number.
             - If start is greater than end.
 
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+
+        >>> ts = nap.Ts(t = np.arange(1, 5))
+        >>> start, end = 2.2, 3.6
+
+        >>> # slice over a range
+        >>> print(ts.get_slice(start, end, mode="closest"))  # returns `slice(1, 3, None)`
+        >>> print(ts.get_slice(start, end, mode="backward"))  # returns `slice(1, 2, None)`
+        >>> print(ts.get_slice(start, end, mode="forward"))  # returns `slice(2, 3, None)`
+
+        >>> # slice a single value
+        >>> print(ts.get_slice(start, None, mode="closest"))  # returns `slice(1, 2, None)`
+        >>> print(ts.get_slice(start, None, mode="backward")) # returns `slice(1, 2, None)`
+        >>> print(ts.get_slice(start, None, mode="forward")) # returns `slice(2, 3, None)`
         """
         return self._get_slice(
             start, end=end, mode=mode, n_points=None, time_unit=time_unit
