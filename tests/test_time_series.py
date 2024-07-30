@@ -1647,7 +1647,7 @@ def test_get_slice_value(start, end, n_points, mode, expected_slice, expected_ar
                              nap.TsdTensor(t=np.array([1, 2, 3, 4]), d=np.array([1, 2, 3, 4])[:, None, None])
                          ])
 def test_get_slice_public(start, end, mode, expected_slice, expected_array, ts):
-    out_slice = ts._get_slice(start, end=end, mode=mode)
+    out_slice = ts.get_slice(start, end=end, mode=mode)
     out_array = ts.t[out_slice]
     assert out_slice == expected_slice
     assert np.all(out_array == expected_array)
