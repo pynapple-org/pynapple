@@ -537,9 +537,7 @@ class Base(abc.ABC):
             idx_start -= self.t[idx_start] > start
         elif mode == "closest":
             # subtract 1 if start is closer to the previous index
-            di = np.argmin(
-                [self.t[idx_start] - start, np.abs(self.t[idx_start - 1] - start)]
-            )
+            di = self.t[idx_start] - start > np.abs(self.t[idx_start - 1] - start)
             idx_start -= di
 
         if end is None:
@@ -569,7 +567,7 @@ class Base(abc.ABC):
             idx_end -= (self.t[idx_end] > end) - int(idx_end == 0)
         elif mode == "closest":
             # subtract 1 if end is closer to self.t[idx_end - 1]
-            di = np.argmin([self.t[idx_end] - end, np.abs(self.t[idx_end - 1] - end)])
+            di = self.t[idx_end] - end > np.abs(self.t[idx_end - 1] - end)
             idx_end -= di
         elif mode == "forward" and idx_end == len(self.t) - 1:
             idx_end += add_if_forward  # add one if idx_start < len(self.t)
