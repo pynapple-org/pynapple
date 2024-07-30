@@ -606,13 +606,13 @@ class Base(abc.ABC):
         Returns
         -------
         slice : slice
+            A slice determining the start and end indices, with unit step.
             - If mode = "closest":
-                the default mode, starts/ends the slice with indices closest to the start/end time provided
+                Starts/ends the slice with indices closest to the start/end time provided.
             - If mode = "backward":
-                starts/ends the slice with the indices preceding the start/end time provided
+                Starts/ends the slice with the indices preceding the start/end time provided.
             - If mode = "forward":
-                starts/ends the slice with the indices following the start/end time provided
-
+                Starts/ends the slice with the indices following the start/end time provided.
 
         Raises
         ------
