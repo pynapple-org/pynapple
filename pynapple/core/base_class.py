@@ -466,3 +466,178 @@ class Base(abc.ABC):
         }
         iset = IntervalSet(start=file["start"], end=file["end"])
         return cls(time_support=iset, **kwargs)
+
+    def _get_slice(self, start, end=None, mode="closest", n_points=None, time_unit="s"):
+        """
+        Get a slice from the time series data based on the start and end values with the specified mode.
+
+        Parameters
+        ----------
+        start : int or float
+            The starting value for the slice.
+        end : int or float, optional
+            The ending value for the slice. Defaults to None.
+        mode : str, optional
+            The mode for slicing. Can be "forward", "backward", or "closest". Defaults to "closest".
+        time_unit : str, optional
+            The time unit for the start and end values. Defaults to "s" (seconds).
+        n_points : int, optional
+            Number of time point that will result from applying the slice. This parameter is used to
+            calculate a step size for the slice.
+
+        Returns
+        -------
+        slice : slice
+            If end is not provided:
+                - For mode == "backward":
+                    - An empty slice for start < self.t[0]
+                    - slice(idx, idx+1) with self.t[idx] <= start < self.t[idx+1]
+                - For mode == "forward":
+                    - An empty slice for start >= self.t[-1]
+                    - slice(idx, idx+1) with self.t[idx-1] < start <= self.t[idx]
+                - For mode == "closest":
+                    - slice(idx, idx+1) with the closest index to start
+            If end is provided:
+                - For mode == "backward":
+                    - An empty slice if end < self.t[0]
+                    - slice(idx_start, idx_end) with self.t[idx_start] <= start < self.t[idx_start+1] and
+                    self.t[idx_end] <= end < self.t[idx_end+1]
+                - For mode == "forward":
+                    - An empty slice if start > self.t[-1]
+                     - slice(idx_start, idx_end) with self.t[idx_start-1] <= start < self.t[idx_start] and
+                    self.t[idx_end-1] <= end < self.t[idx_end]
+                - For mode == "closest":
+                    - slice(idx_start, idx_end) with the closest indices to start and end
+
+        Raises
+        ------
+        ValueError
+            - If start or end is not a number.
+            - If start is greater than end.
+
+        """
+        if not isinstance(start, Number):
+            raise ValueError(
+                f"'start' must be an int or a float. Type {type(start)} provided instead!"
+            )
+
+        if end is None and n_points:
+            raise ValueError("'n_points' can be used only when 'end' is specified!")
+
+        # convert and get index for start
+        start = TsIndex.format_timestamps(np.array([start]), time_unit)[0]
+
+        # check end
+        if end is not None and not isinstance(end, Number):
+            raise ValueError(
+                f"'end' must be an int or a float. Type {type(end)} provided instead!"
+            )
+
+        # get index of preceding time value
+        idx_start = np.searchsorted(self.t, start, side="left")
+        if idx_start == len(self.t):
+            idx_start -= 1  # make sure the index is not out of bound
+
+        if mode == "backward":
+            # in order to get the index preceding start
+            # subtract one except if self.t[idx_start] is exactly equal to start
+            idx_start -= self.t[idx_start] > start
+        elif mode == "closest":
+            # subtract 1 if start is closer to the previous index
+            di = self.t[idx_start] - start > np.abs(self.t[idx_start - 1] - start)
+            idx_start -= di
+
+        if end is None:
+            if idx_start < 0:  # happens only on backwards if start < self.t[0]
+                return slice(0, 0)
+            elif (
+                idx_start == len(self.t) - 1 and mode == "forward"
+            ):  # happens only on forward if start >= self.t[-1]
+                return slice(idx_start, idx_start)
+            return slice(idx_start, idx_start + 1)
+        else:
+            idx_start = max([0, idx_start])  # if taking a range set slice index to 0
+
+        # convert and get index for end
+        end = TsIndex.format_timestamps(np.array([end]), time_unit)[0]
+        if start > end:
+            raise ValueError("'start' should not precede 'end'.")
+
+        idx_end = np.searchsorted(self.t, end, side="left")
+        add_if_forward = 0
+        if idx_end == len(self.t):
+            idx_end -= 1  # make sure the index is not out of bound
+            add_if_forward = 1  # add back the index if forward
+
+        if mode == "backward":
+            # remove 1 if self.t[idx_end] is larger than end, except if idx_end is 0
+            idx_end -= (self.t[idx_end] > end) - int(idx_end == 0)
+        elif mode == "closest":
+            # subtract 1 if end is closer to self.t[idx_end - 1]
+            di = self.t[idx_end] - end > np.abs(self.t[idx_end - 1] - end)
+            idx_end -= di
+        elif mode == "forward" and idx_end == len(self.t) - 1:
+            idx_end += add_if_forward  # add one if idx_start < len(self.t)
+
+        step = None
+        if n_points:
+            tot_tps = idx_end - idx_start
+            if tot_tps > n_points:
+                rounding = tot_tps % n_points
+                step = tot_tps // n_points
+                idx_end -= rounding
+
+        return slice(idx_start, idx_end, step)
+
+    def get_slice(self, start, end=None, mode="closest", time_unit="s"):
+        """
+        Get a slice from the time series data based on the start and end values with the specified mode.
+
+        Parameters
+        ----------
+        start : int or float
+            The starting value for the slice.
+        end : int or float, optional
+            The ending value for the slice. Defaults to None.
+        mode : str, optional
+            The mode for slicing. Can be "forward", "backward", or "closest". Defaults to "closest".
+        time_unit : str, optional
+            The time unit for the start and end values. Defaults to "s" (seconds).
+
+        Returns
+        -------
+        slice : slice
+            A slice determining the start and end indices, with unit step.
+            - If mode = "closest":
+                Starts/ends the slice with indices closest to the start/end time provided.
+            - If mode = "backward":
+                Starts/ends the slice with the indices preceding the start/end time provided.
+            - If mode = "forward":
+                Starts/ends the slice with the indices following the start/end time provided.
+
+        Raises
+        ------
+        ValueError
+            - If start or end is not a number.
+            - If start is greater than end.
+
+        Examples
+        --------
+        >>> import pynapple as nap
+
+        >>> ts = nap.Ts(t = [0, 1, 2, 3])
+        >>> start, end = 1.2, 2.6
+
+        >>> # slice over a range
+        >>> print(ts.get_slice(start, end, mode="closest"))  # returns `slice(1, 3, None)`
+        >>> print(ts.get_slice(start, end, mode="backward"))  # returns `slice(1, 2, None)`
+        >>> print(ts.get_slice(start, end, mode="forward"))  # returns `slice(2, 3, None)`
+
+        >>> # slice a single value
+        >>> print(ts.get_slice(start, None, mode="closest"))  # returns `slice(1, 2, None)`
+        >>> print(ts.get_slice(start, None, mode="backward")) # returns `slice(1, 2, None)`
+        >>> print(ts.get_slice(start, None, mode="forward")) # returns `slice(2, 3, None)`
+        """
+        return self._get_slice(
+            start, end=end, mode=mode, n_points=None, time_unit=time_unit
+        )
