@@ -1450,6 +1450,7 @@ def test_pickling(obj):
     # Ensure time support is the same
     assert np.all(obj.time_support == unpickled_obj.time_support)
 
+
 @pytest.mark.parametrize(
     "start, end, expectation",
     [
@@ -1518,8 +1519,14 @@ def test_get_index_value_types(start, end, time_unit, expectation):
         (5, None, "closest", slice(3, 4), np.array([4]))
     ]
 )
-def test_get_index_value_types(start, end, mode, expected_slice, expected_array):
-    ts = nap.Ts(t=np.array([1, 2, 3, 4]))
+@pytest.mark.parametrize("ts",
+                         [
+                             nap.Ts(t=np.array([1, 2, 3, 4])),
+                             nap.Tsd(t=np.array([1, 2, 3, 4]), d=np.array([1, 2, 3, 4])),
+                             nap.TsdFrame(t=np.array([1, 2, 3, 4]), d=np.array([1, 2, 3, 4])[:, None]),
+                             nap.TsdTensor(t=np.array([1, 2, 3, 4]), d=np.array([1, 2, 3, 4])[:, None, None])
+                         ])
+def test_get_index_value(start, end, mode, expected_slice, expected_array, ts):
     out_slice = ts.get_slice(start, end=end, mode=mode)
     out_array = ts.t[out_slice]
     assert out_slice == expected_slice
