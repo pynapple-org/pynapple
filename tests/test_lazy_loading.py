@@ -23,17 +23,16 @@ import pynapple as nap
 )
 def test_lazy_load_hdf5_is_array(time, data, expectation, tmp_path):
     file_path = tmp_path / Path('data.h5')
-    try:
-        with h5py.File(file_path, 'w') as f:
-            f.create_dataset('data', data=data)
-        with h5py.File(file_path, 'r') as h5_data:            
-            with expectation:
-                nap.Tsd(t=time, d=h5_data['data'], load_array=False)
-
-    finally:
-        # delete file
-        if file_path.exists():
-            file_path.unlink()
+    # try:
+    with h5py.File(file_path, 'w') as f:
+        f.create_dataset('data', data=data)
+    with h5py.File(file_path, 'r') as h5_data:            
+        with expectation:
+            nap.Tsd(t=time, d=h5_data['data'], load_array=False)
+    # finally:
+    #     # delete file
+    #     if file_path.exists():
+    #         file_path.unlink()
 
 
 @pytest.mark.parametrize(
@@ -45,20 +44,20 @@ def test_lazy_load_hdf5_is_array(time, data, expectation, tmp_path):
 @pytest.mark.parametrize("convert_flag", [True, False])
 def test_lazy_load_hdf5_is_array(time, data, convert_flag, tmp_path):
     file_path = tmp_path / Path('data.h5')
-    try:
-        with h5py.File(file_path, 'w') as f:
-            f.create_dataset('data', data=data)
-        # get the tsd
-        h5_data = h5py.File(file_path, 'r')["data"]
-        tsd = nap.Tsd(t=time, d=h5_data, load_array=convert_flag)
-        if convert_flag:
-            assert not isinstance(tsd.d, h5py.Dataset)
-        else:
-            assert isinstance(tsd.d, h5py.Dataset)
-    finally:
-        # delete file
-        if file_path.exists():
-            file_path.unlink()
+    # try:
+    with h5py.File(file_path, 'w') as f:
+        f.create_dataset('data', data=data)
+    # get the tsd
+    h5_data = h5py.File(file_path, 'r')["data"]
+    tsd = nap.Tsd(t=time, d=h5_data, load_array=convert_flag)
+    if convert_flag:
+        assert not isinstance(tsd.d, h5py.Dataset)
+    else:
+        assert isinstance(tsd.d, h5py.Dataset)
+    # finally:
+    #     # delete file
+    #     if file_path.exists():
+    #         file_path.unlink()
 
 
 @pytest.mark.parametrize("time, data", [(np.arange(12), np.arange(12))])
