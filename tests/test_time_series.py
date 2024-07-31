@@ -1,11 +1,11 @@
 """Tests of time series for `pynapple` package."""
 
 import pickle
-from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
 from pathlib import Path
+from contextlib import nullcontext as does_not_raise
 
 import pynapple as nap
 
@@ -608,16 +608,6 @@ class Test_Time_Series_2:
             a.time_support, tsd.time_support
             )
 
-    # def test_loc(self, tsd):
-    #     a = tsd.loc[0:10] # should be 11 elements similar to pandas Series
-    #     b = nap.Tsd(t=tsd.index[0:11], d=tsd.values[0:11])
-    #     assert isinstance(a, nap.Tsd)
-    #     np.testing.assert_array_almost_equal(a.index, b.index)
-    #     np.testing.assert_array_almost_equal(a.values, b.values)
-    #     pd.testing.assert_frame_equal(
-    #         a.time_support, b.time_support
-    #         )
-
     def test_count(self, tsd):
         count = tsd.count(1)
         assert len(count) == 99
@@ -779,8 +769,8 @@ class Test_Time_Series_2:
         np.testing.assert_array_almost_equal(file['start'], tsd.time_support.start)
         np.testing.assert_array_almost_equal(file['end'], tsd.time_support.end)
 
-        Path("tsd.npz").unlink()
-        Path("tsd2.npz").unlink()
+        # Path("tsd.npz").unlink()
+        # Path("tsd2.npz").unlink()
 
     def test_interpolate(self, tsd):
         
@@ -1017,8 +1007,8 @@ class Test_Time_Series_3:
         np.testing.assert_array_almost_equal(file['end'], tsdframe.time_support.end)
         np.testing.assert_array_almost_equal(file['columns'], tsdframe.columns)
 
-        Path("tsdframe.npz").unlink()
-        Path("tsdframe2.npz").unlink()
+        # Path("tsdframe.npz").unlink()
+        # Path("tsdframe2.npz").unlink()
 
     def test_interpolate(self, tsdframe):
         
@@ -1131,8 +1121,8 @@ class Test_Time_Series_4:
         np.testing.assert_array_almost_equal(file['start'], ts.time_support.start)
         np.testing.assert_array_almost_equal(file['end'], ts.time_support.end)
 
-        Path("ts.npz").unlink()
-        Path("ts2.npz").unlink()
+        # Path("ts.npz").unlink()
+        # Path("ts2.npz").unlink()
 
     def test_fillna(self, ts):
         with pytest.raises(AssertionError):
@@ -1369,8 +1359,8 @@ class Test_Time_Series_5:
         np.testing.assert_array_almost_equal(file['start'], tsdtensor.time_support.start)
         np.testing.assert_array_almost_equal(file['end'], tsdtensor.time_support.end)
 
-        Path("tsdtensor.npz").unlink()
-        Path("tsdtensor2.npz").unlink()
+        # Path("tsdtensor.npz").unlink()
+        # Path("tsdtensor2.npz").unlink()
 
     def test_interpolate(self, tsdtensor):
         
@@ -1449,3 +1439,205 @@ def test_pickling(obj):
 
     # Ensure time support is the same
     assert np.all(obj.time_support == unpickled_obj.time_support)
+
+
+@pytest.mark.parametrize(
+    "start, end, expectation",
+    [
+        (1, 3, does_not_raise()),
+        (3, 1, pytest.raises(ValueError, match="'start' should not precede 'end'")),
+        (1., 3., does_not_raise()),
+        (1., None, does_not_raise()),
+        (None, 3,  pytest.raises(ValueError, match="'start' must be an int or a float")),
+        ("a", 3,  pytest.raises(ValueError, match="'start' must be an int or a float")),
+        (2, "a",  pytest.raises(ValueError, match="'end' must be an int or a float")),
+
+    ]
+)
+@pytest.mark.parametrize("time_unit", ["s", "ms",  "us"])
+def test_get_slice_value_types(start, end, time_unit, expectation):
+    ts = nap.Ts(t=np.array([1, 2, 3, 4]))
+    with expectation:
+        ts._get_slice(start, end, time_unit=time_unit)
+
+
+@pytest.mark.parametrize(
+    "start, end, mode, expected_slice, expected_array",
+    [
+        (1, 3, "forward", slice(0, 2), np.array([1, 2])),
+        (1, 3, "backward", slice(0, 2), np.array([1, 2])),
+        (1, 3, "closest", slice(0, 2), np.array([1, 2])),
+        (1, 2.7, "forward", slice(0, 2), np.array([1, 2])),
+        (1, 2.7, "backward", slice(0, 1), np.array([1])),
+        (1, 2.7, "closest", slice(0, 2), np.array([1, 2])),
+        (1, 2.4, "forward", slice(0, 2), np.array([1, 2])),
+        (1, 2.4, "backward", slice(0, 1), np.array([1])),
+        (1, 2.4, "closest", slice(0, 1), np.array([1])),
+        (1.1, 3, "forward", slice(1, 2), np.array([2])),
+        (1.1, 3, "backward", slice(0, 2), np.array([1, 2])),
+        (1.1, 3, "closest", slice(0, 2), np.array([1, 2])),
+        (1.6, 3, "forward", slice(1, 2), np.array([2])),
+        (1.6, 3, "backward", slice(0, 2), np.array([1, 2])),
+        (1.6, 3, "closest", slice(1, 2), np.array([2])),
+        (1.6, 1.8, "backward", slice(0, 0), np.array([])),
+        (1.6, 1.8, "forward", slice(1, 1), np.array([])),
+        (1.6, 1.8, "closest", slice(1, 1), np.array([])),
+        (1.4, 1.6, "closest", slice(0, 1), np.array([1])),
+        (3, 3, "forward", slice(2, 2), np.array([])),
+        (3, 3, "backward", slice(2, 2), np.array([])),
+        (3, 3, "closest", slice(2, 2), np.array([])),
+        (0, 3, "forward", slice(0, 2), np.array([1, 2])),
+        (0, 3, "backward", slice(0, 2), np.array([1, 2])),
+        (0, 3, "closest", slice(0, 2), np.array([1, 2])),
+        (4, 4, "forward", slice(3, 3), np.array([])),
+        (4, 4, "backward", slice(3, 3), np.array([])),
+        (4, 4, "closest", slice(3, 3), np.array([])),
+        (4, 5, "forward", slice(3, 4), np.array([4])),
+        (4, 5, "backward", slice(3, 3), np.array([])),
+        (4, 5, "closest", slice(3, 3), np.array([])),
+        (0, 1, "forward", slice(0, 0), np.array([])),
+        (0, 1, "backward", slice(0, 1), np.array([1])),
+        (0, 1, "closest", slice(0, 0), np.array([])),
+        (0, None, "forward", slice(0, 1), np.array([1])),
+        (0, None, "backward", slice(0, 0), np.array([])),
+        (0, None, "closest", slice(0, 1), np.array([1])),
+        (1, None, "forward", slice(0, 1), np.array([1])),
+        (1, None, "backward", slice(0, 1), np.array([1])),
+        (1, None, "closest", slice(0, 1), np.array([1])),
+        (5, None, "forward", slice(3, 3), np.array([])),
+        (5, None, "backward", slice(3, 4), np.array([4])),
+        (5, None, "closest", slice(3, 4), np.array([4]))
+    ]
+)
+@pytest.mark.parametrize("ts",
+                         [
+                             nap.Ts(t=np.array([1, 2, 3, 4])),
+                             nap.Tsd(t=np.array([1, 2, 3, 4]), d=np.array([1, 2, 3, 4])),
+                             nap.TsdFrame(t=np.array([1, 2, 3, 4]), d=np.array([1, 2, 3, 4])[:, None]),
+                             nap.TsdTensor(t=np.array([1, 2, 3, 4]), d=np.array([1, 2, 3, 4])[:, None, None])
+                         ])
+def test_get_slice_value(start, end, mode, expected_slice, expected_array, ts):
+    out_slice = ts._get_slice(start, end=end, mode=mode)
+    out_array = ts.t[out_slice]
+    assert out_slice == expected_slice
+    assert np.all(out_array == expected_array)
+
+@pytest.mark.parametrize(
+    "end, n_points, expectation",
+    [
+        (1, 3, does_not_raise()),
+        (None, 3, pytest.raises(ValueError, match="'n_points' can be used only when")),
+
+    ]
+)
+@pytest.mark.parametrize("time_unit", ["s", "ms",  "us"])
+@pytest.mark.parametrize("mode", ["closest", "backward",  "forward"])
+def test_get_slice_n_points(end, n_points, expectation, time_unit, mode):
+    ts = nap.Ts(t=np.array([1, 2, 3, 4]))
+    with expectation:
+        ts._get_slice(1, end, n_points=n_points, mode=mode)
+
+
+
+@pytest.mark.parametrize(
+    "start, end, n_points, mode, expected_slice, expected_array",
+    [
+        # smaller than n_points
+        (1, 2, 2, "forward", slice(0, 1), np.array([1])),
+        (1, 2, 2, "backward", slice(0, 1), np.array([1])),
+        (1, 2, 2, "closest", slice(0, 1), np.array([1])),
+        # larger than n_points
+        (1, 5, 2, "forward", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5, 2, "backward", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5, 2, "closest", slice(0, 4, 2), np.array([1, 3])),
+        # larger than n_points with rounding down
+        (1, 5.2, 2, "forward", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5.2, 2, "backward", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5.2, 2, "closest", slice(0, 4, 2), np.array([1, 3])),
+        # larger than n_points with rounding down
+        (1, 6.2, 2, "forward", slice(0, 6, 3), np.array([1, 4])),
+        (1, 6.2, 2, "backward", slice(0, 4, 2), np.array([1, 3])),
+        (1, 6.2, 2, "closest", slice(0, 4, 2), np.array([1, 3])),
+        # larger than n_points with rounding up
+        (1, 5.6, 2, "forward", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5.6, 2, "backward", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5.6, 2, "closest", slice(0, 4, 2), np.array([1, 3])),
+        # larger than n_points with rounding up
+        (1, 6.6, 2, "forward", slice(0, 6, 3), np.array([1, 4])),
+        (1, 6.6, 2, "backward", slice(0, 4, 2), np.array([1, 3])),
+        (1, 6.6, 2, "closest", slice(0, 6, 3), np.array([1, 4])),
+    ]
+)
+@pytest.mark.parametrize("ts",
+                         [
+                             nap.Ts(t=np.arange(1, 10)),
+                             nap.Tsd(t=np.arange(1, 10), d=np.arange(1, 10)),
+                             nap.TsdFrame(t=np.arange(1, 10), d=np.arange(1, 10)[:, None]),
+                             nap.TsdTensor(t=np.arange(1, 10), d=np.arange(1, 10)[:, None, None])
+                         ])
+def test_get_slice_value(start, end, n_points, mode, expected_slice, expected_array, ts):
+    out_slice = ts._get_slice(start, end=end, mode=mode, n_points=n_points)
+    out_array = ts.t[out_slice]
+    assert out_slice == expected_slice
+    assert np.all(out_array == expected_array)
+
+@pytest.mark.parametrize(
+    "start, end, mode, expected_slice, expected_array",
+    [
+        (1, 3, "forward", slice(0, 2), np.array([1, 2])),
+        (1, 3, "backward", slice(0, 2), np.array([1, 2])),
+        (1, 3, "closest", slice(0, 2), np.array([1, 2])),
+        (1, 2.7, "forward", slice(0, 2), np.array([1, 2])),
+        (1, 2.7, "backward", slice(0, 1), np.array([1])),
+        (1, 2.7, "closest", slice(0, 2), np.array([1, 2])),
+        (1, 2.4, "forward", slice(0, 2), np.array([1, 2])),
+        (1, 2.4, "backward", slice(0, 1), np.array([1])),
+        (1, 2.4, "closest", slice(0, 1), np.array([1])),
+        (1.1, 3, "forward", slice(1, 2), np.array([2])),
+        (1.1, 3, "backward", slice(0, 2), np.array([1, 2])),
+        (1.1, 3, "closest", slice(0, 2), np.array([1, 2])),
+        (1.6, 3, "forward", slice(1, 2), np.array([2])),
+        (1.6, 3, "backward", slice(0, 2), np.array([1, 2])),
+        (1.6, 3, "closest", slice(1, 2), np.array([2])),
+        (1.6, 1.8, "backward", slice(0, 0), np.array([])),
+        (1.6, 1.8, "forward", slice(1, 1), np.array([])),
+        (1.6, 1.8, "closest", slice(1, 1), np.array([])),
+        (1.4, 1.6, "closest", slice(0, 1), np.array([1])),
+        (3, 3, "forward", slice(2, 2), np.array([])),
+        (3, 3, "backward", slice(2, 2), np.array([])),
+        (3, 3, "closest", slice(2, 2), np.array([])),
+        (0, 3, "forward", slice(0, 2), np.array([1, 2])),
+        (0, 3, "backward", slice(0, 2), np.array([1, 2])),
+        (0, 3, "closest", slice(0, 2), np.array([1, 2])),
+        (4, 4, "forward", slice(3, 3), np.array([])),
+        (4, 4, "backward", slice(3, 3), np.array([])),
+        (4, 4, "closest", slice(3, 3), np.array([])),
+        (4, 5, "forward", slice(3, 4), np.array([4])),
+        (4, 5, "backward", slice(3, 3), np.array([])),
+        (4, 5, "closest", slice(3, 3), np.array([])),
+        (0, 1, "forward", slice(0, 0), np.array([])),
+        (0, 1, "backward", slice(0, 1), np.array([1])),
+        (0, 1, "closest", slice(0, 0), np.array([])),
+        (0, None, "forward", slice(0, 1), np.array([1])),
+        (0, None, "backward", slice(0, 0), np.array([])),
+        (0, None, "closest", slice(0, 1), np.array([1])),
+        (1, None, "forward", slice(0, 1), np.array([1])),
+        (1, None, "backward", slice(0, 1), np.array([1])),
+        (1, None, "closest", slice(0, 1), np.array([1])),
+        (5, None, "forward", slice(3, 3), np.array([])),
+        (5, None, "backward", slice(3, 4), np.array([4])),
+        (5, None, "closest", slice(3, 4), np.array([4]))
+    ]
+)
+@pytest.mark.parametrize("ts",
+                         [
+                             nap.Ts(t=np.array([1, 2, 3, 4])),
+                             nap.Tsd(t=np.array([1, 2, 3, 4]), d=np.array([1, 2, 3, 4])),
+                             nap.TsdFrame(t=np.array([1, 2, 3, 4]), d=np.array([1, 2, 3, 4])[:, None]),
+                             nap.TsdTensor(t=np.array([1, 2, 3, 4]), d=np.array([1, 2, 3, 4])[:, None, None])
+                         ])
+def test_get_slice_public(start, end, mode, expected_slice, expected_array, ts):
+    out_slice = ts.get_slice(start, end=end, mode=mode)
+    out_array = ts.t[out_slice]
+    assert out_slice == expected_slice
+    assert np.all(out_array == expected_array)
