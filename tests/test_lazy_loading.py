@@ -26,10 +26,10 @@ def test_lazy_load_hdf5_is_array(time, data, expectation, tmp_path):
     try:
         with h5py.File(file_path, 'w') as f:
             f.create_dataset('data', data=data)
-            h5_data = h5py.File(file_path, 'r')["data"]
+        with h5py.File(file_path, 'r') as h5_data:            
             with expectation:
-                nap.Tsd(t=time, d=h5_data, load_array=False)
-        
+                nap.Tsd(t=time, d=h5_data['data'], load_array=False)
+
     finally:
         # delete file
         if file_path.exists():
