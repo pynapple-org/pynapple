@@ -21,8 +21,8 @@ import pynapple as nap
         (np.arange(12), "not_an_array", pytest.raises(TypeError, match="Data should be array-like"))
     ]
 )
-def test_lazy_load_hdf5_is_array(time, data, expectation):
-    file_path = Path('data.h5')
+def test_lazy_load_hdf5_is_array(time, data, expectation, tmp_path):
+    file_path = tmp_path / Path('data.h5')
     try:
         with h5py.File(file_path, 'w') as f:
             f.create_dataset('data', data=data)
@@ -42,8 +42,8 @@ def test_lazy_load_hdf5_is_array(time, data, expectation):
     ]
 )
 @pytest.mark.parametrize("convert_flag", [True, False])
-def test_lazy_load_hdf5_is_array(time, data, convert_flag):
-    file_path = Path('data.h5')
+def test_lazy_load_hdf5_is_array(time, data, convert_flag, tmp_path):
+    file_path = tmp_path / Path('data.h5')
     try:
         with h5py.File(file_path, 'w') as f:
             f.create_dataset('data', data=data)
@@ -63,9 +63,9 @@ def test_lazy_load_hdf5_is_array(time, data, convert_flag):
 @pytest.mark.parametrize("time, data", [(np.arange(12), np.arange(12))])
 @pytest.mark.parametrize("cls", [nap.Tsd, nap.TsdFrame, nap.TsdTensor])
 @pytest.mark.parametrize("func", [np.exp, lambda x: x*2])
-def test_lazy_load_hdf5_apply_func(time, data, func,cls):
+def test_lazy_load_hdf5_apply_func(time, data, func,cls, tmp_path):
     """Apply a unary function to a lazy loaded array."""
-    file_path = Path('data.h5')
+    file_path = tmp_path / Path('data.h5')
     try:
         if cls is nap.TsdFrame:
             data = data[:, None]
@@ -101,8 +101,8 @@ def test_lazy_load_hdf5_apply_func(time, data, func,cls):
         ("get", [2, 7])
     ]
 )
-def test_lazy_load_hdf5_apply_method(time, data, method_name, args, cls):
-    file_path = Path('data.h5')
+def test_lazy_load_hdf5_apply_method(time, data, method_name, args, cls, tmp_path):
+    file_path = tmp_path / Path('data.h5')
     try:
         if cls is nap.TsdFrame:
             data = data[:, None]
@@ -133,8 +133,8 @@ def test_lazy_load_hdf5_apply_method(time, data, method_name, args, cls):
         ("to_tsgroup", [], nap.TsGroup)
     ]
 )
-def test_lazy_load_hdf5_apply_method_tsd_specific(time, data, method_name, args, expected_out_type):
-    file_path = Path('data.h5')
+def test_lazy_load_hdf5_apply_method_tsd_specific(time, data, method_name, args, expected_out_type, tmp_path):
+    file_path = tmp_path / Path('data.h5')
     try:
         with h5py.File(file_path, 'w') as f:
             f.create_dataset('data', data=data)
@@ -157,8 +157,8 @@ def test_lazy_load_hdf5_apply_method_tsd_specific(time, data, method_name, args,
         ("as_dataframe", [], pd.DataFrame),
     ]
 )
-def test_lazy_load_hdf5_apply_method_tsdframe_specific(time, data, method_name, args, expected_out_type):
-    file_path = Path('data.h5')
+def test_lazy_load_hdf5_apply_method_tsdframe_specific(time, data, method_name, args, expected_out_type, tmp_path):
+    file_path = tmp_path / Path('data.h5')
     try:
         with h5py.File(file_path, 'w') as f:
             f.create_dataset('data', data=data[:, None])
@@ -174,8 +174,8 @@ def test_lazy_load_hdf5_apply_method_tsdframe_specific(time, data, method_name, 
             file_path.unlink()
 
 
-def test_lazy_load_hdf5_tsdframe_loc():
-    file_path = Path('data.h5')
+def test_lazy_load_hdf5_tsdframe_loc(tmp_path):
+    file_path = tmp_path / Path('data.h5')
     data = np.arange(10).reshape(5, 2)
     try:
         with h5py.File(file_path, 'w') as f:
@@ -227,8 +227,8 @@ def test_lazy_load_function(lazy):
 
 
 @pytest.mark.parametrize("data", [np.ones(10), np.ones((10, 2)), np.ones((10, 2, 2))])
-def test_lazy_load_nwb_no_warnings(data):
-    file_path = Path('data.h5')
+def test_lazy_load_nwb_no_warnings(data, tmp_path):  # tmp_path is a default fixture creating a temporary folder
+    file_path = tmp_path / Path('data.h5')
 
     try:
         with h5py.File(file_path, 'w') as f:
@@ -252,11 +252,11 @@ def test_lazy_load_nwb_no_warnings(data):
             file_path.unlink()
 
 
-def test_tsgroup_no_warnings():
+def test_tsgroup_no_warnings(tmp_path):  # default fixture
     n_units = 2
     try:
         for k in range(n_units):
-            file_path = Path(f'data_{k}.h5')
+            file_path = tmp_path / Path(f'data_{k}.h5')
             with h5py.File(file_path, 'w') as f:
                 f.create_dataset('spks', data=np.sort(np.random.uniform(0, 10, size=20)))
         with warnings.catch_warnings(record=True) as w:            
@@ -264,7 +264,7 @@ def test_tsgroup_no_warnings():
             nwbfile = mock_NWBFile()
 
             for k in range(n_units):
-                file_path = Path(f'data_{k}.h5')
+                file_path = tmp_path / Path(f'data_{k}.h5')
                 spike_times = h5py.File(file_path, "r")['spks']
                 nwbfile.add_unit(spike_times=spike_times)
             
