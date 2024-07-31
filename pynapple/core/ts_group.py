@@ -720,7 +720,11 @@ class TsGroup(UserDict):
         # Call it on first element to pre-allocate the array
         if len(self) >= 1:
             time_index, d = _count(
-                self.data[self.index[0]].index.values, starts, ends, bin_size, dtype=dtype
+                self.data[self.index[0]].index.values,
+                starts,
+                ends,
+                bin_size,
+                dtype=dtype,
             )
 
             count = np.zeros((len(time_index), len(self.index)), dtype=dtype)
@@ -728,7 +732,11 @@ class TsGroup(UserDict):
 
             for i in range(1, len(self.index)):
                 count[:, i] = _count(
-                    self.data[self.index[i]].index.values, starts, ends, bin_size, dtype=dtype
+                    self.data[self.index[i]].index.values,
+                    starts,
+                    ends,
+                    bin_size,
+                    dtype=dtype,
                 )[1]
 
             return TsdFrame(t=time_index, d=count, time_support=ep, columns=self.index)
