@@ -27,13 +27,14 @@ def _restrict(time_array, starts, ends):
     return jitrestrict(time_array, starts, ends)
 
 
-def _count(time_array, starts, ends, bin_size=None):
+def _count(time_array, starts, ends, bin_size=None, dtype=None):
     if isinstance(bin_size, (float, int)):
-        return jitcount(time_array, starts, ends, bin_size)
+        t, d = jitcount(time_array, starts, ends, bin_size)
     else:
         _, d = jitrestrict_with_count(time_array, starts, ends)
         t = starts + (ends - starts) / 2
-        return t, d
+    d = d.astype(dtype) if dtype else d
+    return t, d
 
 
 def _value_from(time_array, time_target_array, data_target_array, starts, ends):

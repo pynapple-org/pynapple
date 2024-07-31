@@ -606,7 +606,7 @@ class TsGroup(UserDict):
         cols = self._metadata.columns.drop("rate")
         return TsGroup(newgr, time_support=ep, **self._metadata[cols])
 
-    def count(self, *args, **kwargs):
+    def count(self, *args, dtype=None, **kwargs):
         """
         Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
         You can call this function in multiple ways :
@@ -634,6 +634,8 @@ class TsGroup(UserDict):
             IntervalSet to restrict the operation
         time_units : str, optional
             Time units of bin size ('us', 'ms', 's' [default])
+        dtype: type, optional
+            Data type for the count. Default is np.int64.
 
         Returns
         -------
@@ -702,6 +704,12 @@ class TsGroup(UserDict):
                 if isinstance(a, IntervalSet):
                     ep = a
 
+        if dtype:
+            try:
+                dtype = np.dtype(dtype)
+            except Exception:
+                raise ValueError(f"{dtype} is not a valid numpy dtype.")
+
         starts = ep.start
         ends = ep.end
 
@@ -712,20 +720,20 @@ class TsGroup(UserDict):
         # Call it on first element to pre-allocate the array
         if len(self) >= 1:
             time_index, d = _count(
-                self.data[self.index[0]].index.values, starts, ends, bin_size
+                self.data[self.index[0]].index.values, starts, ends, bin_size, dtype=dtype
             )
 
-            count = np.zeros((len(time_index), len(self.index)), dtype=np.int64)
+            count = np.zeros((len(time_index), len(self.index)), dtype=dtype)
             count[:, 0] = d
 
             for i in range(1, len(self.index)):
                 count[:, i] = _count(
-                    self.data[self.index[i]].index.values, starts, ends, bin_size
+                    self.data[self.index[i]].index.values, starts, ends, bin_size, dtype=dtype
                 )[1]
 
             return TsdFrame(t=time_index, d=count, time_support=ep, columns=self.index)
         else:
-            time_index, _ = _count(np.array([]), starts, ends, bin_size)
+            time_index, _ = _count(np.array([]), starts, ends, bin_size, dtype=dtype)
             return TsdFrame(
                 t=time_index, d=np.empty((len(time_index), 0)), time_support=ep
             )

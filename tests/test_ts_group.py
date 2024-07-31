@@ -38,6 +38,16 @@ def ts_group():
     group = nap.TsGroup(data, meta=[10, 11])
     return group
 
+
+@pytest.fixture
+def ts_group_one_group():
+    # Placeholder setup for Ts and Tsd objects. Adjust as necessary.
+    ts1 = nap.Ts(t=np.arange(10))
+    data = {1: ts1}
+    group = nap.TsGroup(data, meta=[10])
+    return group
+
+
 class TestTsGroup1:
 
     def test_create_ts_group(self, group):
@@ -880,3 +890,25 @@ def test_pickling(ts_group):
 
     # Ensure time support is the same
     assert np.all(ts_group.time_support == unpickled_obj.time_support)
+
+
+@pytest.mark.parametrize(
+    "dtype, expectation",
+    [
+        (None, does_not_raise()),
+        (float, does_not_raise()),
+        (int, does_not_raise()),
+        (np.int32, does_not_raise()),
+        (np.int64, does_not_raise()),
+        (np.float32, does_not_raise()),
+        (np.float64, does_not_raise()),
+        (1, pytest.raises(ValueError, match=f"1 is not a valid numpy dtype")),
+    ]
+)
+def test_count_dtype(dtype, expectation, ts_group, ts_group_one_group):
+    with expectation:
+        count = ts_group.count(bin_size=0.1, dtype=dtype)
+        count_one = ts_group_one_group.count(bin_size=0.1, dtype=dtype)
+        if dtype:
+            assert np.issubdtype(count.dtype, dtype)
+            assert np.issubdtype(count_one.dtype, dtype)

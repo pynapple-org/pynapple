@@ -203,7 +203,7 @@ class Base(abc.ABC):
 
         return t, d, time_support, kwargs
 
-    def count(self, *args, **kwargs):
+    def count(self, *args, dtype=None, **kwargs):
         """
         Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
         You can call this function in multiple ways :
@@ -231,6 +231,8 @@ class Base(abc.ABC):
             IntervalSet to restrict the operation
         time_units : str, optional
             Time units of bin size ('us', 'ms', 's' [default])
+        dtype: type, optional
+            Data type for the count. Default is np.int64.
 
         Returns
         -------
@@ -290,6 +292,12 @@ class Base(abc.ABC):
                 if isinstance(a, IntervalSet):
                     ep = a
 
+        if dtype:
+            try:
+                dtype = np.dtype(dtype)
+            except Exception:
+                raise ValueError(f"{dtype} is not a valid numpy dtype.")
+
         starts = ep.start
         ends = ep.end
 
@@ -298,7 +306,7 @@ class Base(abc.ABC):
 
         time_array = self.index.values
 
-        t, d = _count(time_array, starts, ends, bin_size)
+        t, d = _count(time_array, starts, ends, bin_size, dtype=dtype)
 
         return t, d, ep
 

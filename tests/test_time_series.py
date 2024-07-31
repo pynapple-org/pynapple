@@ -1201,7 +1201,6 @@ class Test_Time_Series_4:
         assert len(count) == 1
         np.testing.assert_array_almost_equal(count.values, np.array([100]))
 
-
     def test_count_errors(self, ts):        
         with pytest.raises(ValueError):
             ts.count(bin_size = {})
@@ -1212,6 +1211,24 @@ class Test_Time_Series_4:
         with pytest.raises(ValueError):
             ts.count(time_units = {})
 
+    @pytest.mark.parametrize(
+        "dtype, expectation",
+        [
+            (None, does_not_raise()),
+            (float, does_not_raise()),
+            (int, does_not_raise()),
+            (np.int32, does_not_raise()),
+            (np.int64, does_not_raise()),
+            (np.float32, does_not_raise()),
+            (np.float64, does_not_raise()),
+            (1, pytest.raises(ValueError, match=f"1 is not a valid numpy dtype")),
+        ]
+    )
+    def test_count_dtype(self, dtype, expectation, ts):
+        with expectation:
+            count = ts.count(bin_size=0.1, dtype=dtype)
+            if dtype:
+                assert np.issubdtype(count.dtype, dtype)
 
 ####################################################
 # Test for tsdtensor
