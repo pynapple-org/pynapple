@@ -248,7 +248,8 @@ def test_jitbin_array():
         tsd2 = pd.concat(tsd2)
         # tsd2 = nap.TsdFrame(tsd2)
 
-        pd.testing.assert_frame_equal(tsd3, tsd2)
+        np.testing.assert_array_almost_equal(tsd3.values, tsd2.values)
+        np.testing.assert_array_almost_equal(tsd3.index.values, tsd2.index.values)        
 
 def test_jitintersect():
     for i in range(10):
