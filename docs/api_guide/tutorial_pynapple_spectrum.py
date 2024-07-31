@@ -3,11 +3,7 @@
 Power spectral density
 ======================
 
-Working with Wavelets!
-
 See the [documentation](https://pynapple-org.github.io/pynapple/) of Pynapple for instructions on installing the package.
-
-This tutorial was made by Kipp Freud.
 
 """
 
@@ -29,12 +25,10 @@ import pynapple as nap
 
 # %%
 # ***
-# Generating a Dummy Signal
+# Generating a signal
 # ------------------
-# Let's generate a dummy signal to analyse with wavelets!
+# Let's generate a dummy signal with 2Hz and 10Hz sinusoide with white noise.
 #
-# Our dummy dataset will contain two components, a low frequency 2Hz sinusoid combined
-# with a sinusoid which increases frequency from 5 to 15 Hz throughout the signal.
 
 F = [2, 10]
 
@@ -42,16 +36,17 @@ Fs = 2000
 t = np.arange(0, 100, 1/Fs)
 sig = nap.Tsd(
     t=t,
-    d=np.cos(t*2*np.pi*F[0])+np.cos(t*2*np.pi*F[1])+np.random.normal(0, 2, len(t)),
-    time_support = nap.IntervalSet(0, 10)
+    d=np.cos(t*2*np.pi*F[0])+np.cos(t*2*np.pi*F[1])+np.random.normal(0, 3, len(t)),
+    time_support = nap.IntervalSet(0, 100)
     )
 
 # %%
 # Let's plot it
 plt.figure()
-plt.plot(sig.get(0, 1))
+plt.plot(sig.get(0, 0.4))
 plt.title("Signal")
-plt.show()
+plt.xlabel("Time (s)")
+
 
 
 # %%
@@ -74,7 +69,7 @@ plt.figure()
 plt.plot(psd)
 plt.xlabel("Frequency (Hz)")
 plt.ylabel("Amplitude")
-plt.show()
+
 
 # %%
 # Note that the output of the FFT is truncated to positive frequencies. To get positive and negative frequencies, you can set `full_range=True`.
@@ -86,7 +81,7 @@ plt.plot(psd)
 plt.xlabel("Frequency (Hz)")
 plt.ylabel("Amplitude")
 plt.xlim(0, 20)
-plt.show()
+
 
 # %%
 # We find the two frequencies 2 and 10 Hz.
@@ -106,8 +101,25 @@ except ValueError as e:
 #
 # It is possible to compute an average PSD over multiple epochs with the function `nap.compute_mean_power_spectral_density`.
 # 
-# In this case, the argument `interval_size` determines the duration of each epochs upon which the fft is computed.
+# In this case, the argument `interval_size` determines the duration of each epochs upon which the FFT is computed.
 # If not epochs is passed, the function will split the `time_support`.
+# 
+# In this case, the FFT will be computed over epochs of 10 seconds.
 
+mean_psd = nap.compute_mean_power_spectral_density(sig, interval_size=10.0)
+
+
+# %%
+# Let's compare `mean_psd` to `psd`.
+
+plt.figure()
+plt.plot(psd)
+plt.plot(mean_psd)
+plt.xlabel("Frequency (Hz)")
+plt.ylabel("Amplitude")
+plt.xlim(0, 20)
+
+# %%
+# As we can see, `nap.compute_mean_power_spectral_density` was able to smooth out the noise.
 
 

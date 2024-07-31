@@ -56,16 +56,81 @@ def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False):
         return ret.loc[ret.index >= 0]
     return ret
 
-def compute_mean_power_spectral_density(sig, interval_size, fs=None, ep=None, full_range=False):
+def compute_mean_power_spectral_density(sig, interval_size, fs=None, ep=None, full_range=False, time_units="s"):
+    """Compute mean power spectral density by averaging FFT over epochs of same size. 
+    The parameter `interval_size` controls the duration of the epochs.
+    
+    Note that this function assumes a constant sampling rate for sig.
 
+    Parameters
+    ----------
+    sig : TYPE
+        Description
+    interval_size : TYPE
+        Description
+    fs : None, optional
+        Description
+    ep : None, optional
+        Description
+    full_range : bool, optional
+        Description
+    time_units : str, optional
+        Description
+    
+    Returns
+    -------
+    TYPE
+        Description
+    
+    Raises
+    ------
+    RuntimeError
+        Description
+    TypeError
+        Description
+    """
     if not (ep is None or isinstance(ep, nap.IntervalSet)):
         raise TypeError("ep param must be a pynapple IntervalSet object, or None")
     if ep is None:
         ep = sig.time_support
+    if fs is None:
+        fs = sig.rate        
 
-    # split_ep = ep.split(interval_size)
+    # Split the ep
+    split_ep = ep.split(interval_size)
 
+    if len(split_ep) == 0:
+        raise RuntimeError(f"Splitting epochs with interval_size={interval_size} generated an empty IntervalSet. Try decreasing interval_size")
+    
+    # Get the slices of each ep
+    slices = np.zeros((len(split_ep),2), dtype=int)    
 
+    for i in range(len(split_ep)):
+        sl = sig.get_slice(split_ep[i,0], split_ep[i,1])
+        slices[i,0] = sl.start
+        slices[i,1] = sl.stop
+        
+    # Check what is the signal length
+    N = np.min(np.diff(slices, 1))
+
+    if N == 0:
+        raise RuntimeError(f"One epoch doesn't have any signal. Check the parameter ep or the time support if no epoch is passed.")
+
+    # Get the freqs
+    fft_freq = np.fft.fftfreq(N, 1 / fs)
+
+    # Compute the fft
+    fft_result = np.zeros((N, *sig.shape[1:]), dtype=complex)
+
+    for i in range(len(slices)):
+        fft_result += np.fft.fft(sig[slices[i,0]:slices[i,1]].values[0:N], axis=0)
+
+    ret = pd.DataFrame(fft_result, fft_freq)
+    ret.sort_index(inplace=True)
+    if not full_range:
+        return ret.loc[ret.index >= 0]
+    return ret
+    
 
 
 def _morlet(M=1024, gaussian_width=1.5, window_length=1.0, precision=8):
