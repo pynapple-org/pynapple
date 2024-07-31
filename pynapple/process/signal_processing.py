@@ -10,7 +10,7 @@ import pandas as pd
 import pynapple as nap
 
 
-def compute_spectogram(sig, fs=None, ep=None, full_range=False):
+def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False):
     """
     Performs numpy fft on sig, returns output. Pynapple assumes a constant sampling rate for sig.
 
@@ -55,6 +55,17 @@ def compute_spectogram(sig, fs=None, ep=None, full_range=False):
     if not full_range:
         return ret.loc[ret.index >= 0]
     return ret
+
+def compute_mean_power_spectral_density(sig, interval_size, fs=None, ep=None, full_range=False):
+
+    if not (ep is None or isinstance(ep, nap.IntervalSet)):
+        raise TypeError("ep param must be a pynapple IntervalSet object, or None")
+    if ep is None:
+        ep = sig.time_support
+
+    # split_ep = ep.split(interval_size)
+
+
 
 
 def _morlet(M=1024, gaussian_width=1.5, window_length=1.0, precision=8):

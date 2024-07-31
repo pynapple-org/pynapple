@@ -16,7 +16,8 @@ from .randomize import (
     shuffle_ts_intervals,
 )
 from .signal_processing import (
-    compute_spectogram,
+    compute_power_spectral_density,
+    compute_mean_power_spectral_density,
     compute_wavelet_transform,
     generate_morlet_filterbank,
 )
