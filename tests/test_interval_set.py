@@ -261,11 +261,15 @@ def test_tot_length():
 def test_as_units():
     ep = nap.IntervalSet(start=0, end=100)
     df = pd.DataFrame(data=np.array([[0.0, 100.0]]), columns=["start", "end"], dtype=np.float64)
-    pd.testing.assert_frame_equal(df, ep.as_units("s").astype(np.float64))
-    pd.testing.assert_frame_equal(df * 1e3, ep.as_units("ms").astype(np.float64))
+    np.testing.assert_array_almost_equal(df.values, ep.as_units("s").values.astype(np.float64))
+    np.testing.assert_array_almost_equal(df * 1e3, ep.as_units("ms").values.astype(np.float64))
     tmp = df * 1e6
     np.testing.assert_array_almost_equal(tmp.values, ep.as_units("us").values.astype(np.float64))
 
+def test_as_dataframe():
+    ep = nap.IntervalSet(start=0, end=100)
+    df = pd.DataFrame(data=np.array([[0.0, 100.0]]), columns=["start", "end"], dtype=np.float64)
+    np.testing.assert_array_almost_equal(df.values, ep.as_dataframe().values)
 
 def test_intersect():
     ep = nap.IntervalSet(start=[0, 30], end=[10, 70])
@@ -511,8 +515,50 @@ def test_save_npz():
     Path("ep.npz").unlink()
     Path("ep2.npz").unlink()  
 
+def test_split():
+    np.random.seed(0)
+    start = np.round(np.random.uniform(0, 10))
+    end = np.round(np.random.uniform(90, 100))
+    tmp = np.linspace(start, end, 100)    
+    interval_size = np.round(tmp[1] - tmp[0], 9)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")    
+        ep0 = nap.IntervalSet(tmp[0:-1], tmp[1:])
+    ep = nap.IntervalSet(tmp[0], tmp[-1])
+    ep1 = ep.split(interval_size)
+    np.testing.assert_array_almost_equal(ep0, ep1)
 
+    # Test with a smaller epochs
+    start = np.hstack((tmp[0:-1], np.array([200])))
+    end = np.hstack((tmp[1:], np.array([200+0.9*interval_size])))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")    
+        ep2 = nap.IntervalSet(start, end)
 
+    ep = nap.IntervalSet([start[0], 200], end[-2:])
+    ep1 = ep.split(interval_size)
+    np.testing.assert_array_almost_equal(ep0, ep1)
+
+    # Empty intervalset
+    ep = nap.IntervalSet([], [])
+    assert len(ep.split(1)) == 0
+
+def test_split_errors():
+    start = [0, 10, 16, 25]
+    end = [5, 15, 20, 40]
+    ep = nap.IntervalSet(start=start, end=end)
+
+    with pytest.raises(IOError,  match="Argument interval_size should of type float or int"):
+        ep.split('a')
+
+    with pytest.raises(IOError) as e:
+        ep.split(0)
+    assert str(e.value) == "Argument interval_size should be strictly larger than 0"
+    
+    with pytest.raises(IOError) as e:
+        ep.split(1, time_units=1)
+    assert str(e.value) == "Argument time_units should be of type str"
+    
 
 
 
