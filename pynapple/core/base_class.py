@@ -467,7 +467,7 @@ class Base(abc.ABC):
         iset = IntervalSet(start=file["start"], end=file["end"])
         return cls(time_support=iset, **kwargs)
 
-    def _get_slice(self, start, end=None, mode="closest", n_points=None, time_unit="s"):
+    def _get_slice(self, start, end=None, mode="closest_t", n_points=None, time_unit="s"):
         """
         Get a slice from the time series data based on the start and end values with the specified mode.
 
@@ -478,7 +478,7 @@ class Base(abc.ABC):
         end : int or float, optional
             The ending value for the slice. Defaults to None.
         mode : str, optional
-            The mode for slicing. Can be "forward", "backward", or "closest". Defaults to "closest".
+            The mode for slicing. Can be "after_t", "before_t", or "closest". Defaults to "closest_t".
         time_unit : str, optional
             The time unit for the start and end values. Defaults to "s" (seconds).
         n_points : int, optional
@@ -489,13 +489,13 @@ class Base(abc.ABC):
         -------
         slice : slice
             If end is not provided:
-                - For mode == "backward":
+                - For mode == "before_t":
                     - An empty slice for start < self.t[0]
                     - slice(idx, idx+1) with self.t[idx] <= start < self.t[idx+1]
-                - For mode == "forward":
+                - For mode == "after_t":
                     - An empty slice for start >= self.t[-1]
                     - slice(idx, idx+1) with self.t[idx-1] < start <= self.t[idx]
-                - For mode == "closest":
+                - For mode == "closest_t":
                     - slice(idx, idx+1) with the closest index to start
             If end is provided:
                 - For mode == "backward":
@@ -538,11 +538,11 @@ class Base(abc.ABC):
         if idx_start == len(self.t):
             idx_start -= 1  # make sure the index is not out of bound
 
-        if mode == "backward":
+        if mode == "before_t":
             # in order to get the index preceding start
             # subtract one except if self.t[idx_start] is exactly equal to start
             idx_start -= self.t[idx_start] > start
-        elif mode == "closest":
+        elif mode == "closest_t":
             # subtract 1 if start is closer to the previous index
             di = self.t[idx_start] - start > np.abs(self.t[idx_start - 1] - start)
             idx_start -= di
@@ -569,14 +569,14 @@ class Base(abc.ABC):
             idx_end -= 1  # make sure the index is not out of bound
             add_if_forward = 1  # add back the index if forward
 
-        if mode == "backward":
+        if mode == "before_t":
             # remove 1 if self.t[idx_end] is larger than end, except if idx_end is 0
             idx_end -= (self.t[idx_end] > end) - int(idx_end == 0)
-        elif mode == "closest":
+        elif mode == "closest_t":
             # subtract 1 if end is closer to self.t[idx_end - 1]
             di = self.t[idx_end] - end > np.abs(self.t[idx_end - 1] - end)
             idx_end -= di
-        elif mode == "forward" and idx_end == len(self.t) - 1:
+        elif mode == "after_t" and idx_end == len(self.t) - 1:
             idx_end += add_if_forward  # add one if idx_start < len(self.t)
 
         step = None
