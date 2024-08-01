@@ -712,6 +712,23 @@ class Test_Time_Series_2:
             tsd.threshold(0.5, "bla")
         assert str(e_info.value) == "Method {} for thresholding is not accepted.".format("bla")
 
+    def test_slice_with_int_tsd(self, tsd):
+        array_slice = np.arange(10, dtype=int)
+        tsd_index = nap.Tsd(t=tsd.index[:len(array_slice)], d=array_slice)
+        indexed = tsd[tsd_index]
+        assert isinstance(indexed, nap.Tsd)
+        np.testing.assert_array_almost_equal(indexed.values, tsd.values[array_slice])
+
+    def test_slice_with_bool_tsd(self, tsd):
+        thr = 0.5
+        tsd_index = tsd > thr
+        raw_values = tsd.values
+        np_indexed_vals = raw_values[tsd_index.values]
+        indexed = tsd[tsd_index]
+
+        assert isinstance(indexed, nap.Tsd)
+        np.testing.assert_array_almost_equal(indexed.values, np_indexed_vals)
+
     def test_data(self, tsd):
         np.testing.assert_array_almost_equal(tsd.values, tsd.data())
 
