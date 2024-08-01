@@ -872,6 +872,23 @@ class Test_Time_Series_3:
         assert isinstance(tsdframe[0:10].time_support, nap.IntervalSet)
         np.testing.assert_array_almost_equal(tsdframe[0:10].time_support, tsdframe.time_support)
 
+    def test_slice_with_int_tsd(self, tsdframe):
+        array_slice = np.arange(10, dtype=int)
+        tsd_index = nap.Tsd(t=tsdframe.index[:len(array_slice)], d=array_slice)
+        indexed = tsdframe[tsd_index]
+        assert isinstance(indexed, nap.TsdFrame)
+        np.testing.assert_array_almost_equal(indexed.values, tsdframe.values[array_slice])
+
+    def test_slice_with_bool_tsd(self, tsdframe):
+        thr = 0.5
+        tsd_index = (tsdframe > thr).any(axis=1)
+        raw_values = tsdframe.values
+        np_indexed_vals = raw_values[tsd_index.values]
+        indexed = tsdframe[tsd_index]
+
+        assert isinstance(indexed, nap.TsdFrame)
+        np.testing.assert_array_almost_equal(indexed.values, np_indexed_vals)
+
     def test_str_indexing(self, tsdframe):
         tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), time_units="s", columns=['a', 'b', 'c'])
         np.testing.assert_array_almost_equal(tsdframe.values[:,0], tsdframe['a'].values)
@@ -882,7 +899,6 @@ class Test_Time_Series_3:
 
         with pytest.raises(Exception):
             tsdframe[['d', 'e']]
-
 
     def test_operators(self, tsdframe):
         v = tsdframe.values
