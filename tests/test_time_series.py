@@ -713,13 +713,18 @@ class Test_Time_Series_2:
         assert str(e_info.value) == "Method {} for thresholding is not accepted.".format("bla")
 
     def test_slice_with_int_tsd(self, tsd):
+        tsd = tsd.copy()
         array_slice = np.arange(10, dtype=int)
         tsd_index = nap.Tsd(t=tsd.index[:len(array_slice)], d=array_slice)
         indexed = tsd[tsd_index]
         assert isinstance(indexed, nap.Tsd)
         np.testing.assert_array_almost_equal(indexed.values, tsd.values[array_slice])
 
+        tsd[tsd_index] = 0
+        np.testing.assert_array_almost_equal(tsd.values[array_slice], 0)
+
     def test_slice_with_bool_tsd(self, tsd):
+
         thr = 0.5
         tsd_index = tsd > thr
         raw_values = tsd.values
@@ -728,6 +733,10 @@ class Test_Time_Series_2:
 
         assert isinstance(indexed, nap.Tsd)
         np.testing.assert_array_almost_equal(indexed.values, np_indexed_vals)
+
+        tsd[tsd_index] = 0
+        np.testing.assert_array_almost_equal(tsd.values[tsd_index.values], 0)
+
 
     def test_data(self, tsd):
         np.testing.assert_array_almost_equal(tsd.values, tsd.data())
@@ -896,6 +905,9 @@ class Test_Time_Series_3:
         assert isinstance(indexed, nap.TsdFrame)
         np.testing.assert_array_almost_equal(indexed.values, tsdframe.values[array_slice])
 
+        tsdframe[tsd_index] = 0
+        np.testing.assert_array_almost_equal(tsdframe.values[tsd_index.values], 0)
+
     def test_slice_with_bool_tsd(self, tsdframe):
         thr = 0.5
         tsd_index = (tsdframe > thr).any(axis=1)
@@ -905,6 +917,9 @@ class Test_Time_Series_3:
 
         assert isinstance(indexed, nap.TsdFrame)
         np.testing.assert_array_almost_equal(indexed.values, np_indexed_vals)
+
+        tsdframe[tsd_index] = 0
+        np.testing.assert_array_almost_equal(tsdframe.values[tsd_index.values], 0)
 
     def test_str_indexing(self, tsdframe):
         tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), time_units="s", columns=['a', 'b', 'c'])
