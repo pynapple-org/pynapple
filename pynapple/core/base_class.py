@@ -497,6 +497,8 @@ class Base(abc.ABC):
                     - slice(idx, idx+1) with self.t[idx-1] < start <= self.t[idx]
                 - For mode == "closest_t":
                     - slice(idx, idx+1) with the closest index to start
+                - For mode == "restrict":
+                    - slice the indices such that start <= self.t[idx] <= end
             If end is provided:
                 - For mode == "backward":
                     - An empty slice if end < self.t[0]
@@ -523,6 +525,9 @@ class Base(abc.ABC):
 
         if end is None and n_points:
             raise ValueError("'n_points' can be used only when 'end' is specified!")
+
+        if mode == "restrict" and n_points:
+            raise ValueError("Fixing the number of time points is incompatible with 'restrict' mode.")
 
         # convert and get index for start
         start = TsIndex.format_timestamps(np.array([start]), time_unit)[0]
@@ -551,7 +556,7 @@ class Base(abc.ABC):
             if idx_start < 0:  # happens only on backwards if start < self.t[0]
                 return slice(0, 0)
             elif (
-                idx_start == len(self.t) - 1 and mode == "forward"
+                idx_start == len(self.t) - 1 and mode == "after_t"
             ):  # happens only on forward if start >= self.t[-1]
                 return slice(idx_start, idx_start)
             return slice(idx_start, idx_start + 1)
@@ -578,6 +583,8 @@ class Base(abc.ABC):
             idx_end -= di
         elif mode == "after_t" and idx_end == len(self.t) - 1:
             idx_end += add_if_forward  # add one if idx_start < len(self.t)
+        elif mode == "restrict":
+            idx_end += int(self.t[idx_end] <= end)
 
         step = None
         if n_points:

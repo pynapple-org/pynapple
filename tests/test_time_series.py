@@ -1509,7 +1509,21 @@ def test_get_slice_value_types(start, end, time_unit, expectation):
         (1, None, "closest_t", slice(0, 1), np.array([1])),
         (5, None, "after_t", slice(3, 3), np.array([])),
         (5, None, "before_t", slice(3, 4), np.array([4])),
-        (5, None, "closest_t", slice(3, 4), np.array([4]))
+        (5, None, "closest_t", slice(3, 4), np.array([4])),
+        (1, 3, "restrict", slice(0, 3), np.array([1, 2, 3])),
+        (1, 2.7, "restrict", slice(0, 2), np.array([1, 2])),
+        (1, 2.4, "restrict", slice(0, 2), np.array([1, 2])),
+        (1.1, 3, "restrict", slice(1, 3), np.array([2, 3])),
+        (1.6, 3, "restrict", slice(1, 3), np.array([2, 3])),
+        (1.6, 1.8, "restrict", slice(1, 1), np.array([])),
+        (1.4, 1.6, "restrict", slice(1, 1), np.array([])),
+        (3, 3, "restrict", slice(2, 3), np.array([3])),
+        (0, 3, "restrict", slice(0, 3), np.array([1, 2, 3])),
+        (0, 4, "restrict", slice(0, 4), np.array([1, 2, 3, 4])),
+        (4, 4, "restrict", slice(3, 4), np.array([4])),
+        (4, 5, "restrict", slice(3, 4), np.array([4])),
+        (0, 1, "restrict", slice(0, 1), np.array([1])),
+
     ]
 )
 @pytest.mark.parametrize("ts",
@@ -1524,6 +1538,25 @@ def test_get_slice_value(start, end, mode, expected_slice, expected_array, ts):
     out_array = ts.t[out_slice]
     assert out_slice == expected_slice
     assert np.all(out_array == expected_array)
+    if mode == "restrict":
+        iset = nap.IntervalSet(start, end)
+        out_restrict = ts.restrict(iset)
+        assert np.all(out_restrict.t == out_array)
+
+
+def test_get_slice_restrict_random_val_value():
+    np.random.seed(123)
+    ts = nap.Ts(np.linspace(0.2, 0.8, 100))
+    se_vec = np.random.uniform(0, 1, size=(10000, 2))
+    starts = np.min(se_vec, axis=1)
+    ends = np.max(se_vec, axis=1)
+    for start, end in zip(starts, ends):
+        out_slice = ts._get_slice(start, end=end, mode="restrict")
+        out_ts = ts[out_slice]
+        iset = nap.IntervalSet(start, end)
+        out_restrict = ts.restrict(iset)
+        assert np.all(out_restrict == out_ts)
+
 
 @pytest.mark.parametrize(
     "end, n_points, expectation",
