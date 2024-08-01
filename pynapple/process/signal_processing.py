@@ -6,8 +6,8 @@ Contains functionality for signal processing pynapple object; fourier transforms
 
 import numpy as np
 import pandas as pd
-
-import pynapple as nap
+from numbers import Number
+from .. import core as nap
 
 
 def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False):
@@ -56,7 +56,7 @@ def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False):
         return ret.loc[ret.index >= 0]
     return ret
 
-def compute_mean_power_spectral_density(sig, interval_size, fs=None, ep=None, full_range=False, time_units="s"):
+def compute_mean_power_spectral_density(sig, interval_size, fs=None, ep=None, full_range=False, time_unit="s"):
     """Compute mean power spectral density by averaging FFT over epochs of same size. 
     The parameter `interval_size` controls the duration of the epochs.
     
@@ -64,46 +64,53 @@ def compute_mean_power_spectral_density(sig, interval_size, fs=None, ep=None, fu
 
     Parameters
     ----------
-    sig : TYPE
-        Description
-    interval_size : TYPE
-        Description
+    sig : Tsd or TsdFrame
+        Signal with equispaced samples
+    interval_size : Number
+        Epochs size to compute to average the FFT across
     fs : None, optional
-        Description
+        Sampling frequency of `sig`. If `None`, `fs` is equal to `sig.rate`
     ep : None, optional
-        Description
+        The `IntervalSet` to calculate the fft on. Can be any length.
     full_range : bool, optional
-        Description
-    time_units : str, optional
-        Description
+        If true, will return full fft frequency range, otherwise will return only positive values
+    time_unit : str, optional
+        Time units for parameter `interval_size`. Can be ('s'[default], 'ms', 'us')
     
     Returns
     -------
-    TYPE
-        Description
+    pandas.DataFrame
+        Power spectral density.
     
     Raises
     ------
     RuntimeError
-        Description
+        If splitting the epoch with `interval_size` results in an empty set.
     TypeError
-        Description
+        If `ep` or `sig` are not respectively pynapple time series or interval set.
     """
     if not (ep is None or isinstance(ep, nap.IntervalSet)):
         raise TypeError("ep param must be a pynapple IntervalSet object, or None")
     if ep is None:
         ep = sig.time_support
+    
+    if not (fs is None or isinstance(fs, Number)):
+        raise TypeError("fs must be of type float or int")
     if fs is None:
-        fs = sig.rate        
+        fs = sig.rate
+
+    if not isinstance(full_range, bool):
+        raise TypeError("full_range must be of type bool or None")
 
     # Split the ep
+    interval_size = nap.TsIndex.format_timestamps(np.array([interval_size]), time_unit)[0]
     split_ep = ep.split(interval_size)
 
     if len(split_ep) == 0:
         raise RuntimeError(f"Splitting epochs with interval_size={interval_size} generated an empty IntervalSet. Try decreasing interval_size")
     
     # Get the slices of each ep
-    slices = np.zeros((len(split_ep),2), dtype=int)    
+    slices = np.zeros((len(split_ep),2), dtype=int)
 
     for i in range(len(split_ep)):
         sl = sig.get_slice(split_ep[i,0], split_ep[i,1], mode='backward')
@@ -114,7 +121,7 @@ def compute_mean_power_spectral_density(sig, interval_size, fs=None, ep=None, fu
     N = np.min(np.diff(slices, 1))
 
     if N == 0:
-        raise RuntimeError(f"One epoch doesn't have any signal. Check the parameter ep or the time support if no epoch is passed.")
+        raise RuntimeError("One interval doesn't have any signal associated. Check the parameter ep or the time support if no epoch is passed.")
 
     # Get the freqs
     fft_freq = np.fft.fftfreq(N, 1 / fs)
