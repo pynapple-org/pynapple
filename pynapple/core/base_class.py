@@ -596,7 +596,7 @@ class Base(abc.ABC):
 
         return slice(idx_start, idx_end, step)
 
-    def get_slice(self, start, end=None, mode="closest", time_unit="s"):
+    def get_slice(self, start, end=None, time_unit="s"):
         """
         Get a slice from the time series data based on the start and end values with the specified mode.
 
@@ -606,21 +606,15 @@ class Base(abc.ABC):
             The starting value for the slice.
         end : int or float, optional
             The ending value for the slice. Defaults to None.
-        mode : str, optional
-            The mode for slicing. Can be "forward", "backward", or "closest". Defaults to "closest".
         time_unit : str, optional
             The time unit for the start and end values. Defaults to "s" (seconds).
 
         Returns
         -------
         slice : slice
-            A slice determining the start and end indices, with unit step.
-            - If mode = "closest":
-                Starts/ends the slice with indices closest to the start/end time provided.
-            - If mode = "backward":
-                Starts/ends the slice with the indices preceding the start/end time provided.
-            - If mode = "forward":
-                Starts/ends the slice with the indices following the start/end time provided.
+            A slice determining the start and end indices, with unit step
+            Slicing the array will behave like get: self[s] == self.get(start, end)
+
 
         Raises
         ------
@@ -645,6 +639,7 @@ class Base(abc.ABC):
         >>> print(ts.get_slice(start, None, mode="backward")) # returns `slice(1, 2, None)`
         >>> print(ts.get_slice(start, None, mode="forward")) # returns `slice(2, 3, None)`
         """
+        mode = "closest_t" if end is None else "restrict"
         return self._get_slice(
             start, end=end, mode=mode, n_points=None, time_unit=time_unit
         )
