@@ -467,7 +467,9 @@ class Base(abc.ABC):
         iset = IntervalSet(start=file["start"], end=file["end"])
         return cls(time_support=iset, **kwargs)
 
-    def _get_slice(self, start, end=None, mode="closest_t", n_points=None, time_unit="s"):
+    def _get_slice(
+        self, start, end=None, mode="closest_t", n_points=None, time_unit="s"
+    ):
         """
         Get a slice from the time series data based on the start and end values with the specified mode.
 
@@ -527,7 +529,9 @@ class Base(abc.ABC):
             raise ValueError("'n_points' can be used only when 'end' is specified!")
 
         if mode == "restrict" and n_points:
-            raise ValueError("Fixing the number of time points is incompatible with 'restrict' mode.")
+            raise ValueError(
+                "Fixing the number of time points is incompatible with 'restrict' mode."
+            )
 
         # convert and get index for start
         start = TsIndex.format_timestamps(np.array([start]), time_unit)[0]
