@@ -291,7 +291,7 @@ fig.suptitle("Parametrization Visualization")
 
 # %%
 # ***
-# Effect of time_decay
+# Effect of gaussian_width
 # ------------------
 # Let's increase time_decay to 7.5 and see the effect on the resultant filter bank.
 
@@ -347,9 +347,9 @@ ax.legend()
 
 # %%
 # ***
-# Effect of scaling
+# Effect of window_length
 # ------------------
-# Let's increase scaling to 2.0 and see the effect on the resultant filter bank.
+# Let's increase window_length to 2.0 and see the effect on the resultant filter bank.
 
 freqs = np.linspace(1, 25, num=25)
 filter_bank = nap.generate_morlet_filterbank(
