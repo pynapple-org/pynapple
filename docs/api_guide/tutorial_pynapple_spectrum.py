@@ -14,6 +14,8 @@ See the [documentation](https://pynapple-org.github.io/pynapple/) of Pynapple fo
 #     You can install all with `pip install matplotlib requests tqdm seaborn`
 #
 # Now, import the necessary libraries:
+#
+# mkdocs_gallery_thumbnail_number = 3
 
 import matplotlib.pyplot as plt
 import numpy as np

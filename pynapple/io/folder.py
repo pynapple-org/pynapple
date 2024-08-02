@@ -4,7 +4,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-05-15 15:32:24
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-08-06 17:37:23
+# @Last Modified time: 2024-08-02 11:35:10
 
 """
 The Folder class helps to navigate a hierarchical data tree.
@@ -302,12 +302,12 @@ class Folder(UserDict):
             with open(json_filename, "r") as ff:
                 metadata = json.load(ff)
                 text = "\n".join([" : ".join(it) for it in metadata.items()])
-            panel = Panel.fit(text, border_style="green", title=title)
+            panel = Panel.fit(text, border_style="green", title=str(title))
         else:
             panel = Panel.fit(
                 "No metadata",
                 border_style="red",
-                title=title,
+                title=str(title),
             )
         with Console() as console:
             console.print(panel)
