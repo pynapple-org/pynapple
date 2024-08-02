@@ -613,7 +613,7 @@ class Base(abc.ABC):
         -------
         slice : slice
             A slice determining the start and end indices, with unit step
-            Slicing the array will behave like get: self[s] == self.get(start, end)
+            Slicing the array will be equivalent to calling get: `ts[s].t == ts.get(start, end).t`
 
 
         Raises
@@ -627,17 +627,18 @@ class Base(abc.ABC):
         >>> import pynapple as nap
 
         >>> ts = nap.Ts(t = [0, 1, 2, 3])
-        >>> start, end = 1.2, 2.6
 
         >>> # slice over a range
-        >>> print(ts.get_slice(start, end, mode="closest"))  # returns `slice(1, 3, None)`
-        >>> print(ts.get_slice(start, end, mode="backward"))  # returns `slice(1, 2, None)`
-        >>> print(ts.get_slice(start, end, mode="forward"))  # returns `slice(2, 3, None)`
+        >>> start, end = 1.2, 2.6
+        >>> print(ts.get_slice(start, end))  # returns `slice(2, 3, None)`
+        >>> start, end = 1., 2.
+        >>> print(ts.get_slice(start, end, mode="forward"))  # returns `slice(1, 3, None)`
 
         >>> # slice a single value
-        >>> print(ts.get_slice(start, None, mode="closest"))  # returns `slice(1, 2, None)`
-        >>> print(ts.get_slice(start, None, mode="backward")) # returns `slice(1, 2, None)`
-        >>> print(ts.get_slice(start, None, mode="forward")) # returns `slice(2, 3, None)`
+        >>> start = 1.2
+        >>> print(ts.get_slice(start))  # returns `slice(1, 2, None)`
+        >>> start = 2.
+        >>> print(ts.get_slice(start)) # returns `slice(2, 3, None)`
         """
         mode = "closest_t" if end is None else "restrict"
         return self._get_slice(
