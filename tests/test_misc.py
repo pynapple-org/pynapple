@@ -2,7 +2,7 @@
 # @Author: Guillaume Viejo
 # @Date:   2023-07-10 12:26:20
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-18 16:05:24
+# @Last Modified time: 2024-07-31 11:17:59
 
 """Tests of IO misc functions"""
 
@@ -40,7 +40,7 @@ def test_load_file(path):
     np.testing.assert_array_equal(tsd.values, tsd2.values)
     np.testing.assert_array_equal(tsd.time_support.values, tsd2.time_support.values)
 
-    file_path.unlink()
+    # file_path.unlink()
 
 @pytest.mark.parametrize("path", [path])
 def test_load_file_filenotfound(path):
@@ -57,7 +57,7 @@ def test_load_wrong_format(path):
         nap.load_file(file_path)
 
     assert str(e.value) == "File format not supported"
-    file_path.unlink()
+    # file_path.unlink()
 
 @pytest.mark.parametrize("path", [path])
 def test_load_folder(path):

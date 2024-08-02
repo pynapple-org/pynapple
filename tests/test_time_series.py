@@ -608,16 +608,6 @@ class Test_Time_Series_2:
             a.time_support, tsd.time_support
             )
 
-    # def test_loc(self, tsd):
-    #     a = tsd.loc[0:10] # should be 11 elements similar to pandas Series
-    #     b = nap.Tsd(t=tsd.index[0:11], d=tsd.values[0:11])
-    #     assert isinstance(a, nap.Tsd)
-    #     np.testing.assert_array_almost_equal(a.index, b.index)
-    #     np.testing.assert_array_almost_equal(a.values, b.values)
-    #     pd.testing.assert_frame_equal(
-    #         a.time_support, b.time_support
-    #         )
-
     def test_count(self, tsd):
         count = tsd.count(1)
         assert len(count) == 99
@@ -784,8 +774,8 @@ class Test_Time_Series_2:
         np.testing.assert_array_almost_equal(file['start'], tsd.time_support.start)
         np.testing.assert_array_almost_equal(file['end'], tsd.time_support.end)
 
-        Path("tsd.npz").unlink()
-        Path("tsd2.npz").unlink()
+        # Path("tsd.npz").unlink()
+        # Path("tsd2.npz").unlink()
 
     def test_interpolate(self, tsd):
         
@@ -1022,8 +1012,8 @@ class Test_Time_Series_3:
         np.testing.assert_array_almost_equal(file['end'], tsdframe.time_support.end)
         np.testing.assert_array_almost_equal(file['columns'], tsdframe.columns)
 
-        Path("tsdframe.npz").unlink()
-        Path("tsdframe2.npz").unlink()
+        # Path("tsdframe.npz").unlink()
+        # Path("tsdframe2.npz").unlink()
 
     def test_interpolate(self, tsdframe):
         
@@ -1136,8 +1126,8 @@ class Test_Time_Series_4:
         np.testing.assert_array_almost_equal(file['start'], ts.time_support.start)
         np.testing.assert_array_almost_equal(file['end'], ts.time_support.end)
 
-        Path("ts.npz").unlink()
-        Path("ts2.npz").unlink()
+        # Path("ts.npz").unlink()
+        # Path("ts2.npz").unlink()
 
     def test_fillna(self, ts):
         with pytest.raises(AssertionError):
@@ -1396,8 +1386,8 @@ class Test_Time_Series_5:
         np.testing.assert_array_almost_equal(file['start'], tsdtensor.time_support.start)
         np.testing.assert_array_almost_equal(file['end'], tsdtensor.time_support.end)
 
-        Path("tsdtensor.npz").unlink()
-        Path("tsdtensor2.npz").unlink()
+        # Path("tsdtensor.npz").unlink()
+        # Path("tsdtensor2.npz").unlink()
 
     def test_interpolate(self, tsdtensor):
         

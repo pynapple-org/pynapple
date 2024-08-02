@@ -1,8 +1,4 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-03-30 11:14:41
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-08-02 16:02:43
+
 
 """Tests of ts group for `pynapple` package."""
 
@@ -138,7 +134,8 @@ class TestTsGroup1:
         ar_info = np.ones(3) * 1
         tsgroup = nap.TsGroup(group, sr=sr_info, ar=ar_info)
         assert tsgroup._metadata.shape == (3, 3)
-        pd.testing.assert_series_equal(tsgroup._metadata["sr"], sr_info)
+        np.testing.assert_array_almost_equal(tsgroup._metadata["sr"].values, sr_info.values)
+        np.testing.assert_array_almost_equal(tsgroup._metadata["sr"].index.values, sr_info.index.values)
         np.testing.assert_array_almost_equal(tsgroup._metadata["ar"].values, ar_info)
 
     def test_add_metainfo(self, group):
