@@ -617,6 +617,11 @@ class Test_Time_Series_2:
         assert len(count) == 99
         np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))
 
+        count = tsd.count(bin_size=1, dtype=np.int16)
+        assert len(count) == 99
+        assert count.dtype == np.dtype(np.int16)
+
+
     def test_count_time_units(self, tsd):
         for b, tu in zip([1, 1e3, 1e6],['s', 'ms', 'us']):
             count = tsd.count(b, time_units = tu)
@@ -1157,6 +1162,11 @@ class Test_Time_Series_4:
         assert len(count) == 99
         np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))
 
+        count = ts.count(bin_size=1, dtype=np.int16)
+        assert len(count) == 99
+        assert count.dtype == np.dtype(np.int16)
+        
+
     def test_count_time_units(self, ts):
         for b, tu in zip([1, 1e3, 1e6],['s', 'ms', 'us']):
             count = ts.count(b, time_units = tu)
@@ -1191,7 +1201,6 @@ class Test_Time_Series_4:
         assert len(count) == 1
         np.testing.assert_array_almost_equal(count.values, np.array([100]))
 
-
     def test_count_errors(self, ts):        
         with pytest.raises(ValueError):
             ts.count(bin_size = {})
@@ -1202,6 +1211,24 @@ class Test_Time_Series_4:
         with pytest.raises(ValueError):
             ts.count(time_units = {})
 
+    @pytest.mark.parametrize(
+        "dtype, expectation",
+        [
+            (None, does_not_raise()),
+            (float, does_not_raise()),
+            (int, does_not_raise()),
+            (np.int32, does_not_raise()),
+            (np.int64, does_not_raise()),
+            (np.float32, does_not_raise()),
+            (np.float64, does_not_raise()),
+            (1, pytest.raises(ValueError, match=f"1 is not a valid numpy dtype")),
+        ]
+    )
+    def test_count_dtype(self, dtype, expectation, ts):
+        with expectation:
+            count = ts.count(bin_size=0.1, dtype=dtype)
+            if dtype:
+                assert np.issubdtype(count.dtype, dtype)
 
 ####################################################
 # Test for tsdtensor
