@@ -974,7 +974,7 @@ class TsdFrame(BaseTsd):
     def __setitem__(self, key, value):
         if isinstance(key, BaseTsd):
             key = key.d
-            
+
         try:
             if isinstance(key, str):
                 new_key = self.columns.get_indexer([key])
@@ -990,7 +990,7 @@ class TsdFrame(BaseTsd):
     def __getitem__(self, key, *args, **kwargs):
         if isinstance(key, BaseTsd):
             key = key.d
-        
+
         if (
             isinstance(key, str)
             or hasattr(key, "__iter__")
