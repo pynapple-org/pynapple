@@ -4,13 +4,15 @@ Signal processing tools for Pynapple.
 Contains functionality for signal processing pynapple object; fourier transforms and wavelet decomposition.
 """
 
+from numbers import Number
+
 import numpy as np
 import pandas as pd
 
-import pynapple as nap
+from .. import core as nap
 
 
-def compute_spectogram(sig, fs=None, ep=None, full_range=False):
+def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False):
     """
     Performs numpy fft on sig, returns output. Pynapple assumes a constant sampling rate for sig.
 
@@ -50,6 +52,97 @@ def compute_spectogram(sig, fs=None, ep=None, full_range=False):
         fs = sig.rate
     fft_result = np.fft.fft(sig.restrict(ep).values, axis=0)
     fft_freq = np.fft.fftfreq(len(sig.restrict(ep).values), 1 / fs)
+    ret = pd.DataFrame(fft_result, fft_freq)
+    ret.sort_index(inplace=True)
+    if not full_range:
+        return ret.loc[ret.index >= 0]
+    return ret
+
+
+def compute_mean_power_spectral_density(
+    sig, interval_size, fs=None, ep=None, full_range=False, time_unit="s"
+):
+    """Compute mean power spectral density by averaging FFT over epochs of same size.
+    The parameter `interval_size` controls the duration of the epochs.
+
+    Note that this function assumes a constant sampling rate for sig.
+
+    Parameters
+    ----------
+    sig : Tsd or TsdFrame
+        Signal with equispaced samples
+    interval_size : Number
+        Epochs size to compute to average the FFT across
+    fs : None, optional
+        Sampling frequency of `sig`. If `None`, `fs` is equal to `sig.rate`
+    ep : None, optional
+        The `IntervalSet` to calculate the fft on. Can be any length.
+    full_range : bool, optional
+        If true, will return full fft frequency range, otherwise will return only positive values
+    time_unit : str, optional
+        Time units for parameter `interval_size`. Can be ('s'[default], 'ms', 'us')
+
+    Returns
+    -------
+    pandas.DataFrame
+        Power spectral density.
+
+    Raises
+    ------
+    RuntimeError
+        If splitting the epoch with `interval_size` results in an empty set.
+    TypeError
+        If `ep` or `sig` are not respectively pynapple time series or interval set.
+    """
+    if not (ep is None or isinstance(ep, nap.IntervalSet)):
+        raise TypeError("ep param must be a pynapple IntervalSet object, or None")
+    if ep is None:
+        ep = sig.time_support
+
+    if not (fs is None or isinstance(fs, Number)):
+        raise TypeError("fs must be of type float or int")
+    if fs is None:
+        fs = sig.rate
+
+    if not isinstance(full_range, bool):
+        raise TypeError("full_range must be of type bool or None")
+
+    # Split the ep
+    interval_size = nap.TsIndex.format_timestamps(np.array([interval_size]), time_unit)[
+        0
+    ]
+    split_ep = ep.split(interval_size)
+
+    if len(split_ep) == 0:
+        raise RuntimeError(
+            f"Splitting epochs with interval_size={interval_size} generated an empty IntervalSet. Try decreasing interval_size"
+        )
+
+    # Get the slices of each ep
+    slices = np.zeros((len(split_ep), 2), dtype=int)
+
+    for i in range(len(split_ep)):
+        sl = sig.get_slice(split_ep[i, 0], split_ep[i, 1], mode="backward")
+        slices[i, 0] = sl.start
+        slices[i, 1] = sl.stop
+
+    # Check what is the signal length
+    N = np.min(np.diff(slices, 1))
+
+    if N == 0:
+        raise RuntimeError(
+            "One interval doesn't have any signal associated. Check the parameter ep or the time support if no epoch is passed."
+        )
+
+    # Get the freqs
+    fft_freq = np.fft.fftfreq(N, 1 / fs)
+
+    # Compute the fft
+    fft_result = np.zeros((N, *sig.shape[1:]), dtype=complex)
+
+    for i in range(len(slices)):
+        fft_result += np.fft.fft(sig[slices[i, 0] : slices[i, 1]].values[0:N], axis=0)
+
     ret = pd.DataFrame(fft_result, fft_freq)
     ret.sort_index(inplace=True)
     if not full_range:

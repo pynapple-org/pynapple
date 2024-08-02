@@ -131,7 +131,7 @@ axd["pos"].set_xlim(RUN_Tsd.index.min(), RUN_Tsd.index.max())
 # -----------------------------------
 # Let's take the Fourier transform of our data to get an initial insight into the dominant frequencies.
 
-fft = nap.compute_spectogram(RUN_Tsd, fs=int(FS))
+fft = nap.compute_power_spectral_density(RUN_Tsd, fs=int(FS))
 print(fft)
 
 # %%
