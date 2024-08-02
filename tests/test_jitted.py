@@ -157,7 +157,7 @@ def test_jitcount():
         starts = ep.start
         ends = ep.end
         bin_size = 1.0
-        t, d = nap.core._jitted_functions.jitcount(time_array, starts, ends, bin_size)
+        t, d = nap.core._jitted_functions.jitcount(time_array, starts, ends, bin_size, np.int64)
         tsd3 = nap.Tsd(t=t, d=d, time_support = ep)
 
         tsd2 = []

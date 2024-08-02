@@ -2,7 +2,7 @@
 # @Author: gviejo
 # @Date:   2022-03-30 11:14:41
 # @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-11 14:42:50
+# @Last Modified time: 2024-08-02 16:02:43
 
 """Tests of ts group for `pynapple` package."""
 
@@ -304,6 +304,9 @@ class TestTsGroup1:
 
         count = tsgroup.count()
         np.testing.assert_array_almost_equal(count.values, np.array([[101, 201, 501]]))
+
+        count = tsgroup.count(1.0, dtype=np.int16)
+        assert count.dtype == np.dtype(np.int16)
 
     def test_count_with_ep(self, group):
         ep = nap.IntervalSet(start=0, end=100)

@@ -292,7 +292,9 @@ class Base(abc.ABC):
                 if isinstance(a, IntervalSet):
                     ep = a
 
-        if dtype:
+        if dtype is None:
+            dtype = np.dtype(np.int64)
+        else:
             try:
                 dtype = np.dtype(dtype)
             except Exception:

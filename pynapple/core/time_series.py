@@ -306,7 +306,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         t, d, time_support, kwargs = super().value_from(data, ep)
         return data.__class__(t=t, d=d, time_support=time_support, **kwargs)
 
-    def count(self, *args, **kwargs):
+    def count(self, *args, dtype=None, **kwargs):
         """
         Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
         You can call this function in multiple ways :
@@ -334,6 +334,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
             IntervalSet to restrict the operation
         time_units : str, optional
             Time units of bin size ('us', 'ms', 's' [default])
+        dtype: type, optional
+            Data type for the count. Default is np.int64.
 
         Returns
         -------
@@ -361,7 +363,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
             start    end
         0  100.0  800.0
         """
-        t, d, ep = super().count(*args, **kwargs)
+        t, d, ep = super().count(*args, dtype=dtype, **kwargs)
         return Tsd(t=t, d=d, time_support=ep)
 
     def bin_average(self, bin_size, ep=None, time_units="s"):
@@ -1619,8 +1621,8 @@ class Ts(Base):
         And bincount automatically inherit ep as time support:
 
         >>> bincount.time_support
-        >>>    start    end
-        >>> 0  100.0  800.0
+            start    end
+        0  100.0  800.0
         """
         t, d, ep = super().count(*args, dtype=dtype, **kwargs)
         return Tsd(t=t, d=d, time_support=ep)

@@ -627,6 +627,11 @@ class Test_Time_Series_2:
         assert len(count) == 99
         np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))
 
+        count = tsd.count(bin_size=1, dtype=np.int16)
+        assert len(count) == 99
+        assert count.dtype == np.dtype(np.int16)
+
+
     def test_count_time_units(self, tsd):
         for b, tu in zip([1, 1e3, 1e6],['s', 'ms', 'us']):
             count = tsd.count(b, time_units = tu)
@@ -1166,6 +1171,11 @@ class Test_Time_Series_4:
         count = ts.count(bin_size=1)
         assert len(count) == 99
         np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))
+
+        count = ts.count(bin_size=1, dtype=np.int16)
+        assert len(count) == 99
+        assert count.dtype == np.dtype(np.int16)
+        
 
     def test_count_time_units(self, ts):
         for b, tu in zip([1, 1e3, 1e6],['s', 'ms', 'us']):
