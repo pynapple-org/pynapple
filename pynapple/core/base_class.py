@@ -480,7 +480,7 @@ class Base(abc.ABC):
         end : int or float, optional
             The ending value for the slice. Defaults to None.
         mode : str, optional
-            The mode for slicing. Can be "after_t", "before_t", or "closest". Defaults to "closest_t".
+            The mode for slicing. Can be "after_t", "before_t", "restrict", or "closest_t". Defaults to "closest_t".
         time_unit : str, optional
             The time unit for the start and end values. Defaults to "s" (seconds).
         n_points : int, optional
