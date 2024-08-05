@@ -123,6 +123,17 @@ def test_compute_wavelet_transform():
 
     t = np.linspace(0, 1, 1001)
     sig = nap.Tsd(
+        d=np.sin(t * 50 * np.pi * 2)
+        * np.interp(np.linspace(0, 1, 1001), [0, 0.5, 1], [0, 1, 0]),
+        t=t,
+    )
+    freqs = (10, 100, 10, True)
+    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
+    mwt2 = nap.compute_wavelet_transform(sig, fs=None, freqs=np.geomspace(10, 100, 10))
+    assert np.array_equal(mwt, mwt2)
+
+    t = np.linspace(0, 1, 1001)
+    sig = nap.Tsd(
         d=np.sin(t * 10 * np.pi * 2)
         * np.interp(np.linspace(0, 1, 1001), [0, 0.5, 1], [0, 1, 0]),
         t=t,
@@ -192,7 +203,7 @@ def test_compute_wavelet_transform():
 
     t = np.linspace(0, 1, 1024)
     sig = nap.Tsd(d=np.random.random(1024), t=t)
-    freqs = (1, 51, 10)
+    freqs = (1, 51, 6)
     mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
     assert mwt.shape == (1024, 6)
 
@@ -318,6 +329,18 @@ def test_compute_wavelet_transform():
             "l1",
             pytest.raises(
                 TypeError, match="`freqs` must be a ndarray or tuple instance."
+            ),
+        ),
+        (
+            "not_a_signal",
+            None,
+            np.linspace(10, 100, 10),
+            1.5,
+            1.0,
+            16,
+            "l1",
+            pytest.raises(
+                TypeError, match="`sig` must be instance of Tsd, TsdFrame, or TsdTensor"
             ),
         ),
     ],

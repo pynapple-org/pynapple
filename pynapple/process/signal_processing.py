@@ -178,7 +178,7 @@ def _morlet(M=1024, gaussian_width=1.5, window_length=1.0, precision=8):
     )
 
 
-def _create_freqs(freq_start, freq_stop, freq_step=1, log_scaling=False, log_base=np.e):
+def _create_freqs(freq_start, freq_stop, num_freqs=10, log_scaling=False):
     """
     Creates an array of frequencies.
 
@@ -188,12 +188,10 @@ def _create_freqs(freq_start, freq_stop, freq_step=1, log_scaling=False, log_bas
         Starting value for the frequency definition.
     freq_stop: float
         Stopping value for the frequency definition, inclusive.
-    freq_step: float, optional
-        Step value, for linearly spaced values between start and stop.
+    num_freqs: int, optional
+        Number of freqs to create. Default 10
     log_scaling: Bool
         If True, will use log spacing with base log_base for frequency spacing. Default False.
-    log_base: float
-        If log_scaling==True, this defines the base of the log to use.
 
     Returns
     -------
@@ -201,9 +199,9 @@ def _create_freqs(freq_start, freq_stop, freq_step=1, log_scaling=False, log_bas
         Frequency indices.
     """
     if not log_scaling:
-        return np.arange(freq_start, freq_stop + freq_step, freq_step)
+        return np.linspace(freq_start, freq_stop, num_freqs)
     else:
-        return np.logspace(freq_start, freq_stop, base=log_base)
+        return np.geomspace(freq_start, freq_stop, num_freqs)
 
 
 def compute_wavelet_transform(
@@ -358,25 +356,3 @@ def generate_morlet_filterbank(
         for arr in filter_bank
     ]
     return nap.TsdFrame(d=np.array(filter_bank).transpose(), t=time)
-
-
-def _integrate(arr, step):
-    """
-    Integrates an array with respect to some step param. Used for integrating complex wavelets.
-
-    Parameters
-    ----------
-    arr : np.ndarray
-        wave function to be integrated
-    step : float
-        Step size of given wave function array
-
-    Returns
-    -------
-    array
-        Complex-valued integrated wavelet
-
-    """
-    integral = np.cumsum(arr)
-    integral *= step
-    return integral
