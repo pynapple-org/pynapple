@@ -233,7 +233,7 @@ def compute_wavelet_transform(
         Normalization method:
         * None - no normalization
         * 'l1' - divide by the sum of amplitudes
-        * 'l2' - divide by the square root of the sum of squares
+        * 'l2' - divide by the square root of the sum of amplitudes
 
     Returns
     -------
@@ -327,6 +327,8 @@ def generate_morlet_filterbank(
     """
     if len(freqs) == 0:
         raise ValueError("Given list of freqs cannot be empty.")
+    if np.min(freqs) <= 0:
+        raise ValueError("All frequencies in freqs must be strictly positive")
     filter_bank = []
     cutoff = 8
     morlet_f = _morlet(
