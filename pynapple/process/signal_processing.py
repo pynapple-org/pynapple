@@ -216,9 +216,9 @@ def compute_wavelet_transform(
     ----------
     sig : pynapple.Tsd, pynapple.TsdFrame or pynapple.TsdTensor
         Time series.
-    freqs : 1d array or list of float
+    freqs : 1d array or tuple of float
         If array, frequency values to estimate with morlet wavelets.
-        If list, define the frequency range, as [freq_start, freq_stop, freq_step].
+        If tuple, define the frequency range, as [freq_start, freq_stop, freq_step].
         The `freq_step` is optional, and defaults to 1. Range is inclusive of `freq_stop` value.
     fs : float or None
         Sampling rate, in Hz. Defaults to sig.rate if None is given.
@@ -261,8 +261,9 @@ def compute_wavelet_transform(
             raise ValueError("gaussian_width must be a positive number.")
     if norm is not None and norm not in ["l1", "l2"]:
         raise ValueError("norm parameter must be 'l1', 'l2', or None.")
-
-    if isinstance(freqs, (tuple, list)):
+    if not isinstance(freqs, (np.ndarray, tuple)):
+        raise TypeError("`freqs` must be a ndarray or tuple instance.")
+    if isinstance(freqs, tuple):
         freqs = _create_freqs(*freqs)
 
     if fs is None:
@@ -307,10 +308,8 @@ def generate_morlet_filterbank(
 
     Parameters
     ----------
-    freqs : 1d array or list of float
-        If array, frequency values to estimate with morlet wavelets.
-        If list, define the frequency range, as [freq_start, freq_stop, freq_step].
-        The `freq_step` is optional, and defaults to 1. Range is inclusive of `freq_stop` value.
+    freqs : 1d array
+        Frequency values to estimate with morlet wavelets.
     fs : float
         Sampling rate, in Hz.
     gaussian_width : float
