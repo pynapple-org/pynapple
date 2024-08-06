@@ -184,8 +184,6 @@ ax1.plot(pos_example, color="black")
 ax1.set_xlabel("Time (s)")
 ax1.set_ylabel("Pos.")
 
-plt.show()
-
 
 # %%
 # ***
