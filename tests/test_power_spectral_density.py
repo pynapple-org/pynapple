@@ -4,13 +4,22 @@ from contextlib import nullcontext as does_not_raise
 import numpy as np
 import pandas as pd
 import pytest
+from scipy import signal
 
 import pynapple as nap
 
+
 ############################################################
-# Test for mean_power_spectral_density
+# Test for power_spectral_density
 ############################################################
 
+def get_sorted_fft(data,fs):
+    fft = np.fft.fft(data, axis=0)
+    fft_freq = np.fft.fftfreq(len(data), 1 / fs)
+    order = np.argsort(fft_freq)
+    if fft.ndim==1:
+        fft = fft[:,np.newaxis]
+    return fft_freq[order], fft[order]
 
 def test_compute_power_spectral_density():
 
@@ -20,15 +29,30 @@ def test_compute_power_spectral_density():
     assert isinstance(r, pd.DataFrame)
     assert r.shape[0] == 500
 
+    a, b = get_sorted_fft(sig.values, sig.rate)
+    np.testing.assert_array_almost_equal(r.index.values, a[a>=0])
+    np.testing.assert_array_almost_equal(r.values, b[a>=0])
+    
+    r = nap.compute_power_spectral_density(sig, norm=True)
+    np.testing.assert_array_almost_equal(r.values, b[a>=0]/len(sig))
+
     sig = nap.TsdFrame(d=np.random.random((1000, 4)), t=t)
     r = nap.compute_power_spectral_density(sig)
     assert isinstance(r, pd.DataFrame)
     assert r.shape == (500, 4)
 
+    a, b = get_sorted_fft(sig.values, sig.rate)
+    np.testing.assert_array_almost_equal(r.index.values, a[a>=0])
+    np.testing.assert_array_almost_equal(r.values, b[a>=0])
+
     sig = nap.TsdFrame(d=np.random.random((1000, 4)), t=t)
     r = nap.compute_power_spectral_density(sig, full_range=True)
     assert isinstance(r, pd.DataFrame)
     assert r.shape == (1000, 4)
+
+    a, b = get_sorted_fft(sig.values, sig.rate)
+    np.testing.assert_array_almost_equal(r.index.values, a)
+    np.testing.assert_array_almost_equal(r.values, b)    
 
     t = np.linspace(0, 1, 1000)
     sig = nap.Tsd(d=np.random.random(1000), t=t)
@@ -44,7 +68,7 @@ def test_compute_power_spectral_density():
 
 
 @pytest.mark.parametrize(
-    "sig, fs, ep, full_range, expectation",
+    "sig, fs, ep, full_range, norm, expectation",
     [
         (
             nap.Tsd(
@@ -54,6 +78,7 @@ def test_compute_power_spectral_density():
             ),
             1000,
             None,
+            False,
             False,
             pytest.raises(
                 ValueError,
@@ -67,9 +92,21 @@ def test_compute_power_spectral_density():
             1000,
             "not_ep",
             False,
+            False,
             pytest.raises(
                 TypeError,
                 match="ep param must be a pynapple IntervalSet object, or None",
+            ),
+        ),
+        (
+            nap.Tsd(d=np.random.random(1000), t=np.linspace(0, 1, 1000)),
+            "a",
+            None,
+            False,
+            False,
+            pytest.raises(
+                TypeError,
+                match="fs must be of type float or int",
             ),
         ),
         (
@@ -77,18 +114,41 @@ def test_compute_power_spectral_density():
             1000,
             None,
             False,
+            False,
             pytest.raises(
                 TypeError,
-                match="Currently compute_spectogram is only implemented for Tsd or TsdFrame",
+                match="sig must be either a Tsd or a TsdFrame object.",
             ),
         ),
+        (
+            nap.Tsd(d=np.random.random(1000), t=np.linspace(0, 1, 1000)),
+            1000,
+            None,
+            "a",
+            False,            
+            pytest.raises(
+                TypeError,
+                match="full_range must be of type bool or None",
+            ),
+        ),
+        (
+            nap.Tsd(d=np.random.random(1000), t=np.linspace(0, 1, 1000)),
+            1000,
+            None,
+            False,
+            "a",
+            pytest.raises(
+                TypeError,
+                match="norm must be of type bool",
+            ),
+        ),             
     ],
 )
 def test_compute_power_spectral_density_raise_errors(
-    sig, fs, ep, full_range, expectation
+    sig, fs, ep, full_range, norm, expectation
 ):
     with expectation:
-        psd = nap.compute_power_spectral_density(sig, fs, ep, full_range)
+        psd = nap.compute_power_spectral_density(sig, fs, ep, full_range, norm)
 
 
 ############################################################
@@ -102,6 +162,7 @@ def get_signal_and_output(f=2, fs=1000, duration=100, interval_size=10):
     sig = nap.Tsd(t=t, d=d, time_support=nap.IntervalSet(0, 100))
     tmp = d.reshape((int(duration / interval_size), int(fs * interval_size))).T
     tmp = tmp[0:-1]
+    tmp = tmp*signal.windows.hamming(tmp.shape[0])[:,np.newaxis]
     out = np.sum(np.fft.fft(tmp, axis=0), 1)
     freq = np.fft.fftfreq(out.shape[0], 1 / fs)
     order = np.argsort(freq)
@@ -125,6 +186,14 @@ def test_compute_mean_power_spectral_density():
     np.testing.assert_array_almost_equal(psd.values.flatten(), out)
     np.testing.assert_array_almost_equal(psd.index.values, freq)
 
+    # Norm
+    psd = nap.compute_mean_power_spectral_density(sig, 10, norm=True)
+    assert isinstance(psd, pd.DataFrame)
+    assert psd.shape[0] > 0  # Check that the psd DataFrame is not empty
+    np.testing.assert_array_almost_equal(psd.values.flatten(), out[freq >= 0]/(9999.0*10.0))
+    np.testing.assert_array_almost_equal(psd.index.values, freq[freq >= 0])
+
+
     # TsdFrame
     sig2 = nap.TsdFrame(
         t=sig.t, d=np.repeat(sig.values[:, None], 2, 1), time_support=sig.time_support
@@ -147,14 +216,25 @@ def test_compute_mean_power_spectral_density():
 
 
 @pytest.mark.parametrize(
-    "sig, out, freq, interval_size, fs, ep, full_range, time_units, expectation",
+    "sig, out, freq, interval_size, fs, ep, full_range, norm, time_units, expectation",
     [
-        (*get_signal_and_output(), 10, None, None, False, "s", does_not_raise()),
+        (*get_signal_and_output(), 10, None, None, False, False, "s", does_not_raise()),
+        (
+            "a", *get_signal_and_output()[1:],
+            10,
+            None,
+            None,
+            False,
+            False,
+            "s",
+            pytest.raises(TypeError, match="sig must be either a Tsd or a TsdFrame object."),
+        ),
         (
             *get_signal_and_output(),
             10,
             "a",
             None,
+            False,
             False,
             "s",
             pytest.raises(TypeError, match="fs must be of type float or int"),
@@ -164,6 +244,7 @@ def test_compute_mean_power_spectral_density():
             10,
             None,
             "a",
+            False,
             False,
             "s",
             pytest.raises(
@@ -177,16 +258,28 @@ def test_compute_mean_power_spectral_density():
             None,
             None,
             "a",
+            False,
             "s",
             pytest.raises(TypeError, match="full_range must be of type bool or None"),
         ),
-        (*get_signal_and_output(), 10 * 1e3, None, None, False, "ms", does_not_raise()),
-        (*get_signal_and_output(), 10 * 1e6, None, None, False, "us", does_not_raise()),
+        (
+            *get_signal_and_output(),
+            10,
+            None,
+            None,
+            None,
+            "a",
+            "s",
+            pytest.raises(TypeError, match="full_range must be of type bool or None"),
+        ),        
+        (*get_signal_and_output(), 10 * 1e3, None, None, False, False, "ms", does_not_raise()),
+        (*get_signal_and_output(), 10 * 1e6, None, None, False, False, "us", does_not_raise()),
         (
             *get_signal_and_output(),
             200,
             None,
             None,
+            False,
             False,
             "s",
             pytest.raises(
@@ -200,6 +293,7 @@ def test_compute_mean_power_spectral_density():
             None,
             nap.IntervalSet([0, 200], [100, 300]),
             False,
+            False,
             "s",
             pytest.raises(
                 RuntimeError,
@@ -209,9 +303,9 @@ def test_compute_mean_power_spectral_density():
     ],
 )
 def test_compute_mean_power_spectral_density_raise_errors(
-    sig, out, freq, interval_size, fs, ep, full_range, time_units, expectation
+    sig, out, freq, interval_size, fs, ep, full_range, norm, time_units, expectation
 ):
     with expectation:
         psd = nap.compute_mean_power_spectral_density(
-            sig, interval_size, fs, ep, full_range, time_units
+            sig, interval_size, fs, ep, full_range, norm, time_units
         )

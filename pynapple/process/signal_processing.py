@@ -8,11 +8,12 @@ from numbers import Number
 
 import numpy as np
 import pandas as pd
+from scipy import signal
 
 from .. import core as nap
 
 
-def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False):
+def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False, norm=False):
     """
     Performs numpy fft on sig, returns output. Pynapple assumes a constant sampling rate for sig.
 
@@ -26,6 +27,8 @@ def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False):
         The epoch to calculate the fft on. Must be length 1.
     full_range : bool, optional
         If true, will return full fft frequency range, otherwise will return only positive values
+    norm: bool, optional
+        Whether the FFT result is divided by the length of the signal to normalize the amplitude
 
     Returns
     -------
@@ -39,9 +42,9 @@ def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False):
     parameter otherwise will be sig.time_support, but it must only be a single epoch.
     """
     if not isinstance(sig, (nap.Tsd, nap.TsdFrame)):
-        raise TypeError(
-            "Currently compute_spectogram is only implemented for Tsd or TsdFrame"
-        )
+        raise TypeError("sig must be either a Tsd or a TsdFrame object.")
+    if not (fs is None or isinstance(fs, Number)):
+        raise TypeError("fs must be of type float or int")
     if not (ep is None or isinstance(ep, nap.IntervalSet)):
         raise TypeError("ep param must be a pynapple IntervalSet object, or None")
     if ep is None:
@@ -50,22 +53,40 @@ def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False):
         raise ValueError("Given epoch (or signal time_support) must have length 1")
     if fs is None:
         fs = sig.rate
+    if not isinstance(full_range, bool):
+        raise TypeError("full_range must be of type bool or None")
+    if not isinstance(norm, bool):
+        raise TypeError("norm must be of type bool")
+
     fft_result = np.fft.fft(sig.restrict(ep).values, axis=0)
     fft_freq = np.fft.fftfreq(len(sig.restrict(ep).values), 1 / fs)
+
+    if norm:
+        fft_result = fft_result / fft_result.shape[0]
+
     ret = pd.DataFrame(fft_result, fft_freq)
     ret.sort_index(inplace=True)
+
     if not full_range:
         return ret.loc[ret.index >= 0]
     return ret
 
 
 def compute_mean_power_spectral_density(
-    sig, interval_size, fs=None, ep=None, full_range=False, time_unit="s"
+    sig,
+    interval_size,
+    fs=None,
+    ep=None,
+    full_range=False,
+    norm=False,
+    time_unit="s",
 ):
     """Compute mean power spectral density by averaging FFT over epochs of same size.
     The parameter `interval_size` controls the duration of the epochs.
 
-    Note that this function assumes a constant sampling rate for sig.
+    To imporve frequency resolution, the signal is multiplied by a Hamming window.
+
+    Note that this function assumes a constant sampling rate for `sig`.
 
     Parameters
     ----------
@@ -79,6 +100,8 @@ def compute_mean_power_spectral_density(
         The `IntervalSet` to calculate the fft on. Can be any length.
     full_range : bool, optional
         If true, will return full fft frequency range, otherwise will return only positive values
+    norm: bool, optional
+        Whether the FFT result is divided by the length of the signal to normalize the amplitude
     time_unit : str, optional
         Time units for parameter `interval_size`. Can be ('s'[default], 'ms', 'us')
 
@@ -94,6 +117,9 @@ def compute_mean_power_spectral_density(
     TypeError
         If `ep` or `sig` are not respectively pynapple time series or interval set.
     """
+    if not isinstance(sig, (nap.Tsd, nap.TsdFrame)):
+        raise TypeError("sig must be either a Tsd or a TsdFrame object.")
+
     if not (ep is None or isinstance(ep, nap.IntervalSet)):
         raise TypeError("ep param must be a pynapple IntervalSet object, or None")
     if ep is None:
@@ -106,6 +132,9 @@ def compute_mean_power_spectral_density(
 
     if not isinstance(full_range, bool):
         raise TypeError("full_range must be of type bool or None")
+
+    if not isinstance(norm, bool):
+        raise TypeError("norm must be of type bool")
 
     # Split the ep
     interval_size = nap.TsIndex.format_timestamps(np.array([interval_size]), time_unit)[
@@ -137,11 +166,20 @@ def compute_mean_power_spectral_density(
     # Get the freqs
     fft_freq = np.fft.fftfreq(N, 1 / fs)
 
+    # Get the Hamming window
+    window = signal.windows.hamming(N)
+    if sig.ndim == 2:
+        window = window[:, np.newaxis]
+
     # Compute the fft
     fft_result = np.zeros((N, *sig.shape[1:]), dtype=complex)
 
     for i in range(len(slices)):
-        fft_result += np.fft.fft(sig[slices[i, 0] : slices[i, 1]].values[0:N], axis=0)
+        tmp = sig[slices[i, 0] : slices[i, 1]].values[0:N] * window
+        fft_result += np.fft.fft(tmp, axis=0)
+
+    if norm:
+        fft_result = fft_result / (float(N) * float(len(slices)))
 
     ret = pd.DataFrame(fft_result, fft_freq)
     ret.sort_index(inplace=True)
