@@ -17,6 +17,8 @@ This tutorial was made by Kipp Freud.
 #
 #     You can install all with `pip install matplotlib requests tqdm seaborn`
 #
+# mkdocs_gallery_thumbnail_number = 9
+#
 # Now, import the necessary libraries:
 
 import matplotlib.pyplot as plt
@@ -50,17 +52,15 @@ sig = nap.Tsd(
 # Lets plot it.
 fig, ax = plt.subplots(3, constrained_layout=True, figsize=(10, 5))
 ax[0].plot(t, two_hz_component)
-ax[1].plot(t, increasing_freq_component)
-ax[2].plot(sig)
 ax[0].set_title("2Hz Component")
+ax[1].plot(t, increasing_freq_component)
 ax[1].set_title("Increasing Frequency Component")
+ax[2].plot(sig)
 ax[2].set_title("Dummy Signal")
 [ax[i].margins(0) for i in range(3)]
 [ax[i].set_ylim(-2.5, 2.5) for i in range(3)]
-[ax[i].spines[sp].set_visible(False) for sp in ["right", "top"] for i in range(3)]
 [ax[i].set_xlabel("Time (s)") for i in range(3)]
 [ax[i].set_ylabel("Signal") for i in range(3)]
-[ax[i].set_ylim(-2.5, 2.5) for i in range(3)]
 
 
 # %%
@@ -83,15 +83,11 @@ filter_bank = nap.generate_morlet_filterbank(
 # Lets plot it.
 def plot_filterbank(filter_bank, freqs, title):
     fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 7))
-    offset = 1.0
     for f_i in range(filter_bank.shape[1]):
-        ax.plot(filter_bank[:, f_i].real() + offset * f_i)
-        ax.text(
-            -2.3, offset * f_i, f"{np.round(freqs[f_i], 2)}Hz", va="center", ha="left"
-        )
+        ax.plot(filter_bank[:, f_i].real() + 1.5 * f_i)
+        ax.text(-2.3, 1.5 * f_i, f"{np.round(freqs[f_i], 2)}Hz", va="center", ha="left")
     ax.margins(0)
     ax.yaxis.set_visible(False)
-    [ax.spines[sp].set_visible(False) for sp in ["left", "right", "top"]]
     ax.set_xlim(-2, 2)
     ax.set_xlabel("Time (s)")
     ax.set_title(title)
@@ -117,33 +113,30 @@ mwt = nap.compute_wavelet_transform(
 
 # %%
 # Lets plot it.
-def plot_timefrequency(times, freqs, powers, x_ticks=5, ax=None, **kwargs):
-    if np.iscomplexobj(powers):
-        powers = abs(powers)
-    ax.imshow(powers, aspect="auto", **kwargs)
+def plot_timefrequency(freqs, powers, ax=None):
+    im = ax.imshow(abs(powers), aspect="auto")
     ax.invert_yaxis()
     ax.set_xlabel("Time (s)")
     ax.set_ylabel("Frequency (Hz)")
-    if isinstance(x_ticks, int):
-        x_tick_pos = np.linspace(0, times.size, x_ticks)
-        x_ticks = np.round(np.linspace(times[0], times[-1], x_ticks), 2)
-    else:
-        x_tick_pos = [np.argmin(np.abs(times - val)) for val in x_ticks]
-    ax.set(xticks=x_tick_pos, xticklabels=x_ticks)
-    y_ticks = freqs
-    y_ticks_pos = [np.argmin(np.abs(freqs - val)) for val in y_ticks]
-    ax.set(yticks=y_ticks_pos, yticklabels=y_ticks)
+    ax.get_xaxis().set_visible(False)
+    ax.set(yticks=[np.argmin(np.abs(freqs - val)) for val in freqs], yticklabels=freqs)
     ax.grid(False)
+    return im
 
 
-fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 6))
-plot_timefrequency(
-    mwt.index.values[:],
-    freqs[:],
-    np.transpose(mwt[:, :].values),
-    ax=ax,
-)
-ax.set_title("Wavelet Decomposition Scalogram")
+fig = plt.figure(constrained_layout=True, figsize=(10, 6))
+fig.suptitle("Wavelet Decomposition")
+gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 0.3])
+
+ax0 = plt.subplot(gs[0, 0])
+im = plot_timefrequency(freqs[:], np.transpose(mwt[:, :].values), ax=ax0)
+cbar = fig.colorbar(im, ax=ax0, orientation="vertical")
+
+ax1 = plt.subplot(gs[1, 0])
+ax1.plot(sig)
+ax1.set_ylabel("LFP (a.u.)")
+ax1.set_xlabel("Time (s)")
+ax1.margins(0)
 
 # %%
 # ***
@@ -162,7 +155,7 @@ slow_oscillation_phase = np.angle(mwt[:, two_hz_freq_idx].values)
 
 # %%
 # Lets plot it.
-fig = plt.figure(constrained_layout=True, figsize=(10, 6))
+fig = plt.figure(constrained_layout=True, figsize=(10, 4))
 axd = fig.subplot_mosaic(
     [["signal"], ["phase"]],
     height_ratios=[1, 0.4],
@@ -170,20 +163,12 @@ axd = fig.subplot_mosaic(
 axd["signal"].plot(sig, label="Raw Signal", alpha=0.5)
 axd["signal"].plot(t, slow_oscillation, label="2Hz Reconstruction")
 axd["signal"].legend()
+axd["signal"].set_ylabel("Signal")
+
 axd["phase"].plot(t, slow_oscillation_phase, alpha=0.5)
 axd["phase"].set_ylabel("Phase (rad)")
-axd["signal"].set_ylabel("Signal")
 axd["phase"].set_xlabel("Time (s)")
-[
-    axd[f].spines[sp].set_visible(False)
-    for sp in ["right", "top"]
-    for f in ["phase", "signal"]
-]
-axd["signal"].get_xaxis().set_visible(False)
-axd["signal"].spines["bottom"].set_visible(False)
 [axd[k].margins(0) for k in ["signal", "phase"]]
-axd["signal"].set_ylim(-2.5, 2.5)
-axd["phase"].set_ylim(-np.pi, np.pi)
 
 # %%
 # ***
@@ -205,21 +190,24 @@ fifteenHz_oscillation_power = np.abs(mwt[:, fifteen_hz_freq_idx].values)
 
 # %%
 # Lets plot it.
-fig, ax = plt.subplots(2, constrained_layout=True, figsize=(10, 6))
-ax[0].plot(t, fifteenHz_oscillation, label="15Hz Reconstruction")
-ax[0].plot(t, fifteenHz_oscillation_power, label="15Hz Power")
-ax[1].plot(sig, label="Raw Signal", alpha=0.5)
-ax[1].plot(
-    t, slow_oscillation + fifteenHz_oscillation, label="2Hz + 15Hz Reconstruction"
-)
-[ax[i].set_ylim(-2.5, 2.5) for i in range(2)]
-[ax[i].margins(0) for i in range(2)]
-[ax[i].legend() for i in range(2)]
-[ax[i].spines[sp].set_visible(False) for sp in ["right", "top"] for i in range(2)]
-ax[0].get_xaxis().set_visible(False)
-ax[0].spines["bottom"].set_visible(False)
-ax[1].set_xlabel("Time (s)")
-[ax[i].set_ylabel("Signal") for i in range(2)]
+
+fig = plt.figure(constrained_layout=True, figsize=(10, 4))
+gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 1.0])
+
+ax0 = plt.subplot(gs[0, 0])
+ax0.plot(t, fifteenHz_oscillation, label="15Hz Reconstruction")
+ax0.plot(t, fifteenHz_oscillation_power, label="15Hz Power")
+ax0.set_xticklabels([])
+
+ax1 = plt.subplot(gs[1, 0])
+ax1.plot(sig, label="Raw Signal", alpha=0.5)
+ax1.plot(t, slow_oscillation + fifteenHz_oscillation, label="2Hz + 15Hz Reconstruction")
+ax1.set_xlabel("Time (s)")
+
+[
+    (a.margins(0), a.legend(), a.set_ylim(-2.5, 2.5), a.set_ylabel("Signal"))
+    for a in [ax0, ax1]
+]
 
 
 # %%
@@ -235,7 +223,6 @@ combined_oscillations = mwt.sum(axis=1).real()
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
 ax.plot(sig, alpha=0.5, label="Signal")
 ax.plot(t, combined_oscillations, label="Wavelet Reconstruction", alpha=0.5)
-[ax.spines[sp].set_visible(False) for sp in ["right", "top"]]
 ax.set_xlabel("Time (s)")
 ax.set_ylabel("Signal")
 ax.set_title("Wavelet Reconstruction of Signal")
@@ -250,50 +237,59 @@ ax.legend()
 # ------------------
 # Our reconstruction seems to get the amplitude modulations of our signal correct, but the amplitude is overestimated,
 # in particular towards the end of the time period. Often, this is due to a suboptimal choice of parameters, which
-# can lead to a low spatial or temporal resolution. Let's explore what changing our parameters does to the
+# can lead to a low spatial or temporal resolution. Let's visualize what changing our parameters does to the
 # underlying wavelets.
 
-freqs = np.array([1.0, 2.0, 3.0, 4.0, 5.0])
-window_lengths = [1.0, 2.0, 3.0]
-gaussian_width = [1.0, 2.0, 3.0]
-
+window_lengths = [1.0, 3.0]
+gaussian_widths = [1.0, 3.0]
+colors = np.array([["r", "g"], ["b", "y"]])
 fig, ax = plt.subplots(
-    len(window_lengths), len(gaussian_width), constrained_layout=True, figsize=(10, 8)
+    len(window_lengths) + 1,
+    len(gaussian_widths) + 1,
+    constrained_layout=True,
+    figsize=(10, 8),
 )
 for row_i, wl in enumerate(window_lengths):
-    for col_i, gw in enumerate(gaussian_width):
-        filter_bank = nap.generate_morlet_filterbank(
-            freqs, 1000, gaussian_width=gw, window_length=wl, precision=12
-        )
-        ax[row_i, col_i].plot(filter_bank[:, 0].real())
-        ax[row_i, col_i].set_xlabel("Time (s)")
-        ax[row_i, col_i].set_yticks([])
-        [
-            ax[row_i, col_i].spines[sp].set_visible(False)
-            for sp in ["top", "right", "left"]
-        ]
-        if col_i != 0:
-            ax[row_i, col_i].get_yaxis().set_visible(False)
-for col_i, gw in enumerate(gaussian_width):
-    ax[0, col_i].set_title(f"gaussian_width={gw}", fontsize=10)
-for row_i, wl in enumerate(window_lengths):
-    ax[row_i, 0].set_ylabel(f"window_length={wl}", fontsize=10)
-fig.suptitle("Parametrization Visualization")
-
+    for col_i, gw in enumerate(gaussian_widths):
+        wavelet = nap.generate_morlet_filterbank(
+            np.array([1.0]), 1000, gaussian_width=gw, window_length=wl, precision=12
+        )[:, 0].real()
+        ax[row_i, col_i].plot(wavelet, c=colors[row_i, col_i])
+        fft = nap.compute_power_spectral_density(wavelet)
+        for i, j in [(row_i, -1), (-1, col_i)]:
+            ax[i, j].plot(fft.abs(), c=colors[row_i, col_i])
+for i in range(len(window_lengths)):
+    for j in range(len(gaussian_widths)):
+        ax[i, j].set(xlabel="Time (s)", yticks=[])
+for ci, gw in enumerate(gaussian_widths):
+    ax[0, ci].set_title(f"gaussian_width={gw}", fontsize=10)
+for ri, wl in enumerate(window_lengths):
+    ax[ri, 0].set_ylabel(f"window_length={wl}", fontsize=10)
+fig.suptitle("Parametrization Visualization (1 Hz Wavelet)")
+ax[-1, -1].set_visible(False)
+for i in range(len(window_lengths)):
+    ax[-1, i].set(
+        xlim=(0, 2), yticks=[], ylabel="Frequency Response", xlabel="Frequency (Hz)"
+    )
+for i in range(len(gaussian_widths)):
+    ax[i, -1].set(
+        xlim=(0, 2), yticks=[], ylabel="Frequency Response", xlabel="Frequency (Hz)"
+    )
 
 # %%
-# Increasing time_decay increases the number of wavelet cycles present in the oscillations (cycles) within the
-# Gaussian window of the Morlet wavelet. It essentially controls the trade-off between time resolution
-# and frequency resolution.
+# Increasing window_length increases the number of wavelet cycles present in the oscillations (cycles), and
+# correspondingly increases the time window that the wavelet covers.
 #
-# The scale parameter determines the dilation or compression of the wavelet. It controls the size of the wavelet in
-# time, affecting the overall shape of the wavelet.
+# The gaussian_width parameter determines the shape of the gaussian window being convolved with the sinusoidal
+# component of the wavelet
+#
+# Both of these parameters can be tweaked to control for the trade-off between time resolution and frequency resolution.
 
 # %%
 # ***
 # Effect of gaussian_width
 # ------------------
-# Let's increase time_decay to 7.5 and see the effect on the resultant filter bank.
+# Let's increase gaussian_width to 7.5 and see the effect on the resultant filter bank.
 
 freqs = np.linspace(1, 25, num=25)
 filter_bank = nap.generate_morlet_filterbank(
@@ -313,14 +309,19 @@ mwt = nap.compute_wavelet_transform(
     sig, fs=Fs, freqs=freqs, gaussian_width=7.5, window_length=1.0
 )
 
-fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 6))
-plot_timefrequency(
-    mwt.index.values[:],
-    freqs[:],
-    np.transpose(mwt[:, :].values),
-    ax=ax,
-)
-ax.set_title("Wavelet Decomposition Scalogram")
+fig = plt.figure(constrained_layout=True, figsize=(10, 6))
+fig.suptitle("Wavelet Decomposition")
+gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 0.3])
+
+ax0 = plt.subplot(gs[0, 0])
+im = plot_timefrequency(freqs[:], np.transpose(mwt[:, :].values), ax=ax0)
+cbar = fig.colorbar(im, ax=ax0, orientation="vertical")
+
+ax1 = plt.subplot(gs[1, 0])
+ax1.plot(sig)
+ax1.set_ylabel("LFP (a.u.)")
+ax1.set_xlabel("Time (s)")
+ax1.margins(0)
 
 # %%
 # ***
@@ -365,17 +366,23 @@ plot_filterbank(
 # %%
 # ***
 # Let's see what effect this has on the Wavelet Scalogram which is generated...
-fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 6))
 mwt = nap.compute_wavelet_transform(
     sig, fs=Fs, freqs=freqs, gaussian_width=7.5, window_length=2.0
 )
-plot_timefrequency(
-    mwt.index.values[:],
-    freqs[:],
-    np.transpose(mwt[:, :].values),
-    ax=ax,
-)
-ax.set_title("Wavelet Decomposition Scalogram")
+
+fig = plt.figure(constrained_layout=True, figsize=(10, 6))
+fig.suptitle("Wavelet Decomposition")
+gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 0.3])
+
+ax0 = plt.subplot(gs[0, 0])
+im = plot_timefrequency(freqs[:], np.transpose(mwt[:, :].values), ax=ax0)
+cbar = fig.colorbar(im, ax=ax0, orientation="vertical")
+
+ax1 = plt.subplot(gs[1, 0])
+ax1.plot(sig)
+ax1.set_ylabel("LFP (a.u.)")
+ax1.set_xlabel("Time (s)")
+ax1.margins(0)
 
 # %%
 # ***
@@ -388,10 +395,91 @@ combined_oscillations = mwt.sum(axis=1).real()
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
 ax.plot(sig, alpha=0.5, label="Signal")
 ax.plot(t, combined_oscillations, label="Wavelet Reconstruction", alpha=0.5)
-[ax.spines[sp].set_visible(False) for sp in ["right", "top"]]
 ax.set_xlabel("Time (s)")
 ax.set_ylabel("Signal")
 ax.set_title("Wavelet Reconstruction of Signal")
 ax.margins(0)
 ax.set_ylim(-6, 6)
 ax.legend()
+
+
+# %%
+# ***
+# Effect of L1 vs L2 normalization
+# ------------------
+# compute_wavelet_transform contains two options for normalization; L1, and L2. L1 normalization.
+# By default, L1 is used as it creates cleaner looking decomposition images.
+#
+# L1 normalization often increases the contrast between significant and insignificant coefficients.
+# This can result in a sharper and more defined visual representation, making patterns and structures within
+# the signal more evident.
+#
+# L2 normalization is directly related to the energy of the signal. By normalizing using the
+# L2 norm, you ensure that the transformed coefficients preserve the energy distribution of the original signal.
+#
+# Let's compare two wavelet decomposition images, each generated with a different normalization strategy
+
+mwt_l1 = nap.compute_wavelet_transform(
+    sig, fs=Fs, freqs=freqs, gaussian_width=7.5, window_length=2.0, norm="l1"
+)
+mwt_l2 = nap.compute_wavelet_transform(
+    sig, fs=Fs, freqs=freqs, gaussian_width=7.5, window_length=2.0, norm="l2"
+)
+
+# %%
+# Let's plot both the scalograms and see the difference.
+
+fig = plt.figure(constrained_layout=True, figsize=(10, 6))
+fig.suptitle("Wavelet Decomposition - L1 Normalization")
+gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 0.3])
+ax0 = plt.subplot(gs[0, 0])
+im = plot_timefrequency(freqs[:], np.transpose(mwt_l1[:, :].values), ax=ax0)
+cbar = fig.colorbar(im, ax=ax0, orientation="vertical")
+ax1 = plt.subplot(gs[1, 0])
+ax1.plot(sig)
+ax1.set_ylabel("LFP (a.u.)")
+ax1.set_xlabel("Time (s)")
+ax1.margins(0)
+
+fig = plt.figure(constrained_layout=True, figsize=(10, 6))
+fig.suptitle("Wavelet Decomposition - L2 Normalization")
+gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 0.3])
+ax0 = plt.subplot(gs[0, 0])
+im = plot_timefrequency(freqs[:], np.transpose(mwt_l2[:, :].values), ax=ax0)
+cbar = fig.colorbar(im, ax=ax0, orientation="vertical")
+ax1 = plt.subplot(gs[1, 0])
+ax1.plot(sig)
+ax1.set_ylabel("LFP (a.u.)")
+ax1.set_xlabel("Time (s)")
+ax1.margins(0)
+
+# %%
+# We see that the l1 normalized image contains a visually clearer image; the 5-15 Hz component of the signal is
+# as powerful as the 2 Hz component, so it makes sense that they should be shown with the same power in the scalogram.
+# Let's reconstruct the signal using both decompositions and see the resulting reconstruction...
+
+# %%
+
+combined_oscillations_l1 = mwt_l1.sum(axis=1).real()
+combined_oscillations_l2 = mwt_l2.sum(axis=1).real()
+
+# %%
+# Lets plot it.
+fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
+ax.plot(sig, label="Signal", linewidth=3, alpha=0.6, c="b")
+ax.plot(
+    t, combined_oscillations_l1, label="Wavelet Reconstruction (L1)", c="g", alpha=0.6
+)
+ax.plot(
+    t, combined_oscillations_l2, label="Wavelet Reconstruction (L2)", c="r", alpha=0.6
+)
+ax.set_xlabel("Time (s)")
+ax.set_ylabel("Signal")
+ax.set_title("Wavelet Reconstruction of Signal")
+ax.margins(0)
+ax.set_ylim(-6, 6)
+ax.legend()
+
+# %%
+# We see that the reconstruction from the L2 normalized decomposition matched the original signal much more closely,
+# this is due to the fact that L2 normalization preserved the energy of the original signal in its reconstruction.

@@ -231,7 +231,6 @@ ax1.set_xlabel("Time (s)")
 ax1.set_ylabel("Pos.")
 
 
-
 # %%
 # ***
 # Visualizing Theta Band Power
