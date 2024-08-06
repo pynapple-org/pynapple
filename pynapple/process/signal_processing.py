@@ -257,6 +257,13 @@ def compute_wavelet_transform(
     if isinstance(gaussian_width, (int, float, np.number)):
         if gaussian_width <= 0:
             raise ValueError("gaussian_width must be a positive number.")
+    else:
+        raise TypeError("gaussian_width must be a float or int instance.")
+    if isinstance(window_length, (int, float, np.number)):
+        if window_length <= 0:
+            raise ValueError("window_length must be a positive number.")
+    else:
+        raise TypeError("window_length must be a float or int instance.")
     if norm is not None and norm not in ["l1", "l2"]:
         raise ValueError("norm parameter must be 'l1', 'l2', or None.")
     if not isinstance(freqs, (np.ndarray, tuple)):

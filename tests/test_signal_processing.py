@@ -127,6 +127,17 @@ def test_compute_wavelet_transform():
         * np.interp(np.linspace(0, 1, 1001), [0, 0.5, 1], [0, 1, 0]),
         t=t,
     )
+    freqs = (10, 100, 10)
+    mwt = nap.compute_wavelet_transform(sig, fs=1001, freqs=freqs)
+    mwt2 = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
+    assert np.array_equal(mwt, mwt2)
+
+    t = np.linspace(0, 1, 1001)
+    sig = nap.Tsd(
+        d=np.sin(t * 50 * np.pi * 2)
+        * np.interp(np.linspace(0, 1, 1001), [0, 0.5, 1], [0, 1, 0]),
+        t=t,
+    )
     freqs = (10, 100, 10, True)
     mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
     mwt2 = nap.compute_wavelet_transform(sig, fs=None, freqs=np.geomspace(10, 100, 10))
@@ -305,6 +316,40 @@ def test_compute_wavelet_transform():
             "l1",
             pytest.raises(
                 ValueError, match="gaussian_width must be a positive number."
+            ),
+        ),
+        (
+            nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=np.linspace(0, 1, 1024)),
+            None,
+            np.linspace(1, 600, 10),
+            1.5,
+            -1.0,
+            16,
+            "l1",
+            pytest.raises(ValueError, match="window_length must be a positive number."),
+        ),
+        (
+            nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=np.linspace(0, 1, 1024)),
+            None,
+            np.linspace(1, 600, 10),
+            "not_number",
+            1.0,
+            16,
+            "l1",
+            pytest.raises(
+                TypeError, match="gaussian_width must be a float or int instance."
+            ),
+        ),
+        (
+            nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=np.linspace(0, 1, 1024)),
+            None,
+            np.linspace(1, 600, 10),
+            1.5,
+            "not_number",
+            16,
+            "l1",
+            pytest.raises(
+                TypeError, match="window_length must be a float or int instance."
             ),
         ),
         (

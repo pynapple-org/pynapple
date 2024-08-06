@@ -30,6 +30,18 @@ def test_compute_power_spectral_density():
     assert isinstance(r, pd.DataFrame)
     assert r.shape == (1000, 4)
 
+    t = np.linspace(0, 1, 1000)
+    sig = nap.Tsd(d=np.random.random(1000), t=t)
+    r = nap.compute_power_spectral_density(sig, ep=sig.time_support)
+    assert isinstance(r, pd.DataFrame)
+    assert r.shape[0] == 500
+
+    t = np.linspace(0, 1, 1000)
+    sig = nap.Tsd(d=np.random.random(1000), t=t)
+    r = nap.compute_power_spectral_density(sig, fs=1000)
+    assert isinstance(r, pd.DataFrame)
+    assert r.shape[0] == 500
+
 
 @pytest.mark.parametrize(
     "sig, fs, ep, full_range, expectation",
@@ -118,6 +130,16 @@ def test_compute_mean_power_spectral_density():
         t=sig.t, d=np.repeat(sig.values[:, None], 2, 1), time_support=sig.time_support
     )
     psd = nap.compute_mean_power_spectral_density(sig2, 10, full_range=True)
+    assert isinstance(psd, pd.DataFrame)
+    assert psd.shape[0] > 0  # Check that the psd DataFrame is not empty
+    np.testing.assert_array_almost_equal(psd.values, np.repeat(out[:, None], 2, 1))
+    np.testing.assert_array_almost_equal(psd.index.values, freq)
+
+    # TsdFrame
+    sig2 = nap.TsdFrame(
+        t=sig.t, d=np.repeat(sig.values[:, None], 2, 1), time_support=sig.time_support
+    )
+    psd = nap.compute_mean_power_spectral_density(sig2, 10, full_range=True, fs=1000)
     assert isinstance(psd, pd.DataFrame)
     assert psd.shape[0] > 0  # Check that the psd DataFrame is not empty
     np.testing.assert_array_almost_equal(psd.values, np.repeat(out[:, None], 2, 1))
