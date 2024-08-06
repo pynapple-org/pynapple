@@ -17,6 +17,8 @@ This tutorial was made by Kipp Freud.
 #
 #     You can install all with `pip install matplotlib requests tqdm seaborn`
 #
+# mkdocs_gallery_thumbnail_number = 9
+#
 # Now, import the necessary libraries:
 
 import matplotlib.pyplot as plt

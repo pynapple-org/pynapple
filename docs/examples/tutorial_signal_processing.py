@@ -18,6 +18,8 @@ This tutorial was made by Kipp Freud.
 #
 #     You can install all with `pip install matplotlib requests tqdm seaborn`
 #
+# mkdocs_gallery_thumbnail_number = 7
+#
 # First, import the necessary libraries:
 
 import math
