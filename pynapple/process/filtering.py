@@ -53,7 +53,7 @@ def compute_filtered_signal(data, freq_band, filter_type="bandpass", order=4, sa
     if filter_type not in ["lowpass", "highpass", "bandpass", "bandstop"]:
         raise ValueError(f"Unrecognized filter type {filter_type}. "
                          "filter_type must be either 'lowpass', 'highpass', 'bandpass',or 'bandstop'.")
-    if filter_type in ["lowpass", "highpass"] and isinstance(freq_band, Number):
+    elif filter_type in ["lowpass", "highpass"] and not isinstance(freq_band, Number):
         raise ValueError("Must provide a single float for specifying a 'highpass' and 'lowpass' filters. "
                          f"{freq_band} provided instead!")
     elif filter_type in ["bandpass", "bandstop"] and len(tuple(freq_band)) != 2:
