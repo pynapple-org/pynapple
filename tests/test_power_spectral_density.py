@@ -265,12 +265,22 @@ def test_compute_mean_power_spectral_density():
         (
             *get_signal_and_output(),
             10,
-            None,
-            None,
-            None,
-            "a",
-            "s",
+            None,   # FS
+            None,   # Ep
+            "a",    # full_range
+            False,  # Norm
+            "s",    # Time units
             pytest.raises(TypeError, match="full_range must be of type bool or None"),
+        ),
+        (
+            *get_signal_and_output(),
+            10,
+            None,   # FS
+            None,   # Ep
+            False,  # full_range
+            "a",    # Norm
+            "s",    # Time units
+            pytest.raises(TypeError, match="norm must be of type bool"),
         ),        
         (*get_signal_and_output(), 10 * 1e3, None, None, False, False, "ms", does_not_raise()),
         (*get_signal_and_output(), 10 * 1e6, None, None, False, False, "us", does_not_raise()),
