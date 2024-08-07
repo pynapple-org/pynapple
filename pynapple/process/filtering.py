@@ -54,14 +54,14 @@ def compute_filtered_signal(data, freq_band, filter_type="bandpass", order=4, sa
         raise ValueError(f"Unrecognized filter type {filter_type}. "
                          "filter_type must be either 'lowpass', 'highpass', 'bandpass',or 'bandstop'.")
     elif filter_type in ["lowpass", "highpass"] and not isinstance(freq_band, Number):
-        raise ValueError("Must provide a single float for specifying a 'highpass' and 'lowpass' filters. "
+        raise ValueError("Low/high-pass filter specification requires a single frequency. "
                          f"{freq_band} provided instead!")
     elif filter_type in ["bandpass", "bandstop"]:
         try:
-            if len(freq_band) != 2:
+            if len(freq_band) != 2 or not all(isinstance(fq, Number) for fq in freq_band):
                 raise ValueError
         except Exception:
-            raise ValueError("Must provide a two floats for specifying a 'bandpass' and 'bandstop' filters. "
+            raise ValueError("Band-pass/stop filter specification requires two frequencies. "
                              f"{freq_band} provided instead!")
 
     b, a = butter(order, freq_band, btype=filter_type, fs=sampling_frequency)

@@ -74,3 +74,22 @@ def test_filtering_single_freq_dtype(freq, order, btype, shape: tuple, ep):
     assert np.all(out.time_support == tsd.time_support)
     if isinstance(tsd, nap.TsdFrame):
         assert np.all(tsd.columns == out.columns)
+
+
+@pytest.mark.parametrize("freq_band, filter_type, order, expected_exception", [
+    ((5, 15), "bandpass", 4, does_not_raise()),
+    ((5, 15), "bandstop", 4, does_not_raise()),
+    (10, "highpass", 4, does_not_raise()),
+    (10, "lowpass", 4, does_not_raise()),
+    ((5, 15), "invalid_filter", 4, pytest.raises(ValueError, match="Unrecognized filter type")),
+    (10, "bandpass", 4, pytest.raises(ValueError,  match="Band-pass/stop filter specification requires two frequencies")),
+    ((5, 15), "highpass", 4, pytest.raises(ValueError, match="Low/high-pass filter specification requires a single frequency")),
+    (None, "bandpass", 4, pytest.raises(ValueError,  match="Band-pass/stop filter specification requires two frequencies")),
+    ((None, 1), "highpass", 4, pytest.raises(ValueError, match="Low/high-pass filter specification requires a single frequency"))
+])
+def test_compute_filtered_signal(sample_data, freq_band, filter_type, order, expected_exception):
+    with expected_exception:
+        filtered_data = nap.filtering.compute_filtered_signal(sample_data, freq_band, filter_type, order)
+        if not expected_exception:
+            assert isinstance(filtered_data, type(sample_data))
+            assert filtered_data.d.shape == sample_data.d.shape
