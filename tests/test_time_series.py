@@ -1464,49 +1464,66 @@ def test_get_slice_value_types(start, end, time_unit, expectation):
 @pytest.mark.parametrize(
     "start, end, mode, expected_slice, expected_array",
     [
-        (1, 3, "forward", slice(0, 2), np.array([1, 2])),
-        (1, 3, "backward", slice(0, 2), np.array([1, 2])),
-        (1, 3, "closest", slice(0, 2), np.array([1, 2])),
-        (1, 2.7, "forward", slice(0, 2), np.array([1, 2])),
-        (1, 2.7, "backward", slice(0, 1), np.array([1])),
-        (1, 2.7, "closest", slice(0, 2), np.array([1, 2])),
-        (1, 2.4, "forward", slice(0, 2), np.array([1, 2])),
-        (1, 2.4, "backward", slice(0, 1), np.array([1])),
-        (1, 2.4, "closest", slice(0, 1), np.array([1])),
-        (1.1, 3, "forward", slice(1, 2), np.array([2])),
-        (1.1, 3, "backward", slice(0, 2), np.array([1, 2])),
-        (1.1, 3, "closest", slice(0, 2), np.array([1, 2])),
-        (1.6, 3, "forward", slice(1, 2), np.array([2])),
-        (1.6, 3, "backward", slice(0, 2), np.array([1, 2])),
-        (1.6, 3, "closest", slice(1, 2), np.array([2])),
-        (1.6, 1.8, "backward", slice(0, 0), np.array([])),
-        (1.6, 1.8, "forward", slice(1, 1), np.array([])),
-        (1.6, 1.8, "closest", slice(1, 1), np.array([])),
-        (1.4, 1.6, "closest", slice(0, 1), np.array([1])),
-        (3, 3, "forward", slice(2, 2), np.array([])),
-        (3, 3, "backward", slice(2, 2), np.array([])),
-        (3, 3, "closest", slice(2, 2), np.array([])),
-        (0, 3, "forward", slice(0, 2), np.array([1, 2])),
-        (0, 3, "backward", slice(0, 2), np.array([1, 2])),
-        (0, 3, "closest", slice(0, 2), np.array([1, 2])),
-        (4, 4, "forward", slice(3, 3), np.array([])),
-        (4, 4, "backward", slice(3, 3), np.array([])),
-        (4, 4, "closest", slice(3, 3), np.array([])),
-        (4, 5, "forward", slice(3, 4), np.array([4])),
-        (4, 5, "backward", slice(3, 3), np.array([])),
-        (4, 5, "closest", slice(3, 3), np.array([])),
-        (0, 1, "forward", slice(0, 0), np.array([])),
-        (0, 1, "backward", slice(0, 1), np.array([1])),
-        (0, 1, "closest", slice(0, 0), np.array([])),
-        (0, None, "forward", slice(0, 1), np.array([1])),
-        (0, None, "backward", slice(0, 0), np.array([])),
-        (0, None, "closest", slice(0, 1), np.array([1])),
-        (1, None, "forward", slice(0, 1), np.array([1])),
-        (1, None, "backward", slice(0, 1), np.array([1])),
-        (1, None, "closest", slice(0, 1), np.array([1])),
-        (5, None, "forward", slice(3, 3), np.array([])),
-        (5, None, "backward", slice(3, 4), np.array([4])),
-        (5, None, "closest", slice(3, 4), np.array([4]))
+        (1, 3, "after_t", slice(0, 2), np.array([1, 2])),
+        (1, 3, "before_t", slice(0, 2), np.array([1, 2])),
+        (1, 3, "closest_t", slice(0, 2), np.array([1, 2])),
+        (1, 2.7, "after_t", slice(0, 2), np.array([1, 2])),
+        (1, 2.7, "before_t", slice(0, 1), np.array([1])),
+        (1, 2.7, "closest_t", slice(0, 2), np.array([1, 2])),
+        (1, 2.4, "after_t", slice(0, 2), np.array([1, 2])),
+        (1, 2.4, "before_t", slice(0, 1), np.array([1])),
+        (1, 2.4, "closest_t", slice(0, 1), np.array([1])),
+        (1.1, 3, "after_t", slice(1, 2), np.array([2])),
+        (1.1, 3, "before_t", slice(0, 2), np.array([1, 2])),
+        (1.1, 3, "closest_t", slice(0, 2), np.array([1, 2])),
+        (1.6, 3, "after_t", slice(1, 2), np.array([2])),
+        (1.6, 3, "before_t", slice(0, 2), np.array([1, 2])),
+        (1.6, 3, "closest_t", slice(1, 2), np.array([2])),
+        (1.6, 1.8, "before_t", slice(0, 0), np.array([])),
+        (1.6, 1.8, "after_t", slice(1, 1), np.array([])),
+        (1.6, 1.8, "closest_t", slice(1, 1), np.array([])),
+        (1.4, 1.6, "closest_t", slice(0, 1), np.array([1])),
+        (3, 3, "after_t", slice(2, 2), np.array([])),
+        (3, 3, "before_t", slice(2, 2), np.array([])),
+        (3, 3, "closest_t", slice(2, 2), np.array([])),
+        (0, 3, "after_t", slice(0, 2), np.array([1, 2])),
+        (0, 3, "before_t", slice(0, 2), np.array([1, 2])),
+        (0, 3, "closest_t", slice(0, 2), np.array([1, 2])),
+        (0, 4, "after_t", slice(0, 3), np.array([1, 2, 3])),
+        (0, 4, "before_t", slice(0, 3), np.array([1, 2, 3])),
+        (0, 4, "closest_t", slice(0, 3), np.array([1, 2, 3])),
+        (4, 4, "after_t", slice(3, 3), np.array([])),
+        (4, 4, "before_t", slice(3, 3), np.array([])),
+        (4, 4, "closest_t", slice(3, 3), np.array([])),
+        (4, 5, "after_t", slice(3, 4), np.array([4])),
+        (4, 5, "before_t", slice(3, 3), np.array([])),
+        (4, 5, "closest_t", slice(3, 3), np.array([])),
+        (0, 1, "after_t", slice(0, 0), np.array([])),
+        (0, 1, "before_t", slice(0, 1), np.array([1])),
+        (0, 1, "closest_t", slice(0, 0), np.array([])),
+        (0, None, "after_t", slice(0, 1), np.array([1])),
+        (0, None, "before_t", slice(0, 0), np.array([])),
+        (0, None, "closest_t", slice(0, 1), np.array([1])),
+        (1, None, "after_t", slice(0, 1), np.array([1])),
+        (1, None, "before_t", slice(0, 1), np.array([1])),
+        (1, None, "closest_t", slice(0, 1), np.array([1])),
+        (5, None, "after_t", slice(3, 3), np.array([])),
+        (5, None, "before_t", slice(3, 4), np.array([4])),
+        (5, None, "closest_t", slice(3, 4), np.array([4])),
+        (1, 3, "restrict", slice(0, 3), np.array([1, 2, 3])),
+        (1, 2.7, "restrict", slice(0, 2), np.array([1, 2])),
+        (1, 2.4, "restrict", slice(0, 2), np.array([1, 2])),
+        (1.1, 3, "restrict", slice(1, 3), np.array([2, 3])),
+        (1.6, 3, "restrict", slice(1, 3), np.array([2, 3])),
+        (1.6, 1.8, "restrict", slice(1, 1), np.array([])),
+        (1.4, 1.6, "restrict", slice(1, 1), np.array([])),
+        (3, 3, "restrict", slice(2, 3), np.array([3])),
+        (0, 3, "restrict", slice(0, 3), np.array([1, 2, 3])),
+        (0, 4, "restrict", slice(0, 4), np.array([1, 2, 3, 4])),
+        (4, 4, "restrict", slice(3, 4), np.array([4])),
+        (4, 5, "restrict", slice(3, 4), np.array([4])),
+        (0, 1, "restrict", slice(0, 1), np.array([1])),
+
     ]
 )
 @pytest.mark.parametrize("ts",
@@ -1521,6 +1538,38 @@ def test_get_slice_value(start, end, mode, expected_slice, expected_array, ts):
     out_array = ts.t[out_slice]
     assert out_slice == expected_slice
     assert np.all(out_array == expected_array)
+    if mode == "restrict":
+        iset = nap.IntervalSet(start, end)
+        out_restrict = ts.restrict(iset)
+        assert np.all(out_restrict.t == out_array)
+
+
+def test_get_slice_vs_get_random_val_start_end_value():
+    np.random.seed(123)
+    ts = nap.Ts(np.linspace(0.2, 0.8, 100))
+    se_vec = np.random.uniform(0, 1, size=(10000, 2))
+    starts = np.min(se_vec, axis=1)
+    ends = np.max(se_vec, axis=1)
+    for start, end in zip(starts, ends):
+        out_slice = ts.get_slice(start=start, end=end)
+        out_ts = ts[out_slice]
+        out_get = ts.get(start, end)
+        assert np.all(out_get.t == out_ts.t)
+
+
+def test_get_slice_vs_get_random_val_start_value():
+    np.random.seed(123)
+    ts = nap.Ts(np.linspace(0.2, 0.8, 100))
+    starts = np.random.uniform(0, 1, size=(10000, ))
+
+    for start in starts:
+        out_slice = ts.get_slice(start=start, end=None)
+        out_ts = ts[out_slice]
+        out_get = ts.get(start)
+        assert np.all(out_get.t == out_ts.t)
+
+
+
 
 @pytest.mark.parametrize(
     "end, n_points, expectation",
@@ -1531,7 +1580,7 @@ def test_get_slice_value(start, end, mode, expected_slice, expected_array, ts):
     ]
 )
 @pytest.mark.parametrize("time_unit", ["s", "ms",  "us"])
-@pytest.mark.parametrize("mode", ["closest", "backward",  "forward"])
+@pytest.mark.parametrize("mode", ["closest_t", "before_t",  "after_t"])
 def test_get_slice_n_points(end, n_points, expectation, time_unit, mode):
     ts = nap.Ts(t=np.array([1, 2, 3, 4]))
     with expectation:
@@ -1543,29 +1592,29 @@ def test_get_slice_n_points(end, n_points, expectation, time_unit, mode):
     "start, end, n_points, mode, expected_slice, expected_array",
     [
         # smaller than n_points
-        (1, 2, 2, "forward", slice(0, 1), np.array([1])),
-        (1, 2, 2, "backward", slice(0, 1), np.array([1])),
-        (1, 2, 2, "closest", slice(0, 1), np.array([1])),
+        (1, 2, 2, "after_t", slice(0, 1), np.array([1])),
+        (1, 2, 2, "before_t", slice(0, 1), np.array([1])),
+        (1, 2, 2, "closest_t", slice(0, 1), np.array([1])),
         # larger than n_points
-        (1, 5, 2, "forward", slice(0, 4, 2), np.array([1, 3])),
-        (1, 5, 2, "backward", slice(0, 4, 2), np.array([1, 3])),
-        (1, 5, 2, "closest", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5, 2, "after_t", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5, 2, "before_t", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5, 2, "closest_t", slice(0, 4, 2), np.array([1, 3])),
         # larger than n_points with rounding down
-        (1, 5.2, 2, "forward", slice(0, 4, 2), np.array([1, 3])),
-        (1, 5.2, 2, "backward", slice(0, 4, 2), np.array([1, 3])),
-        (1, 5.2, 2, "closest", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5.2, 2, "after_t", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5.2, 2, "before_t", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5.2, 2, "closest_t", slice(0, 4, 2), np.array([1, 3])),
         # larger than n_points with rounding down
-        (1, 6.2, 2, "forward", slice(0, 6, 3), np.array([1, 4])),
-        (1, 6.2, 2, "backward", slice(0, 4, 2), np.array([1, 3])),
-        (1, 6.2, 2, "closest", slice(0, 4, 2), np.array([1, 3])),
+        (1, 6.2, 2, "after_t", slice(0, 6, 3), np.array([1, 4])),
+        (1, 6.2, 2, "before_t", slice(0, 4, 2), np.array([1, 3])),
+        (1, 6.2, 2, "closest_t", slice(0, 4, 2), np.array([1, 3])),
         # larger than n_points with rounding up
-        (1, 5.6, 2, "forward", slice(0, 4, 2), np.array([1, 3])),
-        (1, 5.6, 2, "backward", slice(0, 4, 2), np.array([1, 3])),
-        (1, 5.6, 2, "closest", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5.6, 2, "after_t", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5.6, 2, "before_t", slice(0, 4, 2), np.array([1, 3])),
+        (1, 5.6, 2, "closest_t", slice(0, 4, 2), np.array([1, 3])),
         # larger than n_points with rounding up
-        (1, 6.6, 2, "forward", slice(0, 6, 3), np.array([1, 4])),
-        (1, 6.6, 2, "backward", slice(0, 4, 2), np.array([1, 3])),
-        (1, 6.6, 2, "closest", slice(0, 6, 3), np.array([1, 4])),
+        (1, 6.6, 2, "after_t", slice(0, 6, 3), np.array([1, 4])),
+        (1, 6.6, 2, "before_t", slice(0, 4, 2), np.array([1, 3])),
+        (1, 6.6, 2, "closest_t", slice(0, 6, 3), np.array([1, 4])),
     ]
 )
 @pytest.mark.parametrize("ts",
@@ -1575,58 +1624,32 @@ def test_get_slice_n_points(end, n_points, expectation, time_unit, mode):
                              nap.TsdFrame(t=np.arange(1, 10), d=np.arange(1, 10)[:, None]),
                              nap.TsdTensor(t=np.arange(1, 10), d=np.arange(1, 10)[:, None, None])
                          ])
-def test_get_slice_value(start, end, n_points, mode, expected_slice, expected_array, ts):
+def test_get_slice_value_step(start, end, n_points, mode, expected_slice, expected_array, ts):
     out_slice = ts._get_slice(start, end=end, mode=mode, n_points=n_points)
     out_array = ts.t[out_slice]
     assert out_slice == expected_slice
     assert np.all(out_array == expected_array)
 
 @pytest.mark.parametrize(
-    "start, end, mode, expected_slice, expected_array",
+    "start, end, expected_slice, expected_array",
     [
-        (1, 3, "forward", slice(0, 2), np.array([1, 2])),
-        (1, 3, "backward", slice(0, 2), np.array([1, 2])),
-        (1, 3, "closest", slice(0, 2), np.array([1, 2])),
-        (1, 2.7, "forward", slice(0, 2), np.array([1, 2])),
-        (1, 2.7, "backward", slice(0, 1), np.array([1])),
-        (1, 2.7, "closest", slice(0, 2), np.array([1, 2])),
-        (1, 2.4, "forward", slice(0, 2), np.array([1, 2])),
-        (1, 2.4, "backward", slice(0, 1), np.array([1])),
-        (1, 2.4, "closest", slice(0, 1), np.array([1])),
-        (1.1, 3, "forward", slice(1, 2), np.array([2])),
-        (1.1, 3, "backward", slice(0, 2), np.array([1, 2])),
-        (1.1, 3, "closest", slice(0, 2), np.array([1, 2])),
-        (1.6, 3, "forward", slice(1, 2), np.array([2])),
-        (1.6, 3, "backward", slice(0, 2), np.array([1, 2])),
-        (1.6, 3, "closest", slice(1, 2), np.array([2])),
-        (1.6, 1.8, "backward", slice(0, 0), np.array([])),
-        (1.6, 1.8, "forward", slice(1, 1), np.array([])),
-        (1.6, 1.8, "closest", slice(1, 1), np.array([])),
-        (1.4, 1.6, "closest", slice(0, 1), np.array([1])),
-        (3, 3, "forward", slice(2, 2), np.array([])),
-        (3, 3, "backward", slice(2, 2), np.array([])),
-        (3, 3, "closest", slice(2, 2), np.array([])),
-        (0, 3, "forward", slice(0, 2), np.array([1, 2])),
-        (0, 3, "backward", slice(0, 2), np.array([1, 2])),
-        (0, 3, "closest", slice(0, 2), np.array([1, 2])),
-        (4, 4, "forward", slice(3, 3), np.array([])),
-        (4, 4, "backward", slice(3, 3), np.array([])),
-        (4, 4, "closest", slice(3, 3), np.array([])),
-        (4, 5, "forward", slice(3, 4), np.array([4])),
-        (4, 5, "backward", slice(3, 3), np.array([])),
-        (4, 5, "closest", slice(3, 3), np.array([])),
-        (0, 1, "forward", slice(0, 0), np.array([])),
-        (0, 1, "backward", slice(0, 1), np.array([1])),
-        (0, 1, "closest", slice(0, 0), np.array([])),
-        (0, None, "forward", slice(0, 1), np.array([1])),
-        (0, None, "backward", slice(0, 0), np.array([])),
-        (0, None, "closest", slice(0, 1), np.array([1])),
-        (1, None, "forward", slice(0, 1), np.array([1])),
-        (1, None, "backward", slice(0, 1), np.array([1])),
-        (1, None, "closest", slice(0, 1), np.array([1])),
-        (5, None, "forward", slice(3, 3), np.array([])),
-        (5, None, "backward", slice(3, 4), np.array([4])),
-        (5, None, "closest", slice(3, 4), np.array([4]))
+        (1, 3, slice(0, 3), np.array([1, 2, 3])),
+        (1, 2.7,  slice(0, 2), np.array([1, 2])),
+        (1, 2.4,  slice(0, 2), np.array([1, 2])),
+        (1.1, 3,  slice(1, 3), np.array([2, 3])),
+        (1.6, 3,  slice(1, 3), np.array([2, 3])),
+        (1.6, 1.8,  slice(1, 1), np.array([])),
+        (1.4, 1.6,  slice(1, 1), np.array([])),
+        (3, 3,  slice(2, 3), np.array([3])),
+        (0, 3,  slice(0, 3), np.array([1, 2, 3])),
+        (0, 4,  slice(0, 4), np.array([1, 2, 3, 4])),
+        (4, 4,  slice(3, 4), np.array([4])),
+        (4, 5,  slice(3, 4), np.array([4])),
+        (0, 1,  slice(0, 1), np.array([1])),
+        (0, None, slice(0, 1), np.array([1])),
+        (1, None, slice(0, 1), np.array([1])),
+        (4, None, slice(3, 4), np.array([4])),
+        (5, None, slice(3, 4), np.array([4])),
     ]
 )
 @pytest.mark.parametrize("ts",
@@ -1636,8 +1659,8 @@ def test_get_slice_value(start, end, n_points, mode, expected_slice, expected_ar
                              nap.TsdFrame(t=np.array([1, 2, 3, 4]), d=np.array([1, 2, 3, 4])[:, None]),
                              nap.TsdTensor(t=np.array([1, 2, 3, 4]), d=np.array([1, 2, 3, 4])[:, None, None])
                          ])
-def test_get_slice_public(start, end, mode, expected_slice, expected_array, ts):
-    out_slice = ts.get_slice(start, end=end, mode=mode)
+def test_get_slice_public(start, end, expected_slice, expected_array, ts):
+    out_slice = ts.get_slice(start, end=end)
     out_array = ts.t[out_slice]
     assert out_slice == expected_slice
     assert np.all(out_array == expected_array)
