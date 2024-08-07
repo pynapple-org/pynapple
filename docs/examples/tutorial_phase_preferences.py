@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-Computing Phase Preferences
-============
+Spikes-phase coupling
+=====================
 
 In this tutorial we will learn how to isolate phase information from our wavelet decomposition and combine it
 with spiking data, to find phase preferences of spiking units.
