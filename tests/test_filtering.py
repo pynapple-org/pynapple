@@ -2,6 +2,16 @@ import pytest
 import pynapple as nap
 import numpy as np
 from scipy import signal
+from contextlib import nullcontext as does_not_raise
+
+
+@pytest.fixture
+def sample_data():
+    # Create a sample Tsd data object
+    t = np.linspace(0, 1, 500)
+    d = np.sin(2 * np.pi * 10 * t) + np.random.normal(0, 0.5, t.shape)
+    time_support = nap.IntervalSet(start=[0], end=[1])
+    return nap.Tsd(t=t, d=d, time_support=time_support)
 
 
 @pytest.mark.parametrize("freq", [10, 100])
@@ -34,3 +44,20 @@ def test_filtering_single_freq(freq, order, btype, shape: tuple, ep):
         out_sci.append(signal.filtfilt(b, a, tsd.restrict(iset).d, axis=0))
     out_sci = np.concatenate(out_sci, axis=0)
     np.testing.assert_array_equal(out.d, out_sci)
+
+
+@pytest.mark.parametrize("freq_band, filter_type, order, expected_exception", [
+    ((5, 15), "bandpass", 4, does_not_raise()),
+    ((5, 15), "bandstop", 4, does_not_raise()),
+    (10, "highpass", 4, does_not_raise()),
+    (10, "lowpass", 4, does_not_raise()),
+    ((5, 15), "invalid_filter", 4, pytest.raises(ValueError)),
+    (10, "bandpass", 4, pytest.raises(ValueError)),
+    ((5, 15), "highpass", 4, pytest.raises(ValueError)),
+])
+def test_compute_filtered_signal(sample_data, freq_band, filter_type, order, expected_exception):
+    with expected_exception:
+        filtered_data = nap.filtering.compute_filtered_signal(sample_data, freq_band, filter_type, order)
+        if not expected_exception:
+            assert isinstance(filtered_data, type(sample_data))
+            assert filtered_data.d.shape == sample_data.d.shape
