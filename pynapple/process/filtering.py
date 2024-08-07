@@ -1,67 +1,73 @@
-"""
-	Filtering module
-"""
+"""Filtering module."""
 
 import numpy as np
 from .. import core as nap
-from scipy.signal import butter, lfilter, filtfilt
+from scipy.signal import butter, filtfilt
+from numbers import Number
 
 
-def _butter_bandpass(lowcut, highcut, fs, order=5):
-    nyq = 0.5 * fs
-    low = lowcut / nyq
-    high = highcut / nyq
-    b, a = butter(order, [low, high], btype='band')
-    return b, a
-
-def _butter_bandpass_filter(data, lowcut, highcut, fs, order=4):
-    b, a = _butter_bandpass(lowcut, highcut, fs, order=order)
-    y = lfilter(b, a, data)
-    return y
-
-def compute_bandpass_filter(data, freq_band, sampling_frequency=None, order=4):
+def compute_filtered_signal(data, freq_band, filter_type="bandpass", order=4, sampling_frequency=None):
     """
-    Bandpass filtering the LFP.
-    
+    Apply a Butterworth filter to the provided signal data.
+
+    This function performs bandpass filtering on Local Field Potential (LFP)
+    data using a Butterworth filter. The filter can be configured to be of
+    type "bandpass", "bandstop", "highpass", or "lowpass".
+
     Parameters
     ----------
-    data : Tsd/TsdFrame
-        Description
-    lowcut : TYPE
-        Description
-    highcut : TYPE
-        Description
-    fs : TYPE
-        Description
+    data : Tsd, TsdFrame, or TsdTensor
+        The signal to be filtered.
+    freq_band : tuple of (float, float) or float
+        Cutoff frequency(ies) in Hz.
+        - For "bandpass" and "bandstop" filters, provide a tuple specifying the two cutoff frequencies.
+        - For "lowpass" and "highpass" filters, provide a single float specifying the cutoff frequency.
+    filter_type : {'bandpass', 'bandstop', 'highpass', 'lowpass'}, optional
+        The type of frequency filter to apply. Default is "bandpass".
     order : int, optional
-        Description
-    
+        The order of the Butterworth filter. Higher values result in sharper frequency cutoffs.
+        Default is 4.
+    sampling_frequency : float, optional
+        The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.
+
+    Returns
+    -------
+    filtered_data : Tsd, TsdFrame, or TsdTensor
+        The filtered signal, with the same data type as the input.
+
     Raises
     ------
-    RuntimeError
-        Description
+    ValueError
+        If `filter_type` is not one of {"bandpass", "bandstop", "highpass", "lowpass"}.
+        If `freq_band` is not a float for "lowpass" and "highpass" filters.
+        If `freq_band` is not a tuple of two floats for "bandpass" and "bandstop" filters.
+
+    Notes
+    -----
+    The cutoff frequency is defined as the frequency at which the amplitude of the signal
+    is reduced by -3 dB (decibels).
     """
-    time_support = data.time_support
-    time_index = data.as_units('s').index.values
-    if type(data) is nap.TsdFrame:
-        tmp = np.zeros(data.shape)
-        for i in np.arange(data.shape[1]):
-            tmp[:,i] = bandpass_filter(data[:,i], lowcut, highcut, fs, order)
+    if sampling_frequency is None:
+        sampling_frequency = data.rate
 
-        return nap.TsdFrame(
-            t = time_index,
-            d = tmp,
-            time_support = time_support,
-            time_units = 's',
-            columns = data.columns)
+    if filter_type not in ["lowpass", "highpass", "bandpass", "bandstop"]:
+        raise ValueError(f"Unrecognized filter type {filter_type}. "
+                         "filter_type must be either 'lowpass', 'highpass', 'bandpass',or 'bandstop'.")
+    if filter_type in ["lowpass", "highpass"] and isinstance(freq_band, Number):
+        raise ValueError("Must provide a single float for specifying a 'highpass' and 'lowpass' filters. "
+                         f"{freq_band} provided instead!")
+    elif filter_type in ["bandpass", "bandstop"] and len(tuple(freq_band)) != 2:
+        raise ValueError("Must provide a two floats for specifying a 'bandpass' and 'bandstop' filters. "
+                         f"{freq_band} provided instead!")
 
-    elif type(data) is nap.Tsd:
-        flfp = _butter_bandpass_filter(data.values, lowcut, highcut, fs, order)
-        return nap.Tsd(
-            t=time_index,
-            d=flfp,
-            time_support=time_support,
-            time_units='s')
+    b, a = butter(order, freq_band, btype=filter_type, fs=sampling_frequency)
 
-    else:
-        raise RuntimeError("Unknow format. Should be Tsd/TsdFrame")
+    out = np.zeros_like(data.d)
+    for ep in data.time_support:
+        slc = data.get_slice(start=ep.start[0], end=ep.end[0])
+        out[slc] = filtfilt(b, a, data.d[slc], axis=0)
+
+    kwargs = dict(t=data.t, d=out, time_support=data.time_support)
+    if isinstance(data, nap.TsdFrame):
+        kwargs["columns"] = data.columns
+    return data.__class__(**kwargs)
