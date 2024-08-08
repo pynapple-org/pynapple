@@ -3,7 +3,6 @@
 import re
 from contextlib import nullcontext as does_not_raise
 
-import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
@@ -271,12 +270,9 @@ def test_generate_morlet_filterbank_raise_errors(
         )
 
 
-import numpy as np
-
 ############################################################
 # Test for compute_wavelet_transform
 ############################################################
-import pynapple as nap
 
 
 def get_1d_signal(fs=1000, fc=50):
