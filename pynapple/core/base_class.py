@@ -568,7 +568,7 @@ class Base(abc.ABC):
 
         # get index of preceding time value
         idx_start = np.searchsorted(self.t, start, side="left")
-        if idx_start == len(self.t):
+        if idx_start == len(self.t) and mode != "restrict":
             idx_start -= 1  # make sure the index is not out of bound
 
         if mode == "before_t":

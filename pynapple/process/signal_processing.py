@@ -155,7 +155,7 @@ def compute_mean_power_spectral_density(
     slices = np.zeros((len(split_ep), 2), dtype=int)
 
     for i in range(len(split_ep)):
-        sl = sig.get_slice(split_ep[i, 0], split_ep[i, 1], mode="backward")
+        sl = sig.get_slice(split_ep[i, 0], split_ep[i, 1])
         slices[i, 0] = sl.start
         slices[i, 1] = sl.stop
 
