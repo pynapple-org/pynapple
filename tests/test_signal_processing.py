@@ -1,5 +1,5 @@
 """Tests of `signal_processing` for pynapple"""
-
+import matplotlib.pyplot as plt
 import numpy as np
 import pytest
 
@@ -60,6 +60,81 @@ def test_generate_morlet_filterbank():
     power = np.abs(nap.compute_power_spectral_density(fb))
     for i, f in enumerate(freqs):
         assert power.iloc[:, i].argmax() == np.abs(power.index - f).argmin()
+
+    # Checking that the power spectra of the wavelets resemble correct Gaussians
+    fs = 2000
+    freqs = np.linspace(100, 1000, 10)
+    fb = nap.generate_morlet_filterbank(
+        freqs, fs, gaussian_width=1.0, window_length=1.0, precision=24
+    )
+    power = np.abs(nap.compute_power_spectral_density(fb))
+    for i, f in enumerate(freqs):
+        gaussian_width = 1.0
+        window_length = 1.0
+        fz = power.index
+        factor = np.pi ** 0.25 * gaussian_width ** 0.25
+        morlet_ft = factor * np.exp(-np.pi ** 2 * gaussian_width * (window_length*(fz - f)/f) ** 2)
+        assert np.isclose(power.iloc[:,i]/np.max(power.iloc[:,i]), morlet_ft/np.max(morlet_ft), atol=0.1).all()
+
+    fs = 100
+    freqs = np.linspace(1, 10, 10)
+    fb = nap.generate_morlet_filterbank(
+        freqs, fs, gaussian_width=1.0, window_length=1.0, precision=24
+    )
+    power = np.abs(nap.compute_power_spectral_density(fb))
+    for i, f in enumerate(freqs):
+        gaussian_width = 1.0
+        window_length = 1.0
+        fz = power.index
+        factor = np.pi ** 0.25 * gaussian_width ** 0.25
+        morlet_ft = factor * np.exp(-np.pi ** 2 * gaussian_width * (window_length*(fz - f) / f) ** 2)
+        assert np.isclose(power.iloc[:, i] / np.max(power.iloc[:, i]), morlet_ft / np.max(morlet_ft),
+                          atol=0.1).all()
+
+    fs = 100
+    freqs = np.linspace(1, 10, 10)
+    fb = nap.generate_morlet_filterbank(
+        freqs, fs, gaussian_width=4.0, window_length=1.0, precision=24
+    )
+    power = np.abs(nap.compute_power_spectral_density(fb))
+    for i, f in enumerate(freqs):
+        gaussian_width = 4.0
+        window_length = 1.0
+        fz = power.index
+        factor = np.pi ** 0.25 * gaussian_width ** 0.25
+        morlet_ft = factor * np.exp(-np.pi ** 2 * gaussian_width * (window_length*(fz - f) / f) ** 2)
+        assert np.isclose(power.iloc[:, i] / np.max(power.iloc[:, i]), morlet_ft / np.max(morlet_ft),
+                          atol=0.1).all()
+
+    fs = 100
+    freqs = np.linspace(1, 10, 10)
+    fb = nap.generate_morlet_filterbank(
+        freqs, fs, gaussian_width=4.0, window_length=3.0, precision=24
+    )
+    power = np.abs(nap.compute_power_spectral_density(fb))
+    for i, f in enumerate(freqs):
+        gaussian_width = 4.0
+        window_length = 3.0
+        fz = power.index
+        factor = np.pi ** 0.25 * gaussian_width ** 0.25
+        morlet_ft = factor * np.exp(-np.pi ** 2 * gaussian_width * (window_length*(fz - f) / f) ** 2)
+        assert np.isclose(power.iloc[:, i] / np.max(power.iloc[:, i]), morlet_ft / np.max(morlet_ft),
+                          atol=0.1).all()
+
+    fs = 1000
+    freqs = np.linspace(1, 10, 10)
+    fb = nap.generate_morlet_filterbank(
+        freqs, fs, gaussian_width=3.5, window_length=1.25, precision=24
+    )
+    power = np.abs(nap.compute_power_spectral_density(fb))
+    for i, f in enumerate(freqs):
+        gaussian_width = 3.5
+        window_length = 1.25
+        fz = power.index
+        factor = np.pi ** 0.25 * gaussian_width ** 0.25
+        morlet_ft = factor * np.exp(-np.pi ** 2 * gaussian_width * (window_length * (fz - f) / f) ** 2)
+        assert np.isclose(power.iloc[:, i] / np.max(power.iloc[:, i]), morlet_ft / np.max(morlet_ft),
+                          atol=0.1).all()
 
 
 @pytest.mark.parametrize(
