@@ -1,7 +1,11 @@
 """
-Signal processing tools for Pynapple.
+# Signal processing tools
 
-Contains functionality for signal processing pynapple object; fourier transforms and wavelet decomposition.
+- `nap.compute_power_spectral_density`
+- `nap.compute_mean_power_spectral_density`
+- `nap.compute_wavelet_transform`
+- `nap.generate_morlet_filterbank`
+
 """
 
 from numbers import Number
@@ -23,7 +27,7 @@ def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False, norm
         Time series.
     fs : float, optional
         Sampling rate, in Hz. If None, will be calculated from the given signal
-    ep : pynapple.IntervalSet or None, optional
+    ep : None or pynapple.IntervalSet, optional
         The epoch to calculate the fft on. Must be length 1.
     full_range : bool, optional
         If true, will return full fft frequency range, otherwise will return only positive values
@@ -90,13 +94,13 @@ def compute_mean_power_spectral_density(
 
     Parameters
     ----------
-    sig : Tsd or TsdFrame
+    sig : pynapple.Tsd or pynapple.TsdFrame
         Signal with equispaced samples
     interval_size : Number
         Epochs size to compute to average the FFT across
     fs : None, optional
         Sampling frequency of `sig`. If `None`, `fs` is equal to `sig.rate`
-    ep : None, optional
+    ep : None or pynapple.IntervalSet, optional
         The `IntervalSet` to calculate the fft on. Can be any length.
     full_range : bool, optional
         If true, will return full fft frequency range, otherwise will return only positive values
@@ -216,32 +220,6 @@ def _morlet(M=1024, gaussian_width=1.5, window_length=1.0, precision=8):
     )
 
 
-def _create_freqs(freq_start, freq_stop, num_freqs=10, log_scaling=False):
-    """
-    Creates an array of frequencies.
-
-    Parameters
-    ----------
-    freq_start : float
-        Starting value for the frequency definition.
-    freq_stop: float
-        Stopping value for the frequency definition, inclusive.
-    num_freqs: int, optional
-        Number of freqs to create. Default 10
-    log_scaling: Bool
-        If True, will use log spacing with base log_base for frequency spacing. Default False.
-
-    Returns
-    -------
-    freqs: 1d array
-        Frequency indices.
-    """
-    if not log_scaling:
-        return np.linspace(freq_start, freq_stop, num_freqs)
-    else:
-        return np.geomspace(freq_start, freq_stop, num_freqs)
-
-
 def compute_wavelet_transform(
     sig, freqs, fs=None, gaussian_width=1.5, window_length=1.0, precision=16, norm="l1"
 ):
@@ -250,26 +228,24 @@ def compute_wavelet_transform(
 
     Parameters
     ----------
-    sig : pynapple.Tsd, pynapple.TsdFrame or pynapple.TsdTensor
+    sig : pynapple.Tsd or pynapple.TsdFrame or pynapple.TsdTensor
         Time series.
-    freqs : 1d array or tuple of float
-        If array, frequency values to estimate with morlet wavelets.
-        If tuple, define the frequency range, as [freq_start, freq_stop, freq_step].
-        The `freq_step` is optional, and defaults to 1. Range is inclusive of `freq_stop` value.
+    freqs : 1d array
+        Frequency values to estimate with Morlet wavelets.
     fs : float or None
-        Sampling rate, in Hz. Defaults to sig.rate if None is given.
+        Sampling rate, in Hz. Defaults to `sig.rate` if None is given.
     gaussian_width : float
-        Defines width of Gaussian to be used in wavelet creation.
+        Defines width of Gaussian to be used in wavelet creation. Default is 1.5.
     window_length : float
-        The length of window to be used for wavelet creation.
+        The length of window to be used for wavelet creation. Default is 1.0.
     precision: int.
-        Precision of wavelet to use. . Defines the number of timepoints to evaluate the Morlet wavelet at.
-        Default is 16
+        Precision of wavelet to use. Defines the number of timepoints to evaluate the Morlet wavelet at.
+        Default is 16.
     norm : {None, 'l1', 'l2'}, optional
         Normalization method:
-        * None - no normalization
-        * 'l1' - divide by the sum of amplitudes
-        * 'l2' - divide by the square root of the sum of amplitudes
+        - None - no normalization
+        - 'l1' - divide by the sum of amplitudes
+        - 'l2' - divide by the square root of the sum of amplitudes
 
     Returns
     -------
@@ -280,10 +256,10 @@ def compute_wavelet_transform(
     --------
     >>> import numpy as np
     >>> import pynapple as nap
-    >>> t = np.linspace(0, 1, 1000)
+    >>> t = np.arange(0, 1, 1/1000)
     >>> signal = nap.Tsd(d=np.sin(t * 50 * np.pi * 2), t=t)
     >>> freqs = np.linspace(10, 100, 10)
-    >>> mwt = nap.compute_wavelet_transform(signal, fs=None, freqs=freqs)
+    >>> mwt = nap.compute_wavelet_transform(signal, fs=1000, freqs=freqs)
 
     Notes
     -----
@@ -292,31 +268,28 @@ def compute_wavelet_transform(
 
     if not isinstance(sig, (nap.Tsd, nap.TsdFrame, nap.TsdTensor)):
         raise TypeError("`sig` must be instance of Tsd, TsdFrame, or TsdTensor")
-    if isinstance(gaussian_width, (int, float, np.number)):
-        if gaussian_width <= 0:
-            raise ValueError("gaussian_width must be a positive number.")
-    else:
-        raise TypeError("gaussian_width must be a float or int instance.")
-    if isinstance(window_length, (int, float, np.number)):
-        if window_length <= 0:
-            raise ValueError("window_length must be a positive number.")
-    else:
-        raise TypeError("window_length must be a float or int instance.")
+
+    if not isinstance(freqs, np.ndarray):
+        raise TypeError("`freqs` must be a ndarray")
+    if len(freqs) == 0:
+        raise ValueError("Given list of freqs cannot be empty.")
+    if np.min(freqs) <= 0:
+        raise ValueError("All frequencies in freqs must be strictly positive")
+
+    if fs is not None and not isinstance(fs, (int, float, np.number)):
+        raise TypeError("`fs` must be of type float or int or None")
+
     if norm is not None and norm not in ["l1", "l2"]:
         raise ValueError("norm parameter must be 'l1', 'l2', or None.")
-    if not isinstance(freqs, (np.ndarray, tuple)):
-        raise TypeError("`freqs` must be a ndarray or tuple instance.")
-    if isinstance(freqs, tuple):
-        freqs = _create_freqs(*freqs)
 
     if fs is None:
         fs = sig.rate
 
-    if isinstance(sig, nap.Tsd):
+    if sig.ndim == 1:
         output_shape = (sig.shape[0], len(freqs))
     else:
         output_shape = (sig.shape[0], len(freqs), *sig.shape[1:])
-        sig = sig.reshape((sig.shape[0], np.prod(sig.shape[1:])))
+        sig = np.reshape(sig, (sig.shape[0], np.prod(sig.shape[1:])))
 
     filter_bank = generate_morlet_filterbank(
         freqs, fs, gaussian_width, window_length, precision
@@ -324,6 +297,7 @@ def compute_wavelet_transform(
     convolved_real = sig.convolve(filter_bank.real().values)
     convolved_imag = sig.convolve(filter_bank.imag().values)
     convolved = convolved_real.values + convolved_imag.values * 1j
+
     if norm == "l1":
         coef = convolved / (fs / freqs)
     elif norm == "l2":
@@ -352,8 +326,8 @@ def generate_morlet_filterbank(
     Parameters
     ----------
     freqs : 1d array
-        Frequency values to estimate with morlet wavelets.
-    fs : float
+        frequency values to estimate with Morlet wavelets.
+    fs : float or int
         Sampling rate, in Hz.
     gaussian_width : float
         Defines width of Gaussian to be used in wavelet creation.
@@ -367,10 +341,34 @@ def generate_morlet_filterbank(
     filter_bank : pynapple.TsdFrame
         list of Morlet wavelet filters of the frequencies given
     """
+    if not isinstance(freqs, np.ndarray):
+        raise TypeError("`freqs` must be a ndarray")
     if len(freqs) == 0:
         raise ValueError("Given list of freqs cannot be empty.")
     if np.min(freqs) <= 0:
         raise ValueError("All frequencies in freqs must be strictly positive")
+
+    if not isinstance(fs, (int, float, np.number)):
+        raise TypeError("`fs` must be of type float or int ndarray")
+
+    if isinstance(gaussian_width, (int, float, np.number)):
+        if gaussian_width <= 0:
+            raise ValueError("gaussian_width must be a positive number.")
+    else:
+        raise TypeError("gaussian_width must be a float or int instance.")
+
+    if isinstance(window_length, (int, float, np.number)):
+        if window_length <= 0:
+            raise ValueError("window_length must be a positive number.")
+    else:
+        raise TypeError("window_length must be a float or int instance.")
+
+    if isinstance(precision, int):
+        if precision <= 0:
+            raise ValueError("precision must be a positive number.")
+    else:
+        raise TypeError("precision must be a float or int instance.")
+
     filter_bank = []
     cutoff = 8
     morlet_f = _morlet(

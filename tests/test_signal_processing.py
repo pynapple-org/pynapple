@@ -2,6 +2,8 @@
 
 import numpy as np
 import pytest
+import re
+from contextlib import nullcontext as does_not_raise
 
 import pynapple as nap
 
@@ -76,13 +78,95 @@ def test_generate_morlet_filterbank():
             ),
         ),
         (
-            [],
+            "a",
             1000,
             1.5,
             1.0,
             16,
-            pytest.raises(ValueError, match="Given list of freqs cannot be empty."),
+            pytest.raises(
+                TypeError, match="`freqs` must be a ndarray"
+            ),
         ),
+        (
+            np.array([]),
+            1000,
+            1.5,
+            1.0,
+            16,
+            pytest.raises(
+                ValueError, match="Given list of freqs cannot be empty."
+            ),
+        ),
+        (
+            np.linspace(1, 10, 1),
+            "a",
+            1.5,
+            1.0,
+            16,
+            pytest.raises(
+                TypeError, match="`fs` must be of type float or int ndarray"
+            ),
+        ),
+        (
+            np.linspace(1, 10, 1),
+            1000,
+            -1.5,
+            1.0,
+            16,
+            pytest.raises(
+                ValueError, match="gaussian_width must be a positive number."
+            ),
+        ),
+        (
+            np.linspace(1, 10, 1),
+            1000,
+            "a",
+            1.0,
+            16,
+            pytest.raises(
+                TypeError, match="gaussian_width must be a float or int instance."
+            ),
+        ),
+        (
+            np.linspace(1, 10, 1),
+            1000,
+            1.5,
+            -1.0,
+            16,
+            pytest.raises(
+                ValueError, match="window_length must be a positive number."
+            ),
+        ),
+        (
+            np.linspace(1, 10, 1),
+            1000,
+            1.5,
+            "a",
+            16,
+            pytest.raises(
+                TypeError, match="window_length must be a float or int instance."
+            ),
+        ),
+        (
+            np.linspace(1, 10, 1),
+            1000,
+            1.5,
+            1.0,
+            -16,
+            pytest.raises(
+                ValueError, match="precision must be a positive number."
+            ),
+        ),
+        (
+            np.linspace(1, 10, 1),
+            1000,
+            1.5,
+            1.0,
+            "a",
+            pytest.raises(
+                TypeError, match="precision must be a float or int instance."
+            ),
+        ),                      
     ],
 )
 def test_generate_morlet_filterbank_raise_errors(
@@ -94,300 +178,249 @@ def test_generate_morlet_filterbank_raise_errors(
         )
 
 
-def test_compute_wavelet_transform():
-    t = np.linspace(0, 1, 1001)
-    sig = nap.Tsd(
-        d=np.sin(t * 50 * np.pi * 2)
-        * np.interp(np.linspace(0, 1, 1001), [0, 0.5, 1], [0, 1, 0]),
-        t=t,
+
+############################################################
+# Test for compute_wavelet_transform
+############################################################
+import pynapple as nap
+import numpy as np
+
+
+def get_1d_signal(fs=1000, fc=50):
+    t = np.arange(0, 2, 1 / fs)
+    d = np.sin(t * fc * np.pi * 2) * np.interp(t, [0, 1, 2], [0, 1, 0])
+    return nap.Tsd(t, d, time_support=nap.IntervalSet(0, 2))
+
+def get_2d_signal(fs=1000, fc=50):
+    t = np.arange(0, 2, 1 / fs)
+    d = np.sin(t * fc * np.pi * 2) * np.interp(t, [0, 1, 2], [0, 1, 0])
+    return nap.TsdFrame(t, d[:,np.newaxis], time_support=nap.IntervalSet(0, 2))
+
+def get_output_1d(sig, wavelets):
+    T = sig.shape[0]
+    M, N = wavelets.shape
+    out = []
+    for n in range(N):
+        out.append(np.convolve(sig, wavelets[:, n], mode="full"))        
+    out = np.array(out).T
+    cut = ((M - 1) // 2, T + M - 1 - ((M - 1) // 2) - (1 - M % 2))
+    return out[cut[0] : cut[1]]
+
+def get_output_2d(sig, wavelets):
+    T, K = sig.shape
+    M, N = wavelets.shape
+    out = []
+    for k in range(K):
+        tmp = []
+        for n in range(N):
+            tmp.append(np.convolve(sig[:,k], wavelets[:, n], mode="full"))
+        out.append(np.array(tmp))
+    out = np.array(out).T
+    cut = ((M - 1) // 2, T + M - 1 - ((M - 1) // 2) - (1 - M % 2))
+    return out[cut[0] : cut[1]]
+
+@pytest.mark.parametrize(
+    "func, freqs, fs, gaussian_width, window_length, precision, norm, fc, maxt",
+    [
+        (get_1d_signal, np.linspace(10, 100, 10), 1000, 1.5, 1.0, 16, None, 50, 1000),
+        (get_1d_signal, np.linspace(10, 100, 10), None, 1.5, 1.0, 16, None, 50, 1000),
+        (get_1d_signal, np.linspace(10, 100, 10), 1000, 3.0, 1.0, 16, None, 50, 1000),
+        (get_1d_signal, np.linspace(10, 100, 10), 1000, 1.5, 2.0, 16, None, 50, 1000),
+        (get_1d_signal, np.linspace(10, 100, 10), 1000, 1.5, 1.0, 20, None, 50, 1000),
+        (get_1d_signal, np.linspace(10, 100, 10), 1000, 1.5, 1.0, 16, "l1", 50, 1000),
+        (get_1d_signal, np.linspace(10, 100, 10), 1000, 1.5, 1.0, 16, "l2", 50, 1000),
+        (get_1d_signal, np.linspace(10, 100, 10), 1000, 1.5, 1.0, 16, None, 20, 1000),
+        (get_2d_signal, np.linspace(10, 100, 10), 1000, 1.5, 1.0, 16, None, 20, 1000),
+    ],
+)
+def test_compute_wavelet_transform(
+    func, freqs, fs, gaussian_width, window_length, precision, norm, fc, maxt
+):
+    sig = func(1000, fc)
+    wavelets = nap.generate_morlet_filterbank(
+        freqs, 1000, gaussian_width, window_length, precision
     )
-    freqs = np.linspace(10, 100, 10)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
-    mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
-    assert mpf == 50
+    if sig.ndim == 1:
+        output = get_output_1d(sig.d, wavelets.values)
+    if sig.ndim == 2:
+        output = get_output_2d(sig.d, wavelets.values)
+
+    if norm == "l1":
+        output = output / (1000 / freqs)
+    if norm == "l2":
+        output = output / (1000 / np.sqrt(freqs))
+
+    mwt = nap.compute_wavelet_transform(
+        sig,
+        freqs,
+        fs=fs,
+        gaussian_width=gaussian_width,
+        window_length=window_length,
+        precision=precision,
+        norm=norm,
+    )
+
+    np.testing.assert_array_almost_equal(output, mwt.values)
+    assert freqs[np.argmax(np.sum(np.abs(mwt), axis=0))] == fc
     assert (
         np.unravel_index(np.abs(mwt.values).argmax(), np.abs(mwt.values).shape)[0]
-        == 500
+        == maxt
     )
-
-    t = np.linspace(0, 1, 1001)
-    sig = nap.Tsd(
-        d=np.sin(t * 50 * np.pi * 2)
-        * np.interp(np.linspace(0, 1, 1001), [0, 0.5, 1], [0, 1, 0]),
-        t=t,
-    )
-    freqs = (10, 100, 10)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
-    mwt2 = nap.compute_wavelet_transform(sig, fs=None, freqs=np.linspace(10, 100, 10))
-    assert np.array_equal(mwt, mwt2)
-
-    t = np.linspace(0, 1, 1001)
-    sig = nap.Tsd(
-        d=np.sin(t * 50 * np.pi * 2)
-        * np.interp(np.linspace(0, 1, 1001), [0, 0.5, 1], [0, 1, 0]),
-        t=t,
-    )
-    freqs = (10, 100, 10)
-    mwt = nap.compute_wavelet_transform(sig, fs=1001, freqs=freqs)
-    mwt2 = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
-    assert np.array_equal(mwt, mwt2)
-
-    t = np.linspace(0, 1, 1001)
-    sig = nap.Tsd(
-        d=np.sin(t * 50 * np.pi * 2)
-        * np.interp(np.linspace(0, 1, 1001), [0, 0.5, 1], [0, 1, 0]),
-        t=t,
-    )
-    freqs = (10, 100, 10, True)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
-    mwt2 = nap.compute_wavelet_transform(sig, fs=None, freqs=np.geomspace(10, 100, 10))
-    assert np.array_equal(mwt, mwt2)
-
-    t = np.linspace(0, 1, 1001)
-    sig = nap.Tsd(
-        d=np.sin(t * 10 * np.pi * 2)
-        * np.interp(np.linspace(0, 1, 1001), [0, 0.5, 1], [0, 1, 0]),
-        t=t,
-    )
-    freqs = np.linspace(10, 100, 10)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
-    mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
-    assert mpf == 10
-    assert (
-        np.unravel_index(np.abs(mwt.values).argmax(), np.abs(mwt.values).shape)[0]
-        == 500
-    )
-
-    t = np.linspace(0, 1, 1000)
-    sig = nap.Tsd(d=np.sin(t * 50 * np.pi * 2), t=t)
-    freqs = np.linspace(10, 100, 10)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
-    mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
-    assert mpf == 50
-    assert mwt.shape == (1000, 10)
-
-    t = np.linspace(0, 1, 1000)
-    sig = nap.Tsd(d=np.sin(t * 20 * np.pi * 2), t=t)
-    freqs = np.linspace(10, 100, 10)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
-    mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
-    assert mpf == 20
-    assert mwt.shape == (1000, 10)
-
-    t = np.linspace(0, 1, 1000)
-    sig = nap.Tsd(d=np.sin(t * 20 * np.pi * 2), t=t)
-    freqs = np.linspace(10, 100, 10)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs, norm="l1")
-    mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
-    assert mpf == 20
-    assert mwt.shape == (1000, 10)
-
-    t = np.linspace(0, 1, 1000)
-    sig = nap.Tsd(d=np.sin(t * 20 * np.pi * 2), t=t)
-    freqs = np.linspace(10, 100, 10)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs, norm="l2")
-    mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
-    assert mpf == 20
-    assert mwt.shape == (1000, 10)
-
-    t = np.linspace(0, 1, 1000)
-    sig = nap.Tsd(d=np.sin(t * 20 * np.pi * 2), t=t)
-    freqs = np.linspace(10, 100, 10)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs, norm=None)
-    mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
-    assert mpf == 20
-    assert mwt.shape == (1000, 10)
-
-    t = np.linspace(0, 1, 1000)
-    sig = nap.Tsd(d=np.sin(t * 70 * np.pi * 2), t=t)
-    freqs = np.linspace(10, 100, 10)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
-    mpf = freqs[np.argmax(np.sum(np.abs(mwt), axis=0))]
-    assert mpf == 70
-    assert mwt.shape == (1000, 10)
-
-    t = np.linspace(0, 1, 1024)
-    sig = nap.Tsd(d=np.random.random(1024), t=t)
-    freqs = np.linspace(1, 600, 10)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
-    assert mwt.shape == (1024, 10)
-
-    t = np.linspace(0, 1, 1024)
-    sig = nap.Tsd(d=np.random.random(1024), t=t)
-    freqs = (1, 51, 6)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
-    assert mwt.shape == (1024, 6)
-
-    t = np.linspace(0, 1, 1024)
-    sig = nap.TsdFrame(d=np.random.random((1024, 4)), t=t)
-    freqs = np.linspace(1, 600, 10)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
-    assert mwt.shape == (1024, 10, 4)
-
-    t = np.linspace(0, 1, 1024)
-    sig = nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=t)
-    freqs = np.linspace(1, 600, 10)
-    mwt = nap.compute_wavelet_transform(sig, fs=None, freqs=freqs)
-    assert mwt.shape == (1024, 10, 4, 2)
-
-    # Testing against manual convolution for l1 norm
-    t = np.linspace(0, 1, 1024)
-    sig = nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=t)
-    freqs = np.linspace(1, 600, 10)
-    mwt = nap.compute_wavelet_transform(
-        sig, fs=None, freqs=freqs, gaussian_width=1.5, window_length=1.0, norm="l1"
-    )
-    output_shape = (sig.shape[0], len(freqs), *sig.shape[1:])
-    sig = sig.reshape((sig.shape[0], np.prod(sig.shape[1:])))
-    filter_bank = nap.generate_morlet_filterbank(freqs, 1024, 1.5, 1.0, precision=16)
-    convolved_real = sig.convolve(filter_bank.real().values)
-    convolved_imag = sig.convolve(filter_bank.imag().values)
-    convolved = convolved_real.values + convolved_imag.values * 1j
-    coef = convolved / (1024 / freqs)
-    cwt = np.expand_dims(coef, -1) if len(coef.shape) == 2 else coef
-    mwt2 = nap.TsdTensor(
-        t=sig.index, d=cwt.reshape(output_shape), time_support=sig.time_support
-    )
-    assert np.array_equal(mwt, mwt2)
-
-    # Testing against manual convolution for l2 norm
-    t = np.linspace(0, 1, 1024)
-    sig = nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=t)
-    freqs = np.linspace(1, 600, 10)
-    mwt = nap.compute_wavelet_transform(
-        sig, fs=None, freqs=freqs, gaussian_width=1.5, window_length=1.0, norm="l2"
-    )
-    output_shape = (sig.shape[0], len(freqs), *sig.shape[1:])
-    sig = sig.reshape((sig.shape[0], np.prod(sig.shape[1:])))
-    filter_bank = nap.generate_morlet_filterbank(freqs, 1024, 1.5, 1.0, precision=16)
-    convolved_real = sig.convolve(filter_bank.real().values)
-    convolved_imag = sig.convolve(filter_bank.imag().values)
-    convolved = convolved_real.values + convolved_imag.values * 1j
-    coef = convolved / (1024 / np.sqrt(freqs))
-    cwt = np.expand_dims(coef, -1) if len(coef.shape) == 2 else coef
-    mwt2 = nap.TsdTensor(
-        t=sig.index, d=cwt.reshape(output_shape), time_support=sig.time_support
-    )
-    assert np.array_equal(mwt, mwt2)
-
-    # Testing against manual convolution for no normalization
-    t = np.linspace(0, 1, 1024)
-    sig = nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=t)
-    freqs = np.linspace(1, 600, 10)
-    mwt = nap.compute_wavelet_transform(
-        sig, fs=None, freqs=freqs, gaussian_width=1.5, window_length=1.0, norm=None
-    )
-    output_shape = (sig.shape[0], len(freqs), *sig.shape[1:])
-    sig = sig.reshape((sig.shape[0], np.prod(sig.shape[1:])))
-    filter_bank = nap.generate_morlet_filterbank(freqs, 1024, 1.5, 1.0, precision=16)
-    convolved_real = sig.convolve(filter_bank.real().values)
-    convolved_imag = sig.convolve(filter_bank.imag().values)
-    convolved = convolved_real.values + convolved_imag.values * 1j
-    coef = convolved
-    cwt = np.expand_dims(coef, -1) if len(coef.shape) == 2 else coef
-    mwt2 = nap.TsdTensor(
-        t=sig.index, d=cwt.reshape(output_shape), time_support=sig.time_support
-    )
-    assert np.array_equal(mwt, mwt2)
+    np.testing.assert_array_almost_equal(mwt.time_support.values, sig.time_support.values)
 
 
 @pytest.mark.parametrize(
-    "sig, fs, freqs, gaussian_width, window_length, precision, norm, expectation",
+    "sig, freqs, fs, gaussian_width, window_length, precision, norm, expectation",
     [
+        (get_1d_signal(), np.linspace(1, 10, 2), 1000, 1.5, 1, 16, None, does_not_raise()),
         (
-            nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=np.linspace(0, 1, 1024)),
-            None,
-            np.linspace(0, 600, 10),
+            "a",
+            np.linspace(1, 10, 2),
+            1000,
             1.5,
-            1.0,
+            1,
             16,
-            "l1",
+            None,
             pytest.raises(
-                ValueError, match="All frequencies in freqs must be strictly positive"
+                TypeError,
+                match=re.escape(
+                    "`sig` must be instance of Tsd, TsdFrame, or TsdTensor"
+                ),
             ),
         ),
         (
-            nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=np.linspace(0, 1, 1024)),
+            get_1d_signal(),
+            np.linspace(1, 10, 2),
+            "a",
+            1.5,
+            1,
+            16,
             None,
-            np.linspace(1, 600, 10),
+            pytest.raises(
+                TypeError,
+                match=re.escape(
+                    "`fs` must be of type float or int or None"
+                ),
+            ),
+        ),        
+        (
+            get_1d_signal(),
+            np.linspace(1, 10, 2),
+            1000,
             -1.5,
-            1.0,
+            1,
             16,
-            "l1",
+            None,
             pytest.raises(
-                ValueError, match="gaussian_width must be a positive number."
+                ValueError,
+                match=re.escape("gaussian_width must be a positive number."),
             ),
         ),
         (
-            nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=np.linspace(0, 1, 1024)),
+            get_1d_signal(),
+            np.linspace(1, 10, 2),
+            1000,
+            "a",
+            1,
+            16,
             None,
-            np.linspace(1, 600, 10),
+            pytest.raises(
+                TypeError,
+                match=re.escape("gaussian_width must be a float or int instance."),
+            ),
+        ),
+        (
+            get_1d_signal(),
+            np.linspace(1, 10, 2),
+            1000,
             1.5,
-            -1.0,
+            -1,
             16,
-            "l1",
-            pytest.raises(ValueError, match="window_length must be a positive number."),
-        ),
-        (
-            nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=np.linspace(0, 1, 1024)),
             None,
-            np.linspace(1, 600, 10),
-            "not_number",
-            1.0,
-            16,
-            "l1",
             pytest.raises(
-                TypeError, match="gaussian_width must be a float or int instance."
+                ValueError,
+                match=re.escape("window_length must be a positive number."),
             ),
         ),
         (
-            nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=np.linspace(0, 1, 1024)),
-            None,
-            np.linspace(1, 600, 10),
+            get_1d_signal(),
+            np.linspace(1, 10, 2),
+            1000,
             1.5,
-            "not_number",
+            "a",
             16,
-            "l1",
+            None,
             pytest.raises(
-                TypeError, match="window_length must be a float or int instance."
+                TypeError,
+                match=re.escape("window_length must be a float or int instance."),
             ),
         ),
         (
-            nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=np.linspace(0, 1, 1024)),
-            None,
-            np.linspace(1, 600, 10),
+            get_1d_signal(),
+            np.linspace(1, 10, 2),
+            1000,
             1.5,
-            1.0,
+            1,
             16,
-            "l3",
+            "a",
             pytest.raises(
-                ValueError, match="norm parameter must be 'l1', 'l2', or None."
+                ValueError,
+                match=re.escape("norm parameter must be 'l1', 'l2', or None."),
             ),
         ),
         (
-            nap.TsdTensor(d=np.random.random((1024, 4, 2)), t=np.linspace(0, 1, 1024)),
-            None,
-            None,
+            get_1d_signal(),
+            "a",
+            1000,
             1.5,
-            1.0,
+            1,
             16,
-            "l1",
+            None,
             pytest.raises(
-                TypeError, match="`freqs` must be a ndarray or tuple instance."
+                TypeError,
+                match=re.escape("`freqs` must be a ndarray"),
             ),
         ),
         (
-            "not_a_signal",
-            None,
-            np.linspace(10, 100, 10),
+            get_1d_signal(),
+            np.array([]),
+            1000,
             1.5,
-            1.0,
+            1,
             16,
-            "l1",
+            None,
             pytest.raises(
-                TypeError, match="`sig` must be instance of Tsd, TsdFrame, or TsdTensor"
+                ValueError,
+                match=re.escape("Given list of freqs cannot be empty."),
             ),
         ),
+        (
+            get_1d_signal(),
+            np.array([-1]),
+            1000,
+            1.5,
+            1,
+            16,
+            None,
+            pytest.raises(
+                ValueError,
+                match=re.escape("All frequencies in freqs must be strictly positive"),
+            ),
+        ),
+        (
+            get_1d_signal(),
+            np.linspace(1, 10, 2),
+            1000,
+            1.5,
+            1,
+            16,
+            1,
+            pytest.raises(
+                ValueError,
+                match=re.escape("norm parameter must be 'l1', 'l2', or None."),
+            ),
+        ),
+        
     ],
 )
 def test_compute_wavelet_transform_raise_errors(
