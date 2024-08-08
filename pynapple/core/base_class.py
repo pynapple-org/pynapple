@@ -403,75 +403,75 @@ class Base(abc.ABC):
         end : float or int or None
             The end
         """
-        assert isinstance(start, Number), "start should be a float or int"
-        time_array = self.index.values
+        sl = self.get_slice(start, end, time_units)
 
         if end is None:
-            start = TsIndex.format_timestamps(np.array([start]), time_units)[0]
-            idx = int(np.searchsorted(time_array, start))
-            if idx == 0:
-                return self[idx]
-            elif idx >= self.shape[0]:
-                return self[-1]
-            else:
-                if start - time_array[idx - 1] < time_array[idx] - start:
-                    return self[idx - 1]
-                else:
-                    return self[idx]
-        else:
-            assert isinstance(end, Number), "end should be a float or int"
-            assert start < end, "Start should not precede end"
-            start, end = TsIndex.format_timestamps(np.array([start, end]), time_units)
-            idx_start = np.searchsorted(time_array, start)
-            idx_end = np.searchsorted(time_array, end, side="right")
-            return self[idx_start:idx_end]
+            sl = sl.start
 
-    def _get_filename(self, filename):
-        """Check if the filename is valid and return the path
+        return self[sl]
+
+    def get_slice(self, start, end=None, time_unit="s"):
+        """
+        Get a slice object from the time series data based on the start and end values such that all the timestamps satisfy `start<=t<=end`.
+        If `end` is None, only the timepoint closest to `start` is returned.
+
+        By default, the time support doesn't change. If you want to change the time support, use the `restrict` function.
+
+        This function is equivalent of calling the `get` method.
 
         Parameters
         ----------
-        filename : str or Path
-            The filename
+        start : int or float
+            The starting value for the slice.
+        end : int or float, optional
+            The ending value for the slice. Defaults to None.
+        time_unit : str, optional
+            The time unit for the start and end values. Defaults to "s" (seconds).
 
         Returns
         -------
-        Path
-            The path to the file
+        slice : slice
+            A slice determining the start and end indices, with unit step
+            Slicing the array will be equivalent to calling get: `ts[s].t == ts.get(start, end).t` with `s` being the slice object.
+
 
         Raises
         ------
-        RuntimeError
-            If the filename is a directory or the parent does not exist
+        ValueError
+            - If start or end is not a number.
+            - If start is greater than end.
+
+        Examples
+        --------
+        >>> import pynapple as nap
+
+        >>> ts = nap.Ts(t = [0, 1, 2, 3])
+
+        >>> # slice over a range
+        >>> start, end = 1.2, 2.6
+        >>> print(ts.get_slice(start, end))  # returns `slice(2, 3, None)`
+        >>> start, end = 1., 2.
+        >>> print(ts.get_slice(start, end, mode="forward"))  # returns `slice(1, 3, None)`
+
+        >>> # slice a single value
+        >>> start = 1.2
+        >>> print(ts.get_slice(start))  # returns `slice(1, 2, None)`
+        >>> start = 2.
+        >>> print(ts.get_slice(start)) # returns `slice(2, 3, None)`
         """
-
-        return check_filename(filename)
-
-    @classmethod
-    def _from_npz_reader(cls, file):
-        """Load a time series object from a npz file interface.
-
-        Parameters
-        ----------
-        file : NPZFile object
-            opened npz file interface.
-
-        Returns
-        -------
-        out : Ts or Tsd or TsdFrame or TsdTensor
-            The time series object
-        """
-        kwargs = {
-            key: file[key] for key in file.keys() if key not in ["start", "end", "type"]
-        }
-        iset = IntervalSet(start=file["start"], end=file["end"])
-        return cls(time_support=iset, **kwargs)
+        mode = "closest_t" if end is None else "restrict"
+        return self._get_slice(
+            start, end=end, mode=mode, n_points=None, time_unit=time_unit
+        )
 
     def _get_slice(
         self, start, end=None, mode="closest_t", n_points=None, time_unit="s"
     ):
         """
         Get a slice from the time series data based on the start and end values with the specified mode.
+
+        For a given time t, mode `before_t` means you want the timepoint right before t to start the slice.
+        Mode `after_t` means you want the timepoint right after t to start the slice.
 
         Parameters
         ----------
@@ -502,16 +502,20 @@ class Base(abc.ABC):
                 - For mode == "restrict":
                     - slice the indices such that start <= self.t[idx] <= end
             If end is provided:
-                - For mode == "backward":
+                - For mode == "before_t":
                     - An empty slice if end < self.t[0]
                     - slice(idx_start, idx_end) with self.t[idx_start] <= start < self.t[idx_start+1] and
                     self.t[idx_end] <= end < self.t[idx_end+1]
-                - For mode == "forward":
+                - For mode == "after_t":
                     - An empty slice if start > self.t[-1]
                      - slice(idx_start, idx_end) with self.t[idx_start-1] <= start < self.t[idx_start] and
                     self.t[idx_end-1] <= end < self.t[idx_end]
                 - For mode == "closest":
                     - slice(idx_start, idx_end) with the closest indices to start and end
+                - For mode == "restrict":
+                    - An empty slice if start > self.t[-1] or end < self.t[0]
+                    - slice(idx_start, idx_end) with self.t[idx_start] <= start <= self.t[idx_start+1] and
+                    self.t[idx_end] <= end <= self.t[idx_end+1]
 
         Raises
         ------
@@ -525,8 +529,18 @@ class Base(abc.ABC):
                 f"'start' must be an int or a float. Type {type(start)} provided instead!"
             )
 
+        if n_points is not None and not isinstance(n_points, int):
+            raise TypeError(
+                f"'n_points' must be of type int or None. Type {type(n_points)} provided instead!"
+            )
+
         if end is None and n_points:
             raise ValueError("'n_points' can be used only when 'end' is specified!")
+
+        if mode not in ["before_t", "after_t", "closest_t", "restrict"]:
+            raise ValueError(
+                "'mode' only accepts 'before_t', 'after_t', 'closest_t' or 'restrict'."
+            )
 
         if mode == "restrict" and n_points:
             raise ValueError(
@@ -600,51 +614,43 @@ class Base(abc.ABC):
 
         return slice(idx_start, idx_end, step)
 
-    def get_slice(self, start, end=None, time_unit="s"):
-        """
-        Get a slice from the time series data based on the start and end values with the specified mode.
+    def _get_filename(self, filename):
+        """Check if the filename is valid and return the path
 
         Parameters
         ----------
-        start : int or float
-            The starting value for the slice.
-        end : int or float, optional
-            The ending value for the slice. Defaults to None.
-        time_unit : str, optional
-            The time unit for the start and end values. Defaults to "s" (seconds).
+        filename : str or Path
+            The filename
 
         Returns
         -------
-        slice : slice
-            A slice determining the start and end indices, with unit step
-            Slicing the array will be equivalent to calling get: `ts[s].t == ts.get(start, end).t`
-
+        Path
+            The path to the file
 
         Raises
         ------
-        ValueError
-            - If start or end is not a number.
-            - If start is greater than end.
-
-        Examples
-        --------
-        >>> import pynapple as nap
-
-        >>> ts = nap.Ts(t = [0, 1, 2, 3])
-
-        >>> # slice over a range
-        >>> start, end = 1.2, 2.6
-        >>> print(ts.get_slice(start, end))  # returns `slice(2, 3, None)`
-        >>> start, end = 1., 2.
-        >>> print(ts.get_slice(start, end, mode="forward"))  # returns `slice(1, 3, None)`
-
-        >>> # slice a single value
-        >>> start = 1.2
-        >>> print(ts.get_slice(start))  # returns `slice(1, 2, None)`
-        >>> start = 2.
-        >>> print(ts.get_slice(start)) # returns `slice(2, 3, None)`
+        RuntimeError
+            If the filename is a directory or the parent does not exist
         """
-        mode = "closest_t" if end is None else "restrict"
-        return self._get_slice(
-            start, end=end, mode=mode, n_points=None, time_unit=time_unit
-        )
+
+        return check_filename(filename)
+
+    @classmethod
+    def _from_npz_reader(cls, file):
+        """Load a time series object from a npz file interface.
+
+        Parameters
+        ----------
+        file : NPZFile object
+            opened npz file interface.
+
+        Returns
+        -------
+        out : Ts or Tsd or TsdFrame or TsdTensor
+            The time series object
+        """
+        kwargs = {
+            key: file[key] for key in file.keys() if key not in ["start", "end", "type"]
+        }
+        iset = IntervalSet(start=file["start"], end=file["end"])
+        return cls(time_support=iset, **kwargs)

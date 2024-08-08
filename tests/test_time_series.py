@@ -1441,24 +1441,30 @@ def test_pickling(obj):
     assert np.all(obj.time_support == unpickled_obj.time_support)
 
 
-@pytest.mark.parametrize(
-    "start, end, expectation",
-    [
-        (1, 3, does_not_raise()),
-        (3, 1, pytest.raises(ValueError, match="'start' should not precede 'end'")),
-        (1., 3., does_not_raise()),
-        (1., None, does_not_raise()),
-        (None, 3,  pytest.raises(ValueError, match="'start' must be an int or a float")),
-        ("a", 3,  pytest.raises(ValueError, match="'start' must be an int or a float")),
-        (2, "a",  pytest.raises(ValueError, match="'end' must be an int or a float")),
+####################################################
+# Test for slicing
+####################################################
 
+
+@pytest.mark.parametrize(
+    "start, end, mode, n_points, expectation",
+    [
+        (1, 3, "closest_t", None, does_not_raise()),
+        (None, 3, "closest_t", None, pytest.raises(ValueError, match="'start' must be an int or a float")),
+        (2, "a", "closest_t", None, pytest.raises(ValueError, match="'end' must be an int or a float. Type <class 'str'> provided instead!")),
+        (1, 3, "closest_t", "a", pytest.raises(TypeError, match="'n_points' must be of type int or None. Type <class 'str'> provided instead!")),        
+        (1, None, "closest_t", 1, pytest.raises(ValueError, match="'n_points' can be used only when 'end' is specified!")),        
+        (1, 3, "banana", None, pytest.raises(ValueError, match="'mode' only accepts 'before_t', 'after_t', 'closest_t' or 'restrict'.")),                
+        (3, 1, "closest_t", None, pytest.raises(ValueError, match="'start' should not precede 'end'")),
+        (1, 3, "restrict", 1, pytest.raises(ValueError, match="Fixing the number of time points is incompatible with 'restrict' mode.")),
+        (1., 3., "closest_t", None, does_not_raise()),
+        (1., None, "closest_t", None, does_not_raise()),
     ]
 )
-@pytest.mark.parametrize("time_unit", ["s", "ms",  "us"])
-def test_get_slice_value_types(start, end, time_unit, expectation):
+def test_get_slice_raise_errors(start, end, mode, n_points, expectation):
     ts = nap.Ts(t=np.array([1, 2, 3, 4]))
     with expectation:
-        ts._get_slice(start, end, time_unit=time_unit)
+        ts._get_slice(start, end, mode, n_points)
 
 
 @pytest.mark.parametrize(
@@ -1567,7 +1573,6 @@ def test_get_slice_vs_get_random_val_start_value():
         out_ts = ts[out_slice]
         out_get = ts.get(start)
         assert np.all(out_get.t == out_ts.t)
-
 
 
 
