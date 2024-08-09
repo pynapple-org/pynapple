@@ -15,6 +15,12 @@ from .randomize import (
     shift_timestamps,
     shuffle_ts_intervals,
 )
+from .signal_processing import (
+    compute_mean_power_spectral_density,
+    compute_power_spectral_density,
+    compute_wavelet_transform,
+    generate_morlet_filterbank,
+)
 from .tuning_curves import (
     compute_1d_mutual_info,
     compute_1d_tuning_curves,
