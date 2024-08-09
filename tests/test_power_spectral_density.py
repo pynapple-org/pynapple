@@ -161,7 +161,7 @@ def get_signal_and_output(f=2, fs=1000, duration=100, interval_size=10):
     d = np.cos(2 * np.pi * f * t)
     sig = nap.Tsd(t=t, d=d, time_support=nap.IntervalSet(0, 100))
     tmp = d.reshape((int(duration / interval_size), int(fs * interval_size))).T
-    tmp = tmp[0:-1]
+    # tmp = tmp[0:-1]
     tmp = tmp*signal.windows.hamming(tmp.shape[0])[:,np.newaxis]
     out = np.sum(np.fft.fft(tmp, axis=0), 1)
     freq = np.fft.fftfreq(out.shape[0], 1 / fs)
@@ -190,7 +190,7 @@ def test_compute_mean_power_spectral_density():
     psd = nap.compute_mean_power_spectral_density(sig, 10, norm=True)
     assert isinstance(psd, pd.DataFrame)
     assert psd.shape[0] > 0  # Check that the psd DataFrame is not empty
-    np.testing.assert_array_almost_equal(psd.values.flatten(), out[freq >= 0]/(9999.0*10.0))
+    np.testing.assert_array_almost_equal(psd.values.flatten(), out[freq >= 0]/(10000.0*10.0))
     np.testing.assert_array_almost_equal(psd.index.values, freq[freq >= 0])
 
 
