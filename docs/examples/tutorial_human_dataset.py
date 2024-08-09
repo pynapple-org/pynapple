@@ -189,36 +189,23 @@ plt.subplots_adjust(wspace=0.2, hspace=0.5, top=0.85)
 # ------------------
 #
 # Now that we have the PETH of spiking, we can go one step further. We will plot the mean firing rate of this cell aligned to the boundary for each trial type. Doing this in Pynapple is very simple!
-
-bin_size = 0.2  # 200ms bin size
-step_size = 0.01  # 10ms step size, to make overlapping bins
-winsize = int(bin_size / step_size)  # Window size
-
-# %%
+# 
 # Use Pynapple to compute binned spike counts
-
-counts_NB = NB_peth.count(step_size)  # Spike counts binned in 10ms steps, for NB trials
-counts_HB = HB_peth.count(step_size)  # Spike counts binned in 10ms steps, for HB trials
-
-# %%
-# Smooth the binned spike counts using a window of size 20, for both trial types
-
-counts_NB = (
-    counts_NB.as_dataframe()
-    .rolling(winsize, win_type="gaussian", min_periods=1, center=True, axis=0)
-    .mean(std=0.2 * winsize)
-)
-counts_HB = (
-    counts_HB.as_dataframe()
-    .rolling(winsize, win_type="gaussian", min_periods=1, center=True, axis=0)
-    .mean(std=0.2 * winsize)
-)
+bin_size = 0.01
+counts_NB = NB_peth.count(bin_size)  # Spike counts binned in 10ms steps, for NB trials
+counts_HB = HB_peth.count(bin_size)  # Spike counts binned in 10ms steps, for HB trials
 
 # %%
 # Compute firing rate for both trial types
 
-fr_NB = counts_NB * winsize
-fr_HB = counts_HB * winsize
+fr_NB = counts_NB / bin_size
+fr_HB = counts_HB / bin_size
+
+# %%
+# Smooth the firing rate with a gaussian window with std=4*bin_size
+counts_NB = counts_NB.smooth(bin_size*4)
+counts_HB = counts_HB.smooth(bin_size*4)
+
 
 # %%
 # Compute the mean firing rate for both trial types
@@ -228,9 +215,9 @@ meanfr_HB = fr_HB.mean(axis=1)
 
 # %%
 # Compute standard error of mean (SEM) of the firing rate for both trial types
-
-error_NB = fr_NB.sem(axis=1)
-error_HB = fr_HB.sem(axis=1)
+from scipy.stats import sem
+error_NB = sem(fr_NB, axis=1)
+error_HB = sem(fr_HB, axis=1)
 
 # %%
 # Plot the mean +/- SEM of firing rate for both trial types

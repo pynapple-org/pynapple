@@ -1682,6 +1682,8 @@ def test_get_slice_value_step(start, end, n_points, mode, expected_slice, expect
         (1, None, slice(0, 1), np.array([1])),
         (4, None, slice(3, 4), np.array([4])),
         (5, None, slice(3, 4), np.array([4])),
+        (-1, 0, slice(0, 0), np.array([])),
+        (5, 6, slice(4, 4), np.array([])),
     ]
 )
 @pytest.mark.parametrize("ts",
