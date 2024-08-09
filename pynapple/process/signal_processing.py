@@ -295,11 +295,8 @@ def compute_wavelet_transform(
     if fs is None:
         fs = sig.rate
 
-    if sig.ndim == 1:
-        output_shape = (sig.shape[0], len(freqs))
-    else:
-        output_shape = (sig.shape[0], len(freqs), *sig.shape[1:])
-        sig = np.reshape(sig, (sig.shape[0], np.prod(sig.shape[1:])))
+    output_shape = (sig.shape[0], len(freqs), *sig.shape[1:])
+    sig = np.reshape(sig, (sig.shape[0], -1))
 
     filter_bank = generate_morlet_filterbank(
         freqs, fs, gaussian_width, window_length, precision
@@ -405,7 +402,7 @@ def generate_morlet_filterbank(
         # Calculate the indices for subsampling the wavelet and achieve the right frequency
         # After the slicing the size will be reduced, therefore we will pad with 0s.
         j = np.arange(scale * (x[-1] - x[0]) + 1) / (scale * (x[1] - x[0]))
-        j = j.astype(int)  # Floor the values to get integer indices
+        j = np.ceil(j).astype(int)  # Ceil the values to get integer indices
         if j[-1] >= morlet_f.size:
             j = np.extract(j < morlet_f.size, j)
         scaled_morlet = morlet_f[j][::-1]  # Scale and reverse wavelet

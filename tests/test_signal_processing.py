@@ -70,6 +70,7 @@ def test_generate_morlet_filterbank():
         # Check that peak freq matched expectation
         assert power.iloc[:, i].argmax() == np.abs(power.index - f).argmin()
 
+    gaussian_atol = 1e-4
     # Checking that the power spectra of the wavelets resemble correct Gaussians
     fs = 2000
     freqs = np.linspace(100, 1000, 10)
@@ -88,7 +89,7 @@ def test_generate_morlet_filterbank():
         assert np.isclose(
             power.iloc[:, i] / np.max(power.iloc[:, i]),
             morlet_ft / np.max(morlet_ft),
-            atol=0.1,
+            atol=gaussian_atol,
         ).all()
 
     fs = 100
@@ -108,7 +109,7 @@ def test_generate_morlet_filterbank():
         assert np.isclose(
             power.iloc[:, i] / np.max(power.iloc[:, i]),
             morlet_ft / np.max(morlet_ft),
-            atol=0.1,
+            atol=gaussian_atol,
         ).all()
 
     fs = 100
@@ -128,7 +129,7 @@ def test_generate_morlet_filterbank():
         assert np.isclose(
             power.iloc[:, i] / np.max(power.iloc[:, i]),
             morlet_ft / np.max(morlet_ft),
-            atol=0.1,
+            atol=gaussian_atol,
         ).all()
 
     fs = 100
@@ -148,7 +149,7 @@ def test_generate_morlet_filterbank():
         assert np.isclose(
             power.iloc[:, i] / np.max(power.iloc[:, i]),
             morlet_ft / np.max(morlet_ft),
-            atol=0.1,
+            atol=gaussian_atol,
         ).all()
 
     fs = 1000
@@ -168,7 +169,7 @@ def test_generate_morlet_filterbank():
         assert np.isclose(
             power.iloc[:, i] / np.max(power.iloc[:, i]),
             morlet_ft / np.max(morlet_ft),
-            atol=0.1,
+            atol=gaussian_atol,
         ).all()
 
 

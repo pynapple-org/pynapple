@@ -374,7 +374,7 @@ ax1.set_xlabel("Time (s)")
 
 fig = plt.figure(constrained_layout=True, figsize=(10, 5))
 gs = plt.GridSpec(2, 2, figure=fig, height_ratios=[1.0, 1.0])
-buffer = 0.02
+buffer = 0.075
 plt.suptitle("Isolated Sharp Wave Ripples")
 for i, (s, e) in enumerate(rip_ep.intersect(zoom_ep).values):
     ax = plt.subplot(gs[int(i / 2), i % 2])
