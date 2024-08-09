@@ -7,7 +7,7 @@ We will examine the dataset from [Grosmark & Buzsáki (2016)](https://www.ncbi.n
 
 Specifically, we will examine Local Field Potential data from a period of active traversal of a linear track.
 
-This tutorial was made by Kipp Freud.
+This tutorial was made by [Kipp Freud](https://kippfreud.com/).
 
 """
 
@@ -26,6 +26,7 @@ This tutorial was made by Kipp Freud.
 import math
 import os
 
+import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import requests
@@ -54,17 +55,10 @@ if path not in os.listdir("."):
             total=math.ceil(int(r.headers.get("content-length", 0)) // block_size),
         ):
             f.write(data)
-
-
-# %%
-# ***
-# Loading the data
-# ------------------
 # Let's load and print the full dataset.
-
 data = nap.load_file(path)
-
 print(data)
+
 
 # %%
 # First we can extract the data from the NWB. The local field potential has been downsampled to 1250Hz. We will call it `eeg`.
@@ -113,6 +107,9 @@ axd["pos"].set_xlabel("time (s)")
 axd["pos"].set_ylabel("Linearized Position")
 axd["pos"].set_xlim(RUN_interval[0, 0], RUN_interval[0, 1])
 
+# %%
+# In the top panel, we can see the lfp trace as a function of time, and on the bottom the mouse position on the linear
+# track as a function of time. Position 0 and 1 correspond to the start and end of the trial respectively.
 
 # %%
 # ***
@@ -145,22 +142,30 @@ ax.legend()
 
 
 # %%
-# The red area outlines the theta rhythm (6-10 Hz) which is proeminent in hippocampal LFP. 
-# Hippocampal theta rhythm appears mostly when the animal is running. 
-# (See Hasselmo, M. E., & Stern, C. E. (2014). Theta rhythm and the encoding and retrieval of space and time. Neuroimage, 85, 656-666.)
-# We can check it here by separating `wake_ep` into `run_ep` and `rest_ep`.
-run_ep = data['position'].dropna().find_support(1)
+# The red area outlines the theta rhythm (6-10 Hz) which is proeminent in hippocampal LFP.
+# Hippocampal theta rhythm appears mostly when the animal is running [1].
+# We can check it here by separating the wake epochs (`wake_ep`) into run epochs (`run_ep`) and rest epochs (`rest_ep`).
+
+# The run epoch is the portion of the data for which we have position data
+run_ep = data["position"].dropna().find_support(1)
+# The rest epoch is the data at all points where we do not have position data
 rest_ep = wake_ep.set_diff(run_ep)
 
 # %%
-# `run_ep` and `rest_ep` are IntervalSet with discontinuous epoch. 
+# `run_ep` and `rest_ep` are IntervalSet with discontinuous epoch.
+#
 # The function `nap.compute_power_spectral_density` takes signal with a single epoch to avoid artefacts between epochs jumps.
-# To compare `run_ep` with `rest_ep`, we can use the function `nap.compute_mean_power_spectral_density` which avearge the FFT over multiple epochs of same duration. The parameter `interval_size` controls the duration of those epochs. 
-# 
-# In this case, `interval_size` is equal to 1.5 seconds. 
+#
+# To compare `run_ep` with `rest_ep`, we can use the function `nap.compute_mean_power_spectral_density` which avearge the FFT over multiple epochs of same duration. The parameter `interval_size` controls the duration of those epochs.
+#
+# In this case, `interval_size` is equal to 1.5 seconds.
 
-power_run = nap.compute_mean_power_spectral_density(eeg, 1.5, fs=FS, ep=run_ep, norm=True)
-power_rest = nap.compute_mean_power_spectral_density(eeg, 1.5, fs=FS, ep=rest_ep, norm=True)
+power_run = nap.compute_mean_power_spectral_density(
+    eeg, 1.5, fs=FS, ep=run_ep, norm=True
+)
+power_rest = nap.compute_mean_power_spectral_density(
+    eeg, 1.5, fs=FS, ep=rest_ep, norm=True
+)
 
 # %%
 # `power_run` and `power_rest` are the power spectral density when the animal is respectively running and resting.
@@ -170,13 +175,13 @@ ax.plot(
     np.abs(power_run[(power_run.index >= 3.0) & (power_run.index <= 30)]),
     alpha=1,
     label="Run",
-    linewidth=2
+    linewidth=2,
 )
 ax.plot(
     np.abs(power_rest[(power_rest.index >= 3.0) & (power_rest.index <= 30)]),
     alpha=1,
     label="Rest",
-    linewidth=2
+    linewidth=2,
 )
 ax.axvspan(6, 10, color="red", alpha=0.1)
 ax.set_xlabel("Freq (Hz)")
@@ -223,7 +228,7 @@ ax0.set_ylabel("Amplitude")
 
 ax1 = plt.subplot(gs[1, 0], sharex=ax0)
 ax1.plot(eeg_example)
-ax1.set_ylabel("LFP (v)")
+ax1.set_ylabel("LFP (a.u.)")
 
 ax1 = plt.subplot(gs[2, 0], sharex=ax0)
 ax1.plot(pos_example, color="black")
@@ -238,11 +243,11 @@ ax1.set_ylabel("Pos.")
 # There seems to be a strong theta frequency present in the data during the maze traversal.
 # Let's plot the estimated 6-10Hz component of the wavelet decomposition on top of our data, and see how well they match up.
 
-theta_freq_index = np.logical_and(freqs>6, freqs<10)
+theta_freq_index = np.logical_and(freqs > 6, freqs < 10)
 
 
 # Extract its real component, as well as its power envelope
-theta_band_reconstruction = np.mean(mwt_RUN[:,theta_freq_index], 1)
+theta_band_reconstruction = np.mean(mwt_RUN[:, theta_freq_index], 1)
 theta_band_power_envelope = np.abs(theta_band_reconstruction)
 
 
@@ -252,13 +257,13 @@ theta_band_power_envelope = np.abs(theta_band_reconstruction)
 
 fig = plt.figure(constrained_layout=True, figsize=(10, 6))
 gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 0.9])
-ax0 = plt.subplot(gs[0,0])
+ax0 = plt.subplot(gs[0, 0])
 ax0.plot(eeg_example, label="CA1")
 ax0.set_title("EEG (1250 Hz)")
 ax0.set_ylabel("LFP (a.u.)")
 ax0.set_xlabel("time (s)")
 ax0.legend()
-ax1 = plt.subplot(gs[1,0])
+ax1 = plt.subplot(gs[1, 0])
 ax1.plot(np.real(theta_band_reconstruction), label="6-10 Hz oscillations")
 ax1.plot(theta_band_power_envelope, label="6-10 Hz power envelope")
 ax1.set_xlabel("time (s)")
@@ -267,7 +272,12 @@ ax1.legend()
 
 # %%
 # ***
-# Visualizing high frequency oscillation
+# We observe that the theta power is far stronger during the first 4 seconds of the dataset, during which the rat
+# is traversing the linear track.
+
+# %%
+# ***
+# Visualizing High Frequency Oscillation
 # -----------------------------------
 # There also seem to be peaks in the 200Hz frequency power after traversal of thew maze is complete. Here we use the interval (18356, 18357.5) seconds to zoom in.
 
@@ -292,11 +302,11 @@ ax1.set_ylabel("LFP (a.u.)")
 ax1.set_xlabel("Time (s)")
 
 # %%
-# Those events are called Sharp-waves ripples (See : Buzsáki, G. (2015). Hippocampal sharp wave‐ripple: A cognitive biomarker for episodic memory and planning. Hippocampus, 25(10), 1073-1188.)
+# Those events are called Sharp-waves ripples [2].
 #
 # Among other methods, we can use the Wavelet decomposition to isolate them. In this case, we will look at the power of the wavelets for frequencies between 150 to 250 Hz.
 
-ripple_freq_index = np.logical_and(freqs>150, freqs<250)
+ripple_freq_index = np.logical_and(freqs > 150, freqs < 250)
 
 # %%
 # We can compute the mean power for this frequency band.
@@ -309,11 +319,11 @@ ripple_power = np.mean(np.abs(mwt_RUN[:, ripple_freq_index]), 1)
 
 fig = plt.figure(constrained_layout=True, figsize=(10, 5))
 gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 0.5])
-ax0 = plt.subplot(gs[0,0])
+ax0 = plt.subplot(gs[0, 0])
 ax0.plot(eeg_example.restrict(zoom_ep), label="CA1")
-ax0.set_ylabel("LFP (v)")
+ax0.set_ylabel("LFP (a.u.)")
 ax0.set_title(f"EEG (1250 Hz)")
-ax1 = plt.subplot(gs[1,0])
+ax1 = plt.subplot(gs[1, 0])
 ax1.legend()
 ax1.plot(ripple_power.restrict(zoom_ep), label="150-250 Hz")
 ax1.legend()
@@ -342,20 +352,44 @@ rip_ep = threshold_ripple_power.time_support
 
 fig = plt.figure(constrained_layout=True, figsize=(10, 5))
 gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 0.5])
-ax0 = plt.subplot(gs[0,0])
+ax0 = plt.subplot(gs[0, 0])
 ax0.plot(eeg_example.restrict(zoom_ep), label="CA1")
-for s,e in rip_ep.intersect(zoom_ep).values:
-    ax0.axvspan(s, e, color='red', alpha=0.1, ec=None)
-ax0.set_ylabel("LFP (v)")
+for i, (s, e) in enumerate(rip_ep.intersect(zoom_ep).values):
+    ax0.axvspan(s, e, color=list(mcolors.TABLEAU_COLORS.keys())[i], alpha=0.2, ec=None)
+ax0.set_ylabel("LFP (a.u.)")
 ax0.set_title(f"EEG (1250 Hz)")
-ax1 = plt.subplot(gs[1,0])
+ax1 = plt.subplot(gs[1, 0])
 ax1.legend()
 ax1.plot(ripple_power.restrict(zoom_ep), label="150-250 Hz")
 ax1.plot(smoothed_ripple_power.restrict(zoom_ep))
-for s,e in rip_ep.intersect(zoom_ep).values:
-    ax1.axvspan(s, e, color='red', alpha=0.1, ec=None)
+for i, (s, e) in enumerate(rip_ep.intersect(zoom_ep).values):
+    ax1.axvspan(s, e, color=list(mcolors.TABLEAU_COLORS.keys())[i], alpha=0.2, ec=None)
 ax1.legend()
 ax1.set_ylabel("Mean Amplitude")
 ax1.set_xlabel("Time (s)")
 
 
+# %%
+# Finally, let's zoom in on each of our isolated ripples
+
+fig = plt.figure(constrained_layout=True, figsize=(10, 5))
+gs = plt.GridSpec(2, 2, figure=fig, height_ratios=[1.0, 1.0])
+buffer = 0.02
+plt.suptitle("Isolated Sharp Wave Ripples")
+for i, (s, e) in enumerate(rip_ep.intersect(zoom_ep).values):
+    ax = plt.subplot(gs[int(i / 2), i % 2])
+    ax.plot(eeg_example.restrict(nap.IntervalSet(s - buffer, e + buffer)))
+    ax.axvspan(s, e, color=list(mcolors.TABLEAU_COLORS.keys())[i], alpha=0.2, ec=None)
+    ax.set_xlim(s - buffer, e + buffer)
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("LFP (a.u.)")
+
+
+# %%
+# ***
+# References
+# -----------------------------------
+#
+# [1] Hasselmo, M. E., & Stern, C. E. (2014). Theta rhythm and the encoding and retrieval of space and time. Neuroimage, 85, 656-666.
+#
+# [2] Buzsáki, G. (2015). Hippocampal sharp wave‐ripple: A cognitive biomarker for episodic memory and planning. Hippocampus, 25(10), 1073-1188.

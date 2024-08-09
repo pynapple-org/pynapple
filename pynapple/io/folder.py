@@ -1,15 +1,6 @@
-#!/usr/bin/env python
-
-# -*- coding: utf-8 -*-
-# @Author: Guillaume Viejo
-# @Date:   2023-05-15 15:32:24
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-08-02 11:35:10
-
 """
 The Folder class helps to navigate a hierarchical data tree.
 """
-
 
 import json
 import string

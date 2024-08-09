@@ -8,7 +8,7 @@ with spiking data, to find phase preferences of spiking units.
 
 Specifically, we will examine LFP and spiking data from a period of REM sleep, after traversal of a linear track.
 
-This tutorial was made by Kipp Freud.
+This tutorial was made by [Kipp Freud](https://kippfreud.com/).
 """
 
 # %%

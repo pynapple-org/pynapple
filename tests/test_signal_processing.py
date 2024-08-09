@@ -17,6 +17,7 @@ def test_generate_morlet_filterbank():
     )
     power = np.abs(nap.compute_power_spectral_density(fb))
     for i, f in enumerate(freqs):
+        # Check that peak freq matched expectation
         assert power.iloc[:, i].argmax() == np.abs(power.index - f).argmin()
 
     fs = 10000
@@ -26,6 +27,7 @@ def test_generate_morlet_filterbank():
     )
     power = np.abs(nap.compute_power_spectral_density(fb))
     for i, f in enumerate(freqs):
+        # Check that peak freq matched expectation
         assert power.iloc[:, i].argmax() == np.abs(power.index - f).argmin()
 
     fs = 1000
@@ -35,6 +37,7 @@ def test_generate_morlet_filterbank():
     )
     power = np.abs(nap.compute_power_spectral_density(fb))
     for i, f in enumerate(freqs):
+        # Check that peak freq matched expectation
         assert power.iloc[:, i].argmax() == np.abs(power.index - f).argmin()
 
     fs = 10000
@@ -44,6 +47,7 @@ def test_generate_morlet_filterbank():
     )
     power = np.abs(nap.compute_power_spectral_density(fb))
     for i, f in enumerate(freqs):
+        # Check that peak freq matched expectation
         assert power.iloc[:, i].argmax() == np.abs(power.index - f).argmin()
 
     fs = 1000
@@ -53,6 +57,7 @@ def test_generate_morlet_filterbank():
     )
     power = np.abs(nap.compute_power_spectral_density(fb))
     for i, f in enumerate(freqs):
+        # Check that peak freq matched expectation
         assert power.iloc[:, i].argmax() == np.abs(power.index - f).argmin()
 
     fs = 10000
@@ -62,6 +67,7 @@ def test_generate_morlet_filterbank():
     )
     power = np.abs(nap.compute_power_spectral_density(fb))
     for i, f in enumerate(freqs):
+        # Check that peak freq matched expectation
         assert power.iloc[:, i].argmax() == np.abs(power.index - f).argmin()
 
     # Checking that the power spectra of the wavelets resemble correct Gaussians

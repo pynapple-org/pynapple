@@ -5,11 +5,14 @@ Wavelet Transform
 
 This tutorial covers the use of `nap.compute_wavelet_transform` to do continuous wavelet transform. By default, pynapple uses Morlet wavelets.
 
+Wavelet are a great tool for capturing changes of spectral characteristics of a signal over time. As neural signals change
+and develop over time, wavelet decompositions can aid both visualization and analysis.
+
 The function `nap.generate_morlet_filterbank` can help parametrize and visualize the Morlet wavelets.
 
 See the [documentation](https://pynapple-org.github.io/pynapple/) of Pynapple for instructions on installing the package.
 
-This tutorial was made by Kipp Freud.
+This tutorial was made by [Kipp Freud](https://kippfreud.com/).
 
 """
 
@@ -84,12 +87,13 @@ filter_bank = nap.generate_morlet_filterbank(
 # %%
 # Lets plot it some of the wavelets.
 
+
 def plot_filterbank(filter_bank, freqs, title):
     fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 7))
     for f_i in range(filter_bank.shape[1]):
-        ax.plot(filter_bank[:, f_i].real() + f_i*1.5)
+        ax.plot(filter_bank[:, f_i].real() + f_i * 1.5)
         ax.text(-5.5, 1.5 * f_i, f"{np.round(freqs[f_i], 2)}Hz", va="center", ha="left")
-    
+
     ax.set_yticks([])
     ax.set_xlim(-5, 5)
     ax.set_xlabel("Time (s)")
@@ -120,6 +124,7 @@ print(mwt)
 
 # %%
 # Lets plot it.
+
 
 def plot_timefrequency(freqs, powers, ax=None):
     im = ax.imshow(np.abs(powers), aspect="auto")
@@ -209,7 +214,9 @@ ax0.set_xticklabels([])
 
 ax1 = plt.subplot(gs[1, 0])
 ax1.plot(sig, label="Raw Signal", alpha=0.5)
-ax1.plot(slow_oscillation + fifteenHz_oscillation.values, label="2Hz + 15Hz Reconstruction")
+ax1.plot(
+    slow_oscillation + fifteenHz_oscillation.values, label="2Hz + 15Hz Reconstruction"
+)
 ax1.set_xlabel("Time (s)")
 
 [
@@ -222,6 +229,11 @@ ax1.set_xlabel("Time (s)")
 # ***
 # Adding ALL the Oscillations!
 # ------------------
+# We will now learn how to interpret the parameters of the wavelet, and in particular how to trade off the
+# accuracy in the frequency decomposition with the accuracy in the time domain reconstruction;
+
+# Up to this point we have used default wavelet and normalization parameters.
+#
 # Let's now add together the real components of all frequency bands to recreate a version of the original signal.
 
 combined_oscillations = np.real(np.sum(mwt, axis=1))
