@@ -95,7 +95,12 @@ class IntervalSet(NDArrayOperatorsMixin):
         Parameters
         ----------
         start : numpy.ndarray or number or pandas.DataFrame or pandas.Series or iterable of (start, end) pairs
-            Beginning of intervals
+            Beginning of intervals. Alternatively, the `end` argument can be left out and `start` can be one of the
+            following:
+                - IntervalSet
+                - pandas.DataFrame with columns ["start", "end"]
+                - iterable of (start, end) pairs
+                - a single (start, end) pair
         end : numpy.ndarray or number or pandas.Series, optional
             Ends of intervals
         time_units : str, optional
@@ -128,13 +133,12 @@ class IntervalSet(NDArrayOperatorsMixin):
             if end is None:
                 # Require iterable of (start, end) tuples
                 try:
-                    start_end_array = np.array(list(start))
-                    if start_end_array.ndim == 1:
-                        start, end = start_end_array
-                    else:
-                        start, end = zip(*start_end_array)
+                    start_end_array = np.array(list(start)).reshape(-1, 2)
+                    start, end = zip(*start_end_array)
                 except (TypeError, ValueError):
-                    raise ValueError("Unable to Interpret the input. Please provide a list of start-end intervals.")
+                    raise ValueError(
+                        "Unable to Interpret the input. Please provide a list of start-end pairs."
+                    )
 
             args = {"start": start, "end": end}
 
