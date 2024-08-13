@@ -617,6 +617,11 @@ class Test_Time_Series_2:
         assert len(count) == 99
         np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))
 
+        count = tsd.count(bin_size=1, dtype=np.int16)
+        assert len(count) == 99
+        assert count.dtype == np.dtype(np.int16)
+
+
     def test_count_time_units(self, tsd):
         for b, tu in zip([1, 1e3, 1e6],['s', 'ms', 'us']):
             count = tsd.count(b, time_units = tu)
@@ -1157,6 +1162,11 @@ class Test_Time_Series_4:
         assert len(count) == 99
         np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))
 
+        count = ts.count(bin_size=1, dtype=np.int16)
+        assert len(count) == 99
+        assert count.dtype == np.dtype(np.int16)
+        
+
     def test_count_time_units(self, ts):
         for b, tu in zip([1, 1e3, 1e6],['s', 'ms', 'us']):
             count = ts.count(b, time_units = tu)
@@ -1191,7 +1201,6 @@ class Test_Time_Series_4:
         assert len(count) == 1
         np.testing.assert_array_almost_equal(count.values, np.array([100]))
 
-
     def test_count_errors(self, ts):        
         with pytest.raises(ValueError):
             ts.count(bin_size = {})
@@ -1202,6 +1211,24 @@ class Test_Time_Series_4:
         with pytest.raises(ValueError):
             ts.count(time_units = {})
 
+    @pytest.mark.parametrize(
+        "dtype, expectation",
+        [
+            (None, does_not_raise()),
+            (float, does_not_raise()),
+            (int, does_not_raise()),
+            (np.int32, does_not_raise()),
+            (np.int64, does_not_raise()),
+            (np.float32, does_not_raise()),
+            (np.float64, does_not_raise()),
+            (1, pytest.raises(ValueError, match=f"1 is not a valid numpy dtype")),
+        ]
+    )
+    def test_count_dtype(self, dtype, expectation, ts):
+        with expectation:
+            count = ts.count(bin_size=0.1, dtype=dtype)
+            if dtype:
+                assert np.issubdtype(count.dtype, dtype)
 
 ####################################################
 # Test for tsdtensor
@@ -1441,24 +1468,30 @@ def test_pickling(obj):
     assert np.all(obj.time_support == unpickled_obj.time_support)
 
 
-@pytest.mark.parametrize(
-    "start, end, expectation",
-    [
-        (1, 3, does_not_raise()),
-        (3, 1, pytest.raises(ValueError, match="'start' should not precede 'end'")),
-        (1., 3., does_not_raise()),
-        (1., None, does_not_raise()),
-        (None, 3,  pytest.raises(ValueError, match="'start' must be an int or a float")),
-        ("a", 3,  pytest.raises(ValueError, match="'start' must be an int or a float")),
-        (2, "a",  pytest.raises(ValueError, match="'end' must be an int or a float")),
+####################################################
+# Test for slicing
+####################################################
 
+
+@pytest.mark.parametrize(
+    "start, end, mode, n_points, expectation",
+    [
+        (1, 3, "closest_t", None, does_not_raise()),
+        (None, 3, "closest_t", None, pytest.raises(ValueError, match="'start' must be an int or a float")),
+        (2, "a", "closest_t", None, pytest.raises(ValueError, match="'end' must be an int or a float. Type <class 'str'> provided instead!")),
+        (1, 3, "closest_t", "a", pytest.raises(TypeError, match="'n_points' must be of type int or None. Type <class 'str'> provided instead!")),        
+        (1, None, "closest_t", 1, pytest.raises(ValueError, match="'n_points' can be used only when 'end' is specified!")),        
+        (1, 3, "banana", None, pytest.raises(ValueError, match="'mode' only accepts 'before_t', 'after_t', 'closest_t' or 'restrict'.")),                
+        (3, 1, "closest_t", None, pytest.raises(ValueError, match="'start' should not precede 'end'")),
+        (1, 3, "restrict", 1, pytest.raises(ValueError, match="Fixing the number of time points is incompatible with 'restrict' mode.")),
+        (1., 3., "closest_t", None, does_not_raise()),
+        (1., None, "closest_t", None, does_not_raise()),
     ]
 )
-@pytest.mark.parametrize("time_unit", ["s", "ms",  "us"])
-def test_get_slice_value_types(start, end, time_unit, expectation):
+def test_get_slice_raise_errors(start, end, mode, n_points, expectation):
     ts = nap.Ts(t=np.array([1, 2, 3, 4]))
     with expectation:
-        ts._get_slice(start, end, time_unit=time_unit)
+        ts._get_slice(start, end, mode, n_points)
 
 
 @pytest.mark.parametrize(
@@ -1570,7 +1603,6 @@ def test_get_slice_vs_get_random_val_start_value():
 
 
 
-
 @pytest.mark.parametrize(
     "end, n_points, expectation",
     [
@@ -1650,6 +1682,8 @@ def test_get_slice_value_step(start, end, n_points, mode, expected_slice, expect
         (1, None, slice(0, 1), np.array([1])),
         (4, None, slice(3, 4), np.array([4])),
         (5, None, slice(3, 4), np.array([4])),
+        (-1, 0, slice(0, 0), np.array([])),
+        (5, 6, slice(4, 4), np.array([])),
     ]
 )
 @pytest.mark.parametrize("ts",

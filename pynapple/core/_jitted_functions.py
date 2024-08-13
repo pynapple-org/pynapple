@@ -44,11 +44,11 @@ def jitrestrict(time_array, starts, ends):
 
 
 @jit(nopython=True)
-def jitrestrict_with_count(time_array, starts, ends):
+def jitrestrict_with_count(time_array, starts, ends, dtype=np.int64):
     n = len(time_array)
     m = len(starts)
     ix = np.zeros(n, dtype=np.int64)
-    count = np.zeros(m, dtype=np.int64)
+    count = np.zeros(m, dtype=dtype)
 
     k = 0
     t = 0
@@ -118,7 +118,7 @@ def jitvaluefrom(time_array, time_target_array, count, count_target, starts, end
 
 
 @jit(nopython=True)
-def jitcount(time_array, starts, ends, bin_size):
+def jitcount(time_array, starts, ends, bin_size, dtype):
     idx, countin = jitrestrict_with_count(time_array, starts, ends)
     time_array = time_array[idx]
 
@@ -133,7 +133,7 @@ def jitcount(time_array, starts, ends, bin_size):
 
     nb = np.sum(nb_bins)
     bins = np.zeros(nb, dtype=np.float64)
-    cnt = np.zeros(nb, dtype=np.int64)
+    cnt = np.zeros(nb, dtype=dtype)
 
     k = 0
     t = 0
