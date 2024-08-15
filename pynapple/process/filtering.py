@@ -1,12 +1,16 @@
 """Filtering module."""
 
-import numpy as np
-from .. import core as nap
-from scipy.signal import butter, filtfilt
 from numbers import Number
 
+import numpy as np
+from scipy.signal import butter, filtfilt
 
-def compute_filtered_signal(data, freq_band, filter_type="bandpass", order=4, sampling_frequency=None):
+from .. import core as nap
+
+
+def compute_filtered_signal(
+    data, freq_band, filter_type="bandpass", order=4, sampling_frequency=None
+):
     """
     Apply a Butterworth filter to the provided signal data.
 
@@ -51,18 +55,26 @@ def compute_filtered_signal(data, freq_band, filter_type="bandpass", order=4, sa
         sampling_frequency = data.rate
 
     if filter_type not in ["lowpass", "highpass", "bandpass", "bandstop"]:
-        raise ValueError(f"Unrecognized filter type {filter_type}. "
-                         "filter_type must be either 'lowpass', 'highpass', 'bandpass',or 'bandstop'.")
+        raise ValueError(
+            f"Unrecognized filter type {filter_type}. "
+            "filter_type must be either 'lowpass', 'highpass', 'bandpass',or 'bandstop'."
+        )
     elif filter_type in ["lowpass", "highpass"] and not isinstance(freq_band, Number):
-        raise ValueError("Low/high-pass filter specification requires a single frequency. "
-                         f"{freq_band} provided instead!")
+        raise ValueError(
+            "Low/high-pass filter specification requires a single frequency. "
+            f"{freq_band} provided instead!"
+        )
     elif filter_type in ["bandpass", "bandstop"]:
         try:
-            if len(freq_band) != 2 or not all(isinstance(fq, Number) for fq in freq_band):
+            if len(freq_band) != 2 or not all(
+                isinstance(fq, Number) for fq in freq_band
+            ):
                 raise ValueError
         except Exception:
-            raise ValueError("Band-pass/stop filter specification requires two frequencies. "
-                             f"{freq_band} provided instead!")
+            raise ValueError(
+                "Band-pass/stop filter specification requires two frequencies. "
+                f"{freq_band} provided instead!"
+            )
 
     b, a = butter(order, freq_band, btype=filter_type, fs=sampling_frequency)
 

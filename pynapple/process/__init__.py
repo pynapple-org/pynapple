@@ -4,6 +4,7 @@ from .correlograms import (
     compute_eventcorrelogram,
 )
 from .decoding import decode_1d, decode_2d
+from .filtering import compute_filtered_signal
 from .perievent import (
     compute_event_trigger_average,
     compute_perievent,
@@ -24,5 +25,3 @@ from .tuning_curves import (
     compute_2d_tuning_curves_continuous,
     compute_discrete_tuning_curves,
 )
-
-from .filtering import compute_filtered_signal
