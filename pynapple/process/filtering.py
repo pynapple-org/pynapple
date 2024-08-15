@@ -76,7 +76,9 @@ def compute_filtered_signal(
                 f"{freq_band} provided instead!"
             )
 
-    sos = butter(order, freq_band, btype=filter_type, fs=sampling_frequency, output="sos")
+    sos = butter(
+        order, freq_band, btype=filter_type, fs=sampling_frequency, output="sos"
+    )
 
     out = np.zeros_like(data.d)
     for ep in data.time_support:
