@@ -38,10 +38,10 @@ def test_filtering_single_freq_match_sci(freq, order, btype, shape: tuple, ep):
     else:
         tsd = nap.TsdTensor(t, y, time_support=ep)
     out = nap.compute_filtered_signal(tsd, freq_band=freq, filter_type=btype, order=order)
-    b, a = signal.butter(order, freq, fs=tsd.rate, btype=btype)
+    sos = signal.butter(order, freq, fs=tsd.rate, btype=btype, output="sos")
     out_sci = []
     for iset in ep:
-        out_sci.append(signal.filtfilt(b, a, tsd.restrict(iset).d, axis=0))
+        out_sci.append(signal.sosfiltfilt(sos, tsd.restrict(iset).d, axis=0))
     out_sci = np.concatenate(out_sci, axis=0)
     np.testing.assert_array_equal(out.d, out_sci)
 
@@ -70,10 +70,10 @@ def test_filtering_freq_band_match_sci(freq, order, btype, shape: tuple, ep):
     else:
         tsd = nap.TsdTensor(t, y, time_support=ep)
     out = nap.compute_filtered_signal(tsd, freq_band=freq, filter_type=btype, order=order)
-    b, a = signal.butter(order, freq, fs=tsd.rate, btype=btype)
+    sos = signal.butter(order, freq, fs=tsd.rate, btype=btype, output="sos")
     out_sci = []
     for iset in ep:
-        out_sci.append(signal.filtfilt(b, a, tsd.restrict(iset).d, axis=0))
+        out_sci.append(signal.sosfiltfilt(sos, tsd.restrict(iset).d, axis=0))
     out_sci = np.concatenate(out_sci, axis=0)
     np.testing.assert_array_equal(out.d, out_sci)
 

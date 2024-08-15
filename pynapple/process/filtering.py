@@ -3,7 +3,7 @@
 from numbers import Number
 
 import numpy as np
-from scipy.signal import butter, filtfilt
+from scipy.signal import butter, filtfilt, sosfiltfilt
 
 from .. import core as nap
 
@@ -76,12 +76,12 @@ def compute_filtered_signal(
                 f"{freq_band} provided instead!"
             )
 
-    b, a = butter(order, freq_band, btype=filter_type, fs=sampling_frequency)
+    sos = butter(order, freq_band, btype=filter_type, fs=sampling_frequency, output="sos")
 
     out = np.zeros_like(data.d)
     for ep in data.time_support:
         slc = data.get_slice(start=ep.start[0], end=ep.end[0])
-        out[slc] = filtfilt(b, a, data.d[slc], axis=0)
+        out[slc] = sosfiltfilt(sos, data.d[slc], axis=0)
 
     kwargs = dict(t=data.t, d=out, time_support=data.time_support)
     if isinstance(data, nap.TsdFrame):
