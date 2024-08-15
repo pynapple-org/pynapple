@@ -8,10 +8,10 @@ from numbers import Number
 
 def compute_filtered_signal(data, freq_band, filter_type="bandpass", order=4, sampling_frequency=None):
     """
-    Apply a Butterworth filter to the provided signal data.
+    Apply a Butterworth filter to the provided signal.
 
-    This function performs bandpass filtering on Local Field Potential (LFP)
-    data using a Butterworth filter. The filter can be configured to be of
+    This function performs bandpass filtering on time series data
+    using a Butterworth filter. The filter can be configured to be of
     type "bandpass", "bandstop", "highpass", or "lowpass".
 
     Parameters
