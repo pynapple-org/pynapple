@@ -3,7 +3,7 @@
 from numbers import Number
 
 import numpy as np
-from scipy.signal import butter, filtfilt, sosfiltfilt
+from scipy.signal import butter, sosfiltfilt
 
 from .. import core as nap
 
