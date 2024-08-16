@@ -31,7 +31,7 @@ def compute_filtered_signal(
     order : int, optional
         The order of the Butterworth filter. Higher values result in sharper frequency cutoffs.
         Default is 4.
-    sampling_frequency : float, optional
+fs : float, optional
         The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.
 
     Returns
