@@ -151,7 +151,7 @@ def test_filtering_freq_band_dtype(freq, order, btype, shape: tuple, ep):
 ])
 def test_compute_filtered_signal(sample_data, freq_band, filter_type, order, expected_exception):
     with expected_exception:
-        filtered_data = nap.filtering.compute_filtered_signal(sample_data, freq_band, filter_type, order)
+        filtered_data = nap.filtering.compute_filtered_signal(sample_data, freq_band, filter_type=filter_type, order=order)
         if not expected_exception:
             assert isinstance(filtered_data, type(sample_data))
             assert filtered_data.d.shape == sample_data.d.shape

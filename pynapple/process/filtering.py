@@ -8,48 +8,46 @@ from scipy.signal import butter, sosfiltfilt
 from .. import core as nap
 
 
-def compute_filtered_signal(
-    data, freq_band, fs=None, filter_type="bandpass", order=4
-):
+def compute_filtered_signal(data, freq_band, sampling_frequency=None, filter_type="bandpass", order=4):
     """
-    Apply a Butterworth filter to the provided signal.
+        Apply a Butterworth filter to the provided signal.
 
-    This function performs bandpass filtering on time series data
-    using a Butterworth filter. The filter can be configured to be of
-    type "bandpass", "bandstop", "highpass", or "lowpass".
+        This function performs bandpass filtering on time series data
+        using a Butterworth filter. The filter can be configured to be of
+        type "bandpass", "bandstop", "highpass", or "lowpass".
 
-    Parameters
-    ----------
-    data : Tsd, TsdFrame, or TsdTensor
-        The signal to be filtered.
-    freq_band : tuple of (float, float) or float
-        Cutoff frequency(ies) in Hz.
-        - For "bandpass" and "bandstop" filters, provide a tuple specifying the two cutoff frequencies.
-        - For "lowpass" and "highpass" filters, provide a single float specifying the cutoff frequency.
-    filter_type : {'bandpass', 'bandstop', 'highpass', 'lowpass'}, optional
-        The type of frequency filter to apply. Default is "bandpass".
-    order : int, optional
-        The order of the Butterworth filter. Higher values result in sharper frequency cutoffs.
-        Default is 4.
-fs : float, optional
-        The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.
+        Parameters
+        ----------
+        data : Tsd, TsdFrame, or TsdTensor
+            The signal to be filtered.
+        freq_band : tuple of (float, float) or float
+            Cutoff frequency(ies) in Hz.
+            - For "bandpass" and "bandstop" filters, provide a tuple specifying the two cutoff frequencies.
+            - For "lowpass" and "highpass" filters, provide a single float specifying the cutoff frequency.
+        filter_type : {'bandpass', 'bandstop', 'highpass', 'lowpass'}, optional
+            The type of frequency filter to apply. Default is "bandpass".
+        order : int, optional
+            The order of the Butterworth filter. Higher values result in sharper frequency cutoffs.
+            Default is 4.
+        sampling_frequency : float, optional
+            The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.
 
-    Returns
-    -------
-    filtered_data : Tsd, TsdFrame, or TsdTensor
-        The filtered signal, with the same data type as the input.
+        Returns
+        -------
+        filtered_data : Tsd, TsdFrame, or TsdTensor
+            The filtered signal, with the same data type as the input.
 
-    Raises
-    ------
-    ValueError
-        If `filter_type` is not one of {"bandpass", "bandstop", "highpass", "lowpass"}.
-        If `freq_band` is not a float for "lowpass" and "highpass" filters.
-        If `freq_band` is not a tuple of two floats for "bandpass" and "bandstop" filters.
+        Raises
+        ------
+        ValueError
+            If `filter_type` is not one of {"bandpass", "bandstop", "highpass", "lowpass"}.
+            If `freq_band` is not a float for "lowpass" and "highpass" filters.
+            If `freq_band` is not a tuple of two floats for "bandpass" and "bandstop" filters.
 
-    Notes
-    -----
-    The cutoff frequency is defined as the frequency at which the amplitude of the signal
-    is reduced by -3 dB (decibels).
+        Notes
+        -----
+        The cutoff frequency is defined as the frequency at which the amplitude of the signal
+        is reduced by -3 dB (decibels).
     """
     if sampling_frequency is None:
         sampling_frequency = data.rate
