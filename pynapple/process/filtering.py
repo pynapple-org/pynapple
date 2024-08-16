@@ -9,7 +9,7 @@ from .. import core as nap
 
 
 def compute_filtered_signal(
-    data, freq_band, filter_type="bandpass", order=4, sampling_frequency=None
+    data, freq_band, fs=None, filter_type="bandpass", order=4
 ):
     """
     Apply a Butterworth filter to the provided signal.
