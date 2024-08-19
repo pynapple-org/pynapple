@@ -119,7 +119,7 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
         assert isinstance(ep, nap.IntervalSet), "ep should be an IntervalSet"
 
     if minmax is None:
-        bins = np.linspace(np.min(feature), np.max(feature), nb_bins + 1)
+        bins = np.linspace(np.nanmin(feature), np.nanmax(feature), nb_bins + 1)
     else:
         assert isinstance(minmax, tuple), "minmax should be a tuple of boundaries"
         bins = np.linspace(minmax[0], minmax[1], nb_bins + 1)
@@ -275,7 +275,7 @@ def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
 
     nb_bins = tc.shape[0] + 1
     if minmax is None:
-        bins = np.linspace(np.min(feature), np.max(feature), nb_bins)
+        bins = np.linspace(np.nanmin(feature), np.nanmax(feature), nb_bins)
     else:
         bins = np.linspace(minmax[0], minmax[1], nb_bins)
 
@@ -445,7 +445,7 @@ def compute_1d_tuning_curves_continuous(
         tsdframe = tsdframe.restrict(feature.time_support)
 
     if minmax is None:
-        bins = np.linspace(np.min(feature), np.max(feature), nb_bins + 1)
+        bins = np.linspace(np.nanmin(feature), np.nanmax(feature), nb_bins + 1)
     else:
         bins = np.linspace(minmax[0], minmax[1], nb_bins + 1)
 
