@@ -241,6 +241,9 @@ class IntervalSet(NDArrayOperatorsMixin):
     def __len__(self):
         return len(self.values)
 
+    # def __iter__(self):
+    #     pass
+
     def __setitem__(self, key, value):
         raise RuntimeError(
             "IntervalSet is immutable. Starts and ends have been already sorted."

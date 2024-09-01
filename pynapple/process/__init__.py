@@ -4,7 +4,12 @@ from .correlograms import (
     compute_eventcorrelogram,
 )
 from .decoding import decode_1d, decode_2d
-from .filtering import compute_filtered_signal
+from .filtering import (
+    compute_bandpass_filter,
+    compute_bandstop_filter,
+    compute_highpass_filter,
+    compute_lowpass_filter,
+)
 from .perievent import (
     compute_event_trigger_average,
     compute_perievent,
