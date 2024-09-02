@@ -1,5 +1,6 @@
 """Filtering module."""
 
+import inspect
 from functools import wraps
 from numbers import Number
 
@@ -9,19 +10,17 @@ from scipy.signal import butter, sosfiltfilt
 from .. import core as nap
 
 
-def _get_butter_coefficients(freq_band, filter_type, sampling_frequency, order=4):
-    return butter(
-        order, freq_band, btype=filter_type, fs=sampling_frequency, output="sos"
-    )
+def _get_butter_coefficients(cutoff, filter_type, sampling_frequency, order=4):
+    return butter(order, cutoff, btype=filter_type, fs=sampling_frequency, output="sos")
 
 
 def _compute_butterworth_filter(
-    data, freq_band, sampling_frequency=None, filter_type="bandpass", order=4
+    data, cutoff, sampling_frequency=None, filter_type="bandpass", order=4
 ):
     """
     Apply a Butterworth filter to the provided signal.
     """
-    sos = _get_butter_coefficients(freq_band, filter_type, sampling_frequency, order)
+    sos = _get_butter_coefficients(cutoff, filter_type, sampling_frequency, order)
     out = np.zeros_like(data.d)
     for ep in data.time_support:
         slc = data.get_slice(start=ep.start[0], end=ep.end[0])
@@ -113,15 +112,25 @@ def _validate_filtering_inputs(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Validate each positional argument
-        if not isinstance(args[0], nap.time_series.BaseTsd):
+        sig = inspect.signature(func)
+        kwargs = sig.bind_partial(*args, **kwargs).arguments
+
+        if "data" not in kwargs or "cutoff" not in kwargs:
+            raise TypeError(
+                "Function needs time series and cutoff frequency to be specified."
+            )
+
+        if not isinstance(kwargs["data"], nap.time_series.BaseTsd):
             raise ValueError(
                 f"Invalid value: {args[0]}. First argument should be of type Tsd, TsdFrame or TsdTensor"
             )
-        if not isinstance(args[1], Number):
-            if len(args[1]) != 2 or not all(isinstance(fq, Number) for fq in args[1]):
+
+        if not isinstance(kwargs["cutoff"], Number):
+            if len(kwargs["cutoff"]) != 2 or not all(
+                isinstance(fq, Number) for fq in kwargs["cutoff"]
+            ):
                 raise ValueError
 
-        # Validate each keyword argument
         if "fs" in kwargs:
             if kwargs["fs"] is not None and not isinstance(kwargs["fs"], Number):
                 raise ValueError(
@@ -141,14 +150,14 @@ def _validate_filtering_inputs(func):
                 )
 
         # Call the original function with validated inputs
-        return func(*args, **kwargs)
+        return func(**kwargs)
 
     return wrapper
 
 
 @_validate_filtering_inputs
 def compute_bandpass_filter(
-    data, freq_band, fs=None, mode="butter", order=4, transition_bandwidth=0.02
+    data, cutoff, fs=None, mode="butter", order=4, transition_bandwidth=0.02
 ):
     """
     Apply a band-pass filter to the provided signal.
@@ -160,7 +169,7 @@ def compute_bandpass_filter(
     ----------
     data : Tsd, TsdFrame, or TsdTensor
         The signal to be filtered.
-    freq_band : tuple of (float, float)
+    cutoff : tuple of (float, float)
         Cutoff frequencies in Hz.
     fs : float, optional
         The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.
@@ -183,7 +192,7 @@ def compute_bandpass_filter(
     ------
     ValueError
         If `data` is not a Tsd, TsdFrame, or TsdTensor.
-        If `freq_band` is not a tuple of two floats for "bandpass" and "bandstop" filters.
+        If `cutoff` is not a tuple of two floats for "bandpass" and "bandstop" filters.
         If `fs` is not float or None.
         If `mode` is not "butter" or "sinc".
         If `order` is not an int.
@@ -196,16 +205,16 @@ def compute_bandpass_filter(
     if fs is None:
         fs = data.rate
 
-    freq_band = np.array(freq_band)
+    cutoff = np.array(cutoff)
 
     if mode == "butter":
         return _compute_butterworth_filter(
-            data, freq_band, fs, filter_type="bandpass", order=order
+            data, cutoff, fs, filter_type="bandpass", order=order
         )
     if mode == "sinc":
         return _compute_windowed_sinc_filter(
             data,
-            freq_band,
+            cutoff,
             fs,
             filter_type="bandpass",
             transition_bandwidth=transition_bandwidth,
@@ -216,7 +225,7 @@ def compute_bandpass_filter(
 
 @_validate_filtering_inputs
 def compute_bandstop_filter(
-    data, freq_band, fs=None, mode="butter", order=4, transition_bandwidth=0.02
+    data, cutoff, fs=None, mode="butter", order=4, transition_bandwidth=0.02
 ):
     """
     Apply a band-stop filter to the provided signal.
@@ -228,7 +237,7 @@ def compute_bandstop_filter(
     ----------
     data : Tsd, TsdFrame, or TsdTensor
         The signal to be filtered.
-    freq_band : tuple of (float, float)
+    cutoff : tuple of (float, float)
         Cutoff frequencies in Hz.
     fs : float, optional
         The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.
@@ -251,7 +260,7 @@ def compute_bandstop_filter(
     ------
     ValueError
         If `data` is not a Tsd, TsdFrame, or TsdTensor.
-        If `freq_band` is not a tuple of two floats for "bandpass" and "bandstop" filters.
+        If `cutoff` is not a tuple of two floats for "bandpass" and "bandstop" filters.
         If `fs` is not float or None.
         If `mode` is not "butter" or "sinc".
         If `order` is not an int.
@@ -264,16 +273,16 @@ def compute_bandstop_filter(
     if fs is None:
         fs = data.rate
 
-    freq_band = np.array(freq_band)
+    cutoff = np.array(cutoff)
 
     if mode == "butter":
         return _compute_butterworth_filter(
-            data, freq_band, fs, filter_type="bandstop", order=order
+            data, cutoff, fs, filter_type="bandstop", order=order
         )
     elif mode == "sinc":
         return _compute_windowed_sinc_filter(
             data,
-            freq_band,
+            cutoff,
             fs,
             filter_type="bandstop",
             transition_bandwidth=transition_bandwidth,
@@ -319,7 +328,7 @@ def compute_highpass_filter(
     ------
     ValueError
         If `data` is not a Tsd, TsdFrame, or TsdTensor.
-        If `freq_band` is not a tuple of two floats for "bandpass" and "bandstop" filters.
+        If `cutoff` is not a number.
         If `fs` is not float or None.
         If `mode` is not "butter" or "sinc".
         If `order` is not an int.
@@ -385,7 +394,7 @@ def compute_lowpass_filter(
     ------
     ValueError
         If `data` is not a Tsd, TsdFrame, or TsdTensor.
-        If `freq_band` is not a tuple of two floats for "bandpass" and "bandstop" filters.
+        If `cutoff` is not a number.
         If `fs` is not float or None.
         If `mode` is not "butter" or "sinc".
         If `order` is not an int.

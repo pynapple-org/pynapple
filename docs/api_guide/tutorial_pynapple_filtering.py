@@ -34,8 +34,10 @@ a comparison of the two methods.
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pynapple as nap
 import seaborn
+
+import pynapple as nap
+
 seaborn.set_theme()
 seaborn.set(font_scale=1.25)
 
@@ -55,33 +57,31 @@ sig = nap.Tsd(t=t,d=f2+f10+f50 + np.random.normal(0, 0.5, len(t)))
 
 # %%
 # Let's plot  it
-# fig = plt.figure(figsize = (15, 5))
-# plt.plot(sig)
-# plt.xlabel("Time (s)")
-# plt.show()
+fig = plt.figure(figsize = (15, 5))
+plt.plot(sig)
+plt.xlabel("Time (s)")
+plt.show()
 
 # %%
 # We can compute the Fourier transform of `sig` to verify that all the frequencies are there.
 psd = nap.compute_power_spectral_density(sig, fs, norm=True)
 
-# fig = plt.figure(figsize = (15, 5))
-# plt.plot(np.abs(psd))
-# plt.xlabel("Frequency (Hz)")
-# plt.ylabel("Amplitude")
-# plt.xlim(0, 100)
-# plt.show()
+fig = plt.figure(figsize = (15, 5))
+plt.plot(np.abs(psd))
+plt.xlabel("Frequency (Hz)")
+plt.ylabel("Amplitude")
+plt.xlim(0, 100)
+plt.show()
 
 # %%
 # Let's say we would like to see only the 10 Hz component.
 # We can use the function `compute_bandpass_filter` with mode `butter` for Butterworth.
 
 sig_butter = nap.compute_bandpass_filter(sig, (8, 12), fs, mode='butter')
-# sig_butter = nap.compute_lowpass_filter(sig, 5, fs, mode='butter')
 
 # %%
 # Let's compare it to the `sinc` mode for Windowed-sinc.
 sig_sinc = nap.compute_bandpass_filter(sig, (8, 12), fs, mode='sinc')
-# sig_sinc = nap.compute_lowpass_filter(sig, 5, fs, mode='sinc')
 
 # %%
 # Let's plot it
@@ -98,9 +98,6 @@ plt.legend()
 plt.xlabel("Time (Hz)")
 plt.xlim(0, 1)
 plt.show()
-
-import sys
-sys.exit()
 
 # %%
 # This gives similar results except at the edges.

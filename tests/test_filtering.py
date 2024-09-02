@@ -240,6 +240,11 @@ def test_get_kernel_error(filter_type, expected_exception):
     with expected_exception:
         nap.process.filtering._get_windowed_sinc_kernel(0.25, filter_type=filter_type)
 
+def test_get__error():
+    with pytest.raises(TypeError, match="Function needs time series and cutoff frequency to be specified."):
+        nap.compute_lowpass_filter(cutoff=0.25)
+
+
 def test_compare_sinc_kernel():
     kernel = nap.process.filtering._get_windowed_sinc_kernel(0.25)
     x = np.arange(-(len(kernel)//2), 1+len(kernel)//2)
