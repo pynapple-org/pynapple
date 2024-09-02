@@ -252,8 +252,8 @@ def test_compare_sinc_kernel():
         warnings.simplefilter("ignore")
         kernel2 = np.sin(2*np.pi*x*0.25)/x#(2*np.pi*x*0.25)
     kernel2[len(kernel)//2] = 0.25*2*np.pi
-    kernel2 = kernel2 * np.blackman(len(kernel2))
     kernel2 = kernel2/kernel2.sum()
+    kernel2 = kernel2 * np.blackman(len(kernel2))
     np.testing.assert_allclose(kernel, kernel2)
 
     ikernel = nap.process.filtering._compute_spectral_inversion(kernel)

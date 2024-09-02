@@ -38,8 +38,8 @@ import seaborn
 
 import pynapple as nap
 
-seaborn.set_theme()
-seaborn.set(font_scale=1.25)
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+seaborn.set_theme(context='notebook', style="ticks", rc=custom_params)
 
 # %%
 # ***
@@ -102,6 +102,45 @@ plt.show()
 # %%
 # This gives similar results except at the edges.
 #
+# Another use of filtering is to remove some frequencies (notch filter). Here we can try to remove
+# the 50 Hz component in the signal.
+
+sig_butter = nap.compute_bandstop_filter(sig, cutoff=(45, 55), fs=fs, mode='butter')
+sig_sinc = nap.compute_bandstop_filter(sig, cutoff=(45, 55), fs=fs, mode='sinc')
+
+
+# %%
+# Let's plot it
+fig = plt.figure(figsize = (15, 5))
+plt.subplot(211)
+plt.plot(t, sig, '-', color = 'gray', label = "Original signal")
+plt.xlim(0, 1)
+plt.legend()
+plt.subplot(212)
+# plt.plot(sig, alpha=0.5)
+plt.plot(sig_butter, label = "Butterworth")
+plt.plot(sig_sinc, '--', label = "Windowed-sinc")
+plt.legend()
+plt.xlabel("Time (Hz)")
+plt.xlim(0, 1)
+plt.show()
+
+# %%
+# Let's see what frequencies remain;
+
+psd_butter = nap.compute_power_spectral_density(sig_butter, fs, norm=True)
+psd_sinc = nap.compute_power_spectral_density(sig_sinc, fs, norm=True)
+
+fig = plt.figure(figsize = (10, 5))
+plt.plot(np.abs(psd_butter), label = "Butterworth filter")
+plt.plot(np.abs(psd_sinc), label = "Windowed-sinc convolution")
+plt.legend()
+plt.xlabel("Frequency (Hz)")
+plt.ylabel("Amplitude")
+plt.xlim(0, 70)
+plt.show()
+
+# %%
 # The remaining notebook compares the two modes.
 #
 # ***
