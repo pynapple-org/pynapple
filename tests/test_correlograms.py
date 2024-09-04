@@ -38,11 +38,8 @@ def test_cross_correlogram():
             ),
         )
 
-
-@pytest.mark.parametrize(
-    "group",
-    [
-        nap.TsGroup(
+def get_group():
+    return nap.TsGroup(
             {
                 0: nap.Ts(t=np.arange(0, 100)),
                 1: nap.Ts(t=np.arange(0, 100)),
@@ -50,7 +47,12 @@ def test_cross_correlogram():
                 3: nap.Ts(t=np.arange(0, 200)),
             }
         )
-    ],
+
+def get_ep():
+    return nap.IntervalSet(start=0, end=99)
+
+@pytest.mark.parametrize(
+    "group",[get_group()],
 )
 class Test_Correlograms:
     def test_autocorrelogram(self, group):
@@ -74,13 +76,8 @@ class Test_Correlograms:
         tmp[[90, 110]] = 0.5
         np.testing.assert_array_almost_equal(tmp, cc[2])
 
-    def test_autocorrelogram_error(self, group):
-        with pytest.raises(RuntimeError) as e_info:
-            nap.compute_autocorrelogram([1,2,3], 1, 100, norm=False)
-        assert str(e_info.value) == "Unknown format for group"
-
     def test_autocorrelogram_with_ep(self, group):
-        ep = nap.IntervalSet(start=0, end=99)
+        ep = get_ep()
         cc = nap.compute_autocorrelogram(group, 1, 100, ep=ep, norm=False)
         np.testing.assert_array_almost_equal(cc[0].values, cc[3].values)
 
@@ -121,7 +118,7 @@ class Test_Correlograms:
         assert pairs == list(cc.keys())
 
     def test_crosscorrelogram_with_ep(self, group):
-        ep = nap.IntervalSet(start=0, end=99)
+        ep = get_ep()
         cc = nap.compute_crosscorrelogram(group, 1, 100, ep=ep, norm=False)
         np.testing.assert_array_almost_equal(cc[(0, 1)].values, cc[(0, 3)].values)
 
@@ -139,10 +136,6 @@ class Test_Correlograms:
         pd.testing.assert_frame_equal(cc, cc2)
         pd.testing.assert_frame_equal(cc, cc3)
 
-    def test_crosscorrelogram_error(self, group):
-        with pytest.raises(RuntimeError) as e_info:
-            nap.compute_crosscorrelogram([1,2,3], 1, 100)
-        assert str(e_info.value) == "Unknown format for group"
 
     def test_crosscorrelogram_with_tuple(self, group):
         from itertools import product
@@ -192,7 +185,18 @@ class Test_Correlograms:
         pd.testing.assert_frame_equal(cc, cc2)
         pd.testing.assert_frame_equal(cc, cc3)
 
-    def test_eventcorrelogram_error(self, group):
-        with pytest.raises(RuntimeError) as e_info:
-            nap.compute_eventcorrelogram([1,2,3], group[0], 1, 100)
-        assert str(e_info.value) == "Unknown format for group"
+@pytest.mark.parametrize("func", [
+    nap.compute_autocorrelogram,
+    nap.compute_crosscorrelogram,
+    nap.compute_eventcorrelogram])
+@pytest.mark.parametrize("group, binsize, windowsize, ep, norm, time_units, msg", [
+    ([1,2,3], 1, 10, get_ep(), True, "s", "Invalid type. Parameter group must be of type <class 'pynapple.core.ts_group.TsGroup'>."),
+    (get_group(), "a", 10, get_ep(), True, "s", "Invalid type. Parameter binsize must be of type <class 'numbers.Number'>."),
+    (get_group(), 1, "a", get_ep(), True, "s", "Invalid type. Parameter windowsize must be of type <class 'numbers.Number'>."),
+    (get_group(), 1, 10, "a", True, "s", "Invalid type. Parameter ep must be of type <class 'pynapple.core.interval_set.IntervalSet'>."),
+    (get_group(), 1, 10, get_ep(), "a", "s", "Invalid type. Parameter norm must be of type <class 'bool'>."),
+    (get_group(), 1, 10, get_ep(), True, 1, "Invalid type. Parameter time_units must be of type <class 'str'>."),
+])
+def test_correlograms_type_errors(func, group, binsize, windowsize, ep, norm, time_units, msg):
+    with pytest.raises(TypeError, match=msg):
+        func(group=group, binsize=binsize, windowsize=windowsize, ep=ep, norm=norm, time_units=time_units)

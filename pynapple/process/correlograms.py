@@ -7,11 +7,59 @@ import pandas as pd
 from numba import jit
 
 from .. import core as nap
+import inspect
+from numbers import Number
+from functools import wraps
 
 
-#########################################################
-# CORRELATION
-#########################################################
+def _validate_correlograms_inputs(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Validate each positional argument
+        sig = inspect.signature(func)
+        kwargs = sig.bind_partial(*args, **kwargs).arguments
+
+        if (
+            "group" not in kwargs
+            or "binsize" not in kwargs
+            or "windowsize" not in kwargs
+        ):
+            raise TypeError(
+                "Function needs TsGroup, binsize and windowsize to be specified."
+            )
+
+        parameters_type = {
+            "group": (nap.TsGroup, (nap.TsGroup, nap.TsGroup)),
+            "binsize": (Number,),
+            "windowsize": (Number,),
+            "ep": (nap.IntervalSet,),
+            "norm": (bool,),
+            "time_units": (str,),
+            "reverse": (bool,),
+        }
+
+        for param, param_types in parameters_type.items():
+            if param in kwargs:
+                for pt in param_types:
+                    if isinstance(pt, tuple) and isinstance(kwargs[param], tuple):
+                        if not all(
+                            [isinstance(v, t) for v, t in zip(kwargs[param], pt)]
+                        ):
+                            raise TypeError(
+                                f"Invalid type. Parameter {param} must be of type {pt}."
+                            )
+                    else:
+                        if not isinstance(kwargs[param], pt):
+                            raise TypeError(
+                                f"Invalid type. Parameter {param} must be of type {pt}."
+                            )
+
+        # Call the original function with validated inputs
+        return func(**kwargs)
+
+    return wrapper
+
+
 @jit(nopython=True)
 def _cross_correlogram(t1, t2, binsize, windowsize):
     """
@@ -81,6 +129,7 @@ def _cross_correlogram(t1, t2, binsize, windowsize):
     return C, B
 
 
+@_validate_correlograms_inputs
 def compute_autocorrelogram(
     group, binsize, windowsize, ep=None, norm=True, time_units="s"
 ):
@@ -118,13 +167,10 @@ def compute_autocorrelogram(
     RuntimeError
         group must be TsGroup
     """
-    if type(group) is nap.TsGroup:
-        if isinstance(ep, nap.IntervalSet):
-            newgroup = group.restrict(ep)
-        else:
-            newgroup = group
+    if isinstance(ep, nap.IntervalSet):
+        newgroup = group.restrict(ep)
     else:
-        raise RuntimeError("Unknown format for group")
+        newgroup = group
 
     autocorrs = {}
 
@@ -152,6 +198,7 @@ def compute_autocorrelogram(
     return autocorrs.astype("float")
 
 
+@_validate_correlograms_inputs
 def compute_crosscorrelogram(
     group, binsize, windowsize, ep=None, norm=True, time_units="s", reverse=False
 ):
@@ -260,6 +307,7 @@ def compute_crosscorrelogram(
     return crosscorrs.astype("float")
 
 
+@_validate_correlograms_inputs
 def compute_eventcorrelogram(
     group, event, binsize, windowsize, ep=None, norm=True, time_units="s"
 ):
@@ -306,10 +354,7 @@ def compute_eventcorrelogram(
     else:
         tsd1 = event.restrict(ep).index
 
-    if type(group) is nap.TsGroup:
-        newgroup = group.restrict(ep)
-    else:
-        raise RuntimeError("Unknown format for group")
+    newgroup = group.restrict(ep)
 
     crosscorrs = {}
 
