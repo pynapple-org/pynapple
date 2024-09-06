@@ -77,23 +77,26 @@ def _get_windowed_sinc_kernel(fc, filter_type="lowpass", transition_bandwidth=0.
         kernel = kernel.flatten() * np.blackman(len(kernel))
         return kernel / np.sum(kernel)
     elif filter_type == "highpass":
-        kernel = _compute_spectral_inversion(kernel.flatten()) * np.blackman(
-            len(kernel)
-        )
-        return kernel / np.sum(kernel)
+        # kernel = _compute_spectral_inversion(
+        #     kernel.flatten() * np.blackman(len(kernel))
+        # )
+        kernel = kernel.flatten() * np.blackman(len(kernel))
+        kernel /= np.sum(kernel)
+        kernel = _compute_spectral_inversion(kernel)
+        return kernel #/ np.sum(kernel)
     elif filter_type == "bandstop":
         kernel[:, 1] = _compute_spectral_inversion(kernel[:, 1])
         kernel = np.sum(kernel, axis=1)
         kernel = kernel * np.blackman(len(kernel))
         w, h = freqz(kernel, worN=4000)
         kernel /= np.max(np.abs(h))
-        return kernel / np.sum(kernel)
+        return kernel #/ np.sum(kernel)
     elif filter_type == "bandpass":
         kernel = kernel[:, 1] - kernel[:, 0]
         kernel = kernel * np.blackman(len(kernel))
         w, h = freqz(kernel, worN=4000)
         kernel /= np.max(np.abs(h))
-        return kernel / np.sum(kernel)
+        return kernel #/ np.sum(kernel)
     else:
         raise ValueError
 
