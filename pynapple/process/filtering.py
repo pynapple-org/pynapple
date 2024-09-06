@@ -156,6 +156,13 @@ def _validate_filtering_inputs(func):
                     "Invalid value for 'transition_bandwidth'. 'transition_bandwidth' should be of type float"
                 )
 
+        if np.any(np.isnan(kwargs["data"])):
+            raise ValueError(
+                "The input signal contains NaN values, which are not supported for filtering. "
+                "Please remove or handle NaNs before applying the filter. "
+                "You can use the `dropna()` method to drop all NaN values."
+            )
+
         # Call the original function with validated inputs
         return func(**kwargs)
 
