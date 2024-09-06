@@ -15,6 +15,15 @@ def sample_data():
     return nap.Tsd(t=t, d=d, time_support=time_support)
 
 
+def sample_data_with_nan():
+    # Create a sample Tsd data object
+    t = np.linspace(0, 1, 500)
+    d = np.sin(2 * np.pi * 10 * t) + np.random.normal(0, 0.5, t.shape)
+    d[10] = np.nan
+    time_support = nap.IntervalSet(start=[0], end=[1])
+    return nap.Tsd(t=t, d=d, time_support=time_support)
+
+
 def compare_scipy(tsd, ep, order, freq, fs, btype):
     sos = signal.butter(order, freq, btype=btype, fs=fs, output="sos")
     out_sci = []
@@ -195,6 +204,9 @@ def test_bandstop(freq, mode, order, transition_bandwidth, shape, sampling_frequ
     (sample_data(), None, "invalid_mode", 4, 0.02, pytest.raises(ValueError,match="Unrecognized filter mode. Choose either 'butter' or 'sinc'")),
     (sample_data(), "invalid_fs", "butter", 4, 0.02, pytest.raises(ValueError,match="Invalid value for 'fs'. Parameter 'fs' should be of type float or int")),
     (sample_data(), None, "sinc", 4, "a", pytest.raises(ValueError,match="Invalid value for 'transition_bandwidth'. 'transition_bandwidth' should be of type float")),
+    (sample_data_with_nan(), None, "sinc", 4, 0.02, pytest.raises(ValueError,match="The input signal contains NaN values, which are not supported for filtering")),
+    (sample_data_with_nan(), None, "butter", 4, 0.02, pytest.raises(ValueError, match="The input signal contains NaN values, which are not supported for filtering"))
+
 ])
 def test_compute_filtered_signal_raise_errors(func, freq, data, fs, mode, order, transition_bandwidth, expected_exception):
     with expected_exception:
