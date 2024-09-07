@@ -128,8 +128,8 @@ plt.show()
 # %%
 # Let's see what frequencies remain;
 
-psd_butter = nap.compute_power_spectral_density(sig_butter, fs, norm=True, n=1024)
-psd_sinc = nap.compute_power_spectral_density(sig_sinc, fs, norm=True, n=1024)
+psd_butter = nap.compute_power_spectral_density(sig_butter, fs, norm=True)
+psd_sinc = nap.compute_power_spectral_density(sig_sinc, fs, norm=True)
 
 fig = plt.figure(figsize = (10, 5))
 plt.plot(np.abs(psd_butter), label = "Butterworth filter")
