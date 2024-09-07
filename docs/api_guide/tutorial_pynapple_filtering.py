@@ -81,7 +81,7 @@ sig_butter = nap.compute_bandpass_filter(sig, (8, 12), fs, mode='butter')
 
 # %%
 # Let's compare it to the `sinc` mode for Windowed-sinc.
-sig_sinc = nap.compute_bandpass_filter(sig, (8, 12), fs, mode='sinc')
+sig_sinc = nap.compute_bandpass_filter(sig, (8, 12), fs, mode='sinc', transition_bandwidth=0.001)
 
 # %%
 # Let's plot it
@@ -106,7 +106,7 @@ plt.show()
 # the 50 Hz component in the signal.
 
 sig_butter = nap.compute_bandstop_filter(sig, cutoff=(45, 55), fs=fs, mode='butter')
-sig_sinc = nap.compute_bandstop_filter(sig, cutoff=(45, 55), fs=fs, mode='sinc')
+sig_sinc = nap.compute_bandstop_filter(sig, cutoff=(45, 55), fs=fs, mode='sinc', transition_bandwidth=0.001)
 
 
 # %%
@@ -128,8 +128,8 @@ plt.show()
 # %%
 # Let's see what frequencies remain;
 
-psd_butter = nap.compute_power_spectral_density(sig_butter, fs, norm=True)
-psd_sinc = nap.compute_power_spectral_density(sig_sinc, fs, norm=True)
+psd_butter = nap.compute_power_spectral_density(sig_butter, fs, norm=True, n=1024)
+psd_sinc = nap.compute_power_spectral_density(sig_sinc, fs, norm=True, n=1024)
 
 fig = plt.figure(figsize = (10, 5))
 plt.plot(np.abs(psd_butter), label = "Butterworth filter")
@@ -182,7 +182,7 @@ for order, sos in butter_sos.items():
 for trans_bandwidth, kernel in sinc_kernel.items():
     plt.subplot(gs[0, 1])
     fft_sinc = nap.compute_power_spectral_density(
-        nap.Tsd(t=np.arange(len(kernel)) / fs, d=kernel), fs)
+        nap.Tsd(t=np.arange(len(kernel)) / fs, d=kernel), fs, n=1024)
     plt.plot(np.abs(fft_sinc), label= f"width={trans_bandwidth}")
     plt.ylabel('Amplitude')
     plt.legend()
