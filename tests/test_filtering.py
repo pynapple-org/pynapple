@@ -253,7 +253,7 @@ def test_get_kernel_error(filter_type, expected_exception):
         nap.process.filtering._get_windowed_sinc_kernel(0.25, filter_type=filter_type)
 
 def test_get__error():
-    with pytest.raises(TypeError, match="Function needs time series and cutoff frequency to be specified."):
+    with pytest.raises(TypeError, match=r"compute_lowpass_filter\(\) missing 1 required positional argument: 'data'"):
         nap.compute_lowpass_filter(cutoff=0.25)
 
 

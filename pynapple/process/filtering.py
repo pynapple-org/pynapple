@@ -114,11 +114,6 @@ def _validate_filtering_inputs(func):
         sig = inspect.signature(func)
         kwargs = sig.bind_partial(*args, **kwargs).arguments
 
-        if "data" not in kwargs or "cutoff" not in kwargs:
-            raise TypeError(
-                "Function needs time series and cutoff frequency to be specified."
-            )
-
         if not isinstance(kwargs["data"], nap.time_series.BaseTsd):
             raise ValueError(
                 f"Invalid value: {args[0]}. First argument should be of type Tsd, TsdFrame or TsdTensor"
@@ -162,6 +157,37 @@ def _validate_filtering_inputs(func):
 
 
 @_validate_filtering_inputs
+def _compute_filter(
+    data,
+    cutoff,
+    fs=None,
+    mode="butter",
+    order=4,
+    transition_bandwidth=0.02,
+    filter_type="bandpass",
+):
+    """Filter the signal."""
+    if fs is None:
+        fs = data.rate
+
+    cutoff = np.array(cutoff)
+
+    if mode == "butter":
+        return _compute_butterworth_filter(
+            data, cutoff, fs, filter_type=filter_type, order=order
+        )
+    if mode == "sinc":
+        return _compute_windowed_sinc_filter(
+            data,
+            cutoff,
+            fs,
+            filter_type=filter_type,
+            transition_bandwidth=transition_bandwidth,
+        )
+    else:
+        raise ValueError("Unrecognized filter mode. Choose either 'butter' or 'sinc'")
+
+
 def compute_bandpass_filter(
     data, cutoff, fs=None, mode="butter", order=4, transition_bandwidth=0.02
 ):
@@ -208,28 +234,17 @@ def compute_bandpass_filter(
     For the Butterworth filter, the cutoff frequency is defined as the frequency at which the amplitude of the signal
     is reduced by -3 dB (decibels).
     """
-    if fs is None:
-        fs = data.rate
-
-    cutoff = np.array(cutoff)
-
-    if mode == "butter":
-        return _compute_butterworth_filter(
-            data, cutoff, fs, filter_type="bandpass", order=order
-        )
-    if mode == "sinc":
-        return _compute_windowed_sinc_filter(
-            data,
-            cutoff,
-            fs,
-            filter_type="bandpass",
-            transition_bandwidth=transition_bandwidth,
-        )
-    else:
-        raise ValueError("Unrecognized filter mode. Choose either 'butter' or 'sinc'")
+    return _compute_filter(
+        data,
+        cutoff,
+        fs=fs,
+        mode=mode,
+        order=order,
+        transition_bandwidth=transition_bandwidth,
+        filter_type="bandpass",
+    )
 
 
-@_validate_filtering_inputs
 def compute_bandstop_filter(
     data, cutoff, fs=None, mode="butter", order=4, transition_bandwidth=0.02
 ):
@@ -276,28 +291,17 @@ def compute_bandstop_filter(
     For the Butterworth filter, the cutoff frequency is defined as the frequency at which the amplitude of the signal
     is reduced by -3 dB (decibels).
     """
-    if fs is None:
-        fs = data.rate
-
-    cutoff = np.array(cutoff)
-
-    if mode == "butter":
-        return _compute_butterworth_filter(
-            data, cutoff, fs, filter_type="bandstop", order=order
-        )
-    elif mode == "sinc":
-        return _compute_windowed_sinc_filter(
-            data,
-            cutoff,
-            fs,
-            filter_type="bandstop",
-            transition_bandwidth=transition_bandwidth,
-        )
-    else:
-        raise ValueError("Unrecognized filter mode. Choose either 'butter' or 'sinc'")
+    return _compute_filter(
+        data,
+        cutoff,
+        fs=fs,
+        mode=mode,
+        order=order,
+        transition_bandwidth=transition_bandwidth,
+        filter_type="bandstop",
+    )
 
 
-@_validate_filtering_inputs
 def compute_highpass_filter(
     data, cutoff, fs=None, mode="butter", order=4, transition_bandwidth=0.02
 ):
@@ -344,26 +348,17 @@ def compute_highpass_filter(
     For the Butterworth filter, the cutoff frequency is defined as the frequency at which the amplitude of the signal
     is reduced by -3 dB (decibels).
     """
-    if fs is None:
-        fs = data.rate
-
-    if mode == "butter":
-        return _compute_butterworth_filter(
-            data, cutoff, fs, filter_type="highpass", order=order
-        )
-    elif mode == "sinc":
-        return _compute_windowed_sinc_filter(
-            data,
-            cutoff,
-            fs,
-            filter_type="highpass",
-            transition_bandwidth=transition_bandwidth,
-        )
-    else:
-        raise ValueError("Unrecognized filter mode. Choose either 'butter' or 'sinc'")
+    return _compute_filter(
+        data,
+        cutoff,
+        fs=fs,
+        mode=mode,
+        order=order,
+        transition_bandwidth=transition_bandwidth,
+        filter_type="highpass",
+    )
 
 
-@_validate_filtering_inputs
 def compute_lowpass_filter(
     data, cutoff, fs=None, mode="butter", order=4, transition_bandwidth=0.02
 ):
@@ -410,20 +405,12 @@ def compute_lowpass_filter(
     For the Butterworth filter, the cutoff frequency is defined as the frequency at which the amplitude of the signal
     is reduced by -3 dB (decibels).
     """
-    if fs is None:
-        fs = data.rate
-
-    if mode == "butter":
-        return _compute_butterworth_filter(
-            data, cutoff, fs, filter_type="lowpass", order=order
-        )
-    elif mode == "sinc":
-        return _compute_windowed_sinc_filter(
-            data,
-            cutoff,
-            fs,
-            filter_type="lowpass",
-            transition_bandwidth=transition_bandwidth,
-        )
-    else:
-        raise ValueError("Unrecognized filter mode. Choose either 'butter' or 'sinc'")
+    return _compute_filter(
+        data,
+        cutoff,
+        fs=fs,
+        mode=mode,
+        order=order,
+        transition_bandwidth=transition_bandwidth,
+        filter_type="lowpass",
+    )
