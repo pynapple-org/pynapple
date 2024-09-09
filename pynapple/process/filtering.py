@@ -67,37 +67,25 @@ def _get_windowed_sinc_kernel(fc, filter_type="lowpass", transition_bandwidth=0.
     -------
     np.ndarray
     """
-    M = int(np.rint(4.0 / transition_bandwidth))
+    M = int(np.rint(20.0 / transition_bandwidth))
     x = np.arange(-(M // 2), 1 + (M // 2))
     fc = np.transpose(np.atleast_2d(fc))
     kernel = np.sinc(2 * fc * x)
+    kernel = kernel*np.blackman(len(x))
     kernel = np.transpose(kernel)
+    kernel = kernel/kernel.sum(0)
 
     if filter_type == "lowpass":
-        kernel = kernel.flatten() * np.blackman(len(kernel))
-        return kernel / np.sum(kernel)
+        return kernel.flatten()
     elif filter_type == "highpass":
-        kernel = kernel.flatten() * np.blackman(len(kernel))
-        kernel /= np.sum(kernel)
-        kernel = _compute_spectral_inversion(kernel)
-        return kernel
+        return _compute_spectral_inversion(kernel.flatten())
     elif filter_type == "bandstop":
-        bw = np.blackman(len(kernel))
-        kernel[:, 1] *= bw
-        kernel[:, 1] /= kernel[:, 1].sum()
         kernel[:, 1] = _compute_spectral_inversion(kernel[:, 1])
-        kernel[:, 0] *= bw
-        kernel[:, 0] /= kernel[:, 0].sum()
         kernel = np.sum(kernel, axis=1)
         return kernel
     elif filter_type == "bandpass":
-        bw = np.blackman(len(kernel))
-        kernel[:, 1] *= bw
-        kernel[:, 1] /= kernel[:, 1].sum()
         kernel[:, 1] = _compute_spectral_inversion(kernel[:, 1])
-        kernel[:, 0] *= bw
-        kernel[:, 0] /= kernel[:, 0].sum()
-        kernel = _compute_spectral_inversion(kernel[:, 1] + kernel[:, 0])
+        kernel = _compute_spectral_inversion(np.sum(kernel, axis=1))
         return kernel
     else:
         raise ValueError

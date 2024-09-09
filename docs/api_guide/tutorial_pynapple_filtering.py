@@ -81,7 +81,7 @@ sig_butter = nap.compute_bandpass_filter(sig, (8, 12), fs, mode='butter')
 
 # %%
 # Let's compare it to the `sinc` mode for Windowed-sinc.
-sig_sinc = nap.compute_bandpass_filter(sig, (8, 12), fs, mode='sinc', transition_bandwidth=0.001)
+sig_sinc = nap.compute_bandpass_filter(sig, (8, 12), fs, mode='sinc')
 
 # %%
 # Let's plot it
@@ -106,7 +106,7 @@ plt.show()
 # the 50 Hz component in the signal.
 
 sig_butter = nap.compute_bandstop_filter(sig, cutoff=(45, 55), fs=fs, mode='butter')
-sig_sinc = nap.compute_bandstop_filter(sig, cutoff=(45, 55), fs=fs, mode='sinc', transition_bandwidth=0.001)
+sig_sinc = nap.compute_bandstop_filter(sig, cutoff=(45, 55), fs=fs, mode='sinc')
 
 
 # %%
