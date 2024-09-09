@@ -17,7 +17,9 @@ from scipy import signal
 from .. import core as nap
 
 
-def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False, norm=False, n=None):
+def compute_power_spectral_density(
+    sig, fs=None, ep=None, full_range=False, norm=False, n=None
+):
     """
     Perform numpy fft on sig, returns output assuming a constant sampling rate for the signal.
 

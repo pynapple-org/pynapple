@@ -5,7 +5,7 @@ from functools import wraps
 from numbers import Number
 
 import numpy as np
-from scipy.signal import butter, freqz, sosfiltfilt
+from scipy.signal import butter, sosfiltfilt
 
 from .. import core as nap
 
@@ -71,9 +71,9 @@ def _get_windowed_sinc_kernel(fc, filter_type="lowpass", transition_bandwidth=0.
     x = np.arange(-(M // 2), 1 + (M // 2))
     fc = np.transpose(np.atleast_2d(fc))
     kernel = np.sinc(2 * fc * x)
-    kernel = kernel*np.blackman(len(x))
+    kernel = kernel * np.blackman(len(x))
     kernel = np.transpose(kernel)
-    kernel = kernel/kernel.sum(0)
+    kernel = kernel / kernel.sum(0)
 
     if filter_type == "lowpass":
         return kernel.flatten()
