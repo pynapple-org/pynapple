@@ -11,7 +11,7 @@ tsd = nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 5, 3), time_units="s
 
 # tsd = nap.TsdFrame(t=np.arange(100), d=np.random.randn(100, 6))
 
-tsd.d[tsd.values>0.9] = np.NaN
+tsd.d[tsd.values>0.9] = np.nan
 
 
 @pytest.mark.parametrize(
