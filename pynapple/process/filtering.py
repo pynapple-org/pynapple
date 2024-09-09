@@ -5,12 +5,51 @@ from functools import wraps
 from numbers import Number
 
 import numpy as np
-from scipy.signal import butter, sosfiltfilt
+import pandas as pd
+from scipy.signal import butter, sosfiltfilt, sosfreqz
 
 from .. import core as nap
 
 
+def _validate_filtering_inputs(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Validate each positional argument
+        sig = inspect.signature(func)
+        kwargs = sig.bind_partial(*args, **kwargs).arguments
+
+        if not isinstance(kwargs["cutoff"], Number):
+            if len(kwargs["cutoff"]) != 2 or not all(
+                isinstance(fq, Number) for fq in kwargs["cutoff"]
+            ):
+                raise ValueError
+
+        if "fs" in kwargs:
+            if kwargs["fs"] is not None and not isinstance(kwargs["fs"], Number):
+                raise ValueError(
+                    "Invalid value for 'fs'. Parameter 'fs' should be of type float or int"
+                )
+
+        if "order" in kwargs:
+            if not isinstance(kwargs["order"], int):
+                raise ValueError(
+                    "Invalid value for 'order': Parameter 'order' should be of type int"
+                )
+
+        if "transition_bandwidth" in kwargs:
+            if not isinstance(kwargs["transition_bandwidth"], float):
+                raise ValueError(
+                    "Invalid value for 'transition_bandwidth'. 'transition_bandwidth' should be of type float"
+                )
+
+        # Call the original function with validated inputs
+        return func(**kwargs)
+
+    return wrapper
+
+
 def _get_butter_coefficients(cutoff, filter_type, sampling_frequency, order=4):
+    """Calls scipy butter"""
     return butter(order, cutoff, btype=filter_type, fs=sampling_frequency, output="sos")
 
 
@@ -48,7 +87,9 @@ def _compute_spectral_inversion(kernel):
     return kernel
 
 
-def _get_windowed_sinc_kernel(fc, filter_type="lowpass", transition_bandwidth=0.02):
+def _get_windowed_sinc_kernel(
+    fc, filter_type, sampling_frequency, transition_bandwidth=0.02
+):
     """
     Get the windowed-sinc kernel.
     Smith, S. (2003). Digital signal processing: a practical guide for engineers and scientists.
@@ -57,10 +98,12 @@ def _get_windowed_sinc_kernel(fc, filter_type="lowpass", transition_bandwidth=0.
     Parameters
     ----------
     fc: float or tuple of float
-        Cutting frequency between 0 and 0.5. Single float for 'lowpass' and 'highpass'. Tuple of float for
+        Cutting frequency in Hz. Single float for 'lowpass' and 'highpass'. Tuple of float for
         'bandpass' and 'bandstop'.
     filter_type: str
         Either 'lowpass', 'highpass', 'bandstop' or 'bandpass'.
+    sampling_frequency: float
+        Sampling frequency in Hz.
     transition_bandwidth: float
         Percentage between 0 and 0.5
     Returns
@@ -69,7 +112,7 @@ def _get_windowed_sinc_kernel(fc, filter_type="lowpass", transition_bandwidth=0.
     """
     M = int(np.rint(20.0 / transition_bandwidth))
     x = np.arange(-(M // 2), 1 + (M // 2))
-    fc = np.transpose(np.atleast_2d(fc))
+    fc = np.transpose(np.atleast_2d(fc / sampling_frequency))
     kernel = np.sinc(2 * fc * x)
     kernel = kernel * np.blackman(len(x))
     kernel = np.transpose(kernel)
@@ -92,68 +135,32 @@ def _get_windowed_sinc_kernel(fc, filter_type="lowpass", transition_bandwidth=0.
 
 
 def _compute_windowed_sinc_filter(
-    data, freq, sampling_frequency, filter_type="lowpass", transition_bandwidth=0.02
+    data, freq, filter_type, sampling_frequency, transition_bandwidth=0.02
 ):
     """
     Apply a windowed-sinc filter to the provided signal.
 
     Parameters
     ----------
-    filter_type
+    data: Tsd, TsdFrame or TsdTensor
+
+    freq: float or tuple of float
+        Cutting frequency in Hz. Single float for 'lowpass' and 'highpass'. Tuple of float for
+        'bandpass' and 'bandstop'.
+    sampling_frequency: float
+        Sampling frequency in Hz.
+    filter_type: str
+        Either 'lowpass', 'highpass', 'bandstop' or 'bandpass'.
+    transition_bandwidth: float
+        Percentage between 0 and 0.5
+    Returns
+    -------
+    Tsd, TsdFrame or TsdTensor
     """
     kernel = _get_windowed_sinc_kernel(
-        freq / sampling_frequency, filter_type, transition_bandwidth
+        freq, filter_type, sampling_frequency, transition_bandwidth
     )
     return data.convolve(kernel)
-
-
-def _validate_filtering_inputs(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        # Validate each positional argument
-        sig = inspect.signature(func)
-        kwargs = sig.bind_partial(*args, **kwargs).arguments
-
-        if not isinstance(kwargs["data"], nap.time_series.BaseTsd):
-            raise ValueError(
-                f"Invalid value: {args[0]}. First argument should be of type Tsd, TsdFrame or TsdTensor"
-            )
-
-        if not isinstance(kwargs["cutoff"], Number):
-            if len(kwargs["cutoff"]) != 2 or not all(
-                isinstance(fq, Number) for fq in kwargs["cutoff"]
-            ):
-                raise ValueError
-
-        if "fs" in kwargs:
-            if kwargs["fs"] is not None and not isinstance(kwargs["fs"], Number):
-                raise ValueError(
-                    "Invalid value for 'fs'. Parameter 'fs' should be of type float or int"
-                )
-
-        if "order" in kwargs:
-            if not isinstance(kwargs["order"], int):
-                raise ValueError(
-                    "Invalid value for 'order': Parameter 'order' should be of type int"
-                )
-
-        if "transition_bandwidth" in kwargs:
-            if not isinstance(kwargs["transition_bandwidth"], float):
-                raise ValueError(
-                    "Invalid value for 'transition_bandwidth'. 'transition_bandwidth' should be of type float"
-                )
-
-        if np.any(np.isnan(kwargs["data"])):
-            raise ValueError(
-                "The input signal contains NaN values, which are not supported for filtering. "
-                "Please remove or handle NaNs before applying the filter. "
-                "You can use the `dropna()` method to drop all NaN values."
-            )
-
-        # Call the original function with validated inputs
-        return func(**kwargs)
-
-    return wrapper
 
 
 @_validate_filtering_inputs
@@ -166,7 +173,21 @@ def _compute_filter(
     transition_bandwidth=0.02,
     filter_type="bandpass",
 ):
-    """Filter the signal."""
+    """
+    Filter the signal.
+    """
+    if not isinstance(data, nap.time_series.BaseTsd):
+        raise ValueError(
+            f"Invalid value: {data}. First argument should be of type Tsd, TsdFrame or TsdTensor"
+        )
+
+    if np.any(np.isnan(data)):
+        raise ValueError(
+            "The input signal contains NaN values, which are not supported for filtering. "
+            "Please remove or handle NaNs before applying the filter. "
+            "You can use the `dropna()` method to drop all NaN values."
+        )
+
     if fs is None:
         fs = data.rate
 
@@ -178,11 +199,7 @@ def _compute_filter(
         )
     if mode == "sinc":
         return _compute_windowed_sinc_filter(
-            data,
-            cutoff,
-            fs,
-            filter_type=filter_type,
-            transition_bandwidth=transition_bandwidth,
+            data, cutoff, filter_type, fs, transition_bandwidth=transition_bandwidth
         )
     else:
         raise ValueError("Unrecognized filter mode. Choose either 'butter' or 'sinc'")
@@ -414,3 +431,57 @@ def compute_lowpass_filter(
         transition_bandwidth=transition_bandwidth,
         filter_type="lowpass",
     )
+
+
+@_validate_filtering_inputs
+def get_filter_frequency_response(
+    cutoff, fs, filter_type, mode, order=4, transition_bandwidth=0.02
+):
+    """
+    Utility function to evaluate the frequency response of a particular type of filter. The arguments are the same
+    as the function `compute_lowpass_filter`, `compute_highpass_filter`, `compute_bandpass_filter` and
+    `compute_bandstop_filter`.
+
+    This function returns a pandas Series object with the index as frequencies.
+
+    Parameters
+    ----------
+    cutoff : float or tuple of float
+        Cutoff frequency in Hz.
+    fs : float
+        The sampling frequency of the signal in Hz.
+    filter_type: str
+        Can be "lowpass", "highpass", "bandpass" or "bandstop"
+    mode: str
+        Can be "butter" or "sinc".
+    order : int, optional
+        The order of the Butterworth filter. Higher values result in sharper frequency cutoffs.
+        Default is 4.
+    transition_bandwidth : float, optional
+        The transition bandwidth. 0.2 corresponds to 20% of the frequency band between 0 and the sampling frequency.
+        The smaller the transition bandwidth, the larger the windowed-sinc kernel.
+        Default is 0.02.
+
+    Returns
+    -------
+    pandas.Series
+    """
+    cutoff = np.array(cutoff)
+
+    if mode == "butter":
+        sos = _get_butter_coefficients(cutoff, filter_type, fs, order)
+        w, h = sosfreqz(sos, worN=1024, fs=fs)
+        return pd.Series(index=w, data=np.abs(h))
+    if mode == "sinc":
+        kernel = _get_windowed_sinc_kernel(
+            cutoff, filter_type, fs, transition_bandwidth
+        )
+        fft_result = np.fft.fft(kernel)
+        fft_result = np.fft.fftshift(fft_result)
+        fft_freq = np.fft.fftfreq(n=len(kernel), d=1 / fs)
+        fft_freq = np.fft.fftshift(fft_freq)
+        return pd.Series(
+            index=fft_freq[fft_freq >= 0], data=np.abs(fft_result[fft_freq >= 0])
+        )
+    else:
+        raise ValueError("Unrecognized filter mode. Choose either 'butter' or 'sinc'")

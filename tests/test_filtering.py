@@ -2,6 +2,7 @@ import pytest
 import pynapple as nap
 import numpy as np
 from scipy import signal
+import pandas as pd
 import warnings
 from contextlib import nullcontext as does_not_raise
 
@@ -34,7 +35,7 @@ def compare_scipy(tsd, ep, order, freq, fs, btype):
 
 def compare_sinc(tsd, ep, transition_bandwidth, freq, fs, ftype):
 
-    kernel = nap.process.filtering._get_windowed_sinc_kernel(freq/fs, ftype, transition_bandwidth)
+    kernel = nap.process.filtering._get_windowed_sinc_kernel(freq, ftype, fs, transition_bandwidth)
     return tsd.convolve(kernel, ep).d
 
 
@@ -242,7 +243,7 @@ def test_filtering_nyquist_edge_case(nyquist_fraction, order):
 
 @pytest.mark.parametrize("tb", [0.2, 0.3])
 def test_get_odd_kernel(tb):
-    kernel = nap.process.filtering._get_windowed_sinc_kernel(0.25, transition_bandwidth=tb)
+    kernel = nap.process.filtering._get_windowed_sinc_kernel(1, "lowpass", 4, transition_bandwidth=tb)
     assert len(kernel)%2 != 0
 
 @pytest.mark.parametrize("filter_type, expected_exception", [
@@ -250,7 +251,7 @@ def test_get_odd_kernel(tb):
 ])
 def test_get_kernel_error(filter_type, expected_exception):
     with expected_exception:
-        nap.process.filtering._get_windowed_sinc_kernel(0.25, filter_type=filter_type)
+        nap.process.filtering._get_windowed_sinc_kernel(1, filter_type, 4)
 
 def test_get__error():
     with pytest.raises(TypeError, match=r"compute_lowpass_filter\(\) missing 1 required positional argument: 'data'"):
@@ -258,7 +259,7 @@ def test_get__error():
 
 
 def test_compare_sinc_kernel():
-    kernel = nap.process.filtering._get_windowed_sinc_kernel(0.25)
+    kernel = nap.process.filtering._get_windowed_sinc_kernel(1, "lowpass", 4)
     x = np.arange(-(len(kernel)//2), 1+len(kernel)//2)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -273,3 +274,28 @@ def test_compare_sinc_kernel():
     ikernel2 = kernel2 * -1.0
     ikernel2[len(ikernel2) // 2] = 1.0 + ikernel2[len(kernel2) // 2]
     np.testing.assert_allclose(ikernel, ikernel2)
+
+@pytest.mark.parametrize("cutoff, fs, filter_type, mode, order, tb", [
+    (250, 1000, "lowpass", "butter", 4, 0.02),
+    (250, 1000, "lowpass", "sinc", 4, 0.02),
+])
+def test_get_filter_frequency_response(cutoff, fs, filter_type, mode, order, tb):
+    output = nap.get_filter_frequency_response(cutoff, fs, filter_type, mode, order, tb)
+    assert isinstance(output, pd.Series)
+    if mode == "butter":
+        sos = nap.process.filtering._get_butter_coefficients(cutoff, filter_type, fs, order)
+        w, h = signal.sosfreqz(sos, worN=1024, fs=fs)
+        np.testing.assert_array_almost_equal(w, output.index.values)
+        np.testing.assert_array_almost_equal(np.abs(h), output.values)
+    if mode == "sinc":
+        kernel = nap.process.filtering._get_windowed_sinc_kernel(cutoff, filter_type, fs, tb)
+        fft_result = np.fft.fft(kernel)
+        fft_result = np.fft.fftshift(fft_result)
+        fft_freq = np.fft.fftfreq(n=len(kernel), d=1 / fs)
+        fft_freq = np.fft.fftshift(fft_freq)
+        np.testing.assert_array_almost_equal(fft_freq[fft_freq >= 0], output.index.values)
+        np.testing.assert_array_almost_equal(np.abs(fft_result[fft_freq >= 0]), output.values)
+
+def test_get_filter_frequency_response_error():
+    with pytest.raises(ValueError, match="Unrecognized filter mode. Choose either 'butter' or 'sinc'"):
+        nap.get_filter_frequency_response(250, 1000, "lowpass", "a", 4, 0.02)

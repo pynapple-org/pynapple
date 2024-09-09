@@ -60,7 +60,7 @@ sig = nap.Tsd(t=t,d=f2+f10+f50 + np.random.normal(0, 0.5, len(t)))
 fig = plt.figure(figsize = (15, 5))
 plt.plot(sig)
 plt.xlabel("Time (s)")
-plt.show()
+
 
 # %%
 # We can compute the Fourier transform of `sig` to verify that all the frequencies are there.
@@ -71,7 +71,7 @@ plt.plot(np.abs(psd))
 plt.xlabel("Frequency (Hz)")
 plt.ylabel("Amplitude")
 plt.xlim(0, 100)
-plt.show()
+
 
 # %%
 # Let's say we would like to see only the 10 Hz component.
@@ -97,12 +97,12 @@ plt.plot(sig_sinc, '--', label = "Windowed-sinc")
 plt.legend()
 plt.xlabel("Time (Hz)")
 plt.xlim(0, 1)
-plt.show()
+
 
 # %%
 # This gives similar results except at the edges.
 #
-# Another use of filtering is to remove some frequencies (notch filter). Here we can try to remove
+# Another use of filtering is to remove some frequencies. Here we can try to remove
 # the 50 Hz component in the signal.
 
 sig_butter = nap.compute_bandstop_filter(sig, cutoff=(45, 55), fs=fs, mode='butter')
@@ -123,7 +123,7 @@ plt.plot(sig_sinc, '--', label = "Windowed-sinc")
 plt.legend()
 plt.xlabel("Time (Hz)")
 plt.xlim(0, 1)
-plt.show()
+
 
 # %%
 # Let's see what frequencies remain;
@@ -138,7 +138,7 @@ plt.legend()
 plt.xlabel("Frequency (Hz)")
 plt.ylabel("Amplitude")
 plt.xlim(0, 70)
-plt.show()
+
 
 # %%
 # The remaining notebook compares the two modes.
@@ -147,16 +147,20 @@ plt.show()
 # Frequency responses
 # -------------------
 #
-# Let's get filter coefficients for a 250Hz recursive low pass filter with different order:
-butter_sos = {
-    order:nap.process.filtering._get_butter_coefficients(250, "lowpass", fs, order=order)
+# In order to check the validity of the filter, the function `get_filter_frequency_response` provides the frequency
+# response of the filters. The calling signature is similar to the previous functions.
+# The function returns a pandas Series with the frequencies as index.
+#
+# Let's get the frequency response for a Butterworth low pass filter with different order:
+butter_freq = {
+    order: nap.get_filter_frequency_response(250, fs, "lowpass", "butter", order=order)
     for order in [2, 4, 6]}
 
 # %%
-# ... and the kernel for the Windowed-sinc equivalent with different transition bandwitdh
-sinc_kernel = {
-    tb:nap.process.filtering._get_windowed_sinc_kernel(250/fs, "lowpass", transition_bandwidth=tb)
-    for tb in [0.02, 0.1, 0.2]}
+# ... and the frequency response for the Windowed-sinc equivalent with different transition bandwidth.
+sinc_freq = {
+    tb:nap.get_filter_frequency_response(250, fs,"lowpass", "sinc", transition_bandwidth=tb)
+    for tb in [0.002, 0.02, 0.2]}
 
 # %%
 # Let's plot the frequency response of both.
@@ -165,74 +169,54 @@ from scipy import signal
 
 fig = plt.figure(figsize = (20, 10))
 gs = plt.GridSpec(2, 2)
-for order, sos in butter_sos.items():
+for order in butter_freq.keys():
     plt.subplot(gs[0, 0])
-    w, h = signal.sosfreqz(sos, worN=1500, fs=fs)
-    plt.plot(w, np.abs(h), label = f"order={order}")
+    plt.plot(butter_freq[order], label = f"order={order}")
     plt.ylabel('Amplitude')
     plt.legend()
     plt.title("Butterworth recursive")
     plt.subplot(gs[1, 0])
-    plt.plot(w, 20 * np.log10(np.abs(h)), label = f"order={order}")
+    plt.plot(20*np.log10(butter_freq[order]), label = f"order={order}")
     plt.xlabel('Frequency [Hz]')
     plt.ylabel('Amplitude [dB]')
-    plt.ylim(-100,40)
+    plt.ylim(-200,20)
     plt.legend()
 
-for trans_bandwidth, kernel in sinc_kernel.items():
+for tb in sinc_freq.keys():
     plt.subplot(gs[0, 1])
-    fft_sinc = nap.compute_power_spectral_density(
-        nap.Tsd(t=np.arange(len(kernel)) / fs, d=kernel), fs, n=1024)
-    plt.plot(np.abs(fft_sinc), label= f"width={trans_bandwidth}")
+    plt.plot(sinc_freq[tb], label= f"width={tb}")
     plt.ylabel('Amplitude')
     plt.legend()
     plt.title("Windowed-sinc conv.")
     plt.subplot(gs[1, 1])
-    plt.plot(20*np.log10(np.abs(fft_sinc)), label= f"width={trans_bandwidth}")
+    plt.plot(20*np.log10(sinc_freq[tb]), label= f"width={tb}")
     plt.xlabel('Frequency [Hz]')
     plt.ylabel('Amplitude [dB]')
-    plt.ylim(-100,40)
+    plt.ylim(-200,20)
     plt.legend()
 
-plt.show()
 # %%
-# ***
-# Step responses
-# --------------
+# In some cases, the transition bandwidth that is too high generates a kernel that is too short. The amplitude of the
+# original signal will then be lower than expected.
+# In this case, the solution is to decrease the transition bandwidth when using the windowed-sinc mode.
+# Note that this increases the length of the kernel significantly.
+# Let see it with the band pass filter.
 
-step = nap.Tsd(t=sig.t, d=np.zeros(len(sig)))
-step[len(step)//2:] = 1.0
 
-# %%
-#
-step_butter = {
-    order:nap.compute_lowpass_filter(step, 0.2*fs, fs, mode='butter', order=order)
-    for order in [4, 12]}
+sinc_freq = {
+    tb:nap.get_filter_frequency_response((100, 200), fs, "bandpass", "sinc", transition_bandwidth=tb)
+    for tb in [0.004, 0.5]}
 
-# %%
-# Let's compare it to the `sinc` mode for Windowed-sinc.
 
-step_sinc = {
-    tb:nap.compute_lowpass_filter(step, 0.2*fs, fs, mode='sinc', transition_bandwidth=tb)
-    for tb in [0.005, 0.2]}
+fig = plt.figure(figsize = (20, 10))
+for tb in sinc_freq.keys():
+    plt.plot(sinc_freq[tb], label= f"width={tb}")
+    plt.ylabel('Amplitude')
+    plt.legend()
+    plt.title("Windowed-sinc conv.")
+    plt.legend()
 
-# %%
-plt.figure()
-plt.subplot(211)
-plt.plot(step)
-for order, filt_step in step_butter.items():
-    plt.plot(filt_step, label=f"order={order}")
-plt.legend()
-plt.xlim(0.95, 1.05)
-plt.title("Butterworth filter")
-plt.subplot(212)
-plt.plot(step)
-for tb, filt_step in step_sinc.items():
-    plt.plot(filt_step, label=f"width={tb}")
-plt.legend()
-plt.xlim(0.95, 1.05)
-plt.title("Windowed-sinc")
-plt.show()
+
 
 # %%
 # ***

@@ -9,6 +9,7 @@ from .filtering import (
     compute_bandstop_filter,
     compute_highpass_filter,
     compute_lowpass_filter,
+    get_filter_frequency_response,
 )
 from .perievent import (
     compute_event_trigger_average,
