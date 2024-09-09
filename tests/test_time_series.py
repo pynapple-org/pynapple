@@ -388,7 +388,7 @@ class Test_Time_Series_1:
             np.testing.assert_array_equal(tsd.values, new_tsd.values)
 
             tmp = np.random.rand(*tsd.shape)
-            tmp[tmp>0.9] = np.NaN
+            tmp[tmp>0.9] = np.nan
             tsd = tsd.__class__(t=tsd.t, d=tmp)
             
             new_tsd = tsd.dropna()
@@ -406,7 +406,7 @@ class Test_Time_Series_1:
             np.testing.assert_array_equal(tsd.values[tokeep], new_tsd.values)
             np.testing.assert_array_equal(new_tsd.time_support, tsd.time_support)
 
-            tsd = tsd.__class__(t=tsd.t, d=np.ones(tsd.shape)*np.NaN)            
+            tsd = tsd.__class__(t=tsd.t, d=np.ones(tsd.shape)*np.nan)            
             new_tsd = tsd.dropna()
             assert len(new_tsd) == 0
             assert len(new_tsd.time_support) == 0
