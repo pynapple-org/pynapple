@@ -81,7 +81,7 @@ sig_butter = nap.compute_bandpass_filter(sig, (8, 12), fs, mode='butter')
 
 # %%
 # Let's compare it to the `sinc` mode for Windowed-sinc.
-sig_sinc = nap.compute_bandpass_filter(sig, (8, 12), fs, mode='sinc')
+sig_sinc = nap.compute_bandpass_filter(sig, (8, 12), fs, mode='sinc', transition_bandwidth=0.003)
 
 # %%
 # Let's plot it
@@ -106,7 +106,7 @@ plt.xlim(0, 1)
 # the 50 Hz component in the signal.
 
 sig_butter = nap.compute_bandstop_filter(sig, cutoff=(45, 55), fs=fs, mode='butter')
-sig_sinc = nap.compute_bandstop_filter(sig, cutoff=(45, 55), fs=fs, mode='sinc')
+sig_sinc = nap.compute_bandstop_filter(sig, cutoff=(45, 55), fs=fs, mode='sinc', transition_bandwidth=0.004)
 
 
 # %%
@@ -117,7 +117,6 @@ plt.plot(t, sig, '-', color = 'gray', label = "Original signal")
 plt.xlim(0, 1)
 plt.legend()
 plt.subplot(212)
-# plt.plot(sig, alpha=0.5)
 plt.plot(sig_butter, label = "Butterworth")
 plt.plot(sig_sinc, '--', label = "Windowed-sinc")
 plt.legend()
@@ -144,28 +143,74 @@ plt.xlim(0, 70)
 # The remaining notebook compares the two modes.
 #
 # ***
-# Frequency responses
+# Frequency Responses
 # -------------------
 #
-# In order to check the validity of the filter, the function `get_filter_frequency_response` provides the frequency
-# response of the filters. The calling signature is similar to the previous functions.
-# The function returns a pandas Series with the frequencies as index.
+# We can inspect the frequency response of a filter by plotting its power spectral density (PSD).
+# To do this, we can use the `get_filter_frequency_response` function, which returns a pandas Series with the frequencies
+# as the index and the PSD as values.
 #
-# Let's get the frequency response for a Butterworth low pass filter with different order:
+# Let's plot the frequency response of a Butterworth filter and a sinc low-pass filter.
+
+# compute the frequency response of the filters
+psd_butter = nap.get_filter_frequency_response(
+    200, fs,"lowpass", "butter", order=8
+)
+psd_sinc = nap.get_filter_frequency_response(
+    200, fs,"lowpass", "sinc", transition_bandwidth=0.1
+)
+
+# compute the transition bandwidth
+tb_butter = psd_butter[psd_butter > 0.99].index.max(), psd_butter[psd_butter < 0.01].index.min()
+tb_sinc = psd_sinc[psd_sinc > 0.99].index.max(), psd_sinc[psd_sinc < 0.01].index.min()
+
+fig, axs = plt.subplots(1, 2, sharex=True, sharey=True, figsize=(15, 5))
+fig.suptitle("Frequency response", fontsize="x-large")
+axs[0].set_title("Butterworth Filter")
+axs[0].plot(psd_butter)
+axs[0].axvspan(0, tb_butter[0], alpha=0.4, color="green", label="Pass Band")
+axs[0].axvspan(*tb_butter, alpha=0.4, color="orange", label="Transition Band")
+axs[0].axvspan(tb_butter[1], 500, alpha=0.4, color="red", label="Stop Band")
+axs[0].legend().get_frame().set_alpha(1.)
+axs[0].set_xlim(0, 500)
+axs[0].set_xlabel("Frequency (Hz)")
+axs[0].set_ylabel("Amplitude")
+
+axs[1].set_title("Sinc Filter")
+axs[1].plot(psd_sinc)
+axs[1].axvspan(0, tb_sinc[0], alpha=0.4, color="green", label="Pass Band")
+axs[1].axvspan(*tb_sinc, alpha=0.4, color="orange", label="Transition Band")
+axs[1].axvspan(tb_sinc[1], 500, alpha=0.4, color="red", label="Stop Band")
+axs[1].legend().get_frame().set_alpha(1.)
+axs[1].set_xlabel("Frequency (Hz)")
+
+# %%
+# The frequency band with response close to one will be preserved by the filtering (pass band),
+# the band with response close to zero will be discarded (stop band), and the band in between will be partially attenuated
+# (transition band).
+#
+# ??? note "Transition Bandwidth (Click to expand/collapse)"
+#     Here, we define the transition band as the range where the amplitude attenuation is between 99% and 1%.
+#     The `transition_bandwidth` parameter of the sinc filter is approximately the width of the transition
+#     band normalized by the sampling frequency. In the example above, if you divide the transition band width
+#     of 122Hz by the sampling frequency of 1000Hz, you get 0.122, which is close to the 0.1 value set.
+#
+# You can modulate the width of the transition band by setting the `order` parameter of the Butterworth filter
+# or the `transition_bandwidth` parameter of the sinc filter.
+# First, let's get the frequency response for a Butterworth low pass filter with different order:
+
 butter_freq = {
     order: nap.get_filter_frequency_response(250, fs, "lowpass", "butter", order=order)
     for order in [2, 4, 6]}
 
 # %%
-# ... and the frequency response for the Windowed-sinc equivalent with different transition bandwidth.
+# ... and then the frequency response for the Windowed-sinc equivalent with different transition bandwidth.
 sinc_freq = {
-    tb:nap.get_filter_frequency_response(250, fs,"lowpass", "sinc", transition_bandwidth=tb)
+    tb: nap.get_filter_frequency_response(250, fs,"lowpass", "sinc", transition_bandwidth=tb)
     for tb in [0.002, 0.02, 0.2]}
 
 # %%
 # Let's plot the frequency response of both.
-
-from scipy import signal
 
 fig = plt.figure(figsize = (20, 10))
 gs = plt.GridSpec(2, 2)
@@ -196,8 +241,8 @@ for tb in sinc_freq.keys():
     plt.legend()
 
 # %%
-# In some cases, the transition bandwidth that is too high generates a kernel that is too short. The amplitude of the
-# original signal will then be lower than expected.
+# ⚠️ **Warning:** In some cases, the transition bandwidth that is too high generates a kernel that is too short.
+# The amplitude of the original signal will then be lower than expected.
 # In this case, the solution is to decrease the transition bandwidth when using the windowed-sinc mode.
 # Note that this increases the length of the kernel significantly.
 # Let see it with the band pass filter.
@@ -287,5 +332,3 @@ plt.legend()
 plt.xlabel("Number of dimensions")
 plt.ylabel("Time (s)")
 plt.title("Low pass filtering benchmark")
-
-plt.show()
