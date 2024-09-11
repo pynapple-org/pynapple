@@ -123,7 +123,7 @@ def _get_windowed_sinc_kernel(
     -------
     np.ndarray
     """
-    M = int(np.rint(20.0 / transition_bandwidth))
+    M = int(np.rint(4.0 / transition_bandwidth))
     x = np.arange(-(M // 2), 1 + (M // 2))
     fc = np.transpose(np.atleast_2d(fc / sampling_frequency))
     kernel = np.sinc(2 * fc * x)
@@ -204,7 +204,7 @@ def _compute_filter(
     if fs is None:
         fs = data.rate
 
-    cutoff = np.array(cutoff)
+    cutoff = np.array(cutoff, dtype=float)
 
     if mode == "butter":
         return _compute_butterworth_filter(
@@ -231,7 +231,7 @@ def compute_bandpass_filter(
     ----------
     data : Tsd, TsdFrame, or TsdTensor
         The signal to be filtered.
-    cutoff : tuple of (float, float)
+    cutoff : (Numeric, Numeric)
         Cutoff frequencies in Hz.
     fs : float, optional
         The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.
@@ -288,7 +288,7 @@ def compute_bandstop_filter(
     ----------
     data : Tsd, TsdFrame, or TsdTensor
         The signal to be filtered.
-    cutoff : tuple of (float, float)
+    cutoff : (Numeric, Numeric)
         Cutoff frequencies in Hz.
     fs : float, optional
         The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.
@@ -345,7 +345,7 @@ def compute_highpass_filter(
     ----------
     data : Tsd, TsdFrame, or TsdTensor
         The signal to be filtered.
-    cutoff : float
+    cutoff : Numeric
         Cutoff frequency in Hz.
     fs : float, optional
         The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.
@@ -402,7 +402,7 @@ def compute_lowpass_filter(
     ----------
     data : Tsd, TsdFrame, or TsdTensor
         The signal to be filtered.
-    cutoff : float
+    cutoff : Numeric
         Cutoff frequency in Hz.
     fs : float, optional
         The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.
@@ -459,7 +459,7 @@ def get_filter_frequency_response(
 
     Parameters
     ----------
-    cutoff : float or tuple of float
+    cutoff : Numeric or tuple of Numeric
         Cutoff frequency in Hz.
     fs : float
         The sampling frequency of the signal in Hz.
