@@ -60,10 +60,23 @@ def _compute_butterworth_filter(
     Apply a Butterworth filter to the provided signal.
     """
     sos = _get_butter_coefficients(cutoff, filter_type, sampling_frequency, order)
-    out = np.zeros_like(data.d)
-    for ep in data.time_support:
-        slc = data.get_slice(start=ep.start[0], end=ep.end[0])
-        out[slc] = sosfiltfilt(sos, data.d[slc], axis=0)
+
+    if nap.utils.get_backend() == "jax":
+        from pynajax.jax_process_filtering import jax_sosfiltfilt
+
+        out = jax_sosfiltfilt(
+            sos,
+            data.index.values,
+            data.values,
+            data.time_support.start,
+            data.time_support.end,
+        )
+
+    else:
+        out = np.zeros_like(data.d)
+        for ep in data.time_support:
+            slc = data.get_slice(start=ep.start[0], end=ep.end[0])
+            out[slc] = sosfiltfilt(sos, data.d[slc], axis=0)
 
     kwargs = dict(t=data.t, d=out, time_support=data.time_support)
     if isinstance(data, nap.TsdFrame):
