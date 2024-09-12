@@ -236,8 +236,8 @@ def apply_bandpass_filter(
     Apply a band-pass filter to the provided signal.
     Mode can be :
 
-        - 'butter' for Butterworth filter. In this case, `order` determines the order of the filter.
-        - 'sinc' for Windowed-Sinc convolution. `transition_bandwidth` determines the transition bandwidth.
+    - `"butter"` for Butterworth filter. In this case, `order` determines the order of the filter.
+    - `"sinc"` for Windowed-Sinc convolution. `transition_bandwidth` determines the transition bandwidth.
 
     Parameters
     ----------
@@ -294,8 +294,8 @@ def apply_bandstop_filter(
     Apply a band-stop filter to the provided signal.
     Mode can be :
 
-        - 'butter' for Butterworth filter. In this case, `order` determines the order of the filter.
-        - 'sinc' for Windowed-Sinc convolution. `transition_bandwidth` determines the transition bandwidth.
+    - `"butter"` for Butterworth filter. In this case, `order` determines the order of the filter.
+    - `"sinc"` for Windowed-Sinc convolution. `transition_bandwidth` determines the transition bandwidth.
 
     Parameters
     ----------
@@ -352,8 +352,8 @@ def apply_highpass_filter(
     Apply a high-pass filter to the provided signal.
     Mode can be :
 
-        - 'butter' for Butterworth filter. In this case, `order` determines the order of the filter.
-        - 'sinc' for Windowed-Sinc convolution. `transition_bandwidth` determines the transition bandwidth.
+    - `"butter"` for Butterworth filter. In this case, `order` determines the order of the filter.
+    - `"sinc"` for Windowed-Sinc convolution. `transition_bandwidth` determines the transition bandwidth.
 
     Parameters
     ----------
@@ -410,8 +410,8 @@ def apply_lowpass_filter(
     Apply a low-pass filter to the provided signal.
     Mode can be :
 
-        - 'butter' for Butterworth filter. In this case, `order` determines the order of the filter.
-        - 'sinc' for Windowed-Sinc convolution. `transition_bandwidth` determines the transition bandwidth.
+    - `"butter"` for Butterworth filter. In this case, `order` determines the order of the filter.
+    - `"sinc"` for Windowed-Sinc convolution. `transition_bandwidth` determines the transition bandwidth.
 
     Parameters
     ----------
