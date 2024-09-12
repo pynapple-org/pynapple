@@ -17,7 +17,9 @@ from scipy import signal
 from .. import core as nap
 
 
-def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False, norm=False):
+def compute_power_spectral_density(
+    sig, fs=None, ep=None, full_range=False, norm=False, n=None
+):
     """
     Perform numpy fft on sig, returns output assuming a constant sampling rate for the signal.
 
@@ -33,6 +35,10 @@ def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False, norm
         If true, will return full fft frequency range, otherwise will return only positive values
     norm: bool, optional
         Whether the FFT result is divided by the length of the signal to normalize the amplitude
+    n: int, optional
+        Length of the transformed axis of the output. If n is smaller than the length of the input,
+        the input is cropped. If it is larger, the input is padded with zeros. If n is not given,
+        the length of the input along the axis specified by axis is used.
 
     Returns
     -------
@@ -62,8 +68,10 @@ def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False, norm
     if not isinstance(norm, bool):
         raise TypeError("norm must be of type bool")
 
-    fft_result = np.fft.fft(sig.restrict(ep).values, axis=0)
-    fft_freq = np.fft.fftfreq(len(sig.restrict(ep).values), 1 / fs)
+    fft_result = np.fft.fft(sig.restrict(ep).values, n=n, axis=0)
+    if n is None:
+        n = len(sig.restrict(ep))
+    fft_freq = np.fft.fftfreq(n, 1 / fs)
 
     if norm:
         fft_result = fft_result / fft_result.shape[0]

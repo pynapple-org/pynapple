@@ -604,6 +604,9 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         else:
             M = std_size * size_factor
 
+        if M % 2 == 0:
+            M += 1
+
         window = signal.windows.gaussian(M=M, std=std_size)
 
         if norm:
