@@ -59,8 +59,8 @@ def test_low_pass(freq, mode, order, transition_bandwidth, shape, sampling_frequ
     if sampling_frequency is not None and sampling_frequency != tsd.rate:
         sampling_frequency = tsd.rate
 
-    out = nap.compute_lowpass_filter(tsd, freq, fs=sampling_frequency, mode=mode, order=order,
-                                     transition_bandwidth=transition_bandwidth)
+    out = nap.apply_lowpass_filter(tsd, freq, fs=sampling_frequency, mode=mode, order=order,
+                                   transition_bandwidth=transition_bandwidth)
     if mode == "butter":
         out_sci = compare_scipy(tsd, ep, order, freq, tsd.rate, "lowpass")
         np.testing.assert_array_almost_equal(out.d, out_sci)
@@ -96,8 +96,8 @@ def test_high_pass(freq, mode, order, transition_bandwidth, shape, sampling_freq
     if sampling_frequency is not None and sampling_frequency != tsd.rate:
         sampling_frequency = tsd.rate
 
-    out = nap.compute_highpass_filter(tsd, freq, fs=sampling_frequency, mode=mode, order=order,
-                                      transition_bandwidth=transition_bandwidth)
+    out = nap.apply_highpass_filter(tsd, freq, fs=sampling_frequency, mode=mode, order=order,
+                                    transition_bandwidth=transition_bandwidth)
 
     if mode == "sinc":
         out_sinc = compare_sinc(tsd, ep, transition_bandwidth, freq, tsd.rate, "highpass")
@@ -134,8 +134,8 @@ def test_bandpass(freq, mode, order, transition_bandwidth, shape, sampling_frequ
     if sampling_frequency is not None and sampling_frequency != tsd.rate:
         sampling_frequency = tsd.rate
 
-    out = nap.compute_bandpass_filter(tsd, freq, fs=sampling_frequency, mode=mode, order=order,
-                                      transition_bandwidth=transition_bandwidth)
+    out = nap.apply_bandpass_filter(tsd, freq, fs=sampling_frequency, mode=mode, order=order,
+                                    transition_bandwidth=transition_bandwidth)
 
     if mode == "sinc":
         out_sinc = compare_sinc(tsd, ep, transition_bandwidth, freq, tsd.rate, "bandpass")
@@ -172,8 +172,8 @@ def test_bandstop(freq, mode, order, transition_bandwidth, shape, sampling_frequ
     if sampling_frequency is not None and sampling_frequency != tsd.rate:
         sampling_frequency = tsd.rate
 
-    out = nap.compute_bandstop_filter(tsd, freq, fs=sampling_frequency, mode=mode, order=order,
-                                      transition_bandwidth=transition_bandwidth)
+    out = nap.apply_bandstop_filter(tsd, freq, fs=sampling_frequency, mode=mode, order=order,
+                                    transition_bandwidth=transition_bandwidth)
 
     if mode == "sinc":
         out_sinc = compare_sinc(tsd, ep, transition_bandwidth, freq, tsd.rate, "bandstop")
@@ -194,10 +194,10 @@ def test_bandstop(freq, mode, order, transition_bandwidth, shape, sampling_frequ
 # Errors
 ########################################################################
 @pytest.mark.parametrize("func, freq", [
-    (nap.compute_lowpass_filter, 10),
-    (nap.compute_highpass_filter, 10),
-    (nap.compute_bandpass_filter, [10, 20]),
-    (nap.compute_bandstop_filter, [10, 20]),
+    (nap.apply_lowpass_filter, 10),
+    (nap.apply_highpass_filter, 10),
+    (nap.apply_bandpass_filter, [10, 20]),
+    (nap.apply_bandstop_filter, [10, 20]),
 ])
 @pytest.mark.parametrize("data, fs, mode, order, transition_bandwidth, expected_exception", [
     (sample_data(), None, "butter", "a", 0.02, pytest.raises(ValueError,match="Invalid value for 'order': Parameter 'order' should be of type int")),
@@ -214,10 +214,10 @@ def test_compute_filtered_signal_raise_errors(func, freq, data, fs, mode, order,
         func(data, freq, fs=fs, mode=mode, order=order, transition_bandwidth=transition_bandwidth)
 
 @pytest.mark.parametrize("func, freq, expected_exception", [
-    (nap.compute_lowpass_filter, "a", pytest.raises(ValueError)),
-    (nap.compute_highpass_filter, "b", pytest.raises(ValueError)),
-    (nap.compute_bandpass_filter, [10, "b"], pytest.raises(ValueError)),
-    (nap.compute_bandstop_filter, [10, 20, 30], pytest.raises(ValueError)),
+    (nap.apply_lowpass_filter, "a", pytest.raises(ValueError,match=r"lowpass filter require a single number. a provided instead.")),
+    (nap.apply_highpass_filter, "b", pytest.raises(ValueError,match=r"highpass filter require a single number. b provided instead.")),
+    (nap.apply_bandpass_filter, [10, "b"], pytest.raises(ValueError,match="bandpass filter require a tuple of two numbers. \[10, 'b'\] provided instead.")),
+    (nap.apply_bandstop_filter, [10, 20, 30], pytest.raises(ValueError,match=r"bandstop filter require a tuple of two numbers. \[10, 20, 30\] provided instead."))
 ])
 def test_compute_filtered_signal_bad_freq(func, freq, expected_exception):
     with expected_exception:
@@ -233,7 +233,7 @@ def test_filtering_nyquist_edge_case(nyquist_fraction, order):
     nyquist_freq = 0.5 * data.rate
     freq = nyquist_freq * nyquist_fraction
 
-    out = nap.filtering.compute_lowpass_filter(data, freq, order=order)
+    out = nap.filtering.apply_lowpass_filter(data, freq, order=order)
     assert isinstance(out, type(data))
     np.testing.assert_allclose(out.t, data.t)
     np.testing.assert_allclose(out.time_support, data.time_support)
@@ -254,8 +254,8 @@ def test_get_kernel_error(filter_type, expected_exception):
         nap.process.filtering._get_windowed_sinc_kernel(1, filter_type, 4)
 
 def test_get__error():
-    with pytest.raises(TypeError, match=r"compute_lowpass_filter\(\) missing 1 required positional argument: 'data'"):
-        nap.compute_lowpass_filter(cutoff=0.25)
+    with pytest.raises(TypeError, match=r"apply_lowpass_filter\(\) missing 1 required positional argument: 'data'"):
+        nap.apply_lowpass_filter(cutoff=0.25)
 
 
 def test_compare_sinc_kernel():

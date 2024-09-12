@@ -5,10 +5,10 @@ from .correlograms import (
 )
 from .decoding import decode_1d, decode_2d
 from .filtering import (
-    compute_bandpass_filter,
-    compute_bandstop_filter,
-    compute_highpass_filter,
-    compute_lowpass_filter,
+    apply_bandpass_filter,
+    apply_bandstop_filter,
+    apply_highpass_filter,
+    apply_lowpass_filter,
     get_filter_frequency_response,
 )
 from .perievent import (

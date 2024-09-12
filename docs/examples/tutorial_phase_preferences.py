@@ -156,7 +156,7 @@ ax1.margins(0)
 #
 # As expected, there is a strong 8Hz component during REM sleep. We can filter it using the function `nap.compute_bandpass_filter`.
 
-theta_band = nap.compute_bandpass_filter(tsd_rem, cutoff=(6.0, 10.0), fs=FS)
+theta_band = nap.apply_bandpass_filter(tsd_rem, cutoff=(6.0, 10.0), fs=FS)
 
 # %%
 # We can plot the original signal and the filtered signal.

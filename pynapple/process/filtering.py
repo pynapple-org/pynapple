@@ -1,6 +1,7 @@
 """Filtering module."""
 
 import inspect
+from collections.abc import Iterable
 from functools import wraps
 from numbers import Number
 
@@ -18,11 +19,21 @@ def _validate_filtering_inputs(func):
         sig = inspect.signature(func)
         kwargs = sig.bind_partial(*args, **kwargs).arguments
 
-        if not isinstance(kwargs["cutoff"], Number):
-            if len(kwargs["cutoff"]) != 2 or not all(
-                isinstance(fq, Number) for fq in kwargs["cutoff"]
+        cutoff = kwargs["cutoff"]
+        filter_type = kwargs["filter_type"]
+        if filter_type in ["lowpass", "highpass"] and not isinstance(cutoff, Number):
+            raise ValueError(
+                f"{filter_type} filter require a single number. {cutoff} provided instead."
+            )
+        if filter_type in ["bandpass", "bandstop"]:
+            if (
+                not isinstance(cutoff, Iterable)
+                or len(cutoff) != 2
+                or not all(isinstance(fq, Number) for fq in cutoff)
             ):
-                raise ValueError
+                raise ValueError(
+                    f"{filter_type} filter require a tuple of two numbers. {cutoff} provided instead."
+                )
 
         if "fs" in kwargs:
             if kwargs["fs"] is not None and not isinstance(kwargs["fs"], Number):
@@ -218,12 +229,13 @@ def _compute_filter(
         raise ValueError("Unrecognized filter mode. Choose either 'butter' or 'sinc'")
 
 
-def compute_bandpass_filter(
+def apply_bandpass_filter(
     data, cutoff, fs=None, mode="butter", order=4, transition_bandwidth=0.02
 ):
     """
     Apply a band-pass filter to the provided signal.
     Mode can be :
+
         - 'butter' for Butterworth filter. In this case, `order` determines the order of the filter.
         - 'sinc' for Windowed-Sinc convolution. `transition_bandwidth` determines the transition bandwidth.
 
@@ -275,12 +287,13 @@ def compute_bandpass_filter(
     )
 
 
-def compute_bandstop_filter(
+def apply_bandstop_filter(
     data, cutoff, fs=None, mode="butter", order=4, transition_bandwidth=0.02
 ):
     """
     Apply a band-stop filter to the provided signal.
     Mode can be :
+
         - 'butter' for Butterworth filter. In this case, `order` determines the order of the filter.
         - 'sinc' for Windowed-Sinc convolution. `transition_bandwidth` determines the transition bandwidth.
 
@@ -332,12 +345,13 @@ def compute_bandstop_filter(
     )
 
 
-def compute_highpass_filter(
+def apply_highpass_filter(
     data, cutoff, fs=None, mode="butter", order=4, transition_bandwidth=0.02
 ):
     """
     Apply a high-pass filter to the provided signal.
     Mode can be :
+
         - 'butter' for Butterworth filter. In this case, `order` determines the order of the filter.
         - 'sinc' for Windowed-Sinc convolution. `transition_bandwidth` determines the transition bandwidth.
 
@@ -389,12 +403,13 @@ def compute_highpass_filter(
     )
 
 
-def compute_lowpass_filter(
+def apply_lowpass_filter(
     data, cutoff, fs=None, mode="butter", order=4, transition_bandwidth=0.02
 ):
     """
     Apply a low-pass filter to the provided signal.
     Mode can be :
+
         - 'butter' for Butterworth filter. In this case, `order` determines the order of the filter.
         - 'sinc' for Windowed-Sinc convolution. `transition_bandwidth` determines the transition bandwidth.
 
@@ -452,8 +467,8 @@ def get_filter_frequency_response(
 ):
     """
     Utility function to evaluate the frequency response of a particular type of filter. The arguments are the same
-    as the function `compute_lowpass_filter`, `compute_highpass_filter`, `compute_bandpass_filter` and
-    `compute_bandstop_filter`.
+    as the function `apply_lowpass_filter`, `apply_highpass_filter`, `apply_bandpass_filter` and
+    `apply_bandstop_filter`.
 
     This function returns a pandas Series object with the index as frequencies.
 

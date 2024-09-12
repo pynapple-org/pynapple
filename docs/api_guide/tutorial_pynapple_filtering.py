@@ -5,16 +5,16 @@ Filtering
 
 The filtering module holds the functions for frequency manipulation :
 
-- `nap.compute_bandstop_filter`
-- `nap.compute_lowpass_filter`
-- `nap.compute_highpass_filter`
-- `nap.compute_bandpass_filter`
+- `nap.apply_bandstop_filter`
+- `nap.apply_lowpass_filter`
+- `nap.apply_highpass_filter`
+- `nap.apply_bandpass_filter`
 
 The functions have similar calling signatures. For example, to filter a 1000 Hz signal between
 10 and 20 Hz using a Butterworth filter:
 
 ```{python}
->>> new_tsd = nap.compute_bandpass_filter(tsd, (10, 20), fs=1000, mode='butter')
+>>> new_tsd = nap.apply_bandpass_filter(tsd, (10, 20), fs=1000, mode='butter')
 ```
 
 Currently, the filtering module provides two methods for frequency manipulation: `butter`
@@ -75,13 +75,13 @@ plt.xlim(0, 100)
 
 # %%
 # Let's say we would like to see only the 10 Hz component.
-# We can use the function `compute_bandpass_filter` with mode `butter` for Butterworth.
+# We can use the function `apply_bandpass_filter` with mode `butter` for Butterworth.
 
-sig_butter = nap.compute_bandpass_filter(sig, (8, 12), fs, mode='butter')
+sig_butter = nap.apply_bandpass_filter(sig, (8, 12), fs, mode='butter')
 
 # %%
 # Let's compare it to the `sinc` mode for Windowed-sinc.
-sig_sinc = nap.compute_bandpass_filter(sig, (8, 12), fs, mode='sinc', transition_bandwidth=0.003)
+sig_sinc = nap.apply_bandpass_filter(sig, (8, 12), fs, mode='sinc', transition_bandwidth=0.003)
 
 # %%
 # Let's plot it
@@ -95,7 +95,7 @@ plt.subplot(212)
 plt.plot(sig_butter, label = "Butterworth")
 plt.plot(sig_sinc, '--', label = "Windowed-sinc")
 plt.legend()
-plt.xlabel("Time (Hz)")
+plt.xlabel("Time (s)")
 plt.xlim(0, 1)
 
 
@@ -105,8 +105,8 @@ plt.xlim(0, 1)
 # Another use of filtering is to remove some frequencies. Here we can try to remove
 # the 50 Hz component in the signal.
 
-sig_butter = nap.compute_bandstop_filter(sig, cutoff=(45, 55), fs=fs, mode='butter')
-sig_sinc = nap.compute_bandstop_filter(sig, cutoff=(45, 55), fs=fs, mode='sinc', transition_bandwidth=0.004)
+sig_butter = nap.apply_bandstop_filter(sig, cutoff=(45, 55), fs=fs, mode='butter')
+sig_sinc = nap.apply_bandstop_filter(sig, cutoff=(45, 55), fs=fs, mode='sinc', transition_bandwidth=0.004)
 
 
 # %%
@@ -256,7 +256,7 @@ for tb in sinc_freq.keys():
 
 sinc_freq = {
     tb:nap.get_filter_frequency_response((100, 200), fs, "bandpass", "sinc", transition_bandwidth=tb)
-    for tb in [0.004, 0.5]}
+    for tb in [0.004, 0.2]}
 
 
 fig = plt.figure(figsize = (20, 10))
@@ -280,14 +280,14 @@ def get_mean_perf(tsd, mode, n=10):
     tmp = np.zeros(n)
     for i in range(n):
         t1 = perf_counter()
-        _ = nap.compute_lowpass_filter(tsd, 0.25 * tsd.rate, mode=mode)
+        _ = nap.apply_lowpass_filter(tsd, 0.25 * tsd.rate, mode=mode)
         t2 = perf_counter()
         tmp[i] = t2 - t1
     return [np.mean(tmp), np.std(tmp)]
 
 def benchmark_time_points(mode):
     times = []
-    for T in np.arange(1000, 100000, 40000):
+    for T in np.arange(1000, 100000, 20000):
         time_array = np.arange(T)/1000
         data_array = np.random.randn(len(time_array))
         startend = np.linspace(0, time_array[-1], T//100).reshape(T//200, 2)
@@ -298,7 +298,7 @@ def benchmark_time_points(mode):
 
 def benchmark_dimensions(mode):
     times = []
-    for n in np.arange(1, 100, 30):
+    for n in np.arange(1, 100, 10):
         time_array = np.arange(10000)/1000
         data_array = np.random.randn(len(time_array), n)
         startend = np.linspace(0, time_array[-1], 10000//100).reshape(10000//200, 2)
