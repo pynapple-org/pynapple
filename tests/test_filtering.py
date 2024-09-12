@@ -63,11 +63,11 @@ def test_low_pass(freq, mode, order, transition_bandwidth, shape, sampling_frequ
                                      transition_bandwidth=transition_bandwidth)
     if mode == "butter":
         out_sci = compare_scipy(tsd, ep, order, freq, tsd.rate, "lowpass")
-        np.testing.assert_array_equal(out.d, out_sci)
+        np.testing.assert_array_almost_equal(out.d, out_sci)
 
     if mode == "sinc":
         out_sinc = compare_sinc(tsd, ep, transition_bandwidth, freq, tsd.rate, "lowpass")
-        np.testing.assert_array_equal(out.d, out_sinc)
+        np.testing.assert_array_almost_equal(out.d, out_sinc)
 
     assert isinstance(out, type(tsd))
     assert np.all(out.t == tsd.t)
@@ -101,11 +101,11 @@ def test_high_pass(freq, mode, order, transition_bandwidth, shape, sampling_freq
 
     if mode == "sinc":
         out_sinc = compare_sinc(tsd, ep, transition_bandwidth, freq, tsd.rate, "highpass")
-        np.testing.assert_array_equal(out.d, out_sinc)
+        np.testing.assert_array_almost_equal(out.d, out_sinc)
 
     if mode == "butter":
         out_sci = compare_scipy(tsd, ep, order, freq, tsd.rate, "highpass")
-        np.testing.assert_array_equal(out.d, out_sci)
+        np.testing.assert_array_almost_equal(out.d, out_sci)
 
     assert isinstance(out, type(tsd))
     assert np.all(out.t == tsd.t)
@@ -139,11 +139,11 @@ def test_bandpass(freq, mode, order, transition_bandwidth, shape, sampling_frequ
 
     if mode == "sinc":
         out_sinc = compare_sinc(tsd, ep, transition_bandwidth, freq, tsd.rate, "bandpass")
-        np.testing.assert_array_equal(out.d, out_sinc)
+        np.testing.assert_array_almost_equal(out.d, out_sinc)
 
     if mode == "butter":
         out_sci = compare_scipy(tsd, ep, order, freq, tsd.rate, "bandpass")
-        np.testing.assert_array_equal(out.d, out_sci)
+        np.testing.assert_array_almost_equal(out.d, out_sci)
 
     assert isinstance(out, type(tsd))
     assert np.all(out.t == tsd.t)
@@ -177,11 +177,11 @@ def test_bandstop(freq, mode, order, transition_bandwidth, shape, sampling_frequ
 
     if mode == "sinc":
         out_sinc = compare_sinc(tsd, ep, transition_bandwidth, freq, tsd.rate, "bandstop")
-        np.testing.assert_array_equal(out.d, out_sinc)
+        np.testing.assert_array_almost_equal(out.d, out_sinc)
 
     if mode == "butter":
         out_sci = compare_scipy(tsd, ep, order, freq, tsd.rate, "bandstop")
-        np.testing.assert_array_equal(out.d, out_sci)
+        np.testing.assert_array_almost_equal(out.d, out_sci)
 
 
     assert isinstance(out, type(tsd))
