@@ -150,7 +150,7 @@ plt.xlim(0, 70)
 # To do this, we can use the `get_filter_frequency_response` function, which returns a pandas Series with the frequencies
 # as the index and the PSD as values.
 #
-# Let's plot the frequency response of a Butterworth filter and a sinc low-pass filter.
+# Let's extract the frequency response of a Butterworth filter and a sinc low-pass filter.
 
 # compute the frequency response of the filters
 psd_butter = nap.get_filter_frequency_response(
@@ -159,6 +159,9 @@ psd_butter = nap.get_filter_frequency_response(
 psd_sinc = nap.get_filter_frequency_response(
     200, fs,"lowpass", "sinc", transition_bandwidth=0.1
 )
+
+# %%
+# ...and plot it.
 
 # compute the transition bandwidth
 tb_butter = psd_butter[psd_butter > 0.99].index.max(), psd_butter[psd_butter < 0.01].index.min()
@@ -183,6 +186,9 @@ axs[1].axvspan(*tb_sinc, alpha=0.4, color="orange", label="Transition Band")
 axs[1].axvspan(tb_sinc[1], 500, alpha=0.4, color="red", label="Stop Band")
 axs[1].legend().get_frame().set_alpha(1.)
 axs[1].set_xlabel("Frequency (Hz)")
+
+print(f"Transition band butterworth filter: ({int(tb_butter[0])}Hz, {int(tb_butter[1])}Hz)")
+print(f"Transition band sinc filter: ({int(tb_sinc[0])}Hz, {int(tb_sinc[1])}Hz)")
 
 # %%
 # The frequency band with response close to one will be preserved by the filtering (pass band),
