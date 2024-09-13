@@ -6,6 +6,7 @@ import pandas as pd
 import pytest
 import warnings
 from .mock import MockArray
+from pathlib import Path
 
 
 def test_create_iset():
@@ -77,6 +78,23 @@ def test_create_iset_from_mock_array():
     
     np.testing.assert_array_almost_equal(ep.start, start)
     np.testing.assert_array_almost_equal(ep.end, end)
+
+def test_create_iset_from_tuple():
+    start = 0
+    end = 5
+    ep = nap.IntervalSet((start, end))
+    assert isinstance(ep, nap.core.interval_set.IntervalSet)
+    np.testing.assert_array_almost_equal(start, ep.start[0])
+    np.testing.assert_array_almost_equal(end, ep.end[0])
+
+def test_create_iset_from_tuple_iter():
+    start = [0, 10, 16, 25]
+    end = [5, 15, 20, 40]
+    pairs = zip(start, end)
+    ep = nap.IntervalSet(pairs)
+    assert isinstance(ep, nap.core.interval_set.IntervalSet)
+    np.testing.assert_array_almost_equal(start, ep.start)
+    np.testing.assert_array_almost_equal(end, ep.end)
 
 def test_create_iset_from_unknown_format():    
     with pytest.raises(RuntimeError) as e:
@@ -259,12 +277,16 @@ def test_tot_length():
 
 def test_as_units():
     ep = nap.IntervalSet(start=0, end=100)
-    df = pd.DataFrame(data=np.array([[0.0, 100.0]]), columns=["start", "end"])
-    pd.testing.assert_frame_equal(df, ep.as_units("s"))
-    pd.testing.assert_frame_equal(df * 1e3, ep.as_units("ms"))
+    df = pd.DataFrame(data=np.array([[0.0, 100.0]]), columns=["start", "end"], dtype=np.float64)
+    np.testing.assert_array_almost_equal(df.values, ep.as_units("s").values.astype(np.float64))
+    np.testing.assert_array_almost_equal(df * 1e3, ep.as_units("ms").values.astype(np.float64))
     tmp = df * 1e6
-    np.testing.assert_array_almost_equal(tmp.values, ep.as_units("us").values)
+    np.testing.assert_array_almost_equal(tmp.values, ep.as_units("us").values.astype(np.float64))
 
+def test_as_dataframe():
+    ep = nap.IntervalSet(start=0, end=100)
+    df = pd.DataFrame(data=np.array([[0.0, 100.0]]), columns=["start", "end"], dtype=np.float64)
+    np.testing.assert_array_almost_equal(df.values, ep.as_dataframe().values)
 
 def test_intersect():
     ep = nap.IntervalSet(start=[0, 30], end=[10, 70])
@@ -474,48 +496,86 @@ def test_str_():
     assert isinstance(ep.__str__(), str)
 
 def test_save_npz():
-    import os
 
     start = np.around(np.array([0, 10, 16], dtype=np.float64), 9)
     end = np.around(np.array([5, 15, 20], dtype=np.float64), 9)
     ep = nap.IntervalSet(start=start,end=end)
 
-    with pytest.raises(RuntimeError) as e:
+    with pytest.raises(TypeError) as e:
         ep.save(dict)
-    assert str(e.value) == "Invalid type; please provide filename as string"
 
     with pytest.raises(RuntimeError) as e:
         ep.save('./')
-    assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+    assert str(e.value) == "Invalid filename input. {} is directory.".format(Path("./").resolve())
 
     fake_path = './fake/path'
     with pytest.raises(RuntimeError) as e:
         ep.save(fake_path+'/file.npz')
-    assert str(e.value) == "Path {} does not exist.".format(fake_path)
+    assert str(e.value) == "Path {} does not exist.".format(Path(fake_path).resolve())
 
     ep.save("ep.npz")
-    os.listdir('.')
-    assert "ep.npz" in os.listdir(".")
+    assert "ep.npz" in [f.name for f in Path('.').iterdir()]
 
     ep.save("ep2")
-    os.listdir('.')
-    assert "ep2.npz" in os.listdir(".")
+    assert "ep2.npz" in [f.name for f in Path('.').iterdir()]
 
-    file = np.load("ep.npz")
+    with np.load("ep.npz") as file:
 
-    keys = list(file.keys())    
-    assert 'start' in keys
-    assert 'end' in keys
+        keys = list(file.keys())
+        assert 'start' in keys
+        assert 'end' in keys
 
-    np.testing.assert_array_almost_equal(file['start'], start)
-    np.testing.assert_array_almost_equal(file['end'], end)
+        np.testing.assert_array_almost_equal(file['start'], start)
+        np.testing.assert_array_almost_equal(file['end'], end)
 
     # Cleaning    
-    os.remove("ep.npz")
-    os.remove("ep2.npz")    
+    Path("ep.npz").unlink()
+    Path("ep2.npz").unlink()  
 
+def test_split():
+    np.random.seed(0)
+    start = np.round(np.random.uniform(0, 10))
+    end = np.round(np.random.uniform(90, 100))
+    tmp = np.linspace(start, end, 100)    
+    interval_size = np.round(tmp[1] - tmp[0], 9)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")    
+        ep0 = nap.IntervalSet(tmp[0:-1], tmp[1:])
+    ep = nap.IntervalSet(tmp[0], tmp[-1])
+    ep1 = ep.split(interval_size)
+    np.testing.assert_array_almost_equal(ep0, ep1)
 
+    # Test with a smaller epochs
+    start = np.hstack((tmp[0:-1], np.array([200])))
+    end = np.hstack((tmp[1:], np.array([200+0.9*interval_size])))
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")    
+        ep2 = nap.IntervalSet(start, end)
 
+    ep = nap.IntervalSet([start[0], 200], end[-2:])
+    ep1 = ep.split(interval_size)
+    np.testing.assert_array_almost_equal(ep0, ep1)
+
+    # Empty intervalset
+    ep = nap.IntervalSet([], [])
+    assert len(ep.split(1)) == 0
+
+def test_split_errors():
+    start = [0, 10, 16, 25]
+    end = [5, 15, 20, 40]
+    ep = nap.IntervalSet(start=start, end=end)
+
+    with pytest.raises(IOError,  match="Argument interval_size should of type float or int"):
+        ep.split('a')
+
+    with pytest.raises(IOError) as e:
+        ep.split(0)
+    assert str(e.value) == "Argument interval_size should be strictly larger than 0"
+    
+    with pytest.raises(IOError) as e:
+        ep.split(1, time_units=1)
+    assert str(e.value) == "Argument time_units should be of type str"
+    
 
 
 

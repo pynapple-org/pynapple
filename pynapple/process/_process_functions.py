@@ -227,7 +227,6 @@ def _perievent_trigger_average(
 def _perievent_continuous(
     time_array, data_array, time_target_array, starts, ends, windowsize
 ):
-
     idx, slice_idx, N_target, w_starts = _jitcontinuous_perievent(
         time_array, time_target_array, starts, ends, windowsize
     )

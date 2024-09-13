@@ -13,7 +13,7 @@ https://github.com/MouseLand/suite2p
 
 """
 
-import os
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
@@ -60,7 +60,8 @@ class Suite2P(BaseLoader):
         path : str
             The path of the session
         """
-        self.basename = os.path.basename(path)
+        path = Path(path)
+        self.basename = path.name
 
         super().__init__(path)
 
@@ -75,13 +76,6 @@ class Suite2P(BaseLoader):
         path : str
             Path to the session
         """
-        self.nwb_path = os.path.join(path, "pynapplenwb")
-        if not os.path.exists(self.nwb_path):
-            raise RuntimeError("Path {} does not exist.".format(self.nwb_path))
-
-        self.nwbfilename = [f for f in os.listdir(self.nwb_path) if "nwb" in f][0]
-        self.nwbfilepath = os.path.join(self.nwb_path, self.nwbfilename)
-
         io = NWBHDF5IO(self.nwbfilepath, "r")
         nwbfile = io.read()
 

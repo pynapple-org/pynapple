@@ -1,21 +1,12 @@
-#!/usr/bin/env python
-
-# -*- coding: utf-8 -*-
-# @Author: Guillaume Viejo
-# @Date:   2023-05-15 15:32:24
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-08-06 17:37:23
-
 """
 The Folder class helps to navigate a hierarchical data tree.
 """
 
-
 import json
-import os
 import string
 from collections import UserDict
 from datetime import datetime
+from pathlib import Path
 
 from rich.console import Console  # , ConsoleOptions, RenderResult
 from rich.panel import Panel
@@ -30,27 +21,29 @@ def _find_files(path, extension=".npz"):
 
     Parameters
     ----------
-    path : TYPE
-        Description
+    path : str or Path
+        The directory path where files will be searched.
     extension : str, optional
-        Description
+        The file extension to look for, default is ".npz".
 
     Returns
     -------
-    TYPE
-        Description
+    dict
+        Dictionary with filenames (without extension and whitespace) as keys
+        and NPZFile or NWBFile objects as values.
     """
+    extension = extension if extension.startswith(".") else "." + extension
+    path = Path(path)  # Ensure path is a Path object
     files = {}
-    for f in os.scandir(path):
-        if f.is_file() and f.name.endswith(extension):
-            if extension == "npz":
-                filename = os.path.splitext(os.path.basename(f.path))[0]
-                filename.translate({ord(c): None for c in string.whitespace})
-                files[filename] = NPZFile(f.path)
-            elif extension == "nwb":
-                filename = os.path.splitext(os.path.basename(f.path))[0]
-                filename.translate({ord(c): None for c in string.whitespace})
-                files[filename] = NWBFile(f.path)
+    extensions_dict = {".npz": NPZFile, ".nwb": NWBFile}
+    assert extension in extensions_dict.keys(), f"Extension {extension} not supported"
+
+    for f in path.iterdir():
+        if f.is_file() and f.suffix == extension:
+            filename = f.stem
+            filename = filename.translate({ord(c): None for c in string.whitespace})
+            files[filename] = extensions_dict[extension](f)
+
     return files
 
 
@@ -108,9 +101,9 @@ class Folder(UserDict):
         path : str
             Path to the folder
         """
-        path = path.rstrip("/")
+        path = Path(path)
         self.path = path
-        self.name = os.path.basename(path)
+        self.name = self.path.name
         self._basic_view = Tree(
             ":open_file_folder: {}".format(self.name), guide_style="blue"
         )
@@ -118,16 +111,15 @@ class Folder(UserDict):
 
         # Search sub-folders
         subfolds = [
-            f.path
-            for f in os.scandir(path)
-            if f.is_dir() and not f.name.startswith(".")
+            p for p in path.iterdir() if p.is_dir() and not p.name.startswith(".")
         ]
+
         subfolds.sort()
 
         self.subfolds = {}
 
         for s in subfolds:
-            sub = os.path.basename(s)
+            sub = s.name
             self.subfolds[sub] = Folder(s)
             self._basic_view.add(":open_file_folder: [blue]" + sub)
 
@@ -244,14 +236,14 @@ class Folder(UserDict):
         description : str, optional
             Metainformation added as a json sidecar.
         """
-        filepath = os.path.join(self.path, name)
+        filepath = self.path / (name + ".npz")
         obj.save(filepath)
-        self.npz_files[name] = NPZFile(filepath + ".npz")
+        self.npz_files[name] = NPZFile(filepath)
         self.data[name] = obj
 
         metadata = {"time": str(datetime.now()), "info": str(description)}
 
-        with open(os.path.join(self.path, name + ".json"), "w") as ff:
+        with open(self.path / (name + ".json"), "w") as ff:
             json.dump(metadata, ff, indent=2)
 
         # regenerate the tree view
@@ -295,19 +287,18 @@ class Folder(UserDict):
             Name of the npz file
         """
         # Search for json first
-        json_filename = os.path.join(self.path, name + ".json")
-        if os.path.isfile(json_filename):
+        json_filename = self.path / (name + ".json")
+        title = self.path / (name + ".npz")
+        if json_filename.exists():
             with open(json_filename, "r") as ff:
                 metadata = json.load(ff)
                 text = "\n".join([" : ".join(it) for it in metadata.items()])
-            panel = Panel.fit(
-                text, border_style="green", title=os.path.join(self.path, name + ".npz")
-            )
+            panel = Panel.fit(text, border_style="green", title=str(title))
         else:
             panel = Panel.fit(
                 "No metadata",
                 border_style="red",
-                title=os.path.join(self.path, name + ".npz"),
+                title=str(title),
             )
         with Console() as console:
             console.print(panel)

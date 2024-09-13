@@ -98,7 +98,6 @@ class PynappleConfig:
         self.set_backend(backend)
 
     def set_backend(self, backend):
-
         assert backend in ["numba", "jax"], "Options for backend are 'jax' or 'numba'"
 
         # Try to import pynajax

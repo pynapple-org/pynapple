@@ -1,18 +1,19 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-03-30 11:14:41
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-11 14:42:50
+
 
 """Tests of ts group for `pynapple` package."""
 
-import pynapple as nap
+import pickle
+import warnings
+from collections import UserDict
+from contextlib import nullcontext as does_not_raise
+
 import numpy as np
 import pandas as pd
 import pytest
-from collections import UserDict
-import warnings
-from contextlib import nullcontext as does_not_raise
+from pathlib import Path
+
+import pynapple as nap
+
 
 @pytest.fixture
 def group():
@@ -33,6 +34,16 @@ def ts_group():
     group = nap.TsGroup(data, meta=[10, 11])
     return group
 
+
+@pytest.fixture
+def ts_group_one_group():
+    # Placeholder setup for Ts and Tsd objects. Adjust as necessary.
+    ts1 = nap.Ts(t=np.arange(10))
+    data = {1: ts1}
+    group = nap.TsGroup(data, meta=[10])
+    return group
+
+
 class TestTsGroup1:
 
     def test_create_ts_group(self, group):
@@ -40,10 +51,19 @@ class TestTsGroup1:
         assert isinstance(tsgroup, UserDict)
         assert len(tsgroup) == 3
 
+    def test_create_ts_group_from_iter(self, group):
+        tsgroup = nap.TsGroup(group.values())
+        assert isinstance(tsgroup, UserDict)
+        assert len(tsgroup) == 3
+
+    def test_create_ts_group_from_invalid(self):
+        with pytest.raises(AttributeError):
+            tsgroup = nap.TsGroup(np.arange(0, 200))
+
     @pytest.mark.parametrize(
         "test_dict, expectation",
         [
-            ({"1": nap.Ts(np.arange(10)), "2":nap.Ts(np.arange(10))}, does_not_raise()),
+            ({"1": nap.Ts(np.arange(10)), "2": nap.Ts(np.arange(10))}, does_not_raise()),
             ({"1": nap.Ts(np.arange(10)), 2: nap.Ts(np.arange(10))}, does_not_raise()),
             ({"1": nap.Ts(np.arange(10)), 1: nap.Ts(np.arange(10))},
              pytest.raises(ValueError, match="Two dictionary keys contain the same integer")),
@@ -70,7 +90,6 @@ class TestTsGroup1:
     )
     def test_metadata_len_match(self, tsgroup):
         assert len(tsgroup._metadata) == len(tsgroup)
-
 
     def test_create_ts_group_from_array(self):
         with warnings.catch_warnings(record=True) as w:
@@ -123,7 +142,8 @@ class TestTsGroup1:
         ar_info = np.ones(3) * 1
         tsgroup = nap.TsGroup(group, sr=sr_info, ar=ar_info)
         assert tsgroup._metadata.shape == (3, 3)
-        pd.testing.assert_series_equal(tsgroup._metadata["sr"], sr_info)
+        np.testing.assert_array_almost_equal(tsgroup._metadata["sr"].values, sr_info.values)
+        np.testing.assert_array_almost_equal(tsgroup._metadata["sr"].index.values, sr_info.index.values)
         np.testing.assert_array_almost_equal(tsgroup._metadata["ar"].values, ar_info)
 
     def test_add_metainfo(self, group):
@@ -289,6 +309,9 @@ class TestTsGroup1:
 
         count = tsgroup.count()
         np.testing.assert_array_almost_equal(count.values, np.array([[101, 201, 501]]))
+
+        count = tsgroup.count(1.0, dtype=np.int16)
+        assert count.dtype == np.dtype(np.int16)
 
     def test_count_with_ep(self, group):
         ep = nap.IntervalSet(start=0, end=100)
@@ -515,8 +538,6 @@ class TestTsGroup1:
 
     def test_save_npz(self, group):
 
-        import os
-
         group = {
             0: nap.Tsd(t=np.arange(0, 20), d = np.random.rand(20)),
             1: nap.Tsd(t=np.arange(0, 20, 0.5), d=np.random.rand(40)),
@@ -525,26 +546,23 @@ class TestTsGroup1:
 
         tsgroup = nap.TsGroup(group, meta = np.arange(len(group), dtype=np.int64), meta2 = np.array(['a', 'b', 'c']))
 
-        with pytest.raises(RuntimeError) as e:
+        with pytest.raises(TypeError) as e:
             tsgroup.save(dict)
-        assert str(e.value) == "Invalid type; please provide filename as string"
 
         with pytest.raises(RuntimeError) as e:
             tsgroup.save('./')
-        assert str(e.value) == "Invalid filename input. {} is directory.".format("./")
+        assert str(e.value) == "Invalid filename input. {} is directory.".format(Path("./").resolve())
 
         fake_path = './fake/path'
         with pytest.raises(RuntimeError) as e:
             tsgroup.save(fake_path+'/file.npz')
-        assert str(e.value) == "Path {} does not exist.".format(fake_path)
+        assert str(e.value) == "Path {} does not exist.".format(Path(fake_path).resolve())
 
         tsgroup.save("tsgroup.npz")
-        os.listdir('.')
-        assert "tsgroup.npz" in os.listdir(".")
+        assert "tsgroup.npz" in [f.name for f in Path('.').iterdir()]
 
         tsgroup.save("tsgroup2")
-        os.listdir('.')
-        assert "tsgroup2.npz" in os.listdir(".")
+        assert "tsgroup2.npz" in [f.name for f in Path('.').iterdir()]
 
         file = np.load("tsgroup.npz")
 
@@ -585,9 +603,9 @@ class TestTsGroup1:
             assert 'd' not in list(file.keys())
             np.testing.assert_array_almost_equal(file['t'], tsgroup3[0].index)
 
-        os.remove("tsgroup.npz")
-        os.remove("tsgroup2.npz")
-        os.remove("tsgroup3.npz")
+        Path("tsgroup.npz").unlink()
+        Path("tsgroup2.npz").unlink()
+        Path("tsgroup3.npz").unlink()
 
     @pytest.mark.parametrize(
         "keys, expectation",
@@ -855,3 +873,50 @@ class TestTsGroup1:
                 ts_group.time_support.as_units("s").to_numpy(),
                 merged.time_support.as_units("s").to_numpy()
                 )
+
+
+def test_pickling(ts_group):
+    """Test that pikling works as expected."""
+    # pickle and unpickle ts_group
+    pickled_obj = pickle.dumps(ts_group)
+    unpickled_obj = pickle.loads(pickled_obj)
+
+    # Ensure the type is the same
+    assert type(ts_group) is type(unpickled_obj), "Types are different"
+
+    # Ensure that TsGroup have same len
+    assert len(ts_group) == len(unpickled_obj)
+
+    # Ensure that metadata content is the same
+    assert np.all(unpickled_obj._metadata == ts_group._metadata)
+
+    # Ensure that metadata columns are the same
+    assert np.all(unpickled_obj._metadata.columns == ts_group._metadata.columns)
+
+    # Ensure that the Ts are the same
+    assert all([np.all(ts_group[key].t == unpickled_obj[key].t) for key in unpickled_obj.keys()])
+
+    # Ensure time support is the same
+    assert np.all(ts_group.time_support == unpickled_obj.time_support)
+
+
+@pytest.mark.parametrize(
+    "dtype, expectation",
+    [
+        (None, does_not_raise()),
+        (float, does_not_raise()),
+        (int, does_not_raise()),
+        (np.int32, does_not_raise()),
+        (np.int64, does_not_raise()),
+        (np.float32, does_not_raise()),
+        (np.float64, does_not_raise()),
+        (1, pytest.raises(ValueError, match=f"1 is not a valid numpy dtype")),
+    ]
+)
+def test_count_dtype(dtype, expectation, ts_group, ts_group_one_group):
+    with expectation:
+        count = ts_group.count(bin_size=0.1, dtype=dtype)
+        count_one = ts_group_one_group.count(bin_size=0.1, dtype=dtype)
+        if dtype:
+            assert np.issubdtype(count.dtype, dtype)
+            assert np.issubdtype(count_one.dtype, dtype)

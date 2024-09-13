@@ -1,5 +1,5 @@
 import numpy as np
-from numba import jit, njit, prange
+from numba import jit  # , njit, prange
 
 
 ################################
@@ -44,11 +44,11 @@ def jitrestrict(time_array, starts, ends):
 
 
 @jit(nopython=True)
-def jitrestrict_with_count(time_array, starts, ends):
+def jitrestrict_with_count(time_array, starts, ends, dtype=np.int64):
     n = len(time_array)
     m = len(starts)
     ix = np.zeros(n, dtype=np.int64)
-    count = np.zeros(m, dtype=np.int64)
+    count = np.zeros(m, dtype=dtype)
 
     k = 0
     t = 0
@@ -118,7 +118,7 @@ def jitvaluefrom(time_array, time_target_array, count, count_target, starts, end
 
 
 @jit(nopython=True)
-def jitcount(time_array, starts, ends, bin_size):
+def jitcount(time_array, starts, ends, bin_size, dtype):
     idx, countin = jitrestrict_with_count(time_array, starts, ends)
     time_array = time_array[idx]
 
@@ -133,7 +133,7 @@ def jitcount(time_array, starts, ends, bin_size):
 
     nb = np.sum(nb_bins)
     bins = np.zeros(nb, dtype=np.float64)
-    cnt = np.zeros(nb, dtype=np.int64)
+    cnt = np.zeros(nb, dtype=dtype)
 
     k = 0
     t = 0
@@ -322,7 +322,6 @@ def jitbin_array(time_array, data_array, starts, ends, bin_size):
 
 @jit(nopython=True)
 def _jitbin_array(countin, time_array, data_array, starts, ends, bin_size):
-
     m = starts.shape[0]
     f = data_array.shape[1:]
 
@@ -375,33 +374,33 @@ def _jitbin_array(countin, time_array, data_array, starts, ends, bin_size):
     return (new_time_array, new_data_array)
 
 
-@jit(nopython=True)
-def jitconvolve(d, a):
-    return np.convolve(d, a)
+# @jit(nopython=True)
+# def jitconvolve(d, a):
+#     return np.convolve(d, a)
 
 
-@njit(parallel=True)
-def pjitconvolve(data_array, array, trim="both"):
-    shape = data_array.shape
-    t = shape[0]
-    k = array.shape[0]
+# @njit(parallel=True)
+# def pjitconvolve(data_array, array, trim="both"):
+#     shape = data_array.shape
+#     t = shape[0]
+#     k = array.shape[0]
 
-    data_array = data_array.reshape(t, -1)
-    new_data_array = np.zeros(data_array.shape)
+#     data_array = data_array.reshape(t, -1)
+#     new_data_array = np.zeros(data_array.shape)
 
-    if trim == "both":
-        cut = ((k - 1) // 2, t + k - 1 - ((k - 1) // 2) - (1 - k % 2))
-    elif trim == "left":
-        cut = (k - 1, t + k - 1)
-    elif trim == "right":
-        cut = (0, t)
+#     if trim == "both":
+#         cut = ((k - 1) // 2, t + k - 1 - ((k - 1) // 2) - (1 - k % 2))
+#     elif trim == "left":
+#         cut = (k - 1, t + k - 1)
+#     elif trim == "right":
+#         cut = (0, t)
 
-    for i in prange(data_array.shape[1]):
-        new_data_array[:, i] = jitconvolve(data_array[:, i], array)[cut[0] : cut[1]]
+#     for i in prange(data_array.shape[1]):
+#         new_data_array[:, i] = jitconvolve(data_array[:, i], array)[cut[0] : cut[1]]
 
-    new_data_array = new_data_array.reshape(shape)
+#     new_data_array = new_data_array.reshape(shape)
 
-    return new_data_array
+#     return new_data_array
 
 
 ################################

@@ -4,7 +4,6 @@
 
 """
 
-import os
 import warnings
 from collections import UserDict
 from collections.abc import Hashable
@@ -21,7 +20,7 @@ from .config import nap_config
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
-from .utils import _get_terminal_size, convert_to_numpy_array
+from .utils import _get_terminal_size, check_filename, convert_to_numpy_array
 
 
 def _union_intervals(i_sets):
@@ -76,9 +75,9 @@ class TsGroup(UserDict):
 
         Parameters
         ----------
-        data : dict
-            Dictionary containing Ts/Tsd objects, keys should contain integer values or should be convertible
-            to integer.
+        data : dict or iterable
+            Dictionary or iterable of Ts/Tsd objects. The keys should be integer-convertible; if a non-dict iterator is
+            passed, its values will be used to create a dict with integer keys.
         time_support : IntervalSet, optional
             The time support of the TsGroup. Ts/Tsd objects will be restricted to the time support if passed.
             If no time support is specified, TsGroup will merge time supports from all the Ts/Tsd objects in data.
@@ -101,7 +100,25 @@ class TsGroup(UserDict):
             - If the converted keys are not unique, i.e. {1: ts_2, "2": ts_2} is valid,
             {1: ts_2, "1": ts_2}  is invalid.
         """
+        # Check input type
+        if time_units not in ["s", "ms", "us"]:
+            raise ValueError("Argument time_units should be 's', 'ms' or 'us'")
+        if not isinstance(bypass_check, bool):
+            raise TypeError("Argument bypass_check should be of type bool")
+        passed_time_support = False
+
+        if isinstance(time_support, IntervalSet):
+            passed_time_support = True
+        else:
+            if time_support is not None:
+                raise TypeError("Argument time_support should be of type IntervalSet")
+            else:
+                passed_time_support = False
+
         self._initialized = False
+
+        if not isinstance(data, dict):
+            data = dict(enumerate(data))
 
         # convert all keys to integer
         try:
@@ -109,7 +126,7 @@ class TsGroup(UserDict):
         except Exception:
             raise ValueError("All keys must be convertible to integer.")
 
-        # check that there were no floats with decimal points in keys.i
+        # check that there were no floats with decimal points in keys.
         # i.e. 0.5 is not a valid key
         if not all(np.allclose(keys[j], float(k)) for j, k in enumerate(data.keys())):
             raise ValueError("All keys must have integer value!}")
@@ -121,6 +138,8 @@ class TsGroup(UserDict):
 
         data = {keys[j]: data[k] for j, k in enumerate(data.keys())}
         self.index = np.sort(keys)
+        # Make sure data dict and index are ordered the same
+        data = {k: data[k] for k in self.index}
 
         self._metadata = pd.DataFrame(index=self.index, columns=["rate"], dtype="float")
 
@@ -141,7 +160,7 @@ class TsGroup(UserDict):
                     )
 
         # If time_support is passed, all elements of data are restricted prior to init
-        if isinstance(time_support, IntervalSet):
+        if passed_time_support:
             self.time_support = time_support
             if not bypass_check:
                 data = {k: data[k].restrict(self.time_support) for k in self.index}
@@ -187,6 +206,10 @@ class TsGroup(UserDict):
         AttributeError
             If the requested attribute is not a metadata column.
         """
+        # avoid infinite recursion when pickling due to
+        # self._metadata.column having attributes '__reduce__', '__reduce_ex__'
+        if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
+            raise AttributeError(name)
         # Check if the requested attribute is part of the metadata
         if name in self._metadata.columns:
             return self._metadata[name]
@@ -588,7 +611,7 @@ class TsGroup(UserDict):
         cols = self._metadata.columns.drop("rate")
         return TsGroup(newgr, time_support=ep, **self._metadata[cols])
 
-    def count(self, *args, **kwargs):
+    def count(self, *args, dtype=None, **kwargs):
         """
         Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
         You can call this function in multiple ways :
@@ -616,6 +639,8 @@ class TsGroup(UserDict):
             IntervalSet to restrict the operation
         time_units : str, optional
             Time units of bin size ('us', 'ms', 's' [default])
+        dtype: type, optional
+            Data type for the count. Default is np.int64.
 
         Returns
         -------
@@ -684,6 +709,12 @@ class TsGroup(UserDict):
                 if isinstance(a, IntervalSet):
                     ep = a
 
+        if dtype:
+            try:
+                dtype = np.dtype(dtype)
+            except Exception:
+                raise ValueError(f"{dtype} is not a valid numpy dtype.")
+
         starts = ep.start
         ends = ep.end
 
@@ -694,20 +725,28 @@ class TsGroup(UserDict):
         # Call it on first element to pre-allocate the array
         if len(self) >= 1:
             time_index, d = _count(
-                self.data[self.index[0]].index.values, starts, ends, bin_size
+                self.data[self.index[0]].index.values,
+                starts,
+                ends,
+                bin_size,
+                dtype=dtype,
             )
 
-            count = np.zeros((len(time_index), len(self.index)), dtype=np.int64)
+            count = np.zeros((len(time_index), len(self.index)), dtype=dtype)
             count[:, 0] = d
 
             for i in range(1, len(self.index)):
                 count[:, i] = _count(
-                    self.data[self.index[i]].index.values, starts, ends, bin_size
+                    self.data[self.index[i]].index.values,
+                    starts,
+                    ends,
+                    bin_size,
+                    dtype=dtype,
                 )[1]
 
             return TsdFrame(t=time_index, d=count, time_support=ep, columns=self.index)
         else:
-            time_index, _ = _count(np.array([]), starts, ends, bin_size)
+            time_index, _ = _count(np.array([]), starts, ends, bin_size, dtype=dtype)
             return TsdFrame(
                 t=time_index, d=np.empty((len(time_index), 0)), time_support=ep
             )
@@ -1306,23 +1345,7 @@ class TsGroup(UserDict):
         RuntimeError
             If filename is not str, path does not exist or filename is a directory.
         """
-        if not isinstance(filename, str):
-            raise RuntimeError("Invalid type; please provide filename as string")
-
-        if os.path.isdir(filename):
-            raise RuntimeError(
-                "Invalid filename input. {} is directory.".format(filename)
-            )
-
-        if not filename.lower().endswith(".npz"):
-            filename = filename + ".npz"
-
-        dirname = os.path.dirname(filename)
-
-        if len(dirname) and not os.path.exists(dirname):
-            raise RuntimeError(
-                "Path {} does not exist.".format(os.path.dirname(filename))
-            )
+        filename = check_filename(filename)
 
         dicttosave = {"type": np.array(["TsGroup"], dtype=np.str_)}
         for k in self._metadata.columns:
@@ -1364,3 +1387,59 @@ class TsGroup(UserDict):
         np.savez(filename, **dicttosave)
 
         return
+
+    @classmethod
+    def _from_npz_reader(cls, file):
+        """
+        Load a Tsd object from a npz file.
+
+        Parameters
+        ----------
+        file : str
+            The opened npz file
+
+        Returns
+        -------
+        Tsd
+            The Tsd object
+        """
+
+        times = file["t"]
+        index = file["index"]
+        has_data = "d" in file.keys()
+        time_support = IntervalSet(file["start"], file["end"])
+
+        if has_data:
+            data = file["data"]
+
+        if "keys" in file.keys():
+            keys = file["keys"]
+        else:
+            keys = np.unique(index)
+
+        group = {}
+        for key in keys:
+            filtering_index = index == key
+            t = times[filtering_index]
+
+            if has_data:
+                group[key] = Tsd(
+                    t=t,
+                    d=data[filtering_index],
+                    time_support=time_support,
+                )
+            else:
+                group[key] = Ts(t=t, time_support=time_support)
+
+        tsgroup = cls(group, time_support=time_support, bypass_check=True)
+
+        metainfo = {}
+        not_info_keys = {"start", "end", "t", "index", "d", "rate", "keys"}
+
+        for k in set(file.keys()) - not_info_keys:
+            tmp = file[k]
+            if len(tmp) == len(tsgroup):
+                metainfo[k] = tmp
+
+        tsgroup.set_info(**metainfo)
+        return tsgroup

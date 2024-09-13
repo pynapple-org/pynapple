@@ -6,7 +6,29 @@ Another postdoc in the lab, Francesco Battaglia, then made major contributions t
 Around 2016-2017, Luke Sjulson started *TSToolbox2*, still in Matlab and which includes some important changes.
 
 In 2018, Francesco started neuroseries, a Python package built on Pandas. It was quickly adopted in Adrien's lab, especially by Guillaume Viejo, a postdoc in the lab. Gradually, the majority of the lab was using it and new functions were constantly added.
-In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuroseries and started *pynapple*. The core of pynapple is largely built upon neuroseries. Some of the original changes to TSToolbox made by Luke were included in this package, especially the *time_support* property of all ts/tsd objects.
+In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuroseries and started *pynapple*. 
+The core of pynapple is largely built upon neuroseries. Some of the original changes to TSToolbox made by Luke were included in this package, especially the *time_support* property of all ts/tsd objects.
+
+Since 2023, the development of pynapple is lead by [Guillaume Viejo](https://www.simonsfoundation.org/people/guillaume-viejo/) 
+and [Edoardo Balzani](https://www.simonsfoundation.org/people/edoardo-balzani/) at the Center for Computational Neuroscience 
+of the Flatiron institute.
+
+
+
+0.7.0 (2024-09-16)
+------------------
+
+- Morlet wavelets spectrogram with utility for plotting the wavelets.
+- (Mean) Power spectral density. Returns a Pandas DataFrame.
+- Convolve function works for any dimension of time series and any dimensions of kernel.
+- `dtype` in count function
+- `get_slice`: public method with a simplified API, argument start, end, time_units. returns a slice that matches behavior of Base.get.
+- `_get_slice`: private method, adds the argument "mode" this can be: "after_t", "before_t", "closest_t", "restrict".
+- `split` method for IntervalSet. Argument is `interval_size` in time unit.
+- Changed os import to pathlib.
+- Fixed pickling issue. TsGroup can now be saved as pickle.
+- TsGroup can be created from an iterable of Ts/Tsd objects.
+- IntervalSet can be created from (start, end) pairs
 
 0.6.6 (2024-05-28)
 ------------------
