@@ -33,7 +33,7 @@ New release :fire:
 
 ### pynapple >= 0.7
 
-Pynapple now implements signal processing. For example, you can filter any time series with a particular bandpass:
+Pynapple now implements signal processing. For example, to filter a 1250 Hz sampled time series between 10 Hz and 20 Hz:
 
 ```python
 nap.apply_bandpass_filter(signal, (10, 20), fs=1250)

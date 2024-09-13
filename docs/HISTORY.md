@@ -9,7 +9,8 @@ In 2018, Francesco started neuroseries, a Python package built on Pandas. It was
 In 2021, Guillaume and other trainees in Adrien's lab decided to fork from neuroseries and started *pynapple*. 
 The core of pynapple is largely built upon neuroseries. Some of the original changes to TSToolbox made by Luke were included in this package, especially the *time_support* property of all ts/tsd objects.
 
-Since 2023, the development of pynapple is lead by Guillaume Viejo and Edoardo Balzani at the Center for Computational Neuroscience 
+Since 2023, the development of pynapple is lead by [Guillaume Viejo](https://www.simonsfoundation.org/people/guillaume-viejo/) 
+and [Edoardo Balzani](https://www.simonsfoundation.org/people/edoardo-balzani/) at the Center for Computational Neuroscience 
 of the Flatiron institute.
 
 
@@ -19,7 +20,15 @@ of the Flatiron institute.
 
 - Morlet wavelets spectrogram with utility for plotting the wavelets.
 - (Mean) Power spectral density. Returns a Pandas DataFrame.
-- 
+- Convolve function works for any dimension of time series and any dimensions of kernel.
+- `dtype` in count function
+- `get_slice`: public method with a simplified API, argument start, end, time_units. returns a slice that matches behavior of Base.get.
+- `_get_slice`: private method, adds the argument "mode" this can be: "after_t", "before_t", "closest_t", "restrict".
+- `split` method for IntervalSet. Argument is `interval_size` in time unit.
+- Changed os import to pathlib.
+- Fixed pickling issue. TsGroup can now be saved as pickle.
+- TsGroup can be created from an iterable of Ts/Tsd objects.
+- IntervalSet can be created from (start, end) pairs
 
 0.6.6 (2024-05-28)
 ------------------
