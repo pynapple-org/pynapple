@@ -31,6 +31,15 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 New release :fire:
 ------------------
 
+### pynapple >= 0.7
+
+Pynapple now implements signal processing. For example, to filter a 1250 Hz sampled time series between 10 Hz and 20 Hz:
+
+```python
+nap.apply_bandpass_filter(signal, (10, 20), fs=1250)
+```
+New functions includes power spectral density and Morlet wavelet decomposition. See the [documentation](https://pynapple-org.github.io/pynapple/reference/process/) for more details.
+
 ### pynapple >= 0.6
 
 Starting with 0.6, [`IntervalSet`](https://pynapple-org.github.io/pynapple/reference/core/interval_set/) objects are behaving as immutable numpy ndarray. Before 0.6, you could select an interval within an `IntervalSet` object with:
@@ -44,8 +53,6 @@ With pynapple>=0.6, the slicing is similar to numpy and it returns an `IntervalS
 ```python
 new_intervalset = intervalset[0]
 ```
-
-See the [documentation](https://pynapple-org.github.io/pynapple/reference/core/interval_set/) for more details.
 
 ### pynapple >= 0.4
 
