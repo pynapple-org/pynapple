@@ -1,17 +1,82 @@
 # -*- coding: utf-8 -*-
 """
+FUnctions for computing tuning curves :
+
+
 """
-# @Author: gviejo
-# @Date:   2022-01-02 23:33:42
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-01-29 11:10:07
 
 import warnings
-
+import inspect
+from collections.abc import Iterable
+from functools import wraps
 import numpy as np
 import pandas as pd
 
 from .. import core as nap
+
+def _validate_tuning_inputs(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Validate each positional argument
+        sig = inspect.signature(func)
+        kwargs = sig.bind_partial(*args, **kwargs).arguments
+
+        if "feature" in kwargs:
+            if not isinstance(kwargs["feature"], (nap.Tsd, nap.TsdFrame)):
+                raise TypeError(
+                    "feature should be a Tsd (or TsdFrame with 1 column only)"
+                )
+            if isinstance(kwargs["feature"], nap.TsdFrame) and not kwargs["feature"].shape[1] == 1:
+                raise ValueError(
+                    "feature should be a Tsd (or TsdFrame with 1 column only)"
+                )
+        if "features" in kwargs:
+            if not isinstance(kwargs["features"], nap.TsdFrame):
+                raise TypeError(
+                    "features should be a TsdFrame with 2 columns"
+                )
+            if isinstance(kwargs["features"], nap.TsdFrame) and not kwargs["features"].shape[1] == 2:
+                raise ValueError(
+                    "features should have 2 columns only."
+                )
+        if "nb_bins" in kwargs:
+            if not isinstance(kwargs["nb_bins"], int):
+                raise TypeError(
+                    "nb_bins should be of type bins"
+                )
+        if "group" in kwargs:
+            if not isinstance(kwargs["group"], nap.TsGroup):
+                raise TypeError(
+                    "group should be a TsGroup."
+                )
+        if "ep" in kwargs:
+            if not isinstance(kwargs["ep"], nap.IntervalSet):
+                raise TypeError(
+                    "ep should be an IntervalSet"
+                )
+        if "minmax" in kwargs:
+            if not isinstance(kwargs["minmax"], Iterable):
+                raise TypeError(
+                    "minmax should be a tuple/list of 2 numbers"
+                )
+            if len(kwargs["minmax"]) != 2:
+                raise ValueError(
+                    "minmax should be of length 2."
+                )
+        if "dict_ep" in kwargs:
+            if not isinstance(kwargs["dict_ep"], dict):
+                raise TypeError(
+                    "dict_ep should be a dictionary of IntervalSet"
+                )
+            if not all([isinstance(v, nap.IntervalSet) for v in kwargs["dict_ep"]]):
+                raise TypeError(
+                    f"dict_ep argument should contain only IntervalSet."
+                )
+
+        # Call the original function with validated inputs
+        return func(**kwargs)
+
+    return wrapper
 
 
 def compute_discrete_tuning_curves(group, dict_ep):
@@ -52,16 +117,7 @@ def compute_discrete_tuning_curves(group, dict_ep):
     RuntimeError
         If group is not a TsGroup object.
     """
-    assert isinstance(group, nap.TsGroup), "group should be a TsGroup."
-    assert isinstance(dict_ep, dict), "dict_ep should be a dictionary of IntervalSet"
     idx = np.sort(list(dict_ep.keys()))
-    for k in idx:
-        assert isinstance(
-            dict_ep[k], nap.IntervalSet
-        ), "dict_ep argument should contain only IntervalSet. Key {} in dict_ep is not an IntervalSet".format(
-            k
-        )
-
     tuning_curves = pd.DataFrame(index=idx, columns=list(group.keys()), data=0.0)
 
     for k in dict_ep.keys():
@@ -103,25 +159,11 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
         If group is not a TsGroup object.
 
     """
-    assert isinstance(group, nap.TsGroup), "group should be a TsGroup."
-    assert isinstance(
-        feature, (nap.Tsd, nap.TsdFrame)
-    ), "feature should be a Tsd (or TsdFrame with 1 column only)"
-    if isinstance(feature, nap.TsdFrame):
-        assert (
-            feature.shape[1] == 1
-        ), "feature should be a Tsd (or TsdFrame with 1 column only)"
-    assert isinstance(nb_bins, int)
-
     if ep is None:
         ep = feature.time_support
-    else:
-        assert isinstance(ep, nap.IntervalSet), "ep should be an IntervalSet"
-
     if minmax is None:
         bins = np.linspace(np.min(feature), np.max(feature), nb_bins + 1)
     else:
-        assert isinstance(minmax, tuple), "minmax should be a tuple of boundaries"
         bins = np.linspace(minmax[0], minmax[1], nb_bins + 1)
 
     idx = bins[0:-1] + np.diff(bins) / 2
@@ -138,7 +180,6 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     for k in group_value:
         count, _ = np.histogram(group_value[k].values, bins)
         count = count / occupancy
-        count[np.isnan(count)] = 0.0
         tuning_curves[k] = count
         tuning_curves[k] = count * feature.rate
 
@@ -178,18 +219,9 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
         If group is not a TsGroup object or if features is not 2 columns only.
 
     """
-    assert isinstance(group, nap.TsGroup), "group should be a TsGroup."
-    assert isinstance(
-        features, nap.TsdFrame
-    ), "features should be a TsdFrame with 2 columns"
-    if isinstance(features, nap.TsdFrame):
-        assert features.shape[1] == 2, "features should have 2 columns only."
-    assert isinstance(nb_bins, int)
-
     if ep is None:
         ep = features.time_support
     else:
-        assert isinstance(ep, nap.IntervalSet), "ep should be an IntervalSet"
         features = features.restrict(ep)
 
     cols = list(features.columns)
