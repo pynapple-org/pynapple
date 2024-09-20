@@ -109,6 +109,8 @@ def test_compute_2d_tuning_curves_continuous_errors(tsdframe, features, nb_bins,
 @pytest.mark.parametrize("func, args, minmax, expected", [
     (nap.compute_1d_tuning_curves, (get_group(), get_feature(), 10), (0,1,2), "minmax should be of length 2."),
     (nap.compute_2d_tuning_curves, (get_group(), get_features(), 10), (0,1,2), "minmax should be of length 4."),
+    (nap.compute_2d_tuning_curves, (get_group(), nap.TsdFrame(t=np.arange(10),d=np.ones((10,3))), 10), (0,1), "features should have 2 columns only."),
+    (nap.compute_1d_tuning_curves, (get_group(), nap.TsdFrame(t=np.arange(10),d=np.ones((10,3))), 10), (0,1), r"feature should be a Tsd \(or TsdFrame with 1 column only\)"),
 ])
 def test_compute_tuning_curves_value_error(func, args, minmax, expected):
     with pytest.raises(ValueError, match=expected):
@@ -187,6 +189,9 @@ def test_compute_2d_tuning_curves(args, kwargs, expected):
     for i in tc.keys():
         assert tc[i].shape == (args[2], args[2])
         np.testing.assert_almost_equal(tc[i], expected)
+
+
+
 
 
 

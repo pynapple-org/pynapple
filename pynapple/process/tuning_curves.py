@@ -35,7 +35,7 @@ def _validate_tuning_inputs(func):
                 raise TypeError(
                     "features should be a TsdFrame with 2 columns"
                 )
-            if isinstance(kwargs["features"], nap.TsdFrame) and not kwargs["features"].shape[1] == 2:
+            if not kwargs["features"].shape[1] == 2:
                 raise ValueError(
                     "features should have 2 columns only."
                 )
@@ -221,7 +221,7 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
     minmax : tuple or list, optional
         The min and max boundaries of the tuning curves given as:
         (minx, maxx, miny, maxy)
-        If None, the boundaries are inferred from the target variable
+        If None, the boundaries are inferred from the target features
 
     Returns
     -------
@@ -242,22 +242,20 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
         )
     if ep is None:
         ep = features.time_support
-    else:
-        features = features.restrict(ep)
 
     cols = list(features.columns)
     groups_value = {}
     binsxy = {}
 
-    for i, c in enumerate(cols):
-        groups_value[c] = group.value_from(features.loc[c], ep)
+    for i in range(2):
+        groups_value[cols[i]] = group.value_from(features[:,i], ep)
         if minmax is None:
             bins = np.linspace(
-                np.min(features.loc[c]), np.max(features.loc[c]), nb_bins + 1
+                np.nanmin(features[:,i]), np.nanmax(features[:,i]), nb_bins + 1
             )
         else:
             bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins + 1)
-        binsxy[c] = bins
+        binsxy[cols[i]] = bins
 
     occupancy, _, _ = np.histogram2d(
         features.loc[cols[0]].values.flatten(),
@@ -392,7 +390,7 @@ def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=Fals
         if minmax is None:
             bins.append(
                 np.linspace(
-                    np.min(features.loc[c]), np.max(features.loc[c]), nb_bins[i]
+                    np.nanmin(features.loc[c]), np.nanmax(features.loc[c]), nb_bins[i]
                 )
             )
         else:
@@ -552,7 +550,7 @@ def compute_2d_tuning_curves_continuous(
     for i, c in enumerate(cols):
         if minmax is None:
             bins = np.linspace(
-                np.min(features.loc[c]), np.max(features.loc[c]), nb_bins[i] + 1
+                np.nanmin(features.loc[c]), np.nanmax(features.loc[c]), nb_bins[i] + 1
             )
         else:
             bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins[i] + 1)
