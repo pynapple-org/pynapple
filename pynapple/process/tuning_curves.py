@@ -40,9 +40,9 @@ def _validate_tuning_inputs(func):
                     "features should have 2 columns only."
                 )
         if "nb_bins" in kwargs:
-            if not isinstance(kwargs["nb_bins"], int):
+            if not isinstance(kwargs["nb_bins"], (int, tuple)):
                 raise TypeError(
-                    "nb_bins should be of type bins"
+                    "nb_bins should be of type int (or tuple with (int, int) for 2D tuning curves)."
                 )
         if "group" in kwargs:
             if not isinstance(kwargs["group"], nap.TsGroup):
@@ -59,26 +59,41 @@ def _validate_tuning_inputs(func):
                 raise TypeError(
                     "minmax should be a tuple/list of 2 numbers"
                 )
-            if len(kwargs["minmax"]) != 2:
-                raise ValueError(
-                    "minmax should be of length 2."
-                )
         if "dict_ep" in kwargs:
             if not isinstance(kwargs["dict_ep"], dict):
                 raise TypeError(
                     "dict_ep should be a dictionary of IntervalSet"
                 )
-            if not all([isinstance(v, nap.IntervalSet) for v in kwargs["dict_ep"]]):
+            if not all([isinstance(v, nap.IntervalSet) for v in kwargs["dict_ep"].values()]):
                 raise TypeError(
-                    f"dict_ep argument should contain only IntervalSet."
+                    "dict_ep argument should contain only IntervalSet."
                 )
-
+        if "tc" in kwargs:
+            if not isinstance(kwargs["tc"], (pd.DataFrame, np.ndarray)):
+                raise TypeError(
+                    "Argument tc should be of type pandas.DataFrame or numpy.ndarray"
+                )
+        if "dict_tc" in kwargs:
+            if not isinstance(kwargs["dict_tc"], dict):
+                raise TypeError(
+                    "Argument dict_tc should be a dictionary of numpy.ndarray"
+                )
+        if "bitssec" in kwargs:
+            if not isinstance(kwargs["bitssec"], bool):
+                raise TypeError(
+                    "Argument bitssec should be of type bool"
+                )
+        if "tsdframe" in kwargs:
+            if not isinstance(kwargs["tsdframe"], (nap.Tsd, nap.TsdFrame)):
+                raise TypeError(
+                    "Argument tsdframe should be of type Tsd or TsdFrame."
+                )
         # Call the original function with validated inputs
         return func(**kwargs)
 
     return wrapper
 
-
+@_validate_tuning_inputs
 def compute_discrete_tuning_curves(group, dict_ep):
     """
     Compute discrete tuning curves of a TsGroup using a dictionary of epochs.
@@ -128,7 +143,7 @@ def compute_discrete_tuning_curves(group, dict_ep):
 
     return tuning_curves
 
-
+@_validate_tuning_inputs
 def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     """
     Computes 1-dimensional tuning curves relative to a 1d feature.
@@ -159,8 +174,13 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
         If group is not a TsGroup object.
 
     """
+    if minmax is not None and len(minmax) != 2:
+        raise ValueError(
+            "minmax should be of length 2."
+        )
     if ep is None:
         ep = feature.time_support
+
     if minmax is None:
         bins = np.linspace(np.min(feature), np.max(feature), nb_bins + 1)
     else:
@@ -170,12 +190,9 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
 
     tuning_curves = pd.DataFrame(index=idx, columns=list(group.keys()))
 
-    if isinstance(ep, nap.IntervalSet):
-        group_value = group.value_from(feature, ep)
-        occupancy, _ = np.histogram(feature.restrict(ep).values, bins)
-    else:
-        group_value = group.value_from(feature)
-        occupancy, _ = np.histogram(feature.values, bins)
+    group_value = group.value_from(feature, ep)
+
+    occupancy, _ = np.histogram(feature.restrict(ep).values, bins)
 
     for k in group_value:
         count, _ = np.histogram(group_value[k].values, bins)
@@ -185,7 +202,7 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
 
     return tuning_curves
 
-
+@_validate_tuning_inputs
 def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
     """
     Computes 2-dimensional tuning curves relative to a 2d features
@@ -219,6 +236,10 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
         If group is not a TsGroup object or if features is not 2 columns only.
 
     """
+    if minmax is not None and len(minmax) != 4:
+        raise ValueError(
+            "minmax should be of length 4."
+        )
     if ep is None:
         ep = features.time_support
     else:
@@ -235,7 +256,6 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
                 np.min(features.loc[c]), np.max(features.loc[c]), nb_bins + 1
             )
         else:
-            assert isinstance(minmax, tuple), "minmax should be a tuple of 4 elements"
             bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins + 1)
         binsxy[c] = bins
 
@@ -253,14 +273,13 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
             [binsxy[cols[0]], binsxy[cols[1]]],
         )
         count = count / occupancy
-        # count[np.isnan(count)] = 0.0
         tc[n] = count * features.rate
 
     xy = [binsxy[c][0:-1] + np.diff(binsxy[c]) / 2 for c in binsxy.keys()]
 
     return tc, xy
 
-
+@_validate_tuning_inputs
 def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
     """
     Mutual information as defined in
@@ -293,17 +312,9 @@ def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
     if isinstance(tc, pd.DataFrame):
         columns = tc.columns.values
         fx = np.atleast_2d(tc.values)
-    elif isinstance(tc, np.ndarray):
+    else:
         fx = np.atleast_2d(tc)
         columns = np.arange(tc.shape[1])
-
-    assert isinstance(
-        feature, (nap.Tsd, nap.TsdFrame)
-    ), "feature should be a Tsd (or TsdFrame with 1 column only)"
-    if isinstance(feature, nap.TsdFrame):
-        assert (
-            feature.shape[1] == 1
-        ), "feature should be a Tsd (or TsdFrame with 1 column only)"
 
     nb_bins = tc.shape[0] + 1
     if minmax is None:
@@ -334,8 +345,8 @@ def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
         SI = pd.DataFrame(index=columns, columns=["SI"], data=SI)
         return SI
 
-
-def compute_2d_mutual_info(tc, features, ep=None, minmax=None, bitssec=False):
+@_validate_tuning_inputs
+def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=False):
     """
     Mutual information as defined in
 
@@ -345,7 +356,7 @@ def compute_2d_mutual_info(tc, features, ep=None, minmax=None, bitssec=False):
 
     Parameters
     ----------
-    tc : dict or numpy.ndarray
+    dict_tc : dict of numpy.ndarray or numpy.ndarray
         If array, first dimension should be the neuron
     features : TsdFrame
         The 2 columns features that were used to compute the tuning curves
@@ -365,18 +376,12 @@ def compute_2d_mutual_info(tc, features, ep=None, minmax=None, bitssec=False):
         Spatial Information (default is bits/spikes)
     """
     # A bit tedious here
-    if type(tc) is dict:
-        fx = np.array([tc[i] for i in tc.keys()])
-        idx = list(tc.keys())
-    elif type(tc) is np.ndarray:
-        fx = tc
-        idx = np.arange(len(tc))
-
-    assert isinstance(
-        features, nap.TsdFrame
-    ), "features should be a TsdFrame with 2 columns"
-    if isinstance(features, nap.TsdFrame):
-        assert features.shape[1] == 2, "features should have 2 columns only."
+    if type(dict_tc) is dict:
+        fx = np.array([dict_tc[i] for i in dict_tc.keys()])
+        idx = list(dict_tc.keys())
+    else:
+        fx = dict_tc
+        idx = np.arange(len(dict_tc))
 
     nb_bins = (fx.shape[1] + 1, fx.shape[2] + 1)
 
@@ -422,7 +427,7 @@ def compute_2d_mutual_info(tc, features, ep=None, minmax=None, bitssec=False):
         SI = pd.DataFrame(index=idx, columns=["SI"], data=SI)
         return SI
 
-
+@_validate_tuning_inputs
 def compute_1d_tuning_curves_continuous(
     tsdframe, feature, nb_bins, ep=None, minmax=None
 ):
@@ -456,19 +461,15 @@ def compute_1d_tuning_curves_continuous(
         If tsdframe is not a Tsd or a TsdFrame object.
 
     """
-    if not isinstance(tsdframe, (nap.Tsd, nap.TsdFrame)):
-        raise RuntimeError("Unknown format for tsdframe.")
-    elif isinstance(tsdframe, nap.Tsd):
+    if isinstance(tsdframe, nap.Tsd):
         tsdframe = tsdframe[:, np.newaxis]
 
-    assert isinstance(
-        feature, (nap.Tsd, nap.TsdFrame)
-    ), "feature should be a Tsd (or TsdFrame with 1 column only)"
-    if isinstance(feature, nap.TsdFrame):
-        assert (
-            feature.shape[1] == 1
-        ), "feature should be a Tsd (or TsdFrame with 1 column only)"
-        feature = np.squeeze(feature)
+    if minmax is not None and len(minmax) != 2:
+        raise ValueError(
+            "minmax should be of length 2."
+        )
+
+    feature = np.squeeze(feature)
 
     if isinstance(ep, nap.IntervalSet):
         feature = feature.restrict(ep)
@@ -491,12 +492,12 @@ def compute_1d_tuning_curves_continuous(
 
     return pd.DataFrame(tmp)
 
-
+@_validate_tuning_inputs
 def compute_2d_tuning_curves_continuous(
     tsdframe, features, nb_bins, ep=None, minmax=None
 ):
     """
-    Computes 2-dimensional tuning curves relative to a 2d feature with continous data.
+    Computes 2-dimensional tuning curves relative to a 2d feature with continuous data.
 
     Parameters
     ----------
@@ -528,16 +529,11 @@ def compute_2d_tuning_curves_continuous(
         If tsdframe is not a Tsd/TsdFrame or if features is not 2 columns
 
     """
-    if not isinstance(tsdframe, (nap.Tsd, nap.TsdFrame)):
-        raise RuntimeError("Unknown format for tsdframe.")
-    elif isinstance(tsdframe, nap.Tsd):
-        tsdframe = tsdframe[:, np.newaxis]
+    if isinstance(nb_bins, tuple) and len(nb_bins) != 2:
+        raise RuntimeError("nb_bins should be of type int (or tuple with (int, int) for 2D tuning curves).")
 
-    assert isinstance(
-        features, nap.TsdFrame
-    ), "features should be a TsdFrame with 2 columns"
-    if isinstance(features, nap.TsdFrame):
-        assert features.shape[1] == 2, "features should have 2 columns only."
+    if isinstance(tsdframe, nap.Tsd):
+        tsdframe = tsdframe[:, np.newaxis]
 
     if isinstance(ep, nap.IntervalSet):
         features = features.restrict(ep)
@@ -547,8 +543,6 @@ def compute_2d_tuning_curves_continuous(
 
     if isinstance(nb_bins, int):
         nb_bins = (nb_bins, nb_bins)
-    elif len(nb_bins) != 2:
-        raise RuntimeError("nb_bins should be int or tuple of 2 ints")
 
     cols = list(features.columns)
 
