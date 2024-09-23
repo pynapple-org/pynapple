@@ -242,6 +242,8 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
         )
     if ep is None:
         ep = features.time_support
+    else:
+        features = features.restrict(ep)
 
     cols = list(features.columns)
     groups_value = {}
