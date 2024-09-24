@@ -1,7 +1,16 @@
 # -*- coding: utf-8 -*-
 """
-FUnctions for computing tuning curves :
+You can compute tuning curves for features in 1 dimension or 2 dimension.
 
+| Function | Description |
+|------|------|
+| `nap.compute_discrete_tuning_curves` | Firing rate from a dictionnary of IntervalSet|
+| `compute_1d_tuning_curves` | Firing rate as a function of a 1-d feature |
+| `compute_2d_tuning_curves` | Firing rate as a function of a 2-d features |
+| `compute_1d_tuning_curves_continuous` | Mean value as a function of a 1-d feature |
+| `compute_2d_tuning_curves_continuous` | Mean value as a function of a 2-d features |
+| `compute_1d_mutual_info` | Mutual information of a tuning curve computed from a 1-d feature. |
+| `compute_2d_mutual_info` | Mutual information of a tuning curve computed from a 2-d features. |
 
 """
 
