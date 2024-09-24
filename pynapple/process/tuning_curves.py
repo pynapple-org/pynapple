@@ -74,9 +74,9 @@ def _validate_tuning_inputs(func):
                     "Argument tc should be of type pandas.DataFrame or numpy.ndarray"
                 )
         if "dict_tc" in kwargs:
-            if not isinstance(kwargs["dict_tc"], dict):
+            if not isinstance(kwargs["dict_tc"], (dict, np.ndarray)):
                 raise TypeError(
-                    "Argument dict_tc should be a dictionary of numpy.ndarray"
+                    "Argument dict_tc should be a dictionary of numpy.ndarray or numpy.ndarray."
                 )
         if "bitssec" in kwargs:
             if not isinstance(kwargs["bitssec"], bool):
@@ -213,8 +213,8 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
         The group of Ts/Tsd for which the tuning curves will be computed
     features : TsdFrame
         The 2d features (i.e. 2 columns features).
-    nb_bins : int
-        Number of bins in the tuning curves
+    nb_bins : int or tuple
+        Number of bins in the tuning curves (separate for 2 feature dimensions if tuple provided)
     ep : IntervalSet, optional
         The epoch on which tuning curves are computed.
         If None, the epoch is the time support of the feature.
@@ -240,6 +240,13 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
         raise ValueError(
             "minmax should be of length 4."
         )
+
+    if isinstance(nb_bins, tuple) and len(nb_bins) != 2:
+        raise ValueError("nb_bins should be of type int (or tuple with (int, int) for 2D tuning curves).")
+
+    if isinstance(nb_bins, int):
+        nb_bins = (nb_bins, nb_bins)
+
     if ep is None:
         ep = features.time_support
     else:
@@ -250,32 +257,32 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
     binsxy = {}
 
     for i in range(2):
-        groups_value[cols[i]] = group.value_from(features[:,i], ep)
+        groups_value[i] = group.value_from(features[:,i], ep)
         if minmax is None:
             bins = np.linspace(
-                np.nanmin(features[:,i]), np.nanmax(features[:,i]), nb_bins + 1
+                np.nanmin(features[:,i]), np.nanmax(features[:,i]), nb_bins[i] + 1
             )
         else:
-            bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins + 1)
-        binsxy[cols[i]] = bins
+            bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins[i] + 1)
+        binsxy[i] = bins
 
     occupancy, _, _ = np.histogram2d(
-        features.loc[cols[0]].values.flatten(),
-        features.loc[cols[1]].values.flatten(),
-        [binsxy[cols[0]], binsxy[cols[1]]],
+        features[:,0].values.flatten(),
+        features[:,1].values.flatten(),
+        [binsxy[0], binsxy[1]],
     )
 
     tc = {}
     for n in group.keys():
         count, _, _ = np.histogram2d(
-            groups_value[cols[0]][n].values.flatten(),
-            groups_value[cols[1]][n].values.flatten(),
-            [binsxy[cols[0]], binsxy[cols[1]]],
+            groups_value[0][n].values.flatten(),
+            groups_value[1][n].values.flatten(),
+            [binsxy[0], binsxy[1]],
         )
         count = count / occupancy
         tc[n] = count * features.rate
 
-    xy = [binsxy[c][0:-1] + np.diff(binsxy[c]) / 2 for c in binsxy.keys()]
+    xy = [binsxy[i][0:-1] + np.diff(binsxy[i]) / 2 for i in range(2)]
 
     return tc, xy
 
@@ -388,11 +395,11 @@ def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=Fals
     cols = features.columns
 
     bins = []
-    for i, c in enumerate(cols):
+    for i in range(2):
         if minmax is None:
             bins.append(
                 np.linspace(
-                    np.nanmin(features.loc[c]), np.nanmax(features.loc[c]), nb_bins[i]
+                    np.nanmin(features[:,i]), np.nanmax(features[:,i]), nb_bins[i]
                 )
             )
         else:
@@ -404,8 +411,8 @@ def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=Fals
         features = features.restrict(ep)
 
     occupancy, _, _ = np.histogram2d(
-        features.loc[cols[0]].values.flatten(),
-        features.loc[cols[1]].values.flatten(),
+        features[:,0].values.flatten(),
+        features[:,1].values.flatten(),
         [bins[0], bins[1]],
     )
     occupancy = occupancy / occupancy.sum()
@@ -432,12 +439,12 @@ def compute_1d_tuning_curves_continuous(
     tsdframe, feature, nb_bins, ep=None, minmax=None
 ):
     """
-    Computes 1-dimensional tuning curves relative to a feature with continous data.
+    Computes 1-dimensional tuning curves relative to a feature with continuous data.
 
     Parameters
     ----------
     tsdframe : Tsd or TsdFrame
-        Input data (e.g. continus calcium data
+        Input data (e.g. continuous calcium data
         where each column is the calcium activity of one neuron)
     feature : Tsd (or TsdFrame with 1 column only)
         The 1-dimensional target feature (e.g. head-direction)
@@ -452,8 +459,7 @@ def compute_1d_tuning_curves_continuous(
 
     Returns
     -------
-    pandas.DataFrame
-        DataFrame to hold the tuning curves
+    pandas.DataFrame to hold the tuning curves
 
     Raises
     ------
@@ -461,13 +467,13 @@ def compute_1d_tuning_curves_continuous(
         If tsdframe is not a Tsd or a TsdFrame object.
 
     """
-    if isinstance(tsdframe, nap.Tsd):
-        tsdframe = tsdframe[:, np.newaxis]
-
     if minmax is not None and len(minmax) != 2:
         raise ValueError(
             "minmax should be of length 2."
         )
+
+    if isinstance(tsdframe, nap.Tsd):
+        tsdframe = tsdframe[:, np.newaxis]
 
     feature = np.squeeze(feature)
 
@@ -484,13 +490,22 @@ def compute_1d_tuning_curves_continuous(
 
     align_times = tsdframe.value_from(feature)
     idx = np.digitize(align_times.values, bins) - 1
-    tmp = tsdframe.as_dataframe().groupby(idx).mean()
-    tmp = tmp.reindex(np.arange(0, len(bins) - 1))
-    tmp.index = pd.Index(bins[0:-1] + np.diff(bins) / 2)
 
-    tmp = tmp.fillna(0)
+    tc = np.zeros((len(bins)-1, tsdframe.shape[1]))
+    for i in range(0, nb_bins):
+        tc[i] = np.mean(tsdframe.values[idx == i], axis=0)
+    tc[np.isnan(tc)] = 0.0
 
-    return pd.DataFrame(tmp)
+    # Assigning nans if bin is not visited.
+    occupancy, _ = np.histogram(feature, bins)
+    tc[occupancy == 0.0] = np.nan
+
+    tc = pd.DataFrame(
+        index = bins[0:-1] + np.diff(bins) / 2,
+        data = tc,
+        columns = tsdframe.columns
+    )
+    return tc
 
 @_validate_tuning_inputs
 def compute_2d_tuning_curves_continuous(
@@ -529,8 +544,13 @@ def compute_2d_tuning_curves_continuous(
         If tsdframe is not a Tsd/TsdFrame or if features is not 2 columns
 
     """
+    if minmax is not None and len(minmax) != 4:
+        raise ValueError(
+            "minmax should be of length 4."
+        )
+
     if isinstance(nb_bins, tuple) and len(nb_bins) != 2:
-        raise RuntimeError("nb_bins should be of type int (or tuple with (int, int) for 2D tuning curves).")
+        raise ValueError("nb_bins should be of type int (or tuple with (int, int) for 2D tuning curves).")
 
     if isinstance(tsdframe, nap.Tsd):
         tsdframe = tsdframe[:, np.newaxis]
@@ -546,33 +566,43 @@ def compute_2d_tuning_curves_continuous(
 
     cols = list(features.columns)
 
-    binsxy = {}
-    idxs = {}
+    binsxy = []
+    idxs = []
 
-    for i, c in enumerate(cols):
+    for i in range(2):
         if minmax is None:
             bins = np.linspace(
-                np.nanmin(features.loc[c]), np.nanmax(features.loc[c]), nb_bins[i] + 1
+                np.nanmin(features[:,i]), np.nanmax(features[:,i]), nb_bins[i] + 1
             )
         else:
             bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins[i] + 1)
 
-        align_times = tsdframe.value_from(features.loc[c], ep)
-        idxs[c] = np.digitize(align_times.values.flatten(), bins) - 1
-        binsxy[c] = bins
+        align_times = tsdframe.value_from(features[:,i], ep)
+        idxs.append(np.digitize(align_times.values.flatten(), bins) - 1)
+        binsxy.append(bins)
 
-    idxs = pd.DataFrame(idxs)
+    idxs = np.transpose(np.array(idxs))
 
-    tc_np = np.zeros((tsdframe.shape[1], nb_bins[0], nb_bins[1])) * np.nan
+    tc = np.zeros((tsdframe.shape[1], nb_bins[0], nb_bins[1]))
 
-    for k, tmp in idxs.groupby(cols):
-        if (0 <= k[0] < nb_bins[0]) and (0 <= k[1] < nb_bins[1]):
-            tc_np[:, k[0], k[1]] = np.mean(tsdframe[tmp.index.values].values, 0)
+    for i in range(nb_bins[0]):
+        for j in range(nb_bins[1]):
+            tc[:,i,j] = np.mean(tsdframe.values[np.logical_and(idxs[:, 0] == i, idxs[:, 1] == j)], 0)
 
-    tc_np[np.isnan(tc_np)] = 0.0
+    tc[np.isnan(tc)] = 0.0
 
-    xy = [binsxy[c][0:-1] + np.diff(binsxy[c]) / 2 for c in binsxy.keys()]
+    # Assigning nans if bin is not visited.
+    occupancy, _, _ = np.histogram2d(
+        features[:,0].values.flatten(),
+        features[:,1].values.flatten(),
+        [binsxy[0], binsxy[1]]
+    )
+    occupancy = occupancy[np.newaxis,:,:]
+    occupancy = np.repeat(occupancy, len(tc), axis=0)
+    tc[occupancy == 0.0] = np.nan
 
-    tc = {c: tc_np[i] for i, c in enumerate(tsdframe.columns)}
+    xy = [binsxy[i][0:-1] + np.diff(binsxy[i]) / 2 for i in range(2)]
+
+    tc = {c: tc[i] for i, c in enumerate(tsdframe.columns)}
 
     return tc, xy
