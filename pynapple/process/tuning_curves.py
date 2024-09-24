@@ -5,14 +5,16 @@ FUnctions for computing tuning curves :
 
 """
 
-import warnings
 import inspect
+import warnings
 from collections.abc import Iterable
 from functools import wraps
+
 import numpy as np
 import pandas as pd
 
 from .. import core as nap
+
 
 def _validate_tuning_inputs(func):
     @wraps(func)
@@ -26,19 +28,18 @@ def _validate_tuning_inputs(func):
                 raise TypeError(
                     "feature should be a Tsd (or TsdFrame with 1 column only)"
                 )
-            if isinstance(kwargs["feature"], nap.TsdFrame) and not kwargs["feature"].shape[1] == 1:
+            if (
+                isinstance(kwargs["feature"], nap.TsdFrame)
+                and not kwargs["feature"].shape[1] == 1
+            ):
                 raise ValueError(
                     "feature should be a Tsd (or TsdFrame with 1 column only)"
                 )
         if "features" in kwargs:
             if not isinstance(kwargs["features"], nap.TsdFrame):
-                raise TypeError(
-                    "features should be a TsdFrame with 2 columns"
-                )
+                raise TypeError("features should be a TsdFrame with 2 columns")
             if not kwargs["features"].shape[1] == 2:
-                raise ValueError(
-                    "features should have 2 columns only."
-                )
+                raise ValueError("features should have 2 columns only.")
         if "nb_bins" in kwargs:
             if not isinstance(kwargs["nb_bins"], (int, tuple)):
                 raise TypeError(
@@ -46,28 +47,20 @@ def _validate_tuning_inputs(func):
                 )
         if "group" in kwargs:
             if not isinstance(kwargs["group"], nap.TsGroup):
-                raise TypeError(
-                    "group should be a TsGroup."
-                )
+                raise TypeError("group should be a TsGroup.")
         if "ep" in kwargs:
             if not isinstance(kwargs["ep"], nap.IntervalSet):
-                raise TypeError(
-                    "ep should be an IntervalSet"
-                )
+                raise TypeError("ep should be an IntervalSet")
         if "minmax" in kwargs:
             if not isinstance(kwargs["minmax"], Iterable):
-                raise TypeError(
-                    "minmax should be a tuple/list of 2 numbers"
-                )
+                raise TypeError("minmax should be a tuple/list of 2 numbers")
         if "dict_ep" in kwargs:
             if not isinstance(kwargs["dict_ep"], dict):
-                raise TypeError(
-                    "dict_ep should be a dictionary of IntervalSet"
-                )
-            if not all([isinstance(v, nap.IntervalSet) for v in kwargs["dict_ep"].values()]):
-                raise TypeError(
-                    "dict_ep argument should contain only IntervalSet."
-                )
+                raise TypeError("dict_ep should be a dictionary of IntervalSet")
+            if not all(
+                [isinstance(v, nap.IntervalSet) for v in kwargs["dict_ep"].values()]
+            ):
+                raise TypeError("dict_ep argument should contain only IntervalSet.")
         if "tc" in kwargs:
             if not isinstance(kwargs["tc"], (pd.DataFrame, np.ndarray)):
                 raise TypeError(
@@ -80,18 +73,15 @@ def _validate_tuning_inputs(func):
                 )
         if "bitssec" in kwargs:
             if not isinstance(kwargs["bitssec"], bool):
-                raise TypeError(
-                    "Argument bitssec should be of type bool"
-                )
+                raise TypeError("Argument bitssec should be of type bool")
         if "tsdframe" in kwargs:
             if not isinstance(kwargs["tsdframe"], (nap.Tsd, nap.TsdFrame)):
-                raise TypeError(
-                    "Argument tsdframe should be of type Tsd or TsdFrame."
-                )
+                raise TypeError("Argument tsdframe should be of type Tsd or TsdFrame.")
         # Call the original function with validated inputs
         return func(**kwargs)
 
     return wrapper
+
 
 @_validate_tuning_inputs
 def compute_discrete_tuning_curves(group, dict_ep):
@@ -143,6 +133,7 @@ def compute_discrete_tuning_curves(group, dict_ep):
 
     return tuning_curves
 
+
 @_validate_tuning_inputs
 def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     """
@@ -175,9 +166,7 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
 
     """
     if minmax is not None and len(minmax) != 2:
-        raise ValueError(
-            "minmax should be of length 2."
-        )
+        raise ValueError("minmax should be of length 2.")
     if ep is None:
         ep = feature.time_support
 
@@ -201,6 +190,7 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
         tuning_curves[k] = count * feature.rate
 
     return tuning_curves
+
 
 @_validate_tuning_inputs
 def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
@@ -237,12 +227,12 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
 
     """
     if minmax is not None and len(minmax) != 4:
-        raise ValueError(
-            "minmax should be of length 4."
-        )
+        raise ValueError("minmax should be of length 4.")
 
     if isinstance(nb_bins, tuple) and len(nb_bins) != 2:
-        raise ValueError("nb_bins should be of type int (or tuple with (int, int) for 2D tuning curves).")
+        raise ValueError(
+            "nb_bins should be of type int (or tuple with (int, int) for 2D tuning curves)."
+        )
 
     if isinstance(nb_bins, int):
         nb_bins = (nb_bins, nb_bins)
@@ -252,23 +242,22 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
     else:
         features = features.restrict(ep)
 
-    cols = list(features.columns)
     groups_value = {}
     binsxy = {}
 
     for i in range(2):
-        groups_value[i] = group.value_from(features[:,i], ep)
+        groups_value[i] = group.value_from(features[:, i], ep)
         if minmax is None:
             bins = np.linspace(
-                np.nanmin(features[:,i]), np.nanmax(features[:,i]), nb_bins[i] + 1
+                np.nanmin(features[:, i]), np.nanmax(features[:, i]), nb_bins[i] + 1
             )
         else:
             bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins[i] + 1)
         binsxy[i] = bins
 
     occupancy, _, _ = np.histogram2d(
-        features[:,0].values.flatten(),
-        features[:,1].values.flatten(),
+        features[:, 0].values.flatten(),
+        features[:, 1].values.flatten(),
         [binsxy[0], binsxy[1]],
     )
 
@@ -285,6 +274,7 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
     xy = [binsxy[i][0:-1] + np.diff(binsxy[i]) / 2 for i in range(2)]
 
     return tc, xy
+
 
 @_validate_tuning_inputs
 def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
@@ -352,6 +342,7 @@ def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
         SI = pd.DataFrame(index=columns, columns=["SI"], data=SI)
         return SI
 
+
 @_validate_tuning_inputs
 def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=False):
     """
@@ -392,14 +383,12 @@ def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=Fals
 
     nb_bins = (fx.shape[1] + 1, fx.shape[2] + 1)
 
-    cols = features.columns
-
     bins = []
     for i in range(2):
         if minmax is None:
             bins.append(
                 np.linspace(
-                    np.nanmin(features[:,i]), np.nanmax(features[:,i]), nb_bins[i]
+                    np.nanmin(features[:, i]), np.nanmax(features[:, i]), nb_bins[i]
                 )
             )
         else:
@@ -411,8 +400,8 @@ def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=Fals
         features = features.restrict(ep)
 
     occupancy, _, _ = np.histogram2d(
-        features[:,0].values.flatten(),
-        features[:,1].values.flatten(),
+        features[:, 0].values.flatten(),
+        features[:, 1].values.flatten(),
         [bins[0], bins[1]],
     )
     occupancy = occupancy / occupancy.sum()
@@ -433,6 +422,7 @@ def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=Fals
         SI = SI / fr[:, 0, 0]
         SI = pd.DataFrame(index=idx, columns=["SI"], data=SI)
         return SI
+
 
 @_validate_tuning_inputs
 def compute_1d_tuning_curves_continuous(
@@ -468,9 +458,7 @@ def compute_1d_tuning_curves_continuous(
 
     """
     if minmax is not None and len(minmax) != 2:
-        raise ValueError(
-            "minmax should be of length 2."
-        )
+        raise ValueError("minmax should be of length 2.")
 
     if isinstance(tsdframe, nap.Tsd):
         tsdframe = tsdframe[:, np.newaxis]
@@ -491,7 +479,7 @@ def compute_1d_tuning_curves_continuous(
     align_times = tsdframe.value_from(feature)
     idx = np.digitize(align_times.values, bins) - 1
 
-    tc = np.zeros((len(bins)-1, tsdframe.shape[1]))
+    tc = np.zeros((len(bins) - 1, tsdframe.shape[1]))
     for i in range(0, nb_bins):
         tc[i] = np.mean(tsdframe.values[idx == i], axis=0)
     tc[np.isnan(tc)] = 0.0
@@ -501,11 +489,10 @@ def compute_1d_tuning_curves_continuous(
     tc[occupancy == 0.0] = np.nan
 
     tc = pd.DataFrame(
-        index = bins[0:-1] + np.diff(bins) / 2,
-        data = tc,
-        columns = tsdframe.columns
+        index=bins[0:-1] + np.diff(bins) / 2, data=tc, columns=tsdframe.columns
     )
     return tc
+
 
 @_validate_tuning_inputs
 def compute_2d_tuning_curves_continuous(
@@ -545,12 +532,12 @@ def compute_2d_tuning_curves_continuous(
 
     """
     if minmax is not None and len(minmax) != 4:
-        raise ValueError(
-            "minmax should be of length 4."
-        )
+        raise ValueError("minmax should be of length 4.")
 
     if isinstance(nb_bins, tuple) and len(nb_bins) != 2:
-        raise ValueError("nb_bins should be of type int (or tuple with (int, int) for 2D tuning curves).")
+        raise ValueError(
+            "nb_bins should be of type int (or tuple with (int, int) for 2D tuning curves)."
+        )
 
     if isinstance(tsdframe, nap.Tsd):
         tsdframe = tsdframe[:, np.newaxis]
@@ -564,20 +551,18 @@ def compute_2d_tuning_curves_continuous(
     if isinstance(nb_bins, int):
         nb_bins = (nb_bins, nb_bins)
 
-    cols = list(features.columns)
-
     binsxy = []
     idxs = []
 
     for i in range(2):
         if minmax is None:
             bins = np.linspace(
-                np.nanmin(features[:,i]), np.nanmax(features[:,i]), nb_bins[i] + 1
+                np.nanmin(features[:, i]), np.nanmax(features[:, i]), nb_bins[i] + 1
             )
         else:
             bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins[i] + 1)
 
-        align_times = tsdframe.value_from(features[:,i], ep)
+        align_times = tsdframe.value_from(features[:, i], ep)
         idxs.append(np.digitize(align_times.values.flatten(), bins) - 1)
         binsxy.append(bins)
 
@@ -587,17 +572,19 @@ def compute_2d_tuning_curves_continuous(
 
     for i in range(nb_bins[0]):
         for j in range(nb_bins[1]):
-            tc[:,i,j] = np.mean(tsdframe.values[np.logical_and(idxs[:, 0] == i, idxs[:, 1] == j)], 0)
+            tc[:, i, j] = np.mean(
+                tsdframe.values[np.logical_and(idxs[:, 0] == i, idxs[:, 1] == j)], 0
+            )
 
     tc[np.isnan(tc)] = 0.0
 
     # Assigning nans if bin is not visited.
     occupancy, _, _ = np.histogram2d(
-        features[:,0].values.flatten(),
-        features[:,1].values.flatten(),
-        [binsxy[0], binsxy[1]]
+        features[:, 0].values.flatten(),
+        features[:, 1].values.flatten(),
+        [binsxy[0], binsxy[1]],
     )
-    occupancy = occupancy[np.newaxis,:,:]
+    occupancy = occupancy[np.newaxis, :, :]
     occupancy = np.repeat(occupancy, len(tc), axis=0)
     tc[occupancy == 0.0] = np.nan
 
