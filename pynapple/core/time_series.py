@@ -139,7 +139,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         return self.values.size
 
     def __array__(self, dtype=None):
-        return self.values.astype(dtype)
+        return np.asarray(self.values, dtype=dtype)
 
     def __array_ufunc__(self, ufunc, method, *args, **kwargs):
         # print("In __array_ufunc__")
