@@ -29,40 +29,31 @@ def _validate_correlograms_inputs(func):
         sig = inspect.signature(func)
         kwargs = sig.bind_partial(*args, **kwargs).arguments
 
-        if (
-            "group" not in kwargs
-            or "binsize" not in kwargs
-            or "windowsize" not in kwargs
-        ):
-            raise TypeError(
-                "Function needs TsGroup, binsize and windowsize to be specified."
-            )
+        # Only TypeError here
+        if getattr(func, "__name__") == 'compute_crosscorrelogram' and isinstance(kwargs["group"], (tuple, list)):
+            if not all([isinstance(g, nap.TsGroup) for g in kwargs["group"]]) or len(kwargs["group"]) != 2:
+                raise TypeError("Invalid type. Parameter group must be of type TsGroup or a tuple/list of (TsGroup, TsGroup).")
+        else:
+            if not isinstance(kwargs["group"], nap.TsGroup):
+                msg = "Invalid type. Parameter group must be of type TsGroup"
+                if getattr(func, "__name__") == 'compute_crosscorrelogram':
+                    msg += " or a tuple/list of (TsGroup, TsGroup)."
+                raise TypeError(msg)
 
         parameters_type = {
-            "group": (nap.TsGroup, (nap.TsGroup, nap.TsGroup)),
-            "binsize": (Number,),
-            "windowsize": (Number,),
-            "ep": (nap.IntervalSet,),
-            "norm": (bool,),
-            "time_units": (str,),
-            "reverse": (bool,),
+            "binsize": Number,
+            "windowsize": Number,
+            "ep": nap.IntervalSet,
+            "norm": bool,
+            "time_units": str,
+            "reverse": bool,
         }
-
-        for param, param_types in parameters_type.items():
+        for param, param_type in parameters_type.items():
             if param in kwargs:
-                for pt in param_types:
-                    if isinstance(pt, tuple) and isinstance(kwargs[param], tuple):
-                        if not all(
-                            [isinstance(v, t) for v, t in zip(kwargs[param], pt)]
-                        ):
-                            raise TypeError(
-                                f"Invalid type. Parameter {param} must be of type {pt}."
-                            )
-                    else:
-                        if not isinstance(kwargs[param], pt):
-                            raise TypeError(
-                                f"Invalid type. Parameter {param} must be of type {pt}."
-                            )
+                if not isinstance(kwargs[param], param_type):
+                    raise TypeError(
+                        f"Invalid type. Parameter {param} must be of type {param_type}."
+                    )
 
         # Call the original function with validated inputs
         return func(**kwargs)
@@ -264,7 +255,24 @@ def compute_crosscorrelogram(
         np.array([windowsize], dtype=np.float64), time_units
     )[0]
 
-    if isinstance(group, nap.TsGroup):
+    if isinstance(group, tuple):
+        if isinstance(ep, nap.IntervalSet):
+            newgroup = [group[i].restrict(ep) for i in range(2)]
+        else:
+            newgroup = group
+
+        pairs = product(list(newgroup[0].keys()), list(newgroup[1].keys()))
+
+        for i, j in pairs:
+            spk1 = newgroup[0][i].index
+            spk2 = newgroup[1][j].index
+            auc, times = _cross_correlogram(spk1, spk2, binsize, windowsize)
+            if norm:
+                auc /= newgroup[1][j].rate
+            crosscorrs[(i, j)] = pd.Series(index=times, data=auc, dtype="float")
+
+        crosscorrs = pd.DataFrame.from_dict(crosscorrs)
+    else:
         if isinstance(ep, nap.IntervalSet):
             newgroup = group.restrict(ep)
         else:
@@ -288,31 +296,6 @@ def compute_crosscorrelogram(
                 index=pairs, data=list(map(lambda n: freq.loc[n[1]], pairs))
             )
             crosscorrs = crosscorrs / freq2
-
-    elif (
-        isinstance(group, (tuple, list))
-        and len(group) == 2
-        and all(map(lambda g: isinstance(g, nap.TsGroup), group))
-    ):
-        if isinstance(ep, nap.IntervalSet):
-            newgroup = [group[i].restrict(ep) for i in range(2)]
-        else:
-            newgroup = group
-
-        pairs = product(list(newgroup[0].keys()), list(newgroup[1].keys()))
-
-        for i, j in pairs:
-            spk1 = newgroup[0][i].index
-            spk2 = newgroup[1][j].index
-            auc, times = _cross_correlogram(spk1, spk2, binsize, windowsize)
-            if norm:
-                auc /= newgroup[1][j].rate
-            crosscorrs[(i, j)] = pd.Series(index=times, data=auc, dtype="float")
-
-        crosscorrs = pd.DataFrame.from_dict(crosscorrs)
-
-    else:
-        raise RuntimeError("Unknown format for group")
 
     return crosscorrs.astype("float")
 

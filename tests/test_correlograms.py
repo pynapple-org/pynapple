@@ -38,54 +38,77 @@ def test_cross_correlogram():
             ),
         )
 
+#############################
+# Type Error
+#############################
 def get_group():
     return nap.TsGroup(
             {
                 0: nap.Ts(t=np.arange(0, 100)),
-                1: nap.Ts(t=np.arange(0, 100)),
-                2: nap.Ts(t=np.array([0, 10])),
-                3: nap.Ts(t=np.arange(0, 200)),
-            }
+                # 1: nap.Ts(t=np.arange(0, 100)),
+                # 2: nap.Ts(t=np.array([0, 10])),
+                # 3: nap.Ts(t=np.arange(0, 200)),
+            },
+            time_support = nap.IntervalSet(0, 100)
         )
 
 def get_ep():
-    return nap.IntervalSet(start=0, end=99)
+    return nap.IntervalSet(start=0, end=100)
+
+
+@pytest.mark.parametrize("func", [
+    nap.compute_autocorrelogram,
+    nap.compute_crosscorrelogram,
+    nap.compute_eventcorrelogram])
+@pytest.mark.parametrize("group, binsize, windowsize, ep, norm, time_units, msg", [
+    (get_group(), "a", 10, get_ep(), True, "s", "Invalid type. Parameter binsize must be of type <class 'numbers.Number'>."),
+    (get_group(), 1, "a", get_ep(), True, "s", "Invalid type. Parameter windowsize must be of type <class 'numbers.Number'>."),
+    (get_group(), 1, 10, "a", True, "s", "Invalid type. Parameter ep must be of type <class 'pynapple.core.interval_set.IntervalSet'>."),
+    (get_group(), 1, 10, get_ep(), "a", "s", "Invalid type. Parameter norm must be of type <class 'bool'>."),
+    (get_group(), 1, 10, get_ep(), True, 1, "Invalid type. Parameter time_units must be of type <class 'str'>."),
+])
+def test_correlograms_type_errors(func, group, binsize, windowsize, ep, norm, time_units, msg):
+    with pytest.raises(TypeError, match=msg):
+        func(group=group, binsize=binsize, windowsize=windowsize, ep=ep, norm=norm, time_units=time_units)
+
+@pytest.mark.parametrize("func, args, msg", [
+    (nap.compute_autocorrelogram, ([1, 2, 3], 1, 1), "Invalid type. Parameter group must be of type TsGroup"),
+    (nap.compute_crosscorrelogram, ([1, 2, 3], 1, 1), r"Invalid type. Parameter group must be of type TsGroup or a tuple\/list of \(TsGroup, TsGroup\)."),
+    (nap.compute_crosscorrelogram, (([1, 2, 3]), 1, 1), r"Invalid type. Parameter group must be of type TsGroup or a tuple\/list of \(TsGroup, TsGroup\)."),
+    (nap.compute_crosscorrelogram, ((get_group(), [1,2,3]), 1, 1), r"Invalid type. Parameter group must be of type TsGroup or a tuple\/list of \(TsGroup, TsGroup\)."),
+    (nap.compute_crosscorrelogram, ((get_group(), get_group(), get_group()), 1, 1), r"Invalid type. Parameter group must be of type TsGroup or a tuple\/list of \(TsGroup, TsGroup\)."),
+    (nap.compute_eventcorrelogram, ([1, 2, 3], 1, 1), "Invalid type. Parameter group must be of type TsGroup"),
+])
+def test_correlograms_type_errors_group(func, args, msg):
+    with pytest.raises(TypeError, match=msg):
+        func(*args)
+
+#################################################
+# Normal tests
+#################################################
+
+@pytest.mark.parametrize("group, binsize, windowsize, kwargs, expected", [
+    (get_group(), 1, 100, {}, np.hstack((np.arange(0, 1, 1 / 100), np.zeros(1), np.arange(0, 1, 1 / 100)[::-1]))[:,np.newaxis] ),
+    (get_group(), 1, 100, {"norm":False}, np.hstack((np.arange(0, 1, 1 / 100), np.zeros(1), np.arange(0, 1, 1 / 100)[::-1]))[:,np.newaxis] ),
+    (nap.TsGroup({1:nap.Ts(t=np.array([0, 10]))}), 1, 100, {"norm":False}, np.hstack((np.zeros(90),np.array([0.5]),np.zeros((19)),np.array([0.5]),np.zeros((90))))[:,np.newaxis]),
+    (get_group(), 1, 100, {"ep":get_ep()}, np.hstack((np.arange(0, 1, 1 / 100), np.zeros(1), np.arange(0, 1, 1 / 100)[::-1]))[:,np.newaxis] ),
+    (get_group(), 1, 100, {"time_units":"s"}, np.hstack((np.arange(0, 1, 1 / 100), np.zeros(1), np.arange(0, 1, 1 / 100)[::-1]))[:,np.newaxis] ),
+])
+def test_autocorrelogram(group, binsize, windowsize, kwargs, expected):
+    cc = nap.compute_autocorrelogram(group, binsize, windowsize, **kwargs)
+    assert isinstance(cc, pd.DataFrame)
+    assert list(cc.keys()) == list(group.keys())
+    np.testing.assert_array_almost_equal(cc.index.values, np.arange(-windowsize, windowsize+binsize, binsize))
+    np.testing.assert_array_almost_equal(cc.values, expected)
+
+
+
+
 
 @pytest.mark.parametrize(
     "group",[get_group()],
 )
 class Test_Correlograms:
-    def test_autocorrelogram(self, group):
-        cc = nap.compute_autocorrelogram(group, 1, 100, norm=False)
-        assert isinstance(cc, pd.DataFrame)
-        assert list(cc.keys()) == list(group.keys())
-        np.testing.assert_array_almost_equal(cc.index.values, np.arange(-100, 101, 1))
-        np.testing.assert_array_almost_equal(
-            cc[0].values,
-            np.hstack(
-                (np.arange(0, 1, 1 / 100), np.zeros(1), np.arange(0, 1, 1 / 100)[::-1])
-            ),
-        )
-        np.testing.assert_array_almost_equal(
-            cc[0].values,
-            np.hstack(
-                (np.arange(0, 1, 1 / 100), np.zeros(1), np.arange(0, 1, 1 / 100)[::-1])
-            ),
-        )
-        tmp = np.zeros(len(cc))
-        tmp[[90, 110]] = 0.5
-        np.testing.assert_array_almost_equal(tmp, cc[2])
-
-    def test_autocorrelogram_with_ep(self, group):
-        ep = get_ep()
-        cc = nap.compute_autocorrelogram(group, 1, 100, ep=ep, norm=False)
-        np.testing.assert_array_almost_equal(cc[0].values, cc[3].values)
-
-    def test_autocorrelogram_with_norm(self, group):
-        cc = nap.compute_autocorrelogram(group, 1, 100, norm=False)
-        cc2 = nap.compute_autocorrelogram(group, 1, 100, norm=True)
-        tmp = group._metadata["rate"].values.astype("float")
-        np.testing.assert_array_almost_equal(cc / tmp, cc2)
 
     def test_autocorrelogram_time_units(self, group):
         cc = nap.compute_autocorrelogram(group, 1, 100, time_units="s")
@@ -185,18 +208,4 @@ class Test_Correlograms:
         pd.testing.assert_frame_equal(cc, cc2)
         pd.testing.assert_frame_equal(cc, cc3)
 
-@pytest.mark.parametrize("func", [
-    nap.compute_autocorrelogram,
-    nap.compute_crosscorrelogram,
-    nap.compute_eventcorrelogram])
-@pytest.mark.parametrize("group, binsize, windowsize, ep, norm, time_units, msg", [
-    ([1,2,3], 1, 10, get_ep(), True, "s", "Invalid type. Parameter group must be of type <class 'pynapple.core.ts_group.TsGroup'>."),
-    (get_group(), "a", 10, get_ep(), True, "s", "Invalid type. Parameter binsize must be of type <class 'numbers.Number'>."),
-    (get_group(), 1, "a", get_ep(), True, "s", "Invalid type. Parameter windowsize must be of type <class 'numbers.Number'>."),
-    (get_group(), 1, 10, "a", True, "s", "Invalid type. Parameter ep must be of type <class 'pynapple.core.interval_set.IntervalSet'>."),
-    (get_group(), 1, 10, get_ep(), "a", "s", "Invalid type. Parameter norm must be of type <class 'bool'>."),
-    (get_group(), 1, 10, get_ep(), True, 1, "Invalid type. Parameter time_units must be of type <class 'str'>."),
-])
-def test_correlograms_type_errors(func, group, binsize, windowsize, ep, norm, time_units, msg):
-    with pytest.raises(TypeError, match=msg):
-        func(group=group, binsize=binsize, windowsize=windowsize, ep=ep, norm=norm, time_units=time_units)
+
