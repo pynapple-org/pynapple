@@ -4,6 +4,13 @@ from .correlograms import (
     compute_eventcorrelogram,
 )
 from .decoding import decode_1d, decode_2d
+from .filtering import (
+    apply_bandpass_filter,
+    apply_bandstop_filter,
+    apply_highpass_filter,
+    apply_lowpass_filter,
+    get_filter_frequency_response,
+)
 from .perievent import (
     compute_event_trigger_average,
     compute_perievent,
@@ -15,11 +22,9 @@ from .randomize import (
     shift_timestamps,
     shuffle_ts_intervals,
 )
-from .signal_processing import (
+from .spectrum import (
     compute_mean_power_spectral_density,
     compute_power_spectral_density,
-    compute_wavelet_transform,
-    generate_morlet_filterbank,
 )
 from .tuning_curves import (
     compute_1d_mutual_info,
@@ -30,3 +35,4 @@ from .tuning_curves import (
     compute_2d_tuning_curves_continuous,
     compute_discrete_tuning_curves,
 )
+from .wavelets import compute_wavelet_transform, generate_morlet_filterbank

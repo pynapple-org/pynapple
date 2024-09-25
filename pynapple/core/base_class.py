@@ -44,7 +44,7 @@ class Base(abc.ABC):
                 self.time_support.values[:, 1] - self.time_support.values[:, 0]
             )
         else:
-            self.rate = np.NaN
+            self.rate = np.nan
             self.time_support = IntervalSet(start=[], end=[])
 
     @property

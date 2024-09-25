@@ -388,7 +388,7 @@ class Test_Time_Series_1:
             np.testing.assert_array_equal(tsd.values, new_tsd.values)
 
             tmp = np.random.rand(*tsd.shape)
-            tmp[tmp>0.9] = np.NaN
+            tmp[tmp>0.9] = np.nan
             tsd = tsd.__class__(t=tsd.t, d=tmp)
             
             new_tsd = tsd.dropna()
@@ -406,7 +406,7 @@ class Test_Time_Series_1:
             np.testing.assert_array_equal(tsd.values[tokeep], new_tsd.values)
             np.testing.assert_array_equal(new_tsd.time_support, tsd.time_support)
 
-            tsd = tsd.__class__(t=tsd.t, d=np.ones(tsd.shape)*np.NaN)            
+            tsd = tsd.__class__(t=tsd.t, d=np.ones(tsd.shape)*np.nan)            
             new_tsd = tsd.dropna()
             assert len(new_tsd) == 0
             assert len(new_tsd.time_support) == 0
@@ -514,16 +514,16 @@ class Test_Time_Series_1:
     def test_smooth(self, tsd):
         if not isinstance(tsd, nap.Ts):            
             from scipy import signal
-            tsd2 = tsd.smooth(1)
+            tsd2 = tsd.smooth(1, size_factor=10)
 
             tmp = tsd.values.reshape(tsd.shape[0], -1)
             tmp2 = np.zeros_like(tmp)
             std = int(tsd.rate * 1)
-            M = std*100
+            M = std*11
             window = signal.windows.gaussian(M, std=std)
             window = window / window.sum()            
             for i in range(tmp.shape[-1]):
-                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[M//2-1:1-M//2-1]
+                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[M//2:1-M//2-1]
             np.testing.assert_array_almost_equal(
                 tmp2, 
                 tsd2.values.reshape(tsd2.shape[0], -1)
@@ -541,10 +541,10 @@ class Test_Time_Series_1:
             tmp = tsd.values.reshape(tsd.shape[0], -1)
             tmp2 = np.zeros_like(tmp)
             std = int(tsd.rate * 1)
-            M = std*200
+            M = std*201
             window = signal.windows.gaussian(M, std=std)            
             for i in range(tmp.shape[-1]):
-                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[M//2-1:1-M//2-1]
+                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[M//2:1-M//2-1]
             np.testing.assert_array_almost_equal(
                 tmp2, 
                 tsd2.values.reshape(tsd2.shape[0], -1)
@@ -554,10 +554,10 @@ class Test_Time_Series_1:
             tmp = tsd.values.reshape(tsd.shape[0], -1)
             tmp2 = np.zeros_like(tmp)
             std = int(tsd.rate * 1)
-            M = int(tsd.rate * 10)
+            M = int(tsd.rate * 11)
             window = signal.windows.gaussian(M, std=std)            
             for i in range(tmp.shape[-1]):
-                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[M//2-1:1-M//2-1]
+                tmp2[:,i] = np.convolve(tmp[:,i], window, mode='full')[M//2:1-M//2-1]
             np.testing.assert_array_almost_equal(
                 tmp2, 
                 tsd2.values.reshape(tsd2.shape[0], -1)

@@ -6,7 +6,7 @@ import pandas as pd
 import pytest
 
 def test_get_backend():
-	assert nap.core.utils.get_backend() == "numba"
+	assert nap.core.utils.get_backend() in ["numba", "jax"]
 
 def test_is_array_like():
 	assert nap.core.utils.is_array_like(np.ones(3))

@@ -52,9 +52,9 @@ def restrict(ep, tsd):
         )
     )
     ix3 = np.vstack((ix, ix2)).T
-    # ix[np.floor(ix / 2) * 2 != ix] = np.NaN
+    # ix[np.floor(ix / 2) * 2 != ix] = np.nan
     # ix = np.floor(ix/2)
-    ix3[np.floor(ix3 / 2) * 2 != ix3] = np.NaN
+    ix3[np.floor(ix3 / 2) * 2 != ix3] = np.nan
     ix3 = np.floor(ix3 / 2)
     ix3[np.isnan(ix3[:, 0]), 0] = ix3[np.isnan(ix3[:, 0]), 1]
 
@@ -90,7 +90,7 @@ def test_jitrestrict_with_count():
         ix = np.array(pd.cut(tsd.index, bins, labels=np.arange(len(bins) - 1, dtype=np.float64)))
         ix2 = np.array(pd.cut(tsd.index,bins,labels=np.arange(len(bins) - 1, dtype=np.float64),right=False,))
         ix3 = np.vstack((ix, ix2)).T
-        ix3[np.floor(ix3 / 2) * 2 != ix3] = np.NaN
+        ix3[np.floor(ix3 / 2) * 2 != ix3] = np.nan
         ix3 = np.floor(ix3 / 2)
         ix3[np.isnan(ix3[:, 0]), 0] = ix3[np.isnan(ix3[:, 0]), 1]
         ix = ix3[:,0]
@@ -417,7 +417,7 @@ def test_jitin_interval():
             )
         )
         ix3 = np.vstack((ix, ix2)).T
-        ix3[np.floor(ix3 / 2) * 2 != ix3] = np.NaN
+        ix3[np.floor(ix3 / 2) * 2 != ix3] = np.nan
         ix3 = np.floor(ix3 / 2)
         ix3[np.isnan(ix3[:, 0]), 0] = ix3[np.isnan(ix3[:, 0]), 1]
         inep2 = ix3[:, 0]
