@@ -37,7 +37,7 @@ def _validate_correlograms_inputs(func):
             if not isinstance(kwargs["group"], nap.TsGroup):
                 msg = "Invalid type. Parameter group must be of type TsGroup"
                 if getattr(func, "__name__") == 'compute_crosscorrelogram':
-                    msg += " or a tuple/list of (TsGroup, TsGroup)."
+                    msg = msg + " or a tuple/list of (TsGroup, TsGroup)."
                 raise TypeError(msg)
 
         parameters_type = {
@@ -47,6 +47,7 @@ def _validate_correlograms_inputs(func):
             "norm": bool,
             "time_units": str,
             "reverse": bool,
+            "event": (nap.Ts, nap.Tsd)
         }
         for param, param_type in parameters_type.items():
             if param in kwargs:

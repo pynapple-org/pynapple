@@ -18,7 +18,8 @@ of the Flatiron institute.
 ------------------
 
 - Fixing nan issue when computing 1d tuning curve (See issue #334).
-- Refactor tuning curves tests.
+- Refactor tuning curves and correlogram tests.
+- Adding validators decorators for tuning curves and correlogram modules.
 
 0.7.0 (2024-09-16)
 ------------------
