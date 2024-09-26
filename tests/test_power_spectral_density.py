@@ -13,13 +13,15 @@ import pynapple as nap
 # Test for power_spectral_density
 ############################################################
 
-def get_sorted_fft(data,fs):
+
+def get_sorted_fft(data, fs):
     fft = np.fft.fft(data, axis=0)
     fft_freq = np.fft.fftfreq(len(data), 1 / fs)
     order = np.argsort(fft_freq)
-    if fft.ndim==1:
-        fft = fft[:,np.newaxis]
+    if fft.ndim == 1:
+        fft = fft[:, np.newaxis]
     return fft_freq[order], fft[order]
+
 
 def test_compute_power_spectral_density():
 
@@ -30,11 +32,11 @@ def test_compute_power_spectral_density():
     assert r.shape[0] == 500
 
     a, b = get_sorted_fft(sig.values, sig.rate)
-    np.testing.assert_array_almost_equal(r.index.values, a[a>=0])
-    np.testing.assert_array_almost_equal(r.values, b[a>=0])
-    
+    np.testing.assert_array_almost_equal(r.index.values, a[a >= 0])
+    np.testing.assert_array_almost_equal(r.values, b[a >= 0])
+
     r = nap.compute_power_spectral_density(sig, norm=True)
-    np.testing.assert_array_almost_equal(r.values, b[a>=0]/len(sig))
+    np.testing.assert_array_almost_equal(r.values, b[a >= 0] / len(sig))
 
     sig = nap.TsdFrame(d=np.random.random((1000, 4)), t=t)
     r = nap.compute_power_spectral_density(sig)
@@ -42,8 +44,8 @@ def test_compute_power_spectral_density():
     assert r.shape == (500, 4)
 
     a, b = get_sorted_fft(sig.values, sig.rate)
-    np.testing.assert_array_almost_equal(r.index.values, a[a>=0])
-    np.testing.assert_array_almost_equal(r.values, b[a>=0])
+    np.testing.assert_array_almost_equal(r.index.values, a[a >= 0])
+    np.testing.assert_array_almost_equal(r.values, b[a >= 0])
 
     sig = nap.TsdFrame(d=np.random.random((1000, 4)), t=t)
     r = nap.compute_power_spectral_density(sig, full_range=True)
@@ -52,7 +54,7 @@ def test_compute_power_spectral_density():
 
     a, b = get_sorted_fft(sig.values, sig.rate)
     np.testing.assert_array_almost_equal(r.index.values, a)
-    np.testing.assert_array_almost_equal(r.values, b)    
+    np.testing.assert_array_almost_equal(r.values, b)
 
     t = np.linspace(0, 1, 1000)
     sig = nap.Tsd(d=np.random.random(1000), t=t)
@@ -68,7 +70,7 @@ def test_compute_power_spectral_density():
 
 
 @pytest.mark.parametrize(
-    "sig, fs, ep, full_range, norm, expectation",
+    "sig, kwargs, expectation",
     [
         (
             nap.Tsd(
@@ -76,10 +78,7 @@ def test_compute_power_spectral_density():
                 t=np.linspace(0, 1, 1000),
                 time_support=nap.IntervalSet(start=[0.1, 0.6], end=[0.2, 0.81]),
             ),
-            1000,
-            None,
-            False,
-            False,
+            {},
             pytest.raises(
                 ValueError,
                 match=re.escape(
@@ -89,66 +88,57 @@ def test_compute_power_spectral_density():
         ),
         (
             nap.Tsd(d=np.random.random(1000), t=np.linspace(0, 1, 1000)),
-            1000,
-            "not_ep",
-            False,
-            False,
+            {"ep": "not_ep"},
             pytest.raises(
                 TypeError,
-                match="ep param must be a pynapple IntervalSet object, or None",
+                match=re.escape(
+                    "Invalid type. Parameter ep must be of type <class 'pynapple.core.interval_set.IntervalSet'>."
+                ),
             ),
         ),
         (
             nap.Tsd(d=np.random.random(1000), t=np.linspace(0, 1, 1000)),
-            "a",
-            None,
-            False,
-            False,
+            {"fs": "a"},
             pytest.raises(
                 TypeError,
-                match="fs must be of type float or int",
+                match="Invalid type. Parameter fs must be of type <class 'numbers.Number'>.",
             ),
         ),
         (
             "not_a_tsd",
-            1000,
-            None,
-            False,
-            False,
+            {},
             pytest.raises(
                 TypeError,
-                match="sig must be either a Tsd or a TsdFrame object.",
+                match=re.escape(
+                    "Invalid type. Parameter sig must be of type (<class 'pynapple.core.time_series.Tsd'>, <class 'pynapple.core.time_series.TsdFrame'>)."
+                ),
             ),
         ),
         (
             nap.Tsd(d=np.random.random(1000), t=np.linspace(0, 1, 1000)),
-            1000,
-            None,
-            "a",
-            False,            
+            {"full_range": "a"},
             pytest.raises(
                 TypeError,
-                match="full_range must be of type bool or None",
+                match=re.escape(
+                    "Invalid type. Parameter full_range must be of type <class 'bool'>."
+                ),
             ),
         ),
         (
             nap.Tsd(d=np.random.random(1000), t=np.linspace(0, 1, 1000)),
-            1000,
-            None,
-            False,
-            "a",
+            {"norm": "a"},
             pytest.raises(
                 TypeError,
-                match="norm must be of type bool",
+                match=re.escape(
+                    "Invalid type. Parameter norm must be of type <class 'bool'>."
+                ),
             ),
-        ),             
+        ),
     ],
 )
-def test_compute_power_spectral_density_raise_errors(
-    sig, fs, ep, full_range, norm, expectation
-):
+def test_compute_power_spectral_density_raise_errors(sig, kwargs, expectation):
     with expectation:
-        psd = nap.compute_power_spectral_density(sig, fs, ep, full_range, norm)
+        nap.compute_power_spectral_density(sig, **kwargs)
 
 
 ############################################################
@@ -156,13 +146,22 @@ def test_compute_power_spectral_density_raise_errors(
 ############################################################
 
 
-def get_signal_and_output(f=2, fs=1000, duration=100, interval_size=10):
+def get_signal_and_output(f=2, fs=1000, duration=100, interval_size=10, overlap = 0.25):
     t = np.arange(0, duration, 1 / fs)
     d = np.cos(2 * np.pi * f * t)
     sig = nap.Tsd(t=t, d=d, time_support=nap.IntervalSet(0, 100))
-    tmp = d.reshape((int(duration / interval_size), int(fs * interval_size))).T
+    tmp = []
+    slice = (0, int(fs*interval_size)+1)
+    while slice[1] < len(d):
+        tmp.append(d[slice[0]:slice[1]])
+        new_slice = (slice[1]-int(fs*interval_size*overlap)-1, slice[1]+int(fs*interval_size*(1-overlap)))
+        slice = new_slice
+
+    tmp = np.transpose(np.array(tmp))
+    print(tmp.shape)
+    # tmp = d.reshape((int(duration / interval_size), int(fs * interval_size))).T
     # tmp = tmp[0:-1]
-    tmp = tmp*signal.windows.hamming(tmp.shape[0])[:,np.newaxis]
+    tmp = tmp * signal.windows.hamming(tmp.shape[0])[:, np.newaxis]
     out = np.sum(np.fft.fft(tmp, axis=0), 1)
     freq = np.fft.fftfreq(out.shape[0], 1 / fs)
     order = np.argsort(freq)
@@ -190,9 +189,10 @@ def test_compute_mean_power_spectral_density():
     psd = nap.compute_mean_power_spectral_density(sig, 10, norm=True)
     assert isinstance(psd, pd.DataFrame)
     assert psd.shape[0] > 0  # Check that the psd DataFrame is not empty
-    np.testing.assert_array_almost_equal(psd.values.flatten(), out[freq >= 0]/(10000.0*10.0))
+    np.testing.assert_array_almost_equal(
+        psd.values.flatten(), out[freq >= 0] / (10001.0 * 12.0)
+    )
     np.testing.assert_array_almost_equal(psd.index.values, freq[freq >= 0])
-
 
     # TsdFrame
     sig2 = nap.TsdFrame(
@@ -216,106 +216,123 @@ def test_compute_mean_power_spectral_density():
 
 
 @pytest.mark.parametrize(
-    "sig, out, freq, interval_size, fs, ep, full_range, norm, time_units, expectation",
+    "sig, interval_size, kwargs, expectation",
     [
-        (*get_signal_and_output(), 10, None, None, False, False, "s", does_not_raise()),
+        (get_signal_and_output()[0], 10, {}, does_not_raise()),
         (
-            "a", *get_signal_and_output()[1:],
-            10,
-            None,
-            None,
-            False,
-            False,
-            "s",
-            pytest.raises(TypeError, match="sig must be either a Tsd or a TsdFrame object."),
-        ),
-        (
-            *get_signal_and_output(),
-            10,
             "a",
-            None,
-            False,
-            False,
-            "s",
-            pytest.raises(TypeError, match="fs must be of type float or int"),
-        ),
-        (
-            *get_signal_and_output(),
             10,
-            None,
-            "a",
-            False,
-            False,
-            "s",
+            {},
             pytest.raises(
                 TypeError,
-                match="ep param must be a pynapple IntervalSet object, or None",
+                match=re.escape(
+                    "Invalid type. Parameter sig must be of type (<class 'pynapple.core.time_series.Tsd'>, <class 'pynapple.core.time_series.TsdFrame'>)."
+                ),
             ),
         ),
         (
-            *get_signal_and_output(),
+            get_signal_and_output()[0],
             10,
-            None,
-            None,
-            "a",
-            False,
-            "s",
-            pytest.raises(TypeError, match="full_range must be of type bool or None"),
+            {"fs": "a"},
+            pytest.raises(
+                TypeError,
+                match=re.escape(
+                    "Invalid type. Parameter fs must be of type <class 'numbers.Number'>."
+                ),
+            ),
         ),
         (
-            *get_signal_and_output(),
+            get_signal_and_output()[0],
             10,
-            None,   # FS
-            None,   # Ep
-            "a",    # full_range
-            False,  # Norm
-            "s",    # Time units
-            pytest.raises(TypeError, match="full_range must be of type bool or None"),
+            {"ep": "a"},
+            pytest.raises(
+                TypeError,
+                match=re.escape(
+                    "Invalid type. Parameter ep must be of type <class 'pynapple.core.interval_set.IntervalSet'>."
+                ),
+            ),
         ),
         (
-            *get_signal_and_output(),
+            get_signal_and_output()[0],
             10,
-            None,   # FS
-            None,   # Ep
-            False,  # full_range
-            "a",    # Norm
-            "s",    # Time units
-            pytest.raises(TypeError, match="norm must be of type bool"),
-        ),        
-        (*get_signal_and_output(), 10 * 1e3, None, None, False, False, "ms", does_not_raise()),
-        (*get_signal_and_output(), 10 * 1e6, None, None, False, False, "us", does_not_raise()),
+            {"ep": "a"},
+            pytest.raises(
+                TypeError,
+                match=re.escape(
+                    "Invalid type. Parameter ep must be of type <class 'pynapple.core.interval_set.IntervalSet'>."
+                ),
+            ),
+        ),
         (
-            *get_signal_and_output(),
+            get_signal_and_output()[0],
+            10,
+            {"norm": "a"},
+            pytest.raises(
+                TypeError,
+                match=re.escape(
+                    "Invalid type. Parameter norm must be of type <class 'bool'>."
+                ),
+            ),
+        ),
+        (
+                get_signal_and_output()[0],
+                10,
+                {"overlap": "a"},
+                pytest.raises(
+                    TypeError,
+                    match=re.escape(
+                        "Invalid type. Parameter overlap must be of type <class 'float'>."
+                    ),
+                ),
+        ),
+        (
+            get_signal_and_output()[0],
             200,
-            None,
-            None,
-            False,
-            False,
-            "s",
+            {},
             pytest.raises(
                 RuntimeError,
-                match="Splitting epochs with interval_size=200 generated an empty IntervalSet. Try decreasing interval_size",
+                match=re.escape(
+                    "Splitting epochs with interval_size=200 generated an empty IntervalSet. Try decreasing interval_size"
+                ),
             ),
         ),
         (
-            *get_signal_and_output(),
+            get_signal_and_output()[0],
             10,
-            None,
-            nap.IntervalSet([0, 200], [100, 300]),
-            False,
-            False,
-            "s",
+            {"ep": nap.IntervalSet([0, 200], [100, 300])},
             pytest.raises(
                 RuntimeError,
-                match="One interval doesn't have any signal associated. Check the parameter ep or the time support if no epoch is passed.",
+                match=re.escape(
+                    "One interval doesn't have any signal associated. Check the parameter ep or the time support if no epoch is passed."
+                ),
             ),
+        ),
+        (
+            get_signal_and_output()[0],
+            10,
+            {"overlap": -0.1},
+            pytest.raises(
+                ValueError,
+                match=re.escape(
+                    "Overlap should be in intervals [0.0, 1.0)."
+                ),
+            ),
+        ),
+        (
+                get_signal_and_output()[0],
+                10,
+                {"overlap": 1.1},
+                pytest.raises(
+                    ValueError,
+                    match=re.escape(
+                        "Overlap should be in intervals [0.0, 1.0)."
+                    ),
+                ),
         ),
     ],
 )
 def test_compute_mean_power_spectral_density_raise_errors(
-    sig, out, freq, interval_size, fs, ep, full_range, norm, time_units, expectation
+    sig, interval_size, kwargs, expectation
 ):
     with expectation:
-        psd = nap.compute_mean_power_spectral_density(
-            sig, interval_size, fs, ep, full_range, norm, time_units
-        )
+        nap.compute_mean_power_spectral_density(sig, interval_size, **kwargs)

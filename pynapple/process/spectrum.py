@@ -1,19 +1,57 @@
 """
-# Power spectral density
-
 This module contains functions to compute power spectral density and mean power spectral density.
+
+| Function | Description |
+|------|------|
+| `compute_power_spectral_density` | Compute Power Spectral Density over a single epoch |
+| `compute_mean_power_spectral_density` | Compute Mean Power Spectral Density over multiple epochs |
 
 """
 
+import inspect
+from functools import wraps
 from numbers import Number
 
 import numpy as np
 import pandas as pd
+from numba import njit
 from scipy import signal
 
 from .. import core as nap
 
 
+def _validate_spectrum_inputs(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Validate each positional argument
+        sig = inspect.signature(func)
+        kwargs = sig.bind_partial(*args, **kwargs).arguments
+
+        parameters_type = {
+            "sig": (nap.Tsd, nap.TsdFrame),
+            "fs": Number,
+            "ep": nap.IntervalSet,
+            "full_range": bool,
+            "norm": bool,
+            "n": int,
+            "time_unit": str,
+            "interval_size": Number,
+            "overlap": float,
+        }
+        for param, param_type in parameters_type.items():
+            if param in kwargs:
+                if not isinstance(kwargs[param], param_type):
+                    raise TypeError(
+                        f"Invalid type. Parameter {param} must be of type {param_type}."
+                    )
+
+        # Call the original function with validated inputs
+        return func(**kwargs)
+
+    return wrapper
+
+
+@_validate_spectrum_inputs
 def compute_power_spectral_density(
     sig, fs=None, ep=None, full_range=False, norm=False, n=None
 ):
@@ -45,25 +83,15 @@ def compute_power_spectral_density(
 
     Notes
     -----
-    compute_spectogram computes fft on only a single epoch of data. This epoch be given with the ep
+    This function computes fft on only a single epoch of data. This epoch be given with the ep
     parameter otherwise will be sig.time_support, but it must only be a single epoch.
     """
-    if not isinstance(sig, (nap.Tsd, nap.TsdFrame)):
-        raise TypeError("sig must be either a Tsd or a TsdFrame object.")
-    if not (fs is None or isinstance(fs, Number)):
-        raise TypeError("fs must be of type float or int")
-    if not (ep is None or isinstance(ep, nap.IntervalSet)):
-        raise TypeError("ep param must be a pynapple IntervalSet object, or None")
     if ep is None:
         ep = sig.time_support
     if len(ep) != 1:
         raise ValueError("Given epoch (or signal time_support) must have length 1")
     if fs is None:
         fs = sig.rate
-    if not isinstance(full_range, bool):
-        raise TypeError("full_range must be of type bool or None")
-    if not isinstance(norm, bool):
-        raise TypeError("norm must be of type bool")
 
     fft_result = np.fft.fft(sig.restrict(ep).values, n=n, axis=0)
     if n is None:
@@ -81,10 +109,12 @@ def compute_power_spectral_density(
     return ret
 
 
+@_validate_spectrum_inputs
 def compute_mean_power_spectral_density(
     sig,
     interval_size,
     fs=None,
+    overlap=0.25,
     ep=None,
     full_range=False,
     norm=False,
@@ -95,7 +125,7 @@ def compute_mean_power_spectral_density(
 
     The parameter `interval_size` controls the duration of the epochs.
 
-    To imporve frequency resolution, the signal is multiplied by a Hamming window.
+    To improve frequency resolution, the signal is multiplied by a Hamming window.
 
     Note that this function assumes a constant sampling rate for `sig`.
 
@@ -105,8 +135,11 @@ def compute_mean_power_spectral_density(
         Signal with equispaced samples
     interval_size : Number
         Epochs size to compute to average the FFT across
-    fs : None, optional
+    fs : Number, optional
         Sampling frequency of `sig`. If `None`, `fs` is equal to `sig.rate`
+    overlap : float, optional
+        Percentage of overlap between successive intervals.
+        `0.0 <= overlap < 1.0`. Default is 0.25
     ep : None or pynapple.IntervalSet, optional
         The `IntervalSet` to calculate the fft on. Can be any length.
     full_range : bool, optional
@@ -133,38 +166,29 @@ def compute_mean_power_spectral_density(
     ------
     RuntimeError
         If splitting the epoch with `interval_size` results in an empty set.
-    TypeError
-        If `ep` or `sig` are not respectively pynapple time series or interval set.
+    ValueError
+        If overlap is not within [0, 1).
     """
-    if not isinstance(sig, (nap.Tsd, nap.TsdFrame)):
-        raise TypeError("sig must be either a Tsd or a TsdFrame object.")
+    if not (0.0 <= overlap < 1.0):
+        raise ValueError("Overlap should be in intervals [0.0, 1.0).")
 
-    if not (ep is None or isinstance(ep, nap.IntervalSet)):
-        raise TypeError("ep param must be a pynapple IntervalSet object, or None")
     if ep is None:
         ep = sig.time_support
 
-    if not (fs is None or isinstance(fs, Number)):
-        raise TypeError("fs must be of type float or int")
     if fs is None:
         fs = sig.rate
 
-    if not isinstance(full_range, bool):
-        raise TypeError("full_range must be of type bool or None")
-
-    if not isinstance(norm, bool):
-        raise TypeError("norm must be of type bool")
-
-    # Split the ep
     interval_size = nap.TsIndex.format_timestamps(np.array([interval_size]), time_unit)[
         0
     ]
-    split_ep = ep.split(interval_size)
 
-    if len(split_ep) == 0:
+    # Check if at least one epoch is larger than the interval size
+    if np.max(ep.end - ep.start) < interval_size:
         raise RuntimeError(
             f"Splitting epochs with interval_size={interval_size} generated an empty IntervalSet. Try decreasing interval_size"
         )
+
+    split_ep = _overlap_split(ep.start, ep.end, interval_size, overlap)
 
     # Get the slices of each ep
     slices = np.zeros((len(split_ep), 2), dtype=int)
@@ -205,3 +229,24 @@ def compute_mean_power_spectral_density(
     if not full_range:
         return ret.loc[ret.index >= 0]
     return ret
+
+
+@njit
+def _overlap_split(start, end, interval_size, overlap):
+    N = int(
+        np.ceil(np.sum(end - start) / (interval_size * (1 - overlap)))
+    )  # upper bound
+    slices = np.zeros((N + 1, 2))
+
+    k = 0  # epochs
+    n = 0
+    while k < len(start):
+        t = start[k]
+        while t + interval_size < end[k]:
+            slices[n, 0] = t
+            slices[n, 1] = t + interval_size
+            t += (1 - overlap) * interval_size
+            n += 1
+        k += 1
+
+    return slices[0:n]
