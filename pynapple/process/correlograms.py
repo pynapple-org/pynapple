@@ -10,16 +10,16 @@ for timestamps data (i.e. spike times).
 
 """
 
+import inspect
+from functools import wraps
 from itertools import combinations, product
+from numbers import Number
 
 import numpy as np
 import pandas as pd
 from numba import jit
 
 from .. import core as nap
-import inspect
-from numbers import Number
-from functools import wraps
 
 
 def _validate_correlograms_inputs(func):
@@ -30,13 +30,20 @@ def _validate_correlograms_inputs(func):
         kwargs = sig.bind_partial(*args, **kwargs).arguments
 
         # Only TypeError here
-        if getattr(func, "__name__") == 'compute_crosscorrelogram' and isinstance(kwargs["group"], (tuple, list)):
-            if not all([isinstance(g, nap.TsGroup) for g in kwargs["group"]]) or len(kwargs["group"]) != 2:
-                raise TypeError("Invalid type. Parameter group must be of type TsGroup or a tuple/list of (TsGroup, TsGroup).")
+        if getattr(func, "__name__") == "compute_crosscorrelogram" and isinstance(
+            kwargs["group"], (tuple, list)
+        ):
+            if (
+                not all([isinstance(g, nap.TsGroup) for g in kwargs["group"]])
+                or len(kwargs["group"]) != 2
+            ):
+                raise TypeError(
+                    "Invalid type. Parameter group must be of type TsGroup or a tuple/list of (TsGroup, TsGroup)."
+                )
         else:
             if not isinstance(kwargs["group"], nap.TsGroup):
                 msg = "Invalid type. Parameter group must be of type TsGroup"
-                if getattr(func, "__name__") == 'compute_crosscorrelogram':
+                if getattr(func, "__name__") == "compute_crosscorrelogram":
                     msg = msg + " or a tuple/list of (TsGroup, TsGroup)."
                 raise TypeError(msg)
 
@@ -47,7 +54,7 @@ def _validate_correlograms_inputs(func):
             "norm": bool,
             "time_units": str,
             "reverse": bool,
-            "event": (nap.Ts, nap.Tsd)
+            "event": (nap.Ts, nap.Tsd),
         }
         for param, param_type in parameters_type.items():
             if param in kwargs:
