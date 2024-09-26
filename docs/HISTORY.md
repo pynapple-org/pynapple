@@ -14,6 +14,12 @@ and [Edoardo Balzani](https://www.simonsfoundation.org/people/edoardo-balzani/) 
 of the Flatiron institute.
 
 
+0.7.1 (2024-09-24)
+------------------
+
+- Fixing nan issue when computing 1d tuning curve (See issue #334).
+- Refactor tuning curves and correlogram tests.
+- Adding validators decorators for tuning curves and correlogram modules.
 
 0.7.0 (2024-09-16)
 ------------------
