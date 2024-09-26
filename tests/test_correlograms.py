@@ -55,6 +55,8 @@ def get_group():
 def get_ep():
     return nap.IntervalSet(start=0, end=100)
 
+def get_event():
+    return nap.Ts(t=np.arange(0, 100), time_support=nap.IntervalSet(0, 100))
 
 @pytest.mark.parametrize("func", [
     nap.compute_autocorrelogram,
@@ -93,14 +95,42 @@ def test_correlograms_type_errors_group(func, args, msg):
     (nap.TsGroup({1:nap.Ts(t=np.array([0, 10]))}), 1, 100, {"norm":False}, np.hstack((np.zeros(90),np.array([0.5]),np.zeros((19)),np.array([0.5]),np.zeros((90))))[:,np.newaxis]),
     (get_group(), 1, 100, {"ep":get_ep()}, np.hstack((np.arange(0, 1, 1 / 100), np.zeros(1), np.arange(0, 1, 1 / 100)[::-1]))[:,np.newaxis] ),
     (get_group(), 1, 100, {"time_units":"s"}, np.hstack((np.arange(0, 1, 1 / 100), np.zeros(1), np.arange(0, 1, 1 / 100)[::-1]))[:,np.newaxis] ),
+    (get_group(), 1*1e3, 100*1e3, {"time_units":"ms"}, np.hstack((np.arange(0, 1, 1 / 100), np.zeros(1), np.arange(0, 1, 1 / 100)[::-1]))[:,np.newaxis] ),
+    (get_group(), 1*1e6, 100*1e6, {"time_units":"us"}, np.hstack((np.arange(0, 1, 1 / 100), np.zeros(1), np.arange(0, 1, 1 / 100)[::-1]))[:,np.newaxis] ),
 ])
 def test_autocorrelogram(group, binsize, windowsize, kwargs, expected):
     cc = nap.compute_autocorrelogram(group, binsize, windowsize, **kwargs)
     assert isinstance(cc, pd.DataFrame)
     assert list(cc.keys()) == list(group.keys())
-    np.testing.assert_array_almost_equal(cc.index.values, np.arange(-windowsize, windowsize+binsize, binsize))
+    if "time_units" in kwargs:
+        if kwargs["time_units"] == "ms":
+            np.testing.assert_array_almost_equal(cc.index.values*1e3, np.arange(-windowsize, windowsize + binsize, binsize))
+        if kwargs["time_units"] == "us":
+            np.testing.assert_array_almost_equal(cc.index.values * 1e6, np.arange(-windowsize, windowsize + binsize, binsize))
+        if kwargs["time_units"] == "s":
+            np.testing.assert_array_almost_equal(cc.index.values, np.arange(-windowsize, windowsize + binsize, binsize))
+    else:
+        np.testing.assert_array_almost_equal(cc.index.values, np.arange(-windowsize, windowsize+binsize, binsize))
     np.testing.assert_array_almost_equal(cc.values, expected)
 
+
+@pytest.mark.parametrize("group, event, binsize, windowsize, kwargs, expected", [
+    (get_group(), get_event(), 1, 100, {}, None),
+])
+def test_eventcorrelogram(group, event, binsize, windowsize, kwargs, expected):
+    cc = nap.compute_eventcorrelogram(group, event, binsize, windowsize, **kwargs)
+    assert isinstance(cc, pd.DataFrame)
+    assert list(cc.keys()) == list(group.keys())
+    # if "time_units" in kwargs:
+    #     if kwargs["time_units"] == "ms":
+    #         np.testing.assert_array_almost_equal(cc.index.values*1e3, np.arange(-windowsize, windowsize + binsize, binsize))
+    #     if kwargs["time_units"] == "us":
+    #         np.testing.assert_array_almost_equal(cc.index.values * 1e6, np.arange(-windowsize, windowsize + binsize, binsize))
+    #     if kwargs["time_units"] == "s":
+    #         np.testing.assert_array_almost_equal(cc.index.values, np.arange(-windowsize, windowsize + binsize, binsize))
+    # else:
+    #     np.testing.assert_array_almost_equal(cc.index.values, np.arange(-windowsize, windowsize+binsize, binsize))
+    # np.testing.assert_array_almost_equal(cc.values, expected)
 
 
 
@@ -109,13 +139,6 @@ def test_autocorrelogram(group, binsize, windowsize, kwargs, expected):
     "group",[get_group()],
 )
 class Test_Correlograms:
-
-    def test_autocorrelogram_time_units(self, group):
-        cc = nap.compute_autocorrelogram(group, 1, 100, time_units="s")
-        cc2 = nap.compute_autocorrelogram(group, 1 * 1e3, 100 * 1e3, time_units="ms")
-        cc3 = nap.compute_autocorrelogram(group, 1 * 1e6, 100 * 1e6, time_units="us")
-        pd.testing.assert_frame_equal(cc, cc2)
-        pd.testing.assert_frame_equal(cc, cc3)
 
     def test_crosscorrelogram(self, group):
         cc = nap.compute_crosscorrelogram(group, 1, 100, norm=False)
