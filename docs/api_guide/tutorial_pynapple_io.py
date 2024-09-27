@@ -25,22 +25,45 @@ This notebook is designed to demonstrate the pynapple IO. It is build around the
 # Navigating a structured dataset
 # -------------------------------
 #
-# The dataset in this example can be found [here](https://www.dropbox.com/s/pr1ze1nuiwk8kw9/MyProject.zip?dl=1).
-
+# First let's import the necessary packages.
+#
+# mkdocs_gallery_thumbnail_path = '_static/treeview.png'
 
 import numpy as np
 import pynapple as nap
+import matplotlib.pyplot as plt
+import seaborn as sns
+import sys, os
+import requests, math
+import tqdm
+import zipfile
 
-# mkdocs_gallery_thumbnail_path = '_static/treeview.png'
+# %%
+# Here we download a small example dataset.
 
-project_path = "../../your/path/to/MyProject"
+project_path = "MyProject"
+
+
+if project_path not in os.listdir("."):
+  r = requests.get(f"https://osf.io/a9n6r/download", stream=True)
+  block_size = 1024*1024
+  with open(project_path+".zip", 'wb') as f:
+    for data in tqdm.tqdm(r.iter_content(block_size), unit='MB', unit_scale=True,
+      total=math.ceil(int(r.headers.get('content-length', 0))//block_size)):
+      f.write(data)
+
+  with zipfile.ZipFile(project_path+".zip", 'r') as zip_ref:
+    zip_ref.extractall(".")
+
+# %%
+# Let's load the project with `nap.load_folder`.
 
 project = nap.load_folder(project_path)
 
 print(project)
 
 # %%
-# The pynapple IO offers a convenient way of visualizing and navigating a folder based dataset. To visualize the whole hierarchy of Folders, you can call the view property or the expand function.
+# The pynapple IO Folders class offers a convenient way of visualizing and navigating a folder based dataset. To visualize the whole hierarchy of Folders, you can call the view property or the expand function.
 
 project.view
 
