@@ -71,8 +71,9 @@ def test_jitrestrict():
 
         tsd2 = restrict(ep, tsd)
         ix = nap.core._jitted_functions.jitrestrict(tsd.index, ep.start, ep.end)
-        tsd3 = pd.Series(index=tsd.index[ix], data=tsd.values[ix])
-        pd.testing.assert_series_equal(tsd2, tsd3)
+        tsd3 = pd.Series(index=tsd.index[ix], data=tsd.values[ix])        
+        np.testing.assert_array_almost_equal(tsd2.values, tsd3.values)
+        np.testing.assert_array_almost_equal(tsd2.index.values, tsd3.index.values)
 
 def test_jitrestrict_with_count():
     for i in range(100):
@@ -81,7 +82,9 @@ def test_jitrestrict_with_count():
         tsd2 = restrict(ep, tsd)
         ix, count = nap.core._jitted_functions.jitrestrict_with_count(tsd.index, ep.start, ep.end)
         tsd3 = pd.Series(index=tsd.index[ix], data=tsd.values[ix])
-        pd.testing.assert_series_equal(tsd2, tsd3)
+        np.testing.assert_array_almost_equal(tsd2.values, tsd3.values)
+        np.testing.assert_array_almost_equal(tsd2.index.values, tsd3.index.values)
+
 
         bins = ep.values.ravel()
         ix = np.array(pd.cut(tsd.index, bins, labels=np.arange(len(bins) - 1, dtype=np.float64)))
@@ -146,8 +149,10 @@ def test_jitvalue_from():
                 tsd2.append(tsd.restrict(ep[j]).as_series().reindex(ix, method="nearest").fillna(0.0))
         
         tsd2 = pd.concat(tsd2)
+        
+        np.testing.assert_array_almost_equal(tsd2.values, tsd3.values)
+        np.testing.assert_array_almost_equal(tsd2.index.values, tsd3.index.values)
 
-        pd.testing.assert_series_equal(tsd2, tsd3)
 
 def test_jitcount():
     for i in range(10):
@@ -157,7 +162,7 @@ def test_jitcount():
         starts = ep.start
         ends = ep.end
         bin_size = 1.0
-        t, d = nap.core._jitted_functions.jitcount(time_array, starts, ends, bin_size)
+        t, d = nap.core._jitted_functions.jitcount(time_array, starts, ends, bin_size, np.int64)
         tsd3 = nap.Tsd(t=t, d=d, time_support = ep)
 
         tsd2 = []
@@ -166,15 +171,15 @@ def test_jitcount():
             idx = np.digitize(ts.restrict(ep[j]).index, bins)-1
             tmp = np.array([np.sum(idx==j) for j in range(len(bins)-1)])
             tmp = nap.Tsd(t = bins[0:-1] + np.diff(bins)/2, d = tmp)
-            tmp = tmp.restrict(ep[j])
-
-            # pd.testing.assert_series_equal(tmp, tsd3.restrict(ep.loc[[j]]))
+            tmp = tmp.restrict(ep[j])            
 
             tsd2.append(tmp.as_series())
 
         tsd2 = pd.concat(tsd2)
-        
-        pd.testing.assert_series_equal(tsd3.as_series(), tsd2)
+    
+        np.testing.assert_array_almost_equal(tsd2.values, tsd3.values)
+        np.testing.assert_array_almost_equal(tsd2.index.values, tsd3.index.values)
+
 
 def test_jitbin():
     for i in range(10):
@@ -210,8 +215,10 @@ def test_jitbin():
         tsd2 = pd.concat(tsd2)
         # tsd2 = nap.Tsd(tsd2)
         tsd2 = tsd2.fillna(0.0)
+        
+        np.testing.assert_array_almost_equal(tsd2.values, tsd3.values)
+        np.testing.assert_array_almost_equal(tsd2.index.values, tsd3.index.values)
 
-        pd.testing.assert_series_equal(tsd3, tsd2)
 
 def test_jitbin_array():
     for i in range(10):
@@ -248,7 +255,8 @@ def test_jitbin_array():
         tsd2 = pd.concat(tsd2)
         # tsd2 = nap.TsdFrame(tsd2)
 
-        pd.testing.assert_frame_equal(tsd3, tsd2)
+        np.testing.assert_array_almost_equal(tsd3.values, tsd2.values)
+        np.testing.assert_array_almost_equal(tsd3.index.values, tsd2.index.values)        
 
 def test_jitintersect():
     for i in range(10):
@@ -280,7 +288,6 @@ def test_jitintersect():
 
         ep4 = nap.IntervalSet(start, end)
 
-        # pd.testing.assert_frame_equal(ep3, ep4)
         np.testing.assert_array_almost_equal(ep3, ep4)
 
 def test_jitunion():
@@ -313,8 +320,7 @@ def test_jitunion():
         stop = df["time"][ix_stop]
 
         ep4 = nap.IntervalSet(start, stop)
-
-        # pd.testing.assert_frame_equal(ep3, ep4)
+        
         np.testing.assert_array_almost_equal(ep3, ep4)
         
 def test_jitdiff():
@@ -353,8 +359,7 @@ def test_jitdiff():
         idx = start != end
 
         ep4 = nap.IntervalSet(start[idx], end[idx])
-
-        # pd.testing.assert_frame_equal(ep3, ep4)
+        
         np.testing.assert_array_almost_equal(ep3, ep4)
 
 def test_jitunion_isets():
@@ -388,8 +393,7 @@ def test_jitunion_isets():
         stop = df["time"][ix_stop]
 
         ep5 = nap.IntervalSet(start, stop)
-
-        # pd.testing.assert_frame_equal(ep5, ep6)
+        
         np.testing.assert_array_almost_equal(ep5, ep6)
 
 

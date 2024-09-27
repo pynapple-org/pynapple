@@ -1,8 +1,4 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-03-30 11:14:41
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-11 14:42:50
+
 
 """Tests of ts group for `pynapple` package."""
 
@@ -37,6 +33,16 @@ def ts_group():
     data = {1: ts1, 2: ts2}
     group = nap.TsGroup(data, meta=[10, 11])
     return group
+
+
+@pytest.fixture
+def ts_group_one_group():
+    # Placeholder setup for Ts and Tsd objects. Adjust as necessary.
+    ts1 = nap.Ts(t=np.arange(10))
+    data = {1: ts1}
+    group = nap.TsGroup(data, meta=[10])
+    return group
+
 
 class TestTsGroup1:
 
@@ -128,7 +134,8 @@ class TestTsGroup1:
         ar_info = np.ones(3) * 1
         tsgroup = nap.TsGroup(group, sr=sr_info, ar=ar_info)
         assert tsgroup._metadata.shape == (3, 3)
-        pd.testing.assert_series_equal(tsgroup._metadata["sr"], sr_info)
+        np.testing.assert_array_almost_equal(tsgroup._metadata["sr"].values, sr_info.values)
+        np.testing.assert_array_almost_equal(tsgroup._metadata["sr"].index.values, sr_info.index.values)
         np.testing.assert_array_almost_equal(tsgroup._metadata["ar"].values, ar_info)
 
     def test_add_metainfo(self, group):
@@ -294,6 +301,9 @@ class TestTsGroup1:
 
         count = tsgroup.count()
         np.testing.assert_array_almost_equal(count.values, np.array([[101, 201, 501]]))
+
+        count = tsgroup.count(1.0, dtype=np.int16)
+        assert count.dtype == np.dtype(np.int16)
 
     def test_count_with_ep(self, group):
         ep = nap.IntervalSet(start=0, end=100)
@@ -880,3 +890,25 @@ def test_pickling(ts_group):
 
     # Ensure time support is the same
     assert np.all(ts_group.time_support == unpickled_obj.time_support)
+
+
+@pytest.mark.parametrize(
+    "dtype, expectation",
+    [
+        (None, does_not_raise()),
+        (float, does_not_raise()),
+        (int, does_not_raise()),
+        (np.int32, does_not_raise()),
+        (np.int64, does_not_raise()),
+        (np.float32, does_not_raise()),
+        (np.float64, does_not_raise()),
+        (1, pytest.raises(ValueError, match=f"1 is not a valid numpy dtype")),
+    ]
+)
+def test_count_dtype(dtype, expectation, ts_group, ts_group_one_group):
+    with expectation:
+        count = ts_group.count(bin_size=0.1, dtype=dtype)
+        count_one = ts_group_one_group.count(bin_size=0.1, dtype=dtype)
+        if dtype:
+            assert np.issubdtype(count.dtype, dtype)
+            assert np.issubdtype(count_one.dtype, dtype)

@@ -332,8 +332,13 @@ class IntervalSet(NDArrayOperatorsMixin):
         Ts
             The starts of the IntervalSet
         """
+        warnings.warn(
+            "starts is a deprecated function. It will be removed in future versions",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         time_series = importlib.import_module(".time_series", "pynapple.core")
-        return time_series.Ts(t=self.values[:, 0], time_support=self)
+        return time_series.Ts(t=self.values[:, 0])
 
     @property
     def ends(self):
@@ -344,8 +349,13 @@ class IntervalSet(NDArrayOperatorsMixin):
         Ts
             The ends of the IntervalSet
         """
+        warnings.warn(
+            "ends is a deprecated function. It will be removed in future versions",
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         time_series = importlib.import_module(".time_series", "pynapple.core")
-        return time_series.Ts(t=self.values[:, 1], time_support=self)
+        return time_series.Ts(t=self.values[:, 1])
 
     @property
     def loc(self):
@@ -353,6 +363,25 @@ class IntervalSet(NDArrayOperatorsMixin):
         Slicing function to add compatibility with pandas DataFrame after removing it as a super class of IntervalSet
         """
         return _IntervalSetSliceHelper(self)
+
+    @classmethod
+    def _from_npz_reader(cls, file):
+        """Load an IntervalSet object from a npz file.
+
+        The file should contain the keys 'start', 'end' and 'type'.
+        The 'type' key should be 'IntervalSet'.
+
+        Parameters
+        ----------
+        file : NPZFile object
+            opened npz file interface.
+
+        Returns
+        -------
+        IntervalSet
+            The IntervalSet object
+        """
+        return cls(start=file["start"], end=file["end"])
 
     def time_span(self):
         """
@@ -652,21 +681,78 @@ class IntervalSet(NDArrayOperatorsMixin):
 
         return
 
-    @classmethod
-    def _from_npz_reader(cls, file):
-        """Load an IntervalSet object from a npz file.
+    def split(self, interval_size, time_units="s"):
+        """Split `IntervalSet` to a new `IntervalSet` with each interval being of size `interval_size`.
 
-        The file should contain the keys 'start', 'end' and 'type'.
-        The 'type' key should be 'IntervalSet'.
+        Used mostly for chunking very large dataset or looping throught multiple epoch of same duration.
+
+        This function skips the epochs that are shorter than `interval_size`.
+
+        Note that intervals are strictly non-overlapping in pynapple. One microsecond is removed from contiguous intervals.
 
         Parameters
         ----------
-        file : NPZFile object
-            opened npz file interface.
+        interval_size : Number
+            Description
+        time_units : str, optional
+            time units for the `interval_size` ('us', 'ms', 's' [default])
 
         Returns
         -------
         IntervalSet
-            The IntervalSet object
+            New `IntervalSet` with equal sized intervals
+
+        Raises
+        ------
+        IOError
+            If `interval_size` is not a Number or is below 0
+            If `time_units` is not a string
         """
-        return cls(start=file["start"], end=file["end"])
+        if not isinstance(interval_size, Number):
+            raise IOError("Argument interval_size should of type float or int")
+
+        if not interval_size > 0:
+            raise IOError("Argument interval_size should be strictly larger than 0")
+
+        if not isinstance(time_units, str):
+            raise IOError("Argument time_units should be of type str")
+
+        if len(self) == 0:
+            return IntervalSet(start=[], end=[])
+
+        interval_size = TsIndex.format_timestamps(
+            np.array((interval_size,), dtype=np.float64).ravel(), time_units
+        )[0]
+
+        interval_size = np.round(interval_size, nap_config.time_index_precision)
+
+        durations = np.round(self.end - self.start, nap_config.time_index_precision)
+
+        idxs = np.where(durations > interval_size)[0]
+        size_tmp = (
+            np.ceil((self.end[idxs] - self.start[idxs]) / interval_size)
+        ).astype(int) + 1
+        new_starts = np.full(size_tmp.sum() - size_tmp.shape[0], np.nan)
+        new_ends = np.full(size_tmp.sum() - size_tmp.shape[0], np.nan)
+        i0 = 0
+        for cnt, idx in enumerate(idxs):
+            new_starts[i0 : i0 + size_tmp[cnt] - 1] = np.arange(
+                self.start[idx], self.end[idx], interval_size
+            )
+            new_ends[i0 : i0 + size_tmp[cnt] - 2] = new_starts[
+                i0 + 1 : i0 + size_tmp[cnt] - 1
+            ]
+            new_ends[i0 + size_tmp[cnt] - 2] = self.end[idx]
+            i0 += size_tmp[cnt] - 1
+        new_starts = np.round(new_starts, nap_config.time_index_precision)
+        new_ends = np.round(new_ends, nap_config.time_index_precision)
+
+        durations = np.round(new_ends - new_starts, nap_config.time_index_precision)
+        tokeep = durations >= interval_size
+        new_starts = new_starts[tokeep]
+        new_ends = new_ends[tokeep]
+
+        # Removing 1 microsecond to have strictly non-overlapping intervals for intervals coming from the same epoch
+        new_ends -= 1e-6
+
+        return IntervalSet(new_starts, new_ends)
