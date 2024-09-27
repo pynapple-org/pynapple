@@ -30,8 +30,6 @@ class Metadata(DataFrame):
     A pandas DataFrame-like object containing metadata for TsGroup or IntervalSet
     
     """
-    _metadata = ["_ob_attrs","_ob_type"] # tell pandas we want a persistent attribute 
-
     def __init__(self, ob, *args, **kwargs):
         """
         Metadata initializer
@@ -46,8 +44,6 @@ class Metadata(DataFrame):
         """
 
         super().__init__(index=ob.index) # initialize to empty frame with index matching input object
-        self._ob_attrs = ob.__dict__.keys() # to make sure we don't reuse attribute names from attached object
-        self._ob_type = type(ob).__name__
         self.set_info(ob,*args, **kwargs)
 
     @property
