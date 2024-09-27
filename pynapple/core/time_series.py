@@ -777,13 +777,17 @@ class TsdTensor(BaseTsd):
         print("key", key)
         if isinstance(key, Tsd):
             if not np.issubdtype(key.dtype, np.bool_):
-                raise ValueError("When indexing with a Tsd, it must contain boolean values")
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
             output = self.values[key.values]
             index = self.index[key.values]
         elif isinstance(key, tuple):
             if isinstance(key[0], Tsd):
                 if not np.issubdtype(key[0].dtype, np.bool_):
-                    raise ValueError("When indexing with a Tsd, it must contain boolean values")
+                    raise ValueError(
+                        "When indexing with a Tsd, it must contain boolean values"
+                    )
                 output = self.values[key[0].values]
                 index = self.index[key[0].values]
                 # Apply the rest of the indexing
@@ -811,7 +815,7 @@ class TsdTensor(BaseTsd):
                 else:
                     return TsdTensor(t=index, d=output, time_support=self.time_support)
             else:
-               return output
+                return output
         else:
             return output
 
