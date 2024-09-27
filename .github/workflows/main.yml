@@ -16,11 +16,11 @@ jobs:
   lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
       - name: Set up Python
-        uses: actions/setup-python@v2
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.8
+          python-version: 3.10
       - name: Install dependencies
         run: |
           echo "testing: ${{github.ref}}"
@@ -63,6 +63,29 @@ jobs:
         uses: codecov/codecov-action@v4.0.1
         with:
             token: ${{ secrets.CODECOV_TOKEN }}
+  check_links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install .[docs]
+      - name: Build site
+        run: mkdocs build
+      - name: Check html
+        uses: chabad360/htmlproofer@master
+        with:
+          directory: "./site"
+          # The directory to scan
+          arguments: --checks Links,Scripts --ignore-urls "https://fonts.gstatic.com,https://mkdocs-gallery.github.io" --assume-extension --check-external-hash --ignore-status-codes 403
+          # The arguments to pass to HTMLProofer
+
+
   check:
     if: always()
     needs:
