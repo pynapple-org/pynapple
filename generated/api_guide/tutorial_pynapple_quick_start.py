@@ -3,11 +3,9 @@
 Quick start
 ===========
 
-The examplar data to replicate the figure in the jupyter notebook can be found [here](https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1). 
-
 The data contains a sample recordings taken simultaneously from the anterodorsal thalamus and the hippocampus and contains both a sleep and wake session. It contains both head-direction cells (i.e. cells that fire for a particular head direction in the horizontal plane) and place cells (i.e. cells that fire for a particular position in the environment).
 
-Preprocessing of the data was made with [Kilosort 2.0](https://github.com/MouseLand/Kilosort) and spike sorting was made with [Klusters](http://neurosuite.sourceforge.net/).
+Preprocessing of the data was made with [Kilosort 2.0](https://github.com/MouseLand/Kilosort) and spike sorting was made with [Klusters](https://neurosuite.sourceforge.net/).
 
 Instructions for installing pynapple can be found [here](https://pynapple-org.github.io/pynapple/#installation).
 
@@ -15,9 +13,9 @@ Instructions for installing pynapple can be found [here](https://pynapple-org.gi
 
 This notebook is meant to provide an overview of pynapple by going through:
 
-- **Input output (IO)**. In this case, pynapple will load a NWB file using the [NWBFile object](https://pynapple-org.github.io/pynapple/io.nwb/) within a project [Folder](https://pynapple-org.github.io/pynapple/io.folder/) that represent a dataset. 
-- **Core functions** that handle time series, interval sets and groups of time series. See this [notebook](https://pynapple-org.github.io/pynapple/notebooks/pynapple-core-notebook/) for a detailled usage of the core functions.
-- **Process functions**. A small collection of high-level functions widely used in system neuroscience. This [notebook](https://pynapple-org.github.io/pynapple/notebooks/pynapple-process-notebook/) details those functions.
+- **Input output (IO)**. In this case, pynapple will load a NWB file using the [NWBFile object](https://pynapple-org.github.io/pynapple/reference/io/interface_nwb/#pynapple.io.interface_nwb.NWBFile) within a project [Folder](https://pynapple-org.github.io/pynapple/reference/io/folder/) that represent a dataset.
+- **Core functions** that handle time series, interval sets and groups of time series. See this [notebook](https://pynapple-org.github.io/pynapple/generated/api_guide/tutorial_pynapple_core/) for a detailled usage of the core functions.
+- **Process functions**. A small collection of high-level functions widely used in system neuroscience. This [notebook](https://pynapple-org.github.io/pynapple/generated/api_guide/tutorial_pynapple_process) details those functions.
 
 """
 
@@ -28,30 +26,50 @@ This notebook is meant to provide an overview of pynapple by going through:
 #     You can install both with `pip install matplotlib seaborn`
 
 import numpy as np
-import pandas as pd
 import pynapple as nap
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
+import requests, math
+import tqdm
+import zipfile
 
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
+
+# %%
+# Here we download the data.
+
+project_path = "MyProject"
+
+if project_path not in os.listdir("."):
+  r = requests.get(f"https://osf.io/a9n6r/download", stream=True)
+  block_size = 1024*1024
+  with open(project_path+".zip", 'wb') as f:
+    for data in tqdm.tqdm(r.iter_content(block_size), unit='MB', unit_scale=True,
+      total=math.ceil(int(r.headers.get('content-length', 0))//block_size)):
+      f.write(data)
+
+  with zipfile.ZipFile(project_path+".zip", 'r') as zip_ref:
+    zip_ref.extractall(".")
+
 
 # %%
 # ***
 # IO
 # -----------------
 # The first step is to give the path to the data folder.
-DATA_DIRECTORY = "../../your/path/to/MyProject/"
+DATA_DIRECTORY = "MyProject/"
 
 
 # %%
-# We can load the session with the function [load_folder](https://pynapple-org.github.io/pynapple/io/#pynapple.io.misc.load_folder). Pynapple will walks throught the folder and collects every subfolders.
+# We can load the session with the function [load_folder](https://pynapple-org.github.io/pynapple/reference/io/misc/#pynapple.io.misc.load_folder). Pynapple will walks throught the folder and collects every subfolders.
 # We can use the attribute `view` or the function `expand` to display a tree view of the dataset. The treeview shows all the compatible data format (i.e npz files or NWBs files) and their equivalent pynapple type.
 data = nap.load_folder(DATA_DIRECTORY)
 data.view
 
 # %%
-# The object `data` is a [`Folder`](https://pynapple-org.github.io/pynapple/io.folder/) object that allows easy navigation and interaction with a dataset.
+# The object `data` is a [`Folder`](https://pynapple-org.github.io/pynapple/reference/io/folder/) object that allows easy navigation and interaction with a dataset.
 # In this case, we want to load the NWB file in the folder `/pynapplenwb`. Data are always lazy loaded. No time series is loaded until it's actually called.
 # When calling the NWB file, the object `nwb` is an interface to the NWB file. All the data inside the NWB file that are compatible with one of the pynapple objects are shown with their corresponding keys.
 nwb = data["sub-A2929"]["A2929-200711"]["pynapplenwb"]["A2929-200711"]
@@ -61,7 +79,7 @@ print(nwb)
 # %%
 # We can individually call each object and they are actually loaded.
 #
-# `units` is a [TsGroup](https://pynapple-org.github.io/pynapple/core.ts_group/) object. It allows to group together time series with different timestamps and couple metainformation to each neuron. In this case, the location of where the neuron was recorded has been added when loading the session for the first time.
+# `units` is a [TsGroup](https://pynapple-org.github.io/pynapple/reference/core/ts_group/) object. It allows to group together time series with different timestamps and couple metainformation to each neuron. In this case, the location of where the neuron was recorded has been added when loading the session for the first time.
 # We load `units` as `spikes`
 spikes = nwb["units"]
 print(spikes)
@@ -72,7 +90,7 @@ neuron_0 = spikes[0]
 print(neuron_0)
 
 # %%
-# `neuron_0` is a [Ts](https://pynapple-org.github.io/pynapple/core.time_series/#pynapple.core.time_series.Ts) object containing the times of the spikes.
+# `neuron_0` is a [Ts](https://pynapple-org.github.io/pynapple/reference/core/time_series/#pynapple.core.time_series.Ts) object containing the times of the spikes.
 
 # %%
 # The other information about the session is contained in `nwb["epochs"]`. In this case, the start and end of the sleep and wake epochs. If the NWB time intervals contains tags of the epochs, pynapple will try to group them together and return a dictionary of IntervalSet instead of IntervalSet.
@@ -129,7 +147,7 @@ print(epochs_above_thr)
 # ***
 # Tuning curves
 # -------------
-# Let's do a more advanced analysis. Neurons from ADn (group 0 in the `spikes` group object) are know to fire for a particular direction. Therefore, we can compute their tuning curves, i.e. their firing rates as a function of the head-direction of the animal in the horizontal plane (*ry*). To do this, we can use the function [`compute_1d_tuning_curves`](https://pynapple-org.github.io/pynapple/process.tuning_curves/#pynapple.process.tuning_curves.compute_1d_tuning_curves). In this case, the tuning curves are computed over 120 bins and between 0 and 2$\pi$.
+# Let's do a more advanced analysis. Neurons from ADn (group 0 in the `spikes` group object) are know to fire for a particular direction. Therefore, we can compute their tuning curves, i.e. their firing rates as a function of the head-direction of the animal in the horizontal plane (*ry*). To do this, we can use the function [`compute_1d_tuning_curves`](https://pynapple-org.github.io/pynapple/reference/process/tuning_curves/#pynapple.process.tuning_curves.compute_1d_tuning_curves). In this case, the tuning curves are computed over 120 bins and between 0 and 2$\pi$.
 
 tuning_curves = nap.compute_1d_tuning_curves(
     group=spikes, feature=head_direction, nb_bins=121, minmax=(0, 2 * np.pi)
@@ -152,7 +170,7 @@ plt.tight_layout()
 plt.show()
 
 # %%
-# While ADN neurons show obvious modulation for head-direction, it is not obvious for all CA1 cells. Therefore we want to restrict the remaining of the analyses to only ADN neurons. We can split the `spikes` group with the function [`getby_category`](https://pynapple-org.github.io/pynapple/core.ts_group/#pynapple.core.ts_group.TsGroup.getby_category).
+# While ADN neurons show obvious modulation for head-direction, it is not obvious for all CA1 cells. Therefore we want to restrict the remaining of the analyses to only ADN neurons. We can split the `spikes` group with the function [`getby_category`](https://pynapple-org.github.io/pynapple/reference/core/ts_group/#pynapple.core.ts_group.TsGroup.getby_category).
 
 spikes_by_location = spikes.getby_category("location")
 
@@ -168,7 +186,7 @@ spikes_adn = spikes_by_location["adn"]
 # ------------
 # A classical question with head-direction cells is how pairs stay coordinated across brain states i.e. wake vs sleep (see Peyrache, A., Lacroix, M. M., Petersen, P. C., & Buzsáki, G. (2015). Internally organized mechanisms of the head direction sense. Nature neuroscience, 18(4), 569-575.)
 #
-# In this example, this coordination across brain states will be evaluated with cross-correlograms of pairs of neurons. We can call the function [`compute_crosscorrelogram`](https://pynapple-org.github.io/pynapple/process.correlograms/#pynapple.process.correlograms.compute_crosscorrelogram) during both sleep and wake epochs.
+# In this example, this coordination across brain states will be evaluated with cross-correlograms of pairs of neurons. We can call the function [`compute_crosscorrelogram`](https://pynapple-org.github.io/pynapple/reference/process/correlograms/#pynapple.process.correlograms.compute_crosscorrelogram) during both sleep and wake epochs.
 
 cc_wake = nap.compute_crosscorrelogram(
     group=spikes_adn,
@@ -222,7 +240,7 @@ plt.show()
 # This last analysis shows how to use the pynapple's decoding function.
 #
 # The previous result indicates a persistent coordination of head-direction cells during sleep. Therefore it is possible to decode a virtual head-direction signal even if the animal is not moving its head.
-# This example uses the function [`decode_1d`](https://pynapple-org.github.io/pynapple/process.decoding/#pynapple.process.decoding.decode_1d) which implements bayesian decoding (see : Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J. (1998). Interpreting neuronal population activity by reconstruction: unified framework with application to hippocampal place cells. Journal of neurophysiology, 79(2), 1017-1044.)
+# This example uses the function [`decode_1d`](https://pynapple-org.github.io/pynapple/reference/process/decoding/#pynapple.process.decoding.decode_1d) which implements bayesian decoding (see : Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J. (1998). Interpreting neuronal population activity by reconstruction: unified framework with application to hippocampal place cells. Journal of neurophysiology, 79(2), 1017-1044.)
 #
 # First we can validate the decoding function with the real position of the head of the animal during wake.
 
@@ -267,7 +285,7 @@ decoded_sleep, proba_angle_Sleep = nap.decode_1d(
 )
 
 # %%
-# Here we are gonna chain the TsGroup function [`set_info`](https://pynapple-org.github.io/pynapple/core.ts_group/#pynapple.core.ts_group.TsGroup.set_info) and the function [`to_tsd`](https://pynapple-org.github.io/pynapple/core.ts_group/#pynapple.core.ts_group.TsGroup.to_tsd) to flatten the TsGroup and quickly assign to each spikes a corresponding value found in the metadata table. Any columns of the metadata table can be assigned to timestamps in a TsGroup.
+# Here we are gonna chain the TsGroup function [`set_info`](https://pynapple-org.github.io/pynapple/reference/core/ts_group/#pynapple.core.ts_group.TsGroup.set_info) and the function [`to_tsd`](https://pynapple-org.github.io/pynapple/reference/core/ts_group/#pynapple.core.ts_group.TsGroup.to_tsd) to flatten the TsGroup and quickly assign to each spikes a corresponding value found in the metadata table. Any columns of the metadata table can be assigned to timestamps in a TsGroup.
 #
 # Here the value assign to the spikes comes from the preferred firing direction of the neurons. The following line is a quick way to sort the neurons based on their preferred firing direction
 order = np.argsort(np.argmax(tuning_curves_adn.values, 0))

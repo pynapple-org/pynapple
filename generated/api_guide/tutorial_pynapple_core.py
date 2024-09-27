@@ -70,7 +70,7 @@ print(tsdframe)
 # Interval Sets object
 # --------------------
 #
-# The [IntervalSet](https://peyrachelab.github.io/pynapple/core.interval_set/) object stores multiple epochs with a common time unit. It can then be used to restrict time series to this particular set of epochs.
+# The [IntervalSet](https://pynapple-org.github.io/pynapple/reference/core/interval_set/) object stores multiple epochs with a common time unit. It can then be used to restrict time series to this particular set of epochs.
 
 
 epochs = nap.IntervalSet(start=[0, 10], end=[5, 15], time_units="s")
@@ -82,7 +82,7 @@ print("\n")
 print(new_tsd)
 
 # %%
-# Multiple operations are available for IntervalSet. For example, IntervalSet can be merged. See the full documentation of the class [here](https://peyrachelab.github.io/pynapple/core.interval_set/#pynapple.core.interval_set.IntervalSet.intersect) for a list of all the functions that can be used to manipulate IntervalSets.
+# Multiple operations are available for IntervalSet. For example, IntervalSet can be merged. See the full documentation of the class [here](https://pynapple-org.github.io/pynapple/reference/core/interval_set/#pynapple.core.interval_set.IntervalSet.intersect) for a list of all the functions that can be used to manipulate IntervalSets.
 
 
 epoch1 = nap.IntervalSet(start=0, end=10)  # no time units passed. Default is us.
@@ -132,7 +132,7 @@ count = tsgroup.count(
 print(count)
 
 # %%
-# One advantage of grouping time series is that metainformation can be added directly on an element-wise basis. In this case, we add labels to each Ts object when instantiating the group and after. We can then use this label to split the group. See the [TsGroup](https://peyrachelab.github.io/pynapple/core.ts_group/) documentation for a complete methodology for splitting TsGroup objects.
+# One advantage of grouping time series is that metainformation can be added directly on an element-wise basis. In this case, we add labels to each Ts object when instantiating the group and after. We can then use this label to split the group. See the [TsGroup](https://pynapple-org.github.io/pynapple/reference/core/ts_group/) documentation for a complete methodology for splitting TsGroup objects.
 #
 # First we create a pandas Series for the label.
 

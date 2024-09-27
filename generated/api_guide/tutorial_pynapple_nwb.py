@@ -8,16 +8,34 @@ Pynapple currently provides loaders for two data formats :
 
  - [NWB format](https://pynwb.readthedocs.io/en/stable/index.html#)
 
-This notebook focuses on the NWB format. Additionaly it demonstrates the capabilities of pynapple for lazy-loading different formats.
+This notebook focuses on the NWB format. Additionally it demonstrates the capabilities of pynapple for lazy-loading different formats.
 
-
-The dataset in this example can be found [here](https://www.dropbox.com/s/pr1ze1nuiwk8kw9/MyProject.zip?dl=1).
 """
 # %%
-#
+# Let's import libraries.
 
 import numpy as np
 import pynapple as nap
+import os
+import requests, math
+import tqdm
+import zipfile
+
+# %%
+# Here we download the data.
+
+project_path = "MyProject"
+
+if project_path not in os.listdir("."):
+  r = requests.get(f"https://osf.io/a9n6r/download", stream=True)
+  block_size = 1024*1024
+  with open(project_path+".zip", 'wb') as f:
+    for data in tqdm.tqdm(r.iter_content(block_size), unit='MB', unit_scale=True,
+      total=math.ceil(int(r.headers.get('content-length', 0))//block_size)):
+      f.write(data)
+
+  with zipfile.ZipFile(project_path+".zip", 'r') as zip_ref:
+    zip_ref.extractall(".")
 
 # %%
 # NWB
@@ -30,15 +48,15 @@ import pynapple as nap
 # 	Multiple tools exists to create NWB file automatically. You can check [neuroconv](https://neuroconv.readthedocs.io/en/main/), [NWBGuide](https://nwb-guide.readthedocs.io/en/latest/) or even [NWBmatic](https://github.com/pynapple-org/nwbmatic).
 
 
-data = nap.load_file("../../your/path/to/MyProject/sub-A2929/A2929-200711/pynapplenwb/A2929-200711.nwb")
+data = nap.load_file("MyProject/sub-A2929/A2929-200711/pynapplenwb/A2929-200711.nwb")
 
 print(data)
 
 # %%
 # Pynapple will give you a table with all the entries of the NWB file that are compatible with a pynapple object.
-# When parsing the NWB file, nothing is loaded. The `NWBFile` keeps track of the position of the data whithin the NWB file with a key. You can see it with the attributes `key_to_id`.
+# When parsing the NWB file, nothing is loaded. The `NWBFile` keeps track of the position of the data within the NWB file with a key. You can see it with the attributes `key_to_id`.
 
-data.key_to_id
+print(data.key_to_id)
 
 
 # %%
@@ -52,7 +70,7 @@ print(data['z'])
 #
 # Internally, the `NWBClass` has replaced the pointer to the data with the actual data.
 #
-# While it looks like pynapple has loaded the data, in fact it did not. By default, calling the NWB object will return an HDF5 dataset.
+# While it looks like pynapple has loaded the data, in fact it still did not. By default, calling the NWB object will return an HDF5 dataset.
 # !!! warning
 # 
 #     New in `0.6.6`
@@ -89,7 +107,7 @@ print(tc)
 
 # %%
 # To change this behavior, you can pass `lazy_loading=False` when instantiating the `NWBClass`.
-path = "../../your/path/to/MyProject/sub-A2929/A2929-200711/pynapplenwb/A2929-200711.nwb"
+path = "MyProject/sub-A2929/A2929-200711/pynapplenwb/A2929-200711.nwb"
 data = nap.NWBFile(path, lazy_loading=False)
 
 z = data['z']
@@ -103,7 +121,7 @@ print(type(z.d))
 #
 # In fact, pynapple can work with any type of memory map. Here we read a binary file with [`np.memmap`](https://numpy.org/doc/stable/reference/generated/numpy.memmap.html).
 
-eeg_path = "../../your/path/to/MyProject/sub-A2929/A2929-200711/A2929-200711.eeg"
+eeg_path = "MyProject/sub-A2929/A2929-200711/A2929-200711.eeg"
 frequency = 1250 # Hz
 n_channels = 16
 f = open(eeg_path, 'rb') 
