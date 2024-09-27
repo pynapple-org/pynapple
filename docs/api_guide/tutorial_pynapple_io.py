@@ -31,9 +31,7 @@ This notebook is designed to demonstrate the pynapple IO. It is build around the
 
 import numpy as np
 import pynapple as nap
-import matplotlib.pyplot as plt
-import seaborn as sns
-import sys, os
+import os
 import requests, math
 import tqdm
 import zipfile

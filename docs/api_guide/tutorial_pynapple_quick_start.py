@@ -3,8 +3,6 @@
 Quick start
 ===========
 
-The examplar data to replicate the figure in the jupyter notebook can be found [here](https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1). 
-
 The data contains a sample recordings taken simultaneously from the anterodorsal thalamus and the hippocampus and contains both a sleep and wake session. It contains both head-direction cells (i.e. cells that fire for a particular head direction in the horizontal plane) and place cells (i.e. cells that fire for a particular position in the environment).
 
 Preprocessing of the data was made with [Kilosort 2.0](https://github.com/MouseLand/Kilosort) and spike sorting was made with [Klusters](https://neurosuite.sourceforge.net/).
@@ -28,20 +26,40 @@ This notebook is meant to provide an overview of pynapple by going through:
 #     You can install both with `pip install matplotlib seaborn`
 
 import numpy as np
-import pandas as pd
 import pynapple as nap
 import matplotlib.pyplot as plt
 import seaborn as sns
+import os
+import requests, math
+import tqdm
+import zipfile
 
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
+
+# %%
+# Here we download the data.
+
+project_path = "MyProject"
+
+if project_path not in os.listdir("."):
+  r = requests.get(f"https://osf.io/a9n6r/download", stream=True)
+  block_size = 1024*1024
+  with open(project_path+".zip", 'wb') as f:
+    for data in tqdm.tqdm(r.iter_content(block_size), unit='MB', unit_scale=True,
+      total=math.ceil(int(r.headers.get('content-length', 0))//block_size)):
+      f.write(data)
+
+  with zipfile.ZipFile(project_path+".zip", 'r') as zip_ref:
+    zip_ref.extractall(".")
+
 
 # %%
 # ***
 # IO
 # -----------------
 # The first step is to give the path to the data folder.
-DATA_DIRECTORY = "../../your/path/to/MyProject/"
+DATA_DIRECTORY = "MyProject/"
 
 
 # %%
