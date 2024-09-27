@@ -1492,6 +1492,48 @@ class Test_Time_Series_5:
         tsdframe2 = tsdtensor.interpolate(ts, ep)
         assert len(tsdframe2) == 0
 
+    def test_indexing_with_boolean_tsd(self, tsdtensor):
+        # Create a boolean Tsd for indexing
+        index_tsd = nap.Tsd(t=tsdtensor.t, d=np.random.choice([True, False], size=len(tsdtensor)))
+        
+        # Test indexing
+        result = tsdtensor[index_tsd]
+        # print(type(result))
+        
+        assert isinstance(result, nap.TsdTensor)
+        assert len(result) == index_tsd.d.sum()
+        np.testing.assert_array_equal(result.t, tsdtensor.t[index_tsd.d])
+        np.testing.assert_array_equal(result.values, tsdtensor.values[index_tsd.d])
+
+    def test_indexing_with_boolean_tsd_and_additional_slicing(self, tsdtensor):
+        # Create a boolean Tsd for indexing
+        index_tsd = nap.Tsd(t=tsdtensor.t, d=np.random.choice([True, False], size=len(tsdtensor)))
+        
+        # Test indexing with additional dimension slicing
+        result = tsdtensor[index_tsd, 1]
+        print("!!!!!!!!!!!", type(result))
+        
+        assert isinstance(result, nap.TsdFrame)
+        assert len(result) == index_tsd.d.sum()
+        np.testing.assert_array_equal(result.t, tsdtensor.t[index_tsd.d])
+        np.testing.assert_array_equal(result.values, tsdtensor.values[index_tsd.d, 1])
+
+    def test_indexing_with_non_boolean_tsd_raises_error(self, tsdtensor):
+        # Create a non-boolean Tsd
+        index_tsd = nap.Tsd(t=np.array([10, 20, 30, 40]), d=np.array([1, 2, 3, 0]))
+        
+        # Test indexing with non-boolean Tsd should raise an error
+        with pytest.raises(ValueError, match="When indexing with a Tsd, it must contain boolean values"):
+            tsdtensor[index_tsd]
+
+    def test_indexing_with_mismatched_boolean_tsd_raises_error(self, tsdtensor):
+        # Create a boolean Tsd with mismatched length
+        index_tsd = nap.Tsd(t=np.arange(len(tsdtensor) + 5), d=np.random.choice([True, False], size=len(tsdtensor) + 5))
+        
+        # Test indexing with mismatched boolean Tsd should raise an error
+        with pytest.raises(IndexError, match="boolean index did not match indexed array along dimension 0"):
+            tsdtensor[index_tsd]
+
 @pytest.mark.parametrize("obj",
                          [
                              nap.Tsd(t=np.arange(10), d=np.random.rand(10), time_units="s"),

@@ -774,15 +774,32 @@ class TsdTensor(BaseTsd):
             return tabulate([], headers=headers) + "\n" + bottom
 
     def __getitem__(self, key, *args, **kwargs):
-        output = self.values.__getitem__(key)
-        if isinstance(key, tuple):
-            index = self.index.__getitem__(key[0])
+        print("key", key)
+        if isinstance(key, Tsd):
+            if not np.issubdtype(key.dtype, np.bool_):
+                raise ValueError("When indexing with a Tsd, it must contain boolean values")
+            output = self.values[key.values]
+            index = self.index[key.values]
+        elif isinstance(key, tuple):
+            if isinstance(key[0], Tsd):
+                if not np.issubdtype(key[0].dtype, np.bool_):
+                    raise ValueError("When indexing with a Tsd, it must contain boolean values")
+                output = self.values[key[0].values]
+                index = self.index[key[0].values]
+                # Apply the rest of the indexing
+                output = output[:, key[1:]]
+                output = output.squeeze()
+            else:
+                output = self.values.__getitem__(key)
+                index = self.index.__getitem__(key[0])
         else:
+            output = self.values.__getitem__(key)
             index = self.index.__getitem__(key)
 
         if isinstance(index, Number):
             index = np.array([index])
 
+        print(output.shape, index.shape)
         if all(is_array_like(a) for a in [index, output]):
             if output.shape[0] == index.shape[0]:
                 if output.ndim == 1:
@@ -793,9 +810,8 @@ class TsdTensor(BaseTsd):
                     )
                 else:
                     return TsdTensor(t=index, d=output, time_support=self.time_support)
-
             else:
-                return output
+               return output
         else:
             return output
 
