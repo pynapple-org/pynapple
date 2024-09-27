@@ -264,7 +264,7 @@ def test_base_tsd_class():
         nap.Ts(t=np.arange(100), time_units="s"),
     ],
 )
-class Test_Time_Series_1:
+class TestTimeSeriesGeneral:
     def test_as_units(self, tsd):
         if hasattr(tsd, "as_units"):
             tmp2 = tsd.index
@@ -594,7 +594,7 @@ class Test_Time_Series_1:
         nap.Tsd(t=np.arange(100), d=np.random.rand(100), time_units="s"),
     ],
 )
-class Test_Time_Series_2:
+class TestTsd:
     def test_as_series(self, tsd):
         assert isinstance(tsd.as_series(), pd.Series)
 
@@ -872,7 +872,7 @@ class Test_Time_Series_2:
         nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), time_units="s"),
     ],
 )
-class Test_Time_Series_3:
+class TestTsdFrame:
     def test_as_dataframe(self, tsdframe):
         assert isinstance(tsdframe.as_dataframe(), pd.DataFrame)
 
@@ -1134,7 +1134,7 @@ class Test_Time_Series_3:
         nap.Ts(t=np.arange(100), time_units="s"),
     ],
 )
-class Test_Time_Series_4:
+class TestTs:
 
     def test_repr_(self, ts):
         # assert pd.Series(ts).fillna("").__repr__() == ts.__repr__()
@@ -1287,7 +1287,7 @@ class Test_Time_Series_4:
         nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 3,2), time_units="s"),
     ],
 )
-class Test_Time_Series_5:
+class TestTsdTensor:
 
     def test_return_ndarray(self, tsdtensor):
         np.testing.assert_array_equal(tsdtensor[0], tsdtensor.values[0])
@@ -1555,7 +1555,7 @@ class Test_Time_Series_5:
         np.testing.assert_array_equal(
             tsdtensor.values[~index_tsd.d], tsdtensor.values[~index_tsd.d]
         )
-        
+
 
 @pytest.mark.parametrize("obj",
                          [
