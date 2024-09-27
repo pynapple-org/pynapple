@@ -152,3 +152,6 @@ tutorials/data/KA28-190405/
 old
 data
 your
+
+# Ignore npz files from testing:
+tests/*.npz
