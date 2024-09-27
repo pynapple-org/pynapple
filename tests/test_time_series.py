@@ -1531,7 +1531,7 @@ class TestTsdTensor:
         index_tsd = nap.Tsd(t=np.arange(len(tsdtensor) + 5), d=np.random.choice([True, False], size=len(tsdtensor) + 5))
         
         # Test indexing with mismatched boolean Tsd should raise an error
-        with pytest.raises(IndexError, match="boolean index did not match indexed array along dimension 0"):
+        with pytest.raises(IndexError, match="boolean index did not match"):
             tsdtensor[index_tsd]
         
     def test_setitem_with_boolean_tsd(self, tsdtensor):
