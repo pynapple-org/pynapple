@@ -7,5 +7,5 @@ from mkdocs_gallery.gen_gallery import DefaultResetArgv
 
 conf = {
 	"reset_argv": DefaultResetArgv(),
-	"filename_pattern": "/tutorial",
+	"filename_pattern": "/aaatutorial",
 }
