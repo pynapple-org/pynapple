@@ -57,7 +57,7 @@ Starting with 0.4, pynapple rely on the [numpy array container](https://numpy.or
 
 This allows for a better handling of returned objects.
 
-Additionaly, it is now possible to define time series objects with more than 2 dimensions with `TsdTensor`. You can also look at this [notebook](https://pynapple-org.github.io/pynapple/generated/gallery/tutorial_pynapple_numpy/) for a demonstration of numpy compatibilities.
+Additionaly, it is now possible to define time series objects with more than 2 dimensions with `TsdTensor`. You can also look at this [notebook](https://pynapple-org.github.io/pynapple/generated/api_guide/tutorial_pynapple_numpy/) for a demonstration of numpy compatibilities.
 
 Getting Started
 ---------------
