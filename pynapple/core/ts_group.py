@@ -16,6 +16,7 @@ from tabulate import tabulate
 from ._core_functions import _count
 from ._jitted_functions import jitunion, jitunion_isets
 from .base_class import Base
+from .metadata_class import Metadata, wrap_metadata
 from .config import nap_config
 from .interval_set import IntervalSet
 from .time_index import TsIndex
@@ -54,7 +55,7 @@ def _union_intervals(i_sets):
 
     return IntervalSet(new_start, new_end)
 
-
+@wrap_metadata
 class TsGroup(UserDict):
     """
     The TsGroup is a dictionary-like object to hold multiple [`Ts`][pynapple.core.time_series.Ts] or [`Tsd`][pynapple.core.time_series.Tsd] objects with different time index.
@@ -141,7 +142,8 @@ class TsGroup(UserDict):
         # Make sure data dict and index are ordered the same
         data = {k: data[k] for k in self.index}
 
-        self._metadata = pd.DataFrame(index=self.index, columns=["rate"], dtype="float")
+        # initialize metadata
+        self._metadata = Metadata(self)
 
         # Transform elements to Ts/Tsd objects
         for k in self.index:
@@ -380,144 +382,6 @@ class TsGroup(UserDict):
         """
         return self._metadata["rate"]
 
-    #######################
-    # Metadata
-    #######################
-
-    @property
-    def metadata_columns(self):
-        """
-        Returns list of metadata columns
-        """
-        return list(self._metadata.columns)
-
-    def _check_metadata_column_names(self, *args, **kwargs):
-        invalid_cols = []
-        for arg in args:
-            if isinstance(arg, pd.DataFrame):
-                invalid_cols += [col for col in arg.columns if hasattr(self, col)]
-
-        for k, v in kwargs.items():
-            if isinstance(v, (list, numpy.ndarray, pd.Series)) and hasattr(self, k):
-                invalid_cols += [k]
-
-        if invalid_cols:
-            raise ValueError(
-                f"Invalid metadata name(s) {invalid_cols}. Metadata name must differ from "
-                f"TsGroup attribute names!"
-            )
-
-    def set_info(self, *args, **kwargs):
-        """
-        Add metadata information about the TsGroup.
-        Metadata are saved as a DataFrame.
-
-        Parameters
-        ----------
-        *args
-            pandas.Dataframe or list of pandas.DataFrame
-        **kwargs
-            Can be either pandas.Series, numpy.ndarray, list or tuple
-
-        Raises
-        ------
-        RuntimeError
-            Raise an error if
-                no column labels are found when passing simple arguments,
-                indexes are not equals for a pandas series,+
-                not the same length when passing numpy array.
-        TypeError
-            If some of the provided metadata could not be set.
-
-        Examples
-        --------
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
-        1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
-        2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
-        }
-        >>> tsgroup = nap.TsGroup(tmp)
-
-        To add metadata with a pandas.DataFrame:
-
-        >>> import pandas as pd
-        >>> structs = pd.DataFrame(index = [0,1,2], data=['pfc','pfc','ca1'], columns=['struct'])
-        >>> tsgroup.set_info(structs)
-        >>> tsgroup
-          Index    Freq. (Hz)  struct
-        -------  ------------  --------
-              0             1  pfc
-              1             2  pfc
-              2             4  ca1
-
-        To add metadata with a pd.Series, numpy.ndarray, list or tuple:
-
-        >>> hd = pd.Series(index = [0,1,2], data = [0,1,1])
-        >>> tsgroup.set_info(hd=hd)
-        >>> tsgroup
-          Index    Freq. (Hz)  struct      hd
-        -------  ------------  --------  ----
-              0             1  pfc          0
-              1             2  pfc          1
-              2             4  ca1          1
-
-        """
-        # check for duplicate names, otherwise "self.metadata_name"
-        # syntax would behave unexpectedly.
-        self._check_metadata_column_names(*args, **kwargs)
-        not_set = []
-        if len(args):
-            for arg in args:
-                if isinstance(arg, pd.DataFrame):
-                    if pd.Index.equals(self._metadata.index, arg.index):
-                        self._metadata = self._metadata.join(arg)
-                    else:
-                        raise RuntimeError("Index are not equals")
-                elif isinstance(arg, (pd.Series, np.ndarray, list)):
-                    raise RuntimeError("Argument should be passed as keyword argument.")
-                else:
-                    not_set.append(arg)
-        if len(kwargs):
-            for k, v in kwargs.items():
-                if isinstance(v, pd.Series):
-                    if pd.Index.equals(self._metadata.index, v.index):
-                        self._metadata[k] = v
-                    else:
-                        raise RuntimeError(
-                            "Index are not equals for argument {}".format(k)
-                        )
-                elif isinstance(v, (np.ndarray, list, tuple)):
-                    if len(self._metadata) == len(v):
-                        self._metadata[k] = np.asarray(v)
-                    else:
-                        raise RuntimeError("Array is not the same length.")
-                else:
-                    not_set.append({k: v})
-        if not_set:
-            raise TypeError(
-                f"Cannot set the following metadata:\n{not_set}.\nMetadata columns provided must be  "
-                f"of type `panda.Series`, `tuple`, `list`, or `numpy.ndarray`."
-            )
-
-    def get_info(self, key):
-        """
-        Returns the metainfo located in one column.
-        The key for the column frequency is "rate".
-
-        Parameters
-        ----------
-        key : str
-            One of the metainfo columns name
-
-        Returns
-        -------
-        pandas.Series
-            The metainfo
-        """
-        if key in ["freq", "frequency"]:
-            key = "rate"
-        return self._metadata[key]
 
     #################################
     # Generic functions of Tsd objects
