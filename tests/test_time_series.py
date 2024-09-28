@@ -1500,7 +1500,7 @@ class TestTsdTensor:
         result = tsdtensor[index_tsd]
         # print(type(result))
         
-        assert isinstance(result, nap.TsdTensor)
+        assert isinstance(result, nap.TsdTensgor)
         assert len(result) == index_tsd.d.sum()
         np.testing.assert_array_equal(result.t, tsdtensor.t[index_tsd.d])
         np.testing.assert_array_equal(result.values, tsdtensor.values[index_tsd.d])
@@ -1511,7 +1511,6 @@ class TestTsdTensor:
         
         # Test indexing with additional dimension slicing
         result = tsdtensor[index_tsd, 1]
-        print("!!!!!!!!!!!", type(result))
         
         assert isinstance(result, nap.TsdFrame)
         assert len(result) == index_tsd.d.sum()
