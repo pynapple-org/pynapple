@@ -1498,7 +1498,6 @@ class TestTsdTensor:
         
         # Test indexing
         result = tsdtensor[index_tsd]
-        # print(type(result))
         
         assert isinstance(result, nap.TsdTensgor)
         assert len(result) == index_tsd.d.sum()
