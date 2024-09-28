@@ -1499,7 +1499,7 @@ class TestTsdTensor:
         # Test indexing
         result = tsdtensor[index_tsd]
         
-        assert isinstance(result, nap.TsdTensgor)
+        assert isinstance(result, nap.TsdTensor)
         assert len(result) == index_tsd.d.sum()
         np.testing.assert_array_equal(result.t, tsdtensor.t[index_tsd.d])
         np.testing.assert_array_equal(result.values, tsdtensor.values[index_tsd.d])
