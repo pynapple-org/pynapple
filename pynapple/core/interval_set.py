@@ -59,11 +59,13 @@ from .config import nap_config
 from .time_index import TsIndex
 from .utils import (
     _get_terminal_size,
+    _get_repr_string,
     _IntervalSetSliceHelper,
     check_filename,
     convert_to_numpy_array,
     is_array_like,
 )
+from .metadata_class import MetadataBase
 
 all_warnings = np.array(
     [
@@ -75,12 +77,12 @@ all_warnings = np.array(
 )
 
 
-class IntervalSet(NDArrayOperatorsMixin):
+class IntervalSet(NDArrayOperatorsMixin,MetadataBase):
     """
     A class representing a (irregular) set of time intervals in elapsed time, with relative operations
     """
 
-    def __init__(self, start, end=None, time_units="s"):
+    def __init__(self, start, end=None, time_units="s",**kwargs):
         """
         IntervalSet initializer
 
@@ -105,6 +107,8 @@ class IntervalSet(NDArrayOperatorsMixin):
             Ends of intervals
         time_units : str, optional
             Time unit of the intervals ('us', 'ms', 's' [default])
+        **kwargs : dict
+            Metadata to be added to the IntervalSet
 
         Raises
         ------
@@ -186,50 +190,22 @@ class IntervalSet(NDArrayOperatorsMixin):
         self.index = np.arange(data.shape[0], dtype="int")
         self.columns = np.array(["start", "end"])
         self.nap_class = self.__class__.__name__
+        MetadataBase.__init__(self,**kwargs)
 
     def __repr__(self):
-        headers = [" " * 6, "start", "end"]
+        col_names = self._metadata.columns
+        headers = ["Index", "start", "end"] + [c for c in col_names]
         bottom = "shape: {}, time unit: sec.".format(self.shape)
 
-        rows = _get_terminal_size()[1]
-        max_rows = np.maximum(rows - 10, 6)
-
-        if len(self) > max_rows:
-            n_rows = max_rows // 2
-            with warnings.catch_warnings():
-                warnings.simplefilter("ignore")
-                return (
-                    tabulate(
-                        np.hstack(
-                            (self.index[0:n_rows][:, None], self.values[0:n_rows])
-                        ),
-                        headers=headers,
-                        tablefmt="plain",
-                        colalign=("left", "center", "center"),
-                    )
-                    + "\n"
-                    + " " * 10
-                    + "..."
-                    + tabulate(
-                        np.hstack(
-                            (self.index[-n_rows:][:, None], self.values[-n_rows:])
-                        ),
-                        headers=[
-                            " " * 6,
-                            " " * 5,
-                            " " * 3,
-                        ],  # To align properly the columns
-                        tablefmt="plain",
-                        colalign=("left", "center", "center"),
-                    )
-                    + "\n"
-                    + bottom
-                )
-
+        if len(col_names):
+            data = np.hstack((self.index[:,None],self.values, self._metadata.values),dtype=object)
         else:
-            return (
+            data = np.hstack((self.index[:,None],self.values),dtype=object)
+
+        lines, headers = _get_repr_string(data, headers)
+        return (
                 tabulate(
-                    self.values, headers=headers, showindex="always", tablefmt="plain"
+                    lines, headers=headers, tablefmt="plain"
                 )
                 + "\n"
                 + bottom
