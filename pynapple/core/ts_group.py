@@ -21,7 +21,12 @@ from .config import nap_config
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
-from .utils import _get_terminal_size, _get_repr_string, check_filename, convert_to_numpy_array
+from .utils import (
+    _get_terminal_size,
+    _get_repr_string,
+    check_filename,
+    convert_to_numpy_array,
+)
 
 
 def _union_intervals(i_sets):
@@ -55,7 +60,8 @@ def _union_intervals(i_sets):
 
     return IntervalSet(new_start, new_end)
 
-class TsGroup(UserDict,MetadataBase):
+
+class TsGroup(UserDict, MetadataBase):
     """
     The TsGroup is a dictionary-like object to hold multiple [`Ts`][pynapple.core.time_series.Ts] or [`Tsd`][pynapple.core.time_series.Tsd] objects with different time index.
 
@@ -237,9 +243,16 @@ class TsGroup(UserDict,MetadataBase):
         col_names = self._metadata.columns.drop("rate")
         headers = ["Index", "rate"] + [c for c in col_names]
 
-        data = np.hstack((self.index[:,None], self._metadata[["rate"]].values, self._metadata[col_names].values),dtype=object)
+        data = np.hstack(
+            (
+                self.index[:, None],
+                self._metadata[["rate"]].values,
+                self._metadata[col_names].values,
+            ),
+            dtype=object,
+        )
 
-        lines,headers = _get_repr_string(data, headers)
+        lines, headers = _get_repr_string(data, headers)
 
         return tabulate(lines, headers=headers)
 
@@ -285,7 +298,6 @@ class TsGroup(UserDict,MetadataBase):
         Return the rates of each element of the group in Hz
         """
         return self._metadata["rate"]
-
 
     #################################
     # Generic functions of Tsd objects

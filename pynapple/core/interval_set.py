@@ -77,12 +77,12 @@ all_warnings = np.array(
 )
 
 
-class IntervalSet(NDArrayOperatorsMixin,MetadataBase):
+class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
     """
     A class representing a (irregular) set of time intervals in elapsed time, with relative operations
     """
 
-    def __init__(self, start, end=None, time_units="s",**kwargs):
+    def __init__(self, start, end=None, time_units="s", **kwargs):
         """
         IntervalSet initializer
 
@@ -190,7 +190,7 @@ class IntervalSet(NDArrayOperatorsMixin,MetadataBase):
         self.index = np.arange(data.shape[0], dtype="int")
         self.columns = np.array(["start", "end"])
         self.nap_class = self.__class__.__name__
-        MetadataBase.__init__(self,**kwargs)
+        MetadataBase.__init__(self, **kwargs)
 
     def __repr__(self):
         col_names = self._metadata.columns
@@ -198,18 +198,14 @@ class IntervalSet(NDArrayOperatorsMixin,MetadataBase):
         bottom = "shape: {}, time unit: sec.".format(self.shape)
 
         if len(col_names):
-            data = np.hstack((self.index[:,None],self.values, self._metadata.values),dtype=object)
+            data = np.hstack(
+                (self.index[:, None], self.values, self._metadata.values), dtype=object
+            )
         else:
-            data = np.hstack((self.index[:,None],self.values),dtype=object)
+            data = np.hstack((self.index[:, None], self.values), dtype=object)
 
         lines, headers = _get_repr_string(data, headers)
-        return (
-                tabulate(
-                    lines, headers=headers, tablefmt="plain"
-                )
-                + "\n"
-                + bottom
-            )
+        return tabulate(lines, headers=headers, tablefmt="plain") + "\n" + bottom
 
     def __str__(self):
         return self.__repr__()

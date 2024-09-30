@@ -2,15 +2,17 @@ from pandas import DataFrame
 import pandas as pd
 import numpy as np
 
+
 class MetadataBase:
     """
     An object containing metadata for TsGroup or IntervalSet
-    
+
     """
+
     def __init__(self, *args, **kwargs):
         """
         Metadata initializer
-        
+
         Parameters
         ----------
         args : list
@@ -19,8 +21,8 @@ class MetadataBase:
             Dictionary containing metadata information
 
         """
-        self._metadata = DataFrame(index=self.index) # what if index is not defined?
-        self.set_info(*args,**kwargs)
+        self._metadata = DataFrame(index=self.index)  # what if index is not defined?
+        self.set_info(*args, **kwargs)
 
     def __getattr__(self, name):
         """
@@ -53,7 +55,7 @@ class MetadataBase:
             raise AttributeError(
                 f"'{type(self).__name__}' object has no attribute '{name}'"
             )
-        
+
     def __setitem__(self, key, value):
         if not isinstance(key, str):
             raise ValueError("Metadata keys must be strings!")
@@ -75,7 +77,6 @@ class MetadataBase:
         else:
             raise KeyError(r"Key {} not in group index.".format(key))
 
-
     @property
     def metadata_columns(self):
         """
@@ -87,7 +88,7 @@ class MetadataBase:
         invalid_cols = []
         for arg in args:
             if isinstance(arg, pd.DataFrame):
-                invalid_cols += [col for col in arg.columns if  hasattr(self, col)]
+                invalid_cols += [col for col in arg.columns if hasattr(self, col)]
 
         for k, v in kwargs.items():
             if isinstance(v, (list, np.ndarray, pd.Series)) and hasattr(self, k):
@@ -100,7 +101,7 @@ class MetadataBase:
             raise ValueError(
                 f"Invalid metadata name(s) {invalid_cols}. Metadata name must differ from "
                 f"{type(self).__dict__.keys()} attribute names!"
-            )   
+            )
 
     def set_info(self, *args, **kwargs):
         """
@@ -160,7 +161,7 @@ class MetadataBase:
         """
         # check for duplicate names, otherwise "self.metadata_name"
         # syntax would behave unexpectedly.
-        self._check_metadata_column_names(*args,**kwargs)
+        self._check_metadata_column_names(*args, **kwargs)
         not_set = []
         if len(args):
             for arg in args:
@@ -214,6 +215,9 @@ class MetadataBase:
         pandas.Series
             The metainfo
         """
-        if key in ["freq", "frequency"]: # this will not be conducive for metadata of other objects
+        if key in [
+            "freq",
+            "frequency",
+        ]:  # this will not be conducive for metadata of other objects
             key = "rate"
         return self._metadata[key]
