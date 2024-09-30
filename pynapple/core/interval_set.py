@@ -56,16 +56,15 @@ from ._jitted_functions import (
     jitunion,
 )
 from .config import nap_config
+from .metadata_class import MetadataBase
 from .time_index import TsIndex
 from .utils import (
-    _get_terminal_size,
     _get_repr_string,
     _IntervalSetSliceHelper,
     check_filename,
     convert_to_numpy_array,
     is_array_like,
 )
-from .metadata_class import MetadataBase
 
 all_warnings = np.array(
     [

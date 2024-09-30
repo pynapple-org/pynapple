@@ -1,6 +1,5 @@
-from pandas import DataFrame
-import pandas as pd
 import numpy as np
+import pandas as pd
 
 
 class MetadataBase:
@@ -21,7 +20,7 @@ class MetadataBase:
             Dictionary containing metadata information
 
         """
-        self._metadata = DataFrame(index=self.index)  # what if index is not defined?
+        self._metadata = pd.DataFrame(index=self.index)  # what if index is not defined?
         self.set_info(*args, **kwargs)
 
     def __getattr__(self, name):

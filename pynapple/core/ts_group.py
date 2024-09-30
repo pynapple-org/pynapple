@@ -16,17 +16,12 @@ from tabulate import tabulate
 from ._core_functions import _count
 from ._jitted_functions import jitunion, jitunion_isets
 from .base_class import Base
-from .metadata_class import MetadataBase
 from .config import nap_config
 from .interval_set import IntervalSet
+from .metadata_class import MetadataBase
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
-from .utils import (
-    _get_terminal_size,
-    _get_repr_string,
-    check_filename,
-    convert_to_numpy_array,
-)
+from .utils import _get_repr_string, check_filename, convert_to_numpy_array
 
 
 def _union_intervals(i_sets):
