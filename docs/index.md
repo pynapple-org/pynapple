@@ -16,7 +16,6 @@ hide:
 ![GitHub contributors](https://img.shields.io/github/contributors/pynapple-org/pynapple)
 ![Twitter Follow](https://img.shields.io/twitter/follow/thepynapple?style=social)
 
-[:material-text-box-search-outline: __Documentation__](https://pynapple.org) |
 [:material-book-open-variant-outline: __Cite the paper__](https://elifesciences.org/reviewed-preprints/85786)
 
 </div>
