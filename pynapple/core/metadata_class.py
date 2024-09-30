@@ -19,7 +19,7 @@ class MetadataBase:
             Dictionary containing metadata information
 
         """
-        self._metadata = DataFrame(index=self.index)
+        self._metadata = DataFrame(index=self.index) # what if index is not defined?
         self.set_info(*args,**kwargs)
 
     def __getattr__(self, name):
@@ -53,6 +53,28 @@ class MetadataBase:
             raise AttributeError(
                 f"'{type(self).__name__}' object has no attribute '{name}'"
             )
+        
+    def __setitem__(self, key, value):
+        if not isinstance(key, str):
+            raise ValueError("Metadata keys must be strings!")
+        # replicate pandas behavior of over-writing cols
+        if key in self._metadata.columns:
+            old_meta = self._metadata.copy()
+            self._metadata.pop(key)
+            try:
+                self.set_info(**{key: value})
+            except Exception:
+                self._metadata = old_meta
+                raise
+        else:
+            self.set_info(**{key: value})
+
+    def __getitem__(self, key):
+        if key in self._metadata.columns:
+            return self.get_info(key)
+        else:
+            raise KeyError(r"Key {} not in group index.".format(key))
+
 
     @property
     def metadata_columns(self):
@@ -192,6 +214,6 @@ class MetadataBase:
         pandas.Series
             The metainfo
         """
-        if key in ["freq", "frequency"]:
+        if key in ["freq", "frequency"]: # this will not be conducive for metadata of other objects
             key = "rate"
         return self._metadata[key]

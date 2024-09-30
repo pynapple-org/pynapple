@@ -21,7 +21,7 @@ from .config import nap_config
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
-from .utils import _get_terminal_size, check_filename, convert_to_numpy_array
+from .utils import _get_terminal_size, _get_repr_string, check_filename, convert_to_numpy_array
 
 
 def _union_intervals(i_sets):
@@ -193,29 +193,15 @@ class TsGroup(UserDict,MetadataBase):
             self._metadata.loc[int(key), "rate"] = float(value.rate)
             super().__setitem__(int(key), value)
         else:
-            if not isinstance(key, str):
-                raise ValueError("Metadata keys must be strings!")
-            # replicate pandas behavior of over-writing cols
-            if key in self._metadata.columns:
-                old_meta = self._metadata.copy()
-                self._metadata.pop(key)
-                try:
-                    self.set_info(**{key: value})
-                except Exception:
-                    self._metadata = old_meta
-                    raise
-            else:
-                self.set_info(**{key: value})
+            MetadataBase.__setitem__(self, key, value)
 
     def __getitem__(self, key):
         # Standard dict keys are Hashable
         if isinstance(key, Hashable):
             if self.__contains__(key):
                 return self.data[key]
-            elif key in self._metadata.columns:
-                return self.get_info(key)
             else:
-                raise KeyError(r"Key {} not in group index.".format(key))
+                return MetadataBase.__getitem__(self, key)
 
         # array boolean are transformed into indices
         # note that raw boolean are hashable, and won't be
@@ -251,58 +237,9 @@ class TsGroup(UserDict,MetadataBase):
         col_names = self._metadata.columns.drop("rate")
         headers = ["Index", "rate"] + [c for c in col_names]
 
-        max_cols = 6
-        max_rows = 2
-        cols, rows = _get_terminal_size()
-        max_cols = np.maximum(cols // 12, 6)
-        max_rows = np.maximum(rows - 10, 2)
+        data = np.hstack((self.index[:,None], self._metadata[["rate"]].values, self._metadata[col_names].values),dtype=object)
 
-        end_line = []
-        lines = []
-
-        def round_if_float(x):
-            if isinstance(x, float):
-                return np.round(x, 5)
-            else:
-                return x
-
-        if len(headers) > max_cols:
-            headers = headers[0:max_cols] + ["..."]
-            end_line.append("...")
-
-        if len(self) > max_rows:
-            n_rows = max_rows // 2
-            index = self.keys()
-
-            for i in index[0:n_rows]:
-                lines.append(
-                    [i, np.round(self._metadata.loc[i, "rate"], 5)]
-                    + [
-                        round_if_float(self._metadata.loc[i, c])
-                        for c in col_names[0 : max_cols - 2]
-                    ]
-                    + end_line
-                )
-            lines.append(["..." for _ in range(len(headers))])
-            for i in index[-n_rows:]:
-                lines.append(
-                    [i, np.round(self._metadata.loc[i, "rate"], 5)]
-                    + [
-                        round_if_float(self._metadata.loc[i, c])
-                        for c in col_names[0 : max_cols - 2]
-                    ]
-                    + end_line
-                )
-        else:
-            for i in self.data.keys():
-                lines.append(
-                    [i, np.round(self._metadata.loc[i, "rate"], 5)]
-                    + [
-                        round_if_float(self._metadata.loc[i, c])
-                        for c in col_names[0 : max_cols - 2]
-                    ]
-                    + end_line
-                )
+        lines,headers = _get_repr_string(data, headers)
 
         return tabulate(lines, headers=headers)
 
