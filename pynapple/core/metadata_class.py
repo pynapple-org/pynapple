@@ -22,6 +22,38 @@ class MetadataBase:
         self._metadata = DataFrame(index=self.index)
         self.set_info(*args,**kwargs)
 
+    def __getattr__(self, name):
+        """
+        Allows dynamic access to metadata columns as properties.
+
+        Parameters
+        ----------
+        name : str
+            The name of the metadata column to access.
+
+        Returns
+        -------
+        pandas.Series
+            The series of values for the requested metadata column.
+
+        Raises
+        ------
+        AttributeError
+            If the requested attribute is not a metadata column.
+        """
+        # avoid infinite recursion when pickling due to
+        # self._metadata.column having attributes '__reduce__', '__reduce_ex__'
+        if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
+            raise AttributeError(name)
+        # Check if the requested attribute is part of the metadata
+        if name in self._metadata.columns:
+            return self._metadata[name]
+        else:
+            # If the attribute is not part of the metadata, raise AttributeError
+            raise AttributeError(
+                f"'{type(self).__name__}' object has no attribute '{name}'"
+            )
+
     @property
     def metadata_columns(self):
         """
