@@ -1,79 +1,54 @@
 from pandas import DataFrame
 import pandas as pd
 import numpy as np
-from functools import wraps
 
-def wrap_metadata(cls):
+class MetadataBase:
     """
-    Decorator to add methods of Metadata to a class
-
-    """
-    @wraps(getattr(Metadata,'set_info')) # wraps original method for docstring
-    def getter(self,*args,**kwargs):    
-        return getattr(getattr(self,'_metadata'),'set_info')(self,*args,**kwargs)
-    setattr(cls, 'set_info', getter)
-
-    @wraps(getattr(Metadata,'get_info')) # wraps original method for docstring
-    def getter(self,*args,**kwargs):    
-        return getattr(getattr(self,'_metadata'),'get_info')(*args,**kwargs)
-    setattr(cls, 'get_info', getter)
-
-    @wraps(getattr(Metadata,'metadata_columns')) # wraps original method for docstring
-    def getter(self):    
-        return getattr(getattr(self,'_metadata'),'metadata_columns')
-    setattr(cls, 'metadata_columns', property(getter))
-
-    return cls
-
-class Metadata(DataFrame):
-    """
-    A pandas DataFrame-like object containing metadata for TsGroup or IntervalSet
+    An object containing metadata for TsGroup or IntervalSet
     
     """
-    def __init__(self, ob, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
         """
         Metadata initializer
         
         Parameters
         ----------
-        object : TsGroup or IntervalSet
-            The object to which the metadata is attached
+        args : list
+            List of pandas.DataFrame
         kwargs : dict
             Dictionary containing metadata information
 
         """
-
-        super().__init__(index=ob.index) # initialize to empty frame with index matching input object
-        self.set_info(ob,*args, **kwargs)
+        self._metadata = DataFrame(index=self.index)
+        self.set_info(*args,**kwargs)
 
     @property
     def metadata_columns(self):
         """
         Returns list of metadata columns
         """
-        return list(self.columns)
+        return list(self._metadata.columns)
 
-    @staticmethod
-    def _check_metadata_column_names(ob, *args, **kwargs):
+    def _check_metadata_column_names(self, *args, **kwargs):
         invalid_cols = []
         for arg in args:
             if isinstance(arg, pd.DataFrame):
-                invalid_cols += [col for col in arg.columns if  hasattr(ob, col)]
+                invalid_cols += [col for col in arg.columns if  hasattr(self, col)]
 
         for k, v in kwargs.items():
-            if isinstance(v, (list, np.ndarray, pd.Series)) and hasattr(ob, k):
-                print(hasattr(ob, k))
-                print(getattr(ob, k))
+            if isinstance(v, (list, np.ndarray, pd.Series)) and hasattr(self, k):
+                print(hasattr(self, k))
+                print(getattr(self, k))
                 print(k)
                 invalid_cols += [k]
 
         if invalid_cols:
             raise ValueError(
                 f"Invalid metadata name(s) {invalid_cols}. Metadata name must differ from "
-                f"{type(ob).__dict__.keys()} attribute names!"
+                f"{type(self).__dict__.keys()} attribute names!"
             )   
 
-    def set_info(self, ob, *args, **kwargs):
+    def set_info(self, *args, **kwargs):
         """
         Add metadata information about the TsGroup or IntervalSet.
         Metadata are saved as a DataFrame.
@@ -131,13 +106,14 @@ class Metadata(DataFrame):
         """
         # check for duplicate names, otherwise "self.metadata_name"
         # syntax would behave unexpectedly.
-        self._check_metadata_column_names(ob, *args,**kwargs)
+        self._check_metadata_column_names(*args,**kwargs)
         not_set = []
         if len(args):
             for arg in args:
                 if isinstance(arg, pd.DataFrame):
-                    if pd.Index.equals(self.index, arg.index):
-                        super().__setitem__(arg.columns,arg.values)
+                    if pd.Index.equals(self._metadata.index, arg.index):
+                        self._metadata = self._metadata.join(arg)
+                        # super().__setitem__(arg.columns,arg.values)
                     else:
                         raise RuntimeError("Index are not equals")
                 elif isinstance(arg, (pd.Series, np.ndarray, list)):
@@ -147,16 +123,17 @@ class Metadata(DataFrame):
         if len(kwargs):
             for k, v in kwargs.items():
                 if isinstance(v, pd.Series):
-                    if pd.Index.equals(self.index, v.index):
-                        super().__setitem__(k, v)
+                    if pd.Index.equals(self._metadata.index, v.index):
+                        self._metadata[k] = v
+                        # super().__setitem__(k, v)
                     else:
                         raise RuntimeError(
                             "Index are not equals for argument {}".format(k)
                         )
                 elif isinstance(v, (np.ndarray, list, tuple)):
                     if len(self) == len(v):
-                        # self._metadata[k] = np.asarray(v)
-                        super().__setitem__(k, np.asarray(v))
+                        self._metadata[k] = np.asarray(v)
+                        # super().__setitem__(k, np.asarray(v))
 
                     else:
                         raise RuntimeError("Array is not the same length.")
@@ -185,4 +162,4 @@ class Metadata(DataFrame):
         """
         if key in ["freq", "frequency"]:
             key = "rate"
-        return self[key]
+        return self._metadata[key]

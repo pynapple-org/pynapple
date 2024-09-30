@@ -16,7 +16,7 @@ from tabulate import tabulate
 from ._core_functions import _count
 from ._jitted_functions import jitunion, jitunion_isets
 from .base_class import Base
-from .metadata_class import Metadata, wrap_metadata
+from .metadata_class import MetadataBase
 from .config import nap_config
 from .interval_set import IntervalSet
 from .time_index import TsIndex
@@ -55,8 +55,7 @@ def _union_intervals(i_sets):
 
     return IntervalSet(new_start, new_end)
 
-@wrap_metadata
-class TsGroup(UserDict):
+class TsGroup(UserDict,MetadataBase):
     """
     The TsGroup is a dictionary-like object to hold multiple [`Ts`][pynapple.core.time_series.Ts] or [`Tsd`][pynapple.core.time_series.Tsd] objects with different time index.
 
@@ -143,7 +142,7 @@ class TsGroup(UserDict):
         data = {k: data[k] for k in self.index}
 
         # initialize metadata
-        self._metadata = Metadata(self)
+        MetadataBase.__init__(self)
 
         # Transform elements to Ts/Tsd objects
         for k in self.index:
