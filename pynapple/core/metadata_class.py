@@ -14,9 +14,9 @@ class MetadataBase:
 
         Parameters
         ----------
-        args : list
+        *args : list
             List of pandas.DataFrame
-        kwargs : dict
+        **kwargs : dict
             Dictionary containing metadata information
 
         """

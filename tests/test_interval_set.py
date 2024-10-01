@@ -127,6 +127,34 @@ def test_create_iset_from_us():
     np.testing.assert_array_almost_equal(start * 1e-6, ep.start)
     np.testing.assert_array_almost_equal(end * 1e-6, ep.end)
 
+def test_create_iset_with_metainfo():
+    start = np.array([0, 10, 16, 25])
+    end = np.array([5, 15, 20, 40])
+    sr_info = pd.Series(index=[0, 1, 2, 3], data=[0, 0, 0, 0], name="sr")
+    ar_info = np.ones(4)
+    ep = nap.IntervalSet(start=start, end=end, sr=sr_info, ar=ar_info)
+    assert ep._metadata.shape == (4, 2)
+    np.testing.assert_array_almost_equal(ep._metadata["sr"].values, sr_info.values)
+    np.testing.assert_array_almost_equal(ep._metadata["sr"].index.values, sr_info.index.values)
+    np.testing.assert_array_almost_equal(ep._metadata["ar"].values, ar_info)
+
+def test_add_metainfo():
+    start = np.array([0, 10, 16, 25])
+    end = np.array([5, 15, 20, 40])
+    ep = nap.IntervalSet(start=start, end=end)
+    df_info = pd.DataFrame(index=[0, 1, 2, 3], data=[0, 0, 0, 0], columns=["df"])
+    sr_info = pd.Series(index=[0, 1, 2, 3], data=[1, 1, 1, 1], name="sr")
+    ar_info = np.ones(4) * 2
+    lt_info = [3, 3, 3, 3]
+    tu_info = (4, 4, 4, 4)
+    ep.set_info(df_info, sr=sr_info, ar=ar_info, lt=lt_info, tu=tu_info)
+    assert ep._metadata.shape == (4, 5)
+    pd.testing.assert_series_equal(ep._metadata["df"], df_info["df"])
+    pd.testing.assert_series_equal(ep._metadata["sr"], sr_info)
+    np.testing.assert_array_almost_equal(ep._metadata["ar"].values, ar_info)
+    np.testing.assert_array_almost_equal(ep._metadata["lt"].values, lt_info)
+    np.testing.assert_array_almost_equal(ep._metadata["tu"].values, tu_info)
+
 def test_modify_iset():
     start = np.around(np.array([0, 10, 16], dtype=np.float64), 9)
     end = np.around(np.array([5, 15, 20], dtype=np.float64), 9)
@@ -288,6 +316,11 @@ def test_as_dataframe():
     df = pd.DataFrame(data=np.array([[0.0, 100.0]]), columns=["start", "end"], dtype=np.float64)
     np.testing.assert_array_almost_equal(df.values, ep.as_dataframe().values)
 
+def test_as_dataframe_metainfo():
+    ep = nap.IntervalSet(start=0, end=100, m1=[0], m2=[1])
+    df = pd.DataFrame(data=np.array([[0.0, 100.0, 0, 1]]), columns=["start", "end", "m1", "m2"], dtype=np.float64)
+    np.testing.assert_array_almost_equal(df.values, ep.as_dataframe().values)
+
 def test_intersect():
     ep = nap.IntervalSet(start=[0, 30], end=[10, 70])
     ep2 = nap.IntervalSet(start=40, end=100)
@@ -295,6 +328,16 @@ def test_intersect():
     np.testing.assert_array_almost_equal(ep.intersect(ep2), ep3)
     np.testing.assert_array_almost_equal(ep2.intersect(ep), ep3)
 
+def test_intersect_metainfo():
+    ep = nap.IntervalSet(start=[0, 50], end=[30, 70], m1=[0, 1])
+    ep2 = nap.IntervalSet(start=20, end=60, m2=[2])
+    ep3 = nap.IntervalSet(start=[20, 50], end=[30, 60], m1=[0, 1], m2=[2, 2])
+    np.testing.assert_array_almost_equal(ep.intersect(ep2).values, ep3.values)
+    np.testing.assert_array_almost_equal(ep2.intersect(ep).values, ep3.values)
+    pd.testing.assert_series_equal(ep.intersect(ep2)._metadata["m1"], ep3._metadata["m1"])
+    pd.testing.assert_series_equal(ep.intersect(ep2)._metadata["m2"], ep3._metadata["m2"])
+    pd.testing.assert_series_equal(ep2.intersect(ep)._metadata["m1"], ep3._metadata["m1"])
+    pd.testing.assert_series_equal(ep2.intersect(ep)._metadata["m2"], ep3._metadata["m2"])
 
 def test_union():
     ep = nap.IntervalSet(start=[0, 30], end=[10, 70])

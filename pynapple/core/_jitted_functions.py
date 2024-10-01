@@ -443,6 +443,46 @@ def jitintersect(start1, end1, start2, end2):
 
     return (newstart, newend)
 
+@jit(nopython=True)
+def jitintersect_meta(start1, end1, start2, end2):
+    m = start1.shape[0]
+    n = start2.shape[0]
+
+    i = 0
+    j = 0
+
+    newstart = np.zeros(m + n, dtype=np.float64)
+    newend = np.zeros(m + n, dtype=np.float64)
+    newmeta = np.zeros((m + n, 2), dtype=np.int32)
+    ct = 0
+
+    while i < m:
+        while j < n:
+            if end2[j] > start1[i]:
+                break
+            j += 1
+
+        if j == n:
+            break
+
+        if start2[j] < end1[i]:
+            newstart[ct] = max(start1[i], start2[j])
+            newend[ct] = min(end1[i], end2[j])
+            newmeta[ct] = [i,j]
+            ct += 1
+            if end2[j] < end1[i]:
+                j += 1
+            else:
+                i += 1
+        else:
+            i += 1
+
+    newstart = newstart[0:ct]
+    newend = newend[0:ct]
+    newmeta = newmeta[0:ct]
+
+    return (newstart, newend, newmeta)
+
 
 @jit(nopython=True)
 def jitunion(start1, end1, start2, end2):
