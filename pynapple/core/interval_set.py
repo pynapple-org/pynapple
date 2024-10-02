@@ -52,7 +52,7 @@ from ._jitted_functions import (
     _jitfix_iset,
     jitdiff,
     jitin_interval,
-    jitintersect_meta,
+    jitintersect,
     jitunion,
 )
 from .config import nap_config
@@ -418,9 +418,9 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
         end1 = self.values[:, 1]
         start2 = a.values[:, 0]
         end2 = a.values[:, 1]
-        s, e, m = jitintersect_meta(start1, end1, start2, end2)
-        m1 = self._metadata.loc[m[:,0]].reset_index(drop=True)
-        m2 = a._metadata.loc[m[:,1]].reset_index(drop=True)
+        s, e, m = jitintersect(start1, end1, start2, end2)
+        m1 = self._metadata.loc[m[:, 0]].reset_index(drop=True)
+        m2 = a._metadata.loc[m[:, 1]].reset_index(drop=True)
         return IntervalSet(s, e, **m1.join(m2))
 
     def union(self, a):
@@ -462,8 +462,9 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
         end1 = self.values[:, 1]
         start2 = a.values[:, 0]
         end2 = a.values[:, 1]
-        s, e = jitdiff(start1, end1, start2, end2)
-        return IntervalSet(s, e)
+        s, e, m = jitdiff(start1, end1, start2, end2)
+        m1 = self._metadata.loc[m].reset_index(drop=True)
+        return IntervalSet(s, e, **m1)
 
     def in_interval(self, tsd):
         """

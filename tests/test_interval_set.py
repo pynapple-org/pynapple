@@ -355,6 +355,15 @@ def test_set_diff():
     ep4 = nap.IntervalSet(start=[70], end=[100])
     np.testing.assert_array_almost_equal(ep2.set_diff(ep), ep4)
 
+def test_set_diff_metainfo():
+    ep = nap.IntervalSet(start=[0, 60], end=[50, 80], m1=[0, 1])
+    ep2 = nap.IntervalSet(start=[20, 40], end=[30, 70] , m2=[2, 3])
+    ep3 = nap.IntervalSet(start=[0, 30, 70], end=[20, 40, 80], m1=[0, 0, 1])
+    np.testing.assert_array_almost_equal(ep.set_diff(ep2).values, ep3.values)
+    pd.testing.assert_series_equal(ep.set_diff(ep2)._metadata["m1"], ep3._metadata["m1"])
+    ep4 = nap.IntervalSet(start=50, end=60, m2=[3])
+    np.testing.assert_array_almost_equal(ep2.set_diff(ep).values, ep4.values)
+    pd.testing.assert_series_equal(ep2.set_diff(ep)._metadata["m2"], ep4._metadata["m2"])
 
 def test_in_interval():
     ep = nap.IntervalSet(start=[0, 30], end=[10, 70])

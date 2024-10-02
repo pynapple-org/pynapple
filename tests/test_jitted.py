@@ -262,7 +262,7 @@ def test_jitintersect():
     for i in range(10):
         ep1, ep2 = get_example_isets()
 
-        s, e = nap.core._jitted_functions.jitintersect(ep1.start, ep1.end, ep2.start, ep2.end)
+        s, e, _ = nap.core._jitted_functions.jitintersect(ep1.start, ep1.end, ep2.start, ep2.end)
         ep3 = nap.IntervalSet(s, e)
 
 
@@ -327,7 +327,7 @@ def test_jitdiff():
     for i in range(10):
         ep1, ep2 = get_example_isets()
 
-        s, e = nap.core._jitted_functions.jitdiff(ep1.start, ep1.end, ep2.start, ep2.end)
+        s, e, _ = nap.core._jitted_functions.jitdiff(ep1.start, ep1.end, ep2.start, ep2.end)
         ep3 = nap.IntervalSet(s, e)
 
         i_sets = (ep1, ep2)

@@ -416,43 +416,6 @@ def jitintersect(start1, end1, start2, end2):
 
     newstart = np.zeros(m + n, dtype=np.float64)
     newend = np.zeros(m + n, dtype=np.float64)
-    ct = 0
-
-    while i < m:
-        while j < n:
-            if end2[j] > start1[i]:
-                break
-            j += 1
-
-        if j == n:
-            break
-
-        if start2[j] < end1[i]:
-            newstart[ct] = max(start1[i], start2[j])
-            newend[ct] = min(end1[i], end2[j])
-            ct += 1
-            if end2[j] < end1[i]:
-                j += 1
-            else:
-                i += 1
-        else:
-            i += 1
-
-    newstart = newstart[0:ct]
-    newend = newend[0:ct]
-
-    return (newstart, newend)
-
-@jit(nopython=True)
-def jitintersect_meta(start1, end1, start2, end2):
-    m = start1.shape[0]
-    n = start2.shape[0]
-
-    i = 0
-    j = 0
-
-    newstart = np.zeros(m + n, dtype=np.float64)
-    newend = np.zeros(m + n, dtype=np.float64)
     newmeta = np.zeros((m + n, 2), dtype=np.int32)
     ct = 0
 
@@ -468,7 +431,7 @@ def jitintersect_meta(start1, end1, start2, end2):
         if start2[j] < end1[i]:
             newstart[ct] = max(start1[i], start2[j])
             newend[ct] = min(end1[i], end2[j])
-            newmeta[ct] = [i,j]
+            newmeta[ct] = [i, j]
             ct += 1
             if end2[j] < end1[i]:
                 j += 1
@@ -573,6 +536,7 @@ def jitdiff(start1, end1, start2, end2):
 
     newstart = np.zeros(m + n, dtype=np.float64)
     newend = np.zeros(m + n, dtype=np.float64)
+    newmeta = np.zeros(m + n, dtype=np.int32)
     ct = 0
 
     while i < m:
@@ -593,18 +557,21 @@ def jitdiff(start1, end1, start2, end2):
                 if start2[j] > start1[i]:
                     newstart[ct] = start1[i]
                     newend[ct] = start2[j]
+                    newmeta[ct] = i
                     ct += 1
                     j += 1
 
                 else:
                     newstart[ct] = end2[j]
                     newend[ct] = end1[i]
+                    newmeta[ct] = i
                     j += 1
 
                 while j < n:
                     if start2[j] < end1[i]:
                         newstart[ct] = end2[j - 1]
                         newend[ct] = start2[j]
+                        newmeta[ct] = i
                         ct += 1
                         j += 1
                     else:
@@ -613,6 +580,7 @@ def jitdiff(start1, end1, start2, end2):
                 if end2[j - 1] < end1[i]:
                     newstart[ct] = end2[j - 1]
                     newend[ct] = end1[i]
+                    newmeta[ct] = i
                     ct += 1
                 else:
                     j -= 1
@@ -621,19 +589,22 @@ def jitdiff(start1, end1, start2, end2):
         else:
             newstart[ct] = start1[i]
             newend[ct] = end1[i]
+            newmeta[ct] = i
             ct += 1
             i += 1
 
     while i < m:
         newstart[ct] = start1[i]
         newend[ct] = end1[i]
+        newmeta[ct] = i
         ct += 1
         i += 1
 
     newstart = newstart[0:ct]
     newend = newend[0:ct]
+    newmeta = newmeta[0:ct]
 
-    return (newstart, newend)
+    return (newstart, newend, newmeta)
 
 
 @jit(nopython=True)
