@@ -9,7 +9,7 @@ For the example dataset, we will be working with a recording of a freely-moving 
 
 The NWB file for the example is hosted on [OSF](https://osf.io/sbnaw). We show below how to stream it.
 
-See the [documentation](https://pynapple-org.github.io/pynapple/) of Pynapple for instructions on installing the package.
+See the [documentation](../../../) of Pynapple for instructions on installing the package.
 
 This tutorial was made by Sofia Skromne Carrasco and Guillaume Viejo.
 
