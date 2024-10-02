@@ -39,7 +39,7 @@ New functions includes power spectral density and Morlet wavelet decomposition. 
 
 ### pynapple >= 0.6
 
-Starting with 0.6, [`IntervalSet`](https://pynapple-org.github.io/pynapple/reference/core/interval_set/) objects are behaving as immutable numpy ndarray. Before 0.6, you could select an interval within an `IntervalSet` object with:
+Starting with 0.6, [`IntervalSet`](reference/core/interval_set/) objects are behaving as immutable numpy ndarray. Before 0.6, you could select an interval within an `IntervalSet` object with:
 
 ```python
 new_intervalset = intervalset.loc[[0]] # Selecting first interval
