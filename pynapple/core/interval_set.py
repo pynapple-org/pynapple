@@ -368,7 +368,12 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
         IntervalSet
             The IntervalSet object
         """
-        return cls(start=file["start"], end=file["end"])
+        ep = cls(start=file["start"], end=file["end"])
+        if "_metadata" in file:  # load metadata if it exists
+            if file["_metadata"]:  # check that metadata is not empty
+                m = pd.DataFrame.from_dict(file["_metadata"].item())
+                ep.set_info(m)
+        return ep
 
     def time_span(self):
         """
@@ -668,6 +673,7 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
             start=self.values[:, 0],
             end=self.values[:, 1],
             type=np.array(["IntervalSet"], dtype=np.str_),
+            _metadata=self._metadata.to_dict(),  # save metadata as dictionary
         )
 
         return
