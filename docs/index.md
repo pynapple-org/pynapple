@@ -48,39 +48,11 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 
 -   :material-brain:{ .lg .middle} &nbsp;  __Neural Analysis__
 
-Starting with 0.6, [`IntervalSet`](reference/core/interval_set/) objects are behaving as immutable numpy ndarray. Before 0.6, you could select an interval within an `IntervalSet` object with:
-
-```python
-new_intervalset = intervalset.loc[[0]] # Selecting first interval
-```
-
-With pynapple>=0.6, the slicing is similar to numpy and it returns an `IntervalSet`
-
-```python
-new_intervalset = intervalset[0]
-```
-
-### pynapple >= 0.4
-
-Starting with 0.4, pynapple rely on the [numpy array container](https://numpy.org/doc/stable/user/basics.dispatch.html) approach instead of Pandas for the time series. Pynapple builtin functions will remain the same except for functions inherited from Pandas. 
-
-This allows for a better handling of returned objects.
-
-Additionaly, it is now possible to define time series objects with more than 2 dimensions with `TsdTensor`. You can also look at this [notebook](generated/api_guide/tutorial_pynapple_numpy/) for a demonstration of numpy compatibilities.
-
-Getting Started
----------------
-
-### Installation
-
-The best way to install pynapple is with pip within a new [conda](https://docs.conda.io/en/latest/) environment :
-=======
     ---
->>>>>>> dev
 
     Explore fully worked examples to learn how to analyze neural recordings using pynapple.
     
-    [:octicons-arrow-right-24: Tutorials](https://pynapple.org/generated/examples/)
+    [:octicons-arrow-right-24: Tutorials](generated/examples/)
 
 -   :material-cog:{ .lg .middle } &nbsp; __API__
 
