@@ -103,6 +103,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
     def __setitem__(self, key, value):
         """setter for time series"""
+        if isinstance(key, BaseTsd):
+            key = key.d
         try:
             self.values.__setitem__(key, value)
         except IndexError:
@@ -775,10 +777,29 @@ class TsdTensor(BaseTsd):
             return tabulate([], headers=headers) + "\n" + bottom
 
     def __getitem__(self, key, *args, **kwargs):
-        output = self.values.__getitem__(key)
-        if isinstance(key, tuple):
-            index = self.index.__getitem__(key[0])
+        if isinstance(key, Tsd):
+            if not np.issubdtype(key.dtype, np.bool_):
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
+            output = self.values[key.values]
+            index = self.index[key.values]
+        elif isinstance(key, tuple):
+            if isinstance(key[0], Tsd):
+                if not np.issubdtype(key[0].dtype, np.bool_):
+                    raise ValueError(
+                        "When indexing with a Tsd, it must contain boolean values"
+                    )
+                output = self.values[key[0].values]
+                index = self.index[key[0].values]
+                # Apply the rest of the indexing
+                output = output[:, key[1:]]
+                output = output.squeeze()
+            else:
+                output = self.values.__getitem__(key)
+                index = self.index.__getitem__(key[0])
         else:
+            output = self.values.__getitem__(key)
             index = self.index.__getitem__(key)
 
         if isinstance(index, Number):
@@ -794,7 +815,6 @@ class TsdTensor(BaseTsd):
                     )
                 else:
                     return TsdTensor(t=index, d=output, time_support=self.time_support)
-
             else:
                 return output
         else:
@@ -975,6 +995,9 @@ class TsdFrame(BaseTsd):
                 return tabulate([], headers=headers) + "\n" + bottom
 
     def __setitem__(self, key, value):
+        if isinstance(key, BaseTsd):
+            key = key.d
+
         try:
             if isinstance(key, str):
                 new_key = self.columns.get_indexer([key])
@@ -988,6 +1011,9 @@ class TsdFrame(BaseTsd):
             raise IndexError
 
     def __getitem__(self, key, *args, **kwargs):
+        if isinstance(key, BaseTsd):
+            key = key.d
+
         if (
             isinstance(key, str)
             or hasattr(key, "__iter__")
@@ -1208,14 +1234,17 @@ class Tsd(BaseTsd):
                 return tabulate([], headers=headers) + "\n" + bottom
 
     def __getitem__(self, key, *args, **kwargs):
+        if isinstance(key, BaseTsd):
+            key = key.d
+
         output = self.values.__getitem__(key)
+
         if isinstance(key, tuple):
             index = self.index.__getitem__(key[0])
+        elif isinstance(key, Number):
+            index = np.array([key])
         else:
             index = self.index.__getitem__(key)
-
-        if isinstance(index, Number):
-            index = np.array([index])
 
         if all(is_array_like(a) for a in [index, output]):
             if output.shape[0] == index.shape[0]:
