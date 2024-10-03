@@ -191,6 +191,11 @@ class MetadataBase:
 
                     else:
                         raise RuntimeError("Array is not the same length.")
+
+                # if only one interval, allow metadata to be any type
+                elif len(self) == 1:
+                    self._metadata[k] = v
+
                 else:
                     not_set.append({k: v})
         if not_set:

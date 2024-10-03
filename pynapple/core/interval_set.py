@@ -226,17 +226,18 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
                 return self.values[:, 0]
             elif key == "end":
                 return self.values[:, 1]
+            elif key in self._metadata.columns:
+                return self._metadata[key]
             else:
                 raise IndexError("Unknown string argument. Should be 'start' or 'end'")
         elif isinstance(key, Number):
             output = self.values.__getitem__(key)
-            return IntervalSet(start=output[0], end=output[1])
-        elif isinstance(key, (list, slice, np.ndarray)):
+            m = self._metadata.loc[key]
+            return IntervalSet(start=output[0], end=output[1], **m)
+        elif isinstance(key, (list, slice, np.ndarray, pd.Series)):
+            m = self._metadata.loc[key].reset_index(drop=True)
             output = self.values.__getitem__(key)
-            return IntervalSet(start=output[:, 0], end=output[:, 1])
-        elif isinstance(key, pd.Series):
-            output = self.values.__getitem__(key)
-            return IntervalSet(start=output[:, 0], end=output[:, 1])
+            return IntervalSet(start=output[:, 0], end=output[:, 1], **m)
         elif isinstance(key, tuple):
             if len(key) == 2:
                 if isinstance(key[1], Number):
@@ -512,6 +513,8 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
         threshold = TsIndex.format_timestamps(
             np.array([threshold], dtype=np.float64), time_units
         )[0]
+        # keep = (self.values[:, 1] - self.values[:, 0]) > threshold
+        # keep_ep = se
         return self[(self.values[:, 1] - self.values[:, 0]) > threshold]
 
     def drop_long_intervals(self, threshold, time_units="s"):
