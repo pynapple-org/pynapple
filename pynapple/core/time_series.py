@@ -802,7 +802,6 @@ class TsdTensor(BaseTsd):
         if isinstance(index, Number):
             index = np.array([index])
 
-        print(output.shape, index.shape)
         if all(is_array_like(a) for a in [index, output]):
             if output.shape[0] == index.shape[0]:
                 if output.ndim == 1:
