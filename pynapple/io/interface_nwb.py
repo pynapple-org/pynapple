@@ -76,22 +76,22 @@ def _extract_compatible_data_from_nwbfile(nwbfile):
 def _path_for_nwb_object(obj):
     """Helper function to get the path of an NWB object"""
     if obj.parent:
-        if obj.parent.name == 'root':
+        if obj.parent.name == "root":
             # unfortunately, there's now way to get the parent name when the
             # parent is a top-level NWB object because the parent actually
             # points to root, so we need to do it this way
             modules = {
-                'acquisition': obj.parent.acquisition,
-                'analysis': obj.parent.analysis,
-                'stimulus': obj.parent.stimulus,
-                'processing': obj.parent.processing,
+                "acquisition": obj.parent.acquisition,
+                "analysis": obj.parent.analysis,
+                "stimulus": obj.parent.stimulus,
+                "processing": obj.parent.processing,
             }
             for k, v in modules.items():
                 if obj.name in v.keys() and v[obj.name] == obj:
-                    return f'{k}/{obj.name}'
+                    return f"{k}/{obj.name}"
             return obj.name
         else:
-            return f'{_path_for_nwb_object(obj.parent)}/{obj.name}'
+            return f"{_path_for_nwb_object(obj.parent)}/{obj.name}"
     else:
         return obj.name
 
@@ -481,15 +481,15 @@ class NWBFile(UserDict):
             If key is not in the dictionary
         """
         if key.__hash__:
-            if '/' in key:
+            if "/" in key:
                 # allow user to specify the full path to the object
                 # store the original key so we can verify it later
                 original_key = key
-                if original_key.startswith('/'):
+                if original_key.startswith("/"):
                     # remove leading slash
                     original_key = original_key[1:]
                 # use just the last part of the key
-                key = key.split('/')[-1]
+                key = key.split("/")[-1]
             else:
                 original_key = None
             if self.__contains__(key):
