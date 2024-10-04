@@ -121,16 +121,15 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
 
         elif isinstance(start, pd.DataFrame):
             assert (
-                "start" in start.columns
-                and "end" in start.columns
-                and start.shape[-1] == 2
+                "start" in start.columns and "end" in start.columns
             ), """
-                Wrong dataframe format. Expected format if passing a pandas dataframe is :
-                    - 2 columns
-                    - column names are ["start", "end"]                    
+                DataFrame must contain columns name "start" and "end" for start and end times.                   
                 """
+            m = start.drop(columns=["start", "end"])
             end = start["end"].values.astype(np.float64)
             start = start["start"].values.astype(np.float64)
+            if m.empty is False:
+                kwargs = {**m, **kwargs}
 
         else:
             if end is None:
@@ -229,7 +228,9 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
             elif key in self._metadata.columns:
                 return self._metadata[key]
             else:
-                raise IndexError("Unknown string argument. Should be 'start' or 'end'")
+                raise IndexError(
+                    f"Unknown string argument. Should be in {['start', 'end'] + list(self._metadata.keys())}"
+                )
         elif isinstance(key, Number):
             output = self.values.__getitem__(key)
             m = self._metadata.loc[key]
@@ -240,13 +241,40 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
             return IntervalSet(start=output[:, 0], end=output[:, 1], **m)
         elif isinstance(key, tuple):
             if len(key) == 2:
-                if isinstance(key[1], Number):
-                    return self.values.__getitem__(key)
-                elif key[1] == slice(None, None, None) or key[1] == slice(0, 2, None):
-                    output = self.values.__getitem__(key)
-                    return IntervalSet(start=output[:, 0], end=output[:, 1])
+                df = self.as_dataframe()
+                if isinstance(key[1], Number):  # self[Any, Number]
+                    return df.iloc[key]
+
+                elif isinstance(key[1], str):  # self[Any, str]
+                    return df.loc[key]
+
+                elif isinstance(key[1], slice):  # self[Any, slice]
+                    df = df.iloc[key]
+
+                elif isinstance(key[1], (list, np.ndarray)):  # self[Any, array_like]
+                    if isinstance(key[1][0], str):  # self[Any, [*str]]
+                        df = df.loc[key]
+                    elif isinstance(key[1][0], Number):  # self[Any, [*Number]]
+                        df = df.iloc[key]
+                    else:
+                        raise IndexError("Unknown type for second index")
+
                 else:
-                    return self.values.__getitem__(key)
+                    raise IndexError("Unknown type for second index")
+
+                # return interval set if start and end are present
+                if ("start" in df.keys()) and ("end" in df.keys()):
+                    if isinstance(df, pd.DataFrame):
+                        return IntervalSet(df)
+                    else:
+                        return IntervalSet(
+                            start=df["start"],
+                            end=df["end"],
+                            **df.drop(["start", "end"]),
+                        )
+                else:
+                    return df
+
             else:
                 raise IndexError(
                     "too many indices for IntervalSet: IntervalSet is 2-dimensional"
