@@ -7,7 +7,7 @@ This tutorial demonstrates how we use Pynapple to generate Figure 4a in the [pub
 The NWB file for the example is hosted on [OSF](https://osf.io/jb2gd). We show below how to stream it.
 The entire dataset can be downloaded [here](https://dandiarchive.org/dandiset/000056).
 
-See the [documentation](https://pynapple-org.github.io/pynapple/) of Pynapple for instructions on installing the package.
+See the [documentation](/) of Pynapple for instructions on installing the package.
 
 This tutorial was made by Dhruv Mehrotra and Guillaume Viejo.
 

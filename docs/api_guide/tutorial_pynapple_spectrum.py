@@ -3,7 +3,7 @@
 Power spectral density
 ======================
 
-See the [documentation](https://pynapple-org.github.io/pynapple/) of Pynapple for instructions on installing the package.
+See the [documentation](/) of Pynapple for instructions on installing the package.
 
 """
 

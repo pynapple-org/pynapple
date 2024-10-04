@@ -13,11 +13,11 @@ Pynapple now implements signal processing. For example, to filter a 1250 Hz samp
 ```python
 nap.apply_bandpass_filter(signal, (10, 20), fs=1250)
 ```
-New functions includes power spectral density and Morlet wavelet decomposition. See the [documentation](https://pynapple-org.github.io/pynapple/reference/process/) for more details.
+New functions includes power spectral density and Morlet wavelet decomposition. See the [documentation](/reference/process/) for more details.
 
 ### pynapple >= 0.6
 
-Starting with 0.6, [`IntervalSet`](https://pynapple-org.github.io/pynapple/reference/core/interval_set/) objects are behaving as immutable numpy ndarray. Before 0.6, you could select an interval within an `IntervalSet` object with:
+Starting with 0.6, [`IntervalSet`](/reference/core/interval_set/) objects are behaving as immutable numpy ndarray. Before 0.6, you could select an interval within an `IntervalSet` object with:
 
 ```python
 new_intervalset = intervalset.loc[[0]] # Selecting first interval
@@ -35,7 +35,7 @@ Starting with 0.4, pynapple rely on the [numpy array container](https://numpy.or
 
 This allows for a better handling of returned objects.
 
-Additionaly, it is now possible to define time series objects with more than 2 dimensions with `TsdTensor`. You can also look at this [notebook](https://pynapple-org.github.io/pynapple/generated/api_guide/tutorial_pynapple_numpy/) for a demonstration of numpy compatibilities.
+Additionaly, it is now possible to define time series objects with more than 2 dimensions with `TsdTensor`. You can also look at this [notebook](/generated/api_guide/tutorial_pynapple_numpy/) for a demonstration of numpy compatibilities.
 
 
 Basic Usage

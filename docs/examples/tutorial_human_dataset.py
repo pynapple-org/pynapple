@@ -8,7 +8,7 @@ This tutorial demonstrates how we use Pynapple on various publicly available dat
 
 The NWB file for the example used here is provided in [this](https://github.com/PeyracheLab/pynacollada/tree/main/pynacollada/Pynapple%20Paper%20Figures/Zheng%202022/000207/sub-4) repository. The entire dataset can be downloaded [here](https://dandiarchive.org/dandiset/000207/0.220216.0323).
 
-See the [documentation](https://pynapple-org.github.io/pynapple/) of Pynapple for instructions on installing the package.
+See the [documentation](/) of Pynapple for instructions on installing the package.
 
 This tutorial was made by Dhruv Mehrotra.
 

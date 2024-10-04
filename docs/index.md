@@ -44,7 +44,7 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 
     Learn the pynapple API with notebooks.
 
-    [:octicons-arrow-right-24: API guide](https://pynapple.org/generated/api_guide/)
+    [:octicons-arrow-right-24: API guide](generated/api_guide/)
 
 -   :material-brain:{ .lg .middle} &nbsp;  __Neural Analysis__
 
@@ -52,7 +52,7 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 
     Explore fully worked examples to learn how to analyze neural recordings using pynapple.
     
-    [:octicons-arrow-right-24: Tutorials](https://pynapple.org/generated/examples/)
+    [:octicons-arrow-right-24: Tutorials](generated/examples/)
 
 -   :material-cog:{ .lg .middle } &nbsp; __API__
 
@@ -60,7 +60,7 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 
     Access a detailed description of each module and function, including parameters and functionality. 
 
-    [:octicons-arrow-right-24: Modules](https://pynapple.org/reference/)
+    [:octicons-arrow-right-24: Modules](reference/)
 
 -   :material-hammer-wrench:{ .lg .middle } &nbsp; __Installation Instructions__ 
 

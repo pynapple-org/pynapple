@@ -10,7 +10,7 @@ and develop over time, wavelet decompositions can aid both visualization and ana
 
 The function `nap.generate_morlet_filterbank` can help parametrize and visualize the Morlet wavelets.
 
-See the [documentation](https://pynapple-org.github.io/pynapple/) of Pynapple for instructions on installing the package.
+See the [documentation](/) of Pynapple for instructions on installing the package.
 
 This tutorial was made by [Kipp Freud](https://kippfreud.com/).
 
