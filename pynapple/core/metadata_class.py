@@ -196,9 +196,8 @@ class MetadataBase:
                             "Index are not equals for argument {}".format(k)
                         )
                 elif isinstance(v, (np.ndarray, list, tuple)):
-                    v = np.asarray(v).ravel()
                     if len(self._metadata.index) == len(v):
-                        self._metadata[k] = v
+                        self._metadata[k] = np.asarray(v)
                     else:
                         raise RuntimeError("Array is not the same length.")
 
