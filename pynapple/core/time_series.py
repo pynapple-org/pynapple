@@ -29,6 +29,7 @@ from tabulate import tabulate
 from ._core_functions import _bin_average, _convolve, _dropna, _restrict, _threshold
 from .base_class import Base
 from .interval_set import IntervalSet
+from .metadata_class import MetadataBase
 from .time_index import TsIndex
 from .utils import (
     _concatenate_tsd,
@@ -848,7 +849,7 @@ class TsdTensor(BaseTsd):
         return
 
 
-class TsdFrame(BaseTsd):
+class TsdFrame(BaseTsd, MetadataBase):
     """
     TsdFrame
 
@@ -868,6 +869,7 @@ class TsdFrame(BaseTsd):
         time_support=None,
         columns=None,
         load_array=True,
+        **kwargs,
     ):
         """
         TsdFrame initializer
@@ -888,6 +890,8 @@ class TsdFrame(BaseTsd):
         load_array : bool, optional
             Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
             Default is True. Does not apply if `d` is already a numpy array.
+        **kwargs : dict, optional
+            Additional keyword arguments for metadata
         """
 
         c = columns
@@ -915,6 +919,7 @@ class TsdFrame(BaseTsd):
 
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
+        MetadataBase.__init__(self, **kwargs)
         self._initialized = True
 
     @property

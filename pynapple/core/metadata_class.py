@@ -20,7 +20,14 @@ class MetadataBase:
             Dictionary containing metadata information
 
         """
-        self._metadata = pd.DataFrame(index=self.index)  # what if index is not defined?
+        if self.__class__.__name__ == "TsdFrame":
+            # metadata index is the same as the columns
+            self._metadata_index = self.columns
+        else:
+            # what if index is not defined?
+            self._metadata_index = self.index
+
+        self._metadata = pd.DataFrame(index=self._metadata_index)
         self.set_info(*args, **kwargs)
 
     def __dir__(self):
@@ -173,7 +180,6 @@ class MetadataBase:
                 if isinstance(arg, pd.DataFrame):
                     if pd.Index.equals(self._metadata.index, arg.index):
                         self._metadata = self._metadata.join(arg)
-                        # super().__setitem__(arg.columns,arg.values)
                     else:
                         raise RuntimeError("Index are not equals")
                 elif isinstance(arg, (pd.Series, np.ndarray, list)):
@@ -185,16 +191,14 @@ class MetadataBase:
                 if isinstance(v, pd.Series):
                     if pd.Index.equals(self._metadata.index, v.index):
                         self._metadata[k] = v
-                        # super().__setitem__(k, v)
                     else:
                         raise RuntimeError(
                             "Index are not equals for argument {}".format(k)
                         )
                 elif isinstance(v, (np.ndarray, list, tuple)):
-                    if len(self) == len(v):
-                        self._metadata[k] = np.asarray(v)
-                        # super().__setitem__(k, np.asarray(v))
-
+                    v = np.asarray(v).ravel()
+                    if len(self._metadata.index) == len(v):
+                        self._metadata[k] = v
                     else:
                         raise RuntimeError("Array is not the same length.")
 
