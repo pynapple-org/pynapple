@@ -7,6 +7,7 @@ import abc
 from numbers import Number
 
 import numpy as np
+import pandas as pd
 
 from ._core_functions import _count, _restrict, _value_from
 from .interval_set import IntervalSet
@@ -665,7 +666,14 @@ class Base(abc.ABC):
             The time series object
         """
         kwargs = {
-            key: file[key] for key in file.keys() if key not in ["start", "end", "type"]
+            key: file[key]
+            for key in file.keys()
+            if key not in ["start", "end", "type", "_metadata"]
         }
         iset = IntervalSet(start=file["start"], end=file["end"])
-        return cls(time_support=iset, **kwargs)
+        ts = cls(time_support=iset, **kwargs)
+        if "_metadata" in file:  # load metadata if it exists
+            if file["_metadata"]:  # check if metadata is not empty
+                m = pd.DataFrame.from_dict(file["_metadata"].item())
+                ts.set_info(m)
+        return ts

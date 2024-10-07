@@ -179,7 +179,7 @@ class MetadataBase:
             for arg in args:
                 if isinstance(arg, pd.DataFrame):
                     if pd.Index.equals(self._metadata.index, arg.index):
-                        self._metadata = self._metadata.join(arg)
+                        object.__setattr__(self, "_metadata", self._metadata.join(arg))
                     else:
                         raise RuntimeError("Index are not equals")
                 elif isinstance(arg, (pd.Series, np.ndarray, list)):
