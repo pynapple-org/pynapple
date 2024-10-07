@@ -979,11 +979,12 @@ class TsdFrame(BaseTsd, MetadataBase):
             else:
                 return tabulate([], headers=headers) + "\n" + bottom
 
-    def __getattr__(self, key):
-        if key in self.metadata_columns:
-            return MetadataBase.__getattr__(self, key)
-        else:
-            return super().__getattr__(key)
+    def __getattr__(self, name):
+        # wrap in try except to avoid infinite recursion from metadata pickling
+        try:
+            return MetadataBase.__getattr__(self, name)
+        except:
+            return super().__getattr__(name)
 
     def __setitem__(self, key, value):
         try:

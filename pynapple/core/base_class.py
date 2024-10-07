@@ -357,6 +357,9 @@ class Base(abc.ABC):
         if hasattr(self, "columns"):
             kwargs["columns"] = self.columns
 
+        if hasattr(self, "_metadata"):
+            kwargs = {**kwargs, **self._metadata}
+
         if hasattr(self, "values"):
             data_array = self.values
             return self.__class__(
