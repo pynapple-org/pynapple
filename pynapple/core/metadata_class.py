@@ -23,6 +23,12 @@ class MetadataBase:
         self._metadata = pd.DataFrame(index=self.index)  # what if index is not defined?
         self.set_info(*args, **kwargs)
 
+    def __dir__(self):
+        """
+        Adds metadata columns to the list of attributes.
+        """
+        return sorted(list(super().__dir__()) + self.metadata_columns)
+
     def __getattr__(self, name):
         """
         Allows dynamic access to metadata columns as properties.
