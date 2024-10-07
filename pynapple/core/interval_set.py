@@ -265,15 +265,15 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
                 # return interval set if start and end are present
                 if ("start" in df.keys()) and ("end" in df.keys()):
                     if isinstance(df, pd.DataFrame):
-                        return IntervalSet(df)
+                        return IntervalSet(df.reset_index(drop=True))
                     else:
                         return IntervalSet(
                             start=df["start"],
                             end=df["end"],
-                            **df.drop(["start", "end"]),
+                            **df.drop(["start", "end"]).reset_index(drop=True),
                         )
                 else:
-                    return df
+                    return df  # do we want to reset index here?
 
             else:
                 raise IndexError(
@@ -541,9 +541,7 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
         threshold = TsIndex.format_timestamps(
             np.array([threshold], dtype=np.float64), time_units
         )[0]
-        # keep = (self.values[:, 1] - self.values[:, 0]) > threshold
-        # keep_ep = se
-        return self[(self.values[:, 1] - self.values[:, 0]) > threshold]
+        return self[(self.values[:, 1] - self.values[:, 0]) > threshold, :]
 
     def drop_long_intervals(self, threshold, time_units="s"):
         """
@@ -564,7 +562,7 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
         threshold = TsIndex.format_timestamps(
             np.array([threshold], dtype=np.float64), time_units
         )[0]
-        return self[(self.values[:, 1] - self.values[:, 0]) < threshold]
+        return self[(self.values[:, 1] - self.values[:, 0]) < threshold, :]
 
     def as_units(self, units="s"):
         """
