@@ -760,8 +760,11 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
         ).astype(int) + 1
         new_starts = np.full(size_tmp.sum() - size_tmp.shape[0], np.nan)
         new_ends = np.full(size_tmp.sum() - size_tmp.shape[0], np.nan)
+        new_meta = np.full(size_tmp.sum() - size_tmp.shape[0], np.nan)
         i0 = 0
         for cnt, idx in enumerate(idxs):
+            # repeat metainfo for each new interval
+            new_meta[i0 : i0 + size_tmp[cnt] - 1] = idx
             new_starts[i0 : i0 + size_tmp[cnt] - 1] = np.arange(
                 self.start[idx], self.end[idx], interval_size
             )
@@ -777,8 +780,10 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
         tokeep = durations >= interval_size
         new_starts = new_starts[tokeep]
         new_ends = new_ends[tokeep]
+        new_meta = new_meta[tokeep]
+        m = self._metadata.loc[new_meta].reset_index(drop=True)
 
         # Removing 1 microsecond to have strictly non-overlapping intervals for intervals coming from the same epoch
         new_ends -= 1e-6
 
-        return IntervalSet(new_starts, new_ends)
+        return IntervalSet(new_starts, new_ends, **m)
