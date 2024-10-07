@@ -1036,7 +1036,7 @@ class TsdFrame(BaseTsd, MetadataBase):
                     # if isinstance(columns, pd.Index):
                     #     if not pd.api.types.is_integer_dtype(columns):
                     kwargs["columns"] = columns
-                    kwargs = {**kwargs, **self._metadata}
+                    kwargs = {**kwargs, **self._metadata.loc[columns]}
 
                     return _get_class(output)(
                         t=index, d=output, time_support=self.time_support, **kwargs
