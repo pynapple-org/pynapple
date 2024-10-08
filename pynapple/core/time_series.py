@@ -774,7 +774,7 @@ class TsdTensor(BaseTsd):
             return tabulate([], headers=headers) + "\n" + bottom
 
     def __getitem__(self, key, *args, **kwargs):
-        print("key", key)
+
         if isinstance(key, Tsd):
             if not np.issubdtype(key.dtype, np.bool_):
                 raise ValueError(
