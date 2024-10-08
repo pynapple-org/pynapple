@@ -22,12 +22,12 @@ class MetadataBase:
         """
         if self.__class__.__name__ == "TsdFrame":
             # metadata index is the same as the columns
-            self._metadata_index = self.columns
+            self.metadata_index = self.columns
         else:
             # what if index is not defined?
-            self._metadata_index = self.index
+            self.metadata_index = self.index
 
-        self._metadata = pd.DataFrame(index=self._metadata_index)
+        self._metadata = pd.DataFrame(index=self.metadata_index)
         self.set_info(*args, **kwargs)
 
     def __dir__(self):
