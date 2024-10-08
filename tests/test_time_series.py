@@ -928,6 +928,13 @@ class Test_Time_Series_3:
         np.testing.assert_array_almost_equal(
             tsdframe.time_support, tsdframe[:, [0, 2]].time_support
         )
+        if len(tsdframe.metadata_columns):
+            assert np.all(
+                tsdframe[:, [0, 2]].metadata_columns == tsdframe.metadata_columns
+            )
+            assert np.all(
+                tsdframe[:, [0, 2]].metadata_index == tsdframe.metadata_index[[0, 2]]
+            )
 
     def test_vertical_slicing(self, tsdframe):
         assert isinstance(tsdframe[0:10], nap.TsdFrame)
@@ -938,6 +945,9 @@ class Test_Time_Series_3:
         np.testing.assert_array_almost_equal(
             tsdframe[0:10].time_support, tsdframe.time_support
         )
+        if len(tsdframe.metadata_columns):
+            assert np.all(tsdframe[0:10].metadata_columns == tsdframe.metadata_columns)
+            assert np.all(tsdframe[0:10].metadata_index == tsdframe.metadata_index)
 
     def test_str_indexing(self, tsdframe):
         tsdframe = nap.TsdFrame(
