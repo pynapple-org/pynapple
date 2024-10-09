@@ -163,6 +163,13 @@ def test_create_iset_with_metainfo():
     )
     np.testing.assert_array_almost_equal(ep._metadata["ar"].values, ar_info)
 
+    # test adding metadata with single interval
+    start = 0
+    end = 10
+    label = ["a", "b"]
+    ep = nap.IntervalSet(start=start, end=end, label=label)
+    assert ep._metadata["label"][0] == label
+
 
 def test_add_metainfo():
     start = np.array([0, 10, 16, 25])
@@ -180,6 +187,13 @@ def test_add_metainfo():
     np.testing.assert_array_almost_equal(ep._metadata["ar"].values, ar_info)
     np.testing.assert_array_almost_equal(ep._metadata["lt"].values, lt_info)
     np.testing.assert_array_almost_equal(ep._metadata["tu"].values, tu_info)
+
+
+def test_create_iset_from_df_with_metainfo():
+    df = pd.DataFrame(data=[[16, 100, "a"]], columns=["start", "end", "label"])
+    ep = nap.IntervalSet(df)
+    np.testing.assert_array_almost_equal(df.start.values, ep.start)
+    np.testing.assert_array_almost_equal(df.end.values, ep.end)
 
 
 def test_modify_iset():

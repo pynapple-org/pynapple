@@ -188,22 +188,27 @@ class MetadataBase:
                     not_set.append(arg)
         if len(kwargs):
             for k, v in kwargs.items():
+
                 if isinstance(v, pd.Series):
                     if pd.Index.equals(self._metadata.index, v.index):
                         self._metadata[k] = v
                     else:
+                        print(self._metadata.index)
+                        print(v.index)
+                        print(v)
                         raise RuntimeError(
                             "Index are not equals for argument {}".format(k)
                         )
+
+                elif len(self) == 1:
+                    # if only one interval, allow metadata to be any type
+                    self._metadata[k] = [v]
+
                 elif isinstance(v, (np.ndarray, list, tuple)):
                     if len(self._metadata.index) == len(v):
                         self._metadata[k] = np.asarray(v)
                     else:
                         raise RuntimeError("Array is not the same length.")
-
-                # if only one interval, allow metadata to be any type
-                elif len(self) == 1:
-                    self._metadata[k] = v
 
                 else:
                     not_set.append({k: v})

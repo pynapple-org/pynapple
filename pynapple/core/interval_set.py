@@ -236,7 +236,7 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
             m = self._metadata.loc[key]
             return IntervalSet(start=output[0], end=output[1], **m)
         elif isinstance(key, (list, slice, np.ndarray, pd.Series)):
-            m = self._metadata.loc[key].reset_index(drop=True)
+            m = self._metadata.iloc[key].reset_index(drop=True)
             output = self.values.__getitem__(key)
             return IntervalSet(start=output[:, 0], end=output[:, 1], **m)
         elif isinstance(key, tuple):
@@ -270,7 +270,7 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
                         return IntervalSet(
                             start=df["start"],
                             end=df["end"],
-                            **df.drop(["start", "end"]).reset_index(drop=True),
+                            **df.drop(["start", "end"]),
                         )
                 else:
                     return df  # do we want to reset index here?
