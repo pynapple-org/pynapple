@@ -1130,6 +1130,11 @@ class Test_Time_Series_3:
         else:
             np.testing.assert_array_almost_equal(file["columns"], tsdframe.columns)
 
+        if len(tsdframe.metadata_columns):
+            assert "_metadata" in keys
+            df = pd.DataFrame.from_dict(file["_metadata"].item())
+            pd.testing.assert_frame_equal(df, tsdframe._metadata)
+
         # Path("tsdframe.npz").unlink()
         # Path("tsdframe2.npz").unlink()
 
