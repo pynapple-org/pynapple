@@ -130,6 +130,7 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
             start = start["start"].values.astype(np.float64)
             if m.empty is False:
                 kwargs = {**m, **kwargs}
+                print(kwargs)
 
         else:
             if end is None:
@@ -235,7 +236,13 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
             output = self.values.__getitem__(key)
             m = self._metadata.loc[key]
             return IntervalSet(start=output[0], end=output[1], **m)
-        elif isinstance(key, (list, slice, np.ndarray, pd.Series)):
+        elif isinstance(key, (list, np.ndarray, pd.Series)):
+            m = self._metadata.loc[key].reset_index(drop=True)
+            output = self.values.__getitem__(key)
+            return IntervalSet(start=output[:, 0], end=output[:, 1], **m)
+        elif isinstance(key, slice):
+            # DataFrame's `loc` treats slices differently (inclusive of stop) than numpy
+            # `iloc` exludes the stop index, like numpy
             m = self._metadata.iloc[key].reset_index(drop=True)
             output = self.values.__getitem__(key)
             return IntervalSet(start=output[:, 0], end=output[:, 1], **m)

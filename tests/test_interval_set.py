@@ -256,6 +256,56 @@ def test_get_iset():
     )
 
 
+@pytest.fixture
+def ep_meta():
+    start = np.array([0, 10, 16, 25])
+    end = np.array([5, 15, 20, 40])
+    label = ["a", "b", "c", "d"]
+    info = np.arange(4)
+    return nap.IntervalSet(start=start, end=end, label=label, info=info)
+
+
+def test_iset_metadata_attr(ep_meta):
+    pd.testing.assert_series_equal(ep_meta.get_info("info"), ep_meta._metadata["info"])
+    pd.testing.assert_series_equal(
+        ep_meta.get_info("label"), ep_meta._metadata["label"]
+    )
+
+    pd.testing.assert_series_equal(ep_meta.info, ep_meta._metadata["info"])
+    pd.testing.assert_series_equal(ep_meta.label, ep_meta._metadata["label"])
+
+    pd.testing.assert_series_equal(ep_meta["info"], ep_meta._metadata["info"])
+    pd.testing.assert_series_equal(ep_meta["label"], ep_meta._metadata["label"])
+
+
+@pytest.mark.parametrize(
+    "index",
+    [0, slice(0, 2), [0, 2], (slice(0, 2), slice(None)), (slice(0, 2), slice(0, 2))],
+)
+def test_get_iset_with_metainfo(ep_meta, index):
+    assert isinstance(ep_meta[index], nap.IntervalSet)
+
+
+@pytest.mark.parametrize(
+    "index, expected",
+    [
+        ((slice(None), 0), "start"),
+        ((slice(None), 1), "end"),
+        ((slice(None), 2), "label"),
+        ((slice(None), 3), "info"),
+        ((slice(None), slice(1, 3)), ["end", "label"]),
+        ((slice(None), [0, 3]), ["start", "info"]),
+    ],
+)
+def test_slice_iset_with_metainfo(ep_meta, index, expected):
+    if isinstance(expected, str):
+        pd.testing.assert_series_equal(ep_meta[index], ep_meta.as_dataframe()[expected])
+    else:
+        pd.testing.assert_frame_equal(
+            ep_meta[index], ep_meta.as_dataframe().loc[index[0], expected]
+        )
+
+
 def test_get_iset_with_series():
     start = np.array([0, 10, 16], dtype=np.float64)
     end = np.array([5, 15, 20], dtype=np.float64)
@@ -382,7 +432,7 @@ def test_as_dataframe():
 
 
 def test_as_dataframe_metainfo():
-    ep = nap.IntervalSet(start=0, end=100, m1=[0], m2=[1])
+    ep = nap.IntervalSet(start=0, end=100, m1=0, m2=1)
     df = pd.DataFrame(
         data=np.array([[0.0, 100.0, 0, 1]]),
         columns=["start", "end", "m1", "m2"],
@@ -401,7 +451,7 @@ def test_intersect():
 
 def test_intersect_metainfo():
     ep = nap.IntervalSet(start=[0, 50], end=[30, 70], m1=[0, 1])
-    ep2 = nap.IntervalSet(start=20, end=60, m2=[2])
+    ep2 = nap.IntervalSet(start=20, end=60, m2=2)
     ep3 = nap.IntervalSet(start=[20, 50], end=[30, 60], m1=[0, 1], m2=[2, 2])
     np.testing.assert_array_almost_equal(ep.intersect(ep2).values, ep3.values)
     np.testing.assert_array_almost_equal(ep2.intersect(ep).values, ep3.values)
@@ -444,7 +494,7 @@ def test_set_diff_metainfo():
     pd.testing.assert_series_equal(
         ep.set_diff(ep2)._metadata["m1"], ep3._metadata["m1"]
     )
-    ep4 = nap.IntervalSet(start=50, end=60, m2=[3])
+    ep4 = nap.IntervalSet(start=50, end=60, m2=3)
     np.testing.assert_array_almost_equal(ep2.set_diff(ep).values, ep4.values)
     pd.testing.assert_series_equal(
         ep2.set_diff(ep)._metadata["m2"], ep4._metadata["m2"]
