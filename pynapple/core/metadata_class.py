@@ -4,7 +4,7 @@ import pandas as pd
 
 class MetadataBase:
     """
-    An object containing metadata for TsGroup or IntervalSet
+    An object containing metadata for TsGroup, IntervalSet, or TsdFrame objects.
 
     """
 
@@ -21,10 +21,10 @@ class MetadataBase:
 
         """
         if self.__class__.__name__ == "TsdFrame":
-            # metadata index is the same as the columns
+            # metadata index is the same as the columns for TsdFrame
             self.metadata_index = self.columns
         else:
-            # what if index is not defined?
+            # metadata index is the same as the index for TsGroup and IntervalSet
             self.metadata_index = self.index
 
         self._metadata = pd.DataFrame(index=self.metadata_index)

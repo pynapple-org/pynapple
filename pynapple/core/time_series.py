@@ -991,10 +991,13 @@ class TsdFrame(BaseTsd, MetadataBase):
                 return tabulate([], headers=headers) + "\n" + bottom
 
     def __getattr__(self, name):
-        # wrap in try except to avoid infinite recursion from metadata pickling
-        try:
+        # avoid infinite recursion when pickling due to
+        # self._metadata.column having attributes '__reduce__', '__reduce_ex__'
+        if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
+            raise AttributeError(name)
+        if name in self._metadata.columns:
             return MetadataBase.__getattr__(self, name)
-        except:
+        else:
             return super().__getattr__(name)
 
     def __setitem__(self, key, value):
