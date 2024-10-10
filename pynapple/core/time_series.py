@@ -29,6 +29,7 @@ from tabulate import tabulate
 from ._core_functions import _bin_average, _convolve, _dropna, _restrict, _threshold
 from .base_class import Base
 from .interval_set import IntervalSet
+from .metadata_class import MetadataBase
 from .time_index import TsIndex
 from .utils import (
     _concatenate_tsd,
@@ -171,6 +172,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
                     kwargs = {}
                     if hasattr(self, "columns"):
                         kwargs["columns"] = self.columns
+                    if hasattr(self, "_metadata"):
+                        kwargs = {**kwargs, **self._metadata}
                     return _get_class(out)(
                         t=self.index, d=out, time_support=self.time_support, **kwargs
                     )
@@ -217,6 +220,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
                 kwargs = {}
                 if hasattr(self, "columns"):
                     kwargs["columns"] = self.columns
+                if hasattr(self, "_metadata"):
+                    kwargs = {**kwargs, **self._metadata}
                 return _get_class(out)(
                     t=self.index, d=out, time_support=self.time_support, **kwargs
                 )
@@ -421,6 +426,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         kwargs = {}
         if hasattr(self, "columns"):
             kwargs["columns"] = self.columns
+        if hasattr(self, "_metadata"):
+            kwargs = {**kwargs, **self._metadata}
 
         return self.__class__(t=t, d=d, time_support=ep, **kwargs)
 
@@ -459,6 +466,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         kwargs = {}
         if hasattr(self, "columns"):
             kwargs["columns"] = self.columns
+        if hasattr(self, "_metadata"):
+            kwargs = {**kwargs, **self._metadata}
 
         return self.__class__(t=t, d=d, time_support=ep, **kwargs)
 
@@ -526,6 +535,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
         if isinstance(self, TsdFrame) and array.ndim == 1:  # keep columns
             kwargs_dict["columns"] = self.columns
+            kwargs_dict = {**kwargs_dict, **self._metadata}
 
         return nap_class(t=time_array, d=new_data_array, **kwargs_dict)
 
@@ -686,6 +696,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         kwargs_dict = dict(time_support=ep)
         if hasattr(self, "columns"):
             kwargs_dict["columns"] = self.columns
+        if hasattr(self, "_metadata"):
+            kwargs_dict = {**kwargs_dict, **self._metadata}
         return self.__class__(t=new_t, d=new_d, **kwargs_dict)
 
 
@@ -848,7 +860,7 @@ class TsdTensor(BaseTsd):
         return
 
 
-class TsdFrame(BaseTsd):
+class TsdFrame(BaseTsd, MetadataBase):
     """
     TsdFrame
 
@@ -868,6 +880,7 @@ class TsdFrame(BaseTsd):
         time_support=None,
         columns=None,
         load_array=True,
+        **kwargs,
     ):
         """
         TsdFrame initializer
@@ -888,6 +901,8 @@ class TsdFrame(BaseTsd):
         load_array : bool, optional
             Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
             Default is True. Does not apply if `d` is already a numpy array.
+        **kwargs : dict, optional
+            Additional keyword arguments for metadata
         """
 
         c = columns
@@ -915,6 +930,7 @@ class TsdFrame(BaseTsd):
 
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
+        MetadataBase.__init__(self, **kwargs)
         self._initialized = True
 
     @property
@@ -974,6 +990,16 @@ class TsdFrame(BaseTsd):
             else:
                 return tabulate([], headers=headers) + "\n" + bottom
 
+    def __getattr__(self, name):
+        # avoid infinite recursion when pickling due to
+        # self._metadata.column having attributes '__reduce__', '__reduce_ex__'
+        if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
+            raise AttributeError(name)
+        if name in self._metadata.columns:
+            return MetadataBase.__getattr__(self, name)
+        else:
+            return super().__getattr__(name)
+
     def __setitem__(self, key, value):
         try:
             if isinstance(key, str):
@@ -1013,6 +1039,7 @@ class TsdFrame(BaseTsd):
                     # if isinstance(columns, pd.Index):
                     #     if not pd.api.types.is_integer_dtype(columns):
                     kwargs["columns"] = columns
+                    kwargs = {**kwargs, **self._metadata.loc[columns]}
 
                     return _get_class(output)(
                         t=index, d=output, time_support=self.time_support, **kwargs
@@ -1112,6 +1139,7 @@ class TsdFrame(BaseTsd):
             end=self.time_support.end,
             columns=cols_name,
             type=np.array(["TsdFrame"], dtype=np.str_),
+            _metadata=self._metadata.to_dict(),  # save metadata as dictionary
         )
 
         return
