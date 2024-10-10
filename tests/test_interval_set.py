@@ -280,7 +280,15 @@ def test_iset_metadata_attr(ep_meta):
 
 @pytest.mark.parametrize(
     "index",
-    [0, slice(0, 2), [0, 2], (slice(0, 2), slice(None)), (slice(0, 2), slice(0, 2))],
+    [
+        0,
+        slice(0, 2),
+        [0, 2],
+        (slice(0, 2), slice(None)),
+        (slice(0, 2), slice(0, 2)),
+        (slice(None), ["start", "end"]),
+        (0, slice(None)),
+    ],
 )
 def test_get_iset_with_metainfo(ep_meta, index):
     assert isinstance(ep_meta[index], nap.IntervalSet)
@@ -295,15 +303,42 @@ def test_get_iset_with_metainfo(ep_meta, index):
         ((slice(None), 3), "info"),
         ((slice(None), slice(1, 3)), ["end", "label"]),
         ((slice(None), [0, 3]), ["start", "info"]),
+        ((slice(None), "end"), "end"),
+        ((slice(None), "label"), "label"),
+        ((slice(None), ["end", "label"]), ["end", "label"]),
     ],
 )
-def test_slice_iset_with_metainfo(ep_meta, index, expected):
+def test_vertical_slice_iset_with_metainfo(ep_meta, index, expected):
     if isinstance(expected, str):
         pd.testing.assert_series_equal(ep_meta[index], ep_meta.as_dataframe()[expected])
     else:
         pd.testing.assert_frame_equal(
             ep_meta[index], ep_meta.as_dataframe().loc[index[0], expected]
         )
+
+
+@pytest.mark.parametrize(
+    "index, expected",
+    [
+        (
+            (slice(None), pd.Series(index=[0, 1, 2, 3], data=[0, 0, 0, 0])),
+            pytest.raises(
+                IndexError,
+                match="Unknown type <class 'pandas.core.series.Series'> for second index",
+            ),
+        ),
+        (
+            (slice(None), [pd.Series(index=[0, 1, 2, 3], data=[0, 0, 0, 0])]),
+            pytest.raises(
+                IndexError,
+                match="Unknown data type <class 'pandas.core.series.Series'> for second index",
+            ),
+        ),
+    ],
+)
+def test_vertical_slice_iset_with_metainfo_errors(ep_meta, index, expected):
+    with expected:
+        ep_meta[index]
 
 
 def test_get_iset_with_series():
@@ -737,6 +772,26 @@ def test_save_npz():
     # Cleaning
     Path("ep.npz").unlink()
     Path("ep2.npz").unlink()
+
+
+def test_save_and_load_npz_with_metainfo(ep_meta):
+    ep_meta.save("ep_meta.npz")
+    assert "ep_meta.npz" in [f.name for f in Path(".").iterdir()]
+
+    with np.load("ep_meta.npz") as file:
+        keys = list(file.keys())
+        assert "start" in keys
+        assert "end" in keys
+        assert "_metadata" in keys
+
+    ep = nap.load_file("ep_meta.npz")
+    assert isinstance(ep, nap.IntervalSet)
+    np.testing.assert_array_almost_equal(ep.start, ep_meta.start)
+    np.testing.assert_array_almost_equal(ep.end, ep_meta.end)
+    pd.testing.assert_frame_equal(ep._metadata, ep_meta._metadata)
+
+    # Cleaning
+    Path("ep_meta.npz").unlink()
 
 
 def test_split():

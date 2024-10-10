@@ -264,10 +264,12 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
                     elif isinstance(key[1][0], Number):  # self[Any, [*Number]]
                         df = df.iloc[key]
                     else:
-                        raise IndexError("Unknown type for second index")
+                        raise IndexError(
+                            f"Unknown data type {type(key[1][0])} for second index"
+                        )
 
                 else:
-                    raise IndexError("Unknown type for second index")
+                    raise IndexError(f"Unknown type {type(key[1])} for second index")
 
                 # return interval set if start and end are present
                 if ("start" in df.keys()) and ("end" in df.keys()):
