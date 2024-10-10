@@ -69,6 +69,7 @@ class MetadataBase:
             )
 
     def __setitem__(self, key, value):
+        # this is only relevant for `TsGroup`. Do we want to allow metadata to be set outside of `set_info`?
         if not isinstance(key, str):
             raise ValueError("Metadata keys must be strings!")
         # replicate pandas behavior of over-writing cols

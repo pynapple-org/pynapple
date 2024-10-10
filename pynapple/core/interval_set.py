@@ -265,11 +265,11 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
                         df = df.iloc[key]
                     else:
                         raise IndexError(
-                            f"Unknown data type {type(key[1][0])} for second index"
+                            f"unknown data type {type(key[1][0])} for second index"
                         )
 
                 else:
-                    raise IndexError(f"Unknown type {type(key[1])} for second index")
+                    raise IndexError(f"unknown type {type(key[1])} for second index")
 
                 # return interval set if start and end are present
                 if ("start" in df.keys()) and ("end" in df.keys()):
@@ -289,7 +289,7 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
                     "too many indices for IntervalSet: IntervalSet is 2-dimensional"
                 )
         else:
-            return self.values.__getitem__(key)
+            raise IndexError(f"unknown type {type(key)} for index")
 
     def __array__(self, dtype=None):
         return self.values.astype(dtype)

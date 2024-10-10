@@ -324,19 +324,26 @@ def test_vertical_slice_iset_with_metainfo(ep_meta, index, expected):
             (slice(None), pd.Series(index=[0, 1, 2, 3], data=[0, 0, 0, 0])),
             pytest.raises(
                 IndexError,
-                match="Unknown type <class 'pandas.core.series.Series'> for second index",
+                match="unknown type <class 'pandas.core.series.Series'> for second index",
             ),
         ),
         (
             (slice(None), [pd.Series(index=[0, 1, 2, 3], data=[0, 0, 0, 0])]),
             pytest.raises(
                 IndexError,
-                match="Unknown data type <class 'pandas.core.series.Series'> for second index",
+                match="unknown data type <class 'pandas.core.series.Series'> for second index",
+            ),
+        ),
+        (
+            pd.DataFrame(index=[0, 1, 2, 3], data=[0, 0, 0, 0]),
+            pytest.raises(
+                IndexError,
+                match="unknown type <class 'pandas.core.frame.DataFrame'> for index",
             ),
         ),
     ],
 )
-def test_vertical_slice_iset_with_metainfo_errors(ep_meta, index, expected):
+def test_get_iset_with_metainfo_errors(ep_meta, index, expected):
     with expected:
         ep_meta[index]
 
@@ -778,17 +785,17 @@ def test_save_and_load_npz_with_metainfo(ep_meta):
     ep_meta.save("ep_meta.npz")
     assert "ep_meta.npz" in [f.name for f in Path(".").iterdir()]
 
-    with np.load("ep_meta.npz") as file:
+    with np.load("ep_meta.npz", allow_pickle=True) as file:
         keys = list(file.keys())
         assert "start" in keys
         assert "end" in keys
         assert "_metadata" in keys
 
-    ep = nap.load_file("ep_meta.npz")
-    assert isinstance(ep, nap.IntervalSet)
-    np.testing.assert_array_almost_equal(ep.start, ep_meta.start)
-    np.testing.assert_array_almost_equal(ep.end, ep_meta.end)
-    pd.testing.assert_frame_equal(ep._metadata, ep_meta._metadata)
+        ep = nap.IntervalSet._from_npz_reader(file)
+        assert isinstance(ep, nap.IntervalSet)
+        np.testing.assert_array_almost_equal(ep.start, ep_meta.start)
+        np.testing.assert_array_almost_equal(ep.end, ep_meta.end)
+        pd.testing.assert_frame_equal(ep._metadata, ep_meta._metadata)
 
     # Cleaning
     Path("ep_meta.npz").unlink()

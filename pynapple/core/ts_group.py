@@ -194,6 +194,7 @@ class TsGroup(UserDict, MetadataBase):
             self._metadata.loc[int(key), "rate"] = float(value.rate)
             super().__setitem__(int(key), value)
         else:
+            # do we want metadata set outside of `set_info` to be allowed?
             MetadataBase.__setitem__(self, key, value)
 
     def __getitem__(self, key):
