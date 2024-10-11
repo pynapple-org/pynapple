@@ -59,6 +59,7 @@ from .config import nap_config
 from .metadata_class import MetadataBase
 from .time_index import TsIndex
 from .utils import (
+    _get_terminal_size,
     _get_repr_string,
     _IntervalSetSliceHelper,
     check_filename,
@@ -192,19 +193,61 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
         MetadataBase.__init__(self, **kwargs)
 
     def __repr__(self):
-        col_names = self._metadata.columns
-        headers = ["Index", "start", "end"] + [c for c in col_names]
-        bottom = "shape: {}, time unit: sec.".format(self.shape)
+        # Start by determining how many columns and rows.
+        # This can be unique for each object
+        cols, rows = _get_terminal_size()
+        max_cols = np.maximum(cols // 12, 5)
+        max_rows = np.maximum(rows - 10, 2)
+        # By default, the first three columns should always show.
 
+        # Adding an extra column between actual values and metadata
+        col_names = self._metadata.columns
+        headers = ["index", "start", "end"]
         if len(col_names):
-            data = np.hstack(
-                (self.index[:, None], self.values, self._metadata.values), dtype=object
+            headers += [""] + [c for c in col_names]
+        bottom = f"shape: {self.shape}, time unit: sec."
+
+        # We rarely want to print everything as it can be very big.
+        if len(self) > max_rows:
+            n_rows = max_rows // 2
+            if len(col_names):
+                separator = np.array([["|"] * n_rows]).T
+            else:
+                separator = np.empty((n_rows, 0))
+            data = np.vstack(
+                (
+                    np.hstack(
+                        (
+                            self.index[0:n_rows, None],
+                            self.values[0:n_rows],
+                            separator,
+                            self._metadata.values[0:n_rows],
+                        ),
+                        dtype=object,
+                    ),
+                    np.array([["..." for _ in range(len(headers))]], dtype=object),
+                    np.hstack(
+                        (
+                            self.index[-n_rows:, None],
+                            self.values[0:n_rows],
+                            separator,
+                            self._metadata.values[-n_rows:],
+                        ),
+                        dtype=object,
+                    ),
+                )
             )
         else:
-            data = np.hstack((self.index[:, None], self.values), dtype=object)
+            if len(col_names):
+                separator = np.array([["|"] * len(self)]).T
+            else:
+                separator = np.empty((len(self), 0))
+            data = np.hstack(
+                (self.index[:, None], self.values, separator, self._metadata.values),
+                dtype=object,
+            )
 
-        lines, headers = _get_repr_string(data, headers)
-        return tabulate(lines, headers=headers, tablefmt="plain") + "\n" + bottom
+        return tabulate(data, headers=headers, tablefmt="plain") + "\n" + bottom
 
     def __str__(self):
         return self.__repr__()
@@ -221,6 +264,7 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
         )
 
     def __getitem__(self, key, *args, **kwargs):
+        print(key)
         if isinstance(key, str):
             if key == "start":
                 return self.values[:, 0]
