@@ -85,10 +85,7 @@ class _MetadataBase:
             self.set_info(**{key: value})
 
     def __getitem__(self, key):
-        if key in self._metadata.columns:
-            return self.get_info(key)
-        else:
-            raise KeyError(r"Key {} not in group index.".format(key))
+        return self.get_info(key)
 
     @property
     def metadata_columns(self):

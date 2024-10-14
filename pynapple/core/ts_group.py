@@ -202,8 +202,10 @@ class TsGroup(UserDict, _MetadataBase):
         if isinstance(key, Hashable):
             if self.__contains__(key):
                 return self.data[key]
-            else:
+            elif key in self._metadata.columns:
                 return _MetadataBase.__getitem__(self, key)
+            else:
+                raise KeyError(r"Key {} not in group index.".format(key))
 
         # array boolean are transformed into indices
         # note that raw boolean are hashable, and won't be
