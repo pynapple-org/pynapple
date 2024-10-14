@@ -594,7 +594,7 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
         threshold = TsIndex.format_timestamps(
             np.array([threshold], dtype=np.float64), time_units
         )[0]
-        return self[(self.values[:, 1] - self.values[:, 0]) > threshold, :]
+        return self[(self.values[:, 1] - self.values[:, 0]) > threshold]
 
     def drop_long_intervals(self, threshold, time_units="s"):
         """
@@ -615,7 +615,7 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
         threshold = TsIndex.format_timestamps(
             np.array([threshold], dtype=np.float64), time_units
         )[0]
-        return self[(self.values[:, 1] - self.values[:, 0]) < threshold, :]
+        return self[(self.values[:, 1] - self.values[:, 0]) < threshold]
 
     def as_units(self, units="s"):
         """
