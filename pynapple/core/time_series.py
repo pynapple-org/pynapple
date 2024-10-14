@@ -938,57 +938,53 @@ class TsdFrame(BaseTsd, MetadataBase):
         return _TsdFrameSliceHelper(self)
 
     def __repr__(self):
-        headers = ["Time (s)"] + [str(k) for k in self.columns]
-        bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(self.shape)
-
+        # Start by determining how many columns and rows.
+        # This can be unique for each object
         cols, rows = _get_terminal_size()
         max_cols = np.maximum(cols // 100, 5)
         max_rows = np.maximum(rows - 10, 2)
 
+        # Computing headers and bottom
+        headers = ["Time (s)"] + [str(k) for k in self.columns]
+        bottom = f"dtype: {self.dtype}, shape: {self.shape}"
+
         if self.shape[1] > max_cols:
             headers = headers[0 : max_cols + 1] + ["..."]
-
-        def round_if_float(x):
-            if isinstance(x, float):
-                return np.round(x, 5)
-            else:
-                return x
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             if len(self):
-                table = []
                 end = ["..."] if self.shape[1] > max_cols else []
                 if len(self) > max_rows:
                     n_rows = max_rows // 2
-                    for i, array in zip(
-                        self.index[0:n_rows], self.values[0:n_rows, 0:max_cols]
-                    ):
-                        table.append([i] + [round_if_float(k) for k in array] + end)
-                    table.append(["..."])
-                    for i, array in zip(
-                        self.index[-n_rows:],
-                        self.values[
-                            self.values.shape[0] - n_rows : self.values.shape[0],
-                            0:max_cols,
-                        ],
-                    ):
-                        table.append([i] + [round_if_float(k) for k in array] + end)
-                    return (
-                        tabulate(table, headers=headers, colalign=("left",))
-                        + "\n"
-                        + bottom
-                    )
+                    ends = np.array([end] * n_rows)
+                    table = np.vstack((
+                            np.hstack((
+                                self.index[0:n_rows,None], np.round(self.values[0:n_rows, 0:max_cols], 5),ends
+                            ), dtype=object),
+                            np.array([["..."]+["..."]*np.minimum(max_cols, self.shape[1])+end], dtype=object),
+                            np.hstack((
+                                self.index[-n_rows:,None], np.round(self.values[-n_rows:, 0:max_cols], 5), ends
+                            ), dtype=object),
+                    ))
                 else:
-                    for i, array in zip(self.index, self.values[:, 0:max_cols]):
-                        table.append([i] + [round_if_float(k) for k in array] + end)
-                    return (
-                        tabulate(table, headers=headers, colalign=("left",))
-                        + "\n"
-                        + bottom
-                    )
+                    end = np.array([end]*len(self))
+                    table = np.hstack((
+                        self.index[:,None],
+                        np.round(self.values[:,0:max_cols], 5),
+                        end), dtype=object)
             else:
-                return tabulate([], headers=headers) + "\n" + bottom
+                table = []
+
+            # Adding metadata if any.
+            col_names = self._metadata.columns
+            if self._metadata.shape[1]:
+                metatable = np.vstack((
+                    np.array([["-"] * table.shape[1]]),
+                    np.hstack(([" "], self._metadata.values.T[0:max_cols]))
+                ), dtype=object)
+
+            return tabulate(table, headers=headers, colalign=("left",)) + "\n" + bottom
 
     def __getattr__(self, name):
         # avoid infinite recursion when pickling due to
