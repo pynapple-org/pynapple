@@ -18,7 +18,7 @@ from ._jitted_functions import jitunion, jitunion_isets
 from .base_class import Base
 from .config import nap_config
 from .interval_set import IntervalSet
-from .metadata_class import MetadataBase
+from .metadata_class import _MetadataBase
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
 from .utils import _get_repr_string, check_filename, convert_to_numpy_array
@@ -56,7 +56,7 @@ def _union_intervals(i_sets):
     return IntervalSet(new_start, new_end)
 
 
-class TsGroup(UserDict, MetadataBase):
+class TsGroup(UserDict, _MetadataBase):
     """
     The TsGroup is a dictionary-like object to hold multiple [`Ts`][pynapple.core.time_series.Ts] or [`Tsd`][pynapple.core.time_series.Tsd] objects with different time index.
 
@@ -143,7 +143,7 @@ class TsGroup(UserDict, MetadataBase):
         data = {k: data[k] for k in self.index}
 
         # initialize metadata
-        MetadataBase.__init__(self)
+        _MetadataBase.__init__(self)
 
         # Transform elements to Ts/Tsd objects
         for k in self.index:
@@ -195,7 +195,7 @@ class TsGroup(UserDict, MetadataBase):
             super().__setitem__(int(key), value)
         else:
             # do we want metadata set outside of `set_info` to be allowed?
-            MetadataBase.__setitem__(self, key, value)
+            _MetadataBase.__setitem__(self, key, value)
 
     def __getitem__(self, key):
         # Standard dict keys are Hashable
@@ -203,7 +203,7 @@ class TsGroup(UserDict, MetadataBase):
             if self.__contains__(key):
                 return self.data[key]
             else:
-                return MetadataBase.__getitem__(self, key)
+                return _MetadataBase.__getitem__(self, key)
 
         # array boolean are transformed into indices
         # note that raw boolean are hashable, and won't be

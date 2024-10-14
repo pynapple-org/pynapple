@@ -29,7 +29,7 @@ from tabulate import tabulate
 from ._core_functions import _bin_average, _convolve, _dropna, _restrict, _threshold
 from .base_class import Base
 from .interval_set import IntervalSet
-from .metadata_class import MetadataBase
+from .metadata_class import _MetadataBase
 from .time_index import TsIndex
 from .utils import (
     _concatenate_tsd,
@@ -860,7 +860,7 @@ class TsdTensor(BaseTsd):
         return
 
 
-class TsdFrame(BaseTsd, MetadataBase):
+class TsdFrame(BaseTsd, _MetadataBase):
     """
     TsdFrame
 
@@ -930,7 +930,7 @@ class TsdFrame(BaseTsd, MetadataBase):
 
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
-        MetadataBase.__init__(self, **kwargs)
+        _MetadataBase.__init__(self, **kwargs)
         self._initialized = True
 
     @property
@@ -958,31 +958,57 @@ class TsdFrame(BaseTsd, MetadataBase):
                 if len(self) > max_rows:
                     n_rows = max_rows // 2
                     ends = np.array([end] * n_rows)
-                    table = np.vstack((
-                            np.hstack((
-                                self.index[0:n_rows,None], np.round(self.values[0:n_rows, 0:max_cols], 5),ends
-                            ), dtype=object),
-                            np.array([["..."]+["..."]*np.minimum(max_cols, self.shape[1])+end], dtype=object),
-                            np.hstack((
-                                self.index[-n_rows:,None], np.round(self.values[-n_rows:, 0:max_cols], 5), ends
-                            ), dtype=object),
-                    ))
+                    table = np.vstack(
+                        (
+                            np.hstack(
+                                (
+                                    self.index[0:n_rows, None],
+                                    np.round(self.values[0:n_rows, 0:max_cols], 5),
+                                    ends,
+                                ),
+                                dtype=object,
+                            ),
+                            np.array(
+                                [
+                                    ["..."]
+                                    + ["..."] * np.minimum(max_cols, self.shape[1])
+                                    + end
+                                ],
+                                dtype=object,
+                            ),
+                            np.hstack(
+                                (
+                                    self.index[-n_rows:, None],
+                                    np.round(self.values[-n_rows:, 0:max_cols], 5),
+                                    ends,
+                                ),
+                                dtype=object,
+                            ),
+                        )
+                    )
                 else:
-                    end = np.array([end]*len(self))
-                    table = np.hstack((
-                        self.index[:,None],
-                        np.round(self.values[:,0:max_cols], 5),
-                        end), dtype=object)
+                    end = np.array([end] * len(self))
+                    table = np.hstack(
+                        (
+                            self.index[:, None],
+                            np.round(self.values[:, 0:max_cols], 5),
+                            end,
+                        ),
+                        dtype=object,
+                    )
             else:
                 table = []
 
             # Adding metadata if any.
             col_names = self._metadata.columns
             if self._metadata.shape[1]:
-                metatable = np.vstack((
-                    np.array([["-"] * table.shape[1]]),
-                    np.hstack(([" "], self._metadata.values.T[0:max_cols]))
-                ), dtype=object)
+                metatable = np.vstack(
+                    (
+                        np.array([["-"] * table.shape[1]]),
+                        np.hstack(([" "], self._metadata.values.T[0:max_cols])),
+                    ),
+                    dtype=object,
+                )
 
             return tabulate(table, headers=headers, colalign=("left",)) + "\n" + bottom
 
@@ -992,7 +1018,7 @@ class TsdFrame(BaseTsd, MetadataBase):
         if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
             raise AttributeError(name)
         if name in self._metadata.columns:
-            return MetadataBase.__getattr__(self, name)
+            return _MetadataBase.__getattr__(self, name)
         else:
             return super().__getattr__(name)
 

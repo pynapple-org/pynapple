@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 
 
-class MetadataBase:
+class _MetadataBase:
     """
     An object containing metadata for TsGroup, IntervalSet, or TsdFrame objects.
 

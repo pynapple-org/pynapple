@@ -56,7 +56,7 @@ from ._jitted_functions import (
     jitunion,
 )
 from .config import nap_config
-from .metadata_class import MetadataBase
+from .metadata_class import _MetadataBase
 from .time_index import TsIndex
 from .utils import (
     _get_terminal_size,
@@ -77,7 +77,7 @@ all_warnings = np.array(
 )
 
 
-class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
+class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
     """
     A class representing a (irregular) set of time intervals in elapsed time, with relative operations
     """
@@ -190,7 +190,7 @@ class IntervalSet(NDArrayOperatorsMixin, MetadataBase):
         self.index = np.arange(data.shape[0], dtype="int")
         self.columns = np.array(["start", "end"])
         self.nap_class = self.__class__.__name__
-        MetadataBase.__init__(self, **kwargs)
+        _MetadataBase.__init__(self, **kwargs)
 
     def __repr__(self):
         # Start by determining how many columns and rows.
