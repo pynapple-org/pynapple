@@ -60,7 +60,6 @@ from .metadata_class import _MetadataBase
 from .time_index import TsIndex
 from .utils import (
     _get_terminal_size,
-    _get_repr_string,
     _IntervalSetSliceHelper,
     check_filename,
     convert_to_numpy_array,
@@ -196,7 +195,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         # Start by determining how many columns and rows.
         # This can be unique for each object
         cols, rows = _get_terminal_size()
-        max_cols = np.maximum(cols // 12, 5)
+        # max_cols = np.maximum(cols // 12, 5)
         max_rows = np.maximum(rows - 10, 2)
         # By default, the first three columns should always show.
 

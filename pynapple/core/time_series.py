@@ -987,12 +987,12 @@ class TsdFrame(BaseTsd, _MetadataBase):
                         )
                     )
                 else:
-                    end = np.array([end] * len(self))
+                    ends = np.array([end] * len(self))
                     table = np.hstack(
                         (
                             self.index[:, None],
                             np.round(self.values[:, 0:max_cols], 5),
-                            end,
+                            ends,
                         ),
                         dtype=object,
                     )
@@ -1000,12 +1000,23 @@ class TsdFrame(BaseTsd, _MetadataBase):
                 table = []
 
             # Adding metadata if any.
-            col_names = self._metadata.columns
-            if self._metadata.shape[1]:
-                metatable = np.vstack(
+            col_names = self._metadata.columns.values
+            if len(col_names):
+                ends = np.array([end] * self._metadata.shape[1])
+                table = np.vstack(
                     (
-                        np.array([["-"] * table.shape[1]]),
-                        np.hstack(([" "], self._metadata.values.T[0:max_cols])),
+                        table,
+                        np.array([["Metadata"] + [" "] * (table.shape[1] - 1)]),
+                        [["--------"] * table.shape[1]],
+                        np.hstack(
+                            (
+                                col_names[:, None],
+                                self._metadata.values[0:max_cols].T,
+                                ends,
+                            ),
+                            dtype=object,
+                        ),
+                        np.array([[" "] * table.shape[1]]),
                     ),
                     dtype=object,
                 )
