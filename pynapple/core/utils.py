@@ -89,60 +89,60 @@ def _get_terminal_size():
     return (cols, rows)
 
 
-# def _get_repr_string(data, headers):
-#     """Helper function to format __repr__ string for `tabulate`
-#
-#     Parameters
-#     ----------
-#     data : list, np.ndarray
-#         List or array of data
-#     headers : list
-#         List of headers
-#
-#     Returns
-#     -------
-#     str, list
-#     """
-#     cols, rows = _get_terminal_size()
-#     max_cols = np.maximum(cols // 12, 6)
-#     max_rows = np.maximum(rows - 10, 2)
-#
-#     lines = []
-#     end_line = []
-#
-#     if len(headers) > max_cols:
-#         headers = headers[0:max_cols] + ["..."]
-#         end_line.append("...")
-#         n_cols = len(headers) - 1
-#     else:
-#         n_cols = len(headers)
-#
-#     if len(data) > max_rows:
-#         n_rows = max_rows // 2
-#     else:
-#         n_rows = len(data)
-#
-#     def round_if_float(x):
-#         if isinstance(x, float):
-#             return np.round(x, 5)
-#         else:
-#             return x
-#
-#     for dat in data[0:n_rows]:
-#         if isinstance(dat, (list, np.ndarray)):
-#             lines.append([round_if_float(d) for d in dat[0:n_cols]] + end_line)
-#         else:
-#             lines.append([round_if_float(dat)] + end_line)
-#
-#     if len(data) > max_rows:
-#         lines.append(["..." for _ in range(len(headers))])
-#         for dat in data[-n_rows:]:
-#             if isinstance(dat, (list, np.ndarray)):
-#                 lines.append([round_if_float(d) for d in dat[0:n_cols]] + end_line)
-#             else:
-#                 lines.append([round_if_float(dat)] + end_line)
-#
-#     return lines, headers
+def _get_repr_string(data, headers):
+    """Helper function to format __repr__ string for `tabulate`
+
+    Parameters
+    ----------
+    data : list, np.ndarray
+        List or array of data
+    headers : list
+        List of headers
+
+    Returns
+    -------
+    str, list
+    """
+    cols, rows = _get_terminal_size()
+    max_cols = np.maximum(cols // 12, 6)
+    max_rows = np.maximum(rows - 10, 2)
+
+    lines = []
+    end_line = []
+
+    if len(headers) > max_cols:
+        headers = headers[0:max_cols] + ["..."]
+        end_line.append("...")
+        n_cols = len(headers) - 1
+    else:
+        n_cols = len(headers)
+
+    if len(data) > max_rows:
+        n_rows = max_rows // 2
+    else:
+        n_rows = len(data)
+
+    def round_if_float(x):
+        if isinstance(x, float):
+            return np.round(x, 5)
+        else:
+            return x
+
+    for dat in data[0:n_rows]:
+        if isinstance(dat, (list, np.ndarray)):
+            lines.append([round_if_float(d) for d in dat[0:n_cols]] + end_line)
+        else:
+            lines.append([round_if_float(dat)] + end_line)
+
+    if len(data) > max_rows:
+        lines.append(["..." for _ in range(len(headers))])
+        for dat in data[-n_rows:]:
+            if isinstance(dat, (list, np.ndarray)):
+                lines.append([round_if_float(d) for d in dat[0:n_cols]] + end_line)
+            else:
+                lines.append([round_if_float(dat)] + end_line)
+
+    return lines, headers
 
 
 def is_array_like(obj):
