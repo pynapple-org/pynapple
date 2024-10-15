@@ -1036,8 +1036,13 @@ class TsdFrame(BaseTsd, _MetadataBase):
     def __setitem__(self, key, value):
         try:
             if isinstance(key, str):
-                new_key = self.columns.get_indexer([key])
-                self.values.__setitem__((slice(None, None, None), new_key[0]), value)
+                if key in self.metadata_columns:
+                    _MetadataBase.__setitem__(self, key, value)
+                else:
+                    new_key = self.columns.get_indexer([key])
+                    self.values.__setitem__(
+                        (slice(None, None, None), new_key[0]), value
+                    )
             elif hasattr(key, "__iter__") and all([isinstance(k, str) for k in key]):
                 new_key = self.columns.get_indexer(key)
                 self.values.__setitem__((slice(None, None, None), new_key), value)
@@ -1047,7 +1052,9 @@ class TsdFrame(BaseTsd, _MetadataBase):
             raise IndexError
 
     def __getitem__(self, key, *args, **kwargs):
-        if (
+        if isinstance(key, str) and (key in self.metadata_columns):
+            return _MetadataBase.__getitem__(self, key)
+        elif (
             isinstance(key, str)
             or hasattr(key, "__iter__")
             and all([isinstance(k, str) for k in key])

@@ -119,12 +119,12 @@ def _make_interval_set(obj, **kwargs):
                 else:
                     return data
 
-            else: # assume extra columns are metadata
+            else:  # assume extra columns are metadata
                 data = nap.IntervalSet(start=df["start_time"], end=df["stop_time"])
-                metadata = df.drop(columns=["start_time","stop_time"])
+                metadata = df.drop(columns=["start_time", "stop_time"])
                 data.set_info(metadata)
                 return data
-            
+
     else:
         return obj
 
