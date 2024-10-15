@@ -125,11 +125,11 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
             ), """
                 DataFrame must contain columns name "start" and "end" for start and end times.                   
                 """
-            m = start.drop(columns=["start", "end"])
+            metadata = start.drop(columns=["start", "end"])
             end = start["end"].values.astype(np.float64)
             start = start["start"].values.astype(np.float64)
-            if m.empty is False:
-                kwargs = {**m, **kwargs}
+            if metadata.empty is False:
+                kwargs = {**metadata, **kwargs}
                 print(kwargs)
 
         else:
@@ -277,18 +277,18 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
                 )
         elif isinstance(key, Number):
             output = self.values.__getitem__(key)
-            m = self._metadata.loc[key]
-            return IntervalSet(start=output[0], end=output[1], **m)
+            metadata = self._metadata.loc[key]
+            return IntervalSet(start=output[0], end=output[1], **metadata)
         elif isinstance(key, (list, np.ndarray, pd.Series)):
-            m = self._metadata.loc[key].reset_index(drop=True)
+            metadata = self._metadata.loc[key].reset_index(drop=True)
             output = self.values.__getitem__(key)
-            return IntervalSet(start=output[:, 0], end=output[:, 1], **m)
+            return IntervalSet(start=output[:, 0], end=output[:, 1], **metadata)
         elif isinstance(key, slice):
             # DataFrame's `loc` treats slices differently (inclusive of stop) than numpy
             # `iloc` exludes the stop index, like numpy
-            m = self._metadata.iloc[key].reset_index(drop=True)
+            metadata = self._metadata.iloc[key].reset_index(drop=True)
             output = self.values.__getitem__(key)
-            return IntervalSet(start=output[:, 0], end=output[:, 1], **m)
+            return IntervalSet(start=output[:, 0], end=output[:, 1], **metadata)
         elif isinstance(key, tuple):
             if len(key) == 2:
                 df = self.as_dataframe()
@@ -452,8 +452,8 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         ep = cls(start=file["start"], end=file["end"])
         if "_metadata" in file:  # load metadata if it exists
             if file["_metadata"]:  # check that metadata is not empty
-                m = pd.DataFrame.from_dict(file["_metadata"].item())
-                ep.set_info(m)
+                metadata = pd.DataFrame.from_dict(file["_metadata"].item())
+                ep.set_info(metadata)
         return ep
 
     def time_span(self):
@@ -833,9 +833,9 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         new_starts = new_starts[tokeep]
         new_ends = new_ends[tokeep]
         new_meta = new_meta[tokeep]
-        m = self._metadata.loc[new_meta].reset_index(drop=True)
+        metadata = self._metadata.loc[new_meta].reset_index(drop=True)
 
         # Removing 1 microsecond to have strictly non-overlapping intervals for intervals coming from the same epoch
         new_ends -= 1e-6
 
-        return IntervalSet(new_starts, new_ends, **m)
+        return IntervalSet(new_starts, new_ends, **metadata)
