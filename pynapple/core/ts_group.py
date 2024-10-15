@@ -258,7 +258,7 @@ class TsGroup(UserDict, _MetadataBase):
                     np.hstack(
                         (
                             self.index[0:n_rows, None],
-                            np.round(self._metadata[["rate"]].values[0:n_rows],5),
+                            np.round(self._metadata[["rate"]].values[0:n_rows], 5),
                             self._metadata[col_names].values[0:n_rows, 0:max_cols],
                             ends,
                         ),
