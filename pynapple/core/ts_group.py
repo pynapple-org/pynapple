@@ -253,29 +253,43 @@ class TsGroup(UserDict, _MetadataBase):
         if len(self) > max_rows:
             n_rows = max_rows // 2
             ends = np.array([end] * n_rows)
-            table = np.vstack((
-                np.hstack((
-                        self.index[0:n_rows, None],
-                        self._metadata[["rate"]].values[0:n_rows],
-                        self._metadata[col_names].values[0:n_rows,0:max_cols],
-                        ends,
-                    ),dtype=object),
-                np.array([["..." for _ in range(2+len(col_names[0:max_cols]))] + end], dtype=object),
-                np.hstack((
-                    self.index[-n_rows:, None],
-                    self._metadata[["rate"]].values[-n_rows:],
-                    self._metadata[col_names].values[-n_rows:,0:max_cols],
-                    ends
-                    ), dtype=object),
-            ))
+            table = np.vstack(
+                (
+                    np.hstack(
+                        (
+                            self.index[0:n_rows, None],
+                            np.round(self._metadata[["rate"]].values[0:n_rows],5),
+                            self._metadata[col_names].values[0:n_rows, 0:max_cols],
+                            ends,
+                        ),
+                        dtype=object,
+                    ),
+                    np.array(
+                        [["..." for _ in range(2 + len(col_names[0:max_cols]))] + end],
+                        dtype=object,
+                    ),
+                    np.hstack(
+                        (
+                            self.index[-n_rows:, None],
+                            np.round(self._metadata[["rate"]].values[-n_rows:], 5),
+                            self._metadata[col_names].values[-n_rows:, 0:max_cols],
+                            ends,
+                        ),
+                        dtype=object,
+                    ),
+                )
+            )
         else:
             ends = np.array([end] * len(self))
-            table = np.hstack((
-                        self.index[:, None],
-                        self._metadata[["rate"]].values,
-                        self._metadata[col_names].values[:,0:max_cols],
-                        ends
-                    ),dtype=object)
+            table = np.hstack(
+                (
+                    self.index[:, None],
+                    np.round(self._metadata[["rate"]].values, 5),
+                    self._metadata[col_names].values[:, 0:max_cols],
+                    ends,
+                ),
+                dtype=object,
+            )
 
         return tabulate(table, headers=headers)
 

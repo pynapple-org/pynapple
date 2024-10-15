@@ -484,16 +484,16 @@ class TestTsGroup1:
         headers = ["Index", "rate"] + [c for c in cols]
         lines = []
 
-        def round_if_float(x):
-            if isinstance(x, float):
-                return np.round(x, 5)
-            else:
-                return x
+        # def round_if_float(x):
+        #     if isinstance(x, float):
+        #         return np.round(x, 5)
+        #     else:
+        #         return x
 
         for i in tsgroup.index:
             lines.append(
                 [str(i), np.round(tsgroup._metadata.loc[i, "rate"], 5)]
-                + [round_if_float(tsgroup._metadata.loc[i, c]) for c in cols]
+                + [tsgroup._metadata.loc[i, c] for c in cols]
             )
         assert tabulate(lines, headers=headers) == tsgroup.__repr__()
 
