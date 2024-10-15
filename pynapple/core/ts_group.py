@@ -21,7 +21,7 @@ from .interval_set import IntervalSet
 from .metadata_class import _MetadataBase
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
-from .utils import _get_repr_string, check_filename, convert_to_numpy_array
+from .utils import _get_terminal_size, check_filename, convert_to_numpy_array
 
 
 def _union_intervals(i_sets):
@@ -238,21 +238,46 @@ class TsGroup(UserDict, _MetadataBase):
         )
 
     def __repr__(self):
+        # Start by determining how many columns and rows.
+        # This can be unique for each object
+        cols, rows = _get_terminal_size()
+        max_cols = np.maximum(cols // 12, 5)
+        max_rows = np.maximum(rows - 10, 2)
+
+        # By default, the first three columns should always show.
         col_names = self._metadata.columns.drop("rate")
-        headers = ["Index", "rate"] + [c for c in col_names]
+        headers = ["Index", "rate"] + [c for c in col_names][0:max_cols]
+        end = ["..."] if len(headers) > max_cols else []
+        headers += end
 
-        data = np.hstack(
-            (
-                self.index[:, None],
-                self._metadata[["rate"]].values,
-                self._metadata[col_names].values,
-            ),
-            dtype=object,
-        )
+        if len(self) > max_rows:
+            n_rows = max_rows // 2
+            ends = np.array([end] * n_rows)
+            table = np.vstack((
+                np.hstack((
+                        self.index[0:n_rows, None],
+                        self._metadata[["rate"]].values[0:n_rows],
+                        self._metadata[col_names].values[0:n_rows,0:max_cols],
+                        ends,
+                    ),dtype=object),
+                np.array([["..." for _ in range(2+len(col_names[0:max_cols]))] + end], dtype=object),
+                np.hstack((
+                    self.index[-n_rows:, None],
+                    self._metadata[["rate"]].values[-n_rows:],
+                    self._metadata[col_names].values[-n_rows:,0:max_cols],
+                    ends
+                    ), dtype=object),
+            ))
+        else:
+            ends = np.array([end] * len(self))
+            table = np.hstack((
+                        self.index[:, None],
+                        self._metadata[["rate"]].values,
+                        self._metadata[col_names].values[:,0:max_cols],
+                        ends
+                    ),dtype=object)
 
-        lines, headers = _get_repr_string(data, headers)
-
-        return tabulate(lines, headers=headers)
+        return tabulate(table, headers=headers)
 
     def __str__(self):
         return self.__repr__()
