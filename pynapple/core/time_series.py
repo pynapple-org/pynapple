@@ -1060,7 +1060,12 @@ class TsdFrame(BaseTsd, _MetadataBase):
             and all([isinstance(k, str) for k in key])
         ):
             return self.loc[key]
+
         else:
+            if isinstance(key, pd.Series) and key.index.equals(self.columns):
+                # if indexing with a pd.Series from metadata, transform it to tuple with slice(None) in first position
+                key = (slice(None, None, None), key)
+
             output = self.values.__getitem__(key)
             columns = self.columns
 
