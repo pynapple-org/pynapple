@@ -101,7 +101,7 @@ class _MetadataBase:
                 f"Invalid metadata name '{name}'. Metadata name must differ from "
                 f"{self.columns} column names!"
             )
-        if name[0].isalpha() == False:
+        if name[0].isalpha() is False:
             # starts with a number
             raise ValueError(
                 f"Invalid metadata name '{name}'. Metadata name cannot start with a number"
