@@ -102,7 +102,6 @@ class _MetadataBase:
 
         for k, v in kwargs.items():
             if isinstance(v, (list, np.ndarray, pd.Series)) and hasattr(self, k):
-                print(hasattr(self, k))
                 print(getattr(self, k))
                 print(k)
                 invalid_cols += [k]
