@@ -206,7 +206,7 @@ class TestTsGroup1:
             tsgroup.set_info(ar_info)
         assert str(e_info.value) == "Argument should be passed as keyword argument."
 
-        with pytest.raises(ValueError, match="Metadata keys must be strings!"):
+        with pytest.raises(TypeError, match="Metadata keys must be strings!"):
             tsgroup[0] = ar_info
 
     def test_add_metainfo_test_runtime_errors(self, group):
@@ -745,7 +745,7 @@ class TestTsGroup1:
         assert all(group._metadata["a"] == np.arange(len(group)) + 10)
 
     def test_prevent_overwriting_existing_methods(self, ts_group):
-        with pytest.raises(ValueError, match=r"Invalid metadata name\(s\)"):
+        with pytest.raises(ValueError, match=r"Invalid metadata name"):
             ts_group["set_info"] = np.arange(2)
 
     def test_setitem_metadata_twice_fail(self, group):

@@ -908,7 +908,11 @@ class Test_Time_Series_2:
             columns=["a", "b", "c"],
         ),
         nap.TsdFrame(
-            t=np.arange(100), d=np.random.rand(100, 3), time_units="s", l1=np.arange(3)
+            t=np.arange(100),
+            d=np.random.rand(100, 3),
+            time_units="s",
+            l1=np.arange(3),
+            l2=["x", "x", "y"],
         ),
         nap.TsdFrame(
             t=np.arange(100),
@@ -916,6 +920,7 @@ class Test_Time_Series_2:
             time_units="s",
             columns=["a", "b", "c"],
             l1=np.arange(3),
+            l2=["x", "x", "y"],
         ),
     ],
 )
@@ -978,11 +983,109 @@ class Test_Time_Series_3:
                     == tsdframe.metadata_index[index]
                 )
 
+        if len(tsdframe.metadata_columns):
+            for col in tsdframe.metadata_columns:
+                assert np.all(tsdframe[col] == tsdframe._metadata[col])
+
         with pytest.raises(Exception):
             tsdframe["d"]
 
         with pytest.raises(Exception):
             tsdframe[["d", "e"]]
+
+    def test_metadata_slicing(self, tsdframe):
+        if len(tsdframe.metadata_columns):
+            for mcol in tsdframe.metadata_columns:
+                mval = tsdframe._metadata[mcol].iloc[0]
+                fcols = tsdframe._metadata[tsdframe._metadata[mcol] == mval].index
+                assert isinstance(tsdframe[tsdframe[mcol] == mval], nap.TsdFrame)
+                assert np.all(tsdframe[tsdframe[mcol] == mval].columns == fcols)
+                assert np.all(tsdframe[tsdframe[mcol] == mval].metadata_index == fcols)
+                assert isinstance(tsdframe[:, tsdframe[mcol] == mval], nap.TsdFrame)
+                np.testing.assert_array_almost_equal(
+                    tsdframe[tsdframe[mcol] == mval].values,
+                    tsdframe[:, tsdframe[mcol] == mval].values,
+                )
+
+    @pytest.mark.parametrize(
+        "args, kwargs, expected",
+        [
+            (
+                [pd.DataFrame(data=np.random.randint(0, 5, size=(3, 3)))],
+                {},
+                pytest.raises(TypeError, match="Invalid metadata type"),
+            ),
+            (
+                [
+                    pd.DataFrame(
+                        columns=["l 1", "l 2", "l 3"],
+                        data=np.random.randint(0, 5, size=(3, 3)),
+                    )
+                ],
+                {},
+                pytest.raises(ValueError, match="Invalid metadata name"),
+            ),
+            (
+                [
+                    pd.DataFrame(
+                        columns=["1", "2", "3"],
+                        data=np.random.randint(0, 5, size=(3, 3)),
+                    )
+                ],
+                {},
+                pytest.raises(ValueError, match="Invalid metadata name"),
+            ),
+            (
+                [
+                    pd.DataFrame(
+                        columns=["l.1", "l.2", "l.3"],
+                        data=np.random.randint(0, 5, size=(3, 3)),
+                    )
+                ],
+                {},
+                pytest.raises(ValueError, match="Invalid metadata name"),
+            ),
+            (
+                [],
+                {"columns": np.zeros(3)},
+                pytest.raises(ValueError, match="Invalid metadata name"),
+            ),
+            (
+                [],
+                {"label": np.zeros(4)},
+                pytest.raises(RuntimeError, match="Array is not the same length."),
+            ),
+        ],
+    )
+    def test_add_metadata_raises(self, tsdframe, args, kwargs, expected):
+        with expected:
+            tsdframe.set_info(*args, **kwargs)
+
+    @pytest.mark.parametrize(
+        "args, kwargs, expected",
+        [
+            (
+                [
+                    pd.DataFrame(
+                        index=["a", "b", "c"],
+                        columns=["a", "b", "c"],
+                        data=np.random.randint(0, 5, size=(3, 3)),
+                    )
+                ],
+                {},
+                pytest.raises(ValueError, match="Invalid metadata name"),
+            ),
+            (
+                [],
+                {"l1": pd.Series([1, 2, 3])},
+                pytest.raises(RuntimeError, match="Index are not equals"),
+            ),
+        ],
+    )
+    def test_add_metadata_pd_raises(self, tsdframe, args, kwargs, expected):
+        if np.all(tsdframe.columns == ["a", "b", "c"]):
+            with expected:
+                tsdframe.set_info(*args, **kwargs)
 
     def test_operators(self, tsdframe):
         v = tsdframe.values

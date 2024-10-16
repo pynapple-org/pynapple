@@ -69,20 +69,10 @@ class _MetadataBase:
             )
 
     def __setitem__(self, key, value):
-        # this is only relevant for `TsGroup`. Do we want to allow metadata to be set outside of `set_info`?
+        # technically trying to construct a dictionary will also enforce that the key is a string
         if not isinstance(key, str):
-            raise ValueError("Metadata keys must be strings!")
-        # replicate pandas behavior of over-writing cols
-        if key in self._metadata.columns:
-            old_meta = self._metadata.copy()
-            self._metadata.pop(key)
-            try:
-                self.set_info(**{key: value})
-            except Exception:
-                self._metadata = old_meta
-                raise
-        else:
-            self.set_info(**{key: value})
+            raise TypeError("Metadata keys must be strings!")
+        self.set_info(**{key: value})
 
     def __getitem__(self, key):
         return self.get_info(key)
@@ -94,21 +84,45 @@ class _MetadataBase:
         """
         return list(self._metadata.columns)
 
-    def _check_metadata_column_names(self, *args, **kwargs):
-        invalid_cols = []
-        for arg in args:
-            if isinstance(arg, pd.DataFrame):
-                invalid_cols += [col for col in arg.columns if hasattr(self, col)]
-
-        for k, v in kwargs.items():
-            if isinstance(v, (list, np.ndarray, pd.Series)) and hasattr(self, k):
-                invalid_cols += [k]
-
-        if invalid_cols:
+    def _raise_invalid_metadata_column_name(self, name):
+        if not isinstance(name, str):
+            raise TypeError(
+                f"Invalid metadata type {type(name)}. Metadata names must be strings!"
+            )
+        if hasattr(self, name) and (name not in self.metadata_columns):
+            # existing non-metadata attribute
             raise ValueError(
-                f"Invalid metadata name(s) {invalid_cols}. Metadata name must differ from "
+                f"Invalid metadata name '{name}'. Metadata name must differ from "
                 f"{type(self).__dict__.keys()} attribute names!"
             )
+        if hasattr(self, "columns") and name in self.columns:
+            # existing column (since TsdFrame columns are not attributes)
+            raise ValueError(
+                f"Invalid metadata name '{name}'. Metadata name must differ from "
+                f"{self.columns} column names!"
+            )
+        if name[0].isalpha() == False:
+            # starts with a number
+            raise ValueError(
+                f"Invalid metadata name '{name}'. Metadata name cannot start with a number"
+            )
+        if (" " in name) or ("." in name):
+            # contains invalid characters
+            raise ValueError(
+                f"Invalid metadata name '{name}'. Metadata name cannot contain the characters [' ', '.']"
+            )
+
+    def _check_metadata_column_names(self, *args, **kwargs):
+        """
+        Check that metadata column names don't conflict with existing attributes, don't start with a number, and don't contain invalid characters.
+        """
+
+        for arg in args:
+            if isinstance(arg, pd.DataFrame):
+                [self._raise_invalid_metadata_column_name(col) for col in arg.columns]
+
+        for k in kwargs:
+            self._raise_invalid_metadata_column_name(k)
 
     def set_info(self, *args, **kwargs):
         """
