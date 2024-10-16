@@ -928,6 +928,13 @@ class Test_Time_Series_3:
     def test_as_dataframe(self, tsdframe):
         assert isinstance(tsdframe.as_dataframe(), pd.DataFrame)
 
+    def test_copy(self, tsdframe):
+        tscopy = tsdframe.copy()
+        np.testing.assert_array_almost_equal(tscopy.values, tsdframe.values)
+        assert np.all(tscopy.columns == tsdframe.columns)
+        if len(tsdframe.metadata_columns):
+            pd.testing.assert_frame_equal(tscopy._metadata, tsdframe._metadata)
+
     @pytest.mark.parametrize("index, nap_type", [(0, nap.Tsd), ([0, 2], nap.TsdFrame)])
     def test_horizontal_slicing(self, tsdframe, index, nap_type):
         assert isinstance(tsdframe[:, index], nap_type)
