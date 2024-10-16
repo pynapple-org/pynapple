@@ -1,10 +1,13 @@
 """
 This module contains functions to compute power spectral density and mean power spectral density.
 
-| Function | Description |
-|------|------|
-| `compute_power_spectral_density` | Compute Power Spectral Density over a single epoch |
++---------------------------------------+----------------------------------------------------------+
+| Function                              | Description                                              |
++=======================================+==========================================================+
+| `compute_power_spectral_density`      | Compute Power Spectral Density over a single epoch       |
++---------------------------------------+----------------------------------------------------------+
 | `compute_mean_power_spectral_density` | Compute Mean Power Spectral Density over multiple epochs |
++---------------------------------------+----------------------------------------------------------+
 
 """
 

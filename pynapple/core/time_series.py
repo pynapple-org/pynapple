@@ -27,7 +27,7 @@ from scipy import signal
 from tabulate import tabulate
 
 from ._core_functions import _bin_average, _convolve, _dropna, _restrict, _threshold
-from .base_class import Base
+from .base_class import _Base
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .utils import (
@@ -61,7 +61,7 @@ def _get_class(data):
         return TsdTensor
 
 
-class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
+class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
     """
     Abstract base class for time series objects.
     Implement most of the shared functions across concrete classes `Tsd`, `TsdFrame`, `TsdTensor`
@@ -689,7 +689,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         return self.__class__(t=new_t, d=new_d, **kwargs_dict)
 
 
-class TsdTensor(BaseTsd):
+class TsdTensor(_BaseTsd):
     """
     TsdTensor
 
@@ -848,7 +848,7 @@ class TsdTensor(BaseTsd):
         return
 
 
-class TsdFrame(BaseTsd):
+class TsdFrame(_BaseTsd):
     """
     TsdFrame
 
@@ -1117,7 +1117,7 @@ class TsdFrame(BaseTsd):
         return
 
 
-class Tsd(BaseTsd):
+class Tsd(_BaseTsd):
     """
     A container around numpy.ndarray specialized for neurophysiology time series.
 
@@ -1422,7 +1422,7 @@ class Tsd(BaseTsd):
         return
 
 
-class Ts(Base):
+class Ts(_Base):
     """
     Timestamps only object for a time series with only time index,
 

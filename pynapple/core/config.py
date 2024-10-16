@@ -11,23 +11,21 @@ For some core functions, the `jax` backend offers speed gains (provided that Jax
 
 See the example below to update the backend. Don't forget to install [pynajax](https://github.com/pynapple-org/pynajax).
 
-``` py
+
 import pynapple as nap
 import numpy as np
 nap.nap_config.set_backend("jax") # Default option is 'numba'.
-```
 
 You can view the current backend with 
-``` py
+
 >>> print(nap.nap_config.backend)
 'jax'
-```
 
 ## Warnings configuration
 
 pynapple gives warnings that can be helpful to debug. For example when passing time indexes that are not sorted:
 
-``` py
+
 >>> import pynapple as nap
 >>> t = [0, 2, 1]
 >>> nap.Ts(t)
@@ -38,11 +36,9 @@ Time (s)
 1.0
 2.0
 shape: 3
-```
 
 pynapple's warnings can be suppressed :
 
-``` py
 >>> nap.nap_config.suppress_time_index_sorting_warnings = True
 >>> nap.Ts(t=t)
 Time (s)
@@ -50,8 +46,6 @@ Time (s)
 1.0
 2.0
 shape: 3
-```
-
 """
 
 import importlib.util
