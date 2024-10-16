@@ -1130,6 +1130,16 @@ class TsdFrame(BaseTsd, _MetadataBase):
         df.columns = self.columns.copy()
         return df
 
+    def copy(self):
+        """Copy the data, index, time support, columns and metadata of the TsdFrame object."""
+        return self.__class__(
+            t=self.index.copy(),
+            d=self.values[:].copy(),
+            time_support=self.time_support,
+            columns=self.columns.copy(),
+            **self._metadata,
+        )
+
     def save(self, filename):
         """
         Save TsdFrame object in npz format. The file will contain the timestamps, the
