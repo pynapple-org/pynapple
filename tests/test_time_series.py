@@ -994,6 +994,7 @@ class Test_Time_Series_3:
             tsdframe[["d", "e"]]
 
     def test_metadata_slicing(self, tsdframe):
+        # test slicing obj[obj.mcol == mval] and obj[:, obj.mcol == mval], and that they produce the same results
         if len(tsdframe.metadata_columns):
             for mcol in tsdframe.metadata_columns:
                 mval = tsdframe._metadata[mcol].iloc[0]
@@ -1008,14 +1009,68 @@ class Test_Time_Series_3:
                 )
 
     @pytest.mark.parametrize(
+        "args, kwargs, cols, vals",
+        [
+            (
+                # add with dataframe
+                [
+                    pd.DataFrame(
+                        data=np.zeros((3, 3)),
+                        columns=["l1", "l2", "l3"],
+                    )
+                ],
+                {},
+                ["l1", "l2", "l3"],
+                [np.zeros(3), np.zeros(3), np.zeros(3)],
+            ),
+            (
+                # add with series
+                [],
+                {"l1": pd.Series([1, 2, 3])},
+                ["l1"],
+                [np.array([1, 2, 3])],
+            ),
+            (
+                # add multiple
+                [],
+                {"l1": np.array([1, 2, 3]), "l2": ["x", "y", "z"]},
+                ["l1", "l2"],
+                [np.array([1, 2, 3]), ["x", "y", "z"]],
+            ),
+        ],
+    )
+    def test_add_and_get_metadata(self, tsdframe, args, kwargs, cols, vals):
+        if len(kwargs) and isinstance(kwargs["l1"], pd.Series):
+            kwargs["l1"] = kwargs["l1"].set_axis(tsdframe.columns)
+        if len(args) and isinstance(args[0], pd.DataFrame):
+            args[0] = args[0].set_index(tsdframe.columns)
+
+        ts1 = tsdframe.copy()  # to check add with set_info
+        ts2 = tsdframe.copy()  # to check add with key
+        ts1.set_info(*args, **kwargs)
+        assert np.all(col in ts1.metadata_columns for col in cols)
+        for col, val in zip(cols, vals):
+            # check with get_info
+            assert np.all(ts1.get_info(col) == val)
+            # check getting as attribute
+            assert np.all(getattr(ts1, col) == val)
+            # check add with key
+            ts2[col] = val
+            # check getting with key
+            assert np.all(ts1[col] == val)
+            assert np.all(ts2[col] == val)
+
+    @pytest.mark.parametrize(
         "args, kwargs, expected",
         [
             (
+                # invalid names as integers
                 [pd.DataFrame(data=np.random.randint(0, 5, size=(3, 3)))],
                 {},
                 pytest.raises(TypeError, match="Invalid metadata type"),
             ),
             (
+                # invalid names with spaces
                 [
                     pd.DataFrame(
                         columns=["l 1", "l 2", "l 3"],
@@ -1026,6 +1081,7 @@ class Test_Time_Series_3:
                 pytest.raises(ValueError, match="Invalid metadata name"),
             ),
             (
+                # invalid names as strings starting with a number
                 [
                     pd.DataFrame(
                         columns=["1", "2", "3"],
@@ -1036,6 +1092,7 @@ class Test_Time_Series_3:
                 pytest.raises(ValueError, match="Invalid metadata name"),
             ),
             (
+                # invalid names with periods
                 [
                     pd.DataFrame(
                         columns=["l.1", "l.2", "l.3"],
@@ -1046,11 +1103,13 @@ class Test_Time_Series_3:
                 pytest.raises(ValueError, match="Invalid metadata name"),
             ),
             (
+                # name that overlaps with existing attribute
                 [],
                 {"columns": np.zeros(3)},
                 pytest.raises(ValueError, match="Invalid metadata name"),
             ),
             (
+                # metadata with wrong length
                 [],
                 {"label": np.zeros(4)},
                 pytest.raises(RuntimeError, match="Array is not the same length."),
@@ -1065,6 +1124,7 @@ class Test_Time_Series_3:
         "args, kwargs, expected",
         [
             (
+                # invalid metadata names that are the same as column names
                 [
                     pd.DataFrame(
                         index=["a", "b", "c"],
@@ -1076,6 +1136,7 @@ class Test_Time_Series_3:
                 pytest.raises(ValueError, match="Invalid metadata name"),
             ),
             (
+                # invalid series with index that doesn't match columns
                 [],
                 {"l1": pd.Series([1, 2, 3])},
                 pytest.raises(RuntimeError, match="Index are not equals"),
