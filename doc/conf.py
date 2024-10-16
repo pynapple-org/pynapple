@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath('..'))
 
 project = 'pynapple'
 copyright = f'2021-{time.strftime("%Y")}, Guillaume Viejo'
-author = 'Guillaume Viejo, Edoardo Balzani'
+author = ''
 version = release = pynapple.__version__
 
 
