@@ -56,13 +56,17 @@ dev = [
     "coverage",                     # Test coverage measurement
 ]
 doc = [
+    "numpydoc",
     "sphinx",
     "pydata-sphinx-theme",
     "sphinx-autodoc-typehints",
     "sphinx-copybutton",
     "sphinx-design",
+    "sphinx-issues",
+    "sphinxcontrib-apidoc",
     "myst-parser",
-    "nbsphinx"
+    "nbsphinx",
+    "nbconvert"
 ]
 docs = [
     "mkdocs",                       # Documentation generator
