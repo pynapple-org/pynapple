@@ -783,19 +783,13 @@ class TsdTensor(BaseTsd):
             output = self.values[key.values]
             index = self.index[key.values]
         elif isinstance(key, tuple):
-            if isinstance(key[0], Tsd):
-                if not np.issubdtype(key[0].dtype, np.bool_):
-                    raise ValueError(
-                        "When indexing with a Tsd, it must contain boolean values"
-                    )
-                output = self.values[key[0].values]
-                index = self.index[key[0].values]
-                # Apply the rest of the indexing
-                output = output[:, key[1:]]
-                output = output.squeeze()
-            else:
-                output = self.values.__getitem__(key)
-                index = self.index.__getitem__(key[0])
+                        if not all(np.issubdtype(k.dtype, np.bool_) if isinstance(k, Tsd) else True for k in key):
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
+            key = tuple(k.values if isinstance(k, Tsd) else k for k in key)
+            output = self.values.__getitem__(key)
+            index = self.index.__getitem__(key[0])
         else:
             output = self.values.__getitem__(key)
             index = self.index.__getitem__(key)
@@ -803,7 +797,6 @@ class TsdTensor(BaseTsd):
         if isinstance(index, Number):
             index = np.array([index])
 
-        print(output.shape, index.shape)
         if all(is_array_like(a) for a in [index, output]):
             if output.shape[0] == index.shape[0]:
                 if output.ndim == 1:
