@@ -9,12 +9,12 @@ BaseLoader is the general class for loading session with pynapple.
 
 @author: Guillaume Viejo
 """
+import importlib
 import os
 import warnings
 from pathlib import Path
 
 import pandas as pd
-import importlib
 
 from .. import core as nap
 

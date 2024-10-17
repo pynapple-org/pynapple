@@ -11,7 +11,6 @@ Support CNMF-E in matlab, inscopix-cnmfe and minian.
 # @Last Modified by:   gviejo
 # @Last Modified time: 2023-11-16 13:14:54
 import importlib
-
 from pathlib import Path
 
 from .. import core as nap

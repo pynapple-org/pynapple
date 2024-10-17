@@ -11,6 +11,7 @@ Object behaves like dictionary.
 """
 
 import errno
+import importlib
 import os
 import warnings
 from collections import UserDict
@@ -18,7 +19,6 @@ from numbers import Number
 from pathlib import Path
 
 import numpy as np
-import importlib
 from tabulate import tabulate
 
 from .. import core as nap
@@ -204,6 +204,7 @@ def _make_tsd_frame(obj, lazy_loading=True):
     Tsd
 
     """
+    pynwb = importlib.import_module("pynwb")
 
     d = obj.data
     if not lazy_loading:

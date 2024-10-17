@@ -5,6 +5,7 @@ Class and functions for loading data processed with the Neurosuite (Klusters, Ne
 
 @author: Guillaume Viejo
 """
+
 import importlib
 import sys
 from pathlib import Path
