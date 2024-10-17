@@ -6,12 +6,12 @@ Class and functions for loading data processed with the Neurosuite (Klusters, Ne
 @author: Guillaume Viejo
 """
 
+import importlib
 import sys
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from pynwb import NWBHDF5IO
 
 from .. import core as nap
 from .loader import BaseLoader
@@ -53,8 +53,8 @@ class NeuroSuite(BaseLoader):
         TYPE
             Description
         """
-
-        io = NWBHDF5IO(self.nwbfilepath, "r")
+        pynwb = importlib.import_module("pynwb")
+        io = pynwb.NWBHDF5IO(self.nwbfilepath, "r")
         nwbfile = io.read()
 
         if nwbfile.units is None:
@@ -121,6 +121,7 @@ class NeuroSuite(BaseLoader):
         if filename is not None:
             filepath = self.path / filename
         else:
+            filepath = Path(filename)
             eegfile = list(filepath.glob(f"*{extension}"))
 
             if not len(eegfile):
