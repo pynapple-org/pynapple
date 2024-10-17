@@ -774,7 +774,6 @@ class TsdTensor(BaseTsd):
             return tabulate([], headers=headers) + "\n" + bottom
 
     def __getitem__(self, key):
-
         if isinstance(key, Tsd):
             if not np.issubdtype(key.dtype, np.bool_):
                 raise ValueError(
@@ -783,7 +782,10 @@ class TsdTensor(BaseTsd):
             output = self.values[key.values]
             index = self.index[key.values]
         elif isinstance(key, tuple):
-            if not all(np.issubdtype(k.dtype, np.bool_) if isinstance(k, Tsd) else True for k in key):
+            if not all(
+                np.issubdtype(k.dtype, np.bool_) if isinstance(k, Tsd) else True
+                for k in key
+            ):
                 raise ValueError(
                     "When indexing with a Tsd, it must contain boolean values"
                 )
@@ -803,7 +805,9 @@ class TsdTensor(BaseTsd):
                     return Tsd(t=index, d=output, time_support=self.time_support)
                 elif output.ndim == 2:
                     return TsdFrame(
-                        t=index, d=output, time_support=self.time_support,
+                        t=index,
+                        d=output,
+                        time_support=self.time_support,
                     )
                 else:
                     return TsdTensor(t=index, d=output, time_support=self.time_support)
