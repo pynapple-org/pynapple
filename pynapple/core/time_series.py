@@ -773,7 +773,7 @@ class TsdTensor(BaseTsd):
         else:
             return tabulate([], headers=headers) + "\n" + bottom
 
-    def __getitem__(self, key, *args, **kwargs):
+    def __getitem__(self, key):
 
         if isinstance(key, Tsd):
             if not np.issubdtype(key.dtype, np.bool_):
@@ -803,7 +803,7 @@ class TsdTensor(BaseTsd):
                     return Tsd(t=index, d=output, time_support=self.time_support)
                 elif output.ndim == 2:
                     return TsdFrame(
-                        t=index, d=output, time_support=self.time_support, **kwargs
+                        t=index, d=output, time_support=self.time_support,
                     )
                 else:
                     return TsdTensor(t=index, d=output, time_support=self.time_support)
