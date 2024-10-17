@@ -783,7 +783,7 @@ class TsdTensor(BaseTsd):
             output = self.values[key.values]
             index = self.index[key.values]
         elif isinstance(key, tuple):
-                        if not all(np.issubdtype(k.dtype, np.bool_) if isinstance(k, Tsd) else True for k in key):
+            if not all(np.issubdtype(k.dtype, np.bool_) if isinstance(k, Tsd) else True for k in key):
                 raise ValueError(
                     "When indexing with a Tsd, it must contain boolean values"
                 )
