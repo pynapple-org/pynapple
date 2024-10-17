@@ -14,7 +14,7 @@ from numba import jit
 from .. import core as nap
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def _jitcontinuous_perievent(time_array, time_target_array, starts, ends, windowsize):
     N_epochs = len(starts)
     count = np.zeros((N_epochs, 2), dtype=np.int64)
@@ -70,7 +70,7 @@ def _jitcontinuous_perievent(time_array, time_target_array, starts, ends, window
     return idx, slice_idx, np.sum(count[:, 1]), start_w
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def _jitperievent_trigger_average(
     time_array,
     count_array,

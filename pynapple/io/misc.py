@@ -4,13 +4,12 @@
 Various io functions
 
 """
+import importlib
 import warnings
 from pathlib import Path
 from xml.dom import minidom
 
 import numpy as np
-from pynwb import NWBHDF5IO
-from pynwb.ecephys import LFP, ElectricalSeries
 
 from .. import core as nap
 from .cnmfe import CNMF_E, InscopixCNMFE, Minian
@@ -280,6 +279,7 @@ def append_NWB_LFP(path, lfp, channel=None):
         If no channel is specify when passing a Tsd
 
     """
+    pynwb = importlib.import_module("pynwb")
     path = Path(path)
     new_path = path / "pynapplenwb"
     nwb_path = ""
@@ -296,21 +296,21 @@ def append_NWB_LFP(path, lfp, channel=None):
         else:
             raise RuntimeError("Please specify which channel it is.")
 
-    io = NWBHDF5IO(nwb_path, "r+")
+    io = pynwb.NWBHDF5IO(nwb_path, "r+")
     nwbfile = io.read()
 
     all_table_region = nwbfile.create_electrode_table_region(
         region=channels, description="", name="electrodes"
     )
 
-    lfp_electrical_series = ElectricalSeries(
+    lfp_electrical_series = pynwb.ecephys.ElectricalSeries(
         name="ElectricalSeries",
         data=lfp.values,
         timestamps=lfp.index.values,
         electrodes=all_table_region,
     )
 
-    lfp = LFP(electrical_series=lfp_electrical_series)
+    lfp = pynwb.ecephys.LFP(electrical_series=lfp_electrical_series)
 
     ecephys_module = nwbfile.create_processing_module(
         name="ecephys", description="processed extracellular electrophysiology data"

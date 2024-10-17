@@ -5,7 +5,7 @@ from numba import jit  # , njit, prange
 ################################
 # Time only functions
 ################################
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitrestrict(time_array, starts, ends):
     n = len(time_array)
     m = len(starts)
@@ -43,7 +43,7 @@ def jitrestrict(time_array, starts, ends):
     return ix[0:x]
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitrestrict_with_count(time_array, starts, ends, dtype=np.int64):
     n = len(time_array)
     m = len(starts)
@@ -83,7 +83,7 @@ def jitrestrict_with_count(time_array, starts, ends, dtype=np.int64):
     return ix[0:x], count
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitvaluefrom(time_array, time_target_array, count, count_target, starts, ends):
     m = starts.shape[0]
     n = time_array.shape[0]
@@ -117,7 +117,7 @@ def jitvaluefrom(time_array, time_target_array, count, count_target, starts, end
     return idx
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitcount(time_array, starts, ends, bin_size, dtype):
     idx, countin = jitrestrict_with_count(time_array, starts, ends)
     time_array = time_array[idx]
@@ -170,7 +170,7 @@ def jitcount(time_array, starts, ends, bin_size, dtype):
     return (new_time_array, new_data_array)
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitin_interval(time_array, starts, ends):
     n = len(time_array)
     m = len(starts)
@@ -210,7 +210,7 @@ def jitin_interval(time_array, starts, ends):
     return data
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitremove_nan(time_array, index_nan):
     n = len(time_array)
     ix_start = np.zeros(n, dtype=np.bool_)
@@ -238,7 +238,7 @@ def jitremove_nan(time_array, index_nan):
 ################################
 # Time Data functions
 ################################
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitthreshold(time_array, data_array, starts, ends, thr, method="above"):
     n = time_array.shape[0]
 
@@ -320,7 +320,7 @@ def jitbin_array(time_array, data_array, starts, ends, bin_size):
     )
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def _jitbin_array(countin, time_array, data_array, starts, ends, bin_size):
     m = starts.shape[0]
     f = data_array.shape[1:]
@@ -374,7 +374,7 @@ def _jitbin_array(countin, time_array, data_array, starts, ends, bin_size):
     return (new_time_array, new_data_array)
 
 
-# @jit(nopython=True)
+# @jit(nopython=True, cache=True)
 # def jitconvolve(d, a):
 #     return np.convolve(d, a)
 
@@ -406,7 +406,7 @@ def _jitbin_array(countin, time_array, data_array, starts, ends, bin_size):
 ################################
 # IntervalSet functions
 ################################
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitintersect(start1, end1, start2, end2):
     m = start1.shape[0]
     n = start2.shape[0]
@@ -444,7 +444,7 @@ def jitintersect(start1, end1, start2, end2):
     return (newstart, newend)
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitunion(start1, end1, start2, end2):
     m = start1.shape[0]
     n = start2.shape[0]
@@ -523,7 +523,7 @@ def jitunion(start1, end1, start2, end2):
     return (newstart, newend)
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitdiff(start1, end1, start2, end2):
     m = start1.shape[0]
     n = start2.shape[0]
@@ -596,7 +596,7 @@ def jitdiff(start1, end1, start2, end2):
     return (newstart, newend)
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitunion_isets(starts, ends):
     idx = np.argsort(starts)
     starts = starts[idx]
@@ -627,7 +627,7 @@ def jitunion_isets(starts, ends):
     return (new_start, new_end)
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def _jitfix_iset(start, end):
     """
     0 - > "Some starts and ends are equal. Removing 1 microsecond!",

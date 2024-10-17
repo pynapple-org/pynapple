@@ -10,10 +10,9 @@ Support CNMF-E in matlab, inscopix-cnmfe and minian.
 # @Date:   2022-02-17 11:07:00
 # @Last Modified by:   gviejo
 # @Last Modified time: 2023-11-16 13:14:54
+import importlib
 
 from pathlib import Path
-
-from pynwb import NWBHDF5IO
 
 from .. import core as nap
 from .loader import BaseLoader
@@ -59,7 +58,8 @@ class CNMF_E(BaseLoader):
         path : str
             Path to the session
         """
-        io = NWBHDF5IO(self.nwbfilepath, "r")
+        pynwb = importlib.import_module("pynwb")
+        io = pynwb.NWBHDF5IO(self.nwbfilepath, "r")
         nwbfile = io.read()
 
         if "ophys" in nwbfile.processing.keys():
@@ -120,7 +120,8 @@ class Minian(BaseLoader):
         path : str
             Path to the session
         """
-        io = NWBHDF5IO(self.nwbfilepath, "r")
+        pynwb = importlib.import_module("pynwb")
+        io = pynwb.NWBHDF5IO(self.nwbfilepath, "r")
         nwbfile = io.read()
 
         if "ophys" in nwbfile.processing.keys():
@@ -182,7 +183,8 @@ class InscopixCNMFE(BaseLoader):
         path : str
             Path to the session
         """
-        io = NWBHDF5IO(self.nwbfilepath, "r")
+        pynwb = importlib.import_module("pynwb")
+        io = pynwb.NWBHDF5IO(self.nwbfilepath, "r")
         nwbfile = io.read()
 
         if "ophys" in nwbfile.processing.keys():
