@@ -21,8 +21,8 @@ sys.path.insert(0, os.path.abspath('..'))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'pynapple'
-copyright = f'2021-{time.strftime("%Y")}, Guillaume Viejo'
-author = ''
+copyright = f'2021-{time.strftime("%Y")}'
+author = 'Guillaume Viejo'
 version = release = pynapple.__version__
 
 
@@ -55,9 +55,6 @@ root_doc = "index"
 exclude_patterns = ['_build', 'docstrings', 'nextgen', 'Thumbs.db', '.DS_Store']
 
 
-# The reST default role (used for this markup: `text`) to use for all documents.
-default_role = 'literal'
-
 # Generate the API documentation when building
 autosummary_generate = True
 numpydoc_show_class_members = False
@@ -73,49 +70,42 @@ html_favicon = "_static/Icon/Pynapple_final_icon.png"
 
 
 # Additional theme options
-# html_theme_options = {
-#     "icon_links": [
-#         {
-#             "name": "GitHub",
-#             "url": "https://github.com/pynapple-org/pynapple",
-#             "icon": "fab fa-github",
-#             "type": "fontawesome",
-#         },
-#         # {
-#         #     "name": "StackOverflow",
-#         #     "url": "https://stackoverflow.com/tags/seaborn",
-#         #     "icon": "fab fa-stack-overflow",
-#         #     "type": "fontawesome",
-#         # },
-#         {
-#             "name": "Twitter",
-#             "url": "https://twitter.com/thepynapple",
-#             "icon": "fab fa-twitter",
-#             "type": "fontawesome",
-#         },
-#     ],
-#     "show_prev_next": False,
-#     "navbar_start": ["navbar-logo"],
-#     "navbar_end": ["navbar-icon-links"],
-#     "header_links_before_dropdown": 8,
-# }
+html_theme_options = {
+    "icon_links": [
+        {
+            "name": "GitHub",
+            "url": "https://github.com/pynapple-org/pynapple",
+            "icon": "fab fa-github",
+            "type": "fontawesome",
+        },
+        {
+            "name": "Twitter",
+            "url": "https://twitter.com/thepynapple",
+            "icon": "fab fa-twitter",
+            "type": "fontawesome",
+        },
+    ],
+    "show_prev_next": True,
+    "header_links_before_dropdown": 6,
+}
 
 html_context = {
     "default_mode": "light",
 }
 
-
-# ----------------------------------------------------------------------------
-# -- Autodoc and Napoleon Options -------------------------------------------------
-autodoc_default_options = {
-    'members': True,
-    'undoc-members': True,
-    'show-inheritance': True,
+html_sidebars = {
+    "index": [],
+    "installing":[],
+    "releases":[],
+    "external":[],
+    "pynajax":[],
+    "citing":[],
+    "**": ["search-field.html", "sidebar-nav-bs.html"],
 }
-napoleon_numpy_docstring = True
 
-# Path for static files (custom stylesheets or JavaScript)
+# # Path for static files (custom stylesheets or JavaScript)
 html_static_path = ['_static']
+html_css_files = ['custom.css']
 
 # Copybutton settings (to hide prompt)
 copybutton_prompt_text = r">>> |\$ |# "
@@ -124,9 +114,14 @@ copybutton_prompt_is_regexp = True
 # Enable markdown and notebook support
 myst_enable_extensions = ["colon_fence"]  # For improved markdown 
 
-# -- Extension configuration -------------------------------------------------
-apidoc_module_dir = "../pynapple"
-
+# # ----------------------------------------------------------------------------
+# # -- Autodoc and Napoleon Options -------------------------------------------------
+# autodoc_default_options = {
+#     'members': True,
+#     'undoc-members': True,
+#     'show-inheritance': True,
+# }
+# napoleon_numpy_docstring = True
 
 
 

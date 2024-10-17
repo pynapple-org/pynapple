@@ -2,20 +2,48 @@
 
 
 pynapple: python neural analysis package
-======================
+========================================
 
-.. grid:: 6
-   :gutter: 1
+|
 
-   .. grid-item::
+.. grid:: 1 1 6 6
+   :gutter: 4
+
+   .. grid-item-card:: Decoding
+      :text-align: center
+
+      .. image:: _static/example_thumbs/decoding.svg
+
+   .. grid-item-card:: Perievent
+      :text-align: center
+
+      .. image:: _static/example_thumbs/perievent.svg
+
+   .. grid-item-card:: Correlation
+      :text-align: center
+
+      .. image:: _static/example_thumbs/correlation.svg
+
+   .. grid-item-card:: Tuning curves
+      :text-align: center
+
+      .. image:: _static/example_thumbs/tuningcurves.svg
+
+   .. grid-item-card::
+      :text-align: center
 
       .. image:: _static/example_thumbs/Pynapple_final_icon.png
 
+   .. grid-item-card::
+      :text-align: center
 
-.. grid:: 1 1 3 3
+      .. image:: _static/example_thumbs/Pynapple_final_icon.png
+
+|
+
+.. grid:: 1 1 2 2
 
    .. grid-item::
-      :columns: 12 12 6 6
 
       Pynapple is a light-weight python library for 
       neurophysiological data analysis. 
@@ -26,22 +54,20 @@ pynapple: python neural analysis package
       (trials, brain states, etc.). 
 
       It also provides users with generic functions for 
-      neuroscience such as tuning curves and cross-correlograms.      
+      neuroscience such as tuning curves, cross-correlograms 
+      and filtering.
 
    .. grid-item-card:: Contents
-      :columns: 12 12 2 2
       :class-title: sd-fs-5
       :class-body: sd-pl-3
 
       .. toctree::
          :maxdepth: 1
 
-         API <api/modules>
-
-   .. grid-item-card:: Features
-      :columns: 12 12 4 4
-      :class-title: sd-fs-5
-      :class-body: sd-pl-3
-
-      * Pynapple core: :ref:`API <api/pynapple.core>`
+         Installing <installing>
+         API <api>
+         Releases <releases>
+         External projects <external>
+         GPU acceleration <pynajax>
+         Citing <citing>
    

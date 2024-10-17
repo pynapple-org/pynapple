@@ -1,23 +1,18 @@
----
-hide:
-  - navigation
----
-
-# Installation
+# Installing and getting started
 
 The best way to install pynapple is with pip within a new [conda](https://docs.conda.io/en/latest/) environment :
 
     
-``` {.sourceCode .shell}
-conda create --name pynapple pip python=3.8
+```
+conda create --name pynapple pip python
 conda activate pynapple
 pip install pynapple
 ```
 
 or directly from the source code:
 
-``` {.sourceCode .shell}
-conda create --name pynapple pip python=3.8
+```
+conda create --name pynapple pip python
 conda activate pynapple
 
 # clone the repository
@@ -28,13 +23,25 @@ cd pynapple
 pip install -e .
 ```
 
-# Dependencies
+## Getting started
 
-## Supported python versions
+
+Once installed, you can import pynapple with 
+
+```python
+import pynapple as nap
+```
+
+## Dependencies
+
+
+### Supported python versions
+
   
   - Python 3.8+
 
-## Mandatory dependencies
+### Mandatory dependencies
+
 
   -   pandas
   -   numpy
@@ -43,5 +50,5 @@ pip install -e .
   -   pynwb 2.0
   -   tabulate
   -   h5py
-
+  -   rich
 
