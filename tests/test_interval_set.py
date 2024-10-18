@@ -9,6 +9,13 @@ from .mock import MockArray
 from pathlib import Path
 
 
+@pytest.fixture
+def ep():
+    start = np.array([0, 10, 16, 25])
+    end = np.array([5, 15, 20, 40])
+    return nap.IntervalSet(start=start, end=end)
+
+
 def test_create_iset():
     start = [0, 10, 16, 25]
     end = [5, 15, 20, 40]
@@ -18,7 +25,7 @@ def test_create_iset():
     np.testing.assert_array_almost_equal(end, ep.end)
 
 
-def test_iset_properties():
+def test_iset_properties(ep):
     start = [0, 10, 16, 25]
     end = [5, 15, 20, 40]
     ep = nap.IntervalSet(start=start, end=end)
@@ -171,10 +178,7 @@ def test_create_iset_with_metainfo():
     assert ep._metadata["label"][0] == label
 
 
-def test_add_metainfo():
-    start = np.array([0, 10, 16, 25])
-    end = np.array([5, 15, 20, 40])
-    ep = nap.IntervalSet(start=start, end=end)
+def test_add_metainfo(ep):
     df_info = pd.DataFrame(index=[0, 1, 2, 3], data=[0, 0, 0, 0], columns=["df"])
     sr_info = pd.Series(index=[0, 1, 2, 3], data=[1, 1, 1, 1], name="sr")
     ar_info = np.ones(4) * 2
@@ -187,6 +191,28 @@ def test_add_metainfo():
     np.testing.assert_array_almost_equal(ep._metadata["ar"].values, ar_info)
     np.testing.assert_array_almost_equal(ep._metadata["lt"].values, lt_info)
     np.testing.assert_array_almost_equal(ep._metadata["tu"].values, tu_info)
+
+
+def test_add_metainfo_key(ep):
+    sr_info = pd.Series(index=[0, 1, 2, 3], data=[1, 1, 1, 1], name="sr")
+    ar_info = np.ones(4) * 2
+    lt_info = [3, 3, 3, 3]
+    tu_info = (4, 4, 4, 4)
+    ep["sr"] = sr_info
+    ep["ar"] = ar_info
+    ep["lt"] = lt_info
+    ep["tu"] = tu_info
+    assert ep._metadata.shape == (4, 4)
+    pd.testing.assert_series_equal(ep._metadata["sr"], sr_info)
+    np.testing.assert_array_almost_equal(ep._metadata["ar"].values, ar_info)
+    np.testing.assert_array_almost_equal(ep._metadata["lt"].values, lt_info)
+    np.testing.assert_array_almost_equal(ep._metadata["tu"].values, tu_info)
+    with pytest.raises(RuntimeError, match="IntervalSet is immutable"):
+        ep["start"] = ar_info
+    with pytest.raises(RuntimeError, match="IntervalSet is immutable"):
+        ep["end"] = ar_info
+    with pytest.raises(RuntimeError, match="IntervalSet is immutable"):
+        ep[0] = ar_info
 
 
 def test_create_iset_from_df_with_metainfo():

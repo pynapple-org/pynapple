@@ -258,9 +258,12 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
     #     pass
 
     def __setitem__(self, key, value):
-        raise RuntimeError(
-            "IntervalSet is immutable. Starts and ends have been already sorted."
-        )
+        if (isinstance(key, str)) and (key not in self.columns):
+            _MetadataBase.__setitem__(self, key, value)
+        else:
+            raise RuntimeError(
+                "IntervalSet is immutable. Starts and ends have been already sorted."
+            )
 
     def __getitem__(self, key, *args, **kwargs):
         print(key)
