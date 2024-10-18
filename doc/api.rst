@@ -62,24 +62,13 @@ Analysis function
 
 .. rubric:: Tuning curves
 
-.. currentmodule:: pynapple.process.tuning_curves
-
-.. autosummary::
-    :toctree: generated/
-    :nosignatures:
-
-    compute_1d_tuning_curves
-
-.. currentmodule:: pynapple.process
-
-.. rubric:: Decoding
+.. currentmodule:: pynapple
 
 .. autosummary::
     :toctree: generated/
     :nosignatures:
     :recursive:
-    :functions:
 
-    decoding
-
+    process
+    
 
