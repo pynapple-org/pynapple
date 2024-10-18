@@ -10,14 +10,16 @@ from contextlib import nullcontext as does_not_raise
 import pynapple as nap
 
 
-#####################
-# IntervalSet tests #
-#####################
+#################
+## IntervalSet ##
+#################
 @pytest.fixture
-def iset():
+def iset_meta():
     start = np.array([0, 10, 16, 25])
     end = np.array([5, 15, 20, 40])
-    return nap.IntervalSet(start=start, end=end)
+    label = ["a", "b", "c", "d"]
+    info = np.arange(4)
+    return nap.IntervalSet(start=start, end=end, label=label, info=info)
 
 
 def test_create_iset_with_metadata():
@@ -25,8 +27,12 @@ def test_create_iset_with_metadata():
     end = np.array([5, 15, 20, 40])
     sr_info = pd.Series(index=[0, 1, 2, 3], data=[0, 0, 0, 0], name="sr")
     ar_info = np.ones(4)
-    ep = nap.IntervalSet(start=start, end=end, sr=sr_info, ar=ar_info)
-    assert ep._metadata.shape == (4, 2)
+    lt_info = [3, 3, 3, 3]
+    tu_info = (4, 4, 4, 4)
+    ep = nap.IntervalSet(
+        start=start, end=end, sr=sr_info, ar=ar_info, lt=lt_info, tu=tu_info
+    )
+    assert ep._metadata.shape == (4, 4)
     np.testing.assert_array_almost_equal(ep._metadata["sr"].values, sr_info.values)
     np.testing.assert_array_almost_equal(
         ep._metadata["sr"].index.values, sr_info.index.values
@@ -41,6 +47,167 @@ def test_create_iset_with_metadata():
     assert ep._metadata["label"][0] == label
 
 
+def test_create_iset_from_df_with_metadata():
+    df = pd.DataFrame(data=[[16, 100, "a"]], columns=["start", "end", "label"])
+    ep = nap.IntervalSet(df)
+    np.testing.assert_array_almost_equal(df.start.values, ep.start)
+    np.testing.assert_array_almost_equal(df.end.values, ep.end)
+
+
+@pytest.mark.parametrize(
+    "index",
+    [
+        0,
+        slice(0, 2),
+        [0, 2],
+        (slice(0, 2), slice(None)),
+        (slice(0, 2), slice(0, 2)),
+        (slice(None), ["start", "end"]),
+        (0, slice(None)),
+    ],
+)
+def test_get_iset_with_metadata(iset_meta, index):
+    assert isinstance(iset_meta[index], nap.IntervalSet)
+
+
+@pytest.mark.parametrize(
+    "index, expected",
+    [
+        ((slice(None), 0), "start"),
+        ((slice(None), 1), "end"),
+        ((slice(None), 2), "label"),
+        ((slice(None), 3), "info"),
+        ((slice(None), slice(1, 3)), ["end", "label"]),
+        ((slice(None), [0, 3]), ["start", "info"]),
+        ((slice(None), "end"), "end"),
+        ((slice(None), "label"), "label"),
+        ((slice(None), ["end", "label"]), ["end", "label"]),
+    ],
+)
+def test_vertical_slice_iset_with_metadata(iset_meta, index, expected):
+    if isinstance(expected, str):
+        pd.testing.assert_series_equal(
+            iset_meta[index], iset_meta.as_dataframe()[expected]
+        )
+    else:
+        pd.testing.assert_frame_equal(
+            iset_meta[index], iset_meta.as_dataframe().loc[index[0], expected]
+        )
+
+
+@pytest.mark.parametrize(
+    "index, expected",
+    [
+        (
+            (slice(None), pd.Series(index=[0, 1, 2, 3], data=[0, 0, 0, 0])),
+            pytest.raises(
+                IndexError,
+                match="unknown type <class 'pandas.core.series.Series'> for second index",
+            ),
+        ),
+        (
+            (slice(None), [pd.Series(index=[0, 1, 2, 3], data=[0, 0, 0, 0])]),
+            pytest.raises(
+                IndexError,
+                match="unknown data type <class 'pandas.core.series.Series'> for second index",
+            ),
+        ),
+        (
+            pd.DataFrame(index=[0, 1, 2, 3], data=[0, 0, 0, 0]),
+            pytest.raises(
+                IndexError,
+                match="unknown type <class 'pandas.core.frame.DataFrame'> for index",
+            ),
+        ),
+    ],
+)
+def test_get_iset_with_metainfo_errors(iset_meta, index, expected):
+    with expected:
+        iset_meta[index]
+
+
+def test_as_dataframe_metadata():
+    ep = nap.IntervalSet(start=0, end=100, m1=0, m2=1)
+    df = pd.DataFrame(
+        data=np.array([[0.0, 100.0, 0, 1]]),
+        columns=["start", "end", "m1", "m2"],
+        dtype=np.float64,
+    )
+    np.testing.assert_array_almost_equal(df.values, ep.as_dataframe().values)
+
+
+def test_intersect_metadata():
+    ep = nap.IntervalSet(start=[0, 50], end=[30, 70], m1=[0, 1])
+    ep2 = nap.IntervalSet(start=20, end=60, m2=2)
+    ep3 = nap.IntervalSet(start=[20, 50], end=[30, 60], m1=[0, 1], m2=[2, 2])
+    np.testing.assert_array_almost_equal(ep.intersect(ep2).values, ep3.values)
+    np.testing.assert_array_almost_equal(ep2.intersect(ep).values, ep3.values)
+    pd.testing.assert_series_equal(
+        ep.intersect(ep2)._metadata["m1"], ep3._metadata["m1"]
+    )
+    pd.testing.assert_series_equal(
+        ep.intersect(ep2)._metadata["m2"], ep3._metadata["m2"]
+    )
+    pd.testing.assert_series_equal(
+        ep2.intersect(ep)._metadata["m1"], ep3._metadata["m1"]
+    )
+    pd.testing.assert_series_equal(
+        ep2.intersect(ep)._metadata["m2"], ep3._metadata["m2"]
+    )
+
+
+def test_set_diff_metadata():
+    ep = nap.IntervalSet(start=[0, 60], end=[50, 80], m1=[0, 1])
+    ep2 = nap.IntervalSet(start=[20, 40], end=[30, 70], m2=[2, 3])
+    ep3 = nap.IntervalSet(start=[0, 30, 70], end=[20, 40, 80], m1=[0, 0, 1])
+    np.testing.assert_array_almost_equal(ep.set_diff(ep2).values, ep3.values)
+    pd.testing.assert_series_equal(
+        ep.set_diff(ep2)._metadata["m1"], ep3._metadata["m1"]
+    )
+    ep4 = nap.IntervalSet(start=50, end=60, m2=3)
+    np.testing.assert_array_almost_equal(ep2.set_diff(ep).values, ep4.values)
+    pd.testing.assert_series_equal(
+        ep2.set_diff(ep)._metadata["m2"], ep4._metadata["m2"]
+    )
+
+
+def test_save_and_load_npz_with_metadata(iset_meta):
+    iset_meta.save("iset_meta.npz")
+    assert "iset_meta.npz" in [f.name for f in Path(".").iterdir()]
+
+    with np.load("iset_meta.npz", allow_pickle=True) as file:
+        keys = list(file.keys())
+        assert "start" in keys
+        assert "end" in keys
+        assert "_metadata" in keys
+
+        ep = nap.IntervalSet._from_npz_reader(file)
+        assert isinstance(ep, nap.IntervalSet)
+        np.testing.assert_array_almost_equal(ep.start, iset_meta.start)
+        np.testing.assert_array_almost_equal(ep.end, iset_meta.end)
+        pd.testing.assert_frame_equal(ep._metadata, iset_meta._metadata)
+
+    # Cleaning
+    Path("iset_meta.npz").unlink()
+
+
+##############
+## TsdFrame ##
+##############
+def test_create_tsdframe_with_metadata():
+    pass
+
+
+#############
+## TsGroup ##
+#############
+def test_create_tsgroup_with_metadata():
+    pass
+
+
+##################
+## Shared tests ##
+##################
 @pytest.mark.parametrize(
     "obj",
     [
@@ -74,7 +241,7 @@ class Test_Metadata:
             (4, 4, 4, 4),
         ],
     )
-    def test_set_metadata(self, obj, info):
+    def test_add_metadata(self, obj, info):
         obj.set_info(label=info)
 
         # verify shape of metadata
@@ -97,7 +264,7 @@ class Test_Metadata:
     @pytest.mark.parametrize(
         "info", [pd.DataFrame(index=[0, 1, 2, 3], data=[0, 0, 0, 0], columns=["label"])]
     )
-    def test_set_metadata_df(self, obj, info):
+    def test_add_metadata_df(self, obj, info):
         # add metadata with `set_info`
         obj.set_info(info)
 
