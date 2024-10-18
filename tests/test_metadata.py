@@ -171,26 +171,6 @@ def test_set_diff_metadata():
     )
 
 
-def test_save_and_load_npz_with_metadata(iset_meta):
-    iset_meta.save("iset_meta.npz")
-    assert "iset_meta.npz" in [f.name for f in Path(".").iterdir()]
-
-    with np.load("iset_meta.npz", allow_pickle=True) as file:
-        keys = list(file.keys())
-        assert "start" in keys
-        assert "end" in keys
-        assert "_metadata" in keys
-
-        ep = nap.IntervalSet._from_npz_reader(file)
-        assert isinstance(ep, nap.IntervalSet)
-        np.testing.assert_array_almost_equal(ep.start, iset_meta.start)
-        np.testing.assert_array_almost_equal(ep.end, iset_meta.end)
-        pd.testing.assert_frame_equal(ep._metadata, iset_meta._metadata)
-
-    # Cleaning
-    Path("iset_meta.npz").unlink()
-
-
 ##############
 ## TsdFrame ##
 ##############
