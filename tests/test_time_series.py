@@ -1077,17 +1077,6 @@ class Test_Time_Series_3:
                 pytest.raises(TypeError, match="Invalid metadata type"),
             ),
             (
-                # invalid names with spaces
-                [
-                    pd.DataFrame(
-                        columns=["l 1", "l 2", "l 3"],
-                        data=np.random.randint(0, 5, size=(3, 3)),
-                    )
-                ],
-                {},
-                pytest.raises(ValueError, match="Invalid metadata name"),
-            ),
-            (
                 # invalid names as strings starting with a number
                 [
                     pd.DataFrame(
@@ -1099,10 +1088,32 @@ class Test_Time_Series_3:
                 pytest.raises(ValueError, match="Invalid metadata name"),
             ),
             (
+                # invalid names with spaces
+                [
+                    pd.DataFrame(
+                        columns=["l 1", "l 2", "l 3"],
+                        data=np.random.randint(0, 5, size=(3, 3)),
+                    )
+                ],
+                {},
+                pytest.raises(ValueError, match="Invalid metadata name"),
+            ),
+            (
                 # invalid names with periods
                 [
                     pd.DataFrame(
                         columns=["l.1", "l.2", "l.3"],
+                        data=np.random.randint(0, 5, size=(3, 3)),
+                    )
+                ],
+                {},
+                pytest.raises(ValueError, match="Invalid metadata name"),
+            ),
+            (
+                # invalid names with dashes
+                [
+                    pd.DataFrame(
+                        columns=["l-1", "l-2", "l-3"],
                         data=np.random.randint(0, 5, size=(3, 3)),
                     )
                 ],

@@ -106,10 +106,10 @@ class _MetadataBase:
             raise ValueError(
                 f"Invalid metadata name '{name}'. Metadata name cannot start with a number"
             )
-        if (" " in name) or ("." in name):
+        if name.replace("_", "").isalnum() is False:
             # contains invalid characters
             raise ValueError(
-                f"Invalid metadata name '{name}'. Metadata name cannot contain the characters [' ', '.']"
+                f"Invalid metadata name '{name}'. Metadata name cannot contain special characters except for underscores"
             )
 
     def _check_metadata_column_names(self, *args, **kwargs):
