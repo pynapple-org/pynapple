@@ -616,11 +616,15 @@ class TestTsGroup1:
         tsgroup.save("tsgroup2")
         assert "tsgroup2.npz" in [f.name for f in Path(".").iterdir()]
 
-        file = np.load("tsgroup.npz")
+        file = np.load("tsgroup.npz", allow_pickle=True)
 
         keys = list(file.keys())
-        for k in ["t", "d", "start", "end", "index", "meta", "meta2"]:
+        for k in ["t", "d", "start", "end", "index", "_metadata"]:
             assert k in keys
+
+        metadata = pd.DataFrame.from_dict(file["_metadata"].item())
+        for k in ["meta", "meta2"]:
+            assert k in metadata.keys()
 
         times = []
         index = []
@@ -643,9 +647,9 @@ class TestTsGroup1:
         np.testing.assert_array_almost_equal(file["d"], data)
         np.testing.assert_array_almost_equal(file["index"], index)
         np.testing.assert_array_almost_equal(
-            file["meta"], np.arange(len(group), dtype=np.int64)
+            metadata["meta"], np.arange(len(group), dtype=np.int64)
         )
-        assert np.all(file["meta2"] == np.array(["a", "b", "c"]))
+        assert np.all(metadata["meta2"] == np.array(["a", "b", "c"]))
         file.close()
 
         tsgroup3 = nap.TsGroup(

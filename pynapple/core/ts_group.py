@@ -1165,12 +1165,15 @@ class TsGroup(UserDict, _MetadataBase):
         filename = check_filename(filename)
 
         dicttosave = {"type": np.array(["TsGroup"], dtype=np.str_)}
-        for k in self._metadata.columns:
-            if k not in ["t", "d", "start", "end", "index", "keys"]:
-                tmp = self._metadata[k].values
-                if tmp.dtype == np.dtype("O"):
-                    tmp = tmp.astype(np.str_)
-                dicttosave[k] = tmp
+        dicttosave["_metadata"] = self._metadata.to_dict()
+
+        # are these things that still need to be enforced?
+        # for k in self._metadata.columns:
+        #     if k not in ["t", "d", "start", "end", "index", "keys"]:
+        #         tmp = self._metadata[k].values
+        #         if tmp.dtype == np.dtype("O"):
+        #             tmp = tmp.astype(np.str_)
+        #         dicttosave[k] = tmp
 
         # We can't use to_tsd here in case tsgroup contains Tsd and not only Ts.
         nt = 0
@@ -1250,13 +1253,10 @@ class TsGroup(UserDict, _MetadataBase):
 
         tsgroup = cls(group, time_support=time_support, bypass_check=True)
 
-        metainfo = {}
-        not_info_keys = {"start", "end", "t", "index", "d", "rate", "keys"}
+        # do we need to enforce that these keys are not in metadata?
+        # not_info_keys = {"start", "end", "t", "index", "d", "rate", "keys"}
 
-        for k in set(file.keys()) - not_info_keys:
-            tmp = file[k]
-            if len(tmp) == len(tsgroup):
-                metainfo[k] = tmp
-
-        tsgroup.set_info(**metainfo)
+        # dropping rate column
+        metainfo = pd.DataFrame.from_dict(file["_metadata"].item()).drop(columns="rate")
+        tsgroup.set_info(metainfo)
         return tsgroup
