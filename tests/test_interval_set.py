@@ -9,13 +9,6 @@ from .mock import MockArray
 from pathlib import Path
 
 
-@pytest.fixture
-def ep():
-    start = np.array([0, 10, 16, 25])
-    end = np.array([5, 15, 20, 40])
-    return nap.IntervalSet(start=start, end=end)
-
-
 def test_create_iset():
     start = [0, 10, 16, 25]
     end = [5, 15, 20, 40]
