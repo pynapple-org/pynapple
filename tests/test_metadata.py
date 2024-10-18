@@ -453,3 +453,24 @@ class Test_Metadata:
 
         # metadata columns should be the same
         assert np.all(obj2.metadata_columns == obj.metadata_columns)
+
+    def test_save_and_load_npz(self, obj):
+        obj.set_info(label1=[1, 1, 2, 2], label2=[0, 1, 2, 3])
+
+        obj.save("obj.npz")
+        file = np.load("obj.npz", allow_pickle=True)
+
+        # only test that metadata is saved correctly
+        assert "_metadata" in file.keys()
+        metadata = pd.DataFrame.from_dict(file["_metadata"].item())
+        for k in ["label1", "label2"]:
+            assert k in metadata.columns
+            pd.testing.assert_series_equal(obj._metadata[k], metadata[k])
+
+        # test pynapple loading
+        obj2 = nap.load_file("obj.npz")
+        assert isinstance(obj2, type(obj))
+        pd.testing.assert_frame_equal(obj2._metadata, obj._metadata)
+
+        # cleaning
+        Path("obj.npz").unlink()
