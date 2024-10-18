@@ -35,7 +35,7 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',  # Links to source code
-    'sphinxcontrib.apidoc',
+    # 'sphinxcontrib.apidoc',
     'myst_parser',  # Markdown support
     'sphinx_copybutton',  # Adds copy button to code blocks
     'sphinx_design',  # For layout components
@@ -57,7 +57,11 @@ exclude_patterns = ['_build', 'docstrings', 'nextgen', 'Thumbs.db', '.DS_Store']
 
 # Generate the API documentation when building
 autosummary_generate = True
-numpydoc_show_class_members = False
+numpydoc_show_class_members = True
+# apidoc_module_dir = '../pynapple'
+# apidoc_separate_modules = True
+autodoc_default_options = {'inherited-members': True}
+
 
 # ----------------------------------------------------------------------------
 # -- Options for HTML output -------------------------------------------------
@@ -116,12 +120,12 @@ myst_enable_extensions = ["colon_fence"]  # For improved markdown
 
 # # ----------------------------------------------------------------------------
 # # -- Autodoc and Napoleon Options -------------------------------------------------
-# autodoc_default_options = {
-#     'members': True,
-#     'undoc-members': True,
-#     'show-inheritance': True,
-# }
-# napoleon_numpy_docstring = True
+autodoc_default_options = {
+    'members': True,
+    'undoc-members': True,
+    'show-inheritance': True,
+}
+napoleon_numpy_docstring = True
 
 
 

@@ -6,8 +6,8 @@ pynapple: python neural analysis package
 
 |
 
-.. grid:: 1 1 6 6
-   :gutter: 4
+.. grid:: 1 1 8 8
+   :gutter: 2
 
    .. grid-item-card:: Decoding
       :text-align: center
@@ -28,6 +28,16 @@ pynapple: python neural analysis package
       :text-align: center
 
       .. image:: _static/example_thumbs/tuningcurves.svg
+
+   .. grid-item-card::
+      :text-align: center
+
+      .. image:: _static/example_thumbs/Pynapple_final_icon.png
+
+   .. grid-item-card::
+      :text-align: center
+
+      .. image:: _static/example_thumbs/Pynapple_final_icon.png
 
    .. grid-item-card::
       :text-align: center

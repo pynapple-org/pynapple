@@ -691,7 +691,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
 class TsdTensor(_BaseTsd):
     """
-    TsdTensor
+    Container for neurophysiological time series with more than 2 dimensions (movies).
 
     Attributes
     ----------
@@ -850,7 +850,7 @@ class TsdTensor(_BaseTsd):
 
 class TsdFrame(_BaseTsd):
     """
-    TsdFrame
+    Column-based container for neurophysiological time series.    
 
     Attributes
     ----------
@@ -1119,7 +1119,7 @@ class TsdFrame(_BaseTsd):
 
 class Tsd(_BaseTsd):
     """
-    A container around numpy.ndarray specialized for neurophysiology time series.
+    1-dimensional container for neurophysiological time series.    
 
     Tsd provides standardized time representation, plus various functions for manipulating times series.
 
