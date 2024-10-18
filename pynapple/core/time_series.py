@@ -29,6 +29,7 @@ from tabulate import tabulate
 from ._core_functions import _bin_average, _convolve, _dropna, _restrict, _threshold
 from .base_class import Base
 from .interval_set import IntervalSet
+from .metadata_class import _MetadataBase
 from .time_index import TsIndex
 from .utils import (
     _concatenate_tsd,
@@ -171,6 +172,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
                     kwargs = {}
                     if hasattr(self, "columns"):
                         kwargs["columns"] = self.columns
+                    if hasattr(self, "_metadata"):
+                        kwargs = {**kwargs, **self._metadata}
                     return _get_class(out)(
                         t=self.index, d=out, time_support=self.time_support, **kwargs
                     )
@@ -217,6 +220,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
                 kwargs = {}
                 if hasattr(self, "columns"):
                     kwargs["columns"] = self.columns
+                if hasattr(self, "_metadata"):
+                    kwargs = {**kwargs, **self._metadata}
                 return _get_class(out)(
                     t=self.index, d=out, time_support=self.time_support, **kwargs
                 )
@@ -421,6 +426,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         kwargs = {}
         if hasattr(self, "columns"):
             kwargs["columns"] = self.columns
+        if hasattr(self, "_metadata"):
+            kwargs = {**kwargs, **self._metadata}
 
         return self.__class__(t=t, d=d, time_support=ep, **kwargs)
 
@@ -459,6 +466,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         kwargs = {}
         if hasattr(self, "columns"):
             kwargs["columns"] = self.columns
+        if hasattr(self, "_metadata"):
+            kwargs = {**kwargs, **self._metadata}
 
         return self.__class__(t=t, d=d, time_support=ep, **kwargs)
 
@@ -526,6 +535,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
         if isinstance(self, TsdFrame) and array.ndim == 1:  # keep columns
             kwargs_dict["columns"] = self.columns
+            kwargs_dict = {**kwargs_dict, **self._metadata}
 
         return nap_class(t=time_array, d=new_data_array, **kwargs_dict)
 
@@ -686,6 +696,8 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         kwargs_dict = dict(time_support=ep)
         if hasattr(self, "columns"):
             kwargs_dict["columns"] = self.columns
+        if hasattr(self, "_metadata"):
+            kwargs_dict = {**kwargs_dict, **self._metadata}
         return self.__class__(t=new_t, d=new_d, **kwargs_dict)
 
 
@@ -848,7 +860,7 @@ class TsdTensor(BaseTsd):
         return
 
 
-class TsdFrame(BaseTsd):
+class TsdFrame(BaseTsd, _MetadataBase):
     """
     TsdFrame
 
@@ -868,6 +880,7 @@ class TsdFrame(BaseTsd):
         time_support=None,
         columns=None,
         load_array=True,
+        **kwargs,
     ):
         """
         TsdFrame initializer
@@ -888,6 +901,8 @@ class TsdFrame(BaseTsd):
         load_array : bool, optional
             Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
             Default is True. Does not apply if `d` is already a numpy array.
+        **kwargs : dict, optional
+            Additional keyword arguments for metadata
         """
 
         c = columns
@@ -915,6 +930,7 @@ class TsdFrame(BaseTsd):
 
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
+        _MetadataBase.__init__(self, **kwargs)
         self._initialized = True
 
     @property
@@ -922,63 +938,111 @@ class TsdFrame(BaseTsd):
         return _TsdFrameSliceHelper(self)
 
     def __repr__(self):
-        headers = ["Time (s)"] + [str(k) for k in self.columns]
-        bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(self.shape)
-
+        # Start by determining how many columns and rows.
+        # This can be unique for each object
         cols, rows = _get_terminal_size()
         max_cols = np.maximum(cols // 100, 5)
         max_rows = np.maximum(rows - 10, 2)
 
+        # Computing headers and bottom
+        headers = ["Time (s)"] + [str(k) for k in self.columns]
+        bottom = f"dtype: {self.dtype}, shape: {self.shape}"
+
         if self.shape[1] > max_cols:
             headers = headers[0 : max_cols + 1] + ["..."]
-
-        def round_if_float(x):
-            if isinstance(x, float):
-                return np.round(x, 5)
-            else:
-                return x
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             if len(self):
-                table = []
                 end = ["..."] if self.shape[1] > max_cols else []
                 if len(self) > max_rows:
                     n_rows = max_rows // 2
-                    for i, array in zip(
-                        self.index[0:n_rows], self.values[0:n_rows, 0:max_cols]
-                    ):
-                        table.append([i] + [round_if_float(k) for k in array] + end)
-                    table.append(["..."])
-                    for i, array in zip(
-                        self.index[-n_rows:],
-                        self.values[
-                            self.values.shape[0] - n_rows : self.values.shape[0],
-                            0:max_cols,
-                        ],
-                    ):
-                        table.append([i] + [round_if_float(k) for k in array] + end)
-                    return (
-                        tabulate(table, headers=headers, colalign=("left",))
-                        + "\n"
-                        + bottom
+                    ends = np.array([end] * n_rows)
+                    table = np.vstack(
+                        (
+                            np.hstack(
+                                (
+                                    self.index[0:n_rows, None],
+                                    np.round(self.values[0:n_rows, 0:max_cols], 5),
+                                    ends,
+                                ),
+                                dtype=object,
+                            ),
+                            np.array(
+                                [
+                                    ["..."]
+                                    + ["..."] * np.minimum(max_cols, self.shape[1])
+                                    + end
+                                ],
+                                dtype=object,
+                            ),
+                            np.hstack(
+                                (
+                                    self.index[-n_rows:, None],
+                                    np.round(self.values[-n_rows:, 0:max_cols], 5),
+                                    ends,
+                                ),
+                                dtype=object,
+                            ),
+                        )
                     )
                 else:
-                    for i, array in zip(self.index, self.values[:, 0:max_cols]):
-                        table.append([i] + [round_if_float(k) for k in array] + end)
-                    return (
-                        tabulate(table, headers=headers, colalign=("left",))
-                        + "\n"
-                        + bottom
+                    ends = np.array([end] * len(self))
+                    table = np.hstack(
+                        (
+                            self.index[:, None],
+                            np.round(self.values[:, 0:max_cols], 5),
+                            ends,
+                        ),
+                        dtype=object,
                     )
             else:
-                return tabulate([], headers=headers) + "\n" + bottom
+                table = []
+
+            # Adding metadata if any.
+            col_names = self._metadata.columns.values
+            if len(col_names):
+                ends = np.array([end] * self._metadata.shape[1])
+                table = np.vstack(
+                    (
+                        table,
+                        np.array([["Metadata"] + [" "] * (table.shape[1] - 1)]),
+                        [["--------"] * table.shape[1]],
+                        np.hstack(
+                            (
+                                col_names[:, None],
+                                self._metadata.values[0:max_cols].T,
+                                ends,
+                            ),
+                            dtype=object,
+                        ),
+                        np.array([[" "] * table.shape[1]]),
+                    ),
+                    dtype=object,
+                )
+
+            return tabulate(table, headers=headers, colalign=("left",)) + "\n" + bottom
+
+    def __getattr__(self, name):
+        # avoid infinite recursion when pickling due to
+        # self._metadata.column having attributes '__reduce__', '__reduce_ex__'
+        if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
+            raise AttributeError(name)
+        if name in self._metadata.columns:
+            return _MetadataBase.__getattr__(self, name)
+        else:
+            return super().__getattr__(name)
 
     def __setitem__(self, key, value):
         try:
             if isinstance(key, str):
-                new_key = self.columns.get_indexer([key])
-                self.values.__setitem__((slice(None, None, None), new_key[0]), value)
+                if key in self.columns:
+                    new_key = self.columns.get_indexer([key])
+                    self.values.__setitem__(
+                        (slice(None, None, None), new_key[0]), value
+                    )
+                else:
+                    _MetadataBase.__setitem__(self, key, value)
             elif hasattr(key, "__iter__") and all([isinstance(k, str) for k in key]):
                 new_key = self.columns.get_indexer(key)
                 self.values.__setitem__((slice(None, None, None), new_key), value)
@@ -988,13 +1052,20 @@ class TsdFrame(BaseTsd):
             raise IndexError
 
     def __getitem__(self, key, *args, **kwargs):
-        if (
+        if isinstance(key, str) and (key in self.metadata_columns):
+            return _MetadataBase.__getitem__(self, key)
+        elif (
             isinstance(key, str)
             or hasattr(key, "__iter__")
             and all([isinstance(k, str) for k in key])
         ):
             return self.loc[key]
+
         else:
+            if isinstance(key, pd.Series) and key.index.equals(self.columns):
+                # if indexing with a pd.Series from metadata, transform it to tuple with slice(None) in first position
+                key = (slice(None, None, None), key)
+
             output = self.values.__getitem__(key)
             columns = self.columns
 
@@ -1013,6 +1084,7 @@ class TsdFrame(BaseTsd):
                     # if isinstance(columns, pd.Index):
                     #     if not pd.api.types.is_integer_dtype(columns):
                     kwargs["columns"] = columns
+                    kwargs = {**kwargs, **self._metadata.loc[columns]}
 
                     return _get_class(output)(
                         t=index, d=output, time_support=self.time_support, **kwargs
@@ -1057,6 +1129,16 @@ class TsdFrame(BaseTsd):
         df.index.name = "Time (" + str(units) + ")"
         df.columns = self.columns.copy()
         return df
+
+    def copy(self):
+        """Copy the data, index, time support, columns and metadata of the TsdFrame object."""
+        return self.__class__(
+            t=self.index.copy(),
+            d=self.values[:].copy(),
+            time_support=self.time_support,
+            columns=self.columns.copy(),
+            **self._metadata,
+        )
 
     def save(self, filename):
         """
@@ -1112,6 +1194,7 @@ class TsdFrame(BaseTsd):
             end=self.time_support.end,
             columns=cols_name,
             type=np.array(["TsdFrame"], dtype=np.str_),
+            _metadata=self._metadata.to_dict(),  # save metadata as dictionary
         )
 
         return
