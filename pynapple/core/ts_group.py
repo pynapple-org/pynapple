@@ -1165,7 +1165,8 @@ class TsGroup(UserDict, _MetadataBase):
         filename = check_filename(filename)
 
         dicttosave = {"type": np.array(["TsGroup"], dtype=np.str_)}
-        dicttosave["_metadata"] = self._metadata.to_dict()
+        # don't save rate in metadata since it will be re-added when loading
+        dicttosave["_metadata"] = self._metadata.drop(columns="rate").to_dict()
 
         # are these things that still need to be enforced?
         # for k in self._metadata.columns:
@@ -1256,7 +1257,6 @@ class TsGroup(UserDict, _MetadataBase):
         # do we need to enforce that these keys are not in metadata?
         # not_info_keys = {"start", "end", "t", "index", "d", "rate", "keys"}
 
-        # dropping rate column
-        metainfo = pd.DataFrame.from_dict(file["_metadata"].item()).drop(columns="rate")
+        metainfo = pd.DataFrame.from_dict(file["_metadata"].item())
         tsgroup.set_info(metainfo)
         return tsgroup
