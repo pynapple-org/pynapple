@@ -121,7 +121,7 @@ def test_vertical_slice_iset_with_metadata(iset_meta, index, expected):
         ),
     ],
 )
-def test_get_iset_with_metainfo_errors(iset_meta, index, expected):
+def test_get_iset_with_metadata_errors(iset_meta, index, expected):
     with expected:
         iset_meta[index]
 
@@ -174,8 +174,63 @@ def test_set_diff_metadata():
 ##############
 ## TsdFrame ##
 ##############
+@pytest.fixture
+def tsdframe_meta():
+    return nap.TsdFrame(
+        t=np.arange(100),
+        d=np.random.rand(100, 4),
+        time_units="s",
+        columns=["a", "b", "c", "d"],
+        l1=np.arange(4),
+        l2=["x", "x", "y", "y"],
+    )
+
+
 def test_create_tsdframe_with_metadata():
+    # I reparameterized test_create_tsdframe to include an option metadata in `test_time_series.py`. Does it make sense to keep it there?
     pass
+
+
+def test_tsdframe_metadata_slicing(tsdframe_meta):
+    # test slicing obj[obj.mcol == mval] and obj[:, obj.mcol == mval], and that they produce the same results
+    if len(tsdframe_meta.metadata_columns):
+        for mcol in tsdframe_meta.metadata_columns:
+            mval = tsdframe_meta._metadata[mcol].iloc[0]
+            fcols = tsdframe_meta._metadata[tsdframe_meta._metadata[mcol] == mval].index
+            assert isinstance(tsdframe_meta[tsdframe_meta[mcol] == mval], nap.TsdFrame)
+            assert np.all(tsdframe_meta[tsdframe_meta[mcol] == mval].columns == fcols)
+            assert np.all(
+                tsdframe_meta[tsdframe_meta[mcol] == mval].metadata_index == fcols
+            )
+            assert isinstance(
+                tsdframe_meta[:, tsdframe_meta[mcol] == mval], nap.TsdFrame
+            )
+            np.testing.assert_array_almost_equal(
+                tsdframe_meta[tsdframe_meta[mcol] == mval].values,
+                tsdframe_meta[:, tsdframe_meta[mcol] == mval].values,
+            )
+
+
+@pytest.mark.parametrize(
+    "args, kwargs, expected",
+    [
+        (
+            # invalid metadata names that are the same as column names
+            [
+                pd.DataFrame(
+                    index=["a", "b", "c"],
+                    columns=["a", "b", "c"],
+                    data=np.random.randint(0, 5, size=(3, 3)),
+                )
+            ],
+            {},
+            pytest.raises(ValueError, match="Invalid metadata name"),
+        ),
+    ],
+)
+def test_tsdframe_add_metadata_error(tsdframe_meta, args, kwargs, expected):
+    with expected:
+        tsdframe_meta.set_info(*args, **kwargs)
 
 
 #############

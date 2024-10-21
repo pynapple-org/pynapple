@@ -126,7 +126,7 @@ class _MetadataBase:
 
     def set_info(self, *args, **kwargs):
         """
-        Add metadata information about the TsGroup or IntervalSet.
+        Add metadata information about the object.
         Metadata are saved as a DataFrame.
 
         Parameters
