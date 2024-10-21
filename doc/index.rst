@@ -75,6 +75,7 @@ pynapple: python neural analysis package
          :maxdepth: 1
 
          Installing <installing>
+         Tutorial <tutorial>
          API <api>
          Releases <releases>
          External projects <external>

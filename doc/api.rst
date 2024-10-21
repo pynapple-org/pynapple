@@ -44,31 +44,56 @@ Core objects
     TsGroup
 
 
-Analysis function
------------------
+Input-Ouput
+-----------
 
-.. rubric:: Discrete correlograms
+.. currentmodule:: pynapple.io
 
-.. currentmodule:: pynapple.process.correlograms
-
-.. autosummary::
-    :toctree: generated/
-    :nosignatures:
-
-    compute_autocorrelogram
-    compute_crosscorrelogram
-    compute_eventcorrelogram
-
-
-.. rubric:: Tuning curves
-
-.. currentmodule:: pynapple
+.. rubric:: Neurodata Without Borders (NWB)
 
 .. autosummary::
     :toctree: generated/
     :nosignatures:
     :recursive:
 
-    process
-    
+    interface_nwb
+
+.. rubric:: Numpy files
+
+.. autosummary::
+    :toctree: generated/
+    :nosignatures:
+    :recursive:
+
+    interface_npz
+
+
+.. rubric:: Miscellaneous
+
+.. autosummary::
+    :toctree: generated/
+    :nosignatures:
+
+    misc
+    folder
+
+
+Analysis modules
+----------------
+
+.. currentmodule:: pynapple.process
+
+.. autosummary::
+    :toctree: generated/
+    :nosignatures:
+
+    correlograms
+    decoding
+    filtering
+    perievent
+    randomize
+    spectrum
+    tuning_curves
+    wavelets
+
 
