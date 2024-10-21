@@ -1,4 +1,4 @@
-"""Filtering module."""
+"""Functions for highpass, lowpass, bandpass or bandstop filtering."""
 
 import inspect
 from collections.abc import Iterable
@@ -200,7 +200,7 @@ def _compute_filter(
     """
     Filter the signal.
     """
-    if not isinstance(data, nap.time_series.BaseTsd):
+    if not isinstance(data, nap.time_series._BaseTsd):
         raise ValueError(
             f"Invalid value: {data}. First argument should be of type Tsd, TsdFrame or TsdTensor"
         )

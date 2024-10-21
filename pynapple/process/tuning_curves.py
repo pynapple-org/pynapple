@@ -1,27 +1,5 @@
-# -*- coding: utf-8 -*-
 """
-You can compute tuning curves for features in 1 dimension or 2 dimension.
-
-+------------------------------------------+----------------------------------------------------+
-| Function                                 | Description                                        |
-+==========================================+====================================================+
-| ``nap.compute_discrete_tuning_curves``   | Firing rate from a dictionary of IntervalSet       |
-+------------------------------------------+----------------------------------------------------+
-| ``compute_1d_tuning_curves``             | Firing rate as a function of a 1-d feature         |
-+------------------------------------------+----------------------------------------------------+
-| ``compute_2d_tuning_curves``             | Firing rate as a function of 2-d features          |
-+------------------------------------------+----------------------------------------------------+
-| ``compute_1d_tuning_curves_continuous``  | Mean value as a function of a 1-d feature          |
-+------------------------------------------+----------------------------------------------------+
-| ``compute_2d_tuning_curves_continuous``  | Mean value as a function of 2-d features           |
-+------------------------------------------+----------------------------------------------------+
-| ``compute_1d_mutual_info``               | Mutual information of a tuning curve computed from |
-|                                          | a 1-d feature                                      |
-+------------------------------------------+----------------------------------------------------+
-| ``compute_2d_mutual_info``               | Mutual information of a tuning curve computed from |
-|                                          | 2-d features                                       |
-+------------------------------------------+----------------------------------------------------+
-
+Functions to compute tuning curves for features in 1 dimension or 2 dimension.
 
 """
 
@@ -299,7 +277,9 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
 @_validate_tuning_inputs
 def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
     """
-    Mutual information as defined in
+    Mutual information of a tuning curve computed from a 1-d feature.
+
+    See:
 
     Skaggs, W. E., McNaughton, B. L., & Gothard, K. M. (1993).
     An information-theoretic approach to deciphering the hippocampal code.
@@ -366,7 +346,9 @@ def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
 @_validate_tuning_inputs
 def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=False):
     """
-    Mutual information as defined in
+    Mutual information of a tuning curve computed from 2-d features.
+    
+    See:
 
     Skaggs, W. E., McNaughton, B. L., & Gothard, K. M. (1993).
     An information-theoretic approach to deciphering the hippocampal code.

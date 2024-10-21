@@ -300,7 +300,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             52 52
         """
         assert isinstance(
-            data, BaseTsd
+            data, _BaseTsd
         ), "First argument should be an instance of Tsd, TsdFrame or TsdTensor"
 
         t, d, time_support, kwargs = super().value_from(data, ep)
@@ -630,7 +630,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         right : None, optional
             Value to return for ts > tsd[-1], default is tsd[-1].
         """
-        if not isinstance(ts, Base):
+        if not isinstance(ts, _Base):
             raise IOError(
                 "First argument should be an instance of Ts, Tsd, TsdFrame or TsdTensor"
             )
@@ -1424,7 +1424,7 @@ class Tsd(_BaseTsd):
 
 class Ts(_Base):
     """
-    Timestamps only object for a time series with only time index,
+    Timestamps only object for a time series with only time index.
 
     Attributes
     ----------
@@ -1563,7 +1563,7 @@ class Ts(_Base):
             52 52
         """
         assert isinstance(
-            data, BaseTsd
+            data, _BaseTsd
         ), "First argument should be an instance of Tsd, TsdFrame or TsdTensor"
 
         t, d, time_support, kwargs = super().value_from(data, ep)

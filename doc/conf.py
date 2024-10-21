@@ -35,10 +35,10 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',  # Links to source code
-    # 'sphinxcontrib.apidoc',
     'myst_parser',  # Markdown support
     'sphinx_copybutton',  # Adds copy button to code blocks
     'sphinx_design',  # For layout components
+    'sphinx_gallery.gen_gallery'
 ]
 
 
@@ -90,7 +90,7 @@ html_theme_options = {
         },
     ],
     "show_prev_next": True,
-    "header_links_before_dropdown": 6,
+    "header_links_before_dropdown": 5,
 }
 
 html_context = {
@@ -128,7 +128,12 @@ autodoc_default_options = {
 napoleon_numpy_docstring = True
 
 
-
+sphinx_gallery_conf = {
+    'examples_dirs': ['tutorials/api_guide','tutorials/examples'],   # path to your example scripts
+    'gallery_dirs': ['auto_examples/api_guide', 'auto_examples/examples'],  # path to where to save gallery generated output
+    'filename_pattern': "tutorial_*.py",
+    'nested_sections':False
+}
 
 
 

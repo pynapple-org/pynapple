@@ -1,5 +1,5 @@
 """
-# Wavelets decomposition
+Functions to compute wavelets decomposition of a time series.
 
 The main function for doing wavelet decomposition is `nap.compute_wavelet_transform`
 

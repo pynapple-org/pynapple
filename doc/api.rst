@@ -34,6 +34,17 @@ Core objects
 
 .. rubric:: Timestamps
 
+.. currentmodule:: pynapple.core.time_series
+
+.. autosummary::
+    :toctree: generated/
+    :nosignatures:
+    :recursive:
+
+    Ts
+
+.. rubric:: Group of timestamps
+
 .. currentmodule:: pynapple.core.ts_group
 
 .. autosummary::
@@ -47,7 +58,7 @@ Core objects
 Input-Ouput
 -----------
 
-.. currentmodule:: pynapple.io
+.. currentmodule:: pynapple.io.interface_nwb
 
 .. rubric:: Neurodata Without Borders (NWB)
 
@@ -56,7 +67,10 @@ Input-Ouput
     :nosignatures:
     :recursive:
 
-    interface_nwb
+    NWBFile
+
+
+.. currentmodule:: pynapple.io.interface_npz
 
 .. rubric:: Numpy files
 
@@ -65,8 +79,10 @@ Input-Ouput
     :nosignatures:
     :recursive:
 
-    interface_npz
+    NPZFile
 
+
+.. currentmodule:: pynapple.io
 
 .. rubric:: Miscellaneous
 
@@ -75,7 +91,7 @@ Input-Ouput
     :nosignatures:
 
     misc
-    folder
+    folder.Folder
 
 
 Analysis modules
