@@ -1257,6 +1257,8 @@ class TsGroup(UserDict, _MetadataBase):
         # do we need to enforce that these keys are not in metadata?
         # not_info_keys = {"start", "end", "t", "index", "d", "rate", "keys"}
 
-        metainfo = pd.DataFrame.from_dict(file["_metadata"].item())
-        tsgroup.set_info(metainfo)
+        if "_metadata" in file:  # load metadata if it exists
+            if file["_metadata"]:  # check that metadata is not empty
+                metainfo = pd.DataFrame.from_dict(file["_metadata"].item())
+                tsgroup.set_info(metainfo)
         return tsgroup
