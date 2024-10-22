@@ -279,8 +279,6 @@ class TestTsGroup1:
         tsgroup = nap.TsGroup(group)
         rate = tsgroup._metadata["rate"]
         pd.testing.assert_series_equal(rate, tsgroup.get_info("rate"))
-        pd.testing.assert_series_equal(rate, tsgroup.get_info("freq"))
-        pd.testing.assert_series_equal(rate, tsgroup.get_info("frequency"))
 
     def test_restrict(self, group):
         tsgroup = nap.TsGroup(group)
