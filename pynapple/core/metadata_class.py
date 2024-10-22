@@ -242,9 +242,4 @@ class _MetadataBase:
         pandas.Series
             The metainfo
         """
-        if key in [
-            "freq",
-            "frequency",
-        ]:  # this will not be conducive for metadata of other objects
-            key = "rate"
         return self._metadata[key]
