@@ -1023,7 +1023,16 @@ class TsdFrame(BaseTsd, _MetadataBase):
 
             return tabulate(table, headers=headers, colalign=("left",)) + "\n" + bottom
 
+    def __setattr__(self, name, value):
+        # necessary setter to allow metadata to be set as an attribute
+        if self._initialized:
+            _MetadataBase.__setattr__(self, name, value)
+        else:
+            super().__setattr__(name, value)
+
     def __getattr__(self, name):
+        # TsdFrame needs a custom __getattr__ to override default inherited from BaseTsd
+
         # avoid infinite recursion when pickling due to
         # self._metadata.column having attributes '__reduce__', '__reduce_ex__'
         if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):

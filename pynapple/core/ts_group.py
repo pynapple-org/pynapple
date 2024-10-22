@@ -116,7 +116,8 @@ class TsGroup(UserDict, _MetadataBase):
             else:
                 passed_time_support = False
 
-        self._initialized = False
+        # set directly in __dict__ to avoid infinite recursion in __setattr__
+        self.__dict__["_initialized"] = False
 
         if not isinstance(data, dict):
             data = dict(enumerate(data))
@@ -189,12 +190,18 @@ class TsGroup(UserDict, _MetadataBase):
     Base functions
     """
 
+    def __setattr__(self, name, value):
+        # necessary setter to allow metadata to be set as an attribute
+        if self._initialized:
+            _MetadataBase.__setattr__(self, name, value)
+        else:
+            object.__setattr__(self, name, value)
+
     def __setitem__(self, key, value):
         if not self._initialized:
             self._metadata.loc[int(key), "rate"] = float(value.rate)
             super().__setitem__(int(key), value)
         else:
-            # do we want metadata set outside of `set_info` to be allowed?
             _MetadataBase.__setitem__(self, key, value)
 
     def __getitem__(self, key):

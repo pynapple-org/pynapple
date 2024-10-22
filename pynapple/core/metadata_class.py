@@ -1,3 +1,4 @@
+from typing import Any
 import numpy as np
 import pandas as pd
 
@@ -35,6 +36,17 @@ class _MetadataBase:
         Adds metadata columns to the list of attributes.
         """
         return sorted(list(super().__dir__()) + self.metadata_columns)
+
+    def __setattr__(self, name, value):
+        """
+        Add metadata as an attribute assignment
+        """
+        # self._initialized must be defined in the class that inherits _MetadataBase
+        # and it must be set to True after metadata is initialized
+        if self._initialized:
+            self.set_info(**{name: value})
+        else:
+            object.__setattr__(self, name, value)
 
     def __getattr__(self, name):
         """

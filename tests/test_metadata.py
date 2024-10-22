@@ -263,6 +263,7 @@ def test_create_tsgroup_with_metadata():
     ],
 )
 class Test_Metadata:
+
     @pytest.mark.parametrize(
         "info",
         [
@@ -276,25 +277,80 @@ class Test_Metadata:
             (4, 4, 4, 4),
         ],
     )
-    def test_add_metadata(self, obj, info):
-        obj.set_info(label=info)
+    class Test_Add_Metadata:
+        def test_add_metadata(self, obj, info):
+            obj.set_info(label=info)
 
-        # verify shape of metadata
-        if isinstance(obj, nap.TsGroup):
-            assert obj._metadata.shape == (4, 2)
-        else:
-            assert obj._metadata.shape == (4, 1)
+            # verify shape of metadata
+            if isinstance(obj, nap.TsGroup):
+                assert obj._metadata.shape == (4, 2)
+            else:
+                assert obj._metadata.shape == (4, 1)
 
-        # verify value in private metadata
-        if isinstance(info, pd.Series):
-            pd.testing.assert_series_equal(obj._metadata["label"], info)
-        else:
-            np.testing.assert_array_almost_equal(obj._metadata["label"].values, info)
+            # verify value in private metadata
+            if isinstance(info, pd.Series):
+                pd.testing.assert_series_equal(obj._metadata["label"], info)
+            else:
+                np.testing.assert_array_almost_equal(
+                    obj._metadata["label"].values, info
+                )
 
-        # verify public retrieval of metadata
-        pd.testing.assert_series_equal(obj.get_info("label"), obj._metadata["label"])
-        pd.testing.assert_series_equal(obj.label, obj._metadata["label"])
-        pd.testing.assert_series_equal(obj["label"], obj._metadata["label"])
+            # verify public retrieval of metadata
+            pd.testing.assert_series_equal(
+                obj.get_info("label"), obj._metadata["label"]
+            )
+            pd.testing.assert_series_equal(obj.label, obj._metadata["label"])
+            pd.testing.assert_series_equal(obj["label"], obj._metadata["label"])
+
+        def test_add_metadata_key(self, obj, info):
+            # add metadata as key
+            obj["label"] = info
+
+            # verify shape of metadata
+            if isinstance(obj, nap.TsGroup):
+                assert obj._metadata.shape == (4, 2)
+            else:
+                assert obj._metadata.shape == (4, 1)
+
+            # verify value in private metadata
+            if isinstance(info, pd.Series):
+                pd.testing.assert_series_equal(obj._metadata["label"], info)
+            else:
+                np.testing.assert_array_almost_equal(
+                    obj._metadata["label"].values, info
+                )
+
+            # verify public retrieval of metadata
+            pd.testing.assert_series_equal(
+                obj.get_info("label"), obj._metadata["label"]
+            )
+            pd.testing.assert_series_equal(obj.label, obj._metadata["label"])
+            pd.testing.assert_series_equal(obj["label"], obj._metadata["label"])
+
+        def test_add_metadata_attr(self, obj, info):
+            # add metadata as attribute
+            obj.label = info
+
+            # verify shape of metadata
+            if isinstance(obj, nap.TsGroup):
+                assert obj._metadata.shape == (4, 2)
+            else:
+                assert obj._metadata.shape == (4, 1)
+
+            # verify value in private metadata
+            if isinstance(info, pd.Series):
+                pd.testing.assert_series_equal(obj._metadata["label"], info)
+            else:
+                np.testing.assert_array_almost_equal(
+                    obj._metadata["label"].values, info
+                )
+
+            # verify public retrieval of metadata
+            pd.testing.assert_series_equal(
+                obj.get_info("label"), obj._metadata["label"]
+            )
+            pd.testing.assert_series_equal(obj.label, obj._metadata["label"])
+            pd.testing.assert_series_equal(obj["label"], obj._metadata["label"])
 
     @pytest.mark.parametrize(
         "info", [pd.DataFrame(index=[0, 1, 2, 3], data=[0, 0, 0, 0], columns=["label"])]
@@ -310,40 +366,6 @@ class Test_Metadata:
         else:
             assert obj._metadata.shape == (4, 1)
             pd.testing.assert_frame_equal(obj._metadata, info)
-
-        # verify public retrieval of metadata
-        pd.testing.assert_series_equal(obj.get_info("label"), obj._metadata["label"])
-        pd.testing.assert_series_equal(obj.label, obj._metadata["label"])
-        pd.testing.assert_series_equal(obj["label"], obj._metadata["label"])
-
-    @pytest.mark.parametrize(
-        "info",
-        [
-            # pd.Series
-            pd.Series(index=[0, 1, 2, 3], data=[1, 1, 1, 1], name="label"),
-            # np.ndarray
-            np.ones(4) * 2,
-            # list
-            [3, 3, 3, 3],
-            # tuple
-            (4, 4, 4, 4),
-        ],
-    )
-    def test_add_metadata_key(self, obj, info):
-        # add metadata as key
-        obj["label"] = info
-
-        # verify shape of metadata
-        if isinstance(obj, nap.TsGroup):
-            assert obj._metadata.shape == (4, 2)
-        else:
-            assert obj._metadata.shape == (4, 1)
-
-        # verify value in private metadata
-        if isinstance(info, pd.Series):
-            pd.testing.assert_series_equal(obj._metadata["label"], info)
-        else:
-            np.testing.assert_array_almost_equal(obj._metadata["label"].values, info)
 
         # verify public retrieval of metadata
         pd.testing.assert_series_equal(obj.get_info("label"), obj._metadata["label"])
@@ -436,6 +458,20 @@ class Test_Metadata:
             # currently obj[0] does not raise an error for TsdFrame
             with pytest.raises(TypeError, match="Metadata keys must be strings!"):
                 obj[0] = info
+
+    def test_overwrite_metadata(self, obj):
+        # add metadata
+        obj.set_info(label=[1, 1, 1, 1])
+        assert np.all(obj.label == 1)
+
+        obj.set_info(label=[2, 2, 2, 2])
+        assert np.all(obj.label == 2)
+
+        obj["label"] = [3, 3, 3, 3]
+        assert np.all(obj.label == 3)
+
+        obj.label = [4, 4, 4, 4]
+        assert np.all(obj.label == 4)
 
     @pytest.mark.parametrize("label, val", [([1, 1, 2, 2], 2)])
     def test_metadata_slicing(self, obj, label, val):

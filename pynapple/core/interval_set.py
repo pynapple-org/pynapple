@@ -115,6 +115,8 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
             If `start` and `end` arguments are of unknown type
 
         """
+        # set directly in __dict__ to avoid infinite recursion in __setattr__
+        self.__dict__["_initialized"] = False
         if isinstance(start, IntervalSet):
             end = start.end.astype(np.float64)
             start = start.start.astype(np.float64)
@@ -190,6 +192,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         self.columns = np.array(["start", "end"])
         self.nap_class = self.__class__.__name__
         _MetadataBase.__init__(self, **kwargs)
+        self._initialized = True
 
     def __repr__(self):
         # Start by determining how many columns and rows.
@@ -254,8 +257,12 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
     def __len__(self):
         return len(self.values)
 
-    # def __iter__(self):
-    #     pass
+    def __setattr__(self, name, value):
+        # necessary setter to allow metadata to be set as an attribute
+        if self._initialized:
+            _MetadataBase.__setattr__(self, name, value)
+        else:
+            object.__setattr__(self, name, value)
 
     def __setitem__(self, key, value):
         if (isinstance(key, str)) and (key not in self.columns):
