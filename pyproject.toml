@@ -65,9 +65,9 @@ doc = [
     "sphinx-issues",
     "sphinxcontrib-apidoc",
     "myst-parser",
-    "nbsphinx",
-    "nbconvert",
-    "sphinx-gallery"
+    "myst-nb"
+    # "sphinx-gallery",
+    # "sphinx-exec-code"
 ]
 docs = [
     "mkdocs",                       # Documentation generator

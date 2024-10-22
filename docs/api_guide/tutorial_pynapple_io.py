@@ -1,4 +1,4 @@
-# coding: utf-8
+.. _tutorial_pynapple_io:
 
 """
 IO Tutorial

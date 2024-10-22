@@ -15,6 +15,7 @@ import time
 import pynapple
 
 sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('sphinxext'))
 
 
 # -- Project information -----------------------------------------------------
@@ -35,10 +36,11 @@ extensions = [
     'sphinx.ext.autosummary',
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',  # Links to source code
-    'myst_parser',  # Markdown support
+    'sphinx.ext.doctest',
+    'myst_nb',
     'sphinx_copybutton',  # Adds copy button to code blocks
     'sphinx_design',  # For layout components
-    'sphinx_gallery.gen_gallery'
+    # 'sphinx_gallery.gen_gallery',
 ]
 
 
@@ -128,12 +130,12 @@ autodoc_default_options = {
 napoleon_numpy_docstring = True
 
 
-sphinx_gallery_conf = {
-    'examples_dirs': ['tutorials/api_guide','tutorials/examples'],   # path to your example scripts
-    'gallery_dirs': ['auto_examples/api_guide', 'auto_examples/examples'],  # path to where to save gallery generated output
-    'filename_pattern': "tutorial_*.py",
-    'nested_sections':False
-}
+# sphinx_gallery_conf = {
+#     'examples_dirs': ['tutorials/api_guide','tutorials/examples'],   # path to your example scripts
+#     'gallery_dirs': ['auto_examples/api_guide', 'auto_examples/examples'],  # path to where to save gallery generated output
+#     'filename_pattern': "tutorial_*.py",
+#     'nested_sections':False
+# }
 
 
 

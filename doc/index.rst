@@ -6,6 +6,40 @@ pynapple: python neural analysis package
 
 |
 
+.. grid:: 1 1 2 2
+
+   .. grid-item::
+
+      Pynapple is a light-weight python library for 
+      neurophysiological data analysis. 
+
+      The goal is to offer a versatile set of tools to 
+      study typical data in the field, i.e. time series 
+      (spike times, behavioral events, etc.) and time intervals 
+      (trials, brain states, etc.). 
+
+      It also provides users with generic functions for 
+      neuroscience such as tuning curves, cross-correlograms 
+      and filtering.
+
+   .. grid-item-card:: Contents
+      :class-title: sd-fs-5
+      :class-body: sd-pl-3
+
+      .. toctree::
+         :maxdepth: 1
+
+         Installing <installing>
+         User guide <user_guide/user_guide>
+         Examples <auto_examples/index>
+         API <api>
+         Releases <releases>
+         External projects <external>
+         GPU acceleration <pynajax>
+         Citing <citing>
+
+|
+
 .. grid:: 1 1 8 8
    :gutter: 2
 
@@ -51,35 +85,5 @@ pynapple: python neural analysis package
 
 |
 
-.. grid:: 1 1 2 2
 
-   .. grid-item::
-
-      Pynapple is a light-weight python library for 
-      neurophysiological data analysis. 
-
-      The goal is to offer a versatile set of tools to 
-      study typical data in the field, i.e. time series 
-      (spike times, behavioral events, etc.) and time intervals 
-      (trials, brain states, etc.). 
-
-      It also provides users with generic functions for 
-      neuroscience such as tuning curves, cross-correlograms 
-      and filtering.
-
-   .. grid-item-card:: Contents
-      :class-title: sd-fs-5
-      :class-body: sd-pl-3
-
-      .. toctree::
-         :maxdepth: 1
-
-         Installing <installing>
-         User guide <auto_examples/api_guide/index>
-         Examples <auto_examples/examples/index>
-         API <api>
-         Releases <releases>
-         External projects <external>
-         GPU acceleration <pynajax>
-         Citing <citing>
    
