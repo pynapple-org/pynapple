@@ -396,15 +396,24 @@ def test_jitunion():
 def test_jitdiff():
     for i in range(10):
         ep1, ep2 = get_example_isets()
+        ep1.set_info(label1=np.arange(len(ep1)))
 
-        s, e, _ = nap.core._jitted_functions.jitdiff(
+        s, e, m = nap.core._jitted_functions.jitdiff(
             ep1.start, ep1.end, ep2.start, ep2.end
         )
-        ep3 = nap.IntervalSet(s, e)
+        ep3 = nap.IntervalSet(s, e, label1=ep1.label1.loc[m].reset_index(drop=True))
 
         i_sets = (ep1, ep2)
         time = np.hstack(
             [i_set["start"] for i_set in i_sets] + [i_set["end"] for i_set in i_sets]
+        )
+        label1 = np.hstack(
+            (
+                ep1.label1.values,
+                np.nan * np.ones(len(ep2)),
+                ep1.label1.values,
+                np.nan * np.ones(len(ep2)),
+            )
         )
         start_end1 = np.hstack(
             (
@@ -419,20 +428,24 @@ def test_jitdiff():
             )
         )
         start_end = np.hstack((start_end1, start_end2))
-        df = pd.DataFrame({"time": time, "start_end": start_end})
+        df = pd.DataFrame({"time": time, "start_end": start_end, "label1": label1})
         df.sort_values(by="time", inplace=True)
         df.reset_index(inplace=True, drop=True)
+        df = df.ffill().bfill()
+        df["label1"] = df["label1"].astype(int)
         df["cumsum"] = df["start_end"].cumsum()
         ix = (df["cumsum"] == 1).to_numpy().nonzero()[0]
-        start = df["time"][ix]
-        end = df["time"][ix + 1]
-        start = start.reset_index(drop=True)
-        end = end.reset_index(drop=True)
+        start = df["time"][ix].reset_index(drop=True)
+        end = df["time"][ix + 1].reset_index(drop=True)
+        label1 = df["label1"][ix].reset_index(drop=True)
         idx = start != end
 
-        ep4 = nap.IntervalSet(start[idx], end[idx])
+        ep4 = nap.IntervalSet(
+            start[idx], end[idx], label1=label1[idx].reset_index(drop=True)
+        )
 
         np.testing.assert_array_almost_equal(ep3, ep4)
+        pd.testing.assert_frame_equal(ep3._metadata, ep4._metadata)
 
 
 def test_jitunion_isets():
