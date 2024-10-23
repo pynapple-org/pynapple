@@ -519,6 +519,11 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         out: IntervalSet
             an IntervalSet with a single interval encompassing the whole IntervalSet
         """
+        if len(self.metadata_columns):
+            warnings.warn(
+                f"metadata incompatible with time_span method. dropping metadata from result",
+                UserWarning,
+            )
         s = self.values[0, 0]
         e = self.values[-1, 1]
         return IntervalSet(s, e)
@@ -577,6 +582,11 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         out: IntervalSet
             _
         """
+        if len(self.metadata_columns):
+            warnings.warn(
+                f"metadata incompatible with union method. dropping metadata from result",
+                UserWarning,
+            )
         start1 = self.values[:, 0]
         end1 = self.values[:, 1]
         start2 = a.values[:, 0]
@@ -711,6 +721,12 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
             a copied IntervalSet with merged intervals
 
         """
+        if len(self.metadata_columns):
+            warnings.warn(
+                f"metadata incompatible with merge_close_intervals method. dropping metadata from result",
+                UserWarning,
+            )
+
         if len(self) == 0:
             return IntervalSet(start=[], end=[])
 

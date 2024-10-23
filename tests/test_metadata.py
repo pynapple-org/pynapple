@@ -213,6 +213,15 @@ def test_set_diff_metadata():
     )
 
 
+def test_drop_metadata_warnings(iset_meta):
+    with pytest.warns(UserWarning, match="metadata incompatible"):
+        iset_meta.merge_close_intervals(1)
+    with pytest.warns(UserWarning, match="metadata incompatible"):
+        iset_meta.union(iset_meta)
+    with pytest.warns(UserWarning, match="metadata incompatible"):
+        iset_meta.time_span()
+
+
 ##############
 ## TsdFrame ##
 ##############
