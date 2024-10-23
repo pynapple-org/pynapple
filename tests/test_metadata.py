@@ -506,7 +506,10 @@ class Test_Metadata:
                 # metadata with wrong length
                 [],
                 {"label": np.zeros(5)},
-                pytest.raises(RuntimeError, match="Array is not the same length."),
+                pytest.raises(
+                    RuntimeError,
+                    match="input array length 5 does not match metadata length 4.",
+                ),
             ),
         ],
     )

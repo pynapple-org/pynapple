@@ -203,9 +203,9 @@ class _MetadataBase:
                     if pd.Index.equals(self._metadata.index, arg.index):
                         self._metadata[arg.columns] = arg
                     else:
-                        raise RuntimeError("Index are not equals")
+                        raise RuntimeError("metadata indices do not match")
                 elif isinstance(arg, (pd.Series, np.ndarray, list)):
-                    raise RuntimeError("Argument should be passed as keyword argument.")
+                    raise RuntimeError("argument should be passed as keyword argument.")
                 else:
                     not_set.append(arg)
         if len(kwargs):
@@ -215,11 +215,8 @@ class _MetadataBase:
                     if pd.Index.equals(self._metadata.index, v.index):
                         self._metadata[k] = v
                     else:
-                        print(self._metadata.index)
-                        print(v.index)
-                        print(v)
                         raise RuntimeError(
-                            "Index are not equals for argument {}".format(k)
+                            "metadata indices do not match for argument {}".format(k)
                         )
 
                 elif len(self) == 1:
@@ -230,7 +227,9 @@ class _MetadataBase:
                     if len(self._metadata.index) == len(v):
                         self._metadata[k] = np.asarray(v)
                     else:
-                        raise RuntimeError("Array is not the same length.")
+                        raise RuntimeError(
+                            f"input array length {len(v)} does not match metadata length {len(self._metadata.index)}."
+                        )
 
                 else:
                     not_set.append({k: v})
