@@ -30,7 +30,7 @@ pynapple: python neural analysis package
          :maxdepth: 1
 
          Installing <installing>
-         User guide <user_guide/user_guide>
+         User guide <user_guide>
          Examples <auto_examples/index>
          API <api>
          Releases <releases>
