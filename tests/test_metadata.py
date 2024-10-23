@@ -213,6 +213,26 @@ def test_set_diff_metadata():
     )
 
 
+def test_drop_short_intervals_metadata(iset_meta):
+    iset_dropped = iset_meta.drop_short_intervals(5)
+    print(iset_dropped)
+    assert np.all(iset_dropped.metadata_columns == iset_meta.metadata_columns)
+    assert len(iset_dropped._metadata) == 1  # one interval left
+    assert iset_dropped.metadata_index == 0  # index reset to 0
+    # label of remaining interval should be "d"
+    assert iset_dropped._metadata["label"][0] == "d"
+
+
+def test_drop_long_intervals_metadata(iset_meta):
+    iset_dropped = iset_meta.drop_long_intervals(5)
+    print(iset_dropped)
+    assert np.all(iset_dropped.metadata_columns == iset_meta.metadata_columns)
+    assert len(iset_dropped._metadata) == 1  # one interval left
+    assert iset_dropped.metadata_index == 0  # index reset to 0
+    # label of remaining interval should be "c"
+    assert iset_dropped._metadata["label"][0] == "c"
+
+
 def test_drop_metadata_warnings(iset_meta):
     with pytest.warns(UserWarning, match="metadata incompatible"):
         iset_meta.merge_close_intervals(1)
