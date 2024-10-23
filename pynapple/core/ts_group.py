@@ -213,6 +213,9 @@ class TsGroup(UserDict, _MetadataBase):
                 return _MetadataBase.__getitem__(self, key)
             else:
                 raise KeyError(r"Key {} not in group index.".format(key))
+        elif isinstance(key, list) and all(isinstance(k, str) for k in key):
+            # index multiple metadata columns
+            return _MetadataBase.__getitem__(self, key)
 
         # array boolean are transformed into indices
         # note that raw boolean are hashable, and won't be

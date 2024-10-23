@@ -274,6 +274,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
 
     def __getitem__(self, key):
         if isinstance(key, str):
+            # self[str]
             if key == "start":
                 return self.values[:, 0]
             elif key == "end":
@@ -284,11 +285,22 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
                 raise IndexError(
                     f"Unknown string argument. Should be in {['start', 'end'] + list(self._metadata.keys())}"
                 )
+        elif isinstance(key, list) and all(isinstance(x, str) for x in key):
+            # self[[*str]]
+            # easiest to convert to dataframe and then slice
+            # in case of mixing ["start", "end"] with metadata columns
+            df = self.as_dataframe()
+            if all(x in key[1] for x in ["start", "end"]):
+                return IntervalSet(df[key])
+            else:
+                return df[key]
         elif isinstance(key, Number):
+            # self[Number]
             output = self.values.__getitem__(key)
             metadata = _MetadataBase.__getitem__(self, key)
             return IntervalSet(start=output[0], end=output[1], **metadata)
         elif isinstance(key, (slice, list, np.ndarray, pd.Series)):
+            # self[array_like]
             output = self.values.__getitem__(key)
             metadata = _MetadataBase.__getitem__(self, key).reset_index(drop=True)
             return IntervalSet(start=output[:, 0], end=output[:, 1], **metadata)

@@ -567,6 +567,14 @@ class Test_Metadata:
         # metadata columns should be the same
         assert np.all(obj2.metadata_columns == obj.metadata_columns)
 
+    def test_metadata_index_columns(self, obj):
+        # add metadata
+        obj.set_info(one=[1, 1, 1, 1], two=[2, 2, 2, 2], three=[3, 3, 3, 3])
+
+        # test metadata columns
+        assert np.all(obj["one"] == 1)
+        assert np.all(obj[["two", "three"]] == obj._metadata[["two", "three"]])
+
     def test_save_and_load_npz(self, obj):
         obj.set_info(label1=[1, 1, 2, 2], label2=[0, 1, 2, 3])
 

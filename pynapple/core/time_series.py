@@ -1068,7 +1068,10 @@ class TsdFrame(BaseTsd, _MetadataBase):
             or hasattr(key, "__iter__")
             and all([isinstance(k, str) for k in key])
         ):
-            return self.loc[key]
+            if all(k in self.metadata_columns for k in key):
+                return _MetadataBase.__getitem__(self, key)
+            else:
+                return self.loc[key]
 
         else:
             if isinstance(key, pd.Series) and key.index.equals(self.columns):
