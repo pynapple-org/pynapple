@@ -235,6 +235,17 @@ def test_drop_long_intervals_metadata(iset_meta):
     assert iset_dropped._metadata["label"][0] == "c"
 
 
+def test_split_metadata(iset_meta):
+    iset_split = iset_meta.split(1)
+    for i, iset in enumerate(iset_meta):
+        # check number of labels in each split
+        iset_i = iset_split[iset_split.info == i]
+        assert len(iset_i) == (iset.end - iset.start)
+        # check first start and last end
+        start_end = iset_i.values[[0, -1]].ravel()[[0, -1]]
+        np.testing.assert_array_almost_equal(start_end, iset.values[0])
+
+
 def test_drop_metadata_warnings(iset_meta):
     with pytest.warns(UserWarning, match="metadata incompatible"):
         iset_meta.merge_close_intervals(1)
