@@ -190,7 +190,7 @@ class TestTsGroup1:
 
         with pytest.raises(RuntimeError) as e_info:
             tsgroup.set_info(df_info)
-        assert str(e_info.value) == "Index are not equals"
+        assert str(e_info.value) == "Metadata index does not match"
 
         tsgroup = nap.TsGroup(group)
         sr_info = pd.Series(index=[0, 1, 2], data=[1, 1, 1])
@@ -214,11 +214,11 @@ class TestTsGroup1:
         sr_info = pd.Series(index=[1, 2, 3], data=[1, 1, 1], name="sr")
         with pytest.raises(Exception) as e_info:
             tsgroup.set_info(sr=sr_info)
-        assert str(e_info.value) == "Index are not equals for argument sr"
+        assert str(e_info.value) == "Metadata index does not match for argument sr"
         df_info = pd.DataFrame(index=[1, 2, 3], data=[1, 1, 1], columns=["df"])
         with pytest.raises(Exception) as e_info:
             tsgroup.set_info(df_info)
-        assert str(e_info.value) == "Index are not equals"
+        assert str(e_info.value) == "Metadata index does not match"
 
         sr_info = pd.Series(index=[1, 2, 3], data=[1, 1, 1], name="sr")
         with pytest.raises(Exception) as e_info:
@@ -228,7 +228,10 @@ class TestTsGroup1:
         ar_info = np.ones(4)
         with pytest.raises(Exception) as e_info:
             tsgroup.set_info(ar=ar_info)
-        assert str(e_info.value) == "Array is not the same length."
+        assert (
+            str(e_info.value)
+            == "input array length 4 does not match metadata length 3."
+        )
 
     def test_keys(self, group):
         tsgroup = nap.TsGroup(group)
@@ -722,11 +725,17 @@ class TestTsGroup1:
             (1.1, pytest.raises(TypeError, match="Metadata columns provided must be")),
             (
                 np.arange(1),
-                pytest.raises(RuntimeError, match="Array is not the same length"),
+                pytest.raises(
+                    RuntimeError,
+                    match="input array length 1 does not match metadata length 3.",
+                ),
             ),
             (
                 np.arange(2),
-                pytest.raises(RuntimeError, match="Array is not the same length"),
+                pytest.raises(
+                    RuntimeError,
+                    match="input array length 2 does not match metadata length 3.",
+                ),
             ),
         ],
     )

@@ -1,6 +1,8 @@
 """Tests for metadata in IntervalSet, TsdFrame, and TsGroup"""
 
 from numbers import Number
+import inspect
+
 
 import pickle
 import numpy as np
@@ -627,3 +629,73 @@ class Test_Metadata:
 
         # cleaning
         Path("obj.npz").unlink()
+
+
+# test double inheritance
+def get_defined_members(cls):
+    """
+    Get all methods and attributes explicitly defined in a class (excluding inherited ones),
+    without relying on `__dir__` overrides.
+    """
+    # Fetch the class's dictionary directly to avoid `__dir__` overrides
+    cls_dict = cls.__dict__
+
+    # Use inspect to identify which are functions, properties, or other attributes
+    return {
+        name
+        for name, obj in cls_dict.items()
+        if not name.startswith("__")  # Ignore dunder methods
+        and (
+            inspect.isfunction(obj)
+            or isinstance(obj, property)
+            or not inspect.isroutine(obj)
+        )
+    }
+
+
+def test_no_conflict_between_intervalset_and_metadatabase():
+    from pynapple.core import IntervalSet
+    from pynapple.core.metadata_class import _MetadataBase  # Adjust import as needed
+
+    iset_members = get_defined_members(IntervalSet)
+    metadatabase_members = get_defined_members(_MetadataBase)
+
+    # Check for any overlapping names between IntervalSet and _MetadataBase
+    conflicting_members = iset_members.intersection(metadatabase_members)
+
+    assert len(conflicting_members) == 0, (
+        f"Conflict detected! The following methods/attributes are "
+        f"overwritten in TsdFrame: {conflicting_members}"
+    )
+
+
+def test_no_conflict_between_tsdframe_and_metadatabase():
+    from pynapple.core import TsdFrame
+    from pynapple.core.metadata_class import _MetadataBase  # Adjust import as needed
+
+    tsdframe_members = get_defined_members(TsdFrame)
+    metadatabase_members = get_defined_members(_MetadataBase)
+
+    # Check for any overlapping names between TsdFrame and _MetadataBase
+    conflicting_members = tsdframe_members.intersection(metadatabase_members)
+
+    assert len(conflicting_members) == 0, (
+        f"Conflict detected! The following methods/attributes are "
+        f"overwritten in TsdFrame: {conflicting_members}"
+    )
+
+
+def test_no_conflict_between_tsgroup_and_metadatabase():
+    from pynapple.core import TsGroup
+    from pynapple.core.metadata_class import _MetadataBase  # Adjust import as needed
+
+    tsgroup_members = get_defined_members(TsGroup)
+    metadatabase_members = get_defined_members(_MetadataBase)
+
+    # Check for any overlapping names between TsdFrame and _MetadataBase
+    conflicting_members = tsgroup_members.intersection(metadatabase_members)
+
+    assert len(conflicting_members) == 0, (
+        f"Conflict detected! The following methods/attributes are "
+        f"overwritten in TsdFrame: {conflicting_members}"
+    )

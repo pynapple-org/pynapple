@@ -650,7 +650,7 @@ class TsGroup(UserDict, _MetadataBase):
         Raises
         ------
         RuntimeError
-            "Index are not equals" : if pandas.Series indexes don't match the TsGroup indexes
+            "Metadata indices do not match" : if pandas.Series indexes don't match the TsGroup indexes
             "Values is not the same length" : if numpy.ndarray/list object is not the same size as the TsGroup object
             "Key not in metadata of TsGroup" : if string argument does not match any column names of the metadata,
             "Unknown argument format" ; if argument is not a string, list, numpy.ndarray or pandas.Series
