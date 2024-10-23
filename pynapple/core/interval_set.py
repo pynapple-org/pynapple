@@ -521,7 +521,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         """
         if len(self.metadata_columns):
             warnings.warn(
-                f"metadata incompatible with time_span method. dropping metadata from result",
+                "metadata incompatible with time_span method. dropping metadata from result",
                 UserWarning,
             )
         s = self.values[0, 0]
@@ -584,7 +584,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         """
         if len(self.metadata_columns):
             warnings.warn(
-                f"metadata incompatible with union method. dropping metadata from result",
+                "metadata incompatible with union method. dropping metadata from result",
                 UserWarning,
             )
         start1 = self.values[:, 0]
@@ -723,7 +723,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         """
         if len(self.metadata_columns):
             warnings.warn(
-                f"metadata incompatible with merge_close_intervals method. dropping metadata from result",
+                "metadata incompatible with merge_close_intervals method. dropping metadata from result",
                 UserWarning,
             )
 
