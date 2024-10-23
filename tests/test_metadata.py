@@ -1,5 +1,7 @@
 """Tests for metadata in IntervalSet, TsdFrame, and TsGroup"""
 
+from numbers import Number
+
 import pickle
 import numpy as np
 import pandas as pd
@@ -75,24 +77,43 @@ def test_get_iset_with_metadata(iset_meta, index):
     [
         ((slice(None), 0), "start"),
         ((slice(None), 1), "end"),
-        ((slice(None), 2), "label"),
-        ((slice(None), 3), "info"),
-        ((slice(None), slice(1, 3)), ["end", "label"]),
-        ((slice(None), [0, 3]), ["start", "info"]),
         ((slice(None), "end"), "end"),
         ((slice(None), "label"), "label"),
         ((slice(None), ["end", "label"]), ["end", "label"]),
+        ((0, [0, 1]), ([0], ["start", "end"])),
+        ((0, slice(None)), ([0], slice(None))),
+        (([1, 2], slice(None)), ([1, 2], slice(None))),
+        (([1, 2], ["end", "label"]), ([1, 2], ["end", "label"])),
     ],
 )
-def test_vertical_slice_iset_with_metadata(iset_meta, index, expected):
+def test_slice_iset_with_metadata(iset_meta, index, expected):
     if isinstance(expected, str):
-        pd.testing.assert_series_equal(
+        if (expected == "start") or (expected == "end"):
+            # start and end returned as array
+            np.testing.assert_array_almost_equal(
+                iset_meta[index], iset_meta.as_dataframe()[expected].values
+            )
+        else:
+            # metadata returned as series
+            pd.testing.assert_series_equal(
+                iset_meta[index], iset_meta.as_dataframe()[expected]
+            )
+    elif isinstance(expected, list):
+        pd.testing.assert_frame_equal(
             iset_meta[index], iset_meta.as_dataframe()[expected]
         )
-    else:
-        pd.testing.assert_frame_equal(
-            iset_meta[index], iset_meta.as_dataframe().loc[index[0], expected]
-        )
+    elif isinstance(expected, tuple):
+        try:
+            # index reset when IntervalSet is returned
+            pd.testing.assert_frame_equal(
+                iset_meta[index].as_dataframe(),
+                iset_meta.as_dataframe().loc[expected].reset_index(drop=True),
+            )
+        except AttributeError:
+            # index not reset when DataFrame is returned
+            pd.testing.assert_frame_equal(
+                iset_meta[index], iset_meta.as_dataframe().loc[expected]
+            )
 
 
 @pytest.mark.parametrize(
@@ -102,14 +123,14 @@ def test_vertical_slice_iset_with_metadata(iset_meta, index, expected):
             (slice(None), pd.Series(index=[0, 1, 2, 3], data=[0, 0, 0, 0])),
             pytest.raises(
                 IndexError,
-                match="unknown type <class 'pandas.core.series.Series'> for second index",
+                match="unknown type <class 'pandas.core.series.Series'> for index 2",
             ),
         ),
         (
             (slice(None), [pd.Series(index=[0, 1, 2, 3], data=[0, 0, 0, 0])]),
             pytest.raises(
                 IndexError,
-                match="unknown data type <class 'pandas.core.series.Series'> for second index",
+                match="unknown index",
             ),
         ),
         (
@@ -117,6 +138,27 @@ def test_vertical_slice_iset_with_metadata(iset_meta, index, expected):
             pytest.raises(
                 IndexError,
                 match="unknown type <class 'pandas.core.frame.DataFrame'> for index",
+            ),
+        ),
+        (
+            (slice(None), 2),
+            pytest.raises(
+                IndexError,
+                match="index 2 is out of bounds for axis 1 with size 2",
+            ),
+        ),
+        (
+            (slice(None), slice(1, 3)),
+            pytest.raises(
+                IndexError,
+                match="index slice\\(1, 3, None\\) out of bounds for IntervalSet axis 1 with size 2",
+            ),
+        ),
+        (
+            (slice(None), [0, 3]),
+            pytest.raises(
+                IndexError,
+                match="index \\[0, 3\\] out of bounds for IntervalSet axis 1 with size 2",
             ),
         ),
     ],

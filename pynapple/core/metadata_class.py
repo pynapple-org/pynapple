@@ -1,3 +1,5 @@
+from numbers import Number
+
 import numpy as np
 import pandas as pd
 
@@ -253,4 +255,27 @@ class _MetadataBase:
         pandas.Series
             The metainfo
         """
-        return self._metadata[key]
+        if isinstance(key, str) or (
+            isinstance(key, list) and all([isinstance(k, str) for k in key])
+        ):
+            # metadata[str] or metadata[[*str]]
+            return self._metadata[key]
+        elif isinstance(key, (Number, list, np.ndarray, pd.Series)) or (
+            isinstance(key, tuple)
+            and (
+                isinstance(key[1], str)
+                or (
+                    isinstance(key[1], list)
+                    and all([isinstance(k, str) for k in key[1]])
+                )
+            )
+        ):
+            # metadata[Number], metadata[array_like], metadata[Any, str], or metadata[Any, [*str]]
+            return self._metadata.loc[key]
+        elif isinstance(key, slice):
+            # DataFrame's `loc` treats slices differently (inclusive of stop) than numpy
+            # `iloc` exludes the stop index, like numpy
+            return self._metadata.iloc[key]
+        else:
+            # we don't allow indexing columns with numbers
+            raise IndexError(f"Unknown metadata index {key}")

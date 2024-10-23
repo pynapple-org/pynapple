@@ -272,70 +272,102 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
                 "IntervalSet is immutable. Starts and ends have been already sorted."
             )
 
-    def __getitem__(self, key, *args, **kwargs):
-        print(key)
+    def __getitem__(self, key):
         if isinstance(key, str):
             if key == "start":
                 return self.values[:, 0]
             elif key == "end":
                 return self.values[:, 1]
             elif key in self._metadata.columns:
-                return self._metadata[key]
+                return _MetadataBase.__getitem__(self, key)
             else:
                 raise IndexError(
                     f"Unknown string argument. Should be in {['start', 'end'] + list(self._metadata.keys())}"
                 )
         elif isinstance(key, Number):
             output = self.values.__getitem__(key)
-            metadata = self._metadata.loc[key]
+            metadata = _MetadataBase.__getitem__(self, key)
             return IntervalSet(start=output[0], end=output[1], **metadata)
-        elif isinstance(key, (list, np.ndarray, pd.Series)):
-            metadata = self._metadata.loc[key].reset_index(drop=True)
+        elif isinstance(key, (slice, list, np.ndarray, pd.Series)):
             output = self.values.__getitem__(key)
-            return IntervalSet(start=output[:, 0], end=output[:, 1], **metadata)
-        elif isinstance(key, slice):
-            # DataFrame's `loc` treats slices differently (inclusive of stop) than numpy
-            # `iloc` exludes the stop index, like numpy
-            metadata = self._metadata.iloc[key].reset_index(drop=True)
-            output = self.values.__getitem__(key)
+            metadata = _MetadataBase.__getitem__(self, key).reset_index(drop=True)
             return IntervalSet(start=output[:, 0], end=output[:, 1], **metadata)
         elif isinstance(key, tuple):
             if len(key) == 2:
-                df = self.as_dataframe()
-                if isinstance(key[1], Number):  # self[Any, Number]
-                    return df.iloc[key]
+                if isinstance(key[1], Number):
+                    # self[Any, Number]
+                    # allow number indexing for start and end times for backward compatibility
+                    return self.values.__getitem__(key)
 
-                elif isinstance(key[1], str):  # self[Any, str]
-                    return df.loc[key]
+                elif isinstance(key[1], str):
+                    # self[Any, str]
+                    if key[1] == "start":
+                        return self.values[key[0], 0]
+                    elif key[1] == "end":
+                        return self.values[key[0], 1]
+                    elif key[1] in self._metadata.columns:
+                        return _MetadataBase.__getitem__(self, key)
 
-                elif isinstance(key[1], slice):  # self[Any, slice]
-                    df = df.iloc[key]
+                elif isinstance(key[1], (list, np.ndarray)):
+                    if all(isinstance(x, str) for x in key[1]):
+                        # self[Any, [*str]]
+                        # easiest to convert to dataframe and then slice
+                        # in case of mixing ["start", "end"] with metadata columns
+                        df = self.as_dataframe()
+                        if all(x in key[1] for x in ["start", "end"]):
+                            return IntervalSet(df.loc[key])
+                        else:
+                            return df.loc[key]
+                    elif all(isinstance(x, Number) for x in key[1]):
+                        if all(x in [0, 1] for x in key[1]):
+                            # self[Any, [0,1]]
+                            # allow number indexing for start and end times for backward compatibility
+                            output = self.values.__getitem__(key[0])
+                            if isinstance(key[0], Number):
+                                return IntervalSet(start=output[0], end=output[1])
+                            else:
+                                return IntervalSet(start=output[:, 0], end=output[:, 1])
+                        else:
+                            raise IndexError(
+                                f"index {key[1]} out of bounds for IntervalSet axis 1 with size 2"
+                            )
+                    else:
+                        raise IndexError(f"unknown index {key[1]} for index 2")
 
-                elif isinstance(key[1], (list, np.ndarray)):  # self[Any, array_like]
-                    if isinstance(key[1][0], str):  # self[Any, [*str]]
-                        df = df.loc[key]
-                    elif isinstance(key[1][0], Number):  # self[Any, [*Number]]
-                        df = df.iloc[key]
+                elif isinstance(key[1], slice):
+                    if key[1] == slice(None, None, None):
+                        # self[Any, :]
+                        output = self.values.__getitem__(key[0])
+                        metadata = _MetadataBase.__getitem__(self, key[0])
+
+                        if isinstance(key[0], Number):
+                            return IntervalSet(
+                                start=output[0], end=output[1], **metadata
+                            )
+                        else:
+                            return IntervalSet(
+                                start=output[:, 0],
+                                end=output[:, 1],
+                                **metadata.reset_index(drop=True),
+                            )
+
+                    elif key[1] == slice(0, 2, None):
+                        # self[Any, :2]
+                        # allow number indexing for start and end times for backward compatibility
+                        output = self.values.__getitem__(key[0])
+
+                        if isinstance(key[0], Number):
+                            return IntervalSet(start=output[0], end=output[1])
+                        else:
+                            return IntervalSet(start=output[:, 0], end=output[:, 1])
+
                     else:
                         raise IndexError(
-                            f"unknown data type {type(key[1][0])} for second index"
+                            f"index {key[1]} out of bounds for IntervalSet axis 1 with size 2"
                         )
 
                 else:
-                    raise IndexError(f"unknown type {type(key[1])} for second index")
-
-                # return interval set if start and end are present
-                if ("start" in df.keys()) and ("end" in df.keys()):
-                    if isinstance(df, pd.DataFrame):
-                        return IntervalSet(df.reset_index(drop=True))
-                    else:
-                        return IntervalSet(
-                            start=df["start"],
-                            end=df["end"],
-                            **df.drop(["start", "end"]),
-                        )
-                else:
-                    return df  # do we want to reset index here?
+                    raise IndexError(f"unknown type {type(key[1])} for index 2")
 
             else:
                 raise IndexError(
