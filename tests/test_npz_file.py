@@ -35,6 +35,10 @@ data = {
     "tsdframe": nap.TsdFrame(
         t=np.arange(100),
         d=np.random.rand(100, 10),
+    ),
+    "tsdframe_minfo": nap.TsdFrame(
+        t=np.arange(100),
+        d=np.random.rand(100, 10),
         minfo=np.ones(10),
     ),
     "tsgroup": nap.TsGroup(
@@ -42,9 +46,20 @@ data = {
             0: nap.Ts(t=np.arange(0, 200)),
             1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
             2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
-        }
+        },
+    ),
+    "tsgroup_minfo": nap.TsGroup(
+        {
+            0: nap.Ts(t=np.arange(0, 200)),
+            1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
+            2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
+        },
+        minfo=[1, 2, 3],
     ),
     "iset": nap.IntervalSet(start=np.array([0.0, 5.0]), end=np.array([1.0, 6.0])),
+    "iset_minfo": nap.IntervalSet(
+        start=np.array([0.0, 5.0]), end=np.array([1.0, 6.0]), minfo=[1, 2]
+    ),
 }
 for k, d in data.items():
     d.save(path / (k + ".npz"))
@@ -62,23 +77,36 @@ def test_init(path):
 
 
 @pytest.mark.parametrize("path", [path])
-@pytest.mark.parametrize("k", ["tsd", "ts", "tsdframe", "tsgroup", "iset"])
+@pytest.mark.parametrize(
+    "k",
+    [
+        "tsd",
+        "ts",
+        "tsdframe",
+        "tsdframe_minfo",
+        "tsgroup",
+        "tsgroup_minfo",
+        "iset",
+        "iset_minfo",
+    ],
+)
 def test_load(path, k):
     file_path = path / (k + ".npz")
     file = nap.NPZFile(file_path)
     tmp = file.load()
     assert isinstance(tmp, type(data[k]))
+    if hasattr(tmp, "metadata_columns") and len(tmp.metadata_columns):
+        pd.testing.assert_frame_equal(tmp._metadata, data[k]._metadata)
 
 
 @pytest.mark.parametrize("path", [path])
-@pytest.mark.parametrize("k", ["tsgroup"])
+@pytest.mark.parametrize("k", ["tsgroup", "tsgroup_minfo"])
 def test_load_tsgroup(path, k):
     file_path = path / (k + ".npz")
     file = nap.NPZFile(file_path)
     tmp = file.load()
     assert isinstance(tmp, type(data[k]))
     assert tmp.keys() == data[k].keys()
-    assert np.all(tmp._metadata == data[k]._metadata)
     assert np.all(tmp[neu] == data[k][neu] for neu in tmp.keys())
     np.testing.assert_array_almost_equal(
         tmp.time_support.values, data[k].time_support.values
@@ -113,7 +141,7 @@ def test_load_ts(path, k):
 
 
 @pytest.mark.parametrize("path", [path])
-@pytest.mark.parametrize("k", ["tsdframe"])
+@pytest.mark.parametrize("k", ["tsdframe", "tsdframe_minfo"])
 def test_load_tsdframe(path, k):
     file_path = path / (k + ".npz")
     file = nap.NPZFile(file_path)
@@ -125,7 +153,6 @@ def test_load_tsdframe(path, k):
     )
     assert np.all(tmp.columns == data[k].columns)
     assert np.all(tmp.d == data[k].d)
-    pd.testing.assert_frame_equal(tmp._metadata, data[k]._metadata)
 
 
 @pytest.mark.parametrize("path", [path])
