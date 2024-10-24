@@ -270,11 +270,6 @@ def tsdframe_meta():
     )
 
 
-def test_create_tsdframe_with_metadata():
-    # I reparameterized test_create_tsdframe to include an option metadata in `test_time_series.py`. Does it make sense to keep it there?
-    pass
-
-
 def test_tsdframe_metadata_slicing(tsdframe_meta):
     # test slicing obj[obj.mcol == mval] and obj[:, obj.mcol == mval], and that they produce the same results
     if len(tsdframe_meta.metadata_columns):
@@ -320,8 +315,6 @@ def test_tsdframe_add_metadata_error(tsdframe_meta, args, kwargs, expected):
 #############
 ## TsGroup ##
 #############
-def test_create_tsgroup_with_metadata():
-    pass
 
 
 ##################

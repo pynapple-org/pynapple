@@ -441,25 +441,6 @@ def test_add_TimeIntervals():
         data.values, np.array([[1.0, 5.0], [6.0, 10.0]])
     )
 
-    # Dict of epochs
-    nwbfile = mock_NWBFile()
-    nwbfile.add_trial_column(
-        name="correct",
-        description="whether the trial was correct",
-    )
-    nwbfile.add_trial(start_time=1.0, stop_time=5.0, correct=True)
-    nwbfile.add_trial(start_time=6.0, stop_time=10.0, correct=False)
-
-    nwb = nap.NWBFile(nwbfile)
-    assert len(nwb) == 1
-    assert "trials" in nwb.keys()
-    obj = nwbfile.trials
-    data = nwb["trials"]
-    assert isinstance(data, dict)
-    assert True in data.keys() and False in data.keys()
-    np.testing.assert_array_almost_equal(data[True].values, np.array([[1.0, 5.0]]))
-    np.testing.assert_array_almost_equal(data[False].values, np.array([[6.0, 10.0]]))
-
     # Dataframe
     nwbfile = mock_NWBFile()
     nwbfile.add_trial_column(
@@ -480,36 +461,6 @@ def test_add_TimeIntervals():
     data = nwb["trials"]
     assert isinstance(data, nap.IntervalSet)
     assert np.all(data.metadata_columns == ["correct", "label"])
-
-
-def test_add_Epochs():
-    # 1 epoch
-    nwbfile = mock_NWBFile()
-    nwbfile.add_epoch(
-        start_time=2.0,
-        stop_time=4.0,
-        tags=["first", "example"],
-        # timeseries=[time_series_with_timestamps],
-    )
-
-    nwbfile.add_epoch(
-        start_time=6.0,
-        stop_time=8.0,
-        tags=["second", "example"],
-        # timeseries=[time_series_with_timestamps],
-    )
-    nwb = nap.NWBFile(nwbfile)
-    assert len(nwb) == 1
-    assert "epochs" in nwb.keys()
-    obj = nwbfile.epochs
-    data = nwb["epochs"]
-    assert isinstance(data, dict)
-    np.testing.assert_array_almost_equal(
-        data["first-example"].values, np.array([[2.0, 4.0]])
-    )
-    np.testing.assert_array_almost_equal(
-        data["second-example"].values, np.array([[6.0, 8.0]])
-    )
 
 
 def test_add_Units():
