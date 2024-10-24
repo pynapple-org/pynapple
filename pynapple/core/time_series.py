@@ -758,16 +758,16 @@ class TsdTensor(_BaseTsd):
             if self.shape[0] > max_rows:
                 n_rows = max_rows // 2
                 for i, array in zip(self.index[0:n_rows], self.values[0:n_rows]):
-                    _str_.append([i.__repr__(), create_str(array)])
+                    _str_.append([i, create_str(array)])
                 _str_.append(["...", ""])
                 for i, array in zip(
                     self.index[-n_rows:],
                     self.values[self.values.shape[0] - n_rows : self.values.shape[0]],
                 ):
-                    _str_.append([i.__repr__(), create_str(array)])
+                    _str_.append([i, create_str(array)])
             else:
                 for i, array in zip(self.index, self.values):
-                    _str_.append([i.__repr__(), create_str(array)])
+                    _str_.append([i, create_str(array)])
 
             return tabulate(_str_, headers=headers, colalign=("left",)) + "\n" + bottom
 
@@ -1471,12 +1471,12 @@ class Ts(_Base):
         if len(self) > max_rows:
             n_rows = max_rows // 2
             _str_ = "\n".join(
-                [i.__repr__() for i in self.index[0:n_rows]]
+                [str(i) for i in self.index[0:n_rows]]
                 + ["..."]
-                + [i.__repr__() for i in self.index[-n_rows:]]
+                + [str(i) for i in self.index[-n_rows:]]
             )
         else:
-            _str_ = "\n".join([i.__repr__() for i in self.index])
+            _str_ = "\n".join([str(i) for i in self.index])
 
         bottom = "shape: {}".format(len(self.index))
         return "\n".join((upper, _str_, bottom))

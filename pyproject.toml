@@ -56,6 +56,10 @@ dev = [
     "coverage",                     # Test coverage measurement
 ]
 doc = [
+    "matplotlib",
+    "zarr",
+    "seaborn",
+    "tqdm",
     "numpydoc",
     "sphinx",
     "pydata-sphinx-theme",

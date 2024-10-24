@@ -3,17 +3,14 @@ User guide
 
 :::{card} Getting started
 ```{toctree}
+:maxdepth: 3
 Introduction to pynapple <user_guide/01_introduction_to_pynapple>
 ```
-```{toctree}
-Quickstart <user_guide/04_quickstart>
-```
-
 :::
 
 :::{card} Input-output
 ```{toctree}
-Loading data <user_guide/02_loading_data>
+Input-output & lazy-loading <user_guide/02_input_output>
 ```
 :::
 
