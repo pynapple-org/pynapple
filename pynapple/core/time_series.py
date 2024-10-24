@@ -902,7 +902,7 @@ class TsdFrame(BaseTsd, _MetadataBase):
             Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
             Default is True. Does not apply if `d` is already a numpy array.
         **kwargs : dict, optional
-            Additional keyword arguments for metadata
+            Additional keyword arguments for labelling with metadata columns of the TsdFrame. The metadata should be the same length as the number of columns of the TsdFrame.
         """
 
         c = columns

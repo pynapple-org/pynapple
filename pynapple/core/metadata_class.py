@@ -82,7 +82,6 @@ class _MetadataBase:
             )
 
     def __setitem__(self, key, value):
-        # technically trying to construct a dictionary will also enforce that the key is a string
         if not isinstance(key, str):
             raise TypeError("Metadata keys must be strings!")
         self.set_info(**{key: value})
@@ -100,7 +99,7 @@ class _MetadataBase:
     def _raise_invalid_metadata_column_name(self, name):
         if not isinstance(name, str):
             raise TypeError(
-                f"Invalid metadata type {type(name)}. Metadata names must be strings!"
+                f"Invalid metadata type {type(name)}. Metadata column names must be strings!"
             )
         if hasattr(self, name) and (name not in self.metadata_columns):
             # existing non-metadata attribute
@@ -242,7 +241,6 @@ class _MetadataBase:
     def get_info(self, key):
         """
         Returns the metainfo located in one column.
-        The key for the column frequency is "rate".
 
         Parameters
         ----------
