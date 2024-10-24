@@ -91,40 +91,12 @@ def _make_interval_set(obj, **kwargs):
         df = obj.to_dataframe()
 
         if hasattr(df, "start_time") and hasattr(df, "stop_time"):
-            if df.shape[1] == 2:
-                data = nap.IntervalSet(start=df["start_time"], end=df["stop_time"])
-                return data
+            data = nap.IntervalSet(start=df["start_time"], end=df["stop_time"])
+            if df.shape[1] > 2:
+                metadata = df.drop(columns=["start_time", "stop_time"])
+                data.set_info(metadata)
+            return data
 
-            group_by_key = None
-            if "tags" in df.columns:
-                group_by_key = "tags"
-
-            elif df.shape[1] == 3:  # assuming third column is the tag
-                group_by_key = df.columns[2]
-
-            if group_by_key:
-                for i in df.index:
-                    if isinstance(df.loc[i, group_by_key], (list, tuple, np.ndarray)):
-                        df.loc[i, group_by_key] = "-".join(
-                            [str(j) for j in df.loc[i, group_by_key]]
-                        )
-
-                data = {}
-                for k, subdf in df.groupby(group_by_key):
-                    data[k] = nap.IntervalSet(
-                        start=subdf["start_time"], end=subdf["stop_time"]
-                    )
-                if len(data) == 1:
-                    return data[list(data.keys())[0]]
-                else:
-                    return data
-
-            else:
-                warnings.warn(
-                    "Too many metadata. Returning pandas.DataFrame, not IntervalSet",
-                    stacklevel=2,
-                )
-                return df  # Too many metadata to split the epoch
     else:
         return obj
 
