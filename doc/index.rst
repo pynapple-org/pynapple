@@ -10,7 +10,7 @@ pynapple: python neural analysis package
 
    .. grid-item::
 
-      Pynapple is a light-weight python library for 
+      Pynapple is a light-weight python library for
       neurophysiological data analysis. 
 
       The goal is to offer a versatile set of tools to 
@@ -21,6 +21,20 @@ pynapple: python neural analysis package
       It also provides users with generic functions for 
       neuroscience such as tuning curves, cross-correlograms 
       and filtering.
+
+      .. grid:: auto
+
+         .. button-ref:: installing
+            :color: primary
+            :shadow:
+
+            Installing
+
+         .. button-ref:: user_guide/01_introduction_to_pynapple
+            :color: primary
+            :shadow:
+
+            Getting started
 
    .. grid-item-card:: Contents
       :class-title: sd-fs-5
