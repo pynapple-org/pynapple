@@ -13,6 +13,16 @@ kernelspec:
 
 # Tuning curves
 
+Pynapple can compute 1 dimension tuning curves 
+(for example firing rate as a function of angular direction) 
+and 2 dimension tuning curves ( for example firing rate as a function 
+of position).
+
+:::{important}
+If you are using calcium imaging data with the activity of the cell as a continuous transient, the function to call ends with `_continuous` for continuous time series (e.g. `compute_1d_tuning_curves_continuous`).
+:::
+
+
 ```{code-cell} ipython3
 :tags: [hide-cell]
 import pynapple as nap
@@ -23,13 +33,19 @@ custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
 ```
 
-## Tuning curves from timestamps data.
+## ..from epochs
 
-pynapple can compute 1 dimension tuning curves 
-(for example firing rate as a function of angular direction) 
-and 2 dimension tuning curves ( for example firing rate as a function 
-of position). In both cases, a `TsGroup` object can be directly 
-passed to the function.
+## ... from timestamps activity
+  
+### 1-dimension tuning curves
+
+### 2-dimension tuning curves
+
+## ... from continuous activity
+
+### 1-dimension tuning curves
+
+### 2-dimension tuning curves
 
 
 First we will create the 2D features:
@@ -87,6 +103,3 @@ plt.ylabel("feature b")
 plt.grid(False)
 plt.show()
 ```
-
-
-## Tuning curves of continuous data

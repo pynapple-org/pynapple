@@ -13,6 +13,8 @@ kernelspec:
 
 # Perievent
 
+The perievent module allows to re-center time series and timestamps data around a particular event as well as computing events (spikes) trigger average.
+
 ```{code-cell} ipython3
 :tags: [hide-cell]
 import pynapple as nap
@@ -37,14 +39,19 @@ ts1 = nap.Ts(t=np.sort(np.random.uniform(0, 1000, 2000)), time_units="s")
 The function `compute_perievent` align timestamps to a particular set of timestamps.
 
 ```{code-cell} ipython3
-peth = nap.compute_perievent(ts1, stim, minmax=(-0.1, 0.2), time_unit="s")
+peth = nap.compute_perievent(
+  data=ts1, 
+  tref=stim, 
+  minmax=(-0.1, 0.2), 
+  time_unit="s")
+
 print(peth)
 ```
 
 The returned object is a `TsGroup`. The column `ref_times` is a 
 metadata column that indicates the center timestamps.
 
-## Raster plot
+### Raster plot
 
 It is then easy to create a raster plot around the times of the 
 stimulation event by calling the `to_tsd` function of pynapple 
@@ -66,7 +73,65 @@ plt.axvline(0.0)
 ```
 
 The same function can be applied to a group of neurons. 
-In this case, it returns a dict of TsGroup
+In this case, it returns a dict of `TsGroup`
+
+## Event trigger average
+
+The function `compute_event_trigger_average` compute the average feature around a particular event time.
+
+```{code-cell}
+:tags: [hide-cell]
+
+group = {
+    0: nap.Ts(t=np.sort(np.random.uniform(0, 100, 10))),
+    1: nap.Ts(t=np.sort(np.random.uniform(0, 100, 20))),
+    2: nap.Ts(t=np.sort(np.random.uniform(0, 100, 30))),
+}
+
+tsgroup = nap.TsGroup(group)
+```
+```{code-cell}
+eta = nap.compute_event_trigger_average(
+  group=tsgroup, 
+  feature=stim, 
+  binsize=0.1, 
+  windowsize=(-1, 1))
+
+print(eta)
+```
+
 
 ## Peri-Event continuous time series
+
+The function `nap.compute_perievent_continuous` align a time series of any dimensions around events.
+
+```{code-cell}
+:tags: [hide-cell]
+
+features = nap.TsdFrame(t=np.arange(0, 100), d=np.random.randn(100,6))
+events = nap.Ts(t=np.sort(np.random.uniform(0, 100, 5)))
+```
+
+```{code-cell}
+
+perievent = nap.compute_perievent_continuous(
+  data=features, 
+  tref=events, 
+  minmax=(-1, 1))
+
+print(perievent)
+```
+
+The object perievent is now of shape (number of bins, (dimensions of input), number of events ) : 
+
+
+```{code-cell}
+print(perievent.shape)
+```
+
+
+
+
+
+
 

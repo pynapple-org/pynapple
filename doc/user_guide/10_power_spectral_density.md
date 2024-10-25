@@ -14,29 +14,17 @@ kernelspec:
 Power spectral density
 ======================
 
-See the [documentation](https://pynapple-org.github.io/pynapple/) of Pynapple for instructions on installing the package.
-
-+++
-
-!!! warning
-    This tutorial uses matplotlib for displaying the figure
-
-    You can install all with `pip install matplotlib requests tqdm seaborn`
-
-Now, import the necessary libraries:
-
-mkdocs_gallery_thumbnail_number = 3
-
 
 ```{code-cell} ipython3
-import matplotlib.pyplot as plt
-import numpy as np
-import seaborn
-
-seaborn.set_theme()
-
+:tags: [hide-input]
 import pynapple as nap
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
 ```
+
 
 ***
 Generating a signal
@@ -57,10 +45,9 @@ sig = nap.Tsd(
     )
 ```
 
-Let's plot it
-
-
 ```{code-cell} ipython3
+:tags: [hide-cell]
+
 plt.figure()
 plt.plot(sig.get(0, 0.4))
 plt.title("Signal")
@@ -140,6 +127,8 @@ Let's compare `mean_psd` to `psd`. In both cases, the ouput is normalized.
 
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 plt.figure()
 plt.plot(np.abs(psd), label='PSD')
 plt.plot(np.abs(mean_psd), label='Mean PSD (10s)')

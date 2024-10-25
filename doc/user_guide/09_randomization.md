@@ -24,7 +24,7 @@ sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_par
 ```
 
 Pynapple provides some ready-to-use randomization methods to compute null distributions for statistical testing.
-Different methods preserve or destroy different features of the data, here's a brief overview.
+Different methods preserve or destroy different features of the data.
 
 ## Shift timestamps
 

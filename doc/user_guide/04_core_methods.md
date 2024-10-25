@@ -107,3 +107,5 @@ plt.show()
 
 ### `threshold`
 
+
+## Mapping between `TsGroup` and `Tsd`

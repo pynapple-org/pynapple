@@ -52,5 +52,9 @@ Power spectral density <user_guide/10_power_spectral_density>
 ```{toctree}
 Wavelet decomposion <user_guide/11_wavelets>
 ```
+
+```{toctree}
+Filtering time series <user_guide/12_filtering>
+```
 :::
 

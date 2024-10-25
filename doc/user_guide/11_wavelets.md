@@ -11,11 +11,6 @@ kernelspec:
   name: python3
 ---
 
-```{code-cell} ipython3
-%matplotlib inline
-```
-
-
 Wavelet Transform
 =================
 
@@ -26,30 +21,15 @@ and develop over time, wavelet decompositions can aid both visualization and ana
 
 The function `nap.generate_morlet_filterbank` can help parametrize and visualize the Morlet wavelets.
 
-See the [documentation](https://pynapple-org.github.io/pynapple/) of Pynapple for instructions on installing the package.
-
-This tutorial was made by [Kipp Freud](https://kippfreud.com/).
-
-+++
-
-!!! warning
-    This tutorial uses matplotlib for displaying the figure
-
-    You can install all with `pip install matplotlib requests tqdm seaborn`
-
-mkdocs_gallery_thumbnail_number = 9
-
-Now, import the necessary libraries:
-
 
 ```{code-cell} ipython3
-import matplotlib.pyplot as plt
-import numpy as np
-import seaborn
-
-seaborn.set_theme()
-
+:tags: [hide-cell]
 import pynapple as nap
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
 ```
 
 ***
@@ -73,10 +53,8 @@ sig = nap.Tsd(
 )
 ```
 
-Lets plot it.
-
-
 ```{code-cell} ipython3
+:tags: [hide-input]
 fig, ax = plt.subplots(3, constrained_layout=True, figsize=(10, 5))
 ax[0].plot(t, two_hz_component)
 ax[0].set_title("2Hz Component")
@@ -91,11 +69,11 @@ ax[2].set_title("Dummy Signal")
 ```
 
 ***
-Getting our Morlet Wavelet Filter Bank
-------------------
+Visualizing the Morlet Wavelets
+-------------------------------
 We will be decomposing our dummy signal using wavelets of different frequencies. These wavelets
 can be examined using the `generate_morlet_filterbank` function. Here we will use the default parameters
-to define a Morlet filter bank with which we will later use to deconstruct the signal.
+to define a Morlet filter bank. This function is a good way to visually inspect the quality of the wavelets.
 
 
 ```{code-cell} ipython3
@@ -105,17 +83,20 @@ freqs = np.linspace(1, 25, num=25)
 filter_bank = nap.generate_morlet_filterbank(
     freqs, Fs, gaussian_width=1.5, window_length=1.0
 )
+
+print(filter_bank)
 ```
 
-Lets plot it some of the wavelets.
+`filter_bank` is a `TsdFrame`.
 
 
 ```{code-cell} ipython3
+:tags: [hide-input]
 def plot_filterbank(filter_bank, freqs, title):
     fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 7))
     for f_i in range(filter_bank.shape[1]):
         ax.plot(filter_bank[:, f_i].real() + f_i * 1.5)
-        ax.text(-5.5, 1.5 * f_i, f"{np.round(freqs[f_i], 2)}Hz", va="center", ha="left")
+        ax.text(-6.8, 1.5 * f_i, f"{np.round(freqs[f_i], 2)}Hz", va="center", ha="left")
 
     ax.set_yticks([])
     ax.set_xlim(-5, 5)
@@ -128,180 +109,15 @@ plot_filterbank(filter_bank, freqs, title)
 ```
 
 ***
-Continuous wavelet transform
-----------------------------
-Here we will use the `compute_wavelet_transform` function to decompose our signal using the filter bank shown
-above. Wavelet decomposition breaks down a signal into its constituent wavelets, capturing both time and
-frequency information for analysis. We will calculate this decomposition and plot it's corresponding
-scalogram (which is another name for time frequency decomposition using wavelets).
-
-
-```{code-cell} ipython3
-# Compute the wavelet transform using the parameters above
-mwt = nap.compute_wavelet_transform(
-    sig, fs=Fs, freqs=freqs, gaussian_width=1.5, window_length=1.0
-)
-```
-
-`mwt` for Morlet wavelet transform is a `TsdFrame`. Each column is the result of the convolution of the signal with one wavelet.
-
-
-```{code-cell} ipython3
-print(mwt)
-```
-
-Lets plot it.
-
-
-```{code-cell} ipython3
-def plot_timefrequency(freqs, powers, ax=None):
-    im = ax.imshow(np.abs(powers), aspect="auto")
-    ax.invert_yaxis()
-    ax.set_xlabel("Time (s)")
-    ax.set_ylabel("Frequency (Hz)")
-    ax.get_xaxis().set_visible(False)
-    ax.set(yticks=[np.argmin(np.abs(freqs - val)) for val in freqs], yticklabels=freqs)
-    ax.grid(False)
-    return im
-
-
-fig = plt.figure(constrained_layout=True, figsize=(10, 6))
-fig.suptitle("Wavelet Decomposition")
-gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 0.3])
-
-ax0 = plt.subplot(gs[0, 0])
-im = plot_timefrequency(freqs[:], np.transpose(mwt[:, :].values), ax=ax0)
-cbar = fig.colorbar(im, ax=ax0, orientation="vertical")
-
-ax1 = plt.subplot(gs[1, 0])
-ax1.plot(sig)
-ax1.set_ylabel("Signal")
-ax1.set_xlabel("Time (s)")
-ax1.margins(0)
-```
-
-***
-Reconstructing the Slow Oscillation and Phase
-------------------
-We can see that the decomposition has picked up on the 2Hz component of the signal, as well as the component with
-increasing frequency. In this section, we will extract just the 2Hz component from the wavelet decomposition,
-and see how it compares to the original section.
-
-
-```{code-cell} ipython3
-# Get the index of the 2Hz frequency
-two_hz_freq_idx = np.where(freqs == 2.0)[0]
-# The 2Hz component is the real component of the wavelet decomposition at this index
-slow_oscillation = np.real(mwt[:, two_hz_freq_idx])
-# The 2Hz wavelet phase is the angle of the wavelet decomposition at this index
-slow_oscillation_phase = np.angle(mwt[:, two_hz_freq_idx])
-```
-
-Lets plot it.
-
-
-```{code-cell} ipython3
-fig = plt.figure(constrained_layout=True, figsize=(10, 4))
-axd = fig.subplot_mosaic(
-    [["signal"], ["phase"]],
-    height_ratios=[1, 0.4],
-)
-axd["signal"].plot(sig, label="Raw Signal", alpha=0.5)
-axd["signal"].plot(slow_oscillation, label="2Hz Reconstruction")
-axd["signal"].legend()
-axd["signal"].set_ylabel("Signal")
-
-axd["phase"].plot(slow_oscillation_phase, alpha=0.5)
-axd["phase"].set_ylabel("Phase (rad)")
-axd["phase"].set_xlabel("Time (s)")
-[axd[k].margins(0) for k in ["signal", "phase"]]
-```
-
-***
-Adding in the 15Hz Oscillation
-------------------
-Let's see what happens if we also add the 15 Hz component of the wavelet decomposition to the reconstruction. We
-will extract the 15 Hz components, and also the 15Hz wavelet power over time. The wavelet power tells us to what
-extent the 15 Hz frequency is present in our signal at different times.
-
-Finally, we will add this 15 Hz reconstruction to the one shown above, to see if it improves out reconstructed
-signal.
-
-
-```{code-cell} ipython3
-# Get the index of the 15 Hz frequency
-fifteen_hz_freq_idx = np.where(freqs == 15.0)[0]
-# The 15 Hz component is the real component of the wavelet decomposition at this index
-fifteenHz_oscillation = np.real(mwt[:, fifteen_hz_freq_idx])
-# The 15 Hz poser is the absolute value of the wavelet decomposition at this index
-fifteenHz_oscillation_power = np.abs(mwt[:, fifteen_hz_freq_idx])
-```
-
-Lets plot it.
-
-
-```{code-cell} ipython3
-fig = plt.figure(constrained_layout=True, figsize=(10, 4))
-gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 1.0])
-
-ax0 = plt.subplot(gs[0, 0])
-ax0.plot(fifteenHz_oscillation, label="15Hz Reconstruction")
-ax0.plot(fifteenHz_oscillation_power, label="15Hz Power")
-ax0.set_xticklabels([])
-
-ax1 = plt.subplot(gs[1, 0])
-ax1.plot(sig, label="Raw Signal", alpha=0.5)
-ax1.plot(
-    slow_oscillation + fifteenHz_oscillation.values, label="2Hz + 15Hz Reconstruction"
-)
-ax1.set_xlabel("Time (s)")
-
-[
-    (a.margins(0), a.legend(), a.set_ylim(-2.5, 2.5), a.set_ylabel("Signal"))
-    for a in [ax0, ax1]
-]
-```
-
-***
-Adding ALL the Oscillations!
-------------------
-We will now learn how to interpret the parameters of the wavelet, and in particular how to trade off the
-accuracy in the frequency decomposition with the accuracy in the time domain reconstruction;
-
-
-```{code-cell} ipython3
-# Up to this point we have used default wavelet and normalization parameters.
-#
-# Let's now add together the real components of all frequency bands to recreate a version of the original signal.
-
-combined_oscillations = np.real(np.sum(mwt, axis=1))
-```
-
-Lets plot it.
-
-
-```{code-cell} ipython3
-fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
-ax.plot(sig, alpha=0.5, label="Signal")
-ax.plot(combined_oscillations, label="Wavelet Reconstruction", alpha=0.5)
-ax.set_xlabel("Time (s)")
-ax.set_ylabel("Signal")
-ax.set_title("Wavelet Reconstruction of Signal")
-ax.set_ylim(-6, 6)
-ax.margins(0)
-ax.legend()
-```
-
-***
-Parametrization
-------------------
-Our reconstruction seems to get the amplitude modulations of our signal correct, but the amplitude is overestimated,
-in particular towards the end of the time period. Often, this is due to a suboptimal choice of parameters, which
-can lead to a low spatial or temporal resolution. Let's visualize what changing our parameters does to the
+Parametrizing the wavelets
+--------------------------
+Let's visualize what changing our parameters does to the
 underlying wavelets.
 
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 window_lengths = [1.0, 3.0]
 gaussian_widths = [1.0, 3.0]
 colors = np.array([["r", "g"], ["b", "y"]])
@@ -348,7 +164,168 @@ component of the wavelet
 Both of these parameters can be tweaked to control for the trade-off between time resolution and frequency resolution.
 
 
-+++
+***
+Continuous wavelet transform
+----------------------------
+Here we will use the `compute_wavelet_transform` function to decompose our signal using the filter bank shown
+above. Wavelet decomposition breaks down a signal into its constituent wavelets, capturing both time and
+frequency information for analysis. We will calculate this decomposition and plot it's corresponding
+scalogram (which is another name for time frequency decomposition using wavelets).
+
+
+```{code-cell} ipython3
+# Compute the wavelet transform using the parameters above
+mwt = nap.compute_wavelet_transform(
+    sig, fs=Fs, freqs=freqs, gaussian_width=1.5, window_length=1.0
+)
+```
+
+`mwt` for Morlet wavelet transform is a `TsdFrame`. Each column is the result of the convolution of the signal with one wavelet.
+
+
+```{code-cell} ipython3
+print(mwt)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+
+def plot_timefrequency(freqs, powers, ax=None):
+    im = ax.imshow(np.abs(powers), aspect="auto")
+    ax.invert_yaxis()
+    ax.set_xlabel("Time (s)")
+    ax.set_ylabel("Frequency (Hz)")
+    ax.get_xaxis().set_visible(False)
+    ax.set(yticks=[np.argmin(np.abs(freqs - val)) for val in freqs[::2]], yticklabels=freqs[::2])
+    ax.grid(False)
+    return im
+
+
+fig = plt.figure(constrained_layout=True, figsize=(10, 6))
+fig.suptitle("Wavelet Decomposition")
+gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 0.3])
+
+ax0 = plt.subplot(gs[0, 0])
+im = plot_timefrequency(freqs[:], np.transpose(mwt[:, :].values), ax=ax0)
+cbar = fig.colorbar(im, ax=ax0, orientation="vertical")
+
+ax1 = plt.subplot(gs[1, 0])
+ax1.plot(sig)
+ax1.set_ylabel("Signal")
+ax1.set_xlabel("Time (s)")
+ax1.margins(0)
+```
+
+We can see that the decomposition has picked up on the 2Hz component of the signal, as well as the component with
+increasing frequency. In this section, we will extract just the 2Hz component from the wavelet decomposition,
+and see how it compares to the original section.
+
+
+```{code-cell} ipython3
+# Get the index of the 2Hz frequency
+two_hz_freq_idx = np.where(freqs == 2.0)[0]
+# The 2Hz component is the real component of the wavelet decomposition at this index
+slow_oscillation = np.real(mwt[:, two_hz_freq_idx])
+# The 2Hz wavelet phase is the angle of the wavelet decomposition at this index
+slow_oscillation_phase = np.angle(mwt[:, two_hz_freq_idx])
+```
+
+
+```{code-cell} ipython3
+:tags: [hide-input]
+
+fig = plt.figure(constrained_layout=True, figsize=(10, 4))
+axd = fig.subplot_mosaic(
+    [["signal"], ["phase"]],
+    height_ratios=[1, 0.4],
+)
+axd["signal"].plot(sig, label="Raw Signal", alpha=0.5)
+axd["signal"].plot(slow_oscillation, label="2Hz Reconstruction")
+axd["signal"].legend()
+axd["signal"].set_ylabel("Signal")
+
+axd["phase"].plot(slow_oscillation_phase, alpha=0.5)
+axd["phase"].set_ylabel("Phase (rad)")
+axd["phase"].set_xlabel("Time (s)")
+[axd[k].margins(0) for k in ["signal", "phase"]]
+```
+
+Let's see what happens if we also add the 15 Hz component of the wavelet decomposition to the reconstruction. We
+will extract the 15 Hz components, and also the 15Hz wavelet power over time. The wavelet power tells us to what
+extent the 15 Hz frequency is present in our signal at different times.
+
+Finally, we will add this 15 Hz reconstruction to the one shown above, to see if it improves out reconstructed
+signal.
+
+
+```{code-cell} ipython3
+# Get the index of the 15 Hz frequency
+fifteen_hz_freq_idx = np.where(freqs == 15.0)[0]
+# The 15 Hz component is the real component of the wavelet decomposition at this index
+fifteenHz_oscillation = np.real(mwt[:, fifteen_hz_freq_idx])
+# The 15 Hz poser is the absolute value of the wavelet decomposition at this index
+fifteenHz_oscillation_power = np.abs(mwt[:, fifteen_hz_freq_idx])
+```
+
+
+```{code-cell} ipython3
+:tags: [hide-input]
+
+fig = plt.figure(constrained_layout=True, figsize=(10, 4))
+gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 1.0])
+
+ax0 = plt.subplot(gs[0, 0])
+ax0.plot(fifteenHz_oscillation, label="15Hz Reconstruction")
+ax0.plot(fifteenHz_oscillation_power, label="15Hz Power")
+ax0.set_xticklabels([])
+
+ax1 = plt.subplot(gs[1, 0])
+ax1.plot(sig, label="Raw Signal", alpha=0.5)
+ax1.plot(
+    slow_oscillation + fifteenHz_oscillation.values, label="2Hz + 15Hz Reconstruction"
+)
+ax1.set_xlabel("Time (s)")
+
+[
+    (a.margins(0), a.legend(), a.set_ylim(-2.5, 2.5), a.set_ylabel("Signal"))
+    for a in [ax0, ax1]
+]
+```
+
+We will now learn how to interpret the parameters of the wavelet, and in particular how to trade off the
+accuracy in the frequency decomposition with the accuracy in the time domain reconstruction;
+
+Up to this point we have used default wavelet and normalization parameters.
+
+Let's now add together the real components of all frequency bands to recreate a version of the original signal.
+
+
+```{code-cell} ipython3
+
+
+combined_oscillations = np.real(np.sum(mwt, axis=1))
+```
+
+
+```{code-cell} ipython3
+:tags: [hide-input]
+
+fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
+ax.plot(sig, alpha=0.5, label="Signal")
+ax.plot(combined_oscillations, label="Wavelet Reconstruction", alpha=0.5)
+ax.set_xlabel("Time (s)")
+ax.set_ylabel("Signal")
+ax.set_title("Wavelet Reconstruction of Signal")
+ax.set_ylim(-6, 6)
+ax.margins(0)
+ax.legend()
+```
+
+Our reconstruction seems to get the amplitude modulations of our signal correct, but the amplitude is overestimated,
+in particular towards the end of the time period. Often, this is due to a suboptimal choice of parameters, which
+can lead to a low spatial or temporal resolution. 
+
+
 
 ***
 Effect of `gaussian_width`
@@ -377,6 +354,11 @@ Let's see what effect this has on the Wavelet Scalogram which is generated...
 mwt = nap.compute_wavelet_transform(
     sig, fs=Fs, freqs=freqs, gaussian_width=7.5, window_length=1.0
 )
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+
 
 fig = plt.figure(constrained_layout=True, figsize=(10, 6))
 fig.suptitle("Wavelet Decomposition")
@@ -405,6 +387,8 @@ Lets plot it.
 
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
 ax.plot(sig, alpha=0.5, label="Signal")
 ax.plot(t, combined_oscillations, label="Wavelet Reconstruction", alpha=0.5)
@@ -449,6 +433,10 @@ Let's see what effect this has on the Wavelet Scalogram which is generated...
 mwt = nap.compute_wavelet_transform(
     sig, fs=Fs, freqs=freqs, gaussian_width=7.5, window_length=2.0
 )
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
 
 fig = plt.figure(constrained_layout=True, figsize=(10, 6))
 fig.suptitle("Wavelet Decomposition")
@@ -473,10 +461,10 @@ And let's see if that has an effect on the reconstructed version of the signal
 combined_oscillations = np.real(np.sum(mwt, axis=1))
 ```
 
-Lets plot it.
-
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
 ax.plot(sig, alpha=0.5, label="Signal")
 ax.plot(combined_oscillations, label="Wavelet Reconstruction", alpha=0.5)
@@ -506,17 +494,21 @@ Let's compare two wavelet decomposition, each generated with a different normali
 
 ```{code-cell} ipython3
 mwt_l1 = nap.compute_wavelet_transform(
-    sig, fs=Fs, freqs=freqs, gaussian_width=7.5, window_length=2.0, norm="l1"
+    sig, fs=Fs, freqs=freqs, 
+    gaussian_width=7.5, window_length=2.0, 
+    norm="l1"
 )
 mwt_l2 = nap.compute_wavelet_transform(
-    sig, fs=Fs, freqs=freqs, gaussian_width=7.5, window_length=2.0, norm="l2"
+    sig, fs=Fs, freqs=freqs, 
+    gaussian_width=7.5, window_length=2.0, 
+    norm="l2"
 )
 ```
 
-Let's plot both the scalograms and see the difference.
-
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 fig = plt.figure(constrained_layout=True, figsize=(10, 6))
 fig.suptitle("Wavelet Decomposition - L1 Normalization")
 gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 0.3])
@@ -552,10 +544,10 @@ combined_oscillations_l1 = np.real(np.sum(mwt_l1, axis=1))
 combined_oscillations_l2 = np.real(np.sum(mwt_l2, axis=1))
 ```
 
-Lets plot it.
-
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
 ax.plot(sig, label="Signal", linewidth=3, alpha=0.6, c="b")
 ax.plot(combined_oscillations_l1, label="Wavelet Reconstruction (L1)", c="g", alpha=0.6)
@@ -570,3 +562,13 @@ ax.legend()
 
 We see that the reconstruction from the L2 normalized decomposition matched the original signal much more closely,
 this is due to the fact that L2 normalization preserved the energy of the original signal in its reconstruction.
+
+:::{card}
+Authors
+^^^
+Kipp Freud](https://kippfreud.com/)
+
+Guillaume Viejo
+
+:::
+
