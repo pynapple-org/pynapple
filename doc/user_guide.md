@@ -18,15 +18,39 @@ Input-output & lazy-loading <user_guide/02_input_output>
 ```{toctree}
 Interaction with numpy <user_guide/03_interacting_with_numpy>
 ```
+
+```{toctree}
+Core methods <user_guide/04_core_methods>
+```
 :::
 
 :::{card} High-level analysis
 ```{toctree}
-Power spectral density <user_guide/pynapple_power_spectral_density>
+Correlograms of discrete events <user_guide/05_correlograms>
 ```
 
 ```{toctree}
-Wavelet decomposion <user_guide/pynapple_wavelets>
+Tuning curves <user_guide/06_tuning_curves>
+```
+
+```{toctree}
+Decoding <user_guide/07_decoding>
+```
+
+```{toctree}
+Perievent <user_guide/08_perievent>
+```
+
+```{toctree}
+Randomization <user_guide/09_randomization>
+```
+
+```{toctree}
+Power spectral density <user_guide/10_power_spectral_density>
+```
+
+```{toctree}
+Wavelet decomposion <user_guide/11_wavelets>
 ```
 :::
 

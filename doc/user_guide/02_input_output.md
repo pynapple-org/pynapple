@@ -130,7 +130,39 @@ z = data['z']
 print(type(z.d))
 ```
 
-## Numpy memory map
+## Saving as NPZ
+
+Pynapple objects have `save` methods to save them as npz files. 
+
+```{code-cell} ipython3
+tsd = nap.Tsd(t=np.arange(10), d=np.arange(10))
+tsd.save("my_tsd.npz")
+
+print(nap.load_file("my_tsd.npz"))
+```
+
+To load  a NPZ to pynapple, it must contain particular set of keys.
+
+```{code-cell} ipython3
+print(np.load("my_tsd.npz"))
+```
+
+When the pynapple object have metadata, they are added to the NPZ file.
+
+```{code-cell} ipython3
+tsgroup = nap.TsGroup({
+    0:nap.Ts(t=[0,1,2]),
+    1:nap.Ts(t=[0,1,2])
+    }, my_label = ["a", "b"])
+tsgroup.save("group")
+
+print(np.load("group.npz"))
+print(np.load("group.npz")["my_label"])
+```
+
+## Memory map
+
+### Numpy memory map
 
 Pynapple can work with [`numpy.memmap`](https://numpy.org/doc/stable/reference/generated/numpy.memmap.html).
 
@@ -165,7 +197,7 @@ We can check the type of `eeg.values`.
 print(type(eeg.values))
 ```
 
-## Zarr
+### Zarr
 
 It is possible to use Higher level library like [zarr](https://zarr.readthedocs.io/en/stable/index.html) also not directly.
 
@@ -252,4 +284,52 @@ project = nap.load_folder(project_path)
 print(project)
 ```
 
+The pynapple IO offers a convenient way of visualizing and navigating a folder 
+based dataset. To visualize the whole hierarchy of Folders, you can call the 
+view property or the expand function.
 
+```{code-cell} ipython3
+
+project.view
+
+```
+
+Here it shows all the subjects (in this case only A2929), 
+all the sessions and all of the derivatives folders. 
+It shows as well all the NPZ files that contains a pynapple object 
+and the NWB files.
+
+The object project behaves like a nested dictionary. 
+It is then easy to loop and navigate through a hierarchy of folders 
+when doing analyses. In this case, we are gonna take only the 
+session A2929-200711.
+
+```{code-cell} ipython3
+session = project["sub-A2929"]["A2929-200711"]
+print(session)
+```
+
+The Folder view gives the path to any object. It can then be easily loaded.
+
+```{code-cell} ipython3
+print(project["sub-A2929"]["A2929-200711"]["pynapplenwb"]["A2929-200711"])
+```
+### JSON sidecar file
+
+A good practice for sharing datasets is to write as many 
+metainformation as possible. Following 
+[BIDS](https://bids-standard.github.io/bids-starter-kit/index.html) 
+specifications, any data files should be accompagned by a JSON sidecar file.
+
+This is possible using the `Folder` class of pynapple with the argument `description`.
+
+```{code-cell} ipython3
+epoch = nap.IntervalSet(start=np.array([0, 3]), end=np.array([1, 6]))
+session.save("stimulus-fish", epoch, description="Fish pictures to V1")
+```
+
+It is then possible to read the description with the `doc` method of the `Folder` object.
+
+```{code-cell} ipython3
+session.doc("stimulus-fish")
+```
