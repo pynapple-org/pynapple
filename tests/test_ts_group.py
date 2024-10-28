@@ -188,7 +188,7 @@ class TestTsGroup1:
         tsgroup = nap.TsGroup(group)
         df_info = pd.DataFrame(index=[4, 5, 6], data=[0, 0, 0], columns=["df"])
 
-        with pytest.raises(RuntimeError) as e_info:
+        with pytest.raises(ValueError) as e_info:
             tsgroup.set_info(df_info)
         assert str(e_info.value) == "Metadata index does not match"
 
@@ -726,14 +726,14 @@ class TestTsGroup1:
             (
                 np.arange(1),
                 pytest.raises(
-                    RuntimeError,
+                    ValueError,
                     match="input array length 1 does not match metadata length 3.",
                 ),
             ),
             (
                 np.arange(2),
                 pytest.raises(
-                    RuntimeError,
+                    ValueError,
                     match="input array length 2 does not match metadata length 3.",
                 ),
             ),

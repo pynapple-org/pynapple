@@ -513,7 +513,7 @@ class Test_Metadata:
                 [],
                 {"label": np.zeros(5)},
                 pytest.raises(
-                    RuntimeError,
+                    ValueError,
                     match="input array length 5 does not match metadata length 4.",
                 ),
             ),
