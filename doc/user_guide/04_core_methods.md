@@ -123,6 +123,10 @@ time_support = nap.IntervalSet(0, 100)
 
 tsgroup = nap.TsGroup(group, time_support=time_support)
 
+tsgroup['label1'] = np.random.randn(3)
+
+tsgroup.set_info(label2 = ['a', 'b', 'c'])
+
 print(tsgroup, "\n")
 
 ```
@@ -134,7 +138,6 @@ print(tsgroup, "\n")
 tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.randn(100, 3), columns=['a', 'b', 'c'])
 epochs = nap.IntervalSet([10, 65], [25, 80])
 tsd = nap.Tsd(t=np.arange(0, 100, 1), d=np.sin(np.arange(0, 10, 0.1)))
-tsd += np.random.randn(len(tsd))
 ```
 
 
@@ -207,12 +210,13 @@ tsdframe.bin_average(3.5)
 :tags: [hide-input]
 bin_size = 3.5
 plt.figure()
-plt.plot(tsdframe[:,0], '.--')
-plt.plot(tsdframe[:,0].bin_average(bin_size), 'o-')
+plt.plot(tsdframe[:,0], '.--', label="tsdframe[:,0]")
+plt.plot(tsdframe[:,0].bin_average(bin_size), 'o-', label="new_tsdframe[:,0]")
 plt.title(f"tsdframe.bin_average(bin_size={bin_size})")
 [plt.axvline(t, linewidth=0.5, alpha=0.5) for t in np.arange(0, 21,bin_size)]
 plt.xlabel("Time (s)")
 plt.xlim(0, 20)
+plt.legend(bbox_to_anchor=(1.0, 0.5, 0.5, 0.5))
 plt.show()
 ```
 
@@ -220,28 +224,62 @@ plt.show()
 
 ### `interpolate`
 
+The`interpolate` method of `Tsd`, `TsdFrame` and `TsdTensor` can be used to fill gaps in a time series. It is a wrapper of [`numpy.interp`](https://numpy.org/devdocs/reference/generated/numpy.interp.html).
+
+
+
+```{code-cell} ipython3
+:tags: [hide-cell]
+tsd = nap.Tsd(t=np.arange(0, 25, 5), d=np.random.randn(5))
+ts = nap.Ts(t=np.arange(0, 21, 1))
+```
+
+```{code-cell} ipython3
+new_tsd = tsd.interpolate(ts)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.figure()
+plt.plot(new_tsd, '.-', label="new_tsd")
+plt.plot(tsd, 'o', label="tsd")
+plt.plot(ts.fillna(0), '+', label="ts")
+plt.title("tsd.interpolate(ts)")
+plt.xlabel("Time (s)")
+plt.legend(bbox_to_anchor=(1.0, 0.5, 0.5, 0.5))
+plt.show()
+```
+
+
+
 ### `value_from`
 
 `value_from` assign to every timestamps the closed value in time from another time series. Let's define the time series we want to assign values from.
 
 
-For every timestamps in `tsgroup`, we want to assign the closest value in time from `tsd_sin`.
+For every timestamps in `tsgroup`, we want to assign the closest value in time from `tsd`.
 
 ```{code-cell} ipython3
-tsgroup_sin = tsgroup.value_from(tsd_sin)
+:tags: [hide-cell]
+tsd = nap.Tsd(t=np.arange(0, 100, 1), d=np.sin(np.arange(0, 10, 0.1)))
+```
+
+```{code-cell} ipython3
+tsgroup_from_tsd = tsgroup.value_from(tsd)
 ```
 
 We can display the first element of `tsgroup` and `tsgroup_sin`.
 
 ```{code-cell} ipython3
+:tags: [hide-input]
 plt.figure()
 plt.plot(tsgroup[0].fillna(0), "|", label="tsgroup[0]", markersize=20, mew=3)
-plt.plot(tsd_sin, linewidth=2, label="tsd_sin")
-plt.plot(tsgroup_sin[0], "o", label = "tsgroup_sin[0]", markersize=20)
+plt.plot(tsd, linewidth=2, label="tsd")
+plt.plot(tsgroup_from_tsd[0], "o", label = "tsgroup_from_tsd[0]", markersize=20)
 plt.title("tsgroup.value_from(tsd)")
 plt.xlabel("Time (s)")
 plt.yticks([-1, 0, 1])
-plt.legend()
+plt.legend(bbox_to_anchor=(1.0, 0.5, 0.5, 0.5))
 plt.show()
 ```
 
@@ -252,7 +290,12 @@ below a certain threshold. Default is `above`. The time support
 of the new `Tsd` object get updated accordingly.
 
 ```{code-cell} ipython3
-tsd_above = tsd_sin.threshold(0.5, method='above')
+:tags: [hide-cell]
+tsd = nap.Tsd(t=np.arange(0, 100, 1), d=np.sin(np.arange(0, 10, 0.1)))
+```
+
+```{code-cell} ipython3
+tsd_above = tsd.threshold(0.5, method='above')
 ```
 This method can be used to isolate epochs for which a signal
 is above/below a certain threshold.
@@ -263,18 +306,18 @@ epoch_above = tsd_above.time_support
 ```{code-cell} ipython3
 :tags: [hide-input]
 plt.figure()
-plt.plot(tsd_sin, label="tsd_sin")
+plt.plot(tsd, label="tsd")
 plt.plot(tsd_above, 'o-', label="tsd_above")
 [plt.axvspan(s, e, alpha=0.2) for s, e in epoch_above.values]
 plt.axhline(0.5, linewidth=0.5, color='grey')
 plt.legend()
 plt.xlabel("Time (s)")
-plt.title("tsd_sin.threshold(0.5)")
+plt.title("tsd.threshold(0.5)")
 plt.show()
 ```
 
 
-## Mapping between `TsGroup` and `Tsd`
+### Mapping between `TsGroup` and `Tsd`
 
 It's is possible to transform a `TsGroup` to `Tsd` with the method
 `to_tsd` and a `Tsd` to `TsGroup` with the method `to_tsgroup`.
@@ -297,7 +340,7 @@ back_to_tsgroup = tsd.to_tsgroup()
 print(back_to_tsgroup)
 ```
 
-### Parameterizing a raster
+#### Parameterizing a raster
 
 The method `to_tsd` makes it easier to display a raster plot.
 `TsGroup` object can be plotted with `plt.plot(tsgroup.to_tsd(), 'o')`.

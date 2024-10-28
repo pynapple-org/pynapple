@@ -17,6 +17,7 @@ Numpy tutorial
 This tutorial shows how pynapple interact with numpy.
 
 ```{code-cell} ipython3
+:tags: [hide-cell]
 import numpy as np
 import pynapple as nap
 import pandas as pd
@@ -26,7 +27,7 @@ Multiple time series object are avaible depending on the shape of the data.
 
 - `TsdTensor` : for data with of more than 2 dimensions, typically movies.
 - `TsdFrame` : for column-based data. It can be easily converted to a pandas.DataFrame. Columns can be labelled and selected similar to pandas.
-- `Tsd` : One-dimensional time series. It can be converted to a pandas.Series.
+- `Tsd` : one-dimensional time series. It can be converted to a pandas.Series.
 - `Ts` : For timestamps data only.
 
 
@@ -45,14 +46,14 @@ ts = nap.Ts(t=np.arange(100))
 print(tsdtensor)
 ```
 
-tsd and ts can be converted to a pandas.Series
+`Tsd` and `Ts` can be converted to a `pandas.Series`.
 
 
 ```{code-cell} ipython3
 print(tsd.as_series())
 ```
 
-tsdframe to a pandas.DataFrame
+`TsdFrame` to a `pandas.DataFrame`.
 
 
 ```{code-cell} ipython3
@@ -76,14 +77,14 @@ Slicing
 -------
 Slicing is very similar to numpy array. The first dimension is always time and time support is always passed on if a pynapple object is returned.
 
-First 10 elements. Return a TsdTensor
+First 10 elements. Return a `TsdTensor`
 
 
 ```{code-cell} ipython3
 print(tsdtensor[0:10])
 ```
 
-First column. Return a Tsd
+First column. Return a `Tsd`
 
 
 ```{code-cell} ipython3
@@ -105,9 +106,9 @@ print(tsd.time_support)
 print(tsd[0:20].time_support)
 ```
 
-TsdFrame offers special slicing similar to pandas.DataFrame.
+`TsdFrame` offers special slicing similar to `pandas.DataFrame`.
 
-Only TsdFrame can have columns labelling and indexing.
+Only `TsdFrame` can have columns labelling and indexing.
 
 
 ```{code-cell} ipython3
@@ -147,21 +148,21 @@ Array operations
 ----------------
 The most common numpy functions will return a time series if the output first dimension matches the shape of the time index.
 
-Here i average along the time axis and get a numpy array.
+Here the `TsdTensor` is averaged along the time axis. The output is a numpy array.
 
 
 ```{code-cell} ipython3
 print(np.mean(tsdtensor, 0))
 ```
 
-Here I average across the second dimension and get a TsdFrame
+Here averaging across the second dimension returns a `TsdFrame`.
 
 
 ```{code-cell} ipython3
 print(np.mean(tsdtensor, 1))
 ```
 
-This is not true for fft functions though.
+This is not true for FFT functions though.
 
 
 ```{code-cell} ipython3

@@ -46,7 +46,7 @@ sig = nap.Tsd(
 ```
 
 ```{code-cell} ipython3
-:tags: [hide-cell]
+:tags: [hide-input]
 
 plt.figure()
 plt.plot(sig.get(0, 0.4))
