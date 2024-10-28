@@ -132,7 +132,6 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
             start = start["start"].values.astype(np.float64)
             if metadata.empty is False:
                 kwargs = {**metadata, **kwargs}
-                print(kwargs)
 
         else:
             if end is None:
@@ -290,7 +289,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
             # easiest to convert to dataframe and then slice
             # in case of mixing ["start", "end"] with metadata columns
             df = self.as_dataframe()
-            if all(x in key[1] for x in ["start", "end"]):
+            if all(x in key for x in ["start", "end"]):
                 return IntervalSet(df[key])
             else:
                 return df[key]
