@@ -114,8 +114,10 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
             Ends of intervals
         time_units : str, optional
             Time unit of the intervals ('us', 'ms', 's' [default])
+        metadata: pd.DataFrame or dict, optional
+            Metadata associated with each interval
         **kwargs : dict
-            Metadata to be added to the IntervalSet
+            Keyword arguments to add metadata fields
 
         Raises
         ------

@@ -880,6 +880,7 @@ class TsdFrame(BaseTsd, _MetadataBase):
         time_support=None,
         columns=None,
         load_array=True,
+        metadata=None,
         **kwargs,
     ):
         """
@@ -901,6 +902,8 @@ class TsdFrame(BaseTsd, _MetadataBase):
         load_array : bool, optional
             Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
             Default is True. Does not apply if `d` is already a numpy array.
+        metadata: pd.DataFrame or dict, optional
+            Metadata associated with data columns
         **kwargs : dict, optional
             Additional keyword arguments for labelling with metadata columns of the TsdFrame. The metadata should be the same length as the number of columns of the TsdFrame.
         """
@@ -930,7 +933,7 @@ class TsdFrame(BaseTsd, _MetadataBase):
 
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
-        _MetadataBase.__init__(self, **kwargs)
+        _MetadataBase.__init__(self, metadata, **kwargs)
         self._initialized = True
 
     @property
