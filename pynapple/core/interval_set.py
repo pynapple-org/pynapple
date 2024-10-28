@@ -140,8 +140,6 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
             metadata = start.drop(columns=["start", "end"])
             end = start["end"].values.astype(np.float64)
             start = start["start"].values.astype(np.float64)
-            if metadata.empty is False:
-                kwargs = {**metadata, **kwargs}
 
         else:
             if end is None:
@@ -332,12 +330,12 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
             # self[Number]
             output = self.values.__getitem__(key)
             metadata = _MetadataBase.__getitem__(self, key)
-            return IntervalSet(start=output[0], end=output[1], **metadata)
+            return IntervalSet(start=output[0], end=output[1], metadata=metadata)
         elif isinstance(key, (slice, list, np.ndarray, pd.Series)):
             # self[array_like]
             output = self.values.__getitem__(key)
             metadata = _MetadataBase.__getitem__(self, key).reset_index(drop=True)
-            return IntervalSet(start=output[:, 0], end=output[:, 1], **metadata)
+            return IntervalSet(start=output[:, 0], end=output[:, 1], metadata=metadata)
         elif isinstance(key, tuple):
             if len(key) == 2:
                 if isinstance(key[1], Number):
@@ -388,13 +386,13 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
 
                         if isinstance(key[0], Number):
                             return IntervalSet(
-                                start=output[0], end=output[1], **metadata
+                                start=output[0], end=output[1], metadata=metadata
                             )
                         else:
                             return IntervalSet(
                                 start=output[:, 0],
                                 end=output[:, 1],
-                                **metadata.reset_index(drop=True),
+                                metadata=metadata.reset_index(drop=True),
                             )
 
                     elif key[1] == slice(0, 2, None):
@@ -600,7 +598,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         s, e, m = jitintersect(start1, end1, start2, end2)
         m1 = self._metadata.loc[m[:, 0]].reset_index(drop=True)
         m2 = a._metadata.loc[m[:, 1]].reset_index(drop=True)
-        return IntervalSet(s, e, **m1.join(m2))
+        return IntervalSet(s, e, metadata=m1.join(m2))
 
     def union(self, a):
         """
@@ -648,7 +646,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         end2 = a.values[:, 1]
         s, e, m = jitdiff(start1, end1, start2, end2)
         m1 = self._metadata.loc[m].reset_index(drop=True)
-        return IntervalSet(s, e, **m1)
+        return IntervalSet(s, e, metadata=m1)
 
     def in_interval(self, tsd):
         """
@@ -942,4 +940,4 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         # Removing 1 microsecond to have strictly non-overlapping intervals for intervals coming from the same epoch
         new_ends -= 1e-6
 
-        return IntervalSet(new_starts, new_ends, **metadata)
+        return IntervalSet(new_starts, new_ends, metadata=metadata)

@@ -3,6 +3,7 @@ from numbers import Number
 import numpy as np
 import pandas as pd
 from typing import Optional, Dict
+import warnings
 
 
 class _MetadataBase:
@@ -31,6 +32,11 @@ class _MetadataBase:
             self.metadata_index = self.index
 
         self._metadata = pd.DataFrame(index=self.metadata_index)
+        if len(kwargs):
+            warnings.warn(
+                "initializing metadata with variable keyword arguments may be unsupported in a future version of Pynapple. Instead, initialize using the metadata argument.",
+                FutureWarning,
+            )
         self.set_info(metadata, **kwargs)
 
     def __dir__(self):
