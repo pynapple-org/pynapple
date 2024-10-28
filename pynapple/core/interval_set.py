@@ -42,6 +42,7 @@
 import importlib
 import warnings
 from numbers import Number
+from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -81,7 +82,13 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
     A class representing a (irregular) set of time intervals in elapsed time, with relative operations
     """
 
-    def __init__(self, start, end=None, time_units="s", **kwargs):
+    def __init__(
+        self,
+        start,
+        end=None,
+        time_units="s",
+        **kwargs,
+    ):
         """
         IntervalSet initializer
 
@@ -172,25 +179,50 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         start = TsIndex.format_timestamps(start, time_units)
         end = TsIndex.format_timestamps(end, time_units)
 
+        drop_meta = False
         if not (np.diff(start) > 0).all():
-            warnings.warn("start is not sorted. Sorting it.", stacklevel=2)
+            if len(kwargs):
+                msg1 = "Cannot add metadata to unsorted start times. "
+                msg2 = " and dropping metadata"
+            else:
+                msg1 = ""
+                msg2 = ""
+            warnings.warn(
+                "start is not sorted. " + msg1 + "Sorting it" + msg2 + ".", stacklevel=2
+            )
             start = np.sort(start)
+            drop_meta = True
 
         if not (np.diff(end) > 0).all():
-            warnings.warn("end is not sorted. Sorting it.", stacklevel=2)
+            if len(kwargs):
+                msg1 = "Cannot add metadata to unsorted end times. "
+                msg2 = " and dropping metadata"
+            else:
+                msg1 = ""
+                msg2 = ""
+            warnings.warn(
+                "end is not sorted. " + msg1 + "Sorting it" + msg2 + ".", stacklevel=2
+            )
             end = np.sort(end)
+            drop_meta = True
 
         data, to_warn = _jitfix_iset(start, end)
 
         if np.any(to_warn):
             msg = "\n".join(all_warnings[to_warn])
             warnings.warn(msg, stacklevel=2)
+            if np.any(to_warn[1:]) and len(kwargs):
+                drop_meta = True
+                warnings.warn("epochs have changed, dropping metadata.", stacklevel=2)
 
         self.values = data
         self.index = np.arange(data.shape[0], dtype="int")
         self.columns = np.array(["start", "end"])
         self.nap_class = self.__class__.__name__
-        _MetadataBase.__init__(self, **kwargs)
+        if drop_meta:
+            _MetadataBase.__init__(self)
+        else:
+            _MetadataBase.__init__(self, **kwargs)
         self._initialized = True
 
     def __repr__(self):

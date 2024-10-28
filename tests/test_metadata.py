@@ -10,6 +10,7 @@ import pandas as pd
 import pytest
 from pathlib import Path
 from contextlib import nullcontext as does_not_raise
+import warnings
 
 import pynapple as nap
 
@@ -49,6 +50,52 @@ def test_create_iset_with_metadata():
     label = ["a", "b"]
     ep = nap.IntervalSet(start=start, end=end, label=label)
     assert ep._metadata["label"][0] == label
+
+
+@pytest.mark.parametrize(
+    "start, end",
+    [
+        # start time not sorted
+        (
+            np.array([10, 5, 16, 25]),
+            np.array([5, 15, 20, 40]),
+        ),
+        # end time not sorted
+        (
+            np.array([5, 10, 16, 25]),
+            np.array([15, 5, 20, 40]),
+        ),
+        # overlapping intervals
+        (
+            np.array([0, 5, 16, 25]),
+            np.array([10, 15, 20, 40]),
+        ),
+    ],
+)
+def test_create_iset_with_metadata_warn_drop(start, end):
+    label = [1, 2, 3, 4]
+    with warnings.catch_warnings(record=True) as w:
+        ep = nap.IntervalSet(start=start, end=end, label=label)
+    assert "dropping metadata" in str(w[-1].message)
+    assert len(ep.metadata_columns) == 0
+
+
+@pytest.mark.parametrize(
+    "start, end",
+    [
+        # start and end are equal
+        (
+            np.array([0, 5, 16, 25]),
+            np.array([5, 15, 20, 40]),
+        ),
+    ],
+)
+def test_create_iset_with_metadata_warn_keep(start, end):
+    label = [1, 2, 3, 4]
+    with warnings.catch_warnings(record=True) as w:
+        ep = nap.IntervalSet(start=start, end=end, label=label)
+    assert "dropping metadata" not in str(w[-1].message)
+    assert len(ep.metadata_columns) == 1
 
 
 def test_create_iset_from_df_with_metadata():
