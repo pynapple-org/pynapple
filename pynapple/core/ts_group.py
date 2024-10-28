@@ -69,7 +69,13 @@ class TsGroup(UserDict, _MetadataBase):
     """
 
     def __init__(
-        self, data, time_support=None, time_units="s", bypass_check=False, **kwargs
+        self,
+        data,
+        time_support=None,
+        time_units="s",
+        bypass_check=False,
+        metadata=None,
+        **kwargs,
     ):
         """
         TsGroup Initializer.
@@ -87,6 +93,8 @@ class TsGroup(UserDict, _MetadataBase):
         bypass_check: bool, optional
             To avoid checking that each element is within time_support.
             Useful to speed up initialization of TsGroup when Ts/Tsd objects have already been restricted beforehand
+        metadata: pd.DataFrame or dict, optional
+            Metadata associated with each Ts/Tsd object
         **kwargs
             Meta-info about the Ts/Tsd objects. Can be either pandas.Series, numpy.ndarray, list or tuple
             Note that the index should match the index of the input dictionary if pandas Series
@@ -184,7 +192,7 @@ class TsGroup(UserDict, _MetadataBase):
         self._initialized = True
 
         # Trying to add argument as metainfo
-        self.set_info(**kwargs)
+        self.set_info(metadata, **kwargs)
 
     """
     Base functions
