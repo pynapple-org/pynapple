@@ -252,7 +252,9 @@ class TsGroup(UserDict, _MetadataBase):
             np.sort(keys), self._metadata.columns.drop("rate")
         ]
         return TsGroup(
-            {k: self[k] for k in keys}, time_support=self.time_support, **metadata
+            {k: self[k] for k in keys},
+            time_support=self.time_support,
+            metadata=metadata,
         )
 
     def __repr__(self):
@@ -997,7 +999,10 @@ class TsGroup(UserDict, _MetadataBase):
         else:
             cols = metadata.columns.drop("rate")
             return TsGroup(
-                data, time_support=time_support, bypass_check=False, **metadata[cols]
+                data,
+                time_support=time_support,
+                bypass_check=False,
+                metadata=metadata[cols],
             )
 
     def merge(

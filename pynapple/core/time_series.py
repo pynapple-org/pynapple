@@ -173,7 +173,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
                     if hasattr(self, "columns"):
                         kwargs["columns"] = self.columns
                     if hasattr(self, "_metadata"):
-                        kwargs = {**kwargs, **self._metadata}
+                        kwargs["metadata"] = self._metadata
                     return _get_class(out)(
                         t=self.index, d=out, time_support=self.time_support, **kwargs
                     )
@@ -221,7 +221,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
                 if hasattr(self, "columns"):
                     kwargs["columns"] = self.columns
                 if hasattr(self, "_metadata"):
-                    kwargs = {**kwargs, **self._metadata}
+                    kwargs["metadata"] = self._metadata
                 return _get_class(out)(
                     t=self.index, d=out, time_support=self.time_support, **kwargs
                 )
@@ -427,7 +427,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         if hasattr(self, "columns"):
             kwargs["columns"] = self.columns
         if hasattr(self, "_metadata"):
-            kwargs = {**kwargs, **self._metadata}
+            kwargs["metadata"] = self._metadata
 
         return self.__class__(t=t, d=d, time_support=ep, **kwargs)
 
@@ -467,7 +467,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         if hasattr(self, "columns"):
             kwargs["columns"] = self.columns
         if hasattr(self, "_metadata"):
-            kwargs = {**kwargs, **self._metadata}
+            kwargs["metadata"] = self._metadata
 
         return self.__class__(t=t, d=d, time_support=ep, **kwargs)
 
@@ -535,7 +535,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
 
         if isinstance(self, TsdFrame) and array.ndim == 1:  # keep columns
             kwargs_dict["columns"] = self.columns
-            kwargs_dict = {**kwargs_dict, **self._metadata}
+            kwargs_dict["metadata"] = self._metadata
 
         return nap_class(t=time_array, d=new_data_array, **kwargs_dict)
 
@@ -697,7 +697,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         if hasattr(self, "columns"):
             kwargs_dict["columns"] = self.columns
         if hasattr(self, "_metadata"):
-            kwargs_dict = {**kwargs_dict, **self._metadata}
+            kwargs_dict["metadata"] = self._metadata
         return self.__class__(t=new_t, d=new_d, **kwargs_dict)
 
 
@@ -1099,7 +1099,7 @@ class TsdFrame(BaseTsd, _MetadataBase):
                     # if isinstance(columns, pd.Index):
                     #     if not pd.api.types.is_integer_dtype(columns):
                     kwargs["columns"] = columns
-                    kwargs = {**kwargs, **self._metadata.loc[columns]}
+                    kwargs["metadata"] = self._metadata.loc[columns]
 
                     return _get_class(output)(
                         t=index, d=output, time_support=self.time_support, **kwargs
@@ -1152,7 +1152,7 @@ class TsdFrame(BaseTsd, _MetadataBase):
             d=self.values[:].copy(),
             time_support=self.time_support,
             columns=self.columns.copy(),
-            **self._metadata,
+            metadata=self._metadata,
         )
 
     def save(self, filename):

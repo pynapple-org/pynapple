@@ -202,7 +202,7 @@ class Base(abc.ABC):
         if hasattr(data, "columns"):
             kwargs["columns"] = data.columns
         if hasattr(self, "_metadata"):
-            kwargs = {**kwargs, **self._metadata}
+            kwargs["metadata"] = self._metadata
 
         return t, d, time_support, kwargs
 
@@ -361,7 +361,7 @@ class Base(abc.ABC):
             kwargs["columns"] = self.columns
 
         if hasattr(self, "_metadata"):
-            kwargs = {**kwargs, **self._metadata}
+            kwargs["metadata"] = self._metadata
 
         if hasattr(self, "values"):
             data_array = self.values
