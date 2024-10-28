@@ -3,3 +3,4 @@
 Analysis examples
 =================
 
+This section contains analysis examples from real data.
