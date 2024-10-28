@@ -90,6 +90,14 @@ class _MetadataBase:
         return self.get_info(key)
 
     @property
+    def metadata(self):
+        """
+        Returns metadata DataFrame
+        """
+        # return copy so that metadata cannot modified in place
+        return self._metadata.copy()
+
+    @property
     def metadata_columns(self):
         """
         Returns list of metadata columns
