@@ -2,6 +2,7 @@ from numbers import Number
 
 import numpy as np
 import pandas as pd
+from typing import Optional, Dict
 
 
 class _MetadataBase:
@@ -10,7 +11,7 @@ class _MetadataBase:
 
     """
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, metadata: Optional[pd.DataFrame | Dict] = None, **kwargs):
         """
         Metadata initializer
 
@@ -30,7 +31,7 @@ class _MetadataBase:
             self.metadata_index = self.index
 
         self._metadata = pd.DataFrame(index=self.metadata_index)
-        self.set_info(*args, **kwargs)
+        self.set_info(metadata, **kwargs)
 
     def __dir__(self):
         """
@@ -132,27 +133,34 @@ class _MetadataBase:
                 f"Invalid metadata name '{name}'. Metadata name cannot contain special characters except for underscores"
             )
 
-    def _check_metadata_column_names(self, *args, **kwargs):
+    def _check_metadata_column_names(
+        self, metadata: Optional[pd.DataFrame | Dict] = None, **kwargs
+    ):
         """
         Check that metadata column names don't conflict with existing attributes, don't start with a number, and don't contain invalid characters.
         """
 
-        for arg in args:
-            if isinstance(arg, pd.DataFrame):
-                [self._raise_invalid_metadata_column_name(col) for col in arg.columns]
+        if metadata is not None:
+            if isinstance(metadata, pd.DataFrame):
+                [
+                    self._raise_invalid_metadata_column_name(col)
+                    for col in metadata.columns
+                ]
+            elif isinstance(metadata, dict):
+                [self._raise_invalid_metadata_column_name(k) for k in metadata.keys()]
 
         for k in kwargs:
             self._raise_invalid_metadata_column_name(k)
 
-    def set_info(self, *args, **kwargs):
+    def set_info(self, metadata: Optional[pd.DataFrame | Dict] = None, **kwargs):
         """
         Add metadata information about the object.
         Metadata are saved as a DataFrame.
 
         Parameters
         ----------
-        *args
-            pandas.Dataframe or list of pandas.DataFrame
+        metadata : pandas.DataFrame or dict
+            metadata information
         **kwargs
             Can be either pandas.Series, numpy.ndarray, list or tuple
 
@@ -202,19 +210,23 @@ class _MetadataBase:
         """
         # check for duplicate names, otherwise "self.metadata_name"
         # syntax would behave unexpectedly.
-        self._check_metadata_column_names(*args, **kwargs)
+        self._check_metadata_column_names(metadata, **kwargs)
         not_set = []
-        if len(args):
-            for arg in args:
-                if isinstance(arg, pd.DataFrame):
-                    if pd.Index.equals(self._metadata.index, arg.index):
-                        self._metadata[arg.columns] = arg
-                    else:
-                        raise ValueError("Metadata index does not match")
-                elif isinstance(arg, (pd.Series, np.ndarray, list)):
-                    raise RuntimeError("Argument should be passed as keyword argument.")
+        if metadata is not None:
+            if isinstance(metadata, pd.DataFrame):
+                if pd.Index.equals(self._metadata.index, metadata.index):
+                    self._metadata[metadata.columns] = metadata
                 else:
-                    not_set.append(arg)
+                    raise ValueError("Metadata index does not match")
+            elif isinstance(metadata, dict):
+                metadata = pd.DataFrame.from_dict(metadata).set_index(
+                    self.metadata_index
+                )
+                self._metadata[metadata.columns] = metadata
+            elif isinstance(metadata, (pd.Series, np.ndarray, list)):
+                raise RuntimeError("Argument should be passed as keyword argument.")
+            else:
+                not_set.append(metadata)
         if len(kwargs):
             for k, v in kwargs.items():
 

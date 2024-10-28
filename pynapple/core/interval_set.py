@@ -87,6 +87,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         start,
         end=None,
         time_units="s",
+        metadata: Optional[pd.DataFrame | Dict] = None,
         **kwargs,
     ):
         """
@@ -181,7 +182,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
 
         drop_meta = False
         if not (np.diff(start) > 0).all():
-            if len(kwargs):
+            if (metadata is not None) or len(kwargs):
                 msg1 = "Cannot add metadata to unsorted start times. "
                 msg2 = " and dropping metadata"
             else:
@@ -194,7 +195,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
             drop_meta = True
 
         if not (np.diff(end) > 0).all():
-            if len(kwargs):
+            if (metadata is not None) or len(kwargs):
                 msg1 = "Cannot add metadata to unsorted end times. "
                 msg2 = " and dropping metadata"
             else:
@@ -211,7 +212,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         if np.any(to_warn):
             msg = "\n".join(all_warnings[to_warn])
             warnings.warn(msg, stacklevel=2)
-            if np.any(to_warn[1:]) and len(kwargs):
+            if np.any(to_warn[1:]) and ((metadata is not None) or len(kwargs)):
                 drop_meta = True
                 warnings.warn("epochs have changed, dropping metadata.", stacklevel=2)
 
@@ -222,7 +223,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         if drop_meta:
             _MetadataBase.__init__(self)
         else:
-            _MetadataBase.__init__(self, **kwargs)
+            _MetadataBase.__init__(self, metadata, **kwargs)
         self._initialized = True
 
     def __repr__(self):
