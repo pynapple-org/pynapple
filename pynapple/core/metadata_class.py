@@ -1,9 +1,8 @@
+import warnings
 from numbers import Number
 
 import numpy as np
 import pandas as pd
-from typing import Optional, Dict
-import warnings
 
 
 class _MetadataBase:
@@ -12,7 +11,7 @@ class _MetadataBase:
 
     """
 
-    def __init__(self, metadata: Optional[pd.DataFrame | Dict] = None, **kwargs):
+    def __init__(self, metadata=None, **kwargs):
         """
         Metadata initializer
 
@@ -139,9 +138,7 @@ class _MetadataBase:
                 f"Invalid metadata name '{name}'. Metadata name cannot contain special characters except for underscores"
             )
 
-    def _check_metadata_column_names(
-        self, metadata: Optional[pd.DataFrame | Dict] = None, **kwargs
-    ):
+    def _check_metadata_column_names(self, metadata=None, **kwargs):
         """
         Check that metadata column names don't conflict with existing attributes, don't start with a number, and don't contain invalid characters.
         """
@@ -161,7 +158,7 @@ class _MetadataBase:
         for k in kwargs:
             self._raise_invalid_metadata_column_name(k)
 
-    def set_info(self, metadata: Optional[pd.DataFrame | Dict] = None, **kwargs):
+    def set_info(self, metadata=None, **kwargs):
         """
         Add metadata information about the object.
         Metadata are saved as a DataFrame.

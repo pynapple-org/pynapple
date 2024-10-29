@@ -42,7 +42,6 @@
 import importlib
 import warnings
 from numbers import Number
-from typing import Dict, Optional
 
 import numpy as np
 import pandas as pd
@@ -87,7 +86,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         start,
         end=None,
         time_units="s",
-        metadata: Optional[pd.DataFrame | Dict] = None,
+        metadata=None,
         **kwargs,
     ):
         """
