@@ -1009,6 +1009,7 @@ class Test_Time_Series_3:
         "col, expected",
         [
             (0, nap.Tsd),
+            ([1], nap.TsdFrame),
             ([0, 1], nap.TsdFrame),
             (slice(0, 2), nap.TsdFrame),
             ([True, False, True], nap.TsdFrame),
