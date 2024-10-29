@@ -976,6 +976,32 @@ class Test_Time_Series_3:
             assert np.all(tsdframe[index].metadata_columns == tsdframe.metadata_columns)
             assert np.all(tsdframe[index].metadata_index == tsdframe.metadata_index)
 
+    @pytest.mark.parametrize(
+        "index, expected", [((1, [0, 1]), nap.TsdFrame), (([0, 1], 1), nap.Tsd)]
+    )
+    def test_vert_and_horz_slicing(self, tsdframe, index, expected):
+        assert isinstance(tsdframe[index], expected)
+        if len(tsdframe[index] == 1):
+            # use ravel to ignore shape mismatch
+            np.testing.assert_array_almost_equal(
+                tsdframe.values[index].ravel(), tsdframe[index].values.ravel()
+            )
+        else:
+            np.testing.assert_array_almost_equal(
+                tsdframe.values[index], tsdframe[index].values
+            )
+        assert isinstance(tsdframe[index].time_support, nap.IntervalSet)
+        np.testing.assert_array_almost_equal(
+            tsdframe[index].time_support, tsdframe.time_support
+        )
+        if isinstance(tsdframe[index], nap.TsdFrame) and len(
+            tsdframe[index].metadata_columns
+        ):
+            assert np.all(tsdframe[index].metadata_columns == tsdframe.metadata_columns)
+            assert np.all(
+                tsdframe[index].metadata_index == tsdframe.metadata_index[index[1]]
+            )
+
     @pytest.mark.parametrize("index", [0, [0, 2]])
     def test_str_indexing(self, tsdframe, index):
         columns = tsdframe.columns
