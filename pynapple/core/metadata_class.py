@@ -155,6 +155,9 @@ class _MetadataBase:
             elif isinstance(metadata, dict):
                 [self._raise_invalid_metadata_column_name(k) for k in metadata.keys()]
 
+            elif isinstance(metadata, pd.Series) and len(self) == 1:
+                [self._raise_invalid_metadata_column_name(k) for k in metadata.index]
+
         for k in kwargs:
             self._raise_invalid_metadata_column_name(k)
 
@@ -224,11 +227,12 @@ class _MetadataBase:
                     self._metadata[metadata.columns] = metadata
                 else:
                     raise ValueError("Metadata index does not match")
-            elif isinstance(metadata, dict):
-                metadata = pd.DataFrame.from_dict(metadata).set_index(
-                    self.metadata_index
-                )
-                self._metadata[metadata.columns] = metadata
+            elif isinstance(metadata, dict) or (
+                (isinstance(metadata, pd.Series) and len(self) == 1)
+            ):
+                for key, val in metadata.items():
+                    self._metadata[key] = val
+
             elif isinstance(metadata, (pd.Series, np.ndarray, list)):
                 raise RuntimeError("Argument should be passed as keyword argument.")
             else:
