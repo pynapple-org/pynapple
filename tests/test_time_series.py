@@ -1,5 +1,7 @@
 """Tests of time series for `pynapple` package."""
 
+from numbers import Number
+
 import pickle
 import numpy as np
 import pandas as pd
@@ -935,7 +937,15 @@ class Test_Time_Series_3:
         if len(tsdframe.metadata_columns):
             pd.testing.assert_frame_equal(tscopy._metadata, tsdframe._metadata)
 
-    @pytest.mark.parametrize("index, nap_type", [(0, nap.Tsd), ([0, 2], nap.TsdFrame)])
+    @pytest.mark.parametrize(
+        "index, nap_type",
+        [
+            (0, nap.Tsd),
+            ([0, 2], nap.TsdFrame),
+            ([False, True, False], nap.TsdFrame),
+            ([False, True, True], nap.TsdFrame),
+        ],
+    )
     def test_horizontal_slicing(self, tsdframe, index, nap_type):
         assert isinstance(tsdframe[:, index], nap_type)
         np.testing.assert_array_almost_equal(
@@ -956,7 +966,16 @@ class Test_Time_Series_3:
                 tsdframe[:, index].metadata_index == tsdframe.metadata_index[index]
             )
 
-    @pytest.mark.parametrize("index", [0, slice(0, 10), [0, 2]])
+    @pytest.mark.parametrize(
+        "index",
+        [
+            0,
+            slice(0, 10),
+            [0, 2],
+            np.hstack([np.zeros(10, bool), True, np.zeros(89, bool)]),
+            np.hstack([np.zeros(10, bool), True, True, True, np.zeros(87, bool)]),
+        ],
+    )
     def test_vertical_slicing(self, tsdframe, index):
         assert isinstance(tsdframe[index], nap.TsdFrame)
         if len(tsdframe[index] == 1):
@@ -977,30 +996,59 @@ class Test_Time_Series_3:
             assert np.all(tsdframe[index].metadata_index == tsdframe.metadata_index)
 
     @pytest.mark.parametrize(
-        "index, expected", [((1, [0, 1]), nap.TsdFrame), (([0, 1], 1), nap.Tsd)]
+        "row",
+        [
+            0,
+            [0, 2],
+            slice(20, 30),
+            np.hstack([np.zeros(10, bool), True, True, True, np.zeros(87, bool)]),
+            np.hstack([np.zeros(10, bool), True, np.zeros(89, bool)]),
+        ],
     )
-    def test_vert_and_horz_slicing(self, tsdframe, index, expected):
-        assert isinstance(tsdframe[index], expected)
-        if len(tsdframe[index] == 1):
-            # use ravel to ignore shape mismatch
-            np.testing.assert_array_almost_equal(
-                tsdframe.values[index].ravel(), tsdframe[index].values.ravel()
-            )
+    @pytest.mark.parametrize(
+        "col, expected",
+        [
+            (0, nap.Tsd),
+            ([0, 1], nap.TsdFrame),
+            (slice(0, 2), nap.TsdFrame),
+            ([True, False, True], nap.TsdFrame),
+            ([False, True, False], nap.TsdFrame),
+        ],
+    )
+    def test_vert_and_horz_slicing(self, tsdframe, row, col, expected):
+
+        if isinstance(row, (list, np.ndarray)) and isinstance(col, (list, np.ndarray)):
+            # not checking these in case of shape mismatch
+            pass
+
+        elif isinstance(row, Number) and isinstance(col, Number):
+            assert isinstance(tsdframe[row, col], Number)
+
         else:
+            assert isinstance(tsdframe[row, col], expected)
+
+            if len(tsdframe[row, col] == 1):
+                # use ravel to ignore shape mismatch
+                np.testing.assert_array_almost_equal(
+                    tsdframe.values[row, col].ravel(), tsdframe[row, col].values.ravel()
+                )
+            else:
+                np.testing.assert_array_almost_equal(
+                    tsdframe.values[row, col], tsdframe[row, col].values
+                )
+            assert isinstance(tsdframe[row, col].time_support, nap.IntervalSet)
             np.testing.assert_array_almost_equal(
-                tsdframe.values[index], tsdframe[index].values
+                tsdframe[row, col].time_support, tsdframe.time_support
             )
-        assert isinstance(tsdframe[index].time_support, nap.IntervalSet)
-        np.testing.assert_array_almost_equal(
-            tsdframe[index].time_support, tsdframe.time_support
-        )
-        if isinstance(tsdframe[index], nap.TsdFrame) and len(
-            tsdframe[index].metadata_columns
-        ):
-            assert np.all(tsdframe[index].metadata_columns == tsdframe.metadata_columns)
-            assert np.all(
-                tsdframe[index].metadata_index == tsdframe.metadata_index[index[1]]
-            )
+            if isinstance(tsdframe[row, col], nap.TsdFrame) and len(
+                tsdframe[row, col].metadata_columns
+            ):
+                assert np.all(
+                    tsdframe[row, col].metadata_columns == tsdframe.metadata_columns
+                )
+                assert np.all(
+                    tsdframe[row, col].metadata_index == tsdframe.metadata_index[col]
+                )
 
     @pytest.mark.parametrize("index", [0, [0, 2]])
     def test_str_indexing(self, tsdframe, index):

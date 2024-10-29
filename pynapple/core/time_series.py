@@ -1101,9 +1101,22 @@ class TsdFrame(BaseTsd, _MetadataBase):
                 index = np.array([index])
 
             if all(is_array_like(a) for a in [index, output]):
+                # if output.shape[0] == index.shape[0]:
                 # reshape output if single index to preserve column axis
-                if len(index) == 1:
+                # if there are more than one columns being indexed
+                # or if the axis 1 key is a list or array
+                if (
+                    (len(index) == 1)
+                    and (output.ndim == 1)
+                    and ((len(output) > 1) or isinstance(key[1], (list, np.ndarray)))
+                ):
                     output = output[None, :]
+                elif (
+                    (output.ndim == 1)
+                    and isinstance(columns, Number)
+                    and isinstance(key[1], (list, np.ndarray))
+                ):
+                    output = output[:, None]
 
                 kwargs["columns"] = columns
                 kwargs["metadata"] = self._metadata.loc[columns]
@@ -1111,6 +1124,8 @@ class TsdFrame(BaseTsd, _MetadataBase):
                 return _get_class(output)(
                     t=index, d=output, time_support=self.time_support, **kwargs
                 )
+            # else:
+            #     return output
             else:
                 return output
 
