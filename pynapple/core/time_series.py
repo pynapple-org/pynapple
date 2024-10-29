@@ -218,10 +218,16 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
             #     return out
             if out.shape[0] == self.index.shape[0]:
                 kwargs = {}
-                if hasattr(self, "columns"):
-                    kwargs["columns"] = self.columns
-                if hasattr(self, "_metadata"):
-                    kwargs["metadata"] = self._metadata
+                if (
+                    (self.ndim == 2)
+                    and (out.ndim == 2)
+                    and (out.shape[1] == self.shape[1])
+                ):
+                    # only pass columns and metadata if number of columns is preserved
+                    if hasattr(self, "columns"):
+                        kwargs["columns"] = self.columns
+                    if hasattr(self, "_metadata"):
+                        kwargs["metadata"] = self._metadata
                 return _get_class(out)(
                     t=self.index, d=out, time_support=self.time_support, **kwargs
                 )
