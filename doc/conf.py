@@ -13,6 +13,7 @@ import os
 import sys
 import time
 import pynapple
+from pathlib import Path
 
 sys.path.insert(0, os.path.abspath('..'))
 sys.path.insert(0, os.path.abspath('sphinxext'))
@@ -37,10 +38,11 @@ extensions = [
     'sphinx.ext.coverage',
     'sphinx.ext.viewcode',  # Links to source code
     'sphinx.ext.doctest',
-    'myst_nb',
     'sphinx_copybutton',  # Adds copy button to code blocks
     'sphinx_design',  # For layout components
-    'sphinx_gallery.gen_gallery',
+    'myst_nb',
+    # 'sphinx_gallery.gen_gallery',    
+    # 'myst_sphinx_gallery',
 ]
 
 
@@ -130,17 +132,13 @@ autodoc_default_options = {
 napoleon_numpy_docstring = True
 
 ## MystNB
-nb_execution_excludepatterns = ['tutorial_*']
+# execution_excludepatterns = ['tutorial_*', 'plot_*', '*.py', '*.ipynb']
 
-
-sphinx_gallery_conf = {
-    'examples_dirs': 'examples',   # path to your example scripts
-    # 'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
-    'filename_pattern': "tutorial_*.py",
-
-}
-
-
+# sphinx_gallery_conf = {
+#     'examples_dirs': 'examples',   # path to your example scripts
+#     'gallery_dirs': 'auto_examples',
+#     'backreferences_dir': 'generated/backreferences',   
+# }
 
 
 

@@ -45,7 +45,7 @@ pynapple: python neural analysis package
 
          Installing <installing>
          User guide <user_guide>
-         Examples <auto_examples/index>
+         Examples <examples>
          API <api>
          Releases <releases>
          External projects <external>
