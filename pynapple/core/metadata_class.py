@@ -247,7 +247,12 @@ class _MetadataBase:
 
                 elif len(self) == 1:
                     # if only one interval, allow metadata to be any type
-                    self._metadata[k] = [v]
+                    if isinstance(v, (np.ndarray, list, tuple)) and len(v) == 1:
+                        # if array_like has only one element, pass directly
+                        self._metadata[k] = v
+                    else:
+                        # if not array_like or array_like has more than one element, pass as list
+                        self._metadata[k] = [v]
 
                 elif isinstance(v, (np.ndarray, list, tuple)):
                     if len(self._metadata.index) == len(v):
