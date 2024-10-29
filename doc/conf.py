@@ -129,12 +129,15 @@ autodoc_default_options = {
 }
 napoleon_numpy_docstring = True
 
+## MystNB
+nb_execution_excludepatterns = ['tutorial_*']
+
 
 sphinx_gallery_conf = {
     'examples_dirs': 'examples',   # path to your example scripts
-    'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
+    # 'gallery_dirs': 'auto_examples',  # path to where to save gallery generated output
     'filename_pattern': "tutorial_*.py",
-    'nested_sections':False
+
 }
 
 
