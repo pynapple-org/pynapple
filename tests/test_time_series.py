@@ -956,12 +956,18 @@ class Test_Time_Series_3:
                 tsdframe[:, index].metadata_index == tsdframe.metadata_index[index]
             )
 
-    @pytest.mark.parametrize("index", [slice(0, 10), [0, 2]])
+    @pytest.mark.parametrize("index", [0, slice(0, 10), [0, 2]])
     def test_vertical_slicing(self, tsdframe, index):
         assert isinstance(tsdframe[index], nap.TsdFrame)
-        np.testing.assert_array_almost_equal(
-            tsdframe.values[index], tsdframe[index].values
-        )
+        if len(tsdframe[index] == 1):
+            # use ravel to ignore shape mismatch
+            np.testing.assert_array_almost_equal(
+                tsdframe.values[index].ravel(), tsdframe[index].values.ravel()
+            )
+        else:
+            np.testing.assert_array_almost_equal(
+                tsdframe.values[index], tsdframe[index].values
+            )
         assert isinstance(tsdframe[index].time_support, nap.IntervalSet)
         np.testing.assert_array_almost_equal(
             tsdframe[index].time_support, tsdframe.time_support
