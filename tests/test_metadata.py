@@ -55,10 +55,10 @@ def test_create_iset_with_metadata():
     # test adding metadata with single interval
     start = 0
     end = 10
-    label = ["a", "b"]
+    label = [["a", "b"]]
     metadata = {"label": label}
     ep = nap.IntervalSet(start=start, end=end, metadata=metadata)
-    assert ep._metadata["label"][0] == label
+    assert ep._metadata["label"][0] == label[0]
 
 
 @pytest.mark.parametrize(
@@ -266,7 +266,7 @@ def test_set_diff_metadata():
     pd.testing.assert_series_equal(
         ep.set_diff(ep2)._metadata["m1"], ep3._metadata["m1"]
     )
-    ep4 = nap.IntervalSet(start=50, end=60, metadata={"m2": 3})
+    ep4 = nap.IntervalSet(start=50, end=60, metadata={"m2": [3]})
     np.testing.assert_array_almost_equal(ep2.set_diff(ep).values, ep4.values)
     pd.testing.assert_series_equal(
         ep2.set_diff(ep)._metadata["m2"], ep4._metadata["m2"]
@@ -377,15 +377,36 @@ def test_tsdframe_add_metadata_error(tsdframe_meta, args, kwargs, expected):
 ##################
 ## Shared tests ##
 ##################
+@pytest.fixture
+def clear_metadata(obj):
+    if isinstance(obj, nap.TsGroup):
+        columns = [col for col in obj.metadata_columns if col != "rate"]
+    else:
+        columns = obj.metadata_columns
+    obj._metadata.drop(columns=columns, inplace=True)
+    return obj
+
+
 @pytest.mark.parametrize(
     "obj",
     [
+        # IntervalSet length 4
         nap.IntervalSet(start=np.array([0, 10, 16, 25]), end=np.array([5, 15, 20, 40])),
+        # IntervalSet length 1
+        nap.IntervalSet(start=0, end=5),
+        # TsdFrame with 4 columns
         nap.TsdFrame(
             t=np.arange(100),
             d=np.random.rand(100, 4),
             time_units="s",
         ),
+        # TsdFrame with 1 column
+        nap.TsdFrame(
+            t=np.arange(100),
+            d=np.random.rand(100, 1),
+            time_units="s",
+        ),
+        # TsGroup length 4
         nap.TsGroup(
             {
                 0: nap.Ts(t=np.arange(0, 200)),
@@ -394,9 +415,23 @@ def test_tsdframe_add_metadata_error(tsdframe_meta, args, kwargs, expected):
                 3: nap.Ts(t=np.arange(0, 400, 1), time_units="s"),
             }
         ),
+        # TsGroup length 1
+        nap.TsGroup(
+            {
+                0: nap.Ts(t=np.arange(0, 200)),
+            }
+        ),
     ],
 )
+@pytest.mark.usefixtures("clear_metadata")
 class Test_Metadata:
+
+    @pytest.fixture
+    def obj_len(self, obj):
+        if isinstance(obj, nap.TsdFrame):
+            return len(obj.columns)
+        else:
+            return len(obj)
 
     @pytest.mark.parametrize(
         "info",
@@ -412,21 +447,22 @@ class Test_Metadata:
         ],
     )
     class Test_Add_Metadata:
-        def test_add_metadata(self, obj, info):
-            obj.set_info(label=info)
+
+        def test_add_metadata(self, obj, info, obj_len):
+            obj.set_info(label=info[:obj_len])
 
             # verify shape of metadata
             if isinstance(obj, nap.TsGroup):
-                assert obj._metadata.shape == (4, 2)
+                assert obj._metadata.shape == (obj_len, 2)
             else:
-                assert obj._metadata.shape == (4, 1)
+                assert obj._metadata.shape == (obj_len, 1)
 
             # verify value in private metadata
             if isinstance(info, pd.Series):
-                pd.testing.assert_series_equal(obj._metadata["label"], info)
+                pd.testing.assert_series_equal(obj._metadata["label"], info[:obj_len])
             else:
                 np.testing.assert_array_almost_equal(
-                    obj._metadata["label"].values, info
+                    obj._metadata["label"].values, info[:obj_len]
                 )
 
             # verify public retrieval of metadata
@@ -436,22 +472,22 @@ class Test_Metadata:
             pd.testing.assert_series_equal(obj.label, obj._metadata["label"])
             pd.testing.assert_series_equal(obj["label"], obj._metadata["label"])
 
-        def test_add_metadata_key(self, obj, info):
+        def test_add_metadata_key(self, obj, info, obj_len):
             # add metadata as key
-            obj["label"] = info
+            obj["label"] = info[:obj_len]
 
             # verify shape of metadata
             if isinstance(obj, nap.TsGroup):
-                assert obj._metadata.shape == (4, 2)
+                assert obj._metadata.shape == (obj_len, 2)
             else:
-                assert obj._metadata.shape == (4, 1)
+                assert obj._metadata.shape == (obj_len, 1)
 
             # verify value in private metadata
             if isinstance(info, pd.Series):
-                pd.testing.assert_series_equal(obj._metadata["label"], info)
+                pd.testing.assert_series_equal(obj._metadata["label"], info[:obj_len])
             else:
                 np.testing.assert_array_almost_equal(
-                    obj._metadata["label"].values, info
+                    obj._metadata["label"].values, info[:obj_len]
                 )
 
             # verify public retrieval of metadata
@@ -461,22 +497,22 @@ class Test_Metadata:
             pd.testing.assert_series_equal(obj.label, obj._metadata["label"])
             pd.testing.assert_series_equal(obj["label"], obj._metadata["label"])
 
-        def test_add_metadata_attr(self, obj, info):
+        def test_add_metadata_attr(self, obj, info, obj_len):
             # add metadata as attribute
-            obj.label = info
+            obj.label = info[:obj_len]
 
             # verify shape of metadata
             if isinstance(obj, nap.TsGroup):
-                assert obj._metadata.shape == (4, 2)
+                assert obj._metadata.shape == (obj_len, 2)
             else:
-                assert obj._metadata.shape == (4, 1)
+                assert obj._metadata.shape == (obj_len, 1)
 
             # verify value in private metadata
             if isinstance(info, pd.Series):
-                pd.testing.assert_series_equal(obj._metadata["label"], info)
+                pd.testing.assert_series_equal(obj._metadata["label"], info[:obj_len])
             else:
                 np.testing.assert_array_almost_equal(
-                    obj._metadata["label"].values, info
+                    obj._metadata["label"].values, info[:obj_len]
                 )
 
             # verify public retrieval of metadata
@@ -485,20 +521,41 @@ class Test_Metadata:
             )
             pd.testing.assert_series_equal(obj.label, obj._metadata["label"])
             pd.testing.assert_series_equal(obj["label"], obj._metadata["label"])
+
+    def test_add_metadata_many(self, obj, obj_len):
+        l1 = [1] * obj_len
+        l2 = [2] * obj_len
+        l3 = [3] * obj_len
+        # add with set_info kwargs
+        obj.set_info(l1=l1, l2=l2, l3=l3)
+
+        # verify shape and value in private metadata
+        if isinstance(obj, nap.TsGroup):
+            assert obj._metadata.shape == (obj_len, 4), print(obj, obj._metadata)
+        else:
+            assert obj._metadata.shape == (obj_len, 3), print(obj._metadata)
+
+        [
+            np.testing.assert_array_almost_equal(obj._metadata[col].values, label)
+            for col, label in zip(["l1", "l2", "l3"], [l1, l2, l3])
+        ]
 
     @pytest.mark.parametrize(
         "info", [pd.DataFrame(index=[0, 1, 2, 3], data=[0, 0, 0, 0], columns=["label"])]
     )
-    def test_add_metadata_df(self, obj, info):
+    def test_add_metadata_df(self, obj, info, obj_len):
+        # get proper length of metadata
+        info = info.iloc[:obj_len]
+
         # add metadata with `set_info`
         obj.set_info(info)
 
         # verify shape and value in private metadata
         if isinstance(obj, nap.TsGroup):
-            assert obj._metadata.shape == (4, 2)
+            assert obj._metadata.shape == (obj_len, 2)
             pd.testing.assert_series_equal(obj._metadata["label"], info["label"])
         else:
-            assert obj._metadata.shape == (4, 1)
+            assert obj._metadata.shape == (obj_len, 1)
             pd.testing.assert_frame_equal(obj._metadata, info)
 
         # verify public retrieval of metadata
@@ -511,7 +568,7 @@ class Test_Metadata:
         [
             (
                 # invalid names as integers
-                [pd.DataFrame(data=np.random.randint(0, 5, size=(3, 3)))],
+                [pd.DataFrame(data=np.random.randint(0, 5, size=(4, 3)))],
                 {},
                 pytest.raises(TypeError, match="Invalid metadata type"),
             ),
@@ -568,10 +625,10 @@ class Test_Metadata:
             (
                 # metadata with wrong length
                 [],
-                {"label": np.zeros(5)},
+                {"label": np.zeros(100)},
                 pytest.raises(
                     ValueError,
-                    match="input array length 5 does not match metadata length 4.",
+                    match="input array length 100 does not match",
                 ),
             ),
         ],
@@ -580,9 +637,9 @@ class Test_Metadata:
         with expected:
             obj.set_info(*args, **kwargs)
 
-    def test_add_metadata_key_error(self, obj):
+    def test_add_metadata_key_error(self, obj, obj_len):
         # type specific key errors
-        info = np.ones(4)
+        info = np.ones(obj_len)
         if isinstance(obj, nap.IntervalSet):
             with pytest.raises(RuntimeError, match="IntervalSet is immutable"):
                 obj[0] = info
@@ -596,82 +653,85 @@ class Test_Metadata:
             with pytest.raises(TypeError, match="Metadata keys must be strings!"):
                 obj[0] = info
 
-    def test_overwrite_metadata(self, obj):
+    def test_overwrite_metadata(self, obj, obj_len):
         # add metadata
-        obj.set_info(label=[1, 1, 1, 1])
+        obj.set_info(label=[1] * obj_len)
         assert np.all(obj.label == 1)
 
-        obj.set_info(label=[2, 2, 2, 2])
+        obj.set_info(label=[2] * obj_len)
         assert np.all(obj.label == 2)
 
-        obj["label"] = [3, 3, 3, 3]
+        obj["label"] = [3] * obj_len
         assert np.all(obj.label == 3)
 
-        obj.label = [4, 4, 4, 4]
+        obj.label = [4] * obj_len
         assert np.all(obj.label == 4)
 
     @pytest.mark.parametrize("label, val", [([1, 1, 2, 2], 2)])
-    def test_metadata_slicing(self, obj, label, val):
-        # add label
-        obj.set_info(label=label, extra=[0, 1, 2, 3])
+    def test_metadata_slicing(self, obj, label, val, obj_len):
+        # slicing not relevant for length 1 objects
+        if obj_len > 1:
+            # add label
+            obj.set_info(label=label, extra=[0, 1, 2, 3])
 
-        # test slicing
-        obj2 = obj[obj.label == val]
-        assert isinstance(obj2, type(obj))
-        assert np.all(obj2.label == val)
-        if isinstance(obj, nap.IntervalSet):
-            # interval set slicing resets index
-            pd.testing.assert_frame_equal(
-                obj2._metadata, obj._metadata[obj.label == val].reset_index(drop=True)
-            )
-        else:
-            # other types do not reset index
-            pd.testing.assert_frame_equal(
-                obj2._metadata, obj._metadata[obj.label == val]
-            )
+            # test slicing
+            obj2 = obj[obj.label == val]
+            assert isinstance(obj2, type(obj))
+            assert np.all(obj2.label == val)
+            if isinstance(obj, nap.IntervalSet):
+                # interval set slicing resets index
+                pd.testing.assert_frame_equal(
+                    obj2._metadata,
+                    obj._metadata[obj.label == val].reset_index(drop=True),
+                )
+            else:
+                # other types do not reset index
+                pd.testing.assert_frame_equal(
+                    obj2._metadata, obj._metadata[obj.label == val]
+                )
 
-        # type specific checks
-        if isinstance(obj, nap.IntervalSet):
-            # slicing will update rows
-            np.testing.assert_array_almost_equal(
-                obj2.values, obj.values[obj.label == val]
-            )
-            # number of columns should be the same
-            assert np.all(obj2.columns == obj.columns)
+            # type specific checks
+            if isinstance(obj, nap.IntervalSet):
+                # slicing will update rows
+                np.testing.assert_array_almost_equal(
+                    obj2.values, obj.values[obj.label == val]
+                )
+                # number of columns should be the same
+                assert np.all(obj2.columns == obj.columns)
 
-        elif isinstance(obj, nap.TsdFrame):
-            # slicing will update columns
-            np.testing.assert_array_almost_equal(
-                obj2.columns, obj.columns[obj.label == val]
-            )
-            np.testing.assert_array_almost_equal(obj2.metadata_index, obj2.columns)
-            # number of rows should be the same
-            assert len(obj2) == len(obj)
+            elif isinstance(obj, nap.TsdFrame):
+                # slicing will update columns
+                np.testing.assert_array_almost_equal(
+                    obj2.columns, obj.columns[obj.label == val]
+                )
+                np.testing.assert_array_almost_equal(obj2.metadata_index, obj2.columns)
+                # number of rows should be the same
+                assert len(obj2) == len(obj)
 
-        elif isinstance(obj, nap.TsGroup):
-            # slicing will update keys
-            np.testing.assert_array_almost_equal(
-                obj2.index, obj.index[obj.label == val]
-            )
-            # length of values should be the same
-            assert np.all(
-                len(values1) == len(values2)
-                for values1, values2 in zip(obj.values(), obj2.values())
-            )
+            elif isinstance(obj, nap.TsGroup):
+                # slicing will update keys
+                np.testing.assert_array_almost_equal(
+                    obj2.index, obj.index[obj.label == val]
+                )
+                # length of values should be the same
+                assert np.all(
+                    len(values1) == len(values2)
+                    for values1, values2 in zip(obj.values(), obj2.values())
+                )
 
-        # metadata columns should be the same
-        assert np.all(obj2.metadata_columns == obj.metadata_columns)
+            # metadata columns should be the same
+            assert np.all(obj2.metadata_columns == obj.metadata_columns)
 
-    def test_metadata_index_columns(self, obj):
+    def test_metadata_index_columns(self, obj, obj_len):
         # add metadata
-        obj.set_info(one=[1, 1, 1, 1], two=[2, 2, 2, 2], three=[3, 3, 3, 3])
+        obj.set_info(one=[1] * obj_len, two=[2] * obj_len, three=[3] * obj_len)
 
         # test metadata columns
         assert np.all(obj["one"] == 1)
         assert np.all(obj[["two", "three"]] == obj._metadata[["two", "three"]])
 
-    def test_save_and_load_npz(self, obj):
-        obj.set_info(label1=[1, 1, 2, 2], label2=[0, 1, 2, 3])
+    def test_save_and_load_npz(self, obj, obj_len):
+        obj.set_info(label1=[1] * obj_len, label2=[2] * obj_len)
 
         obj.save("obj.npz")
         file = np.load("obj.npz", allow_pickle=True)

@@ -248,22 +248,19 @@ class _MetadataBase:
                             "Metadata index does not match for argument {}".format(k)
                         )
 
-                elif len(self) == 1:
-                    # if only one interval, allow metadata to be any type
-                    if isinstance(v, (np.ndarray, list, tuple)) and len(v) == 1:
-                        # if array_like has only one element, pass directly
-                        self._metadata[k] = v
-                    else:
-                        # if not array_like or array_like has more than one element, pass as list
-                        self._metadata[k] = [v]
-
                 elif isinstance(v, (np.ndarray, list, tuple)):
                     if len(self._metadata.index) == len(v):
-                        self._metadata[k] = np.asarray(v)
+                        self._metadata[k] = v
                     else:
                         raise ValueError(
                             f"input array length {len(v)} does not match metadata length {len(self._metadata.index)}."
                         )
+
+                elif (hasattr(v, "__iter__") is False) and (
+                    len(self._metadata.index) == 1
+                ):
+                    # if only one index and metadata is non-iterable, pack into iterable for single assignment
+                    self._metadata[k] = [v]
 
                 else:
                     not_set.append({k: v})
