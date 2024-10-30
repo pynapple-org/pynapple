@@ -1829,7 +1829,7 @@ def test_pickling(obj):
         (
             1,
             3,
-            "banana",
+            "pineapple",
             None,
             pytest.raises(
                 ValueError,
