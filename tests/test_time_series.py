@@ -1017,7 +1017,7 @@ class Test_Time_Series_3:
     def test_vert_and_horz_slicing(self, tsdframe, row, col, expected):
         # get details about row index
         row_array = isinstance(row, (list, np.ndarray))
-        if row_array and isinstance(row[0], (bool, np.bool)):
+        if row_array and isinstance(row[0], (bool, np.bool_)):
             row_len = np.sum(row)
         elif row_array and isinstance(row[0], Number):
             row_len = len(row)
@@ -1026,7 +1026,7 @@ class Test_Time_Series_3:
 
         # get details about column index
         col_array = isinstance(col, (list, np.ndarray))
-        if col_array and isinstance(col[0], (bool, np.bool)):
+        if col_array and isinstance(col[0], (bool, np.bool_)):
             col_len = np.sum(col)
         elif col_array and isinstance(col[0], Number):
             col_len = len(col)
