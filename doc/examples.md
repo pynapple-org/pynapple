@@ -8,7 +8,7 @@ with neurophysiological datasets.
 :::{card}
 ```{toctree}
 :maxdepth: 3
-Analysing Head-direction cells <examples/tutorial_HD_dataset>
+Analysing head-direction cells <examples/tutorial_HD_dataset>
 ```
 :::
 

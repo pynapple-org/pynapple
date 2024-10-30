@@ -11,10 +11,6 @@ kernelspec:
   name: python3
 ---
 
-```{code-cell} ipython3
-%matplotlib inline
-```
-
 
 Spikes-phase coupling
 =====================
@@ -34,13 +30,13 @@ import numpy as np
 import pandas as pd
 import requests
 import scipy
-import seaborn
+import seaborn as sns
 import tqdm
+import pynapple as nap
 
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
-seaborn.set_theme(context='notebook', style="ticks", rc=custom_params)
+sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
 
-import pynapple as nap
 ```
 
 ***

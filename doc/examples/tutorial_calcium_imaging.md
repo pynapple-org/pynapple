@@ -21,9 +21,6 @@ For the example dataset, we will be working with a recording of a freely-moving 
 
 The NWB file for the example is hosted on [OSF](https://osf.io/sbnaw). We show below how to stream it.
 
-See the [documentation](https://pynapple-org.github.io/pynapple/) of Pynapple for instructions on installing the package.
-
-This tutorial was made by Sofia Skromne Carrasco and Guillaume Viejo.
 
 ```{code-cell} ipython3
 ---
@@ -202,5 +199,13 @@ plt.ylabel("Fluorescence")
 plt.subplot(1,2,2)
 plt.plot(half2[4])
 plt.title("Second half")
+plt.xlabel("Angle")
 plt.show()
 ```
+
+:::{card}
+Authors
+^^^
+Sofia Skromne Carrasco
+
+:::

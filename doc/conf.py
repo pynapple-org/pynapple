@@ -41,6 +41,7 @@ extensions = [
     'sphinx_copybutton',  # Adds copy button to code blocks
     'sphinx_design',  # For layout components
     'myst_nb',
+    # 'sphinxcontrib.apidoc'
     # 'sphinx_gallery.gen_gallery',    
     # 'myst_sphinx_gallery',
 ]
@@ -62,9 +63,16 @@ exclude_patterns = ['_build', 'docstrings', 'nextgen', 'Thumbs.db', '.DS_Store']
 # Generate the API documentation when building
 autosummary_generate = True
 numpydoc_show_class_members = True
+autodoc_default_options = {
+    'members': True,
+    'inherited-members': True,
+    'show-inheritance': True,
+    }
+
 # apidoc_module_dir = '../pynapple'
+# apidoc_output_dir = 'reference'
+# apidoc_excluded_paths = ['tests']
 # apidoc_separate_modules = True
-autodoc_default_options = {'inherited-members': True}
 
 
 # ----------------------------------------------------------------------------

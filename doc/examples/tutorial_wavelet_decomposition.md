@@ -19,18 +19,6 @@ We will examine the dataset from [Grosmark & Buzsáki (2016)](https://www.ncbi.n
 
 Specifically, we will examine Local Field Potential data from a period of active traversal of a linear track.
 
-+++
-
-!!! warning
-    This tutorial uses matplotlib for displaying the figure
-
-    You can install all with `pip install matplotlib requests tqdm seaborn`
-
-
-First, import the necessary libraries:
-
-mkdocs_gallery_thumbnail_number = 6
-
 
 ```{code-cell} ipython3
 ---
@@ -44,11 +32,13 @@ import matplotlib.colors as mcolors
 import matplotlib.pyplot as plt
 import numpy as np
 import requests
-import seaborn
+import seaborn as sns
 import tqdm
-
-seaborn.set_theme()
 import pynapple as nap
+
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
+
 ```
 
 ***

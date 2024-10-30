@@ -11,12 +11,8 @@ kernelspec:
   name: python3
 ---
 
-```{code-cell} ipython3
-%matplotlib inline
-```
 
-
-Peyrache et al (2015) Tutorial
+Analysing head-direction cells
 ============
 
 This tutorial demonstrates how we use Pynapple to generate Figure 4a in the [publication](https://elifesciences.org/reviewed-preprints/85786).
@@ -129,7 +125,7 @@ What does this look like ?
 
 
 ```{code-cell} ipython3
-print(tuning_curves)
+tuning_curves
 ```
 
 Each row indicates an angular bin (in radians), and each column corresponds to a single unit. Let's compute the preferred angle quickly as follows:
@@ -181,8 +177,6 @@ for i, n in enumerate(pref_ang.sort_values().index.values):
     plt.plot(
         smoothcurves[n], color=color.loc[n]
     )  # Colour of the curves determined by preferred angle    
-    plt.xlabel("Angle (rad)")  # Angle in radian, on the X-axis
-    plt.ylabel("Firing Rate (Hz)")  # Firing rate in Hz, on the Y-axis
     plt.xticks([])
 plt.show()
 ```
@@ -222,10 +216,10 @@ The variable 'decoded' indicates the most probable angle in which the animal was
 
 
 ```{code-cell} ipython3
-print(proba_feature.as_dataframe())
+print(proba_feature)
 ```
 
-Each row of this pandas DataFrame is a time bin, and each column is an angular bin. The sum of all values in a row add up to 1.
+Each row is a time bin, and each column is an angular bin. The sum of all values in a row add up to 1.
 
 Now, let's plot the raster plot for a given period of time, and overlay the actual and decoded HD on the population activity.
 
@@ -245,6 +239,8 @@ plt.plot(
     decoded.restrict(ep), "--", color="grey", linewidth=2, label="decoded HD"
 )  # decoded HD
 plt.legend(loc="upper left")
+plt.xlabel("Time (s)")
+plt.ylabel("Neurons")
 ```
 
 From this plot, we can see that the decoder is able to estimate the head-direction based on the population activity in ADn. Amazing!

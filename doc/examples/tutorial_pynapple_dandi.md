@@ -11,10 +11,6 @@ kernelspec:
   name: python3
 ---
 
-```{code-cell} ipython3
-%matplotlib inline
-```
-
 
 Streaming data from DANDI
 =========================

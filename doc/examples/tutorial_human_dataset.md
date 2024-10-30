@@ -11,12 +11,8 @@ kernelspec:
   name: python3
 ---
 
-```{code-cell} ipython3
-%matplotlib inline
-```
 
-
-Zheng et al (2022) Tutorial
+Computing perievent
 ============
 
 This tutorial demonstrates how we use Pynapple on various publicly available datasets in systems neuroscience to streamline analysis. In this tutorial, we will examine the dataset from [Zheng et al (2022)](https://www.nature.com/articles/s41593-022-01020-w), which was used to generate Figure 4c in the [publication](https://elifesciences.org/reviewed-preprints/85786).
@@ -178,13 +174,9 @@ Let's plot the PETH
 ```{code-cell} ipython3
 plt.figure(figsize =(15,8))
 plt.subplot(211)  # Plot the figures in 2 rows
-for i, n in enumerate(NB_peth):
-    plt.plot(
-        NB_peth[n].as_units("s").fillna(i),
-        "o",
+plt.plot(NB_peth.to_tsd(), "o",
         color=[102 / 255, 204 / 255, 0 / 255],
-        markersize=4,
-    )  # Plot PETH
+        markersize=4)
 plt.axvline(0, linewidth=2, color="k", linestyle="--")  # Plot a line at t = 0
 plt.yticks([0, 30])  # Set ticks on Y-axis
 plt.gca().set_yticklabels(["1", "30"])  # Label the ticks
@@ -192,13 +184,9 @@ plt.xlabel("Time from NB (s)")  # Time from boundary in seconds, on X-axis
 plt.ylabel("Trial Number")  # Trial number on Y-axis
 
 plt.subplot(212)
-for i, n in enumerate(HB_peth):
-    plt.plot(
-        HB_peth[n].as_units("s").fillna(i),
-        "o",
+plt.plot(HB_peth.to_tsd(), "o",
         color=[255 / 255, 99 / 255, 71 / 255],
-        markersize=4,
-    )  # Plot PETH
+        markersize=4)  # Plot PETH
 plt.axvline(0, linewidth=2, color="k", linestyle="--")  # Plot a line at t = 0
 plt.yticks([0, 30])  # Set ticks on Y-axis
 plt.gca().set_yticklabels(["1", "30"])  # Label the ticks

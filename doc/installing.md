@@ -32,6 +32,8 @@ Once installed, you can import pynapple with
 import pynapple as nap
 ```
 
+To get started with pynapple, please read the [introduction](user_guide/01_introduction_to_pynapple) that introduce the minimal concepts.
+
 ## Dependencies
 
 

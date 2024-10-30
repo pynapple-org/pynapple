@@ -403,34 +403,34 @@ The `process` module of pynapple contains submodules that group methods that can
 Some functions have been doubled given the nature of the data. For instance, computing a 1d tuning curves from spiking activity requires the `nap.compute_1d_tuning_curves`. The same function for calcium imaging data which is a continuous time series is available with `nap.compute_1d_tuning_curves_continuous`. 
 :::
 
-**Discrete correlograms**
+**[Discrete correlograms](05_correlograms)**
 
 This module computes correlograms of discrete events, for example the cross-correlograms of a population of neurons.
 
-**Bayesian decoding**
+**[Bayesian decoding](07_decoding)**
 
 The decoding module perfoms bayesian decoding given a set of tuning curves and a `TsGroup`.
 
-**Filtering**
+**[Filtering](12_filtering)**
 
 Bandpass, lowpass, highpass or bandstop filtering can be done to any time series using either Butterworth filter or windowed-sinc convolution.
 
-**Perievent time histogram**
+**[Perievent time histogram](08_perievent)**
 
 The perievent module has a set of functions to center time series and timestamps data around a particular events.
 
-**Randomizing**
+**[Randomizing](09_randomization)**
 
 The randomize module holds multiple technique to shuffle timestamps in order to create surrogate datasets.
 
-**Spectrum**
+**[Spectrum](10_power_spectral_density)**
 
 The spectrum module contains the methods to return the (mean) power spectral density of a time series.
 
-**Tuning curves**
+**[Tuning curves](06_tuning_curves)**
 
 Tuning curves of neurons based on spiking or calcium activity can be computed.
 
-**Wavelets**
+**[Wavelets](11_wavelets)**
 
 The wavelets module performs Morlet wavelets decomposition of a time series. 
