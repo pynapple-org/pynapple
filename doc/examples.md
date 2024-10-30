@@ -5,7 +5,7 @@ This page contains fully worked examples of data analysis using pynapple
 with neurophysiological datasets.
 
 
-:::{card} 
+:::{card}
 ```{toctree}
 :maxdepth: 3
 Analysing Head-direction cells <examples/tutorial_HD_dataset>
@@ -48,6 +48,6 @@ Example wavelet decomposition <examples/tutorial_wavelet_decomposition>
 :::{card} 
 ```{toctree}
 :maxdepth: 3
-Example filtering & detecting SWRs <examples/tutorial_phase_preferences>
+Example filtering <examples/tutorial_phase_preferences>
 ```
 :::

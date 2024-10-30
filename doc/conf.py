@@ -131,17 +131,6 @@ autodoc_default_options = {
 }
 napoleon_numpy_docstring = True
 
-## MystNB
-# execution_excludepatterns = ['tutorial_*', 'plot_*', '*.py', '*.ipynb']
-
-# sphinx_gallery_conf = {
-#     'examples_dirs': 'examples',   # path to your example scripts
-#     'gallery_dirs': 'auto_examples',
-#     'backreferences_dir': 'generated/backreferences',   
-# }
-
-
-
 
 
 
