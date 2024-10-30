@@ -1,12 +1,3 @@
-#!/usr/bin/env python
-
-# -*- coding: utf-8 -*-
-# @Author: Guillaume Viejo
-# @Date:   2023-07-05 16:03:25
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-08-02 11:16:07
-
-
 from pathlib import Path
 
 import numpy as np
@@ -44,7 +35,7 @@ def _find_class_from_variables(file_variables, data_ndims=None):
 
 
 class NPZFile(object):
-    """Class that points to a NPZ file that can be loaded as a pynapple object.
+    """Class to read/write NPZ files as a pynapple object.
     Objects have a save function in npz format as well as the Folder class.
 
     Examples

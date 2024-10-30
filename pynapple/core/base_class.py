@@ -14,7 +14,7 @@ from .time_index import TsIndex
 from .utils import check_filename, convert_to_numpy_array
 
 
-class Base(abc.ABC):
+class _Base(abc.ABC):
     """
     Abstract base class for time series and timestamps objects.
     Implement most of the shared functions across concrete classes `Ts`, `Tsd`, `TsdFrame`, `TsdTensor`

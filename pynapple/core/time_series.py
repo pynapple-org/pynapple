@@ -27,7 +27,7 @@ from scipy import signal
 from tabulate import tabulate
 
 from ._core_functions import _bin_average, _convolve, _dropna, _restrict, _threshold
-from .base_class import Base
+from .base_class import _Base
 from .interval_set import IntervalSet
 from .time_index import TsIndex
 from .utils import (
@@ -61,7 +61,7 @@ def _get_class(data):
         return TsdTensor
 
 
-class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
+class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
     """
     Abstract base class for time series objects.
     Implement most of the shared functions across concrete classes `Tsd`, `TsdFrame`, `TsdTensor`
@@ -300,7 +300,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
             52 52
         """
         assert isinstance(
-            data, BaseTsd
+            data, _BaseTsd
         ), "First argument should be an instance of Tsd, TsdFrame or TsdTensor"
 
         t, d, time_support, kwargs = super().value_from(data, ep)
@@ -630,7 +630,7 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         right : None, optional
             Value to return for ts > tsd[-1], default is tsd[-1].
         """
-        if not isinstance(ts, Base):
+        if not isinstance(ts, _Base):
             raise IOError(
                 "First argument should be an instance of Ts, Tsd, TsdFrame or TsdTensor"
             )
@@ -689,9 +689,9 @@ class BaseTsd(Base, NDArrayOperatorsMixin, abc.ABC):
         return self.__class__(t=new_t, d=new_d, **kwargs_dict)
 
 
-class TsdTensor(BaseTsd):
+class TsdTensor(_BaseTsd):
     """
-    TsdTensor
+    Container for neurophysiological time series with more than 2 dimensions (movies).
 
     Attributes
     ----------
@@ -758,16 +758,16 @@ class TsdTensor(BaseTsd):
             if self.shape[0] > max_rows:
                 n_rows = max_rows // 2
                 for i, array in zip(self.index[0:n_rows], self.values[0:n_rows]):
-                    _str_.append([i.__repr__(), create_str(array)])
+                    _str_.append([i, create_str(array)])
                 _str_.append(["...", ""])
                 for i, array in zip(
                     self.index[-n_rows:],
                     self.values[self.values.shape[0] - n_rows : self.values.shape[0]],
                 ):
-                    _str_.append([i.__repr__(), create_str(array)])
+                    _str_.append([i, create_str(array)])
             else:
                 for i, array in zip(self.index, self.values):
-                    _str_.append([i.__repr__(), create_str(array)])
+                    _str_.append([i, create_str(array)])
 
             return tabulate(_str_, headers=headers, colalign=("left",)) + "\n" + bottom
 
@@ -848,9 +848,9 @@ class TsdTensor(BaseTsd):
         return
 
 
-class TsdFrame(BaseTsd):
+class TsdFrame(_BaseTsd):
     """
-    TsdFrame
+    Column-based container for neurophysiological time series.
 
     Attributes
     ----------
@@ -1117,9 +1117,9 @@ class TsdFrame(BaseTsd):
         return
 
 
-class Tsd(BaseTsd):
+class Tsd(_BaseTsd):
     """
-    A container around numpy.ndarray specialized for neurophysiology time series.
+    1-dimensional container for neurophysiological time series.
 
     Tsd provides standardized time representation, plus various functions for manipulating times series.
 
@@ -1422,9 +1422,9 @@ class Tsd(BaseTsd):
         return
 
 
-class Ts(Base):
+class Ts(_Base):
     """
-    Timestamps only object for a time series with only time index,
+    Timestamps only object for a time series with only time index.
 
     Attributes
     ----------
@@ -1471,12 +1471,12 @@ class Ts(Base):
         if len(self) > max_rows:
             n_rows = max_rows // 2
             _str_ = "\n".join(
-                [i.__repr__() for i in self.index[0:n_rows]]
+                [str(i) for i in self.index[0:n_rows]]
                 + ["..."]
-                + [i.__repr__() for i in self.index[-n_rows:]]
+                + [str(i) for i in self.index[-n_rows:]]
             )
         else:
-            _str_ = "\n".join([i.__repr__() for i in self.index])
+            _str_ = "\n".join([str(i) for i in self.index])
 
         bottom = "shape: {}".format(len(self.index))
         return "\n".join((upper, _str_, bottom))
@@ -1563,7 +1563,7 @@ class Ts(Base):
             52 52
         """
         assert isinstance(
-            data, BaseTsd
+            data, _BaseTsd
         ), "First argument should be an instance of Tsd, TsdFrame or TsdTensor"
 
         t, d, time_support, kwargs = super().value_from(data, ep)

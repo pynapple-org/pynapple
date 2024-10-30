@@ -1,6 +1,7 @@
 """
 
-    The class `TsGroup` helps group objects with different timestamps (i.e. timestamps of spikes of a population of neurons).
+The class `TsGroup` helps group objects with different timestamps 
+(i.e. timestamps of spikes of a population of neurons).
 
 """
 
@@ -15,11 +16,11 @@ from tabulate import tabulate
 
 from ._core_functions import _count
 from ._jitted_functions import jitunion, jitunion_isets
-from .base_class import Base
+from .base_class import _Base
 from .config import nap_config
 from .interval_set import IntervalSet
 from .time_index import TsIndex
-from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
+from .time_series import Ts, Tsd, TsdFrame, _BaseTsd, is_array_like
 from .utils import _get_terminal_size, check_filename, convert_to_numpy_array
 
 
@@ -57,7 +58,7 @@ def _union_intervals(i_sets):
 
 class TsGroup(UserDict):
     """
-    The TsGroup is a dictionary-like object to hold multiple [`Ts`][pynapple.core.time_series.Ts] or [`Tsd`][pynapple.core.time_series.Tsd] objects with different time index.
+    Dictionary-like object to group objects with different timestamps (for example timestamps of spikes of a population of neurons).
 
     Attributes
     ----------
@@ -145,7 +146,7 @@ class TsGroup(UserDict):
 
         # Transform elements to Ts/Tsd objects
         for k in self.index:
-            if not isinstance(data[k], Base):
+            if not isinstance(data[k], _Base):
                 if isinstance(data[k], list) or is_array_like(data[k]):
                     warnings.warn(
                         "Elements should not be passed as {}. Default time units is seconds when creating the Ts object.".format(
@@ -946,6 +947,7 @@ class TsGroup(UserDict):
               2             4
 
         This exemple shows how to get a new TsGroup with all elements for which the metainfo frequency is above 1.
+
         >>> newtsgroup = tsgroup.getby_threshold('freq', 1, op = '>')
           Index    Freq. (Hz)
         -------  ------------
@@ -986,6 +988,7 @@ class TsGroup(UserDict):
 
         Examples
         --------
+
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
@@ -1000,6 +1003,7 @@ class TsGroup(UserDict):
               2             4        2
 
         This exemple shows how to bin the TsGroup according to one metainfo key.
+
         >>> newtsgroup, bincenter = tsgroup.getby_intervals('alpha', [0, 1, 2])
         >>> newtsgroup
         [  Index    Freq. (Hz)    alpha
@@ -1010,8 +1014,10 @@ class TsGroup(UserDict):
                1             2        1]
 
         By default, the function returns the center of the bins.
+
         >>> bincenter
         array([0.5, 1.5])
+
         """
         idx = np.digitize(self._metadata[key], bins) - 1
         groups = self._metadata.index.groupby(idx)
@@ -1038,6 +1044,7 @@ class TsGroup(UserDict):
 
         Examples
         --------
+
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
@@ -1052,6 +1059,7 @@ class TsGroup(UserDict):
               2             4        1
 
         This exemple shows how to group the TsGroup according to one metainfo key.
+
         >>> newtsgroup = tsgroup.getby_category('group')
         >>> newtsgroup
         {0:   Index    Freq. (Hz)    group
@@ -1061,6 +1069,7 @@ class TsGroup(UserDict):
          -------  ------------  -------
                1             2        1
                2             4        1}
+
         """
         groups = self._metadata.groupby(key).groups
         sliced = {k: self[list(groups[k])] for k in groups.keys()}
@@ -1279,17 +1288,14 @@ class TsGroup(UserDict):
         and assigning to each the corresponding index. Typically, a TsGroup like
         this :
 
-        ``` py
-        TsGroup({
+        >>> TsGroup({
             0 : Tsd(t=[0, 2, 4], d=[1, 2, 3])
-            1 : Tsd(t=[1, 5], d=[5, 6])
-        })
-        ```
+            1 : Tsd(t=[1, 5], d=[5, 6])})
 
         will be saved as npz with the following keys:
 
-        ``` py
-        {
+
+        >>> {
             't' : [0, 1, 2, 4, 5],
             'd' : [1, 5, 2, 3, 5],
             'index' : [0, 1, 0, 0, 1],
@@ -1298,7 +1304,6 @@ class TsGroup(UserDict):
             'keys' : [0, 1],
             'type' : 'TsGroup'
         }
-        ```
 
         Metadata are saved by columns with the column name as the npz key. To avoid
         potential conflicts, make sure the columns name of the metadata are different
@@ -1367,7 +1372,7 @@ class TsGroup(UserDict):
         for n in self.index:
             kl = len(self[n])
             times[k : k + kl] = self[n].index
-            if isinstance(self[n], BaseTsd):
+            if isinstance(self[n], _BaseTsd):
                 data[k : k + kl] = self[n].values
             index[k : k + kl] = int(n)
             k += kl

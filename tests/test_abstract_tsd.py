@@ -2,12 +2,12 @@ import pynapple as nap
 import numpy as np
 import pandas as pd
 import pytest
-from pynapple.core.time_series import BaseTsd
-from pynapple.core.base_class import Base
+from pynapple.core.time_series import _BaseTsd
+from pynapple.core.base_class import _Base
 from pynapple.core.time_index import TsIndex
 
 
-class MyClass(BaseTsd):
+class MyClass(_BaseTsd):
 
     def __getitem__(self, key):
         return key
@@ -21,7 +21,7 @@ class MyClass(BaseTsd):
     def __repr__(self):
         return "In repr"
 
-class MyClass2(Base):
+class MyClass2(_Base):
 
     def __getitem__(self, key):
         return key
