@@ -141,6 +141,8 @@ napoleon_numpy_docstring = True
 
 
 
+nitpicky = True
+
 
 
 

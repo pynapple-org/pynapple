@@ -25,7 +25,7 @@ In addition, the `Folder` class helps you walk through a set of nested folders t
 
 When loading a NWB file, pynapple will walk through it and test the compatibility of each data structure with a 
 pynapple objects. If the data structure is incompatible, pynapple will ignore it. The class that deals with reading 
-NWB file is [`nap.NWBFile`](generated/pynapple.io.interface_nwb.NWBFile.html#pynapple.io.interface_nwb.NWBFile). You can pass the path to a NWB file or directly an opened NWB file. Alternatively 
+NWB file is [`nap.NWBFile`](pynapple.io.interface_nwb.NWBFile). You can pass the path to a NWB file or directly an opened NWB file. Alternatively 
 you can use the function [`nap.load_file`](../../../reference/io/misc/#pynapple.io.misc.load_file).
 
 :::{note}

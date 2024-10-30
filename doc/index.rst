@@ -4,6 +4,20 @@
 pynapple: python neural analysis package
 ========================================
 
+.. toctree::
+   :maxdepth: 1
+   :hidden:
+
+   Installing <installing>
+   User guide <user_guide>
+   Examples <examples>
+   API <api>
+   Releases <releases>
+   External projects <external>
+   GPU acceleration <pynajax>
+   Citing <citing>
+
+
 |
 
 .. grid:: 1 1 2 2
@@ -36,21 +50,12 @@ pynapple: python neural analysis package
 
             Getting started
 
-   .. grid-item-card:: Contents
-      :class-title: sd-fs-5
-      :class-body: sd-pl-3
+         .. button-ref:: citing
+            :color: primary
+            :shadow:
 
-      .. toctree::
-         :maxdepth: 1
+            Citing
 
-         Installing <installing>
-         User guide <user_guide>
-         Examples <examples>
-         API <api>
-         Releases <releases>
-         External projects <external>
-         GPU acceleration <pynajax>
-         Citing <citing>
 
 |
 
@@ -59,55 +64,52 @@ pynapple: python neural analysis package
 
    .. grid-item-card:: Time Series
       :text-align: center
+      :link: ./user_guide/04_core_methods.html
 
-      .. image:: _static/example_thumbs/timeseries.svg
-         :target: ./user_guide/04_core_methods.html
+      .. image:: _static/example_thumbs/timeseries.svg         
          :class: dark-light
 
    .. grid-item-card:: Decoding
       :text-align: center
+      :link: ./user_guide/07_decoding.html
 
-      .. image:: _static/example_thumbs/decoding.svg
-         :target: ./user_guide/07_decoding.html
+      .. image:: _static/example_thumbs/decoding.svg         
          :class: dark-light
 
    .. grid-item-card:: Perievent
       :text-align: center
+      :link: ./user_guide/08_perievent.html
 
-      .. image:: _static/example_thumbs/perievent.svg
-         :target: ./user_guide/08_perievent.html
+      .. image:: _static/example_thumbs/perievent.svg         
          :class: dark-light
 
    .. grid-item-card:: Correlation
       :text-align: center
+      :link: ./user_guide/05_correlograms.html
 
-      .. image:: _static/example_thumbs/correlation.svg
-         :target: ./user_guide/05_correlograms.html
+      .. image:: _static/example_thumbs/correlation.svg         
          :class: dark-light
 
    .. grid-item-card:: Tuning curves
       :text-align: center
+      :link: ./user_guide/06_tuning_curves.html
 
-      .. image:: _static/example_thumbs/tuningcurves.svg
-         :target: ./user_guide/06_tuning_curves.html
+      .. image:: _static/example_thumbs/tuningcurves.svg         
          :class: dark-light
 
    .. grid-item-card:: Wavelets
       :text-align: center
+      :link: ./user_guide/11_wavelets.html
 
-      .. image:: _static/example_thumbs/wavelets.svg
-         :target: ./user_guide/11_wavelets.html
+      .. image:: _static/example_thumbs/wavelets.svg         
          :class: dark-light
 
    .. grid-item-card:: Filtering
       :text-align: center
+      :link: ./user_guide/07_decoding.html
 
-      .. image:: _static/example_thumbs/filtering.svg
-         :target: ./user_guide/07_decoding.html
+      .. image:: _static/example_thumbs/filtering.svg         
          :class: dark-light
-
-|
-|
 
 
 
