@@ -20,7 +20,7 @@ from .base_class import _Base
 from .config import nap_config
 from .interval_set import IntervalSet
 from .time_index import TsIndex
-from .time_series import _BaseTsd, Ts, Tsd, TsdFrame, is_array_like
+from .time_series import Ts, Tsd, TsdFrame, _BaseTsd, is_array_like
 from .utils import _get_terminal_size, check_filename, convert_to_numpy_array
 
 
@@ -947,7 +947,7 @@ class TsGroup(UserDict):
               2             4
 
         This exemple shows how to get a new TsGroup with all elements for which the metainfo frequency is above 1.
-        
+
         >>> newtsgroup = tsgroup.getby_threshold('freq', 1, op = '>')
           Index    Freq. (Hz)
         -------  ------------
@@ -1294,7 +1294,7 @@ class TsGroup(UserDict):
 
         will be saved as npz with the following keys:
 
-        
+
         >>> {
             't' : [0, 1, 2, 4, 5],
             'd' : [1, 5, 2, 3, 5],

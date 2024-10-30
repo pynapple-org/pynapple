@@ -118,4 +118,5 @@ This package is supported by the Center for Computational Neuroscience, in the F
 
 .. image:: _static/CCN-logo-wText.png
    :width: 200px
+   :target: https://www.simonsfoundation.org/flatiron/center-for-computational-neuroscience/
 

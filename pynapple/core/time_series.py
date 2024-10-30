@@ -850,7 +850,7 @@ class TsdTensor(_BaseTsd):
 
 class TsdFrame(_BaseTsd):
     """
-    Column-based container for neurophysiological time series.    
+    Column-based container for neurophysiological time series.
 
     Attributes
     ----------
@@ -1119,7 +1119,7 @@ class TsdFrame(_BaseTsd):
 
 class Tsd(_BaseTsd):
     """
-    1-dimensional container for neurophysiological time series.    
+    1-dimensional container for neurophysiological time series.
 
     Tsd provides standardized time representation, plus various functions for manipulating times series.
 

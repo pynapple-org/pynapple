@@ -81,8 +81,6 @@ class IntervalSet(NDArrayOperatorsMixin):
 
     def __init__(self, start, end=None, time_units="s"):
         """
-        IntervalSet initializer
-
         If start and end are not aligned, meaning that:
         1. len(start) != len(end)
         2. end[i] > start[i]
@@ -96,7 +94,7 @@ class IntervalSet(NDArrayOperatorsMixin):
         start : numpy.ndarray or number or pandas.DataFrame or pandas.Series or iterable of (start, end) pairs
             Beginning of intervals. Alternatively, the `end` argument can be left out and `start` can be one of the
             following:
-            
+
             - IntervalSet
             - pandas.DataFrame with columns ["start", "end"]
             - iterable of (start, end) pairs

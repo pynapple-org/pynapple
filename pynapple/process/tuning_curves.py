@@ -347,7 +347,7 @@ def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
 def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=False):
     """
     Mutual information of a tuning curve computed from 2-d features.
-    
+
     See:
 
     Skaggs, W. E., McNaughton, B. L., & Gothard, K. M. (1993).
