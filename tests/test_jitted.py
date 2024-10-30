@@ -308,8 +308,10 @@ def test_jitintersect():
         ep3 = nap.IntervalSet(
             s,
             e,
-            label1=ep1.label1.loc[m[:, 0]].reset_index(drop=True),
-            label2=ep2.label2.loc[m[:, 1]].reset_index(drop=True),
+            metadata={
+                "label1": ep1.label1.loc[m[:, 0]].reset_index(drop=True),
+                "label2": ep2.label2.loc[m[:, 1]].reset_index(drop=True),
+            },
         )
 
         i_sets = [ep1, ep2]
@@ -352,7 +354,7 @@ def test_jitintersect():
         label1 = df["label1"][ix].reset_index(drop=True)
         label2 = df["label2"][ix].reset_index(drop=True)
 
-        ep4 = nap.IntervalSet(start, end, label1=label1, label2=label2)
+        ep4 = nap.IntervalSet(start, end, metadata={"label1": label1, "label2": label2})
 
         np.testing.assert_array_almost_equal(ep3, ep4)
         pd.testing.assert_frame_equal(ep3._metadata, ep4._metadata)
@@ -401,7 +403,9 @@ def test_jitdiff():
         s, e, m = nap.core._jitted_functions.jitdiff(
             ep1.start, ep1.end, ep2.start, ep2.end
         )
-        ep3 = nap.IntervalSet(s, e, label1=ep1.label1.loc[m].reset_index(drop=True))
+        ep3 = nap.IntervalSet(
+            s, e, metadata={"label1": ep1.label1.loc[m].reset_index(drop=True)}
+        )
 
         i_sets = (ep1, ep2)
         time = np.hstack(
@@ -441,7 +445,9 @@ def test_jitdiff():
         idx = start != end
 
         ep4 = nap.IntervalSet(
-            start[idx], end[idx], label1=label1[idx].reset_index(drop=True)
+            start[idx],
+            end[idx],
+            metadata={"label1": label1[idx].reset_index(drop=True)},
         )
 
         np.testing.assert_array_almost_equal(ep3, ep4)

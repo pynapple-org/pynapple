@@ -22,9 +22,13 @@ import pynapple as nap
 def iset_meta():
     start = np.array([0, 10, 16, 25])
     end = np.array([5, 15, 20, 40])
-    label = ["a", "b", "c", "d"]
-    info = np.arange(4)
-    return nap.IntervalSet(start=start, end=end, label=label, info=info)
+    metadata = {"label": ["a", "b", "c", "d"], "info": np.arange(4)}
+    return nap.IntervalSet(start=start, end=end, metadata=metadata)
+
+
+@pytest.fixture
+def label_meta():
+    return {"label": [1, 2, 3, 4]}
 
 
 def test_create_iset_with_metadata():
@@ -32,11 +36,15 @@ def test_create_iset_with_metadata():
     end = np.array([5, 15, 20, 40])
     sr_info = pd.Series(index=[0, 1, 2, 3], data=[0, 0, 0, 0], name="sr")
     ar_info = np.ones(4)
-    lt_info = [3, 3, 3, 3]
-    tu_info = (4, 4, 4, 4)
-    ep = nap.IntervalSet(
-        start=start, end=end, sr=sr_info, ar=ar_info, lt=lt_info, tu=tu_info
-    )
+    lt_info = [2, 2, 2, 2]
+    tu_info = (3, 3, 3, 3)
+    metadata = {
+        "sr": sr_info,
+        "ar": ar_info,
+        "lt": lt_info,
+        "tu": tu_info,
+    }
+    ep = nap.IntervalSet(start=start, end=end, metadata=metadata)
     assert ep._metadata.shape == (4, 4)
     np.testing.assert_array_almost_equal(ep._metadata["sr"].values, sr_info.values)
     np.testing.assert_array_almost_equal(
@@ -48,7 +56,8 @@ def test_create_iset_with_metadata():
     start = 0
     end = 10
     label = ["a", "b"]
-    ep = nap.IntervalSet(start=start, end=end, label=label)
+    metadata = {"label": label}
+    ep = nap.IntervalSet(start=start, end=end, metadata=metadata)
     assert ep._metadata["label"][0] == label
 
 
@@ -72,10 +81,9 @@ def test_create_iset_with_metadata():
         ),
     ],
 )
-def test_create_iset_with_metadata_warn_drop(start, end):
-    label = [1, 2, 3, 4]
+def test_create_iset_with_metadata_warn_drop(start, end, label_meta):
     with warnings.catch_warnings(record=True) as w:
-        ep = nap.IntervalSet(start=start, end=end, label=label)
+        ep = nap.IntervalSet(start=start, end=end, metadata=label_meta)
     assert "dropping metadata" in str(w[-1].message)
     assert len(ep.metadata_columns) == 0
 
@@ -90,10 +98,9 @@ def test_create_iset_with_metadata_warn_drop(start, end):
         ),
     ],
 )
-def test_create_iset_with_metadata_warn_keep(start, end):
-    label = [1, 2, 3, 4]
+def test_create_iset_with_metadata_warn_keep(start, end, label_meta):
     with warnings.catch_warnings(record=True) as w:
-        ep = nap.IntervalSet(start=start, end=end, label=label)
+        ep = nap.IntervalSet(start=start, end=end, metadata=label_meta)
     assert "dropping metadata" not in str(w[-1].message)
     assert len(ep.metadata_columns) == 1
 
@@ -218,7 +225,7 @@ def test_get_iset_with_metadata_errors(iset_meta, index, expected):
 
 
 def test_as_dataframe_metadata():
-    ep = nap.IntervalSet(start=0, end=100, m1=0, m2=1)
+    ep = nap.IntervalSet(start=0, end=100, metadata={"m1": 0, "m2": 1})
     df = pd.DataFrame(
         data=np.array([[0.0, 100.0, 0, 1]]),
         columns=["start", "end", "m1", "m2"],
@@ -228,9 +235,11 @@ def test_as_dataframe_metadata():
 
 
 def test_intersect_metadata():
-    ep = nap.IntervalSet(start=[0, 50], end=[30, 70], m1=[0, 1])
-    ep2 = nap.IntervalSet(start=20, end=60, m2=2)
-    ep3 = nap.IntervalSet(start=[20, 50], end=[30, 60], m1=[0, 1], m2=[2, 2])
+    ep = nap.IntervalSet(start=[0, 50], end=[30, 70], metadata={"m1": [0, 1]})
+    ep2 = nap.IntervalSet(start=20, end=60, metadata={"m2": 2})
+    ep3 = nap.IntervalSet(
+        start=[20, 50], end=[30, 60], metadata={"m1": [0, 1], "m2": [2, 2]}
+    )
     np.testing.assert_array_almost_equal(ep.intersect(ep2).values, ep3.values)
     np.testing.assert_array_almost_equal(ep2.intersect(ep).values, ep3.values)
     pd.testing.assert_series_equal(
@@ -248,14 +257,16 @@ def test_intersect_metadata():
 
 
 def test_set_diff_metadata():
-    ep = nap.IntervalSet(start=[0, 60], end=[50, 80], m1=[0, 1])
-    ep2 = nap.IntervalSet(start=[20, 40], end=[30, 70], m2=[2, 3])
-    ep3 = nap.IntervalSet(start=[0, 30, 70], end=[20, 40, 80], m1=[0, 0, 1])
+    ep = nap.IntervalSet(start=[0, 60], end=[50, 80], metadata={"m1": [0, 1]})
+    ep2 = nap.IntervalSet(start=[20, 40], end=[30, 70], metadata={"m2": [2, 3]})
+    ep3 = nap.IntervalSet(
+        start=[0, 30, 70], end=[20, 40, 80], metadata={"m1": [0, 0, 1]}
+    )
     np.testing.assert_array_almost_equal(ep.set_diff(ep2).values, ep3.values)
     pd.testing.assert_series_equal(
         ep.set_diff(ep2)._metadata["m1"], ep3._metadata["m1"]
     )
-    ep4 = nap.IntervalSet(start=50, end=60, m2=3)
+    ep4 = nap.IntervalSet(start=50, end=60, metadata={"m2": 3})
     np.testing.assert_array_almost_equal(ep2.set_diff(ep).values, ep4.values)
     pd.testing.assert_series_equal(
         ep2.set_diff(ep)._metadata["m2"], ep4._metadata["m2"]
@@ -312,8 +323,7 @@ def tsdframe_meta():
         d=np.random.rand(100, 4),
         time_units="s",
         columns=["a", "b", "c", "d"],
-        l1=np.arange(4),
-        l2=["x", "x", "y", "y"],
+        metadata={"l1": np.arange(4), "l2": ["x", "x", "y", "y"]},
     )
 
 

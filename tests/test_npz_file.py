@@ -58,7 +58,7 @@ data = {
     ),
     "iset": nap.IntervalSet(start=np.array([0.0, 5.0]), end=np.array([1.0, 6.0])),
     "iset_minfo": nap.IntervalSet(
-        start=np.array([0.0, 5.0]), end=np.array([1.0, 6.0]), minfo=[1, 2]
+        start=np.array([0.0, 5.0]), end=np.array([1.0, 6.0]), metadata={"minfo": [1, 2]}
     ),
 }
 for k, d in data.items():

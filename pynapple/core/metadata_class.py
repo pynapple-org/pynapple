@@ -224,9 +224,12 @@ class _MetadataBase:
                     self._metadata[metadata.columns] = metadata
                 else:
                     raise ValueError("Metadata index does not match")
-            elif isinstance(metadata, dict) or (
-                (isinstance(metadata, pd.Series) and len(self) == 1)
-            ):
+            elif isinstance(metadata, dict):
+                # merge metadata with kwargs to use checks below
+                kwargs = {**metadata, **kwargs}
+
+            elif isinstance(metadata, pd.Series) and (len(self) == 1):
+                # allow series to be passed if only one interval
                 for key, val in metadata.items():
                     self._metadata[key] = val
 

@@ -87,7 +87,6 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         end=None,
         time_units="s",
         metadata=None,
-        **kwargs,
     ):
         """
         IntervalSet initializer
@@ -115,8 +114,6 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
             Time unit of the intervals ('us', 'ms', 's' [default])
         metadata: pd.DataFrame or dict, optional
             Metadata associated with each interval
-        **kwargs : dict
-            Keyword arguments to add metadata fields
 
         Raises
         ------
@@ -181,7 +178,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
 
         drop_meta = False
         if not (np.diff(start) > 0).all():
-            if (metadata is not None) or len(kwargs):
+            if metadata is not None:
                 msg1 = "Cannot add metadata to unsorted start times. "
                 msg2 = " and dropping metadata"
             else:
@@ -194,7 +191,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
             drop_meta = True
 
         if not (np.diff(end) > 0).all():
-            if (metadata is not None) or len(kwargs):
+            if metadata is not None:
                 msg1 = "Cannot add metadata to unsorted end times. "
                 msg2 = " and dropping metadata"
             else:
@@ -211,7 +208,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         if np.any(to_warn):
             msg = "\n".join(all_warnings[to_warn])
             warnings.warn(msg, stacklevel=2)
-            if np.any(to_warn[1:]) and ((metadata is not None) or len(kwargs)):
+            if np.any(to_warn[1:]) and (metadata is not None):
                 drop_meta = True
                 warnings.warn("epochs have changed, dropping metadata.", stacklevel=2)
 
@@ -222,7 +219,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         if drop_meta:
             _MetadataBase.__init__(self)
         else:
-            _MetadataBase.__init__(self, metadata, **kwargs)
+            _MetadataBase.__init__(self, metadata)
         self._initialized = True
 
     def __repr__(self):
