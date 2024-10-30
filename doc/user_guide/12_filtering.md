@@ -24,7 +24,7 @@ The filtering module holds the functions for frequency manipulation :
 The functions have similar calling signatures. For example, to filter a 1000 Hz signal between
 10 and 20 Hz using a Butterworth filter:
 
-```{python}
+```
 >>> new_tsd = nap.apply_bandpass_filter(tsd, (10, 20), fs=1000, mode='butter')
 ```
 

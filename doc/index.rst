@@ -112,7 +112,7 @@ pynapple: python neural analysis package
 
 
 Support
-~~~~~~
+~~~~~~~
 
 This package is supported by the Center for Computational Neuroscience, in the Flatiron Institute of the Simons Foundation
 

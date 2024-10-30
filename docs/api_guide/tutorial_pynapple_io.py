@@ -1,5 +1,3 @@
-.. _tutorial_pynapple_io:
-
 """
 IO Tutorial
 ===========
