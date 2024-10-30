@@ -169,70 +169,6 @@ class TestTsGroup1:
         )
         np.testing.assert_array_almost_equal(tsgroup._metadata["ar"].values, ar_info)
 
-    def test_add_metainfo(self, group):
-        tsgroup = nap.TsGroup(group)
-        df_info = pd.DataFrame(index=[0, 1, 2], data=[0, 0, 0], columns=["df"])
-        sr_info = pd.Series(index=[0, 1, 2], data=[1, 1, 1], name="sr")
-        ar_info = np.ones(3) * 3
-        lt_info = [3, 4, 5]
-        tu_info = (6, 8, 3)
-        tsgroup.set_info(df_info, sr=sr_info, ar=ar_info, lt=lt_info, tu=tu_info)
-        assert tsgroup._metadata.shape == (3, 6)
-        pd.testing.assert_series_equal(tsgroup._metadata["df"], df_info["df"])
-        pd.testing.assert_series_equal(tsgroup._metadata["sr"], sr_info)
-        np.testing.assert_array_almost_equal(tsgroup._metadata["ar"].values, ar_info)
-        np.testing.assert_array_almost_equal(tsgroup._metadata["lt"].values, lt_info)
-        np.testing.assert_array_almost_equal(tsgroup._metadata["tu"].values, tu_info)
-
-    def test_add_metainfo_raise_error(self, group):
-        tsgroup = nap.TsGroup(group)
-        df_info = pd.DataFrame(index=[4, 5, 6], data=[0, 0, 0], columns=["df"])
-
-        with pytest.raises(ValueError) as e_info:
-            tsgroup.set_info(df_info)
-        assert str(e_info.value) == "Metadata index does not match"
-
-        tsgroup = nap.TsGroup(group)
-        sr_info = pd.Series(index=[0, 1, 2], data=[1, 1, 1])
-
-        with pytest.raises(RuntimeError) as e_info:
-            tsgroup.set_info(sr_info)
-        assert str(e_info.value) == "Argument should be passed as keyword argument."
-
-        tsgroup = nap.TsGroup(group)
-        ar_info = np.ones(3) * 3
-
-        with pytest.raises(RuntimeError) as e_info:
-            tsgroup.set_info(ar_info)
-        assert str(e_info.value) == "Argument should be passed as keyword argument."
-
-        with pytest.raises(TypeError, match="Metadata keys must be strings!"):
-            tsgroup[0] = ar_info
-
-    def test_add_metainfo_test_runtime_errors(self, group):
-        tsgroup = nap.TsGroup(group)
-        sr_info = pd.Series(index=[1, 2, 3], data=[1, 1, 1], name="sr")
-        with pytest.raises(Exception) as e_info:
-            tsgroup.set_info(sr=sr_info)
-        assert str(e_info.value) == "Metadata index does not match for argument sr"
-        df_info = pd.DataFrame(index=[1, 2, 3], data=[1, 1, 1], columns=["df"])
-        with pytest.raises(Exception) as e_info:
-            tsgroup.set_info(df_info)
-        assert str(e_info.value) == "Metadata index does not match"
-
-        sr_info = pd.Series(index=[1, 2, 3], data=[1, 1, 1], name="sr")
-        with pytest.raises(Exception) as e_info:
-            tsgroup.set_info(sr_info)
-        assert str(e_info.value) == "Argument should be passed as keyword argument."
-
-        ar_info = np.ones(4)
-        with pytest.raises(Exception) as e_info:
-            tsgroup.set_info(ar=ar_info)
-        assert (
-            str(e_info.value)
-            == "input array length 4 does not match metadata length 3."
-        )
-
     def test_keys(self, group):
         tsgroup = nap.TsGroup(group)
         assert tsgroup.keys() == [0, 1, 2]
@@ -267,16 +203,6 @@ class TestTsGroup1:
         tsgroup = nap.TsGroup(group)
         with pytest.raises(Exception):
             tmp = tsgroup[4]
-
-    def test_get_info(self, group):
-        tsgroup = nap.TsGroup(group)
-        df_info = pd.DataFrame(index=[0, 1, 2], data=[0, 0, 0], columns=["df"])
-        sr_info = pd.Series(index=[0, 1, 2], data=[1, 1, 1], name="sr")
-        ar_info = np.ones(3) * 3
-        tsgroup.set_info(df_info, sr=sr_info, ar=ar_info)
-        pd.testing.assert_series_equal(tsgroup.get_info("df"), df_info["df"])
-        pd.testing.assert_series_equal(tsgroup.get_info("sr"), sr_info)
-        np.testing.assert_array_almost_equal(tsgroup.get_info("ar").values, ar_info)
 
     def test_get_rate(self, group):
         tsgroup = nap.TsGroup(group)
@@ -691,59 +617,6 @@ class TestTsGroup1:
         with expectation:
             out = ts_group[keys]
 
-    @pytest.mark.parametrize(
-        "name, expectation",
-        [
-            ("a", does_not_raise()),
-            ("ab", does_not_raise()),
-            ("__1", does_not_raise()),
-            (1, pytest.raises(ValueError, match="Metadata keys must be strings")),
-            (1.1, pytest.raises(ValueError, match="Metadata keys must be strings")),
-            (
-                np.arange(1),
-                pytest.raises(ValueError, match="Metadata keys must be strings"),
-            ),
-            (
-                np.arange(2),
-                pytest.raises(ValueError, match="Metadata keys must be strings"),
-            ),
-        ],
-    )
-    def test_setitem_metadata_key(self, group, name, expectation):
-        group = nap.TsGroup(group)
-        with expectation:
-            group[name] = np.arange(len(group))
-
-    @pytest.mark.parametrize(
-        "val, expectation",
-        [
-            (np.arange(3), does_not_raise()),
-            (pd.Series(range(3)), does_not_raise()),
-            ([1, 2, 3], does_not_raise()),
-            ((1, 2, 3), does_not_raise()),
-            (1, pytest.raises(TypeError, match="Metadata columns provided must be")),
-            (1.1, pytest.raises(TypeError, match="Metadata columns provided must be")),
-            (
-                np.arange(1),
-                pytest.raises(
-                    ValueError,
-                    match="input array length 1 does not match metadata length 3.",
-                ),
-            ),
-            (
-                np.arange(2),
-                pytest.raises(
-                    ValueError,
-                    match="input array length 2 does not match metadata length 3.",
-                ),
-            ),
-        ],
-    )
-    def test_setitem_metadata_key(self, group, val, expectation):
-        group = nap.TsGroup(group)
-        with expectation:
-            group["a"] = val
-
     def test_setitem_metadata_vals(self, group):
         group = nap.TsGroup(group)
         group["a"] = np.arange(len(group))
@@ -759,26 +632,8 @@ class TestTsGroup1:
         with pytest.raises(ValueError, match=r"Invalid metadata name"):
             ts_group["set_info"] = np.arange(2)
 
-    def test_setitem_metadata_twice_fail(self, group):
-        group = nap.TsGroup(group)
-        group["a"] = np.arange(len(group))
-        raised = False
-        try:
-            group["a"] = np.arange(1)
-        except:
-            raised = True
-            # check no changes have been made
-            assert all(group._metadata["a"] == np.arange(len(group)))
-
-        if not raised:
-            raise ValueError
-
     def test_getitem_ts_object(self, ts_group):
         assert isinstance(ts_group[1], nap.Ts)
-
-    def test_getitem_metadata(self, ts_group):
-        assert np.all(ts_group.meta == np.array([10, 11]))
-        assert np.all(ts_group["meta"] == np.array([10, 11]))
 
     @pytest.mark.parametrize(
         "bool_idx",
