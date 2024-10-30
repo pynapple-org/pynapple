@@ -1017,10 +1017,32 @@ class Test_Time_Series_3:
         ],
     )
     def test_vert_and_horz_slicing(self, tsdframe, row, col, expected):
+        # get details about row index
+        row_array = isinstance(row, (list, np.ndarray))
+        if row_array and isinstance(row[0], (bool, np.bool)):
+            row_len = np.sum(row)
+        elif row_array and isinstance(row[0], Number):
+            row_len = len(row)
+        else:
+            row_len = 1
 
-        if isinstance(row, (list, np.ndarray)) and isinstance(col, (list, np.ndarray)):
-            # not checking these in case of shape mismatch
-            pass
+        # get details about column index
+        col_array = isinstance(col, (list, np.ndarray))
+        if col_array and isinstance(col[0], (bool, np.bool)):
+            col_len = np.sum(col)
+        elif col_array and isinstance(col[0], Number):
+            col_len = len(col)
+        else:
+            col_len = 1
+
+        # this is when shape mismatch is a problem
+        if (row_len > 1) and (col_len > 1):
+            if row_len == col_len:
+                assert isinstance(tsdframe[row, col], nap.Tsd)
+            else:
+                # shape mismatch
+                with pytest.raises(IndexError, match="shape mismatch"):
+                    tsdframe[row, col]
 
         elif isinstance(row, Number) and isinstance(col, Number):
             assert isinstance(tsdframe[row, col], Number)
@@ -2056,3 +2078,4 @@ def test_get_slice_public(start, end, expected_slice, expected_array, ts):
     out_array = ts.t[out_slice]
     assert out_slice == expected_slice
     assert np.all(out_array == expected_array)
+
