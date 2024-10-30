@@ -887,7 +887,6 @@ class TsdFrame(BaseTsd, _MetadataBase):
         columns=None,
         load_array=True,
         metadata=None,
-        **kwargs,
     ):
         """
         TsdFrame initializer
@@ -939,7 +938,7 @@ class TsdFrame(BaseTsd, _MetadataBase):
 
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
-        _MetadataBase.__init__(self, metadata, **kwargs)
+        _MetadataBase.__init__(self, metadata)
         self._initialized = True
 
     @property

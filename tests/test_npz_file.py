@@ -39,7 +39,7 @@ data = {
     "tsdframe_minfo": nap.TsdFrame(
         t=np.arange(100),
         d=np.random.rand(100, 10),
-        minfo=np.ones(10),
+        metadata={"minfo": np.ones(10)},
     ),
     "tsgroup": nap.TsGroup(
         {

@@ -33,7 +33,7 @@ def test_create_tsd_from_number():
 
 
 @pytest.mark.parametrize(
-    "t, d, columns, kwargs",
+    "t, d, columns, metadata",
     [
         (np.arange(100), np.random.rand(100, 4), None, {}),
         (np.arange(100), np.random.rand(100, 4), ["a", "b", "c", "d"], {}),
@@ -45,13 +45,13 @@ def test_create_tsd_from_number():
         ),
     ],
 )
-def test_create_tsdframe(t, d, columns, kwargs):
-    tsdframe = nap.TsdFrame(t=t, d=d, columns=columns, **kwargs)
+def test_create_tsdframe(t, d, columns, metadata):
+    tsdframe = nap.TsdFrame(t=t, d=d, columns=columns, metadata=metadata)
     assert isinstance(tsdframe, nap.TsdFrame)
     if columns is not None:
         assert np.all(tsdframe.columns == np.array(columns))
-    if len(kwargs):
-        for key, value in kwargs.items():
+    if len(metadata):
+        for key, value in metadata.items():
             assert np.all(tsdframe._metadata[key] == np.array(value))
 
 
@@ -913,16 +913,14 @@ class Test_Time_Series_2:
             t=np.arange(100),
             d=np.random.rand(100, 3),
             time_units="s",
-            l1=np.arange(3),
-            l2=["x", "x", "y"],
+            metadata={"l1": np.arange(3), "l2": ["x", "x", "y"]},
         ),
         nap.TsdFrame(
             t=np.arange(100),
             d=np.random.rand(100, 3),
             time_units="s",
             columns=["a", "b", "c"],
-            l1=np.arange(3),
-            l2=["x", "x", "y"],
+            metadata={"l1": np.arange(3), "l2": ["x", "x", "y"]},
         ),
     ],
 )
@@ -2078,4 +2076,3 @@ def test_get_slice_public(start, end, expected_slice, expected_array, ts):
     out_array = ts.t[out_slice]
     assert out_slice == expected_slice
     assert np.all(out_array == expected_array)
-
