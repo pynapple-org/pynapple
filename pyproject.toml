@@ -71,7 +71,8 @@ doc = [
     "myst-parser",
     "myst-nb",
     "dandi",
-    "sphinx-autobuild"
+    "sphinx-autobuild",
+    "sphinx-contributors"
     # "sphinx-exec-code"
 ]
 docs = [
