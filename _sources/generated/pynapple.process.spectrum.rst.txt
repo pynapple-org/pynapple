@@ -1,0 +1,13 @@
+﻿pynapple.process.spectrum
+=========================
+
+.. automodule:: pynapple.process.spectrum
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      compute_mean_power_spectral_density
+      compute_power_spectral_density
+   

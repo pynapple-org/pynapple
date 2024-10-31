@@ -1,0 +1,6 @@
+pynapple.core.interval\_set.IntervalSet.tot\_length
+===================================================
+
+.. currentmodule:: pynapple.core.interval_set
+
+.. automethod:: IntervalSet.tot_length

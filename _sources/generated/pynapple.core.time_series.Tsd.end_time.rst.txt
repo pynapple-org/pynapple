@@ -1,0 +1,6 @@
+pynapple.core.time\_series.Tsd.end\_time
+========================================
+
+.. currentmodule:: pynapple.core.time_series
+
+.. automethod:: Tsd.end_time

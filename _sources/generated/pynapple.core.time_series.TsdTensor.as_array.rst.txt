@@ -1,0 +1,6 @@
+pynapple.core.time\_series.TsdTensor.as\_array
+==============================================
+
+.. currentmodule:: pynapple.core.time_series
+
+.. automethod:: TsdTensor.as_array

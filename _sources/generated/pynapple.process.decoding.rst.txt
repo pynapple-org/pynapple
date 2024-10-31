@@ -1,0 +1,13 @@
+﻿pynapple.process.decoding
+=========================
+
+.. automodule:: pynapple.process.decoding
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      decode_1d
+      decode_2d
+   

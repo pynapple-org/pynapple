@@ -1,0 +1,6 @@
+pynapple.core.ts\_group.TsGroup.clear
+=====================================
+
+.. currentmodule:: pynapple.core.ts_group
+
+.. automethod:: TsGroup.clear

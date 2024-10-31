@@ -1,0 +1,6 @@
+pynapple.core.ts\_group.TsGroup.set\_info
+=========================================
+
+.. currentmodule:: pynapple.core.ts_group
+
+.. automethod:: TsGroup.set_info

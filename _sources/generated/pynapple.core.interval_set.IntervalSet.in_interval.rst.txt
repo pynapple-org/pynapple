@@ -1,0 +1,6 @@
+pynapple.core.interval\_set.IntervalSet.in\_interval
+====================================================
+
+.. currentmodule:: pynapple.core.interval_set
+
+.. automethod:: IntervalSet.in_interval

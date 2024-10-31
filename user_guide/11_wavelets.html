@@ -1,0 +1,1380 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Wavelet Transform &#8212; pynapple 0.7.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!-- 
+    this give us a css class that will be invisible only if js is disabled 
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=26a4bc78f4c0ddb94549" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=26a4bc78f4c0ddb94549" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_contributors.css?v=f079e67e" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=f2caec9a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=26a4bc78f4c0ddb94549"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=26a4bc78f4c0ddb94549" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=26a4bc78f4c0ddb94549" />
+
+    <script src="../_static/documentation_options.js?v=5a057da9"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=c57da192"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/11_wavelets';</script>
+    <link rel="icon" href="../_static/Pynapple_final_icon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Filtering" href="12_filtering.html" />
+    <link rel="prev" title="Power spectral density" href="10_power_spectral_density.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.7.1" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.7.1 documentation - Home"/>
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.7.1 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="01_introduction_to_pynapple.html">Introduction to pynapple</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="02_input_output.html">Input-output &amp; lazy-loading</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="03_interacting_with_numpy.html">Interaction with numpy</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="04_core_methods.html">Core methods</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="05_correlograms.html">Correlograms of discrete events</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="06_tuning_curves.html">Tuning curves</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="07_decoding.html">Decoding</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="08_perievent.html">Perievent</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="09_randomization.html">Randomization</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="10_power_spectral_density.html">Power spectral density</a></li>
+</ul>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Wavelet decomposion</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="12_filtering.html">Filtering time series</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../user_guide.html" class="nav-link">User guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Wavelet Transform</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="wavelet-transform">
+<h1>Wavelet Transform<a class="headerlink" href="#wavelet-transform" title="Link to this heading">#</a></h1>
+<p>This tutorial covers the use of <code class="docutils literal notranslate"><span class="pre">nap.compute_wavelet_transform</span></code> to do continuous wavelet transform. By default, pynapple uses Morlet wavelets.</p>
+<p>Wavelet are a great tool for capturing changes of spectral characteristics of a signal over time. As neural signals change
+and develop over time, wavelet decompositions can aid both visualization and analysis.</p>
+<p>The function <code class="docutils literal notranslate"><span class="pre">nap.generate_morlet_filterbank</span></code> can help parametrize and visualize the Morlet wavelets.</p>
+<div class="cell tag_hide-cell docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell content</span>
+<span class="expanded">Hide code cell content</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+<span class="n">custom_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;axes.spines.right&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;axes.spines.top&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">set_theme</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s2">&quot;ticks&quot;</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="s2">&quot;colorblind&quot;</span><span class="p">,</span> <span class="n">font_scale</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">rc</span><span class="o">=</span><span class="n">custom_params</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details>
+</div>
+<hr class="docutils" />
+<section id="generating-a-dummy-signal">
+<h2>Generating a Dummy Signal<a class="headerlink" href="#generating-a-dummy-signal" title="Link to this heading">#</a></h2>
+<p>Let’s generate a dummy signal to analyse with wavelets!</p>
+<p>Our dummy dataset will contain two components, a low frequency 2Hz sinusoid combined
+with a sinusoid which increases frequency from 5 to 15 Hz throughout the signal.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">Fs</span> <span class="o">=</span> <span class="mi">2000</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">Fs</span> <span class="o">*</span> <span class="mi">5</span><span class="p">)</span>
+<span class="n">two_hz_phase</span> <span class="o">=</span> <span class="n">t</span> <span class="o">*</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mi">2</span>
+<span class="n">two_hz_component</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">two_hz_phase</span><span class="p">)</span>
+<span class="n">increasing_freq_component</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span> <span class="o">*</span> <span class="p">(</span><span class="mi">5</span> <span class="o">+</span> <span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">sig</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span>
+    <span class="n">d</span><span class="o">=</span><span class="n">two_hz_component</span> <span class="o">+</span> <span class="n">increasing_freq_component</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mi">10000</span><span class="p">),</span>
+    <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">two_hz_component</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;2Hz Component&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">increasing_freq_component</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Increasing Frequency Component&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Dummy Signal&quot;</span><span class="p">)</span>
+<span class="p">[</span><span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+<span class="p">[</span><span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+<span class="p">[</span><span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+<span class="p">[</span><span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Signal&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[Text(0, 0.5, &#39;Signal&#39;), Text(0, 0.5, &#39;Signal&#39;), Text(0, 0.5, &#39;Signal&#39;)]
+</pre></div>
+</div>
+<img alt="../_images/28d17812414103eb5a81a2422b5a6c19febae4680b2ba7a1f1b2ce722a5d0bdc.png" src="../_images/28d17812414103eb5a81a2422b5a6c19febae4680b2ba7a1f1b2ce722a5d0bdc.png" />
+</div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="visualizing-the-morlet-wavelets">
+<h2>Visualizing the Morlet Wavelets<a class="headerlink" href="#visualizing-the-morlet-wavelets" title="Link to this heading">#</a></h2>
+<p>We will be decomposing our dummy signal using wavelets of different frequencies. These wavelets
+can be examined using the <code class="docutils literal notranslate"><span class="pre">generate_morlet_filterbank</span></code> function. Here we will use the default parameters
+to define a Morlet filter bank. This function is a good way to visually inspect the quality of the wavelets.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Define the frequency of the wavelets in our filter bank</span>
+<span class="n">freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+<span class="c1"># Get the filter bank</span>
+<span class="n">filter_bank</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">generate_morlet_filterbank</span><span class="p">(</span>
+    <span class="n">freqs</span><span class="p">,</span> <span class="n">Fs</span><span class="p">,</span> <span class="n">gaussian_width</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mf">1.0</span>
+<span class="p">)</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">filter_bank</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)                0    1    2    3    4  ...
+------------  -----------  ---  ---  ---  ---  -----
+-8.0          2.01396e-19    0    0    0    0  ...
+-7.999499984  2.02445e-19    0    0    0    0  ...
+-7.998999969  2.03497e-19    0    0    0    0  ...
+-7.998499953  2.04553e-19    0    0    0    0  ...
+-7.997999937  2.05612e-19    0    0    0    0  ...
+-7.997499922  2.06675e-19    0    0    0    0  ...
+-7.996999906  2.07741e-19    0    0    0    0  ...
+...
+7.996999906   2.07207e-19    0    0    0    0  ...
+7.997499922   2.06143e-19    0    0    0    0  ...
+7.997999937   2.05082e-19    0    0    0    0  ...
+7.998499953   2.04025e-19    0    0    0    0  ...
+7.998999969   2.02971e-19    0    0    0    0  ...
+7.999499984   2.0192e-19     0    0    0    0  ...
+8.0           2.00351e-19    0    0    0    0  ...
+dtype: complex128, shape: (32000, 25)
+</pre></div>
+</div>
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">filter_bank</span></code> is a <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code>.</p>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_filterbank</span><span class="p">(</span><span class="n">filter_bank</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">title</span><span class="p">):</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">f_i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">filter_bank</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">filter_bank</span><span class="p">[:,</span> <span class="n">f_i</span><span class="p">]</span><span class="o">.</span><span class="n">real</span><span class="p">()</span> <span class="o">+</span> <span class="n">f_i</span> <span class="o">*</span> <span class="mf">1.5</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">text</span><span class="p">(</span><span class="o">-</span><span class="mf">6.8</span><span class="p">,</span> <span class="mf">1.5</span> <span class="o">*</span> <span class="n">f_i</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">freqs</span><span class="p">[</span><span class="n">f_i</span><span class="p">],</span><span class="w"> </span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">Hz&quot;</span><span class="p">,</span> <span class="n">va</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">([])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+
+
+<span class="n">title</span> <span class="o">=</span> <span class="s2">&quot;Morlet Wavelet Filter Bank (Real Components): gaussian_width=1.5, window_length=1.0&quot;</span>
+<span class="n">plot_filterbank</span><span class="p">(</span><span class="n">filter_bank</span><span class="p">,</span> <span class="n">freqs</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<img alt="../_images/8ea744be70bc87dd4ebdb8ddad3b65ed5ee2e184fefdb1aeff7958b6fa41b687.png" src="../_images/8ea744be70bc87dd4ebdb8ddad3b65ed5ee2e184fefdb1aeff7958b6fa41b687.png" />
+</div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="parametrizing-the-wavelets">
+<h2>Parametrizing the wavelets<a class="headerlink" href="#parametrizing-the-wavelets" title="Link to this heading">#</a></h2>
+<p>Let’s visualize what changing our parameters does to the
+underlying wavelets.</p>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">window_lengths</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">]</span>
+<span class="n">gaussian_widths</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">3.0</span><span class="p">]</span>
+<span class="n">colors</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="s2">&quot;g&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">]])</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
+    <span class="nb">len</span><span class="p">(</span><span class="n">window_lengths</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="nb">len</span><span class="p">(</span><span class="n">gaussian_widths</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+    <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+<span class="p">)</span>
+<span class="k">for</span> <span class="n">row_i</span><span class="p">,</span> <span class="n">wl</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">window_lengths</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">col_i</span><span class="p">,</span> <span class="n">gw</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gaussian_widths</span><span class="p">):</span>
+        <span class="n">wavelet</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">generate_morlet_filterbank</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">1.0</span><span class="p">]),</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">gaussian_width</span><span class="o">=</span><span class="n">gw</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="n">wl</span><span class="p">,</span> <span class="n">precision</span><span class="o">=</span><span class="mi">12</span>
+        <span class="p">)[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">real</span><span class="p">()</span>
+        <span class="n">ax</span><span class="p">[</span><span class="n">row_i</span><span class="p">,</span> <span class="n">col_i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">wavelet</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">row_i</span><span class="p">,</span> <span class="n">col_i</span><span class="p">])</span>
+        <span class="n">fft</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_power_spectral_density</span><span class="p">(</span><span class="n">wavelet</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="p">[(</span><span class="n">row_i</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">col_i</span><span class="p">)]:</span>
+            <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fft</span><span class="o">.</span><span class="n">abs</span><span class="p">(),</span> <span class="n">c</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="n">row_i</span><span class="p">,</span> <span class="n">col_i</span><span class="p">])</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">window_lengths</span><span class="p">)):</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gaussian_widths</span><span class="p">)):</span>
+        <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">,</span> <span class="n">yticks</span><span class="o">=</span><span class="p">[])</span>
+<span class="k">for</span> <span class="n">ci</span><span class="p">,</span> <span class="n">gw</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">gaussian_widths</span><span class="p">):</span>
+    <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">ci</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;gaussian_width=</span><span class="si">{</span><span class="n">gw</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">ri</span><span class="p">,</span> <span class="n">wl</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">window_lengths</span><span class="p">):</span>
+    <span class="n">ax</span><span class="p">[</span><span class="n">ri</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;window_length=</span><span class="si">{</span><span class="n">wl</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Parametrization Visualization (1 Hz Wavelet)&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">window_lengths</span><span class="p">)):</span>
+    <span class="n">ax</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+        <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">yticks</span><span class="o">=</span><span class="p">[],</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;Frequency Response&quot;</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Frequency (Hz)&quot;</span>
+    <span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gaussian_widths</span><span class="p">)):</span>
+    <span class="n">ax</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set</span><span class="p">(</span>
+        <span class="n">xlim</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">yticks</span><span class="o">=</span><span class="p">[],</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;Frequency Response&quot;</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Frequency (Hz)&quot;</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<img alt="../_images/07aa03b0e4e3f5235ff2a538fe9a21ca8ebb5bf39d9abfedd6a15e9790382137.png" src="../_images/07aa03b0e4e3f5235ff2a538fe9a21ca8ebb5bf39d9abfedd6a15e9790382137.png" />
+</div>
+</div>
+<p>Increasing <code class="docutils literal notranslate"><span class="pre">window_length</span></code> increases the number of wavelet cycles present in the oscillations (cycles), and
+correspondingly increases the time window that the wavelet covers.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">gaussian_width</span></code> parameter determines the shape of the gaussian window being convolved with the sinusoidal
+component of the wavelet</p>
+<p>Both of these parameters can be tweaked to control for the trade-off between time resolution and frequency resolution.</p>
+</section>
+<hr class="docutils" />
+<section id="continuous-wavelet-transform">
+<h2>Continuous wavelet transform<a class="headerlink" href="#continuous-wavelet-transform" title="Link to this heading">#</a></h2>
+<p>Here we will use the <code class="docutils literal notranslate"><span class="pre">compute_wavelet_transform</span></code> function to decompose our signal using the filter bank shown
+above. Wavelet decomposition breaks down a signal into its constituent wavelets, capturing both time and
+frequency information for analysis. We will calculate this decomposition and plot it’s corresponding
+scalogram (which is another name for time frequency decomposition using wavelets).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Compute the wavelet transform using the parameters above</span>
+<span class="n">mwt</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_wavelet_transform</span><span class="p">(</span>
+    <span class="n">sig</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">Fs</span><span class="p">,</span> <span class="n">freqs</span><span class="o">=</span><span class="n">freqs</span><span class="p">,</span> <span class="n">gaussian_width</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mf">1.0</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">mwt</span></code> for Morlet wavelet transform is a <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code>. Each column is the result of the convolution of the signal with one wavelet.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">mwt</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)             0           1           2          3          4  ...
+----------  ----------  ----------  ----------  ---------  ---------  -----
+0.0          0.0960187   0.0774885  -0.0654364  0.117029   0.0273148  ...
+0.00050005   0.0960229   0.0798076  -0.0649095  0.118694   0.0331067  ...
+0.0010001    0.0960262   0.0821274  -0.0643798  0.12034    0.0389143  ...
+0.00150015   0.0960289   0.0844476  -0.0638465  0.121959   0.0447322  ...
+0.0020002    0.0960307   0.0867689  -0.0633125  0.123554   0.0505593  ...
+0.00250025   0.0960313   0.0890917  -0.0627778  0.125125   0.0563939  ...
+0.0030003    0.0960313   0.0914141  -0.0622378  0.126665   0.0622392  ...
+...
+4.9969997   -0.0806571  -0.0578934   0.144571   0.0655655  0.0213112  ...
+4.99749975  -0.0806641  -0.0555643   0.145094   0.0656382  0.021288   ...
+4.9979998   -0.0806703  -0.0532377   0.145609   0.0657031  0.0212633  ...
+4.99849985  -0.0806764  -0.0509128   0.146109   0.0657607  0.0212351  ...
+4.9989999   -0.0806816  -0.04859     0.146601   0.0658114  0.021206   ...
+4.99949995  -0.0806857  -0.0462698   0.147081   0.0658569  0.0211752  ...
+5.0         -0.0806885  -0.0439537   0.14755    0.0658931  0.0211431  ...
+dtype: complex128, shape: (10000, 25)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span> <span class="nf">plot_timefrequency</span><span class="p">(</span><span class="n">freqs</span><span class="p">,</span> <span class="n">powers</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+    <span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">powers</span><span class="p">),</span> <span class="n">aspect</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">invert_yaxis</span><span class="p">()</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Frequency (Hz)&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">get_xaxis</span><span class="p">()</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">yticks</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">freqs</span> <span class="o">-</span> <span class="n">val</span><span class="p">))</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">freqs</span><span class="p">[::</span><span class="mi">2</span><span class="p">]],</span> <span class="n">yticklabels</span><span class="o">=</span><span class="n">freqs</span><span class="p">[::</span><span class="mi">2</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">im</span>
+
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Wavelet Decomposition&quot;</span><span class="p">)</span>
+<span class="n">gs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">GridSpec</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">height_ratios</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">])</span>
+
+<span class="n">ax0</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">im</span> <span class="o">=</span> <span class="n">plot_timefrequency</span><span class="p">(</span><span class="n">freqs</span><span class="p">[:],</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">mwt</span><span class="p">[:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">values</span><span class="p">),</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax0</span><span class="p">)</span>
+<span class="n">cbar</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax0</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s2">&quot;vertical&quot;</span><span class="p">)</span>
+
+<span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Signal&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<img alt="../_images/404f335cdfda7c79ce0ce1fb86af39dffc9a2ed35cddbaabd691fd7a8ee020e2.png" src="../_images/404f335cdfda7c79ce0ce1fb86af39dffc9a2ed35cddbaabd691fd7a8ee020e2.png" />
+</div>
+</div>
+<p>We can see that the decomposition has picked up on the 2Hz component of the signal, as well as the component with
+increasing frequency. In this section, we will extract just the 2Hz component from the wavelet decomposition,
+and see how it compares to the original section.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get the index of the 2Hz frequency</span>
+<span class="n">two_hz_freq_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">freqs</span> <span class="o">==</span> <span class="mf">2.0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="c1"># The 2Hz component is the real component of the wavelet decomposition at this index</span>
+<span class="n">slow_oscillation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">mwt</span><span class="p">[:,</span> <span class="n">two_hz_freq_idx</span><span class="p">])</span>
+<span class="c1"># The 2Hz wavelet phase is the angle of the wavelet decomposition at this index</span>
+<span class="n">slow_oscillation_phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">mwt</span><span class="p">[:,</span> <span class="n">two_hz_freq_idx</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">axd</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">subplot_mosaic</span><span class="p">(</span>
+    <span class="p">[[</span><span class="s2">&quot;signal&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;phase&quot;</span><span class="p">]],</span>
+    <span class="n">height_ratios</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="n">axd</span><span class="p">[</span><span class="s2">&quot;signal&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Raw Signal&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">axd</span><span class="p">[</span><span class="s2">&quot;signal&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">slow_oscillation</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;2Hz Reconstruction&quot;</span><span class="p">)</span>
+<span class="n">axd</span><span class="p">[</span><span class="s2">&quot;signal&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">axd</span><span class="p">[</span><span class="s2">&quot;signal&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Signal&quot;</span><span class="p">)</span>
+
+<span class="n">axd</span><span class="p">[</span><span class="s2">&quot;phase&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">slow_oscillation_phase</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">axd</span><span class="p">[</span><span class="s2">&quot;phase&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Phase (rad)&quot;</span><span class="p">)</span>
+<span class="n">axd</span><span class="p">[</span><span class="s2">&quot;phase&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+<span class="p">[</span><span class="n">axd</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;signal&quot;</span><span class="p">,</span> <span class="s2">&quot;phase&quot;</span><span class="p">]]</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[None, None]
+</pre></div>
+</div>
+<img alt="../_images/4289a81c811f84e52d2febd2631e0d7b2fc63d1a3be35e4aeed44c455f2d628f.png" src="../_images/4289a81c811f84e52d2febd2631e0d7b2fc63d1a3be35e4aeed44c455f2d628f.png" />
+</div>
+</div>
+<p>Let’s see what happens if we also add the 15 Hz component of the wavelet decomposition to the reconstruction. We
+will extract the 15 Hz components, and also the 15Hz wavelet power over time. The wavelet power tells us to what
+extent the 15 Hz frequency is present in our signal at different times.</p>
+<p>Finally, we will add this 15 Hz reconstruction to the one shown above, to see if it improves out reconstructed
+signal.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Get the index of the 15 Hz frequency</span>
+<span class="n">fifteen_hz_freq_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">freqs</span> <span class="o">==</span> <span class="mf">15.0</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="c1"># The 15 Hz component is the real component of the wavelet decomposition at this index</span>
+<span class="n">fifteenHz_oscillation</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">mwt</span><span class="p">[:,</span> <span class="n">fifteen_hz_freq_idx</span><span class="p">])</span>
+<span class="c1"># The 15 Hz poser is the absolute value of the wavelet decomposition at this index</span>
+<span class="n">fifteenHz_oscillation_power</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">mwt</span><span class="p">[:,</span> <span class="n">fifteen_hz_freq_idx</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">gs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">GridSpec</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">height_ratios</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
+
+<span class="n">ax0</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">ax0</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fifteenHz_oscillation</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;15Hz Reconstruction&quot;</span><span class="p">)</span>
+<span class="n">ax0</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fifteenHz_oscillation_power</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;15Hz Power&quot;</span><span class="p">)</span>
+<span class="n">ax0</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">([])</span>
+
+<span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Raw Signal&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">slow_oscillation</span> <span class="o">+</span> <span class="n">fifteenHz_oscillation</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;2Hz + 15Hz Reconstruction&quot;</span>
+<span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+
+<span class="p">[</span>
+    <span class="p">(</span><span class="n">a</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">a</span><span class="o">.</span><span class="n">legend</span><span class="p">(),</span> <span class="n">a</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">),</span> <span class="n">a</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Signal&quot;</span><span class="p">))</span>
+    <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="p">[</span><span class="n">ax0</span><span class="p">,</span> <span class="n">ax1</span><span class="p">]</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[(None,
+  &lt;matplotlib.legend.Legend at 0x7fd2f43a1e10&gt;,
+  (-2.5, 2.5),
+  Text(0, 0.5, &#39;Signal&#39;)),
+ (None,
+  &lt;matplotlib.legend.Legend at 0x7fd2f43a3d00&gt;,
+  (-2.5, 2.5),
+  Text(0, 0.5, &#39;Signal&#39;))]
+</pre></div>
+</div>
+<img alt="../_images/1fce5367f848a3b412eac69a61e314ce61d07a6f51cb1efdd2e7174d72083741.png" src="../_images/1fce5367f848a3b412eac69a61e314ce61d07a6f51cb1efdd2e7174d72083741.png" />
+</div>
+</div>
+<p>We will now learn how to interpret the parameters of the wavelet, and in particular how to trade off the
+accuracy in the frequency decomposition with the accuracy in the time domain reconstruction;</p>
+<p>Up to this point we have used default wavelet and normalization parameters.</p>
+<p>Let’s now add together the real components of all frequency bands to recreate a version of the original signal.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">combined_oscillations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mwt</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Signal&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">combined_oscillations</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Wavelet Reconstruction&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Signal&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Wavelet Reconstruction of Signal&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend at 0x7fd2f551c4c0&gt;
+</pre></div>
+</div>
+<img alt="../_images/be710d1eef6e7498c10bf42e8185e5cf254bf9e22ff440d5fe37e017e710c04f.png" src="../_images/be710d1eef6e7498c10bf42e8185e5cf254bf9e22ff440d5fe37e017e710c04f.png" />
+</div>
+</div>
+<p>Our reconstruction seems to get the amplitude modulations of our signal correct, but the amplitude is overestimated,
+in particular towards the end of the time period. Often, this is due to a suboptimal choice of parameters, which
+can lead to a low spatial or temporal resolution.</p>
+</section>
+<hr class="docutils" />
+<section id="effect-of-gaussian-width">
+<h2>Effect of <code class="docutils literal notranslate"><span class="pre">gaussian_width</span></code><a class="headerlink" href="#effect-of-gaussian-width" title="Link to this heading">#</a></h2>
+<p>Let’s increase <code class="docutils literal notranslate"><span class="pre">gaussian_width</span></code> to 7.5 and see the effect on the resultant filter bank.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+<span class="n">filter_bank</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">generate_morlet_filterbank</span><span class="p">(</span>
+    <span class="n">freqs</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">gaussian_width</span><span class="o">=</span><span class="mf">7.5</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mf">1.0</span>
+<span class="p">)</span>
+
+<span class="n">plot_filterbank</span><span class="p">(</span>
+    <span class="n">filter_bank</span><span class="p">,</span>
+    <span class="n">freqs</span><span class="p">,</span>
+    <span class="s2">&quot;Morlet Wavelet Filter Bank (Real Components): gaussian_width=7.5, center_frequency=1.0&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/9d96d1938045282956bdeb7e6dc5bc1720650522542c9eb0a62851053e0e798a.png" src="../_images/9d96d1938045282956bdeb7e6dc5bc1720650522542c9eb0a62851053e0e798a.png" />
+</div>
+</div>
+<hr class="docutils" />
+<p>Let’s see what effect this has on the Wavelet Scalogram which is generated…</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mwt</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_wavelet_transform</span><span class="p">(</span>
+    <span class="n">sig</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">Fs</span><span class="p">,</span> <span class="n">freqs</span><span class="o">=</span><span class="n">freqs</span><span class="p">,</span> <span class="n">gaussian_width</span><span class="o">=</span><span class="mf">7.5</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mf">1.0</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Wavelet Decomposition&quot;</span><span class="p">)</span>
+<span class="n">gs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">GridSpec</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">height_ratios</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">])</span>
+
+<span class="n">ax0</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">im</span> <span class="o">=</span> <span class="n">plot_timefrequency</span><span class="p">(</span><span class="n">freqs</span><span class="p">[:],</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">mwt</span><span class="p">[:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">values</span><span class="p">),</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax0</span><span class="p">)</span>
+<span class="n">cbar</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax0</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s2">&quot;vertical&quot;</span><span class="p">)</span>
+
+<span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Signal&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<img alt="../_images/57350549e3e5d89aa01a860affc0594d1226f804df82701b91e83d25baf7cbfe.png" src="../_images/57350549e3e5d89aa01a860affc0594d1226f804df82701b91e83d25baf7cbfe.png" />
+</div>
+</div>
+<hr class="docutils" />
+<p>And let’s see if that has an effect on the reconstructed version of the signal</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">combined_oscillations</span> <span class="o">=</span> <span class="n">mwt</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">real</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Lets plot it.</p>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Signal&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">combined_oscillations</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Wavelet Reconstruction&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="p">[</span><span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="n">sp</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span> <span class="k">for</span> <span class="n">sp</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;right&quot;</span><span class="p">,</span> <span class="s2">&quot;top&quot;</span><span class="p">]]</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Signal&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Wavelet Reconstruction of Signal&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend at 0x7fd2f77e2050&gt;
+</pre></div>
+</div>
+<img alt="../_images/54725c73c4f567eb074b2b2235329b6ae808a1e2ba6f531d25f55514ffb98cf3.png" src="../_images/54725c73c4f567eb074b2b2235329b6ae808a1e2ba6f531d25f55514ffb98cf3.png" />
+</div>
+</div>
+<p>There’s a small improvement, but perhaps we can do better.</p>
+</section>
+<hr class="docutils" />
+<section id="effect-of-window-length">
+<h2>Effect of <code class="docutils literal notranslate"><span class="pre">window_length</span></code><a class="headerlink" href="#effect-of-window-length" title="Link to this heading">#</a></h2>
+<p>Let’s increase <code class="docutils literal notranslate"><span class="pre">window_length</span></code> to 2.0 and see the effect on the resultant filter bank.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">freqs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="mi">25</span><span class="p">)</span>
+<span class="n">filter_bank</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">generate_morlet_filterbank</span><span class="p">(</span>
+    <span class="n">freqs</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">gaussian_width</span><span class="o">=</span><span class="mf">7.5</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mf">2.0</span>
+<span class="p">)</span>
+
+<span class="n">plot_filterbank</span><span class="p">(</span>
+    <span class="n">filter_bank</span><span class="p">,</span>
+    <span class="n">freqs</span><span class="p">,</span>
+    <span class="s2">&quot;Morlet Wavelet Filter Bank (Real Components): gaussian_width=7.5, center_frequency=2.0&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/401d3fa6f1c5356ba98b98913923e8678d54c5ad2cb01e86aef1811ae5790436.png" src="../_images/401d3fa6f1c5356ba98b98913923e8678d54c5ad2cb01e86aef1811ae5790436.png" />
+</div>
+</div>
+<hr class="docutils" />
+<p>Let’s see what effect this has on the Wavelet Scalogram which is generated…</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mwt</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_wavelet_transform</span><span class="p">(</span>
+    <span class="n">sig</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">Fs</span><span class="p">,</span> <span class="n">freqs</span><span class="o">=</span><span class="n">freqs</span><span class="p">,</span> <span class="n">gaussian_width</span><span class="o">=</span><span class="mf">7.5</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mf">2.0</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Wavelet Decomposition&quot;</span><span class="p">)</span>
+<span class="n">gs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">GridSpec</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">height_ratios</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">])</span>
+
+<span class="n">ax0</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">im</span> <span class="o">=</span> <span class="n">plot_timefrequency</span><span class="p">(</span><span class="n">freqs</span><span class="p">[:],</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">mwt</span><span class="p">[:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">values</span><span class="p">),</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax0</span><span class="p">)</span>
+<span class="n">cbar</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax0</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s2">&quot;vertical&quot;</span><span class="p">)</span>
+
+<span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Signal&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<img alt="../_images/7a1fbef7431caf4832fb1b4ef51bdcadf78b51eec0b83f0ec5f8f164a97e7572.png" src="../_images/7a1fbef7431caf4832fb1b4ef51bdcadf78b51eec0b83f0ec5f8f164a97e7572.png" />
+</div>
+</div>
+<hr class="docutils" />
+<p>And let’s see if that has an effect on the reconstructed version of the signal</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">combined_oscillations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mwt</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Signal&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">combined_oscillations</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Wavelet Reconstruction&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Signal&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Wavelet Reconstruction of Signal&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend at 0x7fd2eddc4640&gt;
+</pre></div>
+</div>
+<img alt="../_images/f30fb82a93be97370b8e0fe7ab74090e8e92e4c66aa6661c9ab26b2ac6ec90c4.png" src="../_images/f30fb82a93be97370b8e0fe7ab74090e8e92e4c66aa6661c9ab26b2ac6ec90c4.png" />
+</div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="effect-of-l1-vs-l2-normalization">
+<h2>Effect of L1 vs L2 normalization<a class="headerlink" href="#effect-of-l1-vs-l2-normalization" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">compute_wavelet_transform</span></code> contains two options for normalization; L1, and L2.
+By default, L1 is used as it creates cleaner looking decomposition images.</p>
+<p>L1 normalization often increases the contrast between significant and insignificant coefficients.
+This can result in a sharper and more defined visual representation, making patterns and structures within
+the signal more evident.</p>
+<p>L2 normalization is directly related to the energy of the signal. By normalizing using the
+L2 norm, you ensure that the transformed coefficients preserve the energy distribution of the original signal.</p>
+<p>Let’s compare two wavelet decomposition, each generated with a different normalization strategy</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">mwt_l1</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_wavelet_transform</span><span class="p">(</span>
+    <span class="n">sig</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">Fs</span><span class="p">,</span> <span class="n">freqs</span><span class="o">=</span><span class="n">freqs</span><span class="p">,</span> 
+    <span class="n">gaussian_width</span><span class="o">=</span><span class="mf">7.5</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> 
+    <span class="n">norm</span><span class="o">=</span><span class="s2">&quot;l1&quot;</span>
+<span class="p">)</span>
+<span class="n">mwt_l2</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_wavelet_transform</span><span class="p">(</span>
+    <span class="n">sig</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">Fs</span><span class="p">,</span> <span class="n">freqs</span><span class="o">=</span><span class="n">freqs</span><span class="p">,</span> 
+    <span class="n">gaussian_width</span><span class="o">=</span><span class="mf">7.5</span><span class="p">,</span> <span class="n">window_length</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> 
+    <span class="n">norm</span><span class="o">=</span><span class="s2">&quot;l2&quot;</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Wavelet Decomposition - L1 Normalization&quot;</span><span class="p">)</span>
+<span class="n">gs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">GridSpec</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">height_ratios</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">])</span>
+<span class="n">ax0</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">im</span> <span class="o">=</span> <span class="n">plot_timefrequency</span><span class="p">(</span><span class="n">freqs</span><span class="p">[:],</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">mwt_l1</span><span class="p">[:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">values</span><span class="p">),</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax0</span><span class="p">)</span>
+<span class="n">cbar</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax0</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s2">&quot;vertical&quot;</span><span class="p">)</span>
+<span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Signal&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;Wavelet Decomposition - L2 Normalization&quot;</span><span class="p">)</span>
+<span class="n">gs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">GridSpec</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figure</span><span class="o">=</span><span class="n">fig</span><span class="p">,</span> <span class="n">height_ratios</span><span class="o">=</span><span class="p">[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">])</span>
+<span class="n">ax0</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">im</span> <span class="o">=</span> <span class="n">plot_timefrequency</span><span class="p">(</span><span class="n">freqs</span><span class="p">[:],</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">mwt_l2</span><span class="p">[:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">values</span><span class="p">),</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax0</span><span class="p">)</span>
+<span class="n">cbar</span> <span class="o">=</span> <span class="n">fig</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax0</span><span class="p">,</span> <span class="n">orientation</span><span class="o">=</span><span class="s2">&quot;vertical&quot;</span><span class="p">)</span>
+<span class="n">ax1</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="n">gs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sig</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Signal&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+<span class="n">ax1</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<img alt="../_images/2d5fce0fd7032de0892c3b169e026b80cca04f4093ae3c1fccd444d0b73b8e75.png" src="../_images/2d5fce0fd7032de0892c3b169e026b80cca04f4093ae3c1fccd444d0b73b8e75.png" />
+<img alt="../_images/665b2a1478ebecd69277c54ae053cb22bb69cc2fa22b582a0be0cd86e7169af7.png" src="../_images/665b2a1478ebecd69277c54ae053cb22bb69cc2fa22b582a0be0cd86e7169af7.png" />
+</div>
+</div>
+<p>We see that the l1 normalized image contains a visually clearer image; the 5-15 Hz component of the signal is
+as powerful as the 2 Hz component, so it makes sense that they should be shown with the same power in the scalogram.
+Let’s reconstruct the signal using both decompositions and see the resulting reconstruction…</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">combined_oscillations_l1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mwt_l1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+<span class="n">combined_oscillations_l2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">real</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mwt_l2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell tag_hide-input docutils container">
+<details class="hide above-input">
+<summary aria-label="Toggle hidden content">
+<span class="collapsed">Show code cell source</span>
+<span class="expanded">Hide code cell source</span>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">constrained_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">sig</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Signal&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;b&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">combined_oscillations_l1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Wavelet Reconstruction (L1)&quot;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;g&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">combined_oscillations_l2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Wavelet Reconstruction (L2)&quot;</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Signal&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Wavelet Reconstruction of Signal&quot;</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">margins</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="o">-</span><span class="mi">6</span><span class="p">,</span> <span class="mi">6</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend at 0x7fd2edc4b9a0&gt;
+</pre></div>
+</div>
+<img alt="../_images/a0527c2a2ae853f52bbaf71d58b3d8be043cc556c9b721255aeee937a72de20f.png" src="../_images/a0527c2a2ae853f52bbaf71d58b3d8be043cc556c9b721255aeee937a72de20f.png" />
+</div>
+</div>
+<p>We see that the reconstruction from the L2 normalized decomposition matched the original signal much more closely,
+this is due to the fact that L2 normalization preserved the energy of the original signal in its reconstruction.</p>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm docutils">
+<div class="sd-card-header docutils">
+<p class="sd-card-text">Authors</p>
+</div>
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Kipp Freud](https://kippfreud.com/)</p>
+<p class="sd-card-text">Guillaume Viejo</p>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="10_power_spectral_density.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Power spectral density</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="12_filtering.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Filtering</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#generating-a-dummy-signal">Generating a Dummy Signal</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#visualizing-the-morlet-wavelets">Visualizing the Morlet Wavelets</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#parametrizing-the-wavelets">Parametrizing the wavelets</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#continuous-wavelet-transform">Continuous wavelet transform</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#effect-of-gaussian-width">Effect of <code class="docutils literal notranslate"><span class="pre">gaussian_width</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#effect-of-window-length">Effect of <code class="docutils literal notranslate"><span class="pre">window_length</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#effect-of-l1-vs-l2-normalization">Effect of L1 vs L2 normalization</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/user_guide/11_wavelets.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=26a4bc78f4c0ddb94549"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=26a4bc78f4c0ddb94549"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2024, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">Guillaume Viejo</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.7.1</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

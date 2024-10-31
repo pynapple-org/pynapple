@@ -1,0 +1,6 @@
+pynapple.core.time\_series.Tsd.find\_support
+============================================
+
+.. currentmodule:: pynapple.core.time_series
+
+.. automethod:: Tsd.find_support

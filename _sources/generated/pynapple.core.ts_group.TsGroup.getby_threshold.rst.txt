@@ -1,0 +1,6 @@
+pynapple.core.ts\_group.TsGroup.getby\_threshold
+================================================
+
+.. currentmodule:: pynapple.core.ts_group
+
+.. automethod:: TsGroup.getby_threshold

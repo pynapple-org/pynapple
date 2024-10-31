@@ -1,0 +1,6 @@
+pynapple.core.time\_series.TsdFrame.to\_numpy
+=============================================
+
+.. currentmodule:: pynapple.core.time_series
+
+.. automethod:: TsdFrame.to_numpy

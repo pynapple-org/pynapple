@@ -1,0 +1,6 @@
+pynapple.core.interval\_set.IntervalSet.merge\_close\_intervals
+===============================================================
+
+.. currentmodule:: pynapple.core.interval_set
+
+.. automethod:: IntervalSet.merge_close_intervals

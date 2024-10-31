@@ -1,0 +1,6 @@
+pynapple.core.interval\_set.IntervalSet.split
+=============================================
+
+.. currentmodule:: pynapple.core.interval_set
+
+.. automethod:: IntervalSet.split

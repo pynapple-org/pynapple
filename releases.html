@@ -1,0 +1,792 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Releases &#8212; pynapple 0.7.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!-- 
+    this give us a css class that will be invisible only if js is disabled 
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=26a4bc78f4c0ddb94549" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=26a4bc78f4c0ddb94549" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx_contributors.css?v=f079e67e" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=f2caec9a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=26a4bc78f4c0ddb94549"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=26a4bc78f4c0ddb94549" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=26a4bc78f4c0ddb94549" />
+
+    <script src="_static/documentation_options.js?v=5a057da9"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=c57da192"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'releases';</script>
+    <link rel="icon" href="_static/Pynapple_final_icon.png"/>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="External Projects" href="external.html" />
+    <link rel="prev" title="pynapple.process.wavelets" href="generated/pynapple.process.wavelets.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.7.1" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.7.1 documentation - Home"/>
+    <img src="_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.7.1 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Releases
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Releases</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="releases">
+<h1>Releases<a class="headerlink" href="#releases" title="Link to this heading">#</a></h1>
+<section id="history">
+<h2>History<a class="headerlink" href="#history" title="Link to this heading">#</a></h2>
+<p>This package somehow started about 20 years ago in Bruce McNaughton’s lab. Dave Redish started the <em>TSToolbox</em> package in Matlab.
+Another postdoc in the lab, Francesco Battaglia, then made major contributions to the package. Francesco passed it on to Adrien Peyrache and other trainees in Paris and The Netherlands.
+Around 2016-2017, Luke Sjulson started <em>TSToolbox2</em>, still in Matlab and which includes some important changes.</p>
+<p>In 2018, Francesco started neuroseries, a Python package built on Pandas. It was quickly adopted in Adrien’s lab, especially by Guillaume Viejo, a postdoc in the lab. Gradually, the majority of the lab was using it and new functions were constantly added.
+In 2021, Guillaume and other trainees in Adrien’s lab decided to fork from neuroseries and started <em>pynapple</em>.
+The core of pynapple is largely built upon neuroseries. Some of the original changes to TSToolbox made by Luke were included in this package, especially the <em>time_support</em> property of all ts/tsd objects.</p>
+<p>Since 2023, the development of pynapple is lead by <a class="reference external" href="https://www.simonsfoundation.org/people/guillaume-viejo/">Guillaume Viejo</a>
+and <a class="reference external" href="https://www.simonsfoundation.org/people/edoardo-balzani/">Edoardo Balzani</a> at the Center for Computational Neuroscience
+of the Flatiron institute.</p>
+</section>
+<section id="id1">
+<h2>Releases<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
+<section id="id2">
+<h3>0.7.1 (2024-09-24)<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Fixing nan issue when computing 1d tuning curve (See issue #334).</p></li>
+<li><p>Refactor tuning curves and correlogram tests.</p></li>
+<li><p>Adding validators decorators for tuning curves and correlogram modules.</p></li>
+</ul>
+</section>
+<section id="id3">
+<h3>0.7.0 (2024-09-16)<a class="headerlink" href="#id3" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Morlet wavelets spectrogram with utility for plotting the wavelets.</p></li>
+<li><p>(Mean) Power spectral density. Returns a Pandas DataFrame.</p></li>
+<li><p>Convolve function works for any dimension of time series and any dimensions of kernel.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dtype</span></code> in count function</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">get_slice</span></code>: public method with a simplified API, argument start, end, time_units. returns a slice that matches behavior of Base.get.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">_get_slice</span></code>: private method, adds the argument “mode” this can be: “after_t”, “before_t”, “closest_t”, “restrict”.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">split</span></code> method for IntervalSet. Argument is <code class="docutils literal notranslate"><span class="pre">interval_size</span></code> in time unit.</p></li>
+<li><p>Changed os import to pathlib.</p></li>
+<li><p>Fixed pickling issue. TsGroup can now be saved as pickle.</p></li>
+<li><p>TsGroup can be created from an iterable of Ts/Tsd objects.</p></li>
+<li><p>IntervalSet can be created from (start, end) pairs</p></li>
+</ul>
+</section>
+<section id="id4">
+<h3>0.6.6 (2024-05-28)<a class="headerlink" href="#id4" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Full lazy-loading for NWB file.</p></li>
+<li><p>Parameter <code class="docutils literal notranslate"><span class="pre">load_array</span></code> for time series can prevent loading zarr array</p></li>
+<li><p>Function to merge a list of <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code></p></li>
+</ul>
+</section>
+<section id="id5">
+<h3>0.6.5 (2024-05-14)<a class="headerlink" href="#id5" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Full <code class="docutils literal notranslate"><span class="pre">pynajax</span></code> backend compatibility</p></li>
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> column slicing</p></li>
+</ul>
+</section>
+<section id="id6">
+<h3>0.6.4 (2024-04-18)<a class="headerlink" href="#id6" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Fixing IntervalSet <code class="docutils literal notranslate"><span class="pre">__repr__</span></code>. Tabulate conflict with numpy 1.26.</p></li>
+</ul>
+</section>
+<section id="id7">
+<h3>0.6.3 (2024-04-17)<a class="headerlink" href="#id7" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Improving <code class="docutils literal notranslate"><span class="pre">__repr__</span></code> for all objects.</p></li>
+<li><p>TsGroup <code class="docutils literal notranslate"><span class="pre">__getattr__</span></code> and <code class="docutils literal notranslate"><span class="pre">__setattr__</span></code> added to access metadata columns directly</p></li>
+<li><p>TsGroup <code class="docutils literal notranslate"><span class="pre">__setitem__</span></code> now allows changes directly to metadata</p></li>
+<li><p>TsGroup <code class="docutils literal notranslate"><span class="pre">__getitem__</span></code> returns column of metadata if passed as string</p></li>
+</ul>
+</section>
+<section id="id8">
+<h3>0.6.2 (2024-04-04)<a class="headerlink" href="#id8" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">smooth</span></code> now takes standard deviation in time units</p></li>
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code> saving method.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">__getattr__</span></code> of <code class="docutils literal notranslate"><span class="pre">BaseTsd</span></code> allow numpy functions to be attached as attributes of Tsd objects</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">get</span></code> method for <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code></p></li>
+<li><p>Tsds can be concatenate vertically if time indexes matches.</p></li>
+</ul>
+</section>
+<section id="id9">
+<h3>0.6.1 (2024-03-03)<a class="headerlink" href="#id9" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Fixed pynapple <code class="docutils literal notranslate"><span class="pre">loc</span></code> method for new <code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code></p></li>
+</ul>
+</section>
+<section id="id10">
+<h3>0.6.0 (2024-03-02)<a class="headerlink" href="#id10" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Refactoring <code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code> to pure numpy ndarray.</p></li>
+<li><p>Implementing new chain of inheritance for time series with abstract base class. <code class="docutils literal notranslate"><span class="pre">base_class.Base</span></code> holds the temporal methods for all time series and <code class="docutils literal notranslate"><span class="pre">Ts</span></code>. <code class="docutils literal notranslate"><span class="pre">time_series.BaseTsd</span></code> inherit <code class="docutils literal notranslate"><span class="pre">Base</span></code> and implements the common methods for <code class="docutils literal notranslate"><span class="pre">Tsd</span></code>, <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> and <code class="docutils literal notranslate"><span class="pre">Tsd</span></code>.</p></li>
+<li><p>Automatic conversion to numpy ndarray for all objects that are numpy-like (typically jax).</p></li>
+</ul>
+</section>
+<section id="id11">
+<h3>0.5.1 (2024-01-29)<a class="headerlink" href="#id11" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Implementing <code class="docutils literal notranslate"><span class="pre">event_trigger_average</span></code> for all dimensions.</p></li>
+<li><p>Hiding jitted functions from users.</p></li>
+</ul>
+</section>
+<section id="id12">
+<h3>0.5.0 (2023-12-12)<a class="headerlink" href="#id12" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Removing GUI stack from pynapple. To create a NWB file, users need to install nwbmatic (https://github.com/pynapple-org/nwbmatic)</p></li>
+<li><p>Implementing <code class="docutils literal notranslate"><span class="pre">compute_perievent_continuous</span></code></p></li>
+<li><p>Implementing <code class="docutils literal notranslate"><span class="pre">convolve</span></code> for Tsd, TsdFrame and TsdTensor</p></li>
+<li><p>Implementing <code class="docutils literal notranslate"><span class="pre">smooth</span></code> for fast gaussian smoothing of time series</p></li>
+</ul>
+</section>
+<section id="id13">
+<h3>0.4.1 (2023-10-30)<a class="headerlink" href="#id13" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Implementing <code class="docutils literal notranslate"><span class="pre">get</span></code> method that return both an interval or the closest timepoint</p></li>
+</ul>
+</section>
+<section id="id14">
+<h3>0.4.0 (2023-10-11)<a class="headerlink" href="#id14" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Implementing the numpy array container approach within pynapple</p></li>
+<li><p>TsdTensor for objects larger than 2 dimensions is now available</p></li>
+</ul>
+</section>
+<section id="id15">
+<h3>0.3.6 (2023-09-11)<a class="headerlink" href="#id15" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Fix issue in NWB reader class with units</p></li>
+<li><p>Implement a linear interpolation function.</p></li>
+</ul>
+</section>
+<section id="id16">
+<h3>0.3.5 (2023-08-08)<a class="headerlink" href="#id16" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>NWB reader class</p></li>
+<li><p>NPZ reader class</p></li>
+<li><p>Folder class for navigating a dataset.</p></li>
+<li><p>Cross-correlograms function can take tuple</p></li>
+<li><p>New doc with mkdocs-gallery</p></li>
+</ul>
+</section>
+<section id="id17">
+<h3>0.3.4 (2023-06-29)<a class="headerlink" href="#id17" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">TsGroup.to_tsd</span></code> and <code class="docutils literal notranslate"><span class="pre">Tsd.to_tsgroup</span></code> transformations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">count</span></code> can take IntervalSet</p></li>
+<li><p>Saving to npz functions for all objects.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tsd.value_from</span></code> can take TsdFrame</p></li>
+<li><p>Warning message for deprecating current IO.</p></li>
+</ul>
+</section>
+<section id="id18">
+<h3>0.3.3 (2023-04-17)<a class="headerlink" href="#id18" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Fixed minor bug with tkinter</p></li>
+</ul>
+</section>
+<section id="id19">
+<h3>0.3.2 (2023-04-12)<a class="headerlink" href="#id19" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>PyQt removed from the list of dependencies</p></li>
+</ul>
+</section>
+<section id="id20">
+<h3>0.3.1 (2022-12-08)<a class="headerlink" href="#id20" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Core functions rewritten with Numba</p></li>
+</ul>
+</section>
+<section id="id21">
+<h3>0.2.4 (2022-05-02)<a class="headerlink" href="#id21" title="Link to this heading">#</a></h3>
+</section>
+<section id="id22">
+<h3>0.2.3 (2022-04-05)<a class="headerlink" href="#id22" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Fixed minor bug when saving DLC in NWB.</p></li>
+</ul>
+</section>
+<section id="id23">
+<h3>0.2.3 (2022-04-05)<a class="headerlink" href="#id23" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Alpha release</p></li>
+</ul>
+</section>
+<section id="id24">
+<h3>0.2.2 (2022-04-05)<a class="headerlink" href="#id24" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Beta testing version for public</p></li>
+</ul>
+</section>
+<section id="id25">
+<h3>0.2.1 (2022-02-07)<a class="headerlink" href="#id25" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Beta testing version for Peyrache Lab.</p></li>
+</ul>
+</section>
+<section id="id26">
+<h3>0.2.0 (2022-01-10)<a class="headerlink" href="#id26" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>First version for pynapple with main features in core, process and IO.</p></li>
+</ul>
+</section>
+<section id="pre-release-2022-01-06">
+<h3>0.2.0 Pre-release (2022-01-06)<a class="headerlink" href="#pre-release-2022-01-06" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>Pre-release version for pynapple with main features in core and process.</p></li>
+</ul>
+</section>
+<section id="id27">
+<h3>0.1.1 (2021-10-25)<a class="headerlink" href="#id27" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>First release on PyPI.</p></li>
+<li><p>Firt minimal version</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="generated/pynapple.process.wavelets.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">pynapple.process.wavelets</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="external.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">External Projects</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#history">History</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Releases</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">0.7.1 (2024-09-24)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">0.7.0 (2024-09-16)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">0.6.6 (2024-05-28)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">0.6.5 (2024-05-14)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">0.6.4 (2024-04-18)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">0.6.3 (2024-04-17)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">0.6.2 (2024-04-04)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">0.6.1 (2024-03-03)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id10">0.6.0 (2024-03-02)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id11">0.5.1 (2024-01-29)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id12">0.5.0 (2023-12-12)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id13">0.4.1 (2023-10-30)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id14">0.4.0 (2023-10-11)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id15">0.3.6 (2023-09-11)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id16">0.3.5 (2023-08-08)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id17">0.3.4 (2023-06-29)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id18">0.3.3 (2023-04-17)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id19">0.3.2 (2023-04-12)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id20">0.3.1 (2022-12-08)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id21">0.2.4 (2022-05-02)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id22">0.2.3 (2022-04-05)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id23">0.2.3 (2022-04-05)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id24">0.2.2 (2022-04-05)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id25">0.2.1 (2022-02-07)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id26">0.2.0 (2022-01-10)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pre-release-2022-01-06">0.2.0 Pre-release (2022-01-06)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id27">0.1.1 (2021-10-25)</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="_sources/releases.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=26a4bc78f4c0ddb94549"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=26a4bc78f4c0ddb94549"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2024, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">Guillaume Viejo</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.7.1</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

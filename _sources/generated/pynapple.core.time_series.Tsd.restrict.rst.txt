@@ -1,0 +1,6 @@
+pynapple.core.time\_series.Tsd.restrict
+=======================================
+
+.. currentmodule:: pynapple.core.time_series
+
+.. automethod:: Tsd.restrict

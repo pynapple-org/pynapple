@@ -1,0 +1,6 @@
+pynapple.io.interface\_nwb.NWBFile.setdefault
+=============================================
+
+.. currentmodule:: pynapple.io.interface_nwb
+
+.. automethod:: NWBFile.setdefault
