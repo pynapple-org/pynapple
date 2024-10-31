@@ -29,7 +29,7 @@ from tabulate import tabulate
 from ._core_functions import _bin_average, _convolve, _dropna, _restrict, _threshold
 from .base_class import Base
 from .interval_set import IntervalSet
-from .metadata_class import _MetadataBase
+from .metadata_class import _MetadataMixin
 from .time_index import TsIndex
 from .utils import (
     _concatenate_tsd,
@@ -866,7 +866,7 @@ class TsdTensor(BaseTsd):
         return
 
 
-class TsdFrame(BaseTsd, _MetadataBase):
+class TsdFrame(BaseTsd, _MetadataMixin):
     """
     TsdFrame
 
@@ -938,7 +938,7 @@ class TsdFrame(BaseTsd, _MetadataBase):
 
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
-        _MetadataBase.__init__(self, metadata)
+        _MetadataMixin.__init__(self, metadata)
         self._initialized = True
 
     @property
@@ -1034,7 +1034,7 @@ class TsdFrame(BaseTsd, _MetadataBase):
     def __setattr__(self, name, value):
         # necessary setter to allow metadata to be set as an attribute
         if self._initialized:
-            _MetadataBase.__setattr__(self, name, value)
+            _MetadataMixin.__setattr__(self, name, value)
         else:
             super().__setattr__(name, value)
 
@@ -1046,7 +1046,7 @@ class TsdFrame(BaseTsd, _MetadataBase):
         if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
             raise AttributeError(name)
         if name in self._metadata.columns:
-            return _MetadataBase.__getattr__(self, name)
+            return _MetadataMixin.__getattr__(self, name)
         else:
             return super().__getattr__(name)
 
@@ -1059,7 +1059,7 @@ class TsdFrame(BaseTsd, _MetadataBase):
                         (slice(None, None, None), new_key[0]), value
                     )
                 else:
-                    _MetadataBase.__setitem__(self, key, value)
+                    _MetadataMixin.__setitem__(self, key, value)
             elif hasattr(key, "__iter__") and all([isinstance(k, str) for k in key]):
                 new_key = self.columns.get_indexer(key)
                 self.values.__setitem__((slice(None, None, None), new_key), value)
@@ -1070,14 +1070,14 @@ class TsdFrame(BaseTsd, _MetadataBase):
 
     def __getitem__(self, key, *args, **kwargs):
         if isinstance(key, str) and (key in self.metadata_columns):
-            return _MetadataBase.__getitem__(self, key)
+            return _MetadataMixin.__getitem__(self, key)
         elif (
             isinstance(key, str)
             or hasattr(key, "__iter__")
             and all([isinstance(k, str) for k in key])
         ):
             if all(k in self.metadata_columns for k in key):
-                return _MetadataBase.__getitem__(self, key)
+                return _MetadataMixin.__getitem__(self, key)
             else:
                 return self.loc[key]
 

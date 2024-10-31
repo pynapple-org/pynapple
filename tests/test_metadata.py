@@ -774,15 +774,15 @@ def get_defined_members(cls):
     }
 
 
-def test_no_conflict_between_intervalset_and_metadatabase():
+def test_no_conflict_between_intervalset_and_metadatamixin():
     from pynapple.core import IntervalSet
-    from pynapple.core.metadata_class import _MetadataBase  # Adjust import as needed
+    from pynapple.core.metadata_class import _MetadataMixin  # Adjust import as needed
 
     iset_members = get_defined_members(IntervalSet)
-    metadatabase_members = get_defined_members(_MetadataBase)
+    metadatamixin_members = get_defined_members(_MetadataMixin)
 
-    # Check for any overlapping names between IntervalSet and _MetadataBase
-    conflicting_members = iset_members.intersection(metadatabase_members)
+    # Check for any overlapping names between IntervalSet and _MetadataMixin
+    conflicting_members = iset_members.intersection(metadatamixin_members)
 
     assert len(conflicting_members) == 0, (
         f"Conflict detected! The following methods/attributes are "
@@ -790,15 +790,15 @@ def test_no_conflict_between_intervalset_and_metadatabase():
     )
 
 
-def test_no_conflict_between_tsdframe_and_metadatabase():
+def test_no_conflict_between_tsdframe_and_metadatamixin():
     from pynapple.core import TsdFrame
-    from pynapple.core.metadata_class import _MetadataBase  # Adjust import as needed
+    from pynapple.core.metadata_class import _MetadataMixin  # Adjust import as needed
 
     tsdframe_members = get_defined_members(TsdFrame)
-    metadatabase_members = get_defined_members(_MetadataBase)
+    metadatamixin_members = get_defined_members(_MetadataMixin)
 
-    # Check for any overlapping names between TsdFrame and _MetadataBase
-    conflicting_members = tsdframe_members.intersection(metadatabase_members)
+    # Check for any overlapping names between TsdFrame and _MetadataMixin
+    conflicting_members = tsdframe_members.intersection(metadatamixin_members)
 
     assert len(conflicting_members) == 0, (
         f"Conflict detected! The following methods/attributes are "
@@ -806,15 +806,15 @@ def test_no_conflict_between_tsdframe_and_metadatabase():
     )
 
 
-def test_no_conflict_between_tsgroup_and_metadatabase():
+def test_no_conflict_between_tsgroup_and_metadatamixin():
     from pynapple.core import TsGroup
-    from pynapple.core.metadata_class import _MetadataBase  # Adjust import as needed
+    from pynapple.core.metadata_class import _MetadataMixin  # Adjust import as needed
 
     tsgroup_members = get_defined_members(TsGroup)
-    metadatabase_members = get_defined_members(_MetadataBase)
+    metadatamixin_members = get_defined_members(_MetadataMixin)
 
-    # Check for any overlapping names between TsdFrame and _MetadataBase
-    conflicting_members = tsgroup_members.intersection(metadatabase_members)
+    # Check for any overlapping names between TsdFrame and _MetadataMixin
+    conflicting_members = tsgroup_members.intersection(metadatamixin_members)
 
     assert len(conflicting_members) == 0, (
         f"Conflict detected! The following methods/attributes are "

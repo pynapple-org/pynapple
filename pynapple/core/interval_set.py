@@ -56,7 +56,7 @@ from ._jitted_functions import (
     jitunion,
 )
 from .config import nap_config
-from .metadata_class import _MetadataBase
+from .metadata_class import _MetadataMixin
 from .time_index import TsIndex
 from .utils import (
     _get_terminal_size,
@@ -76,7 +76,7 @@ all_warnings = np.array(
 )
 
 
-class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
+class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     """
     A class representing a (irregular) set of time intervals in elapsed time, with relative operations
     """
@@ -217,9 +217,9 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         self.columns = np.array(["start", "end"])
         self.nap_class = self.__class__.__name__
         if drop_meta:
-            _MetadataBase.__init__(self)
+            _MetadataMixin.__init__(self)
         else:
-            _MetadataBase.__init__(self, metadata)
+            _MetadataMixin.__init__(self, metadata)
         self._initialized = True
 
     def __repr__(self):
@@ -288,13 +288,13 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
     def __setattr__(self, name, value):
         # necessary setter to allow metadata to be set as an attribute
         if self._initialized:
-            _MetadataBase.__setattr__(self, name, value)
+            _MetadataMixin.__setattr__(self, name, value)
         else:
             object.__setattr__(self, name, value)
 
     def __setitem__(self, key, value):
         if (isinstance(key, str)) and (key not in self.columns):
-            _MetadataBase.__setitem__(self, key, value)
+            _MetadataMixin.__setitem__(self, key, value)
         else:
             raise RuntimeError(
                 "IntervalSet is immutable. Starts and ends have been already sorted."
@@ -308,7 +308,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
             elif key == "end":
                 return self.values[:, 1]
             elif key in self._metadata.columns:
-                return _MetadataBase.__getitem__(self, key)
+                return _MetadataMixin.__getitem__(self, key)
             else:
                 raise IndexError(
                     f"Unknown string argument. Should be in {['start', 'end'] + list(self._metadata.keys())}"
@@ -325,12 +325,12 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
         elif isinstance(key, Number):
             # self[Number]
             output = self.values.__getitem__(key)
-            metadata = _MetadataBase.__getitem__(self, key)
+            metadata = _MetadataMixin.__getitem__(self, key)
             return IntervalSet(start=output[0], end=output[1], metadata=metadata)
         elif isinstance(key, (slice, list, np.ndarray, pd.Series)):
             # self[array_like]
             output = self.values.__getitem__(key)
-            metadata = _MetadataBase.__getitem__(self, key).reset_index(drop=True)
+            metadata = _MetadataMixin.__getitem__(self, key).reset_index(drop=True)
             return IntervalSet(start=output[:, 0], end=output[:, 1], metadata=metadata)
         elif isinstance(key, tuple):
             if len(key) == 2:
@@ -346,7 +346,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
                     elif key[1] == "end":
                         return self.values[key[0], 1]
                     elif key[1] in self._metadata.columns:
-                        return _MetadataBase.__getitem__(self, key)
+                        return _MetadataMixin.__getitem__(self, key)
 
                 elif isinstance(key[1], (list, np.ndarray)):
                     if all(isinstance(x, str) for x in key[1]):
@@ -378,7 +378,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataBase):
                     if key[1] == slice(None, None, None):
                         # self[Any, :]
                         output = self.values.__getitem__(key[0])
-                        metadata = _MetadataBase.__getitem__(self, key[0])
+                        metadata = _MetadataMixin.__getitem__(self, key[0])
 
                         if isinstance(key[0], Number):
                             return IntervalSet(

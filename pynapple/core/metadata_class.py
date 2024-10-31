@@ -5,9 +5,9 @@ import numpy as np
 import pandas as pd
 
 
-class _MetadataBase:
+class _MetadataMixin:
     """
-    An object containing metadata for TsGroup, IntervalSet, or TsdFrame objects.
+    An object containing metadata functionality for TsGroup, IntervalSet, or TsdFrame objects.
 
     """
 

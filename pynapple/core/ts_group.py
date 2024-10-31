@@ -18,7 +18,7 @@ from ._jitted_functions import jitunion, jitunion_isets
 from .base_class import Base
 from .config import nap_config
 from .interval_set import IntervalSet
-from .metadata_class import _MetadataBase
+from .metadata_class import _MetadataMixin
 from .time_index import TsIndex
 from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
 from .utils import _get_terminal_size, check_filename, convert_to_numpy_array
@@ -56,7 +56,7 @@ def _union_intervals(i_sets):
     return IntervalSet(new_start, new_end)
 
 
-class TsGroup(UserDict, _MetadataBase):
+class TsGroup(UserDict, _MetadataMixin):
     """
     The TsGroup is a dictionary-like object to hold multiple [`Ts`][pynapple.core.time_series.Ts] or [`Tsd`][pynapple.core.time_series.Tsd] objects with different time index.
 
@@ -152,7 +152,7 @@ class TsGroup(UserDict, _MetadataBase):
         data = {k: data[k] for k in self.index}
 
         # initialize metadata
-        _MetadataBase.__init__(self)
+        _MetadataMixin.__init__(self)
 
         # Transform elements to Ts/Tsd objects
         for k in self.index:
@@ -201,7 +201,7 @@ class TsGroup(UserDict, _MetadataBase):
     def __setattr__(self, name, value):
         # necessary setter to allow metadata to be set as an attribute
         if self._initialized:
-            _MetadataBase.__setattr__(self, name, value)
+            _MetadataMixin.__setattr__(self, name, value)
         else:
             object.__setattr__(self, name, value)
 
@@ -210,7 +210,7 @@ class TsGroup(UserDict, _MetadataBase):
             self._metadata.loc[int(key), "rate"] = float(value.rate)
             super().__setitem__(int(key), value)
         else:
-            _MetadataBase.__setitem__(self, key, value)
+            _MetadataMixin.__setitem__(self, key, value)
 
     def __getitem__(self, key):
         # Standard dict keys are Hashable
@@ -218,12 +218,12 @@ class TsGroup(UserDict, _MetadataBase):
             if self.__contains__(key):
                 return self.data[key]
             elif key in self._metadata.columns:
-                return _MetadataBase.__getitem__(self, key)
+                return _MetadataMixin.__getitem__(self, key)
             else:
                 raise KeyError(r"Key {} not in group index.".format(key))
         elif isinstance(key, list) and all(isinstance(k, str) for k in key):
             # index multiple metadata columns
-            return _MetadataBase.__getitem__(self, key)
+            return _MetadataMixin.__getitem__(self, key)
 
         # array boolean are transformed into indices
         # note that raw boolean are hashable, and won't be
