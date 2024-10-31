@@ -1,0 +1,16 @@
+{% extends "!layout.html" %}
+
+{%- block footer %}
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      {% trans copyright=copyright|e %}&#169; Copyright {{ copyright }}, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">Guillaume Viejo</a>.{% endtrans %}<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v{{ version }}</div>
+    </div>
+  </div>
+</footer>
+{%- endblock %}
