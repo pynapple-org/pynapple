@@ -30,12 +30,13 @@ Here is a ready-made BibTex entry:
 
 ## Contributors
 
--	Adrien Peyrache
-- 	Dan Levenstein
--	Sofia Skromne Carrasco
--	Davide Spalla
-- 	Luigi Petrucco
-- ... [and many more!](https://github.com/pynapple-org/pynapple/graphs/contributors) 
+```{eval-rst}
+.. contributors:: pynapple-org/pynapple
+    :contributions:
+    :avatars:
+    :limit: 99  
+    :order: DESC
+```
 
 ## Special Credits
 

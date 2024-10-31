@@ -41,6 +41,7 @@ extensions = [
     'sphinx_copybutton',  # Adds copy button to code blocks
     'sphinx_design',  # For layout components
     'myst_nb',
+    'sphinx_contributors'
     # 'sphinxcontrib.apidoc'
     # 'sphinx_gallery.gen_gallery',    
     # 'myst_sphinx_gallery',
