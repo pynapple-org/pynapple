@@ -12,6 +12,7 @@ import pandas as pd
 import pytest
 
 import pynapple as nap
+
 # from pynapple.core.time_units import format_timestamps, return_timestamps, sort_timestamps
 from pynapple.core.time_index import TsIndex
 
