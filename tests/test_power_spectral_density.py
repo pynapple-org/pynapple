@@ -8,7 +8,6 @@ from scipy import signal
 
 import pynapple as nap
 
-
 ############################################################
 # Test for power_spectral_density
 ############################################################
@@ -146,15 +145,18 @@ def test_compute_power_spectral_density_raise_errors(sig, kwargs, expectation):
 ############################################################
 
 
-def get_signal_and_output(f=2, fs=1000, duration=100, interval_size=10, overlap = 0.25):
+def get_signal_and_output(f=2, fs=1000, duration=100, interval_size=10, overlap=0.25):
     t = np.arange(0, duration, 1 / fs)
     d = np.cos(2 * np.pi * f * t)
     sig = nap.Tsd(t=t, d=d, time_support=nap.IntervalSet(0, 100))
     tmp = []
-    slice = (0, int(fs*interval_size)+1)
+    slice = (0, int(fs * interval_size) + 1)
     while slice[1] < len(d):
-        tmp.append(d[slice[0]:slice[1]])
-        new_slice = (slice[1]-int(fs*interval_size*overlap)-1, slice[1]+int(fs*interval_size*(1-overlap)))
+        tmp.append(d[slice[0] : slice[1]])
+        new_slice = (
+            slice[1] - int(fs * interval_size * overlap) - 1,
+            slice[1] + int(fs * interval_size * (1 - overlap)),
+        )
         slice = new_slice
 
     tmp = np.transpose(np.array(tmp))
@@ -275,15 +277,15 @@ def test_compute_mean_power_spectral_density():
             ),
         ),
         (
-                get_signal_and_output()[0],
-                10,
-                {"overlap": "a"},
-                pytest.raises(
-                    TypeError,
-                    match=re.escape(
-                        "Invalid type. Parameter overlap must be of type <class 'float'>."
-                    ),
+            get_signal_and_output()[0],
+            10,
+            {"overlap": "a"},
+            pytest.raises(
+                TypeError,
+                match=re.escape(
+                    "Invalid type. Parameter overlap must be of type <class 'float'>."
                 ),
+            ),
         ),
         (
             get_signal_and_output()[0],
@@ -313,21 +315,17 @@ def test_compute_mean_power_spectral_density():
             {"overlap": -0.1},
             pytest.raises(
                 ValueError,
-                match=re.escape(
-                    "Overlap should be in intervals [0.0, 1.0)."
-                ),
+                match=re.escape("Overlap should be in intervals [0.0, 1.0)."),
             ),
         ),
         (
-                get_signal_and_output()[0],
-                10,
-                {"overlap": 1.1},
-                pytest.raises(
-                    ValueError,
-                    match=re.escape(
-                        "Overlap should be in intervals [0.0, 1.0)."
-                    ),
-                ),
+            get_signal_and_output()[0],
+            10,
+            {"overlap": 1.1},
+            pytest.raises(
+                ValueError,
+                match=re.escape("Overlap should be in intervals [0.0, 1.0)."),
+            ),
         ),
     ],
 )

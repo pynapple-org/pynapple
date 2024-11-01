@@ -1,10 +1,13 @@
 """Tests of correlograms for `pynapple` package."""
 
-import pynapple as nap
+from itertools import combinations
+
 import numpy as np
 import pandas as pd
 import pytest
-from itertools import combinations
+
+import pynapple as nap
+
 
 def test_cross_correlogram():
     t1 = np.array([0])

@@ -6,15 +6,16 @@
 
 """Tests of nwb reading for `pynapple` package."""
 
-import pynapple as nap
+import warnings
+
 import numpy as np
 import pandas as pd
-import pytest
-import warnings
 import pynwb
+import pytest
 from pynwb.testing.mock.file import mock_NWBFile
 from pynwb.testing.mock.utils import name_generator_registry
 
+import pynapple as nap
 
 ############################################################
 # DEPRECATED PART ##########################################
@@ -59,7 +60,7 @@ class Test_NWB:
 
     @pytest.mark.filterwarnings("ignore")
     def test_nwb_meta_info(self, data):
-        from pynwb import NWBFile, NWBHDF5IO
+        from pynwb import NWBHDF5IO, NWBFile
 
         io = NWBHDF5IO(data.nwbfilepath, "r")
         nwbfile = io.read()
@@ -99,19 +100,21 @@ def test_NWBFile_wrong_input():
     with pytest.raises(TypeError):
         nap.NWBFile(1)
 
+
 def test_wrong_key():
     nwbfile = mock_NWBFile()
-    nwb = nap.NWBFile(nwbfile)    
+    nwb = nap.NWBFile(nwbfile)
     with pytest.raises(KeyError):
         nwb["a"]
 
 
 def test_failed_to_build():
     from pynwb.file import Subject
+
     nwbfile = mock_NWBFile(subject=Subject(subject_id="mouse1"))
-    nwb = nap.NWBFile(nwbfile)    
-    for oid, obj in nwbfile.objects.items():                                                                                                                                   
-        nwb.key_to_id[obj.name] = oid 
+    nwb = nap.NWBFile(nwbfile)
+    for oid, obj in nwbfile.objects.items():
+        nwb.key_to_id[obj.name] = oid
         nwb[obj.name] = {"id": oid, "type": "Tsd"}
 
     with pytest.warns(UserWarning) as record:
@@ -120,7 +123,8 @@ def test_failed_to_build():
         record[0].message.args[0]
         == "Failed to build Tsd.\n Returning the NWB object for manual inspection"
     )
-    
+
+
 def test_add_TimeSeries():
     from pynwb.testing.mock.base import mock_TimeSeries
 
@@ -139,7 +143,9 @@ def test_add_TimeSeries():
     # Tsd with timestamps
     name_generator_registry.clear()
     nwbfile = mock_NWBFile()
-    time_series = mock_TimeSeries(timestamps=np.arange(10), data=np.arange(10), rate=None)
+    time_series = mock_TimeSeries(
+        timestamps=np.arange(10), data=np.arange(10), rate=None
+    )
     nwbfile.add_acquisition(time_series)
     nwb = nap.NWBFile(nwbfile)
     assert len(nwb) == 1
@@ -149,11 +155,10 @@ def test_add_TimeSeries():
     np.testing.assert_array_almost_equal(tsd.index, np.arange(10))
     np.testing.assert_array_almost_equal(tsd.values, np.arange(10))
 
-
     # TsdFrame
     name_generator_registry.clear()
     nwbfile = mock_NWBFile()
-    time_series = mock_TimeSeries(data=np.zeros((10,3)))
+    time_series = mock_TimeSeries(data=np.zeros((10, 3)))
     nwbfile.add_acquisition(time_series)
     nwb = nap.NWBFile(nwbfile)
     assert len(nwb) == 1
@@ -166,10 +171,10 @@ def test_add_TimeSeries():
 
 def test_add_SpatialSeries():
     from pynwb.testing.mock.behavior import (
-        mock_SpatialSeries,
+        mock_CompassDirection,
         mock_Position,
         mock_PupilTracking,
-        mock_CompassDirection,
+        mock_SpatialSeries,
     )
 
     for name, Series in zip(
@@ -187,25 +192,25 @@ def test_add_SpatialSeries():
     # Test for 2d and 3d
     name_generator_registry.clear()
     nwbfile = mock_NWBFile()
-    nwbfile.add_acquisition(mock_SpatialSeries(data=np.zeros((4,2))))
+    nwbfile.add_acquisition(mock_SpatialSeries(data=np.zeros((4, 2))))
     nwb = nap.NWBFile(nwbfile)
     assert len(nwb) == 1
     assert "SpatialSeries" in nwb.keys() or "TimeSeries" in nwb.keys()
     data = nwb[list(nwb.keys())[0]]
     assert isinstance(data, nap.TsdFrame)
-    np.testing.assert_array_equal(data.values,np.zeros((4, 2)))
-    np.testing.assert_array_equal(data.columns, ['x', 'y'])
+    np.testing.assert_array_equal(data.values, np.zeros((4, 2)))
+    np.testing.assert_array_equal(data.columns, ["x", "y"])
 
     name_generator_registry.clear()
     nwbfile = mock_NWBFile()
-    nwbfile.add_acquisition(mock_SpatialSeries(data=np.zeros((4,3))))
+    nwbfile.add_acquisition(mock_SpatialSeries(data=np.zeros((4, 3))))
     nwb = nap.NWBFile(nwbfile)
     assert len(nwb) == 1
     assert "SpatialSeries" in nwb.keys() or "TimeSeries" in nwb.keys()
     data = nwb[list(nwb.keys())[0]]
     assert isinstance(data, nap.TsdFrame)
-    np.testing.assert_array_equal(data.values,np.zeros((4, 3)))
-    np.testing.assert_array_equal(data.columns, ['x', 'y', 'z'])
+    np.testing.assert_array_equal(data.values, np.zeros((4, 3)))
+    np.testing.assert_array_equal(data.columns, ["x", "y", "z"])
 
 
 def test_add_Device():
@@ -219,8 +224,8 @@ def test_add_Device():
 
 def test_add_Ecephys():
     from pynwb.testing.mock.ecephys import (
-        mock_ElectrodeGroup,
         mock_ElectricalSeries,
+        mock_ElectrodeGroup,
         mock_SpikeEventSeries,
     )
 
@@ -245,7 +250,9 @@ def test_add_Ecephys():
         np.testing.assert_array_almost_equal(
             data.index, obj.starting_time + np.arange(obj.num_samples) / obj.rate
         )
-        np.testing.assert_array_almost_equal(data.columns.values, obj.electrodes["id"][:])
+        np.testing.assert_array_almost_equal(
+            data.columns.values, obj.electrodes["id"][:]
+        )
 
         # Try ElectrialSeries without channel mapping
         name_generator_registry.clear()
@@ -261,8 +268,9 @@ def test_add_Ecephys():
         np.testing.assert_array_almost_equal(
             data.index, obj.starting_time + np.arange(obj.num_samples) / obj.rate
         )
-        np.testing.assert_array_almost_equal(data.columns.values, np.arange(obj.data.shape[1]))
-
+        np.testing.assert_array_almost_equal(
+            data.columns.values, np.arange(obj.data.shape[1])
+        )
 
         name_generator_registry.clear()
         nwbfile = mock_NWBFile()
@@ -275,18 +283,20 @@ def test_add_Ecephys():
         obj = nwbfile.acquisition["SpikeEventSeries"]
         np.testing.assert_array_almost_equal(data.values, obj.data[:])
         np.testing.assert_array_almost_equal(data.index, obj.timestamps[:])
-        np.testing.assert_array_almost_equal(data.columns.values, obj.electrodes["id"][:])
+        np.testing.assert_array_almost_equal(
+            data.columns.values, obj.electrodes["id"][:]
+        )
 
 
 def test_add_Icephys():
     try:
         from pynwb.testing.mock.icephys import (
-            mock_IntracellularElectrode,
-            mock_VoltageClampStimulusSeries,
-            mock_VoltageClampSeries,
             mock_CurrentClampSeries,
             mock_CurrentClampStimulusSeries,
+            mock_IntracellularElectrode,
             mock_IZeroClampSeries,
+            mock_VoltageClampSeries,
+            mock_VoltageClampStimulusSeries,
         )
 
         with warnings.catch_warnings():
@@ -335,8 +345,8 @@ def test_add_Icephys():
 
 def test_add_Ogen():
     from pynwb.testing.mock.ogen import (
-        mock_OptogeneticStimulusSite,
         mock_OptogeneticSeries,
+        mock_OptogeneticStimulusSite,
     )
 
     name_generator_registry.clear()
@@ -363,15 +373,16 @@ def test_add_Ogen():
 def test_add_Ophys():
     try:
         from pynwb.testing.mock.ophys import (
-            mock_ImagingPlane,
-            mock_OnePhotonSeries,
-            mock_TwoPhotonSeries,
-            mock_PlaneSegmentation,
-            mock_ImageSegmentation,
-            mock_RoiResponseSeries,
             mock_DfOverF,
             mock_Fluorescence,
+            mock_ImageSegmentation,
+            mock_ImagingPlane,
+            mock_OnePhotonSeries,
+            mock_PlaneSegmentation,
+            mock_RoiResponseSeries,
+            mock_TwoPhotonSeries,
         )
+
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
 
@@ -407,7 +418,9 @@ def test_add_Ophys():
                     data.index,
                     obj.starting_time + np.arange(obj.num_samples) / obj.rate,
                 )
-                np.testing.assert_array_almost_equal(data.columns.values, obj.rois["id"][:])
+                np.testing.assert_array_almost_equal(
+                    data.columns.values, obj.rois["id"][:]
+                )
 
     except:
         pass  # some issues with pynwb version
@@ -516,60 +529,70 @@ def test_add_Units():
     spks = {}
     alpha = np.random.randint(0, 10, n_units)
     for n_units_per_shank in range(n_units):
-        spike_times = np.where(np.random.rand((res * duration)) < (firing_rate / res))[0] / res
-        nwbfile.add_unit(spike_times=spike_times, quality="good", alpha=alpha[n_units_per_shank])
+        spike_times = (
+            np.where(np.random.rand((res * duration)) < (firing_rate / res))[0] / res
+        )
+        nwbfile.add_unit(
+            spike_times=spike_times, quality="good", alpha=alpha[n_units_per_shank]
+        )
         spks[n_units_per_shank] = spike_times
 
     nwb_tsgroup = nap.NWBFile(nwbfile)
     assert len(nwb_tsgroup) == 1
     assert "units" in nwb_tsgroup.keys()
-    
-    data = nwb_tsgroup['units']
+
+    data = nwb_tsgroup["units"]
     assert isinstance(data, nap.TsGroup)
     assert len(data) == n_units
     for n in data.keys():
         np.testing.assert_array_almost_equal(data[n].index, spks[n])
 
-    np.testing.assert_array_equal(data._metadata["quality"].values, np.array(["good"]*n_units))
+    np.testing.assert_array_equal(
+        data._metadata["quality"].values, np.array(["good"] * n_units)
+    )
     np.testing.assert_array_equal(data._metadata["alpha"].values, alpha)
 
 
 def test_add_Timestamps():
-    from pynwb.misc import AnnotationSeries
     from pynwb.core import DynamicTable, VectorData
+    from pynwb.misc import AnnotationSeries
 
     nwbfile = mock_NWBFile()
-    nwbfile.add_acquisition(AnnotationSeries("test_ts", data=np.array(["test"]*100), timestamps=np.arange(100)))
+    nwbfile.add_acquisition(
+        AnnotationSeries(
+            "test_ts", data=np.array(["test"] * 100), timestamps=np.arange(100)
+        )
+    )
     nwb = nap.NWBFile(nwbfile)
     assert len(nwb) == 1
     assert "test_ts" in nwb.keys()
-    data = nwb['test_ts']
+    data = nwb["test_ts"]
     assert isinstance(data, nap.Ts)
     assert len(data) == 100
     np.testing.assert_array_almost_equal(data.index, np.arange(100))
 
-    # One ts only 
-    nwbfile = mock_NWBFile()    
+    # One ts only
+    nwbfile = mock_NWBFile()
     test_ts = DynamicTable(
         name="test_ts",
         description="Test Timestamps",
         colnames=[
             "ts_times",
-            ],
+        ],
         columns=[
             VectorData(
                 name="ts_times",
                 data=np.arange(10),
                 description="Test",
-                ),
+            ),
         ],
-        )
+    )
     nwbfile.add_acquisition(test_ts)
-    
+
     nwb = nap.NWBFile(nwbfile)
     assert len(nwb) == 1
     assert "test_ts" in nwb.keys()
-    data = nwb['test_ts']
+    data = nwb["test_ts"]
     assert isinstance(data, nap.Ts)
     assert len(data) == 10
     np.testing.assert_array_almost_equal(data.index, np.arange(10))
@@ -579,31 +602,27 @@ def test_add_Timestamps():
     test_ts = DynamicTable(
         name="test_ts",
         description="Test Timestamps",
-        colnames=[
-            "ts_times",
-            "ts2_times"
-            ],
+        colnames=["ts_times", "ts2_times"],
         columns=[
             VectorData(
                 name="ts_times",
                 data=np.arange(10),
                 description="Test",
-                ),
+            ),
             VectorData(
                 name="ts2_times",
-                data=np.arange(10)+1,
+                data=np.arange(10) + 1,
                 description="Test",
-                ),
-            ],
-        )
+            ),
+        ],
+    )
     nwbfile.add_acquisition(test_ts)
-    
+
     nwb = nap.NWBFile(nwbfile)
     assert len(nwb) == 1
     assert "test_ts" in nwb.keys()
-    data = nwb['test_ts']
+    data = nwb["test_ts"]
     assert isinstance(data, dict)
     assert len(data) == 2
     for i, k in enumerate(data.keys()):
-        np.testing.assert_array_almost_equal(data[k].index, np.arange(10)+i)
-
+        np.testing.assert_array_almost_equal(data[k].index, np.arange(10) + i)
