@@ -61,7 +61,7 @@ def _validate_correlograms_inputs(func):
     return wrapper
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def _cross_correlogram(t1, t2, binsize, windowsize):
     """
     Performs the discrete cross-correlogram of two time series.

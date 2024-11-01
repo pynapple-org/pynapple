@@ -11,6 +11,7 @@ Object behaves like dictionary.
 """
 
 import errno
+import importlib
 import os
 import warnings
 from collections import UserDict
@@ -18,8 +19,6 @@ from numbers import Number
 from pathlib import Path
 
 import numpy as np
-import pynwb
-from pynwb import NWBHDF5IO
 from tabulate import tabulate
 
 from .. import core as nap
@@ -38,6 +37,7 @@ def _extract_compatible_data_from_nwbfile(nwbfile):
     dict
         Dictionary containing all the object found and their type in pynapple.
     """
+    pynwb = importlib.import_module("pynwb")
     data = {}
 
     for oid, obj in nwbfile.objects.items():
@@ -204,6 +204,7 @@ def _make_tsd_frame(obj, lazy_loading=True):
     Tsd
 
     """
+    pynwb = importlib.import_module("pynwb")
 
     d = obj.data
     if not lazy_loading:
@@ -266,7 +267,7 @@ def _make_tsgroup(obj, **kwargs):
     TsGroup
 
     """
-
+    pynwb = importlib.import_module("pynwb")
     index = obj.id[:]
     tsgroup = {}
     for i, gr in zip(index, obj.spike_times_index[:]):
@@ -388,7 +389,8 @@ class NWBFile(UserDict):
             If file is not an instance of NWBFile
         """
         # TODO: do we really need to have instantiation from file and object in the same place?
-
+        pynwb = importlib.import_module("pynwb")
+        NWBHDF5IO = pynwb.NWBHDF5IO
         if isinstance(file, pynwb.file.NWBFile):
             self.nwb = file
             self.name = self.nwb.session_id
