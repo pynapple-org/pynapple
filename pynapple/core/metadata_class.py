@@ -48,7 +48,7 @@ class _MetadataMixin:
         """
         Add metadata as an attribute assignment
         """
-        # self._initialized must be defined in the class that inherits _MetadataBase
+        # self._initialized must be defined in the class that inherits _MetadataMixin
         # and it must be set to True after metadata is initialized
         if self._initialized:
             self.set_info(**{name: value})
