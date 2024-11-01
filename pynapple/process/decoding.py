@@ -1,10 +1,5 @@
-# -*- coding: utf-8 -*-
-# @Author: gviejo
-# @Date:   2022-01-02 23:34:48
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2023-09-22 12:06:13
-
 """
+Decoding functions for timestamps data (spike times). The first argument is always a tuning curves object.
 """
 
 import numpy as np
@@ -14,7 +9,7 @@ from .. import core as nap
 
 def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
     """
-    Performs Bayesian decoding over a one dimensional feature.
+    Perform Bayesian decoding over a one dimensional feature.
     See:
     Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
     (1998). Interpreting neuronal population activity by
@@ -115,7 +110,8 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
 
 def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=None):
     """
-    Performs Bayesian decoding over a two dimensional feature.
+    Performs Bayesian decoding over 2 dimensional features.
+
     See:
     Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
     (1998). Interpreting neuronal population activity by

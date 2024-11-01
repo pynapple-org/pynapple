@@ -267,7 +267,7 @@ def test_properties():
 
 
 def test_base_tsd_class():
-    class DummyTsd(nap.core.time_series.BaseTsd):
+    class DummyTsd(nap.core.time_series._BaseTsd):
         def __init__(self, t, d):
             super().__init__(t, d)
 

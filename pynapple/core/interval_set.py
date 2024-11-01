@@ -1,42 +1,5 @@
 """        
-    The class `IntervalSet` deals with non-overlaping epochs. `IntervalSet` objects can interact with each other or with the time series objects.
-
-    The `IntervalSet` object behaves like a numpy ndarray with the limitation that the object is not mutable.
-
-    You can still apply any numpy array function to it :
-
-    ``` py
-    >>> import pynapple as nap
-    >>> import numpy as np
-    >>> ep = nap.IntervalSet(start=[0, 10], end=[5,20])
-          start    end
-     0        0      5
-     1       10     20
-    shape: (1, 2)        
-    >>> np.diff(ep, 1)
-    UserWarning: Converting IntervalSet to numpy.array
-    array([[ 5.],
-           [10.]])    
-    ```
-
-    You can slice :
-
-    ``` py
-    >>> ep[:,0]
-    array([ 0., 10.])
-    >>> ep[0]
-          start    end
-     0        0      5
-    shape: (1, 2)
-    ```
-
-    But modifying the `IntervalSet` with raise an error:
-
-    ``` py
-    >>> ep[0,0] = 1
-    RuntimeError: IntervalSet is immutable. Starts and ends have been already sorted.
-    ```
-
+The class `IntervalSet` deals with non-overlaping epochs. `IntervalSet` objects can interact with each other or with the time series objects.
 """
 
 import importlib
@@ -79,6 +42,42 @@ all_warnings = np.array(
 class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     """
     A class representing a (irregular) set of time intervals in elapsed time, with relative operations
+
+    The `IntervalSet` object behaves like a numpy ndarray with the limitation that the object is not mutable.
+
+    You can still apply any numpy array function to it :
+
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> ep = nap.IntervalSet(start=[0, 10], end=[5,20])
+            start    end
+        0        0      5
+        1       10     20
+        shape: (1, 2)
+
+    >>> np.diff(ep, 1)
+        UserWarning: Converting IntervalSet to numpy.array
+        array([[ 5.],
+               [10.]])
+
+
+    You can slice :
+
+    >>> ep[:,0]
+        array([ 0., 10.])
+
+    >>> ep[0]
+        start    end
+        0        0      5
+        shape: (1, 2)
+
+
+    But modifying the `IntervalSet` with raise an error:
+
+
+    >>> ep[0,0] = 1
+        RuntimeError: IntervalSet is immutable. Starts and ends have been already sorted.
+
     """
 
     def __init__(
@@ -89,27 +88,26 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         metadata=None,
     ):
         """
-        IntervalSet initializer
-
-        If start and end and not aligned, meaning that \n
+        If start and end are not aligned, meaning that:
         1. len(start) != len(end)
         2. end[i] > start[i]
         3. start[i+1] > end[i]
         4. start and end are not sorted,
 
-        IntervalSet will try to "fix" the data by eliminating some of the start and end data point
+        IntervalSet will try to "fix" the data by eliminating some of the start and end data points.
 
         Parameters
         ----------
         start : numpy.ndarray or number or pandas.DataFrame or pandas.Series or iterable of (start, end) pairs
             Beginning of intervals. Alternatively, the `end` argument can be left out and `start` can be one of the
             following:
-                - IntervalSet
-                - pandas.DataFrame with columns ["start", "end"]
-                - iterable of (start, end) pairs
-                - a single (start, end) pair
+
+            - IntervalSet
+            - pandas.DataFrame with columns ["start", "end"]
+            - iterable of (start, end) pairs
+            - a single (start, end) pair
         end : numpy.ndarray or number or pandas.Series, optional
-            Ends of intervals
+            Ends of intervals.
         time_units : str, optional
             Time unit of the intervals ('us', 'ms', 's' [default])
         metadata: pd.DataFrame or dict, optional
@@ -118,7 +116,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         Raises
         ------
         RuntimeError
-            If `start` and `end` arguments are of unknown type
+            If `start` and `end` arguments are of unknown type.
 
         """
         # set directly in __dict__ to avoid infinite recursion in __setattr__

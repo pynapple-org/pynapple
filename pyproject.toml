@@ -55,6 +55,26 @@ dev = [
     "flake8",                       # Code linter
     "coverage",                     # Test coverage measurement
 ]
+doc = [
+    "matplotlib",
+    "zarr",
+    "seaborn",
+    "tqdm",
+    "numpydoc",
+    "sphinx",
+    "pydata-sphinx-theme",
+    "sphinx-autodoc-typehints",
+    "sphinx-copybutton",
+    "sphinx-design",
+    "sphinx-issues",
+    "sphinxcontrib-apidoc",
+    "myst-parser",
+    "myst-nb",
+    "dandi",
+    "sphinx-autobuild",
+    "sphinx-contributors"
+    # "sphinx-exec-code"
+]
 docs = [
     "mkdocs",                       # Documentation generator
     "mkdocstrings[python]",         # Python-specific plugin for mkdocs

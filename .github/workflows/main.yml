@@ -74,15 +74,17 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install ".[docs]"
+          pip install ".[doc]"
       - name: Build site
-        run: mkdocs build
+        run: |
+          cd doc
+          make html
       - name: Check html
         uses: chabad360/htmlproofer@master
         with:
-          directory: "./site"
+          directory: "./doc/_build/html"
           # The directory to scan
-          arguments: --checks Links,Scripts --ignore-urls "https://fonts.gstatic.com,https://mkdocs-gallery.github.io" --assume-extension --check-external-hash --ignore-status-codes 403
+          arguments: --checks Links,Scripts --ignore-urls "https://fonts.gstatic.com,https://mkdocs-gallery.github.io,./doc/_build/html/_static/" --assume-extension --check-external-hash --ignore-status-codes 403 --ignore-files "/.+\/html\/_static\/.+/"
           # The arguments to pass to HTMLProofer
 
 
