@@ -188,6 +188,9 @@ class TsGroup(UserDict):
     Base functions
     """
 
+    def __dir__(self):
+        return sorted(list(super().__dir__()) + list(self._metadata.columns))
+
     def __getattr__(self, name):
         """
         Allows dynamic access to metadata columns as properties.
