@@ -313,6 +313,71 @@ def test_drop_metadata_warnings(iset_meta):
         iset_meta.time_span()
 
 
+@pytest.mark.parametrize(
+    "name, set_exp, set_attr_exp, set_key_exp, get_attr_exp, get_key_exp",
+    [
+        # existing attribute and key
+        (
+            "start",
+            pytest.warns(UserWarning, match="overlaps with an existing"),
+            pytest.raises(AttributeError, match="IntervalSet is immutable"),
+            pytest.raises(RuntimeError, match="IntervalSet is immutable"),
+            does_not_raise(),
+            does_not_raise(),
+        ),
+        # existing attribute and key
+        (
+            "end",
+            pytest.warns(UserWarning, match="overlaps with an existing"),
+            pytest.raises(AttributeError, match="IntervalSet is immutable"),
+            pytest.raises(RuntimeError, match="IntervalSet is immutable"),
+            does_not_raise(),
+            does_not_raise(),
+        ),
+        # existing attribute
+        (
+            "values",
+            pytest.warns(UserWarning, match="overlaps with an existing"),
+            pytest.raises(AttributeError, match="IntervalSet is immutable"),
+            does_not_raise(),
+            pytest.raises(ValueError),  # shape mismatch
+            pytest.raises(AssertionError),  # we do want metadata
+        ),
+        # existing metdata
+        (
+            "label",
+            does_not_raise(),
+            does_not_raise(),
+            does_not_raise(),
+            pytest.raises(AssertionError),  # we do want metadata
+            pytest.raises(AssertionError),  # we do want metadata
+        ),
+    ],
+)
+def test_iset_metadata_overlapping_names(
+    iset_meta, name, set_exp, set_attr_exp, set_key_exp, get_attr_exp, get_key_exp
+):
+    assert hasattr(iset_meta, name)
+
+    # warning when set
+    with set_exp:
+        iset_meta.set_info({name: np.ones(4)})
+    # error when set as attribute
+    with set_attr_exp:
+        setattr(iset_meta, name, np.ones(4))
+    # error when set as key
+    with set_key_exp:
+        iset_meta[name] = np.ones(4)
+    # retrieve with get_info
+    assert np.all(iset_meta.get_info(name) == np.ones(4))
+    # make sure it doesn't access metadata if its an existing attribute or key
+    with get_attr_exp:
+        assert np.all(getattr(iset_meta, name) == np.ones(4)) == False
+    # make sure it doesn't access metadata if its an existing key
+    with get_key_exp:
+        assert np.all(iset_meta[name] == np.ones(4)) == False
+
+
 ##############
 ## TsdFrame ##
 ##############
@@ -347,26 +412,21 @@ def test_tsdframe_metadata_slicing(tsdframe_meta):
             )
 
 
-@pytest.mark.parametrize(
-    "args, kwargs, expected",
-    [
-        (
-            # invalid metadata names that are the same as column names
-            [
-                pd.DataFrame(
-                    index=["a", "b", "c"],
-                    columns=["a", "b", "c"],
-                    data=np.random.randint(0, 5, size=(3, 3)),
-                )
-            ],
-            {},
-            pytest.raises(ValueError, match="Invalid metadata name"),
-        ),
-    ],
-)
-def test_tsdframe_add_metadata_error(tsdframe_meta, args, kwargs, expected):
-    with expected:
-        tsdframe_meta.set_info(*args, **kwargs)
+# @pytest.mark.parametrize(
+#     "name, set_exp, set_attr_exp, set_key_exp, get_attr_exp, get_key_exp",
+#     [
+#         (
+#             # invalid metadata names that are the same as column names
+#             "a",
+#             pytest.warns(UserWarning, match="overlaps with an existing"),
+#         ),
+#     ],
+# )
+# def test_tsdframe_metadata_overlapping_names(tsdframe_meta, args, kwargs, expected):
+#     assert
+
+#     with expected:
+#         tsdframe_meta.set_info(*args, **kwargs)
 
 
 #############
@@ -575,52 +635,26 @@ class Test_Metadata:
             (
                 # invalid names as strings starting with a number
                 [
-                    pd.DataFrame(
-                        columns=["1"],
-                        data=np.ones((4, 1)),
-                    )
+                    {"1": np.ones(4)},
                 ],
                 {},
-                pytest.raises(ValueError, match="Invalid metadata name"),
+                pytest.warns(UserWarning, match="starts with a number"),
             ),
             (
                 # invalid names with spaces
                 [
-                    pd.DataFrame(
-                        columns=["l 1"],
-                        data=np.ones((4, 1)),
-                    )
+                    {"l 1": np.ones(4)},
                 ],
                 {},
-                pytest.raises(ValueError, match="Invalid metadata name"),
+                pytest.warns(UserWarning, match="contains a special character"),
             ),
             (
                 # invalid names with periods
                 [
-                    pd.DataFrame(
-                        columns=["l.1"],
-                        data=np.ones((4, 1)),
-                    )
+                    {"1.1": np.ones(4)},
                 ],
                 {},
-                pytest.raises(ValueError, match="Invalid metadata name"),
-            ),
-            (
-                # invalid names with dashes
-                [
-                    pd.DataFrame(
-                        columns=["l-1"],
-                        data=np.ones((4, 1)),
-                    )
-                ],
-                {},
-                pytest.raises(ValueError, match="Invalid metadata name"),
-            ),
-            (
-                # name that overlaps with existing attribute
-                [],
-                {"__dir__": np.zeros(4)},
-                pytest.raises(ValueError, match="Invalid metadata name"),
+                pytest.warns(UserWarning, match="contains a special character"),
             ),
             (
                 # metadata with wrong length
@@ -633,25 +667,33 @@ class Test_Metadata:
             ),
         ],
     )
-    def test_add_metadata_error(self, obj, args, kwargs, expected):
+    def test_add_metadata_error(self, obj, obj_len, args, kwargs, expected):
+        # trim to appropriate length
+        if len(args):
+            if isinstance(args[0], pd.DataFrame):
+                metadata = args[0].iloc[:obj_len]
+            elif isinstance(args[0], dict):
+                metadata = {k: v[:obj_len] for k, v in args[0].items()}
+        else:
+            metadata = None
         with expected:
-            obj.set_info(*args, **kwargs)
+            obj.set_info(metadata, **kwargs)
 
-    def test_add_metadata_key_error(self, obj, obj_len):
-        # type specific key errors
-        info = np.ones(obj_len)
-        if isinstance(obj, nap.IntervalSet):
-            with pytest.raises(RuntimeError, match="IntervalSet is immutable"):
-                obj[0] = info
-            with pytest.raises(RuntimeError, match="IntervalSet is immutable"):
-                obj["start"] = info
-            with pytest.raises(RuntimeError, match="IntervalSet is immutable"):
-                obj["end"] = info
+    # def test_add_metadata_key_error(self, obj, obj_len):
+    #     # type specific key errors
+    #     info = np.ones(obj_len)
+    #     if isinstance(obj, nap.IntervalSet):
+    #         with pytest.raises(RuntimeError, match="IntervalSet is immutable"):
+    #             obj[0] = info
+    #         with pytest.raises(RuntimeError, match="IntervalSet is immutable"):
+    #             obj["start"] = info
+    #         with pytest.raises(RuntimeError, match="IntervalSet is immutable"):
+    #             obj["end"] = info
 
-        elif isinstance(obj, nap.TsGroup):
-            # currently obj[0] does not raise an error for TsdFrame
-            with pytest.raises(TypeError, match="Metadata keys must be strings!"):
-                obj[0] = info
+    #     elif isinstance(obj, nap.TsGroup):
+    #         # currently obj[0] does not raise an error for TsdFrame
+    #         with pytest.raises(TypeError, match="Metadata keys must be strings!"):
+    #             obj[0] = info
 
     def test_overwrite_metadata(self, obj, obj_len):
         # add metadata

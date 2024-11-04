@@ -115,32 +115,32 @@ class _MetadataMixin:
             raise TypeError(
                 f"Invalid metadata type {type(name)}. Metadata column names must be strings!"
             )
+        # warnings for metadata names that cannot be accessed as attributes or keys
         if hasattr(self, name) and (name not in self.metadata_columns):
             # existing non-metadata attribute
-            raise ValueError(
-                f"Invalid metadata name '{name}'. Metadata name must differ from "
-                f"{type(self).__dict__.keys()} attribute names!"
+            warnings.warn(
+                f"Metadata name '{name}' overlaps with an existing attribute, and cannot be accessed as an attribute or key. Use 'get_info()' to access metadata."
             )
-        if hasattr(self, "columns") and name in self.columns:
-            # existing column (since TsdFrame columns are not attributes)
-            raise ValueError(
-                f"Invalid metadata name '{name}'. Metadata name must differ from "
-                f"{self.columns} column names!"
+        elif hasattr(self, "columns") and name in self.columns:
+            # existing non-metadata attribute
+            warnings.warn(
+                f"Metadata name '{name}' overlaps with an existing property, and cannot be accessed as an attribute or key. Use 'get_info()' to access metadata."
             )
-        if name[0].isalpha() is False:
-            # starts with a number
-            raise ValueError(
-                f"Invalid metadata name '{name}'. Metadata name cannot start with a number"
-            )
+        # warnings for metadata that cannot be accessed as attributes
         if name.replace("_", "").isalnum() is False:
             # contains invalid characters
-            raise ValueError(
-                f"Invalid metadata name '{name}'. Metadata name cannot contain special characters except for underscores"
+            warnings.warn(
+                f"Metadata name '{name}' contains a special character, and cannot be accessed as an attribute. Use 'get_info()' or key indexing to access metadata."
+            )
+        elif name[0].isalpha() is False:
+            # starts with a number
+            warnings.warn(
+                f"Metadata name '{name}' starts with a number, and cannot be accessed as an attribute. Use 'get_info()' or key indexing to access metadata."
             )
 
     def _check_metadata_column_names(self, metadata=None, **kwargs):
         """
-        Check that metadata column names don't conflict with existing attributes, don't start with a number, and don't contain invalid characters.
+        Throw warnings when metadata names cannot be accessed as attributes or keys.
         """
 
         if metadata is not None:

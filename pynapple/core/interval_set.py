@@ -214,10 +214,11 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         self.index = np.arange(data.shape[0], dtype="int")
         self.columns = np.array(["start", "end"])
         self.nap_class = self.__class__.__name__
-        if drop_meta:
-            _MetadataMixin.__init__(self)
-        else:
-            _MetadataMixin.__init__(self, metadata)
+        # initialize metadata to get all attributes before setting metadata
+        _MetadataMixin.__init__(self)
+        self._class_attributes = self.__dir__()
+        if drop_meta is False:
+            self.set_info(metadata)
         self._initialized = True
 
     def __repr__(self):
@@ -286,12 +287,21 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     def __setattr__(self, name, value):
         # necessary setter to allow metadata to be set as an attribute
         if self._initialized:
-            _MetadataMixin.__setattr__(self, name, value)
+            if name in self._class_attributes:
+                raise AttributeError(
+                    f"Cannot set attribute '{name}'; IntervalSet is immutable. Use 'set_info()' to set '{name}' as metadata."
+                )
+            else:
+                _MetadataMixin.__setattr__(self, name, value)
         else:
             object.__setattr__(self, name, value)
 
     def __setitem__(self, key, value):
-        if (isinstance(key, str)) and (key not in self.columns):
+        if key in self.columns:
+            raise RuntimeError(
+                "IntervalSet is immutable. Starts and ends have been already sorted."
+            )
+        elif isinstance(key, str):
             _MetadataMixin.__setitem__(self, key, value)
         else:
             raise RuntimeError(
