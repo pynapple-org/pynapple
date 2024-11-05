@@ -219,7 +219,7 @@ class TsGroup(UserDict, _MetadataMixin):
             else:
                 if name == "rate":
                     warnings.warn(
-                        "Replacing TsGroup rate with user-defined metadata.",
+                        "Replacing TsGroup 'rate' with user-defined metadata.",
                         UserWarning,
                     )
                 _MetadataMixin.__setattr__(self, name, value)
@@ -233,7 +233,7 @@ class TsGroup(UserDict, _MetadataMixin):
         else:
             if key == "rate":
                 warnings.warn(
-                    "Replacing TsGroup rate with user-defined metadata.",
+                    "Replacing TsGroup 'rate' with user-defined metadata.",
                     UserWarning,
                 )
             _MetadataMixin.__setitem__(self, key, value)

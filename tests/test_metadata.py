@@ -432,6 +432,63 @@ def test_tsdframe_metadata_slicing(tsdframe_meta):
 #############
 ## TsGroup ##
 #############
+@pytest.fixture
+def tsgroup_meta():
+    return nap.TsGroup(
+        {
+            0: nap.Ts(t=np.arange(0, 200)),
+            1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
+            2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
+            3: nap.Ts(t=np.arange(0, 400, 1), time_units="s"),
+        }
+    )
+
+
+@pytest.mark.parametrize(
+    "name, set_exp, set_attr_exp, set_key_exp, get_attr_exp, get_key_exp",
+    [
+        # pre-computed rate metadata
+        (
+            "rate",
+            does_not_raise(),
+            pytest.warns(UserWarning, match="Replacing TsGroup 'rate'"),
+            pytest.warns(UserWarning, match="Replacing TsGroup 'rate'"),
+            pytest.raises(AssertionError),  # we do want metadata
+            pytest.raises(AssertionError),  # we do want metadata
+        ),
+        # 'rates' attribute
+        (
+            "rates",
+            pytest.warns(UserWarning, match="overlaps with an existing"),
+            pytest.raises(AttributeError, match="Cannot set attribute"),
+            does_not_raise(),
+            does_not_raise(),
+            pytest.raises(AssertionError),  # we do want metadata
+        ),
+    ],
+)
+def test_tsgroup_metadata_overlapping_names(
+    tsgroup_meta, name, set_exp, set_attr_exp, set_key_exp, get_attr_exp, get_key_exp
+):
+    assert hasattr(tsgroup_meta, name)
+
+    # warning when set
+    with set_exp:
+        tsgroup_meta.set_info({name: np.ones(4)})
+    # error when set as attribute
+    with set_attr_exp:
+        setattr(tsgroup_meta, name, np.ones(4))
+    # error when set as key
+    with set_key_exp:
+        tsgroup_meta[name] = np.ones(4)
+    # retrieve with get_info
+    assert np.all(tsgroup_meta.get_info(name) == np.ones(4))
+    # make sure it doesn't access metadata if its an existing attribute or key
+    with get_attr_exp:
+        assert np.all(getattr(tsgroup_meta, name) == np.ones(4)) == False
+    # make sure it doesn't access metadata if its an existing key
+    with get_key_exp:
+        assert np.all(tsgroup_meta[name] == np.ones(4)) == False
 
 
 ##################
