@@ -189,6 +189,11 @@ class TsGroup(UserDict, _MetadataMixin):
 
         UserDict.__init__(self, data)
 
+        # grab current attributes before adding metadata
+        self._class_attributes = self.__dir__()
+        self._class_attributes.remove("rate")  # remove rate metadata
+        self._class_attributes.append("_class_attributes")  # add this property
+
         # Making the TsGroup non mutable
         self._initialized = True
 
@@ -207,7 +212,17 @@ class TsGroup(UserDict, _MetadataMixin):
     def __setattr__(self, name, value):
         # necessary setter to allow metadata to be set as an attribute
         if self._initialized:
-            _MetadataMixin.__setattr__(self, name, value)
+            if name in self._class_attributes:
+                raise AttributeError(
+                    f"Cannot set attribute: '{name}' is a reserved attribute. Use 'set_info()' to set '{name}' as metadata."
+                )
+            else:
+                if name == "rate":
+                    warnings.warn(
+                        "Replacing TsGroup rate with user-defined metadata.",
+                        UserWarning,
+                    )
+                _MetadataMixin.__setattr__(self, name, value)
         else:
             object.__setattr__(self, name, value)
 
@@ -216,6 +231,11 @@ class TsGroup(UserDict, _MetadataMixin):
             self._metadata.loc[int(key), "rate"] = float(value.rate)
             super().__setitem__(int(key), value)
         else:
+            if key == "rate":
+                warnings.warn(
+                    "Replacing TsGroup rate with user-defined metadata.",
+                    UserWarning,
+                )
             _MetadataMixin.__setitem__(self, key, value)
 
     def __getitem__(self, key):

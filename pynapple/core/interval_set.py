@@ -216,7 +216,8 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         self.nap_class = self.__class__.__name__
         # initialize metadata to get all attributes before setting metadata
         _MetadataMixin.__init__(self)
-        self._class_attributes = self.__dir__()
+        self._class_attributes = self.__dir__()  # get list of all attributes
+        self._class_attributes.append("_class_attributes")  # add this property
         if drop_meta is False:
             self.set_info(metadata)
         self._initialized = True
