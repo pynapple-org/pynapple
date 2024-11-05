@@ -775,8 +775,12 @@ class TsdTensor(BaseTsd):
             output = self.values[key.values]
             index = self.index[key.values]
         elif isinstance(key, tuple):
-            if any(isinstance(k, Tsd) and not np.issubdtype(k.dtype, np.bool_) for k in key):
-                raise ValueError("When indexing with a Tsd, it must contain boolean values")
+            if any(
+                isinstance(k, Tsd) and not np.issubdtype(k.dtype, np.bool_) for k in key
+            ):
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
             key = tuple(k.values if isinstance(k, Tsd) else k for k in key)
             output = self.values.__getitem__(key)
             index = self.index.__getitem__(key[0])
@@ -980,9 +984,13 @@ class TsdFrame(BaseTsd):
 
     def __setitem__(self, key, value):
         if isinstance(key, Tsd):
-            assert np.issubdtype(key.dtype, np.bool_), "When indexing with a Tsd, it must contain boolean values"
+            try:
+                assert np.issubdtype(key.dtype, np.bool_)
+            except AssertionError:
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
             key = key.d
-
         try:
             if isinstance(key, str):
                 new_key = self.columns.get_indexer([key])
@@ -997,7 +1005,12 @@ class TsdFrame(BaseTsd):
 
     def __getitem__(self, key, *args, **kwargs):
         if isinstance(key, Tsd):
-            assert np.issubdtype(key.dtype, np.bool_), "When indexing with a Tsd, it must contain boolean values"
+            try:
+                assert np.issubdtype(key.dtype, np.bool_)
+            except AssertionError:
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
             key = key.d
 
         if (
@@ -1220,7 +1233,12 @@ class Tsd(BaseTsd):
 
     def __getitem__(self, key, *args, **kwargs):
         if isinstance(key, Tsd):
-            assert np.issubdtype(key.dtype, np.bool_), "When indexing with a Tsd, it must contain boolean values"
+            try:
+                assert np.issubdtype(key.dtype, np.bool_)
+            except AssertionError:
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
             key = key.d
 
         output = self.values.__getitem__(key)
