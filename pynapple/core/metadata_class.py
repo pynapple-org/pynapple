@@ -11,7 +11,7 @@ class _MetadataMixin:
 
     """
 
-    def __init__(self, metadata=None, **kwargs):
+    def __init__(self, metadata=None):
         """
         Metadata initializer
 
@@ -31,12 +31,8 @@ class _MetadataMixin:
             self.metadata_index = self.index
 
         self._metadata = pd.DataFrame(index=self.metadata_index)
-        if len(kwargs):
-            warnings.warn(
-                "initializing metadata with variable keyword arguments may be unsupported in a future version of Pynapple. Instead, initialize using the metadata argument.",
-                FutureWarning,
-            )
-        self.set_info(metadata, **kwargs)
+
+        self.set_info(metadata)
 
     def __dir__(self):
         """

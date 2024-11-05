@@ -193,6 +193,11 @@ class TsGroup(UserDict, _MetadataMixin):
         self._initialized = True
 
         # Trying to add argument as metainfo
+        if len(kwargs):
+            warnings.warn(
+                "initializing metadata with variable keyword arguments may be unsupported in a future version of Pynapple. Instead, initialize using the metadata argument.",
+                FutureWarning,
+            )
         self.set_info(metadata, **kwargs)
 
     """
