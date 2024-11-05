@@ -9,6 +9,30 @@ theme:
     primary: 'green'
     features:
       - navigation.tabs
+  markdown_extensions:
+    - attr_list
+    - admonition
+    - tables
+    - pymdownx.emoji:
+        emoji_index: !!python/name:material.extensions.emoji.twemoji
+        emoji_generator: !!python/name:material.extensions.emoji.to_svg
+
+  features:
+    - content.tabs.link
+    - content.code.annotate
+    - content.code.copy
+    - announce.dismiss
+    - navigation.tabs
+    - navigation.instant
+    - navigation.instant.prefetch
+    - navigation.instant.preview
+    - navigation.instant.progress
+    - navigation.path
+    - navigation.sections
+    - navigation.top
+    - search.highlights
+    - search.share
+    - search.suggest      
 
 plugins:
   - search
@@ -38,7 +62,9 @@ plugins:
             separate_signature: true
 
 nav:  
-  - Overview: index.md  
+  - Overview: index.md
+  - Install: installation.md
+  - Quickstart: quickstart.md  
   - Application guide: generated/api_guide
   - Analysis examples: generated/examples
   - External projects: external.md
@@ -50,13 +76,12 @@ nav:
 
 
 extra_javascript:
-  - javascripts/katex.js
   - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.js
   - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/contrib/auto-render.min.js
 
 extra_css:
   - https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.7/katex.min.css
-
+  - extra.css
 
 markdown_extensions:
   - pymdownx.highlight:
@@ -66,3 +91,7 @@ markdown_extensions:
   - pymdownx.inlinehilite
   - pymdownx.snippets
   - pymdownx.superfences
+  - admonition
+  - md_in_html
+  - pymdownx.tabbed:
+      alternate_style: true

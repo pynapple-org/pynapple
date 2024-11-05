@@ -1,6 +1,7 @@
 """
 
-    The class `TsGroup` helps group objects with different timestamps (i.e. timestamps of spikes of a population of neurons).
+The class `TsGroup` helps group objects with different timestamps 
+(i.e. timestamps of spikes of a population of neurons).
 
 """
 
@@ -15,11 +16,12 @@ from tabulate import tabulate
 
 from ._core_functions import _count
 from ._jitted_functions import jitunion, jitunion_isets
-from .base_class import Base
+from .base_class import _Base
 from .config import nap_config
 from .interval_set import IntervalSet
+from .metadata_class import _MetadataMixin
 from .time_index import TsIndex
-from .time_series import BaseTsd, Ts, Tsd, TsdFrame, is_array_like
+from .time_series import Ts, Tsd, TsdFrame, _BaseTsd, is_array_like
 from .utils import _get_terminal_size, check_filename, convert_to_numpy_array
 
 
@@ -55,9 +57,9 @@ def _union_intervals(i_sets):
     return IntervalSet(new_start, new_end)
 
 
-class TsGroup(UserDict):
+class TsGroup(UserDict, _MetadataMixin):
     """
-    The TsGroup is a dictionary-like object to hold multiple [`Ts`][pynapple.core.time_series.Ts] or [`Tsd`][pynapple.core.time_series.Tsd] objects with different time index.
+    Dictionary-like object to group objects with different timestamps (for example timestamps of spikes of a population of neurons).
 
     Attributes
     ----------
@@ -68,16 +70,22 @@ class TsGroup(UserDict):
     """
 
     def __init__(
-        self, data, time_support=None, time_units="s", bypass_check=False, **kwargs
+        self,
+        data,
+        time_support=None,
+        time_units="s",
+        bypass_check=False,
+        metadata=None,
+        **kwargs,
     ):
         """
         TsGroup Initializer.
 
         Parameters
         ----------
-        data : dict
-            Dictionary containing Ts/Tsd objects, keys should contain integer values or should be convertible
-            to integer.
+        data : dict or iterable
+            Dictionary or iterable of Ts/Tsd objects. The keys should be integer-convertible; if a non-dict iterator is
+            passed, its values will be used to create a dict with integer keys.
         time_support : IntervalSet, optional
             The time support of the TsGroup. Ts/Tsd objects will be restricted to the time support if passed.
             If no time support is specified, TsGroup will merge time supports from all the Ts/Tsd objects in data.
@@ -86,6 +94,8 @@ class TsGroup(UserDict):
         bypass_check: bool, optional
             To avoid checking that each element is within time_support.
             Useful to speed up initialization of TsGroup when Ts/Tsd objects have already been restricted beforehand
+        metadata: pd.DataFrame or dict, optional
+            Metadata associated with each Ts/Tsd object
         **kwargs
             Meta-info about the Ts/Tsd objects. Can be either pandas.Series, numpy.ndarray, list or tuple
             Note that the index should match the index of the input dictionary if pandas Series
@@ -115,7 +125,11 @@ class TsGroup(UserDict):
             else:
                 passed_time_support = False
 
-        self._initialized = False
+        # set directly in __dict__ to avoid infinite recursion in __setattr__
+        self.__dict__["_initialized"] = False
+
+        if not isinstance(data, dict):
+            data = dict(enumerate(data))
 
         # convert all keys to integer
         try:
@@ -123,7 +137,7 @@ class TsGroup(UserDict):
         except Exception:
             raise ValueError("All keys must be convertible to integer.")
 
-        # check that there were no floats with decimal points in keys.i
+        # check that there were no floats with decimal points in keys.
         # i.e. 0.5 is not a valid key
         if not all(np.allclose(keys[j], float(k)) for j, k in enumerate(data.keys())):
             raise ValueError("All keys must have integer value!}")
@@ -135,12 +149,15 @@ class TsGroup(UserDict):
 
         data = {keys[j]: data[k] for j, k in enumerate(data.keys())}
         self.index = np.sort(keys)
+        # Make sure data dict and index are ordered the same
+        data = {k: data[k] for k in self.index}
 
-        self._metadata = pd.DataFrame(index=self.index, columns=["rate"], dtype="float")
+        # initialize metadata
+        _MetadataMixin.__init__(self)
 
         # Transform elements to Ts/Tsd objects
         for k in self.index:
-            if not isinstance(data[k], Base):
+            if not isinstance(data[k], _Base):
                 if isinstance(data[k], list) or is_array_like(data[k]):
                     warnings.warn(
                         "Elements should not be passed as {}. Default time units is seconds when creating the Ts object.".format(
@@ -176,62 +193,25 @@ class TsGroup(UserDict):
         self._initialized = True
 
         # Trying to add argument as metainfo
-        self.set_info(**kwargs)
+        self.set_info(metadata, **kwargs)
 
     """
     Base functions
     """
 
-    def __getattr__(self, name):
-        """
-        Allows dynamic access to metadata columns as properties.
-
-        Parameters
-        ----------
-        name : str
-            The name of the metadata column to access.
-
-        Returns
-        -------
-        pandas.Series
-            The series of values for the requested metadata column.
-
-        Raises
-        ------
-        AttributeError
-            If the requested attribute is not a metadata column.
-        """
-        # avoid infinite recursion when pickling due to
-        # self._metadata.column having attributes '__reduce__', '__reduce_ex__'
-        if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
-            raise AttributeError(name)
-        # Check if the requested attribute is part of the metadata
-        if name in self._metadata.columns:
-            return self._metadata[name]
+    def __setattr__(self, name, value):
+        # necessary setter to allow metadata to be set as an attribute
+        if self._initialized:
+            _MetadataMixin.__setattr__(self, name, value)
         else:
-            # If the attribute is not part of the metadata, raise AttributeError
-            raise AttributeError(
-                f"'{type(self).__name__}' object has no attribute '{name}'"
-            )
+            object.__setattr__(self, name, value)
 
     def __setitem__(self, key, value):
         if not self._initialized:
             self._metadata.loc[int(key), "rate"] = float(value.rate)
             super().__setitem__(int(key), value)
         else:
-            if not isinstance(key, str):
-                raise ValueError("Metadata keys must be strings!")
-            # replicate pandas behavior of over-writing cols
-            if key in self._metadata.columns:
-                old_meta = self._metadata.copy()
-                self._metadata.pop(key)
-                try:
-                    self.set_info(**{key: value})
-                except Exception:
-                    self._metadata = old_meta
-                    raise
-            else:
-                self.set_info(**{key: value})
+            _MetadataMixin.__setitem__(self, key, value)
 
     def __getitem__(self, key):
         # Standard dict keys are Hashable
@@ -239,9 +219,12 @@ class TsGroup(UserDict):
             if self.__contains__(key):
                 return self.data[key]
             elif key in self._metadata.columns:
-                return self.get_info(key)
+                return _MetadataMixin.__getitem__(self, key)
             else:
                 raise KeyError(r"Key {} not in group index.".format(key))
+        elif isinstance(key, list) and all(isinstance(k, str) for k in key):
+            # index multiple metadata columns
+            return _MetadataMixin.__getitem__(self, key)
 
         # array boolean are transformed into indices
         # note that raw boolean are hashable, and won't be
@@ -270,67 +253,66 @@ class TsGroup(UserDict):
             np.sort(keys), self._metadata.columns.drop("rate")
         ]
         return TsGroup(
-            {k: self[k] for k in keys}, time_support=self.time_support, **metadata
+            {k: self[k] for k in keys},
+            time_support=self.time_support,
+            metadata=metadata,
         )
 
     def __repr__(self):
-        col_names = self._metadata.columns.drop("rate")
-        headers = ["Index", "rate"] + [c for c in col_names]
-
-        max_cols = 6
-        max_rows = 2
+        # Start by determining how many columns and rows.
+        # This can be unique for each object
         cols, rows = _get_terminal_size()
-        max_cols = np.maximum(cols // 12, 6)
+        max_cols = np.maximum(cols // 12, 5)
         max_rows = np.maximum(rows - 10, 2)
 
-        end_line = []
-        lines = []
-
-        def round_if_float(x):
-            if isinstance(x, float):
-                return np.round(x, 5)
-            else:
-                return x
-
-        if len(headers) > max_cols:
-            headers = headers[0:max_cols] + ["..."]
-            end_line.append("...")
+        # By default, the first three columns should always show.
+        col_names = self._metadata.columns.drop("rate")
+        headers = ["Index", "rate"] + [c for c in col_names][0:max_cols]
+        end = ["..."] if len(headers) > max_cols else []
+        headers += end
 
         if len(self) > max_rows:
             n_rows = max_rows // 2
-            index = self.keys()
-
-            for i in index[0:n_rows]:
-                lines.append(
-                    [i, np.round(self._metadata.loc[i, "rate"], 5)]
-                    + [
-                        round_if_float(self._metadata.loc[i, c])
-                        for c in col_names[0 : max_cols - 2]
-                    ]
-                    + end_line
+            ends = np.array([end] * n_rows)
+            table = np.vstack(
+                (
+                    np.hstack(
+                        (
+                            self.index[0:n_rows, None],
+                            np.round(self._metadata[["rate"]].values[0:n_rows], 5),
+                            self._metadata[col_names].values[0:n_rows, 0:max_cols],
+                            ends,
+                        ),
+                        dtype=object,
+                    ),
+                    np.array(
+                        [["..." for _ in range(2 + len(col_names[0:max_cols]))] + end],
+                        dtype=object,
+                    ),
+                    np.hstack(
+                        (
+                            self.index[-n_rows:, None],
+                            np.round(self._metadata[["rate"]].values[-n_rows:], 5),
+                            self._metadata[col_names].values[-n_rows:, 0:max_cols],
+                            ends,
+                        ),
+                        dtype=object,
+                    ),
                 )
-            lines.append(["..." for _ in range(len(headers))])
-            for i in index[-n_rows:]:
-                lines.append(
-                    [i, np.round(self._metadata.loc[i, "rate"], 5)]
-                    + [
-                        round_if_float(self._metadata.loc[i, c])
-                        for c in col_names[0 : max_cols - 2]
-                    ]
-                    + end_line
-                )
+            )
         else:
-            for i in self.data.keys():
-                lines.append(
-                    [i, np.round(self._metadata.loc[i, "rate"], 5)]
-                    + [
-                        round_if_float(self._metadata.loc[i, c])
-                        for c in col_names[0 : max_cols - 2]
-                    ]
-                    + end_line
-                )
+            ends = np.array([end] * len(self))
+            table = np.hstack(
+                (
+                    self.index[:, None],
+                    np.round(self._metadata[["rate"]].values, 5),
+                    self._metadata[col_names].values[:, 0:max_cols],
+                    ends,
+                ),
+                dtype=object,
+            )
 
-        return tabulate(lines, headers=headers)
+        return tabulate(table, headers=headers)
 
     def __str__(self):
         return self.__repr__()
@@ -374,145 +356,6 @@ class TsGroup(UserDict):
         Return the rates of each element of the group in Hz
         """
         return self._metadata["rate"]
-
-    #######################
-    # Metadata
-    #######################
-
-    @property
-    def metadata_columns(self):
-        """
-        Returns list of metadata columns
-        """
-        return list(self._metadata.columns)
-
-    def _check_metadata_column_names(self, *args, **kwargs):
-        invalid_cols = []
-        for arg in args:
-            if isinstance(arg, pd.DataFrame):
-                invalid_cols += [col for col in arg.columns if hasattr(self, col)]
-
-        for k, v in kwargs.items():
-            if isinstance(v, (list, numpy.ndarray, pd.Series)) and hasattr(self, k):
-                invalid_cols += [k]
-
-        if invalid_cols:
-            raise ValueError(
-                f"Invalid metadata name(s) {invalid_cols}. Metadata name must differ from "
-                f"TsGroup attribute names!"
-            )
-
-    def set_info(self, *args, **kwargs):
-        """
-        Add metadata information about the TsGroup.
-        Metadata are saved as a DataFrame.
-
-        Parameters
-        ----------
-        *args
-            pandas.Dataframe or list of pandas.DataFrame
-        **kwargs
-            Can be either pandas.Series, numpy.ndarray, list or tuple
-
-        Raises
-        ------
-        RuntimeError
-            Raise an error if
-                no column labels are found when passing simple arguments,
-                indexes are not equals for a pandas series,+
-                not the same length when passing numpy array.
-        TypeError
-            If some of the provided metadata could not be set.
-
-        Examples
-        --------
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
-        1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
-        2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
-        }
-        >>> tsgroup = nap.TsGroup(tmp)
-
-        To add metadata with a pandas.DataFrame:
-
-        >>> import pandas as pd
-        >>> structs = pd.DataFrame(index = [0,1,2], data=['pfc','pfc','ca1'], columns=['struct'])
-        >>> tsgroup.set_info(structs)
-        >>> tsgroup
-          Index    Freq. (Hz)  struct
-        -------  ------------  --------
-              0             1  pfc
-              1             2  pfc
-              2             4  ca1
-
-        To add metadata with a pd.Series, numpy.ndarray, list or tuple:
-
-        >>> hd = pd.Series(index = [0,1,2], data = [0,1,1])
-        >>> tsgroup.set_info(hd=hd)
-        >>> tsgroup
-          Index    Freq. (Hz)  struct      hd
-        -------  ------------  --------  ----
-              0             1  pfc          0
-              1             2  pfc          1
-              2             4  ca1          1
-
-        """
-        # check for duplicate names, otherwise "self.metadata_name"
-        # syntax would behave unexpectedly.
-        self._check_metadata_column_names(*args, **kwargs)
-        not_set = []
-        if len(args):
-            for arg in args:
-                if isinstance(arg, pd.DataFrame):
-                    if pd.Index.equals(self._metadata.index, arg.index):
-                        self._metadata = self._metadata.join(arg)
-                    else:
-                        raise RuntimeError("Index are not equals")
-                elif isinstance(arg, (pd.Series, np.ndarray, list)):
-                    raise RuntimeError("Argument should be passed as keyword argument.")
-                else:
-                    not_set.append(arg)
-        if len(kwargs):
-            for k, v in kwargs.items():
-                if isinstance(v, pd.Series):
-                    if pd.Index.equals(self._metadata.index, v.index):
-                        self._metadata[k] = v
-                    else:
-                        raise RuntimeError(
-                            "Index are not equals for argument {}".format(k)
-                        )
-                elif isinstance(v, (np.ndarray, list, tuple)):
-                    if len(self._metadata) == len(v):
-                        self._metadata[k] = np.asarray(v)
-                    else:
-                        raise RuntimeError("Array is not the same length.")
-                else:
-                    not_set.append({k: v})
-        if not_set:
-            raise TypeError(
-                f"Cannot set the following metadata:\n{not_set}.\nMetadata columns provided must be  "
-                f"of type `panda.Series`, `tuple`, `list`, or `numpy.ndarray`."
-            )
-
-    def get_info(self, key):
-        """
-        Returns the metainfo located in one column.
-        The key for the column frequency is "rate".
-
-        Parameters
-        ----------
-        key : str
-            One of the metainfo columns name
-
-        Returns
-        -------
-        pandas.Series
-            The metainfo
-        """
-        if key in ["freq", "frequency"]:
-            key = "rate"
-        return self._metadata[key]
 
     #################################
     # Generic functions of Tsd objects
@@ -818,7 +661,7 @@ class TsGroup(UserDict):
         Raises
         ------
         RuntimeError
-            "Index are not equals" : if pandas.Series indexes don't match the TsGroup indexes
+            "Metadata indices do not match" : if pandas.Series indexes don't match the TsGroup indexes
             "Values is not the same length" : if numpy.ndarray/list object is not the same size as the TsGroup object
             "Key not in metadata of TsGroup" : if string argument does not match any column names of the metadata,
             "Unknown argument format" ; if argument is not a string, list, numpy.ndarray or pandas.Series
@@ -941,6 +784,7 @@ class TsGroup(UserDict):
               2             4
 
         This exemple shows how to get a new TsGroup with all elements for which the metainfo frequency is above 1.
+
         >>> newtsgroup = tsgroup.getby_threshold('freq', 1, op = '>')
           Index    Freq. (Hz)
         -------  ------------
@@ -981,6 +825,7 @@ class TsGroup(UserDict):
 
         Examples
         --------
+
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
@@ -995,6 +840,7 @@ class TsGroup(UserDict):
               2             4        2
 
         This exemple shows how to bin the TsGroup according to one metainfo key.
+
         >>> newtsgroup, bincenter = tsgroup.getby_intervals('alpha', [0, 1, 2])
         >>> newtsgroup
         [  Index    Freq. (Hz)    alpha
@@ -1005,8 +851,10 @@ class TsGroup(UserDict):
                1             2        1]
 
         By default, the function returns the center of the bins.
+
         >>> bincenter
         array([0.5, 1.5])
+
         """
         idx = np.digitize(self._metadata[key], bins) - 1
         groups = self._metadata.index.groupby(idx)
@@ -1033,6 +881,7 @@ class TsGroup(UserDict):
 
         Examples
         --------
+
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
@@ -1047,6 +896,7 @@ class TsGroup(UserDict):
               2             4        1
 
         This exemple shows how to group the TsGroup according to one metainfo key.
+
         >>> newtsgroup = tsgroup.getby_category('group')
         >>> newtsgroup
         {0:   Index    Freq. (Hz)    group
@@ -1056,6 +906,7 @@ class TsGroup(UserDict):
          -------  ------------  -------
                1             2        1
                2             4        1}
+
         """
         groups = self._metadata.groupby(key).groups
         sliced = {k: self[list(groups[k])] for k in groups.keys()}
@@ -1157,7 +1008,10 @@ class TsGroup(UserDict):
         else:
             cols = metadata.columns.drop("rate")
             return TsGroup(
-                data, time_support=time_support, bypass_check=False, **metadata[cols]
+                data,
+                time_support=time_support,
+                bypass_check=False,
+                metadata=metadata[cols],
             )
 
     def merge(
@@ -1274,17 +1128,14 @@ class TsGroup(UserDict):
         and assigning to each the corresponding index. Typically, a TsGroup like
         this :
 
-        ``` py
-        TsGroup({
+        >>> TsGroup({
             0 : Tsd(t=[0, 2, 4], d=[1, 2, 3])
-            1 : Tsd(t=[1, 5], d=[5, 6])
-        })
-        ```
+            1 : Tsd(t=[1, 5], d=[5, 6])})
 
         will be saved as npz with the following keys:
 
-        ``` py
-        {
+
+        >>> {
             't' : [0, 1, 2, 4, 5],
             'd' : [1, 5, 2, 3, 5],
             'index' : [0, 1, 0, 0, 1],
@@ -1293,7 +1144,6 @@ class TsGroup(UserDict):
             'keys' : [0, 1],
             'type' : 'TsGroup'
         }
-        ```
 
         Metadata are saved by columns with the column name as the npz key. To avoid
         potential conflicts, make sure the columns name of the metadata are different
@@ -1343,12 +1193,16 @@ class TsGroup(UserDict):
         filename = check_filename(filename)
 
         dicttosave = {"type": np.array(["TsGroup"], dtype=np.str_)}
-        for k in self._metadata.columns:
-            if k not in ["t", "d", "start", "end", "index", "keys"]:
-                tmp = self._metadata[k].values
-                if tmp.dtype == np.dtype("O"):
-                    tmp = tmp.astype(np.str_)
-                dicttosave[k] = tmp
+        # don't save rate in metadata since it will be re-added when loading
+        dicttosave["_metadata"] = self._metadata.drop(columns="rate").to_dict()
+
+        # are these things that still need to be enforced?
+        # for k in self._metadata.columns:
+        #     if k not in ["t", "d", "start", "end", "index", "keys"]:
+        #         tmp = self._metadata[k].values
+        #         if tmp.dtype == np.dtype("O"):
+        #             tmp = tmp.astype(np.str_)
+        #         dicttosave[k] = tmp
 
         # We can't use to_tsd here in case tsgroup contains Tsd and not only Ts.
         nt = 0
@@ -1362,7 +1216,7 @@ class TsGroup(UserDict):
         for n in self.index:
             kl = len(self[n])
             times[k : k + kl] = self[n].index
-            if isinstance(self[n], BaseTsd):
+            if isinstance(self[n], _BaseTsd):
                 data[k : k + kl] = self[n].values
             index[k : k + kl] = int(n)
             k += kl
@@ -1428,13 +1282,11 @@ class TsGroup(UserDict):
 
         tsgroup = cls(group, time_support=time_support, bypass_check=True)
 
-        metainfo = {}
-        not_info_keys = {"start", "end", "t", "index", "d", "rate", "keys"}
+        # do we need to enforce that these keys are not in metadata?
+        # not_info_keys = {"start", "end", "t", "index", "d", "rate", "keys"}
 
-        for k in set(file.keys()) - not_info_keys:
-            tmp = file[k]
-            if len(tmp) == len(tsgroup):
-                metainfo[k] = tmp
-
-        tsgroup.set_info(**metainfo)
+        if "_metadata" in file:  # load metadata if it exists
+            if file["_metadata"]:  # check that metadata is not empty
+                metainfo = pd.DataFrame.from_dict(file["_metadata"].item())
+                tsgroup.set_info(metainfo)
         return tsgroup

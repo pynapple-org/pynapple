@@ -18,10 +18,7 @@ PYthon Neural Analysis Package.
 pynapple is a light-weight python library for neurophysiological data analysis. The goal is to offer a versatile set of tools to study typical data in the field, i.e. time series (spike times, behavioral events, etc.) and time intervals (trials, brain states, etc.). It also provides users with generic functions for neuroscience such as tuning curves and cross-correlograms.
 
 -   Free software: MIT License
--   __Documentation__: <https://pynapple-org.github.io/pynapple>
--   __Notebooks and tutorials__ : <https://pynapple-org.github.io/pynapple/generated/gallery/>
-<!-- -   __Collaborative repository__: <https://github.com/pynapple-org/pynacollada> -->
-
+-   __Documentation__: <https://pynapple.org>
 
 > **Note**
 > :page_with_curl: If you are using pynapple, please cite the following [paper](https://elifesciences.org/reviewed-preprints/85786)
@@ -30,6 +27,15 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 
 New release :fire:
 ------------------
+
+### pynapple >= 0.7
+
+Pynapple now implements signal processing. For example, to filter a 1250 Hz sampled time series between 10 Hz and 20 Hz:
+
+```python
+nap.apply_bandpass_filter(signal, (10, 20), fs=1250)
+```
+New functions includes power spectral density and Morlet wavelet decomposition. See the [documentation](https://pynapple-org.github.io/pynapple/reference/process/) for more details.
 
 ### pynapple >= 0.6
 
@@ -44,8 +50,6 @@ With pynapple>=0.6, the slicing is similar to numpy and it returns an `IntervalS
 ```python
 new_intervalset = intervalset[0]
 ```
-
-See the [documentation](https://pynapple-org.github.io/pynapple/reference/core/interval_set/) for more details.
 
 ### pynapple >= 0.4
 

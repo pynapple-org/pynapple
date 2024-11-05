@@ -9,13 +9,12 @@ BaseLoader is the general class for loading session with pynapple.
 
 @author: Guillaume Viejo
 """
+import importlib
 import os
 import warnings
 from pathlib import Path
 
 import pandas as pd
-from pynwb import NWBHDF5IO, TimeSeries
-from pynwb.epoch import TimeIntervals
 
 from .. import core as nap
 
@@ -87,8 +86,8 @@ class BaseLoader(object):
         path : str
             Path to the session folder
         """
-
-        io = NWBHDF5IO(self.nwbfilepath, "r+")
+        pynwb = importlib.import_module("pynwb")
+        io = pynwb.NWBHDF5IO(self.nwbfilepath, "r+")
         nwbfile = io.read()
 
         position = {}
@@ -177,11 +176,12 @@ class BaseLoader(object):
         name : str
             The name in the nwb file
         """
-        io = NWBHDF5IO(self.nwbfilepath, "r+")
+        pynwb = importlib.import_module("pynwb")
+        io = pynwb.NWBHDF5IO(self.nwbfilepath, "r+")
         nwbfile = io.read()
 
         epochs = iset.as_units("s")
-        time_intervals = TimeIntervals(name=name, description=description)
+        time_intervals = pynwb.epoch.TimeIntervals(name=name, description=description)
         for i in epochs.index:
             time_intervals.add_interval(
                 start_time=epochs.loc[i, "start"],
@@ -210,17 +210,17 @@ class BaseLoader(object):
         description : str, optional
             _
         """
-        io = NWBHDF5IO(self.nwbfilepath, "r+")
+        pynwb = importlib.import_module("pynwb")
+        io = pynwb.NWBHDF5IO(self.nwbfilepath, "r+")
         nwbfile = io.read()
 
-        ts = TimeSeries(
+        ts = pynwb.TimeSeries(
             name=name,
             unit="s",
             data=tsd.values,
             timestamps=tsd.as_units("s").index.values,
         )
-
-        time_support = TimeIntervals(
+        time_support = pynwb.epoch.TimeIntervals(
             name=name + "_timesupport", description="The time support of the object"
         )
 
@@ -247,7 +247,8 @@ class BaseLoader(object):
         name : str
             The name in the nwb file
         """
-        io = NWBHDF5IO(self.nwbfilepath, "r")
+        pynwb = importlib.import_module("pynwb")
+        io = pynwb.NWBHDF5IO(self.nwbfilepath, "r")
         nwbfile = io.read()
 
         if name in nwbfile.intervals.keys():
@@ -275,7 +276,8 @@ class BaseLoader(object):
         Tsd
             _
         """
-        io = NWBHDF5IO(self.nwbfilepath, "r")
+        pynwb = importlib.import_module("pynwb")
+        io = pynwb.NWBHDF5IO(self.nwbfilepath, "r")
         nwbfile = io.read()
 
         ts = nwbfile.acquisition[name]

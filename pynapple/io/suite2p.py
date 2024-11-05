@@ -12,12 +12,11 @@ Loader for Suite2P
 https://github.com/MouseLand/suite2p
 
 """
-
+import importlib
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
-from pynwb import NWBHDF5IO
 
 from .. import core as nap
 from .loader import BaseLoader
@@ -76,7 +75,8 @@ class Suite2P(BaseLoader):
         path : str
             Path to the session
         """
-        io = NWBHDF5IO(self.nwbfilepath, "r")
+        pynwb = importlib.import_module("pynwb")
+        io = pynwb.NWBHDF5IO(self.nwbfilepath, "r")
         nwbfile = io.read()
 
         if "ophys" in nwbfile.processing.keys():
