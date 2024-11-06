@@ -1351,6 +1351,28 @@ class Tsd(_BaseTsd):
             else:
                 return tabulate([], headers=headers) + "\n" + bottom
 
+    def __setitem__(self, key, value):
+        if isinstance(key, Tsd):
+            try:
+                assert np.issubdtype(key.dtype, np.bool_)
+            except AssertionError:
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
+            key = key.d
+
+        try:
+            if isinstance(key, str):
+                new_key = self.columns.get_indexer([key])
+                self.values.__setitem__((slice(None, None, None), new_key[0]), value)
+            elif hasattr(key, "__iter__") and all([isinstance(k, str) for k in key]):
+                new_key = self.columns.get_indexer(key)
+                self.values.__setitem__((slice(None, None, None), new_key), value)
+            else:
+                self.values.__setitem__(key, value)
+        except IndexError:
+            raise IndexError
+
     def __getitem__(self, key, *args, **kwargs):
         if isinstance(key, Tsd):
             try:
