@@ -6,18 +6,20 @@
 
 """Tests of IO misc functions"""
 
-import pynapple as nap
+import shutil
+import warnings
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
-import warnings
-from pathlib import Path
-import shutil
+
+import pynapple as nap
 
 # look for tests folder
 path = Path(__file__).parent
-if path.name == 'pynapple':
-    path = path / "tests" 
+if path.name == "pynapple":
+    path = path / "tests"
 path = path / "npzfilestest"
 
 # Recursively remove the folder:
@@ -30,7 +32,7 @@ path2.mkdir(exist_ok=True, parents=True)
 
 @pytest.mark.parametrize("path", [path])
 def test_load_file(path):
-    tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))   
+    tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
     file_path = path / "tsd.npz"
     tsd.save(file_path)
     tsd2 = nap.load_file(file_path)
@@ -42,12 +44,14 @@ def test_load_file(path):
 
     # file_path.unlink()
 
+
 @pytest.mark.parametrize("path", [path])
 def test_load_file_filenotfound(path):
     with pytest.raises(FileNotFoundError) as e:
         nap.load_file("themissingfile.npz")
 
     assert str(e.value) == "File themissingfile.npz does not exist"
+
 
 @pytest.mark.parametrize("path", [path])
 def test_load_wrong_format(path):
@@ -59,14 +63,15 @@ def test_load_wrong_format(path):
     assert str(e.value) == "File format not supported"
     # file_path.unlink()
 
+
 @pytest.mark.parametrize("path", [path])
 def test_load_folder(path):
     folder = nap.load_folder(path)
     assert isinstance(folder, nap.io.Folder)
+
 
 def test_load_folder_foldernotfound():
     with pytest.raises(FileNotFoundError) as e:
         nap.load_folder("MissingFolder")
 
     assert str(e.value) == "Folder MissingFolder does not exist"
-

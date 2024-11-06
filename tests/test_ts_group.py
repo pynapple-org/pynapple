@@ -4,11 +4,11 @@ import pickle
 import warnings
 from collections import UserDict
 from contextlib import nullcontext as does_not_raise
+from pathlib import Path
 
 import numpy as np
 import pandas as pd
 import pytest
-from pathlib import Path
 
 import pynapple as nap
 

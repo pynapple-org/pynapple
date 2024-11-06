@@ -1,13 +1,13 @@
 """Tests of time series for `pynapple` package."""
 
-from numbers import Number
-
 import pickle
+from contextlib import nullcontext as does_not_raise
+from numbers import Number
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
-from pathlib import Path
-from contextlib import nullcontext as does_not_raise
 
 import pynapple as nap
 
@@ -761,15 +761,19 @@ class TestTsd:
     def test_slice_with_int_tsd(self, tsd):
         tsd = tsd.copy()
         array_slice = np.arange(10, dtype=int)
-        tsd_index = nap.Tsd(t=tsd.index[:len(array_slice)], d=array_slice)
-        
+        tsd_index = nap.Tsd(t=tsd.index[: len(array_slice)], d=array_slice)
+
         with pytest.raises(ValueError) as e:
             indexed = tsd[tsd_index]
-        assert str(e.value) == "When indexing with a Tsd, it must contain boolean values"
+        assert (
+            str(e.value) == "When indexing with a Tsd, it must contain boolean values"
+        )
 
         with pytest.raises(ValueError) as e:
             tsd[tsd_index] = 0
-        assert str(e.value) == "When indexing with a Tsd, it must contain boolean values"
+        assert (
+            str(e.value) == "When indexing with a Tsd, it must contain boolean values"
+        )
 
     def test_slice_with_bool_tsd(self, tsd):
 
@@ -798,7 +802,6 @@ class TestTsd:
 
         tsd[tsd_index] = 0
         np.testing.assert_array_almost_equal(tsd.values[tsd_index.values], 0)
-
 
     def test_data(self, tsd):
         np.testing.assert_array_almost_equal(tsd.values, tsd.data())
@@ -1284,6 +1287,7 @@ class TestTsdFrame:
         np.testing.assert_array_almost_equal(file["d"], tsdframe.values)
         np.testing.assert_array_almost_equal(file["start"], tsdframe.time_support.start)
         np.testing.assert_array_almost_equal(file["end"], tsdframe.time_support.end)
+
         if isinstance(tsdframe.columns[0], str):
             assert np.all(file["columns"] == tsdframe.columns)
         else:
@@ -1795,11 +1799,13 @@ class TestTsdTensor:
 
     def test_indexing_with_boolean_tsd(self, tsdtensor):
         # Create a boolean Tsd for indexing
-        index_tsd = nap.Tsd(t=tsdtensor.t, d=np.random.choice([True, False], size=len(tsdtensor)))
-        
+        index_tsd = nap.Tsd(
+            t=tsdtensor.t, d=np.random.choice([True, False], size=len(tsdtensor))
+        )
+
         # Test indexing
         result = tsdtensor[index_tsd]
-        
+
         assert isinstance(result, nap.TsdTensor)
         assert len(result) == index_tsd.d.sum()
         np.testing.assert_array_equal(result.t, tsdtensor.t[index_tsd.d])
@@ -1807,11 +1813,13 @@ class TestTsdTensor:
 
     def test_indexing_with_boolean_tsd_and_additional_slicing(self, tsdtensor):
         # Create a boolean Tsd for indexing
-        index_tsd = nap.Tsd(t=tsdtensor.t, d=np.random.choice([True, False], size=len(tsdtensor)))
-        
+        index_tsd = nap.Tsd(
+            t=tsdtensor.t, d=np.random.choice([True, False], size=len(tsdtensor))
+        )
+
         # Test indexing with additional dimension slicing
         result = tsdtensor[index_tsd, 1]
-        
+
         assert isinstance(result, nap.TsdFrame)
         assert len(result) == index_tsd.d.sum()
         np.testing.assert_array_equal(result.t, tsdtensor.t[index_tsd.d])
@@ -1820,19 +1828,24 @@ class TestTsdTensor:
     def test_indexing_with_non_boolean_tsd_raises_error(self, tsdtensor):
         # Create a non-boolean Tsd
         index_tsd = nap.Tsd(t=np.array([10, 20, 30, 40]), d=np.array([1, 2, 3, 0]))
-        
+
         # Test indexing with non-boolean Tsd should raise an error
-        with pytest.raises(ValueError, match="When indexing with a Tsd, it must contain boolean values"):
+        with pytest.raises(
+            ValueError, match="When indexing with a Tsd, it must contain boolean values"
+        ):
             tsdtensor[index_tsd]
 
     def test_indexing_with_mismatched_boolean_tsd_raises_error(self, tsdtensor):
         # Create a boolean Tsd with mismatched length
-        index_tsd = nap.Tsd(t=np.arange(len(tsdtensor) + 5), d=np.random.choice([True, False], size=len(tsdtensor) + 5))
-        
+        index_tsd = nap.Tsd(
+            t=np.arange(len(tsdtensor) + 5),
+            d=np.random.choice([True, False], size=len(tsdtensor) + 5),
+        )
+
         # Test indexing with mismatched boolean Tsd should raise an error
         with pytest.raises(IndexError, match="boolean index did not match"):
             tsdtensor[index_tsd]
-        
+
     def test_setitem_with_boolean_tsd(self, tsdtensor):
         # Create a boolean Tsd for indexing
         index_tsd = nap.Tsd(
@@ -1854,7 +1867,6 @@ class TestTsdTensor:
         np.testing.assert_array_equal(
             tsdtensor.values[~index_tsd.d], tsdtensor.values[~index_tsd.d]
         )
-
 
 
 @pytest.mark.parametrize(
