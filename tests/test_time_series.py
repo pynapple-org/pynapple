@@ -300,7 +300,7 @@ def test_base_tsd_class():
         nap.Ts(t=np.arange(100), time_units="s"),
     ],
 )
-class Test_Time_Series_1:
+class TestTimeSeriesGeneral:
     def test_as_units(self, tsd):
         if hasattr(tsd, "as_units"):
             tmp2 = tsd.index
@@ -647,7 +647,7 @@ class Test_Time_Series_1:
         nap.Tsd(t=np.arange(100), d=np.random.rand(100), time_units="s"),
     ],
 )
-class Test_Time_Series_2:
+class TestTsd:
     def test_as_series(self, tsd):
         assert isinstance(tsd.as_series(), pd.Series)
 
@@ -757,6 +757,48 @@ class Test_Time_Series_2:
         assert str(
             e_info.value
         ) == "Method {} for thresholding is not accepted.".format("bla")
+
+    def test_slice_with_int_tsd(self, tsd):
+        tsd = tsd.copy()
+        array_slice = np.arange(10, dtype=int)
+        tsd_index = nap.Tsd(t=tsd.index[:len(array_slice)], d=array_slice)
+        
+        with pytest.raises(ValueError) as e:
+            indexed = tsd[tsd_index]
+        assert str(e.value) == "When indexing with a Tsd, it must contain boolean values"
+
+        with pytest.raises(ValueError) as e:
+            tsd[tsd_index] = 0
+        assert str(e.value) == "When indexing with a Tsd, it must contain boolean values"
+
+    def test_slice_with_bool_tsd(self, tsd):
+
+        thr = 0.5
+        tsd_index = tsd > thr
+        raw_values = tsd.values
+        np_indexed_vals = raw_values[tsd_index.values]
+        indexed = tsd[tsd_index]
+
+        assert isinstance(indexed, nap.Tsd)
+        np.testing.assert_array_almost_equal(indexed.values, np_indexed_vals)
+
+        tsd[tsd_index] = 0
+        np.testing.assert_array_almost_equal(tsd.values[tsd_index.values], 0)
+
+    def test_slice_with_bool_tsd(self, tsd):
+
+        thr = 0.5
+        tsd_index = tsd > thr
+        raw_values = tsd.values
+        np_indexed_vals = raw_values[tsd_index.values]
+        indexed = tsd[tsd_index]
+
+        assert isinstance(indexed, nap.Tsd)
+        np.testing.assert_array_almost_equal(indexed.values, np_indexed_vals)
+
+        tsd[tsd_index] = 0
+        np.testing.assert_array_almost_equal(tsd.values[tsd_index.values], 0)
+
 
     def test_data(self, tsd):
         np.testing.assert_array_almost_equal(tsd.values, tsd.data())
@@ -924,7 +966,7 @@ class Test_Time_Series_2:
         ),
     ],
 )
-class Test_Time_Series_3:
+class TestTsdFrame:
     def test_as_dataframe(self, tsdframe):
         assert isinstance(tsdframe.as_dataframe(), pd.DataFrame)
 
@@ -1345,7 +1387,7 @@ class Test_Time_Series_3:
         nap.Ts(t=np.arange(100), time_units="s"),
     ],
 )
-class Test_Time_Series_4:
+class TestTs:
 
     def test_repr_(self, ts):
         # assert pd.Series(ts).fillna("").__repr__() == ts.__repr__()
@@ -1502,7 +1544,7 @@ class Test_Time_Series_4:
         nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 3, 2), time_units="s"),
     ],
 )
-class Test_Time_Series_5:
+class TestTsdTensor:
 
     def test_return_ndarray(self, tsdtensor):
         np.testing.assert_array_equal(tsdtensor[0], tsdtensor.values[0])
@@ -1750,6 +1792,69 @@ class Test_Time_Series_5:
         ep = nap.IntervalSet(start=200, end=300)
         tsdframe2 = tsdtensor.interpolate(ts, ep)
         assert len(tsdframe2) == 0
+
+    def test_indexing_with_boolean_tsd(self, tsdtensor):
+        # Create a boolean Tsd for indexing
+        index_tsd = nap.Tsd(t=tsdtensor.t, d=np.random.choice([True, False], size=len(tsdtensor)))
+        
+        # Test indexing
+        result = tsdtensor[index_tsd]
+        
+        assert isinstance(result, nap.TsdTensor)
+        assert len(result) == index_tsd.d.sum()
+        np.testing.assert_array_equal(result.t, tsdtensor.t[index_tsd.d])
+        np.testing.assert_array_equal(result.values, tsdtensor.values[index_tsd.d])
+
+    def test_indexing_with_boolean_tsd_and_additional_slicing(self, tsdtensor):
+        # Create a boolean Tsd for indexing
+        index_tsd = nap.Tsd(t=tsdtensor.t, d=np.random.choice([True, False], size=len(tsdtensor)))
+        
+        # Test indexing with additional dimension slicing
+        result = tsdtensor[index_tsd, 1]
+        
+        assert isinstance(result, nap.TsdFrame)
+        assert len(result) == index_tsd.d.sum()
+        np.testing.assert_array_equal(result.t, tsdtensor.t[index_tsd.d])
+        np.testing.assert_array_equal(result.values, tsdtensor.values[index_tsd.d, 1])
+
+    def test_indexing_with_non_boolean_tsd_raises_error(self, tsdtensor):
+        # Create a non-boolean Tsd
+        index_tsd = nap.Tsd(t=np.array([10, 20, 30, 40]), d=np.array([1, 2, 3, 0]))
+        
+        # Test indexing with non-boolean Tsd should raise an error
+        with pytest.raises(ValueError, match="When indexing with a Tsd, it must contain boolean values"):
+            tsdtensor[index_tsd]
+
+    def test_indexing_with_mismatched_boolean_tsd_raises_error(self, tsdtensor):
+        # Create a boolean Tsd with mismatched length
+        index_tsd = nap.Tsd(t=np.arange(len(tsdtensor) + 5), d=np.random.choice([True, False], size=len(tsdtensor) + 5))
+        
+        # Test indexing with mismatched boolean Tsd should raise an error
+        with pytest.raises(IndexError, match="boolean index did not match"):
+            tsdtensor[index_tsd]
+        
+    def test_setitem_with_boolean_tsd(self, tsdtensor):
+        # Create a boolean Tsd for indexing
+        index_tsd = nap.Tsd(
+            t=tsdtensor.t, d=np.random.choice([True, False], size=len(tsdtensor))
+        )
+
+        # Create new values to set
+        new_values = np.random.rand(*tsdtensor.shape[1:])
+
+        # Set values using boolean indexing
+        tsdtensor[index_tsd] = new_values
+
+        # Check if values were set correctly
+        np.testing.assert_array_equal(
+            tsdtensor.values[index_tsd.d], np.stack([new_values] * sum(index_tsd.d))
+        )
+
+        # Check if other values remained unchanged
+        np.testing.assert_array_equal(
+            tsdtensor.values[~index_tsd.d], tsdtensor.values[~index_tsd.d]
+        )
+
 
 
 @pytest.mark.parametrize(
