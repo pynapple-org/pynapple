@@ -29,9 +29,17 @@ def get_example_isets(n=100):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         starts = np.sort(np.random.uniform(0, 1000, n))
-        ep1 = nap.IntervalSet(start=starts, end=starts + np.random.uniform(1, 10, n))
+
+        ep1 = nap.IntervalSet(
+            start=starts,
+            end=starts + np.random.uniform(1, 10, n),
+        )
         starts = np.sort(np.random.uniform(0, 1000, n))
-        ep2 = nap.IntervalSet(start=starts, end=starts + np.random.uniform(1, 10, n))
+        ep2 = nap.IntervalSet(
+            start=starts,
+            end=starts + np.random.uniform(1, 10, n),
+        )
+
     return ep1, ep2
 
 
@@ -294,13 +302,25 @@ def test_jitintersect():
     for i in range(10):
         ep1, ep2 = get_example_isets()
 
-        s, e = nap.core._jitted_functions.jitintersect(
+        # set label as interval index
+        ep1.set_info(label1=np.arange(len(ep1)))
+        ep2.set_info(label2=np.arange(len(ep2)))
+
+        s, e, m = nap.core._jitted_functions.jitintersect(
             ep1.start, ep1.end, ep2.start, ep2.end
         )
-        ep3 = nap.IntervalSet(s, e)
+        ep3 = nap.IntervalSet(
+            s,
+            e,
+            metadata={
+                "label1": ep1.label1.loc[m[:, 0]].reset_index(drop=True),
+                "label2": ep2.label2.loc[m[:, 1]].reset_index(drop=True),
+            },
+        )
 
         i_sets = [ep1, ep2]
         n_sets = len(i_sets)
+
         time1 = [i_set["start"] for i_set in i_sets]
         time2 = [i_set["end"] for i_set in i_sets]
         time1.extend(time2)
@@ -313,17 +333,36 @@ def test_jitintersect():
             )
         )
 
-        df = pd.DataFrame({"time": time, "start_end": start_end})
+        # stack labels to match up with start and end times
+        label1 = np.hstack((ep1.label1.values, np.nan * np.ones(len(ep2))))
+        label1 = np.hstack((label1, label1))
+        label2 = np.hstack((np.nan * np.ones(len(ep1)), ep2.label2.values))
+        label2 = np.hstack((label2, label2))
+
+        df = pd.DataFrame(
+            {"time": time, "start_end": start_end, "label1": label1, "label2": label2}
+        )
         df.sort_values(by="time", inplace=True)
         df.reset_index(inplace=True, drop=True)
+        # after sorting, fill NaN labels
+        # will fill consecutive start/stop labels with same value, use both ffill and bfill to ensure there are no NaNs left
+        # don't have to worry about values between stop and next start, as they will get ignored
+        df = df.ffill().bfill()
+        # cast to int to match original dtype
+        df[["label1", "label2"]] = df[["label1", "label2"]].astype(int)
         df["cumsum"] = df["start_end"].cumsum()
         ix = (df["cumsum"] == n_sets).to_numpy().nonzero()[0]
         start = df["time"][ix]
         end = df["time"][ix + 1]
+        # shouldn't matter if we grab label from start or end position
+        label1 = df["label1"][ix].reset_index(drop=True)
+        label2 = df["label2"][ix].reset_index(drop=True)
 
-        ep4 = nap.IntervalSet(start, end)
+        ep4 = nap.IntervalSet(start, end, metadata={"label1": label1, "label2": label2})
 
         np.testing.assert_array_almost_equal(ep3, ep4)
+        pd.testing.assert_frame_equal(ep3._metadata, ep4._metadata)
+
 
 
 def test_jitunion():
@@ -364,15 +403,27 @@ def test_jitunion():
 def test_jitdiff():
     for i in range(10):
         ep1, ep2 = get_example_isets()
+        ep1.set_info(label1=np.arange(len(ep1)))
 
-        s, e = nap.core._jitted_functions.jitdiff(
+
+        s, e, m = nap.core._jitted_functions.jitdiff(
             ep1.start, ep1.end, ep2.start, ep2.end
         )
-        ep3 = nap.IntervalSet(s, e)
+        ep3 = nap.IntervalSet(
+            s, e, metadata={"label1": ep1.label1.loc[m].reset_index(drop=True)}
+        )
 
         i_sets = (ep1, ep2)
         time = np.hstack(
             [i_set["start"] for i_set in i_sets] + [i_set["end"] for i_set in i_sets]
+        )
+        label1 = np.hstack(
+            (
+                ep1.label1.values,
+                np.nan * np.ones(len(ep2)),
+                ep1.label1.values,
+                np.nan * np.ones(len(ep2)),
+            )
         )
         start_end1 = np.hstack(
             (
@@ -387,20 +438,27 @@ def test_jitdiff():
             )
         )
         start_end = np.hstack((start_end1, start_end2))
-        df = pd.DataFrame({"time": time, "start_end": start_end})
+        df = pd.DataFrame({"time": time, "start_end": start_end, "label1": label1})
         df.sort_values(by="time", inplace=True)
         df.reset_index(inplace=True, drop=True)
+        df = df.ffill().bfill()
+        df["label1"] = df["label1"].astype(int)
         df["cumsum"] = df["start_end"].cumsum()
         ix = (df["cumsum"] == 1).to_numpy().nonzero()[0]
-        start = df["time"][ix]
-        end = df["time"][ix + 1]
-        start = start.reset_index(drop=True)
-        end = end.reset_index(drop=True)
+        start = df["time"][ix].reset_index(drop=True)
+        end = df["time"][ix + 1].reset_index(drop=True)
+        label1 = df["label1"][ix].reset_index(drop=True)
         idx = start != end
 
-        ep4 = nap.IntervalSet(start[idx], end[idx])
+        ep4 = nap.IntervalSet(
+            start[idx],
+            end[idx],
+            metadata={"label1": label1[idx].reset_index(drop=True)},
+        )
 
         np.testing.assert_array_almost_equal(ep3, ep4)
+        pd.testing.assert_frame_equal(ep3._metadata, ep4._metadata)
+
 
 
 def test_jitunion_isets():

@@ -7,6 +7,7 @@ import abc
 from numbers import Number
 
 import numpy as np
+import pandas as pd
 
 from ._core_functions import _count, _restrict, _value_from
 from .interval_set import IntervalSet
@@ -200,6 +201,8 @@ class _Base(abc.ABC):
         kwargs = {}
         if hasattr(data, "columns"):
             kwargs["columns"] = data.columns
+        if hasattr(data, "_metadata"):
+            kwargs["metadata"] = data._metadata
 
         return t, d, time_support, kwargs
 
@@ -356,6 +359,9 @@ class _Base(abc.ABC):
         kwargs = {}
         if hasattr(self, "columns"):
             kwargs["columns"] = self.columns
+
+        if hasattr(self, "_metadata"):
+            kwargs["metadata"] = self._metadata
 
         if hasattr(self, "values"):
             data_array = self.values
@@ -660,7 +666,14 @@ class _Base(abc.ABC):
             The time series object
         """
         kwargs = {
-            key: file[key] for key in file.keys() if key not in ["start", "end", "type"]
+            key: file[key]
+            for key in file.keys()
+            if key not in ["start", "end", "type", "_metadata"]
         }
         iset = IntervalSet(start=file["start"], end=file["end"])
-        return cls(time_support=iset, **kwargs)
+        ts = cls(time_support=iset, **kwargs)
+        if "_metadata" in file:  # load metadata if it exists
+            if file["_metadata"]:  # check if metadata is not empty
+                m = pd.DataFrame.from_dict(file["_metadata"].item())
+                ts.set_info(m)
+        return ts

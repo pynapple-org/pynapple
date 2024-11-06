@@ -111,7 +111,7 @@ print(head_direction)
 # -----------------
 # The core functions of pynapple provides many ways to manipulate time series. In this example, spike times are restricted to the wake epoch. Notice how the frequencies change from the original object.
 
-wake_ep = epochs["wake"]
+wake_ep = epochs[epochs.tags == "wake"]
 
 spikes_wake = spikes.restrict(wake_ep)
 print(spikes_wake)
@@ -192,7 +192,7 @@ cc_wake = nap.compute_crosscorrelogram(
     group=spikes_adn,
     binsize=20,  # ms
     windowsize=4000,  # ms
-    ep=epochs["wake"],
+    ep=epochs[epochs.tags == "wake"],
     norm=True,
     time_units="ms",
 )
@@ -201,7 +201,7 @@ cc_sleep = nap.compute_crosscorrelogram(
     group=spikes_adn,
     binsize=5,  # ms
     windowsize=400,  # ms
-    ep=epochs["sleep"],
+    ep=epochs[epochs.tags == "sleep"],
     norm=True,
     time_units="ms",
 )
@@ -251,7 +251,7 @@ tuning_curves_adn = nap.compute_1d_tuning_curves(
 decoded, proba_angle = nap.decode_1d(
     tuning_curves=tuning_curves_adn,
     group=spikes_adn,
-    ep=epochs["wake"],
+    ep=epochs[epochs.tags == "wake"],
     bin_size=0.3,  # second
     feature=head_direction,
 )
@@ -279,7 +279,7 @@ plt.show()
 decoded_sleep, proba_angle_Sleep = nap.decode_1d(
     tuning_curves=tuning_curves_adn,
     group=spikes_adn,
-    ep=epochs["sleep"],
+    ep=epochs[epochs.tags == "sleep"],
     bin_size=0.04,  # second
     feature=head_direction,
 )

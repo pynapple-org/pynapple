@@ -6,10 +6,10 @@ Class and functions for loading data processed with Phy2
 @author: Sara Mahallati, Guillaume Viejo
 """
 
+import importlib
 from pathlib import Path
 
 import numpy as np
-from pynwb import NWBHDF5IO
 
 from .. import core as nap
 from .loader import BaseLoader
@@ -46,8 +46,8 @@ class Phy(BaseLoader):
         TYPE
             Description
         """
-
-        io = NWBHDF5IO(self.nwbfilepath, "r")
+        pynwb = importlib.import_module("pynwb")
+        io = pynwb.NWBHDF5IO(self.nwbfilepath, "r")
         nwbfile = io.read()
 
         if nwbfile.units is None:

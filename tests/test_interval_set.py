@@ -178,7 +178,7 @@ def test_get_iset():
 
     with pytest.raises(IndexError) as e:
         ep["a"]
-    assert str(e.value) == "Unknown string argument. Should be 'start' or 'end'"
+    assert str(e.value) == "Unknown string argument. Should be in ['start', 'end']"
 
     # Get a new IntervalSet
     ep2 = ep[0]
@@ -561,11 +561,12 @@ def test_str_():
     assert isinstance(ep.__str__(), str)
 
 
-def test_save_npz():
+@pytest.mark.parametrize("metadata", [None, {"label": ["a", "b", "c"]}])
+def test_save_npz(metadata):
 
     start = np.around(np.array([0, 10, 16], dtype=np.float64), 9)
     end = np.around(np.array([5, 15, 20], dtype=np.float64), 9)
-    ep = nap.IntervalSet(start=start, end=end)
+    ep = nap.IntervalSet(start=start, end=end, metadata=metadata)
 
     with pytest.raises(TypeError) as e:
         ep.save(dict)
@@ -587,11 +588,17 @@ def test_save_npz():
     ep.save("ep2")
     assert "ep2.npz" in [f.name for f in Path(".").iterdir()]
 
-    with np.load("ep.npz") as file:
+    with np.load("ep.npz", allow_pickle=True) as file:
 
         keys = list(file.keys())
         assert "start" in keys
         assert "end" in keys
+
+        if metadata is not None:
+            assert "_metadata" in keys
+            assert "label" in file["_metadata"].item().keys()
+            df = pd.DataFrame.from_dict(file["_metadata"].item())
+            assert np.all(df["label"] == metadata["label"])
 
         np.testing.assert_array_almost_equal(file["start"], start)
         np.testing.assert_array_almost_equal(file["end"], end)
