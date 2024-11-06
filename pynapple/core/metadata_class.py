@@ -21,7 +21,6 @@ class _MetadataMixin:
             List of pandas.DataFrame
         **kwargs : dict
             Dictionary containing metadata information
-
         """
         if self.__class__.__name__ == "TsdFrame":
             # metadata index is the same as the columns for TsdFrame
@@ -112,7 +111,7 @@ class _MetadataMixin:
                 f"Invalid metadata type {type(name)}. Metadata column names must be strings!"
             )
         # warnings for metadata names that cannot be accessed as attributes or keys
-        if hasattr(self, name) and (name not in self.metadata_columns):
+        if name in self._class_attributes:
             # existing non-metadata attribute
             warnings.warn(
                 f"Metadata name '{name}' overlaps with an existing attribute, and cannot be accessed as an attribute or key. Use 'get_info()' to access metadata."
@@ -122,13 +121,17 @@ class _MetadataMixin:
             warnings.warn(
                 f"Metadata name '{name}' overlaps with an existing property, and cannot be accessed as an attribute or key. Use 'get_info()' to access metadata."
             )
+        # elif name in self.metadata_columns:
+        #     # warnings for metadata that already exists
+        #     warnings.warn(f"Overwriting existing metadata column '{name}'.")
+
         # warnings for metadata that cannot be accessed as attributes
         if name.replace("_", "").isalnum() is False:
             # contains invalid characters
             warnings.warn(
                 f"Metadata name '{name}' contains a special character, and cannot be accessed as an attribute. Use 'get_info()' or key indexing to access metadata."
             )
-        elif name[0].isalpha() is False:
+        elif (name[0].isalpha() is False) and (name[0] != "_"):
             # starts with a number
             warnings.warn(
                 f"Metadata name '{name}' starts with a number, and cannot be accessed as an attribute. Use 'get_info()' or key indexing to access metadata."

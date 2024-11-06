@@ -938,7 +938,13 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
-        _MetadataMixin.__init__(self, metadata)
+        # initialize metadata for class attributes
+        _MetadataMixin.__init__(self)
+        # get current list of attributes
+        self._class_attributes = self.__dir__()
+        self._class_attributes.append("_class_attributes")
+        # set metadata
+        self.set_info(metadata)
         self._initialized = True
 
     @property
@@ -1034,7 +1040,12 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
     def __setattr__(self, name, value):
         # necessary setter to allow metadata to be set as an attribute
         if self._initialized:
-            _MetadataMixin.__setattr__(self, name, value)
+            if name in self._class_attributes:
+                raise AttributeError(
+                    f"Cannot set attribute: '{name}' is a reserved attribute. Use 'set_info()' to set '{name}' as metadata."
+                )
+            else:
+                _MetadataMixin.__setattr__(self, name, value)
         else:
             super().__setattr__(name, value)
 
@@ -1069,17 +1080,18 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             raise IndexError
 
     def __getitem__(self, key, *args, **kwargs):
-        if isinstance(key, str) and (key in self.metadata_columns):
-            return _MetadataMixin.__getitem__(self, key)
-        elif (
+        if (
             isinstance(key, str)
             or hasattr(key, "__iter__")
             and all([isinstance(k, str) for k in key])
         ):
-            if all(k in self.metadata_columns for k in key):
-                return _MetadataMixin.__getitem__(self, key)
-            else:
+            if all(k in self.columns for k in key):
                 return self.loc[key]
+            else:
+                # if all(k in self.metadata_columns for k in key):
+                return _MetadataMixin.__getitem__(self, key)
+                # else:
+                # return self.loc[key]
 
         else:
             if isinstance(key, pd.Series) and key.index.equals(self.columns):
