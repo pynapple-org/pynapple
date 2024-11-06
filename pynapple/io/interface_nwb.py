@@ -458,9 +458,27 @@ class NWBFile(UserDict):
             If key is not in the dictionary
         """
         if key.__hash__:
+            if "/" in key:
+                # allow user to specify the full path to the object
+                # store the original key so we can verify it later
+                original_key = key
+                if original_key.startswith("/"):
+                    # remove leading slash
+                    original_key = original_key[1:]
+                # use just the last part of the key
+                key = key.split("/")[-1]
+
+            else:
+                original_key = None
             if self.__contains__(key):
                 if isinstance(self.data[key], dict) and "id" in self.data[key]:
-                    obj = self.nwb.objects[self.data[key]["id"]]
+                    obj_id = self.data[key]["id"]
+                    obj = self.nwb.objects[obj_id]
+                    if original_key is not None:
+                        if _path_for_nwb_object(obj) != original_key:
+                            raise KeyError(
+                                f"Mismatch between key and object path: {original_key} != {_path_for_nwb_object(obj)}"
+                            )
                     try:
                         data = self._f_eval[self.data[key]["type"]](
                             obj, lazy_loading=self._lazy_loading
@@ -484,3 +502,26 @@ class NWBFile(UserDict):
     def close(self):
         """Close the NWB file"""
         self.io.close()
+
+
+def _path_for_nwb_object(obj):
+    """Helper function to get the path of an NWB object"""
+    if obj.parent:
+        if obj.parent.name == "root":
+            # unfortunately, there's now way to get the parent name when the
+            # parent is a top-level NWB object because the parent actually
+            # points to root, so we need to do it this way
+            modules = {
+                "acquisition": obj.parent.acquisition,
+                "analysis": obj.parent.analysis,
+                "stimulus": obj.parent.stimulus,
+                "processing": obj.parent.processing,
+            }
+            for k, v in modules.items():
+                if obj.name in v.keys() and v[obj.name] == obj:
+                    return f"{k}/{obj.name}"
+            return obj.name
+        else:
+            return f"{_path_for_nwb_object(obj.parent)}/{obj.name}"
+    else:
+        return obj.name
