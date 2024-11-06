@@ -364,7 +364,6 @@ def test_jitintersect():
         pd.testing.assert_frame_equal(ep3._metadata, ep4._metadata)
 
 
-
 def test_jitunion():
     for i in range(10):
         ep1, ep2 = get_example_isets()
@@ -404,7 +403,6 @@ def test_jitdiff():
     for i in range(10):
         ep1, ep2 = get_example_isets()
         ep1.set_info(label1=np.arange(len(ep1)))
-
 
         s, e, m = nap.core._jitted_functions.jitdiff(
             ep1.start, ep1.end, ep2.start, ep2.end
@@ -458,7 +456,6 @@ def test_jitdiff():
 
         np.testing.assert_array_almost_equal(ep3, ep4)
         pd.testing.assert_frame_equal(ep3._metadata, ep4._metadata)
-
 
 
 def test_jitunion_isets():

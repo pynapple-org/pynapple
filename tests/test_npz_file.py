@@ -101,7 +101,6 @@ def test_load(path, k):
         pd.testing.assert_frame_equal(tmp._metadata, data[k]._metadata)
 
 
-
 @pytest.mark.parametrize("path", [path])
 @pytest.mark.parametrize("k", ["tsgroup", "tsgroup_minfo"])
 def test_load_tsgroup(path, k):

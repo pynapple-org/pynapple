@@ -1,16 +1,15 @@
 """Tests for metadata in IntervalSet, TsdFrame, and TsGroup"""
 
-from numbers import Number
 import inspect
-
-
 import pickle
+import warnings
+from contextlib import nullcontext as does_not_raise
+from numbers import Number
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
-from pathlib import Path
-from contextlib import nullcontext as does_not_raise
-import warnings
 
 import pynapple as nap
 
