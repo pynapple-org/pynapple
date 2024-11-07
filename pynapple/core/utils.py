@@ -384,7 +384,12 @@ class _IntervalSetSliceHelper:
         IndexError
 
         """
-        if key in ["start", "end"] + self.intervalset.metadata_columns:
+        # Pickle backward compatibility
+        try:
+            metadata_columns = self.intervalset.metadata_columns
+        except:
+            metadata_columns = []
+        if key in ["start", "end"] + metadata_columns:
             return self.intervalset[key]
         elif isinstance(key, list):
             return self.intervalset[key]
@@ -393,10 +398,7 @@ class _IntervalSetSliceHelper:
         else:
             if isinstance(key, tuple):
                 if len(key) == 2:
-                    if (
-                        key[1]
-                        not in ["start", "end"] + self.intervalset.metadata_columns
-                    ):
+                    if key[1] not in ["start", "end"] + metadata_columns:
                         raise IndexError
                     out = self.intervalset[key[0]][key[1]]
                     if len(out) == 1:

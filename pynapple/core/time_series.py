@@ -1072,7 +1072,15 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         # self._metadata.column having attributes '__reduce__', '__reduce_ex__'
         if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
             raise AttributeError(name)
-        if name in self._metadata.columns:
+
+        try:
+            metadata = self._metadata
+        except:
+            metadata = pd.DataFrame(index=self.columns)
+
+        if name == "_metadata":
+            return metadata
+        elif name in metadata.columns:
             return _MetadataMixin.__getattr__(self, name)
         else:
             return super().__getattr__(name)

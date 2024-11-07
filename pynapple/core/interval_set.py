@@ -304,6 +304,20 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         else:
             object.__setattr__(self, name, value)
 
+    def __getattr__(self, name):
+        # Necessary for backward compatibility with pickle
+        try:
+            metadata = self._metadata
+        except:
+            metadata = pd.DataFrame(index=self.index)
+
+        if name == "_metadata":
+            return metadata
+        elif name in metadata.columns:
+            return _MetadataMixin.__getattr__(self, name)
+        else:
+            return super().__getattr__(name)
+
     def __setitem__(self, key, value):
         if key in self.columns:
             raise RuntimeError(
@@ -317,6 +331,11 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             )
 
     def __getitem__(self, key):
+        try:
+            metadata = _MetadataMixin.__getitem__(self, key)
+        except:
+            metadata = pd.DataFrame(index=self.index)
+
         if isinstance(key, str):
             # self[str]
             if key == "start":
@@ -341,7 +360,6 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         elif isinstance(key, Number):
             # self[Number]
             output = self.values.__getitem__(key)
-            metadata = _MetadataMixin.__getitem__(self, key)
             return IntervalSet(start=output[0], end=output[1], metadata=metadata)
         elif isinstance(key, (slice, list, np.ndarray, pd.Series)):
             # self[array_like]
