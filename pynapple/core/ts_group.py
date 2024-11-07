@@ -216,11 +216,6 @@ class TsGroup(UserDict, _MetadataMixin):
                     f"Cannot set attribute: '{name}' is a reserved attribute. Use 'set_info()' to set '{name}' as metadata."
                 )
             else:
-                if name == "rate":
-                    warnings.warn(
-                        "Replacing TsGroup 'rate' with user-defined metadata.",
-                        UserWarning,
-                    )
                 _MetadataMixin.__setattr__(self, name, value)
         else:
             object.__setattr__(self, name, value)
@@ -230,11 +225,6 @@ class TsGroup(UserDict, _MetadataMixin):
             self._metadata.loc[int(key), "rate"] = float(value.rate)
             super().__setitem__(int(key), value)
         else:
-            if key == "rate":
-                warnings.warn(
-                    "Replacing TsGroup 'rate' with user-defined metadata.",
-                    UserWarning,
-                )
             _MetadataMixin.__setitem__(self, key, value)
 
     def __getitem__(self, key):

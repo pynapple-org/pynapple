@@ -353,7 +353,7 @@ def test_drop_metadata_warnings(iset_meta):
             # warn with setitem
             pytest.warns(UserWarning, match="overlaps with an existing"),
             # attr should not match metadata
-            pytest.raises(ValueError),  # shape mismatch
+            pytest.raises(AssertionError),
             # key should match metadata
             does_not_raise(),
         ),
@@ -388,13 +388,13 @@ def test_iset_metadata_overlapping_names(
     with set_key_exp:
         iset_meta[name] = np.ones(4)
     # retrieve with get_info
-    assert np.all(iset_meta.get_info(name) == np.ones(4))
+    np.testing.assert_array_almost_equal(iset_meta.get_info(name), np.ones(4))
     # make sure it doesn't access metadata if its an existing attribute or key
     with get_attr_exp:
-        assert np.all(getattr(iset_meta, name) == np.ones(4))
+        np.testing.assert_array_almost_equal(getattr(iset_meta, name), np.ones(4))
     # make sure it doesn't access metadata if its an existing key
     with get_key_exp:
-        assert np.all(iset_meta[name] == np.ones(4))
+        np.testing.assert_array_almost_equal(iset_meta[name], np.ones(4))
 
 
 ##############
@@ -450,7 +450,7 @@ def test_tsdframe_metadata_slicing(tsdframe_meta):
             # attribute should raise error
             pytest.raises(AttributeError),
             # key should not match metadata
-            pytest.raises(ValueError),
+            pytest.raises(AssertionError),
         ),
         (
             "columns",
@@ -465,7 +465,7 @@ def test_tsdframe_metadata_slicing(tsdframe_meta):
             # no error with get_info
             does_not_raise(),
             # attribute should not match metadata
-            pytest.raises(AssertionError),
+            pytest.raises(TypeError),
             # key should match metadata
             does_not_raise(),
         ),
@@ -514,13 +514,13 @@ def test_tsdframe_metadata_overlapping_names(
         tsdframe_meta[name] = np.ones(4)
     # retrieve with get_info
     with get_exp:
-        assert np.all(tsdframe_meta.get_info(name) == np.ones(4))
+        np.testing.assert_array_almost_equal(tsdframe_meta.get_info(name), np.ones(4))
     # make sure it doesn't access metadata if its an existing attribute or key
     with get_attr_exp:
-        assert np.all(getattr(tsdframe_meta, name) == np.ones(4))
+        np.testing.assert_array_almost_equal(getattr(tsdframe_meta, name), np.ones(4))
     # make sure it doesn't access metadata if its an existing key
     with get_key_exp:
-        assert np.all(tsdframe_meta[name] == np.ones(4))
+        np.testing.assert_array_almost_equal(tsdframe_meta[name], np.ones(4))
 
 
 #############
@@ -615,13 +615,13 @@ def test_tsgroup_metadata_overlapping_names(
         tsgroup_meta[name] = np.ones(4)
     # retrieve with get_info
     with get_exp:
-        assert np.all(tsgroup_meta.get_info(name) == np.ones(4))
+        np.testing.assert_array_almost_equal(tsgroup_meta.get_info(name), np.ones(4))
     # make sure it doesn't access metadata if its an existing attribute or key
     with get_attr_exp:
-        assert np.all(getattr(tsgroup_meta, name) == np.ones(4))
+        np.testing.assert_array_almost_equal(getattr(tsgroup_meta, name), np.ones(4))
     # make sure it doesn't access metadata if its an existing key
     with get_key_exp:
-        assert np.all(tsgroup_meta[name] == np.ones(4))
+        np.testing.assert_array_almost_equal(tsgroup_meta[name], np.ones(4))
 
 
 ##################
@@ -927,12 +927,12 @@ class Test_Metadata:
         with pytest.warns(UserWarning, match="overlaps with an existing"):
             obj[name] = values
         # retrieve with get_info
-        assert np.all(obj.get_info(name) == values)
+        np.testing.assert_array_almost_equal(obj.get_info(name), values)
         # make sure it doesn't access metadata if its an existing attribute or key
-        with pytest.raises((AssertionError, ValueError)):
-            assert np.all(getattr(obj, name) == values)
+        with pytest.raises((AssertionError, ValueError, TypeError)):
+            np.testing.assert_array_almost_equal(getattr(obj, name), values)
         # access metadata as key
-        assert np.all(obj[name] == values)
+        np.testing.assert_array_almost_equal(obj[name], values)
 
     @pytest.mark.parametrize("label, val", [([1, 1, 2, 2], 2)])
     def test_metadata_slicing(self, obj, label, val, obj_len):
