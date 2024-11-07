@@ -231,7 +231,14 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         # By default, the first three columns should always show.
 
         # Adding an extra column between actual values and metadata
-        col_names = self._metadata.columns
+        try:
+            metadata = self._metadata
+            col_names = metadata.columns
+        except:
+            # Necessary for backward compatibility when saving IntervalSet as pickle
+            metadata = pd.DataFrame(index=self.index)
+            col_names = []
+
         headers = ["index", "start", "end"]
         if len(col_names):
             headers += [""] + [c for c in col_names]
@@ -251,7 +258,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                             self.index[0:n_rows, None],
                             self.values[0:n_rows],
                             separator,
-                            self._metadata.values[0:n_rows],
+                            metadata.values[0:n_rows],
                         ),
                         dtype=object,
                     ),
@@ -261,7 +268,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                             self.index[-n_rows:, None],
                             self.values[0:n_rows],
                             separator,
-                            self._metadata.values[-n_rows:],
+                            metadata.values[-n_rows:],
                         ),
                         dtype=object,
                     ),
@@ -273,7 +280,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             else:
                 separator = np.empty((len(self), 0))
             data = np.hstack(
-                (self.index[:, None], self.values, separator, self._metadata.values),
+                (self.index[:, None], self.values, separator, metadata.values),
                 dtype=object,
             )
 
