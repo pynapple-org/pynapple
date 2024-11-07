@@ -949,6 +949,11 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
     @property
     def loc(self):
+        # add deprecation warning
+        warnings.warn(
+            "'loc' will be deprecated in a future version. Use bracket indexing instead.",
+            DeprecationWarning,
+        )
         return _TsdFrameSliceHelper(self)
 
     def __repr__(self):
@@ -1086,13 +1091,11 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             and all([isinstance(k, str) for k in key])
         ):
             if all(k in self.columns for k in key):
-                return self.loc[key]
+                with warnings.catch_warnings(action="ignore"):
+                    # ignore deprecated warning for loc
+                    return self.loc[key]
             else:
-                # if all(k in self.metadata_columns for k in key):
                 return _MetadataMixin.__getitem__(self, key)
-                # else:
-                # return self.loc[key]
-
         else:
             if isinstance(key, pd.Series) and key.index.equals(self.columns):
                 # if indexing with a pd.Series from metadata, transform it to tuple with slice(None) in first position

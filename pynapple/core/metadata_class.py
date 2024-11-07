@@ -117,10 +117,16 @@ class _MetadataMixin:
                 f"Metadata name '{name}' overlaps with an existing attribute, and cannot be accessed as an attribute or key. Use 'get_info()' to access metadata."
             )
         elif hasattr(self, "columns") and name in self.columns:
-            # existing non-metadata attribute
-            warnings.warn(
-                f"Metadata name '{name}' overlaps with an existing property, and cannot be accessed as an attribute or key. Use 'get_info()' to access metadata."
-            )
+            if self.nap_class == "TsdFrame":
+                # special exception for TsdFrame columns
+                raise ValueError(
+                    f"Invalid metadata name '{name}'. Metadata name must differ from {list(self.columns)} column names!"
+                )
+            else:
+                # existing non-metadata attribute
+                warnings.warn(
+                    f"Metadata name '{name}' overlaps with an existing property, and cannot be accessed as an attribute or key. Use 'get_info()' to access metadata."
+                )
         # elif name in self.metadata_columns:
         #     # warnings for metadata that already exists
         #     warnings.warn(f"Overwriting existing metadata column '{name}'.")

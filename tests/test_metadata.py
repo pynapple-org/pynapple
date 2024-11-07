@@ -433,21 +433,23 @@ def test_tsdframe_metadata_slicing(tsdframe_meta):
 
 
 @pytest.mark.parametrize(
-    "name, attr_exp, set_exp, set_attr_exp, set_key_exp, get_attr_exp, get_key_exp",
+    "name, attr_exp, set_exp, set_attr_exp, set_key_exp, get_exp, get_attr_exp, get_key_exp",
     [
-        # pre-computed rate metadata
+        # existing data column
         (
             "a",
             # not attribute
             pytest.raises(AssertionError),
-            # warn with set_info
-            pytest.warns(UserWarning, match="overlaps with an existing"),
-            # warn with setattr
-            pytest.warns(UserWarning, match="overlaps with an existing"),
-            # cannot be set as key
+            # error with set_info
+            pytest.raises(ValueError, match="Invalid metadata name"),
+            # error with setattr
+            pytest.raises(ValueError, match="Invalid metadata name"),
+            # shape mismatch with setitem
             pytest.raises(ValueError),
-            # attribute should match metadata
-            does_not_raise(),
+            # key error with get_info
+            pytest.raises(KeyError),
+            # attribute should raise error
+            pytest.raises(AttributeError),
             # key should not match metadata
             pytest.raises(ValueError),
         ),
@@ -461,6 +463,8 @@ def test_tsdframe_metadata_slicing(tsdframe_meta):
             pytest.raises(AttributeError, match="Cannot set attribute"),
             # warn when set as key
             pytest.warns(UserWarning, match="overlaps with an existing"),
+            # no error with get_info
+            does_not_raise(),
             # attribute should not match metadata
             pytest.raises(AssertionError),
             # key should match metadata
@@ -477,6 +481,8 @@ def test_tsdframe_metadata_slicing(tsdframe_meta):
             does_not_raise(),
             # no warning with setitem
             does_not_raise(),
+            # no error with get_info
+            does_not_raise(),
             # attr should match metadata
             does_not_raise(),
             # key should match metadata
@@ -490,6 +496,7 @@ def test_tsdframe_metadata_overlapping_names(
     attr_exp,
     set_exp,
     set_attr_exp,
+    get_exp,
     set_key_exp,
     get_attr_exp,
     get_key_exp,
@@ -507,7 +514,8 @@ def test_tsdframe_metadata_overlapping_names(
     with set_key_exp:
         tsdframe_meta[name] = np.ones(4)
     # retrieve with get_info
-    assert np.all(tsdframe_meta.get_info(name) == np.ones(4))
+    with get_exp:
+        assert np.all(tsdframe_meta.get_info(name) == np.ones(4))
     # make sure it doesn't access metadata if its an existing attribute or key
     with get_attr_exp:
         assert np.all(getattr(tsdframe_meta, name) == np.ones(4))
@@ -527,7 +535,8 @@ def tsgroup_meta():
             1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
             2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
             3: nap.Ts(t=np.arange(0, 400, 1), time_units="s"),
-        }
+        },
+        metadata={"label": [1, 2, 3, 4]},
     )
 
 
@@ -560,6 +569,20 @@ def tsgroup_meta():
             # get attribute is not metadata
             pytest.raises(AssertionError),
             # get key is metadata
+            does_not_raise(),
+        ),
+        # existing metdata
+        (
+            "label",
+            # no warning with set_info
+            does_not_raise(),
+            # no warning with setattr
+            does_not_raise(),
+            # no warning with setitem
+            does_not_raise(),
+            # attr should match metadata
+            does_not_raise(),
+            # key should match metadata
             does_not_raise(),
         ),
     ],
