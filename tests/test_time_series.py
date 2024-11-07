@@ -1389,7 +1389,8 @@ class TestTsdFrame:
             tsdframe.loc[columns[0]]
         if isinstance(columns[0], str):
             # suppressed warning with getitem, which implicitly uses loc
-            with warnings.catch_warnings(action="error"):
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
                 tsdframe[columns[0]]
 
 

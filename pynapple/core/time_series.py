@@ -1118,8 +1118,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             and all([isinstance(k, str) for k in key])
         ):
             if all(k in self.columns for k in key):
-                with warnings.catch_warnings(action="ignore"):
+                with warnings.catch_warnings():
                     # ignore deprecated warning for loc
+                    warnings.simplefilter("ignore")
                     return self.loc[key]
             else:
                 return _MetadataMixin.__getitem__(self, key)
