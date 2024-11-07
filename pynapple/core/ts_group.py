@@ -188,10 +188,9 @@ class TsGroup(UserDict, _MetadataMixin):
                 data = {k: data[k].restrict(self.time_support) for k in self.index}
 
         UserDict.__init__(self, data)
-
+        self.nap_class = self.__class__.__name__
         # grab current attributes before adding metadata
         self._class_attributes = self.__dir__()
-        self._class_attributes.remove("rate")  # remove rate metadata
         self._class_attributes.append("_class_attributes")  # add this property
 
         # Making the TsGroup non mutable

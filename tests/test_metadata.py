@@ -541,21 +541,23 @@ def tsgroup_meta():
 
 
 @pytest.mark.parametrize(
-    "name, set_exp, set_attr_exp, set_key_exp, get_attr_exp, get_key_exp",
+    "name, set_exp, set_attr_exp, set_key_exp, get_exp, get_attr_exp, get_key_exp",
     [
         # pre-computed rate metadata
         (
             "rate",
-            # no warning with set_info
-            warnings.catch_warnings(action="error"),
-            # warning with setattr
-            pytest.warns(UserWarning, match="Replacing TsGroup 'rate'"),
-            # warning with setitem
-            pytest.warns(UserWarning, match="Replacing TsGroup 'rate'"),
-            # get attribute is metadata
-            does_not_raise(),
-            # get key is metadata
-            does_not_raise(),
+            # error with set_info
+            pytest.raises(ValueError, match="Invalid metadata name"),
+            # error with setattr
+            pytest.raises(AttributeError, match="Cannot set attribute"),
+            # error with setitem
+            pytest.raises(ValueError, match="Invalid metadata name"),
+            # value mismatch with get_info
+            pytest.raises(AssertionError),
+            # value mismatch with getattr
+            pytest.raises(AssertionError),
+            # value mismatch with getitem
+            pytest.raises(AssertionError),
         ),
         # 'rates' attribute
         (
@@ -566,6 +568,8 @@ def tsgroup_meta():
             pytest.raises(AttributeError, match="Cannot set attribute"),
             # warn with setitem
             pytest.warns(UserWarning, match="overlaps with an existing"),
+            # no error with get_info
+            does_not_raise(),
             # get attribute is not metadata
             pytest.raises(AssertionError),
             # get key is metadata
@@ -580,6 +584,8 @@ def tsgroup_meta():
             does_not_raise(),
             # no warning with setitem
             does_not_raise(),
+            # no error with get_info
+            does_not_raise(),
             # attr should match metadata
             does_not_raise(),
             # key should match metadata
@@ -588,7 +594,14 @@ def tsgroup_meta():
     ],
 )
 def test_tsgroup_metadata_overlapping_names(
-    tsgroup_meta, name, set_exp, set_attr_exp, set_key_exp, get_attr_exp, get_key_exp
+    tsgroup_meta,
+    name,
+    set_exp,
+    set_attr_exp,
+    set_key_exp,
+    get_exp,
+    get_attr_exp,
+    get_key_exp,
 ):
     assert hasattr(tsgroup_meta, name)
 
@@ -602,7 +615,8 @@ def test_tsgroup_metadata_overlapping_names(
     with set_key_exp:
         tsgroup_meta[name] = np.ones(4)
     # retrieve with get_info
-    assert np.all(tsgroup_meta.get_info(name) == np.ones(4))
+    with get_exp:
+        assert np.all(tsgroup_meta.get_info(name) == np.ones(4))
     # make sure it doesn't access metadata if its an existing attribute or key
     with get_attr_exp:
         assert np.all(getattr(tsgroup_meta, name) == np.ones(4))

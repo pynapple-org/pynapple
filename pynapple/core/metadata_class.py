@@ -112,10 +112,16 @@ class _MetadataMixin:
             )
         # warnings for metadata names that cannot be accessed as attributes or keys
         if name in self._class_attributes:
-            # existing non-metadata attribute
-            warnings.warn(
-                f"Metadata name '{name}' overlaps with an existing attribute, and cannot be accessed as an attribute or key. Use 'get_info()' to access metadata."
-            )
+            if (self.nap_class == "TsGroup") and (name == "rate"):
+                # special exception for TsGroup rate attribute
+                raise ValueError(
+                    f"Invalid metadata name '{name}'. Cannot overwrite TsGroup 'rate'!"
+                )
+            else:
+                # existing non-metadata attribute
+                warnings.warn(
+                    f"Metadata name '{name}' overlaps with an existing attribute, and cannot be accessed as an attribute or key. Use 'get_info()' to access metadata."
+                )
         elif hasattr(self, "columns") and name in self.columns:
             if self.nap_class == "TsdFrame":
                 # special exception for TsdFrame columns
@@ -123,7 +129,7 @@ class _MetadataMixin:
                     f"Invalid metadata name '{name}'. Metadata name must differ from {list(self.columns)} column names!"
                 )
             else:
-                # existing non-metadata attribute
+                # existing non-metadata column
                 warnings.warn(
                     f"Metadata name '{name}' overlaps with an existing property, and cannot be accessed as an attribute or key. Use 'get_info()' to access metadata."
                 )
