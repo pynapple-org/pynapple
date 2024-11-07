@@ -1,9 +1,7 @@
 """Tests of time series for `pynapple` package."""
 
-from numbers import Number
-import warnings
-
 import pickle
+import warnings
 from contextlib import nullcontext as does_not_raise
 from numbers import Number
 from pathlib import Path
