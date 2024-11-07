@@ -1,12 +1,15 @@
 """Tests for IntervalSet of `pynapple` package."""
 
-import pynapple as nap
+import warnings
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
-import warnings
+
+import pynapple as nap
+
 from .mock import MockArray
-from pathlib import Path
 
 
 def test_create_iset():
@@ -590,6 +593,7 @@ def test_save_npz(metadata):
         keys = list(file.keys())
         assert "start" in keys
         assert "end" in keys
+
         if metadata is not None:
             assert "_metadata" in keys
             assert "label" in file["_metadata"].item().keys()

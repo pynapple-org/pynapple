@@ -104,6 +104,8 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
     def __setitem__(self, key, value):
         """setter for time series"""
+        if isinstance(key, _BaseTsd):
+            key = key.d
         try:
             self.values.__setitem__(key, value)
         except IndexError:
@@ -143,13 +145,6 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         return np.asarray(self.values, dtype=dtype)
 
     def __array_ufunc__(self, ufunc, method, *args, **kwargs):
-        # print("In __array_ufunc__")
-        # print("     ufunc = ", ufunc)
-        # print("     method = ", method)
-        # print("     args = ", args)
-        # for inp in args:
-        #     print(type(inp))
-        # print("     kwargs = ", kwargs)
 
         if method == "__call__":
             new_args = []
@@ -792,11 +787,26 @@ class TsdTensor(_BaseTsd):
         else:
             return tabulate([], headers=headers) + "\n" + bottom
 
-    def __getitem__(self, key, *args, **kwargs):
-        output = self.values.__getitem__(key)
-        if isinstance(key, tuple):
+    def __getitem__(self, key):
+        if isinstance(key, Tsd):
+            if not np.issubdtype(key.dtype, np.bool_):
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
+            output = self.values[key.values]
+            index = self.index[key.values]
+        elif isinstance(key, tuple):
+            if any(
+                isinstance(k, Tsd) and not np.issubdtype(k.dtype, np.bool_) for k in key
+            ):
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
+            key = tuple(k.values if isinstance(k, Tsd) else k for k in key)
+            output = self.values.__getitem__(key)
             index = self.index.__getitem__(key[0])
         else:
+            output = self.values.__getitem__(key)
             index = self.index.__getitem__(key)
 
         if isinstance(index, Number):
@@ -808,11 +818,12 @@ class TsdTensor(_BaseTsd):
                     return Tsd(t=index, d=output, time_support=self.time_support)
                 elif output.ndim == 2:
                     return TsdFrame(
-                        t=index, d=output, time_support=self.time_support, **kwargs
+                        t=index,
+                        d=output,
+                        time_support=self.time_support,
                     )
                 else:
                     return TsdTensor(t=index, d=output, time_support=self.time_support)
-
             else:
                 return output
         else:
@@ -1067,6 +1078,14 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             return super().__getattr__(name)
 
     def __setitem__(self, key, value):
+        if isinstance(key, Tsd):
+            try:
+                assert np.issubdtype(key.dtype, np.bool_)
+            except AssertionError:
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
+            key = key.d
         try:
             if isinstance(key, str):
                 if key in self.columns:
@@ -1085,7 +1104,15 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             raise IndexError
 
     def __getitem__(self, key, *args, **kwargs):
-        if (
+        if isinstance(key, Tsd):
+            try:
+                assert np.issubdtype(key.dtype, np.bool_)
+            except AssertionError:
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
+            key = key.d
+        elif (
             isinstance(key, str)
             or hasattr(key, "__iter__")
             and all([isinstance(k, str) for k in key])
@@ -1115,7 +1142,6 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                 index = np.array([index])
 
             if all(is_array_like(a) for a in [index, output]):
-                # if output.shape[0] == index.shape[0]:
                 if (
                     (len(index) == 1)
                     and (output.ndim == 1)
@@ -1340,15 +1366,46 @@ class Tsd(_BaseTsd):
             else:
                 return tabulate([], headers=headers) + "\n" + bottom
 
+    def __setitem__(self, key, value):
+        if isinstance(key, Tsd):
+            try:
+                assert np.issubdtype(key.dtype, np.bool_)
+            except AssertionError:
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
+            key = key.d
+
+        try:
+            if isinstance(key, str):
+                new_key = self.columns.get_indexer([key])
+                self.values.__setitem__((slice(None, None, None), new_key[0]), value)
+            elif hasattr(key, "__iter__") and all([isinstance(k, str) for k in key]):
+                new_key = self.columns.get_indexer(key)
+                self.values.__setitem__((slice(None, None, None), new_key), value)
+            else:
+                self.values.__setitem__(key, value)
+        except IndexError:
+            raise IndexError
+
     def __getitem__(self, key, *args, **kwargs):
+        if isinstance(key, Tsd):
+            try:
+                assert np.issubdtype(key.dtype, np.bool_)
+            except AssertionError:
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
+            key = key.d
+
         output = self.values.__getitem__(key)
+
         if isinstance(key, tuple):
             index = self.index.__getitem__(key[0])
+        elif isinstance(key, Number):
+            index = np.array([key])
         else:
             index = self.index.__getitem__(key)
-
-        if isinstance(index, Number):
-            index = np.array([index])
 
         if all(is_array_like(a) for a in [index, output]):
             if output.shape[0] == index.shape[0]:

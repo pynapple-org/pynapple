@@ -6,13 +6,15 @@
 
 """Tests of NPZ file functions"""
 
-import pynapple as nap
+import shutil
+import warnings
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
-import warnings
-from pathlib import Path
-import shutil
+
+import pynapple as nap
 
 # look for tests folder
 path = Path(__file__).parent

@@ -7,10 +7,11 @@
 
 """Tests of decoding for `pynapple` package."""
 
-import pynapple as nap
 import numpy as np
 import pandas as pd
 import pytest
+
+import pynapple as nap
 
 
 def get_testing_set_1d():
@@ -37,6 +38,7 @@ def test_decode_1d():
     tmp[0:50, 1] = 0.0
     np.testing.assert_array_almost_equal(proba.values, tmp)
 
+
 def test_decode_1d_with_dict():
     feature, group, tc, ep = get_testing_set_1d()
     group = dict(group)
@@ -52,6 +54,7 @@ def test_decode_1d_with_dict():
     tmp[0:50, 1] = 0.0
     np.testing.assert_array_almost_equal(proba.values, tmp)
 
+
 def test_decode_1d_with_feature():
     feature, group, tc, ep = get_testing_set_1d()
     decoded, proba = nap.decode_1d(tc, group, ep, bin_size=1, feature=feature)
@@ -66,17 +69,20 @@ def test_decode_1d_with_feature():
     tmp[0:50, 1] = 0.0
     np.testing.assert_array_almost_equal(proba.values, tmp)
 
+
 def test_decode_1d_with_wrong_feature():
     feature, group, tc, ep = get_testing_set_1d()
     with pytest.raises(RuntimeError) as e_info:
-        nap.decode_1d(tc, group, ep, bin_size=1, feature=[1,2,3])
+        nap.decode_1d(tc, group, ep, bin_size=1, feature=[1, 2, 3])
     assert str(e_info.value) == "Unknown format for feature in decode_1d"
+
 
 def test_decode_1d_with_time_units():
     feature, group, tc, ep = get_testing_set_1d()
     for t, tu in zip([1, 1e3, 1e6], ["s", "ms", "us"]):
         decoded, proba = nap.decode_1d(tc, group, ep, 1.0 * t, time_units=tu)
         np.testing.assert_array_almost_equal(feature.values, decoded.values)
+
 
 def test_decoded_1d_raise_errors():
     feature, group, tc, ep = get_testing_set_1d()
@@ -137,6 +143,7 @@ def test_decode_2d():
     tmp[51:100:2, 1] = 1
     np.testing.assert_array_almost_equal(proba[:, :, 1], tmp)
 
+
 def test_decode_2d_with_dict():
     features, group, tc, ep, xy = get_testing_set_2d()
     group = dict(group)
@@ -156,6 +163,7 @@ def test_decode_2d_with_dict():
     tmp[1:50:2, 0] = 1
     tmp[51:100:2, 1] = 1
     np.testing.assert_array_almost_equal(proba[:, :, 1], tmp)
+
 
 def test_decode_2d_with_feature():
     features, group, tc, ep, xy = get_testing_set_2d()

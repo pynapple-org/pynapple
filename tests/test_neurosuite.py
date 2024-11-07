@@ -6,11 +6,13 @@
 
 """Tests of neurosuite loader for `pynapple` package."""
 
-import pynapple as nap
+import warnings
+
 import numpy as np
 import pandas as pd
 import pytest
-import warnings
+
+import pynapple as nap
 
 
 @pytest.mark.filterwarnings("ignore")

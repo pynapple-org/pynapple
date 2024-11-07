@@ -6,15 +6,16 @@
 
 """Tests of nwb reading for `pynapple` package."""
 
-import pynapple as nap
+import warnings
+
 import numpy as np
 import pandas as pd
-import pytest
-import warnings
 import pynwb
+import pytest
 from pynwb.testing.mock.file import mock_NWBFile
 from pynwb.testing.mock.utils import name_generator_registry
 
+import pynapple as nap
 
 ############################################################
 # DEPRECATED PART ##########################################
@@ -59,7 +60,7 @@ class Test_NWB:
 
     @pytest.mark.filterwarnings("ignore")
     def test_nwb_meta_info(self, data):
-        from pynwb import NWBFile, NWBHDF5IO
+        from pynwb import NWBHDF5IO, NWBFile
 
         io = NWBHDF5IO(data.nwbfilepath, "r")
         nwbfile = io.read()
@@ -170,10 +171,10 @@ def test_add_TimeSeries():
 
 def test_add_SpatialSeries():
     from pynwb.testing.mock.behavior import (
-        mock_SpatialSeries,
+        mock_CompassDirection,
         mock_Position,
         mock_PupilTracking,
-        mock_CompassDirection,
+        mock_SpatialSeries,
     )
 
     for name, Series in zip(
@@ -223,8 +224,8 @@ def test_add_Device():
 
 def test_add_Ecephys():
     from pynwb.testing.mock.ecephys import (
-        mock_ElectrodeGroup,
         mock_ElectricalSeries,
+        mock_ElectrodeGroup,
         mock_SpikeEventSeries,
     )
 
@@ -290,12 +291,12 @@ def test_add_Ecephys():
 def test_add_Icephys():
     try:
         from pynwb.testing.mock.icephys import (
-            mock_IntracellularElectrode,
-            mock_VoltageClampStimulusSeries,
-            mock_VoltageClampSeries,
             mock_CurrentClampSeries,
             mock_CurrentClampStimulusSeries,
+            mock_IntracellularElectrode,
             mock_IZeroClampSeries,
+            mock_VoltageClampSeries,
+            mock_VoltageClampStimulusSeries,
         )
 
         with warnings.catch_warnings():
@@ -344,8 +345,8 @@ def test_add_Icephys():
 
 def test_add_Ogen():
     from pynwb.testing.mock.ogen import (
-        mock_OptogeneticStimulusSite,
         mock_OptogeneticSeries,
+        mock_OptogeneticStimulusSite,
     )
 
     name_generator_registry.clear()
@@ -372,14 +373,14 @@ def test_add_Ogen():
 def test_add_Ophys():
     try:
         from pynwb.testing.mock.ophys import (
-            mock_ImagingPlane,
-            mock_OnePhotonSeries,
-            mock_TwoPhotonSeries,
-            mock_PlaneSegmentation,
-            mock_ImageSegmentation,
-            mock_RoiResponseSeries,
             mock_DfOverF,
             mock_Fluorescence,
+            mock_ImageSegmentation,
+            mock_ImagingPlane,
+            mock_OnePhotonSeries,
+            mock_PlaneSegmentation,
+            mock_RoiResponseSeries,
+            mock_TwoPhotonSeries,
         )
 
         with warnings.catch_warnings():
@@ -500,8 +501,8 @@ def test_add_Units():
 
 
 def test_add_Timestamps():
-    from pynwb.misc import AnnotationSeries
     from pynwb.core import DynamicTable, VectorData
+    from pynwb.misc import AnnotationSeries
 
     nwbfile = mock_NWBFile()
     nwbfile.add_acquisition(

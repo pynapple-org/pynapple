@@ -1,10 +1,12 @@
 """Tests of jitted core functions for `pynapple` package."""
 
-import pynapple as nap
+import warnings
+
 import numpy as np
 import pandas as pd
 import pytest
-import warnings
+
+import pynapple as nap
 
 
 def get_example_dataset(n=100):
@@ -27,6 +29,7 @@ def get_example_isets(n=100):
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         starts = np.sort(np.random.uniform(0, 1000, n))
+
         ep1 = nap.IntervalSet(
             start=starts,
             end=starts + np.random.uniform(1, 10, n),
@@ -36,6 +39,7 @@ def get_example_isets(n=100):
             start=starts,
             end=starts + np.random.uniform(1, 10, n),
         )
+
     return ep1, ep2
 
 
