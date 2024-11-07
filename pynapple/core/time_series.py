@@ -1075,7 +1075,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
         try:
             metadata = self._metadata
-        except:
+        except (AttributeError, RecursionError):
             metadata = pd.DataFrame(index=self.columns)
 
         if name == "_metadata":

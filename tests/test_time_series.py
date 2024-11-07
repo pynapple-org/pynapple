@@ -1908,6 +1908,8 @@ def test_pickling(obj):
 
     # Ensure time support is the same
     assert np.all(obj.time_support == unpickled_obj.time_support)
+
+
 #
 
 ####################################################

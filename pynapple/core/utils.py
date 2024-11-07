@@ -387,7 +387,7 @@ class _IntervalSetSliceHelper:
         # Pickle backward compatibility
         try:
             metadata_columns = self.intervalset.metadata_columns
-        except:
+        except Exception:
             metadata_columns = []
         if key in ["start", "end"] + metadata_columns:
             return self.intervalset[key]

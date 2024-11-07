@@ -234,7 +234,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         try:
             metadata = self._metadata
             col_names = metadata.columns
-        except:
+        except Exception:
             # Necessary for backward compatibility when saving IntervalSet as pickle
             metadata = pd.DataFrame(index=self.index)
             col_names = []
@@ -306,9 +306,15 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
 
     def __getattr__(self, name):
         # Necessary for backward compatibility with pickle
+
+        # avoid infinite recursion when pickling due to
+        # self._metadata.column having attributes '__reduce__', '__reduce_ex__'
+        if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
+            raise AttributeError(name)
+
         try:
             metadata = self._metadata
-        except:
+        except Exception:
             metadata = pd.DataFrame(index=self.index)
 
         if name == "_metadata":
@@ -333,7 +339,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     def __getitem__(self, key):
         try:
             metadata = _MetadataMixin.__getitem__(self, key)
-        except:
+        except Exception:
             metadata = pd.DataFrame(index=self.index)
 
         if isinstance(key, str):
