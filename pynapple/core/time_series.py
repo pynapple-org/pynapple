@@ -772,12 +772,18 @@ class TsdTensor(_BaseTsd):
             if self.shape[0] > max_rows:
                 n_rows = max_rows // 2
                 top_rows = (
-                    self.values[0:n_rows].compute() if hasattr(self.values, "compute")
+                    self.values[0:n_rows].compute()
+                    if hasattr(self.values, "compute")
                     else self.values[:n_rows]
                 )
                 bottom_rows = (
-                    self.values[self.values.shape[0] - n_rows : self.values.shape[0]].compute() if hasattr(self.values, "compute")
-                    else self.values[self.values.shape[0] - n_rows : self.values.shape[0]]
+                    self.values[
+                        self.values.shape[0] - n_rows : self.values.shape[0]
+                    ].compute()
+                    if hasattr(self.values, "compute")
+                    else self.values[
+                        self.values.shape[0] - n_rows : self.values.shape[0]
+                    ]
                 )
                 for i, array in zip(self.index[0:n_rows], top_rows):
                     _str_.append([i, create_str(array)])
@@ -788,7 +794,11 @@ class TsdTensor(_BaseTsd):
                 ):
                     _str_.append([i, create_str(array)])
             else:
-                rows =  self.values.compute() if hasattr(self.values, "compute") else self.values
+                rows = (
+                    self.values.compute()
+                    if hasattr(self.values, "compute")
+                    else self.values
+                )
                 for i, array in zip(self.index, rows):
                     _str_.append([i, create_str(array)])
 
@@ -991,11 +1001,13 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     n_rows = max_rows // 2
                     ends = np.array([end] * n_rows)
                     top_rows = (
-                        self.values[0:n_rows, 0:max_cols].compute() if hasattr(self.values, "compute")
+                        self.values[0:n_rows, 0:max_cols].compute()
+                        if hasattr(self.values, "compute")
                         else self.values[0:n_rows, 0:max_cols]
                     )
                     bottom_rows = (
-                        self.values[-n_rows:, 0:max_cols].compute() if hasattr(self.values, "compute")
+                        self.values[-n_rows:, 0:max_cols].compute()
+                        if hasattr(self.values, "compute")
                         else self.values[-n_rows:, 0:max_cols]
                     )
                     table = np.vstack(
@@ -1029,8 +1041,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                 else:
                     ends = np.array([end] * len(self))
                     rows = (
-                        self.values[:, 0:max_cols].compute() if hasattr(self.values, "compute") else
-                        self.values[:, 0:max_cols]
+                        self.values[:, 0:max_cols].compute()
+                        if hasattr(self.values, "compute")
+                        else self.values[:, 0:max_cols]
                     )
                     table = np.hstack(
                         (
@@ -1349,12 +1362,18 @@ class Tsd(_BaseTsd):
                     n_rows = max_rows // 2
                     table = []
                     top_rows = (
-                        self.values[0:n_rows].compute() if hasattr(self.values, "compute")
+                        self.values[0:n_rows].compute()
+                        if hasattr(self.values, "compute")
                         else self.values[0:n_rows]
                     )
                     bottom_rows = (
-                        self.values[self.values.shape[0] - n_rows : self.values.shape[0]].compute() if hasattr(self.values, "compute")
-                        else self.values[self.values.shape[0] - n_rows : self.values.shape[0]]
+                        self.values[
+                            self.values.shape[0] - n_rows : self.values.shape[0]
+                        ].compute()
+                        if hasattr(self.values, "compute")
+                        else self.values[
+                            self.values.shape[0] - n_rows : self.values.shape[0]
+                        ]
                     )
                     for i, v in zip(self.index[0:n_rows], top_rows):
                         table.append([i, v])
