@@ -624,6 +624,19 @@ def test_tsgroup_metadata_overlapping_names(
         np.testing.assert_array_almost_equal(tsgroup_meta[name], np.ones(4))
 
 
+def test_tsgroup_metadata_future_warnings():
+    with pytest.warns(FutureWarning, match="may be unsupported"):
+        tsgroup = nap.TsGroup(
+            {
+                0: nap.Ts(t=np.arange(0, 200)),
+                1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
+                2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
+                3: nap.Ts(t=np.arange(0, 400, 1), time_units="s"),
+            },
+            label=[1, 2, 3, 4],
+        )
+
+
 ##################
 ## Shared tests ##
 ##################
@@ -932,6 +945,27 @@ class Test_Metadata:
         with pytest.raises((AssertionError, ValueError, TypeError)):
             np.testing.assert_array_almost_equal(getattr(obj, name), values)
         # access metadata as key
+        np.testing.assert_array_almost_equal(obj[name], values)
+
+    # test metadata that can only be accessed as key
+    @pytest.mark.parametrize(
+        "name",
+        [
+            "l.1",
+            "l 1",
+            "0",
+        ],
+    )
+    def test_metadata_nonattribute_names(self, obj, obj_len, name):
+        values = np.ones(obj_len)
+
+        # set some metadata to force assertion error with "_metadata" case
+        with pytest.warns(UserWarning, match="cannot be accessed as an attribute"):
+            obj.set_info({name: values})
+
+        # make sure it can be accessed with get_info
+        np.testing.assert_array_almost_equal(obj.get_info(name), values)
+        # make sure it can be accessed as key
         np.testing.assert_array_almost_equal(obj[name], values)
 
     @pytest.mark.parametrize("label, val", [([1, 1, 2, 2], 2)])
