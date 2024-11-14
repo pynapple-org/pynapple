@@ -22,6 +22,7 @@ from .config import nap_config
 from .metadata_class import _MetadataMixin
 from .time_index import TsIndex
 from .utils import (
+    _convert_iter_to_str,
     _get_terminal_size,
     _IntervalSetSliceHelper,
     check_filename,
@@ -214,10 +215,12 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         self.index = np.arange(data.shape[0], dtype="int")
         self.columns = np.array(["start", "end"])
         self.nap_class = self.__class__.__name__
-        if drop_meta:
-            _MetadataMixin.__init__(self)
-        else:
-            _MetadataMixin.__init__(self, metadata)
+        # initialize metadata to get all attributes before setting metadata
+        _MetadataMixin.__init__(self)
+        self._class_attributes = self.__dir__()  # get list of all attributes
+        self._class_attributes.append("_class_attributes")  # add this property
+        if drop_meta is False:
+            self.set_info(metadata)
         self._initialized = True
 
     def __repr__(self):
@@ -229,7 +232,14 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         # By default, the first three columns should always show.
 
         # Adding an extra column between actual values and metadata
-        col_names = self._metadata.columns
+        try:
+            metadata = self._metadata
+            col_names = metadata.columns
+        except Exception:
+            # Necessary for backward compatibility when saving IntervalSet as pickle
+            metadata = pd.DataFrame(index=self.index)
+            col_names = []
+
         headers = ["index", "start", "end"]
         if len(col_names):
             headers += [""] + [c for c in col_names]
@@ -249,7 +259,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                             self.index[0:n_rows, None],
                             self.values[0:n_rows],
                             separator,
-                            self._metadata.values[0:n_rows],
+                            _convert_iter_to_str(metadata.values[0:n_rows]),
                         ),
                         dtype=object,
                     ),
@@ -259,7 +269,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                             self.index[-n_rows:, None],
                             self.values[0:n_rows],
                             separator,
-                            self._metadata.values[-n_rows:],
+                            _convert_iter_to_str(metadata.values[-n_rows:]),
                         ),
                         dtype=object,
                     ),
@@ -271,7 +281,12 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             else:
                 separator = np.empty((len(self), 0))
             data = np.hstack(
-                (self.index[:, None], self.values, separator, self._metadata.values),
+                (
+                    self.index[:, None],
+                    self.values,
+                    separator,
+                    _convert_iter_to_str(metadata.values),
+                ),
                 dtype=object,
             )
 
@@ -286,12 +301,41 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     def __setattr__(self, name, value):
         # necessary setter to allow metadata to be set as an attribute
         if self._initialized:
-            _MetadataMixin.__setattr__(self, name, value)
+            if name in self._class_attributes:
+                raise AttributeError(
+                    f"Cannot set attribute '{name}'; IntervalSet is immutable. Use 'set_info()' to set '{name}' as metadata."
+                )
+            else:
+                _MetadataMixin.__setattr__(self, name, value)
         else:
             object.__setattr__(self, name, value)
 
+    def __getattr__(self, name):
+        # Necessary for backward compatibility with pickle
+
+        # avoid infinite recursion when pickling due to
+        # self._metadata.column having attributes '__reduce__', '__reduce_ex__'
+        if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
+            raise AttributeError(name)
+
+        try:
+            metadata = self._metadata
+        except Exception:
+            metadata = pd.DataFrame(index=self.index)
+
+        if name == "_metadata":
+            return metadata
+        elif name in metadata.columns:
+            return _MetadataMixin.__getattr__(self, name)
+        else:
+            return super().__getattr__(name)
+
     def __setitem__(self, key, value):
-        if (isinstance(key, str)) and (key not in self.columns):
+        if key in self.columns:
+            raise RuntimeError(
+                "IntervalSet is immutable. Starts and ends have been already sorted."
+            )
+        elif isinstance(key, str):
             _MetadataMixin.__setitem__(self, key, value)
         else:
             raise RuntimeError(
@@ -299,6 +343,11 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             )
 
     def __getitem__(self, key):
+        try:
+            metadata = _MetadataMixin.__getitem__(self, key)
+        except Exception:
+            metadata = pd.DataFrame(index=self.index)
+
         if isinstance(key, str):
             # self[str]
             if key == "start":
@@ -323,7 +372,6 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         elif isinstance(key, Number):
             # self[Number]
             output = self.values.__getitem__(key)
-            metadata = _MetadataMixin.__getitem__(self, key)
             return IntervalSet(start=output[0], end=output[1], metadata=metadata)
         elif isinstance(key, (slice, list, np.ndarray, pd.Series)):
             # self[array_like]

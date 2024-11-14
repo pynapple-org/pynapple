@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: Guillaume Viejo
-# @Date:   2023-08-01 11:54:45
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-05-21 15:28:27
-
 """
 Pynapple class to interface with NWB files.
 Data are always lazy-loaded.
@@ -458,3 +452,36 @@ class NWBFile(UserDict):
     def close(self):
         """Close the NWB file"""
         self.io.close()
+
+    def keys(self):
+        """
+        Return keys of NWBFile
+
+        Returns
+        -------
+        list
+            List of keys
+        """
+        return list(self.data.keys())
+
+    def items(self):
+        """
+        Return a list of key/object.
+
+        Returns
+        -------
+        list
+            List of tuples
+        """
+        return list(self.data.items())
+
+    def values(self):
+        """
+        Return a list of all the objects
+
+        Returns
+        -------
+        list
+            List of objects
+        """
+        return list(self.data.values())

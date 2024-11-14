@@ -33,6 +33,7 @@ from .metadata_class import _MetadataMixin
 from .time_index import TsIndex
 from .utils import (
     _concatenate_tsd,
+    _convert_iter_to_str,
     _get_terminal_size,
     _split_tsd,
     _TsdFrameSliceHelper,
@@ -949,11 +950,22 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
-        _MetadataMixin.__init__(self, metadata)
+        # initialize metadata for class attributes
+        _MetadataMixin.__init__(self)
+        # get current list of attributes
+        self._class_attributes = self.__dir__()
+        self._class_attributes.append("_class_attributes")
+        # set metadata
+        self.set_info(metadata)
         self._initialized = True
 
     @property
     def loc(self):
+        # add deprecation warning
+        warnings.warn(
+            "'loc' will be deprecated in a future version. Use bracket indexing instead.",
+            DeprecationWarning,
+        )
         return _TsdFrameSliceHelper(self)
 
     def __repr__(self):
@@ -1030,7 +1042,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                         np.hstack(
                             (
                                 col_names[:, None],
-                                self._metadata.values[0:max_cols].T,
+                                _convert_iter_to_str(
+                                    self._metadata.values[0:max_cols].T
+                                ),
                                 ends,
                             ),
                             dtype=object,
@@ -1045,7 +1059,12 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
     def __setattr__(self, name, value):
         # necessary setter to allow metadata to be set as an attribute
         if self._initialized:
-            _MetadataMixin.__setattr__(self, name, value)
+            if name in self._class_attributes:
+                raise AttributeError(
+                    f"Cannot set attribute: '{name}' is a reserved attribute. Use 'set_info()' to set '{name}' as metadata."
+                )
+            else:
+                _MetadataMixin.__setattr__(self, name, value)
         else:
             super().__setattr__(name, value)
 
@@ -1056,7 +1075,15 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         # self._metadata.column having attributes '__reduce__', '__reduce_ex__'
         if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
             raise AttributeError(name)
-        if name in self._metadata.columns:
+
+        try:
+            metadata = self._metadata
+        except (AttributeError, RecursionError):
+            metadata = pd.DataFrame(index=self.columns)
+
+        if name == "_metadata":
+            return metadata
+        elif name in metadata.columns:
             return _MetadataMixin.__getattr__(self, name)
         else:
             return super().__getattr__(name)
@@ -1096,18 +1123,18 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     "When indexing with a Tsd, it must contain boolean values"
                 )
             key = key.d
-        elif isinstance(key, str) and (key in self.metadata_columns):
-            return _MetadataMixin.__getitem__(self, key)
         elif (
             isinstance(key, str)
             or hasattr(key, "__iter__")
             and all([isinstance(k, str) for k in key])
         ):
-            if all(k in self.metadata_columns for k in key):
-                return _MetadataMixin.__getitem__(self, key)
+            if all(k in self.columns for k in key):
+                with warnings.catch_warnings():
+                    # ignore deprecated warning for loc
+                    warnings.simplefilter("ignore")
+                    return self.loc[key]
             else:
-                return self.loc[key]
-
+                return _MetadataMixin.__getitem__(self, key)
         else:
             if isinstance(key, pd.Series) and key.index.equals(self.columns):
                 # if indexing with a pd.Series from metadata, transform it to tuple with slice(None) in first position

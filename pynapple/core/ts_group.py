@@ -22,7 +22,12 @@ from .interval_set import IntervalSet
 from .metadata_class import _MetadataMixin
 from .time_index import TsIndex
 from .time_series import Ts, Tsd, TsdFrame, _BaseTsd, is_array_like
-from .utils import _get_terminal_size, check_filename, convert_to_numpy_array
+from .utils import (
+    _convert_iter_to_str,
+    _get_terminal_size,
+    check_filename,
+    convert_to_numpy_array,
+)
 
 
 def _union_intervals(i_sets):
@@ -188,11 +193,20 @@ class TsGroup(UserDict, _MetadataMixin):
                 data = {k: data[k].restrict(self.time_support) for k in self.index}
 
         UserDict.__init__(self, data)
+        self.nap_class = self.__class__.__name__
+        # grab current attributes before adding metadata
+        self._class_attributes = self.__dir__()
+        self._class_attributes.append("_class_attributes")  # add this property
 
         # Making the TsGroup non mutable
         self._initialized = True
 
         # Trying to add argument as metainfo
+        if len(kwargs):
+            warnings.warn(
+                "initializing metadata with variable keyword arguments may be unsupported in a future version of Pynapple. Instead, initialize using the metadata argument.",
+                FutureWarning,
+            )
         self.set_info(metadata, **kwargs)
 
     """
@@ -202,9 +216,34 @@ class TsGroup(UserDict, _MetadataMixin):
     def __setattr__(self, name, value):
         # necessary setter to allow metadata to be set as an attribute
         if self._initialized:
-            _MetadataMixin.__setattr__(self, name, value)
+            if name in self._class_attributes:
+                raise AttributeError(
+                    f"Cannot set attribute: '{name}' is a reserved attribute. Use 'set_info()' to set '{name}' as metadata."
+                )
+            else:
+                _MetadataMixin.__setattr__(self, name, value)
         else:
             object.__setattr__(self, name, value)
+
+    def __getattr__(self, name):
+        # Necessary for backward compatibility with pickle
+
+        # avoid infinite recursion when pickling due to
+        # self._metadata.column having attributes '__reduce__', '__reduce_ex__'
+        if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
+            raise AttributeError(name)
+
+        try:
+            metadata = self._metadata
+        except Exception:
+            metadata = pd.DataFrame(index=self.index)
+
+        if name == "_metadata":
+            return metadata
+        elif name in metadata.columns:
+            return _MetadataMixin.__getattr__(self, name)
+        else:
+            return super().__getattr__(name)
 
     def __setitem__(self, key, value):
         if not self._initialized:
@@ -280,7 +319,9 @@ class TsGroup(UserDict, _MetadataMixin):
                         (
                             self.index[0:n_rows, None],
                             np.round(self._metadata[["rate"]].values[0:n_rows], 5),
-                            self._metadata[col_names].values[0:n_rows, 0:max_cols],
+                            _convert_iter_to_str(
+                                self._metadata[col_names].values[0:n_rows, 0:max_cols]
+                            ),
                             ends,
                         ),
                         dtype=object,
@@ -293,7 +334,9 @@ class TsGroup(UserDict, _MetadataMixin):
                         (
                             self.index[-n_rows:, None],
                             np.round(self._metadata[["rate"]].values[-n_rows:], 5),
-                            self._metadata[col_names].values[-n_rows:, 0:max_cols],
+                            _convert_iter_to_str(
+                                self._metadata[col_names].values[-n_rows:, 0:max_cols]
+                            ),
                             ends,
                         ),
                         dtype=object,
@@ -306,7 +349,9 @@ class TsGroup(UserDict, _MetadataMixin):
                 (
                     self.index[:, None],
                     np.round(self._metadata[["rate"]].values, 5),
-                    self._metadata[col_names].values[:, 0:max_cols],
+                    _convert_iter_to_str(
+                        self._metadata[col_names].values[:, 0:max_cols]
+                    ),
                     ends,
                 ),
                 dtype=object,
