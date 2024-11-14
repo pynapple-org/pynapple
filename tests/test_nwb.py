@@ -89,6 +89,23 @@ def test_NWBFile():
     assert isinstance(nwb.io, pynwb.NWBHDF5IO)
     nwb.close()
 
+    assert nwb.keys() == [
+        "position_time_support",
+        "epochs",
+        "z",
+        "y",
+        "x",
+        "rz",
+        "ry",
+        "rx",
+    ]
+
+    for a, b in zip(nwb.items(), nwb.data.items()):
+        assert a == b
+
+    for a, b in zip(nwb.values(), nwb.data.values()):
+        assert a == b
+
 
 def test_NWBFile_missing_file():
     with pytest.raises(FileNotFoundError) as e_info:
