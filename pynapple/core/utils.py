@@ -441,3 +441,19 @@ def check_filename(filename):
         raise RuntimeError("Path {} does not exist.".format(parent_folder))
 
     return filename
+
+
+def _convert_iter_to_str(array):
+    """
+    This function converts an array of arrays to array of strings.
+    This help avoids a DeprecationWarning from numpy when printing an object with metadata
+    """
+    try:
+        shape = array.shape
+        array = array.flatten()
+        for i in range(len(array)):
+            if isinstance(array[i], np.ndarray):
+                array[i] = np.array2string(array[i])
+        return array.reshape(shape)
+    except Exception:
+        return array

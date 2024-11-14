@@ -22,6 +22,7 @@ from .config import nap_config
 from .metadata_class import _MetadataMixin
 from .time_index import TsIndex
 from .utils import (
+    _convert_iter_to_str,
     _get_terminal_size,
     _IntervalSetSliceHelper,
     check_filename,
@@ -258,7 +259,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                             self.index[0:n_rows, None],
                             self.values[0:n_rows],
                             separator,
-                            metadata.values[0:n_rows],
+                            _convert_iter_to_str(metadata.values[0:n_rows]),
                         ),
                         dtype=object,
                     ),
@@ -268,7 +269,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                             self.index[-n_rows:, None],
                             self.values[0:n_rows],
                             separator,
-                            metadata.values[-n_rows:],
+                            _convert_iter_to_str(metadata.values[-n_rows:]),
                         ),
                         dtype=object,
                     ),
@@ -280,7 +281,12 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             else:
                 separator = np.empty((len(self), 0))
             data = np.hstack(
-                (self.index[:, None], self.values, separator, metadata.values),
+                (
+                    self.index[:, None],
+                    self.values,
+                    separator,
+                    _convert_iter_to_str(metadata.values),
+                ),
                 dtype=object,
             )
 

@@ -33,6 +33,7 @@ from .metadata_class import _MetadataMixin
 from .time_index import TsIndex
 from .utils import (
     _concatenate_tsd,
+    _convert_iter_to_str,
     _get_terminal_size,
     _split_tsd,
     _TsdFrameSliceHelper,
@@ -1041,7 +1042,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                         np.hstack(
                             (
                                 col_names[:, None],
-                                self._metadata.values[0:max_cols].T,
+                                _convert_iter_to_str(
+                                    self._metadata.values[0:max_cols].T
+                                ),
                                 ends,
                             ),
                             dtype=object,
