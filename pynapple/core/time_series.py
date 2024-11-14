@@ -956,8 +956,8 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         self._class_attributes = self.__dir__()
         self._class_attributes.append("_class_attributes")
         # set metadata
-        self.set_info(metadata)
         self._initialized = True
+        self.set_info(metadata)
 
     @property
     def loc(self):

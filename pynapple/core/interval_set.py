@@ -219,9 +219,9 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         _MetadataMixin.__init__(self)
         self._class_attributes = self.__dir__()  # get list of all attributes
         self._class_attributes.append("_class_attributes")  # add this property
+        self._initialized = True
         if drop_meta is False:
             self.set_info(metadata)
-        self._initialized = True
 
     def __repr__(self):
         # Start by determining how many columns and rows.

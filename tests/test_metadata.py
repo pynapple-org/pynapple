@@ -445,8 +445,8 @@ def test_tsdframe_metadata_slicing(tsdframe_meta):
             pytest.raises(ValueError, match="Invalid metadata name"),
             # shape mismatch with setitem
             pytest.raises(ValueError),
-            # key error with get_info
-            pytest.raises(KeyError),
+            # assertion error with get_info
+            pytest.raises(AssertionError),
             # attribute should raise error
             pytest.raises(AttributeError),
             # key should not match metadata
