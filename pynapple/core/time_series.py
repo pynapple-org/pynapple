@@ -923,8 +923,6 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             Metadata associated with data columns. Metadata names are pulled from DataFrame columns or dictionary keys.
             The length of the metadata should match the number of data columns.
             If a DataFrame is passed, the index should match the columns of the TsdFrame.
-        **kwargs : dict, optional
-            Additional keyword arguments for labelling with metadata columns of the TsdFrame. The metadata should be the same length as the number of columns of the TsdFrame.
 
         Examples
         --------
