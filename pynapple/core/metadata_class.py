@@ -161,6 +161,14 @@ class _MetadataMixin:
         """
         Add metadata information about the object. Metadata are saved as a pandas.DataFrame.
 
+        If the metadata name does not contain special nor overlaps with class attributes,
+        it can also be set using attribute assignment.
+
+        If the metadata name does not overlap with class-reserved keys,
+        it can also be set using key assignment.
+
+        Metadata entries (excluding "rate" for `TsGroup`) are mutable and can be overwritten.
+
         Parameters
         ----------
         metadata : pandas.DataFrame or dict or pandas.Series, optional
@@ -188,10 +196,10 @@ class _MetadataMixin:
         --------
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
-        1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
-        2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
-        }
+        >>> tmp = {0:nap.Ts(t=np.arange(0,200), time_units='s'),
+        ... 1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
+        ... 2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
+        ... }
         >>> tsgroup = nap.TsGroup(tmp)
 
         To add metadata with a pandas.DataFrame:
@@ -227,6 +235,37 @@ class _MetadataMixin:
               0  0.66722  pfc       [0, 0]       0
               1  1.33445  pfc       [0, 1]       1
               2  4.00334  ca1       [1, 0]       1
+
+        To add metadata as an attribute:
+
+        >>> tsgroup.label = ["a", "b", "c"]
+        >>> tsgroup
+          Index     rate  struct    coords      hd  label
+        -------  -------  --------  --------  ----  -------
+              0  0.66722  pfc       [0, 0]       0  a
+              1  1.33445  pfc       [0, 1]       1  b
+              2  4.00334  ca1       [1, 0]       1  c
+
+        To add metadata as a key:
+
+        >>> tsgroup["type"] = ["multi", "multi", "single"]
+        >>> tsgroup
+          Index     rate  struct    coords      hd  label    type
+        -------  -------  --------  --------  ----  -------  ------
+              0  0.66722  pfc       [0, 0]       0  a        multi
+              1  1.33445  pfc       [0, 1]       1  b        multi
+              2  4.00334  ca1       [1, 0]       1  c        single
+
+        Metadata can be overwritten:
+
+        >>> tsgroup.set_info(label=["x", "y", "z"])
+        >>> tsgroup
+          Index     rate  struct    coords      hd  label    type
+        -------  -------  --------  --------  ----  -------  ------
+              0  0.66722  pfc       [0, 0]       0  x        multi
+              1  1.33445  pfc       [0, 1]       1  y        multi
+              2  4.00334  ca1       [1, 0]       1  z        single
+
         """
         # check for duplicate names and/or formatted names that cannot be accessed as attributes or keys
         self._check_metadata_column_names(metadata, **kwargs)
@@ -287,6 +326,12 @@ class _MetadataMixin:
         """
         Returns metadata based on metadata column name or index.
 
+        If the metadata name does not contain special nor overlaps with class attributes,
+        it can also be accessed as an attribute.
+
+        If the metadata name does not overlap with class-reserved keys,
+        it can also be accessed as a key.
+
         Parameters
         ----------
         key :
@@ -310,10 +355,10 @@ class _MetadataMixin:
         --------
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> tmp = { 0:nap.Ts(t=np.arange(0,200), time_units='s'),
-        1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
-        2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
-        }
+        >>> tmp = {0:nap.Ts(t=np.arange(0,200), time_units='s'),
+        ... 1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
+        ... 2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
+        ... }
         >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"]}
         >>> tsgroup = nap.TsGroup(tmp,metadata=metadata)
 
@@ -328,7 +373,7 @@ class _MetadataMixin:
         To access multiple metadata columns:
 
         >>> tsgroup.get_info(["l1", "l2"])
-        l1 l2
+           l1 l2
         0   1  x
         1   2  x
         2   3  y
@@ -352,6 +397,30 @@ class _MetadataMixin:
 
         >>> tsgroup.get_info((0, "l1"))
         np.int64(1)
+
+        To access metadata as an attribute:
+
+        >>> tsgroup.l1
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
+
+        To access metadata as a key:
+
+        >>> tsgroup["l1"]
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
+
+        Multiple metadata columns can be accessed as keys:
+
+        >>> tsgroup[["l1", "l2"]]
+           l1 l2
+        0   1  x
+        1   2  x
+        2   3  y
 
         """
         # string indexing of one or more metadata columns

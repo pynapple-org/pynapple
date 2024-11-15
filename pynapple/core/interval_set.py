@@ -51,33 +51,31 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     >>> import pynapple as nap
     >>> import numpy as np
     >>> ep = nap.IntervalSet(start=[0, 10], end=[5,20])
-            start    end
-        0        0      5
-        1       10     20
-        shape: (1, 2)
+    >>> ep
+      index    start    end
+          0        0      5
+          1       10     20
+    shape: (2, 2), time unit: sec.
 
     >>> np.diff(ep, 1)
-        UserWarning: Converting IntervalSet to numpy.array
-        array([[ 5.],
-               [10.]])
-
+    UserWarning: Converting IntervalSet to numpy.array
+    array([[ 5.],
+            [10.]])
 
     You can slice :
 
     >>> ep[:,0]
-        array([ 0., 10.])
+    array([ 0., 10.])
 
     >>> ep[0]
-        start    end
-        0        0      5
-        shape: (1, 2)
-
+    start    end
+    0        0      5
+    shape: (1, 2)
 
     But modifying the `IntervalSet` with raise an error:
 
-
     >>> ep[0,0] = 1
-        RuntimeError: IntervalSet is immutable. Starts and ends have been already sorted.
+    RuntimeError: IntervalSet is immutable. Starts and ends have been already sorted.
 
     """
 
@@ -89,12 +87,13 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         metadata=None,
     ):
         """
+        `IntervalSet` object initializor.
+
         If start and end are not aligned, meaning that:
         1. len(start) != len(end)
         2. end[i] > start[i]
         3. start[i+1] > end[i]
         4. start and end are not sorted,
-
         IntervalSet will try to "fix" the data by eliminating some of the start and end data points.
 
         Parameters
@@ -102,7 +101,6 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         start : numpy.ndarray or number or pandas.DataFrame or pandas.Series or iterable of (start, end) pairs
             Beginning of intervals. Alternatively, the `end` argument can be left out and `start` can be one of the
             following:
-
             - IntervalSet
             - pandas.DataFrame with columns ["start", "end"]
             - iterable of (start, end) pairs
@@ -111,14 +109,66 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             Ends of intervals.
         time_units : str, optional
             Time unit of the intervals ('us', 'ms', 's' [default])
-        metadata: pd.DataFrame or dict, optional
-            Metadata associated with each interval
+        metadata: pandas.DataFrame or dict, optional
+            Metadata associated with each interval. Metadata names are pulled from DataFrame columns or dictionary keys.
+            The length of the metadata should match the length of the intervals.
 
         Raises
         ------
         RuntimeError
             If `start` and `end` arguments are of unknown type.
 
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+
+        Initialize an `IntervalSet` object with a list of start and end times:
+
+        >>> start = [0, 10, 20]
+        >>> end = [5, 12, 33]
+        >>> ep = nap.IntervalSet(start=start, end=end)
+        >>> ep
+          index    start    end
+              0        0      5
+              1       10     12
+              2       20     33
+        shape: (3, 2), time unit: sec.
+
+        Initialize an `IntervalSet` object with an array of start and end pairs:
+
+        >>> times = np.array([[0, 5], [10, 12], [20, 33]])
+        >>> ep = nap.IntervalSet(times)
+        >>> ep
+          index    start    end
+              0        0      5
+              1       10     12
+              2       20     33
+        shape: (3, 2), time unit: sec.
+
+        Initialize an `IntervalSet` object with metadata:
+
+        >>> start = [0, 10, 20]
+        >>> end = [5, 12, 33]
+        >>> metadata = {"label": ["a", "b", "c"]}
+        >>> ep = nap.IntervalSet(start=start, end=end, metadata=metadata)
+          index    start    end      label
+              0        0      5  |   a
+              1       10     12  |   b
+              2       20     33  |   c
+        shape: (3, 2), time unit: sec.
+
+        Initialize an `IntervalSet` object with a pandas DataFrame:
+
+        >>> import pandas as pd
+        >>> df = pd.DataFrame(data={"start": [0, 10, 20], "end": [5, 12, 33], "label": ["a", "b", "c"]})
+        >>> ep = nap.IntervalSet(df)
+        >>> ep
+          index    start    end      label
+              0        0      5  |   a
+              1       10     12  |   b
+              2       20     33  |   c
+        shape: (3, 2), time unit: sec.
         """
         # set directly in __dict__ to avoid infinite recursion in __setattr__
         self.__dict__["_initialized"] = False
