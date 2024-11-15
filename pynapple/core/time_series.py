@@ -900,7 +900,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         load_array=True,
         metadata=None,
     ):
-        """
+        r"""
         TsdFrame initializer
         A pandas.DataFrame can be passed directly
 
@@ -920,9 +920,112 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
             Default is True. Does not apply if `d` is already a numpy array.
         metadata: pd.DataFrame or dict, optional
-            Metadata associated with data columns
+            Metadata associated with data columns. Metadata names are pulled from DataFrame columns or dictionary keys.
+            The length of the metadata should match the number of data columns.
+            If a DataFrame is passed, the index should match the columns of the TsdFrame.
         **kwargs : dict, optional
             Additional keyword arguments for labelling with metadata columns of the TsdFrame. The metadata should be the same length as the number of columns of the TsdFrame.
+
+        Examples
+        --------
+        Initialize a TsdFrame:
+
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> t = np.arange(100)
+        >>> d = np.ones((100, 3))
+        >>> tsdframe = nap.TsdFrame(t=t, d=d)
+        >>> tsdframe
+        Time (s)    0    1    2
+        ----------  ---  ---  ---
+        0.0         1.0  1.0  1.0
+        1.0         1.0  1.0  1.0
+        2.0         1.0  1.0  1.0
+        3.0         1.0  1.0  1.0
+        4.0         1.0  1.0  1.0
+        ...         ...  ...  ...
+        95.0        1.0  1.0  1.0
+        96.0        1.0  1.0  1.0
+        97.0        1.0  1.0  1.0
+        98.0        1.0  1.0  1.0
+        99.0        1.0  1.0  1.0
+        dtype: float64, shape: (100, 3)
+
+        Initialize a TsdFrame with column names:
+
+        >>> tsdframe = nap.TsdFrame(t=t, d=d, columns=['A', 'B', 'C'])
+        >>> tsdframe
+        Time (s)    A    B    C
+        ----------  ---  ---  ---
+        0.0         1.0  1.0  1.0
+        1.0         1.0  1.0  1.0
+        2.0         1.0  1.0  1.0
+        3.0         1.0  1.0  1.0
+        4.0         1.0  1.0  1.0
+        ...         ...  ...  ...
+        95.0        1.0  1.0  1.0
+        96.0        1.0  1.0  1.0
+        97.0        1.0  1.0  1.0
+        98.0        1.0  1.0  1.0
+        99.0        1.0  1.0  1.0
+        dtype: float64, shape: (100, 3)
+
+        Initialize a TsdFrame with metadata:
+
+        >>> metadata = {"color": ["red", "blue", "green"], "depth": [1, 2, 3]}
+        >>> tsdframe = nap.TsdFrame(t=t, d=d, columns=["A", "B", "C"], metadata=metadata)
+        >>> tsdframe
+        Time (s)    A         B         C
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        ...         ...       ...       ...
+        95.0        1.0       1.0       1.0
+        96.0        1.0       1.0       1.0
+        97.0        1.0       1.0       1.0
+        98.0        1.0       1.0       1.0
+        99.0        1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        depth       1         2         3
+        <BLANKLINE>
+        dtype: float64, shape: (100, 3)
+
+        Initialize a TsdFrame with a pandas DataFrame:
+
+        >>> import pandas as pd
+        >>> data = pd.DataFrame(index=t, columns=["A", "B", "C"], data=d)
+        >>> metadata = pd.DataFrame(
+        ...    index=["A", "B", "C"],
+        ...    columns=["color", "depth"],
+        ...    data=[["red", 1], ["blue", 2], ["green", 3]],
+        ... )
+        >>> tsdframe = nap.TsdFrame(data, metadata=metadata)
+        >>> tsdframe
+        Time (s)    A         B         C
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        ...         ...       ...       ...
+        95.0        1.0       1.0       1.0
+        96.0        1.0       1.0       1.0
+        97.0        1.0       1.0       1.0
+        98.0        1.0       1.0       1.0
+        99.0        1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        depth       1         2         3
+        <BLANKLINE>
+        dtype: float64, shape: (100, 3)
+
         """
 
         c = columns

@@ -87,7 +87,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         metadata=None,
     ):
         """
-        `IntervalSet` object initializor.
+        IntervalSet initializer.
 
         If start and end are not aligned, meaning that:
         1. len(start) != len(end)
@@ -123,7 +123,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>> import pynapple as nap
         >>> import numpy as np
 
-        Initialize an `IntervalSet` object with a list of start and end times:
+        Initialize an IntervalSet with a list of start and end times:
 
         >>> start = [0, 10, 20]
         >>> end = [5, 12, 33]
@@ -135,7 +135,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
               2       20     33
         shape: (3, 2), time unit: sec.
 
-        Initialize an `IntervalSet` object with an array of start and end pairs:
+        Initialize an IntervalSet with an array of start and end pairs:
 
         >>> times = np.array([[0, 5], [10, 12], [20, 33]])
         >>> ep = nap.IntervalSet(times)
@@ -146,7 +146,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
               2       20     33
         shape: (3, 2), time unit: sec.
 
-        Initialize an `IntervalSet` object with metadata:
+        Initialize an IntervalSet with metadata:
 
         >>> start = [0, 10, 20]
         >>> end = [5, 12, 33]
@@ -158,7 +158,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
               2       20     33  |   c
         shape: (3, 2), time unit: sec.
 
-        Initialize an `IntervalSet` object with a pandas DataFrame:
+        Initialize an IntervalSet with a pandas DataFrame:
 
         >>> import pandas as pd
         >>> df = pd.DataFrame(data={"start": [0, 10, 20], "end": [5, 12, 33], "label": ["a", "b", "c"]})
