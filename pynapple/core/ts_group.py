@@ -66,13 +66,125 @@ class TsGroup(UserDict, _MetadataMixin):
     """
     Dictionary-like object to group objects with different timestamps (for example timestamps of spikes of a population of neurons).
 
-    Attributes
+    Parameters
     ----------
-    time_support: IntervalSet
-        The time support of the TsGroup
-    rates : pandas.Series
-        The rate of each element of the TsGroup
+    data : dict or iterable
+        Dictionary or iterable of Ts/Tsd objects. The keys should be integer-convertible; if a non-dict iterator is
+        passed, its values will be used to create a dict with integer keys.
+    time_support : IntervalSet, optional
+        The time support of the TsGroup. Ts/Tsd objects will be restricted to the time support if passed.
+        If no time support is specified, TsGroup will merge time supports from all the Ts/Tsd objects in data.
+    time_units : str, optional
+        Time units if data does not contain Ts/Tsd objects ('us', 'ms', 's' [default]).
+    bypass_check: bool, optional
+        To avoid checking that each element is within time_support.
+        Useful to speed up initialization of TsGroup when Ts/Tsd objects have already been restricted beforehand
+    metadata: pd.DataFrame or dict, optional
+        Metadata associated with each Ts/Tsd object. Metadata names are pulled from DataFrame columns or dictionary keys.
+        The length of the metadata should match the number of Ts/Tsd objects.
+    **kwargs
+        Meta-info about the Ts/Tsd objects. Can be either pandas.Series, numpy.ndarray, list or tuple
+        The index should match the index of the input dictionary if pandas Series.
+        NOTE: This method of initializing metadata is deprecated and will be removed in a future version of Pynapple.
+
+    Raises
+    ------
+    RuntimeError
+        Raise error if the union of time support of Ts/Tsd object is empty.
+    ValueError
+        - If a key cannot be converted to integer.
+        - If a key was a floating point with non-negligible decimal part.
+        - If the converted keys are not unique, i.e. {1: ts_2, "2": ts_2} is valid,
+        {1: ts_2, "1": ts_2}  is invalid.
+
+    Examples
+    --------
+    Initialize a TsGroup as a dictionary of Ts/Tsd objects:
+
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> data = {
+    ...    0: nap.Ts(np.arange(100)),
+    ...    1: nap.Ts(np.arange(0, 100, 2)),
+    ...    2: nap.Ts(np.arange(0, 100, 3)),
+    ... }
+    >>> tsgroup = nap.TsGroup(data)
+    >>> tsgroup
+      Index     rate
+    -------  -------
+          0  1.0101
+          1  0.50505
+          2  0.34343
+
+    Initialize a TsGroup as a list of Ts/Tsd objects:
+
+    >>> data = [
+    ...    nap.Ts(np.arange(100)),
+    ...    nap.Ts(np.arange(0, 100, 2)),
+    ...    nap.Ts(np.arange(0, 100, 3)),
+    ... ]
+    >>> tsgroup = nap.TsGroup(data)
+    >>> tsgroup
+      Index     rate
+    -------  -------
+          0  1.0101
+          1  0.50505
+          2  0.34343
+
+    Initialize a TsGroup as a list of array (throws UserWarning):
+
+    >>> data = [
+    ...    np.arange(100),
+    ...    np.arange(0, 100, 2),
+    ...    np.arange(0, 100, 3),
+    ... ]
+    >>> tsgroup = nap.TsGroup(data)
+    >>> tsgroup
+      Index     rate
+    -------  -------
+          0  1.0101
+          1  0.50505
+          2  0.34343
+
+    Initialize a TsGroup with metadata:
+
+    >>> data = {
+    ...    0: nap.Ts(np.arange(100)),
+    ...    1: nap.Ts(np.arange(0, 100, 2)),
+    ...    2: nap.Ts(np.arange(0, 100, 3)),
+    ... }
+    >>> metadata = {"label": ["A", "B", "C"]}
+    >>> tsgroup = nap.TsGroup(data, metadata=metadata)
+    >>> tsgroup
+      Index     rate  label
+    -------  -------  -------
+          0  1.0101   A
+          1  0.50505  B
+          2  0.34343  C
+
+    Initialize a TsGroup with metadata as a pandas DataFrame:
+
+    >>> data = {
+    ...    0: nap.Ts(np.arange(100)),
+    ...    1: nap.Ts(np.arange(0, 100, 2)),
+    ...    2: nap.Ts(np.arange(0, 100, 3)),
+    ... }
+    >>> metadata = pd.DataFrame(data=["A", "B", "C"], columns=["label"])
+    >>> tsgroup = nap.TsGroup(data, metadata=metadata)
+    >>> tsgroup
+      Index     rate  label
+    -------  -------  -------
+          0  1.0101   A
+          1  0.50505  B
+          2  0.34343  C
+
     """
+
+    time_support: IntervalSet
+    """The time support of the TsGroup, indicating the time intervals where the TsGroup is defined"""
+
+    nap_class: str
+    """String for the pynapple class name"""
 
     def __init__(
         self,
@@ -83,123 +195,6 @@ class TsGroup(UserDict, _MetadataMixin):
         metadata=None,
         **kwargs,
     ):
-        """
-        TsGroup Initializer.
-
-        Parameters
-        ----------
-        data : dict or iterable
-            Dictionary or iterable of Ts/Tsd objects. The keys should be integer-convertible; if a non-dict iterator is
-            passed, its values will be used to create a dict with integer keys.
-        time_support : IntervalSet, optional
-            The time support of the TsGroup. Ts/Tsd objects will be restricted to the time support if passed.
-            If no time support is specified, TsGroup will merge time supports from all the Ts/Tsd objects in data.
-        time_units : str, optional
-            Time units if data does not contain Ts/Tsd objects ('us', 'ms', 's' [default]).
-        bypass_check: bool, optional
-            To avoid checking that each element is within time_support.
-            Useful to speed up initialization of TsGroup when Ts/Tsd objects have already been restricted beforehand
-        metadata: pd.DataFrame or dict, optional
-            Metadata associated with each Ts/Tsd object. Metadata names are pulled from DataFrame columns or dictionary keys.
-            The length of the metadata should match the number of Ts/Tsd objects.
-        **kwargs
-            Meta-info about the Ts/Tsd objects. Can be either pandas.Series, numpy.ndarray, list or tuple
-            The index should match the index of the input dictionary if pandas Series.
-            NOTE: This method of initializing metadata is deprecated and will be removed in a future version of Pynapple.
-
-        Raises
-        ------
-        RuntimeError
-            Raise error if the union of time support of Ts/Tsd object is empty.
-        ValueError
-            - If a key cannot be converted to integer.
-            - If a key was a floating point with non-negligible decimal part.
-            - If the converted keys are not unique, i.e. {1: ts_2, "2": ts_2} is valid,
-            {1: ts_2, "1": ts_2}  is invalid.
-
-        Examples
-        --------
-        Initialize a TsGroup as a dictionary of Ts/Tsd objects:
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> data = {
-        ...    0: nap.Ts(np.arange(100)),
-        ...    1: nap.Ts(np.arange(0, 100, 2)),
-        ...    2: nap.Ts(np.arange(0, 100, 3)),
-        ... }
-        >>> tsgroup = nap.TsGroup(data)
-        >>> tsgroup
-          Index     rate
-        -------  -------
-              0  1.0101
-              1  0.50505
-              2  0.34343
-
-        Initialize a TsGroup as a list of Ts/Tsd objects:
-
-        >>> data = [
-        ...    nap.Ts(np.arange(100)),
-        ...    nap.Ts(np.arange(0, 100, 2)),
-        ...    nap.Ts(np.arange(0, 100, 3)),
-        ... ]
-        >>> tsgroup = nap.TsGroup(data)
-        >>> tsgroup
-          Index     rate
-        -------  -------
-              0  1.0101
-              1  0.50505
-              2  0.34343
-
-        Initialize a TsGroup as a list of array (throws UserWarning):
-
-        >>> data = [
-        ...    np.arange(100),
-        ...    np.arange(0, 100, 2),
-        ...    np.arange(0, 100, 3),
-        ... ]
-        >>> tsgroup = nap.TsGroup(data)
-        >>> tsgroup
-          Index     rate
-        -------  -------
-              0  1.0101
-              1  0.50505
-              2  0.34343
-
-        Initialize a TsGroup with metadata:
-
-        >>> data = {
-        ...    0: nap.Ts(np.arange(100)),
-        ...    1: nap.Ts(np.arange(0, 100, 2)),
-        ...    2: nap.Ts(np.arange(0, 100, 3)),
-        ... }
-        >>> metadata = {"label": ["A", "B", "C"]}
-        >>> tsgroup = nap.TsGroup(data, metadata=metadata)
-        >>> tsgroup
-          Index     rate  label
-        -------  -------  -------
-              0  1.0101   A
-              1  0.50505  B
-              2  0.34343  C
-
-        Initialize a TsGroup with metadata as a pandas DataFrame:
-
-        >>> data = {
-        ...    0: nap.Ts(np.arange(100)),
-        ...    1: nap.Ts(np.arange(0, 100, 2)),
-        ...    2: nap.Ts(np.arange(0, 100, 3)),
-        ... }
-        >>> metadata = pd.DataFrame(data=["A", "B", "C"], columns=["label"])
-        >>> tsgroup = nap.TsGroup(data, metadata=metadata)
-        >>> tsgroup
-          Index     rate  label
-        -------  -------  -------
-              0  1.0101   A
-              1  0.50505  B
-              2  0.34343  C
-
-
-        """
         # Check input type
         if time_units not in ["s", "ms", "us"]:
             raise ValueError("Argument time_units should be 's', 'ms' or 'us'")
@@ -239,6 +234,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
         data = {keys[j]: data[k] for j, k in enumerate(data.keys())}
         self.index = np.sort(keys)
+
         # Make sure data dict and index are ordered the same
         data = {k: data[k] for k in self.index}
 

@@ -3,14 +3,17 @@ from numbers import Number
 
 import numpy as np
 import pandas as pd
+from typing import Union
 
 
 class _MetadataMixin:
     """
     An object containing metadata functionality for TsGroup, IntervalSet, or TsdFrame objects.
     This is a private mixin that is not meant to be instantiated on its own.
-
     """
+
+    metadata_index: Union[np.ndarray, pd.Index]
+    """Row index for metadata DataFrame"""
 
     def __init__(self):
         """
@@ -86,7 +89,7 @@ class _MetadataMixin:
     @property
     def metadata_columns(self):
         """
-        Returns list of metadata columns
+        List of metadata column names.
         """
         return list(self._metadata.columns)
 
