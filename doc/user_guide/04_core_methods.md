@@ -106,13 +106,17 @@ print(
 
 
 ## Metadata
+Metadata can be added to `IntervalSet`, `TsdFrame`, and `TsGroup` objects at initialization or after an object has been created.
+- `IntervalSet` metadata is information assocaited with each interval, such as a trial label or stimulus condition.
+- `TsdFrame` metadata is information associated with each column, such as a channel or position.
+- `TsGroup` metadata is information associated with each Ts/Tsd object, such as brain region or unit type.
 
-One advantage of grouping time series is that metainformation 
-can be added directly on an element-wise basis. 
-In this case, we add labels to each Ts object when instantiating the group and after. 
-We can then use this label to split the group. 
-See the TsGroup documentation for a complete methodology for splitting TsGroup objects.
-
+### Adding metadata
+At initialization, metadata can be passed via a dictionary or pandas DataFrame using the keyword argument `metadata`. The metadata name is taken from the dictionary key or DataFrame column, and can be set to any string name with a couple class-specific exceptions.
+```{admonition} Class-specific exceptions
+- If column names are supplied to `TsdFrame`, metadata cannot overlap with those names.
+- The `rate` attribute for `TsGroup` is stored with the metadata and cannot be overwritten.
+```
 ```{code-cell} ipython3
 group = {
     0: nap.Ts(t=np.sort(np.random.uniform(0, 100, 10))),
@@ -120,15 +124,52 @@ group = {
     2: nap.Ts(t=np.sort(np.random.uniform(0, 100, 30))),
 }
 time_support = nap.IntervalSet(0, 100)
+metadata = {"region": ["pfc","ofc","hpc"]}
 
-tsgroup = nap.TsGroup(group, time_support=time_support)
+tsgroup = nap.TsGroup(group, time_support=time_support, metadata=metadata)
+print(tsgroup)
+```
 
-tsgroup['label1'] = np.random.randn(3)
+After creation, metadata can be added using the class method `set_info()`. Metadata can be passed as a dictionary or pandas DataFrame as the first positional argument, or metadata can be passed as name-value keyword arguments.
+```{code-cell} ipython3
+tsgroup.set_info(unit_type = ["multi", "single", "single"])
+print(tsgroup)
+```
 
-tsgroup.set_info(label2 = ['a', 'b', 'c'])
+### Accessing metadata
+Metadata is stored as a pandas DataFrame, which can be previewed using the `metadata` attribute.
+```{code-cell} ipython3
+print(tsgroup.metadata)
+```
 
-print(tsgroup, "\n")
+Single metadata columns or lists of columns can be retrieved using the `get_info()` class method:
+```{code-cell} ipython3
+print(tsgroup.get_info("region"))
+```
 
+### Metadata properties
+User-set metadata is mutable and can be overwritten.
+```{code-cell} ipython3
+tsgroup.set_info(region=["A","B","C"])
+print(tsgroup.get_info("region"))
+```
+
+If the metadata name does not overlap with an existing class list item, it can be set and accessed via key indexing.
+```{code-cell} ipython3
+tsgroup["coords"] = [[0,0],[0,1],[1,1]]
+print(tsgroup["coords"])
+```
+
+Similarly, if the metadata name is unique from other class attributes and methods and is formatted properly (i.e. only alpha-numeric characters and underscores), it can be set and accessed as an attribute.
+```{code-cell} ipython3
+tsgroup.unit_type = ["MUA","good","good"]
+print(tsgroup.unit_type)
+```
+
+### Filtering
+Metadata can be used to filter or threshold objects based on metadata values.
+```{code-cell} ipython3
+print(tsgroup[tsgroup.unit_type == "good"])
 ```
 
 ## Time series method
