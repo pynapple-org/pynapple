@@ -1,9 +1,9 @@
 import warnings
 from numbers import Number
+from typing import Union
 
 import numpy as np
 import pandas as pd
-from typing import Union
 
 
 class _MetadataMixin:
