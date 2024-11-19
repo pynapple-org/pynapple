@@ -22,227 +22,6 @@ import seaborn as sns
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
 ```
-
-## Interval sets methods
-
-### Interaction between epochs 
-
-```{code-cell} ipython3
-epoch1 = nap.IntervalSet(start=0, end=10)  # no time units passed. Default is us.
-epoch2 = nap.IntervalSet(start=[5, 30], end=[20, 45])
-print(epoch1, "\n")
-print(epoch2, "\n")
-```
-
-#### `union`
-
-```{code-cell} ipython3
-epoch = epoch1.union(epoch2)
-print(epoch)
-```
-
-#### `intersect`
-
-```{code-cell} ipython3
-epoch = epoch1.intersect(epoch2)
-print(epoch)
-```
-
-#### `set_diff`
-
-```{code-cell} ipython3
-epoch = epoch1.set_diff(epoch2)
-print(epoch)
-```
-
-### `split`
-
-Useful for chunking time series, the `split` method splits an `IntervalSet` in a new
-`IntervalSet` based on the `interval_size` argument.
-
-```{code-cell} ipython3
-epoch = nap.IntervalSet(start=0, end=100)
-
-print(epoch.split(10, time_units="s"))
-```
-
-### Drop intervals
-
-```{code-cell} ipython3
-epoch = nap.IntervalSet(start=[5, 30], end=[6, 45])
-print(epoch)
-```
-
-#### `drop_short_intervals`
-
-```{code-cell} ipython3
-print(
-    epoch.drop_short_intervals(threshold=5)
-    )
-```
-
-#### `drop_long_intervals`
-
-```{code-cell} ipython3
-print(
-    epoch.drop_long_intervals(threshold=5)
-    )
-```
-
-### `merge_close_intervals`
-
-```{code-cell} ipython3
-:tags: [hide-input]
-epoch = nap.IntervalSet(start=[1, 7], end=[6, 45])
-print(epoch)
-```
-If two intervals are closer than the `threshold` argument, they are merged.
-
-```{code-cell} ipython3
-print(
-    epoch.merge_close_intervals(threshold=2.0)
-    )
-```
-
-
-## Metadata
-Metadata can be added to `TsGroup`, `IntervalSet`, and `TsdFrame` objects at initialization or after an object has been created.
-- `TsGroup` metadata is information associated with each Ts/Tsd object, such as brain region or unit type.
-- `IntervalSet` metadata is information assocaited with each interval, such as a trial label or stimulus condition.
-- `TsdFrame` metadata is information associated with each column, such as a channel or position.
-
-
-### Adding metadata
-At initialization, metadata can be passed via a dictionary or pandas DataFrame using the keyword argument `metadata`. The metadata name is taken from the dictionary key or DataFrame column, and it can be set to any string name with a couple class-specific exceptions. 
-
-```{admonition} Class-specific exceptions
-- If column names are supplied to `TsdFrame`, metadata cannot overlap with those names.
-- The `rate` attribute for `TsGroup` is stored with the metadata and cannot be overwritten.
-```
-
-The length of the metadata must match the length of the object it describes (see class examples below for more detail). 
-
-```{code-cell} ipython3
-:tags: [hide-cell]
-import numpy as np
-import pandas as pd
-import pynapple as nap
-
-# input parameters for TsGroup
-group = {
-    0: nap.Ts(t=np.sort(np.random.uniform(0, 100, 10))),
-    1: nap.Ts(t=np.sort(np.random.uniform(0, 100, 20))),
-    2: nap.Ts(t=np.sort(np.random.uniform(0, 100, 30))),
-}
-
-# input parameters for IntervalSet
-starts = [0,10,20]
-ends = [5,15,25]
-
-# input parameters for TsdFrame
-t = np.arange(5)
-d = np.ones((5,3))
-```
-
-#### `TsGroup`
-Metadata added to `TsGroup` must match the number of `Ts`/`Tsd` objects, or the length of its `index` property.
-
-```{code-cell} ipython3
-# Example TsGroup with metadata dictionary
-metadata = {"region": ["pfc","ofc","hpc"]}
-
-tsgroup = nap.TsGroup(group, metadata=metadata)
-print(tsgroup)
-```
-
-#### `IntervalSet`
-Metadata added to `IntervalSet` must match the number of intervals, or the length of its `index` property. 
-
-```{code-cell} ipython3
-# Example IntervalSet with metadata DataFrame
-metadata = pd.DataFrame(
-    data=[[1,"left"],[0,"right"],[1,"left"]], 
-    columns=["reward","choice"]
-    )
-
-intervalset = nap.IntervalSet(starts, ends, metadata=metadata)
-print(intervalset)
-```
-
-#### `TsdFrame`
-Metadata added to `TsdFrame` must match the number of data columns, or the length of its `columns` property. 
-
-```{code-cell} ipython3
-# Example TsdFrame with metadata dictionary
-metadata = {
-    "color": ["red","blue","green"], 
-    "position": [10,20,30]
-    }
-
-tsdframe = nap.TsdFrame(d=d, t=t, columns=["a","b","c"], metadata=metadata)
-print(tsdframe)
-```
-
-#### `set_info`
-After creation, metadata can be added using the class method `set_info()`. Metadata can be passed as a dictionary or pandas DataFrame as the first positional argument, or metadata can be passed as name-value keyword arguments.
-
-```{admonition} Note
-The remaining metadata examples will be shown on a `TsGroup` object; however, all examples can be directly applied to `IntervalSet` and `TsdFrame` objects.
-```
-
-```{code-cell} ipython3
-tsgroup.set_info(unit_type = ["multi", "single", "single"])
-print(tsgroup)
-```
-
-### Accessing metadata
-Metadata is stored as a pandas DataFrame, which can be previewed using the `metadata` attribute.
-
-```{code-cell} ipython3
-print(tsgroup.metadata)
-```
-
-Single metadata columns or lists of columns can be retrieved using the `get_info()` class method:
-```{code-cell} ipython3
-print(tsgroup.get_info("region"))
-```
-
-### Metadata properties
-User-set metadata is mutable and can be overwritten.
-```{code-cell} ipython3
-tsgroup.set_info(region=["A","B","C"])
-print(tsgroup.get_info("region"))
-```
-
-If the metadata name does not overlap with an existing class column, it can be set and accessed via key indexing (i.e. using square brackets).
-
-```{admonition} Note
-As mentioned previously, metadata names must be strings. Bracket-indexing with an integer will produce different behavior based on object type and will not return metadata.
-```
-
-```{code-cell} ipython3
-tsgroup["depth"] = [0,1,2]
-print(tsgroup["depth"])
-```
-
-Similarly, if the metadata name is unique from other class attributes and methods, and it is formatted properly (i.e. only alpha-numeric characters and underscores), it can be set and accessed as an attribute (i.e. using a `.` followed by the metadata name).
-```{code-cell} ipython3
-tsgroup.unit_type = ["MUA","good","good"]
-print(tsgroup.unit_type)
-```
-
-As long as the length of the metadata container matches the length of the object (number of columns for `TsdFrame` and number of indices for `IntervalSet` and `TsGroup`), elements of the metadata can be any data type.
-```{code-cell} ipython3
-tsgroup.coords = [[1,0],[0,1],[1,1]]
-print(tsgroup.coords)
-```
-
-### Filtering
-Metadata can be used to filter or threshold objects based on metadata values.
-```{code-cell} ipython3
-print(tsgroup[tsgroup.unit_type == "good"])
-```
-
 ## Time series method
 
 ```{code-cell} ipython3
@@ -485,3 +264,256 @@ plt.xlabel("Time (s)")
 plt.tight_layout()
 plt.show()
 ```
+
+## Interval sets methods
+
+### Interaction between epochs 
+
+```{code-cell} ipython3
+epoch1 = nap.IntervalSet(start=0, end=10)  # no time units passed. Default is us.
+epoch2 = nap.IntervalSet(start=[5, 30], end=[20, 45])
+print(epoch1, "\n")
+print(epoch2, "\n")
+```
+
+#### `union`
+
+```{code-cell} ipython3
+epoch = epoch1.union(epoch2)
+print(epoch)
+```
+
+#### `intersect`
+
+```{code-cell} ipython3
+epoch = epoch1.intersect(epoch2)
+print(epoch)
+```
+
+#### `set_diff`
+
+```{code-cell} ipython3
+epoch = epoch1.set_diff(epoch2)
+print(epoch)
+```
+
+### `split`
+
+Useful for chunking time series, the `split` method splits an `IntervalSet` in a new
+`IntervalSet` based on the `interval_size` argument.
+
+```{code-cell} ipython3
+epoch = nap.IntervalSet(start=0, end=100)
+
+print(epoch.split(10, time_units="s"))
+```
+
+### Drop intervals
+
+```{code-cell} ipython3
+epoch = nap.IntervalSet(start=[5, 30], end=[6, 45])
+print(epoch)
+```
+
+#### `drop_short_intervals`
+
+```{code-cell} ipython3
+print(
+    epoch.drop_short_intervals(threshold=5)
+    )
+```
+
+#### `drop_long_intervals`
+
+```{code-cell} ipython3
+print(
+    epoch.drop_long_intervals(threshold=5)
+    )
+```
+
+### `merge_close_intervals`
+
+```{code-cell} ipython3
+:tags: [hide-input]
+epoch = nap.IntervalSet(start=[1, 7], end=[6, 45])
+print(epoch)
+```
+If two intervals are closer than the `threshold` argument, they are merged.
+
+```{code-cell} ipython3
+print(
+    epoch.merge_close_intervals(threshold=2.0)
+    )
+```
+
+
+## Metadata
+Metadata can be added to `TsGroup`, `IntervalSet`, and `TsdFrame` objects at initialization or after an object has been created.
+- `TsGroup` metadata is information associated with each Ts/Tsd object, such as brain region or unit type.
+- `IntervalSet` metadata is information assocaited with each interval, such as a trial label or stimulus condition.
+- `TsdFrame` metadata is information associated with each column, such as a channel or position.
+
+
+### Adding metadata
+At initialization, metadata can be passed via a dictionary or pandas DataFrame using the keyword argument `metadata`. The metadata name is taken from the dictionary key or DataFrame column, and it can be set to any string name with a couple class-specific exceptions. 
+
+```{admonition} Class-specific exceptions
+- If column names are supplied to `TsdFrame`, metadata cannot overlap with those names.
+- The `rate` attribute for `TsGroup` is stored with the metadata and cannot be overwritten.
+```
+
+The length of the metadata must match the length of the object it describes (see class examples below for more detail). 
+
+```{code-cell} ipython3
+:tags: [hide-cell]
+import numpy as np
+import pandas as pd
+import pynapple as nap
+
+# input parameters for TsGroup
+group = {
+    1: nap.Ts(t=np.sort(np.random.uniform(0, 100, 10))),
+    2: nap.Ts(t=np.sort(np.random.uniform(0, 100, 20))),
+    3: nap.Ts(t=np.sort(np.random.uniform(0, 100, 30))),
+}
+
+# input parameters for IntervalSet
+starts = [0,10,20]
+ends = [5,15,25]
+
+# input parameters for TsdFrame
+t = np.arange(5)
+d = np.ones((5,3))
+columns = ["a", "b", "c"]
+```
+
+#### `TsGroup`
+Metadata added to `TsGroup` must match the number of `Ts`/`Tsd` objects, or the length of its `index` property.
+```{code-cell} ipython3
+metadata = {"region": ["pfc", "ofc", "hpc"]}
+
+tsgroup = nap.TsGroup(group, metadata=metadata)
+print(tsgroup)
+```
+
+When initializing with a DataFrame, the index must align with the input dictionary keys (only when a dictionary is used to create the `TsGroup`).
+```{code-cell} ipython3
+metadata = pd.DataFrame(
+    index=group.keys(),
+    data=["pfc", "ofc", "hpc"],
+    columns=["region"]
+)
+
+tsgroup = nap.TsGroup(group, metadata=metadata)
+print(tsgroup)
+```
+
+
+#### `IntervalSet`
+Metadata added to `IntervalSet` must match the number of intervals, or the length of its `index` property. 
+
+```{code-cell} ipython3
+metadata = {
+    "reward": [1, 0, 1],
+    "choice": ["left", "right", "left"],    
+}
+
+intervalset = nap.IntervalSet(starts, ends, metadata=metadata)
+print(intervalset)
+```
+
+Metadata can be initialized as a DataFrame using the metadata argument, or it can be inferred when initializing an `IntervalSet` with a DataFrame.
+```{code-cell} ipython3
+df = pd.DataFrame(
+    data=[[0, 5, 1, "left"], [10, 15, 0, "right"], [20, 25, 1, "left"]], 
+    columns=["start", "end", "reward", "choice"]
+    )
+
+intervalset = nap.IntervalSet(df)
+print(intervalset)
+```
+
+#### `TsdFrame`
+Metadata added to `TsdFrame` must match the number of data columns, or the length of its `columns` property. 
+```{code-cell} ipython3
+metadata = {
+    "color": ["red", "blue", "green"], 
+    "position": [10,20,30]
+    }
+
+tsdframe = nap.TsdFrame(d=d, t=t, columns=["a", "b", "c"], metadata=metadata)
+print(tsdframe)
+```
+
+When initializing with a DataFrame, the DataFrame index must match the `TsdFrame` columns.
+```{code-cell} ipython3
+metadata = pd.DataFrame(
+    index=["a", "b", "c"],
+    data=[["red", 10], ["blue", 20], ["green", 30]], 
+    columns=["color", "position"],
+)
+
+tsdframe = nap.TsdFrame(d=d, t=t, columns=["a", "b", "c"], metadata=metadata)
+print(tsdframe)
+```
+
+#### `set_info`
+After creation, metadata can be added using the class method `set_info()`. Metadata can be passed as a dictionary or pandas DataFrame as the first positional argument, or metadata can be passed as name-value keyword arguments.
+
+```{admonition} Note
+The remaining metadata examples will be shown on a `TsGroup` object; however, all examples can be directly applied to `IntervalSet` and `TsdFrame` objects.
+```
+
+```{code-cell} ipython3
+tsgroup.set_info(unit_type = ["multi", "single", "single"])
+print(tsgroup)
+```
+
+### Accessing metadata
+Metadata is stored as a pandas DataFrame, which can be previewed using the `metadata` attribute.
+
+```{code-cell} ipython3
+print(tsgroup.metadata)
+```
+
+Single metadata columns or lists of columns can be retrieved using the `get_info()` class method:
+```{code-cell} ipython3
+print(tsgroup.get_info("region"))
+```
+
+### Metadata properties
+User-set metadata is mutable and can be overwritten.
+```{code-cell} ipython3
+tsgroup.set_info(region=["A","B","C"])
+print(tsgroup.get_info("region"))
+```
+
+If the metadata name does not overlap with an existing class column, it can be set and accessed via key indexing (i.e. using square brackets).
+
+```{admonition} Note
+As mentioned previously, metadata names must be strings. Bracket-indexing with an integer will produce different behavior based on object type and will not return metadata.
+```
+
+```{code-cell} ipython3
+tsgroup["depth"] = [0,1,2]
+print(tsgroup["depth"])
+```
+
+Similarly, if the metadata name is unique from other class attributes and methods, and it is formatted properly (i.e. only alpha-numeric characters and underscores), it can be set and accessed as an attribute (i.e. using a `.` followed by the metadata name).
+```{code-cell} ipython3
+tsgroup.unit_type = ["MUA","good","good"]
+print(tsgroup.unit_type)
+```
+
+As long as the length of the metadata container matches the length of the object (number of columns for `TsdFrame` and number of indices for `IntervalSet` and `TsGroup`), elements of the metadata can be any data type.
+```{code-cell} ipython3
+tsgroup.coords = [[1,0],[0,1],[1,1]]
+print(tsgroup.coords)
+```
+
+### Filtering
+Metadata can be used to filter or threshold objects based on metadata values.
+```{code-cell} ipython3
+print(tsgroup[tsgroup.unit_type == "good"])
+```
+
