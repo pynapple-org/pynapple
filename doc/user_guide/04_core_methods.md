@@ -27,6 +27,12 @@ sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_par
 ```{code-cell} ipython3
 :tags: [hide-cell]
 tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.randn(100, 3), columns=['a', 'b', 'c'])
+group = {
+    0: nap.Ts(t=np.sort(np.random.uniform(0, 100, 10))),
+    1: nap.Ts(t=np.sort(np.random.uniform(0, 100, 20))),
+    2: nap.Ts(t=np.sort(np.random.uniform(0, 100, 30))),
+}
+tsgroup = nap.TsGroup(group)
 epochs = nap.IntervalSet([10, 65], [25, 80])
 tsd = nap.Tsd(t=np.arange(0, 100, 1), d=np.sin(np.arange(0, 10, 0.1)))
 ```
