@@ -906,13 +906,6 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         The length of the metadata should match the number of data columns.
         If a DataFrame is passed, the index should match the columns of the TsdFrame.
 
-    Attributes
-    ----------
-    rate : float
-        Frequency of the time series (Hz) computed over the time support
-    time_support : IntervalSet
-        The time support of the time series
-
     Examples
     --------
     Initialize a TsdFrame:

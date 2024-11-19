@@ -154,9 +154,14 @@ tsgroup.set_info(region=["A","B","C"])
 print(tsgroup.get_info("region"))
 ```
 
-If the metadata name does not overlap with an existing class list item, it can be set and accessed via key indexing.
+If the metadata name does not overlap with an existing class column, it can be set and accessed via key indexing (i.e. using square brackets).
+
+```{admonition} Note
+As mentioned previously, metadata names must be strings. Bracket-indexing with an integer will produce different behavior based on object type and cannot return metadata.
+```
+
 ```{code-cell} ipython3
-tsgroup["coords"] = [[0,0],[0,1],[1,1]]
+tsgroup["coords"] = [0,1,2]
 print(tsgroup["coords"])
 ```
 
