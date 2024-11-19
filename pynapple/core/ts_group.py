@@ -180,11 +180,14 @@ class TsGroup(UserDict, _MetadataMixin):
 
     """
 
+    index: np.ndarray
+    """The index of the TsGroup, indicating the keys of each member"""
+
     time_support: IntervalSet
     """The time support of the TsGroup, indicating the time intervals where the TsGroup is defined"""
 
     nap_class: str
-    """String for the pynapple class name"""
+    """The pynapple class name"""
 
     def __init__(
         self,

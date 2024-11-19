@@ -46,10 +46,88 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
 
     The `IntervalSet` object behaves like a numpy ndarray with the limitation that the object is not mutable.
 
-    You can still apply any numpy array function to it :
+    If start and end are not aligned, meaning that:
+    1. len(start) != len(end)
+    2. end[i] > start[i]
+    3. start[i+1] > end[i]
+    4. start and end are not sorted,
+    IntervalSet will try to "fix" the data by eliminating some of the start and end data points.
+
+    Parameters
+    ----------
+    start : numpy.ndarray or number or pandas.DataFrame or pandas.Series or iterable of (start, end) pairs
+        Beginning of intervals. Alternatively, the `end` argument can be left out and `start` can be one of the
+        following:
+        - IntervalSet
+        - pandas.DataFrame with columns ["start", "end"]
+        - iterable of (start, end) pairs
+        - a single (start, end) pair
+    end : numpy.ndarray or number or pandas.Series, optional
+        Ends of intervals.
+    time_units : str, optional
+        Time unit of the intervals ('us', 'ms', 's' [default])
+    metadata: pandas.DataFrame or dict, optional
+        Metadata associated with each interval. Metadata names are pulled from DataFrame columns or dictionary keys.
+        The length of the metadata should match the length of the intervals.
+
+    Raises
+    ------
+    RuntimeError
+        If `start` and `end` arguments are of unknown type.
+
+    Examples
+    --------
+    Initialize an IntervalSet with a list of start and end times:
 
     >>> import pynapple as nap
     >>> import numpy as np
+    >>> start = [0, 10, 20]
+    >>> end = [5, 12, 33]
+    >>> ep = nap.IntervalSet(start=start, end=end)
+    >>> ep
+      index    start    end
+          0        0      5
+          1       10     12
+          2       20     33
+    shape: (3, 2), time unit: sec.
+
+    Initialize an IntervalSet with an array of start and end pairs:
+
+    >>> times = np.array([[0, 5], [10, 12], [20, 33]])
+    >>> ep = nap.IntervalSet(times)
+    >>> ep
+      index    start    end
+          0        0      5
+          1       10     12
+          2       20     33
+    shape: (3, 2), time unit: sec.
+
+    Initialize an IntervalSet with metadata:
+
+    >>> start = [0, 10, 20]
+    >>> end = [5, 12, 33]
+    >>> metadata = {"label": ["a", "b", "c"]}
+    >>> ep = nap.IntervalSet(start=start, end=end, metadata=metadata)
+      index    start    end      label
+          0        0      5  |   a
+          1       10     12  |   b
+          2       20     33  |   c
+    shape: (3, 2), time unit: sec.
+
+    Initialize an IntervalSet with a pandas DataFrame:
+
+    >>> import pandas as pd
+    >>> df = pd.DataFrame(data={"start": [0, 10, 20], "end": [5, 12, 33], "label": ["a", "b", "c"]})
+    >>> ep = nap.IntervalSet(df)
+    >>> ep
+      index    start    end      label
+          0        0      5  |   a
+          1       10     12  |   b
+          2       20     33  |   c
+    shape: (3, 2), time unit: sec.
+
+    Apply numpy functions to an IntervalSet:
+
     >>> ep = nap.IntervalSet(start=[0, 10], end=[5,20])
     >>> ep
       index    start    end
@@ -62,7 +140,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     array([[ 5.],
             [10.]])
 
-    You can slice :
+    Slicing an IntervalSet:
 
     >>> ep[:,0]
     array([ 0., 10.])
@@ -72,12 +150,29 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     0        0      5
     shape: (1, 2)
 
-    But modifying the `IntervalSet` with raise an error:
+    Modifying the `IntervalSet` with raise an error:
 
     >>> ep[0,0] = 1
     RuntimeError: IntervalSet is immutable. Starts and ends have been already sorted.
-
     """
+
+    start: np.ndarray
+    """The start times of each interval"""
+
+    end: np.ndarray
+    """The end times of each interval"""
+
+    values: np.ndarray
+    """Array of start and end times"""
+
+    index: np.ndarray
+    """Index of each interval, automatically set from 0 to n_intervals"""
+
+    columns: np.ndarray
+    """Column names of the IntervalSet, which are always ["start", "end"]"""
+
+    nap_class: str
+    """The pynapple class name"""
 
     def __init__(
         self,
