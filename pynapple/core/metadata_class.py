@@ -13,7 +13,7 @@ class _MetadataMixin:
     """
 
     metadata_index: Union[np.ndarray, pd.Index]
-    """Row index for metadata DataFrame"""
+    """Row index for metadata DataFrame. This matches the index for TsGroup and IntervalSet, and the columns for TsdFrame."""
 
     def __init__(self):
         """
