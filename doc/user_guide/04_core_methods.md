@@ -353,7 +353,7 @@ print(
 ## Metadata
 Metadata can be added to `TsGroup`, `IntervalSet`, and `TsdFrame` objects at initialization or after an object has been created.
 - `TsGroup` metadata is information associated with each Ts/Tsd object, such as brain region or unit type.
-- `IntervalSet` metadata is information assocaited with each interval, such as a trial label or stimulus condition.
+- `IntervalSet` metadata is information associated with each interval, such as a trial label or stimulus condition.
 - `TsdFrame` metadata is information associated with each column, such as a channel or position.
 
 
@@ -487,8 +487,9 @@ print(tsgroup.get_info("region"))
 ### Metadata properties
 User-set metadata is mutable and can be overwritten.
 ```{code-cell} ipython3
+print(tsgroup, "\n")
 tsgroup.set_info(region=["A","B","C"])
-print(tsgroup.get_info("region"))
+print(tsgroup)
 ```
 
 If the metadata name does not overlap with an existing class column, it can be set and accessed via key indexing (i.e. using square brackets).
@@ -514,7 +515,7 @@ tsgroup.coords = [[1,0],[0,1],[1,1]]
 print(tsgroup.coords)
 ```
 
-### Filtering
+### Using metadata to slice object
 Metadata can be used to filter or threshold objects based on metadata values.
 ```{code-cell} ipython3
 print(tsgroup[tsgroup.unit_type == "good"])
