@@ -47,10 +47,12 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     The `IntervalSet` object behaves like a numpy ndarray with the limitation that the object is not mutable.
 
     If start and end are not aligned, meaning that:
+
     1. len(start) != len(end)
     2. end[i] > start[i]
     3. start[i+1] > end[i]
     4. start and end are not sorted,
+
     IntervalSet will try to "fix" the data by eliminating some of the start and end data points.
 
     Parameters
