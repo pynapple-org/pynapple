@@ -116,7 +116,7 @@ tuning_curves = nap.compute_1d_tuning_curves(
     group=spikes_adn, 
     feature=angle, 
     nb_bins=61, 
-    ep = epochs['wake'],
+    ep=epochs[epochs.tags == "wake"],
     minmax=(0, 2 * np.pi)
     )
 ```
@@ -199,7 +199,7 @@ To decode the population activity, we will be using a Bayesian Decoder as implem
 decoded, proba_feature = nap.decode_1d(
     tuning_curves=tuning_curves,
     group=spikes_adn,
-    ep=epochs["wake"],
+    ep=epochs[epochs.tags == "wake"],
     bin_size=0.1,  # second
     feature=angle,
 )

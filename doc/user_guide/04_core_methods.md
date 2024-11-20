@@ -37,9 +37,6 @@ epochs = nap.IntervalSet([10, 65], [25, 80])
 tsd = nap.Tsd(t=np.arange(0, 100, 1), d=np.sin(np.arange(0, 10, 0.1)))
 ```
 
-
-
-
 ### `restrict`
 
 `restrict` is used to get time points within an `IntervalSet`. This method is available 
