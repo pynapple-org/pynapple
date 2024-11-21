@@ -6,6 +6,16 @@ import numpy as np
 import pandas as pd
 
 
+def add_meta_docstring(meta_func, sep="\n"):
+    meta_doc = getattr(_MetadataMixin, meta_func).__doc__
+
+    def _decorator(func):
+        func.__doc__ = sep.join([meta_doc, func.__doc__])
+        return func
+
+    return _decorator
+
+
 class _MetadataMixin:
     """
     An object containing metadata functionality for TsGroup, IntervalSet, or TsdFrame objects.
@@ -193,82 +203,6 @@ class _MetadataMixin:
             If the metadata argument is passed as a pandas.Series (for more than one metadata index), numpy.ndarray, list or tuple.
         TypeError
             If key-word arguments are not of type `pandas.Series`, `tuple`, `list`, or `numpy.ndarray` and cannot be set.
-
-
-        Examples
-        --------
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> tmp = {0:nap.Ts(t=np.arange(0,200), time_units='s'),
-        ... 1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
-        ... 2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
-        ... }
-        >>> tsgroup = nap.TsGroup(tmp)
-
-        To add metadata with a pandas.DataFrame:
-
-        >>> import pandas as pd
-        >>> structs = pd.DataFrame(index = [0,1,2], data=['pfc','pfc','ca1'], columns=['struct'])
-        >>> tsgroup.set_info(structs)
-        >>> tsgroup
-          Index     rate  struct
-        -------  -------  --------
-              0  0.66722  pfc
-              1  1.33445  pfc
-              2  4.00334  ca1
-
-        To add metadata with a dictionary:
-
-        >>> coords = {"coords": [[0,0],[0,1],[1,0]]}
-        >>> tsgroup.set_info(coords)
-        >>> tsgroup
-          Index     rate  struct    coords
-        -------  -------  --------  --------
-              0  0.66722  pfc       [0, 0]
-              1  1.33445  pfc       [0, 1]
-              2  4.00334  ca1       [1, 0]
-
-        To add metadata with a keyword arument (pd.Series, numpy.ndarray, list or tuple):
-
-        >>> hd = pd.Series(index = [0,1,2], data = [0,1,1])
-        >>> tsgroup.set_info(hd=hd)
-        >>> tsgroup
-          Index     rate  struct    coords      hd
-        -------  -------  --------  --------  ----
-              0  0.66722  pfc       [0, 0]       0
-              1  1.33445  pfc       [0, 1]       1
-              2  4.00334  ca1       [1, 0]       1
-
-        To add metadata as an attribute:
-
-        >>> tsgroup.label = ["a", "b", "c"]
-        >>> tsgroup
-          Index     rate  struct    coords      hd  label
-        -------  -------  --------  --------  ----  -------
-              0  0.66722  pfc       [0, 0]       0  a
-              1  1.33445  pfc       [0, 1]       1  b
-              2  4.00334  ca1       [1, 0]       1  c
-
-        To add metadata as a key:
-
-        >>> tsgroup["type"] = ["multi", "multi", "single"]
-        >>> tsgroup
-          Index     rate  struct    coords      hd  label    type
-        -------  -------  --------  --------  ----  -------  ------
-              0  0.66722  pfc       [0, 0]       0  a        multi
-              1  1.33445  pfc       [0, 1]       1  b        multi
-              2  4.00334  ca1       [1, 0]       1  c        single
-
-        Metadata can be overwritten:
-
-        >>> tsgroup.set_info(label=["x", "y", "z"])
-        >>> tsgroup
-          Index     rate  struct    coords      hd  label    type
-        -------  -------  --------  --------  ----  -------  ------
-              0  0.66722  pfc       [0, 0]       0  x        multi
-              1  1.33445  pfc       [0, 1]       1  y        multi
-              2  4.00334  ca1       [1, 0]       1  z        single
-
         """
         # check for duplicate names and/or formatted names that cannot be accessed as attributes or keys
         self._check_metadata_column_names(metadata, **kwargs)
