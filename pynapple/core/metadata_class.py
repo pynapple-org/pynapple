@@ -174,9 +174,11 @@ class _MetadataMixin:
         """
         Add metadata information about the object. Metadata are saved as a pandas.DataFrame.
 
-        If the metadata name does not contain special nor overlaps with class attributes, it can also be set using attribute assignment.
+        If the metadata name does not contain special nor overlaps with class attributes,
+        it can also be set using attribute assignment.
 
-        If the metadata name does not overlap with class-reserved keys, it can also be set using key assignment.
+        If the metadata name does not overlap with class-reserved keys,
+        it can also be set using key assignment.
 
         Metadata entries (excluding "rate" for `TsGroup`) are mutable and can be overwritten.
 
@@ -261,9 +263,11 @@ class _MetadataMixin:
         """
         Returns metadata based on metadata column name or index.
 
-        If the metadata name does not contain special nor overlaps with class attributes, it can also be accessed as an attribute.
+        If the metadata name does not contain special nor overlaps with class attributes,
+        it can also be accessed as an attribute.
 
-        If the metadata name does not overlap with class-reserved keys, it can also be accessed as a key.
+        If the metadata name does not overlap with class-reserved keys,
+        it can also be accessed as a key.
 
         Parameters
         ----------

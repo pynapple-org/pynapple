@@ -1047,11 +1047,8 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
 
         return IntervalSet(new_starts, new_ends, metadata=metadata)
 
-
-### Add class-specific examples to docstrings of metadata functions
-IntervalSet.set_info.__doc__ = "".join(
-    [
-        _MetadataMixin.set_info.__doc__,
+    @add_meta_docstring("set_info")
+    def set_info(self, metadata=None, **kwargs):
         """
         Examples
         --------
@@ -1123,14 +1120,11 @@ IntervalSet.set_info.__doc__ = "".join(
               1       10     12  |   right            0  y             0
               2       20     33  |   left             1  z             0
         shape: (3, 2), time unit: sec.
-        """,
-    ]
-)
+        """
+        _MetadataMixin.set_info(self, metadata, **kwargs)
 
-
-IntervalSet.get_info.__doc__ = "".join(
-    [
-        _MetadataMixin.get_info.__doc__,
+    @add_meta_docstring("get_info")
+    def get_info(self, key):
         """
         Examples
         --------
@@ -1199,6 +1193,5 @@ IntervalSet.get_info.__doc__ = "".join(
         0   1  x
         1   2  x
         2   3  y
-        """,
-    ]
-)
+        """
+        _MetadataMixin.get_info(self, key)
