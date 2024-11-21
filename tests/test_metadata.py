@@ -1085,7 +1085,8 @@ def test_no_conflict_between_intervalset_and_metadatamixin():
     # Check for any overlapping names between IntervalSet and _MetadataMixin
     conflicting_members = iset_members.intersection(metadatamixin_members)
 
-    assert len(conflicting_members) == 0, (
+    # set_info and get_info will conflict
+    assert len(conflicting_members) == 2, (
         f"Conflict detected! The following methods/attributes are "
         f"overwritten in TsdFrame: {conflicting_members}"
     )
@@ -1101,7 +1102,8 @@ def test_no_conflict_between_tsdframe_and_metadatamixin():
     # Check for any overlapping names between TsdFrame and _MetadataMixin
     conflicting_members = tsdframe_members.intersection(metadatamixin_members)
 
-    assert len(conflicting_members) == 0, (
+    # set_info and get_info will conflict
+    assert len(conflicting_members) == 2, (
         f"Conflict detected! The following methods/attributes are "
         f"overwritten in TsdFrame: {conflicting_members}"
     )
@@ -1117,7 +1119,8 @@ def test_no_conflict_between_tsgroup_and_metadatamixin():
     # Check for any overlapping names between TsdFrame and _MetadataMixin
     conflicting_members = tsgroup_members.intersection(metadatamixin_members)
 
-    assert len(conflicting_members) == 0, (
+    # set_info and get_info will conflict
+    assert len(conflicting_members) == 2, (
         f"Conflict detected! The following methods/attributes are "
         f"overwritten in TsdFrame: {conflicting_members}"
     )

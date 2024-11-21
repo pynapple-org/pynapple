@@ -420,7 +420,6 @@ metadata = {
     "reward": [1, 0, 1],
     "choice": ["left", "right", "left"],    
 }
-
 intervalset = nap.IntervalSet(starts, ends, metadata=metadata)
 print(intervalset)
 ```

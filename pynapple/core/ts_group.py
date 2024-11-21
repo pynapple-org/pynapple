@@ -1574,4 +1574,4 @@ class TsGroup(UserDict, _MetadataMixin):
         1   2  x
         2   3  y
         """
-        _MetadataMixin.get_info(self, key)
+        return _MetadataMixin.get_info(self, key)
