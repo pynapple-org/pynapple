@@ -19,7 +19,7 @@ from ._jitted_functions import jitunion, jitunion_isets
 from .base_class import _Base
 from .config import nap_config
 from .interval_set import IntervalSet
-from .metadata_class import _MetadataMixin
+from .metadata_class import _MetadataMixin, add_meta_docstring
 from .time_index import TsIndex
 from .time_series import Ts, Tsd, TsdFrame, _BaseTsd, is_array_like
 from .utils import (
