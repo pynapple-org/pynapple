@@ -30,18 +30,6 @@ from .utils import (
 )
 
 
-# def add_meta_docstring(meta_func, sep="\n"):
-#     meta_doc = getattr(_MetadataMixin, meta_func).__doc__
-
-#     def _decorator(func):
-#         func.__doc__ = sep.join([meta_doc, func.__doc__])
-#         return func
-
-#     return _decorator
-#     # func.__doc__ = sep.join([meta_doc, func.__doc__])
-#     # return func
-
-
 def _union_intervals(i_sets):
     """
     Helper to merge intervals from ts_group
