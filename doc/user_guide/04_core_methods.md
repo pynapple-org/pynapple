@@ -470,21 +470,21 @@ The remaining metadata examples will be shown on a `TsGroup` object; however, al
 #### `set_info`
 Metadata can be passed as a dictionary or pandas DataFrame as the first positional argument, or metadata can be passed as name-value keyword arguments.
 ```{code-cell} ipython3
-tsgroup.set_info(unit_type = ["multi", "single", "single"])
+tsgroup.set_info(unit_type=["multi", "single", "single"])
 print(tsgroup)
 ```
 
 #### Using dictionary-like keys (square brakets)
 Most metadata names can set as a dictionary-like key (i.e. using square brackets). The only exceptions are for `IntervalSet`, where the names "start" and "end" are reserved for class properties.
 ```{code-cell} ipython3
-tsgroup["depth"] = [0,1,2]
+tsgroup["depth"] = [0, 1, 2]
 print(tsgroup)
 ```
 
 #### Using attribute assignment
 If the metadata name is unique from other class attributes and methods, and it is formatted properly (i.e. only alpha-numeric characters and underscores), it can be set as an attribute (i.e. using a `.` followed by the metadata name).
 ```{code-cell} ipython3
-tsgroup.unit_type = ["MUA","good","good"]
+tsgroup.label=["MUA", "good", "good"]
 print(tsgroup)
 ```
 
@@ -505,12 +505,11 @@ print(tsgroup["region"])
 ```
 
 ```{admonition} Note
-Metadata names must be strings. Key indexing with an integer will produce different behavior based on object type and will not return metadata.
+Metadata names must be strings. Key indexing with an integer will produce different behavior based on object type.
 ```
 
 Finally, metadata that can be set as an attribute can also be accessed as an attribute.
 ```{code-cell} ipython3
-tsgroup.unit_type = ["MUA","good","good"]
 print(tsgroup.region)
 ```
 
@@ -518,7 +517,7 @@ print(tsgroup.region)
 User-set metadata is mutable and can be overwritten.
 ```{code-cell} ipython3
 print(tsgroup, "\n")
-tsgroup.set_info(region=["A","B","C"])
+tsgroup.set_info(region=["A", "B", "C"])
 print(tsgroup)
 ```
 
@@ -530,8 +529,8 @@ print(tsgroup.coords)
 ```
 
 ### Using metadata to slice objects
-Metadata can be used to filter or slice objects based on metadata values.
+Metadata can be used to slice or filter objects based on metadata values.
 ```{code-cell} ipython3
-print(tsgroup[tsgroup.unit_type == "good"])
+print(tsgroup[tsgroup.label == "good"])
 ```
 
