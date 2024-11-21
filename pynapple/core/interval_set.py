@@ -19,7 +19,7 @@ from ._jitted_functions import (
     jitunion,
 )
 from .config import nap_config
-from .metadata_class import _MetadataMixin, add_meta_docstring
+from .metadata_class import _MetadataMixin
 from .time_index import TsIndex
 from .utils import (
     _convert_iter_to_str,

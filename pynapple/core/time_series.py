@@ -29,7 +29,7 @@ from tabulate import tabulate
 from ._core_functions import _bin_average, _convolve, _dropna, _restrict, _threshold
 from .base_class import _Base
 from .interval_set import IntervalSet
-from .metadata_class import _MetadataMixin, add_meta_docstring
+from .metadata_class import _MetadataMixin
 from .time_index import TsIndex
 from .utils import (
     _concatenate_tsd,
