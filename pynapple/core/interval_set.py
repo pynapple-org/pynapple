@@ -19,7 +19,7 @@ from ._jitted_functions import (
     jitunion,
 )
 from .config import nap_config
-from .metadata_class import _MetadataMixin
+from .metadata_class import _MetadataMixin, add_meta_docstring
 from .time_index import TsIndex
 from .utils import (
     _convert_iter_to_str,
@@ -1046,3 +1046,79 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         new_ends -= 1e-6
 
         return IntervalSet(new_starts, new_ends, metadata=metadata)
+
+    @add_meta_docstring("set_info")
+    def set_info(self, metadata=None, **kwargs):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> times = np.array([[0, 5], [10, 12], [20, 33]])
+        >>> ep = nap.IntervalSet(times)
+
+        To add metadata with a pandas.DataFrame:
+
+        >>> import pandas as pd
+        >>> metadata = pd.DataFrame(data=['left','right','left'], columns=['choice'])
+        >>> ep.set_info(metadata)
+        >>> ep
+          index    start    end      choice
+              0        0      5  |   left
+              1       10     12  |   right
+              2       20     33  |   left
+        shape: (3, 2), time unit: sec.
+
+        To add metadata with a dictionary:
+
+        >>> metadata = {"reward": [1, 0, 1]}
+        >>> ep.set_info(metadata)
+        >>> ep
+          index    start    end      choice      reward
+              0        0      5  |   left             1
+              1       10     12  |   right            0
+              2       20     33  |   left             1
+        shape: (3, 2), time unit: sec.
+
+        To add metadata with a keyword arument (pd.Series, numpy.ndarray, list or tuple):
+
+        >>> stim = pd.Series(data = [10, -23, 12])
+        >>> ep.set_info(stim=stim)
+        >>> ep
+          index    start    end      choice      reward    stim
+              0        0      5  |   left             1      10
+              1       10     12  |   right            0     -23
+              2       20     33  |   left             1      12
+        shape: (3, 2), time unit: sec.
+
+        To add metadata as an attribute:
+
+        >>> ep.label = ["a", "b", "c"]
+        >>> ep
+          index    start    end      choice      reward  label
+              0        0      5  |   left             1  a
+              1       10     12  |   right            0  b
+              2       20     33  |   left             1  c
+        shape: (3, 2), time unit: sec.
+
+        To add metadata as a key:
+
+        >>> ep["viol"] = [0, 0, 0]
+        >>> ep
+          index    start    end      choice      reward  label      viol
+              0        0      5  |   left             1  a             0
+              1       10     12  |   right            0  b             0
+              2       20     33  |   left             1  c             0
+        shape: (3, 2), time unit: sec.
+
+        Metadata can be overwritten:
+
+        >>> ep.set_info(label=["x", "y", "z"])
+        >>> ep
+          index    start    end      choice      reward  label      viol
+              0        0      5  |   left             1  x             0
+              1       10     12  |   right            0  y             0
+              2       20     33  |   left             1  z             0
+        shape: (3, 2), time unit: sec.
+        """
+        _MetadataMixin.set_info(self, metadata, **kwargs)
