@@ -357,7 +357,7 @@ Metadata can be added to `TsGroup`, `IntervalSet`, and `TsdFrame` objects at ini
 - `TsdFrame` metadata is information associated with each column, such as a channel or position.
 
 
-### Adding metadata
+### Adding metadata at initialization
 At initialization, metadata can be passed via a dictionary or pandas DataFrame using the keyword argument `metadata`. The metadata name is taken from the dictionary key or DataFrame column, and it can be set to any string name with a couple class-specific exceptions. 
 
 ```{admonition} Class-specific exceptions
@@ -460,31 +460,61 @@ tsdframe = nap.TsdFrame(d=d, t=t, columns=["a", "b", "c"], metadata=metadata)
 print(tsdframe)
 ```
 
-#### `set_info`
-After creation, metadata can be added using the class method `set_info()`. Metadata can be passed as a dictionary or pandas DataFrame as the first positional argument, or metadata can be passed as name-value keyword arguments.
+### Adding metadata after initialization
+After creation, metadata can be added using the class method `set_info()`. Additionally, single metadata fields can be added as a dictionary-like key or as an attribute, with a few noted exceptions outlined below.
 
 ```{admonition} Note
 The remaining metadata examples will be shown on a `TsGroup` object; however, all examples can be directly applied to `IntervalSet` and `TsdFrame` objects.
 ```
 
+#### `set_info`
+Metadata can be passed as a dictionary or pandas DataFrame as the first positional argument, or metadata can be passed as name-value keyword arguments.
 ```{code-cell} ipython3
 tsgroup.set_info(unit_type = ["multi", "single", "single"])
 print(tsgroup)
 ```
 
+#### Using dictionary-like keys (square brakets)
+Most metadata names can set as a dictionary-like key (i.e. using square brackets). The only exceptions are for `IntervalSet`, where the names "start" and "end" are reserved for class properties.
+```{code-cell} ipython3
+tsgroup["depth"] = [0,1,2]
+print(tsgroup)
+```
+
+#### Using attribute assignment
+If the metadata name is unique from other class attributes and methods, and it is formatted properly (i.e. only alpha-numeric characters and underscores), it can be set as an attribute (i.e. using a `.` followed by the metadata name).
+```{code-cell} ipython3
+tsgroup.unit_type = ["MUA","good","good"]
+print(tsgroup)
+```
+
 ### Accessing metadata
 Metadata is stored as a pandas DataFrame, which can be previewed using the `metadata` attribute.
-
 ```{code-cell} ipython3
 print(tsgroup.metadata)
 ```
 
-Single metadata columns or lists of columns can be retrieved using the `get_info()` class method:
+Single metadata columns (or lists of columns) can be retrieved using the `get_info()` class method:
 ```{code-cell} ipython3
 print(tsgroup.get_info("region"))
 ```
 
-### Metadata properties
+Similarly, metadata can be accessed using key indexing (i.e. square brakets)
+```{code-cell} ipython3
+print(tsgroup["region"])
+```
+
+```{admonition} Note
+Metadata names must be strings. Key indexing with an integer will produce different behavior based on object type and will not return metadata.
+```
+
+Finally, metadata that can be set as an attribute can also be accessed as an attribute.
+```{code-cell} ipython3
+tsgroup.unit_type = ["MUA","good","good"]
+print(tsgroup.region)
+```
+
+### Overwriting metadata
 User-set metadata is mutable and can be overwritten.
 ```{code-cell} ipython3
 print(tsgroup, "\n")
@@ -492,31 +522,15 @@ tsgroup.set_info(region=["A","B","C"])
 print(tsgroup)
 ```
 
-If the metadata name does not overlap with an existing class column, it can be set and accessed via key indexing (i.e. using square brackets).
-
-```{admonition} Note
-As mentioned previously, metadata names must be strings. Bracket-indexing with an integer will produce different behavior based on object type and will not return metadata.
-```
-
-```{code-cell} ipython3
-tsgroup["depth"] = [0,1,2]
-print(tsgroup["depth"])
-```
-
-Similarly, if the metadata name is unique from other class attributes and methods, and it is formatted properly (i.e. only alpha-numeric characters and underscores), it can be set and accessed as an attribute (i.e. using a `.` followed by the metadata name).
-```{code-cell} ipython3
-tsgroup.unit_type = ["MUA","good","good"]
-print(tsgroup.unit_type)
-```
-
+### Allowed data types
 As long as the length of the metadata container matches the length of the object (number of columns for `TsdFrame` and number of indices for `IntervalSet` and `TsGroup`), elements of the metadata can be any data type.
 ```{code-cell} ipython3
 tsgroup.coords = [[1,0],[0,1],[1,1]]
 print(tsgroup.coords)
 ```
 
-### Using metadata to slice object
-Metadata can be used to filter or threshold objects based on metadata values.
+### Using metadata to slice objects
+Metadata can be used to filter or slice objects based on metadata values.
 ```{code-cell} ipython3
 print(tsgroup[tsgroup.unit_type == "good"])
 ```
