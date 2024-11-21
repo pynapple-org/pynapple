@@ -1513,6 +1513,78 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         """
         _MetadataMixin.set_info(self, metadata, **kwargs)
 
+    @add_meta_docstring("get_info")
+    def get_info(self, key):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"]}
+        >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
+
+        To access a single metadata column:
+
+        >>> tsdframe.get_info("l1")
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
+
+        To access multiple metadata columns:
+
+        >>> tsdframe.get_info(["l1", "l2"])
+           l1 l2
+        0   1  x
+        1   2  x
+        2   3  y
+
+        To access metadata of a single index:
+
+        >>> tsdframe.get_info(0)
+        rate    0.667223
+        l1             1
+        l2             x
+        Name: 0, dtype: object
+
+        To access metadata of multiple indices:
+
+        >>> tsdframe.get_info([0, 1])
+               rate  l1 l2
+        0  0.667223   1  x
+        1  1.334445   2  x
+
+        To access metadata of a single index and column:
+
+        >>> tsdframe.get_info((0, "l1"))
+        np.int64(1)
+
+        To access metadata as an attribute:
+
+        >>> tsdframe.l1
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
+
+        To access metadata as a key:
+
+        >>> tsdframe["l1"]
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
+
+        Multiple metadata columns can be accessed as keys:
+
+        >>> tsdframe[["l1", "l2"]]
+           l1 l2
+        0   1  x
+        1   2  x
+        2   3  y
+        """
+        _MetadataMixin.get_info(self, key)
+
 
 class Tsd(_BaseTsd):
     """
