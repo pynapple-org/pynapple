@@ -1087,7 +1087,7 @@ def test_no_conflict_between_intervalset_and_metadatamixin():
 
     assert len(conflicting_members) == 0, (
         f"Conflict detected! The following methods/attributes are "
-        f"overwritten in TsdFrame: {conflicting_members}"
+        f"overwritten in IntervalSet: {conflicting_members}"
     )
 
 
@@ -1119,5 +1119,5 @@ def test_no_conflict_between_tsgroup_and_metadatamixin():
 
     assert len(conflicting_members) == 0, (
         f"Conflict detected! The following methods/attributes are "
-        f"overwritten in TsdFrame: {conflicting_members}"
+        f"overwritten in TsGroup: {conflicting_members}"
     )

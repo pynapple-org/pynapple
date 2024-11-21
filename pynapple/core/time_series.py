@@ -1382,8 +1382,11 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
         return
 
-    @add_meta_docstring("set_info")
-    def set_info(self, metadata=None, **kwargs):
+
+### Add class-specific examples to docstrings of metadata functions
+TsdFrame.set_info.__doc__ = "".join(
+    [
+        _MetadataMixin.set_info.__doc__,
         """
         Examples
         --------
@@ -1510,11 +1513,13 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         region      M1        M1        M2
         <BLANKLINE>
         dtype: float64, shape: (5, 3)
-        """
-        _MetadataMixin.set_info(self, metadata, **kwargs)
+        """,
+    ]
+)
 
-    @add_meta_docstring("get_info")
-    def get_info(self, key):
+TsdFrame.get_info.__doc__ = "".join(
+    [
+        _MetadataMixin.get_info.__doc__,
         """
         Examples
         --------
@@ -1582,8 +1587,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         0   1  x
         1   2  x
         2   3  y
-        """
-        _MetadataMixin.get_info(self, key)
+        """,
+    ]
+)
 
 
 class Tsd(_BaseTsd):

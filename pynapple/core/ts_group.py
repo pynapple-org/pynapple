@@ -1420,8 +1420,11 @@ class TsGroup(UserDict, _MetadataMixin):
                 tsgroup.set_info(metainfo)
         return tsgroup
 
-    @add_meta_docstring("set_info")
-    def set_info(self, metadata=None, **kwargs):
+
+### Add class-specific examples to docstrings of metadata functions
+TsGroup.set_info.__doc__ = "".join(
+    [
+        _MetadataMixin.set_info.__doc__,
         """
         Examples
         --------
@@ -1496,12 +1499,13 @@ class TsGroup(UserDict, _MetadataMixin):
               0  0.66722  pfc       [0, 0]       0  x        multi
               1  1.33445  pfc       [0, 1]       1  y        multi
               2  4.00334  ca1       [1, 0]       1  z        single
+        """,
+    ]
+)
 
-        """
-        _MetadataMixin.set_info(self, metadata, **kwargs)
-
-    @add_meta_docstring("get_info")
-    def get_info(self, key):
+TsGroup.get_info.__doc__ = "".join(
+    [
+        _MetadataMixin.get_info.__doc__,
         """
         Examples
         --------
@@ -1573,5 +1577,6 @@ class TsGroup(UserDict, _MetadataMixin):
         0   1  x
         1   2  x
         2   3  y
-        """
-        _MetadataMixin.get_info(self, key)
+        """,
+    ]
+)
