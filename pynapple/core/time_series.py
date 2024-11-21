@@ -29,7 +29,7 @@ from tabulate import tabulate
 from ._core_functions import _bin_average, _convolve, _dropna, _restrict, _threshold
 from .base_class import _Base
 from .interval_set import IntervalSet
-from .metadata_class import _MetadataMixin
+from .metadata_class import _MetadataMixin, add_meta_docstring
 from .time_index import TsIndex
 from .utils import (
     _concatenate_tsd,
@@ -1381,6 +1381,137 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         )
 
         return
+
+    @add_meta_docstring("set_info")
+    def set_info(self, metadata=None, **kwargs):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), columns=["a", "b", "c"])
+
+        To add metadata with a pandas.DataFrame:
+
+        >>> import pandas as pd
+        >>> metadata = pd.DataFrame(index=tsdframe.columns, data=["red", "blue", "green"], columns=["color"])
+        >>> tsdframe.set_info(metadata)
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+
+        To add metadata with a dictionary:
+
+        >>> metadata = {"xpos": [10, 20, 30]}
+        >>> tsdframe.set_info(metadata)
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        xpos        10        20        30
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+
+        To add metadata with a keyword arument (pd.Series, numpy.ndarray, list or tuple):
+
+        >>> ypos = pd.Series(index=tsdframe.columns, data = [10, 10, 10])
+        >>> tsdframe.set_info(ypos=ypos)
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        xpos        10        20        30
+        ypos        10        10        10
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+
+        To add metadata as an attribute:
+
+        >>> tsdframe.label = ["a", "b", "c"]
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        xpos        10        20        30
+        ypos        10        10        10
+        label       a         b         c
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+
+        To add metadata as a key:
+
+        >>> tsdframe["region"] = ["M1", "M1", "M2"]
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        xpos        10        20        30
+        ypos        10        10        10
+        label       a         b         c
+        region      M1        M1        M2
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+
+        Metadata can be overwritten:
+
+        >>> tsdframe.set_info(label=["x", "y", "z"])
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        xpos        10        20        30
+        ypos        10        10        10
+        label       x         y         z
+        region      M1        M1        M2
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+        """
+        _MetadataMixin.set_info(self, metadata, **kwargs)
 
 
 class Tsd(_BaseTsd):
