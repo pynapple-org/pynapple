@@ -50,7 +50,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
 
     1. len(start) != len(end)
     2. end[i] > start[i]
-    3. start[i+1] > end[i]
+    3. start[i+1] < end[i]
     4. start and end are not sorted,
 
     IntervalSet will try to "fix" the data by eliminating some of the start and end data points.
@@ -58,12 +58,14 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     Parameters
     ----------
     start : numpy.ndarray or number or pandas.DataFrame or pandas.Series or iterable of (start, end) pairs
-        Beginning of intervals. Alternatively, the `end` argument can be left out and `start` can be one of the
-        following:
+        Beginning of intervals.
+        Alternatively, the `end` argument can be left out and `start` can be one of the following:
+
         - IntervalSet
         - pandas.DataFrame with columns ["start", "end"]
         - iterable of (start, end) pairs
         - a single (start, end) pair
+
     end : numpy.ndarray or number or pandas.Series, optional
         Ends of intervals.
     time_units : str, optional
@@ -152,7 +154,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     0        0      5
     shape: (1, 2)
 
-    Modifying the `IntervalSet` with raise an error:
+    Modifying the `IntervalSet` will raise an error:
 
     >>> ep[0,0] = 1
     RuntimeError: IntervalSet is immutable. Starts and ends have been already sorted.
@@ -1080,7 +1082,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
               2       20     33  |   left             1
         shape: (3, 2), time unit: sec.
 
-        To add metadata with a keyword arument (pd.Series, numpy.ndarray, list or tuple):
+        To add metadata with a keyword argument (pd.Series, numpy.ndarray, list or tuple):
 
         >>> stim = pd.Series(data = [10, -23, 12])
         >>> ep.set_info(stim=stim)
@@ -1103,9 +1105,9 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
 
         To add metadata as a key:
 
-        >>> ep["viol"] = [0, 0, 0]
+        >>> ep["error"] = [0, 0, 0]
         >>> ep
-          index    start    end      choice      reward  label      viol
+          index    start    end      choice      reward  label      error
               0        0      5  |   left             1  a             0
               1       10     12  |   right            0  b             0
               2       20     33  |   left             1  c             0
@@ -1115,7 +1117,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
 
         >>> ep.set_info(label=["x", "y", "z"])
         >>> ep
-          index    start    end      choice      reward  label      viol
+          index    start    end      choice      reward  label      error
               0        0      5  |   left             1  x             0
               1       10     12  |   right            0  y             0
               2       20     33  |   left             1  z             0

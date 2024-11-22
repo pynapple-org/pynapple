@@ -186,9 +186,11 @@ class _MetadataMixin:
         ----------
         metadata : pandas.DataFrame or dict or pandas.Series, optional
             Object containing metadata information, where metadata names are extracted from column names (pandas.DataFrame), key names (dict), or index (pandas.DataFrame).
+
             - If a pandas.DataFrame is passed, the index must match the metadata index.
             - If a dictionary is passed, the length of each value must match the metadata index length.
             - A pandas.Series can only be passed if the object has a single interval.
+
         **kwargs : optional
             Key-word arguments for setting metadata. Values can be either pandas.Series, numpy.ndarray, list or tuple, and must have the same length as the metadata index.
             If pandas.Series, the index must match the metadata index.

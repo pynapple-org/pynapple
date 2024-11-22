@@ -95,7 +95,7 @@ class TsGroup(UserDict, _MetadataMixin):
         - If a key cannot be converted to integer.
         - If a key was a floating point with non-negligible decimal part.
         - If the converted keys are not unique, i.e. {1: ts_2, "2": ts_2} is valid,
-        {1: ts_2, "1": ts_2}  is invalid.
+            {1: ts_2, "1": ts_2}  is invalid.
 
     Examples
     --------
@@ -1456,7 +1456,7 @@ class TsGroup(UserDict, _MetadataMixin):
               1  1.33445  pfc       [0, 1]
               2  4.00334  ca1       [1, 0]
 
-        To add metadata with a keyword arument (pd.Series, numpy.ndarray, list or tuple):
+        To add metadata with a keyword argument (pd.Series, numpy.ndarray, list or tuple):
 
         >>> hd = pd.Series(index = [0,1,2], data = [0,1,1])
         >>> tsgroup.set_info(hd=hd)

@@ -708,7 +708,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
 class TsdTensor(_BaseTsd):
     """
-    Container for neurophysiological time series with more than 2 dimensions (movies).
+    Container for neurophysiological time series with more than 2 dimensions (for example movies).
 
     Attributes
     ----------
@@ -736,7 +736,7 @@ class TsdTensor(_BaseTsd):
             The time support of the TsdFrame object
         load_array : bool, optional
             Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
-            Default is True. Does not apply if `d` is already a numpy array.
+            Default is True. Does not apply if `d` is already a numpy array  or a numpy memory map.
 
         """
         super().__init__(t, d, time_units, time_support, load_array)
@@ -900,7 +900,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         Column names
     load_array : bool, optional
         Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
-        Default is True. Does not apply if `d` is already a numpy array.
+        Default is True. Does not apply if `d` is already a numpy array or a numpy memory map.
     metadata: pd.DataFrame or dict, optional
         Metadata associated with data columns. Metadata names are pulled from DataFrame columns or dictionary keys.
         The length of the metadata should match the number of data columns.
@@ -1522,6 +1522,19 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> import numpy as np
         >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"]}
         >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
+        >>> print(tsdframe)
+        Time (s)    0         1         2
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        l1          1         2         3
+        l2          x         x         y
+        dtype: float64, shape: (5, 3)
 
         To access a single metadata column:
 
@@ -1539,7 +1552,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         1   2  x
         2   3  y
 
-        To access metadata of a single index:
+        To access metadata of a single column:
 
         >>> tsdframe.get_info(0)
         rate    0.667223
@@ -1547,14 +1560,14 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         l2             x
         Name: 0, dtype: object
 
-        To access metadata of multiple indices:
+        To access metadata of multiple columns:
 
         >>> tsdframe.get_info([0, 1])
                rate  l1 l2
         0  0.667223   1  x
         1  1.334445   2  x
 
-        To access metadata of a single index and column:
+        To access metadata of a single column and metadata key:
 
         >>> tsdframe.get_info((0, "l1"))
         np.int64(1)
@@ -1618,7 +1631,7 @@ class Tsd(_BaseTsd):
             The time support of the tsd object
         load_array : bool, optional
             Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
-            Default is True. Does not apply if `d` is already a numpy array.
+            Default is True. Does not apply if `d` is already a numpy array or a numpy memory map.
         """
         if isinstance(t, pd.Series):
             d = t.values
