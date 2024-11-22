@@ -23,6 +23,15 @@ class _Base(abc.ABC):
 
     _initialized = False
 
+    index: TsIndex
+    """The time index of the time series"""
+
+    rate: float
+    """Frequency of the time series (Hz) computed over the time support"""
+
+    time_support: IntervalSet
+    """The time support of the time series"""
+
     def __init__(self, t, time_units="s", time_support=None):
         if isinstance(t, TsIndex):
             self.index = t
@@ -50,18 +59,22 @@ class _Base(abc.ABC):
 
     @property
     def t(self):
+        """The time index of the time series"""
         return self.index.values
 
     @property
     def start(self):
+        """The first time index in the time series"""
         return self.start_time()
 
     @property
     def end(self):
+        """The last time index in the time series"""
         return self.end_time()
 
     @property
     def shape(self):
+        """The shape of the time series"""
         return self.index.shape
 
     def __repr__(self):
