@@ -190,7 +190,7 @@ def load_eeg(
     Deleted Parameters
     ------------------
     extension : str, optional
-        The file extenstion (.eeg, .dat, .lfp). Make sure the frequency match
+        The file extention (.eeg, .dat, .lfp). Make sure the frequency match
 
     """
     # Need to check if a xml file exists
@@ -238,13 +238,13 @@ def load_eeg(
     n_samples = int((endoffile - startoffile) / n_channels / bytes_size)
     duration = n_samples / frequency
     f.close()
-    fp = np.memmap(filepath, np.int16, "r", shape=(n_samples, n_channels))
+    fp = np.memmap(filepath, precision, "r", shape=(n_samples, n_channels))
     timestep = np.arange(0, n_samples) / frequency
 
     time_support = nap.IntervalSet(start=0, end=duration, time_units="s")
 
     if channel is None:
-        return fp
+        return nap.TsdFrame(t=timestep, d=fp)
     elif type(channel) is int:
         return nap.Tsd(
             t=timestep, d=fp[:, channel], time_units="s", time_support=time_support
