@@ -38,6 +38,7 @@ class _MetadataMixin:
             self.metadata_index = self.index
 
         self._metadata = pd.DataFrame(index=self.metadata_index)
+        self._metadata_groups = None
 
     def __dir__(self):
         """
@@ -325,3 +326,80 @@ class _MetadataMixin:
         else:
             # we don't allow indexing columns with numbers, e.g. metadata[0,0]
             raise IndexError(f"Unknown metadata index {key}")
+
+    def groupby(self, by=None, get_group=None):
+        """
+        Group pynapple object by metadata column(s).
+
+        Parameters
+        ----------
+        by : str or list of str
+            Metadata column name(s) to group by.
+        get_group : str, optional
+            Name of the group to return.
+
+        Returns
+        -------
+        pynapple object
+            Original pynapple object with groups set, or pynapple object corresponding to 'get_group' if it has been supplied.
+
+        Raises
+        ------
+        ValueError
+            If metadata column does not exist.
+        """
+        if isinstance(by, str) and by not in self.metadata_columns:
+            raise ValueError(
+                f"Metadata column '{by}' not found. Metadata columns are {self.metadata_columns}"
+            )
+        elif isinstance(by, list):
+            for b in by:
+                if b not in self.metadata_columns:
+                    raise ValueError(
+                        f"Metadata column '{b}' not found. Metadata columns are {self.metadata_columns}"
+                    )
+        self.__dict__["_metadata_groups"] = self._metadata.groupby(by).groups
+        if get_group is not None:
+            return self.get_group(get_group)
+        else:
+            return self
+
+    def get_group(self, name):
+        """
+        Get group from metadata groups.
+
+        Parameters
+        ----------
+        name : str or tuple of str
+            Name of the group to return.
+
+        Returns
+        -------
+        pynapple object
+            Pynapple object corresponding to the group 'name'.
+
+        Raises
+        ------
+        RuntimeError
+            If no grouping has been performed.
+        ValueError
+            If group name does not exist.
+        """
+        if self._metadata_groups is None:
+            raise RuntimeError(
+                "No grouping has been performed. Please run groupby() first."
+            )
+        elif name not in self._metadata_groups.keys():
+            raise ValueError(
+                f"Group '{name}' not found in metadata groups. Groups are {list(self._metadata_groups.keys())}"
+            )
+        else:
+            idx = self._metadata_groups[name]
+            return self[np.array(idx)]
+
+    @property
+    def metadata_groups(self):
+        """
+        Dictionary of metadata groups. Keys are group names and values are the indices of the group. Is None if no grouping has been performed.
+        """
+        return self._metadata_groups

@@ -643,10 +643,13 @@ def test_tsgroup_metadata_future_warnings():
 @pytest.fixture
 def clear_metadata(obj):
     if isinstance(obj, nap.TsGroup):
+        # clear metadata columns
         columns = [col for col in obj.metadata_columns if col != "rate"]
     else:
         columns = obj.metadata_columns
     obj._metadata.drop(columns=columns, inplace=True)
+    # clear metadata groups
+    obj.__dict__["_metadata_groups"] = None
     return obj
 
 
@@ -1051,6 +1054,56 @@ class Test_Metadata:
 
         # cleaning
         Path("obj.npz").unlink()
+
+        # class Test_Metadata_Group:
+
+    @pytest.mark.parametrize(
+        "metadata, group",
+        [
+            ({"label": [1, 1, 2, 2]}, "label"),
+            ({"l1": [1, 1, 2, 2], "l2": ["a", "b", "b", "b"]}, ["l1", "l2"]),
+        ],
+    )
+    def test_metadata_groupby(self, obj, metadata, group, obj_len):
+        if obj_len <= 1:
+            pytest.skip("groupby not relevant for length 1 objects")
+
+        obj.set_info(metadata)
+        # assert no groups
+        assert obj._metadata_groups == None
+        assert obj._metadata_groups == obj.metadata_groups
+
+        # pandas groups
+        groups = obj._metadata.groupby(group)
+
+        # group by metadata, assert saved groups
+        obj.groupby(group)
+        assert obj._metadata_groups.keys() == groups.groups.keys()
+        for grp, idx in obj._metadata_groups.items():
+            # index same as pandas
+            assert all(idx == groups.groups[grp])
+
+            obj_grp = obj.get_group(grp)
+
+            # get_group should be the same as indexed object
+            pd.testing.assert_frame_equal(
+                obj_grp._metadata, obj[np.array(idx)]._metadata
+            )
+            # index should be the same for both objects
+            assert all(obj_grp.index == obj[np.array(idx)].index)
+            if isinstance(obj, nap.TsdFrame):
+                # columns should be the same
+                assert all(obj_grp.columns == obj[np.array(idx)].columns)
+
+            # get_group should be the same as groupby with specified group
+            pd.testing.assert_frame_equal(
+                obj_grp._metadata, obj.groupby(group, grp)._metadata
+            )
+            # index should be the same for both objects
+            assert all(obj_grp.index == obj.groupby(group, grp).index)
+            if isinstance(obj, nap.TsdFrame):
+                # columns should be the same for tsdframe
+                assert all(obj_grp.columns == obj.groupby(group, grp).columns)
 
 
 # test double inheritance
