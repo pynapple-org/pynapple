@@ -63,7 +63,6 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
 
     # Bin spikes
     count = newgroup.count(bin_size, ep, time_units)
-    count = count.smooth(bin_size*3)
 
     # Occupancy
     if feature is None:

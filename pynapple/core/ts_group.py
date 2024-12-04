@@ -345,7 +345,9 @@ class TsGroup(UserDict, _MetadataMixin):
                 return _MetadataMixin.__getitem__(self, key)
             else:
                 raise KeyError(r"Key {} not in group index.".format(key))
-        elif isinstance(key, list) and len(key) and all(isinstance(k, str) for k in key):
+        elif (
+            isinstance(key, list) and len(key) and all(isinstance(k, str) for k in key)
+        ):
             # index multiple metadata columns
             return _MetadataMixin.__getitem__(self, key)
 
