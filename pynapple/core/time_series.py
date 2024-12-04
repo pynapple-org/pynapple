@@ -1218,11 +1218,15 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     "When indexing with a Tsd, it must contain boolean values"
                 )
             key = key.d
-        elif (
-            isinstance(key, str)
-            or hasattr(key, "__iter__")
-            and all([isinstance(k, str) for k in key])
-        ):
+        elif isinstance(key, str):
+            if key in self.columns:
+                with warnings.catch_warnings():
+                    # ignore deprecated warning for loc
+                    warnings.simplefilter("ignore")
+                    return self.loc[key]
+            else:
+                return _MetadataMixin.__getitem__(self, key)
+        elif hasattr(key, "__iter__") and all([isinstance(k, str) for k in key]):
             if all(k in self.columns for k in key):
                 with warnings.catch_warnings():
                     # ignore deprecated warning for loc
@@ -1272,8 +1276,6 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                 return _get_class(output)(
                     t=index, d=output, time_support=self.time_support, **kwargs
                 )
-            # else:
-            #     return output
             else:
                 return output
 

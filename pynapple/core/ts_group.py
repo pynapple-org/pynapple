@@ -345,7 +345,7 @@ class TsGroup(UserDict, _MetadataMixin):
                 return _MetadataMixin.__getitem__(self, key)
             else:
                 raise KeyError(r"Key {} not in group index.".format(key))
-        elif isinstance(key, list) and all(isinstance(k, str) for k in key):
+        elif isinstance(key, list) and len(key) and all(isinstance(k, str) for k in key):
             # index multiple metadata columns
             return _MetadataMixin.__getitem__(self, key)
 
@@ -389,10 +389,16 @@ class TsGroup(UserDict, _MetadataMixin):
         max_rows = np.maximum(rows - 10, 2)
 
         # By default, the first three columns should always show.
-        col_names = self._metadata.columns.drop("rate")
+        col_names = self._metadata.columns
+        if "rate" in col_names:
+            col_names = col_names.drop("rate")
+
         headers = ["Index", "rate"] + [c for c in col_names][0:max_cols]
         end = ["..."] if len(headers) > max_cols else []
         headers += end
+
+        if len(self) == 0:
+            return tabulate(tabular_data=[], headers=headers)
 
         if len(self) > max_rows:
             n_rows = max_rows // 2
@@ -530,7 +536,7 @@ class TsGroup(UserDict, _MetadataMixin):
         cols = self._metadata.columns.drop("rate")
 
         return TsGroup(
-            newgr, time_support=ep, bypass_check=True, **self._metadata[cols]
+            newgr, time_support=ep, bypass_check=True, metadata=self._metadata[cols]
         )
 
     def value_from(self, tsd, ep=None):
@@ -576,7 +582,7 @@ class TsGroup(UserDict, _MetadataMixin):
             newgr[k] = self.data[k].value_from(tsd, ep)
 
         cols = self._metadata.columns.drop("rate")
-        return TsGroup(newgr, time_support=ep, **self._metadata[cols])
+        return TsGroup(newgr, time_support=ep, metadata=self._metadata[cols])
 
     def count(self, *args, dtype=None, **kwargs):
         """
@@ -867,7 +873,7 @@ class TsGroup(UserDict, _MetadataMixin):
             newgr,
             time_support=self.time_support,
             bypass_check=True,
-            **self._metadata[cols],
+            metadata=self._metadata[cols],
         )
 
     #################################
