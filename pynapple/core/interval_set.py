@@ -307,23 +307,18 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
 
         headers = ["index", "start", "end"]
         if len(col_names):
-            headers += [""] + [c for c in col_names]
+            headers += [c for c in col_names]
         bottom = f"shape: {self.shape}, time unit: sec."
 
         # We rarely want to print everything as it can be very big.
         if len(self) > max_rows:
             n_rows = max_rows // 2
-            if len(col_names):
-                separator = np.array([["|"] * n_rows]).T
-            else:
-                separator = np.empty((n_rows, 0))
             data = np.vstack(
                 (
                     np.hstack(
                         (
                             self.index[0:n_rows, None],
                             self.values[0:n_rows],
-                            separator,
                             _convert_iter_to_str(metadata.values[0:n_rows]),
                         ),
                         dtype=object,
@@ -333,7 +328,6 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                         (
                             self.index[-n_rows:, None],
                             self.values[0:n_rows],
-                            separator,
                             _convert_iter_to_str(metadata.values[-n_rows:]),
                         ),
                         dtype=object,
@@ -341,15 +335,10 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                 )
             )
         else:
-            if len(col_names):
-                separator = np.array([["|"] * len(self)]).T
-            else:
-                separator = np.empty((len(self), 0))
             data = np.hstack(
                 (
                     self.index[:, None],
                     self.values,
-                    separator,
                     _convert_iter_to_str(metadata.values),
                 ),
                 dtype=object,
