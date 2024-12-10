@@ -129,7 +129,6 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         self.dtype = self.values.dtype
         self._load_array = load_array
 
-
     def _define_instance(self, time, iset, data=None, **kwargs):
         """
         Define a new class instance.
@@ -139,10 +138,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         for key in ["columns", "metadata", "load_array"]:
             if hasattr(self, key):
                 kwargs[key] = kwargs.get(key, getattr(self, key))
-        return self.__class__(
-            t=time, d=data, time_support=iset, **kwargs
-        )
-
+        return self.__class__(t=time, d=data, time_support=iset, **kwargs)
 
     @property
     def load_array(self):

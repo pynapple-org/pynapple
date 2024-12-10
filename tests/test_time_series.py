@@ -2216,26 +2216,46 @@ def test_get_slice_public(start, end, expected_slice, expected_array, ts):
         {"columns": [1, 2]},
         {"metadata": {"banana": [3, 4]}},
         {"load_array": False},
-        {
-            "columns": ["a", "b"],
-            "metadata": {"banana": [3, 4]},
-            "load_array": False
-        },
-    ]
+        {"columns": ["a", "b"], "metadata": {"banana": [3, 4]}, "load_array": False},
+    ],
 )
 @pytest.mark.parametrize(
     "tsd",
     [
-        nap.Ts(t=np.arange(10), time_support=nap.IntervalSet(0,15)),
-        nap.Ts(t=np.arange(10), time_support=nap.IntervalSet(0,15)),
-        nap.Tsd(t=np.arange(10), d=np.arange(10), time_support=nap.IntervalSet(0,15)),
-        nap.Tsd(t=np.arange(10), d=np.arange(10), time_support=nap.IntervalSet(0,15)),
-        nap.TsdFrame(t=np.arange(10), d=np.zeros((10, 2)), time_support=nap.IntervalSet(0,15), columns=["a", "b"]),
-        nap.TsdFrame(t=np.arange(10), d=np.zeros((10, 2)), time_support=nap.IntervalSet(0,15), metadata={"pineapple": [1, 2]}),
-        nap.TsdFrame(t=np.arange(10), d=np.zeros((10, 2)), time_support=nap.IntervalSet(0,15), load_array=True),
-        nap.TsdFrame(t=np.arange(10), d=np.zeros((10, 2)), time_support=nap.IntervalSet(0,15),load_array=True, columns=["a", "b"], metadata={"pineapple": [1, 2]}),
-        nap.TsdTensor(t=np.arange(10), d=np.zeros((10, 2, 3)), time_support=nap.IntervalSet(0,15)),
-    ]
+        nap.Ts(t=np.arange(10), time_support=nap.IntervalSet(0, 15)),
+        nap.Ts(t=np.arange(10), time_support=nap.IntervalSet(0, 15)),
+        nap.Tsd(t=np.arange(10), d=np.arange(10), time_support=nap.IntervalSet(0, 15)),
+        nap.Tsd(t=np.arange(10), d=np.arange(10), time_support=nap.IntervalSet(0, 15)),
+        nap.TsdFrame(
+            t=np.arange(10),
+            d=np.zeros((10, 2)),
+            time_support=nap.IntervalSet(0, 15),
+            columns=["a", "b"],
+        ),
+        nap.TsdFrame(
+            t=np.arange(10),
+            d=np.zeros((10, 2)),
+            time_support=nap.IntervalSet(0, 15),
+            metadata={"pineapple": [1, 2]},
+        ),
+        nap.TsdFrame(
+            t=np.arange(10),
+            d=np.zeros((10, 2)),
+            time_support=nap.IntervalSet(0, 15),
+            load_array=True,
+        ),
+        nap.TsdFrame(
+            t=np.arange(10),
+            d=np.zeros((10, 2)),
+            time_support=nap.IntervalSet(0, 15),
+            load_array=True,
+            columns=["a", "b"],
+            metadata={"pineapple": [1, 2]},
+        ),
+        nap.TsdTensor(
+            t=np.arange(10), d=np.zeros((10, 2, 3)), time_support=nap.IntervalSet(0, 15)
+        ),
+    ],
 )
 def test_define_instance(tsd, kwargs):
     t = tsd.t
@@ -2263,7 +2283,8 @@ def test_define_instance(tsd, kwargs):
             assert np.all(val == getattr(out, key))
         # get expected metadata
         meta = kwargs.get("metadata", getattr(tsd, "metadata"))
-        for key, val, in meta.items():
+        for (
+            key,
+            val,
+        ) in meta.items():
             assert np.all(out.metadata[key] == val)
-
-

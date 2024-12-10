@@ -377,7 +377,7 @@ class _Base(abc.ABC):
 
         idx = _restrict(time_array, starts, ends)
         data = None if not hasattr(self, "values") else self.values[idx]
-        return self._define_instance(time_array[idx] , iset, data=data)
+        return self._define_instance(time_array[idx], iset, data=data)
 
     def copy(self):
         """Copy the data, index and time support"""
