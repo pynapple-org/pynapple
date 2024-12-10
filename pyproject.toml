@@ -75,6 +75,7 @@ doc = [
     "sphinx-autobuild",
     "sphinx-contributors",
     "dask",
+    "zarr",
     # "sphinx-exec-code"
 ]
 docs = [
