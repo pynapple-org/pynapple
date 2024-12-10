@@ -16,7 +16,6 @@ import pandas as pd
 import pytest
 
 import pynapple as nap
-from docs.generated.api_guide.tutorial_pynapple_nwb import n_channels
 
 # look for tests folder
 path = Path(__file__).parent
