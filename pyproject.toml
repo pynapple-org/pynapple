@@ -94,6 +94,7 @@ dandi = [
     "fsspec",
     "requests",
     "aiohttp",
+    "dask",
 ]
 
 
