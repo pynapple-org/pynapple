@@ -55,6 +55,7 @@ dev = [
     "flake8",                       # Code linter
     "coverage",                     # Test coverage measurement
     "dask",
+    "zarr",
 ]
 doc = [
     "matplotlib",
