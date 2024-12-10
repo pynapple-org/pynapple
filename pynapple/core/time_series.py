@@ -129,6 +129,26 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         self.dtype = self.values.dtype
         self._load_array = load_array
 
+
+    def _define_instance(self, time, iset, data=None, **kwargs):
+        """
+        Define a new class instance.
+
+        Optional parameters for initialization are either passed to the function or are grabbed from self.
+        """
+        for key in ["columns", "metadata", "load_array"]:
+            if hasattr(self, key):
+                kwargs[key] = kwargs.get(key, getattr(self, key))
+        return self.__class__(
+            t=time, d=data, time_support=iset, **kwargs
+        )
+
+
+    @property
+    def load_array(self):
+        """Read-only property load-array."""
+        return self._load_array
+
     def __setitem__(self, key, value):
         """setter for time series"""
         if isinstance(key, _BaseTsd):
@@ -265,12 +285,6 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         """
         return np.asarray(self.values)
 
-    def copy(self):
-        """Copy the data, index and time support"""
-        return self.__class__(
-            t=self.index.copy(), d=self.values[:].copy(), time_support=self.time_support
-        )
-
     def value_from(self, data, ep=None):
         """
         Replace the value with the closest value from Tsd/TsdFrame/TsdTensor argument
@@ -314,7 +328,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         ), "First argument should be an instance of Tsd, TsdFrame or TsdTensor"
 
         t, d, time_support, kwargs = super().value_from(data, ep)
-        return data.__class__(t=t, d=d, time_support=time_support, **kwargs)
+        return data._define_instance(t, time_support, data=d, **kwargs)
 
     def count(self, *args, dtype=None, **kwargs):
         """
@@ -428,13 +442,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         t, d = _bin_average(time_array, data_array, starts, ends, bin_size)
 
-        kwargs = {}
-        if hasattr(self, "columns"):
-            kwargs["columns"] = self.columns
-        if hasattr(self, "_metadata"):
-            kwargs["metadata"] = self._metadata
-
-        return self.__class__(t=t, d=d, time_support=ep, **kwargs)
+        return self._define_instance(t, ep, data=d)
 
     def dropna(self, update_time_support=True):
         """Drop every rows containing NaNs. By default, the time support is updated to start and end around the time points that are non NaNs.
@@ -468,13 +476,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         else:
             ep = self.time_support
 
-        kwargs = {}
-        if hasattr(self, "columns"):
-            kwargs["columns"] = self.columns
-        if hasattr(self, "_metadata"):
-            kwargs["metadata"] = self._metadata
-
-        return self.__class__(t=t, d=d, time_support=ep, **kwargs)
+        return self._define_instance(t, ep, data=d)
 
     def convolve(self, array, ep=None, trim="both"):
         """Return the discrete linear convolution of the time series with a one dimensional sequence.
@@ -698,12 +700,8 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                     new_d[start : start + len(t), ...] = interpolated_values
 
             start += len(t)
-        kwargs_dict = dict(time_support=ep)
-        if hasattr(self, "columns"):
-            kwargs_dict["columns"] = self.columns
-        if hasattr(self, "_metadata"):
-            kwargs_dict["metadata"] = self._metadata
-        return self.__class__(t=new_t, d=new_d, **kwargs_dict)
+
+        return self._define_instance(new_t, ep, data=new_d)
 
 
 class TsdTensor(_BaseTsd):
@@ -1350,16 +1348,6 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         df.index.name = "Time (" + str(units) + ")"
         df.columns = self.columns.copy()
         return df
-
-    def copy(self):
-        """Copy the data, index, time support, columns and metadata of the TsdFrame object."""
-        return self.__class__(
-            t=self.index.copy(),
-            d=self.values[:].copy(),
-            time_support=self.time_support,
-            columns=self.columns.copy(),
-            metadata=self._metadata,
-        )
 
     def save(self, filename):
         """
@@ -2025,6 +2013,9 @@ class Ts(_Base):
         self.nap_class = self.__class__.__name__
         self._initialized = True
 
+    def _define_instance(self, time, iset, data=None, **kwargs):
+        return self.__class__(t=time, time_support=iset)
+
     def __repr__(self):
         upper = "Time (s)"
         rows = _get_terminal_size()[1]
@@ -2130,7 +2121,7 @@ class Ts(_Base):
 
         t, d, time_support, kwargs = super().value_from(data, ep)
 
-        return data.__class__(t, d, time_support=time_support, **kwargs)
+        return data._define_instance(t, time_support, data=d, **kwargs)
 
     def count(self, *args, dtype=None, **kwargs):
         """

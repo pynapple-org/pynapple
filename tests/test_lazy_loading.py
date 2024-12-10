@@ -369,7 +369,7 @@ def test_dask_lazy_loading_tsd(dask_array_tsd):
         t=np.arange(dask_array_tsd.shape[0]), d=dask_array_tsd, load_array=False
     )
     assert isinstance(tsd.d, da.Array)
-    assert isinstance(tsd.restrict(nap.IntervalSet(0, 10)).d, np.ndarray)
+    assert isinstance(tsd.restrict(nap.IntervalSet(0, 10)).d, da.Array)
     repr(tsd)
     assert isinstance(tsd.d, da.Array)
     assert isinstance(tsd[1:10].d, np.ndarray)
@@ -407,7 +407,7 @@ def test_dask_lazy_loading_tsdframe(dask_array_tsdframe):
         load_array=False,
     )
     assert isinstance(tsdframe.d, da.Array)
-    assert isinstance(tsdframe.restrict(nap.IntervalSet(0, 10)).d, np.ndarray)
+    assert isinstance(tsdframe.restrict(nap.IntervalSet(0, 10)).d, da.Array)
     repr(tsdframe)
     assert isinstance(tsdframe.d, da.Array)
     assert isinstance(tsdframe[1:10].d, np.ndarray)
@@ -449,7 +449,7 @@ def test_dask_lazy_loading_tsdtensor(dask_array_tsdtensor):
         load_array=False,
     )
     assert isinstance(tsdtensor.d, da.Array)
-    assert isinstance(tsdtensor.restrict(nap.IntervalSet(0, 10)).d, np.ndarray)
+    assert isinstance(tsdtensor.restrict(nap.IntervalSet(0, 10)).d, da.Array)
     repr(tsdtensor)
     assert isinstance(tsdtensor.d, da.Array)
     assert isinstance(tsdtensor[1:10].d, np.ndarray)
