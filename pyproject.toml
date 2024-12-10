@@ -86,7 +86,8 @@ docs = [
     "matplotlib",
     "seaborn",
     "zarr",
-    "dandi"
+    "dandi",
+    "dask",
 ]
 dandi = [
     "dandi",                        # Dandi package

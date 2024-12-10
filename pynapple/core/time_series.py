@@ -19,6 +19,7 @@ import abc
 import importlib
 import warnings
 from numbers import Number
+from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -61,6 +62,27 @@ def _get_class(data):
         return TsdFrame
     else:
         return TsdTensor
+
+
+def _initialize_tsd_output(inp, out):
+
+    if isinstance(out, np.ndarray) or is_array_like(out):
+        # # if dims increased in any case, we can't return safely a time series
+        # if out.ndim > self.ndim:
+        #     return out
+        if out.shape[0] == inp.index.shape[0]:
+            kwargs = {"load_array": inp._load_array}
+            if (inp.ndim == 2) and (out.ndim == 2) and (out.shape[1] == inp.shape[1]):
+                # only pass columns and metadata if number of columns is preserved
+                if hasattr(inp, "columns"):
+                    kwargs["columns"] = inp.columns
+                if hasattr(inp, "_metadata"):
+                    kwargs["metadata"] = inp._metadata
+            return _get_class(out)(
+                t=inp.index, d=out, time_support=inp.time_support, **kwargs
+            )
+
+    return out
 
 
 class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
@@ -125,6 +147,19 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 return np_func(self, *args, **kwargs)
 
             return method
+        if name not in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
+            # apply array specific methods
+            attr = getattr(self.d, name, None)
+
+            if isinstance(attr, Callable):
+
+                def method(*args, **kwargs):
+                    out = attr(*args, **kwargs)
+                    return _initialize_tsd_output(self, out)
+
+                return method
+            elif attr:
+                return attr
 
         raise AttributeError(
             "Time series object does not have the attribute {}".format(name)
@@ -167,20 +202,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             else:
                 out = ufunc(*new_args, **kwargs)
 
-            if isinstance(out, np.ndarray) or is_array_like(out):
-                if out.shape[0] == self.index.shape[0]:
-                    kwargs = {"load_array": self._load_array}
-                    if hasattr(self, "columns"):
-                        kwargs["columns"] = self.columns
-                    if hasattr(self, "_metadata"):
-                        kwargs["metadata"] = self._metadata
-                    return _get_class(out)(
-                        t=self.index, d=out, time_support=self.time_support, **kwargs
-                    )
-                else:
-                    return out
-            else:
-                return out
+            return _initialize_tsd_output(self, out)
         else:
             return NotImplemented
 
@@ -211,30 +233,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 new_args.append(a)
 
         out = func._implementation(*new_args, **kwargs)
-
-        if isinstance(out, np.ndarray) or is_array_like(out):
-            # # if dims increased in any case, we can't return safely a time series
-            # if out.ndim > self.ndim:
-            #     return out
-            if out.shape[0] == self.index.shape[0]:
-                kwargs = {"load_array": self._load_array}
-                if (
-                    (self.ndim == 2)
-                    and (out.ndim == 2)
-                    and (out.shape[1] == self.shape[1])
-                ):
-                    # only pass columns and metadata if number of columns is preserved
-                    if hasattr(self, "columns"):
-                        kwargs["columns"] = self.columns
-                    if hasattr(self, "_metadata"):
-                        kwargs["metadata"] = self._metadata
-                return _get_class(out)(
-                    t=self.index, d=out, time_support=self.time_support, **kwargs
-                )
-            else:
-                return out
-        else:
-            return out
+        return _initialize_tsd_output(self, out)
 
     def as_array(self):
         """
