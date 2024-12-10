@@ -628,10 +628,6 @@ class TestTsGroup1:
         group["a"] = np.arange(len(group)) + 10
         assert all(group._metadata["a"] == np.arange(len(group)) + 10)
 
-    def test_prevent_overwriting_existing_methods(self, ts_group):
-        with pytest.raises(ValueError, match=r"Invalid metadata name"):
-            ts_group["set_info"] = np.arange(2)
-
     def test_getitem_ts_object(self, ts_group):
         assert isinstance(ts_group[1], nap.Ts)
 

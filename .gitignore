@@ -8,6 +8,10 @@
 /docs/generated/gallery/*.py
 /docs/generated/gallery/*.zip
 
+/doc/generated
+/doc/examples/nwb-cache
+/doc/_build
+
 /tests/npzfilestest
 
 # Byte-compiled / optimized / DLL files

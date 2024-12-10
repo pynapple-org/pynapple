@@ -1,6 +1,7 @@
 """Tests of time series for `pynapple` package."""
 
 import pickle
+import warnings
 from contextlib import nullcontext as does_not_raise
 from numbers import Number
 from pathlib import Path
@@ -1381,6 +1382,17 @@ class TestTsdFrame:
         assert isinstance(tsd2, nap.TsdFrame)
         np.testing.assert_array_equal(tsd2.columns, tsdframe.columns)
 
+    def test_deprecation_warning(self, tsdframe):
+        columns = tsdframe.columns
+        # warning using loc
+        with pytest.warns(DeprecationWarning):
+            tsdframe.loc[columns[0]]
+        if isinstance(columns[0], str):
+            # suppressed warning with getitem, which implicitly uses loc
+            with warnings.catch_warnings():
+                warnings.simplefilter("error")
+                tsdframe[columns[0]]
+
 
 ####################################################
 # Test for ts
@@ -1897,6 +1909,8 @@ def test_pickling(obj):
     # Ensure time support is the same
     assert np.all(obj.time_support == unpickled_obj.time_support)
 
+
+#
 
 ####################################################
 # Test for slicing

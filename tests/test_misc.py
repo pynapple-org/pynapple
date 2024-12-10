@@ -6,6 +6,7 @@
 
 """Tests of IO misc functions"""
 
+import os
 import shutil
 import warnings
 from pathlib import Path
@@ -15,6 +16,7 @@ import pandas as pd
 import pytest
 
 import pynapple as nap
+from docs.generated.api_guide.tutorial_pynapple_nwb import n_channels
 
 # look for tests folder
 path = Path(__file__).parent
@@ -75,3 +77,40 @@ def test_load_folder_foldernotfound():
         nap.load_folder("MissingFolder")
 
     assert str(e.value) == "Folder MissingFolder does not exist"
+
+
+@pytest.mark.parametrize("path", [path])
+def test_load_eeg(path):
+    filepath = path / "memmap.dat"
+    tmp = np.random.randn(10, 3).astype("int16")
+    data = np.memmap(filename=filepath, dtype="int16", mode="w+", shape=(10, 3))
+    data[:] = tmp
+    data.flush()
+
+    # All channels
+    eeg = nap.load_eeg(filepath, n_channels=3, frequency=100, precision="int16")
+
+    assert isinstance(eeg, nap.TsdFrame)
+    np.testing.assert_array_almost_equal(tmp, eeg.values)
+    np.testing.assert_array_almost_equal(eeg.t, np.arange(0, 10) / 100)
+    assert isinstance(eeg.values, np.memmap)
+
+    # List of channels
+    eeg = nap.load_eeg(
+        filepath, channel=[0, 2], n_channels=3, frequency=100, precision="int16"
+    )
+
+    assert isinstance(eeg, nap.TsdFrame)
+    np.testing.assert_array_almost_equal(tmp[:, [0, 2]], eeg.values)
+    assert isinstance(eeg.values, np.ndarray)
+
+    # Single channel
+    eeg = nap.load_eeg(
+        filepath, channel=0, n_channels=3, frequency=100, precision="int16"
+    )
+
+    assert isinstance(eeg, nap.Tsd)
+    np.testing.assert_array_almost_equal(tmp[:, 0], eeg.values)
+    assert isinstance(eeg.values, np.ndarray)
+
+    filepath.unlink()

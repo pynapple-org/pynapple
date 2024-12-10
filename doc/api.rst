@@ -8,7 +8,7 @@ Core objects
 
 .. rubric:: Time Series
 
-.. currentmodule:: pynapple.core.time_series
+.. currentmodule:: pynapple
 
 .. autosummary::
     :toctree: generated/
@@ -22,7 +22,7 @@ Core objects
 
 .. rubric:: Intervals
 
-.. currentmodule:: pynapple.core.interval_set
+.. currentmodule:: pynapple
 
 .. autosummary::
     :toctree: generated/
@@ -34,7 +34,7 @@ Core objects
 
 .. rubric:: Timestamps
 
-.. currentmodule:: pynapple.core.time_series
+.. currentmodule:: pynapple
 
 .. autosummary::
     :toctree: generated/
@@ -45,7 +45,7 @@ Core objects
 
 .. rubric:: Group of timestamps
 
-.. currentmodule:: pynapple.core.ts_group
+.. currentmodule:: pynapple
 
 .. autosummary::
     :toctree: generated/
@@ -58,7 +58,7 @@ Core objects
 Input-Ouput
 -----------
 
-.. currentmodule:: pynapple.io.interface_nwb
+.. currentmodule:: pynapple.io
 
 .. rubric:: Neurodata Without Borders (NWB)
 
@@ -70,7 +70,7 @@ Input-Ouput
     NWBFile
 
 
-.. currentmodule:: pynapple.io.interface_npz
+.. currentmodule:: pynapple.io
 
 .. rubric:: Numpy files
 

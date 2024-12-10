@@ -29,10 +29,11 @@ from tabulate import tabulate
 from ._core_functions import _bin_average, _convolve, _dropna, _restrict, _threshold
 from .base_class import _Base
 from .interval_set import IntervalSet
-from .metadata_class import _MetadataMixin
+from .metadata_class import _MetadataMixin, add_meta_docstring
 from .time_index import TsIndex
 from .utils import (
     _concatenate_tsd,
+    _convert_iter_to_str,
     _get_terminal_size,
     _split_tsd,
     _TsdFrameSliceHelper,
@@ -67,6 +68,9 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
     Abstract base class for time series objects.
     Implement most of the shared functions across concrete classes `Tsd`, `TsdFrame`, `TsdTensor`
     """
+
+    values: np.ndarray
+    """An array of the time series data"""
 
     def __init__(self, t, d, time_units="s", time_support=None, load_array=True):
         super().__init__(t, time_units, time_support)
@@ -705,7 +709,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
 class TsdTensor(_BaseTsd):
     """
-    Container for neurophysiological time series with more than 2 dimensions (movies).
+    Container for neurophysiological time series with more than 2 dimensions (for example movies).
 
     Attributes
     ----------
@@ -733,7 +737,7 @@ class TsdTensor(_BaseTsd):
             The time support of the TsdFrame object
         load_array : bool, optional
             Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
-            Default is True. Does not apply if `d` is already a numpy array.
+            Default is True. Does not apply if `d` is already a numpy array  or a numpy memory map.
 
         """
         super().__init__(t, d, time_units, time_support, load_array)
@@ -903,14 +907,131 @@ class TsdTensor(_BaseTsd):
 class TsdFrame(_BaseTsd, _MetadataMixin):
     """
     Column-based container for neurophysiological time series.
+    A pandas.DataFrame can be passed directly.
 
-    Attributes
+    Parameters
     ----------
-    rate : float
-        Frequency of the time series (Hz) computed over the time support
-    time_support : IntervalSet
-        The time support of the time series
+    t : numpy.ndarray or pandas.DataFrame
+        the time index t,  or a pandas.DataFrame (if d is None)
+    d : numpy.ndarray
+        The data
+    time_units : str, optional
+        The time units in which times are specified ('us', 'ms', 's' [default]).
+    time_support : IntervalSet, optional
+        The time support of the TsdFrame object
+    columns : iterables
+        Column names
+    load_array : bool, optional
+        Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
+        Default is True. Does not apply if `d` is already a numpy array or a numpy memory map.
+    metadata: pd.DataFrame or dict, optional
+        Metadata associated with data columns. Metadata names are pulled from DataFrame columns or dictionary keys.
+        The length of the metadata should match the number of data columns.
+        If a DataFrame is passed, the index should match the columns of the TsdFrame.
+
+    Examples
+    --------
+    Initialize a TsdFrame:
+
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> t = np.arange(100)
+    >>> d = np.ones((100, 3))
+    >>> tsdframe = nap.TsdFrame(t=t, d=d)
+    >>> tsdframe
+    Time (s)    0    1    2
+    ----------  ---  ---  ---
+    0.0         1.0  1.0  1.0
+    1.0         1.0  1.0  1.0
+    2.0         1.0  1.0  1.0
+    3.0         1.0  1.0  1.0
+    4.0         1.0  1.0  1.0
+    ...         ...  ...  ...
+    95.0        1.0  1.0  1.0
+    96.0        1.0  1.0  1.0
+    97.0        1.0  1.0  1.0
+    98.0        1.0  1.0  1.0
+    99.0        1.0  1.0  1.0
+    dtype: float64, shape: (100, 3)
+
+    Initialize a TsdFrame with column names:
+
+    >>> tsdframe = nap.TsdFrame(t=t, d=d, columns=['A', 'B', 'C'])
+    >>> tsdframe
+    Time (s)    A    B    C
+    ----------  ---  ---  ---
+    0.0         1.0  1.0  1.0
+    1.0         1.0  1.0  1.0
+    2.0         1.0  1.0  1.0
+    3.0         1.0  1.0  1.0
+    4.0         1.0  1.0  1.0
+    ...         ...  ...  ...
+    95.0        1.0  1.0  1.0
+    96.0        1.0  1.0  1.0
+    97.0        1.0  1.0  1.0
+    98.0        1.0  1.0  1.0
+    99.0        1.0  1.0  1.0
+    dtype: float64, shape: (100, 3)
+
+    Initialize a TsdFrame with metadata:
+
+    >>> metadata = {"color": ["red", "blue", "green"], "depth": [1, 2, 3]}
+    >>> tsdframe = nap.TsdFrame(t=t, d=d, columns=["A", "B", "C"], metadata=metadata)
+    >>> tsdframe
+    Time (s)    A         B         C
+    ----------  --------  --------  --------
+    0.0         1.0       1.0       1.0
+    1.0         1.0       1.0       1.0
+    2.0         1.0       1.0       1.0
+    3.0         1.0       1.0       1.0
+    4.0         1.0       1.0       1.0
+    ...         ...       ...       ...
+    95.0        1.0       1.0       1.0
+    96.0        1.0       1.0       1.0
+    97.0        1.0       1.0       1.0
+    98.0        1.0       1.0       1.0
+    99.0        1.0       1.0       1.0
+    Metadata
+    --------    --------  --------  --------
+    color       red       blue      green
+    depth       1         2         3
+    <BLANKLINE>
+    dtype: float64, shape: (100, 3)
+
+    Initialize a TsdFrame with a pandas DataFrame:
+
+    >>> import pandas as pd
+    >>> data = pd.DataFrame(index=t, columns=["A", "B", "C"], data=d)
+    >>> metadata = pd.DataFrame(
+    ...    index=["A", "B", "C"],
+    ...    columns=["color", "depth"],
+    ...    data=[["red", 1], ["blue", 2], ["green", 3]],
+    ... )
+    >>> tsdframe = nap.TsdFrame(data, metadata=metadata)
+    >>> tsdframe
+    Time (s)    A         B         C
+    ----------  --------  --------  --------
+    0.0         1.0       1.0       1.0
+    1.0         1.0       1.0       1.0
+    2.0         1.0       1.0       1.0
+    3.0         1.0       1.0       1.0
+    4.0         1.0       1.0       1.0
+    ...         ...       ...       ...
+    95.0        1.0       1.0       1.0
+    96.0        1.0       1.0       1.0
+    97.0        1.0       1.0       1.0
+    98.0        1.0       1.0       1.0
+    99.0        1.0       1.0       1.0
+    Metadata
+    --------    --------  --------  --------
+    color       red       blue      green
+    depth       1         2         3
+    <BLANKLINE>
+    dtype: float64, shape: (100, 3)
     """
+
+    columns: pd.Index
+    """Data column names of the TsdFrame"""
 
     def __init__(
         self,
@@ -922,31 +1043,6 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         load_array=True,
         metadata=None,
     ):
-        """
-        TsdFrame initializer
-        A pandas.DataFrame can be passed directly
-
-        Parameters
-        ----------
-        t : numpy.ndarray or pandas.DataFrame
-            the time index t,  or a pandas.DataFrame (if d is None)
-        d : numpy.ndarray
-            The data
-        time_units : str, optional
-            The time units in which times are specified ('us', 'ms', 's' [default]).
-        time_support : IntervalSet, optional
-            The time support of the TsdFrame object
-        columns : iterables
-            Column names
-        load_array : bool, optional
-            Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
-            Default is True. Does not apply if `d` is already a numpy array.
-        metadata: pd.DataFrame or dict, optional
-            Metadata associated with data columns
-        **kwargs : dict, optional
-            Additional keyword arguments for labelling with metadata columns of the TsdFrame. The metadata should be the same length as the number of columns of the TsdFrame.
-        """
-
         c = columns
 
         if isinstance(t, pd.DataFrame):
@@ -972,11 +1068,22 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
-        _MetadataMixin.__init__(self, metadata)
+        # initialize metadata for class attributes
+        _MetadataMixin.__init__(self)
+        # get current list of attributes
+        self._class_attributes = self.__dir__()
+        self._class_attributes.append("_class_attributes")
+        # set metadata
         self._initialized = True
+        self.set_info(metadata)
 
     @property
     def loc(self):
+        # add deprecation warning
+        warnings.warn(
+            "'loc' will be deprecated in a future version. Use bracket indexing instead.",
+            DeprecationWarning,
+        )
         return _TsdFrameSliceHelper(self)
 
     def __repr__(self):
@@ -1068,7 +1175,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                         np.hstack(
                             (
                                 col_names[:, None],
-                                self._metadata.values[0:max_cols].T,
+                                _convert_iter_to_str(
+                                    self._metadata.values[0:max_cols].T
+                                ),
                                 ends,
                             ),
                             dtype=object,
@@ -1083,7 +1192,12 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
     def __setattr__(self, name, value):
         # necessary setter to allow metadata to be set as an attribute
         if self._initialized:
-            _MetadataMixin.__setattr__(self, name, value)
+            if name in self._class_attributes:
+                raise AttributeError(
+                    f"Cannot set attribute: '{name}' is a reserved attribute. Use 'set_info()' to set '{name}' as metadata."
+                )
+            else:
+                _MetadataMixin.__setattr__(self, name, value)
         else:
             super().__setattr__(name, value)
 
@@ -1094,7 +1208,15 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         # self._metadata.column having attributes '__reduce__', '__reduce_ex__'
         if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
             raise AttributeError(name)
-        if name in self._metadata.columns:
+
+        try:
+            metadata = self._metadata
+        except (AttributeError, RecursionError):
+            metadata = pd.DataFrame(index=self.columns)
+
+        if name == "_metadata":
+            return metadata
+        elif name in metadata.columns:
             return _MetadataMixin.__getattr__(self, name)
         else:
             return super().__getattr__(name)
@@ -1134,18 +1256,18 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     "When indexing with a Tsd, it must contain boolean values"
                 )
             key = key.d
-        elif isinstance(key, str) and (key in self.metadata_columns):
-            return _MetadataMixin.__getitem__(self, key)
         elif (
             isinstance(key, str)
             or hasattr(key, "__iter__")
             and all([isinstance(k, str) for k in key])
         ):
-            if all(k in self.metadata_columns for k in key):
-                return _MetadataMixin.__getitem__(self, key)
+            if all(k in self.columns for k in key):
+                with warnings.catch_warnings():
+                    # ignore deprecated warning for loc
+                    warnings.simplefilter("ignore")
+                    return self.loc[key]
             else:
-                return self.loc[key]
-
+                return _MetadataMixin.__getitem__(self, key)
         else:
             if isinstance(key, pd.Series) and key.index.equals(self.columns):
                 # if indexing with a pd.Series from metadata, transform it to tuple with slice(None) in first position
@@ -1299,6 +1421,222 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
         return
 
+    @add_meta_docstring("set_info")
+    def set_info(self, metadata=None, **kwargs):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), columns=["a", "b", "c"])
+
+        To add metadata with a pandas.DataFrame:
+
+        >>> import pandas as pd
+        >>> metadata = pd.DataFrame(index=tsdframe.columns, data=["red", "blue", "green"], columns=["color"])
+        >>> tsdframe.set_info(metadata)
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+
+        To add metadata with a dictionary:
+
+        >>> metadata = {"xpos": [10, 20, 30]}
+        >>> tsdframe.set_info(metadata)
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        xpos        10        20        30
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+
+        To add metadata with a keyword arument (pd.Series, numpy.ndarray, list or tuple):
+
+        >>> ypos = pd.Series(index=tsdframe.columns, data = [10, 10, 10])
+        >>> tsdframe.set_info(ypos=ypos)
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        xpos        10        20        30
+        ypos        10        10        10
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+
+        To add metadata as an attribute:
+
+        >>> tsdframe.label = ["a", "b", "c"]
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        xpos        10        20        30
+        ypos        10        10        10
+        label       a         b         c
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+
+        To add metadata as a key:
+
+        >>> tsdframe["region"] = ["M1", "M1", "M2"]
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        xpos        10        20        30
+        ypos        10        10        10
+        label       a         b         c
+        region      M1        M1        M2
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+
+        Metadata can be overwritten:
+
+        >>> tsdframe.set_info(label=["x", "y", "z"])
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        xpos        10        20        30
+        ypos        10        10        10
+        label       x         y         z
+        region      M1        M1        M2
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+        """
+        _MetadataMixin.set_info(self, metadata, **kwargs)
+
+    @add_meta_docstring("get_info")
+    def get_info(self, key):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"]}
+        >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
+        >>> print(tsdframe)
+        Time (s)    0         1         2
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        l1          1         2         3
+        l2          x         x         y
+        dtype: float64, shape: (5, 3)
+
+        To access a single metadata column:
+
+        >>> tsdframe.get_info("l1")
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
+
+        To access multiple metadata columns:
+
+        >>> tsdframe.get_info(["l1", "l2"])
+           l1 l2
+        0   1  x
+        1   2  x
+        2   3  y
+
+        To access metadata of a single column:
+
+        >>> tsdframe.get_info(0)
+        rate    0.667223
+        l1             1
+        l2             x
+        Name: 0, dtype: object
+
+        To access metadata of multiple columns:
+
+        >>> tsdframe.get_info([0, 1])
+               rate  l1 l2
+        0  0.667223   1  x
+        1  1.334445   2  x
+
+        To access metadata of a single column and metadata key:
+
+        >>> tsdframe.get_info((0, "l1"))
+        np.int64(1)
+
+        To access metadata as an attribute:
+
+        >>> tsdframe.l1
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
+
+        To access metadata as a key:
+
+        >>> tsdframe["l1"]
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
+
+        Multiple metadata columns can be accessed as keys:
+
+        >>> tsdframe[["l1", "l2"]]
+           l1 l2
+        0   1  x
+        1   2  x
+        2   3  y
+        """
+        return _MetadataMixin.get_info(self, key)
+
 
 class Tsd(_BaseTsd):
     """
@@ -1332,7 +1670,7 @@ class Tsd(_BaseTsd):
             The time support of the tsd object
         load_array : bool, optional
             Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
-            Default is True. Does not apply if `d` is already a numpy array.
+            Default is True. Does not apply if `d` is already a numpy array or a numpy memory map.
         """
         if isinstance(t, pd.Series):
             d = t.values
