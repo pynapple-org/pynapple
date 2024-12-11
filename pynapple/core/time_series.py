@@ -1057,10 +1057,10 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
     @property
     def loc(self):
         # add deprecation warning
-        warnings.warn(
-            "'loc' will be deprecated in a future version. Use bracket indexing instead.",
-            DeprecationWarning,
-        )
+        # warnings.warn(
+        #     "'loc' will be deprecated in a future version. Use bracket indexing instead.",
+        #     DeprecationWarning,
+        # )
         return _TsdFrameSliceHelper(self)
 
     def __repr__(self):
