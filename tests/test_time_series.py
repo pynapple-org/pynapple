@@ -2215,8 +2215,7 @@ def test_get_slice_public(start, end, expected_slice, expected_array, ts):
         {},
         {"columns": [1, 2]},
         {"metadata": {"banana": [3, 4]}},
-        {"load_array": False},
-        {"columns": ["a", "b"], "metadata": {"banana": [3, 4]}, "load_array": False},
+        {"columns": ["a", "b"], "metadata": {"banana": [3, 4]}},
     ],
 )
 @pytest.mark.parametrize(
@@ -2278,9 +2277,8 @@ def test_define_instance(tsd, kwargs):
 
     # if TsdFrame check kwargs
     if isinstance(tsd, nap.TsdFrame):
-        for key in ["columns", "load_array"]:
-            val = kwargs.get(key, getattr(tsd, key))
-            assert np.all(val == getattr(out, key))
+        val = kwargs.get("columns", getattr(tsd, "columns"))
+        assert np.all(val == getattr(out, "columns"))
         # get expected metadata
         meta = kwargs.get("metadata", getattr(tsd, "metadata"))
         for (

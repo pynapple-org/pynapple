@@ -71,7 +71,7 @@ def _initialize_tsd_output(inp, out):
         # if out.ndim > self.ndim:
         #     return out
         if out.shape[0] == inp.index.shape[0]:
-            kwargs = {"load_array": inp._load_array}
+            kwargs = {}
             if (inp.ndim == 2) and (out.ndim == 2) and (out.shape[1] == inp.shape[1]):
                 # only pass columns and metadata if number of columns is preserved
                 if hasattr(inp, "columns"):
