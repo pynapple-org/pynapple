@@ -243,6 +243,8 @@ Slicing objects
 
 ### Slicing time series and intervals
 
+#### Like numpy array
+
 `Ts`, `Tsd`, `TsdFrame`, `TsdTensor` and `IntervalSet` can be sliced similar to numpy array:
 
 ```{code-cell} ipython3
@@ -271,6 +273,32 @@ print(ep[0:2])
 print(ep[1])
 ```
 
+#### Like pandas DataFrame
+
+:::{important}
+This [page](03_core_methods.md#special-slicing-tsdframe) references all the way to slice `TsdFrame`
+:::
+
+
+`TsdFrame` can be sliced like pandas DataFrame when the columns have been labelled with strings :
+
+```{code-cell} ipython3
+tsdframe = nap.TsdFrame(t=np.arange(10), d=np.random.randn(10,3), columns=['a', 'b', 'c'])
+print(tsdframe['a'])
+```
+but integer-indexing only works like numpy if a list of integers is used to label columns :
+
+```{code-cell} ipython3
+tsdframe = nap.TsdFrame(t=np.arange(4), d=np.random.randn(4,3), columns=[3, 2, 1])
+print(tsdframe, "\n")
+print(tsdframe[3])
+```
+
+The `loc` method can be used to slice column-based only :
+
+```
+print(tsdframe.loc[3])
+```
 
 ### Slicing TsGroup
 

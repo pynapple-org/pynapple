@@ -20,7 +20,11 @@ Interaction with numpy <user_guide/03_interacting_with_numpy>
 ```
 
 ```{toctree}
-Core methods <user_guide/04_core_methods>
+Core methods <user_guide/03_core_methods>
+```
+
+```{toctree}
+Metadata <user_guide/03_metadata>
 ```
 :::
 
