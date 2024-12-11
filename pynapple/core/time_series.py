@@ -19,7 +19,6 @@ import abc
 import importlib
 import warnings
 from numbers import Number
-from typing import Callable
 
 import numpy as np
 import pandas as pd
