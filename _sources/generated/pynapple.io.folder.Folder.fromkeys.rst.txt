@@ -1,0 +1,6 @@
+pynapple.io.folder.Folder.fromkeys
+==================================
+
+.. currentmodule:: pynapple.io.folder
+
+.. automethod:: Folder.fromkeys

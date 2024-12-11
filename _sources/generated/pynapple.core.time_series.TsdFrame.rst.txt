@@ -1,0 +1,59 @@
+﻿pynapple.core.time\_series.TsdFrame
+===================================
+
+.. currentmodule:: pynapple.core.time_series
+
+.. autoclass:: TsdFrame
+   :members:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~TsdFrame.__init__
+      ~TsdFrame.as_array
+      ~TsdFrame.as_dataframe
+      ~TsdFrame.as_units
+      ~TsdFrame.bin_average
+      ~TsdFrame.convolve
+      ~TsdFrame.copy
+      ~TsdFrame.count
+      ~TsdFrame.data
+      ~TsdFrame.dropna
+      ~TsdFrame.end_time
+      ~TsdFrame.find_support
+      ~TsdFrame.get
+      ~TsdFrame.get_slice
+      ~TsdFrame.interpolate
+      ~TsdFrame.restrict
+      ~TsdFrame.save
+      ~TsdFrame.smooth
+      ~TsdFrame.start_time
+      ~TsdFrame.times
+      ~TsdFrame.to_numpy
+      ~TsdFrame.value_from
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~TsdFrame.d
+      ~TsdFrame.end
+      ~TsdFrame.loc
+      ~TsdFrame.ndim
+      ~TsdFrame.shape
+      ~TsdFrame.size
+      ~TsdFrame.start
+      ~TsdFrame.t
+   
+   

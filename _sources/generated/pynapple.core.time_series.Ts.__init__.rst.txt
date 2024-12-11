@@ -1,0 +1,6 @@
+pynapple.core.time\_series.Ts.\_\_init\_\_
+==========================================
+
+.. currentmodule:: pynapple.core.time_series
+
+.. automethod:: Ts.__init__

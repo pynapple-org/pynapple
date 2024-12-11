@@ -1,0 +1,1335 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Index &#8212; pynapple 0.7.1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!-- 
+    this give us a css class that will be invisible only if js is disabled 
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=26a4bc78f4c0ddb94549" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=26a4bc78f4c0ddb94549" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx_contributors.css?v=f079e67e" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=f2caec9a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=26a4bc78f4c0ddb94549"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=26a4bc78f4c0ddb94549" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=26a4bc78f4c0ddb94549" />
+
+    <script src="_static/documentation_options.js?v=5a057da9"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=c57da192"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'genindex';</script>
+    <link rel="icon" href="_static/Pynapple_final_icon.png"/>
+    <link rel="index" title="Index" href="#" />
+    <link rel="search" title="Search" href="search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.7.1" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.7.1 documentation - Home"/>
+    <img src="_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.7.1 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="releases.html">
+    Releases
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button" data-bs-toggle="dropdown" aria-expanded="false" aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+  </div>
+  
+  <div id="rtd-footer-container"></div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none"></div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+
+<h1 id="index">Index</h1>
+
+<div class="genindex-jumpbox">
+ <a href="#_"><strong>_</strong></a>
+ | <a href="#A"><strong>A</strong></a>
+ | <a href="#B"><strong>B</strong></a>
+ | <a href="#C"><strong>C</strong></a>
+ | <a href="#D"><strong>D</strong></a>
+ | <a href="#E"><strong>E</strong></a>
+ | <a href="#F"><strong>F</strong></a>
+ | <a href="#G"><strong>G</strong></a>
+ | <a href="#I"><strong>I</strong></a>
+ | <a href="#J"><strong>J</strong></a>
+ | <a href="#K"><strong>K</strong></a>
+ | <a href="#L"><strong>L</strong></a>
+ | <a href="#M"><strong>M</strong></a>
+ | <a href="#N"><strong>N</strong></a>
+ | <a href="#P"><strong>P</strong></a>
+ | <a href="#R"><strong>R</strong></a>
+ | <a href="#S"><strong>S</strong></a>
+ | <a href="#T"><strong>T</strong></a>
+ | <a href="#U"><strong>U</strong></a>
+ | <a href="#V"><strong>V</strong></a>
+ 
+</div>
+<h2 id="_">_</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.__init__.html#pynapple.core.interval_set.IntervalSet.__init__">__init__() (pynapple.core.interval_set.IntervalSet method)</a>, <a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.__init__">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Ts.__init__.html#pynapple.core.time_series.Ts.__init__">(pynapple.core.time_series.Ts method)</a>, <a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.__init__">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.Tsd.__init__.html#pynapple.core.time_series.Tsd.__init__">(pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.__init__">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.__init__.html#pynapple.core.time_series.TsdFrame.__init__">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.__init__">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.__init__.html#pynapple.core.time_series.TsdTensor.__init__">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.__init__">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.ts_group.TsGroup.__init__.html#pynapple.core.ts_group.TsGroup.__init__">(pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.__init__">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.folder.Folder.__init__.html#pynapple.io.folder.Folder.__init__">(pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.__init__">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.interface_npz.NPZFile.__init__.html#pynapple.io.interface_npz.NPZFile.__init__">(pynapple.io.interface_npz.NPZFile method)</a>, <a href="generated/pynapple.io.interface_npz.NPZFile.html#pynapple.io.interface_npz.NPZFile.__init__">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.interface_nwb.NWBFile.__init__.html#pynapple.io.interface_nwb.NWBFile.__init__">(pynapple.io.interface_nwb.NWBFile method)</a>, <a href="generated/pynapple.io.interface_nwb.NWBFile.html#pynapple.io.interface_nwb.NWBFile.__init__">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="A">A</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.io.misc.html#pynapple.io.misc.append_NWB_LFP">append_NWB_LFP() (in module pynapple.io.misc)</a>
+</li>
+      <li><a href="generated/pynapple.process.filtering.html#pynapple.process.filtering.apply_bandpass_filter">apply_bandpass_filter() (in module pynapple.process.filtering)</a>
+</li>
+      <li><a href="generated/pynapple.process.filtering.html#pynapple.process.filtering.apply_bandstop_filter">apply_bandstop_filter() (in module pynapple.process.filtering)</a>
+</li>
+      <li><a href="generated/pynapple.process.filtering.html#pynapple.process.filtering.apply_highpass_filter">apply_highpass_filter() (in module pynapple.process.filtering)</a>
+</li>
+      <li><a href="generated/pynapple.process.filtering.html#pynapple.process.filtering.apply_lowpass_filter">apply_lowpass_filter() (in module pynapple.process.filtering)</a>
+</li>
+      <li><a href="generated/pynapple.core.time_series.Tsd.as_array.html#pynapple.core.time_series.Tsd.as_array">as_array() (pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.as_array">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.as_array.html#pynapple.core.time_series.TsdFrame.as_array">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.as_array">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.as_array.html#pynapple.core.time_series.TsdTensor.as_array">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.as_array">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.as_dataframe.html#pynapple.core.interval_set.IntervalSet.as_dataframe">as_dataframe() (pynapple.core.interval_set.IntervalSet method)</a>, <a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.as_dataframe">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.as_dataframe.html#pynapple.core.time_series.TsdFrame.as_dataframe">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.as_dataframe">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.time_series.Ts.as_series.html#pynapple.core.time_series.Ts.as_series">as_series() (pynapple.core.time_series.Ts method)</a>, <a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.as_series">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Tsd.as_series.html#pynapple.core.time_series.Tsd.as_series">(pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.as_series">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.as_units.html#pynapple.core.interval_set.IntervalSet.as_units">as_units() (pynapple.core.interval_set.IntervalSet method)</a>, <a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.as_units">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Ts.as_units.html#pynapple.core.time_series.Ts.as_units">(pynapple.core.time_series.Ts method)</a>, <a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.as_units">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.Tsd.as_units.html#pynapple.core.time_series.Tsd.as_units">(pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.as_units">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.as_units.html#pynapple.core.time_series.TsdFrame.as_units">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.as_units">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="B">B</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.time_series.Tsd.bin_average.html#pynapple.core.time_series.Tsd.bin_average">bin_average() (pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.bin_average">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.bin_average.html#pynapple.core.time_series.TsdFrame.bin_average">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.bin_average">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.bin_average.html#pynapple.core.time_series.TsdTensor.bin_average">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.bin_average">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="C">C</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.clear.html#pynapple.core.ts_group.TsGroup.clear">clear() (pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.clear">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.io.folder.Folder.clear.html#pynapple.io.folder.Folder.clear">(pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.clear">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.interface_nwb.NWBFile.clear.html#pynapple.io.interface_nwb.NWBFile.clear">(pynapple.io.interface_nwb.NWBFile method)</a>, <a href="generated/pynapple.io.interface_nwb.NWBFile.html#pynapple.io.interface_nwb.NWBFile.clear">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.io.interface_nwb.NWBFile.close.html#pynapple.io.interface_nwb.NWBFile.close">close() (pynapple.io.interface_nwb.NWBFile method)</a>, <a href="generated/pynapple.io.interface_nwb.NWBFile.html#pynapple.io.interface_nwb.NWBFile.close">[1]</a>
+</li>
+      <li><a href="generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_1d_mutual_info">compute_1d_mutual_info() (in module pynapple.process.tuning_curves)</a>
+</li>
+      <li><a href="generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_1d_tuning_curves">compute_1d_tuning_curves() (in module pynapple.process.tuning_curves)</a>
+</li>
+      <li><a href="generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_1d_tuning_curves_continuous">compute_1d_tuning_curves_continuous() (in module pynapple.process.tuning_curves)</a>
+</li>
+      <li><a href="generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_2d_mutual_info">compute_2d_mutual_info() (in module pynapple.process.tuning_curves)</a>
+</li>
+      <li><a href="generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_2d_tuning_curves">compute_2d_tuning_curves() (in module pynapple.process.tuning_curves)</a>
+</li>
+      <li><a href="generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_2d_tuning_curves_continuous">compute_2d_tuning_curves_continuous() (in module pynapple.process.tuning_curves)</a>
+</li>
+      <li><a href="generated/pynapple.process.correlograms.html#pynapple.process.correlograms.compute_autocorrelogram">compute_autocorrelogram() (in module pynapple.process.correlograms)</a>
+</li>
+      <li><a href="generated/pynapple.process.correlograms.html#pynapple.process.correlograms.compute_crosscorrelogram">compute_crosscorrelogram() (in module pynapple.process.correlograms)</a>
+</li>
+      <li><a href="generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_discrete_tuning_curves">compute_discrete_tuning_curves() (in module pynapple.process.tuning_curves)</a>
+</li>
+      <li><a href="generated/pynapple.process.perievent.html#pynapple.process.perievent.compute_event_trigger_average">compute_event_trigger_average() (in module pynapple.process.perievent)</a>
+</li>
+      <li><a href="generated/pynapple.process.correlograms.html#pynapple.process.correlograms.compute_eventcorrelogram">compute_eventcorrelogram() (in module pynapple.process.correlograms)</a>
+</li>
+      <li><a href="generated/pynapple.process.spectrum.html#pynapple.process.spectrum.compute_mean_power_spectral_density">compute_mean_power_spectral_density() (in module pynapple.process.spectrum)</a>
+</li>
+      <li><a href="generated/pynapple.process.perievent.html#pynapple.process.perievent.compute_perievent">compute_perievent() (in module pynapple.process.perievent)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.process.perievent.html#pynapple.process.perievent.compute_perievent_continuous">compute_perievent_continuous() (in module pynapple.process.perievent)</a>
+</li>
+      <li><a href="generated/pynapple.process.spectrum.html#pynapple.process.spectrum.compute_power_spectral_density">compute_power_spectral_density() (in module pynapple.process.spectrum)</a>
+</li>
+      <li><a href="generated/pynapple.process.wavelets.html#pynapple.process.wavelets.compute_wavelet_transform">compute_wavelet_transform() (in module pynapple.process.wavelets)</a>
+</li>
+      <li><a href="generated/pynapple.core.time_series.Tsd.convolve.html#pynapple.core.time_series.Tsd.convolve">convolve() (pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.convolve">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.convolve.html#pynapple.core.time_series.TsdFrame.convolve">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.convolve">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.convolve.html#pynapple.core.time_series.TsdTensor.convolve">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.convolve">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.time_series.Ts.copy.html#pynapple.core.time_series.Ts.copy">copy() (pynapple.core.time_series.Ts method)</a>, <a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.copy">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Tsd.copy.html#pynapple.core.time_series.Tsd.copy">(pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.copy">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.copy.html#pynapple.core.time_series.TsdFrame.copy">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.copy">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.copy.html#pynapple.core.time_series.TsdTensor.copy">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.copy">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.ts_group.TsGroup.copy.html#pynapple.core.ts_group.TsGroup.copy">(pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.copy">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.folder.Folder.copy.html#pynapple.io.folder.Folder.copy">(pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.copy">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.interface_nwb.NWBFile.copy.html#pynapple.io.interface_nwb.NWBFile.copy">(pynapple.io.interface_nwb.NWBFile method)</a>, <a href="generated/pynapple.io.interface_nwb.NWBFile.html#pynapple.io.interface_nwb.NWBFile.copy">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.time_series.Ts.count.html#pynapple.core.time_series.Ts.count">count() (pynapple.core.time_series.Ts method)</a>, <a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.count">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Tsd.count.html#pynapple.core.time_series.Tsd.count">(pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.count">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.count.html#pynapple.core.time_series.TsdFrame.count">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.count">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.count.html#pynapple.core.time_series.TsdTensor.count">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.count">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.ts_group.TsGroup.count.html#pynapple.core.ts_group.TsGroup.count">(pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.count">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="D">D</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.d">d (pynapple.core.time_series.Tsd property)</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.d">(pynapple.core.time_series.TsdFrame property)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.d">(pynapple.core.time_series.TsdTensor property)</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.data">data (pynapple.io.folder.Folder attribute)</a>
+</li>
+      <li><a href="generated/pynapple.core.time_series.Tsd.data.html#pynapple.core.time_series.Tsd.data">data() (pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.data">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.data.html#pynapple.core.time_series.TsdFrame.data">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.data">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.data.html#pynapple.core.time_series.TsdTensor.data">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.data">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.process.decoding.html#pynapple.process.decoding.decode_1d">decode_1d() (in module pynapple.process.decoding)</a>
+</li>
+      <li><a href="generated/pynapple.process.decoding.html#pynapple.process.decoding.decode_2d">decode_2d() (in module pynapple.process.decoding)</a>
+</li>
+      <li><a href="generated/pynapple.io.folder.Folder.doc.html#pynapple.io.folder.Folder.doc">doc() (pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.doc">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.drop_long_intervals.html#pynapple.core.interval_set.IntervalSet.drop_long_intervals">drop_long_intervals() (pynapple.core.interval_set.IntervalSet method)</a>, <a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.drop_long_intervals">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.drop_short_intervals.html#pynapple.core.interval_set.IntervalSet.drop_short_intervals">drop_short_intervals() (pynapple.core.interval_set.IntervalSet method)</a>, <a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.drop_short_intervals">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.time_series.Tsd.dropna.html#pynapple.core.time_series.Tsd.dropna">dropna() (pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.dropna">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.dropna.html#pynapple.core.time_series.TsdFrame.dropna">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.dropna">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.dropna.html#pynapple.core.time_series.TsdTensor.dropna">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.dropna">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="E">E</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.end">end (pynapple.core.interval_set.IntervalSet property)</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.end">(pynapple.core.time_series.Ts property)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.end">(pynapple.core.time_series.Tsd property)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.end">(pynapple.core.time_series.TsdFrame property)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.end">(pynapple.core.time_series.TsdTensor property)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.time_series.Ts.end_time.html#pynapple.core.time_series.Ts.end_time">end_time() (pynapple.core.time_series.Ts method)</a>, <a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.end_time">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Tsd.end_time.html#pynapple.core.time_series.Tsd.end_time">(pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.end_time">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.end_time.html#pynapple.core.time_series.TsdFrame.end_time">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.end_time">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.end_time.html#pynapple.core.time_series.TsdTensor.end_time">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.end_time">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.ends">ends (pynapple.core.interval_set.IntervalSet property)</a>
+</li>
+      <li><a href="generated/pynapple.io.folder.Folder.expand.html#pynapple.io.folder.Folder.expand">expand() (pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.expand">[1]</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="F">F</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.time_series.Ts.fillna.html#pynapple.core.time_series.Ts.fillna">fillna() (pynapple.core.time_series.Ts method)</a>, <a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.fillna">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.time_series.Ts.find_support.html#pynapple.core.time_series.Ts.find_support">find_support() (pynapple.core.time_series.Ts method)</a>, <a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.find_support">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Tsd.find_support.html#pynapple.core.time_series.Tsd.find_support">(pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.find_support">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.find_support.html#pynapple.core.time_series.TsdFrame.find_support">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.find_support">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.find_support.html#pynapple.core.time_series.TsdTensor.find_support">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.find_support">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder">Folder (class in pynapple.io.folder)</a>
+</li>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.fromkeys.html#pynapple.core.ts_group.TsGroup.fromkeys">fromkeys() (pynapple.core.ts_group.TsGroup class method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.fromkeys">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.io.folder.Folder.fromkeys.html#pynapple.io.folder.Folder.fromkeys">(pynapple.io.folder.Folder class method)</a>, <a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.fromkeys">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.interface_nwb.NWBFile.fromkeys.html#pynapple.io.interface_nwb.NWBFile.fromkeys">(pynapple.io.interface_nwb.NWBFile class method)</a>, <a href="generated/pynapple.io.interface_nwb.NWBFile.html#pynapple.io.interface_nwb.NWBFile.fromkeys">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="G">G</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.process.wavelets.html#pynapple.process.wavelets.generate_morlet_filterbank">generate_morlet_filterbank() (in module pynapple.process.wavelets)</a>
+</li>
+      <li><a href="generated/pynapple.core.time_series.Ts.get.html#pynapple.core.time_series.Ts.get">get() (pynapple.core.time_series.Ts method)</a>, <a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.get">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Tsd.get.html#pynapple.core.time_series.Tsd.get">(pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.get">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.get.html#pynapple.core.time_series.TsdFrame.get">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.get">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.get.html#pynapple.core.time_series.TsdTensor.get">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.get">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.ts_group.TsGroup.get.html#pynapple.core.ts_group.TsGroup.get">(pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.get">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.folder.Folder.get.html#pynapple.io.folder.Folder.get">(pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.get">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.interface_nwb.NWBFile.get.html#pynapple.io.interface_nwb.NWBFile.get">(pynapple.io.interface_nwb.NWBFile method)</a>, <a href="generated/pynapple.io.interface_nwb.NWBFile.html#pynapple.io.interface_nwb.NWBFile.get">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.process.filtering.html#pynapple.process.filtering.get_filter_frequency_response">get_filter_frequency_response() (in module pynapple.process.filtering)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.get_info.html#pynapple.core.ts_group.TsGroup.get_info">get_info() (pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.get_info">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.get_intervals_center.html#pynapple.core.interval_set.IntervalSet.get_intervals_center">get_intervals_center() (pynapple.core.interval_set.IntervalSet method)</a>, <a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.get_intervals_center">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.time_series.Ts.get_slice.html#pynapple.core.time_series.Ts.get_slice">get_slice() (pynapple.core.time_series.Ts method)</a>, <a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.get_slice">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Tsd.get_slice.html#pynapple.core.time_series.Tsd.get_slice">(pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.get_slice">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.get_slice.html#pynapple.core.time_series.TsdFrame.get_slice">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.get_slice">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.get_slice.html#pynapple.core.time_series.TsdTensor.get_slice">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.get_slice">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.getby_category.html#pynapple.core.ts_group.TsGroup.getby_category">getby_category() (pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.getby_category">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.getby_intervals.html#pynapple.core.ts_group.TsGroup.getby_intervals">getby_intervals() (pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.getby_intervals">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.getby_threshold.html#pynapple.core.ts_group.TsGroup.getby_threshold">getby_threshold() (pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.getby_threshold">[1]</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="I">I</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.in_interval">in_interval() (pynapple.core.interval_set.IntervalSet method)</a>, <a href="generated/pynapple.core.interval_set.IntervalSet.in_interval.html#pynapple.core.interval_set.IntervalSet.in_interval">[1]</a>
+</li>
+      <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.info">info() (pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.info.html#pynapple.io.folder.Folder.info">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.interpolate">interpolate() (pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.interpolate.html#pynapple.core.time_series.Tsd.interpolate">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.interpolate">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.interpolate.html#pynapple.core.time_series.TsdFrame.interpolate">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.interpolate">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.interpolate.html#pynapple.core.time_series.TsdTensor.interpolate">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.intersect">intersect() (pynapple.core.interval_set.IntervalSet method)</a>, <a href="generated/pynapple.core.interval_set.IntervalSet.intersect.html#pynapple.core.interval_set.IntervalSet.intersect">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet">IntervalSet (class in pynapple.core.interval_set)</a>
+</li>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.items">items() (pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.items.html#pynapple.core.ts_group.TsGroup.items">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.items">(pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.items.html#pynapple.io.folder.Folder.items">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.interface_nwb.NWBFile.html#pynapple.io.interface_nwb.NWBFile.items">(pynapple.io.interface_nwb.NWBFile method)</a>, <a href="generated/pynapple.io.interface_nwb.NWBFile.items.html#pynapple.io.interface_nwb.NWBFile.items">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="J">J</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.process.randomize.html#pynapple.process.randomize.jitter_timestamps">jitter_timestamps() (in module pynapple.process.randomize)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="K">K</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.keys">keys() (pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.keys.html#pynapple.core.ts_group.TsGroup.keys">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.keys">(pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.keys.html#pynapple.io.folder.Folder.keys">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.interface_nwb.NWBFile.html#pynapple.io.interface_nwb.NWBFile.keys">(pynapple.io.interface_nwb.NWBFile method)</a>, <a href="generated/pynapple.io.interface_nwb.NWBFile.keys.html#pynapple.io.interface_nwb.NWBFile.keys">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="L">L</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.load">load() (pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.load.html#pynapple.io.folder.Folder.load">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.io.interface_npz.NPZFile.html#pynapple.io.interface_npz.NPZFile.load">(pynapple.io.interface_npz.NPZFile method)</a>, <a href="generated/pynapple.io.interface_npz.NPZFile.load.html#pynapple.io.interface_npz.NPZFile.load">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.io.misc.html#pynapple.io.misc.load_eeg">load_eeg() (in module pynapple.io.misc)</a>
+</li>
+      <li><a href="generated/pynapple.io.misc.html#pynapple.io.misc.load_file">load_file() (in module pynapple.io.misc)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.io.misc.html#pynapple.io.misc.load_folder">load_folder() (in module pynapple.io.misc)</a>
+</li>
+      <li><a href="generated/pynapple.io.misc.html#pynapple.io.misc.load_session">load_session() (in module pynapple.io.misc)</a>
+</li>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.loc">loc (pynapple.core.interval_set.IntervalSet property)</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.loc">(pynapple.core.time_series.TsdFrame property)</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="M">M</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.merge">merge() (pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.merge.html#pynapple.core.ts_group.TsGroup.merge">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.merge_close_intervals">merge_close_intervals() (pynapple.core.interval_set.IntervalSet method)</a>, <a href="generated/pynapple.core.interval_set.IntervalSet.merge_close_intervals.html#pynapple.core.interval_set.IntervalSet.merge_close_intervals">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.merge_group">merge_group() (pynapple.core.ts_group.TsGroup static method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.merge_group.html#pynapple.core.ts_group.TsGroup.merge_group">[1]</a>
+</li>
+      <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.metadata">metadata() (pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.metadata.html#pynapple.io.folder.Folder.metadata">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.metadata_columns">metadata_columns (pynapple.core.ts_group.TsGroup property)</a>
+</li>
+      <li>
+    module
+
+      <ul>
+        <li><a href="generated/pynapple.io.misc.html#module-pynapple.io.misc">pynapple.io.misc</a>
+</li>
+        <li><a href="generated/pynapple.process.correlograms.html#module-pynapple.process.correlograms">pynapple.process.correlograms</a>
+</li>
+        <li><a href="generated/pynapple.process.decoding.html#module-pynapple.process.decoding">pynapple.process.decoding</a>
+</li>
+        <li><a href="generated/pynapple.process.filtering.html#module-pynapple.process.filtering">pynapple.process.filtering</a>
+</li>
+        <li><a href="generated/pynapple.process.perievent.html#module-pynapple.process.perievent">pynapple.process.perievent</a>
+</li>
+        <li><a href="generated/pynapple.process.randomize.html#module-pynapple.process.randomize">pynapple.process.randomize</a>
+</li>
+        <li><a href="generated/pynapple.process.spectrum.html#module-pynapple.process.spectrum">pynapple.process.spectrum</a>
+</li>
+        <li><a href="generated/pynapple.process.tuning_curves.html#module-pynapple.process.tuning_curves">pynapple.process.tuning_curves</a>
+</li>
+        <li><a href="generated/pynapple.process.wavelets.html#module-pynapple.process.wavelets">pynapple.process.wavelets</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="N">N</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.name">name (pynapple.io.folder.Folder attribute)</a>
+</li>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.ndim">ndim (pynapple.core.interval_set.IntervalSet property)</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.ndim">(pynapple.core.time_series.Tsd property)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.ndim">(pynapple.core.time_series.TsdFrame property)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.ndim">(pynapple.core.time_series.TsdTensor property)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.npz_files">npz_files (pynapple.io.folder.Folder attribute)</a>
+</li>
+      <li><a href="generated/pynapple.io.interface_npz.NPZFile.html#pynapple.io.interface_npz.NPZFile">NPZFile (class in pynapple.io.interface_npz)</a>
+</li>
+      <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.nwb_files">nwb_files (pynapple.io.folder.Folder attribute)</a>
+</li>
+      <li><a href="generated/pynapple.io.interface_nwb.NWBFile.html#pynapple.io.interface_nwb.NWBFile">NWBFile (class in pynapple.io.interface_nwb)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="P">P</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.path">path (pynapple.io.folder.Folder attribute)</a>
+</li>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.pop">pop() (pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.pop.html#pynapple.core.ts_group.TsGroup.pop">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.pop">(pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.pop.html#pynapple.io.folder.Folder.pop">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.interface_nwb.NWBFile.html#pynapple.io.interface_nwb.NWBFile.pop">(pynapple.io.interface_nwb.NWBFile method)</a>, <a href="generated/pynapple.io.interface_nwb.NWBFile.pop.html#pynapple.io.interface_nwb.NWBFile.pop">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.popitem">popitem() (pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.popitem.html#pynapple.core.ts_group.TsGroup.popitem">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.popitem">(pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.popitem.html#pynapple.io.folder.Folder.popitem">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.interface_nwb.NWBFile.html#pynapple.io.interface_nwb.NWBFile.popitem">(pynapple.io.interface_nwb.NWBFile method)</a>, <a href="generated/pynapple.io.interface_nwb.NWBFile.popitem.html#pynapple.io.interface_nwb.NWBFile.popitem">[1]</a>
+</li>
+      </ul></li>
+      <li>
+    pynapple.io.misc
+
+      <ul>
+        <li><a href="generated/pynapple.io.misc.html#module-pynapple.io.misc">module</a>
+</li>
+      </ul></li>
+      <li>
+    pynapple.process.correlograms
+
+      <ul>
+        <li><a href="generated/pynapple.process.correlograms.html#module-pynapple.process.correlograms">module</a>
+</li>
+      </ul></li>
+      <li>
+    pynapple.process.decoding
+
+      <ul>
+        <li><a href="generated/pynapple.process.decoding.html#module-pynapple.process.decoding">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li>
+    pynapple.process.filtering
+
+      <ul>
+        <li><a href="generated/pynapple.process.filtering.html#module-pynapple.process.filtering">module</a>
+</li>
+      </ul></li>
+      <li>
+    pynapple.process.perievent
+
+      <ul>
+        <li><a href="generated/pynapple.process.perievent.html#module-pynapple.process.perievent">module</a>
+</li>
+      </ul></li>
+      <li>
+    pynapple.process.randomize
+
+      <ul>
+        <li><a href="generated/pynapple.process.randomize.html#module-pynapple.process.randomize">module</a>
+</li>
+      </ul></li>
+      <li>
+    pynapple.process.spectrum
+
+      <ul>
+        <li><a href="generated/pynapple.process.spectrum.html#module-pynapple.process.spectrum">module</a>
+</li>
+      </ul></li>
+      <li>
+    pynapple.process.tuning_curves
+
+      <ul>
+        <li><a href="generated/pynapple.process.tuning_curves.html#module-pynapple.process.tuning_curves">module</a>
+</li>
+      </ul></li>
+      <li>
+    pynapple.process.wavelets
+
+      <ul>
+        <li><a href="generated/pynapple.process.wavelets.html#module-pynapple.process.wavelets">module</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="R">R</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.rate">rate (pynapple.core.time_series.Ts attribute)</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.rate">(pynapple.core.time_series.Tsd attribute)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.rate">(pynapple.core.time_series.TsdFrame attribute)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.rate">(pynapple.core.time_series.TsdTensor attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.rates">rates (pynapple.core.ts_group.TsGroup attribute)</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.ts_group.TsGroup.html#id0">(pynapple.core.ts_group.TsGroup property)</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.process.randomize.html#pynapple.process.randomize.resample_timestamps">resample_timestamps() (in module pynapple.process.randomize)</a>
+</li>
+      <li><a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.restrict">restrict() (pynapple.core.time_series.Ts method)</a>, <a href="generated/pynapple.core.time_series.Ts.restrict.html#pynapple.core.time_series.Ts.restrict">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.restrict">(pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.restrict.html#pynapple.core.time_series.Tsd.restrict">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.restrict">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.restrict.html#pynapple.core.time_series.TsdFrame.restrict">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.restrict">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.restrict.html#pynapple.core.time_series.TsdTensor.restrict">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.restrict">(pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.restrict.html#pynapple.core.ts_group.TsGroup.restrict">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="S">S</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.save">save() (pynapple.core.interval_set.IntervalSet method)</a>, <a href="generated/pynapple.core.interval_set.IntervalSet.save.html#pynapple.core.interval_set.IntervalSet.save">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.save">(pynapple.core.time_series.Ts method)</a>, <a href="generated/pynapple.core.time_series.Ts.save.html#pynapple.core.time_series.Ts.save">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.save">(pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.save.html#pynapple.core.time_series.Tsd.save">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.save">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.save.html#pynapple.core.time_series.TsdFrame.save">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.save">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.save.html#pynapple.core.time_series.TsdTensor.save">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.save">(pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.save.html#pynapple.core.ts_group.TsGroup.save">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.save">(pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.save.html#pynapple.io.folder.Folder.save">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.set_diff">set_diff() (pynapple.core.interval_set.IntervalSet method)</a>, <a href="generated/pynapple.core.interval_set.IntervalSet.set_diff.html#pynapple.core.interval_set.IntervalSet.set_diff">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.set_info">set_info() (pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.set_info.html#pynapple.core.ts_group.TsGroup.set_info">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.setdefault">setdefault() (pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.setdefault.html#pynapple.core.ts_group.TsGroup.setdefault">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.setdefault">(pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.setdefault.html#pynapple.io.folder.Folder.setdefault">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.interface_nwb.NWBFile.html#pynapple.io.interface_nwb.NWBFile.setdefault">(pynapple.io.interface_nwb.NWBFile method)</a>, <a href="generated/pynapple.io.interface_nwb.NWBFile.setdefault.html#pynapple.io.interface_nwb.NWBFile.setdefault">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.shape">shape (pynapple.core.interval_set.IntervalSet property)</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.shape">(pynapple.core.time_series.Ts property)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.shape">(pynapple.core.time_series.Tsd property)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.shape">(pynapple.core.time_series.TsdFrame property)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.shape">(pynapple.core.time_series.TsdTensor property)</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.process.randomize.html#pynapple.process.randomize.shift_timestamps">shift_timestamps() (in module pynapple.process.randomize)</a>
+</li>
+      <li><a href="generated/pynapple.process.randomize.html#pynapple.process.randomize.shuffle_ts_intervals">shuffle_ts_intervals() (in module pynapple.process.randomize)</a>
+</li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.size">size (pynapple.core.interval_set.IntervalSet property)</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.size">(pynapple.core.time_series.Tsd property)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.size">(pynapple.core.time_series.TsdFrame property)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.size">(pynapple.core.time_series.TsdTensor property)</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.smooth">smooth() (pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.smooth.html#pynapple.core.time_series.Tsd.smooth">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.smooth">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.smooth.html#pynapple.core.time_series.TsdFrame.smooth">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.smooth">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.smooth.html#pynapple.core.time_series.TsdTensor.smooth">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.split">split() (pynapple.core.interval_set.IntervalSet method)</a>, <a href="generated/pynapple.core.interval_set.IntervalSet.split.html#pynapple.core.interval_set.IntervalSet.split">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.start">start (pynapple.core.interval_set.IntervalSet property)</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.start">(pynapple.core.time_series.Ts property)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.start">(pynapple.core.time_series.Tsd property)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.start">(pynapple.core.time_series.TsdFrame property)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.start">(pynapple.core.time_series.TsdTensor property)</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.start_time">start_time() (pynapple.core.time_series.Ts method)</a>, <a href="generated/pynapple.core.time_series.Ts.start_time.html#pynapple.core.time_series.Ts.start_time">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.start_time">(pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.start_time.html#pynapple.core.time_series.Tsd.start_time">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.start_time">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.start_time.html#pynapple.core.time_series.TsdFrame.start_time">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.start_time">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.start_time.html#pynapple.core.time_series.TsdTensor.start_time">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.starts">starts (pynapple.core.interval_set.IntervalSet property)</a>
+</li>
+      <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.subfolds">subfolds (pynapple.io.folder.Folder attribute)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="T">T</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.t">t (pynapple.core.time_series.Ts property)</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.t">(pynapple.core.time_series.Tsd property)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.t">(pynapple.core.time_series.TsdFrame property)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.t">(pynapple.core.time_series.TsdTensor property)</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.threshold">threshold() (pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.threshold.html#pynapple.core.time_series.Tsd.threshold">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.time_span">time_span() (pynapple.core.interval_set.IntervalSet method)</a>, <a href="generated/pynapple.core.interval_set.IntervalSet.time_span.html#pynapple.core.interval_set.IntervalSet.time_span">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.time_support">time_support (pynapple.core.time_series.Ts attribute)</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.time_support">(pynapple.core.time_series.Tsd attribute)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.time_support">(pynapple.core.time_series.TsdFrame attribute)</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.time_support">(pynapple.core.time_series.TsdTensor attribute)</a>
+</li>
+        <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.time_support">(pynapple.core.ts_group.TsGroup attribute)</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.times">times() (pynapple.core.time_series.Ts method)</a>, <a href="generated/pynapple.core.time_series.Ts.times.html#pynapple.core.time_series.Ts.times">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.times">(pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.times.html#pynapple.core.time_series.Tsd.times">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.times">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.times.html#pynapple.core.time_series.TsdFrame.times">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.times">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.times.html#pynapple.core.time_series.TsdTensor.times">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.to_numpy">to_numpy() (pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.to_numpy.html#pynapple.core.time_series.Tsd.to_numpy">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.to_numpy">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.to_numpy.html#pynapple.core.time_series.TsdFrame.to_numpy">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.to_numpy">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.to_numpy.html#pynapple.core.time_series.TsdTensor.to_numpy">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.to_tsd">to_tsd() (pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.to_tsd.html#pynapple.core.ts_group.TsGroup.to_tsd">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.to_tsgroup">to_tsgroup() (pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.to_tsgroup.html#pynapple.core.time_series.Tsd.to_tsgroup">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.tot_length">tot_length() (pynapple.core.interval_set.IntervalSet method)</a>, <a href="generated/pynapple.core.interval_set.IntervalSet.tot_length.html#pynapple.core.interval_set.IntervalSet.tot_length">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts">Ts (class in pynapple.core.time_series)</a>
+</li>
+      <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd">Tsd (class in pynapple.core.time_series)</a>
+</li>
+      <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame">TsdFrame (class in pynapple.core.time_series)</a>
+</li>
+      <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor">TsdTensor (class in pynapple.core.time_series)</a>
+</li>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup">TsGroup (class in pynapple.core.ts_group)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+<h2 id="U">U</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.interval_set.IntervalSet.html#pynapple.core.interval_set.IntervalSet.union">union() (pynapple.core.interval_set.IntervalSet method)</a>, <a href="generated/pynapple.core.interval_set.IntervalSet.union.html#pynapple.core.interval_set.IntervalSet.union">[1]</a>
+</li>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.update">update() (pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.update.html#pynapple.core.ts_group.TsGroup.update">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.update">(pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.update.html#pynapple.io.folder.Folder.update">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.interface_nwb.NWBFile.html#pynapple.io.interface_nwb.NWBFile.update">(pynapple.io.interface_nwb.NWBFile method)</a>, <a href="generated/pynapple.io.interface_nwb.NWBFile.update.html#pynapple.io.interface_nwb.NWBFile.update">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+</tr></table>
+
+<h2 id="V">V</h2>
+<table style="width: 100%" class="indextable genindextable"><tr>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.time_series.Ts.html#pynapple.core.time_series.Ts.value_from">value_from() (pynapple.core.time_series.Ts method)</a>, <a href="generated/pynapple.core.time_series.Ts.value_from.html#pynapple.core.time_series.Ts.value_from">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.core.time_series.Tsd.html#pynapple.core.time_series.Tsd.value_from">(pynapple.core.time_series.Tsd method)</a>, <a href="generated/pynapple.core.time_series.Tsd.value_from.html#pynapple.core.time_series.Tsd.value_from">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdFrame.html#pynapple.core.time_series.TsdFrame.value_from">(pynapple.core.time_series.TsdFrame method)</a>, <a href="generated/pynapple.core.time_series.TsdFrame.value_from.html#pynapple.core.time_series.TsdFrame.value_from">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.time_series.TsdTensor.html#pynapple.core.time_series.TsdTensor.value_from">(pynapple.core.time_series.TsdTensor method)</a>, <a href="generated/pynapple.core.time_series.TsdTensor.value_from.html#pynapple.core.time_series.TsdTensor.value_from">[1]</a>
+</li>
+        <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.value_from">(pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.value_from.html#pynapple.core.ts_group.TsGroup.value_from">[1]</a>
+</li>
+      </ul></li>
+  </ul></td>
+  <td style="width: 33%; vertical-align: top;"><ul>
+      <li><a href="generated/pynapple.core.ts_group.TsGroup.html#pynapple.core.ts_group.TsGroup.values">values() (pynapple.core.ts_group.TsGroup method)</a>, <a href="generated/pynapple.core.ts_group.TsGroup.values.html#pynapple.core.ts_group.TsGroup.values">[1]</a>
+
+      <ul>
+        <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.values">(pynapple.io.folder.Folder method)</a>, <a href="generated/pynapple.io.folder.Folder.values.html#pynapple.io.folder.Folder.values">[1]</a>
+</li>
+        <li><a href="generated/pynapple.io.interface_nwb.NWBFile.html#pynapple.io.interface_nwb.NWBFile.values">(pynapple.io.interface_nwb.NWBFile method)</a>, <a href="generated/pynapple.io.interface_nwb.NWBFile.values.html#pynapple.io.interface_nwb.NWBFile.values">[1]</a>
+</li>
+      </ul></li>
+      <li><a href="generated/pynapple.io.folder.Folder.html#pynapple.io.folder.Folder.view">view (pynapple.io.folder.Folder property)</a>
+</li>
+  </ul></td>
+</tr></table>
+
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=26a4bc78f4c0ddb94549"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=26a4bc78f4c0ddb94549"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2024, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">Guillaume Viejo</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.7.1</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

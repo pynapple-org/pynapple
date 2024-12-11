@@ -1,0 +1,52 @@
+﻿pynapple.core.interval\_set.IntervalSet
+=======================================
+
+.. currentmodule:: pynapple.core.interval_set
+
+.. autoclass:: IntervalSet
+   :members:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~IntervalSet.__init__
+      ~IntervalSet.as_dataframe
+      ~IntervalSet.as_units
+      ~IntervalSet.drop_long_intervals
+      ~IntervalSet.drop_short_intervals
+      ~IntervalSet.get_intervals_center
+      ~IntervalSet.in_interval
+      ~IntervalSet.intersect
+      ~IntervalSet.merge_close_intervals
+      ~IntervalSet.save
+      ~IntervalSet.set_diff
+      ~IntervalSet.split
+      ~IntervalSet.time_span
+      ~IntervalSet.tot_length
+      ~IntervalSet.union
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~IntervalSet.end
+      ~IntervalSet.ends
+      ~IntervalSet.loc
+      ~IntervalSet.ndim
+      ~IntervalSet.shape
+      ~IntervalSet.size
+      ~IntervalSet.start
+      ~IntervalSet.starts
+   
+   

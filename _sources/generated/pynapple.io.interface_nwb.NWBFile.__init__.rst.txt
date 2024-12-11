@@ -1,0 +1,6 @@
+pynapple.io.interface\_nwb.NWBFile.\_\_init\_\_
+===============================================
+
+.. currentmodule:: pynapple.io.interface_nwb
+
+.. automethod:: NWBFile.__init__

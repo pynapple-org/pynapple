@@ -1,0 +1,6 @@
+pynapple.core.time\_series.Ts.save
+==================================
+
+.. currentmodule:: pynapple.core.time_series
+
+.. automethod:: Ts.save

@@ -1,0 +1,6 @@
+pynapple.core.interval\_set.IntervalSet.set\_diff
+=================================================
+
+.. currentmodule:: pynapple.core.interval_set
+
+.. automethod:: IntervalSet.set_diff

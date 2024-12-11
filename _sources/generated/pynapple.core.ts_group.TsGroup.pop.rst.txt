@@ -1,0 +1,6 @@
+pynapple.core.ts\_group.TsGroup.pop
+===================================
+
+.. currentmodule:: pynapple.core.ts_group
+
+.. automethod:: TsGroup.pop

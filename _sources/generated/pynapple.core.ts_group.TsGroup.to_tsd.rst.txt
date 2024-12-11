@@ -1,0 +1,6 @@
+pynapple.core.ts\_group.TsGroup.to\_tsd
+=======================================
+
+.. currentmodule:: pynapple.core.ts_group
+
+.. automethod:: TsGroup.to_tsd

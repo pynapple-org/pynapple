@@ -1,0 +1,6 @@
+pynapple.core.time\_series.TsdFrame.save
+========================================
+
+.. currentmodule:: pynapple.core.time_series
+
+.. automethod:: TsdFrame.save
