@@ -61,7 +61,8 @@ class _Base(abc.ABC):
     def _define_instance(self, time, iset, data=None, **kwargs):
         """Return a new class instance.
 
-        Grab "columns", "metadata" and other and other
+        Pass "columns", "metadata" and other attributes of self
+        to the new instance unless specified in kwargs.
         """
         pass
 

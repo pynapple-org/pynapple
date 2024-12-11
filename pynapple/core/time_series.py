@@ -129,6 +129,11 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         self.dtype = self.values.dtype
         self._load_array = load_array
 
+    @property
+    def load_array(self):
+        """Read-only property load-array."""
+        return self._load_array
+
     def _define_instance(self, time, iset, data=None, **kwargs):
         """
         Define a new class instance.
@@ -139,11 +144,6 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             if hasattr(self, key):
                 kwargs[key] = kwargs.get(key, getattr(self, key))
         return self.__class__(t=time, d=data, time_support=iset, **kwargs)
-
-    @property
-    def load_array(self):
-        """Read-only property load-array."""
-        return self._load_array
 
     def __setitem__(self, key, value):
         """setter for time series"""
