@@ -63,23 +63,75 @@ def _get_class(data):
         return TsdTensor
 
 
-def _initialize_tsd_output(inp, out):
+def _initialize_tsd_output(inp, out, time=None, ep=None, kwargs=None):
+    """
+    Initialize the output object for time series data, ensuring proper alignment of time indices
+    and handling metadata when applicable.
+
+    Parameters
+    ----------
+    inp : Tsd | TsdFrame | TsdTensor
+        Input object, typically a `Tsd`, `TsdFrame` or `TsdTensor`, used to extract time indices and metadata
+        if not provided explicitly.
+    out : array-like
+        Output data, which can be a NumPy array or an array-like object compatible with `Tsd` or `TsdFrame`.
+    time : array-like, optional
+        Time indices for the output data. If not provided, the indices are extracted from `inp`.
+    ep : IntervalSet, optional
+        Time support (epoch) for the output. If not provided, the time support is extracted from `inp`.
+    kwargs : dict, optional
+        Additional keyword arguments for constructing the output object. Supports `columns` and `metadata`
+        for `TsdFrame` objects.
+
+    Returns
+    -------
+    object
+        Initialized TSD object (`Tsd`, `TsdFrame`, or equivalent) with the specified time indices, data,
+        and metadata, or the original `out` object if it is not array-like.
+
+    Notes
+    -----
+    - If `out` is a `TsdFrame` and `inp` is also a `TsdFrame` with matching shapes, the columns and metadata
+      are propagated from `inp` to `out`, unless explicitly provided in `kwargs`.
+    - If `time` and `ep` are not provided, they are extracted from `inp`.
+
+    Examples
+    --------
+    # Example usage with TsdFrame
+    out = _initialize_tsd_output(inp=tsd_frame, out=data_array, time=time_array, ep=epoch, kwargs={"columns": cols})
+
+    # Example usage with NumPy array
+    out = _initialize_tsd_output(inp=tsd_obj, out=numpy_array)
+    """
+    kwargs = kwargs if kwargs is not None else {}
 
     if isinstance(out, np.ndarray) or is_array_like(out):
-        # # if dims increased in any case, we can't return safely a time series
-        # if out.ndim > self.ndim:
-        #     return out
-        if out.shape[0] == inp.index.shape[0]:
-            kwargs = {}
-            if (inp.ndim == 2) and (out.ndim == 2) and (out.shape[1] == inp.shape[1]):
-                # only pass columns and metadata if number of columns is preserved
-                if hasattr(inp, "columns"):
-                    kwargs["columns"] = inp.columns
-                if hasattr(inp, "_metadata"):
-                    kwargs["metadata"] = inp._metadata
-            return _get_class(out)(
-                t=inp.index, d=out, time_support=inp.time_support, **kwargs
-            )
+
+        # if time and ep are passed use them, otherwise strip from inp
+        time = inp.index if time is None else time
+
+        if time.shape[0] == out.shape[0]:
+            # grab time support
+            time_support = inp.time_support if ep is None else ep
+
+            cls = _get_class(out)
+
+            # if out will be a tsdframe implement kwargs logic
+            if cls is TsdFrame:
+                # get eventual setting
+                cols = kwargs.get("columns", None)
+                metadata = kwargs.get("metadata", None)
+
+                # if input is tsdframe and has the shape grab metdata and cols if
+                # not already passed in kwargs
+                if isinstance(inp, TsdFrame) and (out.shape[1] == inp.shape[1]):
+                    cols = cols if cols is not None else getattr(inp, "columns", None)
+                    metadata = metadata if metadata is not None else getattr(inp, "metadata", None)
+
+                # update the kwargs
+                kwargs.update({"columns": cols, "metadata": metadata})
+
+            return cls(t=time, d=out, time_support=time_support, **kwargs)
 
     return out
 
@@ -512,15 +564,8 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         new_data_array = _convolve(time_array, data_array, starts, ends, array, trim)
 
-        kwargs_dict = dict(time_support=ep)
+        return _initialize_tsd_output(self, new_data_array, time=time_array, ep=ep)
 
-        nap_class = _get_class(new_data_array)
-
-        if isinstance(self, TsdFrame) and array.ndim == 1:  # keep columns
-            kwargs_dict["columns"] = self.columns
-            kwargs_dict["metadata"] = self._metadata
-
-        return nap_class(t=time_array, d=new_data_array, **kwargs_dict)
 
     def smooth(self, std, windowsize=None, time_units="s", size_factor=100, norm=True):
         """Smooth a time series with a gaussian kernel.
@@ -789,23 +834,7 @@ class TsdTensor(_BaseTsd):
 
         if isinstance(index, Number):
             index = np.array([index])
-
-        if all(is_array_like(a) for a in [index, output]):
-            if output.shape[0] == index.shape[0]:
-                if output.ndim == 1:
-                    return Tsd(t=index, d=output, time_support=self.time_support)
-                elif output.ndim == 2:
-                    return TsdFrame(
-                        t=index,
-                        d=output,
-                        time_support=self.time_support,
-                    )
-                else:
-                    return TsdTensor(t=index, d=output, time_support=self.time_support)
-            else:
-                return output
-        else:
-            return output
+        return _initialize_tsd_output(self, output, time=index, ep=self.time_support)
 
     def save(self, filename):
         """
@@ -1242,12 +1271,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
                 kwargs["columns"] = columns
                 kwargs["metadata"] = self._metadata.loc[columns]
-
-                return _get_class(output)(
-                    t=index, d=output, time_support=self.time_support, **kwargs
-                )
-            # else:
-            #     return output
+                return _initialize_tsd_output(self, output,  time=index, ep=self.time_support, kwargs=kwargs)
             else:
                 return output
 
@@ -1693,16 +1717,7 @@ class Tsd(_BaseTsd):
             index = np.array([key])
         else:
             index = self.index.__getitem__(key)
-
-        if all(is_array_like(a) for a in [index, output]):
-            if output.shape[0] == index.shape[0]:
-                return _get_class(output)(
-                    t=index, d=output, time_support=self.time_support, **kwargs
-                )
-            else:
-                return output
-        else:
-            return output
+        return _initialize_tsd_output(self, output, time=index, ep=self.time_support, kwargs=kwargs)
 
     def as_series(self):
         """
