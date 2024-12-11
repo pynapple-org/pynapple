@@ -19,6 +19,7 @@ import abc
 import importlib
 import warnings
 from numbers import Number
+from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -63,6 +64,27 @@ def _get_class(data):
         return TsdTensor
 
 
+def _initialize_tsd_output(inp, out):
+
+    if isinstance(out, np.ndarray) or is_array_like(out):
+        # # if dims increased in any case, we can't return safely a time series
+        # if out.ndim > self.ndim:
+        #     return out
+        if out.shape[0] == inp.index.shape[0]:
+            kwargs = {"load_array": inp._load_array}
+            if (inp.ndim == 2) and (out.ndim == 2) and (out.shape[1] == inp.shape[1]):
+                # only pass columns and metadata if number of columns is preserved
+                if hasattr(inp, "columns"):
+                    kwargs["columns"] = inp.columns
+                if hasattr(inp, "_metadata"):
+                    kwargs["metadata"] = inp._metadata
+            return _get_class(out)(
+                t=inp.index, d=out, time_support=inp.time_support, **kwargs
+            )
+
+    return out
+
+
 class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
     """
     Abstract base class for time series objects.
@@ -105,6 +127,17 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             )
 
         self.dtype = self.values.dtype
+
+    def _define_instance(self, time, iset, data=None, **kwargs):
+        """
+        Define a new class instance.
+
+        Optional parameters for initialization are either passed to the function or are grabbed from self.
+        """
+        for key in ["columns", "metadata"]:
+            if hasattr(self, key):
+                kwargs[key] = kwargs.get(key, getattr(self, key))
+        return self.__class__(t=time, d=data, time_support=iset, **kwargs)
 
     def __setitem__(self, key, value):
         """setter for time series"""
@@ -166,20 +199,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             else:
                 out = ufunc(*new_args, **kwargs)
 
-            if isinstance(out, np.ndarray) or is_array_like(out):
-                if out.shape[0] == self.index.shape[0]:
-                    kwargs = {}
-                    if hasattr(self, "columns"):
-                        kwargs["columns"] = self.columns
-                    if hasattr(self, "_metadata"):
-                        kwargs["metadata"] = self._metadata
-                    return _get_class(out)(
-                        t=self.index, d=out, time_support=self.time_support, **kwargs
-                    )
-                else:
-                    return out
-            else:
-                return out
+            return _initialize_tsd_output(self, out)
         else:
             return NotImplemented
 
@@ -210,30 +230,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 new_args.append(a)
 
         out = func._implementation(*new_args, **kwargs)
-
-        if isinstance(out, np.ndarray) or is_array_like(out):
-            # # if dims increased in any case, we can't return safely a time series
-            # if out.ndim > self.ndim:
-            #     return out
-            if out.shape[0] == self.index.shape[0]:
-                kwargs = {}
-                if (
-                    (self.ndim == 2)
-                    and (out.ndim == 2)
-                    and (out.shape[1] == self.shape[1])
-                ):
-                    # only pass columns and metadata if number of columns is preserved
-                    if hasattr(self, "columns"):
-                        kwargs["columns"] = self.columns
-                    if hasattr(self, "_metadata"):
-                        kwargs["metadata"] = self._metadata
-                return _get_class(out)(
-                    t=self.index, d=out, time_support=self.time_support, **kwargs
-                )
-            else:
-                return out
-        else:
-            return out
+        return _initialize_tsd_output(self, out)
 
     def as_array(self):
         """
@@ -264,12 +261,6 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         Mostly useful for matplotlib plotting when calling `plot(tsd)`.
         """
         return np.asarray(self.values)
-
-    def copy(self):
-        """Copy the data, index and time support"""
-        return self.__class__(
-            t=self.index.copy(), d=self.values[:].copy(), time_support=self.time_support
-        )
 
     def value_from(self, data, ep=None):
         """
@@ -314,7 +305,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         ), "First argument should be an instance of Tsd, TsdFrame or TsdTensor"
 
         t, d, time_support, kwargs = super().value_from(data, ep)
-        return data.__class__(t=t, d=d, time_support=time_support, **kwargs)
+        return data._define_instance(t, time_support, data=d, **kwargs)
 
     def count(self, *args, dtype=None, **kwargs):
         """
@@ -428,13 +419,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         t, d = _bin_average(time_array, data_array, starts, ends, bin_size)
 
-        kwargs = {}
-        if hasattr(self, "columns"):
-            kwargs["columns"] = self.columns
-        if hasattr(self, "_metadata"):
-            kwargs["metadata"] = self._metadata
-
-        return self.__class__(t=t, d=d, time_support=ep, **kwargs)
+        return self._define_instance(t, ep, data=d)
 
     def dropna(self, update_time_support=True):
         """Drop every rows containing NaNs. By default, the time support is updated to start and end around the time points that are non NaNs.
@@ -468,13 +453,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         else:
             ep = self.time_support
 
-        kwargs = {}
-        if hasattr(self, "columns"):
-            kwargs["columns"] = self.columns
-        if hasattr(self, "_metadata"):
-            kwargs["metadata"] = self._metadata
-
-        return self.__class__(t=t, d=d, time_support=ep, **kwargs)
+        return self._define_instance(t, ep, data=d)
 
     def convolve(self, array, ep=None, trim="both"):
         """Return the discrete linear convolution of the time series with a one dimensional sequence.
@@ -698,12 +677,8 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                     new_d[start : start + len(t), ...] = interpolated_values
 
             start += len(t)
-        kwargs_dict = dict(time_support=ep)
-        if hasattr(self, "columns"):
-            kwargs_dict["columns"] = self.columns
-        if hasattr(self, "_metadata"):
-            kwargs_dict["metadata"] = self._metadata
-        return self.__class__(t=new_t, d=new_d, **kwargs_dict)
+
+        return self._define_instance(new_t, ep, data=new_d)
 
 
 class TsdTensor(_BaseTsd):
@@ -1312,16 +1287,6 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         df.index.name = "Time (" + str(units) + ")"
         df.columns = self.columns.copy()
         return df
-
-    def copy(self):
-        """Copy the data, index, time support, columns and metadata of the TsdFrame object."""
-        return self.__class__(
-            t=self.index.copy(),
-            d=self.values[:].copy(),
-            time_support=self.time_support,
-            columns=self.columns.copy(),
-            metadata=self._metadata,
-        )
 
     def save(self, filename):
         """
@@ -1974,10 +1939,11 @@ class Ts(_Base):
         self.nap_class = self.__class__.__name__
         self._initialized = True
 
+    def _define_instance(self, time, iset, data=None, **kwargs):
+        return self.__class__(t=time, time_support=iset)
+
     def __repr__(self):
         upper = "Time (s)"
-
-        max_rows = 2
         rows = _get_terminal_size()[1]
         max_rows = np.maximum(rows - 10, 2)
 
@@ -2081,7 +2047,7 @@ class Ts(_Base):
 
         t, d, time_support, kwargs = super().value_from(data, ep)
 
-        return data.__class__(t, d, time_support=time_support, **kwargs)
+        return data._define_instance(t, time_support, data=d, **kwargs)
 
     def count(self, *args, dtype=None, **kwargs):
         """
