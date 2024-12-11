@@ -103,13 +103,13 @@ def class_class_invocations(cls):
 
 def subclass_class_invocations(base_class):
     """
-    Finds methods in subclasses of a base class where the `__call__` method is invoked.
+    Finds methods in subclasses of a base class where the `__class__` method is invoked.
 
     Args:
         base_class (type): The base class to inspect.
 
     Returns:
-        dict: A dictionary with subclass names as keys and a list of method names invoking `__call__`.
+        dict: A dictionary with subclass names as keys and a list of method names invoking `__class__`.
     """
     results = {}
 
@@ -129,13 +129,13 @@ def subclass_class_invocations(base_class):
 
 def find_class_invocations_in_function(func):
     """
-    Checks if a function contains a call to `__call__`.
+    Checks if a function contains a call to `__class__`.
 
     Args:
         func (callable): The function to analyze.
 
     Returns:
-        bool: True if `__call__` is invoked in the function, False otherwise.
+        bool: True if `__class__` is invoked in the function, False otherwise.
     """
     try:
         # Get the source code of the function
