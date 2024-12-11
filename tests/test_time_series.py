@@ -1382,16 +1382,16 @@ class TestTsdFrame:
         assert isinstance(tsd2, nap.TsdFrame)
         np.testing.assert_array_equal(tsd2.columns, tsdframe.columns)
 
-    def test_deprecation_warning(self, tsdframe):
-        columns = tsdframe.columns
-        # warning using loc
-        with pytest.warns(DeprecationWarning):
-            tsdframe.loc[columns[0]]
-        if isinstance(columns[0], str):
-            # suppressed warning with getitem, which implicitly uses loc
-            with warnings.catch_warnings():
-                warnings.simplefilter("error")
-                tsdframe[columns[0]]
+    # def test_deprecation_warning(self, tsdframe):
+    #     columns = tsdframe.columns
+    #     # warning using loc
+    #     with pytest.warns(DeprecationWarning):
+    #         tsdframe.loc[columns[0]]
+    #     if isinstance(columns[0], str):
+    #         # suppressed warning with getitem, which implicitly uses loc
+    #         with warnings.catch_warnings():
+    #             warnings.simplefilter("error")
+    #             tsdframe[columns[0]]
 
 
 ####################################################

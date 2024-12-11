@@ -357,6 +357,7 @@ print(tsdframe.loc[['kiwi', np.pi]])
 
 In general, it is probably a bad idea to mix types when labelling columns.
 
+
 ## Interval sets methods
 
 ### Interaction between epochs 
