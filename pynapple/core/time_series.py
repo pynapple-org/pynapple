@@ -185,10 +185,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         Optional parameters for initialization are either passed to the function or are grabbed from self.
         """
-        for key in ["columns", "metadata"]:
-            if hasattr(self, key):
-                kwargs[key] = kwargs.get(key, getattr(self, key))
-        return self.__class__(t=time, d=data, time_support=iset, **kwargs)
+        return _initialize_tsd_output(self, data, time=time, ep=iset, kwargs=kwargs)
 
     def __setitem__(self, key, value):
         """setter for time series"""
@@ -470,7 +467,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         t, d = _bin_average(time_array, data_array, starts, ends, bin_size)
 
-        return self._define_instance(t, ep, data=d)
+        return _initialize_tsd_output(self, d, time=t, ep=ep)
 
     def dropna(self, update_time_support=True):
         """Drop every rows containing NaNs. By default, the time support is updated to start and end around the time points that are non NaNs.
@@ -504,7 +501,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         else:
             ep = self.time_support
 
-        return self._define_instance(t, ep, data=d)
+        return _initialize_tsd_output(self, d, time=t, ep=ep)
 
     def convolve(self, array, ep=None, trim="both"):
         """Return the discrete linear convolution of the time series with a one dimensional sequence.
@@ -722,7 +719,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
             start += len(t)
 
-        return self._define_instance(new_t, ep, data=new_d)
+        return _initialize_tsd_output(self, new_d, time=new_t, ep=ep)
 
 
 class TsdTensor(_BaseTsd):
