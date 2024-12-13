@@ -58,7 +58,7 @@ class _Base(abc.ABC):
             self.time_support = IntervalSet(start=[], end=[])
 
     @abc.abstractmethod
-    def _define_instance(self, time, iset, data=None, **kwargs):
+    def _define_instance(self, time_index, time_support, values=None, **kwargs):
         """Return a new class instance.
 
         Pass "columns", "metadata" and other attributes of self
@@ -206,8 +206,15 @@ class _Base(abc.ABC):
         >>> print(len(ts.restrict(ep)), len(newts))
             52 52
         """
+        if not isinstance(data, _Base) and not hasattr(data, "values"):
+            raise TypeError(
+                "First argument should be an instance of Tsd, TsdFrame or TsdTensor"
+            )
         if ep is None:
             ep = data.time_support
+        if not isinstance(ep, IntervalSet):
+            raise TypeError("Argument ep should be of type IntervalSet or None")
+
         time_array = self.index.values
         time_target_array = data.index.values
         data_target_array = data.values
@@ -220,15 +227,9 @@ class _Base(abc.ABC):
 
         time_support = IntervalSet(start=starts, end=ends)
 
-        kwargs = {}
-        if hasattr(data, "columns"):
-            kwargs["columns"] = data.columns
-        if hasattr(data, "_metadata"):
-            kwargs["metadata"] = data._metadata
+        return data._define_instance(time_index=t, time_support=time_support, values=d)
 
-        return t, d, time_support, kwargs
-
-    def count(self, *args, dtype=None, **kwargs):
+    def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
         """
         Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
         You can call this function in multiple ways :
@@ -285,37 +286,20 @@ class _Base(abc.ABC):
             start    end
         0  100.0  800.0
         """
-        bin_size = None
-        if "bin_size" in kwargs:
-            bin_size = kwargs["bin_size"]
+
+        if bin_size is not None:
             if isinstance(bin_size, int):
                 bin_size = float(bin_size)
             if not isinstance(bin_size, float):
-                raise ValueError("bin_size argument should be float.")
-        else:
-            for a in args:
-                if isinstance(a, (float, int)):
-                    bin_size = float(a)
+                raise TypeError("bin_size argument should be float or int.")
 
-        time_units = "s"
-        if "time_units" in kwargs:
-            time_units = kwargs["time_units"]
-            if not isinstance(time_units, str):
+            if not isinstance(time_units, str) or time_units not in ["s", "ms", "us"]:
                 raise ValueError("time_units argument should be 's', 'ms' or 'us'.")
-        else:
-            for a in args:
-                if isinstance(a, str) and a in ["s", "ms", "us"]:
-                    time_units = a
 
-        ep = self.time_support
-        if "ep" in kwargs:
-            ep = kwargs["ep"]
-            if not isinstance(ep, IntervalSet):
-                raise ValueError("ep argument should be IntervalSet")
-        else:
-            for a in args:
-                if isinstance(a, IntervalSet):
-                    ep = a
+        if ep is None:
+            ep = self.time_support
+        if not isinstance(ep, IntervalSet):
+            raise TypeError("ep argument should be of type IntervalSet")
 
         if dtype is None:
             dtype = np.dtype(np.int64)
@@ -335,7 +319,7 @@ class _Base(abc.ABC):
 
         t, d = _count(time_array, starts, ends, bin_size, dtype=dtype)
 
-        return t, d, ep
+        return self._define_instance(t, ep, values=d)
 
     def restrict(self, iset):
         """
@@ -369,8 +353,8 @@ class _Base(abc.ABC):
         0    0.0  500.0
 
         """
-
-        assert isinstance(iset, IntervalSet), "Argument should be IntervalSet"
+        if not isinstance(iset, IntervalSet):
+            raise TypeError("Argument should be IntervalSet")
 
         time_array = self.index.values
         starts = iset.start
@@ -378,14 +362,14 @@ class _Base(abc.ABC):
 
         idx = _restrict(time_array, starts, ends)
         data = None if not hasattr(self, "values") else self.values[idx]
-        return self._define_instance(time_array[idx], iset, data=data)
+        return self._define_instance(time_array[idx], iset, values=data)
 
     def copy(self):
         """Copy the data, index and time support"""
         data = getattr(self, "values", None)
         if data is not None:
             data = data.copy() if hasattr(data, "copy") else data[:].copy()
-        return self._define_instance(self.index.copy(), self.time_support, data=data)
+        return self._define_instance(self.index.copy(), self.time_support, values=data)
 
     def find_support(self, min_gap, time_units="s"):
         """

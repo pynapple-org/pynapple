@@ -152,7 +152,9 @@ def find_method_invocations_in_function(func, method_name):
         tree = ast.parse(source)
         # Walk the AST to check for `__call__` invocations
         for node in ast.walk(tree):
-            if isinstance(node, ast.Call) and isinstance(node.func, (ast.Attribute, ast.Name)):
+            if isinstance(node, ast.Call) and isinstance(
+                node.func, (ast.Attribute, ast.Name)
+            ):
                 name = getattr(node.func, "attr", getattr(node.func, "id", None))
                 if name == method_name:
                     return True
@@ -190,7 +192,9 @@ def find_method_invocations_in_module_functions(module, method_name):
         for submodule_info in pkgutil.iter_modules(module.__path__):
             submodule_name = f"{module.__name__}.{submodule_info.name}"
             submodule = importlib.import_module(submodule_name)
-            submodule_results = find_method_invocations_in_module_functions(submodule, method_name)
+            submodule_results = find_method_invocations_in_module_functions(
+                submodule, method_name
+            )
             if submodule_results:
                 results_func.update(submodule_results)
 
@@ -202,7 +206,7 @@ def test_find_func():
     current_module = sys.modules[__name__]
 
     # Run the detection function
-    results = find_method_invocations_in_module_functions(current_module,  "__class__")
+    results = find_method_invocations_in_module_functions(current_module, "__class__")
     expected_results = {
         "tests.test_call_invocation.invalid_func": "invalid_func",
         "tests.test_call_invocation.invalid_func_decorated": "invalid_func_decorated",
@@ -242,7 +246,9 @@ def test_no_direct_get_cls_invocation_in_base_subclasses():
             "Please, replace them with `_initialize_tsd_output`."
         )
 
-    if results_func != {'pynapple.core.time_series._initialize_tsd_output': '_initialize_tsd_output'}:
+    if results_func != {
+        "pynapple.core.time_series._initialize_tsd_output": "_initialize_tsd_output"
+    }:
         raise ValueError(
             f"Direct use of _get_cls found in the following modules and functions: {results_func}. \n"
             "Please, replace them with `_initialize_tsd_output`."

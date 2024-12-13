@@ -37,7 +37,7 @@ class MyClass2(_Base):
     def __repr__(self):
         return "In repr"
 
-    def _define_instance(self, time, iset, data=None, **kwargs):
+    def _define_instance(self, time_index, time_support, values=None, **kwargs):
         pass
 
 

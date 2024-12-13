@@ -89,7 +89,7 @@ def _compute_butterworth_filter(
             slc = data.get_slice(start=ep.start[0], end=ep.end[0])
             out[slc] = sosfiltfilt(sos, data.d[slc], axis=0)
 
-    return data._define_instance(data.t, data.time_support, data=out)
+    return data._define_instance(data.t, data.time_support, values=out)
 
 
 def _compute_spectral_inversion(kernel):
