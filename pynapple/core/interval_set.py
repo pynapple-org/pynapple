@@ -112,10 +112,10 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     >>> end = [5, 12, 33]
     >>> metadata = {"label": ["a", "b", "c"]}
     >>> ep = nap.IntervalSet(start=start, end=end, metadata=metadata)
-      index    start    end      label
-          0        0      5  |   a
-          1       10     12  |   b
-          2       20     33  |   c
+      index    start    end     label
+          0        0      5     a
+          1       10     12     b
+          2       20     33     c
     shape: (3, 2), time unit: sec.
 
     Initialize an IntervalSet with a pandas DataFrame:
@@ -124,10 +124,10 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     >>> df = pd.DataFrame(data={"start": [0, 10, 20], "end": [5, 12, 33], "label": ["a", "b", "c"]})
     >>> ep = nap.IntervalSet(df)
     >>> ep
-      index    start    end      label
-          0        0      5  |   a
-          1       10     12  |   b
-          2       20     33  |   c
+      index    start    end     label
+          0        0      5     a
+          1       10     12     b
+          2       20     33     c
     shape: (3, 2), time unit: sec.
 
     Apply numpy functions to an IntervalSet:
@@ -307,23 +307,18 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
 
         headers = ["index", "start", "end"]
         if len(col_names):
-            headers += [""] + [c for c in col_names]
+            headers += [c for c in col_names]
         bottom = f"shape: {self.shape}, time unit: sec."
 
         # We rarely want to print everything as it can be very big.
         if len(self) > max_rows:
             n_rows = max_rows // 2
-            if len(col_names):
-                separator = np.array([["|"] * n_rows]).T
-            else:
-                separator = np.empty((n_rows, 0))
             data = np.vstack(
                 (
                     np.hstack(
                         (
                             self.index[0:n_rows, None],
                             self.values[0:n_rows],
-                            separator,
                             _convert_iter_to_str(metadata.values[0:n_rows]),
                         ),
                         dtype=object,
@@ -333,7 +328,6 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                         (
                             self.index[-n_rows:, None],
                             self.values[0:n_rows],
-                            separator,
                             _convert_iter_to_str(metadata.values[-n_rows:]),
                         ),
                         dtype=object,
@@ -341,15 +335,10 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                 )
             )
         else:
-            if len(col_names):
-                separator = np.array([["|"] * len(self)]).T
-            else:
-                separator = np.empty((len(self), 0))
             data = np.hstack(
                 (
                     self.index[:, None],
                     self.values,
-                    separator,
                     _convert_iter_to_str(metadata.values),
                 ),
                 dtype=object,
@@ -1065,10 +1054,10 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>> metadata = pd.DataFrame(data=['left','right','left'], columns=['choice'])
         >>> ep.set_info(metadata)
         >>> ep
-          index    start    end      choice
-              0        0      5  |   left
-              1       10     12  |   right
-              2       20     33  |   left
+          index    start    end     choice
+              0        0      5     left
+              1       10     12     right
+              2       20     33     left
         shape: (3, 2), time unit: sec.
 
         To add metadata with a dictionary:
@@ -1076,10 +1065,10 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>> metadata = {"reward": [1, 0, 1]}
         >>> ep.set_info(metadata)
         >>> ep
-          index    start    end      choice      reward
-              0        0      5  |   left             1
-              1       10     12  |   right            0
-              2       20     33  |   left             1
+          index    start    end     choice      reward
+              0        0      5     left             1
+              1       10     12     right            0
+              2       20     33     left             1
         shape: (3, 2), time unit: sec.
 
         To add metadata with a keyword argument (pd.Series, numpy.ndarray, list or tuple):
@@ -1087,40 +1076,40 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>> stim = pd.Series(data = [10, -23, 12])
         >>> ep.set_info(stim=stim)
         >>> ep
-          index    start    end      choice      reward    stim
-              0        0      5  |   left             1      10
-              1       10     12  |   right            0     -23
-              2       20     33  |   left             1      12
+          index    start    end     choice      reward    stim
+              0        0      5     left             1      10
+              1       10     12     right            0     -23
+              2       20     33     left             1      12
         shape: (3, 2), time unit: sec.
 
         To add metadata as an attribute:
 
         >>> ep.label = ["a", "b", "c"]
         >>> ep
-          index    start    end      choice      reward  label
-              0        0      5  |   left             1  a
-              1       10     12  |   right            0  b
-              2       20     33  |   left             1  c
+          index    start    end     choice      reward  label
+              0        0      5     left             1  a
+              1       10     12     right            0  b
+              2       20     33     left             1  c
         shape: (3, 2), time unit: sec.
 
         To add metadata as a key:
 
         >>> ep["error"] = [0, 0, 0]
         >>> ep
-          index    start    end      choice      reward  label      error
-              0        0      5  |   left             1  a             0
-              1       10     12  |   right            0  b             0
-              2       20     33  |   left             1  c             0
+          index    start    end     choice      reward  label      error
+              0        0      5     left             1  a             0
+              1       10     12     right            0  b             0
+              2       20     33     left             1  c             0
         shape: (3, 2), time unit: sec.
 
         Metadata can be overwritten:
 
         >>> ep.set_info(label=["x", "y", "z"])
         >>> ep
-          index    start    end      choice      reward  label      error
-              0        0      5  |   left             1  x             0
-              1       10     12  |   right            0  y             0
-              2       20     33  |   left             1  z             0
+          index    start    end     choice      reward  label      error
+              0        0      5     left             1  x             0
+              1       10     12     right            0  y             0
+              2       20     33     left             1  z             0
         shape: (3, 2), time unit: sec.
         """
         _MetadataMixin.set_info(self, metadata, **kwargs)
