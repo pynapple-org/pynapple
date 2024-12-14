@@ -37,6 +37,9 @@ class MyClass2(_Base):
     def __repr__(self):
         return "In repr"
 
+    def _define_instance(self, time_index, time_support, values=None, **kwargs):
+        pass
+
 
 def test_create_atsd():
     a = MyClass(t=np.arange(10), d=np.arange(10))
