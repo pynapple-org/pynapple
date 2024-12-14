@@ -19,6 +19,7 @@ import abc
 import importlib
 import warnings
 from numbers import Number
+from typing import Callable
 
 import numpy as np
 import pandas as pd
@@ -63,6 +64,27 @@ def _get_class(data):
         return TsdTensor
 
 
+def _initialize_tsd_output(inp, out):
+
+    if isinstance(out, np.ndarray) or is_array_like(out):
+        # # if dims increased in any case, we can't return safely a time series
+        # if out.ndim > self.ndim:
+        #     return out
+        if out.shape[0] == inp.index.shape[0]:
+            kwargs = {"load_array": inp._load_array}
+            if (inp.ndim == 2) and (out.ndim == 2) and (out.shape[1] == inp.shape[1]):
+                # only pass columns and metadata if number of columns is preserved
+                if hasattr(inp, "columns"):
+                    kwargs["columns"] = inp.columns
+                if hasattr(inp, "_metadata"):
+                    kwargs["metadata"] = inp._metadata
+            return _get_class(out)(
+                t=inp.index, d=out, time_support=inp.time_support, **kwargs
+            )
+
+    return out
+
+
 class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
     """
     Abstract base class for time series objects.
@@ -105,6 +127,23 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             )
 
         self.dtype = self.values.dtype
+        self._load_array = load_array
+
+    @property
+    def load_array(self):
+        """Read-only property load-array."""
+        return self._load_array
+
+    def _define_instance(self, time, iset, data=None, **kwargs):
+        """
+        Define a new class instance.
+
+        Optional parameters for initialization are either passed to the function or are grabbed from self.
+        """
+        for key in ["columns", "metadata", "load_array"]:
+            if hasattr(self, key):
+                kwargs[key] = kwargs.get(key, getattr(self, key))
+        return self.__class__(t=time, d=data, time_support=iset, **kwargs)
 
     def __setitem__(self, key, value):
         """setter for time series"""
@@ -124,6 +163,19 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 return np_func(self, *args, **kwargs)
 
             return method
+        if name not in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
+            # apply array specific methods
+            attr = getattr(self.d, name, None)
+
+            if isinstance(attr, Callable):
+
+                def method(*args, **kwargs):
+                    out = attr(*args, **kwargs)
+                    return _initialize_tsd_output(self, out)
+
+                return method
+            elif attr:
+                return attr
 
         raise AttributeError(
             "Time series object does not have the attribute {}".format(name)
@@ -166,20 +218,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             else:
                 out = ufunc(*new_args, **kwargs)
 
-            if isinstance(out, np.ndarray) or is_array_like(out):
-                if out.shape[0] == self.index.shape[0]:
-                    kwargs = {}
-                    if hasattr(self, "columns"):
-                        kwargs["columns"] = self.columns
-                    if hasattr(self, "_metadata"):
-                        kwargs["metadata"] = self._metadata
-                    return _get_class(out)(
-                        t=self.index, d=out, time_support=self.time_support, **kwargs
-                    )
-                else:
-                    return out
-            else:
-                return out
+            return _initialize_tsd_output(self, out)
         else:
             return NotImplemented
 
@@ -210,30 +249,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 new_args.append(a)
 
         out = func._implementation(*new_args, **kwargs)
-
-        if isinstance(out, np.ndarray) or is_array_like(out):
-            # # if dims increased in any case, we can't return safely a time series
-            # if out.ndim > self.ndim:
-            #     return out
-            if out.shape[0] == self.index.shape[0]:
-                kwargs = {}
-                if (
-                    (self.ndim == 2)
-                    and (out.ndim == 2)
-                    and (out.shape[1] == self.shape[1])
-                ):
-                    # only pass columns and metadata if number of columns is preserved
-                    if hasattr(self, "columns"):
-                        kwargs["columns"] = self.columns
-                    if hasattr(self, "_metadata"):
-                        kwargs["metadata"] = self._metadata
-                return _get_class(out)(
-                    t=self.index, d=out, time_support=self.time_support, **kwargs
-                )
-            else:
-                return out
-        else:
-            return out
+        return _initialize_tsd_output(self, out)
 
     def as_array(self):
         """
@@ -264,12 +280,6 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         Mostly useful for matplotlib plotting when calling `plot(tsd)`.
         """
         return np.asarray(self.values)
-
-    def copy(self):
-        """Copy the data, index and time support"""
-        return self.__class__(
-            t=self.index.copy(), d=self.values[:].copy(), time_support=self.time_support
-        )
 
     def value_from(self, data, ep=None):
         """
@@ -314,7 +324,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         ), "First argument should be an instance of Tsd, TsdFrame or TsdTensor"
 
         t, d, time_support, kwargs = super().value_from(data, ep)
-        return data.__class__(t=t, d=d, time_support=time_support, **kwargs)
+        return data._define_instance(t, time_support, data=d, **kwargs)
 
     def count(self, *args, dtype=None, **kwargs):
         """
@@ -428,13 +438,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         t, d = _bin_average(time_array, data_array, starts, ends, bin_size)
 
-        kwargs = {}
-        if hasattr(self, "columns"):
-            kwargs["columns"] = self.columns
-        if hasattr(self, "_metadata"):
-            kwargs["metadata"] = self._metadata
-
-        return self.__class__(t=t, d=d, time_support=ep, **kwargs)
+        return self._define_instance(t, ep, data=d)
 
     def dropna(self, update_time_support=True):
         """Drop every rows containing NaNs. By default, the time support is updated to start and end around the time points that are non NaNs.
@@ -468,13 +472,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         else:
             ep = self.time_support
 
-        kwargs = {}
-        if hasattr(self, "columns"):
-            kwargs["columns"] = self.columns
-        if hasattr(self, "_metadata"):
-            kwargs["metadata"] = self._metadata
-
-        return self.__class__(t=t, d=d, time_support=ep, **kwargs)
+        return self._define_instance(t, ep, data=d)
 
     def convolve(self, array, ep=None, trim="both"):
         """Return the discrete linear convolution of the time series with a one dimensional sequence.
@@ -698,12 +696,8 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                     new_d[start : start + len(t), ...] = interpolated_values
 
             start += len(t)
-        kwargs_dict = dict(time_support=ep)
-        if hasattr(self, "columns"):
-            kwargs_dict["columns"] = self.columns
-        if hasattr(self, "_metadata"):
-            kwargs_dict["metadata"] = self._metadata
-        return self.__class__(t=new_t, d=new_d, **kwargs_dict)
+
+        return self._define_instance(new_t, ep, data=new_d)
 
 
 class TsdTensor(_BaseTsd):
@@ -774,16 +768,35 @@ class TsdTensor(_BaseTsd):
             _str_ = []
             if self.shape[0] > max_rows:
                 n_rows = max_rows // 2
-                for i, array in zip(self.index[0:n_rows], self.values[0:n_rows]):
+                top_rows = (
+                    self.values[0:n_rows].compute()
+                    if hasattr(self.values, "compute")
+                    else self.values[:n_rows]
+                )
+                bottom_rows = (
+                    self.values[
+                        self.values.shape[0] - n_rows : self.values.shape[0]
+                    ].compute()
+                    if hasattr(self.values, "compute")
+                    else self.values[
+                        self.values.shape[0] - n_rows : self.values.shape[0]
+                    ]
+                )
+                for i, array in zip(self.index[0:n_rows], top_rows):
                     _str_.append([i, create_str(array)])
                 _str_.append(["...", ""])
                 for i, array in zip(
                     self.index[-n_rows:],
-                    self.values[self.values.shape[0] - n_rows : self.values.shape[0]],
+                    bottom_rows,
                 ):
                     _str_.append([i, create_str(array)])
             else:
-                for i, array in zip(self.index, self.values):
+                rows = (
+                    self.values.compute()
+                    if hasattr(self.values, "compute")
+                    else self.values
+                )
+                for i, array in zip(self.index, rows):
                     _str_.append([i, create_str(array)])
 
             return tabulate(_str_, headers=headers, colalign=("left",)) + "\n" + bottom
@@ -798,6 +811,7 @@ class TsdTensor(_BaseTsd):
                     "When indexing with a Tsd, it must contain boolean values"
                 )
             output = self.values[key.values]
+            output = output.compute() if hasattr(output, "compute") else output
             index = self.index[key.values]
         elif isinstance(key, tuple):
             if any(
@@ -808,9 +822,11 @@ class TsdTensor(_BaseTsd):
                 )
             key = tuple(k.values if isinstance(k, Tsd) else k for k in key)
             output = self.values.__getitem__(key)
+            output = output.compute() if hasattr(output, "compute") else output
             index = self.index.__getitem__(key[0])
         else:
             output = self.values.__getitem__(key)
+            output = output.compute() if hasattr(output, "compute") else output
             index = self.index.__getitem__(key)
 
         if isinstance(index, Number):
@@ -1084,12 +1100,22 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                 if len(self) > max_rows:
                     n_rows = max_rows // 2
                     ends = np.array([end] * n_rows)
+                    top_rows = (
+                        self.values[0:n_rows, 0:max_cols].compute()
+                        if hasattr(self.values, "compute")
+                        else self.values[0:n_rows, 0:max_cols]
+                    )
+                    bottom_rows = (
+                        self.values[-n_rows:, 0:max_cols].compute()
+                        if hasattr(self.values, "compute")
+                        else self.values[-n_rows:, 0:max_cols]
+                    )
                     table = np.vstack(
                         (
                             np.hstack(
                                 (
                                     self.index[0:n_rows, None],
-                                    np.round(self.values[0:n_rows, 0:max_cols], 5),
+                                    np.round(top_rows, 5),
                                     ends,
                                 ),
                                 dtype=object,
@@ -1105,7 +1131,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                             np.hstack(
                                 (
                                     self.index[-n_rows:, None],
-                                    np.round(self.values[-n_rows:, 0:max_cols], 5),
+                                    np.round(bottom_rows, 5),
                                     ends,
                                 ),
                                 dtype=object,
@@ -1114,10 +1140,15 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     )
                 else:
                     ends = np.array([end] * len(self))
+                    rows = (
+                        self.values[:, 0:max_cols].compute()
+                        if hasattr(self.values, "compute")
+                        else self.values[:, 0:max_cols]
+                    )
                     table = np.hstack(
                         (
                             self.index[:, None],
-                            np.round(self.values[:, 0:max_cols], 5),
+                            np.round(rows, 5),
                             ends,
                         ),
                         dtype=object,
@@ -1240,6 +1271,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                 key = (slice(None, None, None), key)
 
             output = self.values.__getitem__(key)
+            output = output.compute() if hasattr(output, "compute") else output
             columns = self.columns
 
             if isinstance(key, tuple):
@@ -1314,16 +1346,6 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         df.index.name = "Time (" + str(units) + ")"
         df.columns = self.columns.copy()
         return df
-
-    def copy(self):
-        """Copy the data, index, time support, columns and metadata of the TsdFrame object."""
-        return self.__class__(
-            t=self.index.copy(),
-            d=self.values[:].copy(),
-            time_support=self.time_support,
-            columns=self.columns.copy(),
-            metadata=self._metadata,
-        )
 
     def save(self, filename):
         """
@@ -1662,14 +1684,26 @@ class Tsd(_BaseTsd):
                 if len(self) > max_rows:
                     n_rows = max_rows // 2
                     table = []
-                    for i, v in zip(self.index[0:n_rows], self.values[0:n_rows]):
+                    top_rows = (
+                        self.values[0:n_rows].compute()
+                        if hasattr(self.values, "compute")
+                        else self.values[0:n_rows]
+                    )
+                    bottom_rows = (
+                        self.values[
+                            self.values.shape[0] - n_rows : self.values.shape[0]
+                        ].compute()
+                        if hasattr(self.values, "compute")
+                        else self.values[
+                            self.values.shape[0] - n_rows : self.values.shape[0]
+                        ]
+                    )
+                    for i, v in zip(self.index[0:n_rows], top_rows):
                         table.append([i, v])
                     table.append(["..."])
                     for i, v in zip(
                         self.index[-n_rows:],
-                        self.values[
-                            self.values.shape[0] - n_rows : self.values.shape[0]
-                        ],
+                        bottom_rows,
                     ):
                         table.append([i, v])
 
@@ -1724,6 +1758,7 @@ class Tsd(_BaseTsd):
             key = key.d
 
         output = self.values.__getitem__(key)
+        output = output.compute() if hasattr(output, "compute") else output
 
         if isinstance(key, tuple):
             index = self.index.__getitem__(key[0])
@@ -1976,10 +2011,11 @@ class Ts(_Base):
         self.nap_class = self.__class__.__name__
         self._initialized = True
 
+    def _define_instance(self, time, iset, data=None, **kwargs):
+        return self.__class__(t=time, time_support=iset)
+
     def __repr__(self):
         upper = "Time (s)"
-
-        max_rows = 2
         rows = _get_terminal_size()[1]
         max_rows = np.maximum(rows - 10, 2)
 
@@ -2083,7 +2119,7 @@ class Ts(_Base):
 
         t, d, time_support, kwargs = super().value_from(data, ep)
 
-        return data.__class__(t, d, time_support=time_support, **kwargs)
+        return data._define_instance(t, time_support, data=d, **kwargs)
 
     def count(self, *args, dtype=None, **kwargs):
         """

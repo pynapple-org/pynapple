@@ -57,6 +57,15 @@ class _Base(abc.ABC):
             self.rate = np.nan
             self.time_support = IntervalSet(start=[], end=[])
 
+    @abc.abstractmethod
+    def _define_instance(self, time, iset, data=None, **kwargs):
+        """Return a new class instance.
+
+        Pass "columns", "metadata" and other attributes of self
+        to the new instance unless specified in kwargs.
+        """
+        pass
+
     @property
     def t(self):
         """The time index of the time series"""
@@ -368,25 +377,15 @@ class _Base(abc.ABC):
         ends = iset.end
 
         idx = _restrict(time_array, starts, ends)
-
-        kwargs = {}
-        if hasattr(self, "columns"):
-            kwargs["columns"] = self.columns
-
-        if hasattr(self, "_metadata"):
-            kwargs["metadata"] = self._metadata
-
-        if hasattr(self, "values"):
-            data_array = self.values
-            return self.__class__(
-                t=time_array[idx], d=data_array[idx], time_support=iset, **kwargs
-            )
-        else:
-            return self.__class__(t=time_array[idx], time_support=iset)
+        data = None if not hasattr(self, "values") else self.values[idx]
+        return self._define_instance(time_array[idx], iset, data=data)
 
     def copy(self):
         """Copy the data, index and time support"""
-        return self.__class__(t=self.index.copy(), time_support=self.time_support)
+        data = getattr(self, "values", None)
+        if data is not None:
+            data = data.copy() if hasattr(data, "copy") else data[:].copy()
+        return self._define_instance(self.index.copy(), self.time_support, data=data)
 
     def find_support(self, min_gap, time_units="s"):
         """

@@ -89,10 +89,7 @@ def _compute_butterworth_filter(
             slc = data.get_slice(start=ep.start[0], end=ep.end[0])
             out[slc] = sosfiltfilt(sos, data.d[slc], axis=0)
 
-    kwargs = dict(t=data.t, d=out, time_support=data.time_support)
-    if isinstance(data, nap.TsdFrame):
-        kwargs["columns"] = data.columns
-    return data.__class__(**kwargs)
+    return data._define_instance(data.t, data.time_support, data=out)
 
 
 def _compute_spectral_inversion(kernel):

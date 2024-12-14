@@ -54,6 +54,8 @@ dev = [
     "pytest",                       # Testing framework
     "flake8",                       # Code linter
     "coverage",                     # Test coverage measurement
+    "dask",
+    "zarr",
 ]
 doc = [
     "matplotlib",
@@ -72,7 +74,8 @@ doc = [
     "myst-nb",
     "dandi",
     "sphinx-autobuild",
-    "sphinx-contributors"
+    "sphinx-contributors",
+    "dask",
     # "sphinx-exec-code"
 ]
 docs = [
@@ -86,7 +89,8 @@ docs = [
     "matplotlib",
     "seaborn",
     "zarr",
-    "dandi"
+    "dandi",
+    "dask",
 ]
 dandi = [
     "dandi",                        # Dandi package
