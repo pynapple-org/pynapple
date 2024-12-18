@@ -11,8 +11,8 @@ kernelspec:
   name: python3
 ---
 
-Wavelet Transform
-=================
+Spectrogram
+===========
 
 This tutorial covers the use of `nap.compute_wavelet_transform` to do continuous wavelet transform. By default, pynapple uses Morlet wavelets.
 

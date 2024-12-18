@@ -97,7 +97,7 @@ pynapple: python neural analysis package
       .. image:: _static/example_thumbs/tuningcurves.svg         
          :class: dark-light
 
-   .. grid-item-card:: Wavelets
+   .. grid-item-card:: Spectrogram
       :text-align: center
       :link: ./user_guide/11_wavelets.html
 
