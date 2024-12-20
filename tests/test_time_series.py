@@ -954,6 +954,7 @@ class TestTsd:
 @pytest.mark.parametrize(
     "tsdframe",
     [
+        nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 1), time_units="s"),
         nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), time_units="s"),
         nap.TsdFrame(
             t=np.arange(100),
