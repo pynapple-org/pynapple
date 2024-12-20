@@ -1172,7 +1172,11 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                 if (
                     (len(index) == 1)
                     and (output.ndim == 1)
-                    and ((len(output) > 1) or isinstance(key, int) or isinstance(key[1], (list, np.ndarray)))
+                    and (
+                        (len(output) > 1)
+                        or isinstance(key, int)
+                        or isinstance(key[1], (list, np.ndarray))
+                    )
                 ):
                     # reshape output of single index to preserve column axis if there are more than one columns being indexed
                     # or if column key is a list or array
