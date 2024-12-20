@@ -1174,7 +1174,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     and (output.ndim == 1)
                     and (
                         (len(output) > 1)
-                        or isinstance(key, int)
+                        or isinstance(key, (int, slice))
                         or isinstance(key[1], (list, np.ndarray))
                     )
                 ):
