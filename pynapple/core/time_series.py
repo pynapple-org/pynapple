@@ -1169,26 +1169,23 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                 index = np.array([index])
 
             if all(is_array_like(a) for a in [index, output]):
-                if (
-                    (len(index) == 1)
-                    and (output.ndim == 1)
-                    and (
-                        (len(output) > 1)
-                        or isinstance(key, (int, slice))
-                        or isinstance(key[1], (list, np.ndarray))
-                    )
-                ):
-                    # reshape output of single index to preserve column axis if there are more than one columns being indexed
-                    # or if column key is a list or array
+                if isinstance(key, tuple):
+                    if (
+                        len(index) == 1
+                        and output.ndim == 1
+                        and not isinstance(key[1], int)
+                    ):
+                        output = output[None, :]
+                    elif (
+                        (output.ndim == 1)
+                        and isinstance(key[1], (list, np.ndarray))
+                        and (len(columns) == 1)
+                    ):
+                        # reshape output of single column if column key is a list or array
+                        output = output[:, None]
+                # if getting a row (1 dim implied)
+                elif isinstance(key, Number):
                     output = output[None, :]
-
-                elif (
-                    (output.ndim == 1)
-                    and isinstance(key[1], (list, np.ndarray))
-                    and (len(columns) == 1)
-                ):
-                    # reshape output of single column if column key is a list or array
-                    output = output[:, None]
 
                 kwargs["columns"] = columns
                 kwargs["metadata"] = self._metadata.loc[columns]

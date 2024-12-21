@@ -1051,10 +1051,10 @@ class TestTsdFrame:
         "row",
         [
             0,
-            # [0, 2],
-            # slice(20, 30),
-            # np.hstack([np.zeros(10, bool), True, True, True, np.zeros(87, bool)]),
-            # np.hstack([np.zeros(10, bool), True, np.zeros(89, bool)]),
+            [0, 2],
+            slice(20, 30),
+            np.hstack([np.zeros(10, bool), True, True, True, np.zeros(87, bool)]),
+            np.hstack([np.zeros(10, bool), True, np.zeros(89, bool)]),
         ],
     )
     @pytest.mark.parametrize(
@@ -1072,9 +1072,6 @@ class TestTsdFrame:
         if tsdframe.shape[1] == 1:
             if isinstance(col, list) and isinstance(col[0], int):
                 col = [0]
-            elif isinstance(col, slice):
-                col = slice(0, 1)
-                expected = nap.Tsd
             elif isinstance(col, list) and isinstance(col[0], bool):
                 col = [col[0]]
 
