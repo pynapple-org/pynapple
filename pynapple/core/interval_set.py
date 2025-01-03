@@ -1256,12 +1256,12 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         Applying a function with additional arguments, where the grouped object is not the first argument:
 
         >>> tsg = nap.TsGroup(
-        >>>     {
-        >>>         1: nap.Ts(t=np.arange(0, 40)),
-        >>>         2: nap.Ts(t=np.arange(0, 40, 0.5), time_units="s"),
-        >>>         3: nap.Ts(t=np.arange(0, 40, 0.2), time_units="s"),
-        >>>     },
-        >>> )
+        ...     {
+        ...         1: nap.Ts(t=np.arange(0, 40)),
+        ...         2: nap.Ts(t=np.arange(0, 40, 0.5), time_units="s"),
+        ...         3: nap.Ts(t=np.arange(0, 40, 0.2), time_units="s"),
+        ...     },
+        ... )
         >>> feature = nap.Tsd(t=np.arange(40), d=np.concatenate([np.zeros(20), np.ones(20)]))
         >>> func_kwargs = {
         >>>     "group": tsg,
