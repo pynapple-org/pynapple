@@ -326,7 +326,7 @@ class _MetadataMixin:
             # we don't allow indexing columns with numbers, e.g. metadata[0,0]
             raise IndexError(f"Unknown metadata index {key}")
 
-    def groupby(self, by=None, get_group=None):
+    def groupby(self, by, get_group=None):
         """
         Group pynapple object by metadata column(s).
 
@@ -334,13 +334,13 @@ class _MetadataMixin:
         ----------
         by : str or list of str
             Metadata column name(s) to group by.
-        get_group : str, optional
+        get_group : dictionary key, optional
             Name of the group to return.
 
         Returns
         -------
-        pynapple object
-            Original pynapple object with groups set, or pynapple object corresponding to 'get_group' if it has been supplied.
+        dict or pynapple object
+            Dictionary of object indices (dictionary values) corresponding to each group (dictionary keys), or pynapple object corresponding to 'get_group' if it has been supplied.
 
         Raises
         ------
@@ -378,10 +378,15 @@ class _MetadataMixin:
             Metadata column name(s) to group by.
         func : function
             Function to apply to each group.
-        kwargs : dict
+        grouped_arg : str, optional
+            Name of the function argument that the grouped object should be passed as. If none, the grouped object is passed as the first positional argument.
+        func_kwargs : dict
             Additional keyword arguments to pass to the function.
 
-
+        Returns
+        -------
+        dict
+            Dictionary of results from applying the function to each group, where the keys are the group names and the values are the results.
         """
 
         groups = self.groupby(by)
