@@ -38,7 +38,6 @@ class _MetadataMixin:
             self.metadata_index = self.index
 
         self._metadata = pd.DataFrame(index=self.metadata_index)
-        self._metadata_groups = None
 
     def __dir__(self):
         """
@@ -358,48 +357,42 @@ class _MetadataMixin:
                     raise ValueError(
                         f"Metadata column '{b}' not found. Metadata columns are {self.metadata_columns}"
                     )
-        self.__dict__["_metadata_groups"] = self._metadata.groupby(by).groups
+        groups = self._metadata.groupby(by).groups
         if get_group is not None:
-            return self.get_group(get_group)
+            if get_group not in groups.keys():
+                raise ValueError(
+                    f"Group '{get_group}' not found in metadata groups. Groups are {list(groups.keys())}"
+                )
+            idx = groups[get_group]
+            return self[np.array(idx)]
         else:
-            return self
+            return groups
 
-    def get_group(self, name):
+    def groupby_apply(self, by, func, grouped_arg=None, **func_kwargs):
         """
-        Get group from metadata groups.
+        Apply a function to each group in a grouped pynapple object.
 
         Parameters
         ----------
-        name : str or tuple of str
-            Name of the group to return.
+        by : str or list of str
+            Metadata column name(s) to group by.
+        func : function
+            Function to apply to each group.
+        kwargs : dict
+            Additional keyword arguments to pass to the function.
 
-        Returns
-        -------
-        pynapple object
-            Pynapple object corresponding to the group 'name'.
 
-        Raises
-        ------
-        RuntimeError
-            If no grouping has been performed.
-        ValueError
-            If group name does not exist.
         """
-        if self._metadata_groups is None:
-            raise RuntimeError(
-                "No grouping has been performed. Please run groupby() first."
-            )
-        elif name not in self._metadata_groups.keys():
-            raise ValueError(
-                f"Group '{name}' not found in metadata groups. Groups are {list(self._metadata_groups.keys())}"
-            )
+
+        groups = self.groupby(by)
+
+        out = {}
+        if grouped_arg is None:
+            for group, idx in groups.items():
+                out[group] = func(self[np.array(idx)], **func_kwargs)
         else:
-            idx = self._metadata_groups[name]
-            return self[np.array(idx)]
+            for group, idx in groups.items():
+                func_kwargs[grouped_arg] = self[np.array(idx)]
+                out[group] = func(**func_kwargs)
 
-    @property
-    def metadata_groups(self):
-        """
-        Dictionary of metadata groups. Keys are group names and values are the indices of the group. Is None if no grouping has been performed.
-        """
-        return self._metadata_groups
+        return out

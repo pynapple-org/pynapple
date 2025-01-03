@@ -1069,21 +1069,20 @@ class Test_Metadata:
             pytest.skip("groupby not relevant for length 1 objects")
 
         obj.set_info(metadata)
-        # assert no groups
-        assert obj._metadata_groups == None
-        assert obj._metadata_groups == obj.metadata_groups
 
         # pandas groups
-        groups = obj._metadata.groupby(group)
+        pd_groups = obj._metadata.groupby(group)
 
-        # group by metadata, assert saved groups
-        obj.groupby(group)
-        assert obj._metadata_groups.keys() == groups.groups.keys()
-        for grp, idx in obj._metadata_groups.items():
+        # group by metadata, assert returned groups
+        nap_groups = obj.groupby(group)
+        assert nap_groups.keys() == pd_groups.groups.keys()
+
+        for grp, idx in nap_groups.items():
             # index same as pandas
-            assert all(idx == groups.groups[grp])
+            assert all(idx == pd_groups.groups[grp])
 
-            obj_grp = obj.get_group(grp)
+            # return object with get_group argument
+            obj_grp = obj.groupby(group, get_group=grp)
 
             # get_group should be the same as indexed object
             pd.testing.assert_frame_equal(
@@ -1095,15 +1094,29 @@ class Test_Metadata:
                 # columns should be the same
                 assert all(obj_grp.columns == obj[np.array(idx)].columns)
 
-            # get_group should be the same as groupby with specified group
-            pd.testing.assert_frame_equal(
-                obj_grp._metadata, obj.groupby(group, grp)._metadata
+    @pytest.mark.parametrize(
+        "metadata, group",
+        [
+            ({"label": [1, 1, 2, 2]}, "label"),
+            ({"l1": [1, 1, 2, 2], "l2": ["a", "b", "b", "b"]}, ["l1", "l2"]),
+        ],
+    )
+    @pytest.mark.parametrize("func", [np.mean, np.sum, np.max, np.min])
+    def test_metadata_groupby_apply_numpy(self, obj, metadata, group, func, obj_len):
+        if obj_len <= 1:
+            pytest.skip("groupby not relevant for length 1 objects")
+
+        obj.set_info(metadata)
+        groups = obj.groupby(group)
+
+        # apply numpy function through groupby_apply
+        grouped_out = obj.groupby_apply(group, func)
+
+        for grp, idx in groups.items():
+            # check that the output is the same as applying the function to the indexed object
+            np.testing.assert_array_almost_equal(
+                func(obj[np.array(idx)]), grouped_out[grp]
             )
-            # index should be the same for both objects
-            assert all(obj_grp.index == obj.groupby(group, grp).index)
-            if isinstance(obj, nap.TsdFrame):
-                # columns should be the same for tsdframe
-                assert all(obj_grp.columns == obj.groupby(group, grp).columns)
 
 
 # test double inheritance
