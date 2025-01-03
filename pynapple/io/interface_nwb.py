@@ -279,7 +279,7 @@ def _make_tsgroup(obj, **kwargs):
                 else:
                     pass
 
-    tsgroup = nap.TsGroup(tsgroup, **metainfo)
+    tsgroup = nap.TsGroup(tsgroup, metadata=metainfo)
 
     return tsgroup
 

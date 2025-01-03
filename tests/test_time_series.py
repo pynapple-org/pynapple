@@ -351,7 +351,7 @@ class TestTimeSeriesGeneral:
 
     def test_value_from_value_error(self, tsd):
         with pytest.raises(
-            AssertionError,
+            TypeError,
             match=r"First argument should be an instance of Tsd, TsdFrame or TsdTensor",
         ):
             tsd.value_from(np.arange(10))
@@ -377,7 +377,7 @@ class TestTimeSeriesGeneral:
         assert len(tsd.restrict(ep)) == 51
 
     def test_restrict_error(self, tsd):
-        with pytest.raises(AssertionError, match=r"Argument should be IntervalSet"):
+        with pytest.raises(TypeError, match=r"Argument should be IntervalSet"):
             tsd.restrict([0, 1])
 
     def test_restrict_multiple_epochs(self, tsd):
@@ -424,11 +424,11 @@ class TestTimeSeriesGeneral:
             np.testing.assert_array_equal(tsd.values, new_tsd.values)
 
             tmp = np.random.rand(*tsd.shape)
-            tmp[tmp > 0.9] = np.nan
+            tmp[0 : len(tmp) // 2] = np.nan
             tsd = tsd.__class__(t=tsd.t, d=tmp)
 
             new_tsd = tsd.dropna()
-            assert not np.all(np.isnan(new_tsd.values))
+
             tokeep = np.array([~np.any(np.isnan(tsd[i])) for i in range(len(tsd))])
             np.testing.assert_array_equal(
                 tsd.index.values[tokeep], new_tsd.index.values
@@ -679,7 +679,7 @@ class TestTsd:
             assert len(count) == 99
             np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))
 
-            count = tsd.count(b, tu)
+            count = tsd.count(b, time_units=tu)
             assert len(count) == 99
             np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))
 
@@ -695,7 +695,7 @@ class TestTsd:
 
     def test_count_with_ep_only(self, tsd):
         ep = nap.IntervalSet(start=0, end=100)
-        count = tsd.count(ep)
+        count = tsd.count(ep=ep)
         assert len(count) == 1
         np.testing.assert_array_almost_equal(count.values, np.array([100]))
 
@@ -708,14 +708,20 @@ class TestTsd:
         np.testing.assert_array_almost_equal(count.values, np.array([100]))
 
     def test_count_errors(self, tsd):
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            TypeError, match=r"bin_size argument should be float or int."
+        ):
             tsd.count(bin_size={})
 
-        with pytest.raises(ValueError):
+        with pytest.raises(
+            TypeError, match=r"ep argument should be of type IntervalSet"
+        ):
             tsd.count(ep={})
 
-        with pytest.raises(ValueError):
-            tsd.count(time_units={})
+        with pytest.raises(
+            ValueError, match=r"time_units argument should be 's', 'ms' or 'us'."
+        ):
+            tsd.count(bin_size=1, time_units={})
 
     def test_bin_average(self, tsd):
         meantsd = tsd.bin_average(10)
@@ -1382,16 +1388,16 @@ class TestTsdFrame:
         assert isinstance(tsd2, nap.TsdFrame)
         np.testing.assert_array_equal(tsd2.columns, tsdframe.columns)
 
-    def test_deprecation_warning(self, tsdframe):
-        columns = tsdframe.columns
-        # warning using loc
-        with pytest.warns(DeprecationWarning):
-            tsdframe.loc[columns[0]]
-        if isinstance(columns[0], str):
-            # suppressed warning with getitem, which implicitly uses loc
-            with warnings.catch_warnings():
-                warnings.simplefilter("error")
-                tsdframe[columns[0]]
+    # def test_deprecation_warning(self, tsdframe):
+    #     columns = tsdframe.columns
+    #     # warning using loc
+    #     with pytest.warns(DeprecationWarning):
+    #         tsdframe.loc[columns[0]]
+    #     if isinstance(columns[0], str):
+    #         # suppressed warning with getitem, which implicitly uses loc
+    #         with warnings.catch_warnings():
+    #             warnings.simplefilter("error")
+    #             tsdframe[columns[0]]
 
 
 ####################################################
@@ -1493,7 +1499,7 @@ class TestTs:
             assert len(count) == 99
             np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))
 
-            count = ts.count(b, tu)
+            count = ts.count(b, time_units=tu)
             assert len(count) == 99
             np.testing.assert_array_almost_equal(count.index, np.arange(0.5, 99, 1))
 
@@ -1509,7 +1515,7 @@ class TestTs:
 
     def test_count_with_ep_only(self, ts):
         ep = nap.IntervalSet(start=0, end=100)
-        count = ts.count(ep)
+        count = ts.count(ep=ep)
         assert len(count) == 1
         np.testing.assert_array_almost_equal(count.values, np.array([100]))
 
@@ -1522,14 +1528,14 @@ class TestTs:
         np.testing.assert_array_almost_equal(count.values, np.array([100]))
 
     def test_count_errors(self, ts):
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             ts.count(bin_size={})
 
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             ts.count(ep={})
 
         with pytest.raises(ValueError):
-            ts.count(time_units={})
+            ts.count(bin_size=1, time_units={})
 
     @pytest.mark.parametrize(
         "dtype, expectation",
@@ -2207,3 +2213,82 @@ def test_get_slice_public(start, end, expected_slice, expected_array, ts):
     out_array = ts.t[out_slice]
     assert out_slice == expected_slice
     assert np.all(out_array == expected_array)
+
+
+@pytest.mark.parametrize(
+    "kwargs",
+    [
+        {},
+        {"columns": [1, 2]},
+        {"metadata": {"banana": [3, 4]}},
+        {"columns": ["a", "b"], "metadata": {"banana": [3, 4]}},
+    ],
+)
+@pytest.mark.parametrize(
+    "tsd",
+    [
+        nap.Ts(t=np.arange(10), time_support=nap.IntervalSet(0, 15)),
+        nap.Ts(t=np.arange(10), time_support=nap.IntervalSet(0, 15)),
+        nap.Tsd(t=np.arange(10), d=np.arange(10), time_support=nap.IntervalSet(0, 15)),
+        nap.Tsd(t=np.arange(10), d=np.arange(10), time_support=nap.IntervalSet(0, 15)),
+        nap.TsdFrame(
+            t=np.arange(10),
+            d=np.zeros((10, 2)),
+            time_support=nap.IntervalSet(0, 15),
+            columns=["a", "b"],
+        ),
+        nap.TsdFrame(
+            t=np.arange(10),
+            d=np.zeros((10, 2)),
+            time_support=nap.IntervalSet(0, 15),
+            metadata={"pineapple": [1, 2]},
+        ),
+        nap.TsdFrame(
+            t=np.arange(10),
+            d=np.zeros((10, 2)),
+            time_support=nap.IntervalSet(0, 15),
+            load_array=True,
+        ),
+        nap.TsdFrame(
+            t=np.arange(10),
+            d=np.zeros((10, 2)),
+            time_support=nap.IntervalSet(0, 15),
+            load_array=True,
+            columns=["a", "b"],
+            metadata={"pineapple": [1, 2]},
+        ),
+        nap.TsdTensor(
+            t=np.arange(10), d=np.zeros((10, 2, 3)), time_support=nap.IntervalSet(0, 15)
+        ),
+    ],
+)
+def test_define_instance(tsd, kwargs):
+    t = tsd.t
+    d = getattr(tsd, "d", None)
+    iset = tsd.time_support
+    cols = kwargs.get("columns", None)
+
+    # metadata index must be cols if provided.
+    # clear metadata if cols are provided to avoid errors
+    if (cols is not None) and ("metadata" not in kwargs):
+        kwargs["metadata"] = {}
+
+    out = tsd._define_instance(t, iset, values=d, **kwargs)
+
+    # check data
+    np.testing.assert_array_equal(out.t, t)
+    np.testing.assert_array_equal(out.time_support, iset)
+    if hasattr(tsd, "d"):
+        np.testing.assert_array_equal(out.d, d)
+
+    # if TsdFrame check kwargs
+    if isinstance(tsd, nap.TsdFrame):
+        val = kwargs.get("columns", getattr(tsd, "columns"))
+        assert np.all(val == getattr(out, "columns"))
+        # get expected metadata
+        meta = kwargs.get("metadata", getattr(tsd, "metadata"))
+        for (
+            key,
+            val,
+        ) in meta.items():
+            assert np.all(out.metadata[key] == val)

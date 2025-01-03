@@ -63,6 +63,93 @@ def _get_class(data):
         return TsdTensor
 
 
+def _initialize_tsd_output(
+    input_object, values, time_index=None, time_support=None, kwargs=None
+):
+    """
+    Initialize the output object for time series data, ensuring proper alignment of time indices
+    and handling metadata when applicable.
+
+    Parameters
+    ----------
+    input_object : Tsd | TsdFrame | TsdTensor
+        Input object, typically a `Tsd`, `TsdFrame` or `TsdTensor`, used to extract time indices and metadata
+        if not provided explicitly.
+    values : array-like
+        Output data, which can be a NumPy array or an array-like object compatible with `Tsd` or `TsdFrame`.
+    time_index : array-like, optional
+        Time indices for the output data. If not provided, the indices are extracted from `input_object`.
+    time_support : IntervalSet, optional
+        Time support (epoch) for the output. If not provided, the time support is extracted from `input_object`.
+    kwargs : dict, optional
+        Additional keyword arguments for constructing the output object. Supports `columns` and `metadata`
+        for `TsdFrame` objects.
+
+    Returns
+    -------
+    object
+        Initialized TSD object (`Tsd`, `TsdFrame`, or equivalent) with the specified time indices, data,
+        and metadata, or the original `values` object if it is not array-like.
+
+    Notes
+    -----
+    - If output is a `TsdFrame` and `input_object` is also a `TsdFrame` with matching shapes, the columns and metadata
+      are propagated from input to output, unless explicitly provided in `kwargs`.
+    - If `time_index` and `time_support` are not provided, they are extracted from `input_object`.
+
+    Examples
+    --------
+    # Example usage with TsdFrame
+    out = _initialize_tsd_output(input_object=tsd_frame, values=data_array, time_index=time_array, time_support=epoch, kwargs={"columns": cols})
+
+    # Example usage with NumPy array
+    out = _initialize_tsd_output(input_object=tsd_obj, values=numpy_array)
+    """
+    kwargs = kwargs if kwargs is not None else {}
+
+    if isinstance(values, np.ndarray) or is_array_like(values):
+
+        # if time and ep are passed use them, otherwise strip from inp
+        time_index = input_object.index if time_index is None else time_index
+
+        if time_index.shape[0] == values.shape[0]:
+            # grab time support
+            time_support = (
+                input_object.time_support if time_support is None else time_support
+            )
+
+            cls = _get_class(values)
+
+            # if out will be a tsdframe implement kwargs logic
+            if cls is TsdFrame:
+                # get eventual setting
+                cols = kwargs.get("columns", None)
+                metadata = kwargs.get("metadata", None)
+
+                # if input is tsdframe and has the shape grab metadata and cols if
+                # not already passed in kwargs
+                if isinstance(input_object, TsdFrame) and (
+                    values.shape[1] == input_object.shape[1]
+                ):
+                    cols = (
+                        cols
+                        if cols is not None
+                        else getattr(input_object, "columns", None)
+                    )
+                    metadata = (
+                        metadata
+                        if metadata is not None
+                        else getattr(input_object, "metadata", None)
+                    )
+
+                # update the kwargs
+                kwargs.update({"columns": cols, "metadata": metadata})
+
+            return cls(t=time_index, d=values, time_support=time_support, **kwargs)
+
+    return values
+
+
 class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
     """
     Abstract base class for time series objects.
@@ -105,6 +192,20 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             )
 
         self.dtype = self.values.dtype
+
+    def _define_instance(self, time_index, time_support, values=None, **kwargs):
+        """
+        Define a new class instance.
+
+        Optional parameters for initialization are either passed to the function or are grabbed from self.
+        """
+        return _initialize_tsd_output(
+            self,
+            values,
+            time_index=time_index,
+            time_support=time_support,
+            kwargs=kwargs,
+        )
 
     def __setitem__(self, key, value):
         """setter for time series"""
@@ -166,20 +267,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             else:
                 out = ufunc(*new_args, **kwargs)
 
-            if isinstance(out, np.ndarray) or is_array_like(out):
-                if out.shape[0] == self.index.shape[0]:
-                    kwargs = {}
-                    if hasattr(self, "columns"):
-                        kwargs["columns"] = self.columns
-                    if hasattr(self, "_metadata"):
-                        kwargs["metadata"] = self._metadata
-                    return _get_class(out)(
-                        t=self.index, d=out, time_support=self.time_support, **kwargs
-                    )
-                else:
-                    return out
-            else:
-                return out
+            return _initialize_tsd_output(self, out)
         else:
             return NotImplemented
 
@@ -210,30 +298,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 new_args.append(a)
 
         out = func._implementation(*new_args, **kwargs)
-
-        if isinstance(out, np.ndarray) or is_array_like(out):
-            # # if dims increased in any case, we can't return safely a time series
-            # if out.ndim > self.ndim:
-            #     return out
-            if out.shape[0] == self.index.shape[0]:
-                kwargs = {}
-                if (
-                    (self.ndim == 2)
-                    and (out.ndim == 2)
-                    and (out.shape[1] == self.shape[1])
-                ):
-                    # only pass columns and metadata if number of columns is preserved
-                    if hasattr(self, "columns"):
-                        kwargs["columns"] = self.columns
-                    if hasattr(self, "_metadata"):
-                        kwargs["metadata"] = self._metadata
-                return _get_class(out)(
-                    t=self.index, d=out, time_support=self.time_support, **kwargs
-                )
-            else:
-                return out
-        else:
-            return out
+        return _initialize_tsd_output(self, out)
 
     def as_array(self):
         """
@@ -264,117 +329,6 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         Mostly useful for matplotlib plotting when calling `plot(tsd)`.
         """
         return np.asarray(self.values)
-
-    def copy(self):
-        """Copy the data, index and time support"""
-        return self.__class__(
-            t=self.index.copy(), d=self.values[:].copy(), time_support=self.time_support
-        )
-
-    def value_from(self, data, ep=None):
-        """
-        Replace the value with the closest value from Tsd/TsdFrame/TsdTensor argument
-
-        Parameters
-        ----------
-        data : Tsd, TsdFrame or TsdTensor
-            The object holding the values to replace.
-        ep : IntervalSet (optional)
-            The IntervalSet object to restrict the operation.
-            If None, the time support of the tsd input object is used.
-
-        Returns
-        -------
-        out : Tsd, TsdFrame or TsdTensor
-            Object with the new values
-
-        Examples
-        --------
-        In this example, the ts object will receive the closest values in time from tsd.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
-        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
-
-        The variable ts is a time series object containing only nan.
-        The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
-
-        >>> newts = ts.value_from(tsd, ep)
-
-        newts has the same size of ts restrict to ep.
-
-        >>> print(len(ts.restrict(ep)), len(newts))
-            52 52
-        """
-        assert isinstance(
-            data, _BaseTsd
-        ), "First argument should be an instance of Tsd, TsdFrame or TsdTensor"
-
-        t, d, time_support, kwargs = super().value_from(data, ep)
-        return data.__class__(t=t, d=d, time_support=time_support, **kwargs)
-
-    def count(self, *args, dtype=None, **kwargs):
-        """
-        Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
-        You can call this function in multiple ways :
-
-        1. *tsd.count(bin_size=1, time_units = 'ms')*
-        -> Count occurence of events within a 1 ms bin defined on the time support of the object.
-
-        2. *tsd.count(1, ep=my_epochs)*
-        -> Count occurent of events within a 1 second bin defined on the IntervalSet my_epochs.
-
-        3. *tsd.count(ep=my_bins)*
-        -> Count occurent of events within each epoch of the intervalSet object my_bins
-
-        4. *tsd.count()*
-        -> Count occurent of events within each epoch of the time support.
-
-        bin_size should be seconds unless specified.
-        If bin_size is used and no epochs is passed, the data will be binned based on the time support of the object.
-
-        Parameters
-        ----------
-        bin_size : None or float, optional
-            The bin size (default is second)
-        ep : None or IntervalSet, optional
-            IntervalSet to restrict the operation
-        time_units : str, optional
-            Time units of bin size ('us', 'ms', 's' [default])
-        dtype: type, optional
-            Data type for the count. Default is np.int64.
-
-        Returns
-        -------
-        out: Tsd
-            A Tsd object indexed by the center of the bins.
-
-        Examples
-        --------
-        This example shows how to count events within bins of 0.1 second.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> bincount = ts.count(0.1)
-
-        An epoch can be specified:
-
-        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
-        >>> bincount = ts.count(0.1, ep=ep)
-
-        And bincount automatically inherit ep as time support:
-
-        >>> bincount.time_support
-            start    end
-        0  100.0  800.0
-        """
-        t, d, ep = super().count(*args, dtype=dtype, **kwargs)
-        return Tsd(t=t, d=d, time_support=ep)
 
     def bin_average(self, bin_size, ep=None, time_units="s"):
         """
@@ -428,16 +382,10 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         t, d = _bin_average(time_array, data_array, starts, ends, bin_size)
 
-        kwargs = {}
-        if hasattr(self, "columns"):
-            kwargs["columns"] = self.columns
-        if hasattr(self, "_metadata"):
-            kwargs["metadata"] = self._metadata
-
-        return self.__class__(t=t, d=d, time_support=ep, **kwargs)
+        return _initialize_tsd_output(self, d, time_index=t)
 
     def dropna(self, update_time_support=True):
-        """Drop every rows containing NaNs. By default, the time support is updated to start and end around the time points that are non NaNs.
+        """Drop every row containing NaNs. By default, the time support is updated to start and end around the time points that are non NaNs.
         To change this behavior, you can set update_time_support=False.
 
         Parameters
@@ -449,7 +397,8 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         Tsd, TsdFrame or TsdTensor
             The time series without the NaNs
         """
-        assert isinstance(update_time_support, bool)
+        if not isinstance(update_time_support, bool):
+            raise TypeError("Argument update_time_support should be of type bool")
 
         time_array = self.index.values
         data_array = self.values
@@ -468,13 +417,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         else:
             ep = self.time_support
 
-        kwargs = {}
-        if hasattr(self, "columns"):
-            kwargs["columns"] = self.columns
-        if hasattr(self, "_metadata"):
-            kwargs["metadata"] = self._metadata
-
-        return self.__class__(t=t, d=d, time_support=ep, **kwargs)
+        return _initialize_tsd_output(self, d, time_index=t, time_support=ep)
 
     def convolve(self, array, ep=None, trim="both"):
         """Return the discrete linear convolution of the time series with a one dimensional sequence.
@@ -534,15 +477,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         new_data_array = _convolve(time_array, data_array, starts, ends, array, trim)
 
-        kwargs_dict = dict(time_support=ep)
-
-        nap_class = _get_class(new_data_array)
-
-        if isinstance(self, TsdFrame) and array.ndim == 1:  # keep columns
-            kwargs_dict["columns"] = self.columns
-            kwargs_dict["metadata"] = self._metadata
-
-        return nap_class(t=time_array, d=new_data_array, **kwargs_dict)
+        return _initialize_tsd_output(self, new_data_array, time_index=time_array)
 
     def smooth(self, std, windowsize=None, time_units="s", size_factor=100, norm=True):
         """Smooth a time series with a gaussian kernel.
@@ -698,12 +633,8 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                     new_d[start : start + len(t), ...] = interpolated_values
 
             start += len(t)
-        kwargs_dict = dict(time_support=ep)
-        if hasattr(self, "columns"):
-            kwargs_dict["columns"] = self.columns
-        if hasattr(self, "_metadata"):
-            kwargs_dict["metadata"] = self._metadata
-        return self.__class__(t=new_t, d=new_d, **kwargs_dict)
+
+        return _initialize_tsd_output(self, new_d, time_index=new_t)
 
 
 class TsdTensor(_BaseTsd):
@@ -741,9 +672,10 @@ class TsdTensor(_BaseTsd):
         """
         super().__init__(t, d, time_units, time_support, load_array)
 
-        assert (
-            self.values.ndim >= 3
-        ), "Data should have more than 2 dimensions. If ndim < 3, use TsdFrame or Tsd object"
+        if not self.values.ndim >= 3:
+            raise RuntimeError(
+                "Data should have more than 2 dimensions. If ndim < 3, use TsdFrame or Tsd object"
+            )
 
         self.nap_class = self.__class__.__name__
         self._initialized = True
@@ -815,23 +747,7 @@ class TsdTensor(_BaseTsd):
 
         if isinstance(index, Number):
             index = np.array([index])
-
-        if all(is_array_like(a) for a in [index, output]):
-            if output.shape[0] == index.shape[0]:
-                if output.ndim == 1:
-                    return Tsd(t=index, d=output, time_support=self.time_support)
-                elif output.ndim == 2:
-                    return TsdFrame(
-                        t=index,
-                        d=output,
-                        time_support=self.time_support,
-                    )
-                else:
-                    return TsdTensor(t=index, d=output, time_support=self.time_support)
-            else:
-                return output
-        else:
-            return output
+        return _initialize_tsd_output(self, output, time_index=index)
 
     def save(self, filename):
         """
@@ -1057,10 +973,10 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
     @property
     def loc(self):
         # add deprecation warning
-        warnings.warn(
-            "'loc' will be deprecated in a future version. Use bracket indexing instead.",
-            DeprecationWarning,
-        )
+        # warnings.warn(
+        #     "'loc' will be deprecated in a future version. Use bracket indexing instead.",
+        #     DeprecationWarning,
+        # )
         return _TsdFrameSliceHelper(self)
 
     def __repr__(self):
@@ -1218,11 +1134,15 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     "When indexing with a Tsd, it must contain boolean values"
                 )
             key = key.d
-        elif (
-            isinstance(key, str)
-            or hasattr(key, "__iter__")
-            and all([isinstance(k, str) for k in key])
-        ):
+        elif isinstance(key, str):
+            if key in self.columns:
+                with warnings.catch_warnings():
+                    # ignore deprecated warning for loc
+                    warnings.simplefilter("ignore")
+                    return self.loc[key]
+            else:
+                return _MetadataMixin.__getitem__(self, key)
+        elif hasattr(key, "__iter__") and all([isinstance(k, str) for k in key]):
             if all(k in self.columns for k in key):
                 with warnings.catch_warnings():
                     # ignore deprecated warning for loc
@@ -1268,12 +1188,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
                 kwargs["columns"] = columns
                 kwargs["metadata"] = self._metadata.loc[columns]
-
-                return _get_class(output)(
-                    t=index, d=output, time_support=self.time_support, **kwargs
+                return _initialize_tsd_output(
+                    self, output, time_index=index, kwargs=kwargs
                 )
-            # else:
-            #     return output
             else:
                 return output
 
@@ -1312,16 +1229,6 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         df.index.name = "Time (" + str(units) + ")"
         df.columns = self.columns.copy()
         return df
-
-    def copy(self):
-        """Copy the data, index, time support, columns and metadata of the TsdFrame object."""
-        return self.__class__(
-            t=self.index.copy(),
-            d=self.values[:].copy(),
-            time_support=self.time_support,
-            columns=self.columns.copy(),
-            metadata=self._metadata,
-        )
 
     def save(self, filename):
         """
@@ -1729,16 +1636,7 @@ class Tsd(_BaseTsd):
             index = np.array([key])
         else:
             index = self.index.__getitem__(key)
-
-        if all(is_array_like(a) for a in [index, output]):
-            if output.shape[0] == index.shape[0]:
-                return _get_class(output)(
-                    t=index, d=output, time_support=self.time_support, **kwargs
-                )
-            else:
-                return output
-        else:
-            return output
+        return _initialize_tsd_output(self, output, time_index=index, kwargs=kwargs)
 
     def as_series(self):
         """
@@ -1974,10 +1872,25 @@ class Ts(_Base):
         self.nap_class = self.__class__.__name__
         self._initialized = True
 
+    def _define_instance(self, time_index, time_support, values=None, **kwargs):
+        """
+        Define a new class instance.
+
+        Optional parameters for initialization are either passed to the function or are grabbed from self.
+        """
+        if values is None:
+            return self.__class__(t=time_index, time_support=time_support)
+        else:
+            return _initialize_tsd_output(
+                self,
+                values,
+                time_index=time_index,
+                time_support=time_support,
+                kwargs=kwargs,
+            )
+
     def __repr__(self):
         upper = "Time (s)"
-
-        max_rows = 2
         rows = _get_terminal_size()[1]
         max_rows = np.maximum(rows - 10, 2)
 
@@ -2036,112 +1949,6 @@ class Ts(_Base):
         ss = pd.Series(index=t, dtype="object")
         ss.index.name = "Time (" + str(units) + ")"
         return ss
-
-    def value_from(self, data, ep=None):
-        """
-        Replace the value with the closest value from Tsd/TsdFrame/TsdTensor argument
-
-        Parameters
-        ----------
-        data : Tsd, TsdFrame or TsdTensor
-            The object holding the values to replace.
-        ep : IntervalSet (optional)
-            The IntervalSet object to restrict the operation.
-            If None, the time support of the tsd input object is used.
-
-        Returns
-        -------
-        out : Tsd, TsdFrame or TsdTensor
-            Object with the new values
-
-        Examples
-        --------
-        In this example, the ts object will receive the closest values in time from tsd.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
-        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
-
-        The variable ts is a time series object containing only nan.
-        The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
-
-        >>> newts = ts.value_from(tsd, ep)
-
-        newts is the same size as ts restrict to ep.
-
-        >>> print(len(ts.restrict(ep)), len(newts))
-            52 52
-        """
-        assert isinstance(
-            data, _BaseTsd
-        ), "First argument should be an instance of Tsd, TsdFrame or TsdTensor"
-
-        t, d, time_support, kwargs = super().value_from(data, ep)
-
-        return data.__class__(t, d, time_support=time_support, **kwargs)
-
-    def count(self, *args, dtype=None, **kwargs):
-        """
-        Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
-        You can call this function in multiple ways :
-
-        1. *tsd.count(bin_size=1, time_units = 'ms')*
-        -> Count occurence of events within a 1 ms bin defined on the time support of the object.
-
-        2. *tsd.count(1, ep=my_epochs)*
-        -> Count occurent of events within a 1 second bin defined on the IntervalSet my_epochs.
-
-        3. *tsd.count(ep=my_bins)*
-        -> Count occurent of events within each epoch of the intervalSet object my_bins
-
-        4. *tsd.count()*
-        -> Count occurent of events within each epoch of the time support.
-
-        bin_size should be seconds unless specified.
-        If bin_size is used and no epochs is passed, the data will be binned based on the time support of the object.
-
-        Parameters
-        ----------
-        bin_size : None or float, optional
-            The bin size (default is second)
-        ep : None or IntervalSet, optional
-            IntervalSet to restrict the operation
-        time_units : str, optional
-            Time units of bin size ('us', 'ms', 's' [default])
-        dtype: type, optional
-            Data type for the count. Default is np.int64.
-
-        Returns
-        -------
-        out: Tsd
-            A Tsd object indexed by the center of the bins.
-
-        Examples
-        --------
-        This example shows how to count events within bins of 0.1 second.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> bincount = ts.count(0.1)
-
-        An epoch can be specified:
-
-        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
-        >>> bincount = ts.count(0.1, ep=ep)
-
-        And bincount automatically inherit ep as time support:
-
-        >>> bincount.time_support
-            start    end
-        0  100.0  800.0
-        """
-        t, d, ep = super().count(*args, dtype=dtype, **kwargs)
-        return Tsd(t=t, d=d, time_support=ep)
 
     def fillna(self, value):
         """

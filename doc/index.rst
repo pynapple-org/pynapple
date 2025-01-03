@@ -64,7 +64,7 @@ pynapple: python neural analysis package
 
    .. grid-item-card:: Time Series
       :text-align: center
-      :link: ./user_guide/04_core_methods.html
+      :link: ./user_guide/03_core_methods.html
 
       .. image:: _static/example_thumbs/timeseries.svg         
          :class: dark-light
@@ -97,7 +97,7 @@ pynapple: python neural analysis package
       .. image:: _static/example_thumbs/tuningcurves.svg         
          :class: dark-light
 
-   .. grid-item-card:: Wavelets
+   .. grid-item-card:: Spectrogram
       :text-align: center
       :link: ./user_guide/11_wavelets.html
 

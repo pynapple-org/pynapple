@@ -424,6 +424,10 @@ class TestTsGroup1:
             )
         assert tabulate(lines, headers=headers) == tsgroup.__repr__()
 
+        # Empty TsGroup
+        empty_tsg = nap.TsGroup({}, time_support=nap.IntervalSet(0, 10))
+        assert tabulate([], headers=["Index", "rate"]) == empty_tsg.__repr__()
+
     def test_str_(self, group):
         tsgroup = nap.TsGroup(group)
         assert tsgroup.__str__() == tsgroup.__repr__()

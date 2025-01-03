@@ -233,12 +233,12 @@ def _split_tsd(func, tsd, indices_or_sections, axis=0):
     if func in [np.split, np.array_split, np.vsplit] and axis == 0:
         out = func._implementation(tsd.values, indices_or_sections)
         index_list = np.split(tsd.index.values, indices_or_sections)
-        kwargs = {"columns": tsd.columns.values} if hasattr(tsd, "columns") else {}
-        return [tsd.__class__(t=t, d=d, **kwargs) for t, d in zip(index_list, out)]
+        return [
+            tsd._define_instance(t, None, values=d) for t, d in zip(index_list, out)
+        ]
     elif func in [np.dsplit, np.hsplit]:
         out = func._implementation(tsd.values, indices_or_sections)
-        kwargs = {"columns": tsd.columns.values} if hasattr(tsd, "columns") else {}
-        return [tsd.__class__(t=tsd.index, d=d, **kwargs) for d in out]
+        return [tsd._define_instance(tsd.index, None, values=d) for d in out]
     else:
         return func._implementation(tsd.values, indices_or_sections, axis)
 
