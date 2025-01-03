@@ -303,7 +303,7 @@ class _MetadataMixin:
                 # metadata[str] or metadata[[*str]]
                 return self._metadata[key]
 
-        elif isinstance(key, (Number, list, np.ndarray, pd.Series)) or (
+        elif isinstance(key, (Number, list, np.ndarray, pd.Series, pd.Index)) or (
             isinstance(key, tuple)
             and (
                 isinstance(key[1], str)
@@ -313,7 +313,7 @@ class _MetadataMixin:
                 )
             )
         ):
-            # assume key is index, or tupe of index and column name
+            # assume key is index, or tuple of index and column name
             # metadata[Number], metadata[array_like], metadata[Any, str], or metadata[Any, [*str]]
             return self._metadata.loc[key]
 
