@@ -954,6 +954,7 @@ class TestTsd:
 @pytest.mark.parametrize(
     "tsdframe",
     [
+        nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 1), time_units="s"),
         nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), time_units="s"),
         nap.TsdFrame(
             t=np.arange(100),
@@ -997,6 +998,7 @@ class TestTsdFrame:
         ],
     )
     def test_horizontal_slicing(self, tsdframe, index, nap_type):
+        index = index if isinstance(index, int) else index[: tsdframe.shape[1]]
         assert isinstance(tsdframe[:, index], nap_type)
         np.testing.assert_array_almost_equal(
             tsdframe[:, index].values, tsdframe.values[:, index]
@@ -1067,6 +1069,12 @@ class TestTsdFrame:
         ],
     )
     def test_vert_and_horz_slicing(self, tsdframe, row, col, expected):
+        if tsdframe.shape[1] == 1:
+            if isinstance(col, list) and isinstance(col[0], int):
+                col = [0]
+            elif isinstance(col, list) and isinstance(col[0], bool):
+                col = [col[0]]
+
         # get details about row index
         row_array = isinstance(row, (list, np.ndarray))
         if row_array and isinstance(row[0], (bool, np.bool_)):
