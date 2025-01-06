@@ -391,13 +391,12 @@ class _MetadataMixin:
 
         groups = self.groupby(by)
 
-        out = {}
         if grouped_arg is None:
-            for group, idx in groups.items():
-                out[group] = func(self[np.array(idx)], **func_kwargs)
+            out = {k: func(self[v], **func_kwargs) for k, v in groups.items()}
         else:
-            for group, idx in groups.items():
-                func_kwargs[grouped_arg] = self[np.array(idx)]
-                out[group] = func(**func_kwargs)
+            out = {
+                k: func(**{grouped_arg: self[v], **func_kwargs})
+                for k, v in groups.items()
+            }
 
         return out

@@ -1141,52 +1141,20 @@ def get_defined_members(cls):
     }
 
 
-def test_no_conflict_between_intervalset_and_metadatamixin():
-    from pynapple.core import IntervalSet
+@pytest.mark.parametrize(
+    "nap_class", [nap.core.IntervalSet, nap.core.TsdFrame, nap.core.TsGroup]
+)
+def test_no_conflict_between_class_and_metadatamixin(nap_class):
     from pynapple.core.metadata_class import _MetadataMixin  # Adjust import as needed
 
-    iset_members = get_defined_members(IntervalSet)
+    iset_members = get_defined_members(nap_class)
     metadatamixin_members = get_defined_members(_MetadataMixin)
 
     # Check for any overlapping names between IntervalSet and _MetadataMixin
     conflicting_members = iset_members.intersection(metadatamixin_members)
 
-    # set_info and get_info will conflict
-    assert len(conflicting_members) == 2, (
+    # set_info, get_info, groupby, and groupby_apply are overwritten for class-specific examples in docstrings
+    assert len(conflicting_members) == 4, (
         f"Conflict detected! The following methods/attributes are "
         f"overwritten in IntervalSet: {conflicting_members}"
-    )
-
-
-def test_no_conflict_between_tsdframe_and_metadatamixin():
-    from pynapple.core import TsdFrame
-    from pynapple.core.metadata_class import _MetadataMixin  # Adjust import as needed
-
-    tsdframe_members = get_defined_members(TsdFrame)
-    metadatamixin_members = get_defined_members(_MetadataMixin)
-
-    # Check for any overlapping names between TsdFrame and _MetadataMixin
-    conflicting_members = tsdframe_members.intersection(metadatamixin_members)
-
-    # set_info and get_info will conflict
-    assert len(conflicting_members) == 2, (
-        f"Conflict detected! The following methods/attributes are "
-        f"overwritten in TsdFrame: {conflicting_members}"
-    )
-
-
-def test_no_conflict_between_tsgroup_and_metadatamixin():
-    from pynapple.core import TsGroup
-    from pynapple.core.metadata_class import _MetadataMixin  # Adjust import as needed
-
-    tsgroup_members = get_defined_members(TsGroup)
-    metadatamixin_members = get_defined_members(_MetadataMixin)
-
-    # Check for any overlapping names between TsdFrame and _MetadataMixin
-    conflicting_members = tsgroup_members.intersection(metadatamixin_members)
-
-    # set_info and get_info will conflict
-    assert len(conflicting_members) == 2, (
-        f"Conflict detected! The following methods/attributes are "
-        f"overwritten in TsGroup: {conflicting_members}"
     )
