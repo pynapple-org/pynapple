@@ -430,7 +430,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         elif isinstance(key, (slice, list, np.ndarray, pd.Series, pd.Index)):
             # self[array_like]
             output = self.values.__getitem__(key)
-            metadata = _MetadataMixin.__getitem__(self, key).reset_index(drop=True)
+            metadata = _MetadataMixin.__getitem__(self, key)  # .reset_index(drop=True)
             return IntervalSet(start=output[:, 0], end=output[:, 1], metadata=metadata)
         elif isinstance(key, tuple):
             if len(key) == 2:
@@ -1238,7 +1238,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
         >>> ep = nap.IntervalSet(tmp,metadata=metadata)
 
-        Apply a numpy function::
+        Apply a numpy function:
 
         >>> ep.groupby_apply("l2", np.mean)
         {'x': 6.75, 'y': 26.5}

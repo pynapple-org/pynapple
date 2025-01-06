@@ -1,6 +1,8 @@
 import warnings
 from numbers import Number
 from typing import Union
+from collections import UserDict
+from .utils import is_array_like
 
 import numpy as np
 import pandas as pd
@@ -37,7 +39,7 @@ class _MetadataMixin:
             # metadata index is the same as the index for TsGroup and IntervalSet
             self.metadata_index = self.index
 
-        self._metadata = pd.DataFrame(index=self.metadata_index)
+        self._metadata = _Metadata()  # pd.DataFrame(index=self.metadata_index)
 
     def __dir__(self):
         """
@@ -211,7 +213,7 @@ class _MetadataMixin:
         not_set = []
         if metadata is not None:
             if isinstance(metadata, pd.DataFrame):
-                if pd.Index.equals(self._metadata.index, metadata.index):
+                if pd.Index.equals(self.metadata_index, metadata.index):
                     self._metadata[metadata.columns] = metadata
                 else:
                     raise ValueError("Metadata index does not match")
@@ -232,7 +234,7 @@ class _MetadataMixin:
             for k, v in kwargs.items():
 
                 if isinstance(v, pd.Series):
-                    if pd.Index.equals(self._metadata.index, v.index):
+                    if pd.Index.equals(self.metadata_index, v.index):
                         self._metadata[k] = v
                     else:
                         raise ValueError(
@@ -240,15 +242,15 @@ class _MetadataMixin:
                         )
 
                 elif isinstance(v, (np.ndarray, list, tuple)):
-                    if len(self._metadata.index) == len(v):
+                    if len(self.metadata_index) == len(v):
                         self._metadata[k] = v
                     else:
                         raise ValueError(
-                            f"input array length {len(v)} does not match metadata length {len(self._metadata.index)}."
+                            f"input array length {len(v)} does not match metadata length {len(self.metadata_index)}."
                         )
 
                 elif (hasattr(v, "__iter__") is False) and (
-                    len(self._metadata.index) == 1
+                    len(self.metadata_index) == 1
                 ):
                     # if only one index and metadata is non-iterable, pack into iterable for single assignment
                     self._metadata[k] = [v]
@@ -400,3 +402,40 @@ class _MetadataMixin:
             }
 
         return out
+
+
+class _Metadata(UserDict):
+
+    def __init__(self):
+        super().__init__()
+
+    def __getitem__(self, key):
+        return _MetadataSliceHelper(self)[key]
+
+    @property
+    def columns(self):
+        return list(self.data.keys())
+
+    @property
+    def loc(self):
+        return _MetadataSliceHelper(self)
+
+
+class _MetadataSliceHelper:
+
+    def __init__(self, metadata):
+        self.metadata = metadata
+
+    def __getitem__(self, key):
+        if isinstance(key, str):
+            return self.metadata.data[key]
+
+        elif isinstance(key, list) and all(isinstance(k, str) for k in key):
+            return {k: self.metadata.data[k] for k in key}
+
+        elif (
+            isinstance(key, Number)
+            or (isinstance(key, list) and isinstance(key[0], Number))
+            or is_array_like(key)
+        ):
+            return {k: self.metadata.data[k][key] for k in self.metadata.columns}
