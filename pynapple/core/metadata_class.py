@@ -39,7 +39,9 @@ class _MetadataMixin:
             # metadata index is the same as the index for TsGroup and IntervalSet
             self.metadata_index = self.index
 
-        self._metadata = _Metadata()  # pd.DataFrame(index=self.metadata_index)
+        self._metadata = _Metadata(
+            self.metadata_index
+        )  # pd.DataFrame(index=self.metadata_index)
 
     def __dir__(self):
         """
@@ -96,7 +98,7 @@ class _MetadataMixin:
         Returns a read-only version (copy) of the _metadata DataFrame
         """
         # return copy so that metadata cannot modified in place
-        return self._metadata.copy()
+        return self._metadata.as_dataframe()
 
     @property
     def metadata_columns(self):
@@ -213,8 +215,9 @@ class _MetadataMixin:
         not_set = []
         if metadata is not None:
             if isinstance(metadata, pd.DataFrame):
-                if pd.Index.equals(self.metadata_index, metadata.index):
-                    self._metadata[metadata.columns] = metadata
+                if np.all(self.metadata_index == metadata.index.values):
+                    # self._metadata[metadata.columns] = metadata
+                    kwargs = {**metadata, **kwargs}
                 else:
                     raise ValueError("Metadata index does not match")
             elif isinstance(metadata, dict):
@@ -224,7 +227,8 @@ class _MetadataMixin:
             elif isinstance(metadata, pd.Series) and (len(self) == 1):
                 # allow series to be passed if only one interval
                 for key, val in metadata.items():
-                    self._metadata[key] = val
+                    self._metadata[key] = np.array(val)
+                    # self._metadata[key] = pd.Series(val, index=self.metadata_index)
 
             elif isinstance(metadata, (pd.Series, np.ndarray, list)):
                 raise RuntimeError("Argument should be passed as keyword argument.")
@@ -234,8 +238,9 @@ class _MetadataMixin:
             for k, v in kwargs.items():
 
                 if isinstance(v, pd.Series):
-                    if pd.Index.equals(self.metadata_index, v.index):
-                        self._metadata[k] = v
+                    if np.all(self.metadata_index == v.index.values):
+                        self._metadata[k] = np.array(v)
+                        # self._metadata[k] = v
                     else:
                         raise ValueError(
                             "Metadata index does not match for argument {}".format(k)
@@ -243,7 +248,8 @@ class _MetadataMixin:
 
                 elif isinstance(v, (np.ndarray, list, tuple)):
                     if len(self.metadata_index) == len(v):
-                        self._metadata[k] = v
+                        self._metadata[k] = np.array(v)
+                        # self._metadata[k] = pd.Series(v, index=self.metadata_index)
                     else:
                         raise ValueError(
                             f"input array length {len(v)} does not match metadata length {len(self.metadata_index)}."
@@ -253,7 +259,8 @@ class _MetadataMixin:
                     len(self.metadata_index) == 1
                 ):
                     # if only one index and metadata is non-iterable, pack into iterable for single assignment
-                    self._metadata[k] = [v]
+                    self._metadata[k] = np.array([v])
+                    # self._metadata[k] = pd.Series(v, index=self.metadata_index)
 
                 else:
                     not_set.append({k: v})
@@ -292,6 +299,7 @@ class _MetadataMixin:
         IndexError
             If the metadata index is not found.
         """
+        return self._metadata.loc[key]
         # string indexing of one or more metadata columns
         if isinstance(key, str) or (
             isinstance(key, list) and all([isinstance(k, str) for k in key])
@@ -406,11 +414,9 @@ class _MetadataMixin:
 
 class _Metadata(UserDict):
 
-    def __init__(self):
+    def __init__(self, index):
         super().__init__()
-
-    def __getitem__(self, key):
-        return _MetadataSliceHelper(self)[key]
+        self.index = index
 
     @property
     def columns(self):
@@ -418,13 +424,28 @@ class _Metadata(UserDict):
 
     @property
     def loc(self):
-        return _MetadataSliceHelper(self)
+        return _MetadataSliceHelper(self, self.index)
+
+    @property
+    def iloc(self):
+        return _MetadataSliceHelper(self, range(len(self.index)))
+
+    @property
+    def shape(self):
+        return (len(self.index), len(self.columns))
+
+    def as_dataframe(self):
+        return pd.DataFrame(self.data, index=self.index)
 
 
 class _MetadataSliceHelper:
 
-    def __init__(self, metadata):
+    def __init__(self, metadata, index):
         self.metadata = metadata
+        self.index_map = {k: v for v, k in enumerate(index)}
+
+    def __setitem__(self, key, value):
+        self[key] = value
 
     def __getitem__(self, key):
         if isinstance(key, str):
@@ -433,9 +454,32 @@ class _MetadataSliceHelper:
         elif isinstance(key, list) and all(isinstance(k, str) for k in key):
             return {k: self.metadata.data[k] for k in key}
 
-        elif (
-            isinstance(key, Number)
-            or (isinstance(key, list) and isinstance(key[0], Number))
-            or is_array_like(key)
+        elif isinstance(key, Number):
+            idx = self._get_indexder([key])
+            return {k: [self.metadata.data[k][idx]] for k in self.metadata.columns}
+
+        if isinstance(key, (np.ndarray, list, pd.Index, pd.Series)) and isinstance(
+            key[0], (bool, np.bool)
         ):
             return {k: self.metadata.data[k][key] for k in self.metadata.columns}
+        elif isinstance(key, (np.ndarray, list, pd.Index, pd.Series, slice)):
+            idx = self._get_indexder(key)
+            return {k: self.metadata.data[k][idx] for k in self.metadata.columns}
+
+        elif isinstance(key, tuple) and len(key) == 2:
+            if isinstance(key[1], str):
+                idx = self._get_indexder(key[0])
+                return self.metadata.data[key[1]][idx]
+            elif isinstance(key[1], list) and all(isinstance(k, str) for k in key[1]):
+                if isinstance(key[0], Number):
+                    idx = self._get_indexder([key[0]])
+                    return {k: [self.metadata.data[k][idx]] for k in key[1]}
+                elif is_array_like(key[0]) or isinstance(key[0], slice):
+                    idx = self._get_indexder(key[0])
+                    return {k: self.metadata.data[k][idx] for k in key[1]}
+
+        else:
+            raise IndexError(f"Unknown metadata index {key}")
+
+    def _get_indexder(self, vals):
+        return [self.index_map[val] for val in vals]

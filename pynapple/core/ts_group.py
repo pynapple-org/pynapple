@@ -259,6 +259,8 @@ class TsGroup(UserDict, _MetadataMixin):
                         time_support=time_support,
                         time_units=time_units,
                     )
+        rate = np.array([data[k].rate for k in self.index])
+        self._metadata["rate"] = rate
 
         # If time_support is passed, all elements of data are restricted prior to init
         if passed_time_support:
@@ -331,7 +333,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
     def __setitem__(self, key, value):
         if not self._initialized:
-            self._metadata.loc[int(key), "rate"] = float(value.rate)
+            # self._metadata.loc[int(key), "rate"] = float(value.rate)
             super().__setitem__(int(key), value)
         else:
             _MetadataMixin.__setitem__(self, key, value)

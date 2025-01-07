@@ -1042,7 +1042,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                 table = []
 
             # Adding metadata if any.
-            col_names = self._metadata.columns.values
+            col_names = self.metadata.columns.values
             if len(col_names):
                 ends = np.array([end] * self._metadata.shape[1])
                 table = np.vstack(
@@ -1054,7 +1054,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                             (
                                 col_names[:, None],
                                 _convert_iter_to_str(
-                                    self._metadata.values[0:max_cols].T
+                                    self.metadata.values[0:max_cols].T
                                 ),
                                 ends,
                             ),
