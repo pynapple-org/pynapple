@@ -201,6 +201,9 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             # since metadata would be dropped if starts and ends are sorted separately
             # note that if end times are still not sorted, metadata will be dropped
             if np.any(start["start"].diff() < 0):
+                warnings.warn(
+                    "DataFrame is not sorted by start times. Sorting it.", stacklevel=2
+                )
                 start = start.sort_values("start").reset_index(drop=True)
 
             metadata = start.drop(columns=["start", "end"])
