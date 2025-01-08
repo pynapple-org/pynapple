@@ -85,10 +85,9 @@ def _make_interval_set(obj, **kwargs):
         df = obj.to_dataframe()
 
         if hasattr(df, "start_time") and hasattr(df, "stop_time"):
-            data = nap.IntervalSet(start=df["start_time"], end=df["stop_time"])
-            if df.shape[1] > 2:
-                metadata = df.drop(columns=["start_time", "stop_time"])
-                data.set_info(metadata)
+            df = df.rename(columns={"start_time": "start", "stop_time": "end"})
+            # create from full dataframe to ensure that metadata is associated correctly
+            data = nap.IntervalSet(df)
             return data
 
     else:
