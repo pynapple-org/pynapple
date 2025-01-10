@@ -54,25 +54,51 @@ def test_compute_perievent_windowsize():
 def test_compute_perievent_raise_error():
     tsd = nap.Ts(t=np.arange(100))
     tref = nap.Ts(t=np.arange(10, 100, 10))
-    with pytest.raises(AssertionError) as e_info:
-        nap.compute_perievent(tsd, [0, 1, 2], windowsize=(-10, 10))
-    assert str(e_info.value) == "tref should be a Ts or Tsd object."
+    with pytest.raises(TypeError) as e_info:
+        nap.compute_perievent(tsd, tref=[0, 1, 2], windowsize=(-10, 10))
+    assert (
+        str(e_info.value)
+        == "Invalid type. Parameter tref must be of type ['Ts', 'Tsd', 'TsdFrame', 'TsdTensor']."
+    )
 
-    with pytest.raises(AssertionError) as e_info:
-        nap.compute_perievent([0, 1, 2], tref, windowsize=(-10, 10))
-    assert str(e_info.value) == "data should be a Ts, Tsd or TsGroup."
+    with pytest.raises(TypeError) as e_info:
+        nap.compute_perievent(timestamps=[0, 1, 2], tref=tref, windowsize=(-10, 10))
+    assert (
+        str(e_info.value)
+        == "Invalid type. Parameter timestamps must be of type ['Ts', 'Tsd', 'TsdFrame', 'TsdTensor', 'TsGroup']."
+    )
 
-    with pytest.raises(AssertionError) as e_info:
+    with pytest.raises(TypeError) as e_info:
         nap.compute_perievent(tsd, tref, windowsize={0: 1})
-    assert str(e_info.value) == "windowsize should be a tuple or int or float."
+    assert (
+        str(e_info.value)
+        == "Invalid type. Parameter windowsize must be of type ['tuple', 'Number']."
+    )
 
-    with pytest.raises(AssertionError) as e_info:
+    with pytest.raises(TypeError) as e_info:
         nap.compute_perievent(tsd, tref, windowsize=10, time_unit=1)
-    assert str(e_info.value) == "time_unit should be a str."
+    assert (
+        str(e_info.value)
+        == "Invalid type. Parameter time_unit must be of type ['str']."
+    )
 
-    with pytest.raises(AssertionError) as e_info:
+    with pytest.raises(RuntimeError) as e_info:
         nap.compute_perievent(tsd, tref, windowsize=10, time_unit="a")
     assert str(e_info.value) == "time_unit should be 's', 'ms' or 'us'"
+
+    with pytest.raises(RuntimeError) as e_info:
+        nap.compute_perievent(tsd, tref, windowsize=(1, 2, 3))
+    assert (
+        str(e_info.value)
+        == "windowsize should be a tuple of 2 numbers or a single number."
+    )
+
+    with pytest.raises(RuntimeError) as e_info:
+        nap.compute_perievent(tsd, tref, windowsize=(1, "2"))
+    assert (
+        str(e_info.value)
+        == "windowsize should be a tuple of 2 numbers or a single number."
+    )
 
 
 def test_compute_perievent_with_tsgroup():
@@ -97,7 +123,9 @@ def test_compute_perievent_time_units():
     tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
     tref = nap.Ts(t=np.arange(10, 100, 10))
     for tu, fa in zip(["s", "ms", "us"], [1, 1e3, 1e6]):
-        peth = nap.compute_perievent(tsd, tref, windowsize=(-10 * fa, 10 * fa), time_unit=tu)
+        peth = nap.compute_perievent(
+            tsd, tref, windowsize=(-10 * fa, 10 * fa), time_unit=tu
+        )
         for i, j in zip(peth.keys(), np.arange(0, 100, 10)):
             np.testing.assert_array_almost_equal(peth[i].index, np.arange(-10, 10))
             np.testing.assert_array_almost_equal(peth[i].values, np.arange(j, j + 20))
@@ -127,7 +155,9 @@ def test_compute_perievent_continuous():
     np.testing.assert_array_almost_equal(
         pe.index.values, np.arange(windowsize[0], windowsize[-1] + 1)
     )
-    tmp = np.array([np.arange(t + windowsize[0], t + windowsize[1] + 1) for t in tref.t]).T
+    tmp = np.array(
+        [np.arange(t + windowsize[0], t + windowsize[1] + 1) for t in tref.t]
+    ).T
     np.testing.assert_array_almost_equal(pe.values, tmp)
 
     windowsize = (5, 10)
@@ -184,11 +214,15 @@ def test_compute_perievent_continuous_time_units():
     tref = nap.Ts(t=np.array([20, 60]))
     windowsize = (-5, 10)
     for tu, fa in zip(["s", "ms", "us"], [1, 1e3, 1e6]):
-        pe = nap.compute_perievent_continuous(tsd, tref, windowsize=(windowsize[0] * fa, windowsize[1] * fa), time_unit=tu)
+        pe = nap.compute_perievent_continuous(
+            tsd, tref, windowsize=(windowsize[0] * fa, windowsize[1] * fa), time_unit=tu
+        )
         np.testing.assert_array_almost_equal(
             pe.index.values, np.arange(windowsize[0], windowsize[1] + 1)
         )
-        tmp = np.array([np.arange(t + windowsize[0], t + windowsize[1] + 1) for t in tref.t]).T
+        tmp = np.array(
+            [np.arange(t + windowsize[0], t + windowsize[1] + 1) for t in tref.t]
+        ).T
         np.testing.assert_array_almost_equal(pe.values, tmp)
 
 
@@ -201,7 +235,10 @@ def test_compute_perievent_continuous_with_ep():
 
     assert pe.shape[1] == len(tref) - 1
     tmp = np.array(
-        [np.arange(t + windowsize[0], t + windowsize[1] + 1) for t in tref.restrict(ep).t]
+        [
+            np.arange(t + windowsize[0], t + windowsize[1] + 1)
+            for t in tref.restrict(ep).t
+        ]
     ).T
     np.testing.assert_array_almost_equal(pe.values, tmp)
 
@@ -237,26 +274,55 @@ def test_compute_perievent_continuous_with_ep():
 def test_compute_perievent_continuous_raise_error():
     tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
     tref = nap.Ts(t=np.arange(10, 100, 10))
-    with pytest.raises(AssertionError) as e_info:
-        nap.compute_perievent_continuous(tsd, [0, 1, 2], windowsize=(-10, 10))
-    assert str(e_info.value) == "tref should be a Ts or Tsd object."
+    with pytest.raises(TypeError) as e_info:
+        nap.compute_perievent_continuous(tsd, tref=[0, 1, 2], windowsize=(-10, 10))
+    assert (
+        str(e_info.value)
+        == "Invalid type. Parameter tref must be of type ['Ts', 'Tsd', 'TsdFrame', 'TsdTensor']."
+    )
 
-    with pytest.raises(AssertionError) as e_info:
+    with pytest.raises(TypeError) as e_info:
         nap.compute_perievent_continuous([0, 1, 2], tref, windowsize=(-10, 10))
-    assert str(e_info.value) == "data should be a Tsd, TsdFrame or TsdTensor."
+    assert (
+        str(e_info.value)
+        == "Invalid type. Parameter timeseries must be of type ['Tsd', 'TsdFrame', 'TsdTensor']."
+    )
 
-    with pytest.raises(AssertionError) as e_info:
+    with pytest.raises(TypeError) as e_info:
         nap.compute_perievent_continuous(tsd, tref, windowsize={0: 1})
-    assert str(e_info.value) == "windowsize should be a tuple or int or float."
+    assert (
+        str(e_info.value)
+        == "Invalid type. Parameter windowsize must be of type ['tuple', 'Number']."
+    )
 
-    with pytest.raises(AssertionError) as e_info:
+    with pytest.raises(TypeError) as e_info:
         nap.compute_perievent_continuous(tsd, tref, windowsize=10, time_unit=1)
-    assert str(e_info.value) == "time_unit should be a str."
+    assert (
+        str(e_info.value)
+        == "Invalid type. Parameter time_unit must be of type ['str']."
+    )
 
-    with pytest.raises(AssertionError) as e_info:
+    with pytest.raises(RuntimeError) as e_info:
         nap.compute_perievent_continuous(tsd, tref, windowsize=10, time_unit="a")
     assert str(e_info.value) == "time_unit should be 's', 'ms' or 'us'"
 
-    with pytest.raises(AssertionError) as e_info:
+    with pytest.raises(TypeError) as e_info:
         nap.compute_perievent_continuous(tsd, tref, windowsize=10, ep="a")
-    assert str(e_info.value) == "ep should be an IntervalSet object."
+    assert (
+        str(e_info.value)
+        == "Invalid type. Parameter ep must be of type ['IntervalSet']."
+    )
+
+    with pytest.raises(RuntimeError) as e_info:
+        nap.compute_perievent_continuous(tsd, tref, windowsize=(1, 2, 3))
+    assert (
+        str(e_info.value)
+        == "windowsize should be a tuple of 2 numbers or a single number."
+    )
+
+    with pytest.raises(RuntimeError) as e_info:
+        nap.compute_perievent_continuous(tsd, tref, windowsize=(1, "2"))
+    assert (
+        str(e_info.value)
+        == "windowsize should be a tuple of 2 numbers or a single number."
+    )

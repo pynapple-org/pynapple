@@ -2,14 +2,14 @@
 Functions to realign time series relative to a reference time.
 """
 
+import inspect
+from functools import wraps
+from numbers import Number
+
 import numpy as np
 
 from .. import core as nap
 from ._process_functions import _perievent_continuous, _perievent_trigger_average
-
-import inspect
-from functools import wraps
-from numbers import Number
 
 
 def _validate_perievent_inputs(func):
@@ -23,18 +23,18 @@ def _validate_perievent_inputs(func):
             "timestamps": (nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor, nap.TsGroup),
             "timeseries": (nap.Tsd, nap.TsdFrame, nap.TsdTensor),
             "tref": (nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor),
-            "group": nap.TsGroup,
-            "ep": (nap.IntervalSet, None),
+            "group": (nap.TsGroup,),
+            "ep": (nap.IntervalSet,),
             "feature": (nap.Tsd, nap.TsdFrame, nap.TsdTensor),
-            "binsize": Number,
+            "binsize": (Number,),
             "windowsize": (tuple, Number),
-            "time_units": str,
+            "time_unit": (str,),
         }
         for param, param_type in parameters_type.items():
             if param in kwargs:
                 if not isinstance(kwargs[param], param_type):
                     raise TypeError(
-                        f"Invalid type. Parameter {param} must be of type {param_type}."
+                        f"Invalid type. Parameter {param} must be of type {[p.__name__ for p in param_type]}."
                     )
 
         # Call the original function with validated inputs
@@ -43,7 +43,7 @@ def _validate_perievent_inputs(func):
     return wrapper
 
 
-def _align_tsd(tsd, tref, window, time_support):
+def _align_tsd(tsd, tref, window, new_time_support):
     """
     Helper function compiled with numba for aligning times.
     See compute_perievent for using this function
@@ -72,21 +72,21 @@ def _align_tsd(tsd, tref, window, time_support):
     if isinstance(tsd, nap.Ts):
         for i in range(len(tref)):
             tmp = tsd.index[lbounds[i] : rbounds[i]] - tref.index[i]
-            group[i] = nap.Ts(t=tmp, time_support=time_support)
+            group[i] = nap.Ts(t=tmp, time_support=new_time_support)
     else:
         for i in range(len(tref)):
             tmp = tsd.index[lbounds[i] : rbounds[i]] - tref.index[i]
             tmp2 = tsd.values[lbounds[i] : rbounds[i]]
-            group[i] = nap.Tsd(t=tmp, d=tmp2, time_support=time_support)
+            group[i] = nap.Tsd(t=tmp, d=tmp2, time_support=new_time_support)
 
-    group = nap.TsGroup(group, time_support=time_support, bypass_check=True)
+    group = nap.TsGroup(group, time_support=new_time_support, bypass_check=True)
     group.set_info(ref_times=tref.index)
 
     return group
 
 
 @_validate_perievent_inputs
-def compute_perievent(timestamps, tref, windowsize, ep=None, time_unit="s"):
+def compute_perievent(timestamps, tref, windowsize, time_unit="s"):
     """
     Center the timestamps of a time series object or a time series group around the timestamps given by the `tref` argument.
     `windowsize` indicates the start and end of the window. If `windowsize=(-5, 10)`, the window will be from -5 second to 10 second.
@@ -104,8 +104,6 @@ def compute_perievent(timestamps, tref, windowsize, ep=None, time_unit="s"):
         The time reference of the event to align to
     windowsize : tuple of int/float or int or float
         The window size. Can be unequal on each side i.e. (-500, 1000).
-    ep : IntervalSet, optional
-        The epochs to perform the operation. If None, the default is the time support of the `timestamps` object.
     time_unit : str, optional
         Time units of the windowsize ('s' [default], 'ms', 'us').
 
@@ -137,20 +135,20 @@ def compute_perievent(timestamps, tref, windowsize, ep=None, time_unit="s"):
             "windowsize should be a tuple of 2 numbers or a single number."
         )
 
-    if ep is None:
-        ep = timestamps.time_support
-
     window = np.abs(nap.TsIndex.format_timestamps(np.array(windowsize), time_unit))
+
+    new_time_support = nap.IntervalSet(start=-window[0], end=window[1])
 
     if isinstance(timestamps, nap.TsGroup):
         toreturn = {}
         for n in timestamps.index:
-            toreturn[n] = _align_tsd(timestamps[n], tref, window, ep)
+            toreturn[n] = _align_tsd(timestamps[n], tref, window, new_time_support)
         return toreturn
     else:
-        return _align_tsd(timestamps, tref, window, ep)
+        return _align_tsd(timestamps, tref, window, new_time_support)
 
 
+@_validate_perievent_inputs
 def compute_perievent_continuous(timeseries, tref, windowsize, ep=None, time_unit="s"):
     """
     Center continuous time series around the timestamps given by the 'tref' argument.
@@ -230,6 +228,7 @@ def compute_perievent_continuous(timeseries, tref, windowsize, ep=None, time_uni
         return nap.TsdTensor(t=time_idx, d=new_data_array, time_support=time_support)
 
 
+@_validate_perievent_inputs
 def compute_event_trigger_average(
     group,
     feature,
