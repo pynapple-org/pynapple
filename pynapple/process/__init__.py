@@ -36,3 +36,4 @@ from .tuning_curves import (
     compute_discrete_tuning_curves,
 )
 from .wavelets import compute_wavelet_transform, generate_morlet_filterbank
+from .warping import build_tensor
