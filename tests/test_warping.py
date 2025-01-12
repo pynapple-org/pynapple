@@ -103,7 +103,8 @@ def test_build_tensor_runtime_error():
     )
 
     with pytest.raises(
-        RuntimeError, match=r"When input is a TsGroup, binsize should be specified"
+        RuntimeError,
+        match=r"When input is a TsGroup or Ts object, binsize should be specified",
     ):
         nap.build_tensor(group, ep)
 
@@ -140,3 +141,151 @@ def test_build_tensor_with_group():
 
     tensor = nap.build_tensor(group, ep, binsize=1, align="end")
     np.testing.assert_array_almost_equal(tensor, np.flip(expected, axis=2))
+
+    tensor = nap.build_tensor(group, ep, binsize=1, time_unit="s")
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(group, ep, binsize=1e3, time_unit="ms")
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(group, ep, binsize=1e6, time_unit="us")
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(group, ep, binsize=1, align="start", padding_value=-1)
+    expected[np.isnan(expected)] = -1
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+
+def test_build_tensor_with_ts():
+    ts = nap.Ts(t=np.arange(0, 100))
+    ep = nap.IntervalSet(
+        start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
+    )
+
+    expected = np.ones((len(ep), 8)) * np.nan
+    for i, k in zip(range(len(ep)), range(2, 10, 2)):
+        expected[i, 0:k] = 1
+
+    tensor = nap.build_tensor(ts, ep, binsize=1)
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(ts, ep, binsize=1, align="start")
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(ts, ep, binsize=1, align="end")
+    np.testing.assert_array_almost_equal(tensor, np.flip(expected, axis=1))
+
+    tensor = nap.build_tensor(ts, ep, binsize=1, time_unit="s")
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(ts, ep, binsize=1e3, time_unit="ms")
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(ts, ep, binsize=1e6, time_unit="us")
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(ts, ep, binsize=1, align="start", padding_value=-1)
+    expected[np.isnan(expected)] = -1
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+
+def test_build_tensor_with_tsd():
+    tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
+    ep = nap.IntervalSet(
+        start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
+    )
+
+    expected = np.ones((len(ep), 9)) * np.nan
+    for i, k in zip(range(len(ep)), range(2, 10, 2)):
+        expected[i, 0 : k + 1] = np.arange(k * 10, k * 10 + k + 1)
+
+    tensor = nap.build_tensor(tsd, ep)
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(tsd, ep, align="start")
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(tsd, ep, align="start", padding_value=-1)
+    expected[np.isnan(expected)] = -1
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    expected = np.ones((len(ep), 9)) * np.nan
+    for i, k in zip(range(len(ep)), range(2, 10, 2)):
+        expected[i, -k - 1 :] = np.arange(k * 10, k * 10 + k + 1)
+
+    tensor = nap.build_tensor(tsd, ep, align="end")
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(tsd, ep, align="end", padding_value=-1)
+    expected[np.isnan(expected)] = -1
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+
+def test_build_tensor_with_tsdframe():
+    tsdframe = nap.TsdFrame(t=np.arange(100), d=np.tile(np.arange(100)[:, None], 3))
+    ep = nap.IntervalSet(
+        start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
+    )
+
+    expected = np.ones((len(ep), 9)) * np.nan
+    for i, k in zip(range(len(ep)), range(2, 10, 2)):
+        expected[i, 0 : k + 1] = np.arange(k * 10, k * 10 + k + 1)
+    expected = np.repeat(expected[None, :], 3, axis=0)
+
+    tensor = nap.build_tensor(tsdframe, ep)
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(tsdframe, ep, align="start")
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(tsdframe, ep, align="start", padding_value=-1)
+    expected[np.isnan(expected)] = -1
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    expected = np.ones((len(ep), 9)) * np.nan
+    for i, k in zip(range(len(ep)), range(2, 10, 2)):
+        expected[i, -k - 1 :] = np.arange(k * 10, k * 10 + k + 1)
+    expected = np.repeat(expected[None, :], 3, axis=0)
+
+    tensor = nap.build_tensor(tsdframe, ep, align="end")
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(tsdframe, ep, align="end", padding_value=-1)
+    expected[np.isnan(expected)] = -1
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+
+def test_build_tensor_with_tsdtensor():
+    tsdtensor = nap.TsdTensor(
+        t=np.arange(100), d=np.tile(np.arange(100)[:, None, None], (1, 2, 3))
+    )
+    ep = nap.IntervalSet(
+        start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
+    )
+
+    expected = np.ones((len(ep), 9)) * np.nan
+    for i, k in zip(range(len(ep)), range(2, 10, 2)):
+        expected[i, 0 : k + 1] = np.arange(k * 10, k * 10 + k + 1)
+    expected = np.tile(expected[None, None, :, :], (2, 3, 1, 1))
+
+    tensor = nap.build_tensor(tsdtensor, ep)
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(tsdtensor, ep, align="start")
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(tsdtensor, ep, align="start", padding_value=-1)
+    expected[np.isnan(expected)] = -1
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    expected = np.ones((len(ep), 9)) * np.nan
+    for i, k in zip(range(len(ep)), range(2, 10, 2)):
+        expected[i, -k - 1 :] = np.arange(k * 10, k * 10 + k + 1)
+    expected = np.tile(expected[None, None, :, :], (2, 3, 1, 1))
+
+    tensor = nap.build_tensor(tsdtensor, ep, align="end")
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    tensor = nap.build_tensor(tsdtensor, ep, align="end", padding_value=-1)
+    expected[np.isnan(expected)] = -1
+    np.testing.assert_array_almost_equal(tensor, expected)
