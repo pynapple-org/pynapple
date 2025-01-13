@@ -7,15 +7,23 @@ import pynapple as nap
 
 
 ############################################################
-# Test for warping
+# Test for tensor building
 ############################################################
-def get_input():
-    return nap.Tsd(t=np.arange(10), d=np.arange(10))
-
-
+def get_group():
+    return nap.TsGroup({
+            0: nap.Ts(t=np.arange(0, 100)),
+            1: nap.Ts(t=np.arange(0, 100, 0.5), time_units="s"),
+            2: nap.Ts(t=np.arange(0, 100, 0.2), time_units="s"),})
+def get_ts():
+    return nap.Ts(t=np.arange(0, 100))
+def get_tsd():
+    return nap.Tsd(t=np.arange(100), d=np.arange(100))
+def get_tsdframe():
+    return nap.TsdFrame(t=np.arange(100), d=np.tile(np.arange(100)[:, None], 3))
+def get_tsdtensor():
+    return nap.TsdTensor(t=np.arange(100), d=np.tile(np.arange(100)[:, None, None], (1, 2, 3)))
 def get_ep():
-    return nap.IntervalSet(0, 10)
-
+    return nap.IntervalSet(start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2))
 
 @pytest.mark.parametrize(
     "input, ep, binsize, align, padding_value, time_unit, expectation",
@@ -30,7 +38,7 @@ def get_ep():
             "Invalid type. Parameter input must be of type ['Ts', 'Tsd', 'TsdFrame', 'TsdTensor', 'TsGroup'].",
         ),
         (
-            get_input(),
+            get_tsd(),
             {},
             1,
             "start",
@@ -39,7 +47,7 @@ def get_ep():
             "Invalid type. Parameter ep must be of type ['IntervalSet'].",
         ),
         (
-            get_input(),
+            get_tsd(),
             get_ep(),
             "a",
             "start",
@@ -48,7 +56,7 @@ def get_ep():
             "Invalid type. Parameter binsize must be of type ['Number'].",
         ),
         (
-            get_input(),
+            get_tsd(),
             get_ep(),
             1,
             1,
@@ -57,7 +65,7 @@ def get_ep():
             "Invalid type. Parameter align must be of type ['str'].",
         ),
         (
-            get_input(),
+            get_tsd(),
             get_ep(),
             1,
             "start",
@@ -66,7 +74,7 @@ def get_ep():
             "Invalid type. Parameter padding_value must be of type ['Number'].",
         ),
         (
-            get_input(),
+            get_tsd(),
             get_ep(),
             1,
             "start",
@@ -91,16 +99,8 @@ def test_build_tensor_type_error(
 
 
 def test_build_tensor_runtime_error():
-    group = nap.TsGroup(
-        {
-            0: nap.Ts(t=np.arange(0, 100)),
-            1: nap.Ts(t=np.arange(0, 100, 0.5), time_units="s"),
-            2: nap.Ts(t=np.arange(0, 100, 0.2), time_units="s"),
-        }
-    )
-    ep = nap.IntervalSet(
-        start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
-    )
+    group = get_group()
+    ep = get_ep()
 
     with pytest.raises(
         RuntimeError,
@@ -116,16 +116,8 @@ def test_build_tensor_runtime_error():
 
 
 def test_build_tensor_with_group():
-    group = nap.TsGroup(
-        {
-            0: nap.Ts(t=np.arange(0, 100)),
-            1: nap.Ts(t=np.arange(0, 100, 0.5), time_units="s"),
-            2: nap.Ts(t=np.arange(0, 100, 0.2), time_units="s"),
-        }
-    )
-    ep = nap.IntervalSet(
-        start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
-    )
+    group = get_group()
+    ep = get_ep()
 
     expected = np.ones((len(group), len(ep), 8)) * np.nan
     for i, k in zip(range(len(ep)), range(2, 10, 2)):
@@ -157,10 +149,8 @@ def test_build_tensor_with_group():
 
 
 def test_build_tensor_with_ts():
-    ts = nap.Ts(t=np.arange(0, 100))
-    ep = nap.IntervalSet(
-        start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
-    )
+    ts = get_ts()
+    ep = get_ep()
 
     expected = np.ones((len(ep), 8)) * np.nan
     for i, k in zip(range(len(ep)), range(2, 10, 2)):
@@ -190,10 +180,8 @@ def test_build_tensor_with_ts():
 
 
 def test_build_tensor_with_tsd():
-    tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
-    ep = nap.IntervalSet(
-        start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
-    )
+    tsd = get_tsd()
+    ep = get_ep()
 
     expected = np.ones((len(ep), 9)) * np.nan
     for i, k in zip(range(len(ep)), range(2, 10, 2)):
@@ -222,10 +210,8 @@ def test_build_tensor_with_tsd():
 
 
 def test_build_tensor_with_tsdframe():
-    tsdframe = nap.TsdFrame(t=np.arange(100), d=np.tile(np.arange(100)[:, None], 3))
-    ep = nap.IntervalSet(
-        start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
-    )
+    tsdframe = get_tsdframe()
+    ep = get_ep()
 
     expected = np.ones((len(ep), 9)) * np.nan
     for i, k in zip(range(len(ep)), range(2, 10, 2)):
@@ -256,12 +242,8 @@ def test_build_tensor_with_tsdframe():
 
 
 def test_build_tensor_with_tsdtensor():
-    tsdtensor = nap.TsdTensor(
-        t=np.arange(100), d=np.tile(np.arange(100)[:, None, None], (1, 2, 3))
-    )
-    ep = nap.IntervalSet(
-        start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
-    )
+    tsdtensor = get_tsdtensor()
+    ep = get_ep()
 
     expected = np.ones((len(ep), 9)) * np.nan
     for i, k in zip(range(len(ep)), range(2, 10, 2)):
@@ -288,4 +270,72 @@ def test_build_tensor_with_tsdtensor():
 
     tensor = nap.build_tensor(tsdtensor, ep, align="end", padding_value=-1)
     expected[np.isnan(expected)] = -1
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+#######################################################################
+# Time Warping
+#######################################################################
+
+def get_group2():
+    return nap.TsGroup({
+        0: nap.Ts(t=np.arange(0, 100, 0.2), time_units="s"),
+        1: nap.Ts(t=np.arange(0, 100, 0.1), time_units="s"),
+    })
+
+@pytest.mark.parametrize(
+    "input, ep, num_bin, expectation",
+    [
+        (
+            {},
+            get_ep(),
+            10,
+            "Invalid type. Parameter input must be of type ['Ts', 'Tsd', 'TsdFrame', 'TsdTensor', 'TsGroup'].",
+        ),
+        (
+            get_tsd(),
+            {},
+            10,
+            "Invalid type. Parameter ep must be of type ['IntervalSet'].",
+        ),
+        (
+            get_tsd(),
+            get_ep(),
+            "a",
+            "Invalid type. Parameter num_bin must be of type ['int'].",
+        ),
+    ],
+)
+def test_warp_tensor_type_error(
+    input, ep, num_bin, expectation
+):
+    with pytest.raises(TypeError, match=re.escape(expectation)):
+        nap.warp_tensor(input=input,ep=ep,num_bin=num_bin)
+
+
+def test_warp_tensor_runtime_error():
+    group = get_group()
+    ep = get_ep()
+    with pytest.raises(RuntimeError, match=r"num_bin should be positive integer."):
+        nap.warp_tensor(group, ep, -10)
+    with pytest.raises(RuntimeError, match=r"num_bin should be positive integer."):
+        nap.warp_tensor(group, ep, 0)
+
+def test_warp_tensor_with_tsgroup():
+    group = get_group2()
+    ep = get_ep()
+
+    expected = np.zeros((len(group),len(ep),10))
+    for i in range(2):
+        expected[i,:,:] = np.tile((np.arange(1, 5, 1)*(i+1))[:,None], 10)
+
+    tensor = nap.warp_tensor(group, ep, num_bin=10)
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+def test_warp_tensor_with_ts():
+    ts = get_group2()[0]
+    ep = get_ep()
+
+    expected = np.tile((np.arange(1, 5, 1))[:,None], 10)
+
+    tensor = nap.warp_tensor(ts, ep, num_bin=10)
     np.testing.assert_array_almost_equal(tensor, expected)

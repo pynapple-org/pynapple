@@ -196,8 +196,45 @@ def build_tensor(
         return _build_tensor_from_tsd(input, ep, align, padding_value)
 
 
+def _warp_tensor_from_tsgroup(input, ep, num_bin):
+    if isinstance(input, nap.Ts):
+        output = np.zeros(shape=(1, len(ep), num_bin))
+    else:
+        output = np.zeros(shape=(len(input), len(ep), num_bin))
+
+    binsizes = (ep.end-ep.start)/num_bin
+
+    for i in range(len(ep)):
+        tmp = input.count(binsizes[i], ep[i])
+        output[:,i,:] = np.transpose(tmp.values)
+
+    if isinstance(input, nap.Ts):# Removing first axis if Ts.
+        output = output[0]
+
+    return output
+
+
+def _warp_tensor_from_tsd(input, ep, num_bin):
+    slices = [input.get_slice(s, e) for s, e in ep.values]
+    lengths = list(map(lambda sl: sl.stop - sl.start, slices))
+    output = np.zeros(shape=(len(ep), num_bin, *input.shape[1:]))
+    for i, sl in enumerate(slices):
+        if lengths[i] == num_bin:
+            output[i] = input[sl].values
+        elif lengths[i] > num_bin: # Call bin_average
+            output[i] = input[sl].bin_average((ep.end[i]-ep.start[i])/num_bin, ep[i])
+        else: # Call interpolate
+            output[i] = input[sl].interpolate(
+                ts=nap.Ts(t=np.linspace(ep.start[i], ep.end[i], num_bin)),
+                ep=ep[i])
+
+    if output.ndim > 2:
+        output = np.moveaxis(output, source=[0, 1], destination=[-2, -1])
+
+    return output
+
 @_validate_warping_inputs
-def warp_tensor(input, ep, num_bin=None):
+def warp_tensor(input, ep, num_bin):
     """
     Return linearly time-warped trial-based tensor from an IntervalSet object.
 
@@ -208,7 +245,7 @@ def warp_tensor(input, ep, num_bin=None):
 
     Parameters
     ----------
-    input : Ts, Tsd, TsdFrame, TsdTensor or TsGroup
+    input : Ts , Tsd, TsdFrame, TsdTensor or TsGroup
         Input object
     ep : IntervalSet
         Epochs holding the trials. Each interval can be of unequal size.
@@ -220,8 +257,15 @@ def warp_tensor(input, ep, num_bin=None):
 
     Examples
     --------
-
-
-
     """
+    if num_bin<=0:
+        raise RuntimeError("num_bin should be positive integer.")
+
+    if isinstance(input, (nap.TsGroup, nap.Ts)):
+        return _warp_tensor_from_tsgroup(
+            input, ep, num_bin
+        )
+    else:
+        return _warp_tensor_from_tsd(input, ep, num_bin)
+
 
