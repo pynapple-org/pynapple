@@ -10,20 +10,38 @@ import pynapple as nap
 # Test for tensor building
 ############################################################
 def get_group():
-    return nap.TsGroup({
+    return nap.TsGroup(
+        {
             0: nap.Ts(t=np.arange(0, 100)),
             1: nap.Ts(t=np.arange(0, 100, 0.5), time_units="s"),
-            2: nap.Ts(t=np.arange(0, 100, 0.2), time_units="s"),})
+            2: nap.Ts(t=np.arange(0, 100, 0.2), time_units="s"),
+        }
+    )
+
+
 def get_ts():
     return nap.Ts(t=np.arange(0, 100))
+
+
 def get_tsd():
     return nap.Tsd(t=np.arange(100), d=np.arange(100))
+
+
 def get_tsdframe():
     return nap.TsdFrame(t=np.arange(100), d=np.tile(np.arange(100)[:, None], 3))
+
+
 def get_tsdtensor():
-    return nap.TsdTensor(t=np.arange(100), d=np.tile(np.arange(100)[:, None, None], (1, 2, 3)))
+    return nap.TsdTensor(
+        t=np.arange(100), d=np.tile(np.arange(100)[:, None, None], (1, 2, 3))
+    )
+
+
 def get_ep():
-    return nap.IntervalSet(start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2))
+    return nap.IntervalSet(
+        start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
+    )
+
 
 @pytest.mark.parametrize(
     "input, ep, binsize, align, padding_value, time_unit, expectation",
@@ -272,15 +290,20 @@ def test_build_tensor_with_tsdtensor():
     expected[np.isnan(expected)] = -1
     np.testing.assert_array_almost_equal(tensor, expected)
 
+
 #######################################################################
 # Time Warping
 #######################################################################
 
+
 def get_group2():
-    return nap.TsGroup({
-        0: nap.Ts(t=np.arange(0, 100, 0.2), time_units="s"),
-        1: nap.Ts(t=np.arange(0, 100, 0.1), time_units="s"),
-    })
+    return nap.TsGroup(
+        {
+            0: nap.Ts(t=np.arange(0, 100, 0.2), time_units="s"),
+            1: nap.Ts(t=np.arange(0, 100, 0.1), time_units="s"),
+        }
+    )
+
 
 @pytest.mark.parametrize(
     "input, ep, num_bin, expectation",
@@ -305,11 +328,9 @@ def get_group2():
         ),
     ],
 )
-def test_warp_tensor_type_error(
-    input, ep, num_bin, expectation
-):
+def test_warp_tensor_type_error(input, ep, num_bin, expectation):
     with pytest.raises(TypeError, match=re.escape(expectation)):
-        nap.warp_tensor(input=input,ep=ep,num_bin=num_bin)
+        nap.warp_tensor(input=input, ep=ep, num_bin=num_bin)
 
 
 def test_warp_tensor_runtime_error():
@@ -320,33 +341,98 @@ def test_warp_tensor_runtime_error():
     with pytest.raises(RuntimeError, match=r"num_bin should be positive integer."):
         nap.warp_tensor(group, ep, 0)
 
+
 def test_warp_tensor_with_tsgroup():
     group = get_group2()
     ep = get_ep()
 
-    expected = np.zeros((len(group),len(ep),10))
+    expected = np.zeros((len(group), len(ep), 10))
     for i in range(2):
-        expected[i,:,:] = np.tile((np.arange(1, 5, 1)*(i+1))[:,None], 10)
+        expected[i, :, :] = np.tile((np.arange(1, 5, 1) * (i + 1))[:, None], 10)
 
     tensor = nap.warp_tensor(group, ep, num_bin=10)
     np.testing.assert_array_almost_equal(tensor, expected)
+
 
 def test_warp_tensor_with_ts():
     ts = get_group2()[0]
     ep = get_ep()
 
-    expected = np.tile((np.arange(1, 5, 1))[:,None], 10)
+    expected = np.tile((np.arange(1, 5, 1))[:, None], 10)
 
     tensor = nap.warp_tensor(ts, ep, num_bin=10)
     np.testing.assert_array_almost_equal(tensor, expected)
+
 
 def test_warp_tensor_with_tsd():
     tsd = get_tsd()
 
     # Equal
-    ep = nap.IntervalSet(
-        start=np.arange(20, 100, 20),
-        end = np.arange(30, 110, 20)
+    ep = nap.IntervalSet(start=np.arange(20, 100, 20), end=np.arange(30, 110, 20))
+    expected = np.array([np.arange(i, i + 11) for i in ep.start])
+    tensor = nap.warp_tensor(tsd, ep, 11)
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    # More time points than bins
+    expected2 = np.array(
+        [arr.mean(1) for arr in np.array_split(expected[:, 0:10], 2, axis=1)]
+    ).T
+    tensor = nap.warp_tensor(tsd, ep, 2)
+    np.testing.assert_array_almost_equal(tensor, expected2)
+
+    # Less time points than bins
+    expected3 = np.array([np.linspace(s, e, 20) for s, e in ep.values])
+    tensor = nap.warp_tensor(tsd, ep, 20)
+    np.testing.assert_array_almost_equal(tensor, expected3)
+
+
+def test_warp_tensor_with_tsdframe():
+    tsdframe = get_tsdframe()
+
+    # Equal
+    ep = nap.IntervalSet(start=np.arange(20, 100, 20), end=np.arange(30, 110, 20))
+    expected = np.array([np.arange(i, i + 11) for i in ep.start])
+    expected = np.repeat(expected[None, :, :], 3, axis=0)
+    tensor = nap.warp_tensor(tsdframe, ep, 11)
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    # More time points than bins
+    expected2 = np.array(
+        [arr.mean(2) for arr in np.array_split(expected[:, :, 0:10], 2, axis=2)]
     )
-    expected = np.ones((4,10))
-    tensor = nap.warp_tensor(tsd, ep, 10)
+    expected2 = np.moveaxis(expected2, source=0, destination=-1)
+    tensor = nap.warp_tensor(tsdframe, ep, 2)
+    np.testing.assert_array_almost_equal(tensor, expected2)
+
+    # Less time points than bins
+    expected3 = np.array([np.linspace(s, e, 20) for s, e in ep.values])
+    expected3 = np.repeat(expected3[None, :, :], 3, axis=0)
+    tensor = nap.warp_tensor(tsdframe, ep, 20)
+    np.testing.assert_array_almost_equal(tensor, expected3)
+
+
+def test_warp_tensor_with_tsdtensor():
+    tsdtensor = get_tsdtensor()
+
+    # Equal
+    ep = nap.IntervalSet(start=np.arange(20, 100, 20), end=np.arange(30, 110, 20))
+    expected = np.array([np.arange(i, i + 11) for i in ep.start])
+    expected = np.repeat(expected[None, :, :], 3, axis=0)
+    expected = np.repeat(expected[None, :, :, :], 2, axis=0)
+    tensor = nap.warp_tensor(tsdtensor, ep, 11)
+    np.testing.assert_array_almost_equal(tensor, expected)
+
+    # More time points than bins
+    expected2 = np.array(
+        [arr.mean(-1) for arr in np.array_split(expected[:, :, :, 0:10], 2, axis=-1)]
+    )
+    expected2 = np.moveaxis(expected2, source=0, destination=-1)
+    tensor = nap.warp_tensor(tsdtensor, ep, 2)
+    np.testing.assert_array_almost_equal(tensor, expected2)
+
+    # Less time points than bins
+    expected3 = np.array([np.linspace(s, e, 20) for s, e in ep.values])
+    expected3 = np.repeat(expected3[None, :, :], 3, axis=0)
+    expected3 = np.repeat(expected3[None, :, :, :], 2, axis=0)
+    tensor = nap.warp_tensor(tsdtensor, ep, 20)
+    np.testing.assert_array_almost_equal(tensor, expected3)
