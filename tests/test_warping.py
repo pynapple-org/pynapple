@@ -339,3 +339,14 @@ def test_warp_tensor_with_ts():
 
     tensor = nap.warp_tensor(ts, ep, num_bin=10)
     np.testing.assert_array_almost_equal(tensor, expected)
+
+def test_warp_tensor_with_tsd():
+    tsd = get_tsd()
+
+    # Equal
+    ep = nap.IntervalSet(
+        start=np.arange(20, 100, 20),
+        end = np.arange(30, 110, 20)
+    )
+    expected = np.ones((4,10))
+    tensor = nap.warp_tensor(tsd, ep, 10)
