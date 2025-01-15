@@ -1120,7 +1120,8 @@ class TestTsdFrame:
                 if len(tsdframe[row, col] == 1):
                     # use ravel to ignore shape mismatch
                     np.testing.assert_array_almost_equal(
-                        tsdframe.values[row, col].ravel(), tsdframe[row, col].values.ravel()
+                        tsdframe.values[row, col].ravel(),
+                        tsdframe[row, col].values.ravel(),
                     )
                 else:
                     np.testing.assert_array_almost_equal(
@@ -1137,10 +1138,11 @@ class TestTsdFrame:
                         tsdframe[row, col].metadata_columns == tsdframe.metadata_columns
                     )
                     assert np.all(
-                        tsdframe[row, col].metadata_index == tsdframe.metadata_index[col]
+                        tsdframe[row, col].metadata_index
+                        == tsdframe.metadata_index[col]
                     )
             else:
-                np.testing.assert_array_almost_equal(output, tsdframe.values[row,col])
+                np.testing.assert_array_almost_equal(output, tsdframe.values[row, col])
 
     @pytest.mark.parametrize("index", [0, [0, 2]])
     def test_str_indexing(self, tsdframe, index):
