@@ -106,7 +106,7 @@ def compute_wavelet_transform(
     if fs is None:
         fs = sig.rate
 
-    output_shape = (sig.shape[0], len(freqs), *sig.shape[1:])
+    output_shape = (sig.shape[0], *sig.shape[1:], len(freqs))
     sig = np.reshape(sig, (sig.shape[0], -1))
 
     filter_bank = generate_morlet_filterbank(
@@ -122,16 +122,17 @@ def compute_wavelet_transform(
         coef = convolved / (fs / np.sqrt(freqs))
     else:
         coef = convolved
+
     cwt = np.expand_dims(coef, -1) if len(coef.shape) == 2 else coef
 
     if len(output_shape) == 2:
         return nap.TsdFrame(
-            t=sig.index, d=cwt.reshape(output_shape), time_support=sig.time_support
+            t=sig.index, d=np.squeeze(cwt, axis=1), time_support=sig.time_support
         )
-
-    return nap.TsdTensor(
-        t=sig.index, d=cwt.reshape(output_shape), time_support=sig.time_support
-    )
+    else:
+        return nap.TsdTensor(
+            t=sig.index, d=np.reshape(cwt, output_shape), time_support=sig.time_support
+        )
 
 
 def generate_morlet_filterbank(
