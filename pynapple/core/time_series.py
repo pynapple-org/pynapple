@@ -1206,8 +1206,8 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             else:
                 index = self.index.__getitem__(key)
 
-            if isinstance(index, Number):
-                index = np.array([index])
+            # if isinstance(index, Number):
+            #     index = np.array([index])
 
             if all(is_array_like(a) for a in [index, output]):
                 if isinstance(key, tuple):
