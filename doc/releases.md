@@ -18,6 +18,11 @@ of the Flatiron institute.
 
 ## Releases
 
+### 0.8.0 (2025-01-15)
+
+- New private class: `_MetadataMixin` (core/metadata_class.py). Can be inherited by `IntervalSet`, `TsdFrame` and `TsGroup`.
+- `decode_1d` and `decode_2d` now accepts `TsdFrame` as input. 
+
 ### 0.7.1 (2024-09-24)
 
 - Fixing nan issue when computing 1d tuning curve (See issue #334).
