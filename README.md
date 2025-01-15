@@ -22,6 +22,13 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 New release :fire:
 ------------------
 
+### pynapple >= 0.8
+
+The objects `IntervalSet`, `TsdFrame` and `TsGroup` inherits a new metadata class. It is now possible to add labels for 
+each interval of an `IntervalSet`, each column of a `TsdFrame` and each unit of a `TsGroup`.
+
+See the [documentation](https://pynapple.org/user_guide/03_metadata.html) for more details
+
 ### pynapple >= 0.7
 
 Pynapple now implements signal processing. For example, to filter a 1250 Hz sampled time series between 10 Hz and 20 Hz:
