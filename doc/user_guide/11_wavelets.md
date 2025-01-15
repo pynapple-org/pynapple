@@ -11,8 +11,8 @@ kernelspec:
   name: python3
 ---
 
-Wavelet Transform
-=================
+Spectrogram
+===========
 
 This tutorial covers the use of `nap.compute_wavelet_transform` to do continuous wavelet transform. By default, pynapple uses Morlet wavelets.
 
@@ -29,7 +29,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
-sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
+sns.set_theme(style="ticks", palette="colorblind", font_scale=1.0, rc=custom_params)
 ```
 
 ***
@@ -121,6 +121,7 @@ underlying wavelets.
 window_lengths = [1.0, 3.0]
 gaussian_widths = [1.0, 3.0]
 colors = np.array([["r", "g"], ["b", "y"]])
+fig = plt.figure()
 fig, ax = plt.subplots(
     len(window_lengths) + 1,
     len(gaussian_widths) + 1,
@@ -153,6 +154,7 @@ for i in range(len(gaussian_widths)):
     ax[i, -1].set(
         xlim=(0, 2), yticks=[], ylabel="Frequency Response", xlabel="Frequency (Hz)"
     )
+
 ```
 
 Increasing `window_length` increases the number of wavelet cycles present in the oscillations (cycles), and

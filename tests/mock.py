@@ -1,6 +1,6 @@
 """Test configuration script."""
-import numpy as np
 
+import numpy as np
 
 
 class MockArray:
@@ -19,8 +19,8 @@ class MockArray:
             A list of data elements that the MockArray will contain.
         """
         self.data = np.asarray(data)
-        self.shape = self.data.shape # Simplified shape attribute
-        self.dtype = 'float64'  # Simplified dtype; in real scenarios, this should be more dynamic
+        self.shape = self.data.shape  # Simplified shape attribute
+        self.dtype = "float64"  # Simplified dtype; in real scenarios, this should be more dynamic
         self.ndim = self.data.ndim  # Simplified ndim for a 1-dimensional array
 
     def __getitem__(self, index):

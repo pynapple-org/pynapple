@@ -8,6 +8,10 @@
 /docs/generated/gallery/*.py
 /docs/generated/gallery/*.zip
 
+/doc/generated
+/doc/examples/nwb-cache
+/doc/_build
+
 /tests/npzfilestest
 
 # Byte-compiled / optimized / DLL files
@@ -153,3 +157,6 @@ tutorials/data/KA28-190405/
 old
 data
 your
+
+# Ignore npz files from testing:
+tests/*.npz

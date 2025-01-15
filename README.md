@@ -1,10 +1,4 @@
-<!-- ![pic1](banner_logo.png) -->
-<p align="center">
-  <img width="60%" src="docs/images/banner_logo.png">
-</p>
 
-
-<!-- ========================== -->
 
 [![image](https://img.shields.io/pypi/v/pynapple.svg)](https://pypi.python.org/pypi/pynapple)
 [![pynapple CI](https://github.com/pynapple-org/pynapple/actions/workflows/main.yml/badge.svg)](https://github.com/pynapple-org/pynapple/actions/workflows/main.yml)
@@ -157,7 +151,7 @@ Shown below, the final figure from the example code displays the firing rate of 
 
 <!-- ![pic1](readme_figure.png) -->
 <p align="center">
-  <img width="80%" src="docs/images/readme_figure.png">
+  <img width="80%" src="doc/_static/readme_figure.png">
 </p>
 
 

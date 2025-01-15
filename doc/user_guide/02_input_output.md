@@ -61,7 +61,7 @@ print(data)
 ```
 
 Pynapple will give you a table with all the entries of the NWB file that are compatible with a pynapple object.
-When parsing the NWB file, nothing is loaded. The `NWBFile` class keeps track of the position of the data whithin the NWB file with a key. You can see it with the attributes `key_to_id`.
+When parsing the NWB file, nothing is loaded. The `NWBFile` class keeps track of the position of the data within the NWB file with a key. You can see it with the attributes `key_to_id`.
 
 
 ```{code-cell} ipython3

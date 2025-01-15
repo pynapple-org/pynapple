@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: Guillaume Viejo
-# @Date:   2023-08-01 11:54:45
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-05-21 15:28:27
-
 """
 Pynapple class to interface with NWB files.
 Data are always lazy-loaded.
@@ -11,6 +5,7 @@ Object behaves like dictionary.
 """
 
 import errno
+import importlib
 import os
 import warnings
 from collections import UserDict
@@ -18,8 +13,6 @@ from numbers import Number
 from pathlib import Path
 
 import numpy as np
-import pynwb
-from pynwb import NWBHDF5IO
 from tabulate import tabulate
 
 from .. import core as nap
@@ -38,6 +31,7 @@ def _extract_compatible_data_from_nwbfile(nwbfile):
     dict
         Dictionary containing all the object found and their type in pynapple.
     """
+    pynwb = importlib.import_module("pynwb")
     data = {}
 
     for oid, obj in nwbfile.objects.items():
@@ -91,40 +85,11 @@ def _make_interval_set(obj, **kwargs):
         df = obj.to_dataframe()
 
         if hasattr(df, "start_time") and hasattr(df, "stop_time"):
-            if df.shape[1] == 2:
-                data = nap.IntervalSet(start=df["start_time"], end=df["stop_time"])
-                return data
+            df = df.rename(columns={"start_time": "start", "stop_time": "end"})
+            # create from full dataframe to ensure that metadata is associated correctly
+            data = nap.IntervalSet(df)
+            return data
 
-            group_by_key = None
-            if "tags" in df.columns:
-                group_by_key = "tags"
-
-            elif df.shape[1] == 3:  # assuming third column is the tag
-                group_by_key = df.columns[2]
-
-            if group_by_key:
-                for i in df.index:
-                    if isinstance(df.loc[i, group_by_key], (list, tuple, np.ndarray)):
-                        df.loc[i, group_by_key] = "-".join(
-                            [str(j) for j in df.loc[i, group_by_key]]
-                        )
-
-                data = {}
-                for k, subdf in df.groupby(group_by_key):
-                    data[k] = nap.IntervalSet(
-                        start=subdf["start_time"], end=subdf["stop_time"]
-                    )
-                if len(data) == 1:
-                    return data[list(data.keys())[0]]
-                else:
-                    return data
-
-            else:
-                warnings.warn(
-                    "Too many metadata. Returning pandas.DataFrame, not IntervalSet",
-                    stacklevel=2,
-                )
-                return df  # Too many metadata to split the epoch
     else:
         return obj
 
@@ -204,6 +169,7 @@ def _make_tsd_frame(obj, lazy_loading=True):
     Tsd
 
     """
+    pynwb = importlib.import_module("pynwb")
 
     d = obj.data
     if not lazy_loading:
@@ -266,7 +232,7 @@ def _make_tsgroup(obj, **kwargs):
     TsGroup
 
     """
-
+    pynwb = importlib.import_module("pynwb")
     index = obj.id[:]
     tsgroup = {}
     for i, gr in zip(index, obj.spike_times_index[:]):
@@ -312,7 +278,7 @@ def _make_tsgroup(obj, **kwargs):
                 else:
                     pass
 
-    tsgroup = nap.TsGroup(tsgroup, **metainfo)
+    tsgroup = nap.TsGroup(tsgroup, metadata=metainfo)
 
     return tsgroup
 
@@ -388,7 +354,8 @@ class NWBFile(UserDict):
             If file is not an instance of NWBFile
         """
         # TODO: do we really need to have instantiation from file and object in the same place?
-
+        pynwb = importlib.import_module("pynwb")
+        NWBHDF5IO = pynwb.NWBHDF5IO
         if isinstance(file, pynwb.file.NWBFile):
             self.nwb = file
             self.name = self.nwb.session_id
@@ -484,3 +451,36 @@ class NWBFile(UserDict):
     def close(self):
         """Close the NWB file"""
         self.io.close()
+
+    def keys(self):
+        """
+        Return keys of NWBFile
+
+        Returns
+        -------
+        list
+            List of keys
+        """
+        return list(self.data.keys())
+
+    def items(self):
+        """
+        Return a list of key/object.
+
+        Returns
+        -------
+        list
+            List of tuples
+        """
+        return list(self.data.items())
+
+    def values(self):
+        """
+        Return a list of all the objects
+
+        Returns
+        -------
+        list
+            List of objects
+        """
+        return list(self.data.values())

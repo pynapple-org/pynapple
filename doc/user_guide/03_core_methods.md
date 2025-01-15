@@ -22,126 +22,20 @@ import seaborn as sns
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
 ```
-
-## Interval sets methods
-
-### Interaction between epochs 
-
-```{code-cell} ipython3
-epoch1 = nap.IntervalSet(start=0, end=10)  # no time units passed. Default is us.
-epoch2 = nap.IntervalSet(start=[5, 30], end=[20, 45])
-print(epoch1, "\n")
-print(epoch2, "\n")
-```
-
-#### `union`
-
-```{code-cell} ipython3
-epoch = epoch1.union(epoch2)
-print(epoch)
-```
-
-#### `intersect`
-
-```{code-cell} ipython3
-epoch = epoch1.intersect(epoch2)
-print(epoch)
-```
-
-#### `set_diff`
-
-```{code-cell} ipython3
-epoch = epoch1.set_diff(epoch2)
-print(epoch)
-```
-
-### `split`
-
-Useful for chunking time series, the `split` method splits an `IntervalSet` in a new
-`IntervalSet` based on the `interval_size` argument.
-
-```{code-cell} ipython3
-epoch = nap.IntervalSet(start=0, end=100)
-
-print(epoch.split(10, time_units="s"))
-```
-
-### Drop intervals
-
-```{code-cell} ipython3
-epoch = nap.IntervalSet(start=[5, 30], end=[6, 45])
-print(epoch)
-```
-
-#### `drop_short_intervals`
-
-```{code-cell} ipython3
-print(
-    epoch.drop_short_intervals(threshold=5)
-    )
-```
-
-#### `drop_long_intervals`
-
-```{code-cell} ipython3
-print(
-    epoch.drop_long_intervals(threshold=5)
-    )
-```
-
-### `merge_close_intervals`
-
-```{code-cell} ipython3
-:tags: [hide-input]
-epoch = nap.IntervalSet(start=[1, 7], end=[6, 45])
-print(epoch)
-```
-If two intervals are closer than the `threshold` argument, they are merged.
-
-```{code-cell} ipython3
-print(
-    epoch.merge_close_intervals(threshold=2.0)
-    )
-```
-
-
-## Metadata
-
-One advantage of grouping time series is that metainformation 
-can be added directly on an element-wise basis. 
-In this case, we add labels to each Ts object when instantiating the group and after. 
-We can then use this label to split the group. 
-See the TsGroup documentation for a complete methodology for splitting TsGroup objects.
-
-```{code-cell} ipython3
-group = {
-    0: nap.Ts(t=np.sort(np.random.uniform(0, 100, 10))),
-    1: nap.Ts(t=np.sort(np.random.uniform(0, 100, 20))),
-    2: nap.Ts(t=np.sort(np.random.uniform(0, 100, 30))),
-}
-time_support = nap.IntervalSet(0, 100)
-
-tsgroup = nap.TsGroup(group, time_support=time_support)
-
-tsgroup['label1'] = np.random.randn(3)
-
-tsgroup.set_info(label2 = ['a', 'b', 'c'])
-
-print(tsgroup, "\n")
-
-```
-
 ## Time series method
 
 ```{code-cell} ipython3
 :tags: [hide-cell]
 tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.randn(100, 3), columns=['a', 'b', 'c'])
+group = {
+    0: nap.Ts(t=np.sort(np.random.uniform(0, 100, 10))),
+    1: nap.Ts(t=np.sort(np.random.uniform(0, 100, 20))),
+    2: nap.Ts(t=np.sort(np.random.uniform(0, 100, 30))),
+}
+tsgroup = nap.TsGroup(group)
 epochs = nap.IntervalSet([10, 65], [25, 80])
 tsd = nap.Tsd(t=np.arange(0, 100, 1), d=np.sin(np.arange(0, 10, 0.1)))
 ```
-
-
-
 
 ### `restrict`
 
@@ -373,3 +267,176 @@ plt.xlabel("Time (s)")
 plt.tight_layout()
 plt.show()
 ```
+
+### Special slicing : TsdFrame
+
+For users that are familiar with pandas, `TsdFrame` is the closest object to a [DataFrame](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html).
+but there are distinctive behavior when slicing the object. `TsdFrame` behaves primarily like a numpy array. This section
+lists all the possible ways of slicing `TsdFrame`.
+
+#### 1. If not column labels are passed 
+
+```{code-cell} ipython3
+tsdframe = nap.TsdFrame(t=np.arange(4), d=np.random.randn(4,3))
+print(tsdframe)
+```
+
+Slicing should be done like numpy array :
+
+```{code-cell} ipython3
+tsdframe[0]
+```
+
+```{code-cell} ipython3
+tsdframe[:, 1]
+```
+
+```{code-cell} ipython3
+tsdframe[:, [0, 2]]
+```
+
+#### 2. If column labels are passed as integers
+
+The typical case is channel mapping. The order of the columns on disk are different from the order of the columns on the
+recording device it corresponds to. 
+
+```{code-cell} ipython3
+tsdframe = nap.TsdFrame(t=np.arange(4), d=np.random.randn(4,4), columns = [3, 2, 0, 1])
+print(tsdframe)
+```
+In this case, indexing like numpy still has priority which can led to confusing behavior :
+
+```{code-cell} ipython3
+tsdframe[:, [0, 2]]
+```
+Note how this corresponds to column labels 3 and 0.  
+
+To slice using column labels only, the `TsdFrame` object has the `loc` method similar to Pandas :
+
+```{code-cell} ipython3
+tsdframe.loc[[0, 2]]
+```
+In this case, this corresponds to columns labelled 0 and 2.
+
+#### 3. If column labels are passed as strings
+
+Similar to Pandas, it is possible to label columns using strings.
+
+```{code-cell} ipython3
+tsdframe = nap.TsdFrame(t=np.arange(4), d=np.random.randn(4,3), columns = ["kiwi", "banana", "tomato"])
+print(tsdframe)
+```
+
+When the column labels are all strings, it is possible to use either direct bracket indexing or using the `loc` method:
+
+```{code-cell} ipython3
+print(tsdframe['kiwi'])
+print(tsdframe.loc['kiwi']) 
+```
+
+#### 4. If column labels are mixed type
+
+It is possible to mix types in column names.
+
+```{code-cell} ipython3
+tsdframe = nap.TsdFrame(t=np.arange(4), d=np.random.randn(4,3), columns = ["kiwi", 0, np.pi])
+print(tsdframe)
+```
+
+Direct bracket indexing only works if the column label is a string.
+
+```{code-cell} ipython3
+print(tsdframe['kiwi'])
+```
+
+To slice with mixed types, it is best to use the `loc` method :
+
+```{code-cell} ipython3
+print(tsdframe.loc[['kiwi', np.pi]])
+```
+
+In general, it is probably a bad idea to mix types when labelling columns.
+
+
+## Interval sets methods
+
+### Interaction between epochs 
+
+```{code-cell} ipython3
+epoch1 = nap.IntervalSet(start=0, end=10)  # no time units passed. Default is us.
+epoch2 = nap.IntervalSet(start=[5, 30], end=[20, 45])
+print(epoch1, "\n")
+print(epoch2, "\n")
+```
+
+#### `union`
+
+```{code-cell} ipython3
+epoch = epoch1.union(epoch2)
+print(epoch)
+```
+
+#### `intersect`
+
+```{code-cell} ipython3
+epoch = epoch1.intersect(epoch2)
+print(epoch)
+```
+
+#### `set_diff`
+
+```{code-cell} ipython3
+epoch = epoch1.set_diff(epoch2)
+print(epoch)
+```
+
+### `split`
+
+Useful for chunking time series, the `split` method splits an `IntervalSet` in a new
+`IntervalSet` based on the `interval_size` argument.
+
+```{code-cell} ipython3
+epoch = nap.IntervalSet(start=0, end=100)
+
+print(epoch.split(10, time_units="s"))
+```
+
+### Drop intervals
+
+```{code-cell} ipython3
+epoch = nap.IntervalSet(start=[5, 30], end=[6, 45])
+print(epoch)
+```
+
+#### `drop_short_intervals`
+
+```{code-cell} ipython3
+print(
+    epoch.drop_short_intervals(threshold=5)
+    )
+```
+
+#### `drop_long_intervals`
+
+```{code-cell} ipython3
+print(
+    epoch.drop_long_intervals(threshold=5)
+    )
+```
+
+### `merge_close_intervals`
+
+```{code-cell} ipython3
+:tags: [hide-input]
+epoch = nap.IntervalSet(start=[1, 7], end=[6, 45])
+print(epoch)
+```
+If two intervals are closer than the `threshold` argument, they are merged.
+
+```{code-cell} ipython3
+print(
+    epoch.merge_close_intervals(threshold=2.0)
+    )
+```
+
+
