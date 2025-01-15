@@ -647,6 +647,47 @@ class TsdTensor(_BaseTsd):
         Frequency of the time series (Hz) computed over the time support
     time_support : IntervalSet
         The time support of the time series
+
+    Examples
+    --------
+    Initialize a TsdTensor:
+
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> t = np.arange(10)
+    >>> d = np.random.randn(10, 2, 3)
+    >>> tsdtensor = nap.TsdTensor(t=t, d=d)
+    >>> tsdtensor
+    Time (s)
+    ----------  -------------------------------
+    0           [[-1.493178 ... -1.281017] ...]
+    1           [[0.230829 ... 0.437679] ...]
+    2           [[-0.462031 ...  0.344506] ...]
+    3           [[0.497019 ... 0.469494] ...]
+    4           [[0.065921 ... 1.012917] ...]
+    5           [[0.158534 ... 1.455523] ...]
+    6           [[-2.567728 ...  0.61182 ] ...]
+    7           [[0.940799 ... 0.109203] ...]
+    8           [[2.340077 ... 0.21885 ] ...]
+    9           [[-0.306175 ... -0.447414] ...]
+    dtype: float64, shape: (10, 2, 3)
+
+    Initialize a TsdTensor with `time_support`:
+
+    >>> t = np.arange(10)
+    >>> d = np.random.randn(10, 2, 3)
+    >>> time_support = nap.IntervalSet(start=0, end=4)
+    >>> tsdtensor = nap.TsdTensor(t=t, d=d, time_support=time_support)
+    >>> tsdtensor
+    Time (s)
+    ----------  -------------------------------
+    0           [[-1.493178 ... -1.281017] ...]
+    1           [[0.230829 ... 0.437679] ...]
+    2           [[-0.462031 ...  0.344506] ...]
+    3           [[0.497019 ... 0.469494] ...]
+    4           [[0.065921 ... 1.012917] ...]
+    dtype: float64, shape: (5, 2, 3)
+
     """
 
     def __init__(
@@ -1519,6 +1560,55 @@ class Tsd(_BaseTsd):
         Frequency of the time series (Hz) computed over the time support
     time_support : IntervalSet
         The time support of the time series
+
+    Examples
+    --------
+    Initialize a Tsd:
+
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> t = np.arange(100)
+    >>> d = np.ones(100)
+    >>> tsd = nap.Tsd(t=t, d=d)
+    >>> tsd
+    Time (s)
+    ----------  --
+    0.0          1
+    1.0          1
+    2.0          1
+    3.0          1
+    4.0          1
+    5.0          1
+    6.0          1
+    ...
+    93.0         1
+    94.0         1
+    95.0         1
+    96.0         1
+    97.0         1
+    98.0         1
+    99.0         1
+    dtype: float64, shape: (100,)
+
+    Initialize a Tsd with `time_support`:
+
+    >>> t = np.arange(100)
+    >>> d = np.ones(100)
+    >>> time_support = nap.IntervalSet(start=0.5, end=8)
+    >>> tsd = nap.Tsd(t=t, d=d, time_support=time_support)
+    >>> tsd
+    Time (s)
+    ----------  --
+    1            1
+    2            1
+    3            1
+    4            1
+    5            1
+    6            1
+    7            1
+    8            1
+    dtype: float64, shape: (8,)
+
     """
 
     def __init__(
