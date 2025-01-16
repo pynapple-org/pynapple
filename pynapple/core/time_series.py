@@ -477,7 +477,9 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         new_data_array = _convolve(time_array, data_array, starts, ends, array, trim)
 
-        return _initialize_tsd_output(self, new_data_array, time_index=time_array, time_support=ep)
+        return _initialize_tsd_output(
+            self, new_data_array, time_index=time_array, time_support=ep
+        )
 
     def smooth(self, std, windowsize=None, time_units="s", size_factor=100, norm=True):
         """Smooth a time series with a gaussian kernel.
