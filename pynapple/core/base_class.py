@@ -293,8 +293,8 @@ class _Base(abc.ABC):
             if not isinstance(bin_size, float):
                 raise TypeError("bin_size argument should be float or int.")
 
-            if not isinstance(time_units, str) or time_units not in ["s", "ms", "us"]:
-                raise ValueError("time_units argument should be 's', 'ms' or 'us'.")
+        if not isinstance(time_units, str) or time_units not in ["s", "ms", "us"]:
+            raise ValueError("time_units argument should be 's', 'ms' or 'us'.")
 
         if ep is None:
             ep = self.time_support

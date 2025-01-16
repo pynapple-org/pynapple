@@ -33,6 +33,11 @@ def test_compute_spike_trigger_average_tsd():
     assert sta.shape == output.shape
     np.testing.assert_array_almost_equal(sta.values, output)
 
+    sta = nap.compute_event_trigger_average(spikes, feature, 0.2, (0.6, 0.6))
+    assert isinstance(sta, nap.TsdFrame)
+    assert sta.shape == output.shape
+    np.testing.assert_array_almost_equal(sta.values, output)
+
 
 def test_compute_spike_trigger_average_tsdframe():
     ep = nap.IntervalSet(0, 100)
@@ -149,41 +154,62 @@ def test_compute_spike_trigger_average_raise_error():
         {0: nap.Ts(t1), 1: nap.Ts(t1 - 0.1), 2: nap.Ts(t1 + 0.2)}, time_support=ep
     )
 
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(TypeError) as e_info:
         nap.compute_event_trigger_average(feature, feature, 0.1, (0.5, 0.5), ep)
-    assert str(e_info.value) == "group should be a TsGroup."
+    assert (
+        str(e_info.value)
+        == "Invalid type. Parameter group must be of type ['TsGroup']."
+    )
 
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(TypeError) as e_info:
         nap.compute_event_trigger_average(spikes, np.array(10), 0.1, (0.5, 0.5), ep)
-    assert str(e_info.value) == "Feature should be a Tsd, TsdFrame or TsdTensor"
+    assert (
+        str(e_info.value)
+        == "Invalid type. Parameter feature must be of type ['Tsd', 'TsdFrame', 'TsdTensor']."
+    )
 
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(TypeError) as e_info:
         nap.compute_event_trigger_average(spikes, feature, "0.1", (0.5, 0.5), ep)
-    assert str(e_info.value) == "binsize should be int or float."
+    assert (
+        str(e_info.value)
+        == "Invalid type. Parameter binsize must be of type ['Number']."
+    )
 
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(TypeError) as e_info:
         nap.compute_event_trigger_average(
             spikes, feature, 0.1, (0.5, 0.5), ep, time_unit=1
         )
-    assert str(e_info.value) == "time_unit should be a str."
+    assert (
+        str(e_info.value)
+        == "Invalid type. Parameter time_unit must be of type ['str']."
+    )
 
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(RuntimeError) as e_info:
         nap.compute_event_trigger_average(
             spikes, feature, 0.1, (0.5, 0.5), ep, time_unit="a"
         )
     assert str(e_info.value) == "time_unit should be 's', 'ms' or 'us'"
 
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(RuntimeError) as e_info:
         nap.compute_event_trigger_average(spikes, feature, 0.1, (0.5, 0.5, 0.5), ep)
-    assert str(e_info.value) == "windowsize should be a tuple of 2 elements (-t, +t)"
+    assert (
+        str(e_info.value)
+        == "windowsize should be a tuple of 2 numbers or a single number."
+    )
 
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(RuntimeError) as e_info:
         nap.compute_event_trigger_average(spikes, feature, 0.1, ("a", "b"), ep)
-    assert str(e_info.value) == "windowsize should be a tuple of int/float"
+    assert (
+        str(e_info.value)
+        == "windowsize should be a tuple of 2 numbers or a single number."
+    )
 
-    with pytest.raises(Exception) as e_info:
+    with pytest.raises(TypeError) as e_info:
         nap.compute_event_trigger_average(spikes, feature, 0.1, (0.5, 0.5), [1, 2, 3])
-    assert str(e_info.value) == "ep should be an IntervalSet object."
+    assert (
+        str(e_info.value)
+        == "Invalid type. Parameter ep must be of type ['IntervalSet']."
+    )
 
 
 def test_compute_spike_trigger_average_time_unit():

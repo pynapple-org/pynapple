@@ -60,5 +60,10 @@ Wavelet decomposion <user_guide/11_wavelets>
 ```{toctree}
 Filtering time series <user_guide/12_filtering>
 ```
+
+```{toctree}
+Building trial-based tensor <user_guide/13_warping>
+```
+
 :::
 
