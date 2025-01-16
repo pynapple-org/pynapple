@@ -382,7 +382,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         t, d = _bin_average(time_array, data_array, starts, ends, bin_size)
 
-        return _initialize_tsd_output(self, d, time_index=t)
+        return _initialize_tsd_output(self, d, time_index=t, time_support=ep)
 
     def dropna(self, update_time_support=True):
         """Drop every row containing NaNs. By default, the time support is updated to start and end around the time points that are non NaNs.
@@ -477,7 +477,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         new_data_array = _convolve(time_array, data_array, starts, ends, array, trim)
 
-        return _initialize_tsd_output(self, new_data_array, time_index=time_array)
+        return _initialize_tsd_output(self, new_data_array, time_index=time_array, time_support=ep)
 
     def smooth(self, std, windowsize=None, time_units="s", size_factor=100, norm=True):
         """Smooth a time series with a gaussian kernel.
@@ -634,7 +634,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
             start += len(t)
 
-        return _initialize_tsd_output(self, new_d, time_index=new_t)
+        return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)
 
 
 class TsdTensor(_BaseTsd):
