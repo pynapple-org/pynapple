@@ -650,18 +650,30 @@ class TestTimeSeriesGeneral:
 )
 class TestTsd:
 
-    def test_bin_average_time_support(self, tsd):
-        ep = nap.IntervalSet(tsd.time_support.start[0] + 1, tsd.time_support.end[0] - 1)
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_bin_average_time_support(self, tsd, delta_ep):
+        ep = nap.IntervalSet(
+            tsd.time_support.start[0] + delta_ep[0],
+            tsd.time_support.end[0] + delta_ep[1],
+        )
         out = tsd.bin_average(0.1, ep=ep)
         assert np.all(out.time_support == ep)
 
-    def test_convolve_time_support(self, tsd):
-        ep = nap.IntervalSet(tsd.time_support.start[0] + 1, tsd.time_support.end[0] - 1)
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_convolve_time_support(self, tsd, delta_ep):
+        ep = nap.IntervalSet(
+            tsd.time_support.start[0] + delta_ep[0],
+            tsd.time_support.end[0] + delta_ep[1],
+        )
         out = tsd.convolve(np.ones(10), ep=ep)
         assert np.all(out.time_support == ep)
 
-    def test_interpolate_time_support(self, tsd):
-        ep = nap.IntervalSet(tsd.time_support.start[0] + 1, tsd.time_support.end[0] - 1)
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_interpolate_time_support(self, tsd, delta_ep):
+        ep = nap.IntervalSet(
+            tsd.time_support.start[0] + delta_ep[0],
+            tsd.time_support.end[0] + delta_ep[1],
+        )
         ts = nap.Ts(np.linspace(0, 10, 20))
         out = tsd.interpolate(ts, ep=ep)
         assert np.all(out.time_support == ep)
@@ -996,23 +1008,29 @@ class TestTsd:
 )
 class TestTsdFrame:
 
-    def test_bin_average_time_support(self, tsdframe):
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_bin_average_time_support(self, tsdframe, delta_ep):
         ep = nap.IntervalSet(
-            tsdframe.time_support.start[0] + 1, tsdframe.time_support.end[0] - 1
+            tsdframe.time_support.start[0] + delta_ep[0],
+            tsdframe.time_support.end[0] + delta_ep[1],
         )
         out = tsdframe.bin_average(0.1, ep=ep)
         assert np.all(out.time_support == ep)
 
-    def test_convolve_time_support(self, tsdframe):
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_convolve_time_support(self, tsdframe, delta_ep):
         ep = nap.IntervalSet(
-            tsdframe.time_support.start[0] + 1, tsdframe.time_support.end[0] - 1
+            tsdframe.time_support.start[0] + delta_ep[0],
+            tsdframe.time_support.end[0] + delta_ep[1],
         )
         out = tsdframe.convolve(np.ones(10), ep=ep)
         assert np.all(out.time_support == ep)
 
-    def test_interpolate_time_support(self, tsdframe):
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_interpolate_time_support(self, tsdframe, delta_ep):
         ep = nap.IntervalSet(
-            tsdframe.time_support.start[0] + 1, tsdframe.time_support.end[0] - 1
+            tsdframe.time_support.start[0] + delta_ep[0],
+            tsdframe.time_support.end[0] + delta_ep[1],
         )
         ts = nap.Ts(np.linspace(0, 10, 20))
         out = tsdframe.interpolate(ts, ep=ep)
@@ -1629,23 +1647,29 @@ class TestTs:
 )
 class TestTsdTensor:
 
-    def test_bin_average_time_support(self, tsdtensor):
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_bin_average_time_support(self, delta_ep, tsdtensor):
         ep = nap.IntervalSet(
-            tsdtensor.time_support.start[0] + 1, tsdtensor.time_support.end[0] - 1
+            tsdtensor.time_support.start[0] + delta_ep[0],
+            tsdtensor.time_support.end[0] + delta_ep[1],
         )
         out = tsdtensor.bin_average(0.1, ep=ep)
         assert np.all(out.time_support == ep)
 
-    def test_convolve_time_support(self, tsdtensor):
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_convolve_time_support(self, tsdtensor, delta_ep):
         ep = nap.IntervalSet(
-            tsdtensor.time_support.start[0] + 1, tsdtensor.time_support.end[0] - 1
+            tsdtensor.time_support.start[0] + delta_ep[0],
+            tsdtensor.time_support.end[0] + delta_ep[1],
         )
         out = tsdtensor.convolve(np.ones(10), ep=ep)
         assert np.all(out.time_support == ep)
 
-    def test_interpolate_time_support(self, tsdtensor):
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_interpolate_time_support(self, tsdtensor, delta_ep):
         ep = nap.IntervalSet(
-            tsdtensor.time_support.start[0] + 1, tsdtensor.time_support.end[0] - 1
+            tsdtensor.time_support.start[0] + delta_ep[0],
+            tsdtensor.time_support.end[0] + delta_ep[1],
         )
         ts = nap.Ts(np.linspace(0, 10, 20))
         out = tsdtensor.interpolate(ts, ep=ep)
