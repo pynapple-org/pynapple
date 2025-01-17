@@ -18,6 +18,10 @@ of the Flatiron institute.
 
 ## Releases
 
+### 0.8.1 (2025-01-17)
+
+- Bugfix : time support was not updated for `bin_average` and `interpolate` with new `_initialize_tsd_output` method 
+
 ### 0.8.0 (2025-01-15)
 
 - New private class: `_MetadataMixin` (core/metadata_class.py). Can be inherited by `IntervalSet`, `TsdFrame` and `TsGroup`.
