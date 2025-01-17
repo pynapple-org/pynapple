@@ -649,6 +649,35 @@ class TestTimeSeriesGeneral:
     ],
 )
 class TestTsd:
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_bin_average_time_support(self, tsd, delta_ep):
+        ep = nap.IntervalSet(
+            tsd.time_support.start[0] + delta_ep[0],
+            tsd.time_support.end[0] + delta_ep[1],
+        )
+        out = tsd.bin_average(0.1, ep=ep)
+        assert np.all(out.time_support == ep)
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_convolve_time_support(self, tsd, delta_ep):
+        ep = nap.IntervalSet(
+            tsd.time_support.start[0] + delta_ep[0],
+            tsd.time_support.end[0] + delta_ep[1],
+        )
+        out = tsd.convolve(np.ones(10), ep=ep)
+        assert np.all(out.time_support == ep)
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_interpolate_time_support(self, tsd, delta_ep):
+        ep = nap.IntervalSet(
+            tsd.time_support.start[0] + delta_ep[0],
+            tsd.time_support.end[0] + delta_ep[1],
+        )
+        ts = nap.Ts(np.linspace(0, 10, 20))
+        out = tsd.interpolate(ts, ep=ep)
+        assert np.all(out.time_support == ep)
+
     def test_as_series(self, tsd):
         assert isinstance(tsd.as_series(), pd.Series)
 
@@ -978,6 +1007,35 @@ class TestTsd:
     ],
 )
 class TestTsdFrame:
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_bin_average_time_support(self, tsdframe, delta_ep):
+        ep = nap.IntervalSet(
+            tsdframe.time_support.start[0] + delta_ep[0],
+            tsdframe.time_support.end[0] + delta_ep[1],
+        )
+        out = tsdframe.bin_average(0.1, ep=ep)
+        assert np.all(out.time_support == ep)
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_convolve_time_support(self, tsdframe, delta_ep):
+        ep = nap.IntervalSet(
+            tsdframe.time_support.start[0] + delta_ep[0],
+            tsdframe.time_support.end[0] + delta_ep[1],
+        )
+        out = tsdframe.convolve(np.ones(10), ep=ep)
+        assert np.all(out.time_support == ep)
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_interpolate_time_support(self, tsdframe, delta_ep):
+        ep = nap.IntervalSet(
+            tsdframe.time_support.start[0] + delta_ep[0],
+            tsdframe.time_support.end[0] + delta_ep[1],
+        )
+        ts = nap.Ts(np.linspace(0, 10, 20))
+        out = tsdframe.interpolate(ts, ep=ep)
+        assert np.all(out.time_support == ep)
+
     def test_as_dataframe(self, tsdframe):
         assert isinstance(tsdframe.as_dataframe(), pd.DataFrame)
 
@@ -1588,6 +1646,34 @@ class TestTs:
     ],
 )
 class TestTsdTensor:
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_bin_average_time_support(self, delta_ep, tsdtensor):
+        ep = nap.IntervalSet(
+            tsdtensor.time_support.start[0] + delta_ep[0],
+            tsdtensor.time_support.end[0] + delta_ep[1],
+        )
+        out = tsdtensor.bin_average(0.1, ep=ep)
+        assert np.all(out.time_support == ep)
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_convolve_time_support(self, tsdtensor, delta_ep):
+        ep = nap.IntervalSet(
+            tsdtensor.time_support.start[0] + delta_ep[0],
+            tsdtensor.time_support.end[0] + delta_ep[1],
+        )
+        out = tsdtensor.convolve(np.ones(10), ep=ep)
+        assert np.all(out.time_support == ep)
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_interpolate_time_support(self, tsdtensor, delta_ep):
+        ep = nap.IntervalSet(
+            tsdtensor.time_support.start[0] + delta_ep[0],
+            tsdtensor.time_support.end[0] + delta_ep[1],
+        )
+        ts = nap.Ts(np.linspace(0, 10, 20))
+        out = tsdtensor.interpolate(ts, ep=ep)
+        assert np.all(out.time_support == ep)
 
     def test_return_ndarray(self, tsdtensor):
         np.testing.assert_array_equal(tsdtensor[0], tsdtensor.values[0])
