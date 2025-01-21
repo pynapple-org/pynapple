@@ -46,11 +46,9 @@ def _validate_spectrum_inputs(func):
 
 
 @_validate_spectrum_inputs
-def compute_power_spectral_density(
-    sig, fs=None, ep=None, full_range=False, norm=False, n=None
-):
+def compute_fft(sig, fs=None, ep=None, full_range=False, norm=False, n=None):
     """
-    Compute Power Spectral Density over a single epoch.
+    Compute Fast Fourier Transform over a single epoch.
     Perform numpy fft on sig, returns output assuming a constant sampling rate for the signal.
 
     Parameters
@@ -74,7 +72,7 @@ def compute_power_spectral_density(
     -------
     pandas.DataFrame
         Time frequency representation of the input signal, indexes are frequencies, values
-        are powers.
+        are the FFT.
 
     Notes
     -----
@@ -102,6 +100,57 @@ def compute_power_spectral_density(
     if not full_range:
         return ret.loc[ret.index >= 0]
     return ret
+
+
+@_validate_spectrum_inputs
+def compute_power_spectral_density(sig, fs=None, ep=None, n=None):
+    """
+    Compute Power Spectral Density over a single epoch.
+    Perform numpy fft on sig and obtain the periodogram, returns output assuming a constant sampling rate for the signal.
+
+    Parameters
+    ----------
+    sig : pynapple.Tsd or pynapple.TsdFrame
+        Time series.
+    fs : float, optional
+        Sampling rate, in Hz. If None, will be calculated from the given signal
+    ep : None or pynapple.IntervalSet, optional
+        The epoch to calculate the fft on. Must be length 1.
+    n: int, optional
+        Length of the transformed axis of the output. If n is smaller than the length of the input,
+        the input is cropped. If it is larger, the input is padded with zeros. If n is not given,
+        the length of the input along the axis specified by axis is used.
+
+    Returns
+    -------
+    pandas.DataFrame
+        Power spectral density of the input signal, indexes are frequencies, values
+        are powers/frequency.
+
+    Notes
+    -----
+    This function computes fft on only a single epoch of data. This epoch be given with the ep
+    parameter otherwise will be sig.time_support, but it must only be a single epoch.
+
+    The power spectral density is calculated as the square of the absolute value of the FFT, scaled by the sampling rate and length of the signal.
+    See [this tutorial](https://www.mathworks.com/help/signal/ug/power-spectral-density-estimates-using-fft.html) for more information.
+    """
+
+    fft = nap.compute_fft(sig, fs=fs, ep=ep, n=n)
+    N = len(sig.restrict(ep))
+
+    # transform to power spectral density, power/Hz
+    psd = (1 / (fs * N)) * np.abs(fft) ** 2
+
+    # frequencies not at 0 and not at the nyquist frequency occur twice
+    # subtract from the nyquist frequency to adjust for floating point error in np.fft.fftfreq
+    # nyquist freq may occur at negative end of frequencies if N is even
+    doubled_freqs = (
+        (fft.index != 0) & (fft.index < (fs / 2 - 1e-6)) & (fft.index > (fs / 2 + 1e-6))
+    )
+    psd[doubled_freqs] *= 2
+
+    return psd
 
 
 @_validate_spectrum_inputs
