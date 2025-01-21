@@ -160,7 +160,9 @@ def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False, n=No
     # subtract from the nyquist frequency to adjust for floating point error in np.fft.fftfreq
     # nyquist freq may occur at negative end of frequencies if N is even
     doubled_freqs = (
-        (fft.index != 0) & (fft.index < (fs / 2 - 1e-6)) & (fft.index > (fs / 2 + 1e-6))
+        (fft.index != 0)  # not 0
+        & (fft.index < (fs / 2 - 1e-6))  # less than positive nyquist freq
+        & (fft.index > (-fs / 2 + 1e-6))  # greater than negative nyquist freq
     )
     psd[doubled_freqs] *= 2
 
