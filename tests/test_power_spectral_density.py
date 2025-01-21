@@ -22,12 +22,21 @@ def get_sorted_fft(data, fs):
     return fft_freq[order], fft[order]
 
 
-def get_periodogram(data, fs):
-    f, p = signal.periodogram(data, fs, return_onesided=False, detrend=False, axis=0)
-    order = np.argsort(f)
+def get_periodogram(data, fs, full_range=False):
+    return_onesided = not full_range
+    f, p = signal.periodogram(
+        data, fs, return_onesided=return_onesided, detrend=False, axis=0
+    )
     if p.ndim == 1:
         p = p[:, np.newaxis]
-    return f[order], p[order]
+    if full_range:
+        order = np.argsort(f)
+        f = f[order]
+        p = p[order]
+    else:
+        f = f[:-1]
+        p = p[:-1]
+    return f, p
 
 
 def test_compute_fft():
@@ -102,7 +111,7 @@ def test_compute_power_spectral_density():
     assert isinstance(r, pd.DataFrame)
     assert r.shape == (1000, 4)
 
-    a, b = get_periodogram(sig.values, sig.rate)
+    a, b = get_periodogram(sig.values, sig.rate, full_range=True)
     np.testing.assert_array_almost_equal(r.index.values, a)
     np.testing.assert_array_almost_equal(r.values, b)
 
