@@ -78,6 +78,8 @@ def compute_fft(sig, fs=None, ep=None, full_range=False, norm=False, n=None):
     -----
     This function computes fft on only a single epoch of data. This epoch be given with the ep
     parameter otherwise will be sig.time_support, but it must only be a single epoch.
+
+    If `full_range` is False, the nyquist frequency is excluded in the output due to how computes the FFT frequencies in `numpy.fft.fftfreq`.
     """
     if ep is None:
         ep = sig.time_support
@@ -103,7 +105,7 @@ def compute_fft(sig, fs=None, ep=None, full_range=False, norm=False, n=None):
 
 
 @_validate_spectrum_inputs
-def compute_power_spectral_density(sig, fs=None, ep=None, n=None):
+def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False, n=None):
     """
     Compute Power Spectral Density over a single epoch.
     Perform numpy fft on sig and obtain the periodogram, returns output assuming a constant sampling rate for the signal.
@@ -116,6 +118,8 @@ def compute_power_spectral_density(sig, fs=None, ep=None, n=None):
         Sampling rate, in Hz. If None, will be calculated from the given signal
     ep : None or pynapple.IntervalSet, optional
         The epoch to calculate the fft on. Must be length 1.
+    full_range : bool, optional
+        If true, will return full fft frequency range, otherwise will return only positive values
     n: int, optional
         Length of the transformed axis of the output. If n is smaller than the length of the input,
         the input is cropped. If it is larger, the input is padded with zeros. If n is not given,
@@ -134,13 +138,23 @@ def compute_power_spectral_density(sig, fs=None, ep=None, n=None):
 
     The power spectral density is calculated as the square of the absolute value of the FFT, scaled by the sampling rate and length of the signal.
     See [this tutorial](https://www.mathworks.com/help/signal/ug/power-spectral-density-estimates-using-fft.html) for more information.
+
+    If `full_range` is False, the nyquist frequency is excluded in the output due to how computes the FFT frequencies in `numpy.fft.fftfreq`.
     """
 
-    fft = compute_fft(sig, fs=fs, ep=ep, n=n)
-    N = len(sig.restrict(ep))
+    if ep is None:
+        ep = sig.time_support
+    if len(ep) != 1:
+        raise ValueError("Given epoch (or signal time_support) must have length 1")
+    if fs is None:
+        fs = sig.rate
+    if n is None:
+        n = len(sig.restrict(ep))
+
+    fft = compute_fft(sig, fs=fs, ep=ep, n=n, full_range=full_range)
 
     # transform to power spectral density, power/Hz
-    psd = (1 / (fs * N)) * np.abs(fft) ** 2
+    psd = (1 / (fs * n)) * np.abs(fft) ** 2
 
     # frequencies not at 0 and not at the nyquist frequency occur twice
     # subtract from the nyquist frequency to adjust for floating point error in np.fft.fftfreq
