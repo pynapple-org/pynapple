@@ -168,7 +168,7 @@ def compute_power_spectral_density(sig, fs=None, ep=None, full_range=False, n=No
 
 
 @_validate_spectrum_inputs
-def compute_mean_power_spectral_density(
+def compute_mean_fft(
     sig,
     interval_size,
     fs=None,
