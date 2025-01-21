@@ -25,6 +25,7 @@ from .randomize import (
 from .spectrum import (
     compute_mean_power_spectral_density,
     compute_power_spectral_density,
+    compute_fft,
 )
 from .tuning_curves import (
     compute_1d_mutual_info,

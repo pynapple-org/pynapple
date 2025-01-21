@@ -22,11 +22,11 @@ def get_sorted_fft(data, fs):
     return fft_freq[order], fft[order]
 
 
-def test_compute_power_spectral_density():
+def test_compute_fft():
 
     t = np.linspace(0, 1, 1000)
     sig = nap.Tsd(d=np.random.random(1000), t=t)
-    r = nap.compute_power_spectral_density(sig)
+    r = nap.compute_fft(sig)
     assert isinstance(r, pd.DataFrame)
     assert r.shape[0] == 500
 
@@ -34,11 +34,11 @@ def test_compute_power_spectral_density():
     np.testing.assert_array_almost_equal(r.index.values, a[a >= 0])
     np.testing.assert_array_almost_equal(r.values, b[a >= 0])
 
-    r = nap.compute_power_spectral_density(sig, norm=True)
+    r = nap.compute_fft(sig, norm=True)
     np.testing.assert_array_almost_equal(r.values, b[a >= 0] / len(sig))
 
     sig = nap.TsdFrame(d=np.random.random((1000, 4)), t=t)
-    r = nap.compute_power_spectral_density(sig)
+    r = nap.compute_fft(sig)
     assert isinstance(r, pd.DataFrame)
     assert r.shape == (500, 4)
 
@@ -47,7 +47,7 @@ def test_compute_power_spectral_density():
     np.testing.assert_array_almost_equal(r.values, b[a >= 0])
 
     sig = nap.TsdFrame(d=np.random.random((1000, 4)), t=t)
-    r = nap.compute_power_spectral_density(sig, full_range=True)
+    r = nap.compute_fft(sig, full_range=True)
     assert isinstance(r, pd.DataFrame)
     assert r.shape == (1000, 4)
 
@@ -57,15 +57,61 @@ def test_compute_power_spectral_density():
 
     t = np.linspace(0, 1, 1000)
     sig = nap.Tsd(d=np.random.random(1000), t=t)
-    r = nap.compute_power_spectral_density(sig, ep=sig.time_support)
+    r = nap.compute_fft(sig, ep=sig.time_support)
     assert isinstance(r, pd.DataFrame)
     assert r.shape[0] == 500
 
     t = np.linspace(0, 1, 1000)
     sig = nap.Tsd(d=np.random.random(1000), t=t)
-    r = nap.compute_power_spectral_density(sig, fs=1000)
+    r = nap.compute_fft(sig, fs=1000)
     assert isinstance(r, pd.DataFrame)
     assert r.shape[0] == 500
+
+
+# def test_compute_power_spectral_density():
+
+#     t = np.linspace(0, 1, 1000)
+#     sig = nap.Tsd(d=np.random.random(1000), t=t)
+#     r = nap.compute_power_spectral_density(sig)
+#     assert isinstance(r, pd.DataFrame)
+#     assert r.shape[0] == 500
+
+#     a, b = get_sorted_fft(sig.values, sig.rate)
+#     np.testing.assert_array_almost_equal(r.index.values, a[a >= 0])
+#     np.testing.assert_array_almost_equal(r.values, b[a >= 0])
+
+#     r = nap.compute_power_spectral_density(sig, norm=True)
+#     np.testing.assert_array_almost_equal(r.values, b[a >= 0] / len(sig))
+
+#     sig = nap.TsdFrame(d=np.random.random((1000, 4)), t=t)
+#     r = nap.compute_power_spectral_density(sig)
+#     assert isinstance(r, pd.DataFrame)
+#     assert r.shape == (500, 4)
+
+#     a, b = get_sorted_fft(sig.values, sig.rate)
+#     np.testing.assert_array_almost_equal(r.index.values, a[a >= 0])
+#     np.testing.assert_array_almost_equal(r.values, b[a >= 0])
+
+#     sig = nap.TsdFrame(d=np.random.random((1000, 4)), t=t)
+#     r = nap.compute_power_spectral_density(sig, full_range=True)
+#     assert isinstance(r, pd.DataFrame)
+#     assert r.shape == (1000, 4)
+
+#     a, b = get_sorted_fft(sig.values, sig.rate)
+#     np.testing.assert_array_almost_equal(r.index.values, a)
+#     np.testing.assert_array_almost_equal(r.values, b)
+
+#     t = np.linspace(0, 1, 1000)
+#     sig = nap.Tsd(d=np.random.random(1000), t=t)
+#     r = nap.compute_power_spectral_density(sig, ep=sig.time_support)
+#     assert isinstance(r, pd.DataFrame)
+#     assert r.shape[0] == 500
+
+#     t = np.linspace(0, 1, 1000)
+#     sig = nap.Tsd(d=np.random.random(1000), t=t)
+#     r = nap.compute_power_spectral_density(sig, fs=1000)
+#     assert isinstance(r, pd.DataFrame)
+#     assert r.shape[0] == 500
 
 
 @pytest.mark.parametrize(
@@ -135,9 +181,9 @@ def test_compute_power_spectral_density():
         ),
     ],
 )
-def test_compute_power_spectral_density_raise_errors(sig, kwargs, expectation):
+def test_compute_fft_raise_errors(sig, kwargs, expectation):
     with expectation:
-        nap.compute_power_spectral_density(sig, **kwargs)
+        nap.compute_fft(sig, **kwargs)
 
 
 ############################################################

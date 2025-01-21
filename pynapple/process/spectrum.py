@@ -136,7 +136,7 @@ def compute_power_spectral_density(sig, fs=None, ep=None, n=None):
     See [this tutorial](https://www.mathworks.com/help/signal/ug/power-spectral-density-estimates-using-fft.html) for more information.
     """
 
-    fft = nap.compute_fft(sig, fs=fs, ep=ep, n=n)
+    fft = compute_fft(sig, fs=fs, ep=ep, n=n)
     N = len(sig.restrict(ep))
 
     # transform to power spectral density, power/Hz
