@@ -22,7 +22,7 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 New release :fire:
 ------------------
 
-### pynapple >= 0.8.1
+### pynapple >= 0.8.2
 
 The objects `IntervalSet`, `TsdFrame` and `TsGroup` inherits a new metadata class. It is now possible to add labels for 
 each interval of an `IntervalSet`, each column of a `TsdFrame` and each unit of a `TsGroup`.

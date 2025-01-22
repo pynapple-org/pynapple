@@ -22,10 +22,7 @@ from .randomize import (
     shift_timestamps,
     shuffle_ts_intervals,
 )
-from .spectrum import (
-    compute_mean_power_spectral_density,
-    compute_power_spectral_density,
-)
+from .spectrum import compute_fft, compute_mean_fft, compute_power_spectral_density
 from .tuning_curves import (
     compute_1d_mutual_info,
     compute_1d_tuning_curves,

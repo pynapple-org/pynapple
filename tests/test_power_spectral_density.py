@@ -22,11 +22,28 @@ def get_sorted_fft(data, fs):
     return fft_freq[order], fft[order]
 
 
-def test_compute_power_spectral_density():
+def get_periodogram(data, fs, full_range=False):
+    return_onesided = not full_range
+    f, p = signal.periodogram(
+        data, fs, return_onesided=return_onesided, detrend=False, axis=0
+    )
+    if p.ndim == 1:
+        p = p[:, np.newaxis]
+    if full_range:
+        order = np.argsort(f)
+        f = f[order]
+        p = p[order]
+    else:
+        f = f[:-1]
+        p = p[:-1]
+    return f, p
+
+
+def test_compute_fft():
 
     t = np.linspace(0, 1, 1000)
     sig = nap.Tsd(d=np.random.random(1000), t=t)
-    r = nap.compute_power_spectral_density(sig)
+    r = nap.compute_fft(sig)
     assert isinstance(r, pd.DataFrame)
     assert r.shape[0] == 500
 
@@ -34,11 +51,11 @@ def test_compute_power_spectral_density():
     np.testing.assert_array_almost_equal(r.index.values, a[a >= 0])
     np.testing.assert_array_almost_equal(r.values, b[a >= 0])
 
-    r = nap.compute_power_spectral_density(sig, norm=True)
+    r = nap.compute_fft(sig, norm=True)
     np.testing.assert_array_almost_equal(r.values, b[a >= 0] / len(sig))
 
     sig = nap.TsdFrame(d=np.random.random((1000, 4)), t=t)
-    r = nap.compute_power_spectral_density(sig)
+    r = nap.compute_fft(sig)
     assert isinstance(r, pd.DataFrame)
     assert r.shape == (500, 4)
 
@@ -47,11 +64,54 @@ def test_compute_power_spectral_density():
     np.testing.assert_array_almost_equal(r.values, b[a >= 0])
 
     sig = nap.TsdFrame(d=np.random.random((1000, 4)), t=t)
-    r = nap.compute_power_spectral_density(sig, full_range=True)
+    r = nap.compute_fft(sig, full_range=True)
     assert isinstance(r, pd.DataFrame)
     assert r.shape == (1000, 4)
 
     a, b = get_sorted_fft(sig.values, sig.rate)
+    np.testing.assert_array_almost_equal(r.index.values, a)
+    np.testing.assert_array_almost_equal(r.values, b)
+
+    t = np.linspace(0, 1, 1000)
+    sig = nap.Tsd(d=np.random.random(1000), t=t)
+    r = nap.compute_fft(sig, ep=sig.time_support)
+    assert isinstance(r, pd.DataFrame)
+    assert r.shape[0] == 500
+
+    t = np.linspace(0, 1, 1000)
+    sig = nap.Tsd(d=np.random.random(1000), t=t)
+    r = nap.compute_fft(sig, fs=1000)
+    assert isinstance(r, pd.DataFrame)
+    assert r.shape[0] == 500
+
+
+def test_compute_power_spectral_density():
+
+    t = np.linspace(0, 1, 1000)
+    sig = nap.Tsd(d=np.random.random(1000), t=t)
+    r = nap.compute_power_spectral_density(sig)
+    assert isinstance(r, pd.DataFrame)
+    assert r.shape[0] == 500
+
+    a, b = get_periodogram(sig.values, sig.rate)
+    np.testing.assert_array_almost_equal(r.index.values, a[a >= 0])
+    np.testing.assert_array_almost_equal(r.values, b[a >= 0])
+
+    sig = nap.TsdFrame(d=np.random.random((1000, 4)), t=t)
+    r = nap.compute_power_spectral_density(sig)
+    assert isinstance(r, pd.DataFrame)
+    assert r.shape == (500, 4)
+
+    a, b = get_periodogram(sig.values, sig.rate)
+    np.testing.assert_array_almost_equal(r.index.values, a[a >= 0])
+    np.testing.assert_array_almost_equal(r.values, b[a >= 0])
+
+    sig = nap.TsdFrame(d=np.random.random((1000, 4)), t=t)
+    r = nap.compute_power_spectral_density(sig, full_range=True)
+    assert isinstance(r, pd.DataFrame)
+    assert r.shape == (1000, 4)
+
+    a, b = get_periodogram(sig.values, sig.rate, full_range=True)
     np.testing.assert_array_almost_equal(r.index.values, a)
     np.testing.assert_array_almost_equal(r.values, b)
 
@@ -135,9 +195,12 @@ def test_compute_power_spectral_density():
         ),
     ],
 )
-def test_compute_power_spectral_density_raise_errors(sig, kwargs, expectation):
+def test_compute_fft_raise_errors(sig, kwargs, expectation):
     with expectation:
-        nap.compute_power_spectral_density(sig, **kwargs)
+        nap.compute_fft(sig, **kwargs)
+    if "norm" not in kwargs:
+        with expectation:
+            nap.compute_power_spectral_density(sig, **kwargs)
 
 
 ############################################################
@@ -172,23 +235,23 @@ def get_signal_and_output(f=2, fs=1000, duration=100, interval_size=10, overlap=
     return (sig, out, freq)
 
 
-def test_compute_mean_power_spectral_density():
+def test_compute_mean_fft():
     sig, out, freq = get_signal_and_output()
-    psd = nap.compute_mean_power_spectral_density(sig, 10)
+    psd = nap.compute_mean_fft(sig, 10)
     assert isinstance(psd, pd.DataFrame)
     assert psd.shape[0] > 0  # Check that the psd DataFrame is not empty
     np.testing.assert_array_almost_equal(psd.values.flatten(), out[freq >= 0])
     np.testing.assert_array_almost_equal(psd.index.values, freq[freq >= 0])
 
     # Full range
-    psd = nap.compute_mean_power_spectral_density(sig, 10, full_range=True)
+    psd = nap.compute_mean_fft(sig, 10, full_range=True)
     assert isinstance(psd, pd.DataFrame)
     assert psd.shape[0] > 0  # Check that the psd DataFrame is not empty
     np.testing.assert_array_almost_equal(psd.values.flatten(), out)
     np.testing.assert_array_almost_equal(psd.index.values, freq)
 
     # Norm
-    psd = nap.compute_mean_power_spectral_density(sig, 10, norm=True)
+    psd = nap.compute_mean_fft(sig, 10, norm=True)
     assert isinstance(psd, pd.DataFrame)
     assert psd.shape[0] > 0  # Check that the psd DataFrame is not empty
     np.testing.assert_array_almost_equal(
@@ -200,7 +263,7 @@ def test_compute_mean_power_spectral_density():
     sig2 = nap.TsdFrame(
         t=sig.t, d=np.repeat(sig.values[:, None], 2, 1), time_support=sig.time_support
     )
-    psd = nap.compute_mean_power_spectral_density(sig2, 10, full_range=True)
+    psd = nap.compute_mean_fft(sig2, 10, full_range=True)
     assert isinstance(psd, pd.DataFrame)
     assert psd.shape[0] > 0  # Check that the psd DataFrame is not empty
     np.testing.assert_array_almost_equal(psd.values, np.repeat(out[:, None], 2, 1))
@@ -210,7 +273,7 @@ def test_compute_mean_power_spectral_density():
     sig2 = nap.TsdFrame(
         t=sig.t, d=np.repeat(sig.values[:, None], 2, 1), time_support=sig.time_support
     )
-    psd = nap.compute_mean_power_spectral_density(sig2, 10, full_range=True, fs=1000)
+    psd = nap.compute_mean_fft(sig2, 10, full_range=True, fs=1000)
     assert isinstance(psd, pd.DataFrame)
     assert psd.shape[0] > 0  # Check that the psd DataFrame is not empty
     np.testing.assert_array_almost_equal(psd.values, np.repeat(out[:, None], 2, 1))
@@ -329,8 +392,6 @@ def test_compute_mean_power_spectral_density():
         ),
     ],
 )
-def test_compute_mean_power_spectral_density_raise_errors(
-    sig, interval_size, kwargs, expectation
-):
+def test_compute_mean_fft_raise_errors(sig, interval_size, kwargs, expectation):
     with expectation:
-        nap.compute_mean_power_spectral_density(sig, interval_size, **kwargs)
+        nap.compute_mean_fft(sig, interval_size, **kwargs)

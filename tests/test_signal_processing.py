@@ -15,7 +15,7 @@ def test_generate_morlet_filterbank():
     fb = nap.generate_morlet_filterbank(
         freqs, fs, gaussian_width=1.5, window_length=1.0, precision=16
     )
-    power = np.abs(nap.compute_power_spectral_density(fb))
+    power = np.abs(nap.compute_fft(fb))
     for i, f in enumerate(freqs):
         # Check that peak freq matched expectation
         assert power.iloc[:, i].argmax() == np.abs(power.index - f).argmin()
@@ -25,7 +25,7 @@ def test_generate_morlet_filterbank():
     fb = nap.generate_morlet_filterbank(
         freqs, fs, gaussian_width=1.5, window_length=1.0, precision=16
     )
-    power = np.abs(nap.compute_power_spectral_density(fb))
+    power = np.abs(nap.compute_fft(fb))
     for i, f in enumerate(freqs):
         # Check that peak freq matched expectation
         assert power.iloc[:, i].argmax() == np.abs(power.index - f).argmin()
@@ -35,7 +35,7 @@ def test_generate_morlet_filterbank():
     fb = nap.generate_morlet_filterbank(
         freqs, fs, gaussian_width=3.5, window_length=1.0, precision=16
     )
-    power = np.abs(nap.compute_power_spectral_density(fb))
+    power = np.abs(nap.compute_fft(fb))
     for i, f in enumerate(freqs):
         # Check that peak freq matched expectation
         assert power.iloc[:, i].argmax() == np.abs(power.index - f).argmin()
@@ -45,7 +45,7 @@ def test_generate_morlet_filterbank():
     fb = nap.generate_morlet_filterbank(
         freqs, fs, gaussian_width=3.5, window_length=1.0, precision=16
     )
-    power = np.abs(nap.compute_power_spectral_density(fb))
+    power = np.abs(nap.compute_fft(fb))
     for i, f in enumerate(freqs):
         # Check that peak freq matched expectation
         assert power.iloc[:, i].argmax() == np.abs(power.index - f).argmin()
@@ -55,7 +55,7 @@ def test_generate_morlet_filterbank():
     fb = nap.generate_morlet_filterbank(
         freqs, fs, gaussian_width=1.5, window_length=3.0, precision=16
     )
-    power = np.abs(nap.compute_power_spectral_density(fb))
+    power = np.abs(nap.compute_fft(fb))
     for i, f in enumerate(freqs):
         # Check that peak freq matched expectation
         assert power.iloc[:, i].argmax() == np.abs(power.index - f).argmin()
@@ -65,7 +65,7 @@ def test_generate_morlet_filterbank():
     fb = nap.generate_morlet_filterbank(
         freqs, fs, gaussian_width=1.5, window_length=3.0, precision=16
     )
-    power = np.abs(nap.compute_power_spectral_density(fb))
+    power = np.abs(nap.compute_fft(fb))
     for i, f in enumerate(freqs):
         # Check that peak freq matched expectation
         assert power.iloc[:, i].argmax() == np.abs(power.index - f).argmin()
@@ -77,7 +77,7 @@ def test_generate_morlet_filterbank():
     fb = nap.generate_morlet_filterbank(
         freqs, fs, gaussian_width=1.0, window_length=1.0, precision=24
     )
-    power = np.abs(nap.compute_power_spectral_density(fb))
+    power = np.abs(nap.compute_fft(fb))
     for i, f in enumerate(freqs):
         gaussian_width = 1.0
         window_length = 1.0
@@ -97,7 +97,7 @@ def test_generate_morlet_filterbank():
     fb = nap.generate_morlet_filterbank(
         freqs, fs, gaussian_width=1.0, window_length=1.0, precision=24
     )
-    power = np.abs(nap.compute_power_spectral_density(fb))
+    power = np.abs(nap.compute_fft(fb))
     for i, f in enumerate(freqs):
         gaussian_width = 1.0
         window_length = 1.0
@@ -117,7 +117,7 @@ def test_generate_morlet_filterbank():
     fb = nap.generate_morlet_filterbank(
         freqs, fs, gaussian_width=4.0, window_length=1.0, precision=24
     )
-    power = np.abs(nap.compute_power_spectral_density(fb))
+    power = np.abs(nap.compute_fft(fb))
     for i, f in enumerate(freqs):
         gaussian_width = 4.0
         window_length = 1.0
@@ -137,7 +137,7 @@ def test_generate_morlet_filterbank():
     fb = nap.generate_morlet_filterbank(
         freqs, fs, gaussian_width=4.0, window_length=3.0, precision=24
     )
-    power = np.abs(nap.compute_power_spectral_density(fb))
+    power = np.abs(nap.compute_fft(fb))
     for i, f in enumerate(freqs):
         gaussian_width = 4.0
         window_length = 3.0
@@ -157,7 +157,7 @@ def test_generate_morlet_filterbank():
     fb = nap.generate_morlet_filterbank(
         freqs, fs, gaussian_width=3.5, window_length=1.25, precision=24
     )
-    power = np.abs(nap.compute_power_spectral_density(fb))
+    power = np.abs(nap.compute_fft(fb))
     for i, f in enumerate(freqs):
         gaussian_width = 3.5
         window_length = 1.25
