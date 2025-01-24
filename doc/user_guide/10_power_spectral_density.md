@@ -152,6 +152,7 @@ Let's compare `mean_psd` to `psd`. In both cases, the output is normalized and c
 plt.figure()
 plt.plot(10*np.log10(psd), label='PSD')
 plt.plot(10*np.log10(mean_psd), label='Mean PSD (20s)')
+
 plt.ylabel("Power/Frequency (dB/Hz)")
 plt.legend()
 plt.xlim(0, 15)

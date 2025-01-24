@@ -84,6 +84,11 @@ def test_compute_fft():
     assert isinstance(r, pd.DataFrame)
     assert r.shape[0] == 500
 
+    a, b = get_sorted_fft(np.hstack((sig.values, np.zeros(20))), sig.rate)
+    r = nap.compute_fft(sig, fs=1000, n = len(sig)+20, full_range=True)
+    np.testing.assert_array_almost_equal(r.index.values, a)
+    np.testing.assert_array_almost_equal(r.values, b)
+
 
 def test_compute_power_spectral_density():
 

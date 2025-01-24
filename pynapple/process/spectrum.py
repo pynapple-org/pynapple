@@ -223,8 +223,9 @@ def compute_mean_power_spectral_density(
     Returns
     -------
     pandas.DataFrame
-        Mean power spectral density of the input signal, indexes are frequencies, values
-        are powers/frequency.
+        Return mean power spectral density of the input signal.
+        Indexes are frequencies and values are powers/frequency.
+
 
     Notes
     -----
@@ -284,7 +285,7 @@ def compute_mean_power_spectral_density(
         window = window[:, np.newaxis]
 
     # Compute the PSD
-    psd_result = np.zeros((N, *sig.shape[1:]), dtype=float)
+    psd_result = np.zeros((N, *sig.shape[1:]), dtype=float) # Default
 
     for i in range(len(slices)):
         tmp = sig[slices[i, 0] : slices[i, 1]].values[0:N] * window
@@ -293,13 +294,11 @@ def compute_mean_power_spectral_density(
         # transform to power spectral density, power/Hz
         psd = (1 / (fs * N)) * (np.abs(fft) ** 2)
 
-        psd_result += psd
+        psd_result += psd #Default
 
     psd_result /= float(len(slices))
-
     ret = pd.DataFrame(psd_result, index=fft_freq)
     ret.sort_index(inplace=True)
-
     # frequencies not at 0 and not at the nyquist frequency occur twice
     # subtract from the nyquist frequency to adjust for floating point error in np.fft.fftfreq
     # nyquist freq may occur at negative end of frequencies if N is even
