@@ -18,6 +18,10 @@ of the Flatiron institute.
 
 ## Releases
 
+### 0.8.3 (2025-01-24)
+
+- `compute_mean_power_spectral_density` computes the mean periodogram.
+
 ### 0.8.2 (2025-01-22)
 
 - `compute_power_spectral_density` now computes the periodogram, where previously it was only computing the FFT
