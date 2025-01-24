@@ -285,7 +285,7 @@ def compute_mean_power_spectral_density(
         window = window[:, np.newaxis]
 
     # Compute the PSD
-    psd_result = np.zeros((N, *sig.shape[1:]), dtype=float) # Default
+    psd_result = np.zeros((N, *sig.shape[1:]), dtype=float)  # Default
 
     for i in range(len(slices)):
         tmp = sig[slices[i, 0] : slices[i, 1]].values[0:N] * window
@@ -294,7 +294,7 @@ def compute_mean_power_spectral_density(
         # transform to power spectral density, power/Hz
         psd = (1 / (fs * N)) * (np.abs(fft) ** 2)
 
-        psd_result += psd #Default
+        psd_result += psd  # Default
 
     psd_result /= float(len(slices))
     ret = pd.DataFrame(psd_result, index=fft_freq)

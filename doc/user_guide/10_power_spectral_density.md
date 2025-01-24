@@ -155,7 +155,7 @@ plt.plot(10*np.log10(mean_psd), label='Mean PSD (20s)')
 
 plt.ylabel("Power/Frequency (dB/Hz)")
 plt.legend()
-plt.xlim(0, 15)
+plt.xlim(0, 20)
 plt.xlabel("Frequency (Hz)")
 
 ```
