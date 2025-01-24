@@ -227,43 +227,40 @@ def get_signal_and_output(f=2, fs=1000, duration=100, interval_size=10, overlap=
     # tmp = d.reshape((int(duration / interval_size), int(fs * interval_size))).T
     # tmp = tmp[0:-1]
     tmp = tmp * signal.windows.hamming(tmp.shape[0])[:, np.newaxis]
-    out = np.sum(np.fft.fft(tmp, axis=0), 1)
-    freq = np.fft.fftfreq(out.shape[0], 1 / fs)
+    fft = np.fft.fft(tmp, axis=0)
+    psd = (1 / (fs * tmp.shape[0])) * (np.power(np.abs(fft), 2.0))
+    out = np.mean(psd, 1)
+    freq = np.fft.fftfreq(tmp.shape[0], 1 / fs)
     order = np.argsort(freq)
     out = out[order]
     freq = freq[order]
     return (sig, out, freq)
 
 
-def test_compute_mean_fft():
+def test_compute_mean_psd():
     sig, out, freq = get_signal_and_output()
-    psd = nap.compute_mean_fft(sig, 10)
+    out2 = np.copy(out[freq >= 0])
+    out2[out2 > 0] *= 2.0
+
+    psd = nap.compute_mean_power_spectral_density(sig, 10)
+
     assert isinstance(psd, pd.DataFrame)
     assert psd.shape[0] > 0  # Check that the psd DataFrame is not empty
-    np.testing.assert_array_almost_equal(psd.values.flatten(), out[freq >= 0])
+    np.testing.assert_array_almost_equal(psd.values.flatten(), out2)
     np.testing.assert_array_almost_equal(psd.index.values, freq[freq >= 0])
 
     # Full range
-    psd = nap.compute_mean_fft(sig, 10, full_range=True)
+    psd = nap.compute_mean_power_spectral_density(sig, 10, full_range=True)
     assert isinstance(psd, pd.DataFrame)
     assert psd.shape[0] > 0  # Check that the psd DataFrame is not empty
     np.testing.assert_array_almost_equal(psd.values.flatten(), out)
     np.testing.assert_array_almost_equal(psd.index.values, freq)
 
-    # Norm
-    psd = nap.compute_mean_fft(sig, 10, norm=True)
-    assert isinstance(psd, pd.DataFrame)
-    assert psd.shape[0] > 0  # Check that the psd DataFrame is not empty
-    np.testing.assert_array_almost_equal(
-        psd.values.flatten(), out[freq >= 0] / (10001.0 * 12.0)
-    )
-    np.testing.assert_array_almost_equal(psd.index.values, freq[freq >= 0])
-
     # TsdFrame
     sig2 = nap.TsdFrame(
         t=sig.t, d=np.repeat(sig.values[:, None], 2, 1), time_support=sig.time_support
     )
-    psd = nap.compute_mean_fft(sig2, 10, full_range=True)
+    psd = nap.compute_mean_power_spectral_density(sig2, 10, full_range=True)
     assert isinstance(psd, pd.DataFrame)
     assert psd.shape[0] > 0  # Check that the psd DataFrame is not empty
     np.testing.assert_array_almost_equal(psd.values, np.repeat(out[:, None], 2, 1))
@@ -273,7 +270,7 @@ def test_compute_mean_fft():
     sig2 = nap.TsdFrame(
         t=sig.t, d=np.repeat(sig.values[:, None], 2, 1), time_support=sig.time_support
     )
-    psd = nap.compute_mean_fft(sig2, 10, full_range=True, fs=1000)
+    psd = nap.compute_mean_power_spectral_density(sig2, 10, full_range=True, fs=1000)
     assert isinstance(psd, pd.DataFrame)
     assert psd.shape[0] > 0  # Check that the psd DataFrame is not empty
     np.testing.assert_array_almost_equal(psd.values, np.repeat(out[:, None], 2, 1))
@@ -331,17 +328,6 @@ def test_compute_mean_fft():
         (
             get_signal_and_output()[0],
             10,
-            {"norm": "a"},
-            pytest.raises(
-                TypeError,
-                match=re.escape(
-                    "Invalid type. Parameter norm must be of type <class 'bool'>."
-                ),
-            ),
-        ),
-        (
-            get_signal_and_output()[0],
-            10,
             {"overlap": "a"},
             pytest.raises(
                 TypeError,
@@ -392,6 +378,8 @@ def test_compute_mean_fft():
         ),
     ],
 )
-def test_compute_mean_fft_raise_errors(sig, interval_size, kwargs, expectation):
+def test_compute_mean_power_spectral_density_raise_errors(
+    sig, interval_size, kwargs, expectation
+):
     with expectation:
-        nap.compute_mean_fft(sig, interval_size, **kwargs)
+        nap.compute_mean_power_spectral_density(sig, interval_size, **kwargs)

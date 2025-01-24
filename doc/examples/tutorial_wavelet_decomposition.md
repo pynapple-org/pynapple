@@ -151,7 +151,7 @@ Let's take the Fourier transform of our data to get an initial insight into the 
 jupyter:
   outputs_hidden: false
 ---
-power = nap.compute_power_spectral_density(eeg, fs=FS, ep=wake_ep, norm=True)
+power = nap.compute_power_spectral_density(eeg, fs=FS, ep=wake_ep)
 
 print(power)
 ```
@@ -169,14 +169,14 @@ jupyter:
 ---
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
 ax.plot(
-    np.abs(power[(power.index >= 1.0) & (power.index <= 100)]),
+    power[(power.index >= 1.0) & (power.index <= 100)],
     alpha=0.5,
     label="LFP Frequency Power",
 )
 ax.axvspan(6, 10, color="red", alpha=0.1)
 ax.set_xlabel("Freq (Hz)")
-ax.set_ylabel("Frequency Power")
-ax.set_title("LFP Fourier Decomposition")
+ax.set_ylabel("Power/Frequency ")
+ax.set_title("LFP Power spectral density")
 ax.legend()
 ```
 
@@ -200,7 +200,7 @@ rest_ep = wake_ep.set_diff(run_ep)
 
 The function `nap.compute_power_spectral_density` takes signal with a single epoch to avoid artefacts between epochs jumps.
 
-To compare `run_ep` with `rest_ep`, we can use the function `nap.compute_mean_power_spectral_density` which avearge the FFT over multiple epochs of same duration. The parameter `interval_size` controls the duration of those epochs.
+To compare `run_ep` with `rest_ep`, we can use the function `nap.compute_mean_power_spectral_density` which average the FFT over multiple epochs of same duration. The parameter `interval_size` controls the duration of those epochs.
 
 In this case, `interval_size` is equal to 1.5 seconds.
 
@@ -211,10 +211,10 @@ jupyter:
   outputs_hidden: false
 ---
 power_run = nap.compute_mean_power_spectral_density(
-    eeg, 1.5, fs=FS, ep=run_ep, norm=True
+    eeg, 1.5, fs=FS, ep=run_ep
 )
 power_rest = nap.compute_mean_power_spectral_density(
-    eeg, 1.5, fs=FS, ep=rest_ep, norm=True
+    eeg, 1.5, fs=FS, ep=rest_ep
 )
 ```
 
@@ -228,20 +228,20 @@ jupyter:
 ---
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 4))
 ax.plot(
-    np.abs(power_run[(power_run.index >= 3.0) & (power_run.index <= 30)]),
+    power_run[(power_run.index >= 3.0) & (power_run.index <= 30)],
     alpha=1,
     label="Run",
     linewidth=2,
 )
 ax.plot(
-    np.abs(power_rest[(power_rest.index >= 3.0) & (power_rest.index <= 30)]),
+    power_rest[(power_rest.index >= 3.0) & (power_rest.index <= 30)],
     alpha=1,
     label="Rest",
     linewidth=2,
 )
 ax.axvspan(6, 10, color="red", alpha=0.1)
 ax.set_xlabel("Freq (Hz)")
-ax.set_ylabel("Frequency Power")
+ax.set_ylabel("Power/Frequency")
 ax.set_title("LFP Fourier Decomposition")
 ax.legend()
 ```
