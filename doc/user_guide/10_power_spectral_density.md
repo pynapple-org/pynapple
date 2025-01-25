@@ -40,7 +40,7 @@ Fs = 2000
 t = np.arange(0, 200, 1/Fs)
 sig = nap.Tsd(
     t=t,
-    d=np.cos(t*2*np.pi*F[0])+np.cos(t*2*np.pi*F[1])+np.random.normal(0, 3, len(t)),
+    d=np.cos(t*2*np.pi*F[0])+np.cos(t*2*np.pi*F[1])+2*np.random.normal(0, 3, len(t)),
     time_support = nap.IntervalSet(0, 200)
     )
 ```
@@ -54,21 +54,21 @@ plt.title("Signal")
 plt.xlabel("Time (s)")
 ```
 
-Computing power spectral density (PSD)
+Computing FFT
 --------------------------------------
 
-To compute a PSD of a signal, you can use the function `nap.compute_power_spectral_density`. With `norm=True`, the output of the FFT is divided by the length of the signal.
+To compute the FFT of a signal, you can use the function `nap.compute_fft`. With `norm=True`, the output of the FFT is divided by the length of the signal.
 
 
 ```{code-cell} ipython3
-psd = nap.compute_power_spectral_density(sig, norm=True)
+fft = nap.compute_fft(sig, norm=True)
 ```
 
 Pynapple returns a pandas DataFrame.
 
 
 ```{code-cell} ipython3
-print(psd)
+print(fft)
 ```
 
 It is then easy to plot it.
@@ -76,7 +76,7 @@ It is then easy to plot it.
 
 ```{code-cell} ipython3
 plt.figure()
-plt.plot(np.abs(psd))
+plt.plot(np.abs(fft))
 plt.xlabel("Frequency (Hz)")
 plt.ylabel("Amplitude")
 ```
@@ -88,7 +88,7 @@ Let's zoom on the first 20 Hz.
 
 ```{code-cell} ipython3
 plt.figure()
-plt.plot(np.abs(psd))
+plt.plot(np.abs(fft))
 plt.xlabel("Frequency (Hz)")
 plt.ylabel("Amplitude")
 plt.xlim(0, 20)
@@ -103,9 +103,29 @@ By default, pynapple assumes a constant sampling rate and a single epoch. For ex
 double_ep = nap.IntervalSet([0, 50], [20, 100])
 
 try:
-    nap.compute_power_spectral_density(sig, ep=double_ep)
+    nap.compute_fft(sig, ep=double_ep)
 except ValueError as e:
     print(e)
+```
+
+Computing power spectral density (PSD)
+--------------------------------------
+
+Power spectral density can be returned through the function `compute_power_spectral_density`. Contrary to `compute_fft`, the
+output is real-valued.
+
+```{code-cell} ipython3
+psd = nap.compute_power_spectral_density(sig, fs=Fs)
+```
+
+The output is also a pandas DataFrame.
+
+```{code-cell} ipython3
+plt.figure()
+plt.plot(psd)
+plt.xlabel("Frequency (Hz)")
+plt.ylabel("Power/Frequency")
+plt.xlim(0, 20)
 ```
 
 Computing mean PSD
@@ -116,26 +136,28 @@ It is possible to compute an average PSD over multiple epochs with the function 
 In this case, the argument `interval_size` determines the duration of each epochs upon which the FFT is computed.
 If not epochs is passed, the function will split the `time_support`.
 
-In this case, the FFT will be computed over epochs of 10 seconds.
+In this case, the FFT will be computed over epochs of 20 seconds.
 
 
 ```{code-cell} ipython3
-mean_psd = nap.compute_mean_power_spectral_density(sig, interval_size=20.0, norm=True)
+mean_psd = nap.compute_mean_power_spectral_density(sig, interval_size=20.0, fs=Fs)
 ```
 
-Let's compare `mean_psd` to `psd`. In both cases, the ouput is normalized.
+Let's compare `mean_psd` to `psd`. In both cases, the output is normalized and converted to dB.
 
 
 ```{code-cell} ipython3
 :tags: [hide-input]
 
 plt.figure()
-plt.plot(np.abs(psd), label='PSD')
-plt.plot(np.abs(mean_psd), label='Mean PSD (10s)')
-plt.xlabel("Frequency (Hz)")
-plt.ylabel("Amplitude")
+plt.plot(10*np.log10(psd), label='PSD')
+plt.plot(10*np.log10(mean_psd), label='Mean PSD (20s)')
+
+plt.ylabel("Power/Frequency (dB/Hz)")
 plt.legend()
-plt.xlim(0, 15)
+plt.xlim(0, 20)
+plt.xlabel("Frequency (Hz)")
+
 ```
 
 As we can see, `nap.compute_mean_power_spectral_density` was able to smooth out the noise.
