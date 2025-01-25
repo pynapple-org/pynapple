@@ -1,0 +1,6 @@
+pynapple.TsGroup.pop
+====================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.pop

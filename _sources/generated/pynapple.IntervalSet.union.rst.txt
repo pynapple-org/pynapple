@@ -1,0 +1,6 @@
+pynapple.IntervalSet.union
+==========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: IntervalSet.union

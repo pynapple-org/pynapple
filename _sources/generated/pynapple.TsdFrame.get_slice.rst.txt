@@ -1,0 +1,6 @@
+pynapple.TsdFrame.get\_slice
+============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.get_slice

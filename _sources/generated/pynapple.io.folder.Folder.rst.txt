@@ -1,0 +1,48 @@
+﻿pynapple.io.folder.Folder
+=========================
+
+.. currentmodule:: pynapple.io.folder
+
+.. autoclass:: Folder
+   :members:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Folder.__init__
+      ~Folder.clear
+      ~Folder.copy
+      ~Folder.doc
+      ~Folder.expand
+      ~Folder.fromkeys
+      ~Folder.get
+      ~Folder.info
+      ~Folder.items
+      ~Folder.keys
+      ~Folder.load
+      ~Folder.metadata
+      ~Folder.pop
+      ~Folder.popitem
+      ~Folder.save
+      ~Folder.setdefault
+      ~Folder.update
+      ~Folder.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Folder.view
+   
+   

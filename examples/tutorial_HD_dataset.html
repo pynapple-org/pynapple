@@ -1,0 +1,1366 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Analysing head-direction cells &#8212; pynapple 0.8.3 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_contributors.css?v=f079e67e" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=f2caec9a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=7f96dc5e"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=c57da192"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'examples/tutorial_HD_dataset';</script>
+    <link rel="icon" href="../_static/Pynapple_final_icon.png"/>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Streaming data from DANDI" href="tutorial_pynapple_dandi.html" />
+    <link rel="prev" title="Examples" href="../examples.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.8.3" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.8.3 documentation - Home"/>
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.8.3 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Analysing head-direction cells</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial_pynapple_dandi.html">Streaming data from Dandi</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial_calcium_imaging.html">Computing calcium imaging tuning curves</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial_human_dataset.html">Example perievent</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial_wavelet_decomposition.html">Example wavelet decomposition</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial_phase_preferences.html">Example filtering</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Analysing head-direction cells</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="analysing-head-direction-cells">
+<h1>Analysing head-direction cells<a class="headerlink" href="#analysing-head-direction-cells" title="Link to this heading">#</a></h1>
+<p>This tutorial demonstrates how we use Pynapple to generate Figure 4a in the <a class="reference external" href="https://elifesciences.org/reviewed-preprints/85786">publication</a>.
+The NWB file for the example is hosted on <a class="reference external" href="https://osf.io/jb2gd">OSF</a>. We show below how to stream it.
+The entire dataset can be downloaded <a class="reference external" href="https://dandiarchive.org/dandiset/000056">here</a>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="kn">import</span> <span class="nn">scipy.ndimage</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+<span class="kn">import</span> <span class="nn">requests</span><span class="o">,</span> <span class="nn">math</span><span class="o">,</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">tqdm</span>
+
+<span class="n">custom_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;axes.spines.right&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;axes.spines.top&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">set_theme</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s2">&quot;ticks&quot;</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="s2">&quot;colorblind&quot;</span><span class="p">,</span> <span class="n">font_scale</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">rc</span><span class="o">=</span><span class="n">custom_params</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<section id="downloading-the-data">
+<h2>Downloading the data<a class="headerlink" href="#downloading-the-data" title="Link to this heading">#</a></h2>
+<p>It’s a small NWB file.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">path</span> <span class="o">=</span> <span class="s2">&quot;Mouse32-140822.nwb&quot;</span>
+<span class="k">if</span> <span class="n">path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">):</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;https://osf.io/jb2gd/download&quot;</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">block_size</span> <span class="o">=</span> <span class="mi">1024</span><span class="o">*</span><span class="mi">1024</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">iter_content</span><span class="p">(</span><span class="n">block_size</span><span class="p">),</span> <span class="n">unit</span><span class="o">=</span><span class="s1">&#39;MB&#39;</span><span class="p">,</span> <span class="n">unit_scale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">total</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">r</span><span class="o">.</span><span class="n">headers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;content-length&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span><span class="o">//</span><span class="n">block_size</span><span class="p">)):</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  0%|          | 0.00/34.0 [00:00&lt;?, ?MB/s]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 18%|█▊        | 6.00/34.0 [00:00&lt;00:00, 57.4MB/s]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 35%|███▌      | 12.0/34.0 [00:00&lt;00:00, 56.0MB/s]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 53%|█████▎    | 18.0/34.0 [00:00&lt;00:00, 53.8MB/s]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 71%|███████   | 24.0/34.0 [00:00&lt;00:00, 55.5MB/s]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span> 88%|████████▊ | 30.0/34.0 [00:00&lt;00:00, 56.7MB/s]
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>35.0MB [00:00, 56.4MB/s]                          
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="parsing-the-data">
+<h2>Parsing the data<a class="headerlink" href="#parsing-the-data" title="Link to this heading">#</a></h2>
+<p>The first step is to load the data and other relevant variables of interest</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>  <span class="c1"># Load the NWB file for this dataset</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/home/runner/.local/lib/python3.12/site-packages/hdmf/spec/namespace.py:535: UserWarning: Ignoring cached namespace &#39;hdmf-common&#39; version 1.5.0 because version 1.8.0 is already loaded.
+  warn(&quot;Ignoring cached namespace &#39;%s&#39; version %s because version %s is already loaded.&quot;
+/home/runner/.local/lib/python3.12/site-packages/hdmf/spec/namespace.py:535: UserWarning: Ignoring cached namespace &#39;core&#39; version 2.4.0 because version 2.7.0 is already loaded.
+  warn(&quot;Ignoring cached namespace &#39;%s&#39; version %s because version %s is already loaded.&quot;
+/home/runner/.local/lib/python3.12/site-packages/hdmf/spec/namespace.py:535: UserWarning: Ignoring cached namespace &#39;hdmf-experimental&#39; version 0.1.0 because version 0.5.0 is already loaded.
+  warn(&quot;Ignoring cached namespace &#39;%s&#39; version %s because version %s is already loaded.&quot;
+</pre></div>
+</div>
+</div>
+</div>
+<p>What does this look like ?</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Mouse32-140822
+┍━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━┑
+│ Keys                  │ Type        │
+┝━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━┥
+│ units                 │ TsGroup     │
+│ sws                   │ IntervalSet │
+│ rem                   │ IntervalSet │
+│ position_time_support │ IntervalSet │
+│ epochs                │ IntervalSet │
+│ ry                    │ Tsd         │
+┕━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━┙
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="head-direction-tuning-curves">
+<h2>Head-Direction Tuning Curves<a class="headerlink" href="#head-direction-tuning-curves" title="Link to this heading">#</a></h2>
+<p>To plot Head-Direction Tuning curves, we need the spike timings and the orientation of the animal. These quantities are stored in the variables ‘units’ and ‘ry’.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">spikes</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">]</span>  <span class="c1"># Get spike timings</span>
+<span class="n">epochs</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;epochs&quot;</span><span class="p">]</span>  <span class="c1"># Get the behavioural epochs (in this case, sleep and wakefulness)</span>
+<span class="n">angle</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;ry&quot;</span><span class="p">]</span>  <span class="c1"># Get the tracked orientation of the animal</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/home/runner/.local/lib/python3.12/site-packages/pynapple/io/interface_nwb.py:90: UserWarning: DataFrame is not sorted by start times. Sorting it.
+  data = nap.IntervalSet(df)
+</pre></div>
+</div>
+</div>
+</div>
+<p>What does this look like ?</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">spikes</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Index    rate     location    group
+-------  -------  ----------  -------
+0        2.96981  thalamus    1
+1        2.42638  thalamus    1
+2        5.93417  thalamus    1
+3        5.04432  thalamus    1
+4        0.30207  adn         2
+5        0.87042  adn         2
+6        0.36154  adn         2
+...      ...      ...         ...
+42       1.02061  thalamus    5
+43       6.84913  thalamus    6
+44       0.94002  thalamus    6
+45       0.55768  thalamus    6
+46       1.15056  thalamus    6
+47       0.46084  thalamus    6
+48       0.19287  thalamus    7
+</pre></div>
+</div>
+</div>
+</div>
+<p>Here, rate is the mean firing rate of the unit. Location indicates the brain region the unit was recorded from, and group refers to the shank number on which the cell was located.</p>
+<p>This dataset contains units recorded from the anterior thalamus. Head-direction (HD) cells are found in the anterodorsal nucleus of the thalamus (henceforth referred to as ADn). Units were also recorded from nearby thalamic nuclei in this animal. For the purposes of our tutorial, we are interested in the units recorded in ADn. We can restrict ourselves to analysis of these units rather easily, using Pynapple.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">spikes_adn</span> <span class="o">=</span> <span class="n">spikes</span><span class="o">.</span><span class="n">getby_category</span><span class="p">(</span><span class="s2">&quot;location&quot;</span><span class="p">)[</span><span class="s2">&quot;adn&quot;</span><span class="p">]</span>  <span class="c1"># Select only those units that are in ADn</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>What does this look like ?</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">spikes_adn</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Index    rate      location    group
+-------  --------  ----------  -------
+4        0.30207   adn         2
+5        0.87042   adn         2
+6        0.36154   adn         2
+7        10.51737  adn         2
+8        2.62475   adn         2
+9        2.55818   adn         2
+10       7.06715   adn         2
+...      ...       ...         ...
+28       1.78011   adn         4
+29       4.23006   adn         4
+30       2.15215   adn         4
+31       0.58829   adn         4
+32       1.12899   adn         4
+33       5.26316   adn         4
+34       1.57122   adn         4
+</pre></div>
+</div>
+</div>
+</div>
+<p>Let’s compute some head-direction tuning curves. To do this in Pynapple, all you need is a single line of code!</p>
+<p>Plot firing rate of ADn units as a function of heading direction, i.e. a head-direction tuning curve</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tuning_curves</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_1d_tuning_curves</span><span class="p">(</span>
+    <span class="n">group</span><span class="o">=</span><span class="n">spikes_adn</span><span class="p">,</span> 
+    <span class="n">feature</span><span class="o">=</span><span class="n">angle</span><span class="p">,</span> 
+    <span class="n">nb_bins</span><span class="o">=</span><span class="mi">61</span><span class="p">,</span> 
+    <span class="n">ep</span><span class="o">=</span><span class="n">epochs</span><span class="p">[</span><span class="n">epochs</span><span class="o">.</span><span class="n">tags</span> <span class="o">==</span> <span class="s2">&quot;wake&quot;</span><span class="p">],</span>
+    <span class="n">minmax</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>What does this look like ?</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tuning_curves</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>4</th>
+      <th>5</th>
+      <th>6</th>
+      <th>7</th>
+      <th>8</th>
+      <th>9</th>
+      <th>10</th>
+      <th>11</th>
+      <th>12</th>
+      <th>13</th>
+      <th>...</th>
+      <th>25</th>
+      <th>26</th>
+      <th>27</th>
+      <th>28</th>
+      <th>29</th>
+      <th>30</th>
+      <th>31</th>
+      <th>32</th>
+      <th>33</th>
+      <th>34</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0.051502</th>
+      <td>0.255172</td>
+      <td>0.127586</td>
+      <td>0.170115</td>
+      <td>5.316080</td>
+      <td>0.000000</td>
+      <td>0.722987</td>
+      <td>5.231023</td>
+      <td>0.467815</td>
+      <td>0.680458</td>
+      <td>9.313772</td>
+      <td>...</td>
+      <td>0.722987</td>
+      <td>2.636776</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.297700</td>
+      <td>0.850573</td>
+      <td>0.552872</td>
+      <td>0.467815</td>
+      <td>5.273551</td>
+      <td>1.786203</td>
+    </tr>
+    <tr>
+      <th>0.154505</th>
+      <td>0.300635</td>
+      <td>0.000000</td>
+      <td>0.187897</td>
+      <td>8.305042</td>
+      <td>0.037579</td>
+      <td>0.338214</td>
+      <td>3.194247</td>
+      <td>0.338214</td>
+      <td>0.751587</td>
+      <td>8.718415</td>
+      <td>...</td>
+      <td>0.338214</td>
+      <td>1.691072</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>0.375794</td>
+      <td>0.751587</td>
+      <td>1.014643</td>
+      <td>0.375794</td>
+      <td>8.380200</td>
+      <td>1.954127</td>
+    </tr>
+    <tr>
+      <th>0.257508</th>
+      <td>0.189885</td>
+      <td>0.094943</td>
+      <td>0.094943</td>
+      <td>11.867814</td>
+      <td>0.158238</td>
+      <td>0.094943</td>
+      <td>3.671110</td>
+      <td>0.316475</td>
+      <td>0.569655</td>
+      <td>9.430956</td>
+      <td>...</td>
+      <td>0.632950</td>
+      <td>1.107663</td>
+      <td>0.031648</td>
+      <td>0.000000</td>
+      <td>0.348123</td>
+      <td>1.076015</td>
+      <td>1.677318</td>
+      <td>0.158238</td>
+      <td>10.506971</td>
+      <td>3.892643</td>
+    </tr>
+    <tr>
+      <th>0.360511</th>
+      <td>0.498062</td>
+      <td>0.052428</td>
+      <td>0.078641</td>
+      <td>16.724387</td>
+      <td>0.052428</td>
+      <td>0.314565</td>
+      <td>4.534983</td>
+      <td>0.340779</td>
+      <td>0.655344</td>
+      <td>10.170944</td>
+      <td>...</td>
+      <td>0.498062</td>
+      <td>1.992247</td>
+      <td>0.078641</td>
+      <td>0.000000</td>
+      <td>0.366993</td>
+      <td>0.629131</td>
+      <td>1.782537</td>
+      <td>0.235924</td>
+      <td>12.556397</td>
+      <td>5.321396</td>
+    </tr>
+    <tr>
+      <th>0.463514</th>
+      <td>0.362941</td>
+      <td>0.111674</td>
+      <td>0.139593</td>
+      <td>20.631824</td>
+      <td>0.055837</td>
+      <td>0.335023</td>
+      <td>4.411134</td>
+      <td>0.279186</td>
+      <td>0.725883</td>
+      <td>11.502451</td>
+      <td>...</td>
+      <td>0.335023</td>
+      <td>0.530453</td>
+      <td>0.055837</td>
+      <td>0.000000</td>
+      <td>0.418779</td>
+      <td>0.642127</td>
+      <td>2.456834</td>
+      <td>0.307104</td>
+      <td>15.271458</td>
+      <td>8.431408</td>
+    </tr>
+    <tr>
+      <th>...</th>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+      <td>...</td>
+    </tr>
+    <tr>
+      <th>5.819672</th>
+      <td>0.063460</td>
+      <td>0.158650</td>
+      <td>0.190380</td>
+      <td>1.491313</td>
+      <td>0.793252</td>
+      <td>0.507681</td>
+      <td>5.584491</td>
+      <td>0.444221</td>
+      <td>1.554773</td>
+      <td>2.284565</td>
+      <td>...</td>
+      <td>1.015362</td>
+      <td>12.565105</td>
+      <td>0.095190</td>
+      <td>0.000000</td>
+      <td>0.095190</td>
+      <td>2.221104</td>
+      <td>0.095190</td>
+      <td>0.253841</td>
+      <td>0.285571</td>
+      <td>0.507681</td>
+    </tr>
+    <tr>
+      <th>5.922675</th>
+      <td>0.024772</td>
+      <td>0.123861</td>
+      <td>0.123861</td>
+      <td>1.337703</td>
+      <td>0.569762</td>
+      <td>0.445901</td>
+      <td>4.558100</td>
+      <td>0.371584</td>
+      <td>0.990891</td>
+      <td>3.146080</td>
+      <td>...</td>
+      <td>1.040436</td>
+      <td>10.032774</td>
+      <td>0.049545</td>
+      <td>0.074317</td>
+      <td>0.099089</td>
+      <td>1.535882</td>
+      <td>0.049545</td>
+      <td>0.396357</td>
+      <td>0.767941</td>
+      <td>0.272495</td>
+    </tr>
+    <tr>
+      <th>6.025678</th>
+      <td>0.000000</td>
+      <td>0.112276</td>
+      <td>0.028069</td>
+      <td>1.936754</td>
+      <td>0.533309</td>
+      <td>0.224551</td>
+      <td>4.406818</td>
+      <td>0.392965</td>
+      <td>1.263101</td>
+      <td>5.333091</td>
+      <td>...</td>
+      <td>0.926274</td>
+      <td>6.427778</td>
+      <td>0.000000</td>
+      <td>0.084207</td>
+      <td>0.112276</td>
+      <td>1.038549</td>
+      <td>0.084207</td>
+      <td>0.364896</td>
+      <td>0.954343</td>
+      <td>0.196482</td>
+    </tr>
+    <tr>
+      <th>6.128681</th>
+      <td>0.000000</td>
+      <td>0.138009</td>
+      <td>0.165611</td>
+      <td>2.152940</td>
+      <td>0.220814</td>
+      <td>0.386425</td>
+      <td>4.223075</td>
+      <td>0.441629</td>
+      <td>1.076470</td>
+      <td>4.637101</td>
+      <td>...</td>
+      <td>0.634841</td>
+      <td>6.265607</td>
+      <td>0.055204</td>
+      <td>0.027602</td>
+      <td>0.027602</td>
+      <td>0.938461</td>
+      <td>0.055204</td>
+      <td>0.331222</td>
+      <td>1.021266</td>
+      <td>0.441629</td>
+    </tr>
+    <tr>
+      <th>6.231684</th>
+      <td>0.067699</td>
+      <td>0.101548</td>
+      <td>0.135397</td>
+      <td>2.504850</td>
+      <td>0.000000</td>
+      <td>0.304644</td>
+      <td>3.791124</td>
+      <td>0.372343</td>
+      <td>0.541589</td>
+      <td>5.720536</td>
+      <td>...</td>
+      <td>0.473891</td>
+      <td>3.892672</td>
+      <td>0.000000</td>
+      <td>0.033849</td>
+      <td>0.101548</td>
+      <td>0.812384</td>
+      <td>0.304644</td>
+      <td>0.541589</td>
+      <td>2.234055</td>
+      <td>0.609288</td>
+    </tr>
+  </tbody>
+</table>
+<p>61 rows × 31 columns</p>
+</div></div></div>
+</div>
+<p>Each row indicates an angular bin (in radians), and each column corresponds to a single unit. Let’s compute the preferred angle quickly as follows:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pref_ang</span> <span class="o">=</span> <span class="n">tuning_curves</span><span class="o">.</span><span class="n">idxmax</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>For easier visualization, we will colour our plots according to the preferred angle of the cell. To do so, we will normalize the range of angles we have, over a colourmap.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">norm</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">Normalize</span><span class="p">()</span>  <span class="c1"># Normalizes data into the range [0,1]</span>
+<span class="n">color</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">cm</span><span class="o">.</span><span class="n">hsv</span><span class="p">(</span><span class="n">norm</span><span class="p">([</span><span class="n">i</span> <span class="o">/</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">pref_ang</span><span class="o">.</span><span class="n">values</span><span class="p">]))</span>  <span class="c1"># Assigns a colour in the HSV colourmap for each value of preferred angle</span>
+<span class="n">color</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">pref_ang</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">color</span><span class="p">,</span> <span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;r&#39;</span><span class="p">,</span> <span class="s1">&#39;g&#39;</span><span class="p">,</span> <span class="s1">&#39;b&#39;</span><span class="p">,</span> <span class="s1">&#39;a&#39;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>To make the tuning curves look nice, we will smooth them before plotting, using this custom function:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.ndimage</span> <span class="kn">import</span> <span class="n">gaussian_filter1d</span>
+<span class="k">def</span> <span class="nf">smoothAngularTuningCurves</span><span class="p">(</span><span class="n">tuning_curves</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">2</span><span class="p">):</span>
+
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">tuning_curves</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">tuning_curves</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">tuning_curves</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
+    <span class="n">tmp</span> <span class="o">=</span> <span class="n">gaussian_filter1d</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">index</span> <span class="o">=</span> <span class="n">tuning_curves</span><span class="o">.</span><span class="n">index</span><span class="p">,</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">tmp</span><span class="p">[</span><span class="n">tuning_curves</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span><span class="n">tuning_curves</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">*</span><span class="mi">2</span><span class="p">],</span> 
+        <span class="n">columns</span> <span class="o">=</span> <span class="n">tuning_curves</span><span class="o">.</span><span class="n">columns</span>
+        <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Therefore, we have:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smoothcurves</span> <span class="o">=</span> <span class="n">smoothAngularTuningCurves</span><span class="p">(</span><span class="n">tuning_curves</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>What does this look like? Let’s plot the tuning curves!</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">9</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">pref_ang</span><span class="o">.</span><span class="n">sort_values</span><span class="p">()</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">projection</span><span class="o">=</span><span class="s1">&#39;polar&#39;</span><span class="p">)</span>  <span class="c1"># Plot the curves in 8 rows and 4 columns</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+        <span class="n">smoothcurves</span><span class="p">[</span><span class="n">n</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+    <span class="p">)</span>  <span class="c1"># Colour of the curves determined by preferred angle    </span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">([])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/2ae102a9ce49717bfeacb1bea0b2a2b4358b5c843c4b280f8a3eba121d65e853.png" src="../_images/2ae102a9ce49717bfeacb1bea0b2a2b4358b5c843c4b280f8a3eba121d65e853.png" />
+</div>
+</div>
+<p>Awesome!</p>
+</section>
+<hr class="docutils" />
+<section id="decoding">
+<h2>Decoding<a class="headerlink" href="#decoding" title="Link to this heading">#</a></h2>
+<p>Now that we have HD tuning curves, we can go one step further. Using only the population activity of ADn units, we can decode the direction the animal is looking in. We will then compare this to the real head direction of the animal, and discover that population activity in the ADn indeed codes for HD.</p>
+<p>To decode the population activity, we will be using a Bayesian Decoder as implemented in Pynapple. Just a single line of code!</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">decoded</span><span class="p">,</span> <span class="n">proba_feature</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">decode_1d</span><span class="p">(</span>
+    <span class="n">tuning_curves</span><span class="o">=</span><span class="n">tuning_curves</span><span class="p">,</span>
+    <span class="n">group</span><span class="o">=</span><span class="n">spikes_adn</span><span class="p">,</span>
+    <span class="n">ep</span><span class="o">=</span><span class="n">epochs</span><span class="p">[</span><span class="n">epochs</span><span class="o">.</span><span class="n">tags</span> <span class="o">==</span> <span class="s2">&quot;wake&quot;</span><span class="p">],</span>
+    <span class="n">bin_size</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>  <span class="c1"># second</span>
+    <span class="n">feature</span><span class="o">=</span><span class="n">angle</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>What does this look like ?</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">decoded</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)
+----------  ---------
+8812.35     0.772523
+8812.45     0.66952
+8812.55     0.463514
+8812.65     0.66952
+8812.75     0.66952
+8812.85     0.66952
+8812.95     0.566517
+...
+10770.65    0.0515015
+10770.75    5.92267
+10770.85    5.71667
+10770.95    5.92267
+10771.05    5.92267
+10771.15    5.92267
+10771.25    5.92267
+dtype: float64, shape: (19590,)
+</pre></div>
+</div>
+</div>
+</div>
+<p>The variable ‘decoded’ indicates the most probable angle in which the animal was looking. There is another variable, ‘proba_feature’ that denotes the probability of a given angular bin at a given time point. We can look at it below:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">proba_feature</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)    0.05150151891130808    0.15450455673392424    0.2575075945565404    0.3605106323791566    0.4635136702017727    ...
+----------  ---------------------  ---------------------  --------------------  --------------------  --------------------  -----
+8812.35     0.0                    0.00022                0.00372               0.0177                0.07205               ...
+8812.45     0.0                    1e-05                  0.00186               0.00931               0.09217               ...
+8812.55     0.00042                0.02271                0.19166               0.19196               0.24892               ...
+8812.65     1e-05                  0.00016                0.00566               0.01974               0.10971               ...
+8812.75     4e-05                  0.00137                0.02089               0.03928               0.13386               ...
+8812.85     1e-05                  0.00036                0.02056               0.0518                0.1563                ...
+8812.95     1e-05                  0.00113                0.03198               0.06256               0.2143                ...
+...         ...                    ...                    ...                   ...                   ...                   ...
+10770.65    0.35186                0.17771                0.07297               0.02443               0.00802               ...
+10770.75    0.01448                0.00716                0.00084               0.00026               1e-05                 ...
+10770.85    7e-05                  0.0                    0.0                   0.0                   0.0                   ...
+10770.95    0.00029                0.0                    0.0                   0.0                   0.0                   ...
+10771.05    0.00109                0.00012                1e-05                 0.0                   0.0                   ...
+10771.15    0.00554                0.00124                0.00012               2e-05                 0.0                   ...
+10771.25    0.0006                 6e-05                  0.0                   0.0                   0.0                   ...
+dtype: float64, shape: (19590, 61)
+</pre></div>
+</div>
+</div>
+</div>
+<p>Each row is a time bin, and each column is an angular bin. The sum of all values in a row add up to 1.</p>
+<p>Now, let’s plot the raster plot for a given period of time, and overlay the actual and decoded HD on the population activity.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span>
+    <span class="n">start</span><span class="o">=</span><span class="mi">10717</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="mi">10730</span>
+<span class="p">)</span>  <span class="c1"># Select an arbitrary interval for plotting</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s2">&quot;font&quot;</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">spikes_adn</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+        <span class="n">spikes</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">ep</span><span class="p">)</span><span class="o">.</span><span class="n">fillna</span><span class="p">(</span><span class="n">pref_ang</span><span class="p">[</span><span class="n">n</span><span class="p">]),</span> <span class="s2">&quot;|&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">n</span><span class="p">]</span>
+    <span class="p">)</span>  <span class="c1"># raster plot for each cell</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">decoded</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">ep</span><span class="p">),</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;grey&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;decoded HD&quot;</span>
+<span class="p">)</span>  <span class="c1"># decoded HD</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper left&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Neurons&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Text(0, 0.5, &#39;Neurons&#39;)
+</pre></div>
+</div>
+<img alt="../_images/1dc2d7653a11d4863a75c58b7a51b93f3e8974c2575424834887397ebca003e8.png" src="../_images/1dc2d7653a11d4863a75c58b7a51b93f3e8974c2575424834887397ebca003e8.png" />
+</div>
+</div>
+<p>From this plot, we can see that the decoder is able to estimate the head-direction based on the population activity in ADn. Amazing!</p>
+<p>What does the probability distribution in this example event look like?
+Ideally, the bins with the highest probability will correspond to the bins having the most spikes. Let’s plot the probability matrix to visualize this.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smoothed</span> <span class="o">=</span> <span class="n">scipy</span><span class="o">.</span><span class="n">ndimage</span><span class="o">.</span><span class="n">gaussian_filter</span><span class="p">(</span>
+    <span class="n">proba_feature</span><span class="p">,</span> <span class="mi">1</span>
+<span class="p">)</span>  <span class="c1"># Smoothening the probability distribution</span>
+
+<span class="c1"># Create a DataFrame with the smoothed distribution</span>
+<span class="n">p_feature</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="n">index</span><span class="o">=</span><span class="n">proba_feature</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+    <span class="n">columns</span><span class="o">=</span><span class="n">proba_feature</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">smoothed</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">p_feature</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">(</span><span class="n">p_feature</span><span class="p">)</span>  <span class="c1"># Make it a Pynapple TsdFrame</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">angle</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">ep</span><span class="p">),</span> <span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;actual HD&quot;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span>
+<span class="p">)</span>  <span class="c1"># Actual HD, in white</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">decoded</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">ep</span><span class="p">),</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;grey&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;decoded HD&quot;</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span>
+<span class="p">)</span>  <span class="c1"># Decoded HD, in grey</span>
+
+<span class="c1"># Plot the smoothed probability distribution</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">p_feature</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">ep</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
+    <span class="n">aspect</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;bilinear&quot;</span><span class="p">,</span>
+    <span class="n">extent</span><span class="o">=</span><span class="p">[</span><span class="n">ep</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">ep</span><span class="p">[</span><span class="s2">&quot;end&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">],</span>
+    <span class="n">origin</span><span class="o">=</span><span class="s2">&quot;lower&quot;</span><span class="p">,</span>
+    <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;viridis&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Time (s)&quot;</span><span class="p">)</span>  <span class="c1"># X-axis is time in seconds</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Angle (rad)&quot;</span><span class="p">)</span>  <span class="c1"># Y-axis is the angle in radian</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="s2">&quot;probability&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.colorbar.Colorbar at 0x7fc56fd3d0d0&gt;
+</pre></div>
+</div>
+<img alt="../_images/a8171b3e4c04fde9542a10d176ca3a71f5a893e358754e4bb3c4b471f9b9a543.png" src="../_images/a8171b3e4c04fde9542a10d176ca3a71f5a893e358754e4bb3c4b471f9b9a543.png" />
+</div>
+</div>
+<p>From this probability distribution, we observe that the decoded HD very closely matches the actual HD. Therefore, the population activity in ADn is a reliable estimate of the heading direction of the animal.</p>
+<p>I hope this tutorial was helpful. If you have any questions, comments or suggestions, please feel free to reach out to the Pynapple Team!</p>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm docutils">
+<div class="sd-card-header docutils">
+<p class="sd-card-text">Authors</p>
+</div>
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Dhruv Mehrotra</p>
+<p class="sd-card-text">Guillaume Viejo</p>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="../examples.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Examples</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="tutorial_pynapple_dandi.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Streaming data from DANDI</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#downloading-the-data">Downloading the data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#parsing-the-data">Parsing the data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#head-direction-tuning-curves">Head-Direction Tuning Curves</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#decoding">Decoding</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/examples/tutorial_HD_dataset.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2025, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">Guillaume Viejo</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.8.3</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

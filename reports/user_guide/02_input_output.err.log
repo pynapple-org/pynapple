@@ -1,0 +1,51 @@
+Traceback (most recent call last):
+  File "/home/runner/.local/lib/python3.12/site-packages/jupyter_cache/executors/utils.py", line 58, in single_nb_execution
+    executenb(
+  File "/home/runner/.local/lib/python3.12/site-packages/nbclient/client.py", line 1319, in execute
+    return NotebookClient(nb=nb, resources=resources, km=km, **kwargs).execute()
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/.local/lib/python3.12/site-packages/jupyter_core/utils/__init__.py", line 165, in wrapped
+    return loop.run_until_complete(inner)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/asyncio/base_events.py", line 687, in run_until_complete
+    return future.result()
+           ^^^^^^^^^^^^^^^
+  File "/home/runner/.local/lib/python3.12/site-packages/nbclient/client.py", line 709, in async_execute
+    await self.async_execute_cell(
+  File "/home/runner/.local/lib/python3.12/site-packages/nbclient/client.py", line 1062, in async_execute_cell
+    await self._check_raise_for_error(cell, cell_index, exec_reply)
+  File "/home/runner/.local/lib/python3.12/site-packages/nbclient/client.py", line 918, in _check_raise_for_error
+    raise CellExecutionError.from_cell_and_msg(cell, exec_reply_content)
+nbclient.exceptions.CellExecutionError: An error occurred while executing the following cell:
+------------------
+tsgroup = nap.TsGroup({
+    0:nap.Ts(t=[0,1,2]),
+    1:nap.Ts(t=[0,1,2])
+    }, my_label = ["a", "b"])
+tsgroup.save("group")
+
+print(np.load("group.npz"))
+print(np.load("group.npz")["my_label"])
+------------------
+
+----- stderr -----
+/home/runner/.local/lib/python3.12/site-packages/pynapple/core/ts_group.py:290: FutureWarning: initializing metadata with variable keyword arguments may be unsupported in a future version of Pynapple. Instead, initialize using the metadata argument.
+  warnings.warn(
+----- stdout -----
+NpzFile 'group.npz' with keys: type, _metadata, t, index, keys...
+------------------
+
+[0;31m---------------------------------------------------------------------------[0m
+[0;31mKeyError[0m                                  Traceback (most recent call last)
+Cell [0;32mIn[13], line 8[0m
+[1;32m      5[0m tsgroup[38;5;241m.[39msave([38;5;124m"[39m[38;5;124mgroup[39m[38;5;124m"[39m)
+[1;32m      7[0m [38;5;28mprint[39m(np[38;5;241m.[39mload([38;5;124m"[39m[38;5;124mgroup.npz[39m[38;5;124m"[39m))
+[0;32m----> 8[0m [38;5;28mprint[39m([43mnp[49m[38;5;241;43m.[39;49m[43mload[49m[43m([49m[38;5;124;43m"[39;49m[38;5;124;43mgroup.npz[39;49m[38;5;124;43m"[39;49m[43m)[49m[43m[[49m[38;5;124;43m"[39;49m[38;5;124;43mmy_label[39;49m[38;5;124;43m"[39;49m[43m][49m)
+
+File [0;32m~/.local/lib/python3.12/site-packages/numpy/lib/_npyio_impl.py:265[0m, in [0;36mNpzFile.__getitem__[0;34m(self, key)[0m
+[1;32m    263[0m         [38;5;28;01mreturn[39;00m [38;5;28mself[39m[38;5;241m.[39mzip[38;5;241m.[39mread(key)
+[1;32m    264[0m [38;5;28;01melse[39;00m:
+[0;32m--> 265[0m     [38;5;28;01mraise[39;00m [38;5;167;01mKeyError[39;00m([38;5;124mf[39m[38;5;124m"[39m[38;5;132;01m{[39;00mkey[38;5;132;01m}[39;00m[38;5;124m is not a file in the archive[39m[38;5;124m"[39m)
+
+[0;31mKeyError[0m: 'my_label is not a file in the archive'
+
