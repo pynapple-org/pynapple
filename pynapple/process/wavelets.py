@@ -127,7 +127,10 @@ def compute_wavelet_transform(
 
     if len(output_shape) == 2:
         return nap.TsdFrame(
-            t=sig.index, d=np.squeeze(cwt, axis=1), time_support=sig.time_support
+            t=sig.index,
+            d=np.squeeze(cwt, axis=1),
+            time_support=sig.time_support,
+            columns=freqs,
         )
     else:
         return nap.TsdTensor(
