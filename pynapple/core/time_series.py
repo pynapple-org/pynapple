@@ -1238,6 +1238,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             else:
                 return output
 
+    def _ipython_key_completions_(self) -> list:
+        return list(self.columns)
+
     def as_dataframe(self):
         """
         Convert the TsdFrame object to a pandas.DataFrame object.
