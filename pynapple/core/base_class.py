@@ -1,5 +1,5 @@
 """
-    Abstract class for `core` time series.
+Abstract class for `core` time series.
 
 """
 

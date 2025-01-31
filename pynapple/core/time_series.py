@@ -1,18 +1,18 @@
 """
-    
-    Pynapple time series are containers specialized for neurophysiological time series.
 
-    They provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.
+Pynapple time series are containers specialized for neurophysiological time series.
 
-    Multiple time series object are avaible depending on the shape of the data.
+They provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.
 
-    - `TsdTensor` : for data with of more than 2 dimensions, typically movies.
-    - `TsdFrame` : for column-based data. It can be easily converted to a pandas.DataFrame. Columns can be labelled and selected similar to pandas.
-    - `Tsd` : One-dimensional time series. It can be converted to a pandas.Series.
-    - `Ts` : For timestamps data only.
+Multiple time series object are avaible depending on the shape of the data.
 
-    Most of the same functions are available through all classes. Objects behaves like numpy.ndarray. Slicing can be done the same way for example 
-    `tsd[0:10]` returns the first 10 rows. Similarly, you can call any numpy functions like `np.mean(tsd, 1)`.
+- `TsdTensor` : for data with of more than 2 dimensions, typically movies.
+- `TsdFrame` : for column-based data. It can be easily converted to a pandas.DataFrame. Columns can be labelled and selected similar to pandas.
+- `Tsd` : One-dimensional time series. It can be converted to a pandas.Series.
+- `Ts` : For timestamps data only.
+
+Most of the same functions are available through all classes. Objects behaves like numpy.ndarray. Slicing can be done the same way for example
+`tsd[0:10]` returns the first 10 rows. Similarly, you can call any numpy functions like `np.mean(tsd, 1)`.
 """
 
 import abc

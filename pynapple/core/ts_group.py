@@ -1,6 +1,6 @@
 """
 
-The class `TsGroup` helps group objects with different timestamps 
+The class `TsGroup` helps group objects with different timestamps
 (i.e. timestamps of spikes of a population of neurons).
 
 """
