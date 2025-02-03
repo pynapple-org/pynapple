@@ -1,6 +1,4 @@
-"""Functions to realign time series relative to a reference time.
-
-"""
+"""Functions to realign time series relative to a reference time."""
 
 import numpy as np
 

@@ -18,6 +18,24 @@ of the Flatiron institute.
 
 ## Releases
 
+### 0.8.3 (2025-01-24)
+
+- `compute_mean_power_spectral_density` computes the mean periodogram.
+
+### 0.8.2 (2025-01-22)
+
+- `compute_power_spectral_density` now computes the periodogram, where previously it was only computing the FFT
+- `compute_fft` has been added that contains the old functionality of `compute_power_spectral_density`.
+
+### 0.8.1 (2025-01-17)
+
+- Bugfix : time support was not updated for `bin_average` and `interpolate` with new `_initialize_tsd_output` method 
+
+### 0.8.0 (2025-01-15)
+
+- New private class: `_MetadataMixin` (core/metadata_class.py). Can be inherited by `IntervalSet`, `TsdFrame` and `TsGroup`.
+- `decode_1d` and `decode_2d` now accepts `TsdFrame` as input. 
+
 ### 0.7.1 (2024-09-24)
 
 - Fixing nan issue when computing 1d tuning curve (See issue #334).

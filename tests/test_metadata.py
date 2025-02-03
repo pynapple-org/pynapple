@@ -110,6 +110,44 @@ def test_create_iset_from_df_with_metadata():
 
 
 @pytest.mark.parametrize(
+    "df, expected",
+    [
+        # dataframe is sorted and metadata is kept
+        (
+            pd.DataFrame(
+                {
+                    "start": [25.0, 0.0, 10.0, 16.0],
+                    "end": [40.0, 5.0, 15.0, 20.0],
+                    "label": np.arange(4),
+                }
+            ),
+            ["DataFrame is not sorted by start times"],
+        ),
+        (
+            # dataframe is sorted and and metadata is dropped
+            pd.DataFrame(
+                {
+                    "start": [25, 0, 10, 16],
+                    "end": [40, 20, 15, 20],
+                    "label": np.arange(4),
+                }
+            ),
+            ["DataFrame is not sorted by start times", "dropping metadata"],
+        ),
+    ],
+)
+def test_create_iset_from_df_with_metadata_sort(df, expected):
+    with warnings.catch_warnings(record=True) as w:
+        ep = nap.IntervalSet(df)
+    for e in expected:
+        assert np.any([e in str(w.message) for w in w])
+    if "dropping metadata" not in expected:
+        pd.testing.assert_frame_equal(
+            ep.as_dataframe(), df.sort_values("start").reset_index(drop=True)
+        )
+
+
+@pytest.mark.parametrize(
     "index",
     [
         0,

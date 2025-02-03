@@ -1,10 +1,10 @@
 """
-    This module holds the core function of pynapple as well as 
-    the dispatch between numba and jax.
+This module holds the core function of pynapple as well as
+the dispatch between numba and jax.
 
-    If pynajax is installed and `nap.nap_config.backend` is set 
-    to `jax`, the module will call the functions within pynajax.
-    Otherwise the module will call the functions within `_jitted_functions.py`.
+If pynajax is installed and `nap.nap_config.backend` is set
+to `jax`, the module will call the functions within pynajax.
+Otherwise the module will call the functions within `_jitted_functions.py`.
 
 """
 

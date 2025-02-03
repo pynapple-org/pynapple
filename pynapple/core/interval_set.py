@@ -1,4 +1,4 @@
-"""        
+"""
 The class `IntervalSet` deals with non-overlaping epochs. `IntervalSet` objects can interact with each other or with the time series objects.
 """
 
@@ -198,6 +198,15 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             ), """
                 DataFrame must contain columns name "start" and "end" for start and end times.                   
                 """
+            # try sorting the DataFrame by start times, preserving its end pair, as an effort to preserve metadata
+            # since metadata would be dropped if starts and ends are sorted separately
+            # note that if end times are still not sorted, metadata will be dropped
+            if np.any(start["start"].diff() < 0):
+                warnings.warn(
+                    "DataFrame is not sorted by start times. Sorting it.", stacklevel=2
+                )
+                start = start.sort_values("start").reset_index(drop=True)
+
             metadata = start.drop(columns=["start", "end"])
             index = start.index
             end = start["end"].values.astype(np.float64)
