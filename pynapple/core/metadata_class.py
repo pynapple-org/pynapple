@@ -6,6 +6,7 @@ from .utils import is_array_like
 
 import numpy as np
 import pandas as pd
+import itertools
 
 
 def add_meta_docstring(meta_func, sep="\n"):
@@ -332,7 +333,7 @@ class _MetadataMixin:
                     raise ValueError(
                         f"Metadata column '{b}' not found. Metadata columns are {self.metadata_columns}"
                     )
-        groups = self._metadata.groupby(by).groups
+        groups = self._metadata.groupby(by)
         if get_group is not None:
             if get_group not in groups.keys():
                 raise ValueError(
@@ -408,6 +409,20 @@ class _Metadata(UserDict):
     def as_dataframe(self):
         return pd.DataFrame(self.data, index=self.index)
 
+    def groupby(self, by):
+        if isinstance(by, str):
+            return {
+                k: np.where(self.data[by] == k)[0] for k in np.unique(self.data[by])
+            }
+
+        elif isinstance(by, list):
+            return {
+                k: np.where(
+                    np.all([self.data[col] == k[c] for c, col in enumerate(by)], axis=0)
+                )[0]
+                for k in itertools.product(*[np.unique(self.data[col]) for col in by])
+            }
+
 
 class _MetadataLoc:
 
@@ -428,11 +443,6 @@ class _MetadataLoc:
             # metadata.loc[Number]
             idx = self._get_indexder([key])
             return {k: [self.metadata.data[k][idx]] for k in self.metadata.columns}
-
-        # if isinstance(key, (np.ndarray, list, pd.Index, pd.Series)) and isinstance(
-        #     key[0], (bool, np.bool)
-        # ):
-        #     return {k: self.metadata.data[k][key] for k in self.metadata.columns}
 
         elif isinstance(key, (np.ndarray, list, pd.Index, pd.Series)):
             # metadata.loc[array_like]
@@ -486,6 +496,3 @@ class _MetadataILoc:
 
         else:
             raise IndexError(f"Unknown metadata index {key}")
-
-    def _get_indexder(self, vals):
-        return [self.index_map[val] for val in vals]

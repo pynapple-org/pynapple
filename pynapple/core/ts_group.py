@@ -376,9 +376,7 @@ class TsGroup(UserDict, _MetadataMixin):
         return self._ts_group_from_keys(key)
 
     def _ts_group_from_keys(self, keys):
-        metadata = self._metadata.loc[
-            np.sort(keys), self._metadata.columns.drop("rate")
-        ]
+        metadata = self._metadata.loc[np.sort(keys), self._metadata.columns[1:]]
         return TsGroup(
             {k: self[k] for k in keys},
             time_support=self.time_support,
@@ -395,7 +393,7 @@ class TsGroup(UserDict, _MetadataMixin):
         # By default, the first three columns should always show.
         col_names = self._metadata.columns
         if "rate" in col_names:
-            col_names = col_names.drop("rate")
+            col_names = col_names[1:]  # .drop("rate")
 
         headers = ["Index", "rate"] + [c for c in col_names][0:max_cols]
         end = ["..."] if len(headers) > max_cols else []
@@ -537,7 +535,7 @@ class TsGroup(UserDict, _MetadataMixin):
         newgr = {}
         for k in self.index:
             newgr[k] = self.data[k].restrict(ep)
-        cols = self._metadata.columns.drop("rate")
+        cols = self._metadata.columns[1:]  # .drop("rate")
 
         return TsGroup(
             newgr, time_support=ep, bypass_check=True, metadata=self._metadata[cols]
@@ -585,7 +583,7 @@ class TsGroup(UserDict, _MetadataMixin):
         for k in self.data:
             newgr[k] = self.data[k].value_from(tsd, ep)
 
-        cols = self._metadata.columns.drop("rate")
+        cols = self._metadata.columns[1:]  # .drop("rate")
         return TsGroup(newgr, time_support=ep, metadata=self._metadata[cols])
 
     def count(self, *args, dtype=None, **kwargs):
@@ -871,7 +869,7 @@ class TsGroup(UserDict, _MetadataMixin):
         newgr = {}
         for k in self.index:
             newgr[k] = self.data[k].get(start, end, time_units)
-        cols = self._metadata.columns.drop("rate")
+        cols = self._metadata.columns[1:]  # .drop("rate")
 
         return TsGroup(
             newgr,
@@ -1145,7 +1143,7 @@ class TsGroup(UserDict, _MetadataMixin):
         if ignore_metadata:
             return TsGroup(data, time_support=time_support, bypass_check=False)
         else:
-            cols = metadata.columns.drop("rate")
+            cols = metadata.columns[1:]  # .drop("rate")
             return TsGroup(
                 data,
                 time_support=time_support,
@@ -1333,7 +1331,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
         dicttosave = {"type": np.array(["TsGroup"], dtype=np.str_)}
         # don't save rate in metadata since it will be re-added when loading
-        dicttosave["_metadata"] = self._metadata.drop(columns="rate").to_dict()
+        dicttosave["_metadata"] = self.metadata.drop(columns="rate").to_dict()
 
         # are these things that still need to be enforced?
         # for k in self._metadata.columns:
