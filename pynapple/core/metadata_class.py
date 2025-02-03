@@ -300,41 +300,6 @@ class _MetadataMixin:
             If the metadata index is not found.
         """
         return self._metadata.loc[key]
-        # string indexing of one or more metadata columns
-        if isinstance(key, str) or (
-            isinstance(key, list) and all([isinstance(k, str) for k in key])
-        ):
-            if (
-                isinstance(key, list) and all([k in self.metadata_index for k in key])
-            ) or (isinstance(key, str) and (key in self.metadata_index)):
-                # metadata index is a string
-                return self._metadata.loc[key]
-            else:
-                # metadata[str] or metadata[[*str]]
-                return self._metadata[key]
-
-        elif isinstance(key, (Number, list, np.ndarray, pd.Series, pd.Index)) or (
-            isinstance(key, tuple)
-            and (
-                isinstance(key[1], str)
-                or (
-                    isinstance(key[1], list)
-                    and all([isinstance(k, str) for k in key[1]])
-                )
-            )
-        ):
-            # assume key is index, or tuple of index and column name
-            # metadata[Number], metadata[array_like], metadata[Any, str], or metadata[Any, [*str]]
-            return self._metadata.loc[key]
-
-        elif isinstance(key, slice):
-            # assume key as index slice
-            # DataFrame's `loc` treats slices differently (inclusive of stop) than numpy
-            # `iloc` exludes the stop index, like numpy
-            return self._metadata.iloc[key]
-        else:
-            # we don't allow indexing columns with numbers, e.g. metadata[0,0]
-            raise IndexError(f"Unknown metadata index {key}")
 
     def groupby(self, by, get_group=None):
         """
@@ -418,17 +383,23 @@ class _Metadata(UserDict):
         super().__init__()
         self.index = index
 
+    # def __setitem__(self, key, value):
+    #     self[key] = value
+
+    # def __getitem__(self, key):
+    #     return self.data[key]
+
     @property
     def columns(self):
         return list(self.data.keys())
 
     @property
     def loc(self):
-        return _MetadataSliceHelper(self, self.index)
+        return _MetadataLoc(self, self.index)
 
     @property
     def iloc(self):
-        return _MetadataSliceHelper(self, range(len(self.index)))
+        return _MetadataILoc(self)
 
     @property
     def shape(self):
@@ -438,45 +409,80 @@ class _Metadata(UserDict):
         return pd.DataFrame(self.data, index=self.index)
 
 
-class _MetadataSliceHelper:
+class _MetadataLoc:
 
     def __init__(self, metadata, index):
         self.metadata = metadata
         self.index_map = {k: v for v, k in enumerate(index)}
 
-    def __setitem__(self, key, value):
-        self[key] = value
-
     def __getitem__(self, key):
         if isinstance(key, str):
+            # metadata.loc[str]
             return self.metadata.data[key]
 
         elif isinstance(key, list) and all(isinstance(k, str) for k in key):
+            # metadata.loc[[*str]]
             return {k: self.metadata.data[k] for k in key}
 
         elif isinstance(key, Number):
+            # metadata.loc[Number]
             idx = self._get_indexder([key])
             return {k: [self.metadata.data[k][idx]] for k in self.metadata.columns}
 
-        if isinstance(key, (np.ndarray, list, pd.Index, pd.Series)) and isinstance(
-            key[0], (bool, np.bool)
-        ):
-            return {k: self.metadata.data[k][key] for k in self.metadata.columns}
-        elif isinstance(key, (np.ndarray, list, pd.Index, pd.Series, slice)):
+        # if isinstance(key, (np.ndarray, list, pd.Index, pd.Series)) and isinstance(
+        #     key[0], (bool, np.bool)
+        # ):
+        #     return {k: self.metadata.data[k][key] for k in self.metadata.columns}
+
+        elif isinstance(key, (np.ndarray, list, pd.Index, pd.Series)):
+            # metadata.loc[array_like]
             idx = self._get_indexder(key)
             return {k: self.metadata.data[k][idx] for k in self.metadata.columns}
 
         elif isinstance(key, tuple) and len(key) == 2:
             if isinstance(key[1], str):
+                # metadata.loc[Any, str]
                 idx = self._get_indexder(key[0])
                 return self.metadata.data[key[1]][idx]
+
             elif isinstance(key[1], list) and all(isinstance(k, str) for k in key[1]):
-                if isinstance(key[0], Number):
+                if isinstance(key[0], (Number, str)):
+                    # metadata.loc[Number, [*str]] or metadata.loc[str, [*str]]
                     idx = self._get_indexder([key[0]])
                     return {k: [self.metadata.data[k][idx]] for k in key[1]}
+
                 elif is_array_like(key[0]) or isinstance(key[0], slice):
+                    # metadata.loc[array_like, [*str]]
                     idx = self._get_indexder(key[0])
                     return {k: self.metadata.data[k][idx] for k in key[1]}
+
+        else:
+            raise IndexError(f"Unknown metadata index {key}")
+
+    def _get_indexder(self, vals):
+        return [self.index_map[val] for val in vals]
+
+
+class _MetadataILoc:
+
+    def __init__(self, metadata):
+        self.metadata = metadata
+        self.keys = metadata.columns
+
+    def __getitem__(self, key):
+        if isinstance(key, Number):
+            return {k: [self.metadata.data[k][key]] for k in self.metadata.columns}
+
+        elif isinstance(key, (Number, slice, list, np.ndarray, pd.Index, pd.Series)):
+            return {k: self.metadata.data[k][key] for k in self.metadata.columns}
+
+        elif isinstance(key, tuple) and len(key) == 2:
+            columns = self.metadata.columns[key[1]]
+
+            if isinstance(key[0], Number):
+                return {k: [self.metadata.data[k][key[0]]] for k in columns}
+            else:
+                return {k: self.metadata.data[k][key[0]] for k in columns}
 
         else:
             raise IndexError(f"Unknown metadata index {key}")

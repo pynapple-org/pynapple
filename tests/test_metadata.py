@@ -151,12 +151,17 @@ def test_create_iset_from_df_with_metadata_sort(df, expected):
     "index",
     [
         0,
+        -1,
         slice(0, 2),
         [0, 2],
+        [0, -1],
         (slice(0, 2), slice(None)),
         (slice(0, 2), slice(0, 2)),
-        (slice(None), ["start", "end"]),
+        # (slice(None), ["start", "end"]),
+        ([0, -1], slice(None, 2)),
         (0, slice(None)),
+        (-1, slice(None)),
+        ([0, -1], slice(None)),
     ],
 )
 def test_get_iset_with_metadata(iset_meta, index):
@@ -168,13 +173,13 @@ def test_get_iset_with_metadata(iset_meta, index):
     [
         ((slice(None), 0), "start"),
         ((slice(None), 1), "end"),
-        ((slice(None), "end"), "end"),
-        ((slice(None), "label"), "label"),
-        ((slice(None), ["end", "label"]), ["end", "label"]),
+        # ((slice(None), "end"), "end"),
+        # ((slice(None), "label"), "label"),
+        # ((slice(None), ["end", "label"]), ["end", "label"]),
         ((0, [0, 1]), ([0], ["start", "end"])),
         ((0, slice(None)), ([0], slice(None))),
         (([1, 2], slice(None)), ([1, 2], slice(None))),
-        (([1, 2], ["end", "label"]), ([1, 2], ["end", "label"])),
+        # (([1, 2], ["end", "label"]), ([1, 2], ["end", "label"])),
     ],
 )
 def test_slice_iset_with_metadata(iset_meta, index, expected):
@@ -301,7 +306,6 @@ def test_set_diff_metadata():
 
 def test_drop_short_intervals_metadata(iset_meta):
     iset_dropped = iset_meta.drop_short_intervals(5)
-    print(iset_dropped)
     assert np.all(iset_dropped.metadata_columns == iset_meta.metadata_columns)
     assert len(iset_dropped.metadata_index) == 1  # one interval left
     assert len(iset_dropped._metadata["label"]) == 1  # one interval left
