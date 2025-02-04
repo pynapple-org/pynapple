@@ -153,12 +153,17 @@ def test_create_iset_from_df_with_metadata_sort(df, expected):
     "index",
     [
         0,
+        -1,
         slice(0, 2),
         [0, 2],
+        [0, -1],
         (slice(0, 2), slice(None)),
         (slice(0, 2), slice(0, 2)),
         (slice(None), ["start", "end"]),
+        ([0, -1], slice(None, 2)),
         (0, slice(None)),
+        (-1, slice(None)),
+        ([0, -1], slice(None)),
     ],
 )
 def test_get_iset_with_metadata(iset_meta, index):
