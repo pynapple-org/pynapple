@@ -681,10 +681,13 @@ def test_tsgroup_metadata_future_warnings():
 @pytest.fixture
 def clear_metadata(obj):
     if isinstance(obj, nap.TsGroup):
+        # clear metadata columns
         columns = [col for col in obj.metadata_columns if col != "rate"]
     else:
         columns = obj.metadata_columns
     obj._metadata.drop(columns=columns, inplace=True)
+    # clear metadata groups
+    obj.__dict__["_metadata_groups"] = None
     return obj
 
 
@@ -1090,6 +1093,69 @@ class Test_Metadata:
         # cleaning
         Path("obj.npz").unlink()
 
+        # class Test_Metadata_Group:
+
+    @pytest.mark.parametrize(
+        "metadata, group",
+        [
+            ({"label": [1, 1, 2, 2]}, "label"),
+            ({"l1": [1, 1, 2, 2], "l2": ["a", "b", "b", "b"]}, ["l1", "l2"]),
+        ],
+    )
+    def test_metadata_groupby(self, obj, metadata, group, obj_len):
+        if obj_len <= 1:
+            pytest.skip("groupby not relevant for length 1 objects")
+
+        obj.set_info(metadata)
+
+        # pandas groups
+        pd_groups = obj._metadata.groupby(group)
+
+        # group by metadata, assert returned groups
+        nap_groups = obj.groupby(group)
+        assert nap_groups.keys() == pd_groups.groups.keys()
+
+        for grp, idx in nap_groups.items():
+            # index same as pandas
+            assert all(idx == pd_groups.groups[grp])
+
+            # return object with get_group argument
+            obj_grp = obj.groupby(group, get_group=grp)
+
+            # get_group should be the same as indexed object
+            pd.testing.assert_frame_equal(
+                obj_grp._metadata, obj[np.array(idx)]._metadata
+            )
+            # index should be the same for both objects
+            assert all(obj_grp.index == obj[np.array(idx)].index)
+            if isinstance(obj, nap.TsdFrame):
+                # columns should be the same
+                assert all(obj_grp.columns == obj[np.array(idx)].columns)
+
+    @pytest.mark.parametrize(
+        "metadata, group",
+        [
+            ({"label": [1, 1, 2, 2]}, "label"),
+            ({"l1": [1, 1, 2, 2], "l2": ["a", "b", "b", "b"]}, ["l1", "l2"]),
+        ],
+    )
+    @pytest.mark.parametrize("func", [np.mean, np.sum, np.max, np.min])
+    def test_metadata_groupby_apply_numpy(self, obj, metadata, group, func, obj_len):
+        if obj_len <= 1:
+            pytest.skip("groupby not relevant for length 1 objects")
+
+        obj.set_info(metadata)
+        groups = obj.groupby(group)
+
+        # apply numpy function through groupby_apply
+        grouped_out = obj.groupby_apply(group, func)
+
+        for grp, idx in groups.items():
+            # check that the output is the same as applying the function to the indexed object
+            np.testing.assert_array_almost_equal(
+                func(obj[np.array(idx)]), grouped_out[grp]
+            )
+
 
 # test double inheritance
 def get_defined_members(cls):
@@ -1113,52 +1179,20 @@ def get_defined_members(cls):
     }
 
 
-def test_no_conflict_between_intervalset_and_metadatamixin():
-    from pynapple.core import IntervalSet
+@pytest.mark.parametrize(
+    "nap_class", [nap.core.IntervalSet, nap.core.TsdFrame, nap.core.TsGroup]
+)
+def test_no_conflict_between_class_and_metadatamixin(nap_class):
     from pynapple.core.metadata_class import _MetadataMixin  # Adjust import as needed
 
-    iset_members = get_defined_members(IntervalSet)
+    iset_members = get_defined_members(nap_class)
     metadatamixin_members = get_defined_members(_MetadataMixin)
 
     # Check for any overlapping names between IntervalSet and _MetadataMixin
     conflicting_members = iset_members.intersection(metadatamixin_members)
 
-    # set_info and get_info will conflict
-    assert len(conflicting_members) == 2, (
+    # set_info, get_info, groupby, and groupby_apply are overwritten for class-specific examples in docstrings
+    assert len(conflicting_members) == 4, (
         f"Conflict detected! The following methods/attributes are "
         f"overwritten in IntervalSet: {conflicting_members}"
-    )
-
-
-def test_no_conflict_between_tsdframe_and_metadatamixin():
-    from pynapple.core import TsdFrame
-    from pynapple.core.metadata_class import _MetadataMixin  # Adjust import as needed
-
-    tsdframe_members = get_defined_members(TsdFrame)
-    metadatamixin_members = get_defined_members(_MetadataMixin)
-
-    # Check for any overlapping names between TsdFrame and _MetadataMixin
-    conflicting_members = tsdframe_members.intersection(metadatamixin_members)
-
-    # set_info and get_info will conflict
-    assert len(conflicting_members) == 2, (
-        f"Conflict detected! The following methods/attributes are "
-        f"overwritten in TsdFrame: {conflicting_members}"
-    )
-
-
-def test_no_conflict_between_tsgroup_and_metadatamixin():
-    from pynapple.core import TsGroup
-    from pynapple.core.metadata_class import _MetadataMixin  # Adjust import as needed
-
-    tsgroup_members = get_defined_members(TsGroup)
-    metadatamixin_members = get_defined_members(_MetadataMixin)
-
-    # Check for any overlapping names between TsdFrame and _MetadataMixin
-    conflicting_members = tsgroup_members.intersection(metadatamixin_members)
-
-    # set_info and get_info will conflict
-    assert len(conflicting_members) == 2, (
-        f"Conflict detected! The following methods/attributes are "
-        f"overwritten in TsGroup: {conflicting_members}"
     )

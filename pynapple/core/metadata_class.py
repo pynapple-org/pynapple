@@ -303,7 +303,7 @@ class _MetadataMixin:
                 # metadata[str] or metadata[[*str]]
                 return self._metadata[key]
 
-        elif isinstance(key, (Number, list, np.ndarray, pd.Series)) or (
+        elif isinstance(key, (Number, list, np.ndarray, pd.Series, pd.Index)) or (
             isinstance(key, tuple)
             and (
                 isinstance(key[1], str)
@@ -313,7 +313,7 @@ class _MetadataMixin:
                 )
             )
         ):
-            # assume key is index, or tupe of index and column name
+            # assume key is index, or tuple of index and column name
             # metadata[Number], metadata[array_like], metadata[Any, str], or metadata[Any, [*str]]
             return self._metadata.loc[key]
 
@@ -325,3 +325,78 @@ class _MetadataMixin:
         else:
             # we don't allow indexing columns with numbers, e.g. metadata[0,0]
             raise IndexError(f"Unknown metadata index {key}")
+
+    def groupby(self, by, get_group=None):
+        """
+        Group pynapple object by metadata column(s).
+
+        Parameters
+        ----------
+        by : str or list of str
+            Metadata column name(s) to group by.
+        get_group : dictionary key, optional
+            Name of the group to return.
+
+        Returns
+        -------
+        dict or pynapple object
+            Dictionary of object indices (dictionary values) corresponding to each group (dictionary keys), or pynapple object corresponding to 'get_group' if it has been supplied.
+
+        Raises
+        ------
+        ValueError
+            If metadata column does not exist.
+        """
+        if isinstance(by, str) and by not in self.metadata_columns:
+            raise ValueError(
+                f"Metadata column '{by}' not found. Metadata columns are {self.metadata_columns}"
+            )
+        elif isinstance(by, list):
+            for b in by:
+                if b not in self.metadata_columns:
+                    raise ValueError(
+                        f"Metadata column '{b}' not found. Metadata columns are {self.metadata_columns}"
+                    )
+        groups = self._metadata.groupby(by).groups
+        if get_group is not None:
+            if get_group not in groups.keys():
+                raise ValueError(
+                    f"Group '{get_group}' not found in metadata groups. Groups are {list(groups.keys())}"
+                )
+            idx = groups[get_group]
+            return self[np.array(idx)]
+        else:
+            return groups
+
+    def groupby_apply(self, by, func, grouped_arg=None, **func_kwargs):
+        """
+        Apply a function to each group in a grouped pynapple object.
+
+        Parameters
+        ----------
+        by : str or list of str
+            Metadata column name(s) to group by.
+        func : function
+            Function to apply to each group.
+        grouped_arg : str, optional
+            Name of the function argument that the grouped object should be passed as. If none, the grouped object is passed as the first positional argument.
+        func_kwargs : dict
+            Additional keyword arguments to pass to the function.
+
+        Returns
+        -------
+        dict
+            Dictionary of results from applying the function to each group, where the keys are the group names and the values are the results.
+        """
+
+        groups = self.groupby(by)
+
+        if grouped_arg is None:
+            out = {k: func(self[v], **func_kwargs) for k, v in groups.items()}
+        else:
+            out = {
+                k: func(**{grouped_arg: self[v], **func_kwargs})
+                for k, v in groups.items()
+            }
+
+        return out
