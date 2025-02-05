@@ -161,13 +161,11 @@ class TestTsGroup1:
         ar_info = np.ones(3) * 1
         tsgroup = nap.TsGroup(group, sr=sr_info, ar=ar_info)
         assert tsgroup._metadata.shape == (3, 3)
+        np.testing.assert_array_almost_equal(tsgroup._metadata["sr"], sr_info.values)
         np.testing.assert_array_almost_equal(
-            tsgroup._metadata["sr"].values, sr_info.values
+            tsgroup._metadata.index, sr_info.index.values
         )
-        np.testing.assert_array_almost_equal(
-            tsgroup._metadata["sr"].index.values, sr_info.index.values
-        )
-        np.testing.assert_array_almost_equal(tsgroup._metadata["ar"].values, ar_info)
+        np.testing.assert_array_almost_equal(tsgroup._metadata["ar"], ar_info)
 
     def test_keys(self, group):
         tsgroup = nap.TsGroup(group)
@@ -207,7 +205,7 @@ class TestTsGroup1:
     def test_get_rate(self, group):
         tsgroup = nap.TsGroup(group)
         rate = tsgroup._metadata["rate"]
-        pd.testing.assert_series_equal(rate, tsgroup.get_info("rate"))
+        np.testing.assert_array_almost_equal(rate, tsgroup.get_info("rate"))
 
     def test_restrict(self, group):
         tsgroup = nap.TsGroup(group)
@@ -407,7 +405,7 @@ class TestTsGroup1:
         tsgroup.set_info(bbb=[1] * len(tsgroup))
         tsgroup.set_info(ccc=[np.pi] * len(tsgroup))
 
-        cols = tsgroup._metadata.columns.drop("rate")
+        cols = tsgroup._metadata.columns[1:]  # .drop("rate")
         headers = ["Index", "rate"] + [c for c in cols]
         lines = []
 

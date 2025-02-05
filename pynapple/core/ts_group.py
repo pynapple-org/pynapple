@@ -410,9 +410,9 @@ class TsGroup(UserDict, _MetadataMixin):
                     np.hstack(
                         (
                             self.index[0:n_rows, None],
-                            np.round(self._metadata[["rate"]].values[0:n_rows], 5),
+                            np.round(self.metadata[["rate"]].values[0:n_rows], 5),
                             _convert_iter_to_str(
-                                self._metadata[col_names].values[0:n_rows, 0:max_cols]
+                                self.metadata[col_names].values[0:n_rows, 0:max_cols]
                             ),
                             ends,
                         ),
@@ -425,9 +425,9 @@ class TsGroup(UserDict, _MetadataMixin):
                     np.hstack(
                         (
                             self.index[-n_rows:, None],
-                            np.round(self._metadata[["rate"]].values[-n_rows:], 5),
+                            np.round(self.metadata[["rate"]].values[-n_rows:], 5),
                             _convert_iter_to_str(
-                                self._metadata[col_names].values[-n_rows:, 0:max_cols]
+                                self.metadata[col_names].values[-n_rows:, 0:max_cols]
                             ),
                             ends,
                         ),
@@ -440,9 +440,9 @@ class TsGroup(UserDict, _MetadataMixin):
             table = np.hstack(
                 (
                     self.index[:, None],
-                    np.round(self._metadata[["rate"]].values, 5),
+                    np.round(self.metadata[["rate"]].values, 5),
                     _convert_iter_to_str(
-                        self._metadata[col_names].values[:, 0:max_cols]
+                        self.metadata[col_names].values[:, 0:max_cols]
                     ),
                     ends,
                 ),
@@ -994,7 +994,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
         """
         idx = np.digitize(self._metadata[key], bins) - 1
-        groups = self._metadata.index.groupby(idx)
+        groups = {k: self._metadata.index[idx == k] for k in np.unique(idx)}
         ix = np.unique(list(groups.keys()))
         ix = ix[ix >= 0]
         ix = ix[ix < len(bins) - 1]
@@ -1045,7 +1045,7 @@ class TsGroup(UserDict, _MetadataMixin):
                2             4        1}
 
         """
-        groups = self._metadata.groupby(key).groups
+        groups = self._metadata.groupby(key)
         sliced = {k: self[list(groups[k])] for k in groups.keys()}
         return sliced
 

@@ -387,8 +387,11 @@ class _Metadata(UserDict):
     # def __setitem__(self, key, value):
     #     self[key] = value
 
-    # def __getitem__(self, key):
-    #     return self.data[key]
+    def __getitem__(self, key):
+        if isinstance(key, list):
+            return {key: self.data[key] for key in key}
+        else:
+            return super().__getitem__(key)
 
     @property
     def columns(self):
@@ -427,44 +430,50 @@ class _Metadata(UserDict):
 class _MetadataLoc:
 
     def __init__(self, metadata, index):
-        self.metadata = metadata
+        self.data = metadata.data
+        self.keys = metadata.columns
+        self.index = index
         self.index_map = {k: v for v, k in enumerate(index)}
 
     def __getitem__(self, key):
-        if isinstance(key, str):
-            # metadata.loc[str]
-            return self.metadata.data[key]
+        if isinstance(key, str) or isinstance(key, Number):
+            # metadata.loc[str] or metadata.loc[Number], index row index within each metadata field
+            idx = self._get_indexder(key[0])
+            return self.data[key[1]][idx]
 
         elif isinstance(key, list) and all(isinstance(k, str) for k in key):
             # metadata.loc[[*str]]
-            return {k: self.metadata.data[k] for k in key}
+            return {k: self.data[k] for k in key}
 
         elif isinstance(key, Number):
             # metadata.loc[Number]
             idx = self._get_indexder([key])
-            return {k: [self.metadata.data[k][idx]] for k in self.metadata.columns}
+            return {k: [self.data[k][idx]] for k in self.keys}
 
-        elif isinstance(key, (np.ndarray, list, pd.Index, pd.Series)):
+        elif isinstance(key, (np.ndarray, list, pd.Index)):
             # metadata.loc[array_like]
             idx = self._get_indexder(key)
-            return {k: self.metadata.data[k][idx] for k in self.metadata.columns}
+            return {k: self.data[k][idx] for k in self.keys}
+
+        elif isinstance(key, pd.Series) and np.all(key.index == self.index):
+            # metadata.loc[pd.Series], check that index matches
+            return {k: self.data[k][key] for k in self.keys}
 
         elif isinstance(key, tuple) and len(key) == 2:
             if isinstance(key[1], str):
-                # metadata.loc[Any, str]
-                idx = self._get_indexder(key[0])
-                return self.metadata.data[key[1]][idx]
+                # metadata.loc[Any, str], index metadata field
+                return self.data[key]
 
             elif isinstance(key[1], list) and all(isinstance(k, str) for k in key[1]):
                 if isinstance(key[0], (Number, str)):
                     # metadata.loc[Number, [*str]] or metadata.loc[str, [*str]]
                     idx = self._get_indexder([key[0]])
-                    return {k: [self.metadata.data[k][idx]] for k in key[1]}
+                    return {k: [self.data[k][idx]] for k in key[1]}
 
                 elif is_array_like(key[0]) or isinstance(key[0], slice):
                     # metadata.loc[array_like, [*str]]
                     idx = self._get_indexder(key[0])
-                    return {k: self.metadata.data[k][idx] for k in key[1]}
+                    return {k: self.data[k][idx] for k in key[1]}
 
         else:
             raise IndexError(f"Unknown metadata index {key}")
@@ -476,23 +485,23 @@ class _MetadataLoc:
 class _MetadataILoc:
 
     def __init__(self, metadata):
-        self.metadata = metadata
+        self.data = metadata.data
         self.keys = metadata.columns
 
     def __getitem__(self, key):
         if isinstance(key, Number):
-            return {k: [self.metadata.data[k][key]] for k in self.metadata.columns}
+            return {k: [self.data[k][key]] for k in self.keys}
 
         elif isinstance(key, (Number, slice, list, np.ndarray, pd.Index, pd.Series)):
-            return {k: self.metadata.data[k][key] for k in self.metadata.columns}
+            return {k: self.data[k][key] for k in self.keys}
 
         elif isinstance(key, tuple) and len(key) == 2:
-            columns = self.metadata.columns[key[1]]
+            columns = self.keys[key[1]]
 
             if isinstance(key[0], Number):
-                return {k: [self.metadata.data[k][key[0]]] for k in columns}
+                return {k: [self.data[k][key[0]]] for k in columns}
             else:
-                return {k: self.metadata.data[k][key[0]] for k in columns}
+                return {k: self.data[k][key[0]] for k in columns}
 
         else:
             raise IndexError(f"Unknown metadata index {key}")

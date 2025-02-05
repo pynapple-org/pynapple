@@ -182,7 +182,6 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         self,
         start,
         end=None,
-        index=None,
         time_units="s",
         metadata=None,
     ):
@@ -288,10 +287,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                 warnings.warn("epochs have changed, dropping metadata.", stacklevel=2)
 
         self.values = data
-        if index is not None:
-            self.index = np.array(index, dtype="int")
-        else:
-            self.index = np.arange(data.shape[0], dtype="int")
+        self.index = np.arange(data.shape[0], dtype="int")
         self.columns = np.array(["start", "end"])
         self.nap_class = self.__class__.__name__
         # initialize metadata to get all attributes before setting metadata
@@ -389,12 +385,12 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         try:
             metadata = self._metadata
         except Exception:
-            metadata = pd.DataFrame(index=self.index)
+            metadata = {}
 
         if name == "_metadata":
             return metadata
-        elif name in metadata.columns:
-            return _MetadataMixin.__getattr__(self, name)
+        elif name in metadata.keys():
+            return _MetadataMixin.__getitem__(self, name)
         else:
             return super().__getattr__(name)
 
@@ -418,7 +414,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             elif key == "end":
                 return self.values[:, 1]
             elif key in self._metadata.columns:
-                return _MetadataMixin.__getitem__(self, key)
+                return self._metadata[key]
             else:
                 raise IndexError(
                     f"Unknown string argument. Should be in {['start', 'end'] + list(self._metadata.keys())}"
@@ -426,134 +422,83 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
 
         elif isinstance(key, list) and all(isinstance(x, str) for x in key):
             # self[[*str]]
-            # easiest to convert to dataframe and then slice
-            # in case of mixing ["start", "end"] with metadata columns
-            df = self.as_dataframe()
-            if all(x in key for x in ["start", "end"]):
-                return IntervalSet(df[key])
+            # only works for list of metadata columns
+            if all(x in key for x in self.metadata_columns):
+                return self._metadata[key]
             else:
-                return df[key]
+                raise IndexError(
+                    f"Unknown string argument. Should be in {list(self._metadata.keys())}"
+                )
 
         elif isinstance(key, Number):
-            # self[Number]
+            # self[Number], numpy-like indexing
             output = self.values.__getitem__(key)
             metadata = self._metadata.iloc[key]
             return IntervalSet(start=output[0], end=output[1], metadata=metadata)
 
-        elif isinstance(key, (slice, list, np.ndarray)):
-            # self[array_like], use iloc for metadata
+        elif isinstance(key, (slice, list, np.ndarray, pd.Series, pd.Index)):
+            # self[array_like], numpy-like indexing
             output = self.values.__getitem__(key)
             metadata = self._metadata.iloc[key]
             return IntervalSet(start=output[:, 0], end=output[:, 1], metadata=metadata)
 
-        elif isinstance(key, pd.Series):
-            # use loc for metadata
-            output = self.values.__getitem__(key)
-            metadata = self._metadata.loc[key]  # .reset_index(drop=True)
-            return IntervalSet(
-                start=output[:, 0],
-                end=output[:, 1],
-                # index=self.index[key],
-                metadata=metadata,
-            )
-
         elif isinstance(key, tuple):
             if len(key) == 2:
-                if isinstance(key[1], Number):
-                    # self[Any, Number]
-                    # allow number indexing for start and end times for backward compatibility
-                    return self.values.__getitem__(key)
-
-                elif isinstance(key[1], str):
-                    # self[Any, str]
-                    if key[1] == "start":
-                        return self.values[key[0], 0]
-                    elif key[1] == "end":
-                        return self.values[key[0], 1]
-                    elif key[1] in self._metadata.columns:
-                        return _MetadataMixin.__getitem__(self, key)
-
-                elif isinstance(key[1], (list, np.ndarray)):
-                    if all(isinstance(x, str) for x in key[1]):
-                        # self[Any, [*str]]
-                        # easiest to convert to dataframe and then slice
-                        # in case of mixing ["start", "end"] with metadata columns
-                        df = self.as_dataframe()
-                        if all(x in key[1] for x in ["start", "end"]):
-                            return IntervalSet(df.loc[key])
-                        else:
-                            return df.loc[key]
-
-                    elif all(isinstance(x, Number) for x in key[1]):
-                        if all(x in [0, 1] for x in key[1]):
-                            # self[Any, [0,1]]
-                            # allow number indexing for start and end times for backward compatibility
-                            output = self.values.__getitem__(key[0])
-                            if isinstance(key[0], Number):
-                                return IntervalSet(
-                                    start=output[0],
-                                    end=output[1],
-                                    # index=self.index[key[0]],
-                                )
-                            else:
-                                return IntervalSet(
-                                    start=output[:, 0],
-                                    end=output[:, 1],
-                                    # index=self.index[key[0]],
-                                )
-                        else:
-                            raise IndexError(
-                                f"index {key[1]} out of bounds for IntervalSet axis 1 with size 2"
-                            )
-                    else:
-                        raise IndexError(f"unknown index {key[1]} for index 2")
-
-                elif isinstance(key[1], slice):
-                    if key[1] == slice(None, None, None):
-                        # self[Any, :]
+                if isinstance(key[1], slice):
+                    # self[Any, slice]
+                    if (
+                        (key[1] == slice(None))  # self[Any, :]
+                        or (key[1] == slice(0, None))  # self[Any, 0:]
+                        or (
+                            (key[1].stop > 2)  # self[Any, :3+], self[Any, 0:3+]
+                            and ((key[1].start is None) or (key[1].start == 0))
+                        )
+                    ):
+                        # slice all rows
                         output = self.values.__getitem__(key[0])
                         metadata = self._metadata.iloc[key[0]]
+                        return IntervalSet(output, metadata=metadata)
 
-                        if isinstance(key[0], Number):
-                            return IntervalSet(
-                                start=output[0],
-                                end=output[1],
-                                # index=self.index[key[0]],
-                                metadata=metadata,
-                            )
-                        else:
-                            return IntervalSet(
-                                start=output[:, 0],
-                                end=output[:, 1],
-                                # index=self.index[key[0]],
-                                metadata=metadata,
-                            )
+                    elif (key[1] == slice(0, 2)) or (key[1] == slice(None, 2)):
+                        # slice start and stop
+                        output = self.values.__getitem__(key)
+                        return IntervalSet(output)
 
-                    elif (key[1] == slice(0, 2, None)) or (
-                        key[1] == slice(None, 2, None)
+                    elif ((key[1] == slice(0, -1)) or (key[1] == slice(None, -1))) and (
+                        len(self.metadata_columns) > 0
                     ):
-                        # self[Any, :2]
-                        # allow number indexing for start and end times for backward compatibility
-                        output = self.values.__getitem__(key[0])
-
-                        if isinstance(key[0], Number):
-                            return IntervalSet(
-                                start=output[0], end=output[1], index=self.index[key[0]]
-                            )
-                        else:
-                            return IntervalSet(
-                                start=output[:, 0],
-                                end=output[:, 1],
-                                # index=self.index[key[0]],
-                            )
+                        # slice start and stop and exclude metadata
+                        output = self.values.__getitem__(
+                            (key[0], slice(key[1].start, None, key[1].step))
+                        )
+                        return IntervalSet(output)
 
                     else:
-                        raise IndexError(
-                            f"index {key[1]} out of bounds for IntervalSet axis 1 with size 2"
-                        )
+                        # all other cases, use whatever numpy does
+                        output = self.values.__getitem__(key)
+                        return output
+
+                elif (
+                    isinstance(key[1], (list, np.ndarray, pd.Series, pd.Index))
+                    and all(isinstance(x, Number) for x in key[1])
+                    and (len(key[1]) == 2)
+                ):
+                    # return IntervalSet if one start and one end is indexed
+                    output = self.values.__getitem__(key)
+                    if (
+                        (np.issubdtype(np.array(key[1]).dtype, bool) and np.all(key[1]))
+                        or np.all(key[1] == [0, 1])
+                        or np.all(key[1] == [0, -1])
+                        or np.all(key[1] == [-2, -1])
+                    ):
+                        return IntervalSet(output)
+                    else:
+                        return output
 
                 else:
-                    raise IndexError(f"unknown type {type(key[1])} for index 2")
+                    # treat anything else like numpy indexing
+                    return self.values.__getitem__(key)
+                    # raise IndexError(f"unknown type {type(key[1])} for index 2")
 
             else:
                 raise IndexError(

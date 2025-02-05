@@ -6,6 +6,7 @@ import warnings
 from contextlib import nullcontext as does_not_raise
 from numbers import Number
 from pathlib import Path
+import re
 
 import numpy as np
 import pandas as pd
@@ -148,89 +149,136 @@ def test_create_iset_from_df_with_metadata_sort(df, expected):
 
 
 @pytest.mark.parametrize(
-    "index",
+    "index1",
     [
         0,
         -1,
-        slice(0, 2),
         [0, 2],
         [0, -1],
-        (slice(0, 2), slice(None)),
-        (slice(0, 2), slice(0, 2)),
-        # (slice(None), ["start", "end"]),
-        ([0, -1], slice(None, 2)),
-        (0, slice(None)),
-        (-1, slice(None)),
-        ([0, -1], slice(None)),
+        [0, 1, 3],
+        [0, 1, 2, 3],
+        slice(None),
+        slice(0, None),
+        slice(None, 2),
+        slice(0, 2),
+        slice(None, -1),
+        slice(0, -1),
+        slice(0, 1),
+        slice(None, 1),
+        slice(1, 3),
+        slice(1, -1),
+        [True, False, True, False],
+        pd.Series([True, False, True, False]),
+        pd.Series([1, 3]),
+        pd.Index([1, 3]),
     ],
 )
-def test_get_iset_with_metadata(iset_meta, index):
-    assert isinstance(iset_meta[index], nap.IntervalSet)
+class Test_IntervalSet_Metadata_Slicing:
 
+    @pytest.mark.parametrize(
+        "index2, output_type, has_metadata",
+        [
+            (None, nap.IntervalSet, True),
+            (slice(None), nap.IntervalSet, True),
+            (slice(0, None), nap.IntervalSet, True),
+            (slice(None, 3), nap.IntervalSet, True),
+            (slice(0, 3), nap.IntervalSet, True),
+            (slice(None, 10), nap.IntervalSet, True),
+            (slice(0, 10), nap.IntervalSet, True),
+            (slice(None, 1), (np.ndarray, np.float64), False),
+            (slice(0, 1), (np.ndarray, np.float64), False),
+            (slice(1, 2), (np.ndarray, np.float64), False),
+            (slice(0, 2), nap.IntervalSet, False),
+            (slice(None, 2), nap.IntervalSet, False),
+            (slice(1, 3), (np.ndarray, np.float64), False),
+            (slice(3, 10), (np.ndarray, np.float64), False),
+            ([0, 1], nap.IntervalSet, False),
+            ([0, -1], nap.IntervalSet, False),
+            ([0, 0, 1, 1], (np.ndarray, np.float64), False),
+            ([0, 1, 0, 1], (np.ndarray, np.float64), False),
+            (0, (np.ndarray, np.float64), False),
+            (-1, (np.ndarray, np.float64), False),
+            ([True, False], (np.ndarray, np.float64), False),
+            ([True, True], nap.IntervalSet, False),
+            (pd.Series([0, 1]), nap.IntervalSet, False),
+            (pd.Series([0, 1, 1]), (np.ndarray, np.float64), False),
+            (pd.Series([True, True]), nap.IntervalSet, False),
+            (pd.Series([True, False]), (np.ndarray, np.float64), False),
+        ],
+    )
+    def test_slice_iset_with_metadata(
+        self, iset_meta, index1, index2, output_type, has_metadata
+    ):
+        if index2 is None:
+            index = index1
+        else:
+            index = (index1, index2)
 
-@pytest.mark.parametrize(
-    "index, expected",
-    [
-        ((slice(None), 0), "start"),
-        ((slice(None), 1), "end"),
-        # ((slice(None), "end"), "end"),
-        # ((slice(None), "label"), "label"),
-        # ((slice(None), ["end", "label"]), ["end", "label"]),
-        ((0, [0, 1]), ([0], ["start", "end"])),
-        ((0, slice(None)), ([0], slice(None))),
-        (([1, 2], slice(None)), ([1, 2], slice(None))),
-        # (([1, 2], ["end", "label"]), ([1, 2], ["end", "label"])),
-    ],
-)
-def test_slice_iset_with_metadata(iset_meta, index, expected):
-    if isinstance(expected, str):
-        # start and end returned as array
-        np.testing.assert_array_equal(
-            iset_meta[index], iset_meta.as_dataframe()[expected].values
-        )
-
-    elif isinstance(expected, list):
-        pd.testing.assert_frame_equal(
-            iset_meta[index], iset_meta.as_dataframe()[expected]
-        )
-    elif isinstance(expected, tuple):
+        # skip if shape mismatch
         try:
-            # index reset when IntervalSet is returned
-            pd.testing.assert_frame_equal(
-                iset_meta[index].as_dataframe(),
-                iset_meta.as_dataframe().loc[expected].reset_index(drop=True),
+            iset_meta[index]
+        except Exception as e:
+            if "shape mismatch" in str(e):
+                pytest.skip("index1 and index2 must have the same shape")
+            else:
+                raise e
+
+        assert isinstance(iset_meta[index], output_type)
+
+        expected = iset_meta.values[index]
+
+        # check that indexing iset is the same as indexing the np.array values
+        if output_type is nap.IntervalSet:
+            np.testing.assert_array_almost_equal(
+                iset_meta[index].values.squeeze(), expected.squeeze()
             )
-        except AttributeError:
-            # index not reset when DataFrame is returned
-            pd.testing.assert_frame_equal(
-                iset_meta[index], iset_meta.as_dataframe().loc[expected]
-            )
+        else:
+            np.testing.assert_array_almost_equal(iset_meta[index], expected)
+
+        if has_metadata:
+            for col in iset_meta.metadata_columns:
+                assert np.all(
+                    iset_meta[index].get_info(col) == iset_meta.get_info(col)[index1]
+                )
+
+    @pytest.mark.parametrize(
+        "index2",
+        [
+            slice(0, -1),
+            slice(None, -1),
+        ],
+    )
+    def test_slice_iset_with_metadata_special(self, iset_meta, index1, index2):
+        index = (index1, index2)
+
+        # first slice gets rid of metadata
+        res1 = iset_meta[index]
+        assert isinstance(res1, nap.IntervalSet)
+        np.testing.assert_array_almost_equal(
+            iset_meta.values[index1].squeeze(), res1.values.squeeze()
+        )
+        assert len(res1.metadata_columns) == 0
+
+        # skip if second slice is out of bounds
+        try:
+            res1[index]
+        except Exception as e:
+            if re.match(r"index \d+ is out of bounds", str(e)) or (
+                "boolean index did not match" in str(e)
+            ):
+                pytest.skip("index1 out of bounds for second slice")
+            else:
+                raise e
+
+        # second slice gets rid of last column
+        res2 = res1[index]
+        assert isinstance(res2, (np.ndarray, np.float64))
+        np.testing.assert_array_almost_equal(res2, res1.values[index])
 
 
 @pytest.mark.parametrize(
     "index, expected",
     [
-        (
-            (slice(None), pd.Series(index=[0, 1, 2, 3], data=[0, 0, 0, 0])),
-            pytest.raises(
-                IndexError,
-                match="unknown type <class 'pandas.core.series.Series'> for index 2",
-            ),
-        ),
-        (
-            (slice(None), [pd.Series(index=[0, 1, 2, 3], data=[0, 0, 0, 0])]),
-            pytest.raises(
-                IndexError,
-                match="unknown index",
-            ),
-        ),
-        (
-            pd.DataFrame(index=[0, 1, 2, 3], data=[0, 0, 0, 0]),
-            pytest.raises(
-                IndexError,
-                match="unknown type <class 'pandas.core.frame.DataFrame'> for index",
-            ),
-        ),
         (
             (slice(None), 2),
             pytest.raises(
@@ -239,22 +287,36 @@ def test_slice_iset_with_metadata(iset_meta, index, expected):
             ),
         ),
         (
-            (slice(None), slice(1, 3)),
-            pytest.raises(
-                IndexError,
-                match="index slice\\(1, 3, None\\) out of bounds for IntervalSet axis 1 with size 2",
-            ),
-        ),
-        (
             (slice(None), [0, 3]),
             pytest.raises(
                 IndexError,
-                match="index \\[0, 3\\] out of bounds for IntervalSet axis 1 with size 2",
+                match="index 3 is out of bounds",
+            ),
+        ),
+        (
+            (slice(None), "label"),
+            pytest.raises(
+                IndexError,
+                match="only integers",
+            ),
+        ),
+        (
+            (slice(None), ["label", "info"]),
+            pytest.raises(
+                IndexError,
+                match="only integers",
+            ),
+        ),
+        (
+            (slice(None), [True, True, False]),
+            pytest.raises(
+                IndexError,
+                match="boolean index did not match",
             ),
         ),
     ],
 )
-def test_get_iset_with_metadata_errors(iset_meta, index, expected):
+def test_slice_iset_with_metadata_errors(iset_meta, index, expected):
     with expected:
         iset_meta[index]
 
@@ -316,7 +378,6 @@ def test_drop_short_intervals_metadata(iset_meta):
 
 def test_drop_long_intervals_metadata(iset_meta):
     iset_dropped = iset_meta.drop_long_intervals(5)
-    print(iset_dropped)
     assert np.all(iset_dropped.metadata_columns == iset_meta.metadata_columns)
     assert len(iset_dropped.metadata_index) == 1  # one interval left
     assert len(iset_dropped._metadata["label"]) == 1  # one interval left
@@ -449,111 +510,110 @@ def test_tsdframe_metadata_slicing(tsdframe_meta):
     if len(tsdframe_meta.metadata_columns):
         for mcol in tsdframe_meta.metadata_columns:
             mval = tsdframe_meta._metadata[mcol][0]
-            fcols = np.where(tsdframe_meta._metadata[mcol] == mval)
-            assert isinstance(tsdframe_meta[tsdframe_meta[mcol] == mval], nap.TsdFrame)
-            assert np.all(tsdframe_meta[tsdframe_meta[mcol] == mval].columns == fcols)
-            assert np.all(
-                tsdframe_meta[tsdframe_meta[mcol] == mval].metadata_index == fcols
-            )
+            fcols = tsdframe_meta.columns[
+                np.where(tsdframe_meta._metadata[mcol] == mval)
+            ]
             assert isinstance(
                 tsdframe_meta[:, tsdframe_meta[mcol] == mval], nap.TsdFrame
             )
-            np.testing.assert_array_almost_equal(
-                tsdframe_meta[tsdframe_meta[mcol] == mval].values,
-                tsdframe_meta[:, tsdframe_meta[mcol] == mval].values,
+            assert np.all(
+                tsdframe_meta[:, tsdframe_meta[mcol] == mval].columns == fcols
+            )
+            assert np.all(
+                tsdframe_meta[:, tsdframe_meta[mcol] == mval].metadata_index == fcols
             )
 
 
-# @pytest.mark.parametrize(
-#     "name, attr_exp, set_exp, set_attr_exp, set_key_exp, get_exp, get_attr_exp, get_key_exp",
-#     [
-#         # existing data column
-#         (
-#             "a",
-#             # not attribute
-#             pytest.raises(AssertionError),
-#             # error with set_info
-#             pytest.raises(ValueError, match="Invalid metadata name"),
-#             # error with setattr
-#             pytest.raises(ValueError, match="Invalid metadata name"),
-#             # shape mismatch with setitem
-#             pytest.raises(ValueError),
-#             # assertion error with get_info
-#             pytest.raises(AssertionError),
-#             # attribute should raise error
-#             pytest.raises(AttributeError),
-#             # key should not match metadata
-#             pytest.raises(AssertionError),
-#         ),
-#         (
-#             "columns",
-#             # attribute exists
-#             does_not_raise(),
-#             # warn with set_info
-#             pytest.warns(UserWarning, match="overlaps with an existing"),
-#             # cannot be set as attribute
-#             pytest.raises(AttributeError, match="Cannot set attribute"),
-#             # warn when set as key
-#             pytest.warns(UserWarning, match="overlaps with an existing"),
-#             # no error with get_info
-#             does_not_raise(),
-#             # attribute should not match metadata
-#             pytest.raises(TypeError),
-#             # key should match metadata
-#             does_not_raise(),
-#         ),
-#         # existing metdata
-#         (
-#             "l1",
-#             # attribute exists
-#             does_not_raise(),
-#             # no warning with set_info
-#             does_not_raise(),
-#             # no warning with setattr
-#             does_not_raise(),
-#             # no warning with setitem
-#             does_not_raise(),
-#             # no error with get_info
-#             does_not_raise(),
-#             # attr should match metadata
-#             does_not_raise(),
-#             # key should match metadata
-#             does_not_raise(),
-#         ),
-#     ],
-# )
-# def test_tsdframe_metadata_overlapping_names(
-#     tsdframe_meta,
-#     name,
-#     attr_exp,
-#     set_exp,
-#     set_attr_exp,
-#     get_exp,
-#     set_key_exp,
-#     get_attr_exp,
-#     get_key_exp,
-# ):
-#     with attr_exp:
-#         assert hasattr(tsdframe_meta, name)
-#     # warning when set
-#     with set_exp:
-#         # warnings.simplefilter("error")
-#         tsdframe_meta.set_info({name: np.ones(4)})
-#     # error when set as attribute
-#     with set_attr_exp:
-#         setattr(tsdframe_meta, name, np.ones(4))
-#     # error when set as key
-#     with set_key_exp:
-#         tsdframe_meta[name] = np.ones(4)
-#     # retrieve with get_info
-#     with get_exp:
-#         np.testing.assert_array_almost_equal(tsdframe_meta.get_info(name), np.ones(4))
-#     # make sure it doesn't access metadata if its an existing attribute or key
-#     with get_attr_exp:
-#         np.testing.assert_array_almost_equal(getattr(tsdframe_meta, name), np.ones(4))
-#     # make sure it doesn't access metadata if its an existing key
-#     with get_key_exp:
-#         np.testing.assert_array_almost_equal(tsdframe_meta[name], np.ones(4))
+@pytest.mark.parametrize(
+    "name, attr_exp, set_exp, set_attr_exp, set_key_exp, get_exp, get_attr_exp, get_key_exp",
+    [
+        # existing data column
+        (
+            "a",
+            # not attribute
+            pytest.raises(AssertionError),
+            # error with set_info
+            pytest.raises(ValueError, match="Invalid metadata name"),
+            # error with setattr
+            pytest.raises(ValueError, match="Invalid metadata name"),
+            # shape mismatch with setitem
+            pytest.raises(ValueError),
+            # assertion error with get_info
+            pytest.raises(AssertionError),
+            # attribute should raise error
+            pytest.raises(AttributeError),
+            # key should not match metadata
+            pytest.raises(AssertionError),
+        ),
+        (
+            "columns",
+            # attribute exists
+            does_not_raise(),
+            # warn with set_info
+            pytest.warns(UserWarning, match="overlaps with an existing"),
+            # cannot be set as attribute
+            pytest.raises(AttributeError, match="Cannot set attribute"),
+            # warn when set as key
+            pytest.warns(UserWarning, match="overlaps with an existing"),
+            # no error with get_info
+            does_not_raise(),
+            # attribute should not match metadata
+            pytest.raises(TypeError),
+            # key should match metadata
+            does_not_raise(),
+        ),
+        # existing metdata
+        (
+            "l1",
+            # attribute exists
+            does_not_raise(),
+            # no warning with set_info
+            does_not_raise(),
+            # no warning with setattr
+            does_not_raise(),
+            # no warning with setitem
+            does_not_raise(),
+            # no error with get_info
+            does_not_raise(),
+            # attr should match metadata
+            does_not_raise(),
+            # key should match metadata
+            does_not_raise(),
+        ),
+    ],
+)
+def test_tsdframe_metadata_overlapping_names(
+    tsdframe_meta,
+    name,
+    attr_exp,
+    set_exp,
+    set_attr_exp,
+    get_exp,
+    set_key_exp,
+    get_attr_exp,
+    get_key_exp,
+):
+    with attr_exp:
+        assert hasattr(tsdframe_meta, name)
+    # warning when set
+    with set_exp:
+        # warnings.simplefilter("error")
+        tsdframe_meta.set_info({name: np.ones(4)})
+    # error when set as attribute
+    with set_attr_exp:
+        setattr(tsdframe_meta, name, np.ones(4))
+    # error when set as key
+    with set_key_exp:
+        tsdframe_meta[name] = np.ones(4)
+    # retrieve with get_info
+    with get_exp:
+        np.testing.assert_array_almost_equal(tsdframe_meta.get_info(name), np.ones(4))
+    # make sure it doesn't access metadata if its an existing attribute or key
+    with get_attr_exp:
+        np.testing.assert_array_almost_equal(getattr(tsdframe_meta, name), np.ones(4))
+    # make sure it doesn't access metadata if its an existing key
+    with get_key_exp:
+        np.testing.assert_array_almost_equal(tsdframe_meta[name], np.ones(4))
 
 
 # #############
