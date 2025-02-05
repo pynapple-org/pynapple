@@ -336,7 +336,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                     np.hstack(
                         (
                             self.index[-n_rows:, None],
-                            self.values[0:n_rows],
+                            self.values[-n_rows:],
                             _convert_iter_to_str(metadata.values[-n_rows:]),
                         ),
                         dtype=object,
