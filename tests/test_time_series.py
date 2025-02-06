@@ -1384,9 +1384,7 @@ class TestTsdFrame:
             metadata = file["_metadata"].item()
             assert metadata.keys() == tsdframe._metadata.keys()
             for key in metadata.keys():
-                np.testing.assert_array_almost_equal(
-                    metadata[key], tsdframe._metadata[key]
-                )
+                assert np.all(metadata[key] == tsdframe._metadata[key])
 
         Path("tsdframe.npz").unlink()
         Path("tsdframe2.npz").unlink()
