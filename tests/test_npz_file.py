@@ -116,6 +116,31 @@ def test_load_tsgroup(path, k):
 
 
 @pytest.mark.parametrize("path", [path])
+@pytest.mark.parametrize("k", ["tsgroup", "tsgroup_minfo"])
+def test_load_tsgroup_backward_compatibility(path, k):
+    """
+    For npz files saved without the _metadata keys
+    """
+    file_path = path / (k + ".npz")
+    tmp = dict(np.load(file_path, allow_pickle=True))
+    # Adding one metadata element outside the _metadata key
+    tag = np.random.randn(3)
+    tmp["tag"] = tag
+    np.savez(file_path, **tmp)
+
+    file = nap.NPZFile(file_path)
+    tmp = file.load()
+    assert isinstance(tmp, type(data[k]))
+    assert tmp.keys() == list(data[k].keys())
+    assert np.all(tmp[neu] == data[k][neu] for neu in tmp.keys())
+    np.testing.assert_array_almost_equal(
+        tmp.time_support.values, data[k].time_support.values
+    )
+    assert "rate" in tmp.metadata.columns
+    np.testing.assert_array_almost_equal(tmp.tag.values, tag)
+
+
+@pytest.mark.parametrize("path", [path])
 @pytest.mark.parametrize("k", ["tsd"])
 def test_load_tsd(path, k):
     file_path = path / (k + ".npz")

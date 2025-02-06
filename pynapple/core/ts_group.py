@@ -1419,13 +1419,31 @@ class TsGroup(UserDict, _MetadataMixin):
 
         tsgroup = cls(group, time_support=time_support, bypass_check=True)
 
-        # do we need to enforce that these keys are not in metadata?
-        # not_info_keys = {"start", "end", "t", "index", "d", "rate", "keys"}
-
         if "_metadata" in file:  # load metadata if it exists
             if file["_metadata"]:  # check that metadata is not empty
                 metainfo = pd.DataFrame.from_dict(file["_metadata"].item())
                 tsgroup.set_info(metainfo)
+
+        metainfo = {}
+        not_info_keys = {
+            "start",
+            "end",
+            "t",
+            "index",
+            "d",
+            "rate",
+            "keys",
+            "_metadata",
+            "type",
+        }
+
+        for k in set(file.keys()) - not_info_keys:
+            tmp = file[k]
+            if len(tmp) == len(tsgroup):
+                metainfo[k] = tmp
+
+        tsgroup.set_info(**metainfo)
+
         return tsgroup
 
     @add_meta_docstring("set_info")
