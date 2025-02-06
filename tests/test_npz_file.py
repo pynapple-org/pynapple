@@ -114,6 +114,7 @@ def test_load_tsgroup(path, k):
         tmp.time_support.values, data[k].time_support.values
     )
 
+
 @pytest.mark.parametrize("path", [path])
 @pytest.mark.parametrize("k", ["tsgroup", "tsgroup_minfo"])
 def test_load_tsgroup_backward_compatibility(path, k):
@@ -124,7 +125,7 @@ def test_load_tsgroup_backward_compatibility(path, k):
     tmp = dict(np.load(file_path, allow_pickle=True))
     # Adding one metadata element outside the _metadata key
     tag = np.random.randn(3)
-    tmp['tag'] = tag
+    tmp["tag"] = tag
     np.savez(file_path, **tmp)
 
     file = nap.NPZFile(file_path)
