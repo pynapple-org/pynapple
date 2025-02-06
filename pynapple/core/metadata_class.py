@@ -300,7 +300,66 @@ class _MetadataMixin:
         IndexError
             If the metadata index is not found.
         """
-        return self._metadata.loc[key]
+        if isinstance(key, str) and (key in self.metadata_columns):
+            return self._metadata[key]
+
+        elif (
+            isinstance(key, (list, np.ndarray))
+            and all(isinstance(k, str) for k in key)
+            and all(k in self.metadata_columns for k in key)
+        ):
+            return self._metadata[key]
+
+        else:
+            return self._metadata.loc[key]
+
+    def drop_info(self, key):
+        """
+        Drop metadata based on metadata column name
+
+        Parameters
+        ----------
+        key : (str, list)
+            Metadata column name(s) to drop.
+
+        Returns
+        -------
+        None
+        """
+        if isinstance(key, str):
+            if key in self.metadata_columns:
+                del self._metadata[key]
+            else:
+                raise KeyError(
+                    f"Metadata column {key} not found. Metadata columns are {self.metadata_columns}"
+                )
+
+        elif isinstance(key, (list, np.ndarray)) and all(
+            isinstance(k, str) for k in key
+        ):
+            drop = []
+            no_drop = []
+            for k in key:
+                if k in self.metadata_columns:
+                    drop.append(k)
+                    del self._metadata[k]
+                else:
+                    no_drop.append(k)
+
+            if drop and no_drop:
+                warnings.warn(
+                    f"Metadata columns {no_drop} not found. Metadata columns {drop} were successfully removed. Remaining metadata columns are {self.metadata_columns}"
+                )
+
+            elif no_drop and not drop:
+                raise KeyError(
+                    f"Metadata columns {no_drop} not found. Metadata columns are {self.metadata_columns}"
+                )
+
+        else:
+            raise KeyError(
+                f"Metadata column {key} not found. Metadata columns are {self.metadata_columns}"
+            )
 
     def groupby(self, by, get_group=None):
         """
@@ -384,14 +443,16 @@ class _Metadata(UserDict):
         super().__init__()
         self.index = index
 
-    # def __setitem__(self, key, value):
-    #     self[key] = value
-
     def __getitem__(self, key):
-        if isinstance(key, list):
-            return {key: self.data[key] for key in key}
-        else:
-            return super().__getitem__(key)
+        try:
+            if isinstance(key, list):
+                return {key: self.data[key] for key in key}
+            else:
+                return super().__getitem__(key)
+        except KeyError:
+            raise IndexError(
+                f"Metadata column(s) {key} not found. Metadata columns are {self.columns}"
+            )
 
     @property
     def columns(self):
@@ -436,44 +497,37 @@ class _MetadataLoc:
         self.index_map = {k: v for v, k in enumerate(index)}
 
     def __getitem__(self, key):
-        if isinstance(key, str) or isinstance(key, Number):
-            # metadata.loc[str] or metadata.loc[Number], index row index within each metadata field
-            idx = self._get_indexder(key[0])
-            return self.data[key[1]][idx]
+        if isinstance(key, pd.Series) and np.all(key.index == self.index):
+            # metadata.loc[pd.Series], check that index matches
+            return {k: self.data[k][key] for k in self.keys}
 
-        elif isinstance(key, list) and all(isinstance(k, str) for k in key):
-            # metadata.loc[[*str]]
-            return {k: self.data[k] for k in key}
-
-        elif isinstance(key, Number):
+        elif isinstance(key, (Number, str)):
             # metadata.loc[Number]
-            idx = self._get_indexder([key])
-            return {k: [self.data[k][idx]] for k in self.keys}
+            idx = self.index_map[key]
+            return {k: self.data[k][idx] for k in self.keys}
 
-        elif isinstance(key, (np.ndarray, list, pd.Index)):
+        elif isinstance(key, (list, np.ndarray, pd.Index, slice)):
             # metadata.loc[array_like]
             idx = self._get_indexder(key)
             return {k: self.data[k][idx] for k in self.keys}
 
-        elif isinstance(key, pd.Series) and np.all(key.index == self.index):
-            # metadata.loc[pd.Series], check that index matches
-            return {k: self.data[k][key] for k in self.keys}
-
-        elif isinstance(key, tuple) and len(key) == 2:
-            if isinstance(key[1], str):
-                # metadata.loc[Any, str], index metadata field
-                return self.data[key]
-
-            elif isinstance(key[1], list) and all(isinstance(k, str) for k in key[1]):
-                if isinstance(key[0], (Number, str)):
-                    # metadata.loc[Number, [*str]] or metadata.loc[str, [*str]]
-                    idx = self._get_indexder([key[0]])
-                    return {k: [self.data[k][idx]] for k in key[1]}
-
-                elif is_array_like(key[0]) or isinstance(key[0], slice):
-                    # metadata.loc[array_like, [*str]]
+        elif isinstance(key, tuple):
+            if len(key) == 2:
+                if isinstance(key[0], (str, Number)):
+                    idx = self.index_map[key[0]]
+                else:
                     idx = self._get_indexder(key[0])
+
+                if isinstance(key[1], str):
+                    # metadata.loc[Any, str], index metadata field
+                    return self.data[key[1]][idx]
+
+                elif isinstance(key[1], list) and all(
+                    isinstance(k, str) for k in key[1]
+                ):
                     return {k: self.data[k][idx] for k in key[1]}
+            else:
+                raise IndexError(f"Too many indices for metadata.loc: {key}")
 
         else:
             raise IndexError(f"Unknown metadata index {key}")

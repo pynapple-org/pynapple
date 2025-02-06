@@ -259,8 +259,6 @@ class TsGroup(UserDict, _MetadataMixin):
                         time_support=time_support,
                         time_units=time_units,
                     )
-        rate = np.array([data[k].rate for k in self.index])
-        self._metadata["rate"] = rate
 
         # If time_support is passed, all elements of data are restricted prior to init
         if passed_time_support:
@@ -279,6 +277,8 @@ class TsGroup(UserDict, _MetadataMixin):
                 data = {k: data[k].restrict(self.time_support) for k in self.index}
 
         UserDict.__init__(self, data)
+        rate = np.array([data[k].rate for k in self.index])
+        self._metadata["rate"] = rate
         self.nap_class = self.__class__.__name__
         # grab current attributes before adding metadata
         self._class_attributes = self.__dir__()
