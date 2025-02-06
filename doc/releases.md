@@ -18,6 +18,13 @@ of the Flatiron institute.
 
 ## Releases
 
+### 0.8.4 (2025-02-07)
+
+- Fix value printing of IntervalSet when rows are collapsed 
+- Backward compatibility fix for loading npz files with TsGroup
+- Fix indexing of IntervalSet to be able to use -1
+- Add column names for compute_wavelet_transform 
+
 ### 0.8.3 (2025-01-24)
 
 - `compute_mean_power_spectral_density` computes the mean periodogram.
