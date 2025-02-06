@@ -3,6 +3,7 @@ from numbers import Number
 from typing import Union
 from collections import UserDict
 from .utils import is_array_like
+import copy
 
 import numpy as np
 import pandas as pd
@@ -470,6 +471,10 @@ class _Metadata(UserDict):
     def shape(self):
         return (len(self.index), len(self.columns))
 
+    @property
+    def dtypes(self):
+        return {k: self.data[k].dtype for k in self.columns}
+
     def as_dataframe(self):
         return pd.DataFrame(self.data, index=self.index)
 
@@ -480,12 +485,27 @@ class _Metadata(UserDict):
             }
 
         elif isinstance(by, list):
-            return {
+            groups = {
                 k: np.where(
                     np.all([self.data[col] == k[c] for c, col in enumerate(by)], axis=0)
                 )[0]
                 for k in itertools.product(*[np.unique(self.data[col]) for col in by])
             }
+            # remove empty groups
+            return {k: v for k, v in groups.items() if len(v)}
+
+    def copy(self):
+        return copy.deepcopy(self)
+
+    def merge(self, other):
+        if not isinstance(other, _Metadata):
+            raise TypeError("Can only merge with another _Metadata object")
+        if not np.all(self.columns == other.columns):
+            raise ValueError("Cannot merge metadata with different columns")
+
+        self.index = np.concatenate([self.index, other.index])
+        for k, v in other.data.items():
+            self.data[k] = np.concatenate([self.data[k], v])
 
 
 class _MetadataLoc:

@@ -423,7 +423,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         elif isinstance(key, list) and all(isinstance(x, str) for x in key):
             # self[[*str]]
             # only works for list of metadata columns
-            if all(x in key for x in self.metadata_columns):
+            if all(x in self.metadata_columns for x in key):
                 return self._metadata[key]
             else:
                 raise IndexError(
@@ -943,7 +943,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             start=self.values[:, 0],
             end=self.values[:, 1],
             type=np.array(["IntervalSet"], dtype=np.str_),
-            _metadata=self._metadata.to_dict(),  # save metadata as dictionary
+            _metadata=dict(self._metadata),  # save metadata as dictionary
         )
 
         return

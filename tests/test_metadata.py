@@ -1161,136 +1161,139 @@ class Test_Metadata:
             # metadata columns should be the same
             assert np.all(obj2.metadata_columns == obj.metadata_columns)
 
+    def test_metadata_index_columns(self, obj, obj_len):
+        # add metadata
+        obj.set_info(one=[1] * obj_len, two=[2] * obj_len, three=[3] * obj_len)
 
-#     def test_metadata_index_columns(self, obj, obj_len):
-#         # add metadata
-#         obj.set_info(one=[1] * obj_len, two=[2] * obj_len, three=[3] * obj_len)
+        # test metadata columns
+        assert np.all(obj["one"] == 1)
+        assert np.all(obj[["two", "three"]] == obj._metadata[["two", "three"]])
 
-#         # test metadata columns
-#         assert np.all(obj["one"] == 1)
-#         assert np.all(obj[["two", "three"]] == obj._metadata[["two", "three"]])
+    def test_save_and_load_npz(self, obj, obj_len):
+        obj.set_info(label1=[1] * obj_len, label2=[2] * obj_len)
 
-#     def test_save_and_load_npz(self, obj, obj_len):
-#         obj.set_info(label1=[1] * obj_len, label2=[2] * obj_len)
+        obj.save("obj.npz")
+        file = np.load("obj.npz", allow_pickle=True)
 
-#         obj.save("obj.npz")
-#         file = np.load("obj.npz", allow_pickle=True)
+        # only test that metadata is saved correctly
+        assert "_metadata" in file.keys()
+        metadata = file["_metadata"].item()
+        for k in ["label1", "label2"]:
+            assert k in metadata.keys()
+            np.testing.assert_array_almost_equal(obj._metadata[k], metadata[k])
 
-#         # only test that metadata is saved correctly
-#         assert "_metadata" in file.keys()
-#         metadata = pd.DataFrame.from_dict(file["_metadata"].item())
-#         for k in ["label1", "label2"]:
-#             assert k in metadata.columns
-#             pd.testing.assert_series_equal(obj._metadata[k], metadata[k])
+        # test pynapple loading
+        obj2 = nap.load_file("obj.npz")
+        assert isinstance(obj2, type(obj))
+        assert obj2._metadata.keys() == obj._metadata.keys()
+        for key in obj._metadata.keys():
+            np.testing.assert_array_almost_equal(
+                obj2._metadata[key], obj._metadata[key]
+            )
 
-#         # test pynapple loading
-#         obj2 = nap.load_file("obj.npz")
-#         assert isinstance(obj2, type(obj))
-#         pd.testing.assert_frame_equal(obj2._metadata, obj._metadata)
+        # cleaning
+        Path("obj.npz").unlink()
 
-#         # cleaning
-#         Path("obj.npz").unlink()
+    #         # class Test_Metadata_Group:
 
-#         # class Test_Metadata_Group:
+    @pytest.mark.parametrize(
+        "metadata, group",
+        [
+            ({"label": [1, 1, 2, 2]}, "label"),
+            ({"l1": [1, 1, 2, 2], "l2": ["a", "b", "b", "b"]}, ["l1", "l2"]),
+        ],
+    )
+    def test_metadata_groupby(self, obj, metadata, group, obj_len):
+        if obj_len <= 1:
+            pytest.skip("groupby not relevant for length 1 objects")
 
-#     @pytest.mark.parametrize(
-#         "metadata, group",
-#         [
-#             ({"label": [1, 1, 2, 2]}, "label"),
-#             ({"l1": [1, 1, 2, 2], "l2": ["a", "b", "b", "b"]}, ["l1", "l2"]),
-#         ],
-#     )
-#     def test_metadata_groupby(self, obj, metadata, group, obj_len):
-#         if obj_len <= 1:
-#             pytest.skip("groupby not relevant for length 1 objects")
+        obj.set_info(metadata)
 
-#         obj.set_info(metadata)
+        # pandas groups
+        pd_groups = obj.metadata.groupby(group).groups
 
-#         # pandas groups
-#         pd_groups = obj._metadata.groupby(group)
+        # group by metadata, assert returned groups
+        nap_groups = obj.groupby(group)
+        # remove empty groups, since pandas doesn't return them
+        # nap_nonempty = {k: v for k, v in nap_groups.items() if len(v)}
+        assert nap_groups.keys() == pd_groups.keys()
 
-#         # group by metadata, assert returned groups
-#         nap_groups = obj.groupby(group)
-#         assert nap_groups.keys() == pd_groups.groups.keys()
+        for grp, idx in nap_groups.items():
+            # index same as pandas
+            assert all(idx == pd_groups[grp])
 
-#         for grp, idx in nap_groups.items():
-#             # index same as pandas
-#             assert all(idx == pd_groups.groups[grp])
+            # return object with get_group argument
+            obj_grp = obj.groupby(group, get_group=grp)
 
-#             # return object with get_group argument
-#             obj_grp = obj.groupby(group, get_group=grp)
+            # get_group should be the same as indexed object
+            pd.testing.assert_frame_equal(obj_grp.metadata, obj[np.array(idx)].metadata)
+            # index should be the same for both objects
+            assert all(obj_grp.index == obj[np.array(idx)].index)
+            if isinstance(obj, nap.TsdFrame):
+                # columns should be the same
+                assert all(obj_grp.columns == obj[np.array(idx)].columns)
 
-#             # get_group should be the same as indexed object
-#             pd.testing.assert_frame_equal(
-#                 obj_grp._metadata, obj[np.array(idx)]._metadata
-#             )
-#             # index should be the same for both objects
-#             assert all(obj_grp.index == obj[np.array(idx)].index)
-#             if isinstance(obj, nap.TsdFrame):
-#                 # columns should be the same
-#                 assert all(obj_grp.columns == obj[np.array(idx)].columns)
+    @pytest.mark.parametrize(
+        "metadata, group",
+        [
+            ({"label": [1, 1, 2, 2]}, "label"),
+            ({"l1": [1, 1, 2, 2], "l2": ["a", "b", "b", "b"]}, ["l1", "l2"]),
+        ],
+    )
+    @pytest.mark.parametrize("func", [np.mean, np.sum, np.max, np.min])
+    def test_metadata_groupby_apply_numpy(self, obj, metadata, group, func, obj_len):
+        if obj_len <= 1:
+            pytest.skip("groupby not relevant for length 1 objects")
 
-#     @pytest.mark.parametrize(
-#         "metadata, group",
-#         [
-#             ({"label": [1, 1, 2, 2]}, "label"),
-#             ({"l1": [1, 1, 2, 2], "l2": ["a", "b", "b", "b"]}, ["l1", "l2"]),
-#         ],
-#     )
-#     @pytest.mark.parametrize("func", [np.mean, np.sum, np.max, np.min])
-#     def test_metadata_groupby_apply_numpy(self, obj, metadata, group, func, obj_len):
-#         if obj_len <= 1:
-#             pytest.skip("groupby not relevant for length 1 objects")
+        obj.set_info(metadata)
+        groups = obj.groupby(group)
 
-#         obj.set_info(metadata)
-#         groups = obj.groupby(group)
+        # apply numpy function through groupby_apply
+        grouped_out = obj.groupby_apply(group, func)
 
-#         # apply numpy function through groupby_apply
-#         grouped_out = obj.groupby_apply(group, func)
-
-#         for grp, idx in groups.items():
-#             # check that the output is the same as applying the function to the indexed object
-#             np.testing.assert_array_almost_equal(
-#                 func(obj[np.array(idx)]), grouped_out[grp]
-#             )
-
-
-# # test double inheritance
-# def get_defined_members(cls):
-#     """
-#     Get all methods and attributes explicitly defined in a class (excluding inherited ones),
-#     without relying on `__dir__` overrides.
-#     """
-#     # Fetch the class's dictionary directly to avoid `__dir__` overrides
-#     cls_dict = cls.__dict__
-
-#     # Use inspect to identify which are functions, properties, or other attributes
-#     return {
-#         name
-#         for name, obj in cls_dict.items()
-#         if not name.startswith("__")  # Ignore dunder methods
-#         and (
-#             inspect.isfunction(obj)
-#             or isinstance(obj, property)
-#             or not inspect.isroutine(obj)
-#         )
-#     }
+        for grp, idx in groups.items():
+            # check that the output is the same as applying the function to the indexed object
+            np.testing.assert_array_almost_equal(
+                func(obj[np.array(idx)]), grouped_out[grp]
+            )
 
 
-# @pytest.mark.parametrize(
-#     "nap_class", [nap.core.IntervalSet, nap.core.TsdFrame, nap.core.TsGroup]
-# )
-# def test_no_conflict_between_class_and_metadatamixin(nap_class):
-#     from pynapple.core.metadata_class import _MetadataMixin  # Adjust import as needed
+# test double inheritance
+def get_defined_members(cls):
+    """
+    Get all methods and attributes explicitly defined in a class (excluding inherited ones),
+    without relying on `__dir__` overrides.
+    """
+    # Fetch the class's dictionary directly to avoid `__dir__` overrides
+    cls_dict = cls.__dict__
 
-#     iset_members = get_defined_members(nap_class)
-#     metadatamixin_members = get_defined_members(_MetadataMixin)
+    # Use inspect to identify which are functions, properties, or other attributes
+    return {
+        name
+        for name, obj in cls_dict.items()
+        if not name.startswith("__")  # Ignore dunder methods
+        and (
+            inspect.isfunction(obj)
+            or isinstance(obj, property)
+            or not inspect.isroutine(obj)
+        )
+    }
 
-#     # Check for any overlapping names between IntervalSet and _MetadataMixin
-#     conflicting_members = iset_members.intersection(metadatamixin_members)
 
-#     # set_info, get_info, groupby, and groupby_apply are overwritten for class-specific examples in docstrings
-#     assert len(conflicting_members) == 4, (
-#         f"Conflict detected! The following methods/attributes are "
-#         f"overwritten in IntervalSet: {conflicting_members}"
-#     )
+@pytest.mark.parametrize(
+    "nap_class", [nap.core.IntervalSet, nap.core.TsdFrame, nap.core.TsGroup]
+)
+def test_no_conflict_between_class_and_metadatamixin(nap_class):
+    from pynapple.core.metadata_class import _MetadataMixin  # Adjust import as needed
+
+    iset_members = get_defined_members(nap_class)
+    metadatamixin_members = get_defined_members(_MetadataMixin)
+
+    # Check for any overlapping names between IntervalSet and _MetadataMixin
+    conflicting_members = iset_members.intersection(metadatamixin_members)
+
+    # set_info, get_info, groupby, and groupby_apply are overwritten for class-specific examples in docstrings
+    assert len(conflicting_members) == 4, (
+        f"Conflict detected! The following methods/attributes are "
+        f"overwritten in IntervalSet: {conflicting_members}"
+    )

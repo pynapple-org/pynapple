@@ -512,9 +512,9 @@ def test_add_Units():
         np.testing.assert_array_almost_equal(data[n].index, spks[n])
 
     np.testing.assert_array_equal(
-        data._metadata["quality"].values, np.array(["good"] * n_units)
+        data._metadata["quality"], np.array(["good"] * n_units)
     )
-    np.testing.assert_array_equal(data._metadata["alpha"].values, alpha)
+    np.testing.assert_array_equal(data._metadata["alpha"], alpha)
 
 
 def test_add_Timestamps():

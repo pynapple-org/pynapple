@@ -98,7 +98,7 @@ def test_load(path, k):
     tmp = file.load()
     assert isinstance(tmp, type(data[k]))
     if hasattr(tmp, "metadata_columns") and len(tmp.metadata_columns):
-        pd.testing.assert_frame_equal(tmp._metadata, data[k]._metadata)
+        pd.testing.assert_frame_equal(tmp.metadata, data[k].metadata)
 
 
 @pytest.mark.parametrize("path", [path])

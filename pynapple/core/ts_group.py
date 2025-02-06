@@ -806,18 +806,18 @@ class TsGroup(UserDict, _MetadataMixin):
         """
         if len(args):
             if isinstance(args[0], pd.Series):
-                if pd.Index.equals(self._metadata.index, args[0].index):
+                if np.array_equal(self._metadata.index, args[0].index):
                     _values = args[0].values.flatten()
                 else:
                     raise RuntimeError("Index are not equals")
             elif isinstance(args[0], (np.ndarray, list)):
-                if len(self._metadata) == len(args[0]):
+                if self._metadata.shape[0] == len(args[0]):
                     _values = np.array(args[0])
                 else:
                     raise RuntimeError("Values is not the same length.")
             elif isinstance(args[0], str):
                 if args[0] in self._metadata.columns:
-                    _values = self._metadata[args[0]].values
+                    _values = self._metadata[args[0]]
                 else:
                     raise RuntimeError(
                         "Key {} not in metadata of TsGroup".format(args[0])
@@ -1097,7 +1097,7 @@ class TsGroup(UserDict, _MetadataMixin):
         tsg1 = tsgroups[0]
         items = tsg1.items()
         keys = set(tsg1.keys())
-        metadata = tsg1._metadata
+        metadata = tsg1._metadata.copy()
 
         for i, tsg in enumerate(tsgroups[1:]):
             if not ignore_metadata:
@@ -1106,7 +1106,7 @@ class TsGroup(UserDict, _MetadataMixin):
                         f"TsGroup at position {i+2} has different metadata columns from previous TsGroup objects. "
                         "Set `ignore_metadata=True` to bypass the check."
                     )
-                metadata = pd.concat([metadata, tsg._metadata], axis=0)
+                metadata.merge(tsg._metadata)
 
             if not reset_index:
                 key_overlap = keys.intersection(tsg.keys())
@@ -1331,7 +1331,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
         dicttosave = {"type": np.array(["TsGroup"], dtype=np.str_)}
         # don't save rate in metadata since it will be re-added when loading
-        dicttosave["_metadata"] = self.metadata.drop(columns="rate").to_dict()
+        dicttosave["_metadata"] = self._metadata.iloc[:, 1:]
 
         # are these things that still need to be enforced?
         # for k in self._metadata.columns:
@@ -1424,7 +1424,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
         if "_metadata" in file:  # load metadata if it exists
             if file["_metadata"]:  # check that metadata is not empty
-                metainfo = pd.DataFrame.from_dict(file["_metadata"].item())
+                metainfo = file["_metadata"].item()
                 tsgroup.set_info(metainfo)
         return tsgroup
 

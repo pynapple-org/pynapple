@@ -1324,7 +1324,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             end=self.time_support.end,
             columns=cols_name,
             type=np.array(["TsdFrame"], dtype=np.str_),
-            _metadata=self._metadata.to_dict(),  # save metadata as dictionary
+            _metadata=dict(self._metadata),  # save metadata as dictionary
         )
 
         return

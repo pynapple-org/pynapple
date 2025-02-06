@@ -96,7 +96,7 @@ class TestTsGroup1:
         ],
     )
     def test_metadata_len_match(self, tsgroup):
-        assert len(tsgroup._metadata) == len(tsgroup)
+        assert tsgroup._metadata.shape[0] == len(tsgroup)
 
     def test_create_ts_group_from_array(self):
         with warnings.catch_warnings(record=True) as w:
@@ -173,7 +173,7 @@ class TestTsGroup1:
 
     def test_rates_property(self, group):
         tsgroup = nap.TsGroup(group)
-        pd.testing.assert_series_equal(tsgroup.rates, tsgroup._metadata["rate"])
+        np.testing.assert_array_almost_equal(tsgroup.rates, tsgroup._metadata["rate"])
 
     def test_items(self, group):
         tsgroup = nap.TsGroup(group)
@@ -656,8 +656,8 @@ class TestTsGroup1:
         assert all(out.keys()[i] == ts_group.keys()[slc][i] for i in range(len(idx)))
         for key_i in np.where(bool_idx)[0]:
             key = ts_group.keys()[key_i]
-            assert np.all(out[[key]].rates == ts_group.rates[[key]])
-            assert np.all(out[[key]].meta == ts_group.meta[[key]])
+            assert np.all(out[[key]].rates == ts_group.get_info([key])["rate"])
+            assert np.all(out[[key]].meta == ts_group.get_info([key])["meta"])
             assert np.all(out[key].t == ts_group[key].t)
 
     @pytest.mark.parametrize(
@@ -852,7 +852,9 @@ def test_pickling(ts_group):
     assert len(ts_group) == len(unpickled_obj)
 
     # Ensure that metadata content is the same
-    assert np.all(unpickled_obj._metadata == ts_group._metadata)
+    assert np.all(unpickled_obj._metadata.keys() == ts_group._metadata.keys())
+    for key in ts_group._metadata.keys():
+        assert np.all(unpickled_obj._metadata[key] == ts_group._metadata[key])
 
     # Ensure that metadata columns are the same
     assert np.all(unpickled_obj._metadata.columns == ts_group._metadata.columns)
