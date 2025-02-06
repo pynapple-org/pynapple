@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: Guillaume Viejo
-# @Date:   2023-07-10 17:08:55
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-11 13:13:37
-
 """Tests of NPZ file functions"""
 
 import shutil
@@ -155,6 +149,32 @@ def test_load_tsdframe(path, k):
     )
     assert np.all(tmp.columns == data[k].columns)
     assert np.all(tmp.d == data[k].d)
+
+
+@pytest.mark.parametrize("path", [path])
+@pytest.mark.parametrize("k", ["iset", "iset_minfo"])
+def test_load_tsdframe(path, k):
+    file_path = path / (k + ".npz")
+    file = nap.NPZFile(file_path)
+    tmp = file.load()
+    assert isinstance(tmp, type(data[k]))
+    np.testing.assert_array_almost_equal(tmp.values, data[k].values)
+
+
+@pytest.mark.parametrize("path", [path])
+@pytest.mark.parametrize("k", ["iset", "iset_minfo"])
+def test_load_intervalset_backward_compatibility(path, k):
+    file_path = path / (k + ".npz")
+    tmp = dict(np.load(file_path, allow_pickle=True))
+    tmp.pop("_metadata")
+    np.savez(file_path, **tmp)
+
+    file = nap.NPZFile(file_path)
+    tmp = file.load()
+    assert isinstance(tmp, type(data[k]))
+    np.testing.assert_array_almost_equal(tmp.values, data[k].values)
+    # Testing the slicing
+    np.testing.assert_array_almost_equal(tmp[0].values, data[k].values[0, None])
 
 
 @pytest.mark.parametrize("path", [path])
