@@ -152,8 +152,26 @@ def test_load_tsdframe(path, k):
 
 
 @pytest.mark.parametrize("path", [path])
+@pytest.mark.parametrize("k", ["tsdframe", "tsdframe_minfo"])
+def test_load_tsdframe_backward_compatibility(path, k):
+    file_path = path / (k + ".npz")
+    tmp = dict(np.load(file_path, allow_pickle=True))
+    tmp.pop("_metadata")
+    np.savez(file_path, **tmp)
+    file = nap.NPZFile(file_path)
+    tmp = file.load()
+    assert isinstance(tmp, type(data[k]))
+    assert np.all(tmp.t == data[k].t)
+    np.testing.assert_array_almost_equal(
+        tmp.time_support.values, data[k].time_support.values
+    )
+    assert np.all(tmp.columns == data[k].columns)
+    assert np.all(tmp.d == data[k].d)
+
+
+@pytest.mark.parametrize("path", [path])
 @pytest.mark.parametrize("k", ["iset", "iset_minfo"])
-def test_load_tsdframe(path, k):
+def test_load_intervalset(path, k):
     file_path = path / (k + ".npz")
     file = nap.NPZFile(file_path)
     tmp = file.load()
