@@ -1,10 +1,10 @@
 """
-    This module holds some process function of pynapple that can be
-    called with numba or pynajax as backend    
+This module holds some process function of pynapple that can be
+called with numba or pynajax as backend
 
-    If pynajax is installed and `nap.nap_config.backend` is set 
-    to `jax`, the module will call the functions within pynajax.
-    Otherwise the module will call the functions within `_jitted_functions.py`.
+If pynajax is installed and `nap.nap_config.backend` is set
+to `jax`, the module will call the functions within pynajax.
+Otherwise the module will call the functions within `_jitted_functions.py`.
 
 """
 

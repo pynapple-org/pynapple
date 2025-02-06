@@ -397,6 +397,9 @@ def test_compute_wavelet_transform(
     np.testing.assert_array_almost_equal(
         mwt.time_support.values, sig.time_support.values
     )
+    if isinstance(mwt, nap.TsdFrame):
+        # test column names if TsdFrame
+        np.testing.assert_array_almost_equal(mwt.columns, freqs)
 
 
 @pytest.mark.parametrize(
