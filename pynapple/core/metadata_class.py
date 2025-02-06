@@ -1,13 +1,14 @@
+import copy
+import itertools
 import warnings
+from collections import UserDict
 from numbers import Number
 from typing import Union
-from collections import UserDict
-from .utils import is_array_like
-import copy
 
 import numpy as np
 import pandas as pd
-import itertools
+
+from .utils import is_array_like
 
 
 def add_meta_docstring(meta_func, sep="\n"):
