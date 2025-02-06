@@ -156,11 +156,15 @@ When the pynapple object have metadata, they are added to the NPZ file.
 tsgroup = nap.TsGroup({
     0:nap.Ts(t=[0,1,2]),
     1:nap.Ts(t=[0,1,2])
-    }, my_label = ["a", "b"])
+    }, metadata={"my_label":["a", "b"]})
 tsgroup.save("group")
 
-print(np.load("group.npz"))
-print(np.load("group.npz")["my_label"])
+print(np.load("group.npz", allow_pickle=True))
+```
+By default, they are added within the `_metadata` key:
+
+```{code-cell} ipython3
+print(dict(np.load("group.npz", allow_pickle=True))["_metadata"])
 ```
 
 ## Memory map
