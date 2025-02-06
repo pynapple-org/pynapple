@@ -1425,7 +1425,7 @@ class TsGroup(UserDict, _MetadataMixin):
                 tsgroup.set_info(metainfo)
 
         metainfo = {}
-        not_info_keys = {"start", "end", "t", "index", "d", "rate", "keys", "_metadata"}
+        not_info_keys = {"start", "end", "t", "index", "d", "rate", "keys", "_metadata", "type"}
 
         for k in set(file.keys()) - not_info_keys:
             tmp = file[k]
