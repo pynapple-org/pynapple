@@ -730,6 +730,19 @@ def test_tsgroup_metadata_future_warnings():
         )
 
 
+def test_tsgroup_drop_rate_error(tsgroup_meta):
+    with pytest.raises(ValueError, match="Cannot drop TsGroup 'rate'!"):
+        tsgroup_meta.drop_info("rate")
+
+    with pytest.raises(ValueError, match="Cannot drop TsGroup 'rate'!"):
+        tsgroup_meta.drop_info(["rate"])
+
+    with pytest.raises(ValueError, match="Cannot drop TsGroup 'rate'!"):
+        tsgroup_meta.drop_info(["label", "rate"])
+
+    assert "label" in tsgroup_meta.metadata_columns
+
+
 ##################
 ## Shared tests ##
 ##################
@@ -1023,27 +1036,35 @@ class Test_Metadata:
         obj.drop_info("label")
         assert "label" not in obj.metadata_columns
 
-    def test_drop_metadata_error(self, obj, obj_len):
+    @pytest.mark.parametrize(
+        "drop, error",
+        [
+            (
+                "not_info",
+                pytest.raises(KeyError, match="Metadata column not_info not found"),
+            ),
+            (
+                ["not_info", "not_info2"],
+                pytest.raises(
+                    KeyError,
+                    match=r"Metadata column(s) \['not_info', 'not_info2'\] not found",
+                ),
+            ),
+            (
+                ["label", "not_info"],
+                pytest.raises(
+                    KeyError, match=r"Metadata column(s) \['not_info'\] not found"
+                ),
+            ),
+            (0, pytest.raises(TypeError, match="Invalid metadata column")),
+        ],
+    )
+    def test_drop_metadata_error(self, obj, obj_len, drop, error):
         info = np.ones(obj_len)
         obj.set_info(label=info)
-        with pytest.raises(KeyError, match="Metadata column not_info not found"):
-            obj.drop_info("not_info")
 
-        with pytest.raises(
-            KeyError, match=r"Metadata columns \['not_info', 'not_info2'\] not found"
-        ):
-            obj.drop_info(["not_info", "not_info2"])
-
-    def test_drop_metadata_warning(self, obj, obj_len):
-        info = np.ones(obj_len)
-        obj.set_info(label=info)
-        with pytest.warns(
-            UserWarning,
-            match=r"Metadata columns \['not_info'\] not found. Metadata columns \['label'\] were successfully removed.",
-        ):
-            obj.drop_info(["label", "not_info"])
-
-        assert "label" not in obj.metadata_columns
+        if isinstance(drop, list) and ("label" in drop):
+            assert "label" in obj.metadata_columns
 
     # test naming overlap of shared attributes
     @pytest.mark.parametrize(

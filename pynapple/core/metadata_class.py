@@ -178,7 +178,7 @@ class _MetadataMixin:
 
     def set_info(self, metadata=None, **kwargs):
         """
-        Add metadata information about the object. Metadata are saved as a pandas.DataFrame.
+        Add metadata information about the object. Metadata are saved as a dictionary.
 
         If the metadata name does not contain special nor overlaps with class attributes,
         it can also be set using attribute assignment.
@@ -329,7 +329,10 @@ class _MetadataMixin:
         """
         if isinstance(key, str):
             if key in self.metadata_columns:
-                del self._metadata[key]
+                if (self.nap_class == "TsGroup") and (key == "rate"):
+                    raise ValueError("Cannot drop TsGroup 'rate'!")
+                else:
+                    del self._metadata[key]
             else:
                 raise KeyError(
                     f"Metadata column {key} not found. Metadata columns are {self.metadata_columns}"
@@ -338,28 +341,22 @@ class _MetadataMixin:
         elif isinstance(key, (list, np.ndarray)) and all(
             isinstance(k, str) for k in key
         ):
-            drop = []
-            no_drop = []
+            if (self.nap_class == "TsGroup") and ("rate" in key):
+                raise ValueError("Cannot drop TsGroup 'rate'!")
+
+            no_drop = [k for k in key if k not in self.metadata_columns]
+            if no_drop:
+                raise KeyError(
+                    f"Metadata column(s) {no_drop} not found. Metadata columns are {self.metadata_columns}"
+                )
+
             for k in key:
                 if k in self.metadata_columns:
-                    drop.append(k)
                     del self._metadata[k]
-                else:
-                    no_drop.append(k)
-
-            if drop and no_drop:
-                warnings.warn(
-                    f"Metadata columns {no_drop} not found. Metadata columns {drop} were successfully removed. Remaining metadata columns are {self.metadata_columns}"
-                )
-
-            elif no_drop and not drop:
-                raise KeyError(
-                    f"Metadata columns {no_drop} not found. Metadata columns are {self.metadata_columns}"
-                )
 
         else:
-            raise KeyError(
-                f"Metadata column {key} not found. Metadata columns are {self.metadata_columns}"
+            raise TypeError(
+                f"Invalid metadata column {key}. Metadata columns are {self.metadata_columns}"
             )
 
     def groupby(self, by, get_group=None):
