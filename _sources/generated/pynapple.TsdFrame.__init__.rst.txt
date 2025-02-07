@@ -1,0 +1,6 @@
+pynapple.TsdFrame.\_\_init\_\_
+==============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.__init__

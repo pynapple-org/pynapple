@@ -1,0 +1,6 @@
+pynapple.Tsd.interpolate
+========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Tsd.interpolate
