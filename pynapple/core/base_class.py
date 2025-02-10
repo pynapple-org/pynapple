@@ -7,7 +7,6 @@ import abc
 from numbers import Number
 
 import numpy as np
-import pandas as pd
 
 from ._core_functions import _count, _restrict, _value_from
 from .interval_set import IntervalSet

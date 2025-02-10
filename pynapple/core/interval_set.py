@@ -207,7 +207,6 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                 start = start.sort_values("start").reset_index(drop=True)
 
             metadata = start.drop(columns=["start", "end"])
-            index = start.index
             end = start["end"].values.astype(np.float64)
             start = start["start"].values.astype(np.float64)
 
