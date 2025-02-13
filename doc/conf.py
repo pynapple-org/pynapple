@@ -12,7 +12,6 @@
 import os
 import sys
 import time
-import pynapple
 from pathlib import Path
 
 sys.path.insert(0, os.path.abspath('..'))
@@ -25,7 +24,11 @@ sys.path.insert(0, os.path.abspath('sphinxext'))
 project = 'pynapple'
 copyright = f'2021-{time.strftime("%Y")}'
 author = 'Guillaume Viejo'
-version = release = pynapple.__version__
+from importlib.metadata import version
+release: str = version("pynapple")
+# this will grab major.minor.patch (excluding any .devN afterwards, which should only
+# show up when building locally during development)
+version: str = ".".join(release.split('.')[:3])
 
 
 # -- General configuration ---------------------------------------------------
