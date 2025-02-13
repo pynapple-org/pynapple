@@ -24,8 +24,8 @@ sys.path.insert(0, os.path.abspath('sphinxext'))
 project = 'pynapple'
 copyright = f'2021-{time.strftime("%Y")}'
 author = 'Guillaume Viejo'
-from importlib.metadata import version as get_version
-release: str = get_version("pynapple")
+from importlib.metadata import version
+release: str = version("pynapple")
 # this will grab major.minor.patch (excluding any .devN afterwards, which should only
 # show up when building locally during development)
 version: str = ".".join(release.split('.')[:3])
