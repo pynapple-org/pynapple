@@ -1,4 +1,5 @@
-__version__ = "0.8.4"
+from importlib.metadata import PackageNotFoundError, version
+
 from .core import (
     IntervalSet,
     Ts,
@@ -11,3 +12,9 @@ from .core import (
 )
 from .io import *
 from .process import *
+
+try:
+    __version__ = version("pynapple")
+except PackageNotFoundError:
+    # package is not installed
+    pass
