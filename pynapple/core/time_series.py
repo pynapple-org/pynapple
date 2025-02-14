@@ -1085,7 +1085,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                 table = []
 
             # Adding metadata if any.
-            col_names = self._metadata.columns.values
+            col_names = self.metadata.columns.values
             if len(col_names):
                 ends = np.array([end] * self._metadata.shape[1])
                 table = np.vstack(
@@ -1097,7 +1097,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                             (
                                 col_names[:, None],
                                 _convert_iter_to_str(
-                                    self._metadata.values[0:max_cols].T
+                                    self.metadata.values[0:max_cols].T
                                 ),
                                 ends,
                             ),
@@ -1133,11 +1133,11 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         try:
             metadata = self._metadata
         except (AttributeError, RecursionError):
-            metadata = pd.DataFrame(index=self.columns)
+            metadata = {}  # pd.DataFrame(index=self.columns)
 
         if name == "_metadata":
             return metadata
-        elif name in metadata.columns:
+        elif name in metadata.keys():
             return _MetadataMixin.__getattr__(self, name)
         else:
             return super().__getattr__(name)
@@ -1184,7 +1184,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     warnings.simplefilter("ignore")
                     return self.loc[key]
             else:
-                return _MetadataMixin.__getitem__(self, key)
+                return self._metadata[key]
         elif hasattr(key, "__iter__") and all([isinstance(k, str) for k in key]):
             if all(k in self.columns for k in key):
                 with warnings.catch_warnings():
@@ -1192,12 +1192,8 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     warnings.simplefilter("ignore")
                     return self.loc[key]
             else:
-                return _MetadataMixin.__getitem__(self, key)
+                return self._metadata[key]
         else:
-            if isinstance(key, pd.Series) and key.index.equals(self.columns):
-                # if indexing with a pd.Series from metadata, transform it to tuple with slice(None) in first position
-                key = (slice(None, None, None), key)
-
             output = self.values.__getitem__(key)
             columns = self.columns
 
@@ -1328,7 +1324,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             end=self.time_support.end,
             columns=cols_name,
             type=np.array(["TsdFrame"], dtype=np.str_),
-            _metadata=self._metadata.to_dict(),  # save metadata as dictionary
+            _metadata=dict(self._metadata),  # save metadata as dictionary
         )
 
         return
@@ -1473,19 +1469,6 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> import numpy as np
         >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"]}
         >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
-        >>> print(tsdframe)
-        Time (s)    0         1         2
-        ----------  --------  --------  --------
-        0.0         1.0       1.0       1.0
-        1.0         1.0       1.0       1.0
-        2.0         1.0       1.0       1.0
-        3.0         1.0       1.0       1.0
-        4.0         1.0       1.0       1.0
-        Metadata
-        --------    --------  --------  --------
-        l1          1         2         3
-        l2          x         x         y
-        dtype: float64, shape: (5, 3)
 
         To access a single metadata column:
 
@@ -1548,6 +1531,84 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         2   3  y
         """
         return _MetadataMixin.get_info(self, key)
+
+    @add_meta_docstring("groupby")
+    def groupby(self, by, get_group=None):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
+        >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
+
+        Grouping by a single column:
+
+        >>> tsdframe.groupby("l2")
+        {'x': [0, 1], 'y': [2]}
+
+        Grouping by multiple columns:
+
+        >>> tsdframe.groupby(["l1","l2"])
+        {(1, 'x'): [0], (2, 'x'): [1], (2, 'y'): [2]}
+
+        Filtering to a specific group using the output dictionary:
+
+        >>> groups = tsdframe.groupby("l2")
+        >>> tsdframe[groups["x"]]
+        Time (s)    0         1         2
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        l1          1         2         2
+        l2          x         x         y
+        <BLANKLINE>
+        dtype: float64, shape: (2, 3)
+
+        Filtering to a specific group using the get_group argument:
+
+        >>> tsdframe.groupby("l2", get_group="x")
+        Time (s)    0         1         2
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        l1          1         2         2
+        l2          x         x         y
+        <BLANKLINE>
+        dtype: float64, shape: (2, 3)
+        """
+        return _MetadataMixin.groupby(self, by, get_group)
+
+    @add_meta_docstring("groupby_apply")
+    def groupby_apply(self, by, func, grouped_arg=None, **func_kwargs):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
+        >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
+
+        Apply a numpy function:
+
+        >>> tsdframe.groupby_apply("l1", np.sum)
+        {1: 3.0, 2: 6.0}
+
+        Apply a custom function:
+
+        >>> tsdframe.groupby_apply("l1", lambda x: x.shape[0])
+        {1: 1, 2: 2}
+
+        Apply a function with additional arguments:
+
+        >>> tsdframe.groupby_apply("l1", np.sum, axis=0)
+        {1: array([1., 1., 1.]), 2: array([2., 2., 2.])}
+        """
+        return _MetadataMixin.groupby_apply(self, by, func, grouped_arg, **func_kwargs)
 
 
 class Tsd(_BaseTsd):

@@ -277,6 +277,8 @@ class TsGroup(UserDict, _MetadataMixin):
                 data = {k: data[k].restrict(self.time_support) for k in self.index}
 
         UserDict.__init__(self, data)
+        rate = np.array([data[k].rate for k in self.index])
+        self._metadata["rate"] = rate
         self.nap_class = self.__class__.__name__
         # grab current attributes before adding metadata
         self._class_attributes = self.__dir__()
@@ -331,7 +333,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
     def __setitem__(self, key, value):
         if not self._initialized:
-            self._metadata.loc[int(key), "rate"] = float(value.rate)
+            # self._metadata.loc[int(key), "rate"] = float(value.rate)
             super().__setitem__(int(key), value)
         else:
             _MetadataMixin.__setitem__(self, key, value)
@@ -374,9 +376,7 @@ class TsGroup(UserDict, _MetadataMixin):
         return self._ts_group_from_keys(key)
 
     def _ts_group_from_keys(self, keys):
-        metadata = self._metadata.loc[
-            np.sort(keys), self._metadata.columns.drop("rate")
-        ]
+        metadata = self._metadata.loc[np.sort(keys), self._metadata.columns[1:]]
         return TsGroup(
             {k: self[k] for k in keys},
             time_support=self.time_support,
@@ -393,7 +393,7 @@ class TsGroup(UserDict, _MetadataMixin):
         # By default, the first three columns should always show.
         col_names = self._metadata.columns
         if "rate" in col_names:
-            col_names = col_names.drop("rate")
+            col_names = col_names[1:]  # .drop("rate")
 
         headers = ["Index", "rate"] + [c for c in col_names][0:max_cols]
         end = ["..."] if len(headers) > max_cols else []
@@ -410,9 +410,9 @@ class TsGroup(UserDict, _MetadataMixin):
                     np.hstack(
                         (
                             self.index[0:n_rows, None],
-                            np.round(self._metadata[["rate"]].values[0:n_rows], 5),
+                            np.round(self.metadata[["rate"]].values[0:n_rows], 5),
                             _convert_iter_to_str(
-                                self._metadata[col_names].values[0:n_rows, 0:max_cols]
+                                self.metadata[col_names].values[0:n_rows, 0:max_cols]
                             ),
                             ends,
                         ),
@@ -425,9 +425,9 @@ class TsGroup(UserDict, _MetadataMixin):
                     np.hstack(
                         (
                             self.index[-n_rows:, None],
-                            np.round(self._metadata[["rate"]].values[-n_rows:], 5),
+                            np.round(self.metadata[["rate"]].values[-n_rows:], 5),
                             _convert_iter_to_str(
-                                self._metadata[col_names].values[-n_rows:, 0:max_cols]
+                                self.metadata[col_names].values[-n_rows:, 0:max_cols]
                             ),
                             ends,
                         ),
@@ -440,9 +440,9 @@ class TsGroup(UserDict, _MetadataMixin):
             table = np.hstack(
                 (
                     self.index[:, None],
-                    np.round(self._metadata[["rate"]].values, 5),
+                    np.round(self.metadata[["rate"]].values, 5),
                     _convert_iter_to_str(
-                        self._metadata[col_names].values[:, 0:max_cols]
+                        self.metadata[col_names].values[:, 0:max_cols]
                     ),
                     ends,
                 ),
@@ -535,7 +535,7 @@ class TsGroup(UserDict, _MetadataMixin):
         newgr = {}
         for k in self.index:
             newgr[k] = self.data[k].restrict(ep)
-        cols = self._metadata.columns.drop("rate")
+        cols = self._metadata.columns[1:]  # .drop("rate")
 
         return TsGroup(
             newgr, time_support=ep, bypass_check=True, metadata=self._metadata[cols]
@@ -583,7 +583,7 @@ class TsGroup(UserDict, _MetadataMixin):
         for k in self.data:
             newgr[k] = self.data[k].value_from(tsd, ep)
 
-        cols = self._metadata.columns.drop("rate")
+        cols = self._metadata.columns[1:]  # .drop("rate")
         return TsGroup(newgr, time_support=ep, metadata=self._metadata[cols])
 
     def count(self, *args, dtype=None, **kwargs):
@@ -806,18 +806,18 @@ class TsGroup(UserDict, _MetadataMixin):
         """
         if len(args):
             if isinstance(args[0], pd.Series):
-                if pd.Index.equals(self._metadata.index, args[0].index):
+                if np.array_equal(self._metadata.index, args[0].index):
                     _values = args[0].values.flatten()
                 else:
                     raise RuntimeError("Index are not equals")
             elif isinstance(args[0], (np.ndarray, list)):
-                if len(self._metadata) == len(args[0]):
+                if self._metadata.shape[0] == len(args[0]):
                     _values = np.array(args[0])
                 else:
                     raise RuntimeError("Values is not the same length.")
             elif isinstance(args[0], str):
                 if args[0] in self._metadata.columns:
-                    _values = self._metadata[args[0]].values
+                    _values = self._metadata[args[0]]
                 else:
                     raise RuntimeError(
                         "Key {} not in metadata of TsGroup".format(args[0])
@@ -869,7 +869,7 @@ class TsGroup(UserDict, _MetadataMixin):
         newgr = {}
         for k in self.index:
             newgr[k] = self.data[k].get(start, end, time_units)
-        cols = self._metadata.columns.drop("rate")
+        cols = self._metadata.columns[1:]  # .drop("rate")
 
         return TsGroup(
             newgr,
@@ -994,7 +994,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
         """
         idx = np.digitize(self._metadata[key], bins) - 1
-        groups = self._metadata.index.groupby(idx)
+        groups = {k: self._metadata.index[idx == k] for k in np.unique(idx)}
         ix = np.unique(list(groups.keys()))
         ix = ix[ix >= 0]
         ix = ix[ix < len(bins) - 1]
@@ -1045,7 +1045,7 @@ class TsGroup(UserDict, _MetadataMixin):
                2             4        1}
 
         """
-        groups = self._metadata.groupby(key).groups
+        groups = self._metadata.groupby(key)
         sliced = {k: self[list(groups[k])] for k in groups.keys()}
         return sliced
 
@@ -1097,7 +1097,7 @@ class TsGroup(UserDict, _MetadataMixin):
         tsg1 = tsgroups[0]
         items = tsg1.items()
         keys = set(tsg1.keys())
-        metadata = tsg1._metadata
+        metadata = tsg1._metadata.copy()
 
         for i, tsg in enumerate(tsgroups[1:]):
             if not ignore_metadata:
@@ -1106,7 +1106,7 @@ class TsGroup(UserDict, _MetadataMixin):
                         f"TsGroup at position {i+2} has different metadata columns from previous TsGroup objects. "
                         "Set `ignore_metadata=True` to bypass the check."
                     )
-                metadata = pd.concat([metadata, tsg._metadata], axis=0)
+                metadata.merge(tsg._metadata)
 
             if not reset_index:
                 key_overlap = keys.intersection(tsg.keys())
@@ -1143,7 +1143,7 @@ class TsGroup(UserDict, _MetadataMixin):
         if ignore_metadata:
             return TsGroup(data, time_support=time_support, bypass_check=False)
         else:
-            cols = metadata.columns.drop("rate")
+            cols = metadata.columns[1:]  # .drop("rate")
             return TsGroup(
                 data,
                 time_support=time_support,
@@ -1331,7 +1331,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
         dicttosave = {"type": np.array(["TsGroup"], dtype=np.str_)}
         # don't save rate in metadata since it will be re-added when loading
-        dicttosave["_metadata"] = self._metadata.drop(columns="rate").to_dict()
+        dicttosave["_metadata"] = self._metadata.iloc[:, 1:]
 
         # are these things that still need to be enforced?
         # for k in self._metadata.columns:
@@ -1421,7 +1421,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
         if "_metadata" in file:  # load metadata if it exists
             if file["_metadata"]:  # check that metadata is not empty
-                metainfo = pd.DataFrame.from_dict(file["_metadata"].item())
+                metainfo = file["_metadata"].item()
                 tsgroup.set_info(metainfo)
 
         metainfo = {}
@@ -1601,3 +1601,86 @@ class TsGroup(UserDict, _MetadataMixin):
         2   3  y
         """
         return _MetadataMixin.get_info(self, key)
+
+    @add_meta_docstring("groupby")
+    def groupby(self, by, get_group=None):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tmp = {0:nap.Ts(t=np.arange(0,40), time_units='s'),
+        ... 1:nap.Ts(t=np.arange(0,40,0.5), time_units='s'),
+        ... 2:nap.Ts(t=np.arange(0,40,0.25), time_units='s'),
+        ... }
+        >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
+        >>> tsgroup = nap.TsGroup(tmp,metadata=metadata)
+
+        Grouping by a single column:
+
+        >>> tsgroup.groupby("l2")
+        {'x': [0, 1], 'y': [2]}
+
+        Grouping by multiple columns:
+
+        >>> tsgroup.groupby(["l1","l2"])
+        {(1, 'x'): [0], (2, 'x'): [1], (2, 'y'): [2]}
+
+        Filtering to a specific group using the output dictionary:
+
+        >>> groups = tsgroup.groupby("l2")
+        >>> tsgroup[groups["x"]]
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              1  1.00503     1  x
+              2  2.01005     2  x
+
+        Filtering to a specific group using the get_group argument:
+
+        >>> ep.groupby("l2", get_group="x")
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              1  1.00503     1  x
+              2  2.01005     2  x
+        """
+        return _MetadataMixin.groupby(self, by, get_group)
+
+    def groupby_apply(self, by, func, grouped_arg=None, **func_kwargs):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tmp = {0:nap.Ts(t=np.arange(0,40), time_units='s'),
+        ... 1:nap.Ts(t=np.arange(0,40,0.5), time_units='s'),
+        ... 2:nap.Ts(t=np.arange(0,40,0.25), time_units='s'),
+        ... }
+        >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
+        >>> tsgroup = nap.TsGroup(tmp,metadata=metadata)
+
+        Apply a numpy function:
+
+        >>> tsgroup.groupby_apply("l2", np.mean)
+        {'x': 1.5, 'y': 3.0}
+
+        Apply a custom function:
+
+        >>> tsgroup.groupby_apply("l2", lambda x: x.to_tsd().shape[0])
+        {'x': 120, 'y': 200}
+
+        Apply a function with additional arguments:
+
+        >>> feature = nap.Tsd(
+        ...     t=np.arange(40),
+        ...     d=np.concatenate([np.zeros(20), np.ones(20)]),
+        ...     time_support=nap.IntervalSet(np.array([[0, 5], [10, 12], [20, 33]])),
+        ... )
+        >>> tsgroup.groupby_apply("l2", nap.compute_1d_tuning_curves, feature=feature, nb_bins=2)
+        {'x':          1         2
+         0.25  1.15  2.044444
+         0.75  1.15  2.217857,
+         'y':              3
+         0.25  4.727778
+         0.75  5.421429}
+        """
+        return _MetadataMixin.groupby_apply(self, by, func, grouped_arg, **func_kwargs)
