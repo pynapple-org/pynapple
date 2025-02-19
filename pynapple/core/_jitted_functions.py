@@ -97,8 +97,19 @@ def condition_before(new_dt, current_dt):
     return last_negative_dt, current_dt > 0
 
 @jit(nopython=True, cache=True)
+def compute_temporal_diff_after(reference_t, target_t):
+    return -reference_t + target_t
+
+@jit(nopython=True, cache=True)
 def condition_closest(new_dt, current_dt):
     return new_dt > current_dt, False
+
+
+@jit(nopython=True, cache=True)
+def condition_after(new_dt, current_dt):
+    last_positive_dt = ((new_dt < 0) and (current_dt >= 0)) or (current_dt >= 0)
+    return last_positive_dt, new_dt < 0
+
 
 @jit(nopython=True, cache=True)
 def jitvaluefrom(time_array, time_target_array, count, count_target, starts, ends, condition_func=condition_closest, temporal_diff_func=compute_temporal_diff_closest):
