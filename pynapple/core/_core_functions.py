@@ -24,7 +24,6 @@ from ._jitted_functions import (  # pjitconvolve,
     condition_after,
     unsigned_temporal_difference,
     signed_temporal_difference,
-    signed_temporal_difference,
 )
 from .utils import get_backend
 from typing import Literal
