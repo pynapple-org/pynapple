@@ -423,7 +423,7 @@ class TestTimeSeriesGeneral:
             # extract the indices with searchsorted.
             if mode == "before":
                 expected_idx = (
-                        np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
+                    np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
                 )
                 # check that times are actually before
                 assert np.all(single_ep_tsd2.t[expected_idx] <= single_ep_tsd3.t)
@@ -443,7 +443,7 @@ class TestTimeSeriesGeneral:
                 )
             else:
                 before = (
-                        np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
+                    np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
                 )
                 after = np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="left")
                 dt_before = np.abs(tsd2.t[before] - tsd.t)
@@ -2507,3 +2507,48 @@ def test_define_instance(tsd, kwargs):
             val,
         ) in meta.items():
             assert np.all(out.metadata[key] == val)
+
+
+time_array = np.arange(-4, 10, 1)
+time_target_array = np.arange(-2, 10) + 0.01
+starts = np.array([0])  # np.array([0, 8])
+ends = np.array([10])  # np.array([6, 10])
+a = nap.Tsd(
+    t=time_target_array,
+    d=np.arange(time_target_array.shape[0]),
+    time_support=nap.IntervalSet(starts, ends),
+)
+ts = nap.Ts(time_array)
+
+
+@pytest.mark.parametrize(
+    "tsd, ts, mode, expected_data",
+    [
+        (
+            nap.Tsd(
+                t=np.arange(10) + 0.01,
+                d=np.arange(10),
+                time_support=nap.IntervalSet(0, 10),
+            ),
+            nap.Ts(np.arange(-4, 10, 1)),
+            "before",
+            np.array([np.nan] + [*range(0, 9)]),
+        ),
+        (
+            nap.Tsd(
+                t=np.arange(9) + 0.01,
+                d=np.arange(9),
+                time_support=nap.IntervalSet(0, 10),
+            ),
+            nap.Ts(np.arange(-4, 10, 1)),
+            "after",
+            np.array([*range(0, 9)] + [np.nan]),
+        ),
+    ],
+)
+def test_value_from_out_of_range(tsd, ts, mode, expected_data):
+    out = ts.value_from(tsd, mode=mode)
+    # type should be float even if tsd is int
+    assert np.issubdtype(tsd.d.dtype, np.integer)
+    assert np.issubdtype(out.d.dtype, np.floating)
+    np.testing.assert_array_equal(out.d, expected_data)

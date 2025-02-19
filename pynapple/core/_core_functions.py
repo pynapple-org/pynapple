@@ -72,11 +72,27 @@ def _value_from(
     )
 
     new_time_array = time_array[idx_t]
+    nan_idx = np.isnan(idx)
 
-    new_data_array = np.zeros(
-        (len(new_time_array), *data_target_array.shape[1:]),
-        dtype=data_target_array.dtype,
+    # set the type as default
+    use_type = data_target_array.dtype
+
+    # if is already floating or all values are valid, keep type, otherwise use float
+    use_type = (
+        use_type if np.issubdtype(use_type, np.floating) or not any(nan_idx) else float
     )
+    if not np.issubdtype(use_type, np.floating):
+        new_data_array = np.zeros(
+            (len(new_time_array), *data_target_array.shape[1:]),
+            dtype=use_type,
+        )
+    else:
+        new_data_array = np.full(
+            (len(new_time_array), *data_target_array.shape[1:]),
+            np.nan,
+            dtype=use_type,
+        )
+
     idx2 = ~np.isnan(idx)
     new_data_array[idx2] = data_target_array[idx_target][idx[idx2].astype(int)]
 
