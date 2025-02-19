@@ -176,9 +176,7 @@ def test_jitvalue_from():
             ix = ts.restrict(ep[j]).index
             if len(ix):
                 tsd2.append(
-                    tsd.restrict(ep[j])
-                    .as_series()
-                    .reindex(ix, method="nearest")
+                    tsd.restrict(ep[j]).as_series().reindex(ix, method="nearest")
                 )
 
         tsd2 = pd.concat(tsd2)
