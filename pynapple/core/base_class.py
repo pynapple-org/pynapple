@@ -218,6 +218,9 @@ class _Base(abc.ABC):
         if not isinstance(ep, IntervalSet):
             raise TypeError("Argument ep should be of type IntervalSet or None")
 
+        if mode not in ("closest", "before", "after"):
+            raise ValueError(f'Argument ``mode`` should be "closest", "before", "after". ``{mode}`` provided instead.')
+
         time_array = self.index.values
         time_target_array = data.index.values
         data_target_array = data.values
