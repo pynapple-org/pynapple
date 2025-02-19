@@ -85,7 +85,7 @@ def jitrestrict_with_count(time_array, starts, ends, dtype=np.int64):
 
 @jit(nopython=True, cache=True)
 def signed_temporal_difference(reference_t, target_t):
-    return -reference_t + target_t
+    return target_t - reference_t
 
 
 @jit(nopython=True, cache=True)
