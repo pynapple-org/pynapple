@@ -343,6 +343,25 @@ class TestTimeSeriesGeneral:
         assert len(tsd) == len(tsd3)
         np.testing.assert_array_almost_equal(tsd2.values[::10], tsd3.values)
 
+    @pytest.mark.parametrize(
+        "mode, expectation",
+        [
+            ("before", does_not_raise()),
+            ("closest", does_not_raise()),
+            ("after", does_not_raise()),
+            (
+                "invalid",
+                pytest.raises(
+                    ValueError, match='Argument ``mode`` should be "closest",'
+                ),
+            ),
+        ],
+    )
+    def test_value_from_tsd_mode_type(self, tsd, mode, expectation):
+        tsd2 = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.random.rand(1000))
+        with expectation:
+            tsd.value_from(tsd2, mode=mode)
+
     @pytest.mark.parametrize("mode", ["before", "closest", "after"])
     def test_value_from_tsd_mode(self, tsd, mode):
         # case 1: tim-stamps form tsd are subset of time-stamps of tsd2

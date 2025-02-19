@@ -220,7 +220,7 @@ class _Base(abc.ABC):
 
         if mode not in ("closest", "before", "after"):
             raise ValueError(
-                f'Argument ``mode`` should be "closest", "before", "after". ``{mode}`` provided instead.'
+                f'Argument ``mode`` should be "closest", "before", or "after". ``{mode}`` provided instead.'
             )
 
         time_array = self.index.values
