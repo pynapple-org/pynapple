@@ -362,19 +362,29 @@ class TestTimeSeriesGeneral:
             single_ep_tsd2 = tsd2.restrict(iset)
             # extract the indices with searchsorted.
             if mode == "before":
-                expected_idx = np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
+                expected_idx = (
+                    np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
+                )
                 # check that times are actually before
                 assert np.all(single_ep_tsd2.t[expected_idx] <= single_ep_tsd3.t)
                 # check that subsequent are after
-                assert np.all(single_ep_tsd2.t[expected_idx[:-1]+1] > single_ep_tsd3.t[:-1])
+                assert np.all(
+                    single_ep_tsd2.t[expected_idx[:-1] + 1] > single_ep_tsd3.t[:-1]
+                )
             elif mode == "after":
-                expected_idx = np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="left")
+                expected_idx = np.searchsorted(
+                    single_ep_tsd2.t, single_ep_tsd.t, side="left"
+                )
                 # check that times are actually before
                 assert np.all(single_ep_tsd2.t[expected_idx] >= single_ep_tsd3.t)
                 # check that subsequent are after
-                assert np.all(single_ep_tsd2.t[expected_idx[1:] - 1] < single_ep_tsd3.t[1:])
+                assert np.all(
+                    single_ep_tsd2.t[expected_idx[1:] - 1] < single_ep_tsd3.t[1:]
+                )
             else:
-                before = np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
+                before = (
+                    np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
+                )
                 after = np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="left")
                 dt_before = np.abs(tsd2.t[before] - tsd.t)
                 dt_after = np.abs(tsd2.t[after] - tsd.t)
@@ -382,7 +392,9 @@ class TestTimeSeriesGeneral:
                 # by default if equi-distance, it assigned to after.
                 expected_idx[dt_after <= dt_before] = after[dt_after <= dt_before]
 
-            np.testing.assert_array_equal(single_ep_tsd2.d[expected_idx], single_ep_tsd3.d)
+            np.testing.assert_array_equal(
+                single_ep_tsd2.d[expected_idx], single_ep_tsd3.d
+            )
             np.testing.assert_array_equal(single_ep_tsd.t, single_ep_tsd3.t)
 
     def test_value_from_tsdframe(self, tsd):

@@ -8,10 +8,15 @@ Otherwise the module will call the functions within `_jitted_functions.py`.
 
 """
 
+from typing import Literal
+
 import numpy as np
 from scipy import signal
 
 from ._jitted_functions import (  # pjitconvolve,
+    condition_after,
+    condition_before,
+    condition_closest,
     jitbin_array,
     jitcount,
     jitremove_nan,
@@ -19,14 +24,11 @@ from ._jitted_functions import (  # pjitconvolve,
     jitrestrict_with_count,
     jitthreshold,
     jitvaluefrom,
-    condition_closest,
-    condition_before,
-    condition_after,
-    unsigned_temporal_difference,
     signed_temporal_difference,
+    unsigned_temporal_difference,
 )
 from .utils import get_backend
-from typing import Literal
+
 
 def _restrict(time_array, starts, ends):
     return jitrestrict(time_array, starts, ends)
@@ -41,7 +43,14 @@ def _count(time_array, starts, ends, bin_size=None, dtype=None):
     return t, d
 
 
-def _value_from(time_array, time_target_array, data_target_array, starts, ends, mode: Literal["closest", "before", "after"]="closest"):
+def _value_from(
+    time_array,
+    time_target_array,
+    data_target_array,
+    starts,
+    ends,
+    mode: Literal["closest", "before", "after"] = "closest",
+):
     idx_t, count = jitrestrict_with_count(time_array, starts, ends)
     idx_target, count_target = jitrestrict_with_count(time_target_array, starts, ends)
     if mode == "closest":

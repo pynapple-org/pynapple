@@ -111,7 +111,16 @@ def condition_after(new_dt, current_dt):
 
 
 @jit(nopython=True, cache=True)
-def jitvaluefrom(time_array, time_target_array, count, count_target, starts, ends, condition_func=condition_closest, temporal_diff_func=unsigned_temporal_difference):
+def jitvaluefrom(
+    time_array,
+    time_target_array,
+    count,
+    count_target,
+    starts,
+    ends,
+    condition_func=condition_closest,
+    temporal_diff_func=unsigned_temporal_difference,
+):
     # Get the number of intervals, the length of time_array, and the length of time_target_array
     m = starts.shape[0]
     n = time_array.shape[0]
@@ -127,8 +136,10 @@ def jitvaluefrom(time_array, time_target_array, count, count_target, starts, end
             if count[k] > 0 and count_target[k] > 0:
                 t = np.sum(count[0:k])
                 i = np.sum(count_target[0:k])
-                maxt = t + count[k]  # Maximum index for time_array in the current interval
-                maxi = i + count_target[k] # Maximum index in the target array
+                maxt = (
+                    t + count[k]
+                )  # Maximum index for time_array in the current interval
+                maxi = i + count_target[k]  # Maximum index in the target array
                 while t < maxt:  # Iterate over the current interval in time_array
                     # compute signed or abs temporal difference
                     # abs for closest, signed for after or before
@@ -136,9 +147,13 @@ def jitvaluefrom(time_array, time_target_array, count, count_target, starts, end
                     idx[t] = float(i)  # Store the initial index
 
                     i += 1
-                    while i < maxi:  # Iterate through time_target_array within the current interval
+                    while (
+                        i < maxi
+                    ):  # Iterate through time_target_array within the current interval
                         # check the next temporal difference
-                        new_interval = temporal_diff_func(time_array[t], time_target_array[i])
+                        new_interval = temporal_diff_func(
+                            time_array[t], time_target_array[i]
+                        )
                         # check a condition for breaking the loop, depends on the modality
                         break_cond, nan_cond = condition_func(new_interval, interval)
                         if break_cond:  # Break if the new interval is larger
@@ -151,7 +166,9 @@ def jitvaluefrom(time_array, time_target_array, count, count_target, starts, end
                             i += 1
 
                     if i == maxi:
-                        new_interval = temporal_diff_func(time_array[t], time_target_array[i-1])
+                        new_interval = temporal_diff_func(
+                            time_array[t], time_target_array[i - 1]
+                        )
                         _, nan_cond = condition_func(new_interval, interval)
                         if nan_cond:
                             idx[t] = np.nan
@@ -159,6 +176,7 @@ def jitvaluefrom(time_array, time_target_array, count, count_target, starts, end
                     t += 1  # Move to the next time point
 
     return idx  # Return the array of indices
+
 
 @jit(nopython=True, cache=True)
 def jitcount(time_array, starts, ends, bin_size, dtype):
