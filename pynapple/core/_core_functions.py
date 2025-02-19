@@ -19,9 +19,13 @@ from ._jitted_functions import (  # pjitconvolve,
     jitrestrict_with_count,
     jitthreshold,
     jitvaluefrom,
+    condition_closest,
+    condition_before,
+    compute_temporal_diff_closest,
+    compute_temporal_diff_before
 )
 from .utils import get_backend
-
+from typing import Literal
 
 def _restrict(time_array, starts, ends):
     return jitrestrict(time_array, starts, ends)
@@ -36,9 +40,17 @@ def _count(time_array, starts, ends, bin_size=None, dtype=None):
     return t, d
 
 
-def _value_from(time_array, time_target_array, data_target_array, starts, ends):
+def _value_from(time_array, time_target_array, data_target_array, starts, ends, mode: Literal["closest", "before", "after"]="closest"):
     idx_t, count = jitrestrict_with_count(time_array, starts, ends)
     idx_target, count_target = jitrestrict_with_count(time_target_array, starts, ends)
+    if mode == "closest":
+        condition_func = condition_closest
+        temporal_diff_func = compute_temporal_diff_closest
+    elif mode == "before":
+        condition_func = condition_before
+        temporal_diff_func = compute_temporal_diff_before
+    else:
+        raise ValueError("'mode' must be closest or after")
     idx = jitvaluefrom(
         time_array[idx_t],
         time_target_array[idx_target],
@@ -46,6 +58,8 @@ def _value_from(time_array, time_target_array, data_target_array, starts, ends):
         count_target,
         starts,
         ends,
+        condition_func=condition_func,
+        temporal_diff_func=temporal_diff_func,
     )
 
     new_time_array = time_array[idx_t]

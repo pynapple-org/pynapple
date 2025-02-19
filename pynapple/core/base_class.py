@@ -168,7 +168,7 @@ class _Base(abc.ABC):
         else:
             return None
 
-    def value_from(self, data, ep=None):
+    def value_from(self, data, ep=None, mode="closest"):
         """
         Replace the value with the closest value from Tsd/TsdFrame/TsdTensor argument
 
@@ -176,6 +176,9 @@ class _Base(abc.ABC):
         ----------
         data : Tsd, TsdFrame or TsdTensor
             The object holding the values to replace.
+        mode: literal, either 'closest', 'before', 'after'
+            If closest, replace value with vlue from Tsd/TsdFrame/TsdTensor, if before gets the
+            first value before, if after the first value after.
         ep : IntervalSet (optional)
             The IntervalSet object to restrict the operation.
             If None, the time support of the tsd input object is used.
@@ -222,7 +225,7 @@ class _Base(abc.ABC):
         ends = ep.end
 
         t, d = _value_from(
-            time_array, time_target_array, data_target_array, starts, ends
+            time_array, time_target_array, data_target_array, starts, ends, mode=mode
         )
 
         time_support = IntervalSet(start=starts, end=ends)
