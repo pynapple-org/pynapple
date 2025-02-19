@@ -179,7 +179,6 @@ def test_jitvalue_from():
                     tsd.restrict(ep[j])
                     .as_series()
                     .reindex(ix, method="nearest")
-                    .fillna(0.0)
                 )
 
         tsd2 = pd.concat(tsd2)
