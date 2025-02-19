@@ -22,9 +22,9 @@ from ._jitted_functions import (  # pjitconvolve,
     condition_closest,
     condition_before,
     condition_after,
-    compute_temporal_diff_closest,
-    compute_temporal_diff_before,
-    compute_temporal_diff_after,
+    unsigned_temporal_difference,
+    signed_temporal_difference,
+    signed_temporal_difference,
 )
 from .utils import get_backend
 from typing import Literal
@@ -47,13 +47,11 @@ def _value_from(time_array, time_target_array, data_target_array, starts, ends, 
     idx_target, count_target = jitrestrict_with_count(time_target_array, starts, ends)
     if mode == "closest":
         condition_func = condition_closest
-        temporal_diff_func = compute_temporal_diff_closest
-    elif mode == "before":
-        condition_func = condition_before
-        temporal_diff_func = compute_temporal_diff_before
+        temporal_diff_func = unsigned_temporal_difference
     else:
-        condition_func = condition_after
-        temporal_diff_func = compute_temporal_diff_after
+        condition_func = condition_before if mode == "before" else condition_after
+        temporal_diff_func = signed_temporal_difference
+
     idx = jitvaluefrom(
         time_array[idx_t],
         time_target_array[idx_target],

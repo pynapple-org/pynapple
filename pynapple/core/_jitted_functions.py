@@ -84,21 +84,20 @@ def jitrestrict_with_count(time_array, starts, ends, dtype=np.int64):
 
 
 @jit(nopython=True, cache=True)
-def compute_temporal_diff_before(reference_t, target_t):
+def signed_temporal_difference(reference_t, target_t):
     return -reference_t + target_t
 
+
 @jit(nopython=True, cache=True)
-def compute_temporal_diff_closest(reference_t, target_t):
+def unsigned_temporal_difference(reference_t, target_t):
     return abs(reference_t - target_t)
+
 
 @jit(nopython=True, cache=True)
 def condition_before(new_dt, current_dt):
     last_negative_dt = ((new_dt > 0) and (current_dt <= 0)) or (current_dt >= 0)
     return last_negative_dt, current_dt > 0
 
-@jit(nopython=True, cache=True)
-def compute_temporal_diff_after(reference_t, target_t):
-    return -reference_t + target_t
 
 @jit(nopython=True, cache=True)
 def condition_closest(new_dt, current_dt):
@@ -112,7 +111,7 @@ def condition_after(new_dt, current_dt):
 
 
 @jit(nopython=True, cache=True)
-def jitvaluefrom(time_array, time_target_array, count, count_target, starts, ends, condition_func=condition_closest, temporal_diff_func=compute_temporal_diff_closest):
+def jitvaluefrom(time_array, time_target_array, count, count_target, starts, ends, condition_func=condition_closest, temporal_diff_func=unsigned_temporal_difference):
     # Get the number of intervals, the length of time_array, and the length of time_target_array
     m = starts.shape[0]
     n = time_array.shape[0]
@@ -123,20 +122,24 @@ def jitvaluefrom(time_array, time_target_array, count, count_target, starts, end
 
     # Proceed only if both time arrays have elements
     if n > 0 and d > 0:
-        for k in range(m):  # Iterate through each interval
-            # Check if both count arrays have positive values for the current interval
+        for k in range(m):  # Iterate through each epoch
+            # Check if there are time stamps in both arrays
             if count[k] > 0 and count_target[k] > 0:
                 t = np.sum(count[0:k])
                 i = np.sum(count_target[0:k])
                 maxt = t + count[k]  # Maximum index for time_array in the current interval
-                maxi = i + count_target[k]
+                maxi = i + count_target[k] # Maximum index in the target array
                 while t < maxt:  # Iterate over the current interval in time_array
-                    interval = temporal_diff_func(time_array[t], time_target_array[i])  # Initial interval difference
+                    # compute signed or abs temporal difference
+                    # abs for closest, signed for after or before
+                    interval = temporal_diff_func(time_array[t], time_target_array[i])
                     idx[t] = float(i)  # Store the initial index
 
                     i += 1
                     while i < maxi:  # Iterate through time_target_array within the current interval
+                        # check the next temporal difference
                         new_interval = temporal_diff_func(time_array[t], time_target_array[i])
+                        # check a condition for breaking the loop, depends on the modality
                         break_cond, nan_cond = condition_func(new_interval, interval)
                         if break_cond:  # Break if the new interval is larger
                             if nan_cond:
@@ -146,6 +149,12 @@ def jitvaluefrom(time_array, time_target_array, count, count_target, starts, end
                             idx[t] = float(i)  # Update the index with the closer target
                             interval = new_interval  # Update the interval
                             i += 1
+
+                    if i == maxi:
+                        new_interval = temporal_diff_func(time_array[t], time_target_array[i-1])
+                        _, nan_cond = condition_func(new_interval, interval)
+                        if nan_cond:
+                            idx[t] = np.nan
                     i -= 1  # Revert to the last valid index
                     t += 1  # Move to the next time point
 
