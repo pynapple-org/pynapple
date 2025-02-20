@@ -14,9 +14,6 @@ import numpy as np
 from scipy import signal
 
 from ._jitted_functions import (  # pjitconvolve,
-    condition_after,
-    condition_before,
-    condition_closest,
     jitbin_array,
     jitcount,
     jitremove_nan,
@@ -24,8 +21,6 @@ from ._jitted_functions import (  # pjitconvolve,
     jitrestrict_with_count,
     jitthreshold,
     jitvaluefrom,
-    signed_temporal_difference,
-    unsigned_temporal_difference,
 )
 from .utils import get_backend
 
@@ -53,12 +48,11 @@ def _value_from(
 ):
     idx_t, count = jitrestrict_with_count(time_array, starts, ends)
     idx_target, count_target = jitrestrict_with_count(time_target_array, starts, ends)
+    # replace flag with int
     if mode == "closest":
-        condition_func = condition_closest
-        temporal_diff_func = unsigned_temporal_difference
+        mode = 1
     else:
-        condition_func = condition_before if mode == "before" else condition_after
-        temporal_diff_func = signed_temporal_difference
+        mode = 0 if mode == "before" else 2
 
     idx = jitvaluefrom(
         time_array[idx_t],
@@ -66,8 +60,7 @@ def _value_from(
         count,
         count_target,
         starts,
-        condition_func=condition_func,
-        temporal_diff_func=temporal_diff_func,
+        mode=mode,
     )
 
     new_time_array = time_array[idx_t]
