@@ -124,7 +124,7 @@ $ python
 >>> import pynapple as nap
 ```
 
-You'll find an example of the package below. Click [here](https://www.dropbox.com/s/su4oaje57g3kit9/A2929-200711.zip?dl=1) to download the example dataset. The folder includes a NWB file containing the data.
+You'll find an example of the package below. Click [here](https://osf.io/fqht6) to download the example dataset. The folder includes a NWB file containing the data.
 
 ``` py
 import matplotlib.pyplot as plt
