@@ -226,6 +226,27 @@ class TestTsGroup1:
         np.testing.assert_array_almost_equal(tsgroup2[1].values, np.arange(0, 2000, 5))
         np.testing.assert_array_almost_equal(tsgroup2[2].values, np.arange(0, 3000, 2))
 
+    def test_value_from_raise_type_errors(self, group):
+        tsgroup = nap.TsGroup(group)
+        tsd = nap.Tsd(t=np.arange(0, 300, 0.1), d=np.arange(3000))
+
+        with pytest.raises(
+            TypeError,
+            match=r"First argument should be an instance of Tsd, TsdFrame or TsdTensor",
+        ):
+            tsgroup.value_from(tsd={})
+
+        with pytest.raises(
+            TypeError, match=r"Argument ep should be of type IntervalSet or None"
+        ):
+            tsgroup.value_from(tsd=tsd, ep={})
+
+        with pytest.raises(
+            ValueError,
+            match=r"Argument mode should be 'closest', 'before', or 'after'. 1 provided instead.",
+        ):
+            tsgroup.value_from(tsd=tsd, mode=1)
+
     @pytest.mark.parametrize("mode", ["before", "closest", "after"])
     def test_value_from_tsd_mode(self, group, mode):
         # case 1: tim-stamps form tsd are subset of time-stamps of tsd2

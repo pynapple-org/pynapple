@@ -589,7 +589,7 @@ class TsGroup(UserDict, _MetadataMixin):
             raise TypeError("Argument ep should be of type IntervalSet or None")
         if mode not in ("closest", "before", "after"):
             raise ValueError(
-                f'Argument ``mode`` should be "closest", "before", or "after". ``{mode}`` provided instead.'
+                f"Argument mode should be 'closest', 'before', or 'after'. {mode} provided instead."
             )
 
         newgr = {}
