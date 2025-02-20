@@ -66,7 +66,6 @@ def _value_from(
         count,
         count_target,
         starts,
-        ends,
         condition_func=condition_func,
         temporal_diff_func=temporal_diff_func,
     )
