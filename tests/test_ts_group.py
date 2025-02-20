@@ -239,7 +239,7 @@ class TestTsGroup1:
         np.testing.assert_array_almost_equal(tsgroup2[2].values, np.arange(0, 3000, 2))
 
         # case2: timestamps of tsd (integers) are not subset of that of tsd2.
-        tsd2 = nap.Tsd(t=np.arange(0., 300.3, 0.3), d=np.random.rand(1002))
+        tsd2 = nap.Tsd(t=np.arange(0.0, 300.3, 0.3), d=np.random.rand(1002))
 
         tsgroup2 = tsgroup.value_from(tsd2, mode=mode)
         # loop over epochs
@@ -253,40 +253,34 @@ class TestTsGroup1:
                 # extract the indices with searchsorted.
                 if mode == "before":
                     expected_idx = (
-                            np.searchsorted(single_ep_tsd2.t, ts.t, side="right") - 1
+                        np.searchsorted(single_ep_tsd2.t, ts.t, side="right") - 1
                     )
                     # check that times are actually before
                     assert np.all(single_ep_tsd2.t[expected_idx] <= ts2.t)
                     # check that subsequent are after
-                    assert np.all(
-                        single_ep_tsd2.t[expected_idx[:-1] + 1] > ts2.t[:-1]
-                    )
+                    assert np.all(single_ep_tsd2.t[expected_idx[:-1] + 1] > ts2.t[:-1])
                     valid = np.ones(len(ts), dtype=bool)
                 elif mode == "after":
-                    expected_idx = np.searchsorted(
-                        single_ep_tsd2.t, ts.t, side="left"
-                    )
+                    expected_idx = np.searchsorted(single_ep_tsd2.t, ts.t, side="left")
                     # avoid border errors with searchsorted
                     valid = expected_idx < len(single_ep_tsd2)
                     # check that times are actually before
                     assert np.all(single_ep_tsd2.t[expected_idx[valid]] >= ts2.t[valid])
                     # check that subsequent are after
-                    assert np.all(
-                        single_ep_tsd2.t[expected_idx[1:] - 1] < ts2.t[1:]
-                    )
+                    assert np.all(single_ep_tsd2.t[expected_idx[1:] - 1] < ts2.t[1:])
                     expected_idx = expected_idx[valid]
                 else:
-                    before = (
-                            np.searchsorted(single_ep_tsd2.t, ts.t, side="right") - 1
-                    )
+                    before = np.searchsorted(single_ep_tsd2.t, ts.t, side="right") - 1
                     after = np.searchsorted(single_ep_tsd2.t, ts.t, side="left")
                     dt_before = np.abs(single_ep_tsd2.t[before] - ts.t)
-                    #void border errors with searchsorted
+                    # void border errors with searchsorted
                     valid = after < len(single_ep_tsd2)
-                    dt_after = np.abs(single_ep_tsd2.t[after[valid]]- ts.t[valid])
+                    dt_after = np.abs(single_ep_tsd2.t[after[valid]] - ts.t[valid])
                     expected_idx = before[valid].copy()
                     # by default if equi-distance, it assigned to after.
-                    expected_idx[dt_after <= dt_before[valid]] = after[valid][dt_after <= dt_before[valid]]
+                    expected_idx[dt_after <= dt_before[valid]] = after[valid][
+                        dt_after <= dt_before[valid]
+                    ]
                 np.testing.assert_array_equal(
                     single_ep_tsd2.d[expected_idx], ts2.d[valid]
                 )
