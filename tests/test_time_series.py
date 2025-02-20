@@ -405,8 +405,8 @@ class TestTimeSeriesGeneral:
                     np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
                 )
                 after = np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="left")
-                dt_before = np.abs(tsd2.t[before] - tsd.t)
-                dt_after = np.abs(tsd2.t[after] - tsd.t)
+                dt_before = np.abs(single_ep_tsd2.t[before] - single_ep_tsd.t)
+                dt_after = np.abs(single_ep_tsd2.t[after] - single_ep_tsd.t)
                 expected_idx = before.copy()
                 # by default if equi-distance, it assigned to after.
                 expected_idx[dt_after <= dt_before] = after[dt_after <= dt_before]
