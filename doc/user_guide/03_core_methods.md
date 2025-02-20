@@ -148,8 +148,8 @@ plt.show()
 
 ### `value_from`
 
-`value_from` assign to every timestamps the closed value in time from another time series. Let's define the time series we want to assign values from.
-
+By default, `value_from` assign to timestamps the closest value in time 
+from another time series. Let's define the time series we want to assign values from.
 
 For every timestamps in `tsgroup`, we want to assign the closest value in time from `tsd`.
 

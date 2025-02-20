@@ -117,7 +117,6 @@ def jitvaluefrom(
     count,
     count_target,
     starts,
-    ends,
     condition_func=condition_closest,
     temporal_diff_func=unsigned_temporal_difference,
 ):
