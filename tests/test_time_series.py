@@ -343,11 +343,138 @@ class TestTimeSeriesGeneral:
         assert len(tsd) == len(tsd3)
         np.testing.assert_array_almost_equal(tsd2.values[::10], tsd3.values)
 
+    @pytest.mark.parametrize(
+        "mode, expectation",
+        [
+            ("before", does_not_raise()),
+            ("closest", does_not_raise()),
+            ("after", does_not_raise()),
+            (
+                "invalid",
+                pytest.raises(
+                    ValueError, match='Argument ``mode`` should be "closest",'
+                ),
+            ),
+        ],
+    )
+    def test_value_from_tsd_mode_type(self, tsd, mode, expectation):
+        tsd2 = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.random.rand(1000))
+        with expectation:
+            tsd.value_from(tsd2, mode=mode)
+
+    @pytest.mark.parametrize("mode", ["before", "closest", "after"])
+    def test_value_from_tsd_mode(self, tsd, mode):
+        # case 1: tim-stamps form tsd are subset of time-stamps of tsd2
+        # In this case all modes should do the same thing
+        tsd2 = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.random.rand(1000))
+        tsd3 = tsd.value_from(tsd2, mode=mode)
+        assert len(tsd) == len(tsd3)
+        np.testing.assert_array_almost_equal(tsd2.values[::10], tsd3.values)
+
+        # case2: timestamps of tsd (integers) are not subset of that of tsd2.
+        tsd2 = nap.Tsd(t=np.arange(0, 100, 0.3), d=np.random.rand(334))
+        tsd3 = tsd.value_from(tsd2, mode=mode)
+        # loop over epochs
+        for iset in tsd.time_support:
+            single_ep_tsd = tsd.restrict(iset)
+            single_ep_tsd3 = tsd3.restrict(iset)
+            single_ep_tsd2 = tsd2.restrict(iset)
+            # extract the indices with searchsorted.
+            if mode == "before":
+                expected_idx = (
+                    np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
+                )
+                # check that times are actually before
+                assert np.all(single_ep_tsd2.t[expected_idx] <= single_ep_tsd3.t)
+                # check that subsequent are after
+                assert np.all(
+                    single_ep_tsd2.t[expected_idx[:-1] + 1] > single_ep_tsd3.t[:-1]
+                )
+            elif mode == "after":
+                expected_idx = np.searchsorted(
+                    single_ep_tsd2.t, single_ep_tsd.t, side="left"
+                )
+                # check that times are actually before
+                assert np.all(single_ep_tsd2.t[expected_idx] >= single_ep_tsd3.t)
+                # check that subsequent are after
+                assert np.all(
+                    single_ep_tsd2.t[expected_idx[1:] - 1] < single_ep_tsd3.t[1:]
+                )
+            else:
+                before = (
+                    np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
+                )
+                after = np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="left")
+                dt_before = np.abs(single_ep_tsd2.t[before] - single_ep_tsd.t)
+                dt_after = np.abs(single_ep_tsd2.t[after] - single_ep_tsd.t)
+                expected_idx = before.copy()
+                # by default if equi-distance, it assigned to after.
+                expected_idx[dt_after <= dt_before] = after[dt_after <= dt_before]
+
+            np.testing.assert_array_equal(
+                single_ep_tsd2.d[expected_idx], single_ep_tsd3.d
+            )
+            np.testing.assert_array_equal(single_ep_tsd.t, single_ep_tsd3.t)
+
     def test_value_from_tsdframe(self, tsd):
         tsdframe = nap.TsdFrame(t=np.arange(0, 100, 0.1), d=np.random.rand(1000, 3))
         tsdframe2 = tsd.value_from(tsdframe)
         assert len(tsd) == len(tsdframe2)
         np.testing.assert_array_almost_equal(tsdframe.values[::10], tsdframe2.values)
+
+    @pytest.mark.parametrize("mode", ["before", "closest", "after"])
+    def test_value_from_tsdframe_mode(self, tsd, mode):
+        # case 1: tim-stamps form tsd are subset of time-stamps of tsd2
+        # In this case all modes should do the same thing
+        tsd2 = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.random.rand(1000))
+        tsd3 = tsd.value_from(tsd2, mode=mode)
+        assert len(tsd) == len(tsd3)
+        np.testing.assert_array_almost_equal(tsd2.values[::10], tsd3.values)
+
+        # case2: timestamps of tsd (integers) are not subset of that of tsd2.
+        tsd2 = nap.Tsd(t=np.arange(0, 100, 0.3), d=np.random.rand(334))
+        tsd3 = tsd.value_from(tsd2, mode=mode)
+        # loop over epochs
+        for iset in tsd.time_support:
+            single_ep_tsd = tsd.restrict(iset)
+            single_ep_tsd3 = tsd3.restrict(iset)
+            single_ep_tsd2 = tsd2.restrict(iset)
+            # extract the indices with searchsorted.
+            if mode == "before":
+                expected_idx = (
+                    np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
+                )
+                # check that times are actually before
+                assert np.all(single_ep_tsd2.t[expected_idx] <= single_ep_tsd3.t)
+                # check that subsequent are after
+                assert np.all(
+                    single_ep_tsd2.t[expected_idx[:-1] + 1] > single_ep_tsd3.t[:-1]
+                )
+            elif mode == "after":
+                expected_idx = np.searchsorted(
+                    single_ep_tsd2.t, single_ep_tsd.t, side="left"
+                )
+                # check that times are actually before
+                assert np.all(single_ep_tsd2.t[expected_idx] >= single_ep_tsd3.t)
+                # check that subsequent are after
+                assert np.all(
+                    single_ep_tsd2.t[expected_idx[1:] - 1] < single_ep_tsd3.t[1:]
+                )
+            else:
+                before = (
+                    np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
+                )
+                after = np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="left")
+                dt_before = np.abs(tsd2.t[before] - tsd.t)
+                dt_after = np.abs(tsd2.t[after] - tsd.t)
+                expected_idx = before.copy()
+                # by default if equi-distance, it assigned to after.
+                expected_idx[dt_after <= dt_before] = after[dt_after <= dt_before]
+
+            np.testing.assert_array_equal(
+                single_ep_tsd2.d[expected_idx], single_ep_tsd3.d
+            )
+            np.testing.assert_array_equal(single_ep_tsd.t, single_ep_tsd3.t)
 
     def test_value_from_value_error(self, tsd):
         with pytest.raises(
@@ -2399,3 +2526,48 @@ def test_define_instance(tsd, kwargs):
             val,
         ) in meta.items():
             assert np.all(out.metadata[key] == val)
+
+
+time_array = np.arange(-4, 10, 1)
+time_target_array = np.arange(-2, 10) + 0.01
+starts = np.array([0])  # np.array([0, 8])
+ends = np.array([10])  # np.array([6, 10])
+a = nap.Tsd(
+    t=time_target_array,
+    d=np.arange(time_target_array.shape[0]),
+    time_support=nap.IntervalSet(starts, ends),
+)
+ts = nap.Ts(time_array)
+
+
+@pytest.mark.parametrize(
+    "tsd, ts, mode, expected_data",
+    [
+        (
+            nap.Tsd(
+                t=np.arange(10) + 0.01,
+                d=np.arange(10),
+                time_support=nap.IntervalSet(0, 10),
+            ),
+            nap.Ts(np.arange(-4, 10, 1)),
+            "before",
+            np.array([np.nan] + [*range(0, 9)]),
+        ),
+        (
+            nap.Tsd(
+                t=np.arange(9) + 0.01,
+                d=np.arange(9),
+                time_support=nap.IntervalSet(0, 10),
+            ),
+            nap.Ts(np.arange(-4, 10, 1)),
+            "after",
+            np.array([*range(0, 9)] + [np.nan]),
+        ),
+    ],
+)
+def test_value_from_out_of_range(tsd, ts, mode, expected_data):
+    out = ts.value_from(tsd, mode=mode)
+    # type should be float even if tsd is int
+    assert np.issubdtype(tsd.d.dtype, np.integer)
+    assert np.issubdtype(out.d.dtype, np.floating)
+    np.testing.assert_array_equal(out.d, expected_data)

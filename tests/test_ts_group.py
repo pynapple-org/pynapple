@@ -226,6 +226,87 @@ class TestTsGroup1:
         np.testing.assert_array_almost_equal(tsgroup2[1].values, np.arange(0, 2000, 5))
         np.testing.assert_array_almost_equal(tsgroup2[2].values, np.arange(0, 3000, 2))
 
+    def test_value_from_raise_type_errors(self, group):
+        tsgroup = nap.TsGroup(group)
+        tsd = nap.Tsd(t=np.arange(0, 300, 0.1), d=np.arange(3000))
+
+        with pytest.raises(
+            TypeError,
+            match=r"First argument should be an instance of Tsd, TsdFrame or TsdTensor",
+        ):
+            tsgroup.value_from(tsd={})
+
+        with pytest.raises(
+            TypeError, match=r"Argument ep should be of type IntervalSet or None"
+        ):
+            tsgroup.value_from(tsd=tsd, ep={})
+
+        with pytest.raises(
+            ValueError,
+            match=r"Argument mode should be 'closest', 'before', or 'after'. 1 provided instead.",
+        ):
+            tsgroup.value_from(tsd=tsd, mode=1)
+
+    @pytest.mark.parametrize("mode", ["before", "closest", "after"])
+    def test_value_from_tsd_mode(self, group, mode):
+        # case 1: tim-stamps form tsd are subset of time-stamps of tsd2
+        # In this case all modes should do the same thing
+        tsgroup = nap.TsGroup(group)
+        tsd = nap.Tsd(t=np.arange(0, 300, 0.1), d=np.arange(3000))
+        tsgroup2 = tsgroup.value_from(tsd, mode=mode)
+        assert len(tsgroup) == len(tsgroup2)
+        np.testing.assert_array_almost_equal(tsgroup2[0].values, np.arange(0, 2000, 10))
+        np.testing.assert_array_almost_equal(tsgroup2[1].values, np.arange(0, 2000, 5))
+        np.testing.assert_array_almost_equal(tsgroup2[2].values, np.arange(0, 3000, 2))
+
+        # case2: timestamps of tsd (integers) are not subset of that of tsd2.
+        tsd2 = nap.Tsd(t=np.arange(0.0, 300.3, 0.3), d=np.random.rand(1002))
+
+        tsgroup2 = tsgroup.value_from(tsd2, mode=mode)
+        # loop over epochs
+        for iset in tsd.time_support:
+            single_ep_tsgroup = tsgroup.restrict(iset)
+            single_ep_tsgroup2 = tsgroup2.restrict(iset)
+            single_ep_tsd2 = tsd2.restrict(iset)
+
+            for idx, ts in single_ep_tsgroup.items():
+                ts2 = single_ep_tsgroup2[idx]
+                # extract the indices with searchsorted.
+                if mode == "before":
+                    expected_idx = (
+                        np.searchsorted(single_ep_tsd2.t, ts.t, side="right") - 1
+                    )
+                    # check that times are actually before
+                    assert np.all(single_ep_tsd2.t[expected_idx] <= ts2.t)
+                    # check that subsequent are after
+                    assert np.all(single_ep_tsd2.t[expected_idx[:-1] + 1] > ts2.t[:-1])
+                    valid = np.ones(len(ts), dtype=bool)
+                elif mode == "after":
+                    expected_idx = np.searchsorted(single_ep_tsd2.t, ts.t, side="left")
+                    # avoid border errors with searchsorted
+                    valid = expected_idx < len(single_ep_tsd2)
+                    # check that times are actually before
+                    assert np.all(single_ep_tsd2.t[expected_idx[valid]] >= ts2.t[valid])
+                    # check that subsequent are after
+                    assert np.all(single_ep_tsd2.t[expected_idx[1:] - 1] < ts2.t[1:])
+                    expected_idx = expected_idx[valid]
+                else:
+                    before = np.searchsorted(single_ep_tsd2.t, ts.t, side="right") - 1
+                    after = np.searchsorted(single_ep_tsd2.t, ts.t, side="left")
+                    dt_before = np.abs(single_ep_tsd2.t[before] - ts.t)
+                    # void border errors with searchsorted
+                    valid = after < len(single_ep_tsd2)
+                    dt_after = np.abs(single_ep_tsd2.t[after[valid]] - ts.t[valid])
+                    expected_idx = before[valid].copy()
+                    # by default if equi-distance, it assigned to after.
+                    expected_idx[dt_after <= dt_before[valid]] = after[valid][
+                        dt_after <= dt_before[valid]
+                    ]
+                np.testing.assert_array_equal(
+                    single_ep_tsd2.d[expected_idx], ts2.d[valid]
+                )
+                np.testing.assert_array_equal(ts.t, ts2.t)
+
     def test_value_from_with_restrict(self, group):
         tsgroup = nap.TsGroup(group)
         tsd = nap.Tsd(t=np.arange(0, 300, 0.1), d=np.arange(3000))
@@ -306,27 +387,17 @@ class TestTsGroup1:
             np.testing.assert_array_almost_equal(
                 count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
             )
-            count = tsgroup.count(b, tu)
-            np.testing.assert_array_almost_equal(
-                count.loc[0].values[0:-1].flatten(), np.ones(len(count) - 1)
-            )
-            np.testing.assert_array_almost_equal(
-                count.loc[1].values[0:-1].flatten(), np.ones(len(count) - 1) * 2
-            )
-            np.testing.assert_array_almost_equal(
-                count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
-            )
 
     def test_count_errors(self, group):
         tsgroup = nap.TsGroup(group)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             tsgroup.count(bin_size={})
 
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             tsgroup.count(ep={})
 
         with pytest.raises(ValueError):
-            tsgroup.count(time_units={})
+            tsgroup.count(bin_size=1, time_units={})
 
     def test_get_interval(self, group):
         tsgroup = nap.TsGroup(group)
