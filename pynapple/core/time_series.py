@@ -4,7 +4,7 @@ Pynapple time series are containers specialized for neurophysiological time seri
 
 They provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.
 
-Multiple time series object are avaible depending on the shape of the data.
+Multiple time series object are available depending on the shape of the data.
 
 - `TsdTensor` : for data with of more than 2 dimensions, typically movies.
 - `TsdFrame` : for column-based data. It can be easily converted to a pandas.DataFrame. Columns can be labelled and selected similar to pandas.
