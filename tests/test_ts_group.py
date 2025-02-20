@@ -226,6 +226,63 @@ class TestTsGroup1:
         np.testing.assert_array_almost_equal(tsgroup2[1].values, np.arange(0, 2000, 5))
         np.testing.assert_array_almost_equal(tsgroup2[2].values, np.arange(0, 3000, 2))
 
+    @pytest.mark.parametrize("mode", ["before", "closest", "after"])
+    def test_value_from_tsd_mode(self, group, mode):
+        # case 1: tim-stamps form tsd are subset of time-stamps of tsd2
+        # In this case all modes should do the same thing
+        tsgroup = nap.TsGroup(group)
+        tsd2 = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.random.rand(1000))
+        tsgroup2 = tsgroup.value_from(tsd2, mode=mode)
+        assert len(tsgroup) == len(tsgroup2)
+        np.testing.assert_array_almost_equal(tsgroup2[0].values, np.arange(0, 2000, 10))
+        np.testing.assert_array_almost_equal(tsgroup2[1].values, np.arange(0, 2000, 5))
+        np.testing.assert_array_almost_equal(tsgroup2[2].values, np.arange(0, 3000, 2))
+
+        # # case2: timestamps of tsd (integers) are not subset of that of tsd2.
+        # tsd2 = nap.Tsd(t=np.arange(0, 100, 0.3), d=np.random.rand(334))
+        # tsd3 = tsd.value_from(tsd2, mode=mode)
+        # # loop over epochs
+        # for iset in tsd.time_support:
+        #     single_ep_tsd = tsd.restrict(iset)
+        #     single_ep_tsd3 = tsd3.restrict(iset)
+        #     single_ep_tsd2 = tsd2.restrict(iset)
+        #     # extract the indices with searchsorted.
+        #     if mode == "before":
+        #         expected_idx = (
+        #                 np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
+        #         )
+        #         # check that times are actually before
+        #         assert np.all(single_ep_tsd2.t[expected_idx] <= single_ep_tsd3.t)
+        #         # check that subsequent are after
+        #         assert np.all(
+        #             single_ep_tsd2.t[expected_idx[:-1] + 1] > single_ep_tsd3.t[:-1]
+        #         )
+        #     elif mode == "after":
+        #         expected_idx = np.searchsorted(
+        #             single_ep_tsd2.t, single_ep_tsd.t, side="left"
+        #         )
+        #         # check that times are actually before
+        #         assert np.all(single_ep_tsd2.t[expected_idx] >= single_ep_tsd3.t)
+        #         # check that subsequent are after
+        #         assert np.all(
+        #             single_ep_tsd2.t[expected_idx[1:] - 1] < single_ep_tsd3.t[1:]
+        #         )
+        #     else:
+        #         before = (
+        #                 np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
+        #         )
+        #         after = np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="left")
+        #         dt_before = np.abs(tsd2.t[before] - tsd.t)
+        #         dt_after = np.abs(tsd2.t[after] - tsd.t)
+        #         expected_idx = before.copy()
+        #         # by default if equi-distance, it assigned to after.
+        #         expected_idx[dt_after <= dt_before] = after[dt_after <= dt_before]
+        #
+        #     np.testing.assert_array_equal(
+        #         single_ep_tsd2.d[expected_idx], single_ep_tsd3.d
+        #     )
+        #     np.testing.assert_array_equal(single_ep_tsd.t, single_ep_tsd3.t)
+
     def test_value_from_with_restrict(self, group):
         tsgroup = nap.TsGroup(group)
         tsd = nap.Tsd(t=np.arange(0, 300, 0.1), d=np.arange(3000))
