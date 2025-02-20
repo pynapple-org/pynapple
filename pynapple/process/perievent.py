@@ -5,7 +5,6 @@ Functions to realign time series relative to a reference time.
 import inspect
 from functools import wraps
 from numbers import Number
-
 import numpy as np
 
 from .. import core as nap

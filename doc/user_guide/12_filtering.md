@@ -72,15 +72,15 @@ We can compute the Fourier transform of `sig` to verify that all the frequencies
 
 
 ```{code-cell} ipython3
-psd = nap.compute_power_spectral_density(sig, fs, norm=True)
+psd = nap.compute_power_spectral_density(sig, fs)
 ```
 ```{code-cell} ipython3
 :tags: [hide-input]
 
 fig = plt.figure(figsize = (15, 5))
-plt.plot(np.abs(psd))
+plt.plot(psd)
 plt.xlabel("Frequency (Hz)")
-plt.ylabel("Amplitude")
+plt.ylabel("Power/Frequency")
 plt.xlim(0, 100)
 ```
 
@@ -146,29 +146,29 @@ Let's see what frequencies remain;
 
 
 ```{code-cell} ipython3
-psd_butter = nap.compute_power_spectral_density(sig_butter, fs, norm=True)
-psd_sinc = nap.compute_power_spectral_density(sig_sinc, fs, norm=True)
+psd_butter = nap.compute_power_spectral_density(sig_butter, fs)
+psd_sinc = nap.compute_power_spectral_density(sig_sinc, fs)
 ```
 
 ```{code-cell} ipython3
 :tags: [hide-input]
 
 fig = plt.figure(figsize = (10, 5))
-plt.plot(np.abs(psd_butter), label = "Butterworth filter")
-plt.plot(np.abs(psd_sinc), label = "Windowed-sinc convolution")
+plt.plot(psd_butter, label = "Butterworth filter")
+plt.plot(psd_sinc, label = "Windowed-sinc convolution")
 plt.legend()
 plt.xlabel("Frequency (Hz)")
-plt.ylabel("Amplitude")
+plt.ylabel("Power/Frequency")
 plt.xlim(0, 70)
 ```
 
 ***
-Inspecting frequency fesponses of a filter
+Inspecting frequency responses of a filter
 ------------------------------------------
 
-We can inspect the frequency response of a filter by plotting its power spectral density (PSD).
+We can inspect the frequency response of a filter by plotting its FFT.
 To do this, we can use the `get_filter_frequency_response` function, which returns a pandas Series with the frequencies
-as the index and the PSD as values.
+as the index and the amplitude as values.
 
 Let's extract the frequency response of a Butterworth filter and a sinc low-pass filter.
 

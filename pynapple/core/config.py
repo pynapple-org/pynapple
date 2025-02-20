@@ -2,12 +2,12 @@
 
 ## Backend configuration
 
-By default, pynapple core functions are compiled with [Numba](https://numba.pydata.org/). 
-It is possible to change the backend to [Jax](https://jax.readthedocs.io/en/latest/index.html) 
+By default, pynapple core functions are compiled with [Numba](https://numba.pydata.org/).
+It is possible to change the backend to [Jax](https://jax.readthedocs.io/en/latest/index.html)
 through the [pynajax package](https://github.com/pynapple-org/pynajax).
 
 While numba core functions runs on CPU, the `jax` backend allows pynapple to use GPU accelerated core functions.
-For some core functions, the `jax` backend offers speed gains (provided that Jax runs on the GPU). 
+For some core functions, the `jax` backend offers speed gains (provided that Jax runs on the GPU).
 
 See the example below to update the backend. Don't forget to install [pynajax](https://github.com/pynapple-org/pynajax).
 
@@ -16,7 +16,7 @@ import pynapple as nap
 import numpy as np
 nap.nap_config.set_backend("jax") # Default option is 'numba'.
 
-You can view the current backend with 
+You can view the current backend with
 
 >>> print(nap.nap_config.backend)
 'jax'

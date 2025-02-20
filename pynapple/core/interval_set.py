@@ -1,4 +1,4 @@
-"""        
+"""
 The class `IntervalSet` deals with non-overlaping epochs. `IntervalSet` objects can interact with each other or with the time series objects.
 """
 
@@ -294,7 +294,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         self._class_attributes = self.__dir__()  # get list of all attributes
         self._class_attributes.append("_class_attributes")  # add this property
         self._initialized = True
-        if drop_meta is False:
+        if (drop_meta is False) and (metadata is not None):
             self.set_info(metadata)
 
     def __repr__(self):
@@ -336,7 +336,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                     np.hstack(
                         (
                             self.index[-n_rows:, None],
-                            self.values[0:n_rows],
+                            self.values[-n_rows:],
                             _convert_iter_to_str(metadata.values[-n_rows:]),
                         ),
                         dtype=object,
@@ -406,11 +406,6 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             )
 
     def __getitem__(self, key):
-        try:
-            metadata = _MetadataMixin.__getitem__(self, key)
-        except Exception:
-            metadata = pd.DataFrame(index=self.index)
-
         if isinstance(key, str):
             # self[str]
             if key == "start":
@@ -435,9 +430,15 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         elif isinstance(key, Number):
             # self[Number]
             output = self.values.__getitem__(key)
+            metadata = self._metadata.iloc[key]
             return IntervalSet(start=output[0], end=output[1], metadata=metadata)
-        elif isinstance(key, (slice, list, np.ndarray, pd.Series)):
-            # self[array_like]
+        elif isinstance(key, (slice, list, np.ndarray)):
+            # self[array_like], use iloc for metadata
+            output = self.values.__getitem__(key)
+            metadata = self._metadata.iloc[key].reset_index(drop=True)
+            return IntervalSet(start=output[:, 0], end=output[:, 1], metadata=metadata)
+        elif isinstance(key, pd.Series):
+            # use loc for metadata
             output = self.values.__getitem__(key)
             metadata = _MetadataMixin.__getitem__(self, key).reset_index(drop=True)
             return IntervalSet(start=output[:, 0], end=output[:, 1], metadata=metadata)
@@ -487,7 +488,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                     if key[1] == slice(None, None, None):
                         # self[Any, :]
                         output = self.values.__getitem__(key[0])
-                        metadata = _MetadataMixin.__getitem__(self, key[0])
+                        metadata = self._metadata.iloc[key[0]]
 
                         if isinstance(key[0], Number):
                             return IntervalSet(
@@ -500,7 +501,9 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                                 metadata=metadata.reset_index(drop=True),
                             )
 
-                    elif key[1] == slice(0, 2, None):
+                    elif (key[1] == slice(0, 2, None)) or (
+                        key[1] == slice(None, 2, None)
+                    ):
                         # self[Any, :2]
                         # allow number indexing for start and end times for backward compatibility
                         output = self.values.__getitem__(key[0])

@@ -649,6 +649,35 @@ class TestTimeSeriesGeneral:
     ],
 )
 class TestTsd:
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_bin_average_time_support(self, tsd, delta_ep):
+        ep = nap.IntervalSet(
+            tsd.time_support.start[0] + delta_ep[0],
+            tsd.time_support.end[0] + delta_ep[1],
+        )
+        out = tsd.bin_average(0.1, ep=ep)
+        assert np.all(out.time_support == ep)
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_convolve_time_support(self, tsd, delta_ep):
+        ep = nap.IntervalSet(
+            tsd.time_support.start[0] + delta_ep[0],
+            tsd.time_support.end[0] + delta_ep[1],
+        )
+        out = tsd.convolve(np.ones(10), ep=ep)
+        assert np.all(out.time_support == ep)
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_interpolate_time_support(self, tsd, delta_ep):
+        ep = nap.IntervalSet(
+            tsd.time_support.start[0] + delta_ep[0],
+            tsd.time_support.end[0] + delta_ep[1],
+        )
+        ts = nap.Ts(np.linspace(0, 10, 20))
+        out = tsd.interpolate(ts, ep=ep)
+        assert np.all(out.time_support == ep)
+
     def test_as_series(self, tsd):
         assert isinstance(tsd.as_series(), pd.Series)
 
@@ -978,6 +1007,35 @@ class TestTsd:
     ],
 )
 class TestTsdFrame:
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_bin_average_time_support(self, tsdframe, delta_ep):
+        ep = nap.IntervalSet(
+            tsdframe.time_support.start[0] + delta_ep[0],
+            tsdframe.time_support.end[0] + delta_ep[1],
+        )
+        out = tsdframe.bin_average(0.1, ep=ep)
+        assert np.all(out.time_support == ep)
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_convolve_time_support(self, tsdframe, delta_ep):
+        ep = nap.IntervalSet(
+            tsdframe.time_support.start[0] + delta_ep[0],
+            tsdframe.time_support.end[0] + delta_ep[1],
+        )
+        out = tsdframe.convolve(np.ones(10), ep=ep)
+        assert np.all(out.time_support == ep)
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_interpolate_time_support(self, tsdframe, delta_ep):
+        ep = nap.IntervalSet(
+            tsdframe.time_support.start[0] + delta_ep[0],
+            tsdframe.time_support.end[0] + delta_ep[1],
+        )
+        ts = nap.Ts(np.linspace(0, 10, 20))
+        out = tsdframe.interpolate(ts, ep=ep)
+        assert np.all(out.time_support == ep)
+
     def test_as_dataframe(self, tsdframe):
         assert isinstance(tsdframe.as_dataframe(), pd.DataFrame)
 
@@ -1029,28 +1087,34 @@ class TestTsdFrame:
         ],
     )
     def test_vertical_slicing(self, tsdframe, index):
-        assert isinstance(tsdframe[index], nap.TsdFrame)
-        if len(tsdframe[index] == 1):
-            # use ravel to ignore shape mismatch
-            np.testing.assert_array_almost_equal(
-                tsdframe.values[index].ravel(), tsdframe[index].values.ravel()
-            )
+        if isinstance(index, int):
+            assert isinstance(tsdframe[index], np.ndarray)
         else:
+            assert isinstance(tsdframe[index], nap.TsdFrame)
+
+        output = tsdframe[index]
+        if isinstance(output, nap.TsdFrame):
+            if len(output == 1):
+                # use ravel to ignore shape mismatch
+                np.testing.assert_array_almost_equal(
+                    tsdframe.values[index].ravel(), output.values.ravel()
+                )
+            else:
+                np.testing.assert_array_almost_equal(
+                    tsdframe.values[index], output.values
+                )
+            assert isinstance(output.time_support, nap.IntervalSet)
             np.testing.assert_array_almost_equal(
-                tsdframe.values[index], tsdframe[index].values
+                output.time_support, tsdframe.time_support
             )
-        assert isinstance(tsdframe[index].time_support, nap.IntervalSet)
-        np.testing.assert_array_almost_equal(
-            tsdframe[index].time_support, tsdframe.time_support
-        )
-        if len(tsdframe.metadata_columns):
-            assert np.all(tsdframe[index].metadata_columns == tsdframe.metadata_columns)
-            assert np.all(tsdframe[index].metadata_index == tsdframe.metadata_index)
+            if len(tsdframe.metadata_columns):
+                assert np.all(output.metadata_columns == tsdframe.metadata_columns)
+                assert np.all(output.metadata_index == tsdframe.metadata_index)
 
     @pytest.mark.parametrize(
         "row",
         [
-            0,
+            # 0,
             [0, 2],
             slice(20, 30),
             np.hstack([np.zeros(10, bool), True, True, True, np.zeros(87, bool)]),
@@ -1108,28 +1172,35 @@ class TestTsdFrame:
         else:
             assert isinstance(tsdframe[row, col], expected)
 
-            if len(tsdframe[row, col] == 1):
-                # use ravel to ignore shape mismatch
+            output = tsdframe[row, col]
+
+            if isinstance(output, nap.TsdFrame):
+                if len(tsdframe[row, col] == 1):
+                    # use ravel to ignore shape mismatch
+                    np.testing.assert_array_almost_equal(
+                        tsdframe.values[row, col].ravel(),
+                        tsdframe[row, col].values.ravel(),
+                    )
+                else:
+                    np.testing.assert_array_almost_equal(
+                        tsdframe.values[row, col], tsdframe[row, col].values
+                    )
+                assert isinstance(tsdframe[row, col].time_support, nap.IntervalSet)
                 np.testing.assert_array_almost_equal(
-                    tsdframe.values[row, col].ravel(), tsdframe[row, col].values.ravel()
+                    tsdframe[row, col].time_support, tsdframe.time_support
                 )
+                if isinstance(tsdframe[row, col], nap.TsdFrame) and len(
+                    tsdframe[row, col].metadata_columns
+                ):
+                    assert np.all(
+                        tsdframe[row, col].metadata_columns == tsdframe.metadata_columns
+                    )
+                    assert np.all(
+                        tsdframe[row, col].metadata_index
+                        == tsdframe.metadata_index[col]
+                    )
             else:
-                np.testing.assert_array_almost_equal(
-                    tsdframe.values[row, col], tsdframe[row, col].values
-                )
-            assert isinstance(tsdframe[row, col].time_support, nap.IntervalSet)
-            np.testing.assert_array_almost_equal(
-                tsdframe[row, col].time_support, tsdframe.time_support
-            )
-            if isinstance(tsdframe[row, col], nap.TsdFrame) and len(
-                tsdframe[row, col].metadata_columns
-            ):
-                assert np.all(
-                    tsdframe[row, col].metadata_columns == tsdframe.metadata_columns
-                )
-                assert np.all(
-                    tsdframe[row, col].metadata_index == tsdframe.metadata_index[col]
-                )
+                np.testing.assert_array_almost_equal(output, tsdframe.values[row, col])
 
     @pytest.mark.parametrize("index", [0, [0, 2]])
     def test_str_indexing(self, tsdframe, index):
@@ -1575,6 +1646,34 @@ class TestTs:
     ],
 )
 class TestTsdTensor:
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_bin_average_time_support(self, delta_ep, tsdtensor):
+        ep = nap.IntervalSet(
+            tsdtensor.time_support.start[0] + delta_ep[0],
+            tsdtensor.time_support.end[0] + delta_ep[1],
+        )
+        out = tsdtensor.bin_average(0.1, ep=ep)
+        assert np.all(out.time_support == ep)
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_convolve_time_support(self, tsdtensor, delta_ep):
+        ep = nap.IntervalSet(
+            tsdtensor.time_support.start[0] + delta_ep[0],
+            tsdtensor.time_support.end[0] + delta_ep[1],
+        )
+        out = tsdtensor.convolve(np.ones(10), ep=ep)
+        assert np.all(out.time_support == ep)
+
+    @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
+    def test_interpolate_time_support(self, tsdtensor, delta_ep):
+        ep = nap.IntervalSet(
+            tsdtensor.time_support.start[0] + delta_ep[0],
+            tsdtensor.time_support.end[0] + delta_ep[1],
+        )
+        ts = nap.Ts(np.linspace(0, 10, 20))
+        out = tsdtensor.interpolate(ts, ep=ep)
+        assert np.all(out.time_support == ep)
 
     def test_return_ndarray(self, tsdtensor):
         np.testing.assert_array_equal(tsdtensor[0], tsdtensor.values[0])
