@@ -306,27 +306,17 @@ class TestTsGroup1:
             np.testing.assert_array_almost_equal(
                 count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
             )
-            count = tsgroup.count(b, tu)
-            np.testing.assert_array_almost_equal(
-                count.loc[0].values[0:-1].flatten(), np.ones(len(count) - 1)
-            )
-            np.testing.assert_array_almost_equal(
-                count.loc[1].values[0:-1].flatten(), np.ones(len(count) - 1) * 2
-            )
-            np.testing.assert_array_almost_equal(
-                count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
-            )
 
     def test_count_errors(self, group):
         tsgroup = nap.TsGroup(group)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             tsgroup.count(bin_size={})
 
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             tsgroup.count(ep={})
 
         with pytest.raises(ValueError):
-            tsgroup.count(time_units={})
+            tsgroup.count(bin_size=1, time_units={})
 
     def test_get_interval(self, group):
         tsgroup = nap.TsGroup(group)

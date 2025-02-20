@@ -176,12 +176,12 @@ class _Base(abc.ABC):
         ----------
         data : Tsd, TsdFrame or TsdTensor
             The object holding the values to replace.
-        mode: literal, either 'closest', 'before', 'after'
-            If closest, replace value with vlue from Tsd/TsdFrame/TsdTensor, if before gets the
-            first value before, if after the first value after.
         ep : IntervalSet (optional)
             The IntervalSet object to restrict the operation.
             If None, the time support of the tsd input object is used.
+        mode: literal, either 'closest', 'before', 'after'
+            If closest, replace value with value from Tsd/TsdFrame/TsdTensor, if before gets the
+            first value before, if after the first value after.
 
         Returns
         -------
@@ -202,7 +202,7 @@ class _Base(abc.ABC):
         The variable ts is a timestamp object.
         The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
 
-        >>> newts = ts.value_from(tsd, ep)
+        >>> newts = ts.value_from(tsd, ep, mode='closest')
 
         newts is the same size as ts restrict to ep.
 
