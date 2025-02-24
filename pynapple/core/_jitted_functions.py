@@ -5,7 +5,7 @@ from numba import jit  # , njit, prange
 ################################
 # Time only functions
 ################################
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitrestrict(time_array, starts, ends):
     n = len(time_array)
     m = len(starts)
@@ -43,7 +43,7 @@ def jitrestrict(time_array, starts, ends):
     return ix[0:x]
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitrestrict_with_count(time_array, starts, ends, dtype=np.int64):
     n = len(time_array)
     m = len(starts)
@@ -83,41 +83,104 @@ def jitrestrict_with_count(time_array, starts, ends, dtype=np.int64):
     return ix[0:x], count
 
 
-@jit(nopython=True)
-def jitvaluefrom(time_array, time_target_array, count, count_target, starts, ends):
+@jit(nopython=True, cache=True)
+def jitvaluefrom(
+    time_array,
+    time_target_array,
+    count,
+    count_target,
+    starts,
+    mode,
+):
+    """
+    Compute value_from in a loop.
+
+    Parameters
+    ----------
+    time_array : ndarray
+        The time array for the input.
+    time_target_array : ndarray
+        The time array for the target.
+    count : ndarray[int]
+        Count how many input time points are in each epoch. len(count) is the number of epochs.
+    count_target  ndarray[int]
+        Count how many target time points are in each epoch. len(count_target) is the number of epochs.
+    starts : ndarray[int]
+        Start time for each epoch.
+    mode : int
+        0 before, 1 closest, 2 after.
+    """
+    # Get the number of intervals, the length of time_array, and the length of time_target_array
     m = starts.shape[0]
     n = time_array.shape[0]
     d = time_target_array.shape[0]
 
+    # Initialize an array to store indices with NaN as default values
     idx = np.full(n, np.nan)
 
+    # Proceed only if both time arrays have elements
     if n > 0 and d > 0:
-        for k in range(m):
+        for k in range(m):  # Iterate through each epoch
+            # Check if there are time stamps in both arrays
             if count[k] > 0 and count_target[k] > 0:
                 t = np.sum(count[0:k])
                 i = np.sum(count_target[0:k])
-                maxt = t + count[k]
-                maxi = i + count_target[k]
-                while t < maxt:
-                    interval = abs(time_array[t] - time_target_array[i])
-                    idx[t] = float(i)
+                maxt = (
+                    t + count[k]
+                )  # Maximum index for time_array in the current interval
+                maxi = i + count_target[k]  # Maximum index in the target array
+                while t < maxt:  # Iterate over the current interval in time_array
+                    # compute signed or abs temporal difference
+                    # abs for closest, signed for after or before
+                    if mode != 1:
+                        interval = time_target_array[i] - time_array[t]
+                    else:
+                        interval = abs(time_target_array[i] - time_array[t])
+
+                    idx[t] = float(i)  # Store the initial index
 
                     i += 1
-                    while i < maxi:
-                        new_interval = abs(time_array[t] - time_target_array[i])
-                        if new_interval > interval:
+                    while (
+                        i < maxi
+                    ):  # Iterate through time_target_array within the current interval
+                        # check the next temporal difference
+                        if mode != 1:
+                            new_interval = time_target_array[i] - time_array[t]
+                            break_cond = (
+                                ((new_interval > 0) and (interval <= 0))
+                                or (interval >= 0)
+                                if mode == 0
+                                else ((new_interval < 0) and (interval >= 0))
+                                or (interval >= 0)
+                            )
+                            nan_cond = interval > 0 if mode == 0 else new_interval < 0
+                        else:
+                            new_interval = abs(time_target_array[i] - time_array[t])
+                            break_cond = new_interval > interval
+                            nan_cond = False
+
+                        if break_cond:  # Break if the new interval is larger
+                            if nan_cond:
+                                idx[t] = np.nan
                             break
                         else:
-                            idx[t] = float(i)
-                            interval = new_interval
+                            idx[t] = float(i)  # Update the index with the closer target
+                            interval = new_interval  # Update the interval
                             i += 1
-                    i -= 1
-                    t += 1
 
-    return idx
+                    if i == maxi:
+                        if mode == 2:
+                            new_interval = time_target_array[i - 1] - time_array[t]
+                            nan_cond = new_interval < 0
+                        if nan_cond:
+                            idx[t] = np.nan
+                    i -= 1  # Revert to the last valid index
+                    t += 1  # Move to the next time point
+
+    return idx  # Return the array of indices
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitcount(time_array, starts, ends, bin_size, dtype):
     idx, countin = jitrestrict_with_count(time_array, starts, ends)
     time_array = time_array[idx]
@@ -170,7 +233,7 @@ def jitcount(time_array, starts, ends, bin_size, dtype):
     return (new_time_array, new_data_array)
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitin_interval(time_array, starts, ends):
     n = len(time_array)
     m = len(starts)
@@ -210,7 +273,7 @@ def jitin_interval(time_array, starts, ends):
     return data
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitremove_nan(time_array, index_nan):
     n = len(time_array)
     ix_start = np.zeros(n, dtype=np.bool_)
@@ -238,7 +301,7 @@ def jitremove_nan(time_array, index_nan):
 ################################
 # Time Data functions
 ################################
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitthreshold(time_array, data_array, starts, ends, thr, method="above"):
     n = time_array.shape[0]
 
@@ -320,7 +383,7 @@ def jitbin_array(time_array, data_array, starts, ends, bin_size):
     )
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def _jitbin_array(countin, time_array, data_array, starts, ends, bin_size):
     m = starts.shape[0]
     f = data_array.shape[1:]
@@ -374,7 +437,7 @@ def _jitbin_array(countin, time_array, data_array, starts, ends, bin_size):
     return (new_time_array, new_data_array)
 
 
-# @jit(nopython=True)
+# @jit(nopython=True, cache=True)
 # def jitconvolve(d, a):
 #     return np.convolve(d, a)
 
@@ -406,112 +469,126 @@ def _jitbin_array(countin, time_array, data_array, starts, ends, bin_size):
 ################################
 # IntervalSet functions
 ################################
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitintersect(start1, end1, start2, end2):
-    m = start1.shape[0]
-    n = start2.shape[0]
+    m = start1.shape[0]  # number of intervals in set 1
+    n = start2.shape[0]  # number of intervals in set 2
 
-    i = 0
-    j = 0
+    i = 0  # interval index for set 1
+    j = 0  # interval index for set 2
 
     newstart = np.zeros(m + n, dtype=np.float64)
     newend = np.zeros(m + n, dtype=np.float64)
-    ct = 0
+    newmeta = np.zeros((m + n, 2), dtype=np.int32)
+    ct = 0  # counter for number of new intervals
 
     while i < m:
-        while j < n:
+        while j < n:  # set 2 interval ends before set 1 interval starts
             if end2[j] > start1[i]:
                 break
-            j += 1
+            j += 1  # increment set 2 index
 
-        if j == n:
+        if j == n:  # stop if no more intervals in set 2
             break
 
-        if start2[j] < end1[i]:
-            newstart[ct] = max(start1[i], start2[j])
-            newend[ct] = min(end1[i], end2[j])
+        if start2[j] < end1[i]:  # set 2 interval starts before set 1 interval ends
+            newstart[ct] = max(
+                start1[i], start2[j]
+            )  # start of interval is whichever occurs last
+            newend[ct] = min(
+                end1[i], end2[j]
+            )  # end of interval is whichever occurs first
+            newmeta[ct] = [
+                i,
+                j,
+            ]  # store indices of intervals in set 1 and set 2 for metadata
             ct += 1
             if end2[j] < end1[i]:
-                j += 1
+                j += 1  # increment set 2 index if set 2 interval ends first
             else:
-                i += 1
+                i += 1  # increment set 1 index if set 1 interval ends first
         else:
             i += 1
 
     newstart = newstart[0:ct]
     newend = newend[0:ct]
+    newmeta = newmeta[0:ct]
 
-    return (newstart, newend)
+    return (newstart, newend, newmeta)
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitunion(start1, end1, start2, end2):
-    m = start1.shape[0]
-    n = start2.shape[0]
+    m = start1.shape[0]  # number of intervals in set 1
+    n = start2.shape[0]  # number of intervals in set 2
 
-    i = 0
-    j = 0
+    i = 0  # interval index for set 1
+    j = 0  # interval index for set 2
 
     newstart = np.zeros(m + n, dtype=np.float64)
     newend = np.zeros(m + n, dtype=np.float64)
     ct = 0
 
     while i < m:
-        while j < n:
+        while j < n:  # all set 2 intervals that start before set 1 interval
             if end2[j] > start1[i]:
                 break
-            newstart[ct] = start2[j]
+            newstart[ct] = start2[j]  # add set 2 interval
             newend[ct] = end2[j]
             ct += 1
-            j += 1
+            j += 1  # increment set 2 index
 
         if j == n:
             break
 
-        # overlap
-        if start2[j] < end1[i]:
-            newstart[ct] = min(start1[i], start2[j])
+        if start2[j] < end1[i]:  # overlap
+            newstart[ct] = min(
+                start1[i], start2[j]
+            )  # start of interval is whichever occurs first
 
             while i < m and j < n:
-                newend[ct] = max(end1[i], end2[j])
+                newend[ct] = max(
+                    end1[i], end2[j]
+                )  # end of interval is whichever occurs last
 
                 if end1[i] < end2[j]:
-                    i += 1
+                    i += 1  # incremet set 1 index if it ends first
                 else:
-                    j += 1
+                    j += 1  # increment set 2 index if it ends first
 
-                if i == m:
-                    j += 1
+                if i == m:  # stop if no more intervals in set 1
+                    j += 1  # increment set 2 index
                     ct += 1
                     break
 
-                if j == n:
-                    i += 1
+                if j == n:  # stop if no more intervals in set 2
+                    i += 1  # increment set 1 index
                     ct += 1
                     break
 
-                if end2[j] < start1[i]:
-                    j += 1
+                # stop if end of overlap
+                if end2[j] < start1[i]:  # set 2 interval comes first
+                    j += 1  # increment set 2 index
                     ct += 1
                     break
-                elif end1[i] < start2[j]:
-                    i += 1
+                elif end1[i] < start2[j]:  # set 1 interval comes first
+                    i += 1  # increment set 1 index
                     ct += 1
                     break
 
-        else:
-            newstart[ct] = start1[i]
+        else:  # no overlap
+            newstart[ct] = start1[i]  # add set 1 interval
             newend[ct] = end1[i]
             ct += 1
-            i += 1
+            i += 1  # increment set 1 index
 
-    while i < m:
+    while i < m:  # add remaining intervals from set 1
         newstart[ct] = start1[i]
         newend[ct] = end1[i]
         ct += 1
         i += 1
 
-    while j < n:
+    while j < n:  # add remaining intervals from set 2
         newstart[ct] = start2[j]
         newend[ct] = end2[j]
         ct += 1
@@ -523,80 +600,97 @@ def jitunion(start1, end1, start2, end2):
     return (newstart, newend)
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitdiff(start1, end1, start2, end2):
-    m = start1.shape[0]
-    n = start2.shape[0]
+    m = start1.shape[0]  # number of intervals in set 1
+    n = start2.shape[0]  # number of intervals in set 2
 
-    i = 0
-    j = 0
+    i = 0  # interval index for set 1
+    j = 0  # interval index for set 2
 
     newstart = np.zeros(m + n, dtype=np.float64)
     newend = np.zeros(m + n, dtype=np.float64)
+    newmeta = np.zeros(m + n, dtype=np.int32)
     ct = 0
 
     while i < m:
-        while j < n:
+        while j < n:  # for all set 2 intervals that end before set 1 interval starts
             if end2[j] > start1[i]:
                 break
-            j += 1
+            j += 1  # increment set 2 index
 
-        if j == n:
+        if j == n:  # stop if no more intervals in set 2
             break
 
-        # overlap
-        if start2[j] < end1[i]:
-            if start2[j] < start1[i] and end1[i] < end2[j]:
-                i += 1
+        if start2[j] < end1[i]:  # overlap
+            if (
+                start2[j] < start1[i] and end1[i] < end2[j]
+            ):  # if set 1 interval is completely within set 2 interval
+                i += 1  # increment set 1 index
 
             else:
-                if start2[j] > start1[i]:
-                    newstart[ct] = start1[i]
+                if (
+                    start2[j] > start1[i]
+                ):  # if set 2 interval starts inside set 1 interval
+                    newstart[ct] = start1[i]  # add interval between both starts
                     newend[ct] = start2[j]
+                    newmeta[ct] = i  # store index of interval in set 1 for metadata
                     ct += 1
-                    j += 1
+                    j += 1  # increment set 2 index
 
-                else:
-                    newstart[ct] = end2[j]
+                else:  # if set 2 interval starts before set 1 interval
+                    newstart[ct] = end2[j]  # add interval between both ends
                     newend[ct] = end1[i]
-                    j += 1
+                    newmeta[ct] = i
+                    j += 1  # increment set 2 index
 
                 while j < n:
-                    if start2[j] < end1[i]:
-                        newstart[ct] = end2[j - 1]
+                    if (
+                        start2[j] < end1[i]
+                    ):  # space between adjacent set 2 intervals falls inside set 1 interval
+                        newstart[ct] = end2[
+                            j - 1
+                        ]  # add interval for space between adjacent set 2 intervals
                         newend[ct] = start2[j]
+                        newmeta[ct] = i
                         ct += 1
-                        j += 1
+                        j += 1  # increment set 2 index
                     else:
                         break
 
-                if end2[j - 1] < end1[i]:
-                    newstart[ct] = end2[j - 1]
+                if (
+                    end2[j - 1] < end1[i]
+                ):  # previous set 2 interval ends before set 1 interval
+                    newstart[ct] = end2[j - 1]  # add interval between both ends
                     newend[ct] = end1[i]
+                    newmeta[ct] = i
                     ct += 1
-                else:
-                    j -= 1
-                i += 1
+                else:  # previous set 2 interval ends after set 1 interval
+                    j -= 1  # decrement set 2 index
+                i += 1  # increment set 1 index
 
-        else:
-            newstart[ct] = start1[i]
+        else:  # no overlap
+            newstart[ct] = start1[i]  # add set 1 interval
             newend[ct] = end1[i]
+            newmeta[ct] = i
             ct += 1
-            i += 1
+            i += 1  # increment set 1 index
 
-    while i < m:
+    while i < m:  # add remaining intervals from set 1
         newstart[ct] = start1[i]
         newend[ct] = end1[i]
+        newmeta[ct] = i
         ct += 1
         i += 1
 
     newstart = newstart[0:ct]
     newend = newend[0:ct]
+    newmeta = newmeta[0:ct]
 
-    return (newstart, newend)
+    return (newstart, newend, newmeta)
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def jitunion_isets(starts, ends):
     idx = np.argsort(starts)
     starts = starts[idx]
@@ -627,7 +721,7 @@ def jitunion_isets(starts, ends):
     return (new_start, new_end)
 
 
-@jit(nopython=True)
+@jit(nopython=True, cache=True)
 def _jitfix_iset(start, end):
     """
     0 - > "Some starts and ends are equal. Removing 1 microsecond!",

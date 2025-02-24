@@ -1,18 +1,18 @@
 """
-    
-    Pynapple time series are containers specialized for neurophysiological time series.
 
-    They provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.
+Pynapple time series are containers specialized for neurophysiological time series.
 
-    Multiple time series object are avaible depending on the shape of the data.
+They provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.
 
-    - `TsdTensor` : for data with of more than 2 dimensions, typically movies.
-    - `TsdFrame` : for column-based data. It can be easily converted to a pandas.DataFrame. Columns can be labelled and selected similar to pandas.
-    - `Tsd` : One-dimensional time series. It can be converted to a pandas.Series.
-    - `Ts` : For timestamps data only.
+Multiple time series object are avaible depending on the shape of the data.
 
-    Most of the same functions are available through all classes. Objects behaves like numpy.ndarray. Slicing can be done the same way for example 
-    `tsd[0:10]` returns the first 10 rows. Similarly, you can call any numpy functions like `np.mean(tsd, 1)`.
+- `TsdTensor` : for data with of more than 2 dimensions, typically movies.
+- `TsdFrame` : for column-based data. It can be easily converted to a pandas.DataFrame. Columns can be labelled and selected similar to pandas.
+- `Tsd` : One-dimensional time series. It can be converted to a pandas.Series.
+- `Ts` : For timestamps data only.
+
+Most of the same functions are available through all classes. Objects behaves like numpy.ndarray. Slicing can be done the same way for example
+`tsd[0:10]` returns the first 10 rows. Similarly, you can call any numpy functions like `np.mean(tsd, 1)`.
 """
 
 import abc
@@ -29,9 +29,11 @@ from tabulate import tabulate
 from ._core_functions import _bin_average, _convolve, _dropna, _restrict, _threshold
 from .base_class import _Base
 from .interval_set import IntervalSet
+from .metadata_class import _MetadataMixin, add_meta_docstring
 from .time_index import TsIndex
 from .utils import (
     _concatenate_tsd,
+    _convert_iter_to_str,
     _get_terminal_size,
     _split_tsd,
     _TsdFrameSliceHelper,
@@ -61,11 +63,101 @@ def _get_class(data):
         return TsdTensor
 
 
+def _initialize_tsd_output(
+    input_object, values, time_index=None, time_support=None, kwargs=None
+):
+    """
+    Initialize the output object for time series data, ensuring proper alignment of time indices
+    and handling metadata when applicable.
+
+    Parameters
+    ----------
+    input_object : Tsd | TsdFrame | TsdTensor
+        Input object, typically a `Tsd`, `TsdFrame` or `TsdTensor`, used to extract time indices and metadata
+        if not provided explicitly.
+    values : array-like
+        Output data, which can be a NumPy array or an array-like object compatible with `Tsd` or `TsdFrame`.
+    time_index : array-like, optional
+        Time indices for the output data. If not provided, the indices are extracted from `input_object`.
+    time_support : IntervalSet, optional
+        Time support (epoch) for the output. If not provided, the time support is extracted from `input_object`.
+    kwargs : dict, optional
+        Additional keyword arguments for constructing the output object. Supports `columns` and `metadata`
+        for `TsdFrame` objects.
+
+    Returns
+    -------
+    object
+        Initialized TSD object (`Tsd`, `TsdFrame`, or equivalent) with the specified time indices, data,
+        and metadata, or the original `values` object if it is not array-like.
+
+    Notes
+    -----
+    - If output is a `TsdFrame` and `input_object` is also a `TsdFrame` with matching shapes, the columns and metadata
+      are propagated from input to output, unless explicitly provided in `kwargs`.
+    - If `time_index` and `time_support` are not provided, they are extracted from `input_object`.
+
+    Examples
+    --------
+    # Example usage with TsdFrame
+    out = _initialize_tsd_output(input_object=tsd_frame, values=data_array, time_index=time_array, time_support=epoch, kwargs={"columns": cols})
+
+    # Example usage with NumPy array
+    out = _initialize_tsd_output(input_object=tsd_obj, values=numpy_array)
+    """
+    kwargs = kwargs if kwargs is not None else {}
+
+    if isinstance(values, np.ndarray) or is_array_like(values):
+
+        # if time and ep are passed use them, otherwise strip from inp
+        time_index = input_object.index if time_index is None else time_index
+
+        if time_index.shape[0] == values.shape[0]:
+            # grab time support
+            time_support = (
+                input_object.time_support if time_support is None else time_support
+            )
+
+            cls = _get_class(values)
+
+            # if out will be a tsdframe implement kwargs logic
+            if cls is TsdFrame:
+                # get eventual setting
+                cols = kwargs.get("columns", None)
+                metadata = kwargs.get("metadata", None)
+
+                # if input is tsdframe and has the shape grab metadata and cols if
+                # not already passed in kwargs
+                if isinstance(input_object, TsdFrame) and (
+                    values.shape[1] == input_object.shape[1]
+                ):
+                    cols = (
+                        cols
+                        if cols is not None
+                        else getattr(input_object, "columns", None)
+                    )
+                    metadata = (
+                        metadata
+                        if metadata is not None
+                        else getattr(input_object, "metadata", None)
+                    )
+
+                # update the kwargs
+                kwargs.update({"columns": cols, "metadata": metadata})
+
+            return cls(t=time_index, d=values, time_support=time_support, **kwargs)
+
+    return values
+
+
 class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
     """
     Abstract base class for time series objects.
     Implement most of the shared functions across concrete classes `Tsd`, `TsdFrame`, `TsdTensor`
     """
+
+    values: np.ndarray
+    """An array of the time series data"""
 
     def __init__(self, t, d, time_units="s", time_support=None, load_array=True):
         super().__init__(t, time_units, time_support)
@@ -101,8 +193,24 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         self.dtype = self.values.dtype
 
+    def _define_instance(self, time_index, time_support, values=None, **kwargs):
+        """
+        Define a new class instance.
+
+        Optional parameters for initialization are either passed to the function or are grabbed from self.
+        """
+        return _initialize_tsd_output(
+            self,
+            values,
+            time_index=time_index,
+            time_support=time_support,
+            kwargs=kwargs,
+        )
+
     def __setitem__(self, key, value):
         """setter for time series"""
+        if isinstance(key, _BaseTsd):
+            key = key.d
         try:
             self.values.__setitem__(key, value)
         except IndexError:
@@ -142,13 +250,6 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         return np.asarray(self.values, dtype=dtype)
 
     def __array_ufunc__(self, ufunc, method, *args, **kwargs):
-        # print("In __array_ufunc__")
-        # print("     ufunc = ", ufunc)
-        # print("     method = ", method)
-        # print("     args = ", args)
-        # for inp in args:
-        #     print(type(inp))
-        # print("     kwargs = ", kwargs)
 
         if method == "__call__":
             new_args = []
@@ -166,18 +267,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             else:
                 out = ufunc(*new_args, **kwargs)
 
-            if isinstance(out, np.ndarray) or is_array_like(out):
-                if out.shape[0] == self.index.shape[0]:
-                    kwargs = {}
-                    if hasattr(self, "columns"):
-                        kwargs["columns"] = self.columns
-                    return _get_class(out)(
-                        t=self.index, d=out, time_support=self.time_support, **kwargs
-                    )
-                else:
-                    return out
-            else:
-                return out
+            return _initialize_tsd_output(self, out)
         else:
             return NotImplemented
 
@@ -208,22 +298,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 new_args.append(a)
 
         out = func._implementation(*new_args, **kwargs)
-
-        if isinstance(out, np.ndarray) or is_array_like(out):
-            # # if dims increased in any case, we can't return safely a time series
-            # if out.ndim > self.ndim:
-            #     return out
-            if out.shape[0] == self.index.shape[0]:
-                kwargs = {}
-                if hasattr(self, "columns"):
-                    kwargs["columns"] = self.columns
-                return _get_class(out)(
-                    t=self.index, d=out, time_support=self.time_support, **kwargs
-                )
-            else:
-                return out
-        else:
-            return out
+        return _initialize_tsd_output(self, out)
 
     def as_array(self):
         """
@@ -254,117 +329,6 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         Mostly useful for matplotlib plotting when calling `plot(tsd)`.
         """
         return np.asarray(self.values)
-
-    def copy(self):
-        """Copy the data, index and time support"""
-        return self.__class__(
-            t=self.index.copy(), d=self.values[:].copy(), time_support=self.time_support
-        )
-
-    def value_from(self, data, ep=None):
-        """
-        Replace the value with the closest value from Tsd/TsdFrame/TsdTensor argument
-
-        Parameters
-        ----------
-        data : Tsd, TsdFrame or TsdTensor
-            The object holding the values to replace.
-        ep : IntervalSet (optional)
-            The IntervalSet object to restrict the operation.
-            If None, the time support of the tsd input object is used.
-
-        Returns
-        -------
-        out : Tsd, TsdFrame or TsdTensor
-            Object with the new values
-
-        Examples
-        --------
-        In this example, the ts object will receive the closest values in time from tsd.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
-        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
-
-        The variable ts is a time series object containing only nan.
-        The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
-
-        >>> newts = ts.value_from(tsd, ep)
-
-        newts has the same size of ts restrict to ep.
-
-        >>> print(len(ts.restrict(ep)), len(newts))
-            52 52
-        """
-        assert isinstance(
-            data, _BaseTsd
-        ), "First argument should be an instance of Tsd, TsdFrame or TsdTensor"
-
-        t, d, time_support, kwargs = super().value_from(data, ep)
-        return data.__class__(t=t, d=d, time_support=time_support, **kwargs)
-
-    def count(self, *args, dtype=None, **kwargs):
-        """
-        Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
-        You can call this function in multiple ways :
-
-        1. *tsd.count(bin_size=1, time_units = 'ms')*
-        -> Count occurence of events within a 1 ms bin defined on the time support of the object.
-
-        2. *tsd.count(1, ep=my_epochs)*
-        -> Count occurent of events within a 1 second bin defined on the IntervalSet my_epochs.
-
-        3. *tsd.count(ep=my_bins)*
-        -> Count occurent of events within each epoch of the intervalSet object my_bins
-
-        4. *tsd.count()*
-        -> Count occurent of events within each epoch of the time support.
-
-        bin_size should be seconds unless specified.
-        If bin_size is used and no epochs is passed, the data will be binned based on the time support of the object.
-
-        Parameters
-        ----------
-        bin_size : None or float, optional
-            The bin size (default is second)
-        ep : None or IntervalSet, optional
-            IntervalSet to restrict the operation
-        time_units : str, optional
-            Time units of bin size ('us', 'ms', 's' [default])
-        dtype: type, optional
-            Data type for the count. Default is np.int64.
-
-        Returns
-        -------
-        out: Tsd
-            A Tsd object indexed by the center of the bins.
-
-        Examples
-        --------
-        This example shows how to count events within bins of 0.1 second.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> bincount = ts.count(0.1)
-
-        An epoch can be specified:
-
-        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
-        >>> bincount = ts.count(0.1, ep=ep)
-
-        And bincount automatically inherit ep as time support:
-
-        >>> bincount.time_support
-            start    end
-        0  100.0  800.0
-        """
-        t, d, ep = super().count(*args, dtype=dtype, **kwargs)
-        return Tsd(t=t, d=d, time_support=ep)
 
     def bin_average(self, bin_size, ep=None, time_units="s"):
         """
@@ -418,14 +382,10 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         t, d = _bin_average(time_array, data_array, starts, ends, bin_size)
 
-        kwargs = {}
-        if hasattr(self, "columns"):
-            kwargs["columns"] = self.columns
-
-        return self.__class__(t=t, d=d, time_support=ep, **kwargs)
+        return _initialize_tsd_output(self, d, time_index=t, time_support=ep)
 
     def dropna(self, update_time_support=True):
-        """Drop every rows containing NaNs. By default, the time support is updated to start and end around the time points that are non NaNs.
+        """Drop every row containing NaNs. By default, the time support is updated to start and end around the time points that are non NaNs.
         To change this behavior, you can set update_time_support=False.
 
         Parameters
@@ -437,7 +397,8 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         Tsd, TsdFrame or TsdTensor
             The time series without the NaNs
         """
-        assert isinstance(update_time_support, bool)
+        if not isinstance(update_time_support, bool):
+            raise TypeError("Argument update_time_support should be of type bool")
 
         time_array = self.index.values
         data_array = self.values
@@ -456,11 +417,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         else:
             ep = self.time_support
 
-        kwargs = {}
-        if hasattr(self, "columns"):
-            kwargs["columns"] = self.columns
-
-        return self.__class__(t=t, d=d, time_support=ep, **kwargs)
+        return _initialize_tsd_output(self, d, time_index=t, time_support=ep)
 
     def convolve(self, array, ep=None, trim="both"):
         """Return the discrete linear convolution of the time series with a one dimensional sequence.
@@ -520,14 +477,9 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         new_data_array = _convolve(time_array, data_array, starts, ends, array, trim)
 
-        kwargs_dict = dict(time_support=ep)
-
-        nap_class = _get_class(new_data_array)
-
-        if isinstance(self, TsdFrame) and array.ndim == 1:  # keep columns
-            kwargs_dict["columns"] = self.columns
-
-        return nap_class(t=time_array, d=new_data_array, **kwargs_dict)
+        return _initialize_tsd_output(
+            self, new_data_array, time_index=time_array, time_support=ep
+        )
 
     def smooth(self, std, windowsize=None, time_units="s", size_factor=100, norm=True):
         """Smooth a time series with a gaussian kernel.
@@ -683,15 +635,13 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                     new_d[start : start + len(t), ...] = interpolated_values
 
             start += len(t)
-        kwargs_dict = dict(time_support=ep)
-        if hasattr(self, "columns"):
-            kwargs_dict["columns"] = self.columns
-        return self.__class__(t=new_t, d=new_d, **kwargs_dict)
+
+        return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)
 
 
 class TsdTensor(_BaseTsd):
     """
-    Container for neurophysiological time series with more than 2 dimensions (movies).
+    Container for neurophysiological time series with more than 2 dimensions (for example movies).
 
     Attributes
     ----------
@@ -699,6 +649,47 @@ class TsdTensor(_BaseTsd):
         Frequency of the time series (Hz) computed over the time support
     time_support : IntervalSet
         The time support of the time series
+
+    Examples
+    --------
+    Initialize a TsdTensor:
+
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> t = np.arange(10)
+    >>> d = np.random.randn(10, 2, 3)
+    >>> tsdtensor = nap.TsdTensor(t=t, d=d)
+    >>> tsdtensor
+    Time (s)
+    ----------  -------------------------------
+    0           [[-1.493178 ... -1.281017] ...]
+    1           [[0.230829 ... 0.437679] ...]
+    2           [[-0.462031 ...  0.344506] ...]
+    3           [[0.497019 ... 0.469494] ...]
+    4           [[0.065921 ... 1.012917] ...]
+    5           [[0.158534 ... 1.455523] ...]
+    6           [[-2.567728 ...  0.61182 ] ...]
+    7           [[0.940799 ... 0.109203] ...]
+    8           [[2.340077 ... 0.21885 ] ...]
+    9           [[-0.306175 ... -0.447414] ...]
+    dtype: float64, shape: (10, 2, 3)
+
+    Initialize a TsdTensor with `time_support`:
+
+    >>> t = np.arange(10)
+    >>> d = np.random.randn(10, 2, 3)
+    >>> time_support = nap.IntervalSet(start=0, end=4)
+    >>> tsdtensor = nap.TsdTensor(t=t, d=d, time_support=time_support)
+    >>> tsdtensor
+    Time (s)
+    ----------  -------------------------------
+    0           [[-1.493178 ... -1.281017] ...]
+    1           [[0.230829 ... 0.437679] ...]
+    2           [[-0.462031 ...  0.344506] ...]
+    3           [[0.497019 ... 0.469494] ...]
+    4           [[0.065921 ... 1.012917] ...]
+    dtype: float64, shape: (5, 2, 3)
+
     """
 
     def __init__(
@@ -719,14 +710,15 @@ class TsdTensor(_BaseTsd):
             The time support of the TsdFrame object
         load_array : bool, optional
             Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
-            Default is True. Does not apply if `d` is already a numpy array.
+            Default is True. Does not apply if `d` is already a numpy array  or a numpy memory map.
 
         """
         super().__init__(t, d, time_units, time_support, load_array)
 
-        assert (
-            self.values.ndim >= 3
-        ), "Data should have more than 2 dimensions. If ndim < 3, use TsdFrame or Tsd object"
+        if not self.values.ndim >= 3:
+            raise RuntimeError(
+                "Data should have more than 2 dimensions. If ndim < 3, use TsdFrame or Tsd object"
+            )
 
         self.nap_class = self.__class__.__name__
         self._initialized = True
@@ -774,31 +766,31 @@ class TsdTensor(_BaseTsd):
         else:
             return tabulate([], headers=headers) + "\n" + bottom
 
-    def __getitem__(self, key, *args, **kwargs):
-        output = self.values.__getitem__(key)
-        if isinstance(key, tuple):
+    def __getitem__(self, key):
+        if isinstance(key, Tsd):
+            if not np.issubdtype(key.dtype, np.bool_):
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
+            output = self.values[key.values]
+            index = self.index[key.values]
+        elif isinstance(key, tuple):
+            if any(
+                isinstance(k, Tsd) and not np.issubdtype(k.dtype, np.bool_) for k in key
+            ):
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
+            key = tuple(k.values if isinstance(k, Tsd) else k for k in key)
+            output = self.values.__getitem__(key)
             index = self.index.__getitem__(key[0])
         else:
+            output = self.values.__getitem__(key)
             index = self.index.__getitem__(key)
 
         if isinstance(index, Number):
             index = np.array([index])
-
-        if all(is_array_like(a) for a in [index, output]):
-            if output.shape[0] == index.shape[0]:
-                if output.ndim == 1:
-                    return Tsd(t=index, d=output, time_support=self.time_support)
-                elif output.ndim == 2:
-                    return TsdFrame(
-                        t=index, d=output, time_support=self.time_support, **kwargs
-                    )
-                else:
-                    return TsdTensor(t=index, d=output, time_support=self.time_support)
-
-            else:
-                return output
-        else:
-            return output
+        return _initialize_tsd_output(self, output, time_index=index)
 
     def save(self, filename):
         """
@@ -848,17 +840,134 @@ class TsdTensor(_BaseTsd):
         return
 
 
-class TsdFrame(_BaseTsd):
+class TsdFrame(_BaseTsd, _MetadataMixin):
     """
     Column-based container for neurophysiological time series.
+    A pandas.DataFrame can be passed directly.
 
-    Attributes
+    Parameters
     ----------
-    rate : float
-        Frequency of the time series (Hz) computed over the time support
-    time_support : IntervalSet
-        The time support of the time series
+    t : numpy.ndarray or pandas.DataFrame
+        the time index t,  or a pandas.DataFrame (if d is None)
+    d : numpy.ndarray
+        The data
+    time_units : str, optional
+        The time units in which times are specified ('us', 'ms', 's' [default]).
+    time_support : IntervalSet, optional
+        The time support of the TsdFrame object
+    columns : iterables
+        Column names
+    load_array : bool, optional
+        Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
+        Default is True. Does not apply if `d` is already a numpy array or a numpy memory map.
+    metadata: pd.DataFrame or dict, optional
+        Metadata associated with data columns. Metadata names are pulled from DataFrame columns or dictionary keys.
+        The length of the metadata should match the number of data columns.
+        If a DataFrame is passed, the index should match the columns of the TsdFrame.
+
+    Examples
+    --------
+    Initialize a TsdFrame:
+
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> t = np.arange(100)
+    >>> d = np.ones((100, 3))
+    >>> tsdframe = nap.TsdFrame(t=t, d=d)
+    >>> tsdframe
+    Time (s)    0    1    2
+    ----------  ---  ---  ---
+    0.0         1.0  1.0  1.0
+    1.0         1.0  1.0  1.0
+    2.0         1.0  1.0  1.0
+    3.0         1.0  1.0  1.0
+    4.0         1.0  1.0  1.0
+    ...         ...  ...  ...
+    95.0        1.0  1.0  1.0
+    96.0        1.0  1.0  1.0
+    97.0        1.0  1.0  1.0
+    98.0        1.0  1.0  1.0
+    99.0        1.0  1.0  1.0
+    dtype: float64, shape: (100, 3)
+
+    Initialize a TsdFrame with column names:
+
+    >>> tsdframe = nap.TsdFrame(t=t, d=d, columns=['A', 'B', 'C'])
+    >>> tsdframe
+    Time (s)    A    B    C
+    ----------  ---  ---  ---
+    0.0         1.0  1.0  1.0
+    1.0         1.0  1.0  1.0
+    2.0         1.0  1.0  1.0
+    3.0         1.0  1.0  1.0
+    4.0         1.0  1.0  1.0
+    ...         ...  ...  ...
+    95.0        1.0  1.0  1.0
+    96.0        1.0  1.0  1.0
+    97.0        1.0  1.0  1.0
+    98.0        1.0  1.0  1.0
+    99.0        1.0  1.0  1.0
+    dtype: float64, shape: (100, 3)
+
+    Initialize a TsdFrame with metadata:
+
+    >>> metadata = {"color": ["red", "blue", "green"], "depth": [1, 2, 3]}
+    >>> tsdframe = nap.TsdFrame(t=t, d=d, columns=["A", "B", "C"], metadata=metadata)
+    >>> tsdframe
+    Time (s)    A         B         C
+    ----------  --------  --------  --------
+    0.0         1.0       1.0       1.0
+    1.0         1.0       1.0       1.0
+    2.0         1.0       1.0       1.0
+    3.0         1.0       1.0       1.0
+    4.0         1.0       1.0       1.0
+    ...         ...       ...       ...
+    95.0        1.0       1.0       1.0
+    96.0        1.0       1.0       1.0
+    97.0        1.0       1.0       1.0
+    98.0        1.0       1.0       1.0
+    99.0        1.0       1.0       1.0
+    Metadata
+    --------    --------  --------  --------
+    color       red       blue      green
+    depth       1         2         3
+    <BLANKLINE>
+    dtype: float64, shape: (100, 3)
+
+    Initialize a TsdFrame with a pandas DataFrame:
+
+    >>> import pandas as pd
+    >>> data = pd.DataFrame(index=t, columns=["A", "B", "C"], data=d)
+    >>> metadata = pd.DataFrame(
+    ...    index=["A", "B", "C"],
+    ...    columns=["color", "depth"],
+    ...    data=[["red", 1], ["blue", 2], ["green", 3]],
+    ... )
+    >>> tsdframe = nap.TsdFrame(data, metadata=metadata)
+    >>> tsdframe
+    Time (s)    A         B         C
+    ----------  --------  --------  --------
+    0.0         1.0       1.0       1.0
+    1.0         1.0       1.0       1.0
+    2.0         1.0       1.0       1.0
+    3.0         1.0       1.0       1.0
+    4.0         1.0       1.0       1.0
+    ...         ...       ...       ...
+    95.0        1.0       1.0       1.0
+    96.0        1.0       1.0       1.0
+    97.0        1.0       1.0       1.0
+    98.0        1.0       1.0       1.0
+    99.0        1.0       1.0       1.0
+    Metadata
+    --------    --------  --------  --------
+    color       red       blue      green
+    depth       1         2         3
+    <BLANKLINE>
+    dtype: float64, shape: (100, 3)
     """
+
+    columns: pd.Index
+    """Data column names of the TsdFrame"""
 
     def __init__(
         self,
@@ -868,28 +977,8 @@ class TsdFrame(_BaseTsd):
         time_support=None,
         columns=None,
         load_array=True,
+        metadata=None,
     ):
-        """
-        TsdFrame initializer
-        A pandas.DataFrame can be passed directly
-
-        Parameters
-        ----------
-        t : numpy.ndarray or pandas.DataFrame
-            the time index t,  or a pandas.DataFrame (if d is None)
-        d : numpy.ndarray
-            The data
-        time_units : str, optional
-            The time units in which times are specified ('us', 'ms', 's' [default]).
-        time_support : IntervalSet, optional
-            The time support of the TsdFrame object
-        columns : iterables
-            Column names
-        load_array : bool, optional
-            Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
-            Default is True. Does not apply if `d` is already a numpy array.
-        """
-
         c = columns
 
         if isinstance(t, pd.DataFrame):
@@ -915,70 +1004,162 @@ class TsdFrame(_BaseTsd):
 
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
+        # initialize metadata for class attributes
+        _MetadataMixin.__init__(self)
+        # get current list of attributes
+        self._class_attributes = self.__dir__()
+        self._class_attributes.append("_class_attributes")
+        # set metadata
         self._initialized = True
+        self.set_info(metadata)
 
     @property
     def loc(self):
+        # add deprecation warning
+        # warnings.warn(
+        #     "'loc' will be deprecated in a future version. Use bracket indexing instead.",
+        #     DeprecationWarning,
+        # )
         return _TsdFrameSliceHelper(self)
 
     def __repr__(self):
-        headers = ["Time (s)"] + [str(k) for k in self.columns]
-        bottom = "dtype: {}".format(self.dtype) + ", shape: {}".format(self.shape)
-
+        # Start by determining how many columns and rows.
+        # This can be unique for each object
         cols, rows = _get_terminal_size()
         max_cols = np.maximum(cols // 100, 5)
         max_rows = np.maximum(rows - 10, 2)
 
+        # Computing headers and bottom
+        headers = ["Time (s)"] + [str(k) for k in self.columns]
+        bottom = f"dtype: {self.dtype}, shape: {self.shape}"
+
         if self.shape[1] > max_cols:
             headers = headers[0 : max_cols + 1] + ["..."]
-
-        def round_if_float(x):
-            if isinstance(x, float):
-                return np.round(x, 5)
-            else:
-                return x
 
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             if len(self):
-                table = []
                 end = ["..."] if self.shape[1] > max_cols else []
                 if len(self) > max_rows:
                     n_rows = max_rows // 2
-                    for i, array in zip(
-                        self.index[0:n_rows], self.values[0:n_rows, 0:max_cols]
-                    ):
-                        table.append([i] + [round_if_float(k) for k in array] + end)
-                    table.append(["..."])
-                    for i, array in zip(
-                        self.index[-n_rows:],
-                        self.values[
-                            self.values.shape[0] - n_rows : self.values.shape[0],
-                            0:max_cols,
-                        ],
-                    ):
-                        table.append([i] + [round_if_float(k) for k in array] + end)
-                    return (
-                        tabulate(table, headers=headers, colalign=("left",))
-                        + "\n"
-                        + bottom
+                    ends = np.array([end] * n_rows)
+                    table = np.vstack(
+                        (
+                            np.hstack(
+                                (
+                                    self.index[0:n_rows, None],
+                                    np.round(self.values[0:n_rows, 0:max_cols], 5),
+                                    ends,
+                                ),
+                                dtype=object,
+                            ),
+                            np.array(
+                                [
+                                    ["..."]
+                                    + ["..."] * np.minimum(max_cols, self.shape[1])
+                                    + end
+                                ],
+                                dtype=object,
+                            ),
+                            np.hstack(
+                                (
+                                    self.index[-n_rows:, None],
+                                    np.round(self.values[-n_rows:, 0:max_cols], 5),
+                                    ends,
+                                ),
+                                dtype=object,
+                            ),
+                        )
                     )
                 else:
-                    for i, array in zip(self.index, self.values[:, 0:max_cols]):
-                        table.append([i] + [round_if_float(k) for k in array] + end)
-                    return (
-                        tabulate(table, headers=headers, colalign=("left",))
-                        + "\n"
-                        + bottom
+                    ends = np.array([end] * len(self))
+                    table = np.hstack(
+                        (
+                            self.index[:, None],
+                            np.round(self.values[:, 0:max_cols], 5),
+                            ends,
+                        ),
+                        dtype=object,
                     )
             else:
-                return tabulate([], headers=headers) + "\n" + bottom
+                table = []
+
+            # Adding metadata if any.
+            col_names = self._metadata.columns.values
+            if len(col_names):
+                ends = np.array([end] * self._metadata.shape[1])
+                table = np.vstack(
+                    (
+                        table,
+                        np.array([["Metadata"] + [" "] * (table.shape[1] - 1)]),
+                        [["--------"] * table.shape[1]],
+                        np.hstack(
+                            (
+                                col_names[:, None],
+                                _convert_iter_to_str(
+                                    self._metadata.values[0:max_cols].T
+                                ),
+                                ends,
+                            ),
+                            dtype=object,
+                        ),
+                        np.array([[" "] * table.shape[1]]),
+                    ),
+                    dtype=object,
+                )
+
+            return tabulate(table, headers=headers, colalign=("left",)) + "\n" + bottom
+
+    def __setattr__(self, name, value):
+        # necessary setter to allow metadata to be set as an attribute
+        if self._initialized:
+            if name in self._class_attributes:
+                raise AttributeError(
+                    f"Cannot set attribute: '{name}' is a reserved attribute. Use 'set_info()' to set '{name}' as metadata."
+                )
+            else:
+                _MetadataMixin.__setattr__(self, name, value)
+        else:
+            super().__setattr__(name, value)
+
+    def __getattr__(self, name):
+        # TsdFrame needs a custom __getattr__ to override default inherited from BaseTsd
+
+        # avoid infinite recursion when pickling due to
+        # self._metadata.column having attributes '__reduce__', '__reduce_ex__'
+        if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
+            raise AttributeError(name)
+
+        try:
+            metadata = self._metadata
+        except (AttributeError, RecursionError):
+            metadata = pd.DataFrame(index=self.columns)
+
+        if name == "_metadata":
+            return metadata
+        elif name in metadata.columns:
+            return _MetadataMixin.__getattr__(self, name)
+        else:
+            return super().__getattr__(name)
 
     def __setitem__(self, key, value):
+        if isinstance(key, Tsd):
+            try:
+                assert np.issubdtype(key.dtype, np.bool_)
+            except AssertionError:
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
+            key = key.d
         try:
             if isinstance(key, str):
-                new_key = self.columns.get_indexer([key])
-                self.values.__setitem__((slice(None, None, None), new_key[0]), value)
+                if key in self.columns:
+                    new_key = self.columns.get_indexer([key])
+                    self.values.__setitem__(
+                        (slice(None, None, None), new_key[0]), value
+                    )
+                else:
+                    _MetadataMixin.__setitem__(self, key, value)
             elif hasattr(key, "__iter__") and all([isinstance(k, str) for k in key]):
                 new_key = self.columns.get_indexer(key)
                 self.values.__setitem__((slice(None, None, None), new_key), value)
@@ -988,13 +1169,35 @@ class TsdFrame(_BaseTsd):
             raise IndexError
 
     def __getitem__(self, key, *args, **kwargs):
-        if (
-            isinstance(key, str)
-            or hasattr(key, "__iter__")
-            and all([isinstance(k, str) for k in key])
-        ):
-            return self.loc[key]
+        if isinstance(key, Tsd):
+            try:
+                assert np.issubdtype(key.dtype, np.bool_)
+            except AssertionError:
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
+            key = key.d
+        elif isinstance(key, str):
+            if key in self.columns:
+                with warnings.catch_warnings():
+                    # ignore deprecated warning for loc
+                    warnings.simplefilter("ignore")
+                    return self.loc[key]
+            else:
+                return _MetadataMixin.__getitem__(self, key)
+        elif hasattr(key, "__iter__") and all([isinstance(k, str) for k in key]):
+            if all(k in self.columns for k in key):
+                with warnings.catch_warnings():
+                    # ignore deprecated warning for loc
+                    warnings.simplefilter("ignore")
+                    return self.loc[key]
+            else:
+                return _MetadataMixin.__getitem__(self, key)
         else:
+            if isinstance(key, pd.Series) and key.index.equals(self.columns):
+                # if indexing with a pd.Series from metadata, transform it to tuple with slice(None) in first position
+                key = (slice(None, None, None), key)
+
             output = self.values.__getitem__(key)
             columns = self.columns
 
@@ -1005,20 +1208,33 @@ class TsdFrame(_BaseTsd):
             else:
                 index = self.index.__getitem__(key)
 
-            if isinstance(index, Number):
-                index = np.array([index])
+            # if isinstance(index, Number):
+            #     index = np.array([index])
 
             if all(is_array_like(a) for a in [index, output]):
-                if output.shape[0] == index.shape[0]:
-                    # if isinstance(columns, pd.Index):
-                    #     if not pd.api.types.is_integer_dtype(columns):
-                    kwargs["columns"] = columns
+                if isinstance(key, tuple):
+                    if (
+                        len(index) == 1
+                        and output.ndim == 1
+                        and not isinstance(key[1], int)
+                    ):
+                        output = output[None, :]
+                    elif (
+                        (output.ndim == 1)
+                        and isinstance(key[1], (list, np.ndarray))
+                        and (len(columns) == 1)
+                    ):
+                        # reshape output of single column if column key is a list or array
+                        output = output[:, None]
+                # if getting a row (1 dim implied)
+                elif isinstance(key, Number):
+                    output = output[None, :]
 
-                    return _get_class(output)(
-                        t=index, d=output, time_support=self.time_support, **kwargs
-                    )
-                else:
-                    return output
+                kwargs["columns"] = columns
+                kwargs["metadata"] = self._metadata.loc[columns]
+                return _initialize_tsd_output(
+                    self, output, time_index=index, kwargs=kwargs
+                )
             else:
                 return output
 
@@ -1112,9 +1328,226 @@ class TsdFrame(_BaseTsd):
             end=self.time_support.end,
             columns=cols_name,
             type=np.array(["TsdFrame"], dtype=np.str_),
+            _metadata=self._metadata.to_dict(),  # save metadata as dictionary
         )
 
         return
+
+    @add_meta_docstring("set_info")
+    def set_info(self, metadata=None, **kwargs):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), columns=["a", "b", "c"])
+
+        To add metadata with a pandas.DataFrame:
+
+        >>> import pandas as pd
+        >>> metadata = pd.DataFrame(index=tsdframe.columns, data=["red", "blue", "green"], columns=["color"])
+        >>> tsdframe.set_info(metadata)
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+
+        To add metadata with a dictionary:
+
+        >>> metadata = {"xpos": [10, 20, 30]}
+        >>> tsdframe.set_info(metadata)
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        xpos        10        20        30
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+
+        To add metadata with a keyword arument (pd.Series, numpy.ndarray, list or tuple):
+
+        >>> ypos = pd.Series(index=tsdframe.columns, data = [10, 10, 10])
+        >>> tsdframe.set_info(ypos=ypos)
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        xpos        10        20        30
+        ypos        10        10        10
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+
+        To add metadata as an attribute:
+
+        >>> tsdframe.label = ["a", "b", "c"]
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        xpos        10        20        30
+        ypos        10        10        10
+        label       a         b         c
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+
+        To add metadata as a key:
+
+        >>> tsdframe["region"] = ["M1", "M1", "M2"]
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        xpos        10        20        30
+        ypos        10        10        10
+        label       a         b         c
+        region      M1        M1        M2
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+
+        Metadata can be overwritten:
+
+        >>> tsdframe.set_info(label=["x", "y", "z"])
+        >>> tsdframe
+        Time (s)    a         b         c
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        color       red       blue      green
+        xpos        10        20        30
+        ypos        10        10        10
+        label       x         y         z
+        region      M1        M1        M2
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
+        """
+        _MetadataMixin.set_info(self, metadata, **kwargs)
+
+    @add_meta_docstring("get_info")
+    def get_info(self, key):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"]}
+        >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
+        >>> print(tsdframe)
+        Time (s)    0         1         2
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        l1          1         2         3
+        l2          x         x         y
+        dtype: float64, shape: (5, 3)
+
+        To access a single metadata column:
+
+        >>> tsdframe.get_info("l1")
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
+
+        To access multiple metadata columns:
+
+        >>> tsdframe.get_info(["l1", "l2"])
+           l1 l2
+        0   1  x
+        1   2  x
+        2   3  y
+
+        To access metadata of a single column:
+
+        >>> tsdframe.get_info(0)
+        rate    0.667223
+        l1             1
+        l2             x
+        Name: 0, dtype: object
+
+        To access metadata of multiple columns:
+
+        >>> tsdframe.get_info([0, 1])
+               rate  l1 l2
+        0  0.667223   1  x
+        1  1.334445   2  x
+
+        To access metadata of a single column and metadata key:
+
+        >>> tsdframe.get_info((0, "l1"))
+        np.int64(1)
+
+        To access metadata as an attribute:
+
+        >>> tsdframe.l1
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
+
+        To access metadata as a key:
+
+        >>> tsdframe["l1"]
+        0    1
+        1    2
+        2    3
+        Name: l1, dtype: int64
+
+        Multiple metadata columns can be accessed as keys:
+
+        >>> tsdframe[["l1", "l2"]]
+           l1 l2
+        0   1  x
+        1   2  x
+        2   3  y
+        """
+        return _MetadataMixin.get_info(self, key)
 
 
 class Tsd(_BaseTsd):
@@ -1129,6 +1562,55 @@ class Tsd(_BaseTsd):
         Frequency of the time series (Hz) computed over the time support
     time_support : IntervalSet
         The time support of the time series
+
+    Examples
+    --------
+    Initialize a Tsd:
+
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> t = np.arange(100)
+    >>> d = np.ones(100)
+    >>> tsd = nap.Tsd(t=t, d=d)
+    >>> tsd
+    Time (s)
+    ----------  --
+    0.0          1
+    1.0          1
+    2.0          1
+    3.0          1
+    4.0          1
+    5.0          1
+    6.0          1
+    ...
+    93.0         1
+    94.0         1
+    95.0         1
+    96.0         1
+    97.0         1
+    98.0         1
+    99.0         1
+    dtype: float64, shape: (100,)
+
+    Initialize a Tsd with `time_support`:
+
+    >>> t = np.arange(100)
+    >>> d = np.ones(100)
+    >>> time_support = nap.IntervalSet(start=0.5, end=8)
+    >>> tsd = nap.Tsd(t=t, d=d, time_support=time_support)
+    >>> tsd
+    Time (s)
+    ----------  --
+    1            1
+    2            1
+    3            1
+    4            1
+    5            1
+    6            1
+    7            1
+    8            1
+    dtype: float64, shape: (8,)
+
     """
 
     def __init__(
@@ -1149,7 +1631,7 @@ class Tsd(_BaseTsd):
             The time support of the tsd object
         load_array : bool, optional
             Whether the data should be converted to a numpy (or jax) array. Useful when passing a memory map object like zarr.
-            Default is True. Does not apply if `d` is already a numpy array.
+            Default is True. Does not apply if `d` is already a numpy array or a numpy memory map.
         """
         if isinstance(t, pd.Series):
             d = t.values
@@ -1207,25 +1689,47 @@ class Tsd(_BaseTsd):
             else:
                 return tabulate([], headers=headers) + "\n" + bottom
 
+    def __setitem__(self, key, value):
+        if isinstance(key, Tsd):
+            try:
+                assert np.issubdtype(key.dtype, np.bool_)
+            except AssertionError:
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
+            key = key.d
+
+        try:
+            if isinstance(key, str):
+                new_key = self.columns.get_indexer([key])
+                self.values.__setitem__((slice(None, None, None), new_key[0]), value)
+            elif hasattr(key, "__iter__") and all([isinstance(k, str) for k in key]):
+                new_key = self.columns.get_indexer(key)
+                self.values.__setitem__((slice(None, None, None), new_key), value)
+            else:
+                self.values.__setitem__(key, value)
+        except IndexError:
+            raise IndexError
+
     def __getitem__(self, key, *args, **kwargs):
+        if isinstance(key, Tsd):
+            try:
+                assert np.issubdtype(key.dtype, np.bool_)
+            except AssertionError:
+                raise ValueError(
+                    "When indexing with a Tsd, it must contain boolean values"
+                )
+            key = key.d
+
         output = self.values.__getitem__(key)
+
         if isinstance(key, tuple):
             index = self.index.__getitem__(key[0])
+        elif isinstance(key, Number):
+            index = np.array([key])
         else:
             index = self.index.__getitem__(key)
-
-        if isinstance(index, Number):
-            index = np.array([index])
-
-        if all(is_array_like(a) for a in [index, output]):
-            if output.shape[0] == index.shape[0]:
-                return _get_class(output)(
-                    t=index, d=output, time_support=self.time_support, **kwargs
-                )
-            else:
-                return output
-        else:
-            return output
+        return _initialize_tsd_output(self, output, time_index=index, kwargs=kwargs)
 
     def as_series(self):
         """
@@ -1461,10 +1965,25 @@ class Ts(_Base):
         self.nap_class = self.__class__.__name__
         self._initialized = True
 
+    def _define_instance(self, time_index, time_support, values=None, **kwargs):
+        """
+        Define a new class instance.
+
+        Optional parameters for initialization are either passed to the function or are grabbed from self.
+        """
+        if values is None:
+            return self.__class__(t=time_index, time_support=time_support)
+        else:
+            return _initialize_tsd_output(
+                self,
+                values,
+                time_index=time_index,
+                time_support=time_support,
+                kwargs=kwargs,
+            )
+
     def __repr__(self):
         upper = "Time (s)"
-
-        max_rows = 2
         rows = _get_terminal_size()[1]
         max_rows = np.maximum(rows - 10, 2)
 
@@ -1523,112 +2042,6 @@ class Ts(_Base):
         ss = pd.Series(index=t, dtype="object")
         ss.index.name = "Time (" + str(units) + ")"
         return ss
-
-    def value_from(self, data, ep=None):
-        """
-        Replace the value with the closest value from Tsd/TsdFrame/TsdTensor argument
-
-        Parameters
-        ----------
-        data : Tsd, TsdFrame or TsdTensor
-            The object holding the values to replace.
-        ep : IntervalSet (optional)
-            The IntervalSet object to restrict the operation.
-            If None, the time support of the tsd input object is used.
-
-        Returns
-        -------
-        out : Tsd, TsdFrame or TsdTensor
-            Object with the new values
-
-        Examples
-        --------
-        In this example, the ts object will receive the closest values in time from tsd.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
-        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
-
-        The variable ts is a time series object containing only nan.
-        The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
-
-        >>> newts = ts.value_from(tsd, ep)
-
-        newts is the same size as ts restrict to ep.
-
-        >>> print(len(ts.restrict(ep)), len(newts))
-            52 52
-        """
-        assert isinstance(
-            data, _BaseTsd
-        ), "First argument should be an instance of Tsd, TsdFrame or TsdTensor"
-
-        t, d, time_support, kwargs = super().value_from(data, ep)
-
-        return data.__class__(t, d, time_support=time_support, **kwargs)
-
-    def count(self, *args, dtype=None, **kwargs):
-        """
-        Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
-        You can call this function in multiple ways :
-
-        1. *tsd.count(bin_size=1, time_units = 'ms')*
-        -> Count occurence of events within a 1 ms bin defined on the time support of the object.
-
-        2. *tsd.count(1, ep=my_epochs)*
-        -> Count occurent of events within a 1 second bin defined on the IntervalSet my_epochs.
-
-        3. *tsd.count(ep=my_bins)*
-        -> Count occurent of events within each epoch of the intervalSet object my_bins
-
-        4. *tsd.count()*
-        -> Count occurent of events within each epoch of the time support.
-
-        bin_size should be seconds unless specified.
-        If bin_size is used and no epochs is passed, the data will be binned based on the time support of the object.
-
-        Parameters
-        ----------
-        bin_size : None or float, optional
-            The bin size (default is second)
-        ep : None or IntervalSet, optional
-            IntervalSet to restrict the operation
-        time_units : str, optional
-            Time units of bin size ('us', 'ms', 's' [default])
-        dtype: type, optional
-            Data type for the count. Default is np.int64.
-
-        Returns
-        -------
-        out: Tsd
-            A Tsd object indexed by the center of the bins.
-
-        Examples
-        --------
-        This example shows how to count events within bins of 0.1 second.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> bincount = ts.count(0.1)
-
-        An epoch can be specified:
-
-        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
-        >>> bincount = ts.count(0.1, ep=ep)
-
-        And bincount automatically inherit ep as time support:
-
-        >>> bincount.time_support
-            start    end
-        0  100.0  800.0
-        """
-        t, d, ep = super().count(*args, dtype=dtype, **kwargs)
-        return Tsd(t=t, d=d, time_support=ep)
 
     def fillna(self, value):
         """

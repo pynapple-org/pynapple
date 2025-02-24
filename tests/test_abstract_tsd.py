@@ -1,10 +1,11 @@
-import pynapple as nap
 import numpy as np
 import pandas as pd
 import pytest
-from pynapple.core.time_series import _BaseTsd
+
+import pynapple as nap
 from pynapple.core.base_class import _Base
 from pynapple.core.time_index import TsIndex
+from pynapple.core.time_series import _BaseTsd
 
 
 class MyClass(_BaseTsd):
@@ -21,6 +22,7 @@ class MyClass(_BaseTsd):
     def __repr__(self):
         return "In repr"
 
+
 class MyClass2(_Base):
 
     def __getitem__(self, key):
@@ -35,6 +37,10 @@ class MyClass2(_Base):
     def __repr__(self):
         return "In repr"
 
+    def _define_instance(self, time_index, time_support, values=None, **kwargs):
+        pass
+
+
 def test_create_atsd():
     a = MyClass(t=np.arange(10), d=np.arange(10))
 
@@ -43,12 +49,12 @@ def test_create_atsd():
     assert hasattr(a, "values")
     assert hasattr(a, "time_support")
 
-    assert np.isclose(a.rate, 10/9)
+    assert np.isclose(a.rate, 10 / 9)
     assert isinstance(a.index, nap.TsIndex)
     try:
         assert isinstance(a.values, np.ndarray)
     except:
-         assert nap.core.utils.is_array_like(a.values)
+        assert nap.core.utils.is_array_like(a.values)
     assert isinstance(a.time_support, nap.IntervalSet)
 
     assert hasattr(a, "t")
@@ -76,6 +82,7 @@ def test_create_atsd():
     np.testing.assert_array_equal(a.values, b.values)
     np.testing.assert_array_equal(a.index.values, b.index.values)
 
+
 def test_create_ats():
 
     a = MyClass2(t=np.arange(10))
@@ -85,13 +92,14 @@ def test_create_ats():
     assert hasattr(a, "time_support")
     assert hasattr(a, "shape")
 
-    assert np.isclose(a.rate, 10/9)
-    assert isinstance(a.index, nap.TsIndex)	
+    assert np.isclose(a.rate, 10 / 9)
+    assert isinstance(a.index, nap.TsIndex)
     assert isinstance(a.time_support, nap.IntervalSet)
     assert a.shape == a.index.shape
 
     assert hasattr(a, "t")
     assert a[0] == 0
+
 
 def test_create_ats_from_tsindex():
 
@@ -102,12 +110,13 @@ def test_create_ats_from_tsindex():
     assert hasattr(a, "time_support")
     assert hasattr(a, "shape")
 
-    assert np.isclose(a.rate, 10/9)
-    assert isinstance(a.index, nap.TsIndex)	
+    assert np.isclose(a.rate, 10 / 9)
+    assert isinstance(a.index, nap.TsIndex)
     assert isinstance(a.time_support, nap.IntervalSet)
     assert a.shape == a.index.shape
 
-    assert hasattr(a, "t")	
+    assert hasattr(a, "t")
+
 
 @pytest.mark.filterwarnings("ignore")
 def test_create_ats_from_number():
@@ -118,7 +127,7 @@ def test_create_ats_from_number():
     assert hasattr(a, "index")
     assert hasattr(a, "time_support")
     assert hasattr(a, "shape")
-    
+
 
 def test_methods():
     a = MyClass(t=[], d=[])
@@ -143,6 +152,3 @@ def test_methods():
     assert hasattr(a, "convolve")
     assert hasattr(a, "smooth")
     assert hasattr(a, "interpolate")
-
-
-

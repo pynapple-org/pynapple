@@ -18,7 +18,8 @@ class TestTsArray:
             (
                 "abc",
                 pytest.raises(
-                    RuntimeError, match="Unknown format for t. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."
+                    RuntimeError,
+                    match="Unknown format for t. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.",
                 ),
             ),
         ],
@@ -31,9 +32,7 @@ class TestTsArray:
     @pytest.mark.filterwarnings("ignore")
     @pytest.mark.parametrize(
         "time, expectation",
-        [
-            (MockArray(np.array([1, 2, 3])), does_not_raise())
-        ],
+        [(MockArray(np.array([1, 2, 3])), does_not_raise())],
     )
     def test_ts_type(self, time, expectation):
         """Verify that the time attribute 't' of a Ts object is stored as a numpy.ndarray."""
@@ -70,16 +69,18 @@ class TestTsdArray:
                 MockArray([1, 2, 3]),
                 "abc",
                 pytest.raises(
-                    RuntimeError, match="Unknown format for d. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."
+                    RuntimeError,
+                    match="Unknown format for d. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.",
                 ),
             ),
             (
                 "abc",
-                MockArray([1, 2, 3]),                
+                MockArray([1, 2, 3]),
                 pytest.raises(
-                    RuntimeError, match="Unknown format for t. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."
+                    RuntimeError,
+                    match="Unknown format for t. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.",
                 ),
-            ),            
+            ),
         ],
     )
     def test_tsd_init(self, time, data, expectation):
@@ -108,9 +109,9 @@ class TestTsdArray:
         [
             (np.array([1, 2, 3]), np.array([1, 2, 3]), does_not_raise()),
             (
-                    MockArray(np.array([1, 2, 3])),
-                    np.array([1, 2, 3]),
-                    does_not_raise(),
+                MockArray(np.array([1, 2, 3])),
+                np.array([1, 2, 3]),
+                does_not_raise(),
             ),
         ],
     )
@@ -149,7 +150,8 @@ class TestTsdFrameArray:
                 MockArray([1, 2, 3]),
                 "abc",
                 pytest.raises(
-                    RuntimeError, match="Unknown format for d. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."
+                    RuntimeError,
+                    match="Unknown format for d. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.",
                 ),
             ),
         ],
@@ -180,9 +182,9 @@ class TestTsdFrameArray:
         [
             (np.array([1, 2, 3]), np.array([[1], [2], [3]]), does_not_raise()),
             (
-                    MockArray(np.array([1, 2, 3])),
-                    np.array([[1], [2], [3]]),
-                    does_not_raise(),
+                MockArray(np.array([1, 2, 3])),
+                np.array([[1], [2], [3]]),
+                does_not_raise(),
             ),
         ],
     )
@@ -224,7 +226,10 @@ class TestTsdTensorArray:
             (
                 MockArray([1, 2, 3]),
                 "abc",
-                pytest.raises(RuntimeError, match="Unknown format for d. Accepted formats are numpy.ndarray, list, tuple or any array-like objects."),
+                pytest.raises(
+                    RuntimeError,
+                    match="Unknown format for d. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.",
+                ),
             ),
         ],
     )
@@ -258,9 +263,9 @@ class TestTsdTensorArray:
         [
             (np.array([1, 2, 3]), np.array([[[1]], [[2]], [[3]]]), does_not_raise()),
             (
-                    MockArray(np.array([1, 2, 3])),
-                    np.array([[[1]], [[2]], [[3]]]),
-                    does_not_raise(),
+                MockArray(np.array([1, 2, 3])),
+                np.array([[[1]], [[2]], [[3]]]),
+                does_not_raise(),
             ),
         ],
     )
@@ -286,4 +291,3 @@ class TestTsdTensorArray:
         if nap.nap_config.backend == "numba":
             with expectation:
                 nap.TsdTensor(t=np.ravel(np.array(data)), d=data)
-

@@ -4,13 +4,12 @@
 Various io functions
 
 """
+import importlib
 import warnings
 from pathlib import Path
 from xml.dom import minidom
 
 import numpy as np
-from pynwb import NWBHDF5IO
-from pynwb.ecephys import LFP, ElectricalSeries
 
 from .. import core as nap
 from .cnmfe import CNMF_E, InscopixCNMFE, Minian
@@ -191,7 +190,7 @@ def load_eeg(
     Deleted Parameters
     ------------------
     extension : str, optional
-        The file extenstion (.eeg, .dat, .lfp). Make sure the frequency match
+        The file extention (.eeg, .dat, .lfp). Make sure the frequency match
 
     """
     # Need to check if a xml file exists
@@ -239,13 +238,13 @@ def load_eeg(
     n_samples = int((endoffile - startoffile) / n_channels / bytes_size)
     duration = n_samples / frequency
     f.close()
-    fp = np.memmap(filepath, np.int16, "r", shape=(n_samples, n_channels))
+    fp = np.memmap(filepath, precision, "r", shape=(n_samples, n_channels))
     timestep = np.arange(0, n_samples) / frequency
 
     time_support = nap.IntervalSet(start=0, end=duration, time_units="s")
 
     if channel is None:
-        return fp
+        return nap.TsdFrame(t=timestep, d=fp)
     elif type(channel) is int:
         return nap.Tsd(
             t=timestep, d=fp[:, channel], time_units="s", time_support=time_support
@@ -280,6 +279,7 @@ def append_NWB_LFP(path, lfp, channel=None):
         If no channel is specify when passing a Tsd
 
     """
+    pynwb = importlib.import_module("pynwb")
     path = Path(path)
     new_path = path / "pynapplenwb"
     nwb_path = ""
@@ -296,21 +296,21 @@ def append_NWB_LFP(path, lfp, channel=None):
         else:
             raise RuntimeError("Please specify which channel it is.")
 
-    io = NWBHDF5IO(nwb_path, "r+")
+    io = pynwb.NWBHDF5IO(nwb_path, "r+")
     nwbfile = io.read()
 
     all_table_region = nwbfile.create_electrode_table_region(
         region=channels, description="", name="electrodes"
     )
 
-    lfp_electrical_series = ElectricalSeries(
+    lfp_electrical_series = pynwb.ecephys.ElectricalSeries(
         name="ElectricalSeries",
         data=lfp.values,
         timestamps=lfp.index.values,
         electrodes=all_table_region,
     )
 
-    lfp = LFP(electrical_series=lfp_electrical_series)
+    lfp = pynwb.ecephys.LFP(electrical_series=lfp_electrical_series)
 
     ecephys_module = nwbfile.create_processing_module(
         name="ecephys", description="processed extracellular electrophysiology data"

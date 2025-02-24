@@ -64,7 +64,7 @@ pynapple: python neural analysis package
 
    .. grid-item-card:: Time Series
       :text-align: center
-      :link: ./user_guide/04_core_methods.html
+      :link: ./user_guide/03_core_methods.html
 
       .. image:: _static/example_thumbs/timeseries.svg         
          :class: dark-light
@@ -97,7 +97,7 @@ pynapple: python neural analysis package
       .. image:: _static/example_thumbs/tuningcurves.svg         
          :class: dark-light
 
-   .. grid-item-card:: Wavelets
+   .. grid-item-card:: Spectrogram
       :text-align: center
       :link: ./user_guide/11_wavelets.html
 
@@ -106,7 +106,7 @@ pynapple: python neural analysis package
 
    .. grid-item-card:: Filtering
       :text-align: center
-      :link: ./user_guide/07_decoding.html
+      :link: ./user_guide/12_filtering.html
 
       .. image:: _static/example_thumbs/filtering.svg         
          :class: dark-light
@@ -120,5 +120,11 @@ This package is supported by the Center for Computational Neuroscience, in the F
 
 .. image:: _static/CCN-logo-wText.png
    :width: 200px
+   :class: only-light
+   :target: https://www.simonsfoundation.org/flatiron/center-for-computational-neuroscience/
+
+.. image:: _static/logo_flatiron_white.svg
+   :width: 200px
+   :class: only-dark
    :target: https://www.simonsfoundation.org/flatiron/center-for-computational-neuroscience/
 

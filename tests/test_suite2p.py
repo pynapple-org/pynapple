@@ -6,12 +6,14 @@
 
 """Tests of Suite2P loader for `pynappple` package."""
 
-import pynapple as nap
+import os
+import warnings
+
 import numpy as np
 import pandas as pd
 import pytest
-import warnings
-import os
+
+import pynapple as nap
 
 path = "nwbfilestest/suite2p/suite2p/plane0"
 

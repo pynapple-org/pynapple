@@ -6,19 +6,21 @@
 
 """Tests of IO folder functions"""
 
-import pynapple as nap
+import json
+import shutil
+import warnings
+from pathlib import Path
+
 import numpy as np
 import pandas as pd
 import pytest
-import warnings
-from pathlib import Path
-import shutil
-import json
+
+import pynapple as nap
 
 # look for tests folder
 path = Path(__file__).parent
-if path.name == 'pynapple':
-    path = path / "tests" 
+if path.name == "pynapple":
+    path = path / "tests"
 path = path / "npzfilestest"
 
 # Recursively remove the folder:
@@ -27,24 +29,28 @@ path.mkdir(exist_ok=True, parents=True)
 
 # Populate the folder
 data = {
-    "tsd":nap.Tsd(t=np.arange(100), d=np.arange(100)),
-    "ts":nap.Ts(t=np.sort(np.random.rand(10)*100)),
-    "tsdframe":nap.TsdFrame(t=np.arange(100), d=np.random.rand(100,10)),
-    "tsgroup":nap.TsGroup({
+    "tsd": nap.Tsd(t=np.arange(100), d=np.arange(100)),
+    "ts": nap.Ts(t=np.sort(np.random.rand(10) * 100)),
+    "tsdframe": nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 10)),
+    "tsgroup": nap.TsGroup(
+        {
             0: nap.Ts(t=np.arange(0, 200)),
             1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
             2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
-        }),
-    "iset":nap.IntervalSet(start=np.array([0.0, 5.0]), end=np.array([1.0, 6.0]))
-    }
+        }
+    ),
+    "iset": nap.IntervalSet(start=np.array([0.0, 5.0]), end=np.array([1.0, 6.0])),
+}
 
 for k, d in data.items():
-    d.save(path / (k+".npz"))
+    d.save(path / (k + ".npz"))
+
 
 @pytest.mark.parametrize("path", [path])
 def test_load_folder(path):
     folder = nap.Folder(path)
     assert isinstance(folder, nap.Folder)
+
 
 @pytest.mark.parametrize("path", [path])
 def test_get_item(path):
@@ -55,20 +61,23 @@ def test_get_item(path):
         assert type(data[k]) == type(d)
         assert type(folder.data[k]) == type(d)
 
+
 ##################################################################
 folder = nap.Folder(path)
+
 
 @pytest.mark.parametrize("folder", [folder])
 def test_expand(folder):
     assert folder.expand() == None
     assert folder.view == None
 
+
 @pytest.mark.parametrize("folder", [folder])
 def test_save(folder):
     tsd2 = nap.Tsd(t=np.arange(10), d=np.arange(10))
     folder.save("tsd2", tsd2, "Test description")
 
-    assert isinstance(folder['tsd2'], nap.Tsd)
+    assert isinstance(folder["tsd2"], nap.Tsd)
 
     files = [f.name for f in path.iterdir()]
     assert "tsd2.json" in files
@@ -79,6 +88,7 @@ def test_save(folder):
     assert "info" in metadata.keys()
     assert "Test description" == metadata["info"]
 
+
 # @pytest.mark.parametrize("folder", [folder])
 # def test_metadata(folder):
 #     tsd2 = nap.Tsd(t=np.arange(10), d=np.arange(10))
@@ -86,11 +96,12 @@ def test_save(folder):
 #     folder.metadata("tsd2")
 #     folder.doc("tsd2")
 
+
 @pytest.mark.parametrize("path", [path])
 def test_load(path):
     folder = nap.Folder(path)
     for k in data.keys():
-        assert isinstance(folder.data[k], nap.NPZFile)    
+        assert isinstance(folder.data[k], nap.NPZFile)
     folder.load()
     for k in data.keys():
         assert type(folder[k]) == type(data[k])
