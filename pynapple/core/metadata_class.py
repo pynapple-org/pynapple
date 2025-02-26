@@ -368,7 +368,7 @@ class _MetadataMixin:
         else:
             return groups
 
-    def groupby_apply(self, by, func, grouped_arg=None, **func_kwargs):
+    def groupby_apply(self, by, func, func_input=None, **func_kwargs):
         """
         Apply a function to each group in a grouped pynapple object.
 
@@ -378,8 +378,8 @@ class _MetadataMixin:
             Metadata column name(s) to group by.
         func : function
             Function to apply to each group.
-        grouped_arg : str, optional
-            Name of the function argument that the grouped object should be passed as. If none, the grouped object is passed as the first positional argument.
+        func_input : str, optional
+            Name of the function input that the grouped object should be passed as. If none, the grouped object is passed as the first positional argument.
         func_kwargs : dict
             Additional keyword arguments to pass to the function.
 
@@ -391,11 +391,11 @@ class _MetadataMixin:
 
         groups = self.groupby(by)
 
-        if grouped_arg is None:
+        if func_input is None:
             out = {k: func(self[v], **func_kwargs) for k, v in groups.items()}
         else:
             out = {
-                k: func(**{grouped_arg: self[v], **func_kwargs})
+                k: func(**{func_input: self[v], **func_kwargs})
                 for k, v in groups.items()
             }
 

@@ -1588,7 +1588,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         return _MetadataMixin.groupby(self, by, get_group)
 
     @add_meta_docstring("groupby_apply")
-    def groupby_apply(self, by, func, grouped_arg=None, **func_kwargs):
+    def groupby_apply(self, by, func, func_input=None, **func_kwargs):
         """
         Examples
         --------
@@ -1612,7 +1612,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> tsdframe.groupby_apply("l1", np.sum, axis=0)
         {1: array([1., 1., 1.]), 2: array([2., 2., 2.])}
         """
-        return _MetadataMixin.groupby_apply(self, by, func, grouped_arg, **func_kwargs)
+        return _MetadataMixin.groupby_apply(self, by, func, func_input, **func_kwargs)
 
 
 class Tsd(_BaseTsd):

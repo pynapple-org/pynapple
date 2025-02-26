@@ -1240,7 +1240,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         return _MetadataMixin.groupby(self, by, get_group)
 
     @add_meta_docstring("groupby_apply")
-    def groupby_apply(self, by, func, grouped_arg=None, **func_kwargs):
+    def groupby_apply(self, by, func, func_input=None, **func_kwargs):
         """
         Examples
         --------
@@ -1280,7 +1280,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>>     "feature": feature,
         >>>     "nb_bins": 2,
         >>> }
-        >>> ep.groupby_apply("l2", nap.compute_1d_tuning_curves, grouped_arg="ep", **func_kwargs)
+        >>> ep.groupby_apply("l2", nap.compute_1d_tuning_curves, func_input="ep", **func_kwargs)
         {'x':              1         2         3
          0.25  1.025641  1.823362  4.216524
          0.75       NaN       NaN       NaN,
@@ -1288,4 +1288,4 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
          0.25       NaN       NaN       NaN
          0.75  1.025641  1.978022  4.835165}
         """
-        return _MetadataMixin.groupby_apply(self, by, func, grouped_arg, **func_kwargs)
+        return _MetadataMixin.groupby_apply(self, by, func, func_input, **func_kwargs)
