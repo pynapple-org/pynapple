@@ -1641,7 +1641,7 @@ class TsGroup(UserDict, _MetadataMixin):
         """
         return _MetadataMixin.groupby(self, by, get_group)
 
-    def groupby_apply(self, by, func, func_input=None, **func_kwargs):
+    def groupby_apply(self, by, func, input_key=None, **func_kwargs):
         """
         Examples
         --------
@@ -1679,4 +1679,4 @@ class TsGroup(UserDict, _MetadataMixin):
          0.25  4.727778
          0.75  5.421429}
         """
-        return _MetadataMixin.groupby_apply(self, by, func, func_input, **func_kwargs)
+        return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)

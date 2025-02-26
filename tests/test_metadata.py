@@ -1161,35 +1161,141 @@ class Test_Metadata:
                 func(obj[np.array(idx)]), grouped_out[grp]
             )
 
+    @pytest.mark.parametrize(
+        "func, ep, err",
+        [
+            (  # input_key is not string
+                nap.compute_1d_tuning_curves,
+                1,
+                pytest.raises(TypeError, match="input_key must be a string"),
+            ),
+            (  # input_key does not exist in function
+                nap.compute_1d_tuning_curves,
+                "epp",
+                pytest.raises(KeyError, match="does not have input parameter"),
+            ),
+            (  # function missing required inputs, or incorrect input type
+                nap.compute_1d_tuning_curves,
+                "ep",
+                pytest.raises(TypeError),
+            ),
+        ],
+    )
+    def test_groupby_apply_errors(self, obj, obj_len, func, ep, err):
+        if obj_len <= 1:
+            pytest.skip("groupby not relevant for length 1 objects")
 
-def test_metadata_groupby_apply_tuning_curves():
+        metadata = {"label": [1, 1, 2, 2]}
+        obj.set_info(metadata)
+        with err:
+            obj.groupby_apply("label", func, ep)
+
+
+##############################
+## more groupby_apply tests ##
+##############################
+@pytest.fixture
+def tsgroup_gba():
     units = {
         1: np.geomspace(1, 100, 1000),
         2: np.geomspace(1, 100, 2000),
         3: np.geomspace(1, 100, 3000),
+        4: np.geomspace(1, 100, 4000),
     }
-    tsgroup = nap.TsGroup(units)
+    return nap.TsGroup(units, metadata={"label": [1, 1, 2, 2]})
+
+
+@pytest.fixture
+def iset_gba():
+    start = [1, 21, 41, 61, 81]
+    end = [10, 30, 50, 70, 90]
+    label = [1, 1, 1, 2, 2]
+    return nap.IntervalSet(start=start, end=end, metadata={"label": label})
+
+
+@pytest.fixture
+def tsdframe_gba():
+    return nap.TsdFrame(
+        t=np.linspace(1, 100, 1000),
+        d=np.random.rand(1000, 4),
+        time_units="s",
+        metadata={"label": [1, 1, 2, 2]},
+    )
+
+
+def test_metadata_groupby_apply_tuning_curves(tsgroup_gba, iset_gba):
 
     feature = nap.Tsd(t=np.linspace(1, 100, 100), d=np.tile(np.arange(5), 20))
 
-    start = [0, 20, 40, 60, 80]
-    end = [10, 30, 50, 70, 90]
-    label = [1, 1, 1, 2, 2]
-    iset = nap.IntervalSet(start=start, end=end, metadata={"label": label})
-
-    out = iset.groupby_apply(
+    out = iset_gba.groupby_apply(
         "label",
         nap.compute_1d_tuning_curves,
-        func_input="ep",
-        group=tsgroup,
+        "ep",
+        group=tsgroup_gba,
         feature=feature,
         nb_bins=5,
     )
-    for grp, idx in iset.groupby("label").items():
-        tmp = nap.compute_1d_tuning_curves(tsgroup, feature, nb_bins=5, ep=iset[idx])
+    for grp, idx in iset_gba.groupby("label").items():
+        tmp = nap.compute_1d_tuning_curves(
+            tsgroup_gba, feature, nb_bins=5, ep=iset_gba[idx]
+        )
         pd.testing.assert_frame_equal(out[grp], tmp)
 
 
+def test_metadata_groupby_apply_tsgroup_lambda(tsgroup_gba):
+    func = lambda x: np.mean(x.rate)
+    out = tsgroup_gba.groupby_apply("label", func)
+
+    for grp, idx in tsgroup_gba.groupby("label").items():
+        tmp = func(tsgroup_gba[idx])
+        assert out[grp] == tmp
+
+
+def test_metadata_groupby_apply_compute_mean_psd(tsdframe_gba, iset_gba):
+    out = iset_gba.groupby_apply(
+        "label",
+        nap.compute_mean_power_spectral_density,
+        "ep",
+        sig=tsdframe_gba,
+        interval_size=1,
+    )
+    for grp, idx in iset_gba.groupby("label").items():
+        tmp = nap.compute_mean_power_spectral_density(
+            tsdframe_gba, ep=iset_gba[idx], interval_size=1
+        )
+        pd.testing.assert_frame_equal(out[grp], tmp)
+
+
+@pytest.mark.parametrize(
+    "obj",
+    [
+        nap.TsGroup(
+            {
+                1: np.geomspace(1, 100, 1000),
+                2: np.geomspace(1, 100, 2000),
+                3: np.geomspace(1, 100, 3000),
+                4: np.geomspace(1, 100, 4000),
+            }
+        ),
+        nap.TsdFrame(
+            t=np.linspace(1, 100, 1000),
+            d=np.random.rand(1000, 4),
+        ),
+        nap.Tsd(t=np.linspace(1, 100, 1000), d=np.random.rand(1000)),
+    ],
+)
+def test_metadata_groupby_apply_restrict(obj, iset_gba):
+    out = iset_gba.groupby_apply("label", lambda x: obj.restrict(x))
+    for grp, idx in iset_gba.groupby("label").items():
+        tmp = obj.restrict(iset_gba[idx])
+        if isinstance(obj, nap.TsGroup):
+            for val1, val2 in zip(out[grp].values(), tmp.values()):
+                np.testing.assert_array_almost_equal(val1.index, val2.index)
+        else:
+            np.testing.assert_array_almost_equal(out[grp].values, tmp.values)
+
+
+#########################
 # test double inheritance
 def get_defined_members(cls):
     """

@@ -1,4 +1,5 @@
 import warnings
+import inspect
 from numbers import Number
 from typing import Union
 
@@ -368,7 +369,7 @@ class _MetadataMixin:
         else:
             return groups
 
-    def groupby_apply(self, by, func, func_input=None, **func_kwargs):
+    def groupby_apply(self, by, func, input_key=None, **func_kwargs):
         """
         Apply a function to each group in a grouped pynapple object.
 
@@ -378,10 +379,10 @@ class _MetadataMixin:
             Metadata column name(s) to group by.
         func : function
             Function to apply to each group.
-        func_input : str, optional
-            Name of the function input that the grouped object should be passed as. If none, the grouped object is passed as the first positional argument.
-        func_kwargs : dict
-            Additional keyword arguments to pass to the function.
+        input_key : str or None, optional
+            Input key that the grouped object will be passed as. If None, the grouped object will be passed as the first positional argument.
+        **func_kwargs : optional
+            Additional keyword arguments to pass to the function. Any required positional arguments that are not the grouped object should be passed as keyword arguments.
 
         Returns
         -------
@@ -389,14 +390,17 @@ class _MetadataMixin:
             Dictionary of results from applying the function to each group, where the keys are the group names and the values are the results.
         """
 
-        groups = self.groupby(by)
-
-        if func_input is None:
-            out = {k: func(self[v], **func_kwargs) for k, v in groups.items()}
+        if input_key is not None:
+            if not isinstance(input_key, str):
+                raise TypeError("input_key must be a string.")
+            if input_key not in inspect.signature(func).parameters:
+                raise KeyError(f"{func} does not have input parameter {input_key}.")
+            anon_func = lambda x: func(**{input_key: x, **func_kwargs})
+        elif func_kwargs:
+            anon_func = lambda x: func(x, **func_kwargs)
         else:
-            out = {
-                k: func(**{func_input: self[v], **func_kwargs})
-                for k, v in groups.items()
-            }
+            anon_func = func
 
+        groups = self.groupby(by)
+        out = {k: anon_func(self[v]) for k, v in groups.items()}
         return out
