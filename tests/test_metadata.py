@@ -942,6 +942,18 @@ class Test_Metadata:
             with pytest.raises(TypeError, match="Metadata keys must be strings!"):
                 obj[0] = info
 
+    @pytest.mark.parametrize(
+        "idx",
+        [
+            (0, 0),
+            {"label": 1},
+        ],
+    )
+    def test_get_info_error(self, obj, obj_len, idx):
+        obj.set_info(label=[1] * obj_len)
+        with pytest.raises(IndexError, match="Unknown metadata index"):
+            obj.get_info(idx)
+
     def test_overwrite_metadata(self, obj, obj_len):
         # add metadata
         obj.set_info(label=[1] * obj_len)
