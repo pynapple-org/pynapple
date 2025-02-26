@@ -1,10 +1,8 @@
 """Tests for metadata in IntervalSet, TsdFrame, and TsGroup"""
 
 import inspect
-import pickle
 import warnings
 from contextlib import nullcontext as does_not_raise
-from numbers import Number
 from pathlib import Path
 
 import numpy as np
@@ -1322,7 +1320,8 @@ def get_defined_members(cls):
     "nap_class", [nap.core.IntervalSet, nap.core.TsdFrame, nap.core.TsGroup]
 )
 def test_no_conflict_between_class_and_metadatamixin(nap_class):
-    from pynapple.core.metadata_class import _MetadataMixin  # Adjust import as needed
+    from pynapple.core.metadata_class import \
+        _MetadataMixin  # Adjust import as needed
 
     iset_members = get_defined_members(nap_class)
     metadatamixin_members = get_defined_members(_MetadataMixin)

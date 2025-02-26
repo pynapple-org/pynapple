@@ -1,5 +1,5 @@
-import warnings
 import inspect
+import warnings
 from numbers import Number
 from typing import Union
 
