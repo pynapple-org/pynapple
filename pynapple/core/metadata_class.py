@@ -395,9 +395,15 @@ class _MetadataMixin:
                 raise TypeError("input_key must be a string.")
             if input_key not in inspect.signature(func).parameters:
                 raise KeyError(f"{func} does not have input parameter {input_key}.")
-            anon_func = lambda x: func(**{input_key: x, **func_kwargs})
+
+            def anon_func(x):
+                return func(**{input_key: x, **func_kwargs})
+
         elif func_kwargs:
-            anon_func = lambda x: func(x, **func_kwargs)
+
+            def anon_func(x):
+                return func(x, **func_kwargs)
+
         else:
             anon_func = func
 
