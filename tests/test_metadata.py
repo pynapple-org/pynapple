@@ -1108,8 +1108,6 @@ class Test_Metadata:
         # cleaning
         Path("obj.npz").unlink()
 
-        # class Test_Metadata_Group:
-
     @pytest.mark.parametrize(
         "metadata, group",
         [
@@ -1117,119 +1115,149 @@ class Test_Metadata:
             ({"l1": [1, 1, 2, 2], "l2": ["a", "b", "b", "b"]}, ["l1", "l2"]),
         ],
     )
-    def test_metadata_groupby(self, obj, metadata, group, obj_len):
-        if obj_len <= 1:
-            pytest.skip("groupby not relevant for length 1 objects")
+    class Test_Metadata_Group:
+        def test_metadata_groupby(self, obj, metadata, group, obj_len):
+            if obj_len <= 1:
+                pytest.skip("groupby not relevant for length 1 objects")
 
-        obj.set_info(metadata)
+            obj.set_info(metadata)
 
-        # pandas groups
-        pd_groups = obj._metadata.groupby(group)
+            # pandas groups
+            pd_groups = obj._metadata.groupby(group)
 
-        # group by metadata, assert returned groups
-        nap_groups = obj.groupby(group)
-        assert nap_groups.keys() == pd_groups.groups.keys()
+            # group by metadata, assert returned groups
+            nap_groups = obj.groupby(group)
+            assert nap_groups.keys() == pd_groups.groups.keys()
 
-        for grp, idx in nap_groups.items():
-            # index same as pandas
-            assert all(idx == pd_groups.groups[grp])
+            for grp, idx in nap_groups.items():
+                # index same as pandas
+                assert all(idx == pd_groups.groups[grp])
 
-            # return object with get_group argument
-            obj_grp = obj.groupby(group, get_group=grp)
+                # return object with get_group argument
+                obj_grp = obj.groupby(group, get_group=grp)
 
-            # get_group should be the same as indexed object
-            pd.testing.assert_frame_equal(
-                obj_grp._metadata, obj[np.array(idx)]._metadata
-            )
-            # index should be the same for both objects
-            assert all(obj_grp.index == obj[np.array(idx)].index)
-            if isinstance(obj, nap.TsdFrame):
-                # columns should be the same
-                assert all(obj_grp.columns == obj[np.array(idx)].columns)
+                # get_group should be the same as indexed object
+                pd.testing.assert_frame_equal(
+                    obj_grp._metadata, obj[np.array(idx)]._metadata
+                )
+                # index should be the same for both objects
+                assert all(obj_grp.index == obj[np.array(idx)].index)
+                if isinstance(obj, nap.TsdFrame):
+                    # columns should be the same
+                    assert all(obj_grp.columns == obj[np.array(idx)].columns)
 
-    @pytest.mark.parametrize(
-        "group, get_group, err",
-        [
-            (
-                "labels",
-                None,
-                pytest.raises(ValueError, match="Metadata column 'labels' not found"),
-            ),
-            (
-                ["label", "l2"],
-                None,
-                pytest.raises(ValueError, match="Metadata column 'l2' not found"),
-            ),
-            (
-                "label",
-                3,
-                pytest.raises(ValueError, match="Group '3' not found in metadata"),
-            ),
-        ],
-    )
-    def test_metadata_groupby_error(self, obj, obj_len, group, get_group, err):
-        if obj_len <= 1:
-            pytest.skip("groupby not relevant for length 1 objects")
+        @pytest.mark.parametrize(
+            "bad_group, get_group, err",
+            [
+                (
+                    "labels",
+                    None,
+                    pytest.raises(
+                        ValueError, match="Metadata column 'labels' not found"
+                    ),
+                ),
+                (
+                    ["label", "l2"],
+                    None,
+                    pytest.raises(ValueError, match="not found"),
+                ),
+                (
+                    None,
+                    3,
+                    pytest.raises(ValueError, match="Group '3' not found in metadata"),
+                ),
+            ],
+        )
+        def test_metadata_groupby_error(
+            self, obj, obj_len, metadata, group, bad_group, get_group, err
+        ):
+            if obj_len <= 1:
+                pytest.skip("groupby not relevant for length 1 objects")
 
-        metadata = {"label": [1, 1, 2, 2]}
-        obj.set_info(metadata)
+            obj.set_info(metadata)
 
-        # groupby with invalid key
-        with err:
-            obj.groupby(group, get_group)
+            if bad_group is not None:
+                group = bad_group
 
-    @pytest.mark.parametrize(
-        "metadata, group",
-        [
-            ({"label": [1, 1, 2, 2]}, "label"),
-            ({"l1": [1, 1, 2, 2], "l2": ["a", "b", "b", "b"]}, ["l1", "l2"]),
-        ],
-    )
-    @pytest.mark.parametrize("func", [np.mean, np.sum, np.max, np.min])
-    def test_metadata_groupby_apply_numpy(self, obj, metadata, group, func, obj_len):
-        if obj_len <= 1:
-            pytest.skip("groupby not relevant for length 1 objects")
+            # groupby with invalid key
+            with err:
+                obj.groupby(group, get_group)
 
-        obj.set_info(metadata)
-        groups = obj.groupby(group)
+        @pytest.mark.parametrize("func", [np.mean, np.sum, np.max, np.min])
+        def test_metadata_groupby_apply_numpy(
+            self, obj, metadata, group, func, obj_len
+        ):
+            if obj_len <= 1:
+                pytest.skip("groupby not relevant for length 1 objects")
 
-        # apply numpy function through groupby_apply
-        grouped_out = obj.groupby_apply(group, func)
+            obj.set_info(metadata)
+            groups = obj.groupby(group)
 
-        for grp, idx in groups.items():
-            # check that the output is the same as applying the function to the indexed object
-            np.testing.assert_array_almost_equal(
-                func(obj[np.array(idx)]), grouped_out[grp]
-            )
+            # apply numpy function through groupby_apply
+            grouped_out = obj.groupby_apply(group, func)
 
-    @pytest.mark.parametrize(
-        "func, ep, err",
-        [
-            (  # input_key is not string
-                nap.compute_1d_tuning_curves,
-                1,
-                pytest.raises(TypeError, match="input_key must be a string"),
-            ),
-            (  # input_key does not exist in function
-                nap.compute_1d_tuning_curves,
-                "epp",
-                pytest.raises(KeyError, match="does not have input parameter"),
-            ),
-            (  # function missing required inputs, or incorrect input type
-                nap.compute_1d_tuning_curves,
-                "ep",
-                pytest.raises(TypeError),
-            ),
-        ],
-    )
-    def test_groupby_apply_errors(self, obj, obj_len, func, ep, err):
-        if obj_len <= 1:
-            pytest.skip("groupby not relevant for length 1 objects")
+            for grp, idx in groups.items():
+                # check that the output is the same as applying the function to the indexed object
+                np.testing.assert_array_almost_equal(
+                    func(obj[np.array(idx)]), grouped_out[grp]
+                )
 
-        metadata = {"label": [1, 1, 2, 2]}
-        obj.set_info(metadata)
-        with err:
-            obj.groupby_apply("label", func, ep)
+        @pytest.mark.parametrize(
+            "func, ep, func_kwargs",
+            [
+                (np.mean, None, dict(axis=-1)),
+                (np.mean, "a", dict(axis=-1)),
+            ],
+        )
+        def test_metadata_groupby_apply_func_kwargs(
+            self, obj, obj_len, metadata, group, func, ep, func_kwargs
+        ):
+            if obj_len <= 1:
+                pytest.skip("groupby not relevant for length 1 objects")
+
+            obj.set_info(metadata)
+            groups = obj.groupby(group)
+            grouped_out = obj.groupby_apply(group, func, ep, **func_kwargs)
+
+            for grp, idx in groups.items():
+                if ep:
+                    np.testing.assert_array_almost_equal(
+                        func(**{ep: obj[idx], **func_kwargs}), grouped_out[grp]
+                    )
+                else:
+                    np.testing.assert_array_almost_equal(
+                        func(obj[idx], **func_kwargs), grouped_out[grp]
+                    )
+
+        @pytest.mark.parametrize(
+            "func, ep, err",
+            [
+                (  # input_key is not string
+                    nap.compute_1d_tuning_curves,
+                    1,
+                    pytest.raises(TypeError, match="input_key must be a string"),
+                ),
+                (  # input_key does not exist in function
+                    nap.compute_1d_tuning_curves,
+                    "epp",
+                    pytest.raises(KeyError, match="does not have input parameter"),
+                ),
+                (  # function missing required inputs, or incorrect input type
+                    nap.compute_1d_tuning_curves,
+                    "ep",
+                    pytest.raises(TypeError),
+                ),
+            ],
+        )
+        def test_groupby_apply_errors(
+            self, obj, obj_len, metadata, group, func, ep, err
+        ):
+            if obj_len <= 1:
+                pytest.skip("groupby not relevant for length 1 objects")
+
+            obj.set_info(metadata)
+            with err:
+                obj.groupby_apply(group, func, ep)
 
 
 ##############################
