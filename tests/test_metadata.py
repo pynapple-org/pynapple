@@ -1148,6 +1148,37 @@ class Test_Metadata:
                 assert all(obj_grp.columns == obj[np.array(idx)].columns)
 
     @pytest.mark.parametrize(
+        "group, get_group, err",
+        [
+            (
+                "labels",
+                None,
+                pytest.raises(ValueError, match="Metadata column 'labels' not found"),
+            ),
+            (
+                ["label", "l2"],
+                None,
+                pytest.raises(ValueError, match="Metadata column 'l2' not found"),
+            ),
+            (
+                "label",
+                3,
+                pytest.raises(ValueError, match="Group '3' not found in metadata"),
+            ),
+        ],
+    )
+    def test_metadata_groupby_error(self, obj, obj_len, group, get_group, err):
+        if obj_len <= 1:
+            pytest.skip("groupby not relevant for length 1 objects")
+
+        metadata = {"label": [1, 1, 2, 2]}
+        obj.set_info(metadata)
+
+        # groupby with invalid key
+        with err:
+            obj.groupby(group, get_group)
+
+    @pytest.mark.parametrize(
         "metadata, group",
         [
             ({"label": [1, 1, 2, 2]}, "label"),
