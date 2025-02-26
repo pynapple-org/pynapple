@@ -1,5 +1,5 @@
 [build-system]
-requires      = ["setuptools>=64", "setuptools-scm", "wheel"]
+requires      = ["setuptools>=64", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -57,6 +57,7 @@ dev = [
     "pip-tools",                    # Dependency management
     "pytest",                       # Testing framework
     "flake8",                       # Code linter
+    "Flake8-pyproject",             # So that flake8 can be configured in this file
     "coverage",                     # Test coverage measurement
 ]
 doc = [
@@ -138,3 +139,8 @@ omit = [
     "pynapple/io/suite2p.py",
     "pynapple/core/_jitted_functions.py" # coverage doesn't work with numba
 ]
+
+[tool.flake8]
+ignore = ["E203", "E501", "W293", "E231", "W503", "C901", "W291", "E266"]
+max-complexity = 10
+exclude = ["doc", "__init__.py", "tests"]
