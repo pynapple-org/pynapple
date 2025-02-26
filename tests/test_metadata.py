@@ -1162,6 +1162,34 @@ class Test_Metadata:
             )
 
 
+def test_metadata_groupby_apply_tuning_curves():
+    units = {
+        1: np.geomspace(1, 100, 1000),
+        2: np.geomspace(1, 100, 2000),
+        3: np.geomspace(1, 100, 3000),
+    }
+    tsgroup = nap.TsGroup(units)
+
+    feature = nap.Tsd(t=np.linspace(1, 100, 100), d=np.tile(np.arange(5), 20))
+
+    start = [0, 20, 40, 60, 80]
+    end = [10, 30, 50, 70, 90]
+    label = [1, 1, 1, 2, 2]
+    iset = nap.IntervalSet(start=start, end=end, metadata={"label": label})
+
+    out = iset.groupby_apply(
+        "label",
+        nap.compute_1d_tuning_curves,
+        func_input="ep",
+        group=tsgroup,
+        feature=feature,
+        nb_bins=5,
+    )
+    for grp, idx in iset.groupby("label").items():
+        tmp = nap.compute_1d_tuning_curves(tsgroup, feature, nb_bins=5, ep=iset[idx])
+        pd.testing.assert_frame_equal(out[grp], tmp)
+
+
 # test double inheritance
 def get_defined_members(cls):
     """

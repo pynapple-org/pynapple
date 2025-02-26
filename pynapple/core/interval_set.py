@@ -437,7 +437,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             output = self.values.__getitem__(key)
             metadata = self._metadata.iloc[key].reset_index(drop=True)
             return IntervalSet(start=output[:, 0], end=output[:, 1], metadata=metadata)
-        elif isinstance(key, pd.Series):
+        elif isinstance(key, (pd.Series, pd.Index)):
             # use loc for metadata
             output = self.values.__getitem__(key)
             metadata = _MetadataMixin.__getitem__(self, key).reset_index(drop=True)
