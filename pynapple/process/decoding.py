@@ -22,8 +22,9 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
     tuning_curves : pandas.DataFrame
         Each column is the tuning curve of one neuron relative to the feature.
         Index should be the center of the bin.
-    group : TsGroup or dict of Ts/Tsd object.
+    group : TsGroup, TsdFrame or dict of Ts/Tsd object.
         A group of neurons with the same index as tuning curves column names.
+        You may also pass a TsdFrame with smoothed rates (recommended).
     ep : IntervalSet
         The epoch on which decoding is computed
     bin_size : float
@@ -48,21 +49,35 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
         If different size of neurons for tuning_curves and group.
         If indexes don't match between tuning_curves and group.
     """
-    if isinstance(group, dict):
-        newgroup = nap.TsGroup(group, time_support=ep)
+    if isinstance(group, nap.TsdFrame):
+        newgroup = group.restrict(ep)
+
+        if tuning_curves.shape[1] != newgroup.shape[1]:
+            raise RuntimeError("Different shapes for tuning_curves and group")
+
+        if not np.all(tuning_curves.columns.values == np.array(newgroup.columns)):
+            raise RuntimeError("Different indices for tuning curves and group keys")
+
+        count = group
+
     elif isinstance(group, nap.TsGroup):
         newgroup = group.restrict(ep)
+
+        if tuning_curves.shape[1] != len(newgroup):
+            raise RuntimeError("Different shapes for tuning_curves and group")
+
+        if not np.all(tuning_curves.columns.values == np.array(newgroup.keys())):
+            raise RuntimeError("Different indices for tuning curves and group keys")
+
+        # Bin spikes
+        count = newgroup.count(bin_size, ep, time_units)
+
+    elif isinstance(group, dict):
+        newgroup = nap.TsGroup(group, time_support=ep)
+        count = newgroup.count(bin_size, ep, time_units)
+
     else:
         raise RuntimeError("Unknown format for group")
-
-    if tuning_curves.shape[1] != len(newgroup):
-        raise RuntimeError("Different shapes for tuning_curves and group")
-
-    if not np.all(tuning_curves.columns.values == np.array(newgroup.keys())):
-        raise RuntimeError("Difference indexes for tuning curves and group keys")
-
-    # Bin spikes
-    count = newgroup.count(bin_size, ep, time_units)
 
     # Occupancy
     if feature is None:
@@ -122,9 +137,10 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
     Parameters
     ----------
     tuning_curves : dict
-        Dictionnay of 2d tuning curves (one for each neuron).
-    group : TsGroup or dict of Ts/Tsd object.
+        Dictionary of 2d tuning curves (one for each neuron).
+    group : TsGroup, TsdFrame or dict of Ts/Tsd object.
         A group of neurons with the same keys as tuning_curves dictionary.
+        You may also pass a TsdFrame with smoothed rates (recommended).
     ep : IntervalSet
         The epoch on which decoding is computed
     bin_size : float
@@ -153,27 +169,40 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
 
     """
 
-    if type(group) is dict:
-        newgroup = nap.TsGroup(group, time_support=ep)
-        numcells = len(newgroup)
+    if type(group) is nap.TsdFrame:
+        newgroup = group.restrict(ep)
+        numcells = newgroup.shape[1]
+
+        if len(tuning_curves) != numcells:
+            raise RuntimeError("Different shapes for tuning_curves and group")
+
+        if not np.all(
+            np.array(list(tuning_curves.keys())) == np.array(newgroup.columns)
+        ):
+            raise RuntimeError("Different indices for tuning curves and group keys")
+
+        count = group
+
     elif type(group) is nap.TsGroup:
         newgroup = group.restrict(ep)
         numcells = len(newgroup)
+
+        if len(tuning_curves) != numcells:
+            raise RuntimeError("Different shapes for tuning_curves and group")
+
+        if not np.all(
+            np.array(list(tuning_curves.keys())) == np.array(newgroup.keys())
+        ):
+            raise RuntimeError("Different indices for tuning curves and group keys")
+
+        count = newgroup.count(bin_size, ep, time_units)
+
+    elif type(group) is dict:
+        newgroup = nap.TsGroup(group, time_support=ep)
+        count = newgroup.count(bin_size, ep, time_units)
+
     else:
         raise RuntimeError("Unknown format for group")
-
-    if len(tuning_curves) != numcells:
-        raise RuntimeError("Different shapes for tuning_curves and group")
-
-    if not np.all(np.array(list(tuning_curves.keys())) == np.array(newgroup.keys())):
-        raise RuntimeError("Difference indexes for tuning curves and group keys")
-
-    # Bin spikes
-    # if type(newgroup) is not nap.TsdFrame:
-    count = newgroup.count(bin_size, ep, time_units)
-    # else:
-    #     #Spikes already "binned" with continuous TsdFrame input
-    #     count = newgroup
 
     indexes = list(tuning_curves.keys())
 
@@ -199,9 +228,7 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
     tc = np.array([tuning_curves[i] for i in tuning_curves.keys()])
     tc = tc.reshape(tc.shape[0], np.prod(tc.shape[1:]))
     tc = tc.T
-
     ct = count.values
-
     bin_size_s = nap.TsIndex.format_timestamps(
         np.array([bin_size], dtype=np.float64), time_units
     )[0]

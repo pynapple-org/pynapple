@@ -1,18 +1,18 @@
 """
-    
-    Pynapple time series are containers specialized for neurophysiological time series.
 
-    They provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.
+Pynapple time series are containers specialized for neurophysiological time series.
 
-    Multiple time series object are avaible depending on the shape of the data.
+They provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.
 
-    - `TsdTensor` : for data with of more than 2 dimensions, typically movies.
-    - `TsdFrame` : for column-based data. It can be easily converted to a pandas.DataFrame. Columns can be labelled and selected similar to pandas.
-    - `Tsd` : One-dimensional time series. It can be converted to a pandas.Series.
-    - `Ts` : For timestamps data only.
+Multiple time series object are avaible depending on the shape of the data.
 
-    Most of the same functions are available through all classes. Objects behaves like numpy.ndarray. Slicing can be done the same way for example 
-    `tsd[0:10]` returns the first 10 rows. Similarly, you can call any numpy functions like `np.mean(tsd, 1)`.
+- `TsdTensor` : for data with of more than 2 dimensions, typically movies.
+- `TsdFrame` : for column-based data. It can be easily converted to a pandas.DataFrame. Columns can be labelled and selected similar to pandas.
+- `Tsd` : One-dimensional time series. It can be converted to a pandas.Series.
+- `Ts` : For timestamps data only.
+
+Most of the same functions are available through all classes. Objects behaves like numpy.ndarray. Slicing can be done the same way for example
+`tsd[0:10]` returns the first 10 rows. Similarly, you can call any numpy functions like `np.mean(tsd, 1)`.
 """
 
 import abc
@@ -382,7 +382,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         t, d = _bin_average(time_array, data_array, starts, ends, bin_size)
 
-        return _initialize_tsd_output(self, d, time_index=t)
+        return _initialize_tsd_output(self, d, time_index=t, time_support=ep)
 
     def dropna(self, update_time_support=True):
         """Drop every row containing NaNs. By default, the time support is updated to start and end around the time points that are non NaNs.
@@ -477,7 +477,9 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         new_data_array = _convolve(time_array, data_array, starts, ends, array, trim)
 
-        return _initialize_tsd_output(self, new_data_array, time_index=time_array)
+        return _initialize_tsd_output(
+            self, new_data_array, time_index=time_array, time_support=ep
+        )
 
     def smooth(self, std, windowsize=None, time_units="s", size_factor=100, norm=True):
         """Smooth a time series with a gaussian kernel.
@@ -634,7 +636,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
             start += len(t)
 
-        return _initialize_tsd_output(self, new_d, time_index=new_t)
+        return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)
 
 
 class TsdTensor(_BaseTsd):
@@ -647,6 +649,47 @@ class TsdTensor(_BaseTsd):
         Frequency of the time series (Hz) computed over the time support
     time_support : IntervalSet
         The time support of the time series
+
+    Examples
+    --------
+    Initialize a TsdTensor:
+
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> t = np.arange(10)
+    >>> d = np.random.randn(10, 2, 3)
+    >>> tsdtensor = nap.TsdTensor(t=t, d=d)
+    >>> tsdtensor
+    Time (s)
+    ----------  -------------------------------
+    0           [[-1.493178 ... -1.281017] ...]
+    1           [[0.230829 ... 0.437679] ...]
+    2           [[-0.462031 ...  0.344506] ...]
+    3           [[0.497019 ... 0.469494] ...]
+    4           [[0.065921 ... 1.012917] ...]
+    5           [[0.158534 ... 1.455523] ...]
+    6           [[-2.567728 ...  0.61182 ] ...]
+    7           [[0.940799 ... 0.109203] ...]
+    8           [[2.340077 ... 0.21885 ] ...]
+    9           [[-0.306175 ... -0.447414] ...]
+    dtype: float64, shape: (10, 2, 3)
+
+    Initialize a TsdTensor with `time_support`:
+
+    >>> t = np.arange(10)
+    >>> d = np.random.randn(10, 2, 3)
+    >>> time_support = nap.IntervalSet(start=0, end=4)
+    >>> tsdtensor = nap.TsdTensor(t=t, d=d, time_support=time_support)
+    >>> tsdtensor
+    Time (s)
+    ----------  -------------------------------
+    0           [[-1.493178 ... -1.281017] ...]
+    1           [[0.230829 ... 0.437679] ...]
+    2           [[-0.462031 ...  0.344506] ...]
+    3           [[0.497019 ... 0.469494] ...]
+    4           [[0.065921 ... 1.012917] ...]
+    dtype: float64, shape: (5, 2, 3)
+
     """
 
     def __init__(
@@ -1165,26 +1208,27 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             else:
                 index = self.index.__getitem__(key)
 
-            if isinstance(index, Number):
-                index = np.array([index])
+            # if isinstance(index, Number):
+            #     index = np.array([index])
 
             if all(is_array_like(a) for a in [index, output]):
-                if (
-                    (len(index) == 1)
-                    and (output.ndim == 1)
-                    and ((len(output) > 1) or isinstance(key[1], (list, np.ndarray)))
-                ):
-                    # reshape output of single index to preserve column axis if there are more than one columns being indexed
-                    # or if column key is a list or array
+                if isinstance(key, tuple):
+                    if (
+                        len(index) == 1
+                        and output.ndim == 1
+                        and not isinstance(key[1], int)
+                    ):
+                        output = output[None, :]
+                    elif (
+                        (output.ndim == 1)
+                        and isinstance(key[1], (list, np.ndarray))
+                        and (len(columns) == 1)
+                    ):
+                        # reshape output of single column if column key is a list or array
+                        output = output[:, None]
+                # if getting a row (1 dim implied)
+                elif isinstance(key, Number):
                     output = output[None, :]
-
-                elif (
-                    (output.ndim == 1)
-                    and isinstance(key[1], (list, np.ndarray))
-                    and (len(columns) == 1)
-                ):
-                    # reshape output of single column if column key is a list or array
-                    output = output[:, None]
 
                 kwargs["columns"] = columns
                 kwargs["metadata"] = self._metadata.loc[columns]
@@ -1583,6 +1627,55 @@ class Tsd(_BaseTsd):
         Frequency of the time series (Hz) computed over the time support
     time_support : IntervalSet
         The time support of the time series
+
+    Examples
+    --------
+    Initialize a Tsd:
+
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> t = np.arange(100)
+    >>> d = np.ones(100)
+    >>> tsd = nap.Tsd(t=t, d=d)
+    >>> tsd
+    Time (s)
+    ----------  --
+    0.0          1
+    1.0          1
+    2.0          1
+    3.0          1
+    4.0          1
+    5.0          1
+    6.0          1
+    ...
+    93.0         1
+    94.0         1
+    95.0         1
+    96.0         1
+    97.0         1
+    98.0         1
+    99.0         1
+    dtype: float64, shape: (100,)
+
+    Initialize a Tsd with `time_support`:
+
+    >>> t = np.arange(100)
+    >>> d = np.ones(100)
+    >>> time_support = nap.IntervalSet(start=0.5, end=8)
+    >>> tsd = nap.Tsd(t=t, d=d, time_support=time_support)
+    >>> tsd
+    Time (s)
+    ----------  --
+    1            1
+    2            1
+    3            1
+    4            1
+    5            1
+    6            1
+    7            1
+    8            1
+    dtype: float64, shape: (8,)
+
     """
 
     def __init__(

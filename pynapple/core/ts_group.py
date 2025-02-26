@@ -1,6 +1,6 @@
 """
 
-The class `TsGroup` helps group objects with different timestamps 
+The class `TsGroup` helps group objects with different timestamps
 (i.e. timestamps of spikes of a population of neurons).
 
 """
@@ -541,7 +541,7 @@ class TsGroup(UserDict, _MetadataMixin):
             newgr, time_support=ep, bypass_check=True, metadata=self._metadata[cols]
         )
 
-    def value_from(self, tsd, ep=None):
+    def value_from(self, tsd, ep=None, mode="closest"):
         """
         Replace the value of each Ts/Tsd object within the Ts group with the closest value from tsd argument
 
@@ -549,13 +549,16 @@ class TsGroup(UserDict, _MetadataMixin):
         ----------
         tsd : Tsd
             The Tsd object holding the values to replace
-        ep : IntervalSet
+        ep : IntervalSet (optional)
             The IntervalSet object to restrict the operation.
             If None, the time support of the tsd input object is used.
+        mode: literal, either 'closest', 'before', 'after'
+            If closest, replace value with value from Tsd/TsdFrame/TsdTensor, if before gets the
+            first value before, if after the first value after.
 
         Returns
         -------
-        TsGroup
+        out : TsGroup
             TsGroup object with the new values
 
         Examples
@@ -576,17 +579,27 @@ class TsGroup(UserDict, _MetadataMixin):
         >>> newtsgroup = tsgroup.value_from(tsd, ep)
 
         """
+        if not isinstance(tsd, _BaseTsd):
+            raise TypeError(
+                "First argument should be an instance of Tsd, TsdFrame or TsdTensor"
+            )
         if ep is None:
             ep = tsd.time_support
+        if not isinstance(ep, IntervalSet):
+            raise TypeError("Argument ep should be of type IntervalSet or None")
+        if mode not in ("closest", "before", "after"):
+            raise ValueError(
+                f"Argument mode should be 'closest', 'before', or 'after'. {mode} provided instead."
+            )
 
         newgr = {}
         for k in self.data:
-            newgr[k] = self.data[k].value_from(tsd, ep)
+            newgr[k] = self.data[k].value_from(tsd, ep=ep, mode=mode)
 
         cols = self._metadata.columns.drop("rate")
         return TsGroup(newgr, time_support=ep, metadata=self._metadata[cols])
 
-    def count(self, *args, dtype=None, **kwargs):
+    def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
         """
         Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
         You can call this function in multiple ways :
@@ -652,39 +665,23 @@ class TsGroup(UserDict, _MetadataMixin):
         [1000 rows x 3 columns]
 
         """
-        bin_size = None
-        if "bin_size" in kwargs:
-            bin_size = kwargs["bin_size"]
+        if bin_size is not None:
             if isinstance(bin_size, int):
                 bin_size = float(bin_size)
             if not isinstance(bin_size, float):
-                raise ValueError("bin_size argument should be float.")
-        else:
-            for a in args:
-                if isinstance(a, (float, int)):
-                    bin_size = float(a)
+                raise TypeError("bin_size argument should be float or int.")
 
-        time_units = "s"
-        if "time_units" in kwargs:
-            time_units = kwargs["time_units"]
-            if not isinstance(time_units, str):
+            if not isinstance(time_units, str) or time_units not in ["s", "ms", "us"]:
                 raise ValueError("time_units argument should be 's', 'ms' or 'us'.")
-        else:
-            for a in args:
-                if isinstance(a, str) and a in ["s", "ms", "us"]:
-                    time_units = a
 
-        ep = self.time_support
-        if "ep" in kwargs:
-            ep = kwargs["ep"]
-            if not isinstance(ep, IntervalSet):
-                raise ValueError("ep argument should be IntervalSet")
-        else:
-            for a in args:
-                if isinstance(a, IntervalSet):
-                    ep = a
+        if ep is None:
+            ep = self.time_support
+        if not isinstance(ep, IntervalSet):
+            raise TypeError("ep argument should be of type IntervalSet")
 
-        if dtype:
+        if dtype is None:
+            dtype = np.dtype(np.int64)
+        else:
             try:
                 dtype = np.dtype(dtype)
             except Exception:
@@ -694,7 +691,6 @@ class TsGroup(UserDict, _MetadataMixin):
         ends = ep.end
 
         if isinstance(bin_size, (float, int)):
-            bin_size = float(bin_size)
             bin_size = TsIndex.format_timestamps(np.array([bin_size]), time_units)[0]
 
         # Call it on first element to pre-allocate the array
@@ -1419,13 +1415,31 @@ class TsGroup(UserDict, _MetadataMixin):
 
         tsgroup = cls(group, time_support=time_support, bypass_check=True)
 
-        # do we need to enforce that these keys are not in metadata?
-        # not_info_keys = {"start", "end", "t", "index", "d", "rate", "keys"}
-
         if "_metadata" in file:  # load metadata if it exists
             if file["_metadata"]:  # check that metadata is not empty
                 metainfo = pd.DataFrame.from_dict(file["_metadata"].item())
                 tsgroup.set_info(metainfo)
+
+        metainfo = {}
+        not_info_keys = {
+            "start",
+            "end",
+            "t",
+            "index",
+            "d",
+            "rate",
+            "keys",
+            "_metadata",
+            "type",
+        }
+
+        for k in set(file.keys()) - not_info_keys:
+            tmp = file[k]
+            if len(tmp) == len(tsgroup):
+                metainfo[k] = tmp
+
+        tsgroup.set_info(**metainfo)
+
         return tsgroup
 
     @add_meta_docstring("set_info")

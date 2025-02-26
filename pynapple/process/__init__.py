@@ -23,6 +23,7 @@ from .randomize import (
     shuffle_ts_intervals,
 )
 from .spectrum import (
+    compute_fft,
     compute_mean_power_spectral_density,
     compute_power_spectral_density,
 )

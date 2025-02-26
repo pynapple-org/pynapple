@@ -1,14 +1,8 @@
-<!-- ![pic1](banner_logo.png) -->
-<p align="center">
-  <img width="60%" src="docs/images/banner_logo.png">
-</p>
 
-
-<!-- ========================== -->
 
 [![image](https://img.shields.io/pypi/v/pynapple.svg)](https://pypi.python.org/pypi/pynapple)
 [![pynapple CI](https://github.com/pynapple-org/pynapple/actions/workflows/main.yml/badge.svg)](https://github.com/pynapple-org/pynapple/actions/workflows/main.yml)
-[![Coverage Status](https://coveralls.io/repos/github/pynapple-org/pynapple/badge.svg?branch=main)](https://coveralls.io/github/pynapple-org/pynapple?branch=main)
+[![codecov](https://codecov.io/gh/pynapple-org/pynapple/branch/main/graph/badge.svg?token=VN9BDBOEGZ)](https://codecov.io/gh/pynapple-org/pynapple)
 [![GitHub issues](https://img.shields.io/github/issues/pynapple-org/pynapple)](https://github.com/pynapple-org/pynapple/issues)
 ![GitHub contributors](https://img.shields.io/github/contributors/pynapple-org/pynapple)
 ![Twitter Follow](https://img.shields.io/twitter/follow/thepynapple?style=social)
@@ -18,7 +12,7 @@ PYthon Neural Analysis Package.
 pynapple is a light-weight python library for neurophysiological data analysis. The goal is to offer a versatile set of tools to study typical data in the field, i.e. time series (spike times, behavioral events, etc.) and time intervals (trials, brain states, etc.). It also provides users with generic functions for neuroscience such as tuning curves and cross-correlograms.
 
 -   Free software: MIT License
--   __Documentation__: <https://pynapple.org>
+-   __Documentation__: [<https://pynapple.org>](https://pynapple-org.github.io/pynapple/)
 
 > **Note**
 > :page_with_curl: If you are using pynapple, please cite the following [paper](https://elifesciences.org/reviewed-preprints/85786)
@@ -27,6 +21,13 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 
 New release :fire:
 ------------------
+
+### pynapple >= 0.8.2
+
+The objects `IntervalSet`, `TsdFrame` and `TsGroup` inherits a new metadata class. It is now possible to add labels for 
+each interval of an `IntervalSet`, each column of a `TsdFrame` and each unit of a `TsGroup`.
+
+See the [documentation](https://pynapple.org/user_guide/03_metadata.html) for more details
 
 ### pynapple >= 0.7
 
@@ -157,7 +158,7 @@ Shown below, the final figure from the example code displays the firing rate of 
 
 <!-- ![pic1](readme_figure.png) -->
 <p align="center">
-  <img width="80%" src="docs/images/readme_figure.png">
+  <img width="80%" src="doc/_static/readme_figure.png">
 </p>
 
 

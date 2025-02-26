@@ -60,9 +60,9 @@ to "flatten" the TsGroup `peth`.
 ```{code-cell} ipython3
 plt.figure(figsize=(10, 6))
 plt.subplot(211)
-plt.plot(np.sum(peth.count(0.01), 1), linewidth=3, color="red")
+plt.plot(np.mean(peth.count(0.01), 1) / 0.01, linewidth=3, color="red")
 plt.xlim(-0.1, 0.2)
-plt.ylabel("Count")
+plt.ylabel("Rate (spikes/sec)")
 plt.axvline(0.0)
 plt.subplot(212)
 plt.plot(peth.to_tsd(), "|", markersize=20, color="red", mew=4)
