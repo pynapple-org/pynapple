@@ -1211,10 +1211,10 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>> ep = nap.IntervalSet(times,metadata=metadata)
         >>> print(ep)
           index    start    end    l1  l2
-          0        0      5     1  x
-          1       10     12     2  x
-          2       20     33     2  y
-          shape: (3, 2), time unit: sec.
+              0        0      5     1  x
+              1       10     12     2  x
+              2       20     33     2  y
+        shape: (3, 2), time unit: sec.
 
 
         Grouping by a single column:
@@ -1258,11 +1258,10 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>> ep = nap.IntervalSet(times,metadata=metadata)
         >>> print(ep)
           index    start    end    l1  l2
-      0        0      5     1  x
-      1       10     12     2  x
-      2       20     33     2  y
-shape: (3, 2), time unit: sec.
-
+              0        0      5     1  x
+              1       10     12     2  x
+              2       20     33     2  y
+        shape: (3, 2), time unit: sec.
 
         Apply a numpy function::
 
