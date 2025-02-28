@@ -1136,15 +1136,22 @@ class Test_Metadata:
                 # return object with get_group argument
                 obj_grp = obj.groupby(group, get_group=grp)
 
-                # get_group should be the same as indexed object
-                pd.testing.assert_frame_equal(
-                    obj_grp._metadata, obj[np.array(idx)]._metadata
-                )
-                # index should be the same for both objects
-                assert all(obj_grp.index == obj[np.array(idx)].index)
                 if isinstance(obj, nap.TsdFrame):
+                    # get_group should be the same as indexed object
+                    pd.testing.assert_frame_equal(
+                        obj_grp._metadata, obj[:, np.array(idx)]._metadata
+                    )
+                    # index should be the same for both objects
+                    assert all(obj_grp.index == obj[:, np.array(idx)].index)
                     # columns should be the same
-                    assert all(obj_grp.columns == obj[np.array(idx)].columns)
+                    assert all(obj_grp.columns == obj[:, np.array(idx)].columns)
+                else:
+                    # get_group should be the same as indexed object
+                    pd.testing.assert_frame_equal(
+                        obj_grp._metadata, obj[np.array(idx)]._metadata
+                    )
+                    # index should be the same for both objects
+                    assert all(obj_grp.index == obj[np.array(idx)].index)
 
         @pytest.mark.parametrize(
             "bad_group, get_group, err",

@@ -365,7 +365,10 @@ class _MetadataMixin:
                     f"Group '{get_group}' not found in metadata groups. Groups are {list(groups.keys())}"
                 )
             idx = groups[get_group]
-            return self[np.array(idx)]
+            if self.nap_class == "TsdFrame":
+                return self[:, idx]
+            else:
+                return self[idx]
         else:
             return groups
 
@@ -408,5 +411,8 @@ class _MetadataMixin:
             anon_func = func
 
         groups = self.groupby(by)
-        out = {k: anon_func(self[v]) for k, v in groups.items()}
+        if self.nap_class == "TsdFrame":
+            out = {k: anon_func(self[:, v]) for k, v in groups.items()}
+        else:
+            out = {k: anon_func(self[v]) for k, v in groups.items()}
         return out

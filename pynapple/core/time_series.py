@@ -1473,6 +1473,19 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> import numpy as np
         >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"]}
         >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
+        >>> print(tsdframe)
+        Time (s)    0         1         2
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        l1          1         2         3
+        l2          x         x         y
+        dtype: float64, shape: (5, 3)
 
         To access a single metadata column:
 
@@ -1545,6 +1558,20 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> import numpy as np
         >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
         >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
+        >>> print(tsdframe)
+        Time (s)    0         1         2
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        l1          1         2         2
+        l2          x         x         y
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
 
         Grouping by a single column:
 
@@ -1560,16 +1587,19 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
         >>> groups = tsdframe.groupby("l2")
         >>> tsdframe[:,groups["x"]]
-        Time (s)    0         1         2
-        ----------  --------  --------  --------
-        0.0         1.0       1.0       1.0
-        1.0         1.0       1.0       1.0
+        Time (s)    0         1
+        ----------  --------  --------
+        0.0         1.0       1.0
+        1.0         1.0       1.0
+        2.0         1.0       1.0
+        3.0         1.0       1.0
+        4.0         1.0       1.0
         Metadata
-        --------    --------  --------  --------
-        l1          1         2         2
-        l2          x         x         y
+        --------    --------  --------
+        l1          1         2
+        l2          x         x
         <BLANKLINE>
-        dtype: float64, shape: (2, 3)
+        dtype: float64, shape: (5, 2)
 
         Filtering to a specific group using the get_group argument:
 
@@ -1596,21 +1626,35 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> import numpy as np
         >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
         >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
+        >>> print(tsdframe)
+        Time (s)    0         1         2
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        l1          1         2         2
+        l2          x         x         y
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
 
         Apply a numpy function:
 
         >>> tsdframe.groupby_apply("l1", np.sum)
-        {1: 3.0, 2: 6.0}
+        {1: 5.0, 2: 10.0}
 
         Apply a custom function:
 
-        >>> tsdframe.groupby_apply("l1", lambda x: x.shape[0])
-        {1: 1, 2: 2}
+        >>> tsdframe.groupby_apply("l1", lambda x: x.shape)
+        {1: (5, 1), 2: (5, 2)}
 
         Apply a function with additional arguments:
 
         >>> tsdframe.groupby_apply("l1", np.sum, axis=0)
-        {1: array([1., 1., 1.]), 2: array([2., 2., 2.])}
+        {1: array([5.]), 2: array([5., 5.])}
         """
         return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)
 

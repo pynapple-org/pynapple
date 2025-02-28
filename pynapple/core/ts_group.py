@@ -1611,6 +1611,12 @@ class TsGroup(UserDict, _MetadataMixin):
         ... }
         >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
         >>> tsgroup = nap.TsGroup(tmp,metadata=metadata)
+        >>> print(tsgroup)
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              0  1.00629     1  x
+              1  2.01258     2  x
+              2  4.02516     2  y
 
         Grouping by a single column:
 
@@ -1654,16 +1660,17 @@ class TsGroup(UserDict, _MetadataMixin):
         ... }
         >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
         >>> tsgroup = nap.TsGroup(tmp,metadata=metadata)
-
-        Apply a numpy function:
-
-        >>> tsgroup.groupby_apply("l2", np.mean)
-        {'x': 1.5, 'y': 3.0}
+        >>> print(tsgroup)
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              0  1.00629     1  x
+              1  2.01258     2  x
+              2  4.02516     2  y
 
         Apply a custom function:
 
         >>> tsgroup.groupby_apply("l2", lambda x: x.to_tsd().shape[0])
-        {'x': 120, 'y': 200}
+        {'x': 120, 'y': 160}
 
         Apply a function with additional arguments:
 
@@ -1673,11 +1680,11 @@ class TsGroup(UserDict, _MetadataMixin):
         ...     time_support=nap.IntervalSet(np.array([[0, 5], [10, 12], [20, 33]])),
         ... )
         >>> tsgroup.groupby_apply("l2", nap.compute_1d_tuning_curves, feature=feature, nb_bins=2)
-        {'x':          1         2
+        {'x':          0         1
          0.25  1.15  2.044444
          0.75  1.15  2.217857,
-         'y':              3
-         0.25  4.727778
-         0.75  5.421429}
+         'y':              2
+         0.25  3.833333
+         0.75  4.353571}
         """
         return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)
