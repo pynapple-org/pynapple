@@ -1559,7 +1559,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         Filtering to a specific group using the output dictionary:
 
         >>> groups = tsdframe.groupby("l2")
-        >>> tsdframe[groups["x"]]
+        >>> tsdframe[:,groups["x"]]
         Time (s)    0         1         2
         ----------  --------  --------  --------
         0.0         1.0       1.0       1.0

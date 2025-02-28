@@ -1641,6 +1641,7 @@ class TsGroup(UserDict, _MetadataMixin):
         """
         return _MetadataMixin.groupby(self, by, get_group)
 
+    @add_meta_docstring("groupby_apply")
     def groupby_apply(self, by, func, input_key=None, **func_kwargs):
         """
         Examples
