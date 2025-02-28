@@ -36,14 +36,14 @@ import pynapple as nap
 
 # input parameters for TsGroup
 group = {
-    1: nap.Ts(t=np.sort(np.random.uniform(0, 100, 10))),
-    2: nap.Ts(t=np.sort(np.random.uniform(0, 100, 20))),
-    3: nap.Ts(t=np.sort(np.random.uniform(0, 100, 30))),
-    4: nap.Ts(t=np.sort(np.random.uniform(0, 100, 40))),
+    1: nap.Ts(t=np.sort(np.random.uniform(0, 100, 100))),
+    2: nap.Ts(t=np.sort(np.random.uniform(0, 100, 200))),
+    3: nap.Ts(t=np.sort(np.random.uniform(0, 100, 300))),
+    4: nap.Ts(t=np.sort(np.random.uniform(0, 100, 400))),
 }
 
 # input parameters for IntervalSet
-starts = [0,35,65]
+starts = [0,35,70]
 ends = [30,65,100]
 
 # input parameters for TsdFrame
@@ -89,7 +89,7 @@ print(intervalset)
 Metadata can be initialized as a DataFrame using the metadata argument, or it can be inferred when initializing an `IntervalSet` with a DataFrame.
 ```{code-cell} ipython3
 df = pd.DataFrame(
-    data=[[0, 5, 1, "left"], [10, 15, 0, "right"], [20, 25, 1, "left"]], 
+    data=[[0, 30, 1, "left"], [35, 65, 0, "right"], [70, 100, 1, "left"]], 
     columns=["start", "end", "reward", "choice"]
     )
 
@@ -221,7 +221,11 @@ tsdframe.groupby_apply("label", np.mean)
 If the applied function requires additional inputs, these can be passed as additional keyword arguments into `groupby_apply`.
 ```{code-cell} ipython3
 feature = nap.Tsd(t=np.arange(100), d=np.repeat([0,1], 50))
-tsgroup.groupby_apply("region", nap.compute_1d_tuning_curves, feature=feature, nb_bins=2)
+tsgroup.groupby_apply(
+    "region", 
+    nap.compute_1d_tuning_curves, 
+    feature=feature, 
+    nb_bins=2)
 ```
 
 Alternatively, an anonymous function can be passed instead that defines additional arguments.
@@ -232,11 +236,21 @@ tsgroup.groupby_apply("region", func)
 
 An anonymous function can also be used to apply a function where the grouped object is not the first input.
 ```{code-cell} ipython3
-func = lambda x: nap.compute_1d_tuning_curves(group=tsgroup, feature=feature, nb_bins=2, ep=x)
+func = lambda x: nap.compute_1d_tuning_curves(
+    group=tsgroup, 
+    feature=feature, 
+    nb_bins=2, 
+    ep=x)
 intervalset.groupby_apply("choice", func)
 ```
 
 Alternatively, the optional parameter `input_key` can be passed to specify which keyword argument the grouped object corresponds to. Other required arguments of the applied function need to be passed as keyword arguments.
 ```{code-cell} ipython3
-intervalset.groupby_apply("choice", nap.compute_1d_tuning_curves, input_key="ep", group=tsgroup, feature=feature, nb_bins=2)
+intervalset.groupby_apply(
+    "choice", 
+    nap.compute_1d_tuning_curves, 
+    input_key="ep", 
+    group=tsgroup, 
+    feature=feature, 
+    nb_bins=2)
 ```
