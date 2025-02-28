@@ -36,7 +36,7 @@ requires-python = ">=3.8"
 include = ["pynapple", "pynapple.*"]
 
 [tool.setuptools_scm]
-version_scheme = 'python-simplified-semver'
+version_scheme = 'no-guess-dev'
 local_scheme = 'no-local-version'
 
 [project.urls]
