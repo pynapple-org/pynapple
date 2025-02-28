@@ -707,6 +707,13 @@ def clear_metadata(obj):
             d=np.random.rand(100, 4),
             time_units="s",
         ),
+        # TsdFrame with 4 columns and column names
+        nap.TsdFrame(
+            t=np.arange(100),
+            d=np.random.rand(100, 4),
+            columns=["a", "b", "c", "d"],
+            time_units="s",
+        ),
         # TsdFrame with 1 column
         nap.TsdFrame(
             t=np.arange(100),
@@ -720,6 +727,15 @@ def clear_metadata(obj):
                 1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
                 2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
                 3: nap.Ts(t=np.arange(0, 400, 1), time_units="s"),
+            }
+        ),
+        # TsGroup length 4 with weird keys
+        nap.TsGroup(
+            {
+                1: nap.Ts(t=np.arange(0, 200)),
+                8: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
+                2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
+                13: nap.Ts(t=np.arange(0, 400, 1), time_units="s"),
             }
         ),
         # TsGroup length 1
@@ -756,7 +772,17 @@ class Test_Metadata:
     class Test_Add_Metadata:
 
         def test_add_metadata(self, obj, info, obj_len):
-            obj.set_info(label=info[:obj_len])
+            info = info[:obj_len]
+            if isinstance(info, pd.Series):
+                if isinstance(obj, nap.TsdFrame):
+                    # enforce object index
+                    info = info.set_axis(obj.columns)
+                elif isinstance(obj, nap.TsGroup):
+                    # enforce object index
+                    info = info.set_axis(obj.keys())
+
+            # add metadata with `set_info`
+            obj.set_info(label=info)
 
             # verify shape of metadata
             if isinstance(obj, nap.TsGroup):
@@ -766,10 +792,10 @@ class Test_Metadata:
 
             # verify value in private metadata
             if isinstance(info, pd.Series):
-                pd.testing.assert_series_equal(obj._metadata["label"], info[:obj_len])
+                pd.testing.assert_series_equal(obj._metadata["label"], info)
             else:
                 np.testing.assert_array_almost_equal(
-                    obj._metadata["label"].values, info[:obj_len]
+                    obj._metadata["label"].values, info
                 )
 
             # verify public retrieval of metadata
@@ -780,8 +806,17 @@ class Test_Metadata:
             pd.testing.assert_series_equal(obj["label"], obj._metadata["label"])
 
         def test_add_metadata_key(self, obj, info, obj_len):
+            info = info[:obj_len]
+            if isinstance(info, pd.Series):
+                if isinstance(obj, nap.TsdFrame):
+                    # enforce object index
+                    info = info.set_axis(obj.columns)
+                elif isinstance(obj, nap.TsGroup):
+                    # enforce object index
+                    info = info.set_axis(obj.keys())
+
             # add metadata as key
-            obj["label"] = info[:obj_len]
+            obj["label"] = info
 
             # verify shape of metadata
             if isinstance(obj, nap.TsGroup):
@@ -791,10 +826,10 @@ class Test_Metadata:
 
             # verify value in private metadata
             if isinstance(info, pd.Series):
-                pd.testing.assert_series_equal(obj._metadata["label"], info[:obj_len])
+                pd.testing.assert_series_equal(obj._metadata["label"], info)
             else:
                 np.testing.assert_array_almost_equal(
-                    obj._metadata["label"].values, info[:obj_len]
+                    obj._metadata["label"].values, info
                 )
 
             # verify public retrieval of metadata
@@ -805,8 +840,17 @@ class Test_Metadata:
             pd.testing.assert_series_equal(obj["label"], obj._metadata["label"])
 
         def test_add_metadata_attr(self, obj, info, obj_len):
+            info = info[:obj_len]
+            if isinstance(info, pd.Series):
+                if isinstance(obj, nap.TsdFrame):
+                    # enforce object index
+                    info = info.set_axis(obj.columns)
+                elif isinstance(obj, nap.TsGroup):
+                    # enforce object index
+                    info = info.set_axis(obj.keys())
+
             # add metadata as attribute
-            obj.label = info[:obj_len]
+            obj.label = info
 
             # verify shape of metadata
             if isinstance(obj, nap.TsGroup):
@@ -816,10 +860,10 @@ class Test_Metadata:
 
             # verify value in private metadata
             if isinstance(info, pd.Series):
-                pd.testing.assert_series_equal(obj._metadata["label"], info[:obj_len])
+                pd.testing.assert_series_equal(obj._metadata["label"], info)
             else:
                 np.testing.assert_array_almost_equal(
-                    obj._metadata["label"].values, info[:obj_len]
+                    obj._metadata["label"].values, info
                 )
 
             # verify public retrieval of metadata
@@ -853,6 +897,13 @@ class Test_Metadata:
     def test_add_metadata_df(self, obj, info, obj_len):
         # get proper length of metadata
         info = info.iloc[:obj_len]
+
+        if isinstance(obj, nap.TsdFrame):
+            # enforce object index
+            info = info.set_axis(obj.columns, axis=0)
+        elif isinstance(obj, nap.TsGroup):
+            # enforce object index
+            info = info.set_axis(obj.keys(), axis=0)
 
         # add metadata with `set_info`
         obj.set_info(info)
@@ -1058,10 +1109,8 @@ class Test_Metadata:
 
             elif isinstance(obj, nap.TsdFrame):
                 # slicing will update columns
-                np.testing.assert_array_almost_equal(
-                    obj2.columns, obj.columns[obj.label == val]
-                )
-                np.testing.assert_array_almost_equal(obj2.metadata_index, obj2.columns)
+                assert np.all(obj2.columns == obj.columns[obj.label == val])
+                assert np.all(obj2.metadata_index == obj2.columns)
                 # number of rows should be the same
                 assert len(obj2) == len(obj)
 
@@ -1130,28 +1179,31 @@ class Test_Metadata:
             assert nap_groups.keys() == pd_groups.groups.keys()
 
             for grp, idx in nap_groups.items():
-                # index same as pandas
-                assert all(idx == pd_groups.groups[grp])
 
                 # return object with get_group argument
                 obj_grp = obj.groupby(group, get_group=grp)
 
                 if isinstance(obj, nap.TsdFrame):
-                    # get_group should be the same as indexed object
-                    pd.testing.assert_frame_equal(
-                        obj_grp._metadata, obj[:, np.array(idx)]._metadata
-                    )
-                    # index should be the same for both objects
-                    assert all(obj_grp.index == obj[:, np.array(idx)].index)
+                    # pandas index might be strings if column names are strings
+                    # so we need to convert it to integers
+                    pd_idx = pd_groups.groups[grp]
+                    pd_idx = obj.columns.get_indexer(pd_idx)
+
+                    # index same as pandas
+                    assert all(idx == pd_idx)
+
+                    idx = (slice(None), idx)
                     # columns should be the same
-                    assert all(obj_grp.columns == obj[:, np.array(idx)].columns)
+                    assert all(obj_grp.columns == obj[idx].columns)
+
                 else:
-                    # get_group should be the same as indexed object
-                    pd.testing.assert_frame_equal(
-                        obj_grp._metadata, obj[np.array(idx)]._metadata
-                    )
-                    # index should be the same for both objects
-                    assert all(obj_grp.index == obj[np.array(idx)].index)
+                    # index same as pandas
+                    assert all(idx == pd_groups.groups[grp])
+
+                # get_group should be the same as indexed object
+                pd.testing.assert_frame_equal(obj_grp._metadata, obj[idx]._metadata)
+                # index should be the same for both objects
+                assert all(obj_grp.index == obj[idx].index)
 
         @pytest.mark.parametrize(
             "bad_group, get_group, err",
@@ -1205,9 +1257,9 @@ class Test_Metadata:
 
             for grp, idx in groups.items():
                 # check that the output is the same as applying the function to the indexed object
-                np.testing.assert_array_almost_equal(
-                    func(obj[np.array(idx)]), grouped_out[grp]
-                )
+                if isinstance(obj, nap.TsdFrame):
+                    idx = (slice(None), idx)
+                np.testing.assert_array_almost_equal(func(obj[idx]), grouped_out[grp])
 
         @pytest.mark.parametrize(
             "func, ep, func_kwargs",
@@ -1227,6 +1279,8 @@ class Test_Metadata:
             grouped_out = obj.groupby_apply(group, func, ep, **func_kwargs)
 
             for grp, idx in groups.items():
+                if isinstance(obj, nap.TsdFrame):
+                    idx = (slice(None), idx)
                 if ep:
                     np.testing.assert_array_almost_equal(
                         func(**{ep: obj[idx], **func_kwargs}), grouped_out[grp]

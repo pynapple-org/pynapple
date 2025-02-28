@@ -359,6 +359,10 @@ class _MetadataMixin:
                         f"Metadata column '{b}' not found. Metadata columns are {self.metadata_columns}"
                     )
         groups = self._metadata.groupby(by).groups
+        if self.nap_class == "TsdFrame":
+            # pandas groupby will save the dataframe index, which might not be a positional integer index
+            # so we need to convert the index to positional integer index
+            groups = {k: self.columns.get_indexer(v) for k, v in groups.items()}
         if get_group is not None:
             if get_group not in groups.keys():
                 raise ValueError(
