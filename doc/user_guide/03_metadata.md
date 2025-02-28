@@ -114,7 +114,7 @@ When initializing with a DataFrame, the DataFrame index must match the `TsdFrame
 ```{code-cell} ipython3
 metadata = pd.DataFrame(
     index=["a", "b", "c"],
-    data=[["red", 10, "x"], ["blue", 20, "x"], ["green", 30, "x"]], 
+    data=[["red", 10, "x"], ["blue", 20, "x"], ["green", 30, "y"]], 
     columns=["color", "position", "label"],
 )
 
