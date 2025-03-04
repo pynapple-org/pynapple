@@ -291,7 +291,9 @@ def compute_crosscorrelogram(
         crosscorrs = pd.DataFrame.from_dict(crosscorrs)
 
         if norm:
-            freq = newgroup.get_info("rate")
+            freq = pd.Series(
+                index=newgroup.metadata_index, data=newgroup.get_info("rate")
+            )
             freq2 = pd.Series(
                 index=pairs, data=list(map(lambda n: freq.loc[n[1]], pairs))
             )
