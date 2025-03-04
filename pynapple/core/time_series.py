@@ -1487,7 +1487,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         l2          x         x         y
         dtype: float64, shape: (5, 3)
 
-        To access a single metadata column:
+        To access a single metadata row (transposed to column):
 
         >>> tsdframe.get_info("l1")
         0    1
@@ -1495,7 +1495,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         2    3
         Name: l1, dtype: int64
 
-        To access multiple metadata columns:
+        To access multiple metadata rows (transposed to columns):
 
         >>> tsdframe.get_info(["l1", "l2"])
            l1 l2
@@ -1503,7 +1503,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         1   2  x
         2   3  y
 
-        To access metadata of a single column:
+        To access metadata of a single column (transposed to row):
 
         >>> tsdframe.get_info(0)
         rate    0.667223
@@ -1511,7 +1511,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         l2             x
         Name: 0, dtype: object
 
-        To access metadata of multiple columns:
+        To access metadata of multiple columns (transposed to rows):
 
         >>> tsdframe.get_info([0, 1])
                rate  l1 l2
@@ -1573,12 +1573,12 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         <BLANKLINE>
         dtype: float64, shape: (5, 3)
 
-        Grouping by a single column:
+        Grouping by a single row:
 
         >>> tsdframe.groupby("l2")
         {'x': [0, 1], 'y': [2]}
 
-        Grouping by multiple columns:
+        Grouping by multiple rows:
 
         >>> tsdframe.groupby(["l1","l2"])
         {(1, 'x'): [0], (2, 'x'): [1], (2, 'y'): [2]}
@@ -1604,16 +1604,19 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         Filtering to a specific group using the get_group argument:
 
         >>> tsdframe.groupby("l2", get_group="x")
-        Time (s)    0         1         2
-        ----------  --------  --------  --------
-        0.0         1.0       1.0       1.0
-        1.0         1.0       1.0       1.0
+        Time (s)    0         1
+        ----------  --------  --------
+        0.0         1.0       1.0
+        1.0         1.0       1.0
+        2.0         1.0       1.0
+        3.0         1.0       1.0
+        4.0         1.0       1.0
         Metadata
-        --------    --------  --------  --------
-        l1          1         2         2
-        l2          x         x         y
+        --------    --------  --------
+        l1          1         2
+        l2          x         x
         <BLANKLINE>
-        dtype: float64, shape: (2, 3)
+        dtype: float64, shape: (5, 2)
         """
         return _MetadataMixin.groupby(self, by, get_group)
 

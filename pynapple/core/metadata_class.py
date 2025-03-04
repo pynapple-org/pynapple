@@ -329,12 +329,12 @@ class _MetadataMixin:
 
     def groupby(self, by, get_group=None):
         """
-        Group pynapple object by metadata column(s).
+        Group pynapple object by metadata name(s).
 
         Parameters
         ----------
         by : str or list of str
-            Metadata column name(s) to group by.
+            Metadata name(s) to group by.
         get_group : dictionary key, optional
             Name of the group to return.
 
@@ -346,7 +346,7 @@ class _MetadataMixin:
         Raises
         ------
         ValueError
-            If metadata column does not exist.
+            If metadata name does not exist.
         """
         if isinstance(by, str) and by not in self.metadata_columns:
             raise ValueError(
@@ -383,7 +383,7 @@ class _MetadataMixin:
         Parameters
         ----------
         by : str or list of str
-            Metadata column name(s) to group by.
+            Metadata name(s) to group by.
         func : function
             Function to apply to each group.
         input_key : str or None, optional

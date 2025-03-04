@@ -193,13 +193,14 @@ print(tsgroup.coords)
 ## Using metadata to slice objects
 Metadata can be used to slice or filter objects based on metadata values.
 ```{code-cell} ipython3
-print(tsgroup[tsgroup.label == "good"])
+print(tsgroup[tsgroup.label == "A"])
 ```
 
 ## `groupby`: Using metadata to group objects
 Similar to pandas, metadata can be used to group objects based on one or more metadata columns using the object method `groupby`, where the first argument is the metadata columns name(s) to group by. This function returns a dictionary with keys corresponding to unique groups and values corresponding to object indices belonging to each group.
 ```{code-cell} ipython3
-tsgroup.groupby("region")
+print(tsgroup,"\n")
+print(tsgroup.groupby("region"))
 ```
 
 Grouping by multiple metadata columns should be passed as a list.
@@ -215,7 +216,8 @@ tsgroup.groupby("region", get_group="hpc")
 ## `groupby_apply`: Applying functions to object groups
 The `groupby_apply` object method allows a specific function to be applied to object groups. The first argument, same as `groupby`, is the metadata column(s) used to group the object. The second argument is the function to apply to each group. If only these two arguments are supplied, it is assumed that the grouped object is the first and only input to the applied function. This function returns a dictionary, where keys correspond to each unique group, and values correspond to the function output on each group.
 ```{code-cell} ipython3
-tsdframe.groupby_apply("label", np.mean)
+print(tsdframe,"\n")
+print(tsdframe.groupby_apply("label", np.mean))
 ```
 
 If the applied function requires additional inputs, these can be passed as additional keyword arguments into `groupby_apply`.
