@@ -295,6 +295,14 @@ def test_intersect_metadata():
         ep2.intersect(ep)._metadata["m2"], ep3._metadata["m2"]
     )
 
+    # Case when column names overlap
+    np.testing.assert_array_almost_equal(
+        ep3.intersect(ep2).values, np.array([[20.0, 30.0], [50.0, 60.0]])
+    )
+    metadata = ep3.intersect(ep2)._metadata
+    np.testing.assert_array_equal(metadata.columns.values, ["m1"])
+    np.testing.assert_array_equal(metadata.values, ep._metadata.values)
+
 
 def test_set_diff_metadata():
     ep = nap.IntervalSet(start=[0, 60], end=[50, 80], metadata={"m1": [0, 1]})
