@@ -298,17 +298,12 @@ def test_intersect_metadata():
     )
 
     # Case when column names overlap
-    ep1 = nap.IntervalSet(
-        start=np.sort(np.random.uniform(0, 100, 20)),
-        metadata={'tags':[str(i) for i in range(10)], 'a':[i for i in range(10)]}
+    np.testing.assert_array_almost_equal(
+        ep3.intersect(ep2).values, np.array([[20.0, 30.0], [50.0, 60.0]])
     )
-
-    ep2 = nap.IntervalSet(
-        start=np.sort(np.random.uniform(0, 100, 40)),
-        metadata={'tags':[str(i) for i in range(20)]}
-    )
-
-    # ep1.intersect(ep2)
+    metadata = ep3.intersect(ep2)._metadata
+    np.testing.assert_array_equal(metadata.columns.values, ["m1"])
+    np.testing.assert_array_equal(metadata.values, ep._metadata.values)
 
 
 def test_set_diff_metadata():
