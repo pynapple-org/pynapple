@@ -437,7 +437,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             output = self.values.__getitem__(key)
             metadata = self._metadata.iloc[key].reset_index(drop=True)
             return IntervalSet(start=output[:, 0], end=output[:, 1], metadata=metadata)
-        elif isinstance(key, pd.Series):
+        elif isinstance(key, (pd.Series, pd.Index)):
             # use loc for metadata
             output = self.values.__getitem__(key)
             metadata = _MetadataMixin.__getitem__(self, key).reset_index(drop=True)
@@ -1198,3 +1198,107 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         2   3  y
         """
         return _MetadataMixin.get_info(self, key)
+
+    @add_meta_docstring("groupby")
+    def groupby(self, by, get_group=None):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> times = np.array([[0, 5], [10, 12], [20, 33]])
+        >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
+        >>> ep = nap.IntervalSet(times,metadata=metadata)
+        >>> print(ep)
+          index    start    end    l1  l2
+              0        0      5     1  x
+              1       10     12     2  x
+              2       20     33     2  y
+        shape: (3, 2), time unit: sec.
+
+
+        Grouping by a single column:
+
+        >>> ep.groupby("l2")
+        {'x': [0, 1], 'y': [2]}
+
+        Grouping by multiple columns:
+
+        >>> ep.groupby(["l1","l2"])
+        {(1, 'x'): [0], (2, 'x'): [1], (2, 'y'): [2]}
+
+        Filtering to a specific group using the output dictionary:
+
+        >>> groups = ep.groupby("l2")
+        >>> ep[groups["x"]]
+          index    start    end    l1  l2
+              0        0      5     1  x
+              1       10     12     2  x
+        shape: (2, 2), time unit: sec.
+
+        Filtering to a specific group using the get_group argument:
+
+        >>> ep.groupby("l2", get_group="x")
+          index    start    end    l1  l2
+              0        0      5     1  x
+              1       10     12     2  x
+        shape: (2, 2), time unit: sec.
+        """
+        return _MetadataMixin.groupby(self, by, get_group)
+
+    @add_meta_docstring("groupby_apply")
+    def groupby_apply(self, by, func, input_key=None, **func_kwargs):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> times = np.array([[0, 5], [10, 12], [20, 33]])
+        >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
+        >>> ep = nap.IntervalSet(times,metadata=metadata)
+        >>> print(ep)
+          index    start    end    l1  l2
+              0        0      5     1  x
+              1       10     12     2  x
+              2       20     33     2  y
+        shape: (3, 2), time unit: sec.
+
+        Apply a numpy function::
+
+        >>> ep.groupby_apply("l2", np.mean)
+        {'x': 6.75, 'y': 26.5}
+
+        Apply a custom function:
+
+        >>> ep.groupby_apply("l2", lambda x: x.shape[0])
+        {'x': 2, 'y': 1}
+
+        Apply a function with additional arguments:
+
+        >>> ep.groupby_apply("l2", np.mean, axis=1)
+        {'x': array([ 2.5, 11. ]), 'y': array([26.5])}
+
+        Applying a function with additional arguments, where the grouped object is not the first argument:
+
+        >>> tsg = nap.TsGroup(
+        ...     {
+        ...         1: nap.Ts(t=np.arange(0, 40)),
+        ...         2: nap.Ts(t=np.arange(0, 40, 0.5), time_units="s"),
+        ...         3: nap.Ts(t=np.arange(0, 40, 0.2), time_units="s"),
+        ...     },
+        ... )
+        >>> feature = nap.Tsd(t=np.arange(40), d=np.concatenate([np.zeros(20), np.ones(20)]))
+        >>> func_kwargs = {
+        >>>     "group": tsg,
+        >>>     "feature": feature,
+        >>>     "nb_bins": 2,
+        >>> }
+        >>> ep.groupby_apply("l2", nap.compute_1d_tuning_curves, input_key="ep", **func_kwargs)
+        {'x':              1         2         3
+         0.25  1.025641  1.823362  4.216524
+         0.75       NaN       NaN       NaN,
+         'y':              1         2         3
+         0.25       NaN       NaN       NaN
+         0.75  1.025641  1.978022  4.835165}
+        """
+        return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)

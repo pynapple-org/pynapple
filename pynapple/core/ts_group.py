@@ -1597,3 +1597,94 @@ class TsGroup(UserDict, _MetadataMixin):
         2   3  y
         """
         return _MetadataMixin.get_info(self, key)
+
+    @add_meta_docstring("groupby")
+    def groupby(self, by, get_group=None):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tmp = {0:nap.Ts(t=np.arange(0,40), time_units='s'),
+        ... 1:nap.Ts(t=np.arange(0,40,0.5), time_units='s'),
+        ... 2:nap.Ts(t=np.arange(0,40,0.25), time_units='s'),
+        ... }
+        >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
+        >>> tsgroup = nap.TsGroup(tmp,metadata=metadata)
+        >>> print(tsgroup)
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              0  1.00629     1  x
+              1  2.01258     2  x
+              2  4.02516     2  y
+
+        Grouping by a single column:
+
+        >>> tsgroup.groupby("l2")
+        {'x': [0, 1], 'y': [2]}
+
+        Grouping by multiple columns:
+
+        >>> tsgroup.groupby(["l1","l2"])
+        {(1, 'x'): [0], (2, 'x'): [1], (2, 'y'): [2]}
+
+        Filtering to a specific group using the output dictionary:
+
+        >>> groups = tsgroup.groupby("l2")
+        >>> tsgroup[groups["x"]]
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              1  1.00503     1  x
+              2  2.01005     2  x
+
+        Filtering to a specific group using the get_group argument:
+
+        >>> ep.groupby("l2", get_group="x")
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              1  1.00503     1  x
+              2  2.01005     2  x
+        """
+        return _MetadataMixin.groupby(self, by, get_group)
+
+    @add_meta_docstring("groupby_apply")
+    def groupby_apply(self, by, func, input_key=None, **func_kwargs):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tmp = {0:nap.Ts(t=np.arange(0,40), time_units='s'),
+        ... 1:nap.Ts(t=np.arange(0,40,0.5), time_units='s'),
+        ... 2:nap.Ts(t=np.arange(0,40,0.25), time_units='s'),
+        ... }
+        >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
+        >>> tsgroup = nap.TsGroup(tmp,metadata=metadata)
+        >>> print(tsgroup)
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              0  1.00629     1  x
+              1  2.01258     2  x
+              2  4.02516     2  y
+
+        Apply a custom function:
+
+        >>> tsgroup.groupby_apply("l2", lambda x: x.to_tsd().shape[0])
+        {'x': 120, 'y': 160}
+
+        Apply a function with additional arguments:
+
+        >>> feature = nap.Tsd(
+        ...     t=np.arange(40),
+        ...     d=np.concatenate([np.zeros(20), np.ones(20)]),
+        ...     time_support=nap.IntervalSet(np.array([[0, 5], [10, 12], [20, 33]])),
+        ... )
+        >>> tsgroup.groupby_apply("l2", nap.compute_1d_tuning_curves, feature=feature, nb_bins=2)
+        {'x':          0         1
+         0.25  1.15  2.044444
+         0.75  1.15  2.217857,
+         'y':              2
+         0.25  3.833333
+         0.75  4.353571}
+        """
+        return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)
