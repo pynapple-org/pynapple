@@ -87,6 +87,14 @@ class TestTsGroup1:
         with expectation:
             nap.TsGroup(test_dict)
 
+    def test_create_empty_tsgroup(self):
+        tsgroup = nap.TsGroup(data={}, time_support=nap.IntervalSet(0, 1))
+
+        assert isinstance(tsgroup, nap.TsGroup)
+        assert len(tsgroup) == 0
+        # Need to make sure the metadata has the rate attribute
+        assert "rate" in tsgroup.metadata.columns
+
     @pytest.mark.parametrize(
         "tsgroup",
         [
