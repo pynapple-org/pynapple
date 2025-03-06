@@ -285,6 +285,10 @@ class TsGroup(UserDict, _MetadataMixin):
         # Making the TsGroup non mutable
         self._initialized = True
 
+        # Adding manually the rate column if data is empty.
+        if len(data) == 0:
+            self.set_info(rate=[])
+
         # Trying to add argument as metainfo
         if len(kwargs):
             warnings.warn(
