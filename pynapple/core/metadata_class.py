@@ -1,3 +1,4 @@
+import inspect
 import warnings
 from numbers import Number
 from typing import Union
@@ -303,7 +304,7 @@ class _MetadataMixin:
                 # metadata[str] or metadata[[*str]]
                 return self._metadata[key]
 
-        elif isinstance(key, (Number, list, np.ndarray, pd.Series)) or (
+        elif isinstance(key, (Number, list, np.ndarray, pd.Series, pd.Index)) or (
             isinstance(key, tuple)
             and (
                 isinstance(key[1], str)
@@ -325,3 +326,97 @@ class _MetadataMixin:
         else:
             # we don't allow indexing columns with numbers, e.g. metadata[0,0]
             raise IndexError(f"Unknown metadata index {key}")
+
+    def groupby(self, by, get_group=None):
+        """
+        Group pynapple object by metadata name(s).
+
+        Parameters
+        ----------
+        by : str or list of str
+            Metadata name(s) to group by.
+        get_group : dictionary key, optional
+            Name of the group to return.
+
+        Returns
+        -------
+        dict or pynapple object
+            Dictionary of object indices (dictionary values) corresponding to each group (dictionary keys), or pynapple object corresponding to 'get_group' if it has been supplied.
+
+        Raises
+        ------
+        ValueError
+            If metadata name does not exist.
+        """
+        if isinstance(by, str) and by not in self.metadata_columns:
+            raise ValueError(
+                f"Metadata column '{by}' not found. Metadata columns are {self.metadata_columns}"
+            )
+        elif isinstance(by, list):
+            for b in by:
+                if b not in self.metadata_columns:
+                    raise ValueError(
+                        f"Metadata column '{b}' not found. Metadata columns are {self.metadata_columns}"
+                    )
+        groups = self._metadata.groupby(by).groups
+        if self.nap_class == "TsdFrame":
+            # pandas groupby will save the dataframe index, which might not be a positional integer index
+            # so we need to convert the index to positional integer index
+            groups = {k: self.columns.get_indexer(v) for k, v in groups.items()}
+        if get_group is not None:
+            if get_group not in groups.keys():
+                raise ValueError(
+                    f"Group '{get_group}' not found in metadata groups. Groups are {list(groups.keys())}"
+                )
+            idx = groups[get_group]
+            if self.nap_class == "TsdFrame":
+                return self[:, idx]
+            else:
+                return self[idx]
+        else:
+            return groups
+
+    def groupby_apply(self, by, func, input_key=None, **func_kwargs):
+        """
+        Apply a function to each group in a grouped pynapple object.
+
+        Parameters
+        ----------
+        by : str or list of str
+            Metadata name(s) to group by.
+        func : function
+            Function to apply to each group.
+        input_key : str or None, optional
+            Input key that the grouped object will be passed as. If None, the grouped object will be passed as the first positional argument.
+        **func_kwargs : optional
+            Additional keyword arguments to pass to the function. Any required positional arguments that are not the grouped object should be passed as keyword arguments.
+
+        Returns
+        -------
+        dict
+            Dictionary of results from applying the function to each group, where the keys are the group names and the values are the results.
+        """
+
+        if input_key is not None:
+            if not isinstance(input_key, str):
+                raise TypeError("input_key must be a string.")
+            if input_key not in inspect.signature(func).parameters:
+                raise KeyError(f"{func} does not have input parameter {input_key}.")
+
+            def anon_func(x):
+                return func(**{input_key: x, **func_kwargs})
+
+        elif func_kwargs:
+
+            def anon_func(x):
+                return func(x, **func_kwargs)
+
+        else:
+            anon_func = func
+
+        groups = self.groupby(by)
+        if self.nap_class == "TsdFrame":
+            out = {k: anon_func(self[:, v]) for k, v in groups.items()}
+        else:
+            out = {k: anon_func(self[v]) for k, v in groups.items()}
+        return out

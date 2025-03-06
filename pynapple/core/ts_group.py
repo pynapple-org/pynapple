@@ -541,7 +541,7 @@ class TsGroup(UserDict, _MetadataMixin):
             newgr, time_support=ep, bypass_check=True, metadata=self._metadata[cols]
         )
 
-    def value_from(self, tsd, ep=None):
+    def value_from(self, tsd, ep=None, mode="closest"):
         """
         Replace the value of each Ts/Tsd object within the Ts group with the closest value from tsd argument
 
@@ -549,13 +549,16 @@ class TsGroup(UserDict, _MetadataMixin):
         ----------
         tsd : Tsd
             The Tsd object holding the values to replace
-        ep : IntervalSet
+        ep : IntervalSet (optional)
             The IntervalSet object to restrict the operation.
             If None, the time support of the tsd input object is used.
+        mode: literal, either 'closest', 'before', 'after'
+            If closest, replace value with value from Tsd/TsdFrame/TsdTensor, if before gets the
+            first value before, if after the first value after.
 
         Returns
         -------
-        TsGroup
+        out : TsGroup
             TsGroup object with the new values
 
         Examples
@@ -576,12 +579,22 @@ class TsGroup(UserDict, _MetadataMixin):
         >>> newtsgroup = tsgroup.value_from(tsd, ep)
 
         """
+        if not isinstance(tsd, _BaseTsd):
+            raise TypeError(
+                "First argument should be an instance of Tsd, TsdFrame or TsdTensor"
+            )
         if ep is None:
             ep = tsd.time_support
+        if not isinstance(ep, IntervalSet):
+            raise TypeError("Argument ep should be of type IntervalSet or None")
+        if mode not in ("closest", "before", "after"):
+            raise ValueError(
+                f"Argument mode should be 'closest', 'before', or 'after'. {mode} provided instead."
+            )
 
         newgr = {}
         for k in self.data:
-            newgr[k] = self.data[k].value_from(tsd, ep)
+            newgr[k] = self.data[k].value_from(tsd, ep=ep, mode=mode)
 
         cols = self._metadata.columns.drop("rate")
         return TsGroup(newgr, time_support=ep, metadata=self._metadata[cols])
@@ -1584,3 +1597,94 @@ class TsGroup(UserDict, _MetadataMixin):
         2   3  y
         """
         return _MetadataMixin.get_info(self, key)
+
+    @add_meta_docstring("groupby")
+    def groupby(self, by, get_group=None):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tmp = {0:nap.Ts(t=np.arange(0,40), time_units='s'),
+        ... 1:nap.Ts(t=np.arange(0,40,0.5), time_units='s'),
+        ... 2:nap.Ts(t=np.arange(0,40,0.25), time_units='s'),
+        ... }
+        >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
+        >>> tsgroup = nap.TsGroup(tmp,metadata=metadata)
+        >>> print(tsgroup)
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              0  1.00629     1  x
+              1  2.01258     2  x
+              2  4.02516     2  y
+
+        Grouping by a single column:
+
+        >>> tsgroup.groupby("l2")
+        {'x': [0, 1], 'y': [2]}
+
+        Grouping by multiple columns:
+
+        >>> tsgroup.groupby(["l1","l2"])
+        {(1, 'x'): [0], (2, 'x'): [1], (2, 'y'): [2]}
+
+        Filtering to a specific group using the output dictionary:
+
+        >>> groups = tsgroup.groupby("l2")
+        >>> tsgroup[groups["x"]]
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              1  1.00503     1  x
+              2  2.01005     2  x
+
+        Filtering to a specific group using the get_group argument:
+
+        >>> ep.groupby("l2", get_group="x")
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              1  1.00503     1  x
+              2  2.01005     2  x
+        """
+        return _MetadataMixin.groupby(self, by, get_group)
+
+    @add_meta_docstring("groupby_apply")
+    def groupby_apply(self, by, func, input_key=None, **func_kwargs):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tmp = {0:nap.Ts(t=np.arange(0,40), time_units='s'),
+        ... 1:nap.Ts(t=np.arange(0,40,0.5), time_units='s'),
+        ... 2:nap.Ts(t=np.arange(0,40,0.25), time_units='s'),
+        ... }
+        >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
+        >>> tsgroup = nap.TsGroup(tmp,metadata=metadata)
+        >>> print(tsgroup)
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              0  1.00629     1  x
+              1  2.01258     2  x
+              2  4.02516     2  y
+
+        Apply a custom function:
+
+        >>> tsgroup.groupby_apply("l2", lambda x: x.to_tsd().shape[0])
+        {'x': 120, 'y': 160}
+
+        Apply a function with additional arguments:
+
+        >>> feature = nap.Tsd(
+        ...     t=np.arange(40),
+        ...     d=np.concatenate([np.zeros(20), np.ones(20)]),
+        ...     time_support=nap.IntervalSet(np.array([[0, 5], [10, 12], [20, 33]])),
+        ... )
+        >>> tsgroup.groupby_apply("l2", nap.compute_1d_tuning_curves, feature=feature, nb_bins=2)
+        {'x':          0         1
+         0.25  1.15  2.044444
+         0.75  1.15  2.217857,
+         'y':              2
+         0.25  3.833333
+         0.75  4.353571}
+        """
+        return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)
