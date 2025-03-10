@@ -638,6 +638,79 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)
 
+    def to_trial_tensor(self, ep, align="start", padding_value=np.nan):
+        """
+        Return trial-based tensor from an IntervalSet object. The order of the tensor array is
+        (shape of time series, number of trial, number of  time points)
+
+        The `align` parameter controls how the time series are aligned. If `align="start"`, the time
+        series are aligned to the start of the trials. If `align="end"`, the time series are aligned
+        to the end of the trials.
+
+        If trials are uneven durations, the returned array is padded. The parameter `padding_value`
+        determine which value is used to pad the array. Default is NaN.
+
+        Parameters
+        ----------
+        ep : IntervalSet
+            Epochs holding the trials. Each interval can be of unequal size.
+        align: str, optional
+            How to align the time series ('start' [default], 'end')
+        padding_value: Number, optional
+            How to pad the array if unequal intervals. Default is np.nan.
+
+        Returns
+        -------
+        numpy.ndarray
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsdframe = nap.TsdFrame(t=np.arange(100), d=np.arange(200).reshape(2,100).T)
+        >>> ep = nap.IntervalSet(start=np.arange(20, 100, 20), end=np.arange(20, 100, 20) + np.arange(2, 10, 2))
+        >>> print(ep)
+          index    start    end
+              0       20     22
+              1       40     44
+              2       60     66
+              3       80     88
+        shape: (4, 2), time unit: sec.
+
+        Create a trial-based tensor by slicing `tsdframe` for each interval of `ep`.
+
+        >>> tensor = tsdframe.to_trial_tensor(ep)
+        >>> tensor
+        array([[[ 20.,  21.,  22.,  nan,  nan,  nan,  nan,  nan,  nan],
+                [ 40.,  41.,  42.,  43.,  44.,  nan,  nan,  nan,  nan],
+                [ 60.,  61.,  62.,  63.,  64.,  65.,  66.,  nan,  nan],
+                [ 80.,  81.,  82.,  83.,  84.,  85.,  86.,  87.,  88.]],
+               [[120., 121., 122.,  nan,  nan,  nan,  nan,  nan,  nan],
+                [140., 141., 142., 143., 144.,  nan,  nan,  nan,  nan],
+                [160., 161., 162., 163., 164., 165., 166.,  nan,  nan],
+                [180., 181., 182., 183., 184., 185., 186., 187., 188.]]])
+        """
+        if not isinstance(ep, IntervalSet):
+            raise RuntimeError("Argument ep should be of type IntervalSet")
+        if align not in ["start", "end"]:
+            raise RuntimeError("align should be 'start' or 'end'")
+
+        slices = [self.get_slice(s, e) for s, e in ep.values]
+        lengths = list(map(lambda sl: sl.stop - sl.start, slices))
+        n_t = max(lengths)
+        output = np.ones(shape=(len(ep), n_t, *self.shape[1:])) * padding_value
+        if align == "start":
+            for i, sl in enumerate(slices):
+                output[i, 0 : lengths[i]] = self[sl].values
+        if align == "end":
+            for i, sl in enumerate(slices):
+                output[i, -lengths[i] :] = self[sl].values
+
+        if output.ndim > 2:
+            output = np.moveaxis(output, source=[0, 1], destination=[-2, -1])
+
+        return output
+
 
 class TsdTensor(_BaseTsd):
     """
@@ -2223,3 +2296,73 @@ class Ts(_Base):
         )
 
         return
+
+    def to_trial_tensor(
+        self, ep, binsize, align="start", padding_value=np.nan, time_unit="s"
+    ):
+        """
+        Return trial-based count tensor from an IntervalSet object. The order of the tensor array is
+        (number of trial, number of time bins).
+
+        The `binsize` parameter determines the number of time bins.
+
+        The `align` parameter controls how the time series are aligned. If `align="start"`, the time
+        series are aligned to the start of the trials. If `align="end"`, the time series are aligned
+        to the end of the trials.
+
+        If trials are uneven durations, the returned array is padded. The parameter `padding_value`
+        determine which value is used to pad the array. Default is NaN.
+
+        Parameters
+        ----------
+        ep : IntervalSet
+            Epochs holding the trials. Each interval can be of unequal size.
+        binsize : Number
+        align: str, optional
+            How to align the time series ('start' [default], 'end')
+        padding_value: Number, optional
+            How to pad the array if unequal intervals. Default is np.nan.
+        time_unit : str, optional
+            Time units of the binsize parameter ('s' [default], 'ms', 'us').
+
+        Returns
+        -------
+        numpy.ndarray
+
+        Raises
+        ------
+        RuntimeError
+            If `time_unit` not in ["s", "ms", "us"]
+        """
+        if not isinstance(ep, IntervalSet):
+            raise RuntimeError("Argument ep should be of type IntervalSet")
+        if time_unit not in ["s", "ms", "us"]:
+            raise RuntimeError("time_unit should be 's', 'ms' or 'us'")
+        if align not in ["start", "end"]:
+            raise RuntimeError("align should be 'start' or 'end'")
+        if not isinstance(binsize, Number):
+            raise RuntimeError("binsize should be of type int or float")
+
+        # Determine size of tensor
+        binsize = float(TsIndex.format_timestamps(np.array([binsize]), time_unit)[0])
+        n_t = int(np.max(np.ceil((ep.end + binsize - ep.start) / binsize)))
+        count = self.count(bin_size=binsize, ep=ep)
+
+        output = np.ones(shape=(len(ep), n_t)) * padding_value
+        n_ep = np.zeros(len(ep), dtype="int")  # To trim to the minimum length
+
+        if align == "start":
+            for i in range(len(ep)):
+                tmp = count.get(ep.start[i], ep.end[i]).values
+                n_ep[i] = tmp.shape[0]
+                output[i, 0 : tmp.shape[0]] = np.transpose(tmp)
+            output = output[:, 0 : np.max(n_ep)]
+
+        if align == "end":
+            for i in range(len(ep)):
+                tmp = count.get(ep.start[i], ep.end[i]).values
+                n_ep[i] = tmp.shape[0]
+                output[i, -tmp.shape[0] :] = np.transpose(tmp)
+            output = output[:, -np.max(n_ep) :]
+
+        return output

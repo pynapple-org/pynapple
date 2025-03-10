@@ -8,6 +8,7 @@ The class `TsGroup` helps group objects with different timestamps
 import warnings
 from collections import UserDict
 from collections.abc import Hashable
+from numbers import Number
 
 import numpy
 import numpy as np
@@ -848,6 +849,112 @@ class TsGroup(UserDict, _MetadataMixin):
         toreturn = Tsd(t=times[idx], d=data[idx], time_support=self.time_support)
 
         return toreturn
+
+    def to_trial_tensor(
+        self, ep, binsize, align="start", padding_value=np.nan, time_unit="s"
+    ):
+        """
+        Return trial-based count tensor from an IntervalSet object. The order of the tensor array is
+        (number of group element, number of trial, number of time bins).
+
+        The `binsize` parameter determines the number of time bins.
+
+        The `align` parameter controls how the time series are aligned. If `align="start"`, the time
+        series are aligned to the start of the trials. If `align="end"`, the time series are aligned
+        to the end of the trials.
+
+        If trials are uneven durations, the returned array is padded. The parameter `padding_value`
+        determine which value is used to pad the array. Default is NaN.
+
+        Parameters
+        ----------
+        ep : IntervalSet
+            Epochs holding the trials. Each interval can be of unequal size.
+        binsize : Number
+        align: str, optional
+            How to align the time series ('start' [default], 'end')
+        padding_value: Number, optional
+            How to pad the array if unequal intervals. Default is np.nan.
+        time_unit : str, optional
+            Time units of the binsize parameter ('s' [default], 'ms', 'us').
+
+        Returns
+        -------
+        numpy.ndarray
+
+        Raises
+        ------
+        RuntimeError
+            If `time_unit` not in ["s", "ms", "us"]
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> group = nap.TsGroup({0:nap.Ts(t=np.arange(0, 100))})
+        >>> ep = nap.IntervalSet(start=np.arange(20, 100, 20), end=np.arange(20, 100, 20) + np.arange(2, 10, 2))
+        >>> print(ep)
+          index    start    end
+              0       20     22
+              1       40     44
+              2       60     66
+              3       80     88
+        shape: (4, 2), time unit: sec.
+
+        Create a trial-based tensor by counting events within 1 second bin for each interval of `ep`.
+
+        >>> tensor = group.to_trial_tensor(ep, binsize=1)
+        >>> tensor
+        array([[[ 1.,  1., nan, nan, nan, nan, nan, nan],
+                [ 1.,  1.,  1.,  1., nan, nan, nan, nan],
+                [ 1.,  1.,  1.,  1.,  1.,  1., nan, nan],
+                [ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.]]])
+
+        By default, the time series are aligned to the start of the epochs. The parameter `align` control this behavior.
+
+        >>> tensor = group.to_trial_tensor(ep, binsize=1, align="end")
+        >>> tensor
+        array([[[nan, nan, nan, nan, nan, nan,  1.,  1.],
+                [nan, nan, nan, nan,  1.,  1.,  1.,  1.],
+                [nan, nan,  1.,  1.,  1.,  1.,  1.,  1.],
+                [ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.]]])
+
+        """
+        if not isinstance(ep, IntervalSet):
+            raise RuntimeError("Argument ep should be of type IntervalSet")
+        if time_unit not in ["s", "ms", "us"]:
+            raise RuntimeError("time_unit should be 's', 'ms' or 'us'")
+        if align not in ["start", "end"]:
+            raise RuntimeError("align should be 'start' or 'end'")
+        if not isinstance(binsize, Number):
+            raise RuntimeError("binsize should be of type int or float")
+        # Determine size of tensor
+        binsize = float(TsIndex.format_timestamps(np.array([binsize]), time_unit)[0])
+        n_t = int(np.max(np.ceil((ep.end + binsize - ep.start) / binsize)))
+        count = self.count(bin_size=binsize, ep=ep)
+
+        if len(count.shape) == 1:
+            output = np.ones(shape=(1, len(ep), n_t)) * padding_value
+        else:
+            output = np.ones(shape=(count.shape[1], len(ep), n_t)) * padding_value
+
+        n_ep = np.zeros(len(ep), dtype="int")  # To trim to the minimum length
+
+        if align == "start":
+            for i in range(len(ep)):
+                tmp = count.get(ep.start[i], ep.end[i]).values
+                n_ep[i] = tmp.shape[0]
+                output[:, i, 0 : tmp.shape[0]] = np.transpose(tmp)
+            output = output[:, :, 0 : np.max(n_ep)]
+
+        if align == "end":
+            for i in range(len(ep)):
+                tmp = count.get(ep.start[i], ep.end[i]).values
+                n_ep[i] = tmp.shape[0]
+                output[:, i, -tmp.shape[0] :] = np.transpose(tmp)
+            output = output[:, :, -np.max(n_ep) :]
+
+        return output
 
     def get(self, start, end=None, time_units="s"):
         """Slice the `TsGroup` object from `start` to `end` such that all the timestamps within the group satisfy `start<=t<=end`.

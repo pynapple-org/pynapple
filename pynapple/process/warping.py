@@ -40,55 +40,55 @@ def _validate_warping_inputs(func):
     return wrapper
 
 
-def _build_tensor_from_tsgroup(input, ep, binsize, align, padding_value, time_unit):
-    # Determine size of tensor
-    binsize = float(nap.TsIndex.format_timestamps(np.array([binsize]), time_unit)[0])
-    n_t = int(np.max(np.ceil((ep.end + binsize - ep.start) / binsize)))
-    count = input.count(bin_size=binsize, ep=ep)
-
-    if len(count.shape) == 1:
-        output = np.ones(shape=(1, len(ep), n_t)) * padding_value
-    else:
-        output = np.ones(shape=(count.shape[1], len(ep), n_t)) * padding_value
-
-    n_ep = np.zeros(len(ep), dtype="int")  # To trim to the minimum length
-
-    if align == "start":
-        for i in range(len(ep)):
-            tmp = count.get(ep.start[i], ep.end[i]).values
-            n_ep[i] = tmp.shape[0]
-            output[:, i, 0 : tmp.shape[0]] = np.transpose(tmp)
-        output = output[:, :, 0 : np.max(n_ep)]
-
-    if align == "end":
-        for i in range(len(ep)):
-            tmp = count.get(ep.start[i], ep.end[i]).values
-            n_ep[i] = tmp.shape[0]
-            output[:, i, -tmp.shape[0] :] = np.transpose(tmp)
-        output = output[:, :, -np.max(n_ep) :]
-
-    if len(count.shape) == 1:  # Removing first axis if Ts.
-        output = output[0]
-
-    return output
-
-
-def _build_tensor_from_tsd(input, ep, align, padding_value):
-    slices = [input.get_slice(s, e) for s, e in ep.values]
-    lengths = list(map(lambda sl: sl.stop - sl.start, slices))
-    n_t = max(lengths)
-    output = np.ones(shape=(len(ep), n_t, *input.shape[1:])) * padding_value
-    if align == "start":
-        for i, sl in enumerate(slices):
-            output[i, 0 : lengths[i]] = input[sl].values
-    if align == "end":
-        for i, sl in enumerate(slices):
-            output[i, -lengths[i] :] = input[sl].values
-
-    if output.ndim > 2:
-        output = np.moveaxis(output, source=[0, 1], destination=[-2, -1])
-
-    return output
+# def _build_tensor_from_tsgroup(input, ep, binsize, align, padding_value, time_unit):
+#     # Determine size of tensor
+#     binsize = float(nap.TsIndex.format_timestamps(np.array([binsize]), time_unit)[0])
+#     n_t = int(np.max(np.ceil((ep.end + binsize - ep.start) / binsize)))
+#     count = input.count(bin_size=binsize, ep=ep)
+#
+#     if len(count.shape) == 1:
+#         output = np.ones(shape=(1, len(ep), n_t)) * padding_value
+#     else:
+#         output = np.ones(shape=(count.shape[1], len(ep), n_t)) * padding_value
+#
+#     n_ep = np.zeros(len(ep), dtype="int")  # To trim to the minimum length
+#
+#     if align == "start":
+#         for i in range(len(ep)):
+#             tmp = count.get(ep.start[i], ep.end[i]).values
+#             n_ep[i] = tmp.shape[0]
+#             output[:, i, 0 : tmp.shape[0]] = np.transpose(tmp)
+#         output = output[:, :, 0 : np.max(n_ep)]
+#
+#     if align == "end":
+#         for i in range(len(ep)):
+#             tmp = count.get(ep.start[i], ep.end[i]).values
+#             n_ep[i] = tmp.shape[0]
+#             output[:, i, -tmp.shape[0] :] = np.transpose(tmp)
+#         output = output[:, :, -np.max(n_ep) :]
+#
+#     if len(count.shape) == 1:  # Removing first axis if Ts.
+#         output = output[0]
+#
+#     return output
+#
+#
+# def _build_tensor_from_tsd(input, ep, align, padding_value):
+#     slices = [input.get_slice(s, e) for s, e in ep.values]
+#     lengths = list(map(lambda sl: sl.stop - sl.start, slices))
+#     n_t = max(lengths)
+#     output = np.ones(shape=(len(ep), n_t, *input.shape[1:])) * padding_value
+#     if align == "start":
+#         for i, sl in enumerate(slices):
+#             output[i, 0 : lengths[i]] = input[sl].values
+#     if align == "end":
+#         for i, sl in enumerate(slices):
+#             output[i, -lengths[i] :] = input[sl].values
+#
+#     if output.ndim > 2:
+#         output = np.moveaxis(output, source=[0, 1], destination=[-2, -1])
+#
+#     return output
 
 
 @_validate_warping_inputs
@@ -189,11 +189,9 @@ def build_tensor(
             raise RuntimeError(
                 "When input is a TsGroup or Ts object, binsize should be specified"
             )
-        return _build_tensor_from_tsgroup(
-            input, ep, binsize, align, padding_value, time_unit
-        )
+        return input.to_trial_tensor(ep, binsize, align, padding_value, time_unit)
     else:
-        return _build_tensor_from_tsd(input, ep, align, padding_value)
+        return input.to_trial_tensor(ep, align, padding_value)
 
 
 def _warp_tensor_from_tsgroup(input, ep, num_bin):
