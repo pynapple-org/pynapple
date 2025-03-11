@@ -1,11 +1,12 @@
 """Tests of time series for `pynapple` package."""
 
 import pickle
+import re
 import warnings
 from contextlib import nullcontext as does_not_raise
 from numbers import Number
 from pathlib import Path
-import re
+
 import numpy as np
 import pandas as pd
 import pytest
@@ -766,35 +767,55 @@ class TestTimeSeriesGeneral:
             assert str(e_info.value) == "windowsize should be type int or float"
 
     @pytest.mark.parametrize(
-    "ep, align, padding_value, expectation",
-    [
-    ([], "start", np.nan, "Argument ep should be of type IntervalSet" ),
-    (nap.IntervalSet(0, 1), "a", np.nan, "align should be 'start' or 'end'"),
-    ])
+        "ep, align, padding_value, expectation",
+        [
+            ([], "start", np.nan, "Argument ep should be of type IntervalSet"),
+            (nap.IntervalSet(0, 1), "a", np.nan, "align should be 'start' or 'end'"),
+        ],
+    )
     def test_to_tensor_runtime_errors(self, tsd, ep, align, padding_value, expectation):
         with pytest.raises(RuntimeError, match=re.escape(expectation)):
             tsd.to_trial_tensor(ep, align, padding_value)
 
     def test_to_tensor(self, tsd):
-        ep = nap.IntervalSet(start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2))
+        if hasattr(tsd, "values"):
+            ep = nap.IntervalSet(
+                start=np.arange(0, 100, 20),
+                end=np.arange(0, 100, 20) + np.arange(0, 10, 2),
+            )
 
-        expected = np.ones((len(ep), 9, *tsd.shape[1:])) * np.nan
-        for i, k in zip(range(len(ep)), range(2, 10, 2)):
-            # expected[i, 0 : k + 1] = np.arange(k * 10, k * 10 + k + 1)
-            expected[i, 0: k + 1] = tsd.get(ep.start[i], ep.end[i]).values
+            expected = np.ones((len(ep), 9, *tsd.shape[1:])) * np.nan
+            for i, k in zip(range(len(ep)), range(2, 10, 2)):
+                # expected[i, 0 : k + 1] = np.arange(k * 10, k * 10 + k + 1)
+                expected[i, 0 : k + 1] = tsd.get(ep.start[i], ep.end[i]).values
 
-        if len(expected.shape) > 2: # Need to move the last axis front
-            expected = np.moveaxis(expected, -1, 0)
+            if expected.ndim > 2:  # Need to move the last axis front
+                expected = np.moveaxis(expected, (0, 1), (-2, -1))
 
-        tensor = tsd.to_trial_tensor(ep)
-        np.testing.assert_array_almost_equal(tensor, expected)
+            tensor = tsd.to_trial_tensor(ep)
+            np.testing.assert_array_almost_equal(tensor, expected)
 
-        tensor = tsd.to_trial_tensor(ep, align="start")
-        np.testing.assert_array_almost_equal(tensor, expected)
+            tensor = tsd.to_trial_tensor(ep, align="start")
+            np.testing.assert_array_almost_equal(tensor, expected)
 
-        tensor = tsd.to_trial_tensor(ep, align="start", padding_value=-1)
-        expected[np.isnan(expected)] = -1
-        np.testing.assert_array_almost_equal(tensor, expected)
+            tensor = tsd.to_trial_tensor(ep, align="start", padding_value=-1)
+            expected[np.isnan(expected)] = -1
+            np.testing.assert_array_almost_equal(tensor, expected)
+
+            expected = np.ones((len(ep), 9, *tsd.shape[1:])) * np.nan
+            for i, k in zip(range(len(ep)), range(2, 10, 2)):
+                expected[i, -k - 1 :] = tsd.get(ep.start[i], ep.end[i]).values
+
+            if expected.ndim > 2:  # Need to move the last axis front
+                expected = np.moveaxis(expected, (0, 1), (-2, -1))
+
+            tensor = tsd.to_trial_tensor(ep, align="end")
+            np.testing.assert_array_almost_equal(tensor, expected)
+
+            tensor = tsd.to_trial_tensor(ep, align="end", padding_value=-1)
+            expected[np.isnan(expected)] = -1
+            np.testing.assert_array_almost_equal(tensor, expected)
+
 
 ####################################################
 # Test for tsd
@@ -1791,6 +1812,73 @@ class TestTs:
             count = ts.count(bin_size=0.1, dtype=dtype)
             if dtype:
                 assert np.issubdtype(count.dtype, dtype)
+
+    @pytest.mark.parametrize(
+        "ep, binsize, align, padding_value, time_unit, expectation",
+        [
+            ([], 1, "start", np.nan, "s", "Argument ep should be of type IntervalSet"),
+            (
+                nap.IntervalSet(0, 1),
+                "a",
+                "start",
+                np.nan,
+                "s",
+                "binsize should be of type int or float",
+            ),
+            (
+                nap.IntervalSet(0, 1),
+                1,
+                "a",
+                np.nan,
+                "s",
+                "align should be 'start' or 'end'",
+            ),
+            (
+                nap.IntervalSet(0, 1),
+                1,
+                "start",
+                np.nan,
+                1,
+                "time_unit should be 's', 'ms' or 'us'",
+            ),
+        ],
+    )
+    def test_to_tensor_runtime_errors(
+        self, ts, ep, binsize, align, padding_value, time_unit, expectation
+    ):
+        with pytest.raises(RuntimeError, match=re.escape(expectation)):
+            ts.to_trial_tensor(ep, binsize, align, padding_value, time_unit)
+
+    def test_to_tensor(self, ts):
+        ep = nap.IntervalSet(
+            start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
+        )
+
+        expected = np.ones((len(ep), 8)) * np.nan
+        for i, k in zip(range(len(ep)), range(2, 10, 2)):
+            expected[i, 0:k] = 1
+
+        tensor = ts.to_trial_tensor(ep, binsize=1)
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = ts.to_trial_tensor(ep, binsize=1, align="start")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = ts.to_trial_tensor(ep, binsize=1, align="end")
+        np.testing.assert_array_almost_equal(tensor, np.flip(expected, axis=1))
+
+        tensor = ts.to_trial_tensor(ep, binsize=1, time_unit="s")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = ts.to_trial_tensor(ep, binsize=1e3, time_unit="ms")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = ts.to_trial_tensor(ep, binsize=1e6, time_unit="us")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = ts.to_trial_tensor(ep, binsize=1, align="start", padding_value=-1)
+        expected[np.isnan(expected)] = -1
+        np.testing.assert_array_almost_equal(tensor, expected)
 
 
 ####################################################
