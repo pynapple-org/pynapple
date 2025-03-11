@@ -933,10 +933,7 @@ class TsGroup(UserDict, _MetadataMixin):
         n_t = int(np.max(np.ceil((ep.end + binsize - ep.start) / binsize)))
         count = self.count(bin_size=binsize, ep=ep)
 
-        if len(count.shape) == 1:
-            output = np.ones(shape=(1, len(ep), n_t)) * padding_value
-        else:
-            output = np.ones(shape=(count.shape[1], len(ep), n_t)) * padding_value
+        output = np.ones(shape=(count.shape[1], len(ep), n_t)) * padding_value
 
         n_ep = np.zeros(len(ep), dtype="int")  # To trim to the minimum length
 

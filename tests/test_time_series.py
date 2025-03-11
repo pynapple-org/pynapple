@@ -5,7 +5,7 @@ import warnings
 from contextlib import nullcontext as does_not_raise
 from numbers import Number
 from pathlib import Path
-
+import re
 import numpy as np
 import pandas as pd
 import pytest
@@ -765,6 +765,36 @@ class TestTimeSeriesGeneral:
                 tsd.smooth(1, windowsize="a")
             assert str(e_info.value) == "windowsize should be type int or float"
 
+    @pytest.mark.parametrize(
+    "ep, align, padding_value, expectation",
+    [
+    ([], "start", np.nan, "Argument ep should be of type IntervalSet" ),
+    (nap.IntervalSet(0, 1), "a", np.nan, "align should be 'start' or 'end'"),
+    ])
+    def test_to_tensor_runtime_errors(self, tsd, ep, align, padding_value, expectation):
+        with pytest.raises(RuntimeError, match=re.escape(expectation)):
+            tsd.to_trial_tensor(ep, align, padding_value)
+
+    def test_to_tensor(self, tsd):
+        ep = nap.IntervalSet(start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2))
+
+        expected = np.ones((len(ep), 9, *tsd.shape[1:])) * np.nan
+        for i, k in zip(range(len(ep)), range(2, 10, 2)):
+            # expected[i, 0 : k + 1] = np.arange(k * 10, k * 10 + k + 1)
+            expected[i, 0: k + 1] = tsd.get(ep.start[i], ep.end[i]).values
+
+        if len(expected.shape) > 2: # Need to move the last axis front
+            expected = np.moveaxis(expected, -1, 0)
+
+        tensor = tsd.to_trial_tensor(ep)
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = tsd.to_trial_tensor(ep, align="start")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = tsd.to_trial_tensor(ep, align="start", padding_value=-1)
+        expected[np.isnan(expected)] = -1
+        np.testing.assert_array_almost_equal(tensor, expected)
 
 ####################################################
 # Test for tsd

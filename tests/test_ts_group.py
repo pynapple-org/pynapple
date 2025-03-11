@@ -5,7 +5,7 @@ import warnings
 from collections import UserDict
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
-
+import re
 import numpy as np
 import pandas as pd
 import pytest
@@ -581,6 +581,55 @@ class TestTsGroup1:
             str(e_info.value)
             == """Unknown argument format. Must be pandas.Series, numpy.ndarray or a string from one of the following values : [rate, alpha]"""
         )
+
+    def test_to_tensor(self, group):
+        tsgroup = nap.TsGroup(group)
+        ep = nap.IntervalSet(start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2))
+
+        expected = np.ones((len(group), len(ep), 8)) * np.nan
+        for i, k in zip(range(len(ep)), range(2, 10, 2)):
+            expected[:, i, 0:k] = 1
+        for i, k in zip(range(len(group)), [1, 2, 5]):
+            expected[i] *= k
+
+        tensor = tsgroup.to_trial_tensor(ep, binsize=1)
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = tsgroup[[0]].to_trial_tensor(ep, binsize=1)
+        np.testing.assert_array_almost_equal(tensor, expected[0:1])
+
+        tensor = tsgroup.to_trial_tensor(ep, binsize=1, align="start")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = tsgroup.to_trial_tensor(ep, binsize=1, align="end")
+        np.testing.assert_array_almost_equal(tensor, np.flip(expected, axis=2))
+
+        tensor = tsgroup.to_trial_tensor(ep, binsize=1, time_unit="s")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = tsgroup.to_trial_tensor(ep, binsize=1e3, time_unit="ms")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = tsgroup.to_trial_tensor(ep, binsize=1e6, time_unit="us")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = tsgroup.to_trial_tensor(ep, binsize=1, align="start", padding_value=-1)
+        expected[np.isnan(expected)] = -1
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+    @pytest.mark.parametrize(
+    "ep, binsize, align, padding_value, time_unit, expectation",
+    [
+    ([], 1, "start", np.nan, "s", "Argument ep should be of type IntervalSet" ),
+    (nap.IntervalSet(0,1), "a", "start", np.nan, "s", "binsize should be of type int or float"),
+    (nap.IntervalSet(0, 1), 1, "a", np.nan, "s", "align should be 'start' or 'end'"),
+    (nap.IntervalSet(0, 1), 1, "start", np.nan, 1, "time_unit should be 's', 'ms' or 'us'"),
+    ])
+    def test_to_tensor_runtime_errors(self, group, ep, binsize, align, padding_value, time_unit, expectation):
+        tsgroup = nap.TsGroup(group)
+        with pytest.raises(RuntimeError, match=re.escape(expectation)):
+            tsgroup.to_trial_tensor(ep, binsize, align, padding_value, time_unit)
+
 
     def test_save_npz(self, group):
 
