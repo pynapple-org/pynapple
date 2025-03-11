@@ -263,6 +263,39 @@ plt.title("tsd.threshold(0.5)")
 plt.show()
 ```
 
+### `to_trial_tensor`
+
+The method `to_trial_tensor` create a numpy array from an `IntervalSet` either by slicing time series or by counting
+events in `TsGroup` or `Tsd`. The first dimension depends on the object.
+
+```{code-cell} ipython3
+ep = nap.IntervalSet([0, 10, 30, 50], metadata={'trials':[1, 2]})
+print(tsgroup, "\n", ep)
+```
+
+Here a tensor of shape (3, 2, 10) is created corresponding to (number of neurons, number of trials, number of bins).
+
+
+```{code-cell} ipython3
+tensor = tsgroup.to_trial_tensor(ep, binsize=1)
+print(tensor, "\n")
+print("Tensor shape = ", tensor.shape)
+```
+
+Since trial 2 is twice longer than trial 1, the array is padded with nans. The parameter `padding_value` controls this 
+behavior.
+
+It is also possible to construct a trial-based tensor from a time series. In the same logic, the tensor is padded with a 
+default nan value. In this case, the parameter `bin_size` is absent. The final shape of the tensor will depend on the
+time series dimensions as well as the number of time points found within the trial intervals.
+
+```{code-cell} ipython3
+tensor = tsd.to_trial_tensor(ep, padding_value=-1)
+print(tensor, "\n")
+print("Tensor shape = ", tensor.shape)
+```
+
+
 
 ### Mapping between `TsGroup` and `Tsd`
 
