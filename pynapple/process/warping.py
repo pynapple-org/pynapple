@@ -40,7 +40,6 @@ def _validate_warping_inputs(func):
     return wrapper
 
 
-
 @_validate_warping_inputs
 def build_tensor(
     input, ep, binsize=None, align="start", padding_value=np.nan, time_unit="s"
