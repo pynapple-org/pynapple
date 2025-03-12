@@ -238,7 +238,7 @@ def compute_event_trigger_average(
     time_unit="s",
 ):
     """
-    Bin the event timestamps within binsize and compute the Event Trigger Average (ETA) within `windowsize`.
+    Bin the event timestamps within binsize and compute the Event-Triggered Average (ETA) within `windowsize`.
     If C is the event count matrix and `feature` is a Tsd array, the function computes
     the Hankel matrix H from windowsize=(-t1,+t2) by offseting the Tsd array.
 
