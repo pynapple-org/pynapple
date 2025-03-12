@@ -701,10 +701,10 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         output = np.ones(shape=(len(ep), n_t, *self.shape[1:])) * padding_value
         if align == "start":
             for i, sl in enumerate(slices):
-                output[i, 0 : lengths[i]] = self[sl].values
+                output[i, 0 : lengths[i]] = self.values[sl]
         if align == "end":
             for i, sl in enumerate(slices):
-                output[i, -lengths[i] :] = self[sl].values
+                output[i, -lengths[i] :] = self.values[sl]
 
         if output.ndim > 2:
             output = np.moveaxis(output, source=[0, 1], destination=[-2, -1])
