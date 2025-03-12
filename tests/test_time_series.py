@@ -775,7 +775,10 @@ class TestTimeSeriesGeneral:
     )
     def test_to_tensor_runtime_errors(self, tsd, ep, align, padding_value, expectation):
         with pytest.raises(RuntimeError, match=re.escape(expectation)):
-            tsd.to_trial_tensor(ep, align, padding_value)
+            if isinstance(tsd, nap.Ts):
+                tsd.trial_count(ep, align, padding_value)
+            else:
+                tsd.to_trial_tensor(ep, align, padding_value)
 
     def test_to_tensor(self, tsd):
         if hasattr(tsd, "values"):
@@ -1843,13 +1846,13 @@ class TestTs:
             ),
         ],
     )
-    def test_to_tensor_runtime_errors(
+    def test_trial_count_runtime_errors(
         self, ts, ep, binsize, align, padding_value, time_unit, expectation
     ):
         with pytest.raises(RuntimeError, match=re.escape(expectation)):
-            ts.to_trial_tensor(ep, binsize, align, padding_value, time_unit)
+            ts.trial_count(ep, binsize, align, padding_value, time_unit)
 
-    def test_to_tensor(self, ts):
+    def test_trial_count(self, ts):
         ep = nap.IntervalSet(
             start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
         )
@@ -1858,25 +1861,25 @@ class TestTs:
         for i, k in zip(range(len(ep)), range(2, 10, 2)):
             expected[i, 0:k] = 1
 
-        tensor = ts.to_trial_tensor(ep, binsize=1)
+        tensor = ts.trial_count(ep, binsize=1)
         np.testing.assert_array_almost_equal(tensor, expected)
 
-        tensor = ts.to_trial_tensor(ep, binsize=1, align="start")
+        tensor = ts.trial_count(ep, binsize=1, align="start")
         np.testing.assert_array_almost_equal(tensor, expected)
 
-        tensor = ts.to_trial_tensor(ep, binsize=1, align="end")
+        tensor = ts.trial_count(ep, binsize=1, align="end")
         np.testing.assert_array_almost_equal(tensor, np.flip(expected, axis=1))
 
-        tensor = ts.to_trial_tensor(ep, binsize=1, time_unit="s")
+        tensor = ts.trial_count(ep, binsize=1, time_unit="s")
         np.testing.assert_array_almost_equal(tensor, expected)
 
-        tensor = ts.to_trial_tensor(ep, binsize=1e3, time_unit="ms")
+        tensor = ts.trial_count(ep, binsize=1e3, time_unit="ms")
         np.testing.assert_array_almost_equal(tensor, expected)
 
-        tensor = ts.to_trial_tensor(ep, binsize=1e6, time_unit="us")
+        tensor = ts.trial_count(ep, binsize=1e6, time_unit="us")
         np.testing.assert_array_almost_equal(tensor, expected)
 
-        tensor = ts.to_trial_tensor(ep, binsize=1, align="start", padding_value=-1)
+        tensor = ts.trial_count(ep, binsize=1, align="start", padding_value=-1)
         expected[np.isnan(expected)] = -1
         np.testing.assert_array_almost_equal(tensor, expected)
 

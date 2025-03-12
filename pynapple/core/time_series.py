@@ -641,7 +641,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
     def to_trial_tensor(self, ep, align="start", padding_value=np.nan):
         """
         Return trial-based tensor from an IntervalSet object. The order of the tensor array is
-        (number of time series, number of trials, number of  time points)
+        (shape of time series, number of trials, number of  time points)
 
         The `align` parameter controls how the time series are aligned. If `align="start"`, the time
         series are aligned to the start of each trial. If `align="end"`, the time series are aligned

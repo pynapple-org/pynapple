@@ -46,17 +46,18 @@ def build_tensor(
 ):
     """
     Return trial-based tensor from an IntervalSet object.
-    This is equivalent to calling `input.to_trial_tensor`.
+    This is equivalent to calling `input.to_trial_tensor` for Tsd, TsdFrame, and TsdTensor objects,
+    or is equivalent to calling `input.trial_count` for Ts and TsGroup objects.
 
-    - If `input` is a `TsGroup`, returns a numpy array of shape (number of group element, number of trial, number of time bins). The `binsize` parameter determines the number of time bins.
+    - If `input` is a `TsGroup`, returns a numpy array of shape (number of group elements, number of trials, number of time bins). The `binsize` parameter determines the number of time bins.
 
-    - If `input` is `Tsd`, `TsdFrame` or `TsdTensor`, returns a numpy array of shape (shape of time series, number of trial, number of  time points).
+    - If `input` is `Tsd`, `TsdFrame` or `TsdTensor`, returns a numpy array of shape (shape of time series, number of trials, number of  time points).
 
     The `align` parameter controls how the time series are aligned. If `align="start"`, the time
-    series are aligned to the start of the trials. If `align="end"`, the time series are aligned
-    to the end of the trials.
+    series are aligned to the start of each trial. If `align="end"`, the time series are aligned
+    to the end of each trial.
 
-    If trials are uneven durations, the returned array is padded. The parameter `padding_value`
+    If trials have uneven durations, the returned array is padded. The parameter `padding_value`
     determine which value is used to pad the array. Default is NaN.
 
     Parameters
@@ -66,6 +67,7 @@ def build_tensor(
     ep : IntervalSet
         Epochs holding the trials. Each interval can be of unequal size.
     binsize : Number, optional
+        Size of the time bins for TsGroup and Ts objects.
     align: str, optional
         How to align the time series ('start' [default], 'end')
     padding_value: Number, optional
@@ -139,7 +141,7 @@ def build_tensor(
             raise RuntimeError(
                 "When input is a TsGroup or Ts object, binsize should be specified"
             )
-        return input.to_trial_tensor(ep, binsize, align, padding_value, time_unit)
+        return input.trial_count(ep, binsize, align, padding_value, time_unit)
     else:
         return input.to_trial_tensor(ep, align, padding_value)
 

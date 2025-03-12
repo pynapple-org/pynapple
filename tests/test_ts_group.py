@@ -583,7 +583,7 @@ class TestTsGroup1:
             == """Unknown argument format. Must be pandas.Series, numpy.ndarray or a string from one of the following values : [rate, alpha]"""
         )
 
-    def test_to_tensor(self, group):
+    def test_trial_count(self, group):
         tsgroup = nap.TsGroup(group)
         ep = nap.IntervalSet(
             start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
@@ -595,28 +595,28 @@ class TestTsGroup1:
         for i, k in zip(range(len(group)), [1, 2, 5]):
             expected[i] *= k
 
-        tensor = tsgroup.to_trial_tensor(ep, binsize=1)
+        tensor = tsgroup.trial_count(ep, binsize=1)
         np.testing.assert_array_almost_equal(tensor, expected)
 
-        tensor = tsgroup[[0]].to_trial_tensor(ep, binsize=1)
+        tensor = tsgroup[[0]].trial_count(ep, binsize=1)
         np.testing.assert_array_almost_equal(tensor, expected[0:1])
 
-        tensor = tsgroup.to_trial_tensor(ep, binsize=1, align="start")
+        tensor = tsgroup.trial_count(ep, binsize=1, align="start")
         np.testing.assert_array_almost_equal(tensor, expected)
 
-        tensor = tsgroup.to_trial_tensor(ep, binsize=1, align="end")
+        tensor = tsgroup.trial_count(ep, binsize=1, align="end")
         np.testing.assert_array_almost_equal(tensor, np.flip(expected, axis=2))
 
-        tensor = tsgroup.to_trial_tensor(ep, binsize=1, time_unit="s")
+        tensor = tsgroup.trial_count(ep, binsize=1, time_unit="s")
         np.testing.assert_array_almost_equal(tensor, expected)
 
-        tensor = tsgroup.to_trial_tensor(ep, binsize=1e3, time_unit="ms")
+        tensor = tsgroup.trial_count(ep, binsize=1e3, time_unit="ms")
         np.testing.assert_array_almost_equal(tensor, expected)
 
-        tensor = tsgroup.to_trial_tensor(ep, binsize=1e6, time_unit="us")
+        tensor = tsgroup.trial_count(ep, binsize=1e6, time_unit="us")
         np.testing.assert_array_almost_equal(tensor, expected)
 
-        tensor = tsgroup.to_trial_tensor(ep, binsize=1, align="start", padding_value=-1)
+        tensor = tsgroup.trial_count(ep, binsize=1, align="start", padding_value=-1)
         expected[np.isnan(expected)] = -1
         np.testing.assert_array_almost_equal(tensor, expected)
 
@@ -650,12 +650,12 @@ class TestTsGroup1:
             ),
         ],
     )
-    def test_to_tensor_runtime_errors(
+    def test_trial_count_runtime_errors(
         self, group, ep, binsize, align, padding_value, time_unit, expectation
     ):
         tsgroup = nap.TsGroup(group)
         with pytest.raises(RuntimeError, match=re.escape(expectation)):
-            tsgroup.to_trial_tensor(ep, binsize, align, padding_value, time_unit)
+            tsgroup.trial_count(ep, binsize, align, padding_value, time_unit)
 
     def test_save_npz(self, group):
 
