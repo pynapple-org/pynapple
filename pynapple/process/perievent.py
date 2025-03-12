@@ -3,7 +3,6 @@ Functions to realign time series relative to a reference time.
 """
 
 import inspect
-import warnings
 from functools import wraps
 from numbers import Number
 
