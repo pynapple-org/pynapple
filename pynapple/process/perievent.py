@@ -3,6 +3,7 @@ Functions to realign time series relative to a reference time.
 """
 
 import inspect
+import warnings
 from functools import wraps
 from numbers import Number
 
@@ -28,6 +29,7 @@ def _validate_perievent_inputs(func):
             "feature": (nap.Tsd, nap.TsdFrame, nap.TsdTensor),
             "binsize": (Number,),
             "windowsize": (tuple, Number),
+            "minmax": (tuple, Number),
             "time_unit": (str,),
         }
         for param, param_type in parameters_type.items():
@@ -86,11 +88,11 @@ def _align_tsd(tsd, tref, window, new_time_support):
 
 
 @_validate_perievent_inputs
-def compute_perievent(timestamps, tref, windowsize, time_unit="s"):
+def compute_perievent(timestamps, tref, minmax, time_unit="s", **kwargs):
     """
     Center the timestamps of a time series object or a time series group around the timestamps given by the `tref` argument.
-    `windowsize` indicates the start and end of the window. If `windowsize=(-5, 10)`, the window will be from -5 second to 10 second.
-    If `windowsize=10`, the window will be from -10 second to 10 second.
+    `minmax` indicates the start and end of the window. If `minmax=(-5, 10)`, the window will be from -5 second to 10 second.
+    If `minmax=10`, the window will be from -10 second to 10 second.
 
     To center the values of a time series around a set of timestamps, you can use `compute_perievent_continuous`.
 
@@ -102,10 +104,10 @@ def compute_perievent(timestamps, tref, windowsize, time_unit="s"):
         If TsGroup, returns a dictionary of TsGroup
     tref : Ts, Tsd, TsdFrame or TsdTensor.
         The time reference of the event to align to
-    windowsize : tuple of int/float or int or float
+    minmax : tuple of int/float or int or float
         The window size. Can be unequal on each side i.e. (-500, 1000).
     time_unit : str, optional
-        Time units of the windowsize ('s' [default], 'ms', 'us').
+        Time units of the minmax ('s' [default], 'ms', 'us').
 
     Returns
     -------
@@ -117,25 +119,21 @@ def compute_perievent(timestamps, tref, windowsize, time_unit="s"):
     ------
     RuntimeError
         If `time_unit` not in ["s", "ms", "us"]
-        If `windowsize` is wrongly defined
+        If `minmax` is wrongly defined
     """
     if time_unit not in ["s", "ms", "us"]:
         raise RuntimeError("time_unit should be 's', 'ms' or 'us'")
 
-    if isinstance(windowsize, Number):
-        windowsize = np.array([windowsize, windowsize], dtype=np.float64)
+    if isinstance(minmax, Number):
+        minmax = np.array([minmax, minmax], dtype=np.float64)
 
-    if len(windowsize) != 2:
-        raise RuntimeError(
-            "windowsize should be a tuple of 2 numbers or a single number."
-        )
+    if len(minmax) != 2:
+        raise RuntimeError("minmax should be a tuple of 2 numbers or a single number.")
 
-    if not all([isinstance(x, Number) for x in windowsize]):
-        raise RuntimeError(
-            "windowsize should be a tuple of 2 numbers or a single number."
-        )
+    if not all([isinstance(x, Number) for x in minmax]):
+        raise RuntimeError("minmax should be a tuple of 2 numbers or a single number.")
 
-    window = np.abs(nap.TsIndex.format_timestamps(np.array(windowsize), time_unit))
+    window = np.abs(nap.TsIndex.format_timestamps(np.array(minmax), time_unit))
 
     new_time_support = nap.IntervalSet(start=-window[0], end=window[1])
 
@@ -149,11 +147,13 @@ def compute_perievent(timestamps, tref, windowsize, time_unit="s"):
 
 
 @_validate_perievent_inputs
-def compute_perievent_continuous(timeseries, tref, windowsize, ep=None, time_unit="s"):
+def compute_perievent_continuous(
+    timeseries, tref, minmax, ep=None, time_unit="s", **kwargs
+):
     """
     Center continuous time series around the timestamps given by the 'tref' argument.
-    `windowsize` indicates the start and end of the window. If `windowsize=(-5, 10)`, the window will be from -5 second to 10 second.
-    If `windowsize=10`, the window will be from -10 second to 10 second.
+    `minmax` indicates the start and end of the window. If `minmax=(-5, 10)`, the window will be from -5 second to 10 second.
+    If `minmax=10`, the window will be from -10 second to 10 second.
 
     To realign timestamps around a set of timestamps, you can use `compute_perievent`.
 
@@ -165,12 +165,12 @@ def compute_perievent_continuous(timeseries, tref, windowsize, ep=None, time_uni
         The time series to align to tref.
     tref : Ts, Tsd, TsdFrame or TsdTensor
         The time reference of the event to align to
-    windowsize : tuple of int/float or int or float
+    minmax : tuple of int/float or int or float
         The window size. Can be unequal on each side i.e. (-500, 1000).
     ep : IntervalSet, optional
         The epochs to perform the operation. If None, the default is the time support of the data.
     time_unit : str, optional
-        Time units of the windowsize ('s' [default], 'ms', 'us').
+        Time units of the minmax ('s' [default], 'ms', 'us').
 
     Returns
     -------
@@ -186,23 +186,19 @@ def compute_perievent_continuous(timeseries, tref, windowsize, ep=None, time_uni
     if time_unit not in ["s", "ms", "us"]:
         raise RuntimeError("time_unit should be 's', 'ms' or 'us'")
 
-    if isinstance(windowsize, Number):
-        windowsize = np.array([windowsize, windowsize], dtype=np.float64)
+    if isinstance(minmax, Number):
+        minmax = np.array([minmax, minmax], dtype=np.float64)
 
-    if len(windowsize) != 2:
-        raise RuntimeError(
-            "windowsize should be a tuple of 2 numbers or a single number."
-        )
+    if len(minmax) != 2:
+        raise RuntimeError("minmax should be a tuple of 2 numbers or a single number.")
 
-    if not all([isinstance(x, Number) for x in windowsize]):
-        raise RuntimeError(
-            "windowsize should be a tuple of 2 numbers or a single number."
-        )
+    if not all([isinstance(x, Number) for x in minmax]):
+        raise RuntimeError("minmax should be a tuple of 2 numbers or a single number.")
 
     if ep is None:
         ep = timeseries.time_support
 
-    window = np.abs(nap.TsIndex.format_timestamps(np.array(windowsize), time_unit))
+    window = np.abs(nap.TsIndex.format_timestamps(np.array(minmax), time_unit))
 
     time_array = timeseries.index.values
     data_array = timeseries.values
@@ -210,14 +206,14 @@ def compute_perievent_continuous(timeseries, tref, windowsize, ep=None, time_uni
     starts = ep.start
     ends = ep.end
 
-    binsize = time_array[1] - time_array[0]
-    idx1 = -np.arange(0, window[0] + binsize, binsize)[::-1][:-1]
-    idx2 = np.arange(0, window[1] + binsize, binsize)[1:]
+    bin_size = time_array[1] - time_array[0]
+    idx1 = -np.arange(0, window[0] + bin_size, bin_size)[::-1][:-1]
+    idx2 = np.arange(0, window[1] + bin_size, bin_size)[1:]
     time_idx = np.hstack((idx1, np.zeros(1), idx2))
-    windowsize = np.array([idx1.shape[0], idx2.shape[0]])
+    minmax = np.array([idx1.shape[0], idx2.shape[0]])
 
     new_data_array = _perievent_continuous(
-        time_array, data_array, time_target_array, starts, ends, windowsize
+        time_array, data_array, time_target_array, starts, ends, minmax
     )
 
     time_support = nap.IntervalSet(start=-window[0], end=window[1])
@@ -238,7 +234,7 @@ def compute_event_trigger_average(
     time_unit="s",
 ):
     """
-    Bin the event timestamps within binsize and compute the Event-Triggered Average (ETA) within `windowsize`.
+    Bin the event timestamps within bin_size and compute the Event-Triggered Average (ETA) within `windowsize`.
     If C is the event count matrix and `feature` is a Tsd array, the function computes
     the Hankel matrix H from windowsize=(-t1,+t2) by offseting the Tsd array.
 
