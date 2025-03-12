@@ -2318,7 +2318,7 @@ class Ts(_Base):
         ep : IntervalSet
             Epochs holding the trials. Each interval can be of unequal size.
         binsize : Number
-            The size of the time bins
+            The size of the time bins.
         align: str, optional
             How to align the time series ('start' [default], 'end')
         padding_value: Number, optional

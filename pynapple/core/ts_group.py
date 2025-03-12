@@ -850,20 +850,20 @@ class TsGroup(UserDict, _MetadataMixin):
 
         return toreturn
 
-    def to_trial_tensor(
+    def trial_count(
         self, ep, binsize, align="start", padding_value=np.nan, time_unit="s"
     ):
         """
         Return trial-based count tensor from an IntervalSet object. The order of the tensor array is
-        (number of group element, number of trial, number of time bins).
+        (number of group elements, number of trials, number of time bins).
 
         The `binsize` parameter determines the number of time bins.
 
         The `align` parameter controls how the time series are aligned. If `align="start"`, the time
-        series are aligned to the start of the trials. If `align="end"`, the time series are aligned
-        to the end of the trials.
+        series are aligned to the start of each trial. If `align="end"`, the time series are aligned
+        to the end of each trial.
 
-        If trials are uneven durations, the returned array is padded. The parameter `padding_value`
+        If trials have uneven durations, the returned array is padded. The parameter `padding_value`
         determine which value is used to pad the array. Default is NaN.
 
         Parameters
@@ -871,6 +871,7 @@ class TsGroup(UserDict, _MetadataMixin):
         ep : IntervalSet
             Epochs holding the trials. Each interval can be of unequal size.
         binsize : Number
+            The size of the time bins.
         align: str, optional
             How to align the time series ('start' [default], 'end')
         padding_value: Number, optional
@@ -903,7 +904,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
         Create a trial-based tensor by counting events within 1 second bin for each interval of `ep`.
 
-        >>> tensor = group.to_trial_tensor(ep, binsize=1)
+        >>> tensor = group.trial_count(ep, binsize=1)
         >>> tensor
         array([[[ 1.,  1., nan, nan, nan, nan, nan, nan],
                 [ 1.,  1.,  1.,  1., nan, nan, nan, nan],
@@ -912,7 +913,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
         By default, the time series are aligned to the start of the epochs. The parameter `align` control this behavior.
 
-        >>> tensor = group.to_trial_tensor(ep, binsize=1, align="end")
+        >>> tensor = group.trial_count(ep, binsize=1, align="end")
         >>> tensor
         array([[[nan, nan, nan, nan, nan, nan,  1.,  1.],
                 [nan, nan, nan, nan,  1.,  1.,  1.,  1.],
