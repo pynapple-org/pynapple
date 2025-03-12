@@ -641,13 +641,13 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
     def to_trial_tensor(self, ep, align="start", padding_value=np.nan):
         """
         Return trial-based tensor from an IntervalSet object. The order of the tensor array is
-        (shape of time series, number of trial, number of  time points)
+        (number of time series, number of trials, number of  time points)
 
         The `align` parameter controls how the time series are aligned. If `align="start"`, the time
-        series are aligned to the start of the trials. If `align="end"`, the time series are aligned
-        to the end of the trials.
+        series are aligned to the start of each trial. If `align="end"`, the time series are aligned
+        to the end of each trial.
 
-        If trials are uneven durations, the returned array is padded. The parameter `padding_value`
+        If trials have uneven durations, the returned array is padded. The parameter `padding_value`
         determine which value is used to pad the array. Default is NaN.
 
         Parameters
@@ -2297,27 +2297,28 @@ class Ts(_Base):
 
         return
 
-    def to_trial_tensor(
+    def trial_count(
         self, ep, binsize, align="start", padding_value=np.nan, time_unit="s"
     ):
         """
         Return trial-based count tensor from an IntervalSet object. The order of the tensor array is
-        (number of trial, number of time bins).
+        (number of trials, number of time bins).
 
         The `binsize` parameter determines the number of time bins.
 
         The `align` parameter controls how the time series are aligned. If `align="start"`, the time
-        series are aligned to the start of the trials. If `align="end"`, the time series are aligned
-        to the end of the trials.
+        series are aligned to the start of each trial. If `align="end"`, the time series are aligned
+        to the end of each trial.
 
-        If trials are uneven durations, the returned array is padded. The parameter `padding_value`
-        determine which value is used to pad the array. Default is NaN.
+        If trials have uneven durations, the returned array is padded. The parameter `padding_value`
+        determines which value is used to pad the array. Default is NaN.
 
         Parameters
         ----------
         ep : IntervalSet
             Epochs holding the trials. Each interval can be of unequal size.
         binsize : Number
+            The size of the time bins
         align: str, optional
             How to align the time series ('start' [default], 'end')
         padding_value: Number, optional
