@@ -47,10 +47,10 @@ ep = nap.IntervalSet(
 print(ep)
 ```
 
-To build a trial-based tensor from a `TsGroup` object with 1 second bins: 
+To build a trial-based count tensor from a `TsGroup` object with 1 second bins: 
 
 ```{code-cell} ipython3
-tensor = nap.build_tensor(tsgroup, ep, binsize=1, padding_value=np.nan)
+tensor = nap.build_tensor(tsgroup, ep, bin_size=1, padding_value=np.nan)
 
 print(tensor)
 ```
@@ -85,14 +85,14 @@ plt.show()
 :::{note}
 This function is also available at the object level.
 ```
->>> tensor = tsgroup.to_trial_tensor(ep, binsize=1, padding_value=np.nan)
+>>> tensor = tsgroup.trial_count(ep, bin_size=1, padding_value=np.nan)
 ```
 :::
 
 
 
 
-It is also possible to create a trial-based tensor from a time series. In this case the argument `binsize` is not used.
+It is also possible to create a trial-based tensor from a time series. In this case the argument `bin_size` is not used.
 
 ```{code-cell} ipython3
 tsdframe = nap.TsdFrame(t=np.arange(100), d=np.arange(200).reshape(2,100).T)

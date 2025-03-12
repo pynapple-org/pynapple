@@ -62,7 +62,7 @@ Filtering time series <user_guide/12_filtering>
 ```
 
 ```{toctree}
-Building trial-based tensor <user_guide/13_warping>
+Building trial-based tensors <user_guide/13_warping>
 ```
 
 :::

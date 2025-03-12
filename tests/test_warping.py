@@ -44,7 +44,7 @@ def get_ep():
 
 
 @pytest.mark.parametrize(
-    "input, ep, binsize, align, padding_value, time_unit, expectation",
+    "input, ep, bin_size, align, padding_value, time_unit, expectation",
     [
         (
             {},
@@ -71,7 +71,7 @@ def get_ep():
             "start",
             np.nan,
             "s",
-            "Invalid type. Parameter binsize must be of type ['Number'].",
+            "Invalid type. Parameter bin_size must be of type ['Number'].",
         ),
         (
             get_tsd(),
@@ -103,13 +103,13 @@ def get_ep():
     ],
 )
 def test_build_tensor_type_error(
-    input, ep, binsize, align, padding_value, time_unit, expectation
+    input, ep, bin_size, align, padding_value, time_unit, expectation
 ):
     with pytest.raises(TypeError, match=re.escape(expectation)):
         nap.build_tensor(
             input=input,
             ep=ep,
-            binsize=binsize,
+            bin_size=bin_size,
             align=align,
             padding_value=padding_value,
             time_unit=time_unit,
@@ -122,7 +122,7 @@ def test_build_tensor_runtime_error():
 
     with pytest.raises(
         RuntimeError,
-        match=r"When input is a TsGroup or Ts object, binsize should be specified",
+        match=r"When input is a TsGroup or Ts object, bin_size should be specified",
     ):
         nap.build_tensor(group, ep)
 
@@ -143,25 +143,25 @@ def test_build_tensor_with_group():
     for i, k in zip(range(len(group)), [1, 2, 5]):
         expected[i] *= k
 
-    tensor = nap.build_tensor(group, ep, binsize=1)
+    tensor = nap.build_tensor(group, ep, bin_size=1)
     np.testing.assert_array_almost_equal(tensor, expected)
 
-    tensor = nap.build_tensor(group, ep, binsize=1, align="start")
+    tensor = nap.build_tensor(group, ep, bin_size=1, align="start")
     np.testing.assert_array_almost_equal(tensor, expected)
 
-    tensor = nap.build_tensor(group, ep, binsize=1, align="end")
+    tensor = nap.build_tensor(group, ep, bin_size=1, align="end")
     np.testing.assert_array_almost_equal(tensor, np.flip(expected, axis=2))
 
-    tensor = nap.build_tensor(group, ep, binsize=1, time_unit="s")
+    tensor = nap.build_tensor(group, ep, bin_size=1, time_unit="s")
     np.testing.assert_array_almost_equal(tensor, expected)
 
-    tensor = nap.build_tensor(group, ep, binsize=1e3, time_unit="ms")
+    tensor = nap.build_tensor(group, ep, bin_size=1e3, time_unit="ms")
     np.testing.assert_array_almost_equal(tensor, expected)
 
-    tensor = nap.build_tensor(group, ep, binsize=1e6, time_unit="us")
+    tensor = nap.build_tensor(group, ep, bin_size=1e6, time_unit="us")
     np.testing.assert_array_almost_equal(tensor, expected)
 
-    tensor = nap.build_tensor(group, ep, binsize=1, align="start", padding_value=-1)
+    tensor = nap.build_tensor(group, ep, bin_size=1, align="start", padding_value=-1)
     expected[np.isnan(expected)] = -1
     np.testing.assert_array_almost_equal(tensor, expected)
 
@@ -174,25 +174,25 @@ def test_build_tensor_with_ts():
     for i, k in zip(range(len(ep)), range(2, 10, 2)):
         expected[i, 0:k] = 1
 
-    tensor = nap.build_tensor(ts, ep, binsize=1)
+    tensor = nap.build_tensor(ts, ep, bin_size=1)
     np.testing.assert_array_almost_equal(tensor, expected)
 
-    tensor = nap.build_tensor(ts, ep, binsize=1, align="start")
+    tensor = nap.build_tensor(ts, ep, bin_size=1, align="start")
     np.testing.assert_array_almost_equal(tensor, expected)
 
-    tensor = nap.build_tensor(ts, ep, binsize=1, align="end")
+    tensor = nap.build_tensor(ts, ep, bin_size=1, align="end")
     np.testing.assert_array_almost_equal(tensor, np.flip(expected, axis=1))
 
-    tensor = nap.build_tensor(ts, ep, binsize=1, time_unit="s")
+    tensor = nap.build_tensor(ts, ep, bin_size=1, time_unit="s")
     np.testing.assert_array_almost_equal(tensor, expected)
 
-    tensor = nap.build_tensor(ts, ep, binsize=1e3, time_unit="ms")
+    tensor = nap.build_tensor(ts, ep, bin_size=1e3, time_unit="ms")
     np.testing.assert_array_almost_equal(tensor, expected)
 
-    tensor = nap.build_tensor(ts, ep, binsize=1e6, time_unit="us")
+    tensor = nap.build_tensor(ts, ep, bin_size=1e6, time_unit="us")
     np.testing.assert_array_almost_equal(tensor, expected)
 
-    tensor = nap.build_tensor(ts, ep, binsize=1, align="start", padding_value=-1)
+    tensor = nap.build_tensor(ts, ep, bin_size=1, align="start", padding_value=-1)
     expected[np.isnan(expected)] = -1
     np.testing.assert_array_almost_equal(tensor, expected)
 

@@ -265,7 +265,14 @@ plt.show()
 
 ### `to_trial_tensor`
 
-`Tsd`, `TsdFrame`, and `TsdTensor` all have the method `to_trial_tensor`, which creates a numpy array from an `IntervalSet` by slicing the time series. The resulting tensor has shape (shape of time series, number of trials, number of time points), where the first dimension(s) is dependent on the object. If the trials have uneven durations, the tensor is padded with a default NaN value. 
+`Tsd`, `TsdFrame`, and `TsdTensor` all have the method `to_trial_tensor`, which creates a numpy array from an `IntervalSet` by slicing the time series. The resulting tensor has shape (shape of time series, number of trials, number of time points), where the first dimension(s) is dependent on the object. 
+
+```{code-cell} ipython3
+ep = nap.IntervalSet([0, 10, 30, 50], metadata={'trials':[1, 2]})
+print(tsgroup, "\n", ep)
+```
+
+The following example returns a tensor with shape (2, 21), for 2 trials and 21 time points, where the first dimension is dropped due to this being a `Tsd` object.
 
 ```{code-cell} ipython3
 tensor = tsd.to_trial_tensor(ep)
@@ -273,7 +280,7 @@ print(tensor, "\n")
 print("Tensor shape = ", tensor.shape)
 ```
 
-The padding value can be changed by setting the optional parameter `padding_value`.
+Since trial 2 is twice as long as trial 1, the array is padded with NaNs. The padding value can be changed by setting the parameter `padding_value`.
 
 ```{code-cell} ipython3
 tensor = tsd.to_trial_tensor(ep, padding_value=-1)
@@ -294,20 +301,12 @@ print("Tensor shape = ", tensor.shape)
 `TsGroup` and `Ts` objects each have the method `trial_count`, which builds a trial-based count tensor from an `IntervalSet` object. Similar to `count`, this function requires a `bin_size` parameter which determines the number of time bins within each trial. The resulting tensor has shape (number of group elements, number of trials, number of time bins) for `TsGroup` objects, or (number of trials, number of time bins) for `Ts` objects. 
 
 ```{code-cell} ipython3
-ep = nap.IntervalSet([0, 10, 30, 50], metadata={'trials':[1, 2]})
-print(tsgroup, "\n", ep)
-```
-
-Here a tensor of shape (3, 2, 10) is created corresponding to (number of neurons, number of trials, number of bins).
-
-
-```{code-cell} ipython3
 tensor = tsgroup.trial_count(ep, bin_size=1)
 print(tensor, "\n")
 print("Tensor shape = ", tensor.shape)
 ```
 
-Since trial 2 is twice as long as trial 1, the array is padded with NaNs. Similar to `to_trial_tensor`, the parameter `padding_value` controls this behavior. Additionally, the parameter `align` can change whether the count is aligned to the "start" or "end" of each trial.
+Similar to `to_trial_tensor`, the array is padded with NaNs when the trials have uneven durations, where the padding value can be controled using the parameter `padding_value`. Additionally, the parameter `align` can change whether the count is aligned to the "start" or "end" of each trial.
 
 ```{code-cell} ipython3
 tensor = tsgroup.trial_count(ep, bin_size=1, align="end", padding_value=-1)

@@ -21,7 +21,7 @@ def _validate_warping_inputs(func):
         parameters_type = {
             "input": (nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor, nap.TsGroup),
             "ep": (nap.IntervalSet,),
-            "binsize": (Number,),
+            "bin_size": (Number,),
             "time_unit": (str,),
             "align": (str,),
             "padding_value": (Number,),
@@ -42,14 +42,14 @@ def _validate_warping_inputs(func):
 
 @_validate_warping_inputs
 def build_tensor(
-    input, ep, binsize=None, align="start", padding_value=np.nan, time_unit="s"
+    input, ep, bin_size=None, align="start", padding_value=np.nan, time_unit="s"
 ):
     """
     Return trial-based tensor from an IntervalSet object.
     This is equivalent to calling `input.to_trial_tensor` for Tsd, TsdFrame, and TsdTensor objects,
     or is equivalent to calling `input.trial_count` for Ts and TsGroup objects.
 
-    - If `input` is a `TsGroup`, returns a numpy array of shape (number of group elements, number of trials, number of time bins). The `binsize` parameter determines the number of time bins.
+    - If `input` is a `TsGroup`, returns a numpy array of shape (number of group elements, number of trials, number of time bins). The `bin_size` parameter determines the number of time bins.
 
     - If `input` is `Tsd`, `TsdFrame` or `TsdTensor`, returns a numpy array of shape (shape of time series, number of trials, number of  time points).
 
@@ -66,14 +66,14 @@ def build_tensor(
         Input to slice and align to the trials within the `ep` parameter.
     ep : IntervalSet
         Epochs holding the trials. Each interval can be of unequal size.
-    binsize : Number, optional
+    bin_size : Number, optional
         Size of the time bins for TsGroup and Ts objects.
     align: str, optional
         How to align the time series ('start' [default], 'end')
     padding_value: Number, optional
         How to pad the array if unequal intervals. Default is np.nan.
     time_unit : str, optional
-        Time units of the binsize parameter ('s' [default], 'ms', 'us').
+        Time units of the bin_size parameter ('s' [default], 'ms', 'us').
 
     Returns
     -------
@@ -100,7 +100,7 @@ def build_tensor(
 
     Create a trial-based tensor by counting events within 1 second bin for each interval of `ep`.
 
-    >>> tensor = nap.build_tensor(group, ep, binsize=1)
+    >>> tensor = nap.build_tensor(group, ep, bin_size=1)
     >>> tensor
     array([[[ 1.,  1., nan, nan, nan, nan, nan, nan],
             [ 1.,  1.,  1.,  1., nan, nan, nan, nan],
@@ -109,7 +109,7 @@ def build_tensor(
 
     By default, the time series are aligned to the start of the epochs. The parameter `align` control this behavior.
 
-    >>> tensor = nap.build_tensor(group, ep, binsize=1, align="end")
+    >>> tensor = nap.build_tensor(group, ep, bin_size=1, align="end")
     >>> tensor
     array([[[nan, nan, nan, nan, nan, nan,  1.,  1.],
             [nan, nan, nan, nan,  1.,  1.,  1.,  1.],
@@ -137,11 +137,11 @@ def build_tensor(
         raise RuntimeError("align should be 'start' or 'end'")
 
     if isinstance(input, (nap.TsGroup, nap.Ts)):
-        if not isinstance(binsize, Number):
+        if not isinstance(bin_size, Number):
             raise RuntimeError(
-                "When input is a TsGroup or Ts object, binsize should be specified"
+                "When input is a TsGroup or Ts object, bin_size should be specified"
             )
-        return input.trial_count(ep, binsize, align, padding_value, time_unit)
+        return input.trial_count(ep, bin_size, align, padding_value, time_unit)
     else:
         return input.to_trial_tensor(ep, align, padding_value)
 
@@ -152,10 +152,10 @@ def _warp_tensor_from_tsgroup(input, ep, num_bin):
     else:
         output = np.zeros(shape=(len(input), len(ep), num_bin))
 
-    binsizes = (ep.end - ep.start) / num_bin
+    bin_sizes = (ep.end - ep.start) / num_bin
 
     for i in range(len(ep)):
-        tmp = input.count(binsizes[i], ep[i])
+        tmp = input.count(bin_sizes[i], ep[i])
         output[:, i, :] = np.transpose(tmp.values)
 
     if isinstance(input, nap.Ts):  # Removing first axis if Ts.
