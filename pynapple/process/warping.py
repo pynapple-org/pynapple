@@ -25,7 +25,7 @@ def _validate_warping_inputs(func):
             "time_unit": (str,),
             "align": (str,),
             "padding_value": (Number,),
-            "num_bin": (int,),
+            "num_bins": (int,),
         }
         for param, param_type in parameters_type.items():
             if param in kwargs:
@@ -146,13 +146,13 @@ def build_tensor(
         return input.to_trial_tensor(ep, align, padding_value)
 
 
-def _warp_tensor_from_tsgroup(input, ep, num_bin):
+def _warp_tensor_from_tsgroup(input, ep, num_bins):
     if isinstance(input, nap.Ts):
-        output = np.zeros(shape=(1, len(ep), num_bin))
+        output = np.zeros(shape=(1, len(ep), num_bins))
     else:
-        output = np.zeros(shape=(len(input), len(ep), num_bin))
+        output = np.zeros(shape=(len(input), len(ep), num_bins))
 
-    bin_sizes = (ep.end - ep.start) / num_bin
+    bin_sizes = (ep.end - ep.start) / num_bins
 
     for i in range(len(ep)):
         tmp = input.count(bin_sizes[i], ep[i])
@@ -164,20 +164,20 @@ def _warp_tensor_from_tsgroup(input, ep, num_bin):
     return output
 
 
-def _warp_tensor_from_tsd(input, ep, num_bin):
+def _warp_tensor_from_tsd(input, ep, num_bins):
     slices = [input.get_slice(s, e) for s, e in ep.values]
     lengths = list(map(lambda sl: sl.stop - sl.start, slices))
-    output = np.zeros(shape=(len(ep), num_bin, *input.shape[1:]))
+    output = np.zeros(shape=(len(ep), num_bins, *input.shape[1:]))
     for i, sl in enumerate(slices):
-        if lengths[i] == num_bin:
+        if lengths[i] == num_bins:
             output[i] = input[sl].values
-        elif lengths[i] > num_bin:  # Call bin_average
+        elif lengths[i] > num_bins:  # Call bin_average
             output[i] = input[sl].bin_average(
-                (ep.end[i] - ep.start[i]) / num_bin, ep[i]
+                (ep.end[i] - ep.start[i]) / num_bins, ep[i]
             )
         else:  # Call interpolate
             output[i] = input[sl].interpolate(
-                ts=nap.Ts(t=np.linspace(ep.start[i], ep.end[i], num_bin)), ep=ep[i]
+                ts=nap.Ts(t=np.linspace(ep.start[i], ep.end[i], num_bins)), ep=ep[i]
             )
 
     if output.ndim > 2:
@@ -187,13 +187,13 @@ def _warp_tensor_from_tsd(input, ep, num_bin):
 
 
 @_validate_warping_inputs
-def warp_tensor(input, ep, num_bin):
+def warp_tensor(input, ep, num_bins):
     """
     Return linearly time-warped trial-based tensor from an IntervalSet object.
 
-    - If `input` is a `TsGroup`, returns a numpy array of shape (number of group element, number of trial, `num_bin`).
+    - If `input` is a `TsGroup`, returns a numpy array of shape (number of group element, number of trial, `num_bins`).
 
-    - If `input` is `Tsd`, `TsdFrame` or `TsdTensor`, returns a numpy array of shape (shape of time series, number of trial, `num_bin`).
+    - If `input` is `Tsd`, `TsdFrame` or `TsdTensor`, returns a numpy array of shape (shape of time series, number of trial, `num_bins`).
 
     Parameters
     ----------
@@ -201,7 +201,7 @@ def warp_tensor(input, ep, num_bin):
         Input object
     ep : IntervalSet
         Epochs holding the trials. Each interval can be of unequal size.
-    num_bin : int
+    num_bins : int
 
     Returns
     -------
@@ -223,7 +223,7 @@ def warp_tensor(input, ep, num_bin):
 
     Create a trial-based tensor by counting events within 10 bins between start and end of each interval of `ep`.
 
-    >>> tensor = nap.warp_tensor(group, ep, num_bin=10)
+    >>> tensor = nap.warp_tensor(group, ep, num_bins=10)
     >>> tensor
     array([[[1., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
             [1., 0., 1., 0., 0., 1., 0., 1., 0., 0.],
@@ -233,17 +233,17 @@ def warp_tensor(input, ep, num_bin):
     This function works for any time series. Under the hood, the time series is either bin-averaged or interpolated depending on the number of bins.
 
     >>> tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
-    >>> tensor = nap.warp_tensor(tsd, ep, num_bin=3)
+    >>> tensor = nap.warp_tensor(tsd, ep, num_bins=3)
     >>> tensor
     array([[20. , 21. , 22. ],
            [40.5, 42. , 43. ],
            [60.5, 62.5, 64.5],
            [81. , 84. , 87. ]])
     """
-    if num_bin <= 0:
-        raise RuntimeError("num_bin should be positive integer.")
+    if num_bins <= 0:
+        raise RuntimeError("num_bins should be positive integer.")
 
     if isinstance(input, (nap.TsGroup, nap.Ts)):
-        return _warp_tensor_from_tsgroup(input, ep, num_bin)
+        return _warp_tensor_from_tsgroup(input, ep, num_bins)
     else:
-        return _warp_tensor_from_tsd(input, ep, num_bin)
+        return _warp_tensor_from_tsd(input, ep, num_bins)

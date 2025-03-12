@@ -306,7 +306,7 @@ def get_group2():
 
 
 @pytest.mark.parametrize(
-    "input, ep, num_bin, expectation",
+    "input, ep, num_bins, expectation",
     [
         (
             {},
@@ -324,21 +324,21 @@ def get_group2():
             get_tsd(),
             get_ep(),
             "a",
-            "Invalid type. Parameter num_bin must be of type ['int'].",
+            "Invalid type. Parameter num_bins must be of type ['int'].",
         ),
     ],
 )
-def test_warp_tensor_type_error(input, ep, num_bin, expectation):
+def test_warp_tensor_type_error(input, ep, num_bins, expectation):
     with pytest.raises(TypeError, match=re.escape(expectation)):
-        nap.warp_tensor(input=input, ep=ep, num_bin=num_bin)
+        nap.warp_tensor(input=input, ep=ep, num_bins=num_bins)
 
 
 def test_warp_tensor_runtime_error():
     group = get_group()
     ep = get_ep()
-    with pytest.raises(RuntimeError, match=r"num_bin should be positive integer."):
+    with pytest.raises(RuntimeError, match=r"num_bins should be positive integer."):
         nap.warp_tensor(group, ep, -10)
-    with pytest.raises(RuntimeError, match=r"num_bin should be positive integer."):
+    with pytest.raises(RuntimeError, match=r"num_bins should be positive integer."):
         nap.warp_tensor(group, ep, 0)
 
 
@@ -350,7 +350,7 @@ def test_warp_tensor_with_tsgroup():
     for i in range(2):
         expected[i, :, :] = np.tile((np.arange(1, 5, 1) * (i + 1))[:, None], 10)
 
-    tensor = nap.warp_tensor(group, ep, num_bin=10)
+    tensor = nap.warp_tensor(group, ep, num_bins=10)
     np.testing.assert_array_almost_equal(tensor, expected)
 
 
@@ -360,7 +360,7 @@ def test_warp_tensor_with_ts():
 
     expected = np.tile((np.arange(1, 5, 1))[:, None], 10)
 
-    tensor = nap.warp_tensor(ts, ep, num_bin=10)
+    tensor = nap.warp_tensor(ts, ep, num_bins=10)
     np.testing.assert_array_almost_equal(tensor, expected)
 
 

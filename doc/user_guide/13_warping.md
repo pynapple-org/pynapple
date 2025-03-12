@@ -14,11 +14,11 @@ kernelspec:
 Trial-based tensor & time warping
 =================================
 
-The warping module contains functions for constructing trial-based tensor.
-If the input is a TsGroup containing the activity of a population of neurons :
+The warping module contains functions for constructing trial-based tensors.
+If the input is a TsGroup containing the activity of a population of neurons:
 
-- `nap.build_tensor` -> returns a tensor of shape (number of neurons, number of trials, number of time bins) with padded values if unequal trial intervals.
-- `nap.warp_tensor` -> returns a tensor of shape (number of neurons, number of trials, number of time bins) with linearly warped time.
+- `nap.build_tensor` returns a tensor of shape (number of neurons, number of trials, number of time bins) with padded values if unequal trial intervals.
+- `nap.warp_tensor` returns a tensor of shape (number of neurons, number of trials, number of time bins) with linearly warped time bins.
 
 Both functions works for all time series object (`Tsd`, `TsdFrame` and `TsdTensor`) and timestamp objects (`Ts` and `TsGroup`). See examples below.
 
@@ -140,12 +140,12 @@ plt.show()
 `nap.warp_tensor`
 -----------------
 
-The function `nap.warp_tensor` is similar to `build_tensor` but time is stretched linearly for each interval depending on
-the parameter `num_bin`. In other words, the number of bins between start and end of an epoch is always `num_bin` but
-the duration of a bin can vary.
+The function `nap.warp_tensor` is similar to `build_tensor`, but time is stretched linearly for each interval depending on
+the parameter `num_bins`. In other words, the number of bins between the start and end of an epoch is always `num_bins`, but
+the duration of each bin can vary across epochs.
 
 ```{code-cell} ipython3
-tensor = nap.warp_tensor(tsgroup, ep, num_bin=10)
+tensor = nap.warp_tensor(tsgroup, ep, num_bins=10)
 
 print(tensor)
 ```
@@ -178,7 +178,7 @@ It is also possible to warp a time series to create a trial-based tensor. Under 
 bin-averaged or interpolated depending on the number of bins.
 
 ```{code-cell} ipython3
-tensor = nap.warp_tensor(tsdframe, ep, num_bin=10)
+tensor = nap.warp_tensor(tsdframe, ep, num_bins=10)
 
 print(tensor)
 ```
