@@ -465,4 +465,4 @@ The wavelets module performs Morlet wavelets decomposition of a time series.
 
 **[Warping](13_warping)**
 
-This module allows to build trial-based tensor and time warped trial-based tensor
+This module provides methods for building trial-based tensors and time-warped trial-based tensors.

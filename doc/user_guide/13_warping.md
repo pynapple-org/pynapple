@@ -11,7 +11,7 @@ kernelspec:
   name: python3
 ---
 
-Trial-based tensor & time warping
+Trial-based tensors & time warping
 =================================
 
 The warping module contains functions for constructing trial-based tensors.
