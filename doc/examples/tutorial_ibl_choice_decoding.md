@@ -6,8 +6,9 @@ jupytext:
     format_version: 0.13
     jupytext_version: 1.16.4
 kernelspec:
+  display_name: Python 3
   language: python
-  name: conda-env-dartsort-py
+  name: python3
 ---
 
 # Trial-aligned decoding with International Brain Lab data
