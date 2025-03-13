@@ -116,6 +116,7 @@ html_context = {
 html_sidebars = {
     "index": [],
     "installing":[],
+    "about":[],
     "releases":[],
     "external":[],
     "pynajax":[],
