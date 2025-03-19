@@ -590,3 +590,62 @@ def test_add_Timestamps():
     assert len(data) == 2
     for i, k in enumerate(data.keys()):
         np.testing.assert_array_almost_equal(data[k].index, np.arange(10) + i)
+
+
+def test_add_object_with_same_name():
+
+    # Create an NWB file
+    nwbfile = mock_NWBFile()
+
+    # Create a TimeSeries object with the same name for acquisition
+    from pynwb.testing.mock.base import mock_TimeSeries
+
+    timeseries_acq = mock_TimeSeries(
+        name="timeseries",
+        data=np.random.randn(100),
+        unit="mV",
+        timestamps=np.arange(100),
+    )
+
+    # Add the TimeSeries to the acquisition group
+    nwbfile.add_acquisition(timeseries_acq)
+
+    # Create a ProcessingModule and add the TimeSeries to it
+    from pynwb import ProcessingModule
+
+    processing_module = ProcessingModule(name="processed", description="processed data")
+    processing_module.add(
+        mock_TimeSeries(
+            name="timeseries", data=np.random.randn(100), timestamps=np.arange(100)
+        )
+    )
+
+    # Add the ProcessingModule to the NWB file
+    nwbfile.add_processing_module(processing_module)
+
+    nwb = nap.NWBFile(nwbfile)
+
+    assert len(nwb) == 2
+    np.testing.assert_array_equal(
+        np.array(["processed/timeseries", "timeseries"]), np.array(nwb.keys())
+    )
+    assert isinstance(nwb["processed/timeseries"], nap.Tsd)
+    assert isinstance(nwb["timeseries"], nap.Tsd)
+
+    # Testing with full path
+    assert isinstance(nwb["/processed/timeseries"], nap.Tsd)
+    assert isinstance(nwb["/timeseries"], nap.Tsd)
+
+    # Wrong full path
+    with pytest.raises(KeyError, match=r"Can't find key /bad/path in group index."):
+        nwb["/bad/path"]
+
+
+def test_path_utility_func():
+    from pynapple.io.interface_nwb import _get_unique_identifier
+
+    full_path_to_key = {"/a/b/c": "c", "/a/e/c": "c", "/i/e/c": "c"}
+    expected = {"/a/b/c": "b/c", "/a/e/c": "a/e/c", "/i/e/c": "i/e/c"}
+    out = _get_unique_identifier(full_path_to_key)
+    for k in full_path_to_key:
+        assert expected[k] == out[k]

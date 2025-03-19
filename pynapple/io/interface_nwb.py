@@ -18,8 +18,43 @@ from tabulate import tabulate
 from .. import core as nap
 
 
+def _get_unique_identifier(full_path_to_key):
+    out, count = np.unique(list(full_path_to_key.values()), return_counts=True)
+    if len(out) == len(full_path_to_key):
+        return full_path_to_key
+    else:
+        key_to_change = out[count > 1]
+        for full_path, key in full_path_to_key.items():
+            if key in key_to_change:
+                # Adding the most immediate parent path until disambiguation
+                base_parts = full_path.split("/")
+                relative_parts = key.split("/")
+                new_key = "/".join(base_parts[-len(relative_parts) - 1 :])
+                if new_key.startswith("/"):
+                    new_key = new_key[1:]
+                full_path_to_key[full_path] = new_key
+        return _get_unique_identifier(full_path_to_key)
+
+
+def _get_full_path(path, obj):
+    if hasattr(obj, "parent"):  # Better be safe here
+        if obj.parent is None:
+            return "/" + path
+        else:
+            if hasattr(obj.parent, "name"):  # and extra safe
+                if obj.parent.name == "root":
+                    return "/" + path
+                else:
+                    return _get_full_path(obj.parent.name + "/" + path, obj.parent)
+            else:
+                return "/" + path
+    else:
+        return "/" + path
+
+
 def _extract_compatible_data_from_nwbfile(nwbfile):
-    """Extract all the NWB objects that can be converted to a pynapple object.
+    """Extract all the NWB objects that can be converted to a pynapple object. If two objects have the same names, they
+    are distinguished by adding their module name to their path.
 
     Parameters
     ----------
@@ -32,37 +67,39 @@ def _extract_compatible_data_from_nwbfile(nwbfile):
         Dictionary containing all the object found and their type in pynapple.
     """
     pynwb = importlib.import_module("pynwb")
+
     data = {}
 
     for oid, obj in nwbfile.objects.items():
         if isinstance(obj, pynwb.misc.DynamicTable) and any(
             [i.name.endswith("_times_index") for i in obj.columns]
         ):
-            data["units"] = {"id": oid, "type": "TsGroup"}
+            # data["units"] = {"id": oid, "type": "TsGroup"}
+            data[_get_full_path(obj.name, obj)] = {"id": oid, "type": "TsGroup"}
 
         elif isinstance(obj, pynwb.epoch.TimeIntervals):
             # Supposedly IntervalsSets
-            data[obj.name] = {"id": oid, "type": "IntervalSet"}
+            data[_get_full_path(obj.name, obj)] = {"id": oid, "type": "IntervalSet"}
 
         elif isinstance(obj, pynwb.misc.DynamicTable) and any(
             [i.name.endswith("_times") for i in obj.columns]
         ):
             # Supposedly Timestamps
-            data[obj.name] = {"id": oid, "type": "Ts"}
+            data[_get_full_path(obj.name, obj)] = {"id": oid, "type": "Ts"}
 
         elif isinstance(obj, pynwb.misc.AnnotationSeries):
             # Old timestamps version
-            data[obj.name] = {"id": oid, "type": "Ts"}
+            data[_get_full_path(obj.name, obj)] = {"id": oid, "type": "Ts"}
 
         elif isinstance(obj, pynwb.misc.TimeSeries):
             if len(obj.data.shape) > 2:
-                data[obj.name] = {"id": oid, "type": "TsdTensor"}
+                data[_get_full_path(obj.name, obj)] = {"id": oid, "type": "TsdTensor"}
 
             elif len(obj.data.shape) == 2:
-                data[obj.name] = {"id": oid, "type": "TsdFrame"}
+                data[_get_full_path(obj.name, obj)] = {"id": oid, "type": "TsdFrame"}
 
             elif len(obj.data.shape) == 1:
-                data[obj.name] = {"id": oid, "type": "Tsd"}
+                data[_get_full_path(obj.name, obj)] = {"id": oid, "type": "Tsd"}
 
     return data
 
@@ -310,27 +347,6 @@ def _make_ts(obj, **kwargs):
 
     return data
 
-def _path_for_nwb_object(obj):
-    """Helper function to get the path of an NWB object"""
-    if obj.parent:
-        if obj.parent.name == "root":
-            # unfortunately, there's now way to get the parent name when the
-            # parent is a top-level NWB object because the parent actually
-            # points to root, so we need to do it this way
-            modules = {
-                "acquisition": obj.parent.acquisition,
-                "analysis": obj.parent.analysis,
-                "stimulus": obj.parent.stimulus,
-                "processing": obj.parent.processing,
-            }
-            for k, v in modules.items():
-                if obj.name in v.keys() and v[obj.name] == obj:
-                    return f"{k}/{obj.name}"
-            return obj.name
-        else:
-            return f"{_path_for_nwb_object(obj.parent)}/{obj.name}"
-    else:
-        return obj.name
 
 class NWBFile(UserDict):
     """Class for reading NWB Files.
@@ -391,7 +407,19 @@ class NWBFile(UserDict):
             else:
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file)
 
+        # Get a dictionary with full_path -> {'id', 'type'}
         self.data = _extract_compatible_data_from_nwbfile(self.nwb)
+
+        # Need to check if some object names are doublons
+        self.full_path_to_key = _get_unique_identifier(
+            {p: os.path.basename(p) for p in self.data.keys()}
+        )
+
+        # Creating the reverse mapping for the user : key -> full_path and key -> {'id', 'type'}
+        self.key_to_full_path = {v: k for k, v in self.full_path_to_key.items()}
+        self.data = {self.full_path_to_key[p]: self.data[p] for p in self.data.keys()}
+
+        # Mapping unique path identifier to id
         self.key_to_id = {k: self.data[k]["id"] for k in self.data.keys()}
 
         self._view = [[k, self.data[k]["type"]] for k in self.data.keys()]
@@ -446,27 +474,15 @@ class NWBFile(UserDict):
             If key is not in the dictionary
         """
         if key.__hash__:
-            if "/" in key:
-                # allow user to specify the full path to the object
-                # store the original key so we can verify it later
-                original_key = key
-                if original_key.startswith("/"):
-                    # remove leading slash
-                    original_key = original_key[1:]
-                # use just the last part of the key
-                key = key.split("/")[-1]
+            if key.startswith("/"):  # allow user to specify the full path to the object
+                if key in self.full_path_to_key:
+                    return self[self.full_path_to_key[key]]
+                else:
+                    raise KeyError("Can't find key {} in group index.".format(key))
 
-            else:
-                original_key = None
             if self.__contains__(key):
                 if isinstance(self.data[key], dict) and "id" in self.data[key]:
-                    obj_id = self.data[key]["id"]
-                    obj = self.nwb.objects[obj_id]
-                    if original_key is not None:
-                        if _path_for_nwb_object(obj) != original_key:
-                            raise KeyError(
-                                f"Mismatch between key and object path: {original_key} != {_path_for_nwb_object(obj)}"
-                            )
+                    obj = self.nwb.objects[self.data[key]["id"]]
                     try:
                         data = self._f_eval[self.data[key]["type"]](
                             obj, lazy_loading=self._lazy_loading
@@ -523,4 +539,3 @@ class NWBFile(UserDict):
             List of objects
         """
         return list(self.data.values())
-
