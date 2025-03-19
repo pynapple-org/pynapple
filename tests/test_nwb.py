@@ -9,10 +9,8 @@
 import warnings
 
 import numpy as np
-import pandas as pd
 import pynwb
 import pytest
-from jupytext.paired_paths import full_path
 from pynwb.testing.mock.file import mock_NWBFile
 from pynwb.testing.mock.utils import name_generator_registry
 
@@ -647,20 +645,21 @@ def test_add_object_with_same_name():
     [
         (
             {"/a/b/c": "c", "/a/e/c": "c", "/i/e/c": "c"},
-            {"/a/b/c": "b/c", "/a/e/c": "a/e/c", "/i/e/c": "i/e/c"}
+            {"/a/b/c": "b/c", "/a/e/c": "a/e/c", "/i/e/c": "i/e/c"},
         ),
         (
             {"/a/b/c": "c", "/a/e/c": "c", "/a/e/d": "d"},
-            {"/a/b/c": "b/c", "/a/e/c": "e/c", "/a/e/d": "d"}
+            {"/a/b/c": "b/c", "/a/e/c": "e/c", "/a/e/d": "d"},
         ),
         (
             {"/a/b/c": "c", "/a/e/c": "c", "/a/e/d": "d", "/x/e/d": "d"},
-            {"/a/b/c": "b/c", "/a/e/c": "e/c", "/a/e/d": "a/e/d", "/x/e/d": "x/e/d"}
+            {"/a/b/c": "b/c", "/a/e/c": "e/c", "/a/e/d": "a/e/d", "/x/e/d": "x/e/d"},
         ),
-    ]
+    ],
 )
 def test_path_utility_func(full_path_to_key, expected):
     from pynapple.io.interface_nwb import _get_unique_identifier
+
     out = _get_unique_identifier(full_path_to_key)
     for k in full_path_to_key:
         assert expected[k] == out[k]

@@ -24,7 +24,8 @@ def _get_unique_identifier(full_path_to_key):
         key_to_change = out[count > 1]
         # Filter for ambiguous keys only
         update_dict = {
-            key: val for key, val in full_path_to_key.items()
+            key: val
+            for key, val in full_path_to_key.items()
             if full_path_to_key[key] in key_to_change
         }
         for full_path, key in update_dict.items():
@@ -60,7 +61,7 @@ def iterate_over_nwb(nwbfile):
     pynwb = importlib.import_module("pynwb")
     for oid, obj in nwbfile.objects.items():
         if isinstance(obj, pynwb.misc.DynamicTable) and any(
-                [i.name.endswith("_times_index") for i in obj.columns]
+            [i.name.endswith("_times_index") for i in obj.columns]
         ):
             # data["units"] = {"id": oid, "type": "TsGroup"}
             yield obj, {"id": oid, "type": "TsGroup"}
@@ -70,7 +71,7 @@ def iterate_over_nwb(nwbfile):
             yield obj, {"id": oid, "type": "IntervalSet"}
 
         elif isinstance(obj, pynwb.misc.DynamicTable) and any(
-                [i.name.endswith("_times") for i in obj.columns]
+            [i.name.endswith("_times") for i in obj.columns]
         ):
             # Supposedly Timestamps
             yield obj, {"id": oid, "type": "Ts"}
@@ -104,7 +105,9 @@ def _extract_compatible_data_from_nwbfile(nwbfile):
     dict
         Dictionary containing all the object found and their type in pynapple.
     """
-    return {_get_full_path(obj.name, obj): out for obj, out in iterate_over_nwb(nwbfile)}
+    return {
+        _get_full_path(obj.name, obj): out for obj, out in iterate_over_nwb(nwbfile)
+    }
 
 
 def _make_interval_set(obj, **kwargs):
