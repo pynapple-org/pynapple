@@ -20,20 +20,24 @@ from .. import core as nap
 
 def _get_unique_identifier(full_path_to_key):
     out, count = np.unique(list(full_path_to_key.values()), return_counts=True)
-    if len(out) == len(full_path_to_key):
-        return full_path_to_key
-    else:
+    if len(out) != len(full_path_to_key):
         key_to_change = out[count > 1]
-        for full_path, key in full_path_to_key.items():
-            if key in key_to_change:
-                # Adding the most immediate parent path until disambiguation
-                base_parts = full_path.split("/")
-                relative_parts = key.split("/")
-                new_key = "/".join(base_parts[-len(relative_parts) - 1 :])
-                if new_key.startswith("/"):
-                    new_key = new_key[1:]
-                full_path_to_key[full_path] = new_key
-        return _get_unique_identifier(full_path_to_key)
+        # Filter for ambiguous keys only
+        update_dict = {
+            key: val for key, val in full_path_to_key.items()
+            if full_path_to_key[key] in key_to_change
+        }
+        for full_path, key in update_dict.items():
+            # Adding the most immediate parent path until disambiguation
+            base_parts = full_path.split("/")
+            relative_parts = key.split("/")
+            new_key = "/".join(base_parts[-len(relative_parts) - 1 :])
+            if new_key.startswith("/"):
+                new_key = new_key[1:]
+            update_dict[full_path] = new_key
+        update_dict = _get_unique_identifier(update_dict)
+        full_path_to_key.update(update_dict)
+    return full_path_to_key
 
 
 def _get_full_path(path, obj):
@@ -52,6 +56,40 @@ def _get_full_path(path, obj):
         return "/" + path
 
 
+def iterate_over_nwb(nwbfile):
+    pynwb = importlib.import_module("pynwb")
+    for oid, obj in nwbfile.objects.items():
+        if isinstance(obj, pynwb.misc.DynamicTable) and any(
+                [i.name.endswith("_times_index") for i in obj.columns]
+        ):
+            # data["units"] = {"id": oid, "type": "TsGroup"}
+            yield obj, {"id": oid, "type": "TsGroup"}
+
+        elif isinstance(obj, pynwb.epoch.TimeIntervals):
+            # Supposedly IntervalsSets
+            yield obj, {"id": oid, "type": "IntervalSet"}
+
+        elif isinstance(obj, pynwb.misc.DynamicTable) and any(
+                [i.name.endswith("_times") for i in obj.columns]
+        ):
+            # Supposedly Timestamps
+            yield obj, {"id": oid, "type": "Ts"}
+
+        elif isinstance(obj, pynwb.misc.AnnotationSeries):
+            # Old timestamps version
+            yield obj, {"id": oid, "type": "Ts"}
+
+        elif isinstance(obj, pynwb.misc.TimeSeries):
+            if len(obj.data.shape) > 2:
+                yield obj, {"id": oid, "type": "TsdTensor"}
+
+            elif len(obj.data.shape) == 2:
+                yield obj, {"id": oid, "type": "TsdFrame"}
+
+            elif len(obj.data.shape) == 1:
+                yield obj, {"id": oid, "type": "Tsd"}
+
+
 def _extract_compatible_data_from_nwbfile(nwbfile):
     """Extract all the NWB objects that can be converted to a pynapple object. If two objects have the same names, they
     are distinguished by adding their module name to their path.
@@ -66,42 +104,7 @@ def _extract_compatible_data_from_nwbfile(nwbfile):
     dict
         Dictionary containing all the object found and their type in pynapple.
     """
-    pynwb = importlib.import_module("pynwb")
-
-    data = {}
-
-    for oid, obj in nwbfile.objects.items():
-        if isinstance(obj, pynwb.misc.DynamicTable) and any(
-            [i.name.endswith("_times_index") for i in obj.columns]
-        ):
-            # data["units"] = {"id": oid, "type": "TsGroup"}
-            data[_get_full_path(obj.name, obj)] = {"id": oid, "type": "TsGroup"}
-
-        elif isinstance(obj, pynwb.epoch.TimeIntervals):
-            # Supposedly IntervalsSets
-            data[_get_full_path(obj.name, obj)] = {"id": oid, "type": "IntervalSet"}
-
-        elif isinstance(obj, pynwb.misc.DynamicTable) and any(
-            [i.name.endswith("_times") for i in obj.columns]
-        ):
-            # Supposedly Timestamps
-            data[_get_full_path(obj.name, obj)] = {"id": oid, "type": "Ts"}
-
-        elif isinstance(obj, pynwb.misc.AnnotationSeries):
-            # Old timestamps version
-            data[_get_full_path(obj.name, obj)] = {"id": oid, "type": "Ts"}
-
-        elif isinstance(obj, pynwb.misc.TimeSeries):
-            if len(obj.data.shape) > 2:
-                data[_get_full_path(obj.name, obj)] = {"id": oid, "type": "TsdTensor"}
-
-            elif len(obj.data.shape) == 2:
-                data[_get_full_path(obj.name, obj)] = {"id": oid, "type": "TsdFrame"}
-
-            elif len(obj.data.shape) == 1:
-                data[_get_full_path(obj.name, obj)] = {"id": oid, "type": "Tsd"}
-
-    return data
+    return {_get_full_path(obj.name, obj): out for obj, out in iterate_over_nwb(nwbfile)}
 
 
 def _make_interval_set(obj, **kwargs):
