@@ -18,8 +18,82 @@ from tabulate import tabulate
 from .. import core as nap
 
 
+def _get_unique_identifier(full_path_to_key):
+    out, count = np.unique(list(full_path_to_key.values()), return_counts=True)
+    if len(out) != len(full_path_to_key):
+        key_to_change = out[count > 1]
+        # Filter for ambiguous keys only
+        update_dict = {
+            key: val
+            for key, val in full_path_to_key.items()
+            if full_path_to_key[key] in key_to_change
+        }
+        for full_path, key in update_dict.items():
+            # Adding the most immediate parent path until disambiguation
+            base_parts = full_path.split("/")
+            relative_parts = key.split("/")
+            new_key = "/".join(base_parts[-len(relative_parts) - 1 :])
+            if new_key.startswith("/"):
+                new_key = new_key[1:]
+            update_dict[full_path] = new_key
+        update_dict = _get_unique_identifier(update_dict)
+        full_path_to_key.update(update_dict)
+    return full_path_to_key
+
+
+def _get_full_path(path, obj):
+    if hasattr(obj, "parent"):  # Better be safe here
+        if obj.parent is None:
+            return "/" + path
+        else:
+            if hasattr(obj.parent, "name"):  # and extra safe
+                if obj.parent.name == "root":
+                    return "/" + path
+                else:
+                    return _get_full_path(obj.parent.name + "/" + path, obj.parent)
+            else:
+                return "/" + path
+    else:
+        return "/" + path
+
+
+def iterate_over_nwb(nwbfile):
+    pynwb = importlib.import_module("pynwb")
+    for oid, obj in nwbfile.objects.items():
+        if isinstance(obj, pynwb.misc.DynamicTable) and any(
+            [i.name.endswith("_times_index") for i in obj.columns]
+        ):
+            # data["units"] = {"id": oid, "type": "TsGroup"}
+            yield obj, {"id": oid, "type": "TsGroup"}
+
+        elif isinstance(obj, pynwb.epoch.TimeIntervals):
+            # Supposedly IntervalsSets
+            yield obj, {"id": oid, "type": "IntervalSet"}
+
+        elif isinstance(obj, pynwb.misc.DynamicTable) and any(
+            [i.name.endswith("_times") for i in obj.columns]
+        ):
+            # Supposedly Timestamps
+            yield obj, {"id": oid, "type": "Ts"}
+
+        elif isinstance(obj, pynwb.misc.AnnotationSeries):
+            # Old timestamps version
+            yield obj, {"id": oid, "type": "Ts"}
+
+        elif isinstance(obj, pynwb.misc.TimeSeries):
+            if len(obj.data.shape) > 2:
+                yield obj, {"id": oid, "type": "TsdTensor"}
+
+            elif len(obj.data.shape) == 2:
+                yield obj, {"id": oid, "type": "TsdFrame"}
+
+            elif len(obj.data.shape) == 1:
+                yield obj, {"id": oid, "type": "Tsd"}
+
+
 def _extract_compatible_data_from_nwbfile(nwbfile):
-    """Extract all the NWB objects that can be converted to a pynapple object.
+    """Extract all the NWB objects that can be converted to a pynapple object. If two objects have the same names, they
+    are distinguished by adding their module name to their path.
 
     Parameters
     ----------
@@ -31,40 +105,9 @@ def _extract_compatible_data_from_nwbfile(nwbfile):
     dict
         Dictionary containing all the object found and their type in pynapple.
     """
-    pynwb = importlib.import_module("pynwb")
-    data = {}
-
-    for oid, obj in nwbfile.objects.items():
-        if isinstance(obj, pynwb.misc.DynamicTable) and any(
-            [i.name.endswith("_times_index") for i in obj.columns]
-        ):
-            data["units"] = {"id": oid, "type": "TsGroup"}
-
-        elif isinstance(obj, pynwb.epoch.TimeIntervals):
-            # Supposedly IntervalsSets
-            data[obj.name] = {"id": oid, "type": "IntervalSet"}
-
-        elif isinstance(obj, pynwb.misc.DynamicTable) and any(
-            [i.name.endswith("_times") for i in obj.columns]
-        ):
-            # Supposedly Timestamps
-            data[obj.name] = {"id": oid, "type": "Ts"}
-
-        elif isinstance(obj, pynwb.misc.AnnotationSeries):
-            # Old timestamps version
-            data[obj.name] = {"id": oid, "type": "Ts"}
-
-        elif isinstance(obj, pynwb.misc.TimeSeries):
-            if len(obj.data.shape) > 2:
-                data[obj.name] = {"id": oid, "type": "TsdTensor"}
-
-            elif len(obj.data.shape) == 2:
-                data[obj.name] = {"id": oid, "type": "TsdFrame"}
-
-            elif len(obj.data.shape) == 1:
-                data[obj.name] = {"id": oid, "type": "Tsd"}
-
-    return data
+    return {
+        _get_full_path(obj.name, obj): out for obj, out in iterate_over_nwb(nwbfile)
+    }
 
 
 def _make_interval_set(obj, **kwargs):
@@ -370,7 +413,19 @@ class NWBFile(UserDict):
             else:
                 raise FileNotFoundError(errno.ENOENT, os.strerror(errno.ENOENT), file)
 
+        # Get a dictionary with full_path -> {'id', 'type'}
         self.data = _extract_compatible_data_from_nwbfile(self.nwb)
+
+        # Need to check if some object names are doublons
+        self.full_path_to_key = _get_unique_identifier(
+            {p: os.path.basename(p) for p in self.data.keys()}
+        )
+
+        # Creating the reverse mapping for the user : key -> full_path and key -> {'id', 'type'}
+        self.key_to_full_path = {v: k for k, v in self.full_path_to_key.items()}
+        self.data = {self.full_path_to_key[p]: self.data[p] for p in self.data.keys()}
+
+        # Mapping unique path identifier to id
         self.key_to_id = {k: self.data[k]["id"] for k in self.data.keys()}
 
         self._view = [[k, self.data[k]["type"]] for k in self.data.keys()]
@@ -425,6 +480,12 @@ class NWBFile(UserDict):
             If key is not in the dictionary
         """
         if key.__hash__:
+            if key.startswith("/"):  # allow user to specify the full path to the object
+                if key in self.full_path_to_key:
+                    return self[self.full_path_to_key[key]]
+                else:
+                    raise KeyError("Can't find key {} in group index.".format(key))
+
             if self.__contains__(key):
                 if isinstance(self.data[key], dict) and "id" in self.data[key]:
                     obj = self.nwb.objects[self.data[key]["id"]]
