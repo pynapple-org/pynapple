@@ -78,6 +78,7 @@ def test_load_folder_foldernotfound():
 
     assert str(e.value) == "Folder MissingFolder does not exist"
 
+
 @skip_if_backend("jax")
 @pytest.mark.parametrize("path", [path])
 def test_load_eeg(path):
