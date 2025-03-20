@@ -12,6 +12,7 @@ import pandas as pd
 import pytest
 
 import pynapple as nap
+from pynapple.core.time_series import is_array_like
 from .helper_tests import skip_if_backend
 
 # tsd1 = nap.Tsd(t=np.arange(100), d=np.random.rand(100), time_units="s")
@@ -1263,15 +1264,18 @@ class TestTsdFrame:
         [
             0,
             slice(0, 10),
-            [0, 2],
+            [0, 2], # not jax compatible
             np.hstack([np.zeros(10, bool), True, np.zeros(89, bool)]),
             np.hstack([np.zeros(10, bool), True, True, True, np.zeros(87, bool)]),
         ],
     )
     def test_vertical_slicing(self, tsdframe, index):
         if isinstance(index, int):
-            assert isinstance(tsdframe[index], np.ndarray)
+            # jax and numpy compatibile check
+            assert (not isinstance(tsdframe[index], nap.TsdFrame)) and is_array_like(tsdframe[index])
         else:
+            if isinstance(index, list) and nap.nap_config.backend == "jax":
+                index = np.array(index)
             assert isinstance(tsdframe[index], nap.TsdFrame)
 
         output = tsdframe[index]
