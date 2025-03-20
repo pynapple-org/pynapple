@@ -1489,6 +1489,12 @@ class TestTsdFrame:
         # assert pd.DataFrame(tsdframe).__repr__() == tsdframe.__repr__()
         assert isinstance(tsdframe.__repr__(), str)
 
+    def test_repr_empty(self, tsdframe):
+        ep = nap.IntervalSet(tsdframe.t[-1] + 1, tsdframe.t[-1] + 10)
+        newtsdframe = tsdframe.restrict(ep)
+        repr = newtsdframe.__repr__()
+        assert isinstance(repr, str)
+
     def test_str_(self, tsdframe):
         # assert pd.DataFrame(tsdframe).__str__() == tsdframe.__str__()
         assert isinstance(tsdframe.__str__(), str)
