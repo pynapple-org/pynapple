@@ -1082,7 +1082,8 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                         dtype=object,
                     )
             else:
-                table = []
+                table = np.ndarray(shape=(0, self.shape[1] + 1))
+                end = []
 
             # Adding metadata if any.
             col_names = self._metadata.columns.values
@@ -1108,7 +1109,12 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     dtype=object,
                 )
 
-            return tabulate(table, headers=headers, colalign=("left",)) + "\n" + bottom
+            if len(table):
+                return (
+                    tabulate(table, headers=headers, colalign=("left",)) + "\n" + bottom
+                )
+            else:
+                return tabulate([], headers=headers) + "\n" + bottom
 
     def __setattr__(self, name, value):
         # necessary setter to allow metadata to be set as an attribute
