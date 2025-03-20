@@ -111,5 +111,6 @@ Analysis modules
     spectrum
     tuning_curves
     wavelets
+    warping
 
 

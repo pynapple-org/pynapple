@@ -168,7 +168,7 @@ class _Base(abc.ABC):
         else:
             return None
 
-    def value_from(self, data, ep=None):
+    def value_from(self, data, ep=None, mode="closest"):
         """
         Replace the value with the closest value from Tsd/TsdFrame/TsdTensor argument
 
@@ -179,6 +179,9 @@ class _Base(abc.ABC):
         ep : IntervalSet (optional)
             The IntervalSet object to restrict the operation.
             If None, the time support of the tsd input object is used.
+        mode: literal, either 'closest', 'before', 'after'
+            If closest, replace value with value from Tsd/TsdFrame/TsdTensor, if before gets the
+            first value before, if after the first value after.
 
         Returns
         -------
@@ -199,7 +202,7 @@ class _Base(abc.ABC):
         The variable ts is a timestamp object.
         The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
 
-        >>> newts = ts.value_from(tsd, ep)
+        >>> newts = ts.value_from(tsd, ep, mode='closest')
 
         newts is the same size as ts restrict to ep.
 
@@ -215,6 +218,11 @@ class _Base(abc.ABC):
         if not isinstance(ep, IntervalSet):
             raise TypeError("Argument ep should be of type IntervalSet or None")
 
+        if mode not in ("closest", "before", "after"):
+            raise ValueError(
+                f'Argument ``mode`` should be "closest", "before", or "after". ``{mode}`` provided instead.'
+            )
+
         time_array = self.index.values
         time_target_array = data.index.values
         data_target_array = data.values
@@ -222,7 +230,7 @@ class _Base(abc.ABC):
         ends = ep.end
 
         t, d = _value_from(
-            time_array, time_target_array, data_target_array, starts, ends
+            time_array, time_target_array, data_target_array, starts, ends, mode=mode
         )
 
         time_support = IntervalSet(start=starts, end=ends)
@@ -293,8 +301,8 @@ class _Base(abc.ABC):
             if not isinstance(bin_size, float):
                 raise TypeError("bin_size argument should be float or int.")
 
-            if not isinstance(time_units, str) or time_units not in ["s", "ms", "us"]:
-                raise ValueError("time_units argument should be 's', 'ms' or 'us'.")
+        if not isinstance(time_units, str) or time_units not in ["s", "ms", "us"]:
+            raise ValueError("time_units argument should be 's', 'ms' or 'us'.")
 
         if ep is None:
             ep = self.time_support

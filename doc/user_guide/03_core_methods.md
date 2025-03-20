@@ -148,8 +148,8 @@ plt.show()
 
 ### `value_from`
 
-`value_from` assign to every timestamps the closed value in time from another time series. Let's define the time series we want to assign values from.
-
+By default, `value_from` assign to timestamps the closest value in time 
+from another time series. Let's define the time series we want to assign values from.
 
 For every timestamps in `tsgroup`, we want to assign the closest value in time from `tsd`.
 
@@ -176,6 +176,59 @@ plt.yticks([-1, 0, 1])
 plt.legend(bbox_to_anchor=(1.0, 0.5, 0.5, 0.5))
 plt.show()
 ```
+
+The argument `mode` can control if the nearest target time is taken before or 
+after the reference time.
+
+```{code-cell} ipython3
+:tags: [hide-cell]
+tsd = nap.Tsd(t=np.arange(0, 10, 1), d=np.arange(0, 100, 10))
+ts = nap.Ts(t=np.arange(0.5, 9, 1))
+```
+
+In this case, the variable `ts` receive data from the time point before.
+
+```{code-cell} ipython3
+new_ts_before = ts.value_from(tsd, mode="before")
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.figure()
+plt.plot(ts.fillna(-1), "|", label="ts", markersize=20, mew=3)
+plt.plot(tsd, "*-", linewidth=2, label="tsd")
+plt.plot(new_ts_before, "o-", label = "new_ts_before", markersize=10)
+plt.title("ts.value_from(tsd, mode='before')")
+plt.xlabel("Time (s)")
+plt.legend(bbox_to_anchor=(1.0, 0.5, 0.5, 0.5))
+plt.show()
+```
+```{code-cell} ipython3
+:tags: [hide-input]
+new_ts_after = ts.value_from(tsd, mode="after")
+plt.figure()
+plt.plot(ts.fillna(-1), "|", label="ts", markersize=20, mew=3)
+plt.plot(tsd, "*-", linewidth=2, label="tsd")
+plt.plot(new_ts_after, "o-", label = "new_ts_after", markersize=10)
+plt.title("ts.value_from(tsd, mode='after')")
+plt.xlabel("Time (s)")
+plt.legend(bbox_to_anchor=(1.0, 0.5, 0.5, 0.5))
+plt.show()
+```
+
+If there is no time point found before or after or within the interval, the function assigns
+Nans.
+
+```{code-cell} ipython3
+tsd = nap.Tsd(t=np.arange(1, 10, 1), d=np.arange(10, 100, 10))
+ep = nap.IntervalSet(start=0, end = 10)
+ts = nap.Ts(t=[0, 9])
+
+# First ts is at 0s. First tsd is at 1s.
+ts.value_from(tsd, ep=ep, mode="before")
+```
+
+
 
 ### `threshold`
 
@@ -210,6 +263,56 @@ plt.title("tsd.threshold(0.5)")
 plt.show()
 ```
 
+### `to_trial_tensor`
+
+`Tsd`, `TsdFrame`, and `TsdTensor` all have the method `to_trial_tensor`, which creates a numpy array from an `IntervalSet` by slicing the time series. The resulting tensor has shape (shape of time series, number of trials, number of time points), where the first dimension(s) is dependent on the object. 
+
+```{code-cell} ipython3
+ep = nap.IntervalSet([0, 10, 30, 50], metadata={'trials':[1, 2]})
+print(tsgroup, "\n", ep)
+```
+
+The following example returns a tensor with shape (2, 21), for 2 trials and 21 time points, where the first dimension is dropped due to this being a `Tsd` object.
+
+```{code-cell} ipython3
+tensor = tsd.to_trial_tensor(ep)
+print(tensor, "\n")
+print("Tensor shape = ", tensor.shape)
+```
+
+Since trial 2 is twice as long as trial 1, the array is padded with NaNs. The padding value can be changed by setting the parameter `padding_value`.
+
+```{code-cell} ipython3
+tensor = tsd.to_trial_tensor(ep, padding_value=-1)
+print(tensor, "\n")
+print("Tensor shape = ", tensor.shape)
+```
+
+By default, time series are aligned to the start of each trial. To align the time series to the end of each trial, the optional parameter `align` can be set to "end".
+
+```{code-cell} ipython3
+tensor = tsd.to_trial_tensor(ep, align="end")
+print(tensor, "\n")
+print("Tensor shape = ", tensor.shape)
+```
+
+### `trial_count`
+
+`TsGroup` and `Ts` objects each have the method `trial_count`, which builds a trial-based count tensor from an `IntervalSet` object. Similar to `count`, this function requires a `bin_size` parameter which determines the number of time bins within each trial. The resulting tensor has shape (number of group elements, number of trials, number of time bins) for `TsGroup` objects, or (number of trials, number of time bins) for `Ts` objects. 
+
+```{code-cell} ipython3
+tensor = tsgroup.trial_count(ep, bin_size=1)
+print(tensor, "\n")
+print("Tensor shape = ", tensor.shape)
+```
+
+Similar to `to_trial_tensor`, the array is padded with NaNs when the trials have uneven durations, where the padding value can be controled using the parameter `padding_value`. Additionally, the parameter `align` can change whether the count is aligned to the "start" or "end" of each trial.
+
+```{code-cell} ipython3
+tensor = tsgroup.trial_count(ep, bin_size=1, align="end", padding_value=-1)
+print(tensor, "\n")
+print("Tensor shape = ", tensor.shape)
+```
 
 ### Mapping between `TsGroup` and `Tsd`
 
