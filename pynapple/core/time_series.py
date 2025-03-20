@@ -1169,6 +1169,8 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             raise IndexError
 
     def __getitem__(self, key, *args, **kwargs):
+        if isinstance(key, tuple):
+            key = tuple(k.values if hasattr(k, "values") else k for k in key)
         if isinstance(key, Tsd):
             try:
                 assert np.issubdtype(key.dtype, np.bool_)
@@ -1196,7 +1198,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         else:
             if isinstance(key, pd.Series) and key.index.equals(self.columns):
                 # if indexing with a pd.Series from metadata, transform it to tuple with slice(None) in first position
-                key = (slice(None, None, None), key)
+                key = (slice(None, None, None), key.values)
 
             output = self.values.__getitem__(key)
             columns = self.columns
