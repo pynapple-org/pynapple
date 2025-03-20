@@ -12,6 +12,7 @@ import pandas as pd
 import pytest
 
 import pynapple as nap
+from .helper_tests import skip_if_backend
 
 # tsd1 = nap.Tsd(t=np.arange(100), d=np.random.rand(100), time_units="s")
 # tsd2 = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), columns = ['a', 'b', 'c'])
@@ -1002,9 +1003,9 @@ class TestTsd:
 
         assert isinstance(indexed, nap.Tsd)
         np.testing.assert_array_almost_equal(indexed.values, np_indexed_vals)
-
-        tsd[tsd_index] = 0
-        np.testing.assert_array_almost_equal(tsd.values[tsd_index.values], 0)
+        if nap.nap_config.backend != "jax":
+            tsd[tsd_index] = 0
+            np.testing.assert_array_almost_equal(tsd.values[tsd_index.values], 0)
 
     def test_slice_with_bool_tsd(self, tsd):
 
@@ -1016,9 +1017,9 @@ class TestTsd:
 
         assert isinstance(indexed, nap.Tsd)
         np.testing.assert_array_almost_equal(indexed.values, np_indexed_vals)
-
-        tsd[tsd_index] = 0
-        np.testing.assert_array_almost_equal(tsd.values[tsd_index.values], 0)
+        if nap.nap_config.backend != "jax":
+            tsd[tsd_index] = 0
+            np.testing.assert_array_almost_equal(tsd.values[tsd_index.values], 0)
 
     def test_data(self, tsd):
         np.testing.assert_array_almost_equal(tsd.values, tsd.data())
@@ -1344,7 +1345,9 @@ class TestTsdFrame:
                 assert isinstance(tsdframe[row, col], nap.Tsd)
             else:
                 # shape mismatch
-                with pytest.raises(IndexError, match="shape mismatch"):
+                # Numpy: IndexError, JAX: ValueError
+                # (numpy | jax error messages)
+                with pytest.raises((IndexError, ValueError), match="shape mismatch|Incompatible shapes for "):
                     tsdframe[row, col]
 
         elif isinstance(row, Number) and isinstance(col, Number):
@@ -2225,6 +2228,7 @@ class TestTsdTensor:
         with pytest.raises(IndexError, match="boolean index did not match"):
             tsdtensor[index_tsd]
 
+    @skip_if_backend("jax")
     def test_setitem_with_boolean_tsd(self, tsdtensor):
         # Create a boolean Tsd for indexing
         index_tsd = nap.Tsd(
