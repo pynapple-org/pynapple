@@ -77,7 +77,8 @@ doc = [
     "myst-nb",
     "dandi",
     "sphinx-autobuild",
-    "sphinx-contributors"
+    "sphinx-contributors",
+    "scikit-learn",
     # "sphinx-exec-code"
 ]
 docs = [
