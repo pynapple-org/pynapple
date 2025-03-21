@@ -1,3 +1,3 @@
 """Unit test package for pynapple."""
 
-from . import mock
+from . import helper_tests

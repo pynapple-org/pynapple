@@ -1,6 +1,17 @@
 """Test configuration script."""
 
 import numpy as np
+import pytest
+
+import pynapple as nap
+
+
+def skip_if_backend(backend_name):
+    """Skip test if the backend matches `backend_name`."""
+    return pytest.mark.skipif(
+        nap.nap_config.backend == backend_name,
+        reason=f"Test skipped because backend is {backend_name}",
+    )
 
 
 class MockArray:

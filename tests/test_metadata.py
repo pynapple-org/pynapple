@@ -559,8 +559,10 @@ def test_tsdframe_metadata_overlapping_names(
     with set_attr_exp:
         setattr(tsdframe_meta, name, np.ones(4))
     # error when set as key
-    with set_key_exp:
-        tsdframe_meta[name] = np.ones(4)
+    # skip jax (no in-place set)
+    if nap.nap_config.backend != "jax":
+        with set_key_exp:
+            tsdframe_meta[name] = np.ones(4)
     # retrieve with get_info
     with get_exp:
         np.testing.assert_array_almost_equal(tsdframe_meta.get_info(name), np.ones(4))

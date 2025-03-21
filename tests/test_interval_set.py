@@ -9,7 +9,7 @@ import pytest
 
 import pynapple as nap
 
-from .mock import MockArray
+from .helper_tests import MockArray
 
 
 def test_create_iset():

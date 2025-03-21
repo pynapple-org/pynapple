@@ -5,7 +5,7 @@ import pytest
 
 import pynapple as nap
 
-from .mock import MockArray
+from .helper_tests import MockArray
 
 
 class TestTsArray:
