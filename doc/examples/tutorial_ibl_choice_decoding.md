@@ -97,13 +97,7 @@ stim_on_intervals = nap.IntervalSet(
 )
 ```
 
-Restrict the neural activity to the included trial epochs:
-
-```{code-cell} ipython3
-spikes = spikes.restrict(trials)
-```
-
-Now, we use `build_tensor` to align the neural data to these stimulus windows and bin it in 0.1s time bins.
+Now, use `build_tensor` to align the neural data to these stimulus windows and bin it in 0.1s time bins.
 
 ```{code-cell} ipython3
 trial_aligned_binned_spikes = nap.build_tensor(
