@@ -148,6 +148,7 @@ napoleon_numpy_docstring = True
 
 nitpicky = True
 
+nb_execution_timeout = 60 * 15  # Set timeout in seconds (e.g., 15 minutes)
 
 
 
