@@ -40,7 +40,7 @@ The function `compute_perievent` align timestamps to a particular set of timesta
 
 ```{code-cell} ipython3
 peth = nap.compute_perievent(
-  data=ts1, 
+  timestamps=ts1, 
   tref=stim, 
   minmax=(-0.1, 0.2), 
   time_unit="s")
@@ -115,7 +115,7 @@ events = nap.Ts(t=np.sort(np.random.uniform(0, 100, 5)))
 ```{code-cell}
 
 perievent = nap.compute_perievent_continuous(
-  data=features, 
+  timeseries=features, 
   tref=events, 
   minmax=(-1, 1))
 
