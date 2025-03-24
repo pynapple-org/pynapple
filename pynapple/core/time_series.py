@@ -1295,7 +1295,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     if (
                         len(index) == 1
                         and output.ndim == 1
-                        and not isinstance(key[1], int)
+                        and not isinstance(key[1], (int, np.integer))
                     ):
                         output = output[None, :]
                     elif (
