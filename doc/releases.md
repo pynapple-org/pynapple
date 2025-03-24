@@ -1,5 +1,13 @@
 # Releases
 
+### 0.8.5 (2025-03-24)
+
+- Implements `nap.build_tensor` and `nap.warp_tensor` for trial-based data.
+- Fix horizontal slicing for TsdFrame (Issue )
+- Fix empty TsGroup. The rate attribute was not added to the metadata dataframe.
+- New example notebook : Trial-aligned choice decoding in International Brain Lab data
+- Set pynapple version dynamically by reading the github tag.
+
 ### 0.8.4 (2025-02-07)
 
 - Fix value printing of IntervalSet when rows are collapsed 
