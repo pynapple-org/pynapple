@@ -1,0 +1,6 @@
+pynapple.Tsd.threshold
+======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Tsd.threshold

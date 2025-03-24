@@ -1,0 +1,1014 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Computing perievent &#8212; pynapple 0.0.post1.dev1 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.4510f1fc1dee50b3e5859aac5469c37c29e427902b24a333a5f9fcb2f0b3ac41.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_contributors.css?v=f079e67e" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=f2caec9a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=42336cb0"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=c57da192"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'examples/tutorial_human_dataset';</script>
+    <link rel="icon" href="../_static/Pynapple_final_icon.png"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Wavelet Transform" href="tutorial_wavelet_decomposition.html" />
+    <link rel="prev" title="Calcium Imaging" href="tutorial_calcium_imaging.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.0.post1" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.0.post1.dev1 documentation - Home"/>
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.0.post1.dev1 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About us
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial_HD_dataset.html">Analysing head-direction cells</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial_pynapple_dandi.html">Streaming data from Dandi</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial_calcium_imaging.html">Computing calcium imaging tuning curves</a></li>
+</ul>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Example perievent</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial_wavelet_decomposition.html">Example wavelet decomposition</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial_phase_preferences.html">Example filtering</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial_ibl_choice_decoding.html">Trial-aligned choice decoding in International Brain Lab data</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Computing perievent</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="computing-perievent">
+<h1>Computing perievent<a class="headerlink" href="#computing-perievent" title="Link to this heading">#</a></h1>
+<p>This tutorial demonstrates how we use Pynapple on various publicly available datasets in systems neuroscience to streamline analysis. In this tutorial, we will examine the dataset from <a class="reference external" href="https://www.nature.com/articles/s41593-022-01020-w">Zheng et al (2022)</a>, which was used to generate Figure 4c in the <a class="reference external" href="https://elifesciences.org/reviewed-preprints/85786">publication</a>.</p>
+<p>The NWB file for the example used here is provided in <a class="reference external" href="https://github.com/PeyracheLab/pynacollada/tree/main/pynacollada/Pynapple%20Paper%20Figures/Zheng%202022/000207/sub-4">this</a> repository. The entire dataset can be downloaded <a class="reference external" href="https://dandiarchive.org/dandiset/000207/0.220216.0323">here</a>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+</pre></div>
+</div>
+</div>
+</div>
+<hr class="docutils" />
+<section id="stream-the-data-from-dandi">
+<h2>Stream the data from DANDI<a class="headerlink" href="#stream-the-data-from-dandi" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">pynwb</span> <span class="kn">import</span> <span class="n">NWBHDF5IO</span>
+
+<span class="kn">from</span> <span class="nn">dandi.dandiapi</span> <span class="kn">import</span> <span class="n">DandiAPIClient</span>
+<span class="kn">import</span> <span class="nn">fsspec</span>
+<span class="kn">from</span> <span class="nn">fsspec.implementations.cached</span> <span class="kn">import</span> <span class="n">CachingFileSystem</span>
+<span class="kn">import</span> <span class="nn">h5py</span>
+
+<span class="c1"># Enter the session ID and path to the file</span>
+<span class="n">dandiset_id</span><span class="p">,</span> <span class="n">filepath</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;000207&quot;</span><span class="p">,</span> <span class="s2">&quot;sub-4/sub-4_ses-4_ecephys.nwb&quot;</span><span class="p">)</span>
+
+<span class="k">with</span> <span class="n">DandiAPIClient</span><span class="p">()</span> <span class="k">as</span> <span class="n">client</span><span class="p">:</span>
+    <span class="n">asset</span> <span class="o">=</span> <span class="n">client</span><span class="o">.</span><span class="n">get_dandiset</span><span class="p">(</span><span class="n">dandiset_id</span><span class="p">,</span> <span class="s2">&quot;draft&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">get_asset_by_path</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+    <span class="n">s3_url</span> <span class="o">=</span> <span class="n">asset</span><span class="o">.</span><span class="n">get_content_url</span><span class="p">(</span><span class="n">follow_redirects</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">strip_query</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="c1"># first, create a virtual filesystem based on the http protocol</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">fsspec</span><span class="o">.</span><span class="n">filesystem</span><span class="p">(</span><span class="s2">&quot;http&quot;</span><span class="p">)</span>
+
+<span class="c1"># create a cache to save downloaded data to disk (optional)</span>
+<span class="n">fs</span> <span class="o">=</span> <span class="n">CachingFileSystem</span><span class="p">(</span>
+    <span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span>
+    <span class="n">cache_storage</span><span class="o">=</span><span class="s2">&quot;nwb-cache&quot;</span><span class="p">,</span>  <span class="c1"># Local folder for the cache</span>
+<span class="p">)</span>
+
+<span class="c1"># next, open the file</span>
+<span class="n">file</span> <span class="o">=</span> <span class="n">h5py</span><span class="o">.</span><span class="n">File</span><span class="p">(</span><span class="n">fs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">s3_url</span><span class="p">,</span> <span class="s2">&quot;rb&quot;</span><span class="p">))</span>
+<span class="n">io</span> <span class="o">=</span> <span class="n">NWBHDF5IO</span><span class="p">(</span><span class="n">file</span><span class="o">=</span><span class="n">file</span><span class="p">,</span> <span class="n">load_namespaces</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>/home/runner/.local/lib/python3.12/site-packages/hdmf/spec/namespace.py:535: UserWarning: Ignoring cached namespace &#39;hdmf-common&#39; version 1.5.0 because version 1.8.0 is already loaded.
+  warn(&quot;Ignoring cached namespace &#39;%s&#39; version %s because version %s is already loaded.&quot;
+/home/runner/.local/lib/python3.12/site-packages/hdmf/spec/namespace.py:535: UserWarning: Ignoring cached namespace &#39;core&#39; version 2.5.0 because version 2.8.0 is already loaded.
+  warn(&quot;Ignoring cached namespace &#39;%s&#39; version %s because version %s is already loaded.&quot;
+/home/runner/.local/lib/python3.12/site-packages/hdmf/spec/namespace.py:535: UserWarning: Ignoring cached namespace &#39;hdmf-experimental&#39; version 0.1.0 because version 0.5.0 is already loaded.
+  warn(&quot;Ignoring cached namespace &#39;%s&#39; version %s because version %s is already loaded.&quot;
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="parsing-the-data">
+<h2>Parsing the data<a class="headerlink" href="#parsing-the-data" title="Link to this heading">#</a></h2>
+<p>The first step is to load the data from the Neurodata Without Borders (NWB) file. This is done as follows:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">custom_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;axes.spines.right&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;axes.spines.top&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">set_theme</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s2">&quot;ticks&quot;</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="s2">&quot;colorblind&quot;</span><span class="p">,</span> <span class="n">font_scale</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">rc</span><span class="o">=</span><span class="n">custom_params</span><span class="p">)</span>
+
+<span class="n">data</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">NWBFile</span><span class="p">(</span><span class="n">io</span><span class="o">.</span><span class="n">read</span><span class="p">())</span>  <span class="c1"># Load the NWB file for this dataset</span>
+
+<span class="c1"># What does this look like?</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>4
+┍━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━┑
+│ Keys                     │ Type        │
+┝━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━┥
+│ units                    │ TsGroup     │
+│ timediscrimination_table │ IntervalSet │
+│ recognition_table        │ IntervalSet │
+│ encoding_table           │ IntervalSet │
+│ experiment_ids           │ Tsd         │
+│ events                   │ Tsd         │
+┕━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━┙
+</pre></div>
+</div>
+</div>
+</div>
+<p>Get spike timings</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">spikes</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;units&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>What does this look like?</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">spikes</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Index    rate     x      y       z       imp    location           filtering    ...
+-------  -------  -----  ------  ------  -----  -----------------  -----------  -----
+0        7.0009   26.63  -15.83  -16.49  nan    hippocampus_right  300-3000Hz   ...
+1        7.24478  26.63  -15.83  -16.49  nan    hippocampus_right  300-3000Hz   ...
+2        6.09486  26.63  -15.83  -16.49  nan    hippocampus_right  300-3000Hz   ...
+3        6.91548  26.63  -15.83  -16.49  nan    hippocampus_right  300-3000Hz   ...
+4        0.40162  26.63  -15.83  -16.49  nan    hippocampus_right  300-3000Hz   ...
+5        0.46117  26.63  -15.83  -16.49  nan    hippocampus_right  300-3000Hz   ...
+6        1.81066  26.63  -15.83  -16.49  nan    hippocampus_right  300-3000Hz   ...
+...      ...      ...    ...     ...     ...    ...                ...          ...
+28       1.13432  26.63  -15.83  -16.49  nan    hippocampus_right  300-3000Hz   ...
+29       0.60013  26.63  -15.83  -16.49  nan    hippocampus_right  300-3000Hz   ...
+30       0.18433  26.63  -15.83  -16.49  nan    hippocampus_right  300-3000Hz   ...
+31       2.3282   26.63  -15.83  -16.49  nan    hippocampus_right  300-3000Hz   ...
+32       0.31052  26.63  -15.83  -16.49  nan    hippocampus_right  300-3000Hz   ...
+33       0.69087  26.63  -15.83  -16.49  nan    hippocampus_right  300-3000Hz   ...
+34       0.65578  26.63  -15.83  -16.49  nan    hippocampus_right  300-3000Hz   ...
+</pre></div>
+</div>
+</div>
+</div>
+<p>This TsGroup has, among other information, the mean firing rate of the unit, the X, Y and Z coordinates, the brain region the unit was recorded from, and the channel number on which the unit was located.</p>
+<p>Next, let’s get the encoding table of all stimulus times, as shown below:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">encoding_table</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;encoding_table&quot;</span><span class="p">]</span>
+
+<span class="c1"># What does this look like?</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">encoding_table</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>index    start         end           fixcross_time       ExperimentID    boundary1_time      boundary2_time     boundary3_time     stimCategory    Clip_name
+0        1.06846275    9.10133       0.05655475          70.0            5.06846275          nan                nan                0               NB_24.mp4
+1        10.18234225   18.1145585    9.116686249999999   70.0            12.88060075         14.43444675        nan                1               SB_23.mp4
+2        19.071072     27.13738775   18.13049825         70.0            23.071071999999997  nan                nan                2               HB_20.mp4
+3        28.1604755    36.390234     27.15492625         70.0            32.1604755          nan                nan                0               NB_26.mp4
+4        37.470909     44.5844975    36.40934675         70.0            41.470909           nan                nan                0               NB_25.mp4
+5        45.5747065    53.5579785    44.6036855          70.0            49.5747065          nan                nan                0               NB_11.mp4
+6        54.58672125   62.78414525   53.577170249999995  70.0            56.074423249999995  nan                nan                1               SB_6.mp4
+...      ...           ...           ...                 ...             ...                 ...                ...                ...             ...
+83       868.08706525  876.1916395   867.00219025        70.0            868.63873425        869.91904325       871.67373          1               SB_30.mp4
+84       883.93252325  891.72896825  882.9728282499999   70.0            887.9325232499999   886.1784335        890.2121689999999  2               HB_6.mp4
+85       892.75523325  900.92109225  891.7479727499999   70.0            898.284193          nan                nan                1               SB_2.mp4
+86       901.9068505   910.17197875  900.940121          70.0            905.9068504999999   nan                nan                2               HB_27.mp4
+87       911.1383965   919.33594975  910.19093775        70.0            915.1383965         912.6979262499999  917.06715075       2               HB_10.mp4
+88       920.36395025  928.32984475  919.3549025         70.0            921.90619325        923.47853075       924.9241169999999  1               SB_27.mp4
+89       930.6396355   939.07302925  929.7180985         70.0            932.99710575        934.19136925       nan                1               SB_25.mp4
+shape: (90, 2), time unit: sec.
+</pre></div>
+</div>
+</div>
+</div>
+<p>This table has, among other things, the scene boundary times for which we will plot the peri-event time histogram (PETH).</p>
+<p>There are 3 types of scene boundaries in this data. For the purposes of demonstration, we will use only the “No boundary” (NB) and the “Hard boundary” (HB conditions). The encoding table has a stimCategory field, which tells us the type of boundary corresponding to a given trial.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">stimCategory</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+    <span class="n">encoding_table</span><span class="o">.</span><span class="n">stimCategory</span>
+<span class="p">)</span>  <span class="c1"># Get the scene boundary type for all trials</span>
+
+<span class="c1"># What does this look like?</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">stimCategory</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[0 1 2 0 0 0 1 0 2 1 2 0 2 0 1 1 1 1 0 0 2 0 0 2 0 1 0 2 0 0 2 0 0 0 0 2 2
+ 2 0 0 1 1 1 1 0 2 1 1 0 2 1 0 2 2 2 0 1 0 1 1 2 2 0 2 2 2 1 1 2 1 0 2 2 1
+ 0 1 2 0 2 2 1 1 1 1 2 1 2 2 1 1]
+</pre></div>
+</div>
+</div>
+</div>
+<p>Trials marked 0 correspond to NB, while trials marked 2 correspond to HB. Let’s extract the trial numbers for NB and HB trials, as shown below:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">indxNB</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">stimCategory</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span>  <span class="c1"># NB trial indices</span>
+<span class="n">indxHB</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">stimCategory</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>  <span class="c1"># HB trial indices</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>The encoding table also has 3 types of boundary times. For the purposes of our demonstration, we will focus on boundary1 times, and extract them as shown below:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">boundary1_time</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">encoding_table</span><span class="o">.</span><span class="n">boundary1_time</span><span class="p">)</span>  <span class="c1"># Get timings of Boundary1</span>
+
+<span class="c1"># What does this look like?</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">boundary1_time</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>[  5.06846275  12.88060075  23.071072    32.1604755   41.470909
+  49.5747065   56.07442325  72.803867    82.1299925   92.77667275
+  99.9925845  109.0787315  118.0778575  133.12435825 140.94827125
+ 147.8236585  160.726736   170.441769   183.29262575 191.11327175
+ 199.63382425 208.5142425  217.6186295  232.62687825 241.7270365
+ 250.58327775 259.5545145  268.6661045  278.026902   287.04517875
+ 301.2426685  310.21093375 319.1822215  328.13037175 337.16751875
+ 363.737004   372.785663   381.86749625 391.2704085  400.5077995
+ 407.28660475 416.0272855  431.792285   441.75272875 448.88401175
+ 456.97766275 463.88864475 472.13035175 490.53584775 499.7064625
+ 507.6917495  518.78793775 528.140675   537.1412335  552.5116415
+ 562.4287995  569.44012625 580.99649325 591.974217   597.74463025
+ 608.3638655  624.44389125 633.4175285  642.3969695  651.776966
+ 660.699774   676.9439885  681.3602465  692.799878   699.53861175
+ 711.341688   720.4819275  729.43782175 772.99961425 780.19490625
+ 788.1175045  798.34264525 807.54519    817.25781375 835.1736475
+ 842.54760125 852.294991   861.40924725 868.63873425 887.93252325
+ 898.284193   905.9068505  915.1383965  921.90619325 932.99710575]
+</pre></div>
+</div>
+</div>
+</div>
+<p>This contains the timings of all boundaries in this block of trials. Note that we also have the type of boundary for each trial. Let’s store the NB and HB boundary timings in separate variables, as Pynapple Ts objects:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">NB</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">boundary1_time</span><span class="p">[</span><span class="n">indxNB</span><span class="p">])</span>  <span class="c1"># NB timings</span>
+<span class="n">HB</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">boundary1_time</span><span class="p">[</span><span class="n">indxHB</span><span class="p">])</span>  <span class="c1"># HB timings</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="peri-event-time-histogram-peth">
+<h2>Peri-Event Time Histogram (PETH)<a class="headerlink" href="#peri-event-time-histogram-peth" title="Link to this heading">#</a></h2>
+<p>A PETH is a plot where we align a variable of interest (for example, spikes) to an external event (in this case, to boundary times). This visualization helps us infer relationships between the two.</p>
+<p>For our demonstration, we will align the spikes of the first unit, which is located in the hippocampus, to the times of NB and HB. You can do a quick check to verify that the first unit is indeed located in the hippocampus, we leave it to you.</p>
+<p>With Pynapple, PETHs can be computed with a single line of code!</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">NB_peth</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_perievent</span><span class="p">(</span>
+    <span class="n">spikes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">NB</span><span class="p">,</span> <span class="n">minmax</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="p">)</span>  <span class="c1"># Compute PETH of unit aligned to NB, for -0.5 to 1s windows</span>
+<span class="n">HB_peth</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_perievent</span><span class="p">(</span>
+    <span class="n">spikes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">HB</span><span class="p">,</span> <span class="n">minmax</span><span class="o">=</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="p">)</span>  <span class="c1"># Compute PETH of unit aligned to HB, for -0.5 to 1s windows</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Let’s plot the PETH</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span> <span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">211</span><span class="p">)</span>  <span class="c1"># Plot the figures in 2 rows</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">NB_peth</span><span class="o">.</span><span class="n">to_tsd</span><span class="p">(),</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="mi">102</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">204</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span> <span class="o">/</span> <span class="mi">255</span><span class="p">],</span>
+        <span class="n">markersize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>  <span class="c1"># Plot a line at t = 0</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">30</span><span class="p">])</span>  <span class="c1"># Set ticks on Y-axis</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">([</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;30&quot;</span><span class="p">])</span>  <span class="c1"># Label the ticks</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Time from NB (s)&quot;</span><span class="p">)</span>  <span class="c1"># Time from boundary in seconds, on X-axis</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Trial Number&quot;</span><span class="p">)</span>  <span class="c1"># Trial number on Y-axis</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">subplot</span><span class="p">(</span><span class="mi">212</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">HB_peth</span><span class="o">.</span><span class="n">to_tsd</span><span class="p">(),</span> <span class="s2">&quot;o&quot;</span><span class="p">,</span>
+        <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="mi">255</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">99</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">71</span> <span class="o">/</span> <span class="mi">255</span><span class="p">],</span>
+        <span class="n">markersize</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>  <span class="c1"># Plot PETH</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>  <span class="c1"># Plot a line at t = 0</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">30</span><span class="p">])</span>  <span class="c1"># Set ticks on Y-axis</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">([</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;30&quot;</span><span class="p">])</span>  <span class="c1"># Label the ticks</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Time from HB (s)&quot;</span><span class="p">)</span>  <span class="c1"># Time from boundary in seconds, on X-axis</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Trial Number&quot;</span><span class="p">)</span>  <span class="c1"># Trial number on Y-axis</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">subplots_adjust</span><span class="p">(</span><span class="n">wspace</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">hspace</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">top</span><span class="o">=</span><span class="mf">0.85</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/cbdf4c72841b1e612212262d3588eac737912f6128c4803b3681048cbccf5973.png" src="../_images/cbdf4c72841b1e612212262d3588eac737912f6128c4803b3681048cbccf5973.png" />
+</div>
+</div>
+<p>Awesome! From the PETH, we can see that this neuron fires after boundary onset in HB trials. This is an example of what the authors describe <a class="reference external" href="https://www.nature.com/articles/s41593-022-01020-w">here</a> as a boundary cell.</p>
+</section>
+<hr class="docutils" />
+<section id="peth-of-firing-rate-for-nb-and-hb-cells">
+<h2>PETH of firing rate for NB and HB cells<a class="headerlink" href="#peth-of-firing-rate-for-nb-and-hb-cells" title="Link to this heading">#</a></h2>
+<p>Now that we have the PETH of spiking, we can go one step further. We will plot the mean firing rate of this cell aligned to the boundary for each trial type. Doing this in Pynapple is very simple!</p>
+<p>Use Pynapple to compute binned spike counts</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">bin_size</span> <span class="o">=</span> <span class="mf">0.01</span>
+<span class="n">counts_NB</span> <span class="o">=</span> <span class="n">NB_peth</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">bin_size</span><span class="p">)</span>  <span class="c1"># Spike counts binned in 10ms steps, for NB trials</span>
+<span class="n">counts_HB</span> <span class="o">=</span> <span class="n">HB_peth</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">bin_size</span><span class="p">)</span>  <span class="c1"># Spike counts binned in 10ms steps, for HB trials</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Compute firing rate for both trial types</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fr_NB</span> <span class="o">=</span> <span class="n">counts_NB</span> <span class="o">/</span> <span class="n">bin_size</span>
+<span class="n">fr_HB</span> <span class="o">=</span> <span class="n">counts_HB</span> <span class="o">/</span> <span class="n">bin_size</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Smooth the firing rate with a gaussian window with std=4*bin_size</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">counts_NB</span> <span class="o">=</span> <span class="n">counts_NB</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">bin_size</span><span class="o">*</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">counts_HB</span> <span class="o">=</span> <span class="n">counts_HB</span><span class="o">.</span><span class="n">smooth</span><span class="p">(</span><span class="n">bin_size</span><span class="o">*</span><span class="mi">4</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Compute the mean firing rate for both trial types</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meanfr_NB</span> <span class="o">=</span> <span class="n">fr_NB</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">meanfr_HB</span> <span class="o">=</span> <span class="n">fr_HB</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Compute standard error of mean (SEM) of the firing rate for both trial types</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">scipy.stats</span> <span class="kn">import</span> <span class="n">sem</span>
+<span class="n">error_NB</span> <span class="o">=</span> <span class="n">sem</span><span class="p">(</span><span class="n">fr_NB</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">error_HB</span> <span class="o">=</span> <span class="n">sem</span><span class="p">(</span><span class="n">fr_HB</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Plot the mean +/- SEM of firing rate for both trial types</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span> <span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span><span class="mi">8</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">meanfr_NB</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="mi">102</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">204</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span> <span class="o">/</span> <span class="mi">255</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;NB&quot;</span>
+<span class="p">)</span>  <span class="c1"># Plot mean firing rate for NB trials</span>
+
+<span class="c1"># Plot SEM for NB trials</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+    <span class="n">meanfr_NB</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+    <span class="n">meanfr_NB</span><span class="o">.</span><span class="n">values</span> <span class="o">-</span> <span class="n">error_NB</span><span class="p">,</span>
+    <span class="n">meanfr_NB</span><span class="o">.</span><span class="n">values</span> <span class="o">+</span> <span class="n">error_NB</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="mi">102</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">204</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">0</span> <span class="o">/</span> <span class="mi">255</span><span class="p">],</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span>
+    <span class="n">meanfr_HB</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="mi">255</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">99</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">71</span> <span class="o">/</span> <span class="mi">255</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;HB&quot;</span>
+<span class="p">)</span>  <span class="c1"># Plot mean firing rate for HB trials</span>
+
+<span class="c1"># Plot SEM for NB trials</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span>
+    <span class="n">meanfr_HB</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+    <span class="n">meanfr_HB</span><span class="o">.</span><span class="n">values</span> <span class="o">-</span> <span class="n">error_HB</span><span class="p">,</span>
+    <span class="n">meanfr_HB</span><span class="o">.</span><span class="n">values</span> <span class="o">+</span> <span class="n">error_HB</span><span class="p">,</span>
+    <span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="mi">255</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">99</span> <span class="o">/</span> <span class="mi">255</span><span class="p">,</span> <span class="mi">71</span> <span class="o">/</span> <span class="mi">255</span><span class="p">],</span>
+    <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>  <span class="c1"># Plot a line at t = 0</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Time from boundary (s)&quot;</span><span class="p">)</span>  <span class="c1"># Time from boundary in seconds, on X-axis</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Firing rate (Hz)&quot;</span><span class="p">)</span>  <span class="c1"># Firing rate in Hz on Y-axis</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s2">&quot;upper right&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;matplotlib.legend.Legend at 0x7fb1eadf8710&gt;
+</pre></div>
+</div>
+<img alt="../_images/a30026383ad04b73837c4ce8d3724628ea3e3243ba23534111832f2e11956b93.png" src="../_images/a30026383ad04b73837c4ce8d3724628ea3e3243ba23534111832f2e11956b93.png" />
+</div>
+</div>
+<p>This plot verifies what we visualized in the PETH rasters above, that this cell responds to a hard boundary. Hence, it is a boundary cell. To learn more about these cells, please check out the original study <a class="reference external" href="https://www.nature.com/articles/s41593-022-01020-w">here</a>.</p>
+<p>I hope this tutorial was helpful. If you have any questions, comments or suggestions, please feel free to reach out to the Pynapple Team!</p>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm docutils">
+<div class="sd-card-header docutils">
+<p class="sd-card-text">Authors</p>
+</div>
+<div class="sd-card-body docutils">
+<p class="sd-card-text">Dhruv Mehrotra</p>
+<p class="sd-card-text">Guillaume Viejo</p>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="tutorial_calcium_imaging.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Calcium Imaging</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="tutorial_wavelet_decomposition.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Wavelet Transform</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#stream-the-data-from-dandi">Stream the data from DANDI</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#parsing-the-data">Parsing the data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#peri-event-time-histogram-peth">Peri-Event Time Histogram (PETH)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#peth-of-firing-rate-for-nb-and-hb-cells">PETH of firing rate for NB and HB cells</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/examples/tutorial_human_dataset.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2025, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">pynapple authors</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.0.post1</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

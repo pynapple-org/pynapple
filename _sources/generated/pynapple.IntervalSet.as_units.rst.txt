@@ -1,0 +1,6 @@
+pynapple.IntervalSet.as\_units
+==============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: IntervalSet.as_units
