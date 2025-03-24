@@ -18,8 +18,6 @@ import pandas as pd
 
 from .. import core as nap
 
-warnings.simplefilter("always", DeprecationWarning)
-
 
 def get_error_text(path):
     try:

@@ -8,6 +8,7 @@ The class `TsGroup` helps group objects with different timestamps
 import warnings
 from collections import UserDict
 from collections.abc import Hashable
+from numbers import Number
 
 import numpy
 import numpy as np
@@ -285,6 +286,10 @@ class TsGroup(UserDict, _MetadataMixin):
         # Making the TsGroup non mutable
         self._initialized = True
 
+        # Adding manually the rate column if data is empty.
+        if len(data) == 0:
+            self.set_info(rate=[])
+
         # Trying to add argument as metainfo
         if len(kwargs):
             warnings.warn(
@@ -541,7 +546,7 @@ class TsGroup(UserDict, _MetadataMixin):
             newgr, time_support=ep, bypass_check=True, metadata=self._metadata[cols]
         )
 
-    def value_from(self, tsd, ep=None):
+    def value_from(self, tsd, ep=None, mode="closest"):
         """
         Replace the value of each Ts/Tsd object within the Ts group with the closest value from tsd argument
 
@@ -549,13 +554,16 @@ class TsGroup(UserDict, _MetadataMixin):
         ----------
         tsd : Tsd
             The Tsd object holding the values to replace
-        ep : IntervalSet
+        ep : IntervalSet (optional)
             The IntervalSet object to restrict the operation.
             If None, the time support of the tsd input object is used.
+        mode: literal, either 'closest', 'before', 'after'
+            If closest, replace value with value from Tsd/TsdFrame/TsdTensor, if before gets the
+            first value before, if after the first value after.
 
         Returns
         -------
-        TsGroup
+        out : TsGroup
             TsGroup object with the new values
 
         Examples
@@ -576,17 +584,27 @@ class TsGroup(UserDict, _MetadataMixin):
         >>> newtsgroup = tsgroup.value_from(tsd, ep)
 
         """
+        if not isinstance(tsd, _BaseTsd):
+            raise TypeError(
+                "First argument should be an instance of Tsd, TsdFrame or TsdTensor"
+            )
         if ep is None:
             ep = tsd.time_support
+        if not isinstance(ep, IntervalSet):
+            raise TypeError("Argument ep should be of type IntervalSet or None")
+        if mode not in ("closest", "before", "after"):
+            raise ValueError(
+                f"Argument mode should be 'closest', 'before', or 'after'. {mode} provided instead."
+            )
 
         newgr = {}
         for k in self.data:
-            newgr[k] = self.data[k].value_from(tsd, ep)
+            newgr[k] = self.data[k].value_from(tsd, ep=ep, mode=mode)
 
         cols = self._metadata.columns.drop("rate")
         return TsGroup(newgr, time_support=ep, metadata=self._metadata[cols])
 
-    def count(self, *args, dtype=None, **kwargs):
+    def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
         """
         Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
         You can call this function in multiple ways :
@@ -652,39 +670,23 @@ class TsGroup(UserDict, _MetadataMixin):
         [1000 rows x 3 columns]
 
         """
-        bin_size = None
-        if "bin_size" in kwargs:
-            bin_size = kwargs["bin_size"]
+        if bin_size is not None:
             if isinstance(bin_size, int):
                 bin_size = float(bin_size)
             if not isinstance(bin_size, float):
-                raise ValueError("bin_size argument should be float.")
-        else:
-            for a in args:
-                if isinstance(a, (float, int)):
-                    bin_size = float(a)
+                raise TypeError("bin_size argument should be float or int.")
 
-        time_units = "s"
-        if "time_units" in kwargs:
-            time_units = kwargs["time_units"]
-            if not isinstance(time_units, str):
-                raise ValueError("time_units argument should be 's', 'ms' or 'us'.")
-        else:
-            for a in args:
-                if isinstance(a, str) and a in ["s", "ms", "us"]:
-                    time_units = a
+        if not isinstance(time_units, str) or time_units not in ["s", "ms", "us"]:
+            raise ValueError("time_units argument should be 's', 'ms' or 'us'.")
 
-        ep = self.time_support
-        if "ep" in kwargs:
-            ep = kwargs["ep"]
-            if not isinstance(ep, IntervalSet):
-                raise ValueError("ep argument should be IntervalSet")
-        else:
-            for a in args:
-                if isinstance(a, IntervalSet):
-                    ep = a
+        if ep is None:
+            ep = self.time_support
+        if not isinstance(ep, IntervalSet):
+            raise TypeError("ep argument should be of type IntervalSet")
 
-        if dtype:
+        if dtype is None:
+            dtype = np.dtype(np.int64)
+        else:
             try:
                 dtype = np.dtype(dtype)
             except Exception:
@@ -694,7 +696,6 @@ class TsGroup(UserDict, _MetadataMixin):
         ends = ep.end
 
         if isinstance(bin_size, (float, int)):
-            bin_size = float(bin_size)
             bin_size = TsIndex.format_timestamps(np.array([bin_size]), time_units)[0]
 
         # Call it on first element to pre-allocate the array
@@ -852,6 +853,110 @@ class TsGroup(UserDict, _MetadataMixin):
         toreturn = Tsd(t=times[idx], d=data[idx], time_support=self.time_support)
 
         return toreturn
+
+    def trial_count(
+        self, ep, bin_size, align="start", padding_value=np.nan, time_unit="s"
+    ):
+        """
+        Return trial-based count tensor from an IntervalSet object. The shape of the tensor array is
+        (number of group elements, number of trials, number of time bins).
+
+        The `bin_size` parameter determines the number of time bins.
+
+        The `align` parameter controls how the time series are aligned. If `align="start"`, the time
+        series are aligned to the start of each trial. If `align="end"`, the time series are aligned
+        to the end of each trial.
+
+        If trials have uneven durations, the returned array is padded. The parameter `padding_value`
+        determine which value is used to pad the array. Default is NaN.
+
+        Parameters
+        ----------
+        ep : IntervalSet
+            Epochs holding the trials. Each interval can be of unequal size.
+        bin_size : Number
+            The size of the time bins.
+        align: str, optional
+            How to align the time series ('start' [default], 'end')
+        padding_value: Number, optional
+            How to pad the array if unequal intervals. Default is np.nan.
+        time_unit : str, optional
+            Time units of the bin_size parameter ('s' [default], 'ms', 'us').
+
+        Returns
+        -------
+        numpy.ndarray
+
+        Raises
+        ------
+        RuntimeError
+            If `time_unit` not in ["s", "ms", "us"]
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> group = nap.TsGroup({0:nap.Ts(t=np.arange(0, 100))})
+        >>> ep = nap.IntervalSet(start=np.arange(20, 100, 20), end=np.arange(20, 100, 20) + np.arange(2, 10, 2))
+        >>> print(ep)
+          index    start    end
+              0       20     22
+              1       40     44
+              2       60     66
+              3       80     88
+        shape: (4, 2), time unit: sec.
+
+        Create a trial-based tensor by counting events within 1 second bin for each interval of `ep`.
+
+        >>> tensor = group.trial_count(ep, bin_size=1)
+        >>> tensor
+        array([[[ 1.,  1., nan, nan, nan, nan, nan, nan],
+                [ 1.,  1.,  1.,  1., nan, nan, nan, nan],
+                [ 1.,  1.,  1.,  1.,  1.,  1., nan, nan],
+                [ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.]]])
+
+        By default, the time series are aligned to the start of the epochs. The parameter `align` control this behavior.
+
+        >>> tensor = group.trial_count(ep, bin_size=1, align="end")
+        >>> tensor
+        array([[[nan, nan, nan, nan, nan, nan,  1.,  1.],
+                [nan, nan, nan, nan,  1.,  1.,  1.,  1.],
+                [nan, nan,  1.,  1.,  1.,  1.,  1.,  1.],
+                [ 1.,  1.,  1.,  1.,  1.,  1.,  1.,  1.]]])
+
+        """
+        if not isinstance(ep, IntervalSet):
+            raise RuntimeError("Argument ep should be of type IntervalSet")
+        if time_unit not in ["s", "ms", "us"]:
+            raise RuntimeError("time_unit should be 's', 'ms' or 'us'")
+        if align not in ["start", "end"]:
+            raise RuntimeError("align should be 'start' or 'end'")
+        if not isinstance(bin_size, Number):
+            raise RuntimeError("bin_size should be of type int or float")
+        # Determine size of tensor
+        bin_size = float(TsIndex.format_timestamps(np.array([bin_size]), time_unit)[0])
+        n_t = int(np.max(np.ceil((ep.end + bin_size - ep.start) / bin_size)))
+        count = self.count(bin_size=bin_size, ep=ep)
+
+        output = np.ones(shape=(count.shape[1], len(ep), n_t)) * padding_value
+
+        n_ep = np.zeros(len(ep), dtype="int")  # To trim to the minimum length
+
+        if align == "start":
+            for i in range(len(ep)):
+                tmp = count.get(ep.start[i], ep.end[i]).values
+                n_ep[i] = tmp.shape[0]
+                output[:, i, 0 : tmp.shape[0]] = np.transpose(tmp)
+            output = output[:, :, 0 : np.max(n_ep)]
+
+        if align == "end":
+            for i in range(len(ep)):
+                tmp = count.get(ep.start[i], ep.end[i]).values
+                n_ep[i] = tmp.shape[0]
+                output[:, i, -tmp.shape[0] :] = np.transpose(tmp)
+            output = output[:, :, -np.max(n_ep) :]
+
+        return output
 
     def get(self, start, end=None, time_units="s"):
         """Slice the `TsGroup` object from `start` to `end` such that all the timestamps within the group satisfy `start<=t<=end`.
@@ -1601,3 +1706,94 @@ class TsGroup(UserDict, _MetadataMixin):
         2   3  y
         """
         return _MetadataMixin.get_info(self, key)
+
+    @add_meta_docstring("groupby")
+    def groupby(self, by, get_group=None):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tmp = {0:nap.Ts(t=np.arange(0,40), time_units='s'),
+        ... 1:nap.Ts(t=np.arange(0,40,0.5), time_units='s'),
+        ... 2:nap.Ts(t=np.arange(0,40,0.25), time_units='s'),
+        ... }
+        >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
+        >>> tsgroup = nap.TsGroup(tmp,metadata=metadata)
+        >>> print(tsgroup)
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              0  1.00629     1  x
+              1  2.01258     2  x
+              2  4.02516     2  y
+
+        Grouping by a single column:
+
+        >>> tsgroup.groupby("l2")
+        {'x': [0, 1], 'y': [2]}
+
+        Grouping by multiple columns:
+
+        >>> tsgroup.groupby(["l1","l2"])
+        {(1, 'x'): [0], (2, 'x'): [1], (2, 'y'): [2]}
+
+        Filtering to a specific group using the output dictionary:
+
+        >>> groups = tsgroup.groupby("l2")
+        >>> tsgroup[groups["x"]]
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              1  1.00503     1  x
+              2  2.01005     2  x
+
+        Filtering to a specific group using the get_group argument:
+
+        >>> ep.groupby("l2", get_group="x")
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              1  1.00503     1  x
+              2  2.01005     2  x
+        """
+        return _MetadataMixin.groupby(self, by, get_group)
+
+    @add_meta_docstring("groupby_apply")
+    def groupby_apply(self, by, func, input_key=None, **func_kwargs):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tmp = {0:nap.Ts(t=np.arange(0,40), time_units='s'),
+        ... 1:nap.Ts(t=np.arange(0,40,0.5), time_units='s'),
+        ... 2:nap.Ts(t=np.arange(0,40,0.25), time_units='s'),
+        ... }
+        >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
+        >>> tsgroup = nap.TsGroup(tmp,metadata=metadata)
+        >>> print(tsgroup)
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              0  1.00629     1  x
+              1  2.01258     2  x
+              2  4.02516     2  y
+
+        Apply a custom function:
+
+        >>> tsgroup.groupby_apply("l2", lambda x: x.to_tsd().shape[0])
+        {'x': 120, 'y': 160}
+
+        Apply a function with additional arguments:
+
+        >>> feature = nap.Tsd(
+        ...     t=np.arange(40),
+        ...     d=np.concatenate([np.zeros(20), np.ones(20)]),
+        ...     time_support=nap.IntervalSet(np.array([[0, 5], [10, 12], [20, 33]])),
+        ... )
+        >>> tsgroup.groupby_apply("l2", nap.compute_1d_tuning_curves, feature=feature, nb_bins=2)
+        {'x':          0         1
+         0.25  1.15  2.044444
+         0.75  1.15  2.217857,
+         'y':              2
+         0.25  3.833333
+         0.75  4.353571}
+        """
+        return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)

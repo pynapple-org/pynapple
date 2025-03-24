@@ -1,6 +1,7 @@
 """Tests of ts group for `pynapple` package."""
 
 import pickle
+import re
 import warnings
 from collections import UserDict
 from contextlib import nullcontext as does_not_raise
@@ -86,6 +87,14 @@ class TestTsGroup1:
     def test_initialize_from_dict(self, test_dict, expectation):
         with expectation:
             nap.TsGroup(test_dict)
+
+    def test_create_empty_tsgroup(self):
+        tsgroup = nap.TsGroup(data={}, time_support=nap.IntervalSet(0, 1))
+
+        assert isinstance(tsgroup, nap.TsGroup)
+        assert len(tsgroup) == 0
+        # Need to make sure the metadata has the rate attribute
+        assert "rate" in tsgroup.metadata.columns
 
     @pytest.mark.parametrize(
         "tsgroup",
@@ -226,6 +235,87 @@ class TestTsGroup1:
         np.testing.assert_array_almost_equal(tsgroup2[1].values, np.arange(0, 2000, 5))
         np.testing.assert_array_almost_equal(tsgroup2[2].values, np.arange(0, 3000, 2))
 
+    def test_value_from_raise_type_errors(self, group):
+        tsgroup = nap.TsGroup(group)
+        tsd = nap.Tsd(t=np.arange(0, 300, 0.1), d=np.arange(3000))
+
+        with pytest.raises(
+            TypeError,
+            match=r"First argument should be an instance of Tsd, TsdFrame or TsdTensor",
+        ):
+            tsgroup.value_from(tsd={})
+
+        with pytest.raises(
+            TypeError, match=r"Argument ep should be of type IntervalSet or None"
+        ):
+            tsgroup.value_from(tsd=tsd, ep={})
+
+        with pytest.raises(
+            ValueError,
+            match=r"Argument mode should be 'closest', 'before', or 'after'. 1 provided instead.",
+        ):
+            tsgroup.value_from(tsd=tsd, mode=1)
+
+    @pytest.mark.parametrize("mode", ["before", "closest", "after"])
+    def test_value_from_tsd_mode(self, group, mode):
+        # case 1: tim-stamps form tsd are subset of time-stamps of tsd2
+        # In this case all modes should do the same thing
+        tsgroup = nap.TsGroup(group)
+        tsd = nap.Tsd(t=np.arange(0, 300, 0.1), d=np.arange(3000))
+        tsgroup2 = tsgroup.value_from(tsd, mode=mode)
+        assert len(tsgroup) == len(tsgroup2)
+        np.testing.assert_array_almost_equal(tsgroup2[0].values, np.arange(0, 2000, 10))
+        np.testing.assert_array_almost_equal(tsgroup2[1].values, np.arange(0, 2000, 5))
+        np.testing.assert_array_almost_equal(tsgroup2[2].values, np.arange(0, 3000, 2))
+
+        # case2: timestamps of tsd (integers) are not subset of that of tsd2.
+        tsd2 = nap.Tsd(t=np.arange(0.0, 300.3, 0.3), d=np.random.rand(1002))
+
+        tsgroup2 = tsgroup.value_from(tsd2, mode=mode)
+        # loop over epochs
+        for iset in tsd.time_support:
+            single_ep_tsgroup = tsgroup.restrict(iset)
+            single_ep_tsgroup2 = tsgroup2.restrict(iset)
+            single_ep_tsd2 = tsd2.restrict(iset)
+
+            for idx, ts in single_ep_tsgroup.items():
+                ts2 = single_ep_tsgroup2[idx]
+                # extract the indices with searchsorted.
+                if mode == "before":
+                    expected_idx = (
+                        np.searchsorted(single_ep_tsd2.t, ts.t, side="right") - 1
+                    )
+                    # check that times are actually before
+                    assert np.all(single_ep_tsd2.t[expected_idx] <= ts2.t)
+                    # check that subsequent are after
+                    assert np.all(single_ep_tsd2.t[expected_idx[:-1] + 1] > ts2.t[:-1])
+                    valid = np.ones(len(ts), dtype=bool)
+                elif mode == "after":
+                    expected_idx = np.searchsorted(single_ep_tsd2.t, ts.t, side="left")
+                    # avoid border errors with searchsorted
+                    valid = expected_idx < len(single_ep_tsd2)
+                    # check that times are actually before
+                    assert np.all(single_ep_tsd2.t[expected_idx[valid]] >= ts2.t[valid])
+                    # check that subsequent are after
+                    assert np.all(single_ep_tsd2.t[expected_idx[1:] - 1] < ts2.t[1:])
+                    expected_idx = expected_idx[valid]
+                else:
+                    before = np.searchsorted(single_ep_tsd2.t, ts.t, side="right") - 1
+                    after = np.searchsorted(single_ep_tsd2.t, ts.t, side="left")
+                    dt_before = np.abs(single_ep_tsd2.t[before] - ts.t)
+                    # void border errors with searchsorted
+                    valid = after < len(single_ep_tsd2)
+                    dt_after = np.abs(single_ep_tsd2.t[after[valid]] - ts.t[valid])
+                    expected_idx = before[valid].copy()
+                    # by default if equi-distance, it assigned to after.
+                    expected_idx[dt_after <= dt_before[valid]] = after[valid][
+                        dt_after <= dt_before[valid]
+                    ]
+                np.testing.assert_array_equal(
+                    single_ep_tsd2.d[expected_idx], ts2.d[valid]
+                )
+                np.testing.assert_array_equal(ts.t, ts2.t)
+
     def test_value_from_with_restrict(self, group):
         tsgroup = nap.TsGroup(group)
         tsd = nap.Tsd(t=np.arange(0, 300, 0.1), d=np.arange(3000))
@@ -306,27 +396,17 @@ class TestTsGroup1:
             np.testing.assert_array_almost_equal(
                 count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
             )
-            count = tsgroup.count(b, tu)
-            np.testing.assert_array_almost_equal(
-                count.loc[0].values[0:-1].flatten(), np.ones(len(count) - 1)
-            )
-            np.testing.assert_array_almost_equal(
-                count.loc[1].values[0:-1].flatten(), np.ones(len(count) - 1) * 2
-            )
-            np.testing.assert_array_almost_equal(
-                count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
-            )
 
     def test_count_errors(self, group):
         tsgroup = nap.TsGroup(group)
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             tsgroup.count(bin_size={})
 
-        with pytest.raises(ValueError):
+        with pytest.raises(TypeError):
             tsgroup.count(ep={})
 
         with pytest.raises(ValueError):
-            tsgroup.count(time_units={})
+            tsgroup.count(bin_size=1, time_units={})
 
     def test_get_interval(self, group):
         tsgroup = nap.TsGroup(group)
@@ -510,6 +590,80 @@ class TestTsGroup1:
             str(e_info.value)
             == """Unknown argument format. Must be pandas.Series, numpy.ndarray or a string from one of the following values : [rate, alpha]"""
         )
+
+    def test_trial_count(self, group):
+        tsgroup = nap.TsGroup(group)
+        ep = nap.IntervalSet(
+            start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
+        )
+
+        expected = np.ones((len(group), len(ep), 8)) * np.nan
+        for i, k in zip(range(len(ep)), range(2, 10, 2)):
+            expected[:, i, 0:k] = 1
+        for i, k in zip(range(len(group)), [1, 2, 5]):
+            expected[i] *= k
+
+        tensor = tsgroup.trial_count(ep, bin_size=1)
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = tsgroup[[0]].trial_count(ep, bin_size=1)
+        np.testing.assert_array_almost_equal(tensor, expected[0:1])
+
+        tensor = tsgroup.trial_count(ep, bin_size=1, align="start")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = tsgroup.trial_count(ep, bin_size=1, align="end")
+        np.testing.assert_array_almost_equal(tensor, np.flip(expected, axis=2))
+
+        tensor = tsgroup.trial_count(ep, bin_size=1, time_unit="s")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = tsgroup.trial_count(ep, bin_size=1e3, time_unit="ms")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = tsgroup.trial_count(ep, bin_size=1e6, time_unit="us")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = tsgroup.trial_count(ep, bin_size=1, align="start", padding_value=-1)
+        expected[np.isnan(expected)] = -1
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+    @pytest.mark.parametrize(
+        "ep, bin_size, align, padding_value, time_unit, expectation",
+        [
+            ([], 1, "start", np.nan, "s", "Argument ep should be of type IntervalSet"),
+            (
+                nap.IntervalSet(0, 1),
+                "a",
+                "start",
+                np.nan,
+                "s",
+                "bin_size should be of type int or float",
+            ),
+            (
+                nap.IntervalSet(0, 1),
+                1,
+                "a",
+                np.nan,
+                "s",
+                "align should be 'start' or 'end'",
+            ),
+            (
+                nap.IntervalSet(0, 1),
+                1,
+                "start",
+                np.nan,
+                1,
+                "time_unit should be 's', 'ms' or 'us'",
+            ),
+        ],
+    )
+    def test_trial_count_runtime_errors(
+        self, group, ep, bin_size, align, padding_value, time_unit, expectation
+    ):
+        tsgroup = nap.TsGroup(group)
+        with pytest.raises(RuntimeError, match=re.escape(expectation)):
+            tsgroup.trial_count(ep, bin_size, align, padding_value, time_unit)
 
     def test_save_npz(self, group):
 

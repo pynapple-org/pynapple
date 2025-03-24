@@ -40,7 +40,7 @@ The function `compute_perievent` align timestamps to a particular set of timesta
 
 ```{code-cell} ipython3
 peth = nap.compute_perievent(
-  data=ts1, 
+  timestamps=ts1, 
   tref=stim, 
   minmax=(-0.1, 0.2), 
   time_unit="s")
@@ -60,9 +60,9 @@ to "flatten" the TsGroup `peth`.
 ```{code-cell} ipython3
 plt.figure(figsize=(10, 6))
 plt.subplot(211)
-plt.plot(np.sum(peth.count(0.01), 1), linewidth=3, color="red")
+plt.plot(np.mean(peth.count(0.01), 1) / 0.01, linewidth=3, color="red")
 plt.xlim(-0.1, 0.2)
-plt.ylabel("Count")
+plt.ylabel("Rate (spikes/sec)")
 plt.axvline(0.0)
 plt.subplot(212)
 plt.plot(peth.to_tsd(), "|", markersize=20, color="red", mew=4)
@@ -115,7 +115,7 @@ events = nap.Ts(t=np.sort(np.random.uniform(0, 100, 5)))
 ```{code-cell}
 
 perievent = nap.compute_perievent_continuous(
-  data=features, 
+  timeseries=features, 
   tref=events, 
   minmax=(-1, 1))
 

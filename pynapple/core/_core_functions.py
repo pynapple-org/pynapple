@@ -8,6 +8,8 @@ Otherwise the module will call the functions within `_jitted_functions.py`.
 
 """
 
+from typing import Literal
+
 import numpy as np
 from scipy import signal
 
@@ -36,24 +38,53 @@ def _count(time_array, starts, ends, bin_size=None, dtype=None):
     return t, d
 
 
-def _value_from(time_array, time_target_array, data_target_array, starts, ends):
+def _value_from(
+    time_array,
+    time_target_array,
+    data_target_array,
+    starts,
+    ends,
+    mode: Literal["closest", "before", "after"] = "closest",
+):
     idx_t, count = jitrestrict_with_count(time_array, starts, ends)
     idx_target, count_target = jitrestrict_with_count(time_target_array, starts, ends)
+    # replace flag with int
+    if mode == "closest":
+        mode = 1
+    else:
+        mode = 0 if mode == "before" else 2
+
     idx = jitvaluefrom(
         time_array[idx_t],
         time_target_array[idx_target],
         count,
         count_target,
         starts,
-        ends,
+        mode=mode,
     )
 
     new_time_array = time_array[idx_t]
+    nan_idx = np.isnan(idx)
 
-    new_data_array = np.zeros(
-        (len(new_time_array), *data_target_array.shape[1:]),
-        dtype=data_target_array.dtype,
+    # set the type as default
+    use_type = data_target_array.dtype
+
+    # if is already floating or all values are valid, keep type, otherwise use float
+    use_type = (
+        use_type if np.issubdtype(use_type, np.floating) or not any(nan_idx) else float
     )
+    if not np.issubdtype(use_type, np.floating):
+        new_data_array = np.zeros(
+            (len(new_time_array), *data_target_array.shape[1:]),
+            dtype=use_type,
+        )
+    else:
+        new_data_array = np.full(
+            (len(new_time_array), *data_target_array.shape[1:]),
+            np.nan,
+            dtype=use_type,
+        )
+
     idx2 = ~np.isnan(idx)
     new_data_array[idx2] = data_target_array[idx_target][idx[idx2].astype(int)]
 

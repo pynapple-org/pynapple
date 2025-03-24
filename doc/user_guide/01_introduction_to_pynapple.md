@@ -462,3 +462,7 @@ Tuning curves of neurons based on spiking or calcium activity can be computed.
 **[Wavelets](11_wavelets)**
 
 The wavelets module performs Morlet wavelets decomposition of a time series. 
+
+**[Warping](13_warping)**
+
+This module provides methods for building trial-based tensors and time-warped trial-based tensors.
