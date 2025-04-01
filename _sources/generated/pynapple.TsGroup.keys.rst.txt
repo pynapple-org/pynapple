@@ -1,0 +1,6 @@
+pynapple.TsGroup.keys
+=====================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.keys

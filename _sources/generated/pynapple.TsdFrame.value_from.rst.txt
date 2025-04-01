@@ -1,0 +1,6 @@
+pynapple.TsdFrame.value\_from
+=============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.value_from

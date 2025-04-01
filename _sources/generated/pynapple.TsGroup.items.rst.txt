@@ -1,0 +1,6 @@
+pynapple.TsGroup.items
+======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.items

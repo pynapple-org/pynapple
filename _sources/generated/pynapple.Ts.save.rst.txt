@@ -1,0 +1,6 @@
+pynapple.Ts.save
+================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Ts.save
