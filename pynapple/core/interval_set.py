@@ -682,14 +682,16 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         start2 = a.values[:, 0]
         end2 = a.values[:, 1]
         s, e, m = jitintersect(start1, end1, start2, end2)
-        m1 = self._metadata.loc[m[:, 0]]
-        m2 = a._metadata.loc[m[:, 1]]
+        m1 = self._metadata.loc[m[:, 0]].reset_index()
+        m2 = a._metadata.loc[m[:, 1]].reset_index()
         # In case some columns overlap
         overlap = np.intersect1d(m1.columns, m2.columns)
         if len(overlap):
-            m1 = m1.drop(overlap)
-            m2 = m2.drop(overlap)
-        return IntervalSet(s, e, metadata={**m1, **m2})
+            m1.drop(overlap)
+            m2.drop(overlap)
+
+        metadata = m1.merge(m2, axis=1)
+        return IntervalSet(s, e, metadata=metadata)
 
     def union(self, a):
         """

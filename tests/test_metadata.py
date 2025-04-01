@@ -1,6 +1,7 @@
 """Tests for metadata in IntervalSet, TsdFrame, and TsGroup"""
 
 import inspect
+import re
 import warnings
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
@@ -354,8 +355,8 @@ def test_intersect_metadata():
         ep3.intersect(ep2).values, np.array([[20.0, 30.0], [50.0, 60.0]])
     )
     metadata = ep3.intersect(ep2)._metadata
-    np.testing.assert_array_equal(metadata.columns.values, ["m1"])
-    np.testing.assert_array_equal(metadata.values, ep._metadata.values)
+    np.testing.assert_array_equal(metadata.columns, ["m1"])
+    np.testing.assert_array_equal(list(metadata.values()), list(ep._metadata.values()))
 
 
 def test_set_diff_metadata():
@@ -543,8 +544,8 @@ def test_tsdframe_metadata_slicing(tsdframe_meta):
             pytest.raises(ValueError, match="Invalid metadata name"),
             # shape mismatch with setitem
             pytest.raises(ValueError),
-            # type error with get_info (compare dict to array)
-            pytest.raises(TypeError),
+            # assertion error with get_info (compare dict to array)
+            pytest.raises(AssertionError),
             # attribute should raise error
             pytest.raises(AttributeError),
             # key should not match metadata
@@ -1080,7 +1081,7 @@ class Test_Metadata:
     )
     def test_get_info_error(self, obj, obj_len, idx):
         obj.set_info(label=[1] * obj_len)
-        with pytest.raises(IndexError, match="Unknown metadata index"):
+        with pytest.raises((IndexError, KeyError)):
             obj.get_info(idx)
 
     def test_overwrite_metadata(self, obj, obj_len):
@@ -1281,8 +1282,6 @@ class Test_Metadata:
         # cleaning
         Path("obj.npz").unlink()
 
-    #         # class Test_Metadata_Group:
-
     @pytest.mark.parametrize(
         "metadata, group",
         [
@@ -1297,43 +1296,39 @@ class Test_Metadata:
 
             obj.set_info(metadata)
 
-        # pandas groups
-        pd_groups = obj.metadata.groupby(group).groups
+            # pandas groups
+            pd_groups = obj.metadata.groupby(group).groups
 
-        # group by metadata, assert returned groups
-        nap_groups = obj.groupby(group)
-        # remove empty groups, since pandas doesn't return them
-        # nap_nonempty = {k: v for k, v in nap_groups.items() if len(v)}
-        assert nap_groups.keys() == pd_groups.keys()
+            # group by metadata, assert returned groups
+            nap_groups = obj.groupby(group)
+            # remove empty groups, since pandas doesn't return them
+            # nap_nonempty = {k: v for k, v in nap_groups.items() if len(v)}
+            assert nap_groups.keys() == pd_groups.keys()
 
-        for grp, idx in nap_groups.items():
-            # index same as pandas
-            assert all(idx == pd_groups[grp])
-
+            for grp, idx in nap_groups.items():
+                # index same as pandas
+                assert all(idx == pd_groups[grp])
                 # return object with get_group argument
                 obj_grp = obj.groupby(group, get_group=grp)
 
+                # index same as pandas
+                assert all(idx == pd_groups[grp])
                 if isinstance(obj, nap.TsdFrame):
-                    # pandas index might be strings if column names are strings
-                    # so we need to convert it to integers
-                    pd_idx = pd_groups.groups[grp]
-                    pd_idx = obj.columns.get_indexer(pd_idx)
-
-                    # index same as pandas
-                    assert all(idx == pd_idx)
-
-                    idx = (slice(None), idx)
                     # columns should be the same
-                    assert all(obj_grp.columns == obj[idx].columns)
+                    assert all(obj_grp.columns == obj.loc[idx].columns)
 
+                    # get_group should be the same as indexed object
+                    pd.testing.assert_frame_equal(
+                        obj_grp.metadata, obj.loc[idx].metadata
+                    )
+                    # index should be the same for both objects
+                    assert all(obj_grp.index == obj.loc[idx].index)
                 else:
-                    # index same as pandas
-                    assert all(idx == pd_groups.groups[grp])
+                    # get_group should be the same as indexed object
+                    pd.testing.assert_frame_equal(obj_grp.metadata, obj[idx].metadata)
 
-                # get_group should be the same as indexed object
-                pd.testing.assert_frame_equal(obj_grp._metadata, obj[idx]._metadata)
-                # index should be the same for both objects
-                assert all(obj_grp.index == obj[idx].index)
+                    # index should be the same for both objects
+                    assert all(obj_grp.index == obj[idx].index)
 
         @pytest.mark.parametrize(
             "bad_group, get_group, err",
@@ -1388,8 +1383,13 @@ class Test_Metadata:
             for grp, idx in groups.items():
                 # check that the output is the same as applying the function to the indexed object
                 if isinstance(obj, nap.TsdFrame):
-                    idx = (slice(None), idx)
-                np.testing.assert_array_almost_equal(func(obj[idx]), grouped_out[grp])
+                    np.testing.assert_array_almost_equal(
+                        func(obj.loc[idx]), grouped_out[grp]
+                    )
+                else:
+                    np.testing.assert_array_almost_equal(
+                        func(obj[idx]), grouped_out[grp]
+                    )
 
         @pytest.mark.parametrize(
             "func, ep, func_kwargs",
@@ -1410,14 +1410,16 @@ class Test_Metadata:
 
             for grp, idx in groups.items():
                 if isinstance(obj, nap.TsdFrame):
-                    idx = (slice(None), idx)
+                    obj_idx = obj.loc[idx]
+                else:
+                    obj_idx = obj[idx]
                 if ep:
                     np.testing.assert_array_almost_equal(
-                        func(**{ep: obj[idx], **func_kwargs}), grouped_out[grp]
+                        func(**{ep: obj_idx, **func_kwargs}), grouped_out[grp]
                     )
                 else:
                     np.testing.assert_array_almost_equal(
-                        func(obj[idx], **func_kwargs), grouped_out[grp]
+                        func(obj_idx, **func_kwargs), grouped_out[grp]
                     )
 
         @pytest.mark.parametrize(
@@ -1611,8 +1613,7 @@ def get_defined_members(cls):
     "nap_class", [nap.core.IntervalSet, nap.core.TsdFrame, nap.core.TsGroup]
 )
 def test_no_conflict_between_class_and_metadatamixin(nap_class):
-    from pynapple.core.metadata_class import \
-        _MetadataMixin  # Adjust import as needed
+    from pynapple.core.metadata_class import _MetadataMixin  # Adjust import as needed
 
     iset_members = get_defined_members(nap_class)
     metadatamixin_members = get_defined_members(_MetadataMixin)

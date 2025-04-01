@@ -381,7 +381,7 @@ class TsGroup(UserDict, _MetadataMixin):
         return self._ts_group_from_keys(key)
 
     def _ts_group_from_keys(self, keys):
-        metadata = self._metadata.loc[np.sort(keys), self._metadata.columns[1:]]
+        metadata = self._metadata.loc[np.sort(keys)].copy().drop("rate")
         return TsGroup(
             {k: self[k] for k in keys},
             time_support=self.time_support,
@@ -1436,7 +1436,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
         dicttosave = {"type": np.array(["TsGroup"], dtype=np.str_)}
         # don't save rate in metadata since it will be re-added when loading
-        dicttosave["_metadata"] = self._metadata.iloc[:, 1:]
+        dicttosave["_metadata"] = dict(self._metadata.copy().drop("rate"))
 
         # are these things that still need to be enforced?
         # for k in self._metadata.columns:

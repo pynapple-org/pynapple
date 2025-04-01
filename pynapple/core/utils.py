@@ -340,12 +340,10 @@ class _TsdFrameSliceHelper:
                 raise IndexError(str(key))
             index = self.tsdframe.columns.get_indexer([key])
 
-        if len(index) == 1:
-            return self.tsdframe.__getitem__((slice(None, None, None), index[0]))
-        else:
-            return self.tsdframe.__getitem__(
-                (slice(None, None, None), index), columns=key
-            )
+        # if len(index) == 1:
+        #     return self.tsdframe.__getitem__((slice(None, None, None), index[0]))
+        # else:
+        return self.tsdframe.__getitem__((slice(None, None, None), index), columns=key)
 
 
 class _IntervalSetSliceHelper:
