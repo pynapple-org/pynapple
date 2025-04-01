@@ -336,7 +336,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                     np.hstack(
                         (
                             self.index[-n_rows:, None],
-                            self.values[0:n_rows],
+                            self.values[-n_rows:],
                             _convert_iter_to_str(metadata.values[-n_rows:]),
                         ),
                         dtype=object,
@@ -684,6 +684,11 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         s, e, m = jitintersect(start1, end1, start2, end2)
         m1 = self._metadata.loc[m[:, 0]]
         m2 = a._metadata.loc[m[:, 1]]
+        # In case some columns overlap
+        overlap = np.intersect1d(m1.columns, m2.columns)
+        if len(overlap):
+            m1 = m1.drop(overlap)
+            m2 = m2.drop(overlap)
         return IntervalSet(s, e, metadata={**m1, **m2})
 
     def union(self, a):
@@ -1186,7 +1191,14 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>> import numpy as np
         >>> times = np.array([[0, 5], [10, 12], [20, 33]])
         >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
-        >>> ep = nap.IntervalSet(tmp,metadata=metadata)
+        >>> ep = nap.IntervalSet(times,metadata=metadata)
+        >>> print(ep)
+          index    start    end    l1  l2
+              0        0      5     1  x
+              1       10     12     2  x
+              2       20     33     2  y
+        shape: (3, 2), time unit: sec.
+
 
         Grouping by a single column:
 
@@ -1218,7 +1230,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         return _MetadataMixin.groupby(self, by, get_group)
 
     @add_meta_docstring("groupby_apply")
-    def groupby_apply(self, by, func, grouped_arg=None, **func_kwargs):
+    def groupby_apply(self, by, func, input_key=None, **func_kwargs):
         """
         Examples
         --------
@@ -1226,7 +1238,13 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>> import numpy as np
         >>> times = np.array([[0, 5], [10, 12], [20, 33]])
         >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
-        >>> ep = nap.IntervalSet(tmp,metadata=metadata)
+        >>> ep = nap.IntervalSet(times,metadata=metadata)
+        >>> print(ep)
+          index    start    end    l1  l2
+              0        0      5     1  x
+              1       10     12     2  x
+              2       20     33     2  y
+        shape: (3, 2), time unit: sec.
 
         Apply a numpy function:
 
@@ -1258,7 +1276,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>>     "feature": feature,
         >>>     "nb_bins": 2,
         >>> }
-        >>> ep.groupby_apply("l2", nap.compute_1d_tuning_curves, grouped_arg="ep", **func_kwargs)
+        >>> ep.groupby_apply("l2", nap.compute_1d_tuning_curves, input_key="ep", **func_kwargs)
         {'x':              1         2         3
          0.25  1.025641  1.823362  4.216524
          0.75       NaN       NaN       NaN,
@@ -1266,4 +1284,4 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
          0.25       NaN       NaN       NaN
          0.75  1.025641  1.978022  4.835165}
         """
-        return _MetadataMixin.groupby_apply(self, by, func, grouped_arg, **func_kwargs)
+        return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)

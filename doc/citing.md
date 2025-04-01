@@ -21,27 +21,4 @@ Here is a ready-made BibTex entry:
 }
 ```
 
-## Development Lead
 
-
--   Guillaume Viejo <gviejo@flatironinstitute.org>
-- 	Edoardo Balzani <ebalzani@flatironinstitute.org>
-
-
-## Contributors
-
-```{eval-rst}
-.. contributors:: pynapple-org/pynapple
-    :contributions:
-    :avatars:
-    :limit: 99  
-    :order: DESC
-```
-
-## Special Credits
-
-Special thanks to Francesco P. Battaglia
-(<https://github.com/fpbattaglia>) for the development of the original
-*TSToolbox* (<https://github.com/PeyracheLab/TStoolbox>) and
-*neuroseries* (<https://github.com/NeuroNetMem/neuroseries>) packages,
-the latter constituting the core of *pynapple*.

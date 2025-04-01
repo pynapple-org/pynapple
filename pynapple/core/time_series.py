@@ -4,7 +4,7 @@ Pynapple time series are containers specialized for neurophysiological time seri
 
 They provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.
 
-Multiple time series object are avaible depending on the shape of the data.
+Multiple time series object are available depending on the shape of the data.
 
 - `TsdTensor` : for data with of more than 2 dimensions, typically movies.
 - `TsdFrame` : for column-based data. It can be easily converted to a pandas.DataFrame. Columns can be labelled and selected similar to pandas.
@@ -638,6 +638,79 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)
 
+    def to_trial_tensor(self, ep, align="start", padding_value=np.nan):
+        """
+        Return trial-based tensor from an IntervalSet object. The shape of the tensor array is
+        (shape of time series, number of trials, number of  time points)
+
+        The `align` parameter controls how the time series are aligned. If `align="start"`, the time
+        series are aligned to the start of each trial. If `align="end"`, the time series are aligned
+        to the end of each trial.
+
+        If trials have uneven durations, the returned array is padded. The parameter `padding_value`
+        determine which value is used to pad the array. Default is NaN.
+
+        Parameters
+        ----------
+        ep : IntervalSet
+            Epochs holding the trials. Each interval can be of unequal size.
+        align: str, optional
+            How to align the time series ('start' [default], 'end')
+        padding_value: Number, optional
+            How to pad the array if unequal intervals. Default is np.nan.
+
+        Returns
+        -------
+        numpy.ndarray
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsdframe = nap.TsdFrame(t=np.arange(100), d=np.arange(200).reshape(2,100).T)
+        >>> ep = nap.IntervalSet(start=np.arange(20, 100, 20), end=np.arange(20, 100, 20) + np.arange(2, 10, 2))
+        >>> print(ep)
+          index    start    end
+              0       20     22
+              1       40     44
+              2       60     66
+              3       80     88
+        shape: (4, 2), time unit: sec.
+
+        Create a trial-based tensor by slicing `tsdframe` for each interval of `ep`.
+
+        >>> tensor = tsdframe.to_trial_tensor(ep)
+        >>> tensor
+        array([[[ 20.,  21.,  22.,  nan,  nan,  nan,  nan,  nan,  nan],
+                [ 40.,  41.,  42.,  43.,  44.,  nan,  nan,  nan,  nan],
+                [ 60.,  61.,  62.,  63.,  64.,  65.,  66.,  nan,  nan],
+                [ 80.,  81.,  82.,  83.,  84.,  85.,  86.,  87.,  88.]],
+               [[120., 121., 122.,  nan,  nan,  nan,  nan,  nan,  nan],
+                [140., 141., 142., 143., 144.,  nan,  nan,  nan,  nan],
+                [160., 161., 162., 163., 164., 165., 166.,  nan,  nan],
+                [180., 181., 182., 183., 184., 185., 186., 187., 188.]]])
+        """
+        if not isinstance(ep, IntervalSet):
+            raise RuntimeError("Argument ep should be of type IntervalSet")
+        if align not in ["start", "end"]:
+            raise RuntimeError("align should be 'start' or 'end'")
+
+        slices = [self.get_slice(s, e) for s, e in ep.values]
+        lengths = list(map(lambda sl: sl.stop - sl.start, slices))
+        n_t = max(lengths)
+        output = np.ones(shape=(len(ep), n_t, *self.shape[1:])) * padding_value
+        if align == "start":
+            for i, sl in enumerate(slices):
+                output[i, 0 : lengths[i]] = self.values[sl]
+        if align == "end":
+            for i, sl in enumerate(slices):
+                output[i, -lengths[i] :] = self.values[sl]
+
+        if output.ndim > 2:
+            output = np.moveaxis(output, source=[0, 1], destination=[-2, -1])
+
+        return output
+
 
 class TsdTensor(_BaseTsd):
     """
@@ -1082,7 +1155,8 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                         dtype=object,
                     )
             else:
-                table = []
+                table = np.ndarray(shape=(0, self.shape[1] + 1))
+                end = []
 
             # Adding metadata if any.
             col_names = self.metadata.columns.values
@@ -1108,7 +1182,12 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     dtype=object,
                 )
 
-            return tabulate(table, headers=headers, colalign=("left",)) + "\n" + bottom
+            if len(table):
+                return (
+                    tabulate(table, headers=headers, colalign=("left",)) + "\n" + bottom
+                )
+            else:
+                return tabulate([], headers=headers) + "\n" + bottom
 
     def __setattr__(self, name, value):
         # necessary setter to allow metadata to be set as an attribute
@@ -1212,7 +1291,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     if (
                         len(index) == 1
                         and output.ndim == 1
-                        and not isinstance(key[1], int)
+                        and not isinstance(key[1], (int, np.integer))
                     ):
                         output = output[None, :]
                     elif (
@@ -1469,8 +1548,21 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> import numpy as np
         >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"]}
         >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
+        >>> print(tsdframe)
+        Time (s)    0         1         2
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        l1          1         2         3
+        l2          x         x         y
+        dtype: float64, shape: (5, 3)
 
-        To access a single metadata column:
+        To access a single metadata row (transposed to column):
 
         >>> tsdframe.get_info("l1")
         0    1
@@ -1478,7 +1570,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         2    3
         Name: l1, dtype: int64
 
-        To access multiple metadata columns:
+        To access multiple metadata rows (transposed to columns):
 
         >>> tsdframe.get_info(["l1", "l2"])
            l1 l2
@@ -1486,7 +1578,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         1   2  x
         2   3  y
 
-        To access metadata of a single column:
+        To access metadata of a single column (transposed to row):
 
         >>> tsdframe.get_info(0)
         rate    0.667223
@@ -1494,7 +1586,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         l2             x
         Name: 0, dtype: object
 
-        To access metadata of multiple columns:
+        To access metadata of multiple columns (transposed to rows):
 
         >>> tsdframe.get_info([0, 1])
                rate  l1 l2
@@ -1541,13 +1633,27 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> import numpy as np
         >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
         >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
+        >>> print(tsdframe)
+        Time (s)    0         1         2
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        l1          1         2         2
+        l2          x         x         y
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
 
-        Grouping by a single column:
+        Grouping by a single row:
 
         >>> tsdframe.groupby("l2")
         {'x': [0, 1], 'y': [2]}
 
-        Grouping by multiple columns:
+        Grouping by multiple rows:
 
         >>> tsdframe.groupby(["l1","l2"])
         {(1, 'x'): [0], (2, 'x'): [1], (2, 'y'): [2]}
@@ -1555,36 +1661,42 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         Filtering to a specific group using the output dictionary:
 
         >>> groups = tsdframe.groupby("l2")
-        >>> tsdframe[groups["x"]]
-        Time (s)    0         1         2
-        ----------  --------  --------  --------
-        0.0         1.0       1.0       1.0
-        1.0         1.0       1.0       1.0
+        >>> tsdframe[:,groups["x"]]
+        Time (s)    0         1
+        ----------  --------  --------
+        0.0         1.0       1.0
+        1.0         1.0       1.0
+        2.0         1.0       1.0
+        3.0         1.0       1.0
+        4.0         1.0       1.0
         Metadata
-        --------    --------  --------  --------
-        l1          1         2         2
-        l2          x         x         y
+        --------    --------  --------
+        l1          1         2
+        l2          x         x
         <BLANKLINE>
-        dtype: float64, shape: (2, 3)
+        dtype: float64, shape: (5, 2)
 
         Filtering to a specific group using the get_group argument:
 
         >>> tsdframe.groupby("l2", get_group="x")
-        Time (s)    0         1         2
-        ----------  --------  --------  --------
-        0.0         1.0       1.0       1.0
-        1.0         1.0       1.0       1.0
+        Time (s)    0         1
+        ----------  --------  --------
+        0.0         1.0       1.0
+        1.0         1.0       1.0
+        2.0         1.0       1.0
+        3.0         1.0       1.0
+        4.0         1.0       1.0
         Metadata
-        --------    --------  --------  --------
-        l1          1         2         2
-        l2          x         x         y
+        --------    --------  --------
+        l1          1         2
+        l2          x         x
         <BLANKLINE>
-        dtype: float64, shape: (2, 3)
+        dtype: float64, shape: (5, 2)
         """
         return _MetadataMixin.groupby(self, by, get_group)
 
     @add_meta_docstring("groupby_apply")
-    def groupby_apply(self, by, func, grouped_arg=None, **func_kwargs):
+    def groupby_apply(self, by, func, input_key=None, **func_kwargs):
         """
         Examples
         --------
@@ -1592,23 +1704,37 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> import numpy as np
         >>> metadata = {"l1": [1, 2, 2], "l2": ["x", "x", "y"]}
         >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
+        >>> print(tsdframe)
+        Time (s)    0         1         2
+        ----------  --------  --------  --------
+        0.0         1.0       1.0       1.0
+        1.0         1.0       1.0       1.0
+        2.0         1.0       1.0       1.0
+        3.0         1.0       1.0       1.0
+        4.0         1.0       1.0       1.0
+        Metadata
+        --------    --------  --------  --------
+        l1          1         2         2
+        l2          x         x         y
+        <BLANKLINE>
+        dtype: float64, shape: (5, 3)
 
         Apply a numpy function:
 
         >>> tsdframe.groupby_apply("l1", np.sum)
-        {1: 3.0, 2: 6.0}
+        {1: 5.0, 2: 10.0}
 
         Apply a custom function:
 
-        >>> tsdframe.groupby_apply("l1", lambda x: x.shape[0])
-        {1: 1, 2: 2}
+        >>> tsdframe.groupby_apply("l1", lambda x: x.shape)
+        {1: (5, 1), 2: (5, 2)}
 
         Apply a function with additional arguments:
 
         >>> tsdframe.groupby_apply("l1", np.sum, axis=0)
-        {1: array([1., 1., 1.]), 2: array([2., 2., 2.])}
+        {1: array([5.]), 2: array([5., 5.])}
         """
-        return _MetadataMixin.groupby_apply(self, by, func, grouped_arg, **func_kwargs)
+        return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)
 
 
 class Tsd(_BaseTsd):
@@ -2172,3 +2298,74 @@ class Ts(_Base):
         )
 
         return
+
+    def trial_count(
+        self, ep, bin_size, align="start", padding_value=np.nan, time_unit="s"
+    ):
+        """
+        Return trial-based count tensor from an IntervalSet object. The shape of the tensor array is
+        (number of trials, number of time bins).
+
+        The `bin_size` parameter determines the number of time bins.
+
+        The `align` parameter controls how the time series are aligned. If `align="start"`, the time
+        series are aligned to the start of each trial. If `align="end"`, the time series are aligned
+        to the end of each trial.
+
+        If trials have uneven durations, the returned array is padded. The parameter `padding_value`
+        determines which value is used to pad the array. Default is NaN.
+
+        Parameters
+        ----------
+        ep : IntervalSet
+            Epochs holding the trials. Each interval can be of unequal size.
+        bin_size : Number
+            The size of the time bins.
+        align: str, optional
+            How to align the time series ('start' [default], 'end')
+        padding_value: Number, optional
+            How to pad the array if unequal intervals. Default is np.nan.
+        time_unit : str, optional
+            Time units of the bin_size parameter ('s' [default], 'ms', 'us').
+
+        Returns
+        -------
+        numpy.ndarray
+
+        Raises
+        ------
+        RuntimeError
+            If `time_unit` not in ["s", "ms", "us"]
+        """
+        if not isinstance(ep, IntervalSet):
+            raise RuntimeError("Argument ep should be of type IntervalSet")
+        if time_unit not in ["s", "ms", "us"]:
+            raise RuntimeError("time_unit should be 's', 'ms' or 'us'")
+        if align not in ["start", "end"]:
+            raise RuntimeError("align should be 'start' or 'end'")
+        if not isinstance(bin_size, Number):
+            raise RuntimeError("bin_size should be of type int or float")
+
+        # Determine size of tensor
+        bin_size = float(TsIndex.format_timestamps(np.array([bin_size]), time_unit)[0])
+        n_t = int(np.max(np.ceil((ep.end + bin_size - ep.start) / bin_size)))
+        count = self.count(bin_size=bin_size, ep=ep)
+
+        output = np.ones(shape=(len(ep), n_t)) * padding_value
+        n_ep = np.zeros(len(ep), dtype="int")  # To trim to the minimum length
+
+        if align == "start":
+            for i in range(len(ep)):
+                tmp = count.get(ep.start[i], ep.end[i]).values
+                n_ep[i] = tmp.shape[0]
+                output[i, 0 : tmp.shape[0]] = np.transpose(tmp)
+            output = output[:, 0 : np.max(n_ep)]
+
+        if align == "end":
+            for i in range(len(ep)):
+                tmp = count.get(ep.start[i], ep.end[i]).values
+                n_ep[i] = tmp.shape[0]
+                output[i, -tmp.shape[0] :] = np.transpose(tmp)
+            output = output[:, -np.max(n_ep) :]
+
+        return output

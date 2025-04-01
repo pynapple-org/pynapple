@@ -1,5 +1,6 @@
 import copy
 import itertools
+import inspect
 import warnings
 from collections import UserDict
 from numbers import Number
@@ -360,12 +361,12 @@ class _MetadataMixin:
 
     def groupby(self, by, get_group=None):
         """
-        Group pynapple object by metadata column(s).
+        Group pynapple object by metadata name(s).
 
         Parameters
         ----------
         by : str or list of str
-            Metadata column name(s) to group by.
+            Metadata name(s) to group by.
         get_group : dictionary key, optional
             Name of the group to return.
 
@@ -377,7 +378,7 @@ class _MetadataMixin:
         Raises
         ------
         ValueError
-            If metadata column does not exist.
+            If metadata name does not exist.
         """
         if isinstance(by, str) and by not in self.metadata_columns:
             raise ValueError(
@@ -396,24 +397,27 @@ class _MetadataMixin:
                     f"Group '{get_group}' not found in metadata groups. Groups are {list(groups.keys())}"
                 )
             idx = groups[get_group]
-            return self[np.array(idx)]
+            if self.nap_class == "TsdFrame":
+                return self[:, idx]
+            else:
+                return self[idx]
         else:
             return groups
 
-    def groupby_apply(self, by, func, grouped_arg=None, **func_kwargs):
+    def groupby_apply(self, by, func, input_key=None, **func_kwargs):
         """
         Apply a function to each group in a grouped pynapple object.
 
         Parameters
         ----------
         by : str or list of str
-            Metadata column name(s) to group by.
+            Metadata name(s) to group by.
         func : function
             Function to apply to each group.
-        grouped_arg : str, optional
-            Name of the function argument that the grouped object should be passed as. If none, the grouped object is passed as the first positional argument.
-        func_kwargs : dict
-            Additional keyword arguments to pass to the function.
+        input_key : str or None, optional
+            Input key that the grouped object will be passed as. If None, the grouped object will be passed as the first positional argument.
+        **func_kwargs : optional
+            Additional keyword arguments to pass to the function. Any required positional arguments that are not the grouped object should be passed as keyword arguments.
 
         Returns
         -------
@@ -421,16 +425,28 @@ class _MetadataMixin:
             Dictionary of results from applying the function to each group, where the keys are the group names and the values are the results.
         """
 
-        groups = self.groupby(by)
+        if input_key is not None:
+            if not isinstance(input_key, str):
+                raise TypeError("input_key must be a string.")
+            if input_key not in inspect.signature(func).parameters:
+                raise KeyError(f"{func} does not have input parameter {input_key}.")
 
-        if grouped_arg is None:
-            out = {k: func(self[v], **func_kwargs) for k, v in groups.items()}
+            def anon_func(x):
+                return func(**{input_key: x, **func_kwargs})
+
+        elif func_kwargs:
+
+            def anon_func(x):
+                return func(x, **func_kwargs)
+
         else:
-            out = {
-                k: func(**{grouped_arg: self[v], **func_kwargs})
-                for k, v in groups.items()
-            }
+            anon_func = func
 
+        groups = self.groupby(by)
+        if self.nap_class == "TsdFrame":
+            out = {k: anon_func(self[:, v]) for k, v in groups.items()}
+        else:
+            out = {k: anon_func(self[v]) for k, v in groups.items()}
         return out
 
 

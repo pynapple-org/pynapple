@@ -1,9 +1,3 @@
-# -*- coding: utf-8 -*-
-# @Author: Guillaume Viejo
-# @Date:   2023-07-10 17:08:55
-# @Last Modified by:   Guillaume Viejo
-# @Last Modified time: 2024-04-11 13:13:37
-
 """Tests of NPZ file functions"""
 
 import shutil
@@ -116,6 +110,31 @@ def test_load_tsgroup(path, k):
 
 
 @pytest.mark.parametrize("path", [path])
+@pytest.mark.parametrize("k", ["tsgroup", "tsgroup_minfo"])
+def test_load_tsgroup_backward_compatibility(path, k):
+    """
+    For npz files saved without the _metadata keys
+    """
+    file_path = path / (k + ".npz")
+    tmp = dict(np.load(file_path, allow_pickle=True))
+    # Adding one metadata element outside the _metadata key
+    tag = np.random.randn(3)
+    tmp["tag"] = tag
+    np.savez(file_path, **tmp)
+
+    file = nap.NPZFile(file_path)
+    tmp = file.load()
+    assert isinstance(tmp, type(data[k]))
+    assert tmp.keys() == list(data[k].keys())
+    assert np.all(tmp[neu] == data[k][neu] for neu in tmp.keys())
+    np.testing.assert_array_almost_equal(
+        tmp.time_support.values, data[k].time_support.values
+    )
+    assert "rate" in tmp.metadata.columns
+    np.testing.assert_array_almost_equal(tmp.tag.values, tag)
+
+
+@pytest.mark.parametrize("path", [path])
 @pytest.mark.parametrize("k", ["tsd"])
 def test_load_tsd(path, k):
     file_path = path / (k + ".npz")
@@ -155,6 +174,50 @@ def test_load_tsdframe(path, k):
     )
     assert np.all(tmp.columns == data[k].columns)
     assert np.all(tmp.d == data[k].d)
+
+
+@pytest.mark.parametrize("path", [path])
+@pytest.mark.parametrize("k", ["tsdframe", "tsdframe_minfo"])
+def test_load_tsdframe_backward_compatibility(path, k):
+    file_path = path / (k + ".npz")
+    tmp = dict(np.load(file_path, allow_pickle=True))
+    tmp.pop("_metadata")
+    np.savez(file_path, **tmp)
+    file = nap.NPZFile(file_path)
+    tmp = file.load()
+    assert isinstance(tmp, type(data[k]))
+    assert np.all(tmp.t == data[k].t)
+    np.testing.assert_array_almost_equal(
+        tmp.time_support.values, data[k].time_support.values
+    )
+    assert np.all(tmp.columns == data[k].columns)
+    assert np.all(tmp.d == data[k].d)
+
+
+@pytest.mark.parametrize("path", [path])
+@pytest.mark.parametrize("k", ["iset", "iset_minfo"])
+def test_load_intervalset(path, k):
+    file_path = path / (k + ".npz")
+    file = nap.NPZFile(file_path)
+    tmp = file.load()
+    assert isinstance(tmp, type(data[k]))
+    np.testing.assert_array_almost_equal(tmp.values, data[k].values)
+
+
+@pytest.mark.parametrize("path", [path])
+@pytest.mark.parametrize("k", ["iset", "iset_minfo"])
+def test_load_intervalset_backward_compatibility(path, k):
+    file_path = path / (k + ".npz")
+    tmp = dict(np.load(file_path, allow_pickle=True))
+    tmp.pop("_metadata")
+    np.savez(file_path, **tmp)
+
+    file = nap.NPZFile(file_path)
+    tmp = file.load()
+    assert isinstance(tmp, type(data[k]))
+    np.testing.assert_array_almost_equal(tmp.values, data[k].values)
+    # Testing the slicing
+    np.testing.assert_array_almost_equal(tmp[0].values, data[k].values[0, None])
 
 
 @pytest.mark.parametrize("path", [path])

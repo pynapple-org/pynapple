@@ -1,6 +1,7 @@
 """Tests of time series for `pynapple` package."""
 
 import pickle
+import re
 import warnings
 from contextlib import nullcontext as does_not_raise
 from numbers import Number
@@ -343,11 +344,138 @@ class TestTimeSeriesGeneral:
         assert len(tsd) == len(tsd3)
         np.testing.assert_array_almost_equal(tsd2.values[::10], tsd3.values)
 
+    @pytest.mark.parametrize(
+        "mode, expectation",
+        [
+            ("before", does_not_raise()),
+            ("closest", does_not_raise()),
+            ("after", does_not_raise()),
+            (
+                "invalid",
+                pytest.raises(
+                    ValueError, match='Argument ``mode`` should be "closest",'
+                ),
+            ),
+        ],
+    )
+    def test_value_from_tsd_mode_type(self, tsd, mode, expectation):
+        tsd2 = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.random.rand(1000))
+        with expectation:
+            tsd.value_from(tsd2, mode=mode)
+
+    @pytest.mark.parametrize("mode", ["before", "closest", "after"])
+    def test_value_from_tsd_mode(self, tsd, mode):
+        # case 1: tim-stamps form tsd are subset of time-stamps of tsd2
+        # In this case all modes should do the same thing
+        tsd2 = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.random.rand(1000))
+        tsd3 = tsd.value_from(tsd2, mode=mode)
+        assert len(tsd) == len(tsd3)
+        np.testing.assert_array_almost_equal(tsd2.values[::10], tsd3.values)
+
+        # case2: timestamps of tsd (integers) are not subset of that of tsd2.
+        tsd2 = nap.Tsd(t=np.arange(0, 100, 0.3), d=np.random.rand(334))
+        tsd3 = tsd.value_from(tsd2, mode=mode)
+        # loop over epochs
+        for iset in tsd.time_support:
+            single_ep_tsd = tsd.restrict(iset)
+            single_ep_tsd3 = tsd3.restrict(iset)
+            single_ep_tsd2 = tsd2.restrict(iset)
+            # extract the indices with searchsorted.
+            if mode == "before":
+                expected_idx = (
+                    np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
+                )
+                # check that times are actually before
+                assert np.all(single_ep_tsd2.t[expected_idx] <= single_ep_tsd3.t)
+                # check that subsequent are after
+                assert np.all(
+                    single_ep_tsd2.t[expected_idx[:-1] + 1] > single_ep_tsd3.t[:-1]
+                )
+            elif mode == "after":
+                expected_idx = np.searchsorted(
+                    single_ep_tsd2.t, single_ep_tsd.t, side="left"
+                )
+                # check that times are actually before
+                assert np.all(single_ep_tsd2.t[expected_idx] >= single_ep_tsd3.t)
+                # check that subsequent are after
+                assert np.all(
+                    single_ep_tsd2.t[expected_idx[1:] - 1] < single_ep_tsd3.t[1:]
+                )
+            else:
+                before = (
+                    np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
+                )
+                after = np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="left")
+                dt_before = np.abs(single_ep_tsd2.t[before] - single_ep_tsd.t)
+                dt_after = np.abs(single_ep_tsd2.t[after] - single_ep_tsd.t)
+                expected_idx = before.copy()
+                # by default if equi-distance, it assigned to after.
+                expected_idx[dt_after <= dt_before] = after[dt_after <= dt_before]
+
+            np.testing.assert_array_equal(
+                single_ep_tsd2.d[expected_idx], single_ep_tsd3.d
+            )
+            np.testing.assert_array_equal(single_ep_tsd.t, single_ep_tsd3.t)
+
     def test_value_from_tsdframe(self, tsd):
         tsdframe = nap.TsdFrame(t=np.arange(0, 100, 0.1), d=np.random.rand(1000, 3))
         tsdframe2 = tsd.value_from(tsdframe)
         assert len(tsd) == len(tsdframe2)
         np.testing.assert_array_almost_equal(tsdframe.values[::10], tsdframe2.values)
+
+    @pytest.mark.parametrize("mode", ["before", "closest", "after"])
+    def test_value_from_tsdframe_mode(self, tsd, mode):
+        # case 1: tim-stamps form tsd are subset of time-stamps of tsd2
+        # In this case all modes should do the same thing
+        tsd2 = nap.Tsd(t=np.arange(0, 100, 0.1), d=np.random.rand(1000))
+        tsd3 = tsd.value_from(tsd2, mode=mode)
+        assert len(tsd) == len(tsd3)
+        np.testing.assert_array_almost_equal(tsd2.values[::10], tsd3.values)
+
+        # case2: timestamps of tsd (integers) are not subset of that of tsd2.
+        tsd2 = nap.Tsd(t=np.arange(0, 100, 0.3), d=np.random.rand(334))
+        tsd3 = tsd.value_from(tsd2, mode=mode)
+        # loop over epochs
+        for iset in tsd.time_support:
+            single_ep_tsd = tsd.restrict(iset)
+            single_ep_tsd3 = tsd3.restrict(iset)
+            single_ep_tsd2 = tsd2.restrict(iset)
+            # extract the indices with searchsorted.
+            if mode == "before":
+                expected_idx = (
+                    np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
+                )
+                # check that times are actually before
+                assert np.all(single_ep_tsd2.t[expected_idx] <= single_ep_tsd3.t)
+                # check that subsequent are after
+                assert np.all(
+                    single_ep_tsd2.t[expected_idx[:-1] + 1] > single_ep_tsd3.t[:-1]
+                )
+            elif mode == "after":
+                expected_idx = np.searchsorted(
+                    single_ep_tsd2.t, single_ep_tsd.t, side="left"
+                )
+                # check that times are actually before
+                assert np.all(single_ep_tsd2.t[expected_idx] >= single_ep_tsd3.t)
+                # check that subsequent are after
+                assert np.all(
+                    single_ep_tsd2.t[expected_idx[1:] - 1] < single_ep_tsd3.t[1:]
+                )
+            else:
+                before = (
+                    np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="right") - 1
+                )
+                after = np.searchsorted(single_ep_tsd2.t, single_ep_tsd.t, side="left")
+                dt_before = np.abs(tsd2.t[before] - tsd.t)
+                dt_after = np.abs(tsd2.t[after] - tsd.t)
+                expected_idx = before.copy()
+                # by default if equi-distance, it assigned to after.
+                expected_idx[dt_after <= dt_before] = after[dt_after <= dt_before]
+
+            np.testing.assert_array_equal(
+                single_ep_tsd2.d[expected_idx], single_ep_tsd3.d
+            )
+            np.testing.assert_array_equal(single_ep_tsd.t, single_ep_tsd3.t)
 
     def test_value_from_value_error(self, tsd):
         with pytest.raises(
@@ -637,6 +765,59 @@ class TestTimeSeriesGeneral:
             with pytest.raises(IOError) as e_info:
                 tsd.smooth(1, windowsize="a")
             assert str(e_info.value) == "windowsize should be type int or float"
+
+    @pytest.mark.parametrize(
+        "ep, align, padding_value, expectation",
+        [
+            ([], "start", np.nan, "Argument ep should be of type IntervalSet"),
+            (nap.IntervalSet(0, 1), "a", np.nan, "align should be 'start' or 'end'"),
+        ],
+    )
+    def test_to_tensor_runtime_errors(self, tsd, ep, align, padding_value, expectation):
+        with pytest.raises(RuntimeError, match=re.escape(expectation)):
+            if isinstance(tsd, nap.Ts):
+                tsd.trial_count(ep, align, padding_value)
+            else:
+                tsd.to_trial_tensor(ep, align, padding_value)
+
+    def test_to_tensor(self, tsd):
+        if hasattr(tsd, "values"):
+            ep = nap.IntervalSet(
+                start=np.arange(0, 100, 20),
+                end=np.arange(0, 100, 20) + np.arange(0, 10, 2),
+            )
+
+            expected = np.ones((len(ep), 9, *tsd.shape[1:])) * np.nan
+            for i, k in zip(range(len(ep)), range(2, 10, 2)):
+                # expected[i, 0 : k + 1] = np.arange(k * 10, k * 10 + k + 1)
+                expected[i, 0 : k + 1] = tsd.get(ep.start[i], ep.end[i]).values
+
+            if expected.ndim > 2:  # Need to move the last axis front
+                expected = np.moveaxis(expected, (0, 1), (-2, -1))
+
+            tensor = tsd.to_trial_tensor(ep)
+            np.testing.assert_array_almost_equal(tensor, expected)
+
+            tensor = tsd.to_trial_tensor(ep, align="start")
+            np.testing.assert_array_almost_equal(tensor, expected)
+
+            tensor = tsd.to_trial_tensor(ep, align="start", padding_value=-1)
+            expected[np.isnan(expected)] = -1
+            np.testing.assert_array_almost_equal(tensor, expected)
+
+            expected = np.ones((len(ep), 9, *tsd.shape[1:])) * np.nan
+            for i, k in zip(range(len(ep)), range(2, 10, 2)):
+                expected[i, -k - 1 :] = tsd.get(ep.start[i], ep.end[i]).values
+
+            if expected.ndim > 2:  # Need to move the last axis front
+                expected = np.moveaxis(expected, (0, 1), (-2, -1))
+
+            tensor = tsd.to_trial_tensor(ep, align="end")
+            np.testing.assert_array_almost_equal(tensor, expected)
+
+            tensor = tsd.to_trial_tensor(ep, align="end", padding_value=-1)
+            expected[np.isnan(expected)] = -1
+            np.testing.assert_array_almost_equal(tensor, expected)
 
 
 ####################################################
@@ -984,6 +1165,9 @@ class TestTsd:
     "tsdframe",
     [
         nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 1), time_units="s"),
+        nap.TsdFrame(
+            t=np.arange(1), d=np.random.rand(1, 3), time_support=nap.IntervalSet(0, 2)
+        ),
         nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), time_units="s"),
         nap.TsdFrame(
             t=np.arange(100),
@@ -1019,12 +1203,13 @@ class TestTsdFrame:
 
     @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
     def test_convolve_time_support(self, tsdframe, delta_ep):
-        ep = nap.IntervalSet(
-            tsdframe.time_support.start[0] + delta_ep[0],
-            tsdframe.time_support.end[0] + delta_ep[1],
-        )
-        out = tsdframe.convolve(np.ones(10), ep=ep)
-        assert np.all(out.time_support == ep)
+        if len(tsdframe) > 1:
+            ep = nap.IntervalSet(
+                tsdframe.time_support.start[0] + delta_ep[0],
+                tsdframe.time_support.end[0] + delta_ep[1],
+            )
+            out = tsdframe.convolve(np.ones(10), ep=ep)
+            assert np.all(out.time_support == ep)
 
     @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
     def test_interpolate_time_support(self, tsdframe, delta_ep):
@@ -1089,27 +1274,28 @@ class TestTsdFrame:
     def test_vertical_slicing(self, tsdframe, index):
         if isinstance(index, int):
             assert isinstance(tsdframe[index], np.ndarray)
-        else:
+        elif len(tsdframe) > 1:
             assert isinstance(tsdframe[index], nap.TsdFrame)
 
-        output = tsdframe[index]
-        if isinstance(output, nap.TsdFrame):
-            if len(output == 1):
-                # use ravel to ignore shape mismatch
+        if len(tsdframe) > 1:
+            output = tsdframe[index]
+            if isinstance(output, nap.TsdFrame):
+                if len(output == 1):
+                    # use ravel to ignore shape mismatch
+                    np.testing.assert_array_almost_equal(
+                        tsdframe.values[index].ravel(), output.values.ravel()
+                    )
+                else:
+                    np.testing.assert_array_almost_equal(
+                        tsdframe.values[index], output.values
+                    )
+                assert isinstance(output.time_support, nap.IntervalSet)
                 np.testing.assert_array_almost_equal(
-                    tsdframe.values[index].ravel(), output.values.ravel()
+                    output.time_support, tsdframe.time_support
                 )
-            else:
-                np.testing.assert_array_almost_equal(
-                    tsdframe.values[index], output.values
-                )
-            assert isinstance(output.time_support, nap.IntervalSet)
-            np.testing.assert_array_almost_equal(
-                output.time_support, tsdframe.time_support
-            )
-            if len(tsdframe.metadata_columns):
-                assert np.all(output.metadata_columns == tsdframe.metadata_columns)
-                assert np.all(output.metadata_index == tsdframe.metadata_index)
+                if len(tsdframe.metadata_columns):
+                    assert np.all(output.metadata_columns == tsdframe.metadata_columns)
+                    assert np.all(output.metadata_index == tsdframe.metadata_index)
 
     @pytest.mark.parametrize(
         "row",
@@ -1133,74 +1319,78 @@ class TestTsdFrame:
         ],
     )
     def test_vert_and_horz_slicing(self, tsdframe, row, col, expected):
-        if tsdframe.shape[1] == 1:
-            if isinstance(col, list) and isinstance(col[0], int):
-                col = [0]
-            elif isinstance(col, list) and isinstance(col[0], bool):
-                col = [col[0]]
+        if len(tsdframe) > 1:
+            if tsdframe.shape[1] == 1:
+                if isinstance(col, list) and isinstance(col[0], int):
+                    col = [0]
+                elif isinstance(col, list) and isinstance(col[0], bool):
+                    col = [col[0]]
 
-        # get details about row index
-        row_array = isinstance(row, (list, np.ndarray))
-        if row_array and isinstance(row[0], (bool, np.bool_)):
-            row_len = np.sum(row)
-        elif row_array and isinstance(row[0], Number):
-            row_len = len(row)
-        else:
-            row_len = 1
-
-        # get details about column index
-        col_array = isinstance(col, (list, np.ndarray))
-        if col_array and isinstance(col[0], (bool, np.bool_)):
-            col_len = np.sum(col)
-        elif col_array and isinstance(col[0], Number):
-            col_len = len(col)
-        else:
-            col_len = 1
-
-        # this is when shape mismatch is a problem
-        if (row_len > 1) and (col_len > 1):
-            if row_len == col_len:
-                assert isinstance(tsdframe[row, col], nap.Tsd)
+            # get details about row index
+            row_array = isinstance(row, (list, np.ndarray))
+            if row_array and isinstance(row[0], (bool, np.bool_)):
+                row_len = np.sum(row)
+            elif row_array and isinstance(row[0], Number):
+                row_len = len(row)
             else:
-                # shape mismatch
-                with pytest.raises(IndexError, match="shape mismatch"):
-                    tsdframe[row, col]
+                row_len = 1
 
-        elif isinstance(row, Number) and isinstance(col, Number):
-            assert isinstance(tsdframe[row, col], Number)
+            # get details about column index
+            col_array = isinstance(col, (list, np.ndarray))
+            if col_array and isinstance(col[0], (bool, np.bool_)):
+                col_len = np.sum(col)
+            elif col_array and isinstance(col[0], Number):
+                col_len = len(col)
+            else:
+                col_len = 1
 
-        else:
-            assert isinstance(tsdframe[row, col], expected)
+            # this is when shape mismatch is a problem
+            if (row_len > 1) and (col_len > 1):
+                if row_len == col_len:
+                    assert isinstance(tsdframe[row, col], nap.Tsd)
+                else:
+                    # shape mismatch
+                    with pytest.raises(IndexError, match="shape mismatch"):
+                        tsdframe[row, col]
 
-            output = tsdframe[row, col]
+            elif isinstance(row, Number) and isinstance(col, Number):
+                assert isinstance(tsdframe[row, col], Number)
 
-            if isinstance(output, nap.TsdFrame):
-                if len(tsdframe[row, col] == 1):
-                    # use ravel to ignore shape mismatch
+            else:
+                assert isinstance(tsdframe[row, col], expected)
+
+                output = tsdframe[row, col]
+
+                if isinstance(output, nap.TsdFrame):
+                    if len(tsdframe[row, col] == 1):
+                        # use ravel to ignore shape mismatch
+                        np.testing.assert_array_almost_equal(
+                            tsdframe.values[row, col].ravel(),
+                            tsdframe[row, col].values.ravel(),
+                        )
+                    else:
+                        np.testing.assert_array_almost_equal(
+                            tsdframe.values[row, col], tsdframe[row, col].values
+                        )
+                    assert isinstance(tsdframe[row, col].time_support, nap.IntervalSet)
                     np.testing.assert_array_almost_equal(
-                        tsdframe.values[row, col].ravel(),
-                        tsdframe[row, col].values.ravel(),
+                        tsdframe[row, col].time_support, tsdframe.time_support
                     )
+                    if isinstance(tsdframe[row, col], nap.TsdFrame) and len(
+                        tsdframe[row, col].metadata_columns
+                    ):
+                        assert np.all(
+                            tsdframe[row, col].metadata_columns
+                            == tsdframe.metadata_columns
+                        )
+                        assert np.all(
+                            tsdframe[row, col].metadata_index
+                            == tsdframe.metadata_index[col]
+                        )
                 else:
                     np.testing.assert_array_almost_equal(
-                        tsdframe.values[row, col], tsdframe[row, col].values
+                        output, tsdframe.values[row, col]
                     )
-                assert isinstance(tsdframe[row, col].time_support, nap.IntervalSet)
-                np.testing.assert_array_almost_equal(
-                    tsdframe[row, col].time_support, tsdframe.time_support
-                )
-                if isinstance(tsdframe[row, col], nap.TsdFrame) and len(
-                    tsdframe[row, col].metadata_columns
-                ):
-                    assert np.all(
-                        tsdframe[row, col].metadata_columns == tsdframe.metadata_columns
-                    )
-                    assert np.all(
-                        tsdframe[row, col].metadata_index
-                        == tsdframe.metadata_index[col]
-                    )
-            else:
-                np.testing.assert_array_almost_equal(output, tsdframe.values[row, col])
 
     @pytest.mark.parametrize("index", [0, [0, 2]])
     def test_str_indexing(self, tsdframe, index):
@@ -1308,6 +1498,12 @@ class TestTsdFrame:
         # assert pd.DataFrame(tsdframe).__repr__() == tsdframe.__repr__()
         assert isinstance(tsdframe.__repr__(), str)
 
+    def test_repr_empty(self, tsdframe):
+        ep = nap.IntervalSet(tsdframe.t[-1] + 1, tsdframe.t[-1] + 10)
+        newtsdframe = tsdframe.restrict(ep)
+        repr = newtsdframe.__repr__()
+        assert isinstance(repr, str)
+
     def test_str_(self, tsdframe):
         # assert pd.DataFrame(tsdframe).__str__() == tsdframe.__str__()
         assert isinstance(tsdframe.__str__(), str)
@@ -1317,25 +1513,35 @@ class TestTsdFrame:
 
     def test_bin_average(self, tsdframe):
         meantsd = tsdframe.bin_average(10)
-        assert len(meantsd) == 10
-        np.testing.assert_array_almost_equal(meantsd.index, np.arange(5, 100, 10))
-        bins = np.arange(
-            tsdframe.time_support.start[0], tsdframe.time_support.end[0] + 1, 10
-        )
-        tmp = tsdframe.as_dataframe().groupby(np.digitize(tsdframe.index, bins)).mean()
-        np.testing.assert_array_almost_equal(meantsd.values, tmp.values)
+        if len(tsdframe) == 100:
+            assert len(meantsd) == 10
+            np.testing.assert_array_almost_equal(meantsd.index, np.arange(5, 100, 10))
+            bins = np.arange(
+                tsdframe.time_support.start[0], tsdframe.time_support.end[0] + 1, 10
+            )
+            tmp = (
+                tsdframe.as_dataframe()
+                .groupby(np.digitize(tsdframe.index, bins))
+                .mean()
+            )
+            np.testing.assert_array_almost_equal(meantsd.values, tmp.values)
 
     def test_bin_average_with_ep(self, tsdframe):
-        ep = nap.IntervalSet(start=0, end=40)
-        meantsd = tsdframe.bin_average(10, ep)
-        assert len(meantsd) == 4
-        np.testing.assert_array_almost_equal(meantsd.index, np.arange(5, 40, 10))
-        bins = np.arange(ep.start[0], ep.end[0] + 10, 10)
-        tsdframe = tsdframe.restrict(ep)
-        tmp = tsdframe.as_dataframe().groupby(np.digitize(tsdframe.index, bins)).mean()
-        np.testing.assert_array_almost_equal(
-            meantsd.values, tmp.loc[np.arange(1, 5)].values
-        )
+        if len(tsdframe) > 1:
+            ep = nap.IntervalSet(start=0, end=40)
+            meantsd = tsdframe.bin_average(10, ep)
+            assert len(meantsd) == 4
+            np.testing.assert_array_almost_equal(meantsd.index, np.arange(5, 40, 10))
+            bins = np.arange(ep.start[0], ep.end[0] + 10, 10)
+            tsdframe = tsdframe.restrict(ep)
+            tmp = (
+                tsdframe.as_dataframe()
+                .groupby(np.digitize(tsdframe.index, bins))
+                .mean()
+            )
+            np.testing.assert_array_almost_equal(
+                meantsd.values, tmp.loc[np.arange(1, 5)].values
+            )
 
     def test_save_npz(self, tsdframe):
         with pytest.raises(TypeError) as e:
@@ -1636,6 +1842,73 @@ class TestTs:
             count = ts.count(bin_size=0.1, dtype=dtype)
             if dtype:
                 assert np.issubdtype(count.dtype, dtype)
+
+    @pytest.mark.parametrize(
+        "ep, bin_size, align, padding_value, time_unit, expectation",
+        [
+            ([], 1, "start", np.nan, "s", "Argument ep should be of type IntervalSet"),
+            (
+                nap.IntervalSet(0, 1),
+                "a",
+                "start",
+                np.nan,
+                "s",
+                "bin_size should be of type int or float",
+            ),
+            (
+                nap.IntervalSet(0, 1),
+                1,
+                "a",
+                np.nan,
+                "s",
+                "align should be 'start' or 'end'",
+            ),
+            (
+                nap.IntervalSet(0, 1),
+                1,
+                "start",
+                np.nan,
+                1,
+                "time_unit should be 's', 'ms' or 'us'",
+            ),
+        ],
+    )
+    def test_trial_count_runtime_errors(
+        self, ts, ep, bin_size, align, padding_value, time_unit, expectation
+    ):
+        with pytest.raises(RuntimeError, match=re.escape(expectation)):
+            ts.trial_count(ep, bin_size, align, padding_value, time_unit)
+
+    def test_trial_count(self, ts):
+        ep = nap.IntervalSet(
+            start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
+        )
+
+        expected = np.ones((len(ep), 8)) * np.nan
+        for i, k in zip(range(len(ep)), range(2, 10, 2)):
+            expected[i, 0:k] = 1
+
+        tensor = ts.trial_count(ep, bin_size=1)
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = ts.trial_count(ep, bin_size=1, align="start")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = ts.trial_count(ep, bin_size=1, align="end")
+        np.testing.assert_array_almost_equal(tensor, np.flip(expected, axis=1))
+
+        tensor = ts.trial_count(ep, bin_size=1, time_unit="s")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = ts.trial_count(ep, bin_size=1e3, time_unit="ms")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = ts.trial_count(ep, bin_size=1e6, time_unit="us")
+        np.testing.assert_array_almost_equal(tensor, expected)
+
+        tensor = ts.trial_count(ep, bin_size=1, align="start", padding_value=-1)
+        expected[np.isnan(expected)] = -1
+        np.testing.assert_array_almost_equal(tensor, expected)
 
 
 ####################################################
@@ -2401,3 +2674,48 @@ def test_define_instance(tsd, kwargs):
             val,
         ) in meta.items():
             assert np.all(out.metadata[key] == val)
+
+
+time_array = np.arange(-4, 10, 1)
+time_target_array = np.arange(-2, 10) + 0.01
+starts = np.array([0])  # np.array([0, 8])
+ends = np.array([10])  # np.array([6, 10])
+a = nap.Tsd(
+    t=time_target_array,
+    d=np.arange(time_target_array.shape[0]),
+    time_support=nap.IntervalSet(starts, ends),
+)
+ts = nap.Ts(time_array)
+
+
+@pytest.mark.parametrize(
+    "tsd, ts, mode, expected_data",
+    [
+        (
+            nap.Tsd(
+                t=np.arange(10) + 0.01,
+                d=np.arange(10),
+                time_support=nap.IntervalSet(0, 10),
+            ),
+            nap.Ts(np.arange(-4, 10, 1)),
+            "before",
+            np.array([np.nan] + [*range(0, 9)]),
+        ),
+        (
+            nap.Tsd(
+                t=np.arange(9) + 0.01,
+                d=np.arange(9),
+                time_support=nap.IntervalSet(0, 10),
+            ),
+            nap.Ts(np.arange(-4, 10, 1)),
+            "after",
+            np.array([*range(0, 9)] + [np.nan]),
+        ),
+    ],
+)
+def test_value_from_out_of_range(tsd, ts, mode, expected_data):
+    out = ts.value_from(tsd, mode=mode)
+    # type should be float even if tsd is int
+    assert np.issubdtype(tsd.d.dtype, np.integer)
+    assert np.issubdtype(out.d.dtype, np.floating)
+    np.testing.assert_array_equal(out.d, expected_data)

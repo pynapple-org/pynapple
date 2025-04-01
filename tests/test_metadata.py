@@ -1,7 +1,6 @@
 """Tests for metadata in IntervalSet, TsdFrame, and TsGroup"""
 
 import inspect
-import re
 import warnings
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
@@ -349,6 +348,14 @@ def test_intersect_metadata():
     np.testing.assert_array_equal(
         ep2.intersect(ep)._metadata["m2"], ep3._metadata["m2"]
     )
+
+    # Case when column names overlap
+    np.testing.assert_array_almost_equal(
+        ep3.intersect(ep2).values, np.array([[20.0, 30.0], [50.0, 60.0]])
+    )
+    metadata = ep3.intersect(ep2)._metadata
+    np.testing.assert_array_equal(metadata.columns.values, ["m1"])
+    np.testing.assert_array_equal(metadata.values, ep._metadata.values)
 
 
 def test_set_diff_metadata():
@@ -768,6 +775,13 @@ def clear_metadata(obj):
             d=np.random.rand(100, 4),
             time_units="s",
         ),
+        # TsdFrame with 4 columns and column names
+        nap.TsdFrame(
+            t=np.arange(100),
+            d=np.random.rand(100, 4),
+            columns=["a", "b", "c", "d"],
+            time_units="s",
+        ),
         # TsdFrame with 1 column
         nap.TsdFrame(
             t=np.arange(100),
@@ -781,6 +795,15 @@ def clear_metadata(obj):
                 1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
                 2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
                 3: nap.Ts(t=np.arange(0, 400, 1), time_units="s"),
+            }
+        ),
+        # TsGroup length 4 with weird keys
+        nap.TsGroup(
+            {
+                1: nap.Ts(t=np.arange(0, 200)),
+                8: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
+                2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
+                13: nap.Ts(t=np.arange(0, 400, 1), time_units="s"),
             }
         ),
         # TsGroup length 1
@@ -817,7 +840,17 @@ class Test_Metadata:
     class Test_Add_Metadata:
 
         def test_add_metadata(self, obj, info, obj_len):
-            obj.set_info(label=info[:obj_len])
+            info = info[:obj_len]
+            if isinstance(info, pd.Series):
+                if isinstance(obj, nap.TsdFrame):
+                    # enforce object index
+                    info = info.set_axis(obj.columns)
+                elif isinstance(obj, nap.TsGroup):
+                    # enforce object index
+                    info = info.set_axis(obj.keys())
+
+            # add metadata with `set_info`
+            obj.set_info(label=info)
 
             # verify shape of metadata
             if isinstance(obj, nap.TsGroup):
@@ -843,8 +876,17 @@ class Test_Metadata:
             np.testing.assert_array_almost_equal(obj["label"], obj._metadata["label"])
 
         def test_add_metadata_key(self, obj, info, obj_len):
+            info = info[:obj_len]
+            if isinstance(info, pd.Series):
+                if isinstance(obj, nap.TsdFrame):
+                    # enforce object index
+                    info = info.set_axis(obj.columns)
+                elif isinstance(obj, nap.TsGroup):
+                    # enforce object index
+                    info = info.set_axis(obj.keys())
+
             # add metadata as key
-            obj["label"] = info[:obj_len]
+            obj["label"] = info
 
             # verify shape of metadata
             if isinstance(obj, nap.TsGroup):
@@ -870,8 +912,17 @@ class Test_Metadata:
             np.testing.assert_array_almost_equal(obj["label"], obj._metadata["label"])
 
         def test_add_metadata_attr(self, obj, info, obj_len):
+            info = info[:obj_len]
+            if isinstance(info, pd.Series):
+                if isinstance(obj, nap.TsdFrame):
+                    # enforce object index
+                    info = info.set_axis(obj.columns)
+                elif isinstance(obj, nap.TsGroup):
+                    # enforce object index
+                    info = info.set_axis(obj.keys())
+
             # add metadata as attribute
-            obj.label = info[:obj_len]
+            obj.label = info
 
             # verify shape of metadata
             if isinstance(obj, nap.TsGroup):
@@ -920,6 +971,13 @@ class Test_Metadata:
     def test_add_metadata_df(self, obj, info, obj_len):
         # get proper length of metadata
         info = info.iloc[:obj_len]
+
+        if isinstance(obj, nap.TsdFrame):
+            # enforce object index
+            info = info.set_axis(obj.columns, axis=0)
+        elif isinstance(obj, nap.TsGroup):
+            # enforce object index
+            info = info.set_axis(obj.keys(), axis=0)
 
         # add metadata with `set_info`
         obj.set_info(info)
@@ -1012,6 +1070,18 @@ class Test_Metadata:
             # currently obj[0] does not raise an error for TsdFrame
             with pytest.raises(TypeError, match="Metadata keys must be strings!"):
                 obj[0] = info
+
+    @pytest.mark.parametrize(
+        "idx",
+        [
+            (0, 0),
+            {"label": 1},
+        ],
+    )
+    def test_get_info_error(self, obj, obj_len, idx):
+        obj.set_info(label=[1] * obj_len)
+        with pytest.raises(IndexError, match="Unknown metadata index"):
+            obj.get_info(idx)
 
     def test_overwrite_metadata(self, obj, obj_len):
         # add metadata
@@ -1159,10 +1229,8 @@ class Test_Metadata:
 
             elif isinstance(obj, nap.TsdFrame):
                 # slicing will update columns
-                np.testing.assert_array_almost_equal(
-                    obj2.columns, obj.columns[obj.label == val]
-                )
-                np.testing.assert_array_almost_equal(obj2.metadata_index, obj2.columns)
+                assert np.all(obj2.columns == obj.columns[obj.label == val])
+                assert np.all(obj2.metadata_index == obj2.columns)
                 # number of rows should be the same
                 assert len(obj2) == len(obj)
 
@@ -1222,11 +1290,12 @@ class Test_Metadata:
             ({"l1": [1, 1, 2, 2], "l2": ["a", "b", "b", "b"]}, ["l1", "l2"]),
         ],
     )
-    def test_metadata_groupby(self, obj, metadata, group, obj_len):
-        if obj_len <= 1:
-            pytest.skip("groupby not relevant for length 1 objects")
+    class Test_Metadata_Group:
+        def test_metadata_groupby(self, obj, metadata, group, obj_len):
+            if obj_len <= 1:
+                pytest.skip("groupby not relevant for length 1 objects")
 
-        obj.set_info(metadata)
+            obj.set_info(metadata)
 
         # pandas groups
         pd_groups = obj.metadata.groupby(group).groups
@@ -1241,42 +1310,281 @@ class Test_Metadata:
             # index same as pandas
             assert all(idx == pd_groups[grp])
 
-            # return object with get_group argument
-            obj_grp = obj.groupby(group, get_group=grp)
+                # return object with get_group argument
+                obj_grp = obj.groupby(group, get_group=grp)
 
-            # get_group should be the same as indexed object
-            pd.testing.assert_frame_equal(obj_grp.metadata, obj[np.array(idx)].metadata)
-            # index should be the same for both objects
-            assert all(obj_grp.index == obj[np.array(idx)].index)
-            if isinstance(obj, nap.TsdFrame):
-                # columns should be the same
-                assert all(obj_grp.columns == obj[np.array(idx)].columns)
+                if isinstance(obj, nap.TsdFrame):
+                    # pandas index might be strings if column names are strings
+                    # so we need to convert it to integers
+                    pd_idx = pd_groups.groups[grp]
+                    pd_idx = obj.columns.get_indexer(pd_idx)
 
-    @pytest.mark.parametrize(
-        "metadata, group",
-        [
-            ({"label": [1, 1, 2, 2]}, "label"),
-            ({"l1": [1, 1, 2, 2], "l2": ["a", "b", "b", "b"]}, ["l1", "l2"]),
-        ],
+                    # index same as pandas
+                    assert all(idx == pd_idx)
+
+                    idx = (slice(None), idx)
+                    # columns should be the same
+                    assert all(obj_grp.columns == obj[idx].columns)
+
+                else:
+                    # index same as pandas
+                    assert all(idx == pd_groups.groups[grp])
+
+                # get_group should be the same as indexed object
+                pd.testing.assert_frame_equal(obj_grp._metadata, obj[idx]._metadata)
+                # index should be the same for both objects
+                assert all(obj_grp.index == obj[idx].index)
+
+        @pytest.mark.parametrize(
+            "bad_group, get_group, err",
+            [
+                (
+                    "labels",
+                    None,
+                    pytest.raises(
+                        ValueError, match="Metadata column 'labels' not found"
+                    ),
+                ),
+                (
+                    ["label", "l2"],
+                    None,
+                    pytest.raises(ValueError, match="not found"),
+                ),
+                (
+                    None,
+                    3,
+                    pytest.raises(ValueError, match="Group '3' not found in metadata"),
+                ),
+            ],
+        )
+        def test_metadata_groupby_error(
+            self, obj, obj_len, metadata, group, bad_group, get_group, err
+        ):
+            if obj_len <= 1:
+                pytest.skip("groupby not relevant for length 1 objects")
+
+            obj.set_info(metadata)
+
+            if bad_group is not None:
+                group = bad_group
+
+            # groupby with invalid key
+            with err:
+                obj.groupby(group, get_group)
+
+        @pytest.mark.parametrize("func", [np.mean, np.sum, np.max, np.min])
+        def test_metadata_groupby_apply_numpy(
+            self, obj, metadata, group, func, obj_len
+        ):
+            if obj_len <= 1:
+                pytest.skip("groupby not relevant for length 1 objects")
+
+            obj.set_info(metadata)
+            groups = obj.groupby(group)
+
+            # apply numpy function through groupby_apply
+            grouped_out = obj.groupby_apply(group, func)
+
+            for grp, idx in groups.items():
+                # check that the output is the same as applying the function to the indexed object
+                if isinstance(obj, nap.TsdFrame):
+                    idx = (slice(None), idx)
+                np.testing.assert_array_almost_equal(func(obj[idx]), grouped_out[grp])
+
+        @pytest.mark.parametrize(
+            "func, ep, func_kwargs",
+            [
+                (np.mean, None, dict(axis=-1)),
+                (np.mean, "a", dict(axis=-1)),
+            ],
+        )
+        def test_metadata_groupby_apply_func_kwargs(
+            self, obj, obj_len, metadata, group, func, ep, func_kwargs
+        ):
+            if obj_len <= 1:
+                pytest.skip("groupby not relevant for length 1 objects")
+
+            obj.set_info(metadata)
+            groups = obj.groupby(group)
+            grouped_out = obj.groupby_apply(group, func, ep, **func_kwargs)
+
+            for grp, idx in groups.items():
+                if isinstance(obj, nap.TsdFrame):
+                    idx = (slice(None), idx)
+                if ep:
+                    np.testing.assert_array_almost_equal(
+                        func(**{ep: obj[idx], **func_kwargs}), grouped_out[grp]
+                    )
+                else:
+                    np.testing.assert_array_almost_equal(
+                        func(obj[idx], **func_kwargs), grouped_out[grp]
+                    )
+
+        @pytest.mark.parametrize(
+            "func, ep, err",
+            [
+                (  # input_key is not string
+                    nap.compute_1d_tuning_curves,
+                    1,
+                    pytest.raises(TypeError, match="input_key must be a string"),
+                ),
+                (  # input_key does not exist in function
+                    nap.compute_1d_tuning_curves,
+                    "epp",
+                    pytest.raises(KeyError, match="does not have input parameter"),
+                ),
+                (  # function missing required inputs, or incorrect input type
+                    nap.compute_1d_tuning_curves,
+                    "ep",
+                    pytest.raises(TypeError),
+                ),
+            ],
+        )
+        def test_groupby_apply_errors(
+            self, obj, obj_len, metadata, group, func, ep, err
+        ):
+            if obj_len <= 1:
+                pytest.skip("groupby not relevant for length 1 objects")
+
+            obj.set_info(metadata)
+            with err:
+                obj.groupby_apply(group, func, ep)
+
+
+##############################
+## more groupby_apply tests ##
+##############################
+@pytest.fixture
+def tsgroup_gba():
+    units = {
+        1: np.geomspace(1, 100, 1000),
+        2: np.geomspace(1, 100, 2000),
+        3: np.geomspace(1, 100, 3000),
+        4: np.geomspace(1, 100, 4000),
+    }
+    return nap.TsGroup(units, metadata={"label": ["A", "A", "B", "B"]})
+
+
+@pytest.fixture
+def iset_gba():
+    start = [1, 21, 41, 61, 81]
+    end = [10, 30, 50, 70, 90]
+    label = [1, 1, 1, 2, 2]
+    return nap.IntervalSet(start=start, end=end, metadata={"label": label})
+
+
+@pytest.fixture
+def tsdframe_gba():
+    return nap.TsdFrame(
+        t=np.linspace(1, 100, 1000),
+        d=np.random.rand(1000, 4),
+        time_units="s",
+        metadata={"label": ["x", "x", "y", "y"]},
     )
-    @pytest.mark.parametrize("func", [np.mean, np.sum, np.max, np.min])
-    def test_metadata_groupby_apply_numpy(self, obj, metadata, group, func, obj_len):
-        if obj_len <= 1:
-            pytest.skip("groupby not relevant for length 1 objects")
-
-        obj.set_info(metadata)
-        groups = obj.groupby(group)
-
-        # apply numpy function through groupby_apply
-        grouped_out = obj.groupby_apply(group, func)
-
-        for grp, idx in groups.items():
-            # check that the output is the same as applying the function to the indexed object
-            np.testing.assert_array_almost_equal(
-                func(obj[np.array(idx)]), grouped_out[grp]
-            )
 
 
+def test_metadata_groupby_apply_tuning_curves(tsgroup_gba, iset_gba):
+
+    feature = nap.Tsd(t=np.linspace(1, 100, 100), d=np.tile(np.arange(5), 20))
+
+    # apply to intervalset
+    out = iset_gba.groupby_apply(
+        "label",
+        nap.compute_1d_tuning_curves,
+        "ep",
+        group=tsgroup_gba,
+        feature=feature,
+        nb_bins=5,
+    )
+    for grp, idx in iset_gba.groupby("label").items():
+        tmp = nap.compute_1d_tuning_curves(
+            tsgroup_gba, feature, nb_bins=5, ep=iset_gba[idx]
+        )
+        pd.testing.assert_frame_equal(out[grp], tmp)
+
+    # apply to tsgroup
+    out2 = tsgroup_gba.groupby_apply(
+        "label",
+        nap.compute_1d_tuning_curves,
+        feature=feature,
+        nb_bins=5,
+    )
+    # make sure groups are different
+    assert out2.keys() != out.keys()
+    for grp, idx in tsgroup_gba.groupby("label").items():
+        tmp = nap.compute_1d_tuning_curves(tsgroup_gba[idx], feature, nb_bins=5)
+        pd.testing.assert_frame_equal(out2[grp], tmp)
+
+
+def test_metadata_groupby_apply_tsgroup_lambda(tsgroup_gba):
+    func = lambda x: np.mean(x.rate)
+    out = tsgroup_gba.groupby_apply("label", func)
+
+    for grp, idx in tsgroup_gba.groupby("label").items():
+        tmp = func(tsgroup_gba[idx])
+        assert out[grp] == tmp
+
+
+def test_metadata_groupby_apply_compute_mean_psd(tsdframe_gba, iset_gba):
+    # test on iset
+    out = iset_gba.groupby_apply(
+        "label",
+        nap.compute_mean_power_spectral_density,
+        "ep",
+        sig=tsdframe_gba,
+        interval_size=1,
+    )
+    for grp, idx in iset_gba.groupby("label").items():
+        tmp = nap.compute_mean_power_spectral_density(
+            tsdframe_gba, ep=iset_gba[idx], interval_size=1
+        )
+        pd.testing.assert_frame_equal(out[grp], tmp)
+
+    # test on tsdframe
+    out2 = tsdframe_gba.groupby_apply(
+        "label",
+        nap.compute_mean_power_spectral_density,
+        interval_size=1,
+    )
+    # make sure groups are different
+    assert out2.keys() != out.keys()
+    for grp, idx in tsdframe_gba.groupby("label").items():
+        tmp = nap.compute_mean_power_spectral_density(
+            tsdframe_gba[:, idx], interval_size=1
+        )
+        pd.testing.assert_frame_equal(out2[grp], tmp)
+
+
+@pytest.mark.parametrize(
+    "obj",
+    [
+        nap.TsGroup(
+            {
+                1: np.geomspace(1, 100, 1000),
+                2: np.geomspace(1, 100, 2000),
+                3: np.geomspace(1, 100, 3000),
+                4: np.geomspace(1, 100, 4000),
+            }
+        ),
+        nap.TsdFrame(
+            t=np.linspace(1, 100, 1000),
+            d=np.random.rand(1000, 4),
+        ),
+        nap.Tsd(t=np.linspace(1, 100, 1000), d=np.random.rand(1000)),
+    ],
+)
+def test_metadata_groupby_apply_restrict(obj, iset_gba):
+    out = iset_gba.groupby_apply("label", lambda x: obj.restrict(x))
+    for grp, idx in iset_gba.groupby("label").items():
+        tmp = obj.restrict(iset_gba[idx])
+        if isinstance(obj, nap.TsGroup):
+            for val1, val2 in zip(out[grp].values(), tmp.values()):
+                np.testing.assert_array_almost_equal(val1.index, val2.index)
+        else:
+            np.testing.assert_array_almost_equal(out[grp].values, tmp.values)
+
+
+#########################
 # test double inheritance
 def get_defined_members(cls):
     """
