@@ -131,7 +131,7 @@ def test_load_tsgroup_backward_compatibility(path, k):
         tmp.time_support.values, data[k].time_support.values
     )
     assert "rate" in tmp.metadata.columns
-    np.testing.assert_array_almost_equal(tmp.tag.values, tag)
+    np.testing.assert_array_almost_equal(tmp.tag, tag)
 
 
 @pytest.mark.parametrize("path", [path])

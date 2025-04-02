@@ -290,7 +290,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
         # Adding manually the rate column if data is empty.
         if len(data) == 0:
-            self.set_info(rate=[])
+            self._metadata["rate"] = np.array([])
 
         # Trying to add argument as metainfo
         if len(kwargs):

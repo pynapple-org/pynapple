@@ -670,14 +670,14 @@ class _MetadataLoc:
 
         elif isinstance(key, (Number, str)):
             # metadata.loc[Number], single row across all columns
-            index = key
             idx = self.index_map[key]
+            index = key
             data = {k: self.data[k][idx] for k in self.keys}
 
         elif isinstance(key, (list, np.ndarray, pd.Index, slice)):
             # metadata.loc[array_like], multiple rows across all columns
-            index = key
             idx = self._get_indexder(key)
+            index = key
             data = {k: self.data[k][idx] for k in self.keys}
 
         elif isinstance(key, tuple):
@@ -686,16 +686,16 @@ class _MetadataLoc:
                     idx = self.index_map[key[0]]
                 else:
                     idx = self._get_indexder(key[0])
-                index = key[0]
 
                 if isinstance(key[1], str):
                     # metadata.loc[Any, str], slice single metadata column
-                    data = self.data[key[1]][idx]
+                    return self.data[key[1]][idx]
 
                 elif isinstance(key[1], list) and all(
                     isinstance(k, str) for k in key[1]
                 ):
                     # metadata.loc[Any, [*str]], slice multiple metadata columns
+                    index = key[0]
                     data = {k: self.data[k][idx] for k in key[1]}
 
                 else:

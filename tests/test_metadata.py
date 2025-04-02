@@ -1314,13 +1314,14 @@ class Test_Metadata:
                 # index same as pandas
                 assert all(idx == pd_groups[grp])
                 if isinstance(obj, nap.TsdFrame):
-                    # columns should be the same
-                    assert all(obj_grp.columns == obj.loc[idx].columns)
+                    if isinstance(obj_grp, nap.TsdFrame):
+                        # columns should be the same
+                        assert all(obj_grp.columns == obj.loc[idx].columns)
 
-                    # get_group should be the same as indexed object
-                    pd.testing.assert_frame_equal(
-                        obj_grp.metadata, obj.loc[idx].metadata
-                    )
+                        # get_group should be the same as indexed object
+                        pd.testing.assert_frame_equal(
+                            obj_grp.metadata, obj.loc[idx].metadata
+                        )
                     # index should be the same for both objects
                     assert all(obj_grp.index == obj.loc[idx].index)
                 else:
