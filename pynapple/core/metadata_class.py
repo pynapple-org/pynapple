@@ -1,10 +1,17 @@
+import copy
 import inspect
+import itertools
 import warnings
+from collections import UserDict
 from numbers import Number
 from typing import Union
+from tabulate import tabulate
+import re
 
 import numpy as np
 import pandas as pd
+
+from .utils import _get_terminal_size
 
 
 def add_meta_docstring(meta_func, sep="\n"):
@@ -38,7 +45,9 @@ class _MetadataMixin:
             # metadata index is the same as the index for TsGroup and IntervalSet
             self.metadata_index = self.index
 
-        self._metadata = pd.DataFrame(index=self.metadata_index)
+        self._metadata = _Metadata(
+            self.metadata_index
+        )  # pd.DataFrame(index=self.metadata_index)
 
     def __dir__(self):
         """
@@ -81,7 +90,7 @@ class _MetadataMixin:
         """
         if not isinstance(key, str):
             raise TypeError("Metadata keys must be strings!")
-        self.set_info(**{key: value})
+        self.set_info({key: value})
 
     def __getitem__(self, key):
         """
@@ -95,7 +104,7 @@ class _MetadataMixin:
         Returns a read-only version (copy) of the _metadata DataFrame
         """
         # return copy so that metadata cannot modified in place
-        return self._metadata.copy()
+        return self._metadata.as_dataframe()
 
     @property
     def metadata_columns(self):
@@ -173,7 +182,7 @@ class _MetadataMixin:
 
     def set_info(self, metadata=None, **kwargs):
         """
-        Add metadata information about the object. Metadata are saved as a pandas.DataFrame.
+        Add metadata information about the object. Metadata are saved as a dictionary.
 
         If the metadata name does not contain special nor overlaps with class attributes,
         it can also be set using attribute assignment.
@@ -212,47 +221,51 @@ class _MetadataMixin:
         not_set = []
         if metadata is not None:
             if isinstance(metadata, pd.DataFrame):
-                if pd.Index.equals(self._metadata.index, metadata.index):
-                    self._metadata[metadata.columns] = metadata
+                if np.all(self.metadata_index == metadata.index.values):
+                    # self._metadata[metadata.columns] = metadata
+                    kwargs = {**metadata, **kwargs}
                 else:
                     raise ValueError("Metadata index does not match")
-            elif isinstance(metadata, dict):
+            elif isinstance(metadata, (dict, _Metadata)):
                 # merge metadata with kwargs to use checks below
                 kwargs = {**metadata, **kwargs}
 
-            elif isinstance(metadata, pd.Series) and (len(self) == 1):
+            elif isinstance(metadata, pd.Series) and (len(self.metadata_index) == 1):
                 # allow series to be passed if only one interval
                 for key, val in metadata.items():
-                    self._metadata[key] = val
+                    self._metadata[key] = np.array(val)
+                    # self._metadata[key] = pd.Series(val, index=self.metadata_index)
 
             elif isinstance(metadata, (pd.Series, np.ndarray, list)):
-                raise RuntimeError("Argument should be passed as keyword argument.")
+                raise TypeError(
+                    f"Metadata with type {type(metadata)} should be passed as a keyword argument."
+                )
             else:
                 not_set.append(metadata)
         if len(kwargs):
             for k, v in kwargs.items():
 
                 if isinstance(v, pd.Series):
-                    if pd.Index.equals(self._metadata.index, v.index):
-                        self._metadata[k] = v
+                    if np.all(self.metadata_index == v.index.values):
+                        self._metadata[k] = np.array(v)
                     else:
                         raise ValueError(
                             "Metadata index does not match for argument {}".format(k)
                         )
 
                 elif isinstance(v, (np.ndarray, list, tuple)):
-                    if len(self._metadata.index) == len(v):
-                        self._metadata[k] = v
+                    if len(self.metadata_index) == len(v):
+                        self._metadata[k] = np.array(v)
                     else:
                         raise ValueError(
-                            f"input array length {len(v)} does not match metadata length {len(self._metadata.index)}."
+                            f"input array length {len(v)} does not match metadata length {len(self.metadata_index)}."
                         )
 
                 elif (hasattr(v, "__iter__") is False) and (
-                    len(self._metadata.index) == 1
+                    len(self.metadata_index) == 1
                 ):
                     # if only one index and metadata is non-iterable, pack into iterable for single assignment
-                    self._metadata[k] = [v]
+                    self._metadata[k] = np.array([v])
 
                 else:
                     not_set.append({k: v})
@@ -283,7 +296,7 @@ class _MetadataMixin:
 
         Returns
         -------
-        pandas.Series or pandas.DataFrame or Any (for single location)
+        dict or np.array or Any (for single location)
             The metadata information based on the key provided.
 
         Raises
@@ -291,41 +304,66 @@ class _MetadataMixin:
         IndexError
             If the metadata index is not found.
         """
-        # string indexing of one or more metadata columns
-        if isinstance(key, str) or (
-            isinstance(key, list) and all([isinstance(k, str) for k in key])
-        ):
-            if (
-                isinstance(key, list) and all([k in self.metadata_index for k in key])
-            ) or (isinstance(key, str) and (key in self.metadata_index)):
-                # metadata index is a string
-                return self._metadata.loc[key]
-            else:
-                # metadata[str] or metadata[[*str]]
-                return self._metadata[key]
+        if isinstance(key, str) and (key in self.metadata_columns):
+            # single metadata column
+            return self._metadata[key]
 
-        elif isinstance(key, (Number, list, np.ndarray, pd.Series, pd.Index)) or (
-            isinstance(key, tuple)
-            and (
-                isinstance(key[1], str)
-                or (
-                    isinstance(key[1], list)
-                    and all([isinstance(k, str) for k in key[1]])
-                )
-            )
+        elif (
+            isinstance(key, (list, np.ndarray))
+            and all(isinstance(k, str) for k in key)
+            and all(k in self.metadata_columns for k in key)
         ):
-            # assume key is index, or tuple of index and column name
-            # metadata[Number], metadata[array_like], metadata[Any, str], or metadata[Any, [*str]]
+            # multiple metadata columns
+            return self._metadata[key]
+
+        else:
+            # everything else, use .loc
             return self._metadata.loc[key]
 
-        elif isinstance(key, slice):
-            # assume key as index slice
-            # DataFrame's `loc` treats slices differently (inclusive of stop) than numpy
-            # `iloc` exludes the stop index, like numpy
-            return self._metadata.iloc[key]
+    def drop_info(self, key):
+        """
+        Drop metadata based on metadata column name
+
+        Parameters
+        ----------
+        key : (str, list)
+            Metadata column name(s) to drop.
+
+        Returns
+        -------
+        None
+        """
+        if isinstance(key, str):
+            if key in self.metadata_columns:
+                if (self.nap_class == "TsGroup") and (key == "rate"):
+                    raise ValueError("Cannot drop TsGroup 'rate'!")
+                else:
+                    del self._metadata[key]
+            else:
+                raise KeyError(
+                    f"Metadata column {key} not found. Metadata columns are {self.metadata_columns}"
+                )
+
+        elif isinstance(key, (list, np.ndarray)) and all(
+            isinstance(k, str) for k in key
+        ):
+            if (self.nap_class == "TsGroup") and ("rate" in key):
+                raise ValueError("Cannot drop TsGroup 'rate'!")
+
+            no_drop = [k for k in key if k not in self.metadata_columns]
+            if no_drop:
+                raise KeyError(
+                    f"Metadata column(s) {no_drop} not found. Metadata columns are {self.metadata_columns}"
+                )
+
+            for k in key:
+                if k in self.metadata_columns:
+                    del self._metadata[k]
+
         else:
-            # we don't allow indexing columns with numbers, e.g. metadata[0,0]
-            raise IndexError(f"Unknown metadata index {key}")
+            raise TypeError(
+                f"Invalid metadata column {key}. Metadata columns are {self.metadata_columns}"
+            )
 
     def groupby(self, by, get_group=None):
         """
@@ -358,11 +396,7 @@ class _MetadataMixin:
                     raise ValueError(
                         f"Metadata column '{b}' not found. Metadata columns are {self.metadata_columns}"
                     )
-        groups = self._metadata.groupby(by).groups
-        if self.nap_class == "TsdFrame":
-            # pandas groupby will save the dataframe index, which might not be a positional integer index
-            # so we need to convert the index to positional integer index
-            groups = {k: self.columns.get_indexer(v) for k, v in groups.items()}
+        groups = self._metadata.groupby(by)
         if get_group is not None:
             if get_group not in groups.keys():
                 raise ValueError(
@@ -370,7 +404,7 @@ class _MetadataMixin:
                 )
             idx = groups[get_group]
             if self.nap_class == "TsdFrame":
-                return self[:, idx]
+                return self.loc[idx]
             else:
                 return self[idx]
         else:
@@ -416,7 +450,335 @@ class _MetadataMixin:
 
         groups = self.groupby(by)
         if self.nap_class == "TsdFrame":
-            out = {k: anon_func(self[:, v]) for k, v in groups.items()}
+            out = {k: anon_func(self.loc[v]) for k, v in groups.items()}
         else:
             out = {k: anon_func(self[v]) for k, v in groups.items()}
         return out
+
+
+class _Metadata(UserDict):
+    """
+    A custom dictionary class for storing metadata information.
+
+    Parameters
+    ----------
+    index : np.ndarray
+        Object index values.
+    data : dict, optional
+        Dictionary containing metadata information.
+        This field should only be set by _MetadataLoc and _MetadataILoc in order to preserve the metadata dictionary type.
+    """
+
+    def __init__(self, index, data=None):
+        super().__init__()
+        self.index = index
+        if data is not None:
+            self.update(data)
+
+    def __repr__(self):
+        # Start by determining how many columns and rows.
+        # This can be unique for each object
+        cols, rows = _get_terminal_size()
+        # max_cols = np.maximum(cols // 12, 5)
+        max_rows = np.maximum(rows - 10, 2)
+        # By default, the first three columns should always show.
+        data = {"i": self.index, **self.data}
+        if len(self.index) > max_rows:
+            n_rows = max_rows // 2
+            data = {
+                k: np.hstack((v[:n_rows], "...", v[-n_rows:])) for k, v in data.items()
+            }
+        repstr = tabulate(data, headers="keys", tablefmt="github", stralign="right")
+        # reformat table to remove some space and only have rule between first two columns
+        # split at new line, remove some space
+        repstr = [s[2:-2] for s in repstr.split("\n")]
+        # split at first rule
+        repstr = [re.split(r"\|", s, 1) for s in repstr]
+        # replace remaining rules between columns, remove index label
+        repstr = [
+            " " * len(s[0][:-1]) + "   " + re.sub(r".\|.", "  ", s[1][1:])
+            for s in repstr[:2]
+        ] + [s[0][:-1] + " | " + re.sub(r".\|.", "  ", s[1][1:]) for s in repstr[2:]]
+        return "\n".join(repstr)  # join back together
+
+    def __getitem__(self, key):
+        """
+        Wrapper around typical dictionary __getitem__ to allow for multiple key indexing.
+        """
+        try:
+            if isinstance(key, list):
+                return _Metadata(
+                    index=self.index, data={key: self.data[key] for key in key}
+                )
+            else:
+                return super().__getitem__(key)
+        except KeyError:
+            raise IndexError(
+                f"Metadata column(s) {key} not found. Metadata columns are {self.columns}"
+            )
+
+    @property
+    def columns(self):
+        """
+        Metadata keys (columns).
+        """
+        return list(self.data.keys())
+
+    @property
+    def loc(self):
+        """
+        Pandas-like indexing for metadata.
+        """
+        return _MetadataLoc(self)
+
+    @property
+    def iloc(self):
+        """
+        Numpy-like indexing for metadata.
+        """
+        return _MetadataILoc(self)
+
+    @property
+    def shape(self):
+        """
+        Metadata shape as (n_index, n_columns).
+        """
+        return (len(self.index), len(self.columns))
+
+    @property
+    def dtypes(self):
+        """
+        Dictonary of data types for each metadata column.
+        """
+        return {k: self.data[k].dtype for k in self.columns}
+
+    def drop(self, key):
+        """
+        Drop metadata column(s).
+
+        Parameters
+        ----------
+        key : str or list of str
+            Metadata column name(s) to drop.
+
+        Returns
+        -------
+        None
+        """
+        if isinstance(key, str):
+            if key in self.columns:
+                del self.data[key]
+            else:
+                raise KeyError(
+                    f"Metadata column {key} not found. Metadata columns are {self.columns}"
+                )
+
+        elif isinstance(key, (list, np.ndarray)) and all(
+            isinstance(k, str) for k in key
+        ):
+            no_drop = [k for k in key if k not in self.columns]
+            if no_drop:
+                raise KeyError(
+                    f"Metadata column(s) {no_drop} not found. Metadata columns are {self.columns}"
+                )
+
+            for k in key:
+                if k in self.columns:
+                    del self.data[k]
+
+        else:
+            raise TypeError(
+                f"Invalid metadata column {key}. Metadata columns are {self.columns}"
+            )
+        return self
+
+    def as_dataframe(self):
+        """
+        Convert metadata dictionary to a pandas DataFrame.
+        """
+        return pd.DataFrame(self.data, index=self.index)
+
+    def groupby(self, by):
+        """
+        Grouping function for metadata.
+
+        Parameters
+        ----------
+        by : str or list of str
+            Metadata column name(s) to group by.
+
+        Returns
+        -------
+        dict
+            Dictionary of object indices (dictionary values) corresponding to each group (dictionary keys).
+        """
+        if isinstance(by, str):
+            # groupby single column
+            return {
+                k: self.index[np.where(self.data[by] == k)[0]]
+                for k in np.unique(self.data[by])
+            }
+
+        elif isinstance(by, list):
+            # groupby multiple columns
+            groups = {
+                k: np.where(
+                    np.all([self.data[col] == k[c] for c, col in enumerate(by)], axis=0)
+                )[0]
+                for k in itertools.product(*[np.unique(self.data[col]) for col in by])
+            }
+            # use object index, remove empty groups
+            return {k: self.index[v] for k, v in groups.items() if len(v)}
+
+    def copy(self):
+        """
+        Return a deep copy of the metadata object.
+        """
+        return copy.deepcopy(self)
+
+    def reset_index(self):
+        """
+        Reset metadata index to default range index.
+        """
+        self.index = np.arange(len(self.index))
+        return self
+
+    def merge(self, other, axis=0):
+        """
+        Merge metadata with another metadata object. Operates in place.
+        Can only merge metadata with matching columns OR metadata with matching index.
+        """
+        if not isinstance(other, _Metadata):
+            raise TypeError("Can only merge with another _Metadata object")
+
+        if axis == 0:
+            if np.all(self.columns == other.columns):
+                # merge metadata with matching columns
+                self.index = np.concatenate([self.index, other.index])
+                for k, v in other.data.items():
+                    self.data[k] = np.concatenate([self.data[k], v])
+            else:
+                raise ValueError("Column names must match for merge along axis 0.")
+
+        elif axis == 1:
+            if (len(self.index) == len(other.index)) and np.all(
+                self.index == other.index
+            ):
+                no_merge = [k for k in other.columns if k in self.columns]
+                if no_merge:
+                    raise ValueError(
+                        f"Metadata column(s) {no_merge} already exists. Cannot merge metadata."
+                    )
+                # merge metadata with matching index
+                for k, v in other.data.items():
+                    self.data[k] = v
+            else:
+                raise ValueError("Index values must match for merge along axis 1.")
+
+        else:
+            raise ValueError(f"Invalid axis {axis}. Must be 0 or 1.")
+
+        return self
+
+
+class _MetadataLoc:
+    """
+    Helper class for pandas-like indexing of metadata.
+    Assumes that index corresponds to object index values in first axis, and metadata columns in second axis.
+    """
+
+    def __init__(self, metadata):
+        self.data = metadata.data
+        self.keys = metadata.columns
+        self.index = metadata.index
+        self.index_map = {k: v for v, k in enumerate(self.index)}
+
+    def __getitem__(self, key):
+        if isinstance(key, pd.Series) and np.all(key.index == self.index):
+            # metadata.loc[pd.Series], check that index matches
+            index = key[key].index
+            data = {k: self.data[k][key] for k in self.keys}
+
+        elif isinstance(key, (Number, str)):
+            # metadata.loc[Number], single row across all columns
+            idx = self.index_map[key]
+            index = key
+            data = {k: self.data[k][idx] for k in self.keys}
+
+        elif isinstance(key, (list, np.ndarray, pd.Index, slice)):
+            # metadata.loc[array_like], multiple rows across all columns
+            idx = self._get_indexder(key)
+            index = key
+            data = {k: self.data[k][idx] for k in self.keys}
+
+        elif isinstance(key, tuple):
+            if len(key) == 2:
+                if isinstance(key[0], (str, Number)):
+                    idx = self.index_map[key[0]]
+                else:
+                    idx = self._get_indexder(key[0])
+
+                if isinstance(key[1], str):
+                    # metadata.loc[Any, str], slice single metadata column
+                    return self.data[key[1]][idx]
+
+                elif isinstance(key[1], list) and all(
+                    isinstance(k, str) for k in key[1]
+                ):
+                    # metadata.loc[Any, [*str]], slice multiple metadata columns
+                    index = key[0]
+                    data = {k: self.data[k][idx] for k in key[1]}
+
+                else:
+                    raise IndexError(f"Unknown metadata index {key}")
+            else:
+                raise IndexError(f"Too many indices for metadata.loc: {key}")
+        else:
+            raise IndexError(f"Unknown metadata index {key}")
+
+        return _Metadata(np.array(index), data)
+
+    def _get_indexder(self, vals):
+        """
+        Function that maps object index values to positional index.
+        """
+        return [self.index_map[val] for val in vals]
+
+
+class _MetadataILoc:
+    """
+    Helper class for numpy-like indexing of metadata.
+    Assumes that indices correspond to positional index of row (object index) in first axis and positional index of column (metadata column) in second axis.
+    """
+
+    def __init__(self, metadata):
+        self.data = metadata.data
+        self.index = metadata.index
+        self.keys = metadata.columns
+
+    def __getitem__(self, key):
+        if isinstance(key, Number):
+            # metadata.iloc[Number], single row across all columns
+            index = self.index[key]
+            data = {k: [self.data[k][key]] for k in self.keys}
+
+        elif isinstance(key, (slice, list, np.ndarray, pd.Index, pd.Series)):
+            # metadata.iloc[array_like], multiple rows across all columns
+            index = self.index[key]
+            data = {k: self.data[k][key] for k in self.keys}
+
+        elif isinstance(key, tuple) and len(key) == 2:
+            columns = self.keys[key[1]]
+            index = self.index[key[0]]
+
+            if isinstance(key[0], Number):
+                # metadata.iloc[Number, *], single row across column(s)
+                data = {k: [self.data[k][key[0]]] for k in columns}
+            else:
+                # metadata.iloc[array_like, *], multiple rows across column(s)
+                data = {k: self.data[k][key[0]] for k in columns}
+
+        else:
+            raise IndexError(f"Unknown metadata index {key}")
+
+        return _Metadata(index, data)

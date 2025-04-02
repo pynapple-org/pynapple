@@ -92,7 +92,7 @@ def test_load(path, k):
     tmp = file.load()
     assert isinstance(tmp, type(data[k]))
     if hasattr(tmp, "metadata_columns") and len(tmp.metadata_columns):
-        pd.testing.assert_frame_equal(tmp._metadata, data[k]._metadata)
+        pd.testing.assert_frame_equal(tmp.metadata, data[k].metadata)
 
 
 @pytest.mark.parametrize("path", [path])
@@ -131,7 +131,7 @@ def test_load_tsgroup_backward_compatibility(path, k):
         tmp.time_support.values, data[k].time_support.values
     )
     assert "rate" in tmp.metadata.columns
-    np.testing.assert_array_almost_equal(tmp.tag.values, tag)
+    np.testing.assert_array_almost_equal(tmp.tag, tag)
 
 
 @pytest.mark.parametrize("path", [path])

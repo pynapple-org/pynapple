@@ -26,7 +26,13 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from scipy import signal
 from tabulate import tabulate
 
-from ._core_functions import _bin_average, _convolve, _dropna, _restrict, _threshold
+from ._core_functions import (
+    _bin_average,
+    _convolve,
+    _dropna,
+    _restrict,
+    _threshold,
+)
 from .base_class import _Base
 from .interval_set import IntervalSet
 from .metadata_class import _MetadataMixin, add_meta_docstring
@@ -1159,7 +1165,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                 end = []
 
             # Adding metadata if any.
-            col_names = self._metadata.columns.values
+            col_names = self.metadata.columns.values
             if len(col_names):
                 ends = np.array([end] * self._metadata.shape[1])
                 table = np.vstack(
@@ -1171,7 +1177,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                             (
                                 col_names[:, None],
                                 _convert_iter_to_str(
-                                    self._metadata.values[0:max_cols].T
+                                    self.metadata.values[0:max_cols].T
                                 ),
                                 ends,
                             ),
@@ -1212,11 +1218,11 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         try:
             metadata = self._metadata
         except (AttributeError, RecursionError):
-            metadata = pd.DataFrame(index=self.columns)
+            metadata = {}  # pd.DataFrame(index=self.columns)
 
         if name == "_metadata":
             return metadata
-        elif name in metadata.columns:
+        elif name in metadata.keys():
             return _MetadataMixin.__getattr__(self, name)
         else:
             return super().__getattr__(name)
@@ -1263,7 +1269,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     warnings.simplefilter("ignore")
                     return self.loc[key]
             else:
-                return _MetadataMixin.__getitem__(self, key)
+                return self._metadata[key]
         elif hasattr(key, "__iter__") and all([isinstance(k, str) for k in key]):
             if all(k in self.columns for k in key):
                 with warnings.catch_warnings():
@@ -1271,12 +1277,8 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     warnings.simplefilter("ignore")
                     return self.loc[key]
             else:
-                return _MetadataMixin.__getitem__(self, key)
+                return self._metadata[key]
         else:
-            if isinstance(key, pd.Series) and key.index.equals(self.columns):
-                # if indexing with a pd.Series from metadata, transform it to tuple with slice(None) in first position
-                key = (slice(None, None, None), key)
-
             output = self.values.__getitem__(key)
             columns = self.columns
 
@@ -1407,7 +1409,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             end=self.time_support.end,
             columns=cols_name,
             type=np.array(["TsdFrame"], dtype=np.str_),
-            _metadata=self._metadata.to_dict(),  # save metadata as dictionary
+            _metadata=dict(self._metadata),  # save metadata as dictionary
         )
 
         return

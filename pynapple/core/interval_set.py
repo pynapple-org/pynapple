@@ -307,7 +307,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
 
         # Adding an extra column between actual values and metadata
         try:
-            metadata = self._metadata
+            metadata = pd.DataFrame(index=self.metadata_index, data=self._metadata.data)
             col_names = metadata.columns
         except Exception:
             # Necessary for backward compatibility when saving IntervalSet as pickle
@@ -384,12 +384,12 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         try:
             metadata = self._metadata
         except Exception:
-            metadata = pd.DataFrame(index=self.index)
+            metadata = {}
 
         if name == "_metadata":
             return metadata
-        elif name in metadata.columns:
-            return _MetadataMixin.__getattr__(self, name)
+        elif name in metadata.keys():
+            return _MetadataMixin.__getitem__(self, name)
         else:
             return super().__getattr__(name)
 
@@ -413,113 +413,91 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             elif key == "end":
                 return self.values[:, 1]
             elif key in self._metadata.columns:
-                return _MetadataMixin.__getitem__(self, key)
+                return self._metadata[key]
             else:
                 raise IndexError(
                     f"Unknown string argument. Should be in {['start', 'end'] + list(self._metadata.keys())}"
                 )
+
         elif isinstance(key, list) and all(isinstance(x, str) for x in key):
             # self[[*str]]
-            # easiest to convert to dataframe and then slice
-            # in case of mixing ["start", "end"] with metadata columns
-            df = self.as_dataframe()
-            if all(x in key for x in ["start", "end"]):
-                return IntervalSet(df[key])
+            # only works for list of metadata columns
+            if all(x in self.metadata_columns for x in key):
+                return self._metadata[key]
             else:
-                return df[key]
+                raise IndexError(
+                    f"Unknown string argument. Should be in {list(self._metadata.keys())}"
+                )
+
         elif isinstance(key, Number):
-            # self[Number]
+            # self[Number], numpy-like indexing
             output = self.values.__getitem__(key)
             metadata = self._metadata.iloc[key]
             return IntervalSet(start=output[0], end=output[1], metadata=metadata)
-        elif isinstance(key, (slice, list, np.ndarray)):
-            # self[array_like], use iloc for metadata
+
+        elif isinstance(key, (slice, list, np.ndarray, pd.Series, pd.Index)):
+            # self[array_like], numpy-like indexing
             output = self.values.__getitem__(key)
-            metadata = self._metadata.iloc[key].reset_index(drop=True)
+            metadata = self._metadata.iloc[key]
             return IntervalSet(start=output[:, 0], end=output[:, 1], metadata=metadata)
-        elif isinstance(key, (pd.Series, pd.Index)):
-            # use loc for metadata
-            output = self.values.__getitem__(key)
-            metadata = _MetadataMixin.__getitem__(self, key).reset_index(drop=True)
-            return IntervalSet(start=output[:, 0], end=output[:, 1], metadata=metadata)
+
         elif isinstance(key, tuple):
             if len(key) == 2:
-                if isinstance(key[1], Number):
-                    # self[Any, Number]
-                    # allow number indexing for start and end times for backward compatibility
-                    return self.values.__getitem__(key)
-
-                elif isinstance(key[1], str):
-                    # self[Any, str]
-                    if key[1] == "start":
-                        return self.values[key[0], 0]
-                    elif key[1] == "end":
-                        return self.values[key[0], 1]
-                    elif key[1] in self._metadata.columns:
-                        return _MetadataMixin.__getitem__(self, key)
-
-                elif isinstance(key[1], (list, np.ndarray)):
-                    if all(isinstance(x, str) for x in key[1]):
-                        # self[Any, [*str]]
-                        # easiest to convert to dataframe and then slice
-                        # in case of mixing ["start", "end"] with metadata columns
-                        df = self.as_dataframe()
-                        if all(x in key[1] for x in ["start", "end"]):
-                            return IntervalSet(df.loc[key])
-                        else:
-                            return df.loc[key]
-                    elif all(isinstance(x, Number) for x in key[1]):
-                        if all(x in [0, 1] for x in key[1]):
-                            # self[Any, [0,1]]
-                            # allow number indexing for start and end times for backward compatibility
-                            output = self.values.__getitem__(key[0])
-                            if isinstance(key[0], Number):
-                                return IntervalSet(start=output[0], end=output[1])
-                            else:
-                                return IntervalSet(start=output[:, 0], end=output[:, 1])
-                        else:
-                            raise IndexError(
-                                f"index {key[1]} out of bounds for IntervalSet axis 1 with size 2"
-                            )
-                    else:
-                        raise IndexError(f"unknown index {key[1]} for index 2")
-
-                elif isinstance(key[1], slice):
-                    if key[1] == slice(None, None, None):
-                        # self[Any, :]
+                if isinstance(key[1], slice):
+                    # self[Any, slice]
+                    if (
+                        (key[1] == slice(None))  # self[Any, :]
+                        or (key[1] == slice(0, None))  # self[Any, 0:]
+                        or (
+                            (key[1].stop > 2)  # self[Any, :3+], self[Any, 0:3+]
+                            and ((key[1].start is None) or (key[1].start == 0))
+                        )
+                    ):
+                        # slice all rows
                         output = self.values.__getitem__(key[0])
                         metadata = self._metadata.iloc[key[0]]
+                        return IntervalSet(output, metadata=metadata)
 
-                        if isinstance(key[0], Number):
-                            return IntervalSet(
-                                start=output[0], end=output[1], metadata=metadata
-                            )
-                        else:
-                            return IntervalSet(
-                                start=output[:, 0],
-                                end=output[:, 1],
-                                metadata=metadata.reset_index(drop=True),
-                            )
+                    elif (key[1] == slice(0, 2)) or (key[1] == slice(None, 2)):
+                        # slice start and stop
+                        output = self.values.__getitem__(key)
+                        return IntervalSet(output)
 
-                    elif (key[1] == slice(0, 2, None)) or (
-                        key[1] == slice(None, 2, None)
+                    elif ((key[1] == slice(0, -1)) or (key[1] == slice(None, -1))) and (
+                        len(self.metadata_columns) > 0
                     ):
-                        # self[Any, :2]
-                        # allow number indexing for start and end times for backward compatibility
-                        output = self.values.__getitem__(key[0])
-
-                        if isinstance(key[0], Number):
-                            return IntervalSet(start=output[0], end=output[1])
-                        else:
-                            return IntervalSet(start=output[:, 0], end=output[:, 1])
+                        # slice start and stop and exclude metadata
+                        output = self.values.__getitem__(
+                            (key[0], slice(key[1].start, None, key[1].step))
+                        )
+                        return IntervalSet(output)
 
                     else:
-                        raise IndexError(
-                            f"index {key[1]} out of bounds for IntervalSet axis 1 with size 2"
-                        )
+                        # all other cases, use whatever numpy does
+                        output = self.values.__getitem__(key)
+                        return output
+
+                elif (
+                    isinstance(key[1], (list, np.ndarray, pd.Series, pd.Index))
+                    and all(isinstance(x, Number) for x in key[1])
+                    and (len(key[1]) == 2)
+                ):
+                    # return IntervalSet if one start and one end is indexed
+                    output = self.values.__getitem__(key)
+                    if (
+                        (np.issubdtype(np.array(key[1]).dtype, bool) and np.all(key[1]))
+                        or np.all(key[1] == [0, 1])
+                        or np.all(key[1] == [0, -1])
+                        or np.all(key[1] == [-2, -1])
+                    ):
+                        return IntervalSet(output)
+                    else:
+                        return output
 
                 else:
-                    raise IndexError(f"unknown type {type(key[1])} for index 2")
+                    # treat anything else like numpy indexing
+                    return self.values.__getitem__(key)
+                    # raise IndexError(f"unknown type {type(key[1])} for index 2")
 
             else:
                 raise IndexError(
@@ -704,14 +682,16 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         start2 = a.values[:, 0]
         end2 = a.values[:, 1]
         s, e, m = jitintersect(start1, end1, start2, end2)
-        m1 = self._metadata.loc[m[:, 0]].reset_index(drop=True)
-        m2 = a._metadata.loc[m[:, 1]].reset_index(drop=True)
+        m1 = self._metadata.loc[m[:, 0]].reset_index()
+        m2 = a._metadata.loc[m[:, 1]].reset_index()
         # In case some columns overlap
         overlap = np.intersect1d(m1.columns, m2.columns)
         if len(overlap):
-            m1 = m1.drop(overlap, axis=1)
-            m2 = m2.drop(overlap, axis=1)
-        return IntervalSet(s, e, metadata=m1.join(m2))
+            m1.drop(overlap)
+            m2.drop(overlap)
+
+        metadata = m1.merge(m2, axis=1)
+        return IntervalSet(s, e, metadata=metadata)
 
     def union(self, a):
         """
@@ -758,7 +738,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         start2 = a.values[:, 0]
         end2 = a.values[:, 1]
         s, e, m = jitdiff(start1, end1, start2, end2)
-        m1 = self._metadata.loc[m].reset_index(drop=True)
+        m1 = self._metadata.loc[m]
         return IntervalSet(s, e, metadata=m1)
 
     def in_interval(self, tsd):
@@ -925,7 +905,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             _
         """
         df = pd.DataFrame(data=self.values, columns=["start", "end"])
-        return pd.concat([df, self._metadata], axis=1)
+        return pd.concat([df, self._metadata.as_dataframe()], axis=1)
 
     def save(self, filename):
         """
@@ -969,7 +949,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             start=self.values[:, 0],
             end=self.values[:, 1],
             type=np.array(["IntervalSet"], dtype=np.str_),
-            _metadata=self._metadata.to_dict(),  # save metadata as dictionary
+            _metadata=dict(self._metadata),  # save metadata as dictionary
         )
 
         return
@@ -1047,8 +1027,8 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         tokeep = durations >= interval_size
         new_starts = new_starts[tokeep]
         new_ends = new_ends[tokeep]
-        new_meta = new_meta[tokeep]
-        metadata = self._metadata.loc[new_meta].reset_index(drop=True)
+        new_meta = new_meta[tokeep].astype(int)
+        metadata = self._metadata.loc[new_meta]
 
         # Removing 1 microsecond to have strictly non-overlapping intervals for intervals coming from the same epoch
         new_ends -= 1e-6
@@ -1268,7 +1248,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
               2       20     33     2  y
         shape: (3, 2), time unit: sec.
 
-        Apply a numpy function::
+        Apply a numpy function:
 
         >>> ep.groupby_apply("l2", np.mean)
         {'x': 6.75, 'y': 26.5}
