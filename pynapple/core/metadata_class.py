@@ -1,6 +1,6 @@
 import copy
-import itertools
 import inspect
+import itertools
 import warnings
 from collections import UserDict
 from numbers import Number
