@@ -86,7 +86,7 @@ class _MetadataMixin:
         """
         if not isinstance(key, str):
             raise TypeError("Metadata keys must be strings!")
-        self.set_info(**{key: value})
+        self.set_info({key: value})
 
     def __getitem__(self, key):
         """
@@ -226,14 +226,16 @@ class _MetadataMixin:
                 # merge metadata with kwargs to use checks below
                 kwargs = {**metadata, **kwargs}
 
-            elif isinstance(metadata, pd.Series) and (len(self) == 1):
+            elif isinstance(metadata, pd.Series) and (len(self.metadata_index) == 1):
                 # allow series to be passed if only one interval
                 for key, val in metadata.items():
                     self._metadata[key] = np.array(val)
                     # self._metadata[key] = pd.Series(val, index=self.metadata_index)
 
             elif isinstance(metadata, (pd.Series, np.ndarray, list)):
-                raise RuntimeError("Argument should be passed as keyword argument.")
+                raise TypeError(
+                    f"Metadata with type {type(metadata)} should be passed as a keyword argument."
+                )
             else:
                 not_set.append(metadata)
         if len(kwargs):
@@ -475,7 +477,9 @@ class _Metadata(UserDict):
         """
         try:
             if isinstance(key, list):
-                return {key: self.data[key] for key in key}
+                return _Metadata(
+                    index=self.index, data={key: self.data[key] for key in key}
+                )
             else:
                 return super().__getitem__(key)
         except KeyError:
@@ -632,9 +636,6 @@ class _Metadata(UserDict):
             ):
                 no_merge = [k for k in other.columns if k in self.columns]
                 if no_merge:
-                    print(other.columns)
-                    print(self.columns)
-                    print(no_merge)
                     raise ValueError(
                         f"Metadata column(s) {no_merge} already exists. Cannot merge metadata."
                     )

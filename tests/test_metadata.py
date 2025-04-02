@@ -319,7 +319,7 @@ def test_slice_iset_with_metadata_errors(iset_meta, index, expected):
         iset_meta[index]
 
 
-def test_as_dataframe_metadata():
+def test_iset_as_dataframe_metadata():
     ep = nap.IntervalSet(start=0, end=100, metadata={"m1": 0, "m2": 1})
     df = pd.DataFrame(
         data=np.array([[0.0, 100.0, 0, 1]]),
@@ -329,7 +329,7 @@ def test_as_dataframe_metadata():
     np.testing.assert_array_almost_equal(df.values, ep.as_dataframe().values)
 
 
-def test_intersect_metadata():
+def test_iset_intersect_metadata():
     ep = nap.IntervalSet(start=[0, 50], end=[30, 70], metadata={"m1": [0, 1]})
     ep2 = nap.IntervalSet(start=20, end=60, metadata={"m2": 2})
     ep3 = nap.IntervalSet(
@@ -839,8 +839,15 @@ class Test_Metadata:
         ],
     )
     class Test_Add_Metadata:
+        """
+        Test adding metadata with different types of input.
+        """
 
         def test_add_metadata(self, obj, info, obj_len):
+            """
+            Test adding metadata with set_info.
+            Test retrieval with get_info, getitem, and getattr.
+            """
             info = info[:obj_len]
             if isinstance(info, pd.Series):
                 if isinstance(obj, nap.TsdFrame):
@@ -877,6 +884,10 @@ class Test_Metadata:
             np.testing.assert_array_almost_equal(obj["label"], obj._metadata["label"])
 
         def test_add_metadata_key(self, obj, info, obj_len):
+            """
+            Test adding metadata with setitem.
+            Test retrieval with get_info, getitem, and getattr.
+            """
             info = info[:obj_len]
             if isinstance(info, pd.Series):
                 if isinstance(obj, nap.TsdFrame):
@@ -906,13 +917,20 @@ class Test_Metadata:
                 )
 
             # verify public retrieval of metadata
+            # get_info
             np.testing.assert_array_almost_equal(
                 obj.get_info("label"), obj._metadata["label"]
             )
+            # getattr
             np.testing.assert_array_almost_equal(obj.label, obj._metadata["label"])
+            # getitem
             np.testing.assert_array_almost_equal(obj["label"], obj._metadata["label"])
 
         def test_add_metadata_attr(self, obj, info, obj_len):
+            """
+            Test adding metadata with setattr.
+            Test retrieval with get_info, getitem, and getattr.
+            """
             info = info[:obj_len]
             if isinstance(info, pd.Series):
                 if isinstance(obj, nap.TsdFrame):
@@ -942,13 +960,19 @@ class Test_Metadata:
                 )
 
             # verify public retrieval of metadata
+            # get_info
             np.testing.assert_array_almost_equal(
                 obj.get_info("label"), obj._metadata["label"]
             )
+            # getattr
             np.testing.assert_array_almost_equal(obj.label, obj._metadata["label"])
+            # getitem
             np.testing.assert_array_almost_equal(obj["label"], obj._metadata["label"])
 
     def test_add_metadata_many(self, obj, obj_len):
+        """
+        Test adding multiple metadata columns with set_info.
+        """
         l1 = [1] * obj_len
         l2 = [2] * obj_len
         l3 = [3] * obj_len
@@ -967,9 +991,22 @@ class Test_Metadata:
         ]
 
     @pytest.mark.parametrize(
-        "info", [pd.DataFrame(index=[0, 1, 2, 3], data=[0, 0, 0, 0], columns=["label"])]
+        "info",
+        [
+            # single column
+            pd.DataFrame(index=[0, 1, 2, 3], data=[0, 0, 0, 0], columns=["label"]),
+            # multiple columns
+            pd.DataFrame(
+                index=[0, 1, 2, 3],
+                data=[[0, "a"], [0, "b"], [0, "c"], [0, "d"]],
+                columns=["l1", "l2"],
+            ),
+        ],
     )
     def test_add_metadata_df(self, obj, info, obj_len):
+        """
+        Test adding metadata with a DataFrame.
+        """
         # get proper length of metadata
         info = info.iloc[:obj_len]
 
@@ -985,20 +1022,71 @@ class Test_Metadata:
 
         # verify shape and value in private metadata
         if isinstance(obj, nap.TsGroup):
-            assert obj._metadata.shape == (obj_len, 2)
-            np.testing.assert_array_almost_equal(
-                obj._metadata["label"], info["label"].values
-            )
+            assert obj._metadata.shape == (obj_len, len(info.columns) + 1)
+            pd.testing.assert_frame_equal(obj.metadata[info.columns], info)
         else:
-            assert obj._metadata.shape == (obj_len, 1)
+            assert obj._metadata.shape == (obj_len, len(info.columns))
             pd.testing.assert_frame_equal(obj.metadata, info)
 
         # verify public retrieval of metadata
-        np.testing.assert_array_almost_equal(
-            obj.get_info("label"), obj._metadata["label"]
-        )
-        np.testing.assert_array_almost_equal(obj.label, obj._metadata["label"])
-        np.testing.assert_array_almost_equal(obj["label"], obj._metadata["label"])
+        for col in info.columns:
+            # get info
+            np.testing.assert_array_equal(obj.get_info(col), obj._metadata[col])
+            # getattr
+            np.testing.assert_array_equal(getattr(obj, col), obj._metadata[col])
+            # getitem
+            np.testing.assert_array_equal(obj[col], obj._metadata[col])
+
+    @pytest.mark.parametrize(
+        "info",
+        [
+            # single column
+            pd.Series(index=["label"], data=[0]),
+            # multiple columns
+            pd.Series(index=["l1", "l2"], data=[0, "a"]),
+        ],
+    )
+    def test_add_metadata_series(self, obj, info, obj_len):
+        """
+        Test adding metadata with a Series for length 1 objects.
+        """
+        if obj_len > 1:
+            pytest.skip("groupby not relevant for length > 1 objects")
+
+        obj.set_info(info)
+
+        # verify shape and value in private metadata
+        if isinstance(obj, nap.TsGroup):
+            assert obj._metadata.shape == (obj_len, len(info.index) + 1)
+            np.testing.assert_array_equal(
+                obj.metadata[info.index].values[0], info.values
+            )
+        else:
+            assert obj._metadata.shape == (obj_len, len(info.index))
+            np.testing.assert_array_equal(obj.metadata.values[0], info.values)
+
+        # verify public retrieval of metadata
+        for col in info.index:
+            # get info
+            np.testing.assert_array_equal(obj.get_info(col), obj._metadata[col])
+            # getattr
+            np.testing.assert_array_equal(getattr(obj, col), obj._metadata[col])
+            # getitem
+            np.testing.assert_array_equal(obj[col], obj._metadata[col])
+
+    @pytest.fixture
+    def metadata_slice_type_error(self, obj_len):
+        """
+        Fixture to return the appropriate error when setting metadata with a slice.
+        If the object is length 1, it should not raise an error.
+        """
+        if obj_len > 1:
+            return pytest.raises(
+                TypeError,
+                match="Cannot set the following metadata",
+            )
+        else:
+            return does_not_raise()
 
     @pytest.mark.parametrize(
         "args, kwargs, expected",
@@ -1042,21 +1130,85 @@ class Test_Metadata:
                     match="input array length 100 does not match",
                 ),
             ),
+            (
+                # metadata dataframe with mismatching index
+                [
+                    pd.DataFrame(
+                        index=["r", "s", "t", "q"],
+                        data=np.random.randint(0, 5, size=(4, 3)),
+                        columns=["l1", "l2", "l3"],
+                    )
+                ],
+                {},
+                pytest.raises(
+                    ValueError,
+                    match="Metadata index does not match",
+                ),
+            ),
+            (
+                # metadata series with mismatching index
+                [{"label": pd.Series(index=["r", "s", "t", "q"], data=[1, 2, 3, 4])}],
+                {},
+                pytest.raises(
+                    ValueError,
+                    match="Metadata index does not match",
+                ),
+            ),
+            (
+                # wrong type for metadata argument
+                [np.zeros(4)],
+                {},
+                pytest.raises(
+                    TypeError,
+                    match="should be passed as a keyword argument",
+                ),
+            ),
+            (
+                # wrong type for metadata arg and metadata value
+                [slice(4)],
+                {},
+                pytest.raises(
+                    TypeError,
+                    match="Cannot set the following metadata",
+                ),
+            ),
+            (
+                # wrong type for metadata value
+                [{"label": slice(4)}],
+                {},
+                "metadata_slice_type_error",
+            ),
         ],
     )
-    def test_add_metadata_error(self, obj, obj_len, args, kwargs, expected):
+    def test_add_metadata_error(self, obj, obj_len, args, kwargs, expected, request):
+        """
+        Test for errors when adding metadata.
+        """
         # trim to appropriate length
         if len(args):
             if isinstance(args[0], pd.DataFrame):
                 metadata = args[0].iloc[:obj_len]
             elif isinstance(args[0], dict):
-                metadata = {k: v[:obj_len] for k, v in args[0].items()}
+                metadata = {
+                    k: (v[:obj_len] if type(v) != slice else v)
+                    for k, v in args[0].items()
+                }
+            else:
+                metadata = args[0]
         else:
             metadata = None
+
+        if isinstance(expected, str):
+            # check for fixture
+            expected = request.getfixturevalue(expected)
+
         with expected:
             obj.set_info(metadata, **kwargs)
 
     def test_add_metadata_key_error(self, obj, obj_len):
+        """
+        Test for errors when adding metadata with a key.
+        """
         # type specific key errors
         info = np.ones(obj_len)
         if isinstance(obj, nap.IntervalSet):
@@ -1080,11 +1232,17 @@ class Test_Metadata:
         ],
     )
     def test_get_info_error(self, obj, obj_len, idx):
+        """
+        Test get_info with invalid index.
+        """
         obj.set_info(label=[1] * obj_len)
         with pytest.raises((IndexError, KeyError)):
             obj.get_info(idx)
 
     def test_overwrite_metadata(self, obj, obj_len):
+        """
+        Test for overwriting metadata with set_info, setitem, and setattr.
+        """
         # add metadata
         obj.set_info(label=[1] * obj_len)
         assert np.all(obj.label == 1)
@@ -1099,6 +1257,9 @@ class Test_Metadata:
         assert np.all(obj.label == 4)
 
     def test_drop_metadata(self, obj, obj_len):
+        """
+        Test for dropping metadata with drop_info.
+        """
         info = np.ones(obj_len)
         obj.set_info(label=info)
         assert "label" in obj.metadata_columns
@@ -1116,22 +1277,29 @@ class Test_Metadata:
                 ["not_info", "not_info2"],
                 pytest.raises(
                     KeyError,
-                    match=r"Metadata column(s) \['not_info', 'not_info2'\] not found",
+                    match=r"Metadata column\(s\) \['not_info', 'not_info2'\] not found",
                 ),
             ),
             (
                 ["label", "not_info"],
                 pytest.raises(
-                    KeyError, match=r"Metadata column(s) \['not_info'\] not found"
+                    KeyError, match=r"Metadata column\(s\) \['not_info'\] not found"
                 ),
             ),
             (0, pytest.raises(TypeError, match="Invalid metadata column")),
         ],
     )
     def test_drop_metadata_error(self, obj, obj_len, drop, error):
+        """
+        Test for errors when dropping metadata.
+        """
         info = np.ones(obj_len)
         obj.set_info(label=info)
 
+        with error:
+            obj.drop_info(drop)
+
+        # make sure label doesn't get dropped if in list
         if isinstance(drop, list) and ("label" in drop):
             assert "label" in obj.metadata_columns
 
@@ -1141,10 +1309,14 @@ class Test_Metadata:
         [
             "set_info",
             "_metadata",
+            "metadata",
             "_class_attributes",
         ],
     )
     def test_metadata_overlapping_names(self, obj, obj_len, name):
+        """
+        Test for metadata names that overlap with existing attributes.
+        """
         values = np.ones(obj_len)
 
         # set some metadata to force assertion error with "_metadata" case
@@ -1180,6 +1352,9 @@ class Test_Metadata:
         ],
     )
     def test_metadata_nonattribute_names(self, obj, obj_len, name):
+        """
+        Test for adding metadata with names that cannot be accessed as attributes.
+        """
         values = np.ones(obj_len)
 
         # set some metadata to force assertion error with "_metadata" case
@@ -1193,6 +1368,9 @@ class Test_Metadata:
 
     @pytest.mark.parametrize("label, val", [([1, 1, 2, 2], 2)])
     def test_metadata_slicing(self, obj, label, val, obj_len):
+        """
+        Test slicing of metadata with a boolean
+        """
         # slicing not relevant for length 1 objects
         if obj_len > 1:
             # add label
@@ -1250,14 +1428,24 @@ class Test_Metadata:
             assert np.all(obj2.metadata_columns == obj.metadata_columns)
 
     def test_metadata_index_columns(self, obj, obj_len):
+        """
+        Test getting multiple metadata columns with getitem and get_info.
+        """
         # add metadata
         obj.set_info(one=[1] * obj_len, two=[2] * obj_len, three=[3] * obj_len)
 
         # test metadata columns
         assert np.all(obj["one"] == 1)
+        assert np.all(
+            obj[["two", "three"]].as_dataframe() == obj.metadata[["two", "three"]]
+        )
         assert np.all(obj[["two", "three"]] == obj._metadata[["two", "three"]])
+        assert np.all(obj[["two", "three"]] == obj.get_info(["two", "three"]))
 
     def test_save_and_load_npz(self, obj, obj_len):
+        """
+        Test saving and loading objects with metadata as npz files.
+        """
         obj.set_info(label1=[1] * obj_len, label2=[2] * obj_len)
 
         obj.save("obj.npz")
