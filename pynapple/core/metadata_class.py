@@ -5,9 +5,13 @@ import warnings
 from collections import UserDict
 from numbers import Number
 from typing import Union
+from tabulate import tabulate
+import re
 
 import numpy as np
 import pandas as pd
+
+from .utils import _get_terminal_size
 
 
 def add_meta_docstring(meta_func, sep="\n"):
@@ -470,6 +474,32 @@ class _Metadata(UserDict):
         self.index = index
         if data is not None:
             self.update(data)
+
+    def __repr__(self):
+        # Start by determining how many columns and rows.
+        # This can be unique for each object
+        cols, rows = _get_terminal_size()
+        # max_cols = np.maximum(cols // 12, 5)
+        max_rows = np.maximum(rows - 10, 2)
+        # By default, the first three columns should always show.
+        data = {"i": self.index, **self.data}
+        if len(self.index) > max_rows:
+            n_rows = max_rows // 2
+            data = {
+                k: np.hstack((v[:n_rows], "...", v[-n_rows:])) for k, v in data.items()
+            }
+        repstr = tabulate(data, headers="keys", tablefmt="github", stralign="right")
+        # reformat table to remove some space and only have rule between first two columns
+        # split at new line, remove some space
+        repstr = [s[2:-2] for s in repstr.split("\n")]
+        # split at first rule
+        repstr = [re.split(r"\|", s, 1) for s in repstr]
+        # replace remaining rules between columns, remove index label
+        repstr = [
+            " " * len(s[0][:-1]) + "   " + re.sub(r".\|.", "  ", s[1][1:])
+            for s in repstr[:2]
+        ] + [s[0][:-1] + " | " + re.sub(r".\|.", "  ", s[1][1:]) for s in repstr[2:]]
+        return "\n".join(repstr)  # join back together
 
     def __getitem__(self, key):
         """
