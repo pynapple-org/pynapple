@@ -21,8 +21,6 @@ def label_meta():
 #################
 ## IntervalSet ##
 #################
-
-
 class TestIntervalSetMetadata:
     """
     Tests for metadata specific to IntervalSet.
@@ -558,8 +556,6 @@ class TestIntervalSetMetadata:
 ##############
 ## TsdFrame ##
 ##############
-
-
 class TestTsdFrameMetadata:
     """
     Tests for metadata specific to TsdFrame.
@@ -845,6 +841,13 @@ class TestTsGroupMetadata:
             tsgroup_meta.drop_info(["label", "rate"])
 
         assert "label" in tsgroup_meta.metadata_columns
+
+    def test_metadata_dict_drop_rate(self, tsgroup_meta):
+        """
+        Test that rate can be dropped from the metadata dict using the private drop method.
+        """
+        tsgroup_meta._metadata.drop("rate")
+        assert "rate" not in tsgroup_meta.metadata_columns
 
 
 ##################
@@ -1581,7 +1584,7 @@ class TestMetadata:
             ({"l1": [1, 1, 2, 2], "l2": ["a", "b", "b", "b"]}, ["l1", "l2"]),
         ],
     )
-    class TestGroupMetadata:
+    class TestMetadataGroup:
         def test_metadata_groupby(self, obj, metadata, group, obj_len):
             """
             Test that groupby matches pandas groupby, and that get_group returns appropriate object.
@@ -1760,13 +1763,78 @@ class TestMetadata:
             with err:
                 obj.groupby_apply(group, func, ep)
 
+    #########################################
+    ## Tests for metadata dictionary class ##
+    #########################################
+    @pytest.mark.parametrize(
+        "dropped",
+        [
+            "label",
+            ["label"],
+            ["label", "info"],
+        ],
+    )
+    def test_metadata_dict_drop(self, obj, obj_len, dropped):
+        """
+        Test dropping metdata from the metadata dictionary directly
+        """
+        obj.set_info(label=[1] * obj_len)
+        assert "label" in obj.metadata_columns
+        obj.set_info(info=[2] * obj_len)
+        assert "info" in obj.metadata_columns
+
+        obj._metadata.drop(dropped)
+        if not isinstance(dropped, list):
+            dropped = [dropped]
+
+        for drop in dropped:
+            assert drop not in obj.metadata_columns
+        for no_drop in np.setdiff1d(["label", "info"], dropped):
+            assert no_drop in obj.metadata_columns
+
+    @pytest.mark.parametrize(
+        "dropped, expected",
+        [
+            (
+                "not_info",
+                pytest.raises(KeyError, match="Metadata column not_info not found"),
+            ),
+            (
+                ["not_info"],
+                pytest.raises(
+                    KeyError, match=r"Metadata column\(s\) \['not_info'\] not found"
+                ),
+            ),
+            (
+                ["label", "not_info"],
+                pytest.raises(
+                    KeyError, match=r"Metadata column\(s\) \['not_info'\] not found"
+                ),
+            ),
+            (
+                ["not_info", "label", "info"],
+                pytest.raises(
+                    KeyError,
+                    match=r"Metadata column\(s\) \['not_info', 'info'\] not found",
+                ),
+            ),
+            (0, pytest.raises(TypeError, match="Invalid metadata column")),
+        ],
+    )
+    def test_metadata_dict_drop_error(self, obj, obj_len, dropped, expected):
+        """
+        Test dropping metadata with invalid key(s)
+        """
+        obj.set_info(label=[1] * obj_len)
+        with expected:
+            obj._metadata.drop(dropped)
+        assert "label" in obj.metadata_columns
+
 
 ##############################
 ## more groupby_apply tests ##
 ##############################
-
-
-class TestGroupbyApply:
+class TestGroupbyApplyFunctions:
     """
     Tests for specific groupby_apply functions.
     """
