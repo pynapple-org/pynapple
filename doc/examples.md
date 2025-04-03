@@ -51,3 +51,11 @@ Example wavelet decomposition <examples/tutorial_wavelet_decomposition>
 Example filtering <examples/tutorial_phase_preferences>
 ```
 :::
+
+
+:::{card} 
+```{toctree}
+:maxdepth: 3
+Trial-aligned choice decoding in International Brain Lab data <examples/tutorial_ibl_choice_decoding>
+```
+:::
