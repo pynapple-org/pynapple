@@ -1345,14 +1345,6 @@ class TestTsdFrame:
             elif row_array and isinstance(row[0], Number):
                 row_len = len(row)
             else:
-                # shape mismatch
-                # Numpy: IndexError, JAX: ValueError
-                # (numpy | jax error messages)
-                # with pytest.raises(
-                #     (IndexError, ValueError),
-                #     match="shape mismatch|Incompatible shapes for ",
-                # ):
-                #     tsdframe[row, col]
                 row_len = 1
 
             # get details about column index
@@ -1370,7 +1362,12 @@ class TestTsdFrame:
                     assert isinstance(tsdframe[row, col], nap.Tsd)
                 else:
                     # shape mismatch
-                    with pytest.raises(IndexError, match="shape mismatch"):
+                    # Numpy: IndexError, JAX: ValueError
+                    # (numpy | jax error messages)
+                    with pytest.raises(
+                        (IndexError, ValueError),
+                        match="shape mismatch|Incompatible shapes for ",
+                    ):
                         tsdframe[row, col]
 
             elif isinstance(row, Number) and isinstance(col, Number):
