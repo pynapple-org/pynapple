@@ -38,7 +38,8 @@ jobs:
         # operator, so it checks whether the right side is contained in the
         # left side. In particular, we succeed if the path of the source code
         # ends in the most recent git tag, fail if it does not.
-        [[ "$(ls dist/*tar.gz)" =~ "-$(git describe --tags).tar.gz" ]]
+        TAG=$(git describe --tags)
+        [[ "$(ls dist/*tar.gz)" =~ "-${TAG:1}.tar.gz" ]]
     - name: Check we can install from wheel
         # note that this is how this works in bash (different shells might be
         # slightly different). we've checked there's only one .whl file in an
