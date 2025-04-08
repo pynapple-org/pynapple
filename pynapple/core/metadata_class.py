@@ -740,19 +740,20 @@ class _MetadataLoc:
                     f"Metadata index '{index}' not found. Metadata indices are {self.index}"
                 )
 
-        elif hasattr(index, "__iter__"):
-            # non-tuple and non-str iterable
+        elif hasattr(index, "dtype") or isinstance(index, list):
+            # list or array_like
             if np.issubdtype(np.array(index).dtype, bool):
                 # metadata.loc[bool array], boolean indexing
                 if len(index) == len(self.index):
                     idx = index
 
-                    if hasattr(index, "index"):
+                    if hasattr(index, "index") and not isinstance(index, list):
+                        # boolean values associated with an index (i.e. pandas Series)
                         if all(i in self.index for i in index.index):
-                            # boolean values associated with an index (i.e. pandas Series)
-                            index = index[idx].index
-                            # use _get_indexer in case index is not sorted
-                            idx = self._get_indexder(np.sort(index))
+                            # get index where boolean is True
+                            index = np.sort(index[idx].index)
+                            # use _get_indexer in case index was not sorted
+                            idx = self._get_indexder(index)
                         else:
                             raise IndexError(
                                 f"Index of boolean cannot be aligned to index of metadata"
@@ -805,12 +806,12 @@ class _MetadataLoc:
             else:
                 # informative error for columns not found
                 raise KeyError(
-                    f"Metadata column(s) {[c for c in columns if c not in self.keys]} not found. Metadata columns are {self.keys}"
+                    f"Metadata columns {[c for c in columns if c not in self.keys]} not found. Metadata columns are {self.keys}"
                 )
         else:
             # metadata.loc[:, unknown], unknown columns, probably a type error
             raise TypeError(
-                f"Unknown metadata column(s) {columns}. Columns must be strings."
+                f"Unknown metadata columns {columns}. Columns must be strings."
             )
 
     def _get_indexder(self, vals):

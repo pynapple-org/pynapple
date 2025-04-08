@@ -1344,7 +1344,7 @@ class TestMetadata:
         Test get_info with invalid index.
         """
         obj.set_info(label=[1] * obj_len)
-        with pytest.raises((IndexError, KeyError)):
+        with pytest.raises((IndexError, TypeError)):
             obj.get_info(idx)
 
     def test_overwrite_metadata(self, obj, obj_len):
@@ -1799,8 +1799,11 @@ class TestMetadataDict:
         "loc1, return_type1, expected1",
         [
             # supported indices
-            (pd.Series([True, False, True, False]), _Metadata, None),
+            (pd.Series([False, True, True, False]), _Metadata, None),
+            ([True, False, False, False], _Metadata, None),
             (0, _Metadata, None),
+            ([0], _Metadata, None),
+            ([], _Metadata, None),
             ([0, 1], _Metadata, None),
             (slice(None), _Metadata, None),
             (np.array([2, 3]), _Metadata, None),
@@ -1812,6 +1815,23 @@ class TestMetadataDict:
                 pytest.raises(IndexError, match="Metadata index 'label' not found"),
             ),
             (
+                100,
+                None,
+                pytest.raises(IndexError, match="Metadata index '100' not found"),
+            ),
+            (
+                pd.Series(
+                    [False, True, True, False], index=["aaa", "bbb", "ccc", "ddd"]
+                ),
+                None,
+                pytest.raises(IndexError, match="Index of boolean cannot be aligned"),
+            ),
+            (
+                [True, False, False, False, False],
+                None,
+                pytest.raises(IndexError, match="Boolean index length"),
+            ),
+            (
                 ["label", "other"],
                 None,
                 pytest.raises(
@@ -1819,9 +1839,14 @@ class TestMetadataDict:
                 ),
             ),
             (
-                100,
+                pd.DataFrame(data=[0, 1, 2, 3]),
                 None,
-                pytest.raises(IndexError, match="Metadata index '100' not found"),
+                pytest.raises(IndexError, match="Unknown metadata index"),
+            ),
+            (
+                slice(0, 2),
+                None,
+                pytest.raises(IndexError, match="Unknown metadata index"),
             ),
         ],
     )
@@ -1833,7 +1858,6 @@ class TestMetadataDict:
             ("label", (np.number, np.ndarray), does_not_raise()),
             (["label", "other"], _Metadata, does_not_raise()),
             # errors
-            (0, None, pytest.raises(TypeError, match="Unknown metadata column")),
             (
                 "info",
                 None,
@@ -1842,10 +1866,9 @@ class TestMetadataDict:
             (
                 ["label", "info"],
                 None,
-                pytest.raises(
-                    KeyError, match=r"Metadata column\(s\) \['info'\] not found"
-                ),
+                pytest.raises(KeyError, match=r"Metadata columns \['info'\] not found"),
             ),
+            (0, None, pytest.raises(TypeError, match="Unknown metadata column")),
         ],
     )
     def test_metadata_dict_loc(
@@ -1855,12 +1878,19 @@ class TestMetadataDict:
         Test getting metadata with loc
         """
         meta = _Metadata(index, data)
-        if isinstance(loc1, (list, np.ndarray, pd.Index)) and (len(index) == 1):
+        if (
+            isinstance(loc1, (list, np.ndarray, pd.Index))
+            and (len(index) == 1)
+            and (len(loc1) > 1)
+            and (return_type1 is not None)
+        ):
             pytest.skip("array-like not relevant for length 1 objects")
 
         if isinstance(loc1, pd.Series):
             loc1 = loc1[: len(index)]
-            loc1 = loc1.set_axis(index)
+            if return_type1 is not None:
+                # if return type is not None, set index to loc1
+                loc1 = loc1.set_axis(index)
 
         ## set up test instance
         # set up loc
