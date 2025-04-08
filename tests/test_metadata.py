@@ -11,6 +11,7 @@ import pandas as pd
 import pytest
 
 import pynapple as nap
+from pynapple.core.metadata_class import _Metadata
 
 
 @pytest.fixture
@@ -1763,9 +1764,144 @@ class TestMetadata:
             with err:
                 obj.groupby_apply(group, func, ep)
 
-    #########################################
-    ## Tests for metadata dictionary class ##
-    #########################################
+
+#########################################
+## Tests for metadata dictionary class ##
+#########################################
+@pytest.mark.parametrize(
+    "index, data",
+    [
+        (
+            np.arange(4),
+            {"label": np.array([1, 2, 3, 4]), "other": np.array(["a", "b", "c", "d"])},
+        ),
+        (np.arange(1), {"label": np.array([1]), "other": np.array(["a"])}),
+    ],
+)
+class TestMetadataDict:
+    """
+    Tests for private metadata dictionary class methods that are used internally.
+    """
+
+    def test_metadata_dict_init(self, index, data):
+        """
+        Test metadata dictionary initialization.
+        Used when slicing metadata to maintain the metadata type
+        """
+        meta = _Metadata(index, data)
+        np.testing.assert_array_equal(meta.index, index)
+        assert meta.shape == (len(index), len(data))
+        assert meta.columns == list(data.keys())
+        for key in data.keys():
+            np.testing.assert_array_equal(meta[key], data[key])
+
+    @pytest.mark.parametrize(
+        "loc1, return_type1, expected1",
+        [
+            # supported indices
+            (pd.Series([True, False, True, False]), _Metadata, None),
+            (0, _Metadata, None),
+            ([0, 1], _Metadata, None),
+            (slice(None), _Metadata, None),
+            (np.array([2, 3]), _Metadata, None),
+            (pd.Index([0, 3]), _Metadata, None),
+            # errors
+            (
+                "label",
+                None,
+                pytest.raises(IndexError, match="Metadata index 'label' not found"),
+            ),
+            (
+                ["label", "other"],
+                None,
+                pytest.raises(
+                    IndexError, match=r"Metadata indices \['label', 'other'\] not found"
+                ),
+            ),
+            (
+                100,
+                None,
+                pytest.raises(IndexError, match="Metadata index '100' not found"),
+            ),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "loc2, return_type2, expected2",
+        [
+            # supported column indexes
+            (None, _Metadata, does_not_raise()),
+            ("label", (np.number, np.ndarray), does_not_raise()),
+            (["label", "other"], _Metadata, does_not_raise()),
+            # errors
+            (0, None, pytest.raises(TypeError, match="Unknown metadata column")),
+            (
+                "info",
+                None,
+                pytest.raises(KeyError, match="Metadata column 'info' not found"),
+            ),
+            (
+                ["label", "info"],
+                None,
+                pytest.raises(
+                    KeyError, match=r"Metadata column\(s\) \['info'\] not found"
+                ),
+            ),
+        ],
+    )
+    def test_metadata_dict_loc(
+        self, index, data, loc1, return_type1, expected1, loc2, return_type2, expected2
+    ):
+        """
+        Test getting metadata with loc
+        """
+        meta = _Metadata(index, data)
+        if isinstance(loc1, (list, np.ndarray, pd.Index)) and (len(index) == 1):
+            pytest.skip("array-like not relevant for length 1 objects")
+
+        if isinstance(loc1, pd.Series):
+            loc1 = loc1[: len(index)]
+            loc1 = loc1.set_axis(index)
+
+        ## set up test instance
+        # set up loc
+        if loc2 is None:
+            loc = loc1
+        else:
+            loc = (loc1, loc2)
+        # return type None has priority, otherwise use return_type2
+        if (return_type1 is None) or (return_type2 is None):
+            return_type = None
+        else:
+            return_type = return_type2
+        # expected1 has priority over expected2
+        if expected1 is None:
+            expected = expected2
+        else:
+            expected = expected1
+
+        with expected:
+            meta.loc[loc]
+
+        if return_type is not None:
+            assert isinstance(meta.loc[loc], return_type)
+
+            if isinstance(loc, tuple):
+                if isinstance(loc[1], str):
+                    # tuple that retuns some value
+                    np.testing.assert_array_equal(meta.loc[loc], data[loc[1]][loc[0]])
+                else:
+                    # tuple that retuns a _Metadata object
+                    np.testing.assert_array_equal(meta.loc[loc].index, index[loc[0]])
+                    for key in loc[1]:
+                        np.testing.assert_array_equal(
+                            meta.loc[loc][key], data[key][loc[0]]
+                        )
+            else:
+                # single index that returns a _Metadata object
+                np.testing.assert_array_equal(meta.loc[loc].index, index[loc])
+                for key in data.keys():
+                    np.testing.assert_array_equal(meta.loc[loc][key], data[key][loc])
+
     @pytest.mark.parametrize(
         "dropped",
         [
@@ -1774,23 +1910,22 @@ class TestMetadata:
             ["label", "info"],
         ],
     )
-    def test_metadata_dict_drop(self, obj, obj_len, dropped):
+    def test_metadata_dict_drop(self, index, data, dropped):
         """
         Test dropping metdata from the metadata dictionary directly
         """
-        obj.set_info(label=[1] * obj_len)
-        assert "label" in obj.metadata_columns
-        obj.set_info(info=[2] * obj_len)
-        assert "info" in obj.metadata_columns
+        meta = _Metadata(index, data)
+        meta["info"] = [2] * len(index)
 
-        obj._metadata.drop(dropped)
+        meta.drop(dropped)
         if not isinstance(dropped, list):
             dropped = [dropped]
-
+        # check that dropped columns are not in metadata
         for drop in dropped:
-            assert drop not in obj.metadata_columns
+            assert drop not in meta.columns
+        # check that remaining columns are still in metadata
         for no_drop in np.setdiff1d(["label", "info"], dropped):
-            assert no_drop in obj.metadata_columns
+            assert no_drop in meta.columns
 
     @pytest.mark.parametrize(
         "dropped, expected",
@@ -1821,14 +1956,138 @@ class TestMetadata:
             (0, pytest.raises(TypeError, match="Invalid metadata column")),
         ],
     )
-    def test_metadata_dict_drop_error(self, obj, obj_len, dropped, expected):
+    def test_metadata_dict_drop_error(self, index, data, dropped, expected):
         """
         Test dropping metadata with invalid key(s)
         """
-        obj.set_info(label=[1] * obj_len)
+        meta = _Metadata(index, data)
         with expected:
-            obj._metadata.drop(dropped)
-        assert "label" in obj.metadata_columns
+            meta.drop(dropped)
+        assert "label" in meta.columns
+
+    def test_metadata_dict_copy(self, index, data):
+        """
+        Test copying metadata dictionaries
+        """
+        meta1 = _Metadata(index, data)
+        meta2 = meta1.copy()
+        assert meta1.keys() == meta2.keys()
+        for key in meta1.keys():
+            np.testing.assert_array_equal(meta1[key], meta2[key])
+        assert id(meta1) != id(meta2)
+        meta2["info"] = [3] * len(index)
+        assert "info" not in meta1.keys()
+
+    def test_metadata_dict_join_columns(self, index, data):
+        """
+        Test joining metadata dictionary columns.
+        """
+        meta1 = _Metadata(index)
+        meta2 = _Metadata(index)
+        meta1["l1"] = [1] * len(index)
+        meta2["l2"] = [2] * len(index)
+
+        # join on meta1
+        meta1.join(meta2, axis=1)
+        # l1 should be first
+        assert list(meta1.keys()) == ["l1", "l2"]
+        assert "l1" not in meta2.keys()
+
+        # join on meta2
+        meta1.drop("l2")
+        meta2.join(meta1, axis=1)
+        # l2 should be first
+        assert list(meta2.keys()) == ["l2", "l1"]
+        assert "l2" not in meta1.keys()
+
+    def test_metadata_dict_join_rows(self, index, data):
+        """
+        Test joining metadata dictionary rows.
+        """
+        meta1 = _Metadata(index)
+        meta2 = _Metadata(index)
+        meta1["l1"] = [1] * len(index)
+        meta2["l1"] = [2] * len(index)
+
+        # join on meta1, make sure warning is raised
+        with pytest.warns(
+            UserWarning, match="may result in duplicate and unsorted indices"
+        ):
+            meta1.join(meta2, axis=0)
+        np.testing.assert_array_equal(meta1["l1"], [1] * len(index) + [2] * len(index))
+        np.testing.assert_array_equal(meta1.index, np.hstack((index, index)))
+
+        # join on meta2
+        meta1 = _Metadata(index)
+        meta1["l1"] = [1] * len(index)
+        with pytest.warns(
+            UserWarning, match="may result in duplicate and unsorted indices"
+        ):
+            meta2.join(meta1, axis=0)
+        np.testing.assert_array_equal(meta2["l1"], [2] * len(index) + [1] * len(index))
+        np.testing.assert_array_equal(meta2.index, np.hstack((index, index)))
+
+    @pytest.mark.parametrize(
+        "col, new_index, axis, expected",
+        [
+            # duplicate column
+            (
+                "l1",
+                None,
+                1,
+                pytest.raises(
+                    ValueError, match=r"Metadata column\(s\) \['l1'\] already exists"
+                ),
+            ),
+            # mismatched index value
+            (
+                "l2",
+                "value",
+                1,
+                pytest.raises(ValueError, match=r"Metadata indices must match"),
+            ),
+            # mismatched index length
+            (
+                "l2",
+                "length",
+                1,
+                pytest.raises(ValueError, match=r"Metadata indices must match"),
+            ),
+            # mismatched column names
+            (
+                "l2",
+                None,
+                0,
+                pytest.raises(ValueError, match=r"Column names must match"),
+            ),
+            # axis out of bounds
+            (
+                "l2",
+                None,
+                3,
+                pytest.raises(ValueError, match=r"Axis 3 out of bounds"),
+            ),
+        ],
+    )
+    def test_metadata_dict_join_error(
+        self, index, data, col, new_index, axis, expected
+    ):
+        """
+        Test for axis out of bounds error
+        """
+        meta1 = _Metadata(index)
+        meta2 = meta1.copy()
+        meta1["l1"] = [1] * len(index)
+        meta2[col] = [2] * len(index)
+
+        if new_index is not None:
+            if new_index == "value":
+                meta2.index = np.arange(100, 100 + len(index))
+            elif new_index == "length":
+                meta2 = meta2.iloc[: len(index) - 1]
+
+        with expected:
+            meta1.join(meta2, axis=axis)
 
 
 ##############################

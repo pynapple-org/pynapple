@@ -227,7 +227,7 @@ class _MetadataMixin:
                 else:
                     raise ValueError("Metadata index does not match")
             elif isinstance(metadata, (dict, _Metadata)):
-                # merge metadata with kwargs to use checks below
+                # join metadata with kwargs to use checks below
                 kwargs = {**metadata, **kwargs}
 
             elif isinstance(metadata, pd.Series) and (len(self.metadata_index) == 1):
@@ -643,40 +643,63 @@ class _Metadata(UserDict):
         self.index = np.arange(len(self.index))
         return self
 
-    def merge(self, other, axis=0):
+    def join(self, other, axis=1):
         """
-        Merge metadata with another metadata object. Operates in place.
-        Can only merge metadata with matching columns OR metadata with matching index.
+        Join metadata with another metadata object. Operates in place.
+        Can only join metadata with metadata with matching index along axis 1,
+        and metadata with matching columns along axis 0.
+
+        When joining columns, `other` must have unique columns from the caller.
+
+        When joining indices, the indices and rows of `other` are appended to the rows of the caller.
+        The resulting indices are not sorted and may not be unique. Presently, this feature is not used.
+
+        Parameters
+        ----------
+        other : _Metadata
+            Metadata object to join with.
+        axis : int, optional
+            Axis to join along. 0 for rows (index), 1 for columns. Default is 1.
+
+        Returns
+        -------
+        _Metadata
+            Joined metadata object.
         """
         if not isinstance(other, _Metadata):
-            raise TypeError("Can only merge with another _Metadata object")
+            raise TypeError("Can only join with another _Metadata object")
 
         if axis == 0:
             if np.all(self.columns == other.columns):
-                # merge metadata with matching columns
+                warnings.warn(
+                    "Joining metadata along axis 0 may result in duplicate and unsorted indices.",
+                )
+                # join metadata with matching columns
                 self.index = np.concatenate([self.index, other.index])
                 for k, v in other.data.items():
                     self.data[k] = np.concatenate([self.data[k], v])
             else:
-                raise ValueError("Column names must match for merge along axis 0.")
+                raise ValueError("Column names must match for join along axis 0.")
 
         elif axis == 1:
             if (len(self.index) == len(other.index)) and np.all(
                 self.index == other.index
             ):
-                no_merge = [k for k in other.columns if k in self.columns]
-                if no_merge:
+                no_join = [k for k in other.columns if k in self.columns]
+                if no_join:
                     raise ValueError(
-                        f"Metadata column(s) {no_merge} already exists. Cannot merge metadata."
+                        f"Metadata column(s) {no_join} already exists. Cannot join metadata."
                     )
-                # merge metadata with matching index
+                # join metadata with matching index
                 for k, v in other.data.items():
                     self.data[k] = v
             else:
-                raise ValueError("Index values must match for merge along axis 1.")
+                raise ValueError("Metadata indices must match for join along axis 1.")
 
         else:
-            raise ValueError(f"Invalid axis {axis}. Must be 0 or 1.")
+            raise ValueError(
+                f"Axis {axis} out of bounds for joining metadata. Must be 0 or 1."
+            )
 
         return self
 
@@ -694,49 +717,101 @@ class _MetadataLoc:
         self.index_map = {k: v for v, k in enumerate(self.index)}
 
     def __getitem__(self, key):
-        if isinstance(key, pd.Series) and np.all(key.index == self.index):
-            # metadata.loc[pd.Series], check that index matches
-            index = key[key].index
-            data = {k: self.data[k][key] for k in self.keys}
-
-        elif isinstance(key, (Number, str)):
-            # metadata.loc[Number], single row across all columns
-            idx = self.index_map[key]
-            index = key
-            data = {k: self.data[k][idx] for k in self.keys}
-
-        elif isinstance(key, (list, np.ndarray, pd.Index, slice)):
-            # metadata.loc[array_like], multiple rows across all columns
-            idx = self._get_indexder(key)
-            index = key
-            data = {k: self.data[k][idx] for k in self.keys}
-
-        elif isinstance(key, tuple):
+        # unpack index and columns based from key
+        if isinstance(key, tuple):
             if len(key) == 2:
-                if isinstance(key[0], (str, Number)):
-                    idx = self.index_map[key[0]]
-                else:
-                    idx = self._get_indexder(key[0])
-
-                if isinstance(key[1], str):
-                    # metadata.loc[Any, str], slice single metadata column
-                    return self.data[key[1]][idx]
-
-                elif isinstance(key[1], list) and all(
-                    isinstance(k, str) for k in key[1]
-                ):
-                    # metadata.loc[Any, [*str]], slice multiple metadata columns
-                    index = key[0]
-                    data = {k: self.data[k][idx] for k in key[1]}
-
-                else:
-                    raise IndexError(f"Unknown metadata index {key}")
+                index = key[0]
+                columns = key[1]
             else:
-                raise IndexError(f"Too many indices for metadata.loc: {key}")
+                raise IndexError(
+                    f"Too many indices for metadata.loc: Metadata is 2-dimensional"
+                )
         else:
-            raise IndexError(f"Unknown metadata index {key}")
+            index = key
+            columns = self.keys
 
-        return _Metadata(np.array(index), data)
+        if isinstance(index, (Number, str)):
+            # metadata.loc[Number or str]
+            if index in self.index:
+                idx = self.index_map[index]  # indexer from index map
+            else:
+                # error for index not found
+                raise IndexError(
+                    f"Metadata index '{index}' not found. Metadata indices are {self.index}"
+                )
+
+        elif hasattr(index, "__iter__"):
+            # non-tuple and non-str iterable
+            if np.issubdtype(np.array(index).dtype, bool):
+                # metadata.loc[bool array], boolean indexing
+                if len(index) == len(self.index):
+                    idx = index
+
+                    if hasattr(index, "index"):
+                        if all(i in self.index for i in index.index):
+                            # boolean values associated with an index (i.e. pandas Series)
+                            index = index[idx].index
+                            # use _get_indexer in case index is not sorted
+                            idx = self._get_indexder(np.sort(index))
+                        else:
+                            raise IndexError(
+                                f"Index of boolean cannot be aligned to index of metadata"
+                            )
+                    else:
+                        index = self.index[idx]
+
+                else:
+                    raise IndexError(
+                        f"Boolean index length {len(index)} does not match metadata index length {len(self.index)}."
+                    )
+
+            else:
+                # metadata.loc[array_like], check that values correspond to index
+                if all(i in self.index for i in index):
+                    idx = self._get_indexder(index)
+                else:
+                    # error for index not found
+                    raise IndexError(
+                        f"Metadata indices {[i for i in index if i not in self.index]} not found. Metadata indices are {self.index}"
+                    )
+
+        elif isinstance(index, slice) and (index == slice(None)):
+            # metadata.loc[:], keep original index
+            idx = index  # indexer is the slice
+            index = self.index  # original index
+
+        else:
+            # metadata.loc[unknown], unknown index
+            raise IndexError(f"Unknown metadata index {index}")
+
+        # get data for given columns, check that column names are strings
+        if isinstance(columns, str):
+            if columns in self.keys:
+                # metadata.loc[:, str], single column
+                return self.data[columns][idx]
+            else:
+                # error for column not found
+                raise KeyError(
+                    f"Metadata column '{columns}' not found. Metadata columns are {self.keys}"
+                )
+
+        elif isinstance(columns, (list, np.ndarray)) and all(
+            isinstance(k, str) for k in columns
+        ):
+            if all(k in self.keys for k in columns):
+                # metadata.loc[:, [*str]], multiple columns
+                data = {k: self.data[k][idx] for k in columns}
+                return _Metadata(index, data)
+            else:
+                # informative error for columns not found
+                raise KeyError(
+                    f"Metadata column(s) {[c for c in columns if c not in self.keys]} not found. Metadata columns are {self.keys}"
+                )
+        else:
+            # metadata.loc[:, unknown], unknown columns, probably a type error
+            raise TypeError(
+                f"Unknown metadata column(s) {columns}. Columns must be strings."
+            )
 
     def _get_indexder(self, vals):
         """

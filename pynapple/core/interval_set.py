@@ -690,7 +690,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             m1.drop(overlap)
             m2.drop(overlap)
 
-        metadata = m1.merge(m2, axis=1)
+        metadata = m1.join(m2)
         return IntervalSet(s, e, metadata=metadata)
 
     def union(self, a):
