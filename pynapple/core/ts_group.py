@@ -242,6 +242,13 @@ class TsGroup(UserDict, _MetadataMixin):
         # Make sure data dict and index are ordered the same
         data = {k: data[k] for k in self.index}
 
+        # # Also sort metadata
+        # sort_index = np.argsort(keys)
+        # if metadata:
+        #     metadata = {key: value[sort_index] for key, value in metadata.items()}
+        # if kwargs:
+        #     kwargs = {key: value[sort_index] for key, value in kwargs.items()}
+
         # initialize metadata
         _MetadataMixin.__init__(self)
 
@@ -1248,12 +1255,12 @@ class TsGroup(UserDict, _MetadataMixin):
         if ignore_metadata:
             return TsGroup(data, time_support=time_support, bypass_check=False)
         else:
-            cols = metadata.columns[1:]  # .drop("rate")
+            metadata.drop("rate")
             return TsGroup(
                 data,
                 time_support=time_support,
                 bypass_check=False,
-                metadata=metadata[cols],
+                metadata=metadata,
             )
 
     def merge(

@@ -134,7 +134,7 @@ class _MetadataMixin:
                 warnings.warn(
                     f"Metadata name '{name}' overlaps with an existing attribute, and cannot be accessed as an attribute or key. Use 'get_info()' to access metadata."
                 )
-        elif hasattr(self, "columns") and name in self.columns:
+        elif hasattr(self, "columns") and (name in self.columns):
             if self.nap_class == "TsdFrame":
                 # special exception for TsdFrame columns
                 raise ValueError(
@@ -700,6 +700,23 @@ class _Metadata(UserDict):
             raise ValueError(
                 f"Axis {axis} out of bounds for joining metadata. Must be 0 or 1."
             )
+
+        return self
+
+    def merge(self, other):
+        if not isinstance(other, _Metadata):
+            raise TypeError("Can only join with another _Metadata object")
+
+        if np.all(self.columns == other.columns):
+            warnings.warn(
+                "Joining metadata along axis 0 may result in duplicate and unsorted indices.",
+            )
+            # join metadata with matching columns
+            self.index = np.concatenate([self.index, other.index])
+            for k, v in other.data.items():
+                self.data[k] = np.concatenate([self.data[k], v])
+        else:
+            raise ValueError("Column names must match for join along axis 0.")
 
         return self
 
