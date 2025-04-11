@@ -1885,7 +1885,7 @@ class TestMetadataDict:
         """
         meta = _Metadata(index, data)
         with pytest.raises(IndexError, match="Too many indices"):
-            meta.loc[(0, 1, 2)]
+            meta.loc[0, 1, 2]
 
     @pytest.mark.parametrize(
         "loc1, return_type1, expected1",
@@ -2004,6 +2004,14 @@ class TestMetadataDict:
             for col in columns:
                 np.testing.assert_array_equal(meta.iloc[loc][col], data[col][rows])
 
+    def test_metadata_dict_loc_tuple_error(self, index, data):
+        """
+        Test error when accessing metadata with loc using a tuple with more than 2 elements
+        """
+        meta = _Metadata(index, data)
+        with pytest.raises(IndexError, match="Too many indices"):
+            meta.iloc[0, 1, 2]
+
     @pytest.mark.parametrize(
         "dropped",
         [
@@ -2080,7 +2088,7 @@ class TestMetadataDict:
         meta2["info"] = [3] * len(index)
         assert "info" not in meta1.keys()
 
-    def test_metadata_dict_join_columns(self, index, data):
+    def test_metadata_dict_join(self, index, data):
         """
         Test joining metadata dictionary columns.
         """
@@ -2090,19 +2098,26 @@ class TestMetadataDict:
         meta2["l2"] = [2] * len(index)
 
         # join on meta1
-        meta1.join(meta2, axis=1)
+        meta1.join(meta2)
         # l1 should be first
         assert list(meta1.keys()) == ["l1", "l2"]
         assert "l1" not in meta2.keys()
 
         # join on meta2
         meta1.drop("l2")
-        meta2.join(meta1, axis=1)
+        meta2.join(meta1)
         # l2 should be first
         assert list(meta2.keys()) == ["l2", "l1"]
         assert "l2" not in meta1.keys()
 
-    def test_metadata_dict_join_rows(self, index, data):
+        # assert type for join
+        meta3 = {"l2": [2] * len(index)}
+        with pytest.raises(
+            TypeError, match="Can only join with another _Metadata object"
+        ):
+            meta1.join(meta3)
+
+    def test_metadata_dict_merge(self, index, data):
         """
         Test joining metadata dictionary rows.
         """
@@ -2115,7 +2130,7 @@ class TestMetadataDict:
         with pytest.warns(
             UserWarning, match="may result in duplicate and unsorted indices"
         ):
-            meta1.join(meta2, axis=0)
+            meta1.merge(meta2)
         np.testing.assert_array_equal(meta1["l1"], [1] * len(index) + [2] * len(index))
         np.testing.assert_array_equal(meta1.index, np.hstack((index, index)))
 
@@ -2125,9 +2140,16 @@ class TestMetadataDict:
         with pytest.warns(
             UserWarning, match="may result in duplicate and unsorted indices"
         ):
-            meta2.join(meta1, axis=0)
+            meta2.merge(meta1)
         np.testing.assert_array_equal(meta2["l1"], [2] * len(index) + [1] * len(index))
         np.testing.assert_array_equal(meta2.index, np.hstack((index, index)))
+
+        # assert type for merge
+        meta3 = {"l1": [2] * len(index)}
+        with pytest.raises(
+            TypeError, match="Can only merge with another _Metadata object"
+        ):
+            meta1.merge(meta3)
 
     @pytest.mark.parametrize(
         "col, new_index, axis, expected",
@@ -2162,16 +2184,9 @@ class TestMetadataDict:
                 0,
                 pytest.raises(ValueError, match=r"Column names must match"),
             ),
-            # axis out of bounds
-            (
-                "l2",
-                None,
-                3,
-                pytest.raises(ValueError, match=r"Axis 3 out of bounds"),
-            ),
         ],
     )
-    def test_metadata_dict_join_error(
+    def test_metadata_dict_join_errors(
         self, index, data, col, new_index, axis, expected
     ):
         """
@@ -2189,7 +2204,10 @@ class TestMetadataDict:
                 meta2 = meta2.iloc[: len(index) - 1]
 
         with expected:
-            meta1.join(meta2, axis=axis)
+            if axis == 1:
+                meta1.join(meta2)
+            else:
+                meta1.merge(meta2)
 
 
 ##############################

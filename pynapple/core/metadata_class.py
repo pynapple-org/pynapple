@@ -634,23 +634,17 @@ class _Metadata(UserDict):
             self.index = 0
         return self
 
-    def join(self, other, axis=1):
+    def join(self, other):
         """
         Join metadata with another metadata object. Operates in place.
-        Can only join metadata with metadata with matching index along axis 1,
-        and metadata with matching columns along axis 0.
+        Can only join metadata with metadata with matching index.
 
-        When joining columns, `other` must have unique columns from the caller.
-
-        When joining indices, the indices and rows of `other` are appended to the rows of the caller.
-        The resulting indices are not sorted and may not be unique. Presently, this feature is not used.
+        When joining, columns in `other` must be unique from columns of the caller.
 
         Parameters
         ----------
         other : _Metadata
             Metadata object to join with.
-        axis : int, optional
-            Axis to join along. 0 for rows (index), 1 for columns. Default is 1.
 
         Returns
         -------
@@ -660,54 +654,51 @@ class _Metadata(UserDict):
         if not isinstance(other, _Metadata):
             raise TypeError("Can only join with another _Metadata object")
 
-        if axis == 0:
-            if np.all(self.columns == other.columns):
-                warnings.warn(
-                    "Joining metadata along axis 0 may result in duplicate and unsorted indices.",
+        if (len(self.index) == len(other.index)) and np.all(self.index == other.index):
+            no_join = [k for k in other.columns if k in self.columns]
+            if no_join:
+                raise ValueError(
+                    f"Metadata column(s) {no_join} already exists. Cannot join metadata."
                 )
-                # join metadata with matching columns
-                self.index = np.hstack([self.index, other.index])
-                for k, v in other.data.items():
-                    self.data[k] = np.hstack([self.data[k], v])
-            else:
-                raise ValueError("Column names must match for join along axis 0.")
-
-        elif axis == 1:
-            if (len(self.index) == len(other.index)) and np.all(
-                self.index == other.index
-            ):
-                no_join = [k for k in other.columns if k in self.columns]
-                if no_join:
-                    raise ValueError(
-                        f"Metadata column(s) {no_join} already exists. Cannot join metadata."
-                    )
-                # join metadata with matching index
-                for k, v in other.data.items():
-                    self.data[k] = v
-            else:
-                raise ValueError("Metadata indices must match for join along axis 1.")
-
+            # join metadata with matching index
+            for k, v in other.data.items():
+                self.data[k] = v
         else:
-            raise ValueError(
-                f"Axis {axis} out of bounds for joining metadata. Must be 0 or 1."
-            )
+            raise ValueError("Metadata indices must match for join along axis 1.")
 
         return self
 
     def merge(self, other):
+        """
+        Merge metadata with another metadata object. Operates in place.
+        Can only merge metadata with matching columns.
+
+        When merging, the indices and rows of `other` are appended to the rows of the caller.
+        The resulting indices are not sorted and may not be unique.
+
+        Parameters
+        ----------
+        other : _Metadata
+            Metadata object to merge with.
+
+        Returns
+        -------
+        _Metadata
+            Merged metadata object.
+        """
         if not isinstance(other, _Metadata):
-            raise TypeError("Can only join with another _Metadata object")
+            raise TypeError("Can only merge with another _Metadata object")
 
         if np.all(self.columns == other.columns):
             warnings.warn(
-                "Joining metadata along axis 0 may result in duplicate and unsorted indices.",
+                "Merging metadata may result in duplicate and unsorted indices.",
             )
             # join metadata with matching columns
             self.index = np.hstack([self.index, other.index])
             for k, v in other.data.items():
                 self.data[k] = np.hstack([self.data[k], v])
         else:
-            raise ValueError("Column names must match for join along axis 0.")
+            raise ValueError("Column names must match for merge.")
 
         return self
 
