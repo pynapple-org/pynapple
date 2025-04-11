@@ -601,104 +601,99 @@ class TestTsdFrameMetadata:
                     == fcols
                 )
 
-    @pytest.mark.parametrize(
-        "name, attr_exp, set_exp, set_attr_exp, set_key_exp, get_exp, get_attr_exp, get_key_exp",
-        [
-            # existing data column
-            (
-                "a",
-                # not attribute
-                pytest.raises(AssertionError),
-                # error with set_info
-                pytest.raises(ValueError, match="Invalid metadata name"),
-                # error with setattr
-                pytest.raises(ValueError, match="Invalid metadata name"),
-                # shape mismatch with setitem
-                pytest.raises(ValueError),
-                # assertion error with get_info (compare dict to array)
-                pytest.raises(AssertionError),
-                # attribute should raise error
-                pytest.raises(AttributeError),
-                # key should not match metadata
-                pytest.raises(AssertionError),
-            ),
-            (
-                "columns",
-                # attribute exists
-                does_not_raise(),
-                # warn with set_info
-                pytest.warns(UserWarning, match="overlaps with an existing"),
-                # cannot be set as attribute
-                pytest.raises(AttributeError, match="Cannot set attribute"),
-                # warn when set as key
-                pytest.warns(UserWarning, match="overlaps with an existing"),
-                # no error with get_info
-                does_not_raise(),
-                # attribute should not match metadata
-                pytest.raises(TypeError),
-                # key should match metadata
-                does_not_raise(),
-            ),
-            # existing metdata
-            (
-                "l1",
-                # attribute exists
-                does_not_raise(),
-                # no warning with set_info
-                does_not_raise(),
-                # no warning with setattr
-                does_not_raise(),
-                # no warning with setitem
-                does_not_raise(),
-                # no error with get_info
-                does_not_raise(),
-                # attr should match metadata
-                does_not_raise(),
-                # key should match metadata
-                does_not_raise(),
-            ),
-        ],
-    )
-    def test_tsdframe_metadata_overlapping_names(
-        self,
-        tsdframe_meta,
-        name,
-        attr_exp,
-        set_exp,
-        set_attr_exp,
-        get_exp,
-        set_key_exp,
-        get_attr_exp,
-        get_key_exp,
-    ):
-        """
-        Test various errors and warnings when setting metadata with overlapping names specific to TsdFrame.
-        """
-        with attr_exp:
-            assert hasattr(tsdframe_meta, name)
-        # warning when set
-        with set_exp:
-            # warnings.simplefilter("error")
-            tsdframe_meta.set_info({name: np.ones(4)})
-        # error when set as attribute
-        with set_attr_exp:
-            setattr(tsdframe_meta, name, np.ones(4))
-        # error when set as key
+
+@pytest.mark.parametrize(
+    "name, attr_exp, set_exp, set_attr_exp, set_key_exp, get_exp, get_attr_exp, get_key_exp",
+    [
+        # existing data column
+        (
+            "a",
+            # not attribute
+            pytest.raises(AssertionError),
+            # error with set_info
+            pytest.raises(ValueError, match="Invalid metadata name"),
+            # error with setattr
+            pytest.raises(ValueError, match="Invalid metadata name"),
+            # shape mismatch with setitem
+            pytest.raises(ValueError),
+            # assertion error with get_info
+            pytest.raises(AssertionError),
+            # attribute should raise error
+            pytest.raises(AttributeError),
+            # key should not match metadata
+            pytest.raises(AssertionError),
+        ),
+        (
+            "columns",
+            # attribute exists
+            does_not_raise(),
+            # warn with set_info
+            pytest.warns(UserWarning, match="overlaps with an existing"),
+            # cannot be set as attribute
+            pytest.raises(AttributeError, match="Cannot set attribute"),
+            # warn when set as key
+            pytest.warns(UserWarning, match="overlaps with an existing"),
+            # no error with get_info
+            does_not_raise(),
+            # attribute should not match metadata
+            pytest.raises(TypeError),
+            # key should match metadata
+            does_not_raise(),
+        ),
+        # existing metdata
+        (
+            "l1",
+            # attribute exists
+            does_not_raise(),
+            # no warning with set_info
+            does_not_raise(),
+            # no warning with setattr
+            does_not_raise(),
+            # no warning with setitem
+            does_not_raise(),
+            # no error with get_info
+            does_not_raise(),
+            # attr should match metadata
+            does_not_raise(),
+            # key should match metadata
+            does_not_raise(),
+        ),
+    ],
+)
+def test_tsdframe_metadata_overlapping_names(
+    tsdframe_meta,
+    name,
+    attr_exp,
+    set_exp,
+    set_attr_exp,
+    get_exp,
+    set_key_exp,
+    get_attr_exp,
+    get_key_exp,
+):
+    with attr_exp:
+        assert hasattr(tsdframe_meta, name)
+    # warning when set
+    with set_exp:
+        # warnings.simplefilter("error")
+        tsdframe_meta.set_info({name: np.ones(4)})
+    # error when set as attribute
+    with set_attr_exp:
+        setattr(tsdframe_meta, name, np.ones(4))
+    # error when set as key
+    # skip jax (no in-place set)
+    if nap.nap_config.backend != "jax":
         with set_key_exp:
             tsdframe_meta[name] = np.ones(4)
-        # retrieve with get_info
-        with get_exp:
-            np.testing.assert_array_almost_equal(
-                tsdframe_meta.get_info(name), np.ones(4)
-            )
-        # make sure it doesn't access metadata if its an existing attribute or key
-        with get_attr_exp:
-            np.testing.assert_array_almost_equal(
-                getattr(tsdframe_meta, name), np.ones(4)
-            )
-        # make sure it doesn't access metadata if its an existing key
-        with get_key_exp:
-            np.testing.assert_array_almost_equal(tsdframe_meta[name], np.ones(4))
+    # retrieve with get_info
+    with get_exp:
+        np.testing.assert_array_almost_equal(tsdframe_meta.get_info(name), np.ones(4))
+    # make sure it doesn't access metadata if its an existing attribute or key
+    with get_attr_exp:
+        np.testing.assert_array_almost_equal(getattr(tsdframe_meta, name), np.ones(4))
+    # make sure it doesn't access metadata if its an existing key
+    with get_key_exp:
+        np.testing.assert_array_almost_equal(tsdframe_meta[name], np.ones(4))
 
 
 #############

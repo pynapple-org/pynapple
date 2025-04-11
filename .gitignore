@@ -160,4 +160,4 @@ your
 
 # Ignore npz files from testing:
 tests/*.npz
-/.vscode
+.vscode/settings.json

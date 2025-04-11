@@ -1254,6 +1254,8 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             raise IndexError
 
     def __getitem__(self, key, *args, **kwargs):
+        if isinstance(key, tuple):
+            key = tuple(k.values if hasattr(k, "values") else k for k in key)
         if isinstance(key, Tsd):
             try:
                 assert np.issubdtype(key.dtype, np.bool_)
