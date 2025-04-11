@@ -433,7 +433,17 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         if isinstance(key, tuple):
             if len(key) == 2:
                 # any 2D indexing will only act on start and end values
-                return self.values.__getitem__(key)
+                output = self.values.__getitem__(key)
+
+                if (
+                    isinstance(key[1], slice)
+                    and ((key[1].start is None) or (key[1].start == 0))
+                    and ((key[1].stop is None) or (key[1].stop > 1))
+                ):
+                    # start and end included in slice
+                    return IntervalSet(output)
+                else:
+                    return output
 
             else:
                 raise IndexError(

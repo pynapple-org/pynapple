@@ -165,17 +165,9 @@ class _MetadataMixin:
         """
         Throw warnings when metadata names cannot be accessed as attributes or keys. Wrapper for _raise_invalid_metadata_column_name.
         """
-        if metadata is not None:
-            if isinstance(metadata, pd.DataFrame):
-                [
-                    self._raise_invalid_metadata_column_name(col)
-                    for col in metadata.columns
-                ]
-            elif isinstance(metadata, dict):
-                [self._raise_invalid_metadata_column_name(k) for k in metadata.keys()]
-
-            elif isinstance(metadata, pd.Series) and len(self) == 1:
-                [self._raise_invalid_metadata_column_name(k) for k in metadata.index]
+        if (metadata is not None) and (hasattr(metadata, "keys")):
+            # dictionary-like object
+            [self._raise_invalid_metadata_column_name(k) for k in metadata.keys()]
 
         for k in kwargs:
             self._raise_invalid_metadata_column_name(k)
@@ -224,6 +216,7 @@ class _MetadataMixin:
                 # metadata is a dictionary-like object
                 if (
                     hasattr(metadata, "index")
+                    # exlude length 1 objects in case of pandas.Series
                     and (len(self.metadata_index) > 1)
                     and not np.all(self.metadata_index == metadata.index)
                 ):
@@ -231,11 +224,6 @@ class _MetadataMixin:
                 else:
                     kwargs = {**metadata, **kwargs}
 
-            # elif isinstance(metadata, pd.Series) and (len(self.metadata_index) == 1):
-            #     # allow series to be passed if only one interval
-            #     for key, val in metadata.items():
-            #         self._metadata[key] = np.array(val)
-            #         # self._metadata[key] = pd.Series(val, index=self.metadata_index)
             else:
                 raise TypeError(
                     f"Metadata with type {type(metadata)} should be passed as a keyword argument."
@@ -245,6 +233,7 @@ class _MetadataMixin:
             for k, v in kwargs.items():
 
                 if hasattr(v, "keys") and hasattr(v, "index"):
+                    # pandas.Series
                     if np.all(self.metadata_index == v.index):
                         self._metadata[k] = np.array(v)
                     else:
@@ -253,6 +242,7 @@ class _MetadataMixin:
                         )
 
                 elif hasattr(v, "__len__"):
+                    # object that has a length
                     if len(self.metadata_index) == len(v):
                         self._metadata[k] = np.array(v)
                     else:
@@ -476,30 +466,28 @@ class _Metadata(UserDict):
             self.update(data)
 
     def __repr__(self):
-        # Start by determining how many columns and rows.
-        # This can be unique for each object
-        cols, rows = _get_terminal_size()
-        # max_cols = np.maximum(cols // 12, 5)
-        max_rows = np.maximum(rows - 10, 2)
-        # By default, the first three columns should always show.
-        data = {"i": self.index, **self.data}
-        if len(self.index) > max_rows:
-            n_rows = max_rows // 2
-            data = {
-                k: np.hstack((v[:n_rows], "...", v[-n_rows:])) for k, v in data.items()
-            }
-        repstr = tabulate(data, headers="keys", tablefmt="github", stralign="right")
-        # reformat table to remove some space and only have rule between first two columns
-        # split at new line, remove some space
-        repstr = [s[2:-2] for s in repstr.split("\n")]
-        # split at first rule
-        repstr = [re.split(r"\|", s, 1) for s in repstr]
-        # replace remaining rules between columns, remove index label
-        repstr = [
-            " " * len(s[0][:-1]) + "   " + re.sub(r".\|.", "  ", s[1][1:])
-            for s in repstr[:2]
-        ] + [s[0][:-1] + " | " + re.sub(r".\|.", "  ", s[1][1:]) for s in repstr[2:]]
-        return "\n".join(repstr)  # join back together
+        if hasattr(self.index, "__len__"):
+            # Start by determining how many columns and rows.
+            # This can be unique for each object
+            cols, rows = _get_terminal_size()
+            # max_cols = np.maximum(cols // 12, 5)
+            max_rows = np.maximum(rows - 10, 2)
+            # By default, the first three columns should always show.
+            data = {" ": self.index, **self.data}
+            if len(self.index) > max_rows:
+                n_rows = max_rows // 2
+                data = {
+                    k: np.hstack((v[:n_rows], "...", v[-n_rows:]))
+                    for k, v in data.items()
+                }
+            return tabulate(data, headers="keys", tablefmt="plain", numalign="left")
+        else:
+            keys = np.array(list(self.keys()))
+            values = np.array(list(self.values()))
+            return (
+                tabulate(np.vstack((keys, values)).T, tablefmt="plain")
+                + f"\nIndex: {self.index}"
+            )
 
     def __getitem__(self, key):
         """
@@ -678,9 +666,9 @@ class _Metadata(UserDict):
                     "Joining metadata along axis 0 may result in duplicate and unsorted indices.",
                 )
                 # join metadata with matching columns
-                self.index = np.concatenate([self.index, other.index])
+                self.index = np.hstack([self.index, other.index])
                 for k, v in other.data.items():
-                    self.data[k] = np.concatenate([self.data[k], v])
+                    self.data[k] = np.hstack([self.data[k], v])
             else:
                 raise ValueError("Column names must match for join along axis 0.")
 
@@ -715,9 +703,9 @@ class _Metadata(UserDict):
                 "Joining metadata along axis 0 may result in duplicate and unsorted indices.",
             )
             # join metadata with matching columns
-            self.index = np.concatenate([self.index, other.index])
+            self.index = np.hstack([self.index, other.index])
             for k, v in other.data.items():
-                self.data[k] = np.concatenate([self.data[k], v])
+                self.data[k] = np.hstack([self.data[k], v])
         else:
             raise ValueError("Column names must match for join along axis 0.")
 
@@ -850,7 +838,7 @@ class _MetadataILoc:
     def __init__(self, metadata):
         self.data = metadata.data
         self.index = metadata.index
-        self.keys = metadata.columns
+        self.keys = np.array(metadata.columns)
 
     def __getitem__(self, key):
         # unpack index and columns from key
@@ -859,6 +847,8 @@ class _MetadataILoc:
                 idx = key[0]
                 index = self.index[key[0]]
                 columns = self.keys[key[1]]
+                if isinstance(columns, str):
+                    columns = [columns]
             else:
                 raise IndexError(
                     f"Too many indices for metadata.loc: Metadata is 2-dimensional"
@@ -869,28 +859,5 @@ class _MetadataILoc:
             columns = self.keys
 
         data = {k: self.data[k][idx] for k in columns}
-
-        # if isinstance(idx, Number):
-        #     # metadata.iloc[Number, Any]
-        #     data = {k: [self.data[k][key]] for k in self.keys}
-
-        # elif isinstance(key, (slice, list, np.ndarray, pd.Index, pd.Series)):
-        #     # metadata.iloc[array_like], multiple rows across all columns
-        #     index = self.index[key]
-        #     data = {k: self.data[k][key] for k in self.keys}
-
-        # elif isinstance(key, tuple) and len(key) == 2:
-        #     columns = self.keys[key[1]]
-        #     index = self.index[key[0]]
-
-        #     if isinstance(key[0], Number):
-        #         # metadata.iloc[Number, *], single row across column(s)
-        #         data = {k: [self.data[k][key[0]]] for k in columns}
-        #     else:
-        #         # metadata.iloc[array_like, *], multiple rows across column(s)
-        #         data = {k: self.data[k][key[0]] for k in columns}
-
-        # else:
-        #     raise IndexError(f"Unknown metadata index {key}")
 
         return _Metadata(index, data)

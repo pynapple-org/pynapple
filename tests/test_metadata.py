@@ -190,8 +190,8 @@ class TestIntervalSetMetadata:
         "index2, output_type, has_metadata",
         [
             (None, nap.IntervalSet, True),
-            (slice(None), (np.ndarray, np.float64), False),
-            (slice(None, 2), (np.ndarray, np.float64), False),
+            (slice(None), nap.IntervalSet, False),
+            (slice(None, 2), nap.IntervalSet, False),
             (slice(1, 3), (np.ndarray, np.float64), False),
             (slice(3, 10), (np.ndarray, np.float64), False),
             ([0, 1], (np.ndarray, np.float64), False),
@@ -1224,7 +1224,7 @@ class TestMetadata:
                 {},
                 pytest.raises(
                     TypeError,
-                    match="Cannot set the following metadata",
+                    match="should be passed as a keyword argument",
                 ),
             ),
             (
@@ -1887,11 +1887,122 @@ class TestMetadataDict:
         with pytest.raises(IndexError, match="Too many indices"):
             meta.loc[(0, 1, 2)]
 
-    def test_metadata_dict_iloc(self, index, data):
+    @pytest.mark.parametrize(
+        "loc1, return_type1, expected1",
+        [
+            # supported indices
+            (pd.Series([False, True, True, False]), _Metadata, None),
+            ([True, False, False, False], _Metadata, None),
+            (0, _Metadata, None),
+            ([0], _Metadata, None),
+            ([], _Metadata, None),
+            ([0, 1], _Metadata, None),
+            (slice(None), _Metadata, None),
+            (slice(0, 10), _Metadata, None),
+            (np.array([1, 2]), _Metadata, None),
+            (pd.Index([0, 3]), _Metadata, None),
+            (pd.DataFrame(data=[0, 1, 2, 3]), _Metadata, None),
+            # errors
+            (
+                "label",
+                None,
+                pytest.raises(IndexError, match="only integers, slices"),
+            ),
+            (
+                100,
+                None,
+                pytest.raises(IndexError, match="index 100 is out of bounds"),
+            ),
+            (
+                [True, False, False, False, False],
+                None,
+                pytest.raises(IndexError, match="boolean index did not match"),
+            ),
+        ],
+    )
+    @pytest.mark.parametrize(
+        "loc2, return_type2, expected2",
+        [
+            # supported column indexes
+            (None, _Metadata, does_not_raise()),
+            (0, _Metadata, does_not_raise()),
+            ([0, 1], _Metadata, does_not_raise()),
+            (slice(None), _Metadata, does_not_raise()),
+            (slice(0, 10), _Metadata, does_not_raise()),
+            ([True, False], _Metadata, does_not_raise()),
+            ([False, False], _Metadata, does_not_raise()),
+            ([], _Metadata, does_not_raise()),
+            # errors
+            ("label", None, pytest.raises(IndexError, match="only integers, slices")),
+            (
+                ["label", "other"],
+                None,
+                pytest.raises(IndexError, match="only integers, slices"),
+            ),
+            (
+                100,
+                None,
+                pytest.raises(IndexError, match="index 100 is out of bounds"),
+            ),
+            (
+                [True, False, False, False, False],
+                None,
+                pytest.raises(IndexError, match="boolean index did not match"),
+            ),
+        ],
+    )
+    def test_metadata_dict_iloc(
+        self, index, data, loc1, return_type1, expected1, loc2, return_type2, expected2
+    ):
         """
         Test getting metadata with iloc
         """
         meta = _Metadata(index, data)
+        if (
+            isinstance(loc1, (list, np.ndarray, pd.Index, pd.DataFrame))
+            and (len(index) == 1)
+            and (len(loc1) > 1)
+            and (return_type1 is not None)
+        ):
+            pytest.skip("array-like not relevant for length 1 objects")
+
+        if isinstance(loc1, pd.Series):
+            loc1 = loc1[: len(index)]
+
+        ## set up test instance
+        # set up loc
+        if loc2 is None:
+            loc = loc1
+        else:
+            loc = (loc1, loc2)
+        # return type None has priority, otherwise use return_type2
+        if (return_type1 is None) or (return_type2 is None):
+            return_type = None
+        else:
+            return_type = return_type2
+        # expected1 has priority over expected2
+        if expected1 is None:
+            expected = expected2
+        else:
+            expected = expected1
+
+        with expected:
+            meta.iloc[loc]
+
+        if return_type is not None:
+            assert isinstance(meta.iloc[loc], return_type)
+
+            columns = (
+                np.array(list(data.keys()))[loc2]
+                if loc2 is not None
+                else list(data.keys())
+            )
+            if isinstance(columns, str):
+                columns = [columns]
+            rows = index[loc1]
+
+            for col in columns:
+                np.testing.assert_array_equal(meta.iloc[loc][col], data[col][rows])
 
     @pytest.mark.parametrize(
         "dropped",

@@ -1262,7 +1262,7 @@ class TsGroup(UserDict, _MetadataMixin):
             items.extend(tsg.items())
 
         if reset_index:
-            metadata.index = range(len(metadata))
+            metadata.reset_index()
             data = {i: ts[1] for i, ts in enumerate(items)}
         else:
             data = dict(items)
