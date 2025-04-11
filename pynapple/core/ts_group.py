@@ -720,11 +720,26 @@ class TsGroup(UserDict, _MetadataMixin):
                     dtype=dtype,
                 )[1]
 
-            return TsdFrame(t=time_index, d=count, time_support=ep, columns=self.index)
+            metadata = self._metadata.copy()
+            # store a more informative rate
+            metadata["rate"] = count.sum(axis=0) / np.sum(ends - starts)
+            with warnings.catch_warnings():
+                # ignore warning about "rate" metadata
+                warnings.filterwarnings("ignore", message="Metadata name 'rate'")
+                return TsdFrame(
+                    t=time_index,
+                    d=count,
+                    time_support=ep,
+                    columns=self.index,
+                    metadata=metadata,
+                )
         else:
             time_index, _ = _count(np.array([]), starts, ends, bin_size, dtype=dtype)
             return TsdFrame(
-                t=time_index, d=np.empty((len(time_index), 0)), time_support=ep
+                t=time_index,
+                d=np.empty((len(time_index), 0)),
+                time_support=ep,
+                metadata=self._metadata,
             )
 
     def to_tsd(self, *args):

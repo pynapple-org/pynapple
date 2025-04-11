@@ -325,62 +325,125 @@ class TestTsGroup1:
         np.testing.assert_array_almost_equal(tsgroup2[1].values, np.arange(0, 1005, 5))
         np.testing.assert_array_almost_equal(tsgroup2[2].values, np.arange(0, 1002, 2))
 
-    def test_count(self, group):
-        ep = nap.IntervalSet(start=0, end=100)
-        tsgroup = nap.TsGroup(group, time_support=ep)
-        count = tsgroup.count(1.0)
-        np.testing.assert_array_almost_equal(
-            count.loc[0].values[0:-1].flatten(), np.ones(len(count) - 1)
-        )
-        np.testing.assert_array_almost_equal(
-            count.loc[1].values[0:-1].flatten(), np.ones(len(count) - 1) * 2
-        )
-        np.testing.assert_array_almost_equal(
-            count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
-        )
+    @pytest.mark.parametrize(
+        "ep",
+        [
+            None,
+            nap.IntervalSet(start=0, end=50),
+            nap.IntervalSet(start=0, end=100),
+            nap.IntervalSet(start=0, end=300),
+            nap.IntervalSet(start=[0, 120], end=[50, 221]),
+            nap.IntervalSet(start=[20, 201], end=[150, 300]),
+        ],
+    )
+    @pytest.mark.parametrize("bin_size", [None, 1.0, 1, 0.1])
+    @pytest.mark.parametrize("metadata", [None, {"label": ["a", "b", "c"]}])
+    def test_count(self, group, ep, bin_size, metadata):
+        tsgroup = nap.TsGroup(group, time_support=ep, metadata=metadata)
+        dt = np.sum(tsgroup.time_support.end - tsgroup.time_support.start)
 
-        count = tsgroup.count(1)
-        np.testing.assert_array_almost_equal(
-            count.loc[0].values[0:-1].flatten(), np.ones(len(count) - 1)
-        )
-        np.testing.assert_array_almost_equal(
-            count.loc[1].values[0:-1].flatten(), np.ones(len(count) - 1) * 2
-        )
-        np.testing.assert_array_almost_equal(
-            count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
-        )
+        count = tsgroup.count(bin_size)
 
-        count = tsgroup.count()
-        np.testing.assert_array_almost_equal(count.values, np.array([[101, 201, 501]]))
+        res = [[] for _ in range(len(tsgroup))]
+        for s, e in tsgroup.time_support.values:
+            if (bin_size is None) or (bin_size > (e - s)):
+                nbins = 2
+                # add 1E-6 to make final bin inclusive, like jitrestrict_with_count
+                bin_edges = np.array([s, e + 1e-6])
+            else:
+                # define bin edges like jitcount
+                lbound = s
+                bin_edges = [lbound]
+                while lbound < e:
+                    lbound += bin_size
+                    lbound = np.round(lbound, 9)
+                    bin_edges.append(lbound)
 
-        count = tsgroup.count(1.0, dtype=np.int16)
+                nbins = int(np.ceil((e - s + bin_size) / bin_size))
+
+            for u in tsgroup:
+                # use digitize so last bin is closed on the right edge
+                members = np.digitize(tsgroup[u].t, bin_edges)
+                # exclude out of bounds bins
+                members = members[(members > 0) & (members < nbins)]
+                # ensure number of bins returned is nbins
+                counts = np.bincount(members, minlength=nbins)
+                res[u].extend(counts[1:])  # exclude bin 0 which is empty
+
+        res = np.array(res).T
+        np.testing.assert_array_almost_equal(count.values, res)
+        # check rate
+        np.testing.assert_array_almost_equal(
+            count.get_info("rate").values, np.sum(res, axis=0) / dt
+        )
+        # check metadata
+        if metadata is not None:
+            pd.testing.assert_series_equal(
+                tsgroup.get_info("label"), count.get_info("label")
+            )
+
+        # check dtype
+        count = tsgroup.count(bin_size, dtype=np.int16)
         assert count.dtype == np.dtype(np.int16)
 
-    def test_count_with_ep(self, group):
-        ep = nap.IntervalSet(start=0, end=100)
-        tsgroup = nap.TsGroup(group)
-        count = tsgroup.count(1.0, ep)
+    @pytest.mark.parametrize(
+        "ep",
+        [
+            None,
+            nap.IntervalSet(start=0, end=50),
+            nap.IntervalSet(start=0, end=100),
+            nap.IntervalSet(start=0, end=300),
+            nap.IntervalSet(start=[0, 120], end=[50, 221]),
+            nap.IntervalSet(start=[20, 201], end=[150, 300]),
+        ],
+    )
+    @pytest.mark.parametrize("bin_size", [None, 1.0, 1, 0.1])
+    @pytest.mark.parametrize("metadata", [None, {"label": ["a", "b", "c"]}])
+    def test_count_with_ep(self, group, ep, bin_size, metadata):
+        tsgroup = nap.TsGroup(group, metadata=metadata)
+
+        count = tsgroup.count(bin_size=bin_size, ep=ep)
+        if ep is None:
+            ep = tsgroup.time_support
+        dt = np.sum(ep.end - ep.start)
+
+        res = [[] for _ in range(len(tsgroup))]
+        for s, e in ep.values:
+            if (bin_size is None) or (bin_size > (e - s)):
+                nbins = 2
+                # add 1E-6 to make final bin inclusive, like jitrestrict_with_count
+                bin_edges = np.array([s, e + 1e-6])
+            else:
+                # define bin edges like jitcount
+                lbound = s
+                bin_edges = [lbound]
+                while lbound < e:
+                    lbound += bin_size
+                    lbound = np.round(lbound, 9)
+                    bin_edges.append(lbound)
+
+                nbins = int(np.ceil((e - s + bin_size) / bin_size))
+
+            for u in tsgroup:
+                # use digitize so last bin is closed on the right edge
+                members = np.digitize(tsgroup[u].t, bin_edges)
+                # exclude out of bounds bins
+                members = members[(members > 0) & (members < nbins)]
+                # ensure number of bins returned is nbins
+                counts = np.bincount(members, minlength=nbins)
+                res[u].extend(counts[1:])  # exclude bin 0 which is empty
+
+        res = np.array(res).T
+        np.testing.assert_array_almost_equal(count.values, res)
+        # check rate
         np.testing.assert_array_almost_equal(
-            count.loc[0].values[0:-1].flatten(), np.ones(len(count) - 1)
+            count.get_info("rate").values, np.sum(res, axis=0) / dt
         )
-        np.testing.assert_array_almost_equal(
-            count.loc[1].values[0:-1].flatten(), np.ones(len(count) - 1) * 2
-        )
-        np.testing.assert_array_almost_equal(
-            count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
-        )
-        count = tsgroup.count(bin_size=1.0, ep=ep)
-        np.testing.assert_array_almost_equal(
-            count.loc[0].values[0:-1].flatten(), np.ones(len(count) - 1)
-        )
-        np.testing.assert_array_almost_equal(
-            count.loc[1].values[0:-1].flatten(), np.ones(len(count) - 1) * 2
-        )
-        np.testing.assert_array_almost_equal(
-            count.loc[2].values[0:-1].flatten(), np.ones(len(count) - 1) * 5
-        )
-        count = tsgroup.count(ep=nap.IntervalSet(0, 50))
-        np.testing.assert_array_almost_equal(count.values, np.array([[51, 101, 251]]))
+        # check metadata
+        if metadata is not None:
+            pd.testing.assert_series_equal(
+                tsgroup.get_info("label"), count.get_info("label")
+            )
 
     def test_count_time_units(self, group):
         ep = nap.IntervalSet(start=0, end=100)
