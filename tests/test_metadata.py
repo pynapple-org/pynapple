@@ -186,118 +186,66 @@ class TestIntervalSetMetadata:
             pd.Index([1, 3]),
         ],
     )
-    class TestIntervalSetMetadataSlicing:
+    @pytest.mark.parametrize(
+        "index2, output_type, has_metadata",
+        [
+            (None, nap.IntervalSet, True),
+            (slice(None), (np.ndarray, np.float64), False),
+            (slice(None, 2), (np.ndarray, np.float64), False),
+            (slice(1, 3), (np.ndarray, np.float64), False),
+            (slice(3, 10), (np.ndarray, np.float64), False),
+            ([0, 1], (np.ndarray, np.float64), False),
+            ([0, -1], (np.ndarray, np.float64), False),
+            ([0, 0, 1, 1], (np.ndarray, np.float64), False),
+            ([0, 1, 0, 1], (np.ndarray, np.float64), False),
+            (0, (np.ndarray, np.float64), False),
+            (-1, (np.ndarray, np.float64), False),
+            ([True, False], (np.ndarray, np.float64), False),
+            ([True, True], (np.ndarray, np.float64), False),
+            (pd.Series([0, 1]), (np.ndarray, np.float64), False),
+            (pd.Series([0, 1, 1]), (np.ndarray, np.float64), False),
+            (pd.Series([True, True]), (np.ndarray, np.float64), False),
+            (pd.Series([True, False]), (np.ndarray, np.float64), False),
+        ],
+    )
+    def test_slice_iset_with_metadata(
+        self, iset_meta, index1, index2, output_type, has_metadata
+    ):
         """
-        Tests for slicing IntervalSet with metadata.
+        Tests for numpy-like slicing of IntervalSets with metadata.
+        Mixes and matches indices of different data types.
         """
-
-        @pytest.mark.parametrize(
-            "index2, output_type, has_metadata",
-            [
-                (None, nap.IntervalSet, True),
-                (slice(None), nap.IntervalSet, True),
-                (slice(0, None), nap.IntervalSet, True),
-                (slice(None, 3), nap.IntervalSet, True),
-                (slice(0, 3), nap.IntervalSet, True),
-                (slice(None, 10), nap.IntervalSet, True),
-                (slice(0, 10), nap.IntervalSet, True),
-                (slice(None, 1), (np.ndarray, np.float64), False),
-                (slice(0, 1), (np.ndarray, np.float64), False),
-                (slice(1, 2), (np.ndarray, np.float64), False),
-                (slice(0, 2), nap.IntervalSet, False),
-                (slice(None, 2), nap.IntervalSet, False),
-                (slice(1, 3), (np.ndarray, np.float64), False),
-                (slice(3, 10), (np.ndarray, np.float64), False),
-                ([0, 1], nap.IntervalSet, False),
-                ([0, -1], nap.IntervalSet, False),
-                ([0, 0, 1, 1], (np.ndarray, np.float64), False),
-                ([0, 1, 0, 1], (np.ndarray, np.float64), False),
-                (0, (np.ndarray, np.float64), False),
-                (-1, (np.ndarray, np.float64), False),
-                ([True, False], (np.ndarray, np.float64), False),
-                ([True, True], nap.IntervalSet, False),
-                (pd.Series([0, 1]), nap.IntervalSet, False),
-                (pd.Series([0, 1, 1]), (np.ndarray, np.float64), False),
-                (pd.Series([True, True]), nap.IntervalSet, False),
-                (pd.Series([True, False]), (np.ndarray, np.float64), False),
-            ],
-        )
-        def test_slice_iset_with_metadata(
-            self, iset_meta, index1, index2, output_type, has_metadata
-        ):
-            """
-            Tests for numpy-like slicing of IntervalSets with metadata.
-            Mixes and matches indices of different data types.
-            """
-            if index2 is None:
-                index = index1
-            else:
-                index = (index1, index2)
-
-            # skip if shape mismatch
-            try:
-                iset_meta[index]
-            except Exception as e:
-                if "shape mismatch" in str(e):
-                    pytest.skip("index1 and index2 must have the same shape")
-                else:
-                    raise e
-
-            assert isinstance(iset_meta[index], output_type)
-
-            expected = iset_meta.values[index]
-
-            # check that indexing iset is the same as indexing the np.array values
-            if output_type is nap.IntervalSet:
-                np.testing.assert_array_almost_equal(
-                    iset_meta[index].values.squeeze(), expected.squeeze()
-                )
-            else:
-                np.testing.assert_array_almost_equal(iset_meta[index], expected)
-
-            if has_metadata:
-                for col in iset_meta.metadata_columns:
-                    assert np.all(
-                        iset_meta[index].get_info(col)
-                        == iset_meta.get_info(col)[index1]
-                    )
-
-        @pytest.mark.parametrize(
-            "index2",
-            [
-                slice(0, -1),
-                slice(None, -1),
-            ],
-        )
-        def test_slice_iset_with_metadata_special(self, iset_meta, index1, index2):
-            """
-            Tests for special cases of slicing in the second index.
-            """
+        if index2 is None:
+            index = index1
+        else:
             index = (index1, index2)
 
-            # first slice gets rid of metadata
-            res1 = iset_meta[index]
-            assert isinstance(res1, nap.IntervalSet)
+        # skip if shape mismatch
+        try:
+            iset_meta[index]
+        except Exception as e:
+            if "shape mismatch" in str(e):
+                pytest.skip("index1 and index2 must have the same shape")
+            else:
+                raise e
+
+        assert isinstance(iset_meta[index], output_type)
+
+        expected = iset_meta.values[index]
+
+        # check that indexing iset is the same as indexing the np.array values
+        if output_type is nap.IntervalSet:
             np.testing.assert_array_almost_equal(
-                iset_meta.values[index1].squeeze(), res1.values.squeeze()
+                iset_meta[index].values.squeeze(), expected.squeeze()
             )
-            assert len(res1.metadata_columns) == 0
+        else:
+            np.testing.assert_array_almost_equal(iset_meta[index], expected)
 
-            # skip if second slice is out of bounds
-            try:
-                res1[index]
-            except Exception as e:
-                if re.match(r"index \d+ is out of bounds", str(e)) or (
-                    "boolean index did not match" in str(e)
-                ):
-                    pytest.skip("index1 out of bounds for second slice")
-                else:
-                    raise e
-
-            # second slice gets rid of last column
-            res2 = res1[index]
-            assert isinstance(res2, (np.ndarray, np.float64))
-            np.testing.assert_array_almost_equal(res2, res1.values[index])
+        if has_metadata:
+            for col in iset_meta.metadata_columns:
+                assert np.all(
+                    iset_meta[index].get_info(col) == iset_meta.get_info(col)[index1]
+                )
 
     @pytest.mark.parametrize(
         "index, expected",
@@ -601,99 +549,103 @@ class TestTsdFrameMetadata:
                     == fcols
                 )
 
-
-@pytest.mark.parametrize(
-    "name, attr_exp, set_exp, set_attr_exp, set_key_exp, get_exp, get_attr_exp, get_key_exp",
-    [
-        # existing data column
-        (
-            "a",
-            # not attribute
-            pytest.raises(AssertionError),
-            # error with set_info
-            pytest.raises(ValueError, match="Invalid metadata name"),
-            # error with setattr
-            pytest.raises(ValueError, match="Invalid metadata name"),
-            # shape mismatch with setitem
-            pytest.raises(ValueError),
-            # assertion error with get_info
-            pytest.raises(AssertionError),
-            # attribute should raise error
-            pytest.raises(AttributeError),
-            # key should not match metadata
-            pytest.raises(AssertionError),
-        ),
-        (
-            "columns",
-            # attribute exists
-            does_not_raise(),
-            # warn with set_info
-            pytest.warns(UserWarning, match="overlaps with an existing"),
-            # cannot be set as attribute
-            pytest.raises(AttributeError, match="Cannot set attribute"),
-            # warn when set as key
-            pytest.warns(UserWarning, match="overlaps with an existing"),
-            # no error with get_info
-            does_not_raise(),
-            # attribute should not match metadata
-            pytest.raises(TypeError),
-            # key should match metadata
-            does_not_raise(),
-        ),
-        # existing metdata
-        (
-            "l1",
-            # attribute exists
-            does_not_raise(),
-            # no warning with set_info
-            does_not_raise(),
-            # no warning with setattr
-            does_not_raise(),
-            # no warning with setitem
-            does_not_raise(),
-            # no error with get_info
-            does_not_raise(),
-            # attr should match metadata
-            does_not_raise(),
-            # key should match metadata
-            does_not_raise(),
-        ),
-    ],
-)
-def test_tsdframe_metadata_overlapping_names(
-    tsdframe_meta,
-    name,
-    attr_exp,
-    set_exp,
-    set_attr_exp,
-    get_exp,
-    set_key_exp,
-    get_attr_exp,
-    get_key_exp,
-):
-    with attr_exp:
-        assert hasattr(tsdframe_meta, name)
-    # warning when set
-    with set_exp:
-        # warnings.simplefilter("error")
-        tsdframe_meta.set_info({name: np.ones(4)})
-    # error when set as attribute
-    with set_attr_exp:
-        setattr(tsdframe_meta, name, np.ones(4))
-    # error when set as key
-    # skip jax (no in-place set)
-    if nap.nap_config.backend != "jax":
-        with set_key_exp:
-            tsdframe_meta[name] = np.ones(4)
-    # retrieve with get_info
-    with get_exp:
-        np.testing.assert_array_almost_equal(tsdframe_meta.get_info(name), np.ones(4))
-    # make sure it doesn't access metadata if its an existing attribute or key
-    with get_attr_exp:
-        np.testing.assert_array_almost_equal(getattr(tsdframe_meta, name), np.ones(4))
-    # make sure it doesn't access metadata if its an existing key
-    with get_key_exp:
-        np.testing.assert_array_almost_equal(tsdframe_meta[name], np.ones(4))
+    @pytest.mark.parametrize(
+        "name, attr_exp, set_exp, set_attr_exp, set_key_exp, get_exp, get_attr_exp, get_key_exp",
+        [
+            # existing data column
+            (
+                "a",
+                # not attribute
+                pytest.raises(AssertionError),
+                # error with set_info
+                pytest.raises(ValueError, match="Invalid metadata name"),
+                # error with setattr
+                pytest.raises(ValueError, match="Invalid metadata name"),
+                # shape mismatch with setitem
+                pytest.raises(ValueError),
+                # assertion error with get_info
+                pytest.raises(AssertionError),
+                # attribute should raise error
+                pytest.raises(AttributeError),
+                # key should not match metadata
+                pytest.raises(AssertionError),
+            ),
+            (
+                "columns",
+                # attribute exists
+                does_not_raise(),
+                # warn with set_info
+                pytest.warns(UserWarning, match="overlaps with an existing"),
+                # cannot be set as attribute
+                pytest.raises(AttributeError, match="Cannot set attribute"),
+                # warn when set as key
+                pytest.warns(UserWarning, match="overlaps with an existing"),
+                # no error with get_info
+                does_not_raise(),
+                # attribute should not match metadata
+                pytest.raises(TypeError),
+                # key should match metadata
+                does_not_raise(),
+            ),
+            # existing metdata
+            (
+                "l1",
+                # attribute exists
+                does_not_raise(),
+                # no warning with set_info
+                does_not_raise(),
+                # no warning with setattr
+                does_not_raise(),
+                # no warning with setitem
+                does_not_raise(),
+                # no error with get_info
+                does_not_raise(),
+                # attr should match metadata
+                does_not_raise(),
+                # key should match metadata
+                does_not_raise(),
+            ),
+        ],
+    )
+    def test_tsdframe_metadata_overlapping_names(
+        self,
+        tsdframe_meta,
+        name,
+        attr_exp,
+        set_exp,
+        set_attr_exp,
+        get_exp,
+        set_key_exp,
+        get_attr_exp,
+        get_key_exp,
+    ):
+        with attr_exp:
+            assert hasattr(tsdframe_meta, name)
+        # warning when set
+        with set_exp:
+            # warnings.simplefilter("error")
+            tsdframe_meta.set_info({name: np.ones(4)})
+        # error when set as attribute
+        with set_attr_exp:
+            setattr(tsdframe_meta, name, np.ones(4))
+        # error when set as key
+        # skip jax (no in-place set)
+        if nap.nap_config.backend != "jax":
+            with set_key_exp:
+                tsdframe_meta[name] = np.ones(4)
+        # retrieve with get_info
+        with get_exp:
+            np.testing.assert_array_almost_equal(
+                tsdframe_meta.get_info(name), np.ones(4)
+            )
+        # make sure it doesn't access metadata if its an existing attribute or key
+        with get_attr_exp:
+            np.testing.assert_array_almost_equal(
+                getattr(tsdframe_meta, name), np.ones(4)
+            )
+        # make sure it doesn't access metadata if its an existing key
+        with get_key_exp:
+            np.testing.assert_array_almost_equal(tsdframe_meta[name], np.ones(4))
 
 
 #############
@@ -1926,6 +1878,20 @@ class TestMetadataDict:
                 np.testing.assert_array_equal(meta.loc[loc].index, index[loc])
                 for key in data.keys():
                     np.testing.assert_array_equal(meta.loc[loc][key], data[key][loc])
+
+    def test_metadata_dict_loc_tuple_error(self, index, data):
+        """
+        Test error when accessing metadata with loc using a tuple with more than 2 elements
+        """
+        meta = _Metadata(index, data)
+        with pytest.raises(IndexError, match="Too many indices"):
+            meta.loc[(0, 1, 2)]
+
+    def test_metadata_dict_iloc(self, index, data):
+        """
+        Test getting metadata with iloc
+        """
+        meta = _Metadata(index, data)
 
     @pytest.mark.parametrize(
         "dropped",

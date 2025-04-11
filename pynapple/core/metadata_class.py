@@ -220,40 +220,39 @@ class _MetadataMixin:
         self._check_metadata_column_names(metadata, **kwargs)
         not_set = []
         if metadata is not None:
-            if isinstance(metadata, pd.DataFrame):
-                if np.all(self.metadata_index == metadata.index.values):
-                    # self._metadata[metadata.columns] = metadata
-                    kwargs = {**metadata, **kwargs}
+            if hasattr(metadata, "keys"):
+                # metadata is a dictionary-like object
+                if (
+                    hasattr(metadata, "index")
+                    and (len(self.metadata_index) > 1)
+                    and not np.all(self.metadata_index == metadata.index)
+                ):
+                    raise ValueError("Metadata index does not match.")
                 else:
-                    raise ValueError("Metadata index does not match")
-            elif isinstance(metadata, (dict, _Metadata)):
-                # join metadata with kwargs to use checks below
-                kwargs = {**metadata, **kwargs}
+                    kwargs = {**metadata, **kwargs}
 
-            elif isinstance(metadata, pd.Series) and (len(self.metadata_index) == 1):
-                # allow series to be passed if only one interval
-                for key, val in metadata.items():
-                    self._metadata[key] = np.array(val)
-                    # self._metadata[key] = pd.Series(val, index=self.metadata_index)
-
-            elif isinstance(metadata, (pd.Series, np.ndarray, list)):
+            # elif isinstance(metadata, pd.Series) and (len(self.metadata_index) == 1):
+            #     # allow series to be passed if only one interval
+            #     for key, val in metadata.items():
+            #         self._metadata[key] = np.array(val)
+            #         # self._metadata[key] = pd.Series(val, index=self.metadata_index)
+            else:
                 raise TypeError(
                     f"Metadata with type {type(metadata)} should be passed as a keyword argument."
                 )
-            else:
-                not_set.append(metadata)
+
         if len(kwargs):
             for k, v in kwargs.items():
 
-                if isinstance(v, pd.Series):
-                    if np.all(self.metadata_index == v.index.values):
+                if hasattr(v, "keys") and hasattr(v, "index"):
+                    if np.all(self.metadata_index == v.index):
                         self._metadata[k] = np.array(v)
                     else:
                         raise ValueError(
-                            "Metadata index does not match for argument {}".format(k)
+                            f"Metadata index does not match for argument {k}"
                         )
 
-                elif isinstance(v, (np.ndarray, list, tuple)):
+                elif hasattr(v, "__len__"):
                     if len(self.metadata_index) == len(v):
                         self._metadata[k] = np.array(v)
                     else:
@@ -269,6 +268,7 @@ class _MetadataMixin:
 
                 else:
                     not_set.append({k: v})
+
         if not_set:
             raise TypeError(
                 f"Cannot set the following metadata:\n{not_set}.\nMetadata columns provided must be  "
@@ -640,7 +640,10 @@ class _Metadata(UserDict):
         """
         Reset metadata index to default range index.
         """
-        self.index = np.arange(len(self.index))
+        if hasattr(self.index, "__len__"):
+            self.index = np.arange(len(self.index))
+        else:
+            self.index = 0
         return self
 
     def join(self, other, axis=1):
@@ -734,7 +737,7 @@ class _MetadataLoc:
         self.index_map = {k: v for v, k in enumerate(self.index)}
 
     def __getitem__(self, key):
-        # unpack index and columns based from key
+        # unpack index and columns from key
         if isinstance(key, tuple):
             if len(key) == 2:
                 index = key[0]
@@ -850,28 +853,44 @@ class _MetadataILoc:
         self.keys = metadata.columns
 
     def __getitem__(self, key):
-        if isinstance(key, Number):
-            # metadata.iloc[Number], single row across all columns
-            index = self.index[key]
-            data = {k: [self.data[k][key]] for k in self.keys}
-
-        elif isinstance(key, (slice, list, np.ndarray, pd.Index, pd.Series)):
-            # metadata.iloc[array_like], multiple rows across all columns
-            index = self.index[key]
-            data = {k: self.data[k][key] for k in self.keys}
-
-        elif isinstance(key, tuple) and len(key) == 2:
-            columns = self.keys[key[1]]
-            index = self.index[key[0]]
-
-            if isinstance(key[0], Number):
-                # metadata.iloc[Number, *], single row across column(s)
-                data = {k: [self.data[k][key[0]]] for k in columns}
+        # unpack index and columns from key
+        if isinstance(key, tuple):
+            if len(key) == 2:
+                idx = key[0]
+                index = self.index[key[0]]
+                columns = self.keys[key[1]]
             else:
-                # metadata.iloc[array_like, *], multiple rows across column(s)
-                data = {k: self.data[k][key[0]] for k in columns}
-
+                raise IndexError(
+                    f"Too many indices for metadata.loc: Metadata is 2-dimensional"
+                )
         else:
-            raise IndexError(f"Unknown metadata index {key}")
+            idx = key
+            index = self.index[key]
+            columns = self.keys
+
+        data = {k: self.data[k][idx] for k in columns}
+
+        # if isinstance(idx, Number):
+        #     # metadata.iloc[Number, Any]
+        #     data = {k: [self.data[k][key]] for k in self.keys}
+
+        # elif isinstance(key, (slice, list, np.ndarray, pd.Index, pd.Series)):
+        #     # metadata.iloc[array_like], multiple rows across all columns
+        #     index = self.index[key]
+        #     data = {k: self.data[k][key] for k in self.keys}
+
+        # elif isinstance(key, tuple) and len(key) == 2:
+        #     columns = self.keys[key[1]]
+        #     index = self.index[key[0]]
+
+        #     if isinstance(key[0], Number):
+        #         # metadata.iloc[Number, *], single row across column(s)
+        #         data = {k: [self.data[k][key[0]]] for k in columns}
+        #     else:
+        #         # metadata.iloc[array_like, *], multiple rows across column(s)
+        #         data = {k: self.data[k][key[0]] for k in columns}
+
+        # else:
+        #     raise IndexError(f"Unknown metadata index {key}")
 
         return _Metadata(index, data)
