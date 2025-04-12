@@ -58,58 +58,90 @@ pynapple: python neural analysis package
             Citing
 
 
-|
+.. grid:: 1 1 6 6
+    :gutter: 2
 
-.. grid:: 1 1 7 7
-   :gutter: 2
+    .. grid-item-card:: Time Series
+        :text-align: center
+        :link: ./user_guide/01_introduction_to_pynapple.html#instantiating-pynapple-objects
 
-   .. grid-item-card:: Time Series
-      :text-align: center
-      :link: ./user_guide/03_core_methods.html
+        .. image:: _static/example_thumbs/tsd.svg
+            :width: 150px
+            :class: dark-light
 
-      .. image:: _static/example_thumbs/timeseries.svg         
-         :class: dark-light
+    .. grid-item-card:: Intervals
+        :text-align: center
+        :link: ./user_guide/01_introduction_to_pynapple.html#nap-intervalset-intervals
+
+        .. image:: _static/example_thumbs/interval.svg
+            :width: 150px
+            :class: dark-light
+
+    .. grid-item-card:: Timestamps
+        :text-align: center
+        :link: ./user_guide/01_introduction_to_pynapple.html#nap-tsgroup-group-of-timestamps
+
+        .. image:: _static/example_thumbs/tsgroup.svg
+            :width: 150px
+            :class: dark-light
+
+    .. grid-item-card:: Time alignment
+        :text-align: center
+        :link: ./user_guide/01_introduction_to_pynapple.html#restricting-time-series-to-epochs
+
+        .. image:: _static/example_thumbs/interaction.svg
+            :width: 150px
+            :class: dark-light
+
+.. grid:: 1 1 6 6
+   :gutter: 1
 
    .. grid-item-card:: Decoding
       :text-align: center
       :link: ./user_guide/07_decoding.html
 
-      .. image:: _static/example_thumbs/decoding.svg         
+      .. image:: _static/example_thumbs/decoding.svg
+         :width: 150px
          :class: dark-light
 
    .. grid-item-card:: Perievent
       :text-align: center
       :link: ./user_guide/08_perievent.html
 
-      .. image:: _static/example_thumbs/perievent.svg         
+      .. image:: _static/example_thumbs/perievent.svg
+         :width: 150px
          :class: dark-light
 
    .. grid-item-card:: Correlation
       :text-align: center
       :link: ./user_guide/05_correlograms.html
 
-      .. image:: _static/example_thumbs/correlation.svg         
+      .. image:: _static/example_thumbs/correlation.svg
+         :width: 150px
          :class: dark-light
 
    .. grid-item-card:: Tuning curves
       :text-align: center
       :link: ./user_guide/06_tuning_curves.html
 
-      .. image:: _static/example_thumbs/tuningcurves.svg         
+      .. image:: _static/example_thumbs/tuningcurves.svg
+         :width: 150px
          :class: dark-light
 
    .. grid-item-card:: Spectrogram
       :text-align: center
       :link: ./user_guide/11_wavelets.html
 
-      .. image:: _static/example_thumbs/wavelets.svg         
+      .. image:: _static/example_thumbs/wavelets.svg
+         :width: 150px
          :class: dark-light
 
    .. grid-item-card:: Filtering
       :text-align: center
       :link: ./user_guide/12_filtering.html
 
-      .. image:: _static/example_thumbs/filtering.svg         
+      .. image:: _static/example_thumbs/filtering.svg
+         :width: 150px
          :class: dark-light
 
 
