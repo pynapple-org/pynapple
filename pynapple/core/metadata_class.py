@@ -1,7 +1,6 @@
 import copy
 import inspect
 import itertools
-import re
 import warnings
 from collections import UserDict
 from numbers import Number
@@ -723,7 +722,7 @@ class _MetadataLoc:
                 columns = key[1]
             else:
                 raise IndexError(
-                    f"Too many indices for metadata.loc: Metadata is 2-dimensional"
+                    "Too many indices for metadata.loc: Metadata is 2-dimensional"
                 )
         else:
             index = key
@@ -755,7 +754,7 @@ class _MetadataLoc:
                             idx = self._get_indexder(index)
                         else:
                             raise IndexError(
-                                f"Index of boolean cannot be aligned to index of metadata"
+                                "Index of boolean cannot be aligned to index of metadata"
                             )
                     else:
                         index = self.index[idx]
@@ -842,7 +841,7 @@ class _MetadataILoc:
                     columns = [columns]
             else:
                 raise IndexError(
-                    f"Too many indices for metadata.loc: Metadata is 2-dimensional"
+                    "Too many indices for metadata.loc: Metadata is 2-dimensional"
                 )
         else:
             idx = key
