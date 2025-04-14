@@ -1,15 +1,15 @@
 import copy
 import inspect
 import itertools
+import re
 import warnings
 from collections import UserDict
 from numbers import Number
 from typing import Union
-from tabulate import tabulate
-import re
 
 import numpy as np
 import pandas as pd
+from tabulate import tabulate
 
 from .utils import _get_terminal_size
 
