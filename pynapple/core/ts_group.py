@@ -407,59 +407,25 @@ class TsGroup(UserDict, _MetadataMixin):
         if "rate" in col_names:
             col_names = col_names[1:]  # .drop("rate")
 
-        headers = ["Index", "rate"] + [c for c in col_names][0:max_cols]
-        end = ["..."] if len(headers) > max_cols else []
-        headers += end
+        table = {
+            "Index": self.index,
+            "rate": np.round(self._metadata["rate"], 5),
+            **{
+                c: _convert_iter_to_str(self._metadata[c])
+                for c in col_names[0:max_cols]
+            },
+        }
+        if len(table.keys()) > max_cols:
+            table = {**table, "...": np.array(["..."] * len(self.index))}
 
         if len(self) == 0:
-            return tabulate(tabular_data=[], headers=headers)
+            return tabulate(tabular_data=[], headers=list(table.keys()))
 
         if len(self) > max_rows:
             n_rows = max_rows // 2
-            ends = np.array([end] * n_rows)
-            table = np.vstack(
-                (
-                    np.hstack(
-                        (
-                            self.index[0:n_rows, None],
-                            np.round(self._metadata["rate"][0:n_rows], 5),
-                            _convert_iter_to_str(
-                                self._metadata[col_names][0:n_rows, 0:max_cols]
-                            ),
-                            ends,
-                        ),
-                        dtype=object,
-                    ),
-                    np.array(
-                        [["..." for _ in range(2 + len(col_names[0:max_cols]))] + end],
-                        dtype=object,
-                    ),
-                    np.hstack(
-                        (
-                            self.index[-n_rows:, None],
-                            np.round(self._metadata["rate"][-n_rows:], 5),
-                            _convert_iter_to_str(
-                                self._metadata[col_names][-n_rows:, 0:max_cols]
-                            ),
-                            ends,
-                        ),
-                        dtype=object,
-                    ),
-                )
-            )
-        else:
-            ends = np.array([end] * len(self))
-            table = np.hstack(
-                (
-                    self.index[:, None],
-                    np.round(self._metadata["rate"], 5),
-                    _convert_iter_to_str(self._metadata[col_names][:, 0:max_cols]),
-                    ends,
-                ),
-                dtype=object,
-            )
+            table = {k: np.hstack(v[0:n_rows], v[-n_rows:]) for k, v in table.items()}
 
-        return tabulate(table, headers=headers)
+        return tabulate(table, headers="keys")
 
     def __str__(self):
         return self.__repr__()
