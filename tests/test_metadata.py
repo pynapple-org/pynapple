@@ -1802,7 +1802,7 @@ class TestMetadataDict:
         [
             # supported column indexes
             (None, _Metadata, does_not_raise()),
-            ("label", (np.number, np.ndarray), does_not_raise()),
+            ("label", _Metadata, does_not_raise()),
             (["label", "other"], _Metadata, does_not_raise()),
             # errors
             (
@@ -1863,12 +1863,14 @@ class TestMetadataDict:
             assert isinstance(meta.loc[loc], return_type)
 
             if isinstance(loc, tuple):
+                np.testing.assert_array_equal(meta.loc[loc].index, index[loc[0]])
                 if isinstance(loc[1], str):
                     # tuple that retuns some value
-                    np.testing.assert_array_equal(meta.loc[loc], data[loc[1]][loc[0]])
+                    np.testing.assert_array_equal(
+                        meta.loc[loc][loc[1]], data[loc[1]][loc[0]]
+                    )
                 else:
                     # tuple that retuns a _Metadata object
-                    np.testing.assert_array_equal(meta.loc[loc].index, index[loc[0]])
                     for key in loc[1]:
                         np.testing.assert_array_equal(
                             meta.loc[loc][key], data[key][loc[0]]

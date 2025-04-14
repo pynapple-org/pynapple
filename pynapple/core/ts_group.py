@@ -422,9 +422,9 @@ class TsGroup(UserDict, _MetadataMixin):
                     np.hstack(
                         (
                             self.index[0:n_rows, None],
-                            np.round(self.metadata[["rate"]].values[0:n_rows], 5),
+                            np.round(self._metadata["rate"][0:n_rows], 5),
                             _convert_iter_to_str(
-                                self.metadata[col_names].values[0:n_rows, 0:max_cols]
+                                self._metadata[col_names][0:n_rows, 0:max_cols]
                             ),
                             ends,
                         ),
@@ -437,9 +437,9 @@ class TsGroup(UserDict, _MetadataMixin):
                     np.hstack(
                         (
                             self.index[-n_rows:, None],
-                            np.round(self.metadata[["rate"]].values[-n_rows:], 5),
+                            np.round(self._metadata["rate"][-n_rows:], 5),
                             _convert_iter_to_str(
-                                self.metadata[col_names].values[-n_rows:, 0:max_cols]
+                                self._metadata[col_names][-n_rows:, 0:max_cols]
                             ),
                             ends,
                         ),
@@ -452,10 +452,8 @@ class TsGroup(UserDict, _MetadataMixin):
             table = np.hstack(
                 (
                     self.index[:, None],
-                    np.round(self.metadata[["rate"]].values, 5),
-                    _convert_iter_to_str(
-                        self.metadata[col_names].values[:, 0:max_cols]
-                    ),
+                    np.round(self._metadata["rate"], 5),
+                    _convert_iter_to_str(self._metadata[col_names][:, 0:max_cols]),
                     ends,
                 ),
                 dtype=object,

@@ -560,8 +560,8 @@ class TestTsGroup1:
 
         for i in tsgroup.index:
             lines.append(
-                [str(i), np.round(tsgroup._metadata.loc[i, "rate"], 5)]
-                + [tsgroup._metadata.loc[i, c] for c in cols]
+                [str(i), np.round(tsgroup.get_info((i, "rate")), 5)]
+                + [tsgroup.get_info((i, c)) for c in cols]
             )
         assert tabulate(lines, headers=headers) == tsgroup.__repr__()
 

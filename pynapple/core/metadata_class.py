@@ -305,8 +305,11 @@ class _MetadataMixin:
             # multiple metadata columns
             return self._metadata[key]
 
+        elif isinstance(key, tuple) and isinstance(key[1], str):
+            # return array for single column
+            return self._metadata.loc[key][key[1]]
         else:
-            # everything else, use .loc
+            # everything else, use .loc, which returns _Metadata type
             return self._metadata.loc[key]
 
     def drop_info(self, key):
@@ -787,7 +790,7 @@ class _MetadataLoc:
         if isinstance(columns, str):
             if columns in self.keys:
                 # metadata.loc[:, str], single column
-                return self.data[columns][idx]
+                return _Metadata(index, {columns: self.data[columns][idx]})
             else:
                 # error for column not found
                 raise KeyError(
