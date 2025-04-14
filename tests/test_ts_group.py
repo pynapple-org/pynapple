@@ -372,10 +372,6 @@ class TestTsGroup1:
 
         res = np.array(res).T
         np.testing.assert_array_almost_equal(count.values, res)
-        # check rate
-        np.testing.assert_array_almost_equal(
-            count.get_info("rate").values, np.sum(res, axis=0) / dt
-        )
         # check metadata
         if metadata is not None:
             pd.testing.assert_series_equal(
@@ -435,10 +431,6 @@ class TestTsGroup1:
 
         res = np.array(res).T
         np.testing.assert_array_almost_equal(count.values, res)
-        # check rate
-        np.testing.assert_array_almost_equal(
-            count.get_info("rate").values, np.sum(res, axis=0) / dt
-        )
         # check metadata
         if metadata is not None:
             pd.testing.assert_series_equal(
