@@ -242,12 +242,24 @@ class TsGroup(UserDict, _MetadataMixin):
         # Make sure data dict and index are ordered the same
         data = {k: data[k] for k in self.index}
 
-        # # Also sort metadata
-        # sort_index = np.argsort(keys)
-        # if metadata:
-        #     metadata = {key: value[sort_index] for key, value in metadata.items()}
-        # if kwargs:
-        #     kwargs = {key: value[sort_index] for key, value in kwargs.items()}
+        # Also sort metadata if more than one key
+        if len(keys) > 1:
+            sort_index = np.argsort(keys)
+            if metadata:
+                if hasattr(metadata, "index") and np.all(metadata.index != keys):
+                    # check that index matches before sort if index exists
+                    raise ValueError(
+                        "Metadata index does not match the index of the TsGroup."
+                    )
+                metadata = {
+                    key: np.array(value)[sort_index] for key, value in metadata.items()
+                }
+            if kwargs:
+                # this should also check for index within individual kwargs,
+                # but we should just deprecate this in the future
+                kwargs = {
+                    key: np.array(value)[sort_index] for key, value in kwargs.items()
+                }
 
         # initialize metadata
         _MetadataMixin.__init__(self)
@@ -388,7 +400,7 @@ class TsGroup(UserDict, _MetadataMixin):
         return self._ts_group_from_keys(key)
 
     def _ts_group_from_keys(self, keys):
-        metadata = self._metadata.loc[np.sort(keys)].copy().drop("rate")
+        metadata = self._metadata.loc[keys].copy().drop("rate")
         return TsGroup(
             {k: self[k] for k in keys},
             time_support=self.time_support,
