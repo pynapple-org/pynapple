@@ -638,6 +638,54 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)
 
+    def gradient_numpy(self, ts, ep=None, axis=None):
+        """Compute the gradient of the time series using numpy.gradient.
+
+        Parameters
+        ----------
+        ts : Ts, Tsd, TsdFrame or TsdTensor
+            The object holding the timestamps
+        ep : IntervalSet, optional
+            The epochs to use to interpolate. If None, the time support of Tsd is used.
+        axis : int, optional
+            Axis along which the gradient is computed. Default is None.
+
+        Returns
+        -------
+        Tsd, TsdFrame or TsdTensor
+            The gradient of the time series.
+        """
+        if not isinstance(ts, _Base):
+            raise IOError(
+                "First argument should be an instance of Ts, Tsd, TsdFrame or TsdTensor"
+            )
+
+        if ep is None:
+            ep = self.time_support
+        else:
+            if not isinstance(ep, IntervalSet):
+                raise IOError("ep should be an object of type IntervalSet")
+
+        new_t = ts.restrict(ep).index
+
+        new_shape = (
+            len(new_t) if self.values.ndim == 1 else (len(new_t),) + self.shape[1:]
+        )
+        new_d = np.full(new_shape, np.nan)
+
+        start = 0
+        print("EP", len(ep))
+        for i in range(len(ep)):
+            t = ts.get(ep[i, 0], ep[i, 1])
+            tmp = self.get(ep[i, 0], ep[i, 1])
+
+            if len(t) and len(tmp):
+                new_d[start : start + len(t), ...] = np.gradient(tmp.values, axis=axis)
+
+            start += len(t)
+
+        return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)
+
     def to_trial_tensor(self, ep, align="start", padding_value=np.nan):
         """
         Return trial-based tensor from an IntervalSet object. The shape of the tensor array is
