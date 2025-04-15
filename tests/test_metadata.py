@@ -1732,9 +1732,20 @@ class TestMetadata:
     [
         (
             np.arange(4),
-            {"label": np.array([1, 2, 3, 4]), "other": np.array(["a", "b", "c", "d"])},
+            {
+                "label": np.array([1, 2, 3, 4]),
+                "other": np.array(["a", "b", "c", "d"]),
+                "more": np.array([[1, 2], [3, 4], [5, 6], [7, 8]]),
+            },
         ),
-        (np.arange(1), {"label": np.array([1]), "other": np.array(["a"])}),
+        (
+            np.arange(1),
+            {
+                "label": np.array([1]),
+                "other": np.array(["a"]),
+                "more": np.array([[1, 2]]),
+            },
+        ),
     ],
 )
 class TestMetadataDict:
@@ -1943,8 +1954,8 @@ class TestMetadataDict:
             ([0, 1], _Metadata, does_not_raise()),
             (slice(None), _Metadata, does_not_raise()),
             (slice(0, 10), _Metadata, does_not_raise()),
-            ([True, False], _Metadata, does_not_raise()),
-            ([False, False], _Metadata, does_not_raise()),
+            ([True, False, True], _Metadata, does_not_raise()),
+            ([False, False, False], _Metadata, does_not_raise()),
             ([], _Metadata, does_not_raise()),
             # errors
             ("label", None, pytest.raises(IndexError, match="only integers, slices")),
