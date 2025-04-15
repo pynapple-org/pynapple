@@ -19,7 +19,7 @@ from ._jitted_functions import (
     jitunion,
 )
 from .config import nap_config
-from .metadata_class import _MetadataMixin, add_meta_docstring
+from .metadata_class import _MetadataMixin, add_meta_docstring, _Metadata
 from .time_index import TsIndex
 from .utils import (
     _convert_iter_to_str,
@@ -307,53 +307,32 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
 
         # Adding an extra column between actual values and metadata
         try:
-            metadata = pd.DataFrame(index=self.metadata_index, data=self._metadata.data)
+            metadata = _Metadata(index=self.metadata_index, data=self._metadata.data)
             col_names = metadata.columns
         except Exception:
             # Necessary for backward compatibility when saving IntervalSet as pickle
-            metadata = pd.DataFrame(index=self.index)
+            metadata = _Metadata(index=self.index)
             col_names = []
 
         headers = ["index", "start", "end"]
         if len(col_names):
             headers += [c for c in col_names]
         bottom = f"shape: {self.shape}, time unit: sec."
-
+        data = {
+            "index": self.index,
+            "start": self.values[:, 0],
+            "end": self.values[:, 1],
+            **{c: _convert_iter_to_str(v) for c, v in metadata.items()},
+        }
         # We rarely want to print everything as it can be very big.
         if len(self) > max_rows:
             n_rows = max_rows // 2
-            data = np.vstack(
-                (
-                    np.hstack(
-                        (
-                            self.index[0:n_rows, None],
-                            self.values[0:n_rows],
-                            _convert_iter_to_str(metadata.values[0:n_rows]),
-                        ),
-                        dtype=object,
-                    ),
-                    np.array([["..." for _ in range(len(headers))]], dtype=object),
-                    np.hstack(
-                        (
-                            self.index[-n_rows:, None],
-                            self.values[-n_rows:],
-                            _convert_iter_to_str(metadata.values[-n_rows:]),
-                        ),
-                        dtype=object,
-                    ),
-                )
-            )
-        else:
-            data = np.hstack(
-                (
-                    self.index[:, None],
-                    self.values,
-                    _convert_iter_to_str(metadata.values),
-                ),
-                dtype=object,
-            )
+            data = {
+                k: np.hstack((v[0:n_rows], ["..."], v[-n_rows:]), dtype=object)
+                for k, v in data.items()
+            }
 
-        return tabulate(data, headers=headers, tablefmt="plain") + "\n" + bottom
+        return tabulate(data, headers="keys", tablefmt="plain") + "\n" + bottom
 
     def __str__(self):
         return self.__repr__()

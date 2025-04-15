@@ -1115,85 +1115,40 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         if self.shape[1] > max_cols:
             headers = headers[0 : max_cols + 1] + ["..."]
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            if len(self):
-                end = ["..."] if self.shape[1] > max_cols else []
-                if len(self) > max_rows:
-                    n_rows = max_rows // 2
-                    ends = np.array([end] * n_rows)
-                    table = np.vstack(
-                        (
-                            np.hstack(
-                                (
-                                    self.index[0:n_rows, None],
-                                    np.round(self.values[0:n_rows, 0:max_cols], 5),
-                                    ends,
-                                ),
-                                dtype=object,
-                            ),
-                            np.array(
-                                [
-                                    ["..."]
-                                    + ["..."] * np.minimum(max_cols, self.shape[1])
-                                    + end
-                                ],
-                                dtype=object,
-                            ),
-                            np.hstack(
-                                (
-                                    self.index[-n_rows:, None],
-                                    np.round(self.values[-n_rows:, 0:max_cols], 5),
-                                    ends,
-                                ),
-                                dtype=object,
-                            ),
-                        )
-                    )
-                else:
-                    ends = np.array([end] * len(self))
-                    table = np.hstack(
-                        (
-                            self.index[:, None],
-                            np.round(self.values[:, 0:max_cols], 5),
-                            ends,
-                        ),
-                        dtype=object,
-                    )
-            else:
-                table = np.ndarray(shape=(0, self.shape[1] + 1))
-                end = []
+        table = {
+            "Time (s)": np.round(self.index, 5),
+            **{k: np.round(self.loc[k], 5) for k in self.columns[0:max_cols]},
+        }
+        if self.shape[1] > max_cols:
+            table = {**table, "...": np.array(["..."] * len(self.index))}
 
-            # Adding metadata if any.
-            col_names = self.metadata.columns.values
-            if len(col_names):
-                ends = np.array([end] * self._metadata.shape[1])
-                table = np.vstack(
+        if len(self) > max_rows:
+            n_rows = max_rows // 2
+            table = {
+                k: np.hstack((v[0:n_rows], ["..."], v[-n_rows:]), dtype=object)
+                for k, v in table.items()
+            }
+
+        col_names = self._metadata.columns
+        if len(self._metadata.columns):
+            table["Time (s)"] = np.hstack((table["Time (s)"], "Metadata", col_names))
+            for k in self.columns[0:max_cols]:
+                table[k] = np.hstack(
                     (
-                        table,
-                        np.array([["Metadata"] + [" "] * (table.shape[1] - 1)]),
-                        [["--------"] * table.shape[1]],
-                        np.hstack(
-                            (
-                                col_names[:, None],
-                                _convert_iter_to_str(
-                                    self.metadata.values[0:max_cols].T
-                                ),
-                                ends,
-                            ),
-                            dtype=object,
-                        ),
-                        np.array([[" "] * table.shape[1]]),
+                        table[k],
+                        "",
+                        _convert_iter_to_str(np.array(list(self.get_info(k).values()))),
                     ),
                     dtype=object,
                 )
+            repr_str = tabulate(table, headers="keys", colalign=("left",)).split("\n")
+            # repr_str.insert(-len(col_names) - 1, bottom)
+            # repr_str.insert(-len(col_names) - 1, "")
+            repr_str.insert(-len(col_names), repr_str[1])
+        else:
+            repr_str = tabulate(table, headers="keys").split("\n")
 
-            if len(table):
-                return (
-                    tabulate(table, headers=headers, colalign=("left",)) + "\n" + bottom
-                )
-            else:
-                return tabulate([], headers=headers) + "\n" + bottom
+        return ("\n").join(repr_str + [bottom])
 
     def __setattr__(self, name, value):
         # necessary setter to allow metadata to be set as an attribute

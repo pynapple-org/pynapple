@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from tabulate import tabulate
 
-from .utils import _get_terminal_size
+from .utils import _get_terminal_size, _convert_iter_to_str
 
 
 def add_meta_docstring(meta_func, sep="\n"):
@@ -240,20 +240,23 @@ class _MetadataMixin:
                             f"Metadata index does not match for argument {k}"
                         )
 
+                elif (len(self.metadata_index) == 1) and (
+                    (hasattr(v, "__iter__") is False) or isinstance(v, str)
+                ):
+                    # special case for single index objects for non iterable objects or strings
+                    self._metadata[k] = np.array([v])
+
                 elif hasattr(v, "__len__"):
                     # object that has a length
                     if len(self.metadata_index) == len(v):
                         self._metadata[k] = np.array(v)
+                    elif len(self.metadata_index) == 1:
+                        # special case for single index objects
+                        self._metadata[k] = np.array([v])
                     else:
                         raise ValueError(
                             f"input array length {len(v)} does not match metadata length {len(self.metadata_index)}."
                         )
-
-                elif (hasattr(v, "__iter__") is False) and (
-                    len(self.metadata_index) == 1
-                ):
-                    # if only one index and metadata is non-iterable, pack into iterable for single assignment
-                    self._metadata[k] = np.array([v])
 
                 else:
                     not_set.append({k: v})
@@ -475,11 +478,14 @@ class _Metadata(UserDict):
             # max_cols = np.maximum(cols // 12, 5)
             max_rows = np.maximum(rows - 10, 2)
             # By default, the first three columns should always show.
-            data = {" ": self.index, **self.data}
+            data = {
+                " ": self.index,
+                **{k: _convert_iter_to_str(v) for k, v in self.items()},
+            }
             if len(self.index) > max_rows:
                 n_rows = max_rows // 2
                 data = {
-                    k: np.hstack((v[:n_rows], "...", v[-n_rows:]))
+                    k: np.hstack((v[:n_rows], "...", v[-n_rows:]), dtype=object)
                     for k, v in data.items()
                 }
             return tabulate(data, headers="keys", tablefmt="plain", numalign="left")
@@ -586,7 +592,9 @@ class _Metadata(UserDict):
         """
         Convert metadata dictionary to a pandas DataFrame.
         """
-        return pd.DataFrame(self.data, index=self.index)
+        # convert arrays to list to avoid shape issues if metadata is a 2D array
+        data = {k: list(v) for k, v in self.data.items()}
+        return pd.DataFrame(data, index=self.index)
 
     def groupby(self, by):
         """

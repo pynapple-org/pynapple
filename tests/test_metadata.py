@@ -1098,7 +1098,7 @@ class TestMetadata:
             # single column
             pd.Series(index=["label"], data=[0]),
             # multiple columns
-            pd.Series(index=["l1", "l2"], data=[0, "a"]),
+            pd.Series(index=["l1", "l2", "l3"], data=[0, "a", [1, 2]]),
         ],
     )
     def test_add_metadata_series(self, obj, info, obj_len):
@@ -1113,12 +1113,13 @@ class TestMetadata:
         # verify shape and value in private metadata
         if isinstance(obj, nap.TsGroup):
             assert obj._metadata.shape == (obj_len, len(info.index) + 1)
-            np.testing.assert_array_equal(
-                obj.metadata[info.index].values[0], info.values
-            )
+            for col in info.index:
+                np.testing.assert_array_equal(obj.metadata[col].values[0], info[col])
         else:
             assert obj._metadata.shape == (obj_len, len(info.index))
-            np.testing.assert_array_equal(obj.metadata.values[0], info.values)
+            for col in info.index:
+                np.testing.assert_array_equal(obj.metadata[col].values[0], info[col])
+            # np.testing.assert_array_equal(obj.metadata.values[0], info.values)
 
         # verify public retrieval of metadata
         for col in info.index:
@@ -1139,6 +1140,20 @@ class TestMetadata:
             return pytest.raises(
                 TypeError,
                 match="Cannot set the following metadata",
+            )
+        else:
+            return does_not_raise()
+
+    @pytest.fixture
+    def metadata_length_error(self, obj_len):
+        """
+        Fixture to return the appropriate error when setting metadata with a slice.
+        If the object is length 1, it should not raise an error.
+        """
+        if obj_len > 1:
+            return pytest.raises(
+                ValueError,
+                match="input array length 100 does not match",
             )
         else:
             return does_not_raise()
@@ -1180,10 +1195,7 @@ class TestMetadata:
                 # metadata with wrong length
                 [],
                 {"label": np.zeros(100)},
-                pytest.raises(
-                    ValueError,
-                    match="input array length 100 does not match",
-                ),
+                "metadata_length_error",
             ),
             (
                 # metadata dataframe with mismatching index
