@@ -610,10 +610,12 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         # apply scipy filter
         out = np.zeros_like(self.d[::down])
+        i_start = 0
         for ep in self.time_support:
             slc = self.get_slice(start=ep.start[0], end=ep.end[0])
             # TODO: remove conversion when add jax backend is available
-            out[slc] = signal.decimate(
+            delta = (slc.stop - slc.start)
+            out[i_start: i_start + delta // down + int(delta % down != 0)] = signal.decimate(
                 np.asarray(self.d[slc]),
                 down,
                 n=order,
@@ -621,6 +623,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 axis=0,
                 zero_phase=True,
             )
+            i_start += (slc.stop - slc.start) // down
 
         return _initialize_tsd_output(
             self, out, time_index=self.t[::down], time_support=self.time_support
