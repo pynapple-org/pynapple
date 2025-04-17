@@ -497,6 +497,21 @@ class _Metadata(UserDict):
                 + f"\nIndex: {self.index}"
             )
 
+    def __eq__(self, other):
+        """
+        Check if two metadata objects are equal.
+        """
+        if not isinstance(other, _Metadata):
+            return False
+        if not np.array_equal(self.index, other.index):
+            return False
+        if not np.array_equal(self.columns, other.columns):
+            return False
+        for k in self.data:
+            if not np.array_equal(self.data[k], other.data[k]):
+                return False
+        return True
+
     def __getitem__(self, key):
         """
         Wrapper around typical dictionary __getitem__ to allow for multiple key indexing.
