@@ -566,6 +566,66 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         return self.convolve(window)
 
+    def decimate(self, down, order=8, filter_type="iir"):
+        """
+        Downsample the time series by an integer factor after an anti-aliasing filter.
+
+        As default, applies an anti-aliasing Chebyshev type I filter and downsample.
+        The filter is a low pass low pass-filter, if ``filter_type`` is set to "fir",
+        applies a 30 point filter with Hamming window.
+
+        Parameters
+        ----------
+        down : int
+            The down-sampling factor.
+        order : int, optional
+            The order of the filter. Default is 8.
+        filter_type : literal, "iir" or "fir".
+            The order of the filter. Default is 8.
+
+        Example
+        -------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> import matplotlib.pyplot as plt
+        >>> noisy_data = np.random.rand(100) + np.sin(np.linspace(0, 2 * np.pi, 100))
+        >>> tsd = nap.Tsd(t=np.arange(100), d=noisy_data)
+        >>> new_tsd = tsd.decimate(down=4)
+        >>> plt.plot(tsd, color="k", label="original")
+        >>> plt.plot(new_tsd, color="r", label="decimate")
+        >>> plt.plot(tsd[::4], color="g", label="naive downsample")
+        >>> plt.legend()
+
+        """
+        if not isinstance(down, int):
+            raise ValueError(
+                "Invalid value for 'down': Parameter 'down' should be of type int."
+            )
+        if not isinstance(order, int):
+            raise ValueError(
+                "Invalid value for 'order': Parameter 'order' should be of type int."
+            )
+        if filter_type not in ["fir", "iir"]:
+            raise ValueError("'filter_type' should be one of 'fir', 'iir'.")
+
+        # apply scipy filter
+        out = np.zeros_like(self.d[::down])
+        for ep in self.time_support:
+            slc = self.get_slice(start=ep.start[0], end=ep.end[0])
+            # TODO: remove conversion when add jax backend is available
+            out[slc] = signal.decimate(
+                np.asarray(self.d[slc]),
+                down,
+                n=order,
+                ftype=filter_type,
+                axis=0,
+                zero_phase=True,
+            )
+
+        return _initialize_tsd_output(
+            self, out, time_index=self.t[::down], time_support=self.time_support
+        )
+
     def interpolate(self, ts, ep=None, left=None, right=None):
         """Wrapper of the numpy linear interpolation method. See [numpy interpolate](https://numpy.org/doc/stable/reference/generated/numpy.interp.html)
         for an explanation of the parameters.
