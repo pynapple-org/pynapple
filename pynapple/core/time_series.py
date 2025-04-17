@@ -581,7 +581,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         order : int, optional
             The order of the filter. Default is 8.
         filter_type : literal, "iir" or "fir".
-            The order of the filter. Default is 8.
+            The filter type. Default is "iir".
 
         Example
         -------
