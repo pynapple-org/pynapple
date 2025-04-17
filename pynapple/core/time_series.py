@@ -26,7 +26,7 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from scipy import signal
 from tabulate import tabulate
 
-from ._core_functions import _bin_average, _convolve, _dropna, _restrict, _threshold
+from ._core_functions import _bin_average, _convolve, _count, _dropna, _restrict, _threshold
 from .base_class import _Base
 from .interval_set import IntervalSet
 from .metadata_class import _MetadataMixin, add_meta_docstring
@@ -566,7 +566,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         return self.convolve(window)
 
-    def decimate(self, down, order=8, filter_type="iir"):
+    def decimate(self, down, order=8, filter_type="iir", ep=None):
         """
         Downsample the time series by an integer factor after an anti-aliasing filter.
 
@@ -582,6 +582,8 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             The order of the filter. Default is 8.
         filter_type : literal, "iir" or "fir".
             The filter type. Default is "iir".
+        ep: IntervalSet
+            The epoch over which applying decimate.
 
         Example
         -------
@@ -608,14 +610,20 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         if filter_type not in ["fir", "iir"]:
             raise ValueError("'filter_type' should be one of 'fir', 'iir'.")
 
+        if not isinstance(ep, IntervalSet):
+            ep = self.time_support
+
         # apply scipy filter
-        out = np.zeros_like(self.d[::down])
+        _, n_vals = _count(self.t, ep.start, ep.end, dtype=np.int32)
+        deltas = np.ceil(n_vals / down).astype(int)
+        tot_samples = np.sum(deltas)
+        new_data = np.zeros((tot_samples, *self.d.shape[1:]))
+        new_time = np.zeros(tot_samples)
         i_start = 0
-        for ep in self.time_support:
-            slc = self.get_slice(start=ep.start[0], end=ep.end[0])
+        for e, d in zip(ep, deltas):
+            slc = self.get_slice(start=e.start[0], end=e.end[0])
             # TODO: remove conversion when add jax backend is available
-            delta = (slc.stop - slc.start)
-            out[i_start: i_start + delta // down + int(delta % down != 0)] = signal.decimate(
+            new_data[i_start: i_start + d] = signal.decimate(
                 np.asarray(self.d[slc]),
                 down,
                 n=order,
@@ -623,10 +631,11 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 axis=0,
                 zero_phase=True,
             )
-            i_start += (slc.stop - slc.start) // down
+            new_time[i_start: i_start + d] = self.t[slc][::down]
+            i_start += d
 
         return _initialize_tsd_output(
-            self, out, time_index=self.t[::down], time_support=self.time_support
+            self, new_data, time_index=new_time, time_support=ep
         )
 
     def interpolate(self, ts, ep=None, left=None, right=None):
