@@ -583,7 +583,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         filter_type : literal, "iir" or "fir".
             The filter type. Default is "iir".
         ep: IntervalSet
-            The epoch over which applying decimate.
+            The epoch over which applying the decimate algorithm.
 
         Example
         -------
@@ -594,9 +594,10 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         >>> tsd = nap.Tsd(t=np.arange(100), d=noisy_data)
         >>> new_tsd = tsd.decimate(down=4)
         >>> plt.plot(tsd, color="k", label="original")
-        >>> plt.plot(new_tsd, color="r", label="decimate")
-        >>> plt.plot(tsd[::4], color="g", label="naive downsample")
+        >>> plt.plot(new_tsd, color="r", marker="o", label="decimate")
+        >>> plt.plot(tsd[::4], color="g", marker="o", label="naive downsample")
         >>> plt.legend()
+        >>> plt.show()
 
         """
         if not isinstance(down, int):
