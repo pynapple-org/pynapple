@@ -594,9 +594,13 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         >>> tsd = nap.Tsd(t=np.arange(100), d=noisy_data)
         >>> new_tsd = tsd.decimate(down=4)
         >>> plt.plot(tsd, color="k", label="original")
+        [<matplotlib.lines.Line2D at...
         >>> plt.plot(new_tsd, color="r", marker="o", label="decimate")
+        [<matplotlib.lines.Line2D at...
         >>> plt.plot(tsd[::4], color="g", marker="o", label="naive downsample")
+        [<matplotlib.lines.Line2D at...
         >>> plt.legend()
+        <matplotlib.legend.Legend at...
         >>> plt.show()
 
         """
