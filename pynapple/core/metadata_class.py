@@ -281,10 +281,7 @@ class _MetadataMixin:
         ----------
         key :
             - str: metadata column name or metadata index (for TsdFrame with string column names)
-            - list of str: multiple metadata column names or metadata indices (for TsdFrame with string column names)
-            - Number: metadata index (for TsGroup and IntervalSet)
-            - list, np.ndarray, pd.Series: metadata index (for TsGroup and IntervalSet)
-            - tuple: metadata index and column name (for TsGroup and IntervalSet)
+            - list of str: multiple metadata column names
 
         Returns
         -------
@@ -296,24 +293,29 @@ class _MetadataMixin:
         IndexError
             If the metadata index is not found.
         """
-        if isinstance(key, str) and (key in self.metadata_columns):
-            # single metadata column
-            return self._metadata[key]
+        if isinstance(key, str):
+            if key in self.metadata_columns:
+                # single metadata column
+                return self._metadata[key]
+            else:
+                raise KeyError(
+                    f"Metadata column {key} not found. Metadata columns are {self.metadata_columns}"
+                )
 
-        elif (
-            isinstance(key, (list, np.ndarray))
-            and all(isinstance(k, str) for k in key)
-            and all(k in self.metadata_columns for k in key)
+        elif isinstance(key, (list, np.ndarray)) and all(
+            isinstance(k, str) for k in key
         ):
-            # multiple metadata columns
-            return self._metadata[key]
-
-        elif isinstance(key, tuple) and isinstance(key[1], str):
-            # return array for single column
-            return self._metadata.loc[key][key[1]]
+            if all(k in self.metadata_columns for k in key):
+                # multiple metadata columns
+                return self._metadata[key]
+            else:
+                raise KeyError(
+                    f"Metadata column(s) {[k for k in key if k not in self.metadata_columns]} not found. Metadata columns are {self.metadata_columns}"
+                )
         else:
-            # everything else, use .loc, which returns _Metadata type
-            return self._metadata.loc[key]
+            raise TypeError(
+                f"Invalid metadata column {key}. Metadata columns must be strings."
+            )
 
     def drop_info(self, key):
         """
@@ -461,14 +463,12 @@ class _Metadata(UserDict):
         Object index values.
     data : dict, optional
         Dictionary containing metadata information.
-        This field should only be set by _MetadataLoc and _MetadataILoc in order to preserve the metadata dictionary type.
+        This field should only be used internally to preserve the metadata dictionary type.
     """
 
-    def __init__(self, index, data=None):
-        super().__init__()
+    def __init__(self, index, data={}):
+        super().__init__(data)
         self.index = index
-        if data is not None:
-            self.update(data)
 
     def __repr__(self):
         if hasattr(self.index, "__len__"):
@@ -516,17 +516,12 @@ class _Metadata(UserDict):
         """
         Wrapper around typical dictionary __getitem__ to allow for multiple key indexing.
         """
-        try:
-            if isinstance(key, list):
-                return _Metadata(
-                    index=self.index, data={key: self.data[key] for key in key}
-                )
-            else:
-                return super().__getitem__(key)
-        except KeyError:
-            raise IndexError(
-                f"Metadata column(s) {key} not found. Metadata columns are {self.columns}"
+        if isinstance(key, list):
+            return _Metadata(
+                index=self.index, data={key: self.data[key] for key in key}
             )
+        else:
+            return super().__getitem__(key)
 
     @property
     def columns(self):
@@ -756,49 +751,18 @@ class _MetadataLoc:
 
         if isinstance(index, (Number, str)):
             # metadata.loc[Number or str]
-            if index in self.index:
-                idx = self.index_map[index]  # indexer from index map
-            else:
-                # error for index not found
-                raise IndexError(
-                    f"Metadata index '{index}' not found. Metadata indices are {self.index}"
-                )
+            idx = self.index_map[index]  # indexer from index map
 
         elif hasattr(index, "dtype") or isinstance(index, list):
             # list or array_like
             if np.issubdtype(np.array(index).dtype, bool):
                 # metadata.loc[bool array], boolean indexing
-                if len(index) == len(self.index):
-                    idx = index
-
-                    if hasattr(index, "index") and not isinstance(index, list):
-                        # boolean values associated with an index (i.e. pandas Series)
-                        if all(i in self.index for i in index.index):
-                            # get index where boolean is True
-                            index = np.sort(index[idx].index)
-                            # use _get_indexer in case index was not sorted
-                            idx = self._get_indexder(index)
-                        else:
-                            raise IndexError(
-                                "Index of boolean cannot be aligned to index of metadata"
-                            )
-                    else:
-                        index = self.index[idx]
-
-                else:
-                    raise IndexError(
-                        f"Boolean index length {len(index)} does not match metadata index length {len(self.index)}."
-                    )
+                idx = index
+                index = self.index[idx]
 
             else:
-                # metadata.loc[array_like], check that values correspond to index
-                if all(i in self.index for i in index):
-                    idx = self._get_indexder(index)
-                else:
-                    # error for index not found
-                    raise IndexError(
-                        f"Metadata indices {[i for i in index if i not in self.index]} not found. Metadata indices are {self.index}"
-                    )
+                # metadata.loc[array_like]
+                idx = self._get_indexder(index)
 
         elif isinstance(index, slice) and (index == slice(None)):
             # metadata.loc[:], keep original index
@@ -807,36 +771,14 @@ class _MetadataLoc:
 
         else:
             # metadata.loc[unknown], unknown index
-            raise IndexError(f"Unknown metadata index {index}")
+            raise TypeError(f"Unknown metadata index type {type(index)}")
 
-        # get data for given columns, check that column names are strings
         if isinstance(columns, str):
-            if columns in self.keys:
-                # metadata.loc[:, str], single column
-                return _Metadata(index, {columns: self.data[columns][idx]})
-            else:
-                # error for column not found
-                raise KeyError(
-                    f"Metadata column '{columns}' not found. Metadata columns are {self.keys}"
-                )
-
-        elif isinstance(columns, (list, np.ndarray)) and all(
-            isinstance(k, str) for k in columns
-        ):
-            if all(k in self.keys for k in columns):
-                # metadata.loc[:, [*str]], multiple columns
-                data = {k: self.data[k][idx] for k in columns}
-                return _Metadata(index, data)
-            else:
-                # informative error for columns not found
-                raise KeyError(
-                    f"Metadata columns {[c for c in columns if c not in self.keys]} not found. Metadata columns are {self.keys}"
-                )
+            data = {columns: self.data[columns][idx]}
         else:
-            # metadata.loc[:, unknown], unknown columns, probably a type error
-            raise TypeError(
-                f"Unknown metadata columns {columns}. Columns must be strings."
-            )
+            data = {k: self.data[k][idx] for k in columns}
+
+        return _Metadata(index, data)
 
     def _get_indexder(self, vals):
         """

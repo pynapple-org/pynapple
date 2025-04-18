@@ -563,8 +563,8 @@ class TestTsdFrameMetadata:
                 pytest.raises(ValueError, match="Invalid metadata name"),
                 # shape mismatch with setitem
                 pytest.raises(ValueError),
-                # assertion error with get_info
-                pytest.raises(AssertionError),
+                # key error with get_info
+                pytest.raises(KeyError),
                 # attribute should raise error
                 pytest.raises(AttributeError),
                 # key should not match metadata
@@ -1294,6 +1294,7 @@ class TestMetadata:
     @pytest.mark.parametrize(
         "idx",
         [
+            0,
             (0, 0),
             {"label": 1},
         ],
@@ -1303,7 +1304,7 @@ class TestMetadata:
         Test get_info with invalid index.
         """
         obj.set_info(label=[1] * obj_len)
-        with pytest.raises((IndexError, TypeError)):
+        with pytest.raises(TypeError):
             obj.get_info(idx)
 
     def test_overwrite_metadata(self, obj, obj_len):
@@ -1782,41 +1783,32 @@ class TestMetadataDict:
             (
                 "label",
                 None,
-                pytest.raises(IndexError, match="Metadata index 'label' not found"),
+                pytest.raises(KeyError),
             ),
             (
                 100,
                 None,
-                pytest.raises(IndexError, match="Metadata index '100' not found"),
-            ),
-            (
-                pd.Series(
-                    [False, True, True, False], index=["aaa", "bbb", "ccc", "ddd"]
-                ),
-                None,
-                pytest.raises(IndexError, match="Index of boolean cannot be aligned"),
+                pytest.raises(KeyError),
             ),
             (
                 [True, False, False, False, False],
                 None,
-                pytest.raises(IndexError, match="Boolean index length"),
+                pytest.raises(IndexError, match="boolean index"),
             ),
             (
                 ["label", "other"],
                 None,
-                pytest.raises(
-                    IndexError, match=r"Metadata indices \['label', 'other'\] not found"
-                ),
+                pytest.raises(KeyError),
             ),
             (
                 pd.DataFrame(data=[0, 1, 2, 3]),
                 None,
-                pytest.raises(IndexError, match="Unknown metadata index"),
+                pytest.raises(TypeError),
             ),
             (
                 slice(0, 2),
                 None,
-                pytest.raises(IndexError, match="Unknown metadata index"),
+                pytest.raises(TypeError, match="Unknown metadata index"),
             ),
         ],
     )
@@ -1831,14 +1823,14 @@ class TestMetadataDict:
             (
                 "info",
                 None,
-                pytest.raises(KeyError, match="Metadata column 'info' not found"),
+                pytest.raises(KeyError),
             ),
             (
                 ["label", "info"],
                 None,
-                pytest.raises(KeyError, match=r"Metadata columns \['info'\] not found"),
+                pytest.raises(KeyError),
             ),
-            (0, None, pytest.raises(TypeError, match="Unknown metadata column")),
+            (0, None, pytest.raises(TypeError)),
         ],
     )
     def test_metadata_dict_loc(

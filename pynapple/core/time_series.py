@@ -1137,7 +1137,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     (
                         table[k],
                         "",
-                        _convert_iter_to_str(np.array(list(self.get_info(k).values()))),
+                        _convert_iter_to_str(
+                            np.array(list(self._metadata.loc[k].values()))
+                        ),
                     ),
                     dtype=object,
                 )

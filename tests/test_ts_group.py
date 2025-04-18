@@ -552,8 +552,8 @@ class TestTsGroup1:
 
         for i in tsgroup.index:
             lines.append(
-                [str(i), np.round(tsgroup.get_info((i, "rate")), 5)]
-                + [tsgroup.get_info((i, c)) for c in cols]
+                [str(i), np.round(tsgroup._metadata.loc[i, "rate"]["rate"], 5)]
+                + [tsgroup._metadata.loc[i, c][c] for c in cols]
             )
         assert tabulate(lines, headers=headers) == tsgroup.__repr__()
 
@@ -865,8 +865,8 @@ class TestTsGroup1:
         assert all(out.keys()[i] == ts_group.keys()[slc][i] for i in range(len(idx)))
         for key_i in np.where(bool_idx)[0]:
             key = ts_group.keys()[key_i]
-            assert np.all(out[[key]].rates == ts_group.get_info([key])["rate"])
-            assert np.all(out[[key]].meta == ts_group.get_info([key])["meta"])
+            assert np.all(out[[key]].rates == ts_group._metadata.loc[key]["rate"])
+            assert np.all(out[[key]].meta == ts_group._metadata.loc[key]["meta"])
             assert np.all(out[key].t == ts_group[key].t)
 
     @pytest.mark.parametrize(

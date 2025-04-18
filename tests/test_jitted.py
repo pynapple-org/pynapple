@@ -310,8 +310,8 @@ def test_jitintersect():
             s,
             e,
             metadata={
-                "label1": ep1.get_info((m[:, 0], "label1")),
-                "label2": ep2.get_info((m[:, 1], "label2")),
+                "label1": ep1._metadata.loc[m[:, 0], "label1"]["label1"],
+                "label2": ep2._metadata.loc[m[:, 1], "label2"]["label2"],
             },
         )
 
@@ -404,7 +404,9 @@ def test_jitdiff():
         s, e, m = nap.core._jitted_functions.jitdiff(
             ep1.start, ep1.end, ep2.start, ep2.end
         )
-        ep3 = nap.IntervalSet(s, e, metadata={"label1": ep1.get_info((m, "label1"))})
+        ep3 = nap.IntervalSet(
+            s, e, metadata={"label1": ep1._metadata.loc[m, "label1"]["label1"]}
+        )
 
         i_sets = (ep1, ep2)
         time = np.hstack(
