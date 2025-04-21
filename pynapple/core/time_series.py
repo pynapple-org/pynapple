@@ -1520,78 +1520,105 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"]}
         >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
         >>> print(tsdframe)
-        Time (s)    0         1         2
-        ----------  --------  --------  --------
-        0.0         1.0       1.0       1.0
-        1.0         1.0       1.0       1.0
-        2.0         1.0       1.0       1.0
-        3.0         1.0       1.0       1.0
-        4.0         1.0       1.0       1.0
+        Time (s)    0    1    2
+        ----------  ---  ---  ---
+        0.0         1.0  1.0  1.0
+        1.0         1.0  1.0  1.0
+        2.0         1.0  1.0  1.0
+        3.0         1.0  1.0  1.0
+        4.0         1.0  1.0  1.0
         Metadata
-        --------    --------  --------  --------
-        l1          1         2         3
-        l2          x         x         y
+        ----------  ---  ---  ---
+        l1          1    2    3
+        l2          x    x    y
         dtype: float64, shape: (5, 3)
 
         To access a single metadata row (transposed to column):
 
         >>> tsdframe.get_info("l1")
-        0    1
-        1    2
-        2    3
-        Name: l1, dtype: int64
+        array([1, 2, 3])
 
         To access multiple metadata rows (transposed to columns):
 
         >>> tsdframe.get_info(["l1", "l2"])
-           l1 l2
-        0   1  x
-        1   2  x
-        2   3  y
-
-        To access metadata of a single column (transposed to row):
-
-        >>> tsdframe.get_info(0)
-        rate    0.667223
-        l1             1
-        l2             x
-        Name: 0, dtype: object
-
-        To access metadata of multiple columns (transposed to rows):
-
-        >>> tsdframe.get_info([0, 1])
-               rate  l1 l2
-        0  0.667223   1  x
-        1  1.334445   2  x
-
-        To access metadata of a single column and metadata key:
-
-        >>> tsdframe.get_info((0, "l1"))
-        np.int64(1)
+             l1    l2
+        0    1     x
+        1    2     x
+        2    3     y
 
         To access metadata as an attribute:
 
         >>> tsdframe.l1
-        0    1
-        1    2
-        2    3
-        Name: l1, dtype: int64
+        array([1, 2, 3])
 
         To access metadata as a key:
 
         >>> tsdframe["l1"]
-        0    1
-        1    2
-        2    3
-        Name: l1, dtype: int64
+        array([1, 2, 3])
 
         Multiple metadata columns can be accessed as keys:
 
         >>> tsdframe[["l1", "l2"]]
-           l1 l2
-        0   1  x
-        1   2  x
-        2   3  y
+             l1    l2
+        0    1     x
+        1    2     x
+        2    3     y
+        """
+        return _MetadataMixin.get_info(self, key)
+
+    @add_meta_docstring("drop_info")
+    def drop_info(self, key):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"], "l3": [4, 5, 6]}
+        >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
+        >>> print(tsdframe)
+        Time (s)    0    1    2
+        ----------  ---  ---  ---
+        0.0         1.0  1.0  1.0
+        1.0         1.0  1.0  1.0
+        2.0         1.0  1.0  1.0
+        3.0         1.0  1.0  1.0
+        4.0         1.0  1.0  1.0
+        Metadata
+        ----------  ---  ---  ---
+        l1          1    2    3
+        l2          x    x    y
+        l3          4    5    6
+        dtype: float64, shape: (5, 3)
+
+        To drop a single metadata row:
+
+        >>> tsdframe.drop_info("l1")
+        >>> tsdframe
+        Time (s)    0    1    2
+        ----------  ---  ---  ---
+        0.0         1.0  1.0  1.0
+        1.0         1.0  1.0  1.0
+        2.0         1.0  1.0  1.0
+        3.0         1.0  1.0  1.0
+        4.0         1.0  1.0  1.0
+        Metadata
+        ----------  ---  ---  ---
+        l2          x    x    y
+        l3          4    5    6
+        dtype: float64, shape: (5, 3)
+
+        To drop multiple metadata rows:
+
+        >>> tsdframe.drop_info(["l2", "l3"])
+        >>> tsdframe
+          Time (s)    0    1    2
+        ----------  ---  ---  ---
+                 0    1    1    1
+                 1    1    1    1
+                 2    1    1    1
+                 3    1    1    1
+                 4    1    1    1
+        dtype: float64, shape: (5, 3)
         """
         return _MetadataMixin.get_info(self, key)
 

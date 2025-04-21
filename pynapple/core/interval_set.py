@@ -1048,67 +1048,83 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         >>> import numpy as np
         >>> times = np.array([[0, 5], [10, 12], [20, 33]])
         >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"]}
-        >>> ep = nap.IntervalSet(tmp,metadata=metadata)
+        >>> ep = nap.IntervalSet(times, metadata=metadata)
+        >>> ep
+          index    start    end    l1  l2
+              0        0      5     1  x
+              1       10     12     2  x
+              2       20     33     3  y
+        shape: (3, 2), time unit: sec.
 
         To access a single metadata column:
 
         >>> ep.get_info("l1")
-        0    1
-        1    2
-        2    3
-        Name: l1, dtype: int64
+        array([1, 2, 3])
 
         To access multiple metadata columns:
 
         >>> ep.get_info(["l1", "l2"])
-           l1 l2
-        0   1  x
-        1   2  x
-        2   3  y
-
-        To access metadata of a single index:
-
-        >>> ep.get_info(0)
-        rate    0.667223
-        l1             1
-        l2             x
-        Name: 0, dtype: object
-
-        To access metadata of multiple indices:
-
-        >>> ep.get_info([0, 1])
-               rate  l1 l2
-        0  0.667223   1  x
-        1  1.334445   2  x
-
-        To access metadata of a single index and column:
-
-        >>> ep.get_info((0, "l1"))
-        np.int64(1)
+             l1    l2
+        0    1     x
+        1    2     x
+        2    3     y
 
         To access metadata as an attribute:
 
         >>> ep.l1
-        0    1
-        1    2
-        2    3
-        Name: l1, dtype: int64
+        array([1, 2, 3])
 
         To access metadata as a key:
 
         >>> ep["l1"]
-        0    1
-        1    2
-        2    3
-        Name: l1, dtype: int64
+        array([1, 2, 3])
 
         Multiple metadata columns can be accessed as keys:
 
         >>> ep[["l1", "l2"]]
-           l1 l2
-        0   1  x
-        1   2  x
-        2   3  y
+             l1    l2
+        0    1     x
+        1    2     x
+        2    3     y
+        """
+        return _MetadataMixin.get_info(self, key)
+
+    @add_meta_docstring("drop_info")
+    def drop_info(self, key):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> times = np.array([[0, 5], [10, 12], [20, 33]])
+        >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"], "l3": [4, 5, 6]}
+        >>> ep = nap.IntervalSet(tmp,metadata=metadata)
+        >>> ep
+          index    start    end    l1  l2      l3
+              0        0      5     1  x        4
+              1       10     12     2  x        5
+              2       20     33     3  y        6
+        shape: (3, 2), time unit: sec.
+
+        To drop a single metadata column:
+
+        >>> ep.drop_info("l1")
+        >>> ep
+          index    start    end  l2      l3
+              0        0      5  x        4
+              1       10     12  x        5
+              2       20     33  y        6
+        shape: (3, 2), time unit: sec.
+
+        To drop multiple metadata columns:
+
+        >>> ep.drop_info(["l2", "l3"])
+        >>> ep
+          index    start    end
+              0        0      5
+              1       10     12
+              2       20     33
+        shape: (3, 2), time unit: sec.
         """
         return _MetadataMixin.get_info(self, key)
 

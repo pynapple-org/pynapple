@@ -1639,66 +1639,80 @@ class TsGroup(UserDict, _MetadataMixin):
         ... }
         >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"]}
         >>> tsgroup = nap.TsGroup(tmp,metadata=metadata)
+        >>> print(tsgroup)
+          Index     rate    l1  l2
+        -------  -------  ----  ----
+              0  0.66722     1  x
+              1  1.33445     2  x
+              2  4.00334     3  y
 
         To access a single metadata column:
 
         >>> tsgroup.get_info("l1")
-        0    1
-        1    2
-        2    3
-        Name: l1, dtype: int64
+        array([1, 2, 3])
 
         To access multiple metadata columns:
 
         >>> tsgroup.get_info(["l1", "l2"])
-           l1 l2
-        0   1  x
-        1   2  x
-        2   3  y
-
-        To access metadata of a single index:
-
-        >>> tsgroup.get_info(0)
-        rate    0.667223
-        l1             1
-        l2             x
-        Name: 0, dtype: object
-
-        To access metadata of multiple indices:
-
-        >>> tsgroup.get_info([0, 1])
-               rate  l1 l2
-        0  0.667223   1  x
-        1  1.334445   2  x
-
-        To access metadata of a single index and column:
-
-        >>> tsgroup.get_info((0, "l1"))
-        np.int64(1)
-
-        To access metadata as an attribute:
-
-        >>> tsgroup.l1
-        0    1
-        1    2
-        2    3
-        Name: l1, dtype: int64
+             l1    l2
+        0    1     x
+        1    2     x
+        2    3     y
 
         To access metadata as a key:
 
         >>> tsgroup["l1"]
-        0    1
-        1    2
-        2    3
-        Name: l1, dtype: int64
+        array([1, 2, 3])
 
         Multiple metadata columns can be accessed as keys:
 
         >>> tsgroup[["l1", "l2"]]
-           l1 l2
-        0   1  x
-        1   2  x
-        2   3  y
+             l1    l2
+        0    1     x
+        1    2     x
+        2    3     y
+        """
+        return _MetadataMixin.get_info(self, key)
+
+    @add_meta_docstring("drop_info")
+    def drop_info(self, key):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tmp = {0:nap.Ts(t=np.arange(0,200), time_units='s'),
+        ... 1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
+        ... 2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
+        ... }
+        >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"], "l3": [4, 5, 6]}
+        >>> tsgroup = nap.TsGroup(tmp,metadata=metadata)
+        >>> print(tsgroup)
+          Index     rate    l1  l2      l3
+        -------  -------  ----  ----  ----
+              0  0.66722     1  x        4
+              1  1.33445     2  x        5
+              2  4.00334     3  y        6
+
+        To drop a single metadata column:
+
+        >>> tsgroup.drop_info("l1")
+        >>> tsgroup
+          Index     rate  l2      l3
+        -------  -------  ----  ----
+              0  0.66722  x        4
+              1  1.33445  x        5
+              2  4.00334  y        6
+
+        To drop multiple metadata columns:
+
+        >>> tsgroup.drop_info(["l2", "l3"])
+        >>> tsgroup
+          Index     rate
+        -------  -------
+              0  0.66722
+              1  1.33445
+              2  4.00334
         """
         return _MetadataMixin.get_info(self, key)
 

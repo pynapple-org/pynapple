@@ -319,7 +319,7 @@ class _MetadataMixin:
 
     def drop_info(self, key):
         """
-        Drop metadata based on metadata column name
+        Drop metadata based on metadata column name. Operates in place.
 
         Parameters
         ----------
