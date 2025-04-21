@@ -623,7 +623,7 @@ class _Metadata(UserDict):
         if isinstance(by, str):
             # groupby single column
             return {
-                k: self.index[np.where(self.data[by] == k)[0]]
+                k.item(): self.index[np.where(self.data[by] == k)[0]]
                 for k in np.unique(self.data[by])
             }
 
@@ -636,7 +636,11 @@ class _Metadata(UserDict):
                 for k in itertools.product(*[np.unique(self.data[col]) for col in by])
             }
             # use object index, remove empty groups
-            return {k: self.index[v] for k, v in groups.items() if len(v)}
+            return {
+                tuple(k.item() for k in k): self.index[v]
+                for k, v in groups.items()
+                if len(v)
+            }
 
     def copy(self):
         """
