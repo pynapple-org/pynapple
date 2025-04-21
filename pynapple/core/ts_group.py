@@ -1714,7 +1714,7 @@ class TsGroup(UserDict, _MetadataMixin):
               1  1.33445
               2  4.00334
         """
-        return _MetadataMixin.get_info(self, key)
+        return _MetadataMixin.drop_info(self, key)
 
     @add_meta_docstring("groupby")
     def groupby(self, by, get_group=None):

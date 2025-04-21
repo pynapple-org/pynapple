@@ -1126,7 +1126,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
               2       20     33
         shape: (3, 2), time unit: sec.
         """
-        return _MetadataMixin.get_info(self, key)
+        return _MetadataMixin.drop_info(self, key)
 
     @add_meta_docstring("groupby")
     def groupby(self, by, get_group=None):

@@ -1620,7 +1620,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                  4    1    1    1
         dtype: float64, shape: (5, 3)
         """
-        return _MetadataMixin.get_info(self, key)
+        return _MetadataMixin.drop_info(self, key)
 
     @add_meta_docstring("groupby")
     def groupby(self, by, get_group=None):
