@@ -10,7 +10,7 @@ import numpy as np
 import pandas as pd
 from tabulate import tabulate
 
-from .utils import _get_terminal_size, _convert_iter_to_str
+from .utils import _convert_iter_to_str, _get_terminal_size
 
 
 def add_meta_docstring(meta_func, sep="\n"):
