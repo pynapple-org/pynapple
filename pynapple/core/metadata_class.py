@@ -623,7 +623,9 @@ class _Metadata(UserDict):
         if isinstance(by, str):
             # groupby single column
             return {
-                k.item(): self.index[np.where(self.data[by] == k)[0]]
+                (k.item() if hasattr(k, "item") else k): self.index[
+                    np.where(self.data[by] == k)[0]
+                ]
                 for k in np.unique(self.data[by])
             }
 
@@ -637,7 +639,7 @@ class _Metadata(UserDict):
             }
             # use object index, remove empty groups
             return {
-                tuple(k.item() for k in k): self.index[v]
+                tuple(k.item() if hasattr(k, "item") else k for k in k): self.index[v]
                 for k, v in groups.items()
                 if len(v)
             }
