@@ -2226,6 +2226,18 @@ class TestMetadataDict:
             else:
                 meta1.merge(meta2)
 
+    def test_metadata_dict_repr(self, index, data):
+        """
+        Test metadata dictionary string representation
+        """
+        meta = _Metadata(index, data)
+        assert isinstance(meta.__repr__(), str)
+        # check special length 1 strings returned from iloc and loc
+        assert isinstance(meta.iloc[0].__repr__(), str)
+        assert isinstance(meta.loc[0].__repr__(), str)
+        # test empty
+        assert isinstance(meta[[]].__repr__(), str)
+
 
 ##############################
 ## more groupby_apply tests ##

@@ -491,7 +491,9 @@ class _Metadata(UserDict):
             return tabulate(data, headers="keys", tablefmt="plain", numalign="left")
         else:
             keys = np.array(list(self.keys()))
-            values = np.array(list(self.values()))
+            values = np.array(
+                [str(v) if hasattr(v, "__len__") else v for v in self.values()]
+            )
             return (
                 tabulate(np.vstack((keys, values)).T, tablefmt="plain")
                 + f"\nIndex: {self.index}"
