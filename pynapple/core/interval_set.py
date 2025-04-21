@@ -402,12 +402,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         elif isinstance(key, list) and all(isinstance(x, str) for x in key):
             # self[[*str]]
             # only works for list of metadata columns
-            if all(x in self.metadata_columns for x in key):
-                return self._metadata[key]
-            else:
-                raise IndexError(
-                    f"Unknown string argument. Should be in {list(self._metadata.keys())}"
-                )
+            return self._metadata[key]
 
         if isinstance(key, tuple):
             if len(key) == 2:
