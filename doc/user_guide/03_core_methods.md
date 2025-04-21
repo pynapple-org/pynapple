@@ -462,11 +462,14 @@ In general, it is probably a bad idea to mix types when labelling columns.
 
 
 ## Interval sets methods
+ 
 
 ### Interaction between epochs 
 
+Intervals can be combined in different ways. 
+
 ```{code-cell} ipython3
-epoch1 = nap.IntervalSet(start=0, end=10)  # no time units passed. Default is us.
+epoch1 = nap.IntervalSet(start=[0, 40], end=[10, 50])  # no time units passed. Default is us.
 epoch2 = nap.IntervalSet(start=[5, 30], end=[20, 45])
 print(epoch1, "\n")
 print(epoch2, "\n")
@@ -479,6 +482,24 @@ epoch = epoch1.union(epoch2)
 print(epoch)
 ```
 
+```{code-cell} ipython3
+:tags: [hide-input]
+colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+plt.figure()
+[plt.axvspan(s, e, ymin=0.8, ymax=1, color=colors[0]) for s, e in epoch1.values]
+[plt.axvspan(s, e, ymin=0.4, ymax=0.6, color=colors[1]) for s, e in epoch2.values]
+[plt.axvspan(s, e, ymin=0, ymax=0.2, color=colors[2]) for s, e in epoch.values]
+plt.xlabel("Time (s)")
+plt.ylim(0, 1)
+plt.xlim(0, 50)
+plt.gca().spines["left"].set_visible(False)
+plt.yticks([0.1, 0.5, 0.9], ['epoch1.union(epoch2)', 'epoch2', 'epoch1'])
+plt.title("Union")
+plt.show()
+```
+
+
+
 #### `intersect`
 
 ```{code-cell} ipython3
@@ -486,11 +507,43 @@ epoch = epoch1.intersect(epoch2)
 print(epoch)
 ```
 
+```{code-cell} ipython3
+:tags: [hide-input]
+colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+plt.figure()
+[plt.axvspan(s, e, ymin=0.8, ymax=1, color=colors[0]) for s, e in epoch1.values]
+[plt.axvspan(s, e, ymin=0.4, ymax=0.6, color=colors[1]) for s, e in epoch2.values]
+[plt.axvspan(s, e, ymin=0, ymax=0.2, color=colors[2]) for s, e in epoch.values]
+plt.xlabel("Time (s)")
+plt.ylim(0, 1)
+plt.xlim(0, 50)
+plt.gca().spines["left"].set_visible(False)
+plt.yticks([0.1, 0.5, 0.9], ['epoch1.intersect(epoch2)', 'epoch2', 'epoch1'])
+plt.title("Intersection")
+plt.show()
+```
+
 #### `set_diff`
 
 ```{code-cell} ipython3
 epoch = epoch1.set_diff(epoch2)
 print(epoch)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+colors = plt.rcParams['axes.prop_cycle'].by_key()['color']
+plt.figure()
+[plt.axvspan(s, e, ymin=0.8, ymax=1, color=colors[0]) for s, e in epoch1.values]
+[plt.axvspan(s, e, ymin=0.4, ymax=0.6, color=colors[1]) for s, e in epoch2.values]
+[plt.axvspan(s, e, ymin=0, ymax=0.2, color=colors[2]) for s, e in epoch.values]
+plt.xlabel("Time (s)")
+plt.ylim(0, 1)
+plt.xlim(0, 50)
+plt.gca().spines["left"].set_visible(False)
+plt.yticks([0.1, 0.5, 0.9], ['epoch1.set_diff(epoch2)', 'epoch2', 'epoch1'])
+plt.title("Difference")
+plt.show()
 ```
 
 ### `split`
@@ -527,7 +580,7 @@ print(
     )
 ```
 
-### `merge_close_intervals`
+#### `merge_close_intervals`
 
 ```{code-cell} ipython3
 :tags: [hide-input]

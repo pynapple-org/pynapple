@@ -31,7 +31,6 @@ import pandas as pd
 import requests
 import scipy
 import seaborn as sns
-import tqdm
 import pynapple as nap
 
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
@@ -51,12 +50,7 @@ if path not in os.listdir("."):
     r = requests.get(f"https://osf.io/2dfvp/download", stream=True)
     block_size = 1024 * 1024
     with open(path, "wb") as f:
-        for data in tqdm.tqdm(
-            r.iter_content(block_size),
-            unit="MB",
-            unit_scale=True,
-            total=math.ceil(int(r.headers.get("content-length", 0)) // block_size),
-        ):
+        for data in r.iter_content(block_size):
             f.write(data)
 ```
 
