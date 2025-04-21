@@ -1130,23 +1130,29 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             }
 
         col_names = self._metadata.columns
-        if len(self._metadata.columns):
-            table["Time (s)"] = np.hstack((table["Time (s)"], "Metadata", col_names))
+        if len(col_names):
+            if len(col_names) > 3:
+                col_names = col_names[0:2]
+                insert_str = ["..."]
+            else:
+                insert_str = []
+            table["Time (s)"] = np.hstack(
+                (table["Time (s)"], "Metadata", col_names, insert_str)
+            )
             for k in self.columns[0:max_cols]:
                 table[k] = np.hstack(
                     (
                         table[k],
                         "",
                         _convert_iter_to_str(
-                            np.array(list(self._metadata.loc[k].values()))
+                            np.array(list(self._metadata.loc[k, col_names].values()))
                         ),
+                        insert_str,
                     ),
                     dtype=object,
                 )
             repr_str = tabulate(table, headers="keys", colalign=("left",)).split("\n")
-            # repr_str.insert(-len(col_names) - 1, bottom)
-            # repr_str.insert(-len(col_names) - 1, "")
-            repr_str.insert(-len(col_names), repr_str[1])
+            repr_str.insert(-len(col_names + insert_str), repr_str[1])
         else:
             repr_str = tabulate(table, headers="keys").split("\n")
 
