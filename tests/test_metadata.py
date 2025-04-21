@@ -2421,8 +2421,8 @@ def test_no_conflict_between_class_and_metadatamixin(nap_class):
     # Check for any overlapping names between IntervalSet and _MetadataMixin
     conflicting_members = iset_members.intersection(metadatamixin_members)
 
-    # set_info, get_info, groupby, and groupby_apply are overwritten for class-specific examples in docstrings
-    assert len(conflicting_members) == 4, (
+    # set_info, get_info, drop_info, groupby, and groupby_apply are overwritten for class-specific examples in docstrings
+    assert len(conflicting_members) == 5, (
         f"Conflict detected! The following methods/attributes are "
         f"overwritten in IntervalSet: {conflicting_members}"
     )
