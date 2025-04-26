@@ -1157,6 +1157,46 @@ class TestTsd:
         tsd2 = tsd.interpolate(ts, ep)
         assert len(tsd2) == 0
 
+    def test_gradient(self, tsd):
+        """
+        Test the derivative calculation for a time series, verifying
+        correctness for a function with known derivative (sine wave).
+        """
+        times = np.arange(0, 10, 0.001)
+
+        # Tsd
+        data = np.sin(times)
+        tsd = nap.Tsd(t=times, d=data)
+        expected_gradient = np.cos(times) # Derivative of sin(x) is cos(x)
+        gradient = tsd.gradient()
+        np.testing.assert_allclose(gradient.values, expected_gradient, atol=1e-3)
+
+        # Tsdframe
+        data = np.column_stack([np.sin(times), np.cos(times)])
+        tsdframe = nap.TsdFrame(t=times, d=data)
+        expected_gradient = np.column_stack([np.cos(times), -1 * np.sin(times)])
+        gradient = tsdframe.gradient()
+        np.testing.assert_allclose(gradient.values, expected_gradient, atol=1e-3)
+
+    def test_gradient_with_ep(self, tsd):
+        """
+        Test the gradient method on a Tsd with custom time support
+        to verify derivatives are separate at epoch boundaries.
+        """
+        times = np.arange(0, 100)
+        data = np.tile(np.arange(0, 10), 10)
+        intervals = nap.IntervalSet(start=np.arange(0, 100, 10), end=np.arange(10, 110, 10))
+        expected_gradient = np.ones(len(times)) # Derivative is 1 across each interval
+
+        # With time support
+        tsd = nap.Tsd(t=times, d=data, time_support=intervals)
+        gradient = tsd.gradient()
+        assert np.all(gradient == expected_gradient)
+
+        # With ep parameter
+        tsd = nap.Tsd(t=times, d=data)
+        gradient = tsd.gradient(ep=intervals)
+        assert np.all(gradient == expected_gradient)
 
 ####################################################
 # Test for tsdframe
