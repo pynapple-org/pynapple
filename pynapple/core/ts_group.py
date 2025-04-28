@@ -435,7 +435,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
         if len(self) > max_rows:
             n_rows = max_rows // 2
-            table = {k: np.hstack(v[0:n_rows], v[-n_rows:]) for k, v in table.items()}
+            table = {k: np.hstack((v[0:n_rows], v[-n_rows:])) for k, v in table.items()}
 
         return tabulate(table, headers="keys")
 

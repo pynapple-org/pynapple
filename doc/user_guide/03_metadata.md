@@ -154,7 +154,7 @@ print(tsgroup)
 As long as the length of the metadata container matches the length of the object (number of columns for `TsdFrame` and number of indices for `IntervalSet` and `TsGroup`), elements of the metadata can be any data type.
 ```{code-cell} ipython3
 tsgroup.coords = [[1,0],[0,1],[1,1],[2,1]]
-print(tsgroup.coords)
+print(tsgroup)
 ```
 
 ## Accessing metadata

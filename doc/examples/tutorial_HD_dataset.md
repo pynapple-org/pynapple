@@ -86,6 +86,7 @@ What does this look like ?
 
 
 ```{code-cell} ipython3
+a = data["wrong_input"]
 print(spikes)
 ```
 
