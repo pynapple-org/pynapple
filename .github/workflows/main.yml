@@ -83,6 +83,7 @@ jobs:
           sphinx-build -b html doc/ doc/_build
 
   check_links:
+    needs: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
