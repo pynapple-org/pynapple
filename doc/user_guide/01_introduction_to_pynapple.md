@@ -15,7 +15,7 @@ kernelspec:
 
 The goal of this tutorial is to quickly learn enough about pynapple to get started with data analysis. This tutorial assumes familiarity with the basics functionalities of numpy. 
 
-You can check how to install pynapple [here](../installing.md).
+You can check how to install pynapple [here](../installing.html).
 
 :::{important}
 By default, pynapple will assume a time units in seconds when passing timestamps array or time parameters such as bin size (unless specified with the `time_units` argument)
