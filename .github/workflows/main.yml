@@ -64,6 +64,7 @@ jobs:
         uses: codecov/codecov-action@v4.0.1
         with:
             token: ${{ secrets.CODECOV_TOKEN }}
+
   documentation:
     needs: lint
     runs-on: ubuntu-latest
@@ -79,7 +80,7 @@ jobs:
           pip install .[dev,doc]
       - name: Build documentation
         run: |
-          sphinx-build -b html doc/ docs/_build
+          sphinx-build -b html doc/ doc/_build
       - name: Check html
         uses: chabad360/htmlproofer@master
         with:
