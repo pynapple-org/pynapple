@@ -245,7 +245,7 @@ class TsGroup(UserDict, _MetadataMixin):
         # Also sort metadata if more than one key
         if len(keys) > 1:
             sort_index = np.argsort(keys)
-            if metadata:
+            if (metadata is not None) and (len(metadata) > 0):
                 if hasattr(metadata, "index") and np.all(metadata.index != keys):
                     # check that index matches before sort if index exists
                     raise ValueError(
