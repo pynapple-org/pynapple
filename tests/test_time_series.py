@@ -1167,7 +1167,7 @@ class TestTsd:
         # Tsd
         data = np.sin(times)
         tsd = nap.Tsd(t=times, d=data)
-        expected_gradient = np.cos(times) # Derivative of sin(x) is cos(x)
+        expected_gradient = np.cos(times)  # Derivative of sin(x) is cos(x)
         gradient = tsd.gradient()
         np.testing.assert_allclose(gradient.values, expected_gradient, atol=1e-3)
 
@@ -1185,8 +1185,10 @@ class TestTsd:
         """
         times = np.arange(0, 100)
         data = np.tile(np.arange(0, 10), 10)
-        intervals = nap.IntervalSet(start=np.arange(0, 100, 10), end=np.arange(10, 110, 10))
-        expected_gradient = np.ones(len(times)) # Derivative is 1 across each interval
+        intervals = nap.IntervalSet(
+            start=np.arange(0, 100, 10), end=np.arange(10, 110, 10)
+        )
+        expected_gradient = np.ones(len(times))  # Derivative is 1 across each interval
 
         # With time support
         tsd = nap.Tsd(t=times, d=data, time_support=intervals)
@@ -1197,6 +1199,7 @@ class TestTsd:
         tsd = nap.Tsd(t=times, d=data)
         gradient = tsd.gradient(ep=intervals)
         assert np.all(gradient == expected_gradient)
+
 
 ####################################################
 # Test for tsdframe
