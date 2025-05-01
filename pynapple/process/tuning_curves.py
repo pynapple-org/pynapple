@@ -462,9 +462,6 @@ def compute_1d_tuning_curves_continuous(
     if minmax is not None and len(minmax) != 2:
         raise ValueError("minmax should be of length 2.")
 
-    if isinstance(tsdframe, nap.Tsd):
-        tsdframe = tsdframe[:, np.newaxis]
-
     feature = np.squeeze(feature)
 
     if isinstance(ep, nap.IntervalSet):
@@ -472,6 +469,9 @@ def compute_1d_tuning_curves_continuous(
         tsdframe = tsdframe.restrict(ep)
     else:
         tsdframe = tsdframe.restrict(feature.time_support)
+
+    if isinstance(tsdframe, nap.Tsd):
+        tsdframe = tsdframe[:, np.newaxis]
 
     if minmax is None:
         bins = np.linspace(np.nanmin(feature), np.nanmax(feature), nb_bins + 1)
@@ -541,14 +541,14 @@ def compute_2d_tuning_curves_continuous(
             "nb_bins should be of type int (or tuple with (int, int) for 2D tuning curves)."
         )
 
-    if isinstance(tsdframe, nap.Tsd):
-        tsdframe = tsdframe[:, np.newaxis]
-
     if isinstance(ep, nap.IntervalSet):
         features = features.restrict(ep)
         tsdframe = tsdframe.restrict(ep)
     else:
         tsdframe = tsdframe.restrict(features.time_support)
+
+    if isinstance(tsdframe, nap.Tsd):
+        tsdframe = tsdframe[:, np.newaxis]
 
     if isinstance(nb_bins, int):
         nb_bins = (nb_bins, nb_bins)

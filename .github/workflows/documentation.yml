@@ -10,6 +10,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        # this is necessary for setuptools_scm to work properly with github
+        # actions, see https://github.com/pypa/setuptools_scm/issues/480 and
+        # https://stackoverflow.com/a/68959339
+        with:
+          fetch-depth: 0
       - uses: actions/setup-python@v5
       - name: Install dependencies
         run: |
