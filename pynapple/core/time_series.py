@@ -605,18 +605,21 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         """
         if not isinstance(down, int):
-            raise ValueError(
+            raise IOError(
                 "Invalid value for 'down': Parameter 'down' should be of type int."
             )
-        if not isinstance(order, int):
-            raise ValueError(
-                "Invalid value for 'order': Parameter 'order' should be of type int."
+        if not isinstance(order, int) or order <= 0:
+            raise IOError(
+                "Invalid value for 'order': Parameter 'order' should be a positive int."
             )
         if filter_type not in ["fir", "iir"]:
-            raise ValueError("'filter_type' should be one of 'fir', 'iir'.")
+            raise IOError("'filter_type' should be one of 'fir', 'iir'.")
+
+        if ep is None:
+            ep = self.time_support
 
         if not isinstance(ep, IntervalSet):
-            ep = self.time_support
+            raise IOError("ep should be an object of type IntervalSet")
 
         # apply scipy filter
         _, n_vals = _count(self.t, ep.start, ep.end, dtype=np.int32)

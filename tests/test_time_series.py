@@ -10,6 +10,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.signal import decimate
 
 import pynapple as nap
 from pynapple.core.time_series import is_array_like
@@ -20,6 +21,23 @@ from .helper_tests import skip_if_backend
 # tsd2 = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), columns = ['a', 'b', 'c'])
 # tsd3 = nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 5, 4), time_units="s")
 # tsd4 = nap.Ts(t=np.arange(100), time_units="s")
+
+
+def decimate_scipy(tsd, ep, order, down, filter_type):
+    out_sci = []
+    for iset in ep:
+        out_sci.append(
+            decimate(
+                tsd.restrict(iset).d,
+                q=down,
+                n=order,
+                ftype=filter_type,
+                axis=0,
+                zero_phase=True,
+            )
+        )
+    out_sci = np.concatenate(out_sci, axis=0)
+    return out_sci
 
 
 def test_create_tsd():
@@ -768,6 +786,88 @@ class TestTimeSeriesGeneral:
             with pytest.raises(IOError) as e_info:
                 tsd.smooth(1, windowsize="a")
             assert str(e_info.value) == "windowsize should be type int or float"
+
+    @pytest.mark.parametrize("down", [2, 3])
+    @pytest.mark.parametrize(
+        "ep", [nap.IntervalSet(0, 100), nap.IntervalSet([0, 41], [39, 100])]
+    )
+    @pytest.mark.parametrize("filter_type", ["iir", "fir"])
+    @pytest.mark.parametrize("order", [8, 6])
+    def test_decimate_vs_scipy(self, tsd, down, ep, filter_type, order):
+        if isinstance(tsd, nap.Ts):
+            pytest.skip("Ts do not implement decimate...")
+        out = tsd.decimate(down, ep=ep, filter_type=filter_type, order=order)
+        out_sci = decimate_scipy(tsd, ep, order, down, filter_type)
+        np.testing.assert_array_equal(out.d, out_sci)
+
+    @pytest.mark.parametrize("down", [2, 3])
+    @pytest.mark.parametrize(
+        "ep", [nap.IntervalSet(0, 100), nap.IntervalSet([0, 41], [39, 100])]
+    )
+    def test_decimate_time_axis(self, tsd, down, ep):
+        if isinstance(tsd, nap.Ts):
+            pytest.skip("Ts do not implement decimate...")
+        out = tsd.decimate(down, ep=ep)
+        for iset in ep:
+            np.testing.assert_array_equal(
+                out.restrict(iset).t, tsd.restrict(iset).t[::down]
+            )
+
+    @pytest.mark.parametrize(
+        "down, expectation",
+        [
+            (2, does_not_raise()),
+            ("3", pytest.raises(IOError, match="Invalid value for 'down'")),
+        ],
+    )
+    def test_decimate_down_input_error(self, tsd, down, expectation):
+        if isinstance(tsd, nap.Ts):
+            pytest.skip("Ts do not implement decimate...")
+        with expectation:
+            tsd.decimate(down)
+
+    @pytest.mark.parametrize(
+        "order, expectation",
+        [
+            (6, does_not_raise()),
+            (-1, pytest.raises(IOError, match="Invalid value for 'order'")),
+            ("6", pytest.raises(IOError, match="Invalid value for 'order'")),
+        ],
+    )
+    def test_decimate_order_input_error(self, tsd, order, expectation):
+        if isinstance(tsd, nap.Ts):
+            pytest.skip("Ts do not implement decimate...")
+        with expectation:
+            tsd.decimate(2, order=order)
+
+    @pytest.mark.parametrize(
+        "filter_type, expectation",
+        [
+            ("fir", does_not_raise()),
+            ("iir", does_not_raise()),
+            ("invalid", pytest.raises(IOError, match="'filter_type' should be one")),
+            (1, pytest.raises(IOError, match="'filter_type' should be one")),
+        ],
+    )
+    def test_decimate_filter_type_error(self, tsd, filter_type, expectation):
+        if isinstance(tsd, nap.Ts):
+            pytest.skip("Ts do not implement decimate...")
+        with expectation:
+            tsd.decimate(2, filter_type=filter_type)
+
+    @pytest.mark.parametrize(
+        "ep, expectation",
+        [
+            (nap.IntervalSet(0, 40), does_not_raise()),
+            (None, does_not_raise()),
+            ([0, 40], pytest.raises(IOError, match="ep should be an object")),
+        ],
+    )
+    def test_decimate_filter_epoch_error(self, tsd, ep, expectation):
+        if isinstance(tsd, nap.Ts):
+            pytest.skip("Ts do not implement decimate...")
+        with expectation:
+            tsd.decimate(2, ep=ep)
 
     @pytest.mark.parametrize(
         "ep, align, padding_value, expectation",
