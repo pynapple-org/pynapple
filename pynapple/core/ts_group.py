@@ -20,7 +20,7 @@ from ._jitted_functions import jitunion, jitunion_isets
 from .base_class import _Base
 from .config import nap_config
 from .interval_set import IntervalSet
-from .metadata_class import _MetadataMixin, add_meta_docstring
+from .metadata_class import _MetadataMixin, add_meta_docstring, add_or_convert_metadata
 from .time_index import TsIndex
 from .time_series import Ts, Tsd, TsdFrame, _BaseTsd, is_array_like
 from .utils import (
@@ -263,6 +263,8 @@ class TsGroup(UserDict, _MetadataMixin):
 
         # initialize metadata
         _MetadataMixin.__init__(self)
+        # to test compatibility with pandas
+        # self._metadata = pd.DataFrame(index=self.metadata_index)
 
         # Transform elements to Ts/Tsd objects
         for k in self.index:
@@ -335,6 +337,7 @@ class TsGroup(UserDict, _MetadataMixin):
         else:
             object.__setattr__(self, name, value)
 
+    @add_or_convert_metadata
     def __getattr__(self, name):
         # Necessary for backward compatibility with pickle
 
@@ -362,6 +365,7 @@ class TsGroup(UserDict, _MetadataMixin):
         else:
             _MetadataMixin.__setitem__(self, key, value)
 
+    @add_or_convert_metadata
     def __getitem__(self, key):
         # Standard dict keys are Hashable
         if isinstance(key, Hashable):
@@ -587,6 +591,7 @@ class TsGroup(UserDict, _MetadataMixin):
         cols = self._metadata.columns[1:]  # .drop("rate")
         return TsGroup(newgr, time_support=ep, metadata=self._metadata[cols])
 
+    @add_or_convert_metadata
     def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
         """
         Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
@@ -849,6 +854,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
         return toreturn
 
+    @add_or_convert_metadata
     def trial_count(
         self, ep, bin_size, align="start", padding_value=np.nan, time_unit="s"
     ):
@@ -1353,6 +1359,7 @@ class TsGroup(UserDict, _MetadataMixin):
             ignore_metadata=ignore_metadata,
         )
 
+    @add_or_convert_metadata
     def save(self, filename):
         """
         Save TsGroup object in npz format. The file will contain the timestamps,

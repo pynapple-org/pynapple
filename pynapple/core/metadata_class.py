@@ -23,6 +23,39 @@ def add_meta_docstring(meta_func, sep="\n"):
     return _decorator
 
 
+def add_or_convert_metadata(func):
+    """
+    Decorator for backwards compatibility of objects picked with older versions of pynapple.
+    """
+
+    def _decorator(self, *args, **kwargs):
+        if (
+            (len(args) == 1)
+            and isinstance(args[0], str)
+            and (
+                args[0]
+                in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__")
+            )
+        ):
+            # special case for pickling due to infinite recursion in getattr
+            raise AttributeError(args[0])
+
+        if hasattr(self, "_metadata") is False:
+            # add empty metadata
+            _MetadataMixin.__init__(self)
+
+        elif isinstance(self._metadata, pd.DataFrame):
+            # convert metadata to dictionary
+            self.__dict__["_metadata"] = _Metadata(
+                self.metadata_index,
+                data={k: np.array(v) for k, v in self._metadata.items()},
+            )
+
+        return func(self, *args, **kwargs)
+
+    return _decorator
+
+
 class _MetadataMixin:
     """
     An object containing metadata functionality for TsGroup, IntervalSet, or TsdFrame objects.
@@ -98,6 +131,7 @@ class _MetadataMixin:
         return self.get_info(key)
 
     @property
+    @add_or_convert_metadata
     def metadata(self):
         """
         Returns a read-only version (copy) of the _metadata DataFrame
