@@ -296,7 +296,8 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         self.nap_class = self.__class__.__name__
         # initialize metadata to get all attributes before setting metadata
         _MetadataMixin.__init__(self)
-        # self._metadata = pd.DataFrame(index=self.index)
+        # to test compatibility with pandas
+        # self._metadata = pd.DataFrame(index=self.metadata_index)
         self._class_attributes = self.__dir__()  # get list of all attributes
         self._class_attributes.append("_class_attributes")  # add this property
         self._initialized = True
