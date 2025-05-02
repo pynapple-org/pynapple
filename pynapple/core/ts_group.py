@@ -264,7 +264,7 @@ class TsGroup(UserDict, _MetadataMixin):
         # initialize metadata
         _MetadataMixin.__init__(self)
         # to test compatibility with pandas
-        # self._metadata = pd.DataFrame(index=self.metadata_index)
+        self._metadata = pd.DataFrame(index=self.metadata_index)
 
         # Transform elements to Ts/Tsd objects
         for k in self.index:
@@ -1156,6 +1156,7 @@ class TsGroup(UserDict, _MetadataMixin):
         return sliced
 
     @staticmethod
+    @add_or_convert_metadata
     def merge_group(
         *tsgroups, reset_index=False, reset_time_support=False, ignore_metadata=False
     ):
@@ -1724,6 +1725,7 @@ class TsGroup(UserDict, _MetadataMixin):
         return _MetadataMixin.drop_info(self, key)
 
     @add_meta_docstring("groupby")
+    @add_or_convert_metadata
     def groupby(self, by, get_group=None):
         """
         Examples

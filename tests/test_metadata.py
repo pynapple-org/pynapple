@@ -1529,7 +1529,7 @@ class TestMetadata:
         # test pynapple loading
         obj2 = nap.load_file("obj.npz")
         assert isinstance(obj2, type(obj))
-        assert obj2._metadata.keys() == obj._metadata.keys()
+        assert np.all(obj2._metadata.keys() == obj._metadata.keys())
         for key in obj._metadata.keys():
             np.testing.assert_array_almost_equal(
                 obj2._metadata[key], obj._metadata[key]

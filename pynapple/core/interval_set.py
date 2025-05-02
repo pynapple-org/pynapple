@@ -19,7 +19,12 @@ from ._jitted_functions import (
     jitunion,
 )
 from .config import nap_config
-from .metadata_class import _Metadata, _MetadataMixin, add_meta_docstring
+from .metadata_class import (
+    _Metadata,
+    _MetadataMixin,
+    add_meta_docstring,
+    add_or_convert_metadata,
+)
 from .time_index import TsIndex
 from .utils import (
     _convert_iter_to_str,
@@ -291,10 +296,11 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         self.nap_class = self.__class__.__name__
         # initialize metadata to get all attributes before setting metadata
         _MetadataMixin.__init__(self)
+        # self._metadata = pd.DataFrame(index=self.index)
         self._class_attributes = self.__dir__()  # get list of all attributes
         self._class_attributes.append("_class_attributes")  # add this property
         self._initialized = True
-        if (drop_meta is False) and (metadata is not None):
+        if (drop_meta is False) and (metadata is not None) and len(metadata):
             self.set_info(metadata)
 
     def __repr__(self):
@@ -384,6 +390,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                 "IntervalSet is immutable. Starts and ends have been already sorted."
             )
 
+    @add_or_convert_metadata
     def __getitem__(self, key):
 
         if isinstance(key, str):
@@ -586,6 +593,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         tot_l = np.sum(self.values[:, 1] - self.values[:, 0])
         return TsIndex.return_timestamps(np.array([tot_l]), time_units)[0]
 
+    @add_or_convert_metadata
     def intersect(self, a):
         """
         Set intersection of IntervalSet
@@ -818,6 +826,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         t = starts + (ends - starts) * alpha
         return time_series.Ts(t=t, time_support=self)
 
+    @add_or_convert_metadata
     def as_dataframe(self):
         """
         Convert the `IntervalSet` object to a pandas.DataFrame object.
@@ -1123,6 +1132,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         """
         return _MetadataMixin.drop_info(self, key)
 
+    @add_or_convert_metadata
     @add_meta_docstring("groupby")
     def groupby(self, by, get_group=None):
         """
