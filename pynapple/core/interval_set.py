@@ -403,7 +403,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             elif key == "end":
                 return self.values[:, 1]
             elif key in self._metadata.columns:
-                return self._metadata[key]
+                return _MetadataMixin.__getitem__(self, key)
             else:
                 raise IndexError(
                     f"Unknown string argument. Should be in {['start', 'end'] + list(self._metadata.keys())}"
@@ -412,7 +412,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         elif isinstance(key, list) and all(isinstance(x, str) for x in key):
             # self[[*str]]
             # only works for list of metadata columns
-            return self._metadata[key]
+            return _MetadataMixin.__getitem__(self, key)
 
         if isinstance(key, tuple):
             if len(key) == 2:

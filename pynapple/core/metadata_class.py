@@ -108,8 +108,8 @@ class _MetadataMixin:
         if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
             raise AttributeError(name)
         # Check if the requested attribute is part of the metadata
-        if name in self._metadata.columns:
-            return self._metadata[name]
+        if name in self.metadata_columns:
+            return self.get_info(name)
         else:
             # If the attribute is not part of the metadata, raise AttributeError
             raise AttributeError(
@@ -334,7 +334,10 @@ class _MetadataMixin:
         if isinstance(key, str):
             if key in self.metadata_columns:
                 # single metadata column
-                return self._metadata[key]
+                # wrap in list in case of a 2D array
+                return pd.Series(
+                    index=self.metadata_index, data=list(self._metadata[key]), name=key
+                )
             else:
                 raise KeyError(
                     f"Metadata column {key} not found. Metadata columns are {self.metadata_columns}"
@@ -345,7 +348,11 @@ class _MetadataMixin:
         ):
             if all(k in self.metadata_columns for k in key):
                 # multiple metadata columns
-                return self._metadata[key]
+                # wrap in list in case of a 2D array
+                return pd.DataFrame(
+                    index=self.metadata_index,
+                    data={k: list(self._metadata[k]) for k in key},
+                )
             else:
                 raise KeyError(
                     f"Metadata column(s) {[k for k in key if k not in self.metadata_columns]} not found. Metadata columns are {self.metadata_columns}"
@@ -508,34 +515,34 @@ class _Metadata(UserDict):
         super().__init__(data)
         self.index = index
 
-    def __repr__(self):
-        if hasattr(self.index, "__len__"):
-            # Start by determining how many columns and rows.
-            # This can be unique for each object
-            cols, rows = _get_terminal_size()
-            # max_cols = np.maximum(cols // 12, 5)
-            max_rows = np.maximum(rows - 10, 2)
-            # By default, the first three columns should always show.
-            data = {
-                " ": self.index,
-                **{k: _convert_iter_to_str(v) for k, v in self.items()},
-            }
-            if len(self.index) > max_rows:
-                n_rows = max_rows // 2
-                data = {
-                    k: np.hstack((v[:n_rows], "...", v[-n_rows:]), dtype=object)
-                    for k, v in data.items()
-                }
-            return tabulate(data, headers="keys", tablefmt="plain", numalign="left")
-        else:
-            keys = np.array(list(self.keys()))
-            values = np.array(
-                [str(v) if hasattr(v, "__len__") else v for v in self.values()]
-            )
-            return (
-                tabulate(np.vstack((keys, values)).T, tablefmt="plain")
-                + f"\nIndex: {self.index}"
-            )
+    # def __repr__(self):
+    #     if hasattr(self.index, "__len__"):
+    #         # Start by determining how many columns and rows.
+    #         # This can be unique for each object
+    #         cols, rows = _get_terminal_size()
+    #         # max_cols = np.maximum(cols // 12, 5)
+    #         max_rows = np.maximum(rows - 10, 2)
+    #         # By default, the first three columns should always show.
+    #         data = {
+    #             " ": self.index,
+    #             **{k: _convert_iter_to_str(v) for k, v in self.items()},
+    #         }
+    #         if len(self.index) > max_rows:
+    #             n_rows = max_rows // 2
+    #             data = {
+    #                 k: np.hstack((v[:n_rows], "...", v[-n_rows:]), dtype=object)
+    #                 for k, v in data.items()
+    #             }
+    #         return tabulate(data, headers="keys", tablefmt="plain", numalign="left")
+    #     else:
+    #         keys = np.array(list(self.keys()))
+    #         values = np.array(
+    #             [str(v) if hasattr(v, "__len__") else v for v in self.values()]
+    #         )
+    #         return (
+    #             tabulate(np.vstack((keys, values)).T, tablefmt="plain")
+    #             + f"\nIndex: {self.index}"
+    #         )
 
     def __eq__(self, other):
         """

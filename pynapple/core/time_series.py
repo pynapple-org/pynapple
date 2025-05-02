@@ -1239,7 +1239,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     warnings.simplefilter("ignore")
                     return self.loc[key]
             else:
-                return self._metadata[key]
+                return _MetadataMixin.__getitem__(self, key)
         elif hasattr(key, "__iter__") and all([isinstance(k, str) for k in key]):
             if all(k in self.columns for k in key):
                 with warnings.catch_warnings():
@@ -1247,7 +1247,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     warnings.simplefilter("ignore")
                     return self.loc[key]
             else:
-                return self._metadata[key]
+                return _MetadataMixin.__getitem__(self, key)
         else:
             output = self.values.__getitem__(key)
             columns = self.columns

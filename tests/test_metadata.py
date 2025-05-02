@@ -244,7 +244,8 @@ class TestIntervalSetMetadata:
         if has_metadata:
             for col in iset_meta.metadata_columns:
                 assert np.all(
-                    iset_meta[index].get_info(col) == iset_meta.get_info(col)[index1]
+                    iset_meta[index].get_info(col)
+                    == iset_meta.get_info(col).values[index1]
                 )
 
     @pytest.mark.parametrize(
@@ -1099,7 +1100,7 @@ class TestMetadata:
             # single column
             pd.Series(index=["label"], data=[0]),
             # multiple columns
-            pd.Series(index=["l1", "l2", "l3"], data=[0, "a", [1, 2]]),
+            pd.Series(index=["l1", "l2", "l3"], data=[0, "a", np.array([1, 2])]),
         ],
     )
     def test_add_metadata_series(self, obj, info, obj_len):
@@ -1125,11 +1126,11 @@ class TestMetadata:
         # verify public retrieval of metadata
         for col in info.index:
             # get info
-            np.testing.assert_array_equal(obj.get_info(col), obj._metadata[col])
+            np.testing.assert_array_equal(obj.get_info(col)[0], obj._metadata[col][0])
             # getattr
-            np.testing.assert_array_equal(getattr(obj, col), obj._metadata[col])
+            np.testing.assert_array_equal(getattr(obj, col)[0], obj._metadata[col][0])
             # getitem
-            np.testing.assert_array_equal(obj[col], obj._metadata[col])
+            np.testing.assert_array_equal(obj[col][0], obj._metadata[col][0])
 
     @pytest.fixture
     def metadata_slice_type_error(self, obj_len):
@@ -1506,10 +1507,9 @@ class TestMetadata:
 
         # test metadata columns
         assert np.all(obj["one"] == 1)
-        # assert np.all(
-        #     obj[["two", "three"]].as_dataframe() == obj.metadata[["two", "three"]]
-        # )
-        assert np.all(obj[["two", "three"]] == obj._metadata[["two", "three"]])
+        assert np.all(
+            obj[["two", "three"]] == obj._metadata[["two", "three"]].as_dataframe()
+        )
         assert np.all(obj[["two", "three"]] == obj.get_info(["two", "three"]))
 
     def test_save_and_load_npz(self, obj, obj_len):
