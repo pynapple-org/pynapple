@@ -269,6 +269,7 @@ class _MetadataMixin:
                     # pandas.Series
                     if np.all(self.metadata_index == v.index):
                         self._metadata[k] = np.array(v)
+                        self._metadata[k].setflags(write=False)
                     else:
                         raise ValueError(
                             f"Metadata index does not match for argument {k}"
@@ -279,14 +280,17 @@ class _MetadataMixin:
                 ):
                     # special case for single index objects for non iterable objects or strings
                     self._metadata[k] = np.array([v])
+                    self._metadata[k].setflags(write=False)
 
                 elif hasattr(v, "__len__"):
                     # object that has a length
                     if len(self.metadata_index) == len(v):
                         self._metadata[k] = np.array(v)
+                        self._metadata[k].setflags(write=False)
                     elif len(self.metadata_index) == 1:
                         # special case for single index objects
                         self._metadata[k] = np.array([v])
+                        self._metadata[k].setflags(write=False)
                     else:
                         raise ValueError(
                             f"input array length {len(v)} does not match metadata length {len(self.metadata_index)}."
@@ -713,7 +717,7 @@ class _Metadata(UserDict):
         _Metadata
             Joined metadata object.
         """
-        if not isinstance(other, _Metadata):
+        if not isinstance(other, (_Metadata, pd.DataFrame)):
             raise TypeError("Can only join with another _Metadata object")
 
         if (len(self.index) == len(other.index)) and np.all(self.index == other.index):
@@ -723,7 +727,7 @@ class _Metadata(UserDict):
                     f"Metadata column(s) {no_join} already exists. Cannot join metadata."
                 )
             # join metadata with matching index
-            for k, v in other.data.items():
+            for k, v in other.items():
                 self.data[k] = v
         else:
             raise ValueError("Metadata indices must match for join along axis 1.")
@@ -748,7 +752,7 @@ class _Metadata(UserDict):
         _Metadata
             Merged metadata object.
         """
-        if not isinstance(other, _Metadata):
+        if not isinstance(other, (_Metadata, pd.DataFrame)):
             raise TypeError("Can only merge with another _Metadata object")
 
         if np.all(self.columns == other.columns):
@@ -757,7 +761,7 @@ class _Metadata(UserDict):
             )
             # join metadata with matching columns
             self.index = np.hstack([self.index, other.index])
-            for k, v in other.data.items():
+            for k, v in other.items():
                 self.data[k] = np.hstack([self.data[k], v])
         else:
             raise ValueError("Column names must match for merge.")
