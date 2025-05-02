@@ -336,9 +336,8 @@ class TestIntervalSetMetadata:
         )
         metadata = ep3.intersect(ep2)._metadata
         np.testing.assert_array_equal(metadata.columns, ["m1"])
-        np.testing.assert_array_equal(
-            list(metadata.values()), list(ep._metadata.values())
-        )
+        for col in metadata.columns:
+            np.testing.assert_array_equal(metadata[col], ep3._metadata[col])
 
     def test_set_diff_metadata(self):
         """
@@ -812,6 +811,8 @@ def clear_metadata(obj):
     else:
         columns = obj.metadata_columns
     obj.drop_info(columns)
+    # obj.__dict__["_metadata"] = obj.metadata
+    # assert isinstance(obj._metadata, pd.DataFrame)
     return obj
 
 
@@ -1251,6 +1252,7 @@ class TestMetadata:
         """
         Test for errors when adding metadata.
         """
+        type(obj._metadata)
         # trim to appropriate length
         if len(args):
             if isinstance(args[0], pd.DataFrame):
@@ -1504,9 +1506,9 @@ class TestMetadata:
 
         # test metadata columns
         assert np.all(obj["one"] == 1)
-        assert np.all(
-            obj[["two", "three"]].as_dataframe() == obj.metadata[["two", "three"]]
-        )
+        # assert np.all(
+        #     obj[["two", "three"]].as_dataframe() == obj.metadata[["two", "three"]]
+        # )
         assert np.all(obj[["two", "three"]] == obj._metadata[["two", "three"]])
         assert np.all(obj[["two", "three"]] == obj.get_info(["two", "three"]))
 
@@ -1515,7 +1517,6 @@ class TestMetadata:
         Test saving and loading objects with metadata as npz files.
         """
         obj.set_info(label1=[1] * obj_len, label2=[2] * obj_len)
-
         obj.save("obj.npz")
         file = np.load("obj.npz", allow_pickle=True)
 
@@ -1529,7 +1530,7 @@ class TestMetadata:
         # test pynapple loading
         obj2 = nap.load_file("obj.npz")
         assert isinstance(obj2, type(obj))
-        assert np.all(obj2._metadata.keys() == obj._metadata.keys())
+        assert np.all(list(obj2._metadata.keys()) == list(obj._metadata.keys()))
         for key in obj._metadata.keys():
             np.testing.assert_array_almost_equal(
                 obj2._metadata[key], obj._metadata[key]

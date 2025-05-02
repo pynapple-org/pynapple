@@ -35,7 +35,7 @@ from ._core_functions import (
 )
 from .base_class import _Base
 from .interval_set import IntervalSet
-from .metadata_class import _MetadataMixin, add_meta_docstring
+from .metadata_class import _MetadataMixin, add_meta_docstring, add_or_convert_metadata
 from .time_index import TsIndex
 from .utils import (
     _concatenate_tsd,
@@ -1085,6 +1085,8 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         self.nap_class = self.__class__.__name__
         # initialize metadata for class attributes
         _MetadataMixin.__init__(self)
+        # to test compatibility with pandas
+        # self._metadata = pd.DataFrame(index=self.metadata_index)
         # get current list of attributes
         self._class_attributes = self.__dir__()
         self._class_attributes.append("_class_attributes")
@@ -1170,6 +1172,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         else:
             super().__setattr__(name, value)
 
+    @add_or_convert_metadata
     def __getattr__(self, name):
         # TsdFrame needs a custom __getattr__ to override default inherited from BaseTsd
 
@@ -1178,10 +1181,11 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
             raise AttributeError(name)
 
-        try:
-            metadata = self._metadata
-        except (AttributeError, RecursionError):
-            metadata = {}  # pd.DataFrame(index=self.columns)
+        # try:
+        #     metadata = self._metadata
+        # except (AttributeError, RecursionError):
+        #     metadata = {}  # pd.DataFrame(index=self.columns)
+        metadata = self._metadata
 
         if name == "_metadata":
             return metadata
@@ -1216,6 +1220,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         except IndexError:
             raise IndexError
 
+    @add_or_convert_metadata
     def __getitem__(self, key, *args, **kwargs):
         if isinstance(key, tuple):
             key = tuple(k.values if hasattr(k, "values") else k for k in key)
@@ -1320,6 +1325,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         df.columns = self.columns.copy()
         return df
 
+    # @add_or_convert_metadata
     def save(self, filename):
         """
         Save TsdFrame object in npz format. The file will contain the timestamps, the
@@ -1622,6 +1628,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         """
         return _MetadataMixin.drop_info(self, key)
 
+    @add_or_convert_metadata
     @add_meta_docstring("groupby")
     def groupby(self, by, get_group=None):
         """

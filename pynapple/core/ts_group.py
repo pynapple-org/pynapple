@@ -346,10 +346,11 @@ class TsGroup(UserDict, _MetadataMixin):
         if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
             raise AttributeError(name)
 
-        try:
-            metadata = self._metadata
-        except Exception:
-            metadata = pd.DataFrame(index=self.index)
+        # try:
+        #     metadata = self._metadata
+        # except Exception:
+        #     metadata = pd.DataFrame(index=self.index)
+        metadata = self._metadata
 
         if name == "_metadata":
             return metadata
@@ -1151,7 +1152,7 @@ class TsGroup(UserDict, _MetadataMixin):
                2             4        1}
 
         """
-        groups = self._metadata.groupby(key)
+        groups = self.groupby(key)
         sliced = {k: self[list(groups[k])] for k in groups.keys()}
         return sliced
 

@@ -314,7 +314,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
 
         # Adding an extra column between actual values and metadata
         try:
-            metadata = _Metadata(index=self.metadata_index, data=self._metadata.data)
+            metadata = self._metadata
             col_names = metadata.columns
         except Exception:
             # Necessary for backward compatibility when saving IntervalSet as pickle
@@ -359,6 +359,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         else:
             object.__setattr__(self, name, value)
 
+    @add_or_convert_metadata
     def __getattr__(self, name):
         # Necessary for backward compatibility with pickle
 
@@ -367,10 +368,11 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
             raise AttributeError(name)
 
-        try:
-            metadata = self._metadata
-        except Exception:
-            metadata = {}
+        # try:
+        #     metadata = self._metadata
+        # except Exception:
+        #     metadata = {}
+        metadata = self._metadata
 
         if name == "_metadata":
             return metadata
