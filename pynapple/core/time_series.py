@@ -26,7 +26,14 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from scipy import signal
 from tabulate import tabulate
 
-from ._core_functions import _bin_average, _convolve, _count, _dropna, _restrict, _threshold
+from ._core_functions import (
+    _bin_average,
+    _convolve,
+    _count,
+    _dropna,
+    _restrict,
+    _threshold,
+)
 from .base_class import _Base
 from .interval_set import IntervalSet
 from .metadata_class import _MetadataMixin, add_meta_docstring
@@ -631,7 +638,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         for e, d in zip(ep, deltas):
             slc = self.get_slice(start=e.start[0], end=e.end[0])
             # TODO: remove conversion when add jax backend is available
-            new_data[i_start: i_start + d] = signal.decimate(
+            new_data[i_start : i_start + d] = signal.decimate(
                 np.asarray(self.d[slc]),
                 down,
                 n=order,
@@ -639,7 +646,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 axis=0,
                 zero_phase=True,
             )
-            new_time[i_start: i_start + d] = self.t[slc][::down]
+            new_time[i_start : i_start + d] = self.t[slc][::down]
             i_start += d
 
         return _initialize_tsd_output(
