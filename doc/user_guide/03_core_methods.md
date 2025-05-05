@@ -263,6 +263,38 @@ plt.title("tsd.threshold(0.5)")
 plt.show()
 ```
 
+### `derivative`
+
+The `derivative` method of `Tsd`, `TsdFrame` and `TsdTensor` can be used to calculate the derivative of a time series with respect to time. It is a wrapper of [`numpy.gradient`](https://numpy.org/devdocs/reference/generated/numpy.gradient.html).
+
+
+```{code-cell} ipython3
+:tags: [hide-cell]
+tsd = nap.Tsd(
+    t=np.arange(0, 10, 0.1),
+    d=np.sin(np.arange(0, 10, 0.1)),
+)
+ep = nap.IntervalSet(start=[0, 6], end=[4, 10])
+```
+
+```{code-cell} ipython3
+derivative = tsd.derivative(ep=ep)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.figure()
+plt.plot(tsd, label="tsd")
+plt.plot(derivative, 'o-', label="derivative")
+[plt.axvspan(s, e, alpha=0.2) for s, e in derivative.time_support.values]
+plt.axhline(0, linewidth=0.5, color='grey')
+plt.legend(loc="lower right")
+plt.xlabel("Time (s)")
+plt.title("tsd.derivative()")
+plt.show()
+```
+
+
 ### `to_trial_tensor`
 
 `Tsd`, `TsdFrame`, and `TsdTensor` all have the method `to_trial_tensor`, which creates a numpy array from an `IntervalSet` by slicing the time series. The resulting tensor has shape (shape of time series, number of trials, number of time points), where the first dimension(s) is dependent on the object. 
