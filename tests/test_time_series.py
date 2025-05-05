@@ -1157,48 +1157,29 @@ class TestTsd:
         tsd2 = tsd.interpolate(ts, ep)
         assert len(tsd2) == 0
 
-    def test_gradient(self, tsd):
-        """
-        Test the derivative calculation for a time series, verifying
-        correctness for a function with known derivative (sine wave).
-        """
+    def test_derivative(self, tsd):
         times = np.arange(0, 10, 0.001)
-
-        # Tsd
         data = np.sin(times)
         tsd = nap.Tsd(t=times, d=data)
-        expected_gradient = np.cos(times)  # Derivative of sin(x) is cos(x)
-        gradient = tsd.gradient()
-        np.testing.assert_allclose(gradient.values, expected_gradient, atol=1e-3)
+        expected = np.cos(times)  # Derivative of sin(x) is cos(x)
+        derivative = tsd.derivative()
+        np.testing.assert_allclose(derivative.values, expected, atol=1e-3)
 
-        # Tsdframe
-        data = np.column_stack([np.sin(times), np.cos(times)])
-        tsdframe = nap.TsdFrame(t=times, d=data)
-        expected_gradient = np.column_stack([np.cos(times), -1 * np.sin(times)])
-        gradient = tsdframe.gradient()
-        np.testing.assert_allclose(gradient.values, expected_gradient, atol=1e-3)
-
-    def test_gradient_with_ep(self, tsd):
-        """
-        Test the gradient method on a Tsd with custom time support
-        to verify derivatives are separate at epoch boundaries.
-        """
+    def test_derivative_with_ep(self, tsd):
         times = np.arange(0, 100)
         data = np.tile(np.arange(0, 10), 10)
-        intervals = nap.IntervalSet(
-            start=np.arange(0, 100, 10), end=np.arange(10, 110, 10)
-        )
-        expected_gradient = np.ones(len(times))  # Derivative is 1 across each interval
+        ep = nap.IntervalSet(start=np.arange(0, 100, 10), end=np.arange(10, 110, 10))
+        expected = np.ones(len(times))  # Derivative should be 1
 
         # With time support
-        tsd = nap.Tsd(t=times, d=data, time_support=intervals)
-        gradient = tsd.gradient()
-        assert np.all(gradient == expected_gradient)
+        tsd = nap.Tsd(t=times, d=data, time_support=ep)
+        derivative = tsd.derivative()
+        assert np.all(derivative == expected)
 
         # With ep parameter
         tsd = nap.Tsd(t=times, d=data)
-        gradient = tsd.gradient(ep=intervals)
-        assert np.all(gradient == expected_gradient)
+        derivative = tsd.derivative(ep=ep)
+        assert np.all(derivative == expected)
 
 
 ####################################################
@@ -1702,6 +1683,31 @@ class TestTsdFrame:
         ep = nap.IntervalSet(start=200, end=300)
         tsdframe2 = tsdframe.interpolate(ts, ep)
         assert len(tsdframe2) == 0
+
+    def test_derivative(self, tsdframe):
+        # Test with known derivatives (sine and cosine)
+        times = np.arange(0, 10, 0.001)
+        data = np.column_stack([np.sin(times), np.cos(times)])
+        tsdframe = nap.TsdFrame(t=times, d=data)
+        expected_derivative = np.column_stack([np.cos(times), -1 * np.sin(times)])
+        derivative = tsdframe.derivative()
+        np.testing.assert_allclose(derivative.values, expected_derivative, atol=1e-3)
+
+    def test_derivative_with_ep(self, tsdframe):
+        times = np.arange(0, 10)
+        data = np.array([[i, -i] for i in range(10)])
+        ep = nap.IntervalSet(start=[1, 6], end=[4, 10])
+        expected = np.array([[1, -1] for _ in range(8)])
+
+        # With time support
+        tsdframe = nap.TsdFrame(t=times, d=data, time_support=ep)
+        derivative = tsdframe.derivative()
+        assert np.all(derivative.values == expected)
+
+        # Test with ep parameter
+        tsdframe = nap.TsdFrame(t=times, d=data)
+        derivative = tsdframe.derivative(ep=ep)
+        assert np.all(derivative.values == expected)
 
     def test_convolve_keep_columns(self, tsdframe):
         array = np.random.randn(10)
@@ -2237,6 +2243,30 @@ class TestTsdTensor:
         ep = nap.IntervalSet(start=200, end=300)
         tsdframe2 = tsdtensor.interpolate(ts, ep)
         assert len(tsdframe2) == 0
+
+    def test_derivative(self, tsdtensor):
+        t = np.arange(10)
+        d = np.array([[[i, i], [-i, -i]] for i in range(10)])
+        tsdtensor = nap.TsdTensor(t=t, d=d)
+        derivative = tsdtensor.derivative()
+        expected = np.array([[[1, 1], [-1, -1]] for _ in range(10)])
+        assert np.all(derivative.values == expected)
+
+    def test_derivative_with_ep(self, tsdtensor):
+        t = np.arange(10)
+        d = np.array([[[i, i], [-i, -i]] for i in range(10)])
+        ep = nap.IntervalSet(start=[1, 6], end=[4, 10])
+        expected = np.array([[[1, 1], [-1, -1]] for _ in range(8)])
+
+        # With time support
+        tsdtensor = nap.TsdTensor(t=t, d=d, time_support=ep)
+        derivative = tsdtensor.derivative()
+        assert np.all(derivative.values == expected)
+
+        # With ep parameter
+        tsdtensor = nap.TsdTensor(t=t, d=d)
+        derivative = tsdtensor.derivative(ep=ep)
+        assert np.all(derivative.values == expected)
 
     def test_indexing_with_boolean_tsd(self, tsdtensor):
         # Create a boolean Tsd for indexing

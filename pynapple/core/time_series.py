@@ -638,8 +638,8 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)
 
-    def gradient(self, ep=None):
-        """Compute the gradient of the time series using numpy.gradient.
+    def derivative(self, ep=None):
+        """Computes the derivative of the time series with respect to time. Wraps numpy.gradient.
 
         Parameters
         ----------
@@ -649,7 +649,23 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         Returns
         -------
         Tsd, TsdFrame or TsdTensor
-            The gradient of the time series.
+            The derivative of the time series.
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsd = nap.Tsd(t=np.arange(5), d=np.arange(0, 10, 2))
+        >>> tsd_derivative = tsd.derivative()
+        >>> tsd_derivative
+        Time (s)
+        ----------  --
+        0            2
+        1            2
+        2            2
+        3            2
+        4            2
+        dtype: float64, shape: (5,)
         """
         if ep is None:
             ep = self.time_support
