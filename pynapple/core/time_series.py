@@ -575,10 +575,10 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
     def decimate(self, down, order=8, filter_type="iir", ep=None):
         """
-        Downsample the time series by an integer factor after an anti-aliasing filter.
+        Downsample the time series by an integer factor after an antialiasing filter.
 
-        As default, applies an anti-aliasing Chebyshev type I filter and downsample.
-        The filter is a low pass low pass-filter, if ``filter_type`` is set to "fir",
+        As default, applies an antialiasing Chebyshev type I filter and downsample.
+        The filter is a low pass-filter, if ``filter_type`` is set to "fir",
         applies a 30 point filter with Hamming window.
 
         Parameters
@@ -594,21 +594,25 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         Example
         -------
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> import matplotlib.pyplot as plt
-        >>> noisy_data = np.random.rand(100) + np.sin(np.linspace(0, 2 * np.pi, 100))
-        >>> tsd = nap.Tsd(t=np.arange(100), d=noisy_data)
-        >>> new_tsd = tsd.decimate(down=4)
-        >>> plt.plot(tsd, color="k", label="original")
-        [<matplotlib.lines.Line2D at ...
-        >>> plt.plot(new_tsd, color="r", marker="o", label="decimate")
-        [<matplotlib.lines.Line2D at ...
-        >>> plt.plot(tsd[::4], color="g", marker="o", label="naive downsample")
-        [<matplotlib.lines.Line2D at ...
-        >>> plt.legend()
-        <matplotlib.legend.Legend at ...
-        >>> plt.show()
+        .. plot::
+            :include-source: True
+            :caption: Downsample with decimate
+
+            >>> import pynapple as nap
+            >>> import numpy as np
+            >>> import matplotlib.pyplot as plt
+            >>> noisy_data = np.random.rand(100) + np.sin(np.linspace(0, 2 * np.pi, 100))
+            >>> tsd = nap.Tsd(t=np.arange(100), d=noisy_data)
+            >>> new_tsd = tsd.decimate(down=4)
+            >>> plt.plot(tsd, color="k", label="original") #doctest: +ELLIPSIS
+            [<matplotlib.lines.Line2D at ...
+            >>> plt.plot(new_tsd, color="r", marker="o", label="decimate") #doctest: +ELLIPSIS
+            [<matplotlib.lines.Line2D at ...
+            >>> plt.plot(tsd[::4], color="g", marker="o", label="naive downsample") #doctest: +ELLIPSIS
+            [<matplotlib.lines.Line2D at ...
+            >>> plt.legend() #doctest: +ELLIPSIS
+            <matplotlib.legend.Legend at ...
+            >>> plt.show()
 
         """
         if not isinstance(down, int):

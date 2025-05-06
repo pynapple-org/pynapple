@@ -79,21 +79,21 @@ doc = [
     "sphinx-autobuild",
     "sphinx-contributors",
     "scikit-learn",
-    # "sphinx-exec-code"
+    # "sphinx-excec-code"
 ]
-docs = [
-    "mkdocs",                       # Documentation generator
-    "mkdocstrings[python]",         # Python-specific plugin for mkdocs
-    "mkdocs-section-index",         # Plugin for generating a section index in mkdocs
-    "mkdocs-gen-files",             # Plugin for generating additional files in mkdocs
-    "mkdocs-literate-nav",          # Plugin for literate-style navigation in mkdocs
-    "mkdocs-gallery",               # Plugin for adding image galleries to mkdocs
-    "mkdocs-material",
-    "matplotlib",
-    "seaborn",
-    "zarr",
-    "dandi"
-]
+#docs = [
+#    "mkdocs",                       # Documentation generator
+#    "mkdocstrings[python]",         # Python-specific plugin for mkdocs
+#    "mkdocs-section-index",         # Plugin for generating a section index in mkdocs
+#    "mkdocs-gen-files",             # Plugin for generating additional files in mkdocs
+#    "mkdocs-literate-nav",          # Plugin for literate-style navigation in mkdocs
+#    "mkdocs-gallery",               # Plugin for adding image galleries to mkdocs
+#    "mkdocs-material",
+#    "matplotlib",
+#    "seaborn",
+#    "zarr",
+#    "dandi"
+#]
 dandi = [
     "dandi",                        # Dandi package
     "fsspec",
