@@ -29,6 +29,7 @@ from tabulate import tabulate
 from ._core_functions import (
     _bin_average,
     _convolve,
+    _count,
     _dropna,
     _restrict,
     _threshold,
@@ -571,6 +572,90 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             window = window / window.sum()
 
         return self.convolve(window)
+
+    def decimate(self, down, order=8, filter_type="iir", ep=None):
+        """
+        Downsample the time series by an integer factor after an antialiasing filter.
+
+        As default, applies an antialiasing Chebyshev type I filter and downsample.
+        The filter is a low pass-filter, if ``filter_type`` is set to "fir",
+        applies a 30 point filter with Hamming window.
+
+        Parameters
+        ----------
+        down : int
+            The down-sampling factor.
+        order : int, optional
+            The order of the filter. Default is 8.
+        filter_type : literal, "iir" or "fir".
+            The filter type. Default is "iir".
+        ep: IntervalSet
+            The epoch over which applying the decimate algorithm.
+
+        Example
+        -------
+        .. plot::
+            :include-source: True
+            :caption: Downsample with decimate
+
+            >>> import pynapple as nap
+            >>> import numpy as np
+            >>> import matplotlib.pyplot as plt
+            >>> noisy_data = np.random.rand(100) + np.sin(np.linspace(0, 2 * np.pi, 100))
+            >>> tsd = nap.Tsd(t=np.arange(100), d=noisy_data)
+            >>> new_tsd = tsd.decimate(down=4)
+            >>> plt.plot(tsd, color="k", label="original") #doctest: +ELLIPSIS
+            [<matplotlib.lines.Line2D at ...
+            >>> plt.plot(new_tsd, color="r", marker="o", label="decimate") #doctest: +ELLIPSIS
+            [<matplotlib.lines.Line2D at ...
+            >>> plt.plot(tsd[::4], color="g", marker="o", label="naive downsample") #doctest: +ELLIPSIS
+            [<matplotlib.lines.Line2D at ...
+            >>> plt.legend() #doctest: +ELLIPSIS
+            <matplotlib.legend.Legend at ...
+            >>> plt.show()
+
+        """
+        if not isinstance(down, int):
+            raise IOError(
+                "Invalid value for 'down': Parameter 'down' should be of type int."
+            )
+        if not isinstance(order, int) or order <= 0:
+            raise IOError(
+                "Invalid value for 'order': Parameter 'order' should be a positive int."
+            )
+        if filter_type not in ["fir", "iir"]:
+            raise IOError("'filter_type' should be one of 'fir', 'iir'.")
+
+        if ep is None:
+            ep = self.time_support
+
+        if not isinstance(ep, IntervalSet):
+            raise IOError("ep should be an object of type IntervalSet")
+
+        # apply scipy filter
+        _, n_vals = _count(self.t, ep.start, ep.end, dtype=np.int32)
+        deltas = np.ceil(n_vals / down).astype(int)
+        tot_samples = np.sum(deltas)
+        new_data = np.zeros((tot_samples, *self.d.shape[1:]))
+        new_time = np.zeros(tot_samples)
+        i_start = 0
+        for e, d in zip(ep, deltas):
+            slc = self.get_slice(start=e.start[0], end=e.end[0])
+            # TODO: remove conversion when add jax backend is available
+            new_data[i_start : i_start + d] = signal.decimate(
+                np.asarray(self.d[slc]),
+                down,
+                n=order,
+                ftype=filter_type,
+                axis=0,
+                zero_phase=True,
+            )
+            new_time[i_start : i_start + d] = self.t[slc][::down]
+            i_start += d
+
+        return _initialize_tsd_output(
+            self, new_data, time_index=new_time, time_support=ep
+        )
 
     def interpolate(self, ts, ep=None, left=None, right=None):
         """Wrapper of the numpy linear interpolation method. See [numpy interpolate](https://numpy.org/doc/stable/reference/generated/numpy.interp.html)
