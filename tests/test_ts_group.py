@@ -105,7 +105,7 @@ class TestTsGroup1:
         ],
     )
     def test_metadata_len_match(self, tsgroup):
-        assert len(tsgroup._metadata) == len(tsgroup)
+        assert tsgroup._metadata.shape[0] == len(tsgroup)
 
     def test_create_ts_group_from_array(self):
         with warnings.catch_warnings(record=True) as w:
@@ -170,13 +170,11 @@ class TestTsGroup1:
         ar_info = np.ones(3) * 1
         tsgroup = nap.TsGroup(group, sr=sr_info, ar=ar_info)
         assert tsgroup._metadata.shape == (3, 3)
+        np.testing.assert_array_almost_equal(tsgroup._metadata["sr"], sr_info.values)
         np.testing.assert_array_almost_equal(
-            tsgroup._metadata["sr"].values, sr_info.values
+            tsgroup._metadata.index, sr_info.index.values
         )
-        np.testing.assert_array_almost_equal(
-            tsgroup._metadata["sr"].index.values, sr_info.index.values
-        )
-        np.testing.assert_array_almost_equal(tsgroup._metadata["ar"].values, ar_info)
+        np.testing.assert_array_almost_equal(tsgroup._metadata["ar"], ar_info)
 
     def test_keys(self, group):
         tsgroup = nap.TsGroup(group)
@@ -184,7 +182,7 @@ class TestTsGroup1:
 
     def test_rates_property(self, group):
         tsgroup = nap.TsGroup(group)
-        pd.testing.assert_series_equal(tsgroup.rates, tsgroup._metadata["rate"])
+        np.testing.assert_array_almost_equal(tsgroup.rates, tsgroup._metadata["rate"])
 
     def test_items(self, group):
         tsgroup = nap.TsGroup(group)
@@ -216,7 +214,7 @@ class TestTsGroup1:
     def test_get_rate(self, group):
         tsgroup = nap.TsGroup(group)
         rate = tsgroup._metadata["rate"]
-        pd.testing.assert_series_equal(rate, tsgroup.get_info("rate"))
+        np.testing.assert_array_almost_equal(rate, tsgroup.get_info("rate"))
 
     def test_restrict(self, group):
         tsgroup = nap.TsGroup(group)
@@ -374,7 +372,7 @@ class TestTsGroup1:
         np.testing.assert_array_almost_equal(count.values, res)
         # check metadata
         if metadata is not None:
-            pd.testing.assert_series_equal(
+            np.testing.assert_array_equal(
                 tsgroup.get_info("label"), count.get_info("label")
             )
 
@@ -433,7 +431,7 @@ class TestTsGroup1:
         np.testing.assert_array_almost_equal(count.values, res)
         # check metadata
         if metadata is not None:
-            pd.testing.assert_series_equal(
+            np.testing.assert_array_equal(
                 tsgroup.get_info("label"), count.get_info("label")
             )
 
@@ -542,7 +540,7 @@ class TestTsGroup1:
         tsgroup.set_info(bbb=[1] * len(tsgroup))
         tsgroup.set_info(ccc=[np.pi] * len(tsgroup))
 
-        cols = tsgroup._metadata.columns.drop("rate")
+        cols = tsgroup._metadata.columns[1:]  # .drop("rate")
         headers = ["Index", "rate"] + [c for c in cols]
         lines = []
 
@@ -554,8 +552,8 @@ class TestTsGroup1:
 
         for i in tsgroup.index:
             lines.append(
-                [str(i), np.round(tsgroup._metadata.loc[i, "rate"], 5)]
-                + [tsgroup._metadata.loc[i, c] for c in cols]
+                [str(i), np.round(tsgroup._metadata.loc[i, "rate"]["rate"], 5)]
+                + [tsgroup._metadata.loc[i, c][c] for c in cols]
             )
         assert tabulate(lines, headers=headers) == tsgroup.__repr__()
 
@@ -867,8 +865,8 @@ class TestTsGroup1:
         assert all(out.keys()[i] == ts_group.keys()[slc][i] for i in range(len(idx)))
         for key_i in np.where(bool_idx)[0]:
             key = ts_group.keys()[key_i]
-            assert np.all(out[[key]].rates == ts_group.rates[[key]])
-            assert np.all(out[[key]].meta == ts_group.meta[[key]])
+            assert np.all(out[[key]].rates == ts_group._metadata.loc[key]["rate"])
+            assert np.all(out[[key]].meta == ts_group._metadata.loc[key]["meta"])
             assert np.all(out[key].t == ts_group[key].t)
 
     @pytest.mark.parametrize(
@@ -1063,7 +1061,9 @@ def test_pickling(ts_group):
     assert len(ts_group) == len(unpickled_obj)
 
     # Ensure that metadata content is the same
-    assert np.all(unpickled_obj._metadata == ts_group._metadata)
+    assert np.all(unpickled_obj._metadata.keys() == ts_group._metadata.keys())
+    for key in ts_group._metadata.keys():
+        assert np.all(unpickled_obj._metadata[key] == ts_group._metadata[key])
 
     # Ensure that metadata columns are the same
     assert np.all(unpickled_obj._metadata.columns == ts_group._metadata.columns)

@@ -1332,7 +1332,7 @@ class TestTsdFrame:
         np.testing.assert_array_almost_equal(tscopy.values, tsdframe.values)
         assert np.all(tscopy.columns == tsdframe.columns)
         if len(tsdframe.metadata_columns):
-            pd.testing.assert_frame_equal(tscopy._metadata, tsdframe._metadata)
+            pd.testing.assert_frame_equal(tscopy.metadata, tsdframe.metadata)
 
     @pytest.mark.parametrize(
         "index, nap_type",
@@ -1704,8 +1704,10 @@ class TestTsdFrame:
 
         if len(tsdframe.metadata_columns):
             assert "_metadata" in keys
-            df = pd.DataFrame.from_dict(file["_metadata"].item())
-            pd.testing.assert_frame_equal(df, tsdframe._metadata)
+            metadata = file["_metadata"].item()
+            assert metadata.keys() == tsdframe._metadata.keys()
+            for key in metadata.keys():
+                assert np.all(metadata[key] == tsdframe._metadata[key])
 
         Path("tsdframe.npz").unlink()
         Path("tsdframe2.npz").unlink()

@@ -36,7 +36,7 @@ from ._core_functions import (
 )
 from .base_class import _Base
 from .interval_set import IntervalSet
-from .metadata_class import _MetadataMixin, add_meta_docstring
+from .metadata_class import _MetadataMixin, add_meta_docstring, add_or_convert_metadata
 from .time_index import TsIndex
 from .utils import (
     _concatenate_tsd,
@@ -1170,6 +1170,8 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         self.nap_class = self.__class__.__name__
         # initialize metadata for class attributes
         _MetadataMixin.__init__(self)
+        # to test compatibility with pandas
+        # self._metadata = pd.DataFrame(index=self.metadata_index)
         # get current list of attributes
         self._class_attributes = self.__dir__()
         self._class_attributes.append("_class_attributes")
@@ -1200,85 +1202,48 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         if self.shape[1] > max_cols:
             headers = headers[0 : max_cols + 1] + ["..."]
 
-        with warnings.catch_warnings():
-            warnings.simplefilter("ignore")
-            if len(self):
-                end = ["..."] if self.shape[1] > max_cols else []
-                if len(self) > max_rows:
-                    n_rows = max_rows // 2
-                    ends = np.array([end] * n_rows)
-                    table = np.vstack(
-                        (
-                            np.hstack(
-                                (
-                                    self.index[0:n_rows, None],
-                                    np.round(self.values[0:n_rows, 0:max_cols], 5),
-                                    ends,
-                                ),
-                                dtype=object,
-                            ),
-                            np.array(
-                                [
-                                    ["..."]
-                                    + ["..."] * np.minimum(max_cols, self.shape[1])
-                                    + end
-                                ],
-                                dtype=object,
-                            ),
-                            np.hstack(
-                                (
-                                    self.index[-n_rows:, None],
-                                    np.round(self.values[-n_rows:, 0:max_cols], 5),
-                                    ends,
-                                ),
-                                dtype=object,
-                            ),
-                        )
-                    )
-                else:
-                    ends = np.array([end] * len(self))
-                    table = np.hstack(
-                        (
-                            self.index[:, None],
-                            np.round(self.values[:, 0:max_cols], 5),
-                            ends,
-                        ),
-                        dtype=object,
-                    )
-            else:
-                table = np.ndarray(shape=(0, self.shape[1] + 1))
-                end = []
+        table = {
+            "Time (s)": np.round(self.index, 5),
+            **{k: np.round(self.loc[k], 5) for k in self.columns[0:max_cols]},
+        }
+        if self.shape[1] > max_cols:
+            table = {**table, "...": np.array(["..."] * len(self.index))}
 
-            # Adding metadata if any.
-            col_names = self._metadata.columns.values
-            if len(col_names):
-                ends = np.array([end] * self._metadata.shape[1])
-                table = np.vstack(
+        if len(self) > max_rows:
+            n_rows = max_rows // 2
+            table = {
+                k: np.hstack((v[0:n_rows], ["..."], v[-n_rows:]), dtype=object)
+                for k, v in table.items()
+            }
+
+        col_names = self._metadata.columns
+        if len(col_names):
+            if len(col_names) > 3:
+                col_names = col_names[0:2]
+                insert_str = ["..."]
+            else:
+                insert_str = []
+            table["Time (s)"] = np.hstack(
+                (table["Time (s)"], "Metadata", col_names, insert_str)
+            )
+            for k in self.columns[0:max_cols]:
+                table[k] = np.hstack(
                     (
-                        table,
-                        np.array([["Metadata"] + [" "] * (table.shape[1] - 1)]),
-                        [["--------"] * table.shape[1]],
-                        np.hstack(
-                            (
-                                col_names[:, None],
-                                _convert_iter_to_str(
-                                    self._metadata.values[0:max_cols].T
-                                ),
-                                ends,
-                            ),
-                            dtype=object,
+                        table[k],
+                        "",
+                        _convert_iter_to_str(
+                            np.array(list(self._metadata.loc[k, col_names].values()))
                         ),
-                        np.array([[" "] * table.shape[1]]),
+                        insert_str,
                     ),
                     dtype=object,
                 )
+            repr_str = tabulate(table, headers="keys", colalign=("left",)).split("\n")
+            repr_str.insert(-len(col_names + insert_str), repr_str[1])
+        else:
+            repr_str = tabulate(table, headers="keys").split("\n")
 
-            if len(table):
-                return (
-                    tabulate(table, headers=headers, colalign=("left",)) + "\n" + bottom
-                )
-            else:
-                return tabulate([], headers=headers) + "\n" + bottom
+        return ("\n").join(repr_str + [bottom])
 
     def __setattr__(self, name, value):
         # necessary setter to allow metadata to be set as an attribute
@@ -1292,6 +1257,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         else:
             super().__setattr__(name, value)
 
+    @add_or_convert_metadata
     def __getattr__(self, name):
         # TsdFrame needs a custom __getattr__ to override default inherited from BaseTsd
 
@@ -1300,14 +1266,15 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
             raise AttributeError(name)
 
-        try:
-            metadata = self._metadata
-        except (AttributeError, RecursionError):
-            metadata = pd.DataFrame(index=self.columns)
+        # try:
+        #     metadata = self._metadata
+        # except (AttributeError, RecursionError):
+        #     metadata = {}  # pd.DataFrame(index=self.columns)
+        metadata = self._metadata
 
         if name == "_metadata":
             return metadata
-        elif name in metadata.columns:
+        elif name in metadata.keys():
             return _MetadataMixin.__getattr__(self, name)
         else:
             return super().__getattr__(name)
@@ -1338,6 +1305,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         except IndexError:
             raise IndexError
 
+    @add_or_convert_metadata
     def __getitem__(self, key, *args, **kwargs):
         if isinstance(key, tuple):
             key = tuple(k.values if hasattr(k, "values") else k for k in key)
@@ -1366,10 +1334,6 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             else:
                 return _MetadataMixin.__getitem__(self, key)
         else:
-            if isinstance(key, pd.Series) and key.index.equals(self.columns):
-                # if indexing with a pd.Series from metadata, transform it to tuple with slice(None) in first position
-                key = (slice(None, None, None), key.values)
-
             output = self.values.__getitem__(key)
             columns = self.columns
 
@@ -1446,6 +1410,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         df.columns = self.columns.copy()
         return df
 
+    # @add_or_convert_metadata
     def save(self, filename):
         """
         Save TsdFrame object in npz format. The file will contain the timestamps, the
@@ -1500,7 +1465,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             end=self.time_support.end,
             columns=cols_name,
             type=np.array(["TsdFrame"], dtype=np.str_),
-            _metadata=self._metadata.to_dict(),  # save metadata as dictionary
+            _metadata=dict(self._metadata),  # save metadata as dictionary
         )
 
         return
@@ -1646,81 +1611,109 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"]}
         >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
         >>> print(tsdframe)
-        Time (s)    0         1         2
-        ----------  --------  --------  --------
-        0.0         1.0       1.0       1.0
-        1.0         1.0       1.0       1.0
-        2.0         1.0       1.0       1.0
-        3.0         1.0       1.0       1.0
-        4.0         1.0       1.0       1.0
+        Time (s)    0    1    2
+        ----------  ---  ---  ---
+        0.0         1.0  1.0  1.0
+        1.0         1.0  1.0  1.0
+        2.0         1.0  1.0  1.0
+        3.0         1.0  1.0  1.0
+        4.0         1.0  1.0  1.0
         Metadata
-        --------    --------  --------  --------
-        l1          1         2         3
-        l2          x         x         y
+        ----------  ---  ---  ---
+        l1          1    2    3
+        l2          x    x    y
         dtype: float64, shape: (5, 3)
 
         To access a single metadata row (transposed to column):
 
         >>> tsdframe.get_info("l1")
-        0    1
-        1    2
-        2    3
-        Name: l1, dtype: int64
+        array([1, 2, 3])
 
         To access multiple metadata rows (transposed to columns):
 
         >>> tsdframe.get_info(["l1", "l2"])
-           l1 l2
-        0   1  x
-        1   2  x
-        2   3  y
-
-        To access metadata of a single column (transposed to row):
-
-        >>> tsdframe.get_info(0)
-        rate    0.667223
-        l1             1
-        l2             x
-        Name: 0, dtype: object
-
-        To access metadata of multiple columns (transposed to rows):
-
-        >>> tsdframe.get_info([0, 1])
-               rate  l1 l2
-        0  0.667223   1  x
-        1  1.334445   2  x
-
-        To access metadata of a single column and metadata key:
-
-        >>> tsdframe.get_info((0, "l1"))
-        np.int64(1)
+             l1    l2
+        0    1     x
+        1    2     x
+        2    3     y
 
         To access metadata as an attribute:
 
         >>> tsdframe.l1
-        0    1
-        1    2
-        2    3
-        Name: l1, dtype: int64
+        array([1, 2, 3])
 
         To access metadata as a key:
 
         >>> tsdframe["l1"]
-        0    1
-        1    2
-        2    3
-        Name: l1, dtype: int64
+        array([1, 2, 3])
 
         Multiple metadata columns can be accessed as keys:
 
         >>> tsdframe[["l1", "l2"]]
-           l1 l2
-        0   1  x
-        1   2  x
-        2   3  y
+             l1    l2
+        0    1     x
+        1    2     x
+        2    3     y
         """
         return _MetadataMixin.get_info(self, key)
 
+    @add_meta_docstring("drop_info")
+    def drop_info(self, key):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"], "l3": [4, 5, 6]}
+        >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
+        >>> print(tsdframe)
+        Time (s)    0    1    2
+        ----------  ---  ---  ---
+        0.0         1.0  1.0  1.0
+        1.0         1.0  1.0  1.0
+        2.0         1.0  1.0  1.0
+        3.0         1.0  1.0  1.0
+        4.0         1.0  1.0  1.0
+        Metadata
+        ----------  ---  ---  ---
+        l1          1    2    3
+        l2          x    x    y
+        l3          4    5    6
+        dtype: float64, shape: (5, 3)
+
+        To drop a single metadata row:
+
+        >>> tsdframe.drop_info("l1")
+        >>> tsdframe
+        Time (s)    0    1    2
+        ----------  ---  ---  ---
+        0.0         1.0  1.0  1.0
+        1.0         1.0  1.0  1.0
+        2.0         1.0  1.0  1.0
+        3.0         1.0  1.0  1.0
+        4.0         1.0  1.0  1.0
+        Metadata
+        ----------  ---  ---  ---
+        l2          x    x    y
+        l3          4    5    6
+        dtype: float64, shape: (5, 3)
+
+        To drop multiple metadata rows:
+
+        >>> tsdframe.drop_info(["l2", "l3"])
+        >>> tsdframe
+          Time (s)    0    1    2
+        ----------  ---  ---  ---
+                 0    1    1    1
+                 1    1    1    1
+                 2    1    1    1
+                 3    1    1    1
+                 4    1    1    1
+        dtype: float64, shape: (5, 3)
+        """
+        return _MetadataMixin.drop_info(self, key)
+
+    @add_or_convert_metadata
     @add_meta_docstring("groupby")
     def groupby(self, by, get_group=None):
         """

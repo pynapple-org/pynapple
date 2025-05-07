@@ -85,7 +85,7 @@ angle = data["ry"]  # Get the tracked orientation of the animal
 What does this look like ?
 
 
-```{code-cell} ipython3
+```{code-cell} ipython3 
 print(spikes)
 ```
 

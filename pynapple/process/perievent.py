@@ -9,7 +9,10 @@ from numbers import Number
 import numpy as np
 
 from .. import core as nap
-from ._process_functions import _perievent_continuous, _perievent_trigger_average
+from ._process_functions import (
+    _perievent_continuous,
+    _perievent_trigger_average,
+)
 
 
 def _validate_perievent_inputs(func):
