@@ -729,6 +729,67 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)
 
+    def derivative(self, ep=None):
+        """Computes the derivative of the time series with respect to time. Wraps numpy.gradient.
+
+        Parameters
+        ----------
+        ep : IntervalSet, optional
+            The epochs to calculate derivatives. If None, the time support of Tsd is used.
+
+        Returns
+        -------
+        Tsd, TsdFrame or TsdTensor
+            The derivative of the time series.
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsd = nap.Tsd(t=np.arange(5), d=np.arange(0, 10, 2))
+        >>> tsd_derivative = tsd.derivative()
+        >>> tsd_derivative
+        Time (s)
+        ----------  --
+        0            2
+        1            2
+        2            2
+        3            2
+        4            2
+        dtype: float64, shape: (5,)
+        """
+        if ep is None:
+            ep = self.time_support
+        else:
+            if not isinstance(ep, IntervalSet):
+                raise IOError("ep should be an object of type IntervalSet")
+
+        new_t = self.restrict(ep).index
+
+        new_shape = (
+            len(new_t) if self.values.ndim == 1 else (len(new_t),) + self.shape[1:]
+        )
+        new_d = np.full(new_shape, np.nan)
+
+        start = 0
+        for i in range(len(ep)):
+            tmp = self.get(ep[i, 0], ep[i, 1])
+
+            if len(tmp):
+                if self.values.ndim == 1:
+                    new_d[start : start + len(tmp)] = np.gradient(
+                        tmp.values, tmp.index.values
+                    )
+                else:
+                    # Compute gradient along first axis (time)
+                    new_d[start : start + len(tmp)] = np.gradient(
+                        tmp.values, tmp.index.values, axis=0
+                    )
+
+            start += len(tmp)
+
+        return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)
+
     def to_trial_tensor(self, ep, align="start", padding_value=np.nan):
         """
         Return trial-based tensor from an IntervalSet object. The shape of the tensor array is
