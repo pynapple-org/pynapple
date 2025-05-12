@@ -815,7 +815,7 @@ class _MetadataLoc:
 
             else:
                 # metadata.loc[array_like]
-                idx = self._get_indexder(index)
+                idx = self._get_indexer(index)
 
         elif isinstance(index, slice) and (index == slice(None)):
             # metadata.loc[:], keep original index
@@ -833,7 +833,7 @@ class _MetadataLoc:
 
         return _Metadata(index, data)
 
-    def _get_indexder(self, vals):
+    def _get_indexer(self, vals):
         """
         Function that maps object index values to positional index.
         """
