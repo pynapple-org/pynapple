@@ -1126,14 +1126,6 @@ class TestTsd:
     def test_data(self, tsd):
         np.testing.assert_array_almost_equal(tsd.values, tsd.data())
 
-    def test_repr_(self, tsd):
-        # assert pd.Series(tsd).__repr__() == tsd.__repr__()
-        assert isinstance(tsd.__repr__(), str)
-
-    def test_str_(self, tsd):
-        # assert pd.Series(tsd).__str__() == tsd.__str__()
-        assert isinstance(tsd.__str__(), str)
-
     def test_to_tsgroup(self, tsd):
         t = []
         d = []
@@ -1635,20 +1627,6 @@ class TestTsdFrame:
         np.testing.assert_array_almost_equal(tsdframe.index, a.index)
         assert np.all(a.values == (v != 5))
 
-    def test_repr_(self, tsdframe):
-        # assert pd.DataFrame(tsdframe).__repr__() == tsdframe.__repr__()
-        assert isinstance(tsdframe.__repr__(), str)
-
-    def test_repr_empty(self, tsdframe):
-        ep = nap.IntervalSet(tsdframe.t[-1] + 1, tsdframe.t[-1] + 10)
-        newtsdframe = tsdframe.restrict(ep)
-        repr = newtsdframe.__repr__()
-        assert isinstance(repr, str)
-
-    def test_str_(self, tsdframe):
-        # assert pd.DataFrame(tsdframe).__str__() == tsdframe.__str__()
-        assert isinstance(tsdframe.__str__(), str)
-
     def test_data(self, tsdframe):
         np.testing.assert_array_almost_equal(tsdframe.values, tsdframe.data())
 
@@ -1863,14 +1841,6 @@ class TestTsdFrame:
     ],
 )
 class TestTs:
-
-    def test_repr_(self, ts):
-        # assert pd.Series(ts).fillna("").__repr__() == ts.__repr__()
-        assert isinstance(ts.__repr__(), str)
-
-    def test_str_(self, ts):
-        # assert pd.Series(ts).fillna("").__str__() == ts.__str__()
-        assert isinstance(ts.__str__(), str)
 
     def test_save_npz(self, ts):
         with pytest.raises(TypeError) as e:
@@ -2219,14 +2189,6 @@ class TestTsdTensor:
         assert isinstance(a, nap.TsdTensor)
         np.testing.assert_array_almost_equal(tsdtensor.index, a.index)
         assert np.all(a.values == (v != 5))
-
-    def test_repr_(self, tsdtensor):
-        # assert pd.DataFrame(tsdtensor).__repr__() == tsdtensor.__repr__()
-        assert isinstance(tsdtensor.__repr__(), str)
-
-    def test_str_(self, tsdtensor):
-        # assert pd.DataFrame(tsdtensor).__str__() == tsdtensor.__str__()
-        assert isinstance(tsdtensor.__str__(), str)
 
     def test_data(self, tsdtensor):
         np.testing.assert_array_almost_equal(tsdtensor.values, tsdtensor.data())

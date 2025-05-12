@@ -420,29 +420,91 @@ class TsGroup(UserDict, _MetadataMixin):
         max_rows = np.maximum(rows - 10, 2)
 
         # By default, the first three columns should always show.
-        col_names = self._metadata.columns
-        if "rate" in col_names:
-            col_names = col_names[1:]  # .drop("rate")
+        # Adding an extra column between actual values and metadata
+        try:
+            col_names = self._metadata.columns
+        except Exception:
+            # Necessary for backward compatibility when saving IntervalSet as pickle
+            col_names = []
 
-        table = {
-            "Index": self.index,
-            "rate": np.round(self._metadata["rate"], 5),
-            **{
-                c: _convert_iter_to_str(self._metadata[c])
-                for c in col_names[0:max_cols]
-            },
-        }
-        if len(table.keys()) > max_cols:
-            table = {**table, "...": np.array(["..."] * len(self.index))}
+        if len(col_names) and "rate" in col_names:
+            col_names.remove("rate")
+
+        col_to_show = col_names[0:max_cols]
+
+        headers = ["Index", "rate"] + col_to_show
+        end = ["..."] if len(headers) > max_cols else []
+        headers += end
 
         if len(self) == 0:
-            return tabulate(tabular_data=[], headers=list(table.keys()))
+            return tabulate(tabular_data=[], headers=headers)
 
         if len(self) > max_rows:
             n_rows = max_rows // 2
-            table = {k: np.hstack((v[0:n_rows], v[-n_rows:])) for k, v in table.items()}
+            ends = np.array([end] * n_rows)
+            if len(col_to_show):
+                mt_top = np.array(
+                    [
+                        _convert_iter_to_str(self._metadata[c][0:n_rows])
+                        for c in col_to_show
+                    ]
+                ).T
+                mt_bot = np.array(
+                    [
+                        _convert_iter_to_str(self._metadata[c][-n_rows:])
+                        for c in col_to_show
+                    ]
+                ).T
+            else:
+                mt_top = np.ndarray(shape=(n_rows, 0))
+                mt_bot = np.ndarray(shape=(n_rows, 0))
 
-        return tabulate(table, headers="keys")
+            table = np.vstack(
+                (
+                    np.hstack(
+                        (
+                            self.index[0:n_rows, None],
+                            np.round(self._metadata["rate"], 5)[0:n_rows, None],
+                            mt_top,
+                            ends,
+                        ),
+                        dtype=object,
+                    ),
+                    np.array(
+                        [["..." for _ in range(2 + len(col_to_show))] + end],
+                        dtype=object,
+                    ),
+                    np.hstack(
+                        (
+                            self.index[-n_rows:, None],
+                            np.round(self._metadata["rate"], 5)[-n_rows:, None],
+                            mt_bot,
+                            ends,
+                        ),
+                        dtype=object,
+                    ),
+                )
+            )
+        else:
+            ends = np.array([end] * len(self))
+            if len(col_to_show):
+                mt = np.array(
+                    [_convert_iter_to_str(self._metadata[c]) for c in col_to_show]
+                ).T
+            else:
+                mt = np.ndarray(shape=(len(self), 0))
+
+            table = np.hstack(
+                (
+                    self.index[:, None],
+                    np.round(self._metadata["rate"], 5)[:, None],
+                    mt,
+                    ends,
+                ),
+                dtype=object,
+            )
+
+        return tabulate(table, headers=headers)
 
     def __str__(self):
         return self.__repr__()

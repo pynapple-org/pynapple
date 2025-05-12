@@ -20,7 +20,6 @@ from ._jitted_functions import (
 )
 from .config import nap_config
 from .metadata_class import (
-    _Metadata,
     _MetadataMixin,
     add_meta_docstring,
     add_or_convert_metadata,
@@ -218,7 +217,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         else:
             if end is None:
                 # Catch if start is not shape (0, 2)
-                if is_array_like(start) and start.shape==(0,2):
+                if is_array_like(start) and start.shape == (0, 2):
                     start, end = np.array([]), np.array([])
                 else:
                     # Require iterable of (start, end) tuples
@@ -312,7 +311,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         # Start by determining how many columns and rows.
         # This can be unique for each object
         cols, rows = _get_terminal_size()
-        # max_cols = np.maximum(cols // 12, 5)
+        max_cols = np.maximum(cols // 12, 5)
         max_rows = np.maximum(rows - 10, 2)
         # By default, the first three columns should always show.
 
@@ -322,28 +321,80 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             col_names = metadata.columns
         except Exception:
             # Necessary for backward compatibility when saving IntervalSet as pickle
-            metadata = _Metadata(index=self.index)
             col_names = []
 
-        headers = ["index", "start", "end"]
-        if len(col_names):
-            headers += [c for c in col_names]
+        col_to_show = col_names[0:max_cols]
+
+        headers = ["index", "start", "end"] + col_to_show
+        end = ["..."] if len(headers) > max_cols else []
+        headers += end
         bottom = f"shape: {self.shape}, time unit: sec."
-        data = {
-            "index": self.index,
-            "start": self.values[:, 0],
-            "end": self.values[:, 1],
-            **{c: _convert_iter_to_str(v) for c, v in metadata.items()},
-        }
+
+        if len(self) == 0:
+            return tabulate(tabular_data=[], headers=headers) + bottom
+
         # We rarely want to print everything as it can be very big.
         if len(self) > max_rows:
             n_rows = max_rows // 2
-            data = {
-                k: np.hstack((v[0:n_rows], ["..."], v[-n_rows:]), dtype=object)
-                for k, v in data.items()
-            }
+            ends = np.array([end] * n_rows)
+            if len(col_to_show):
+                mt_top = np.array(
+                    [
+                        _convert_iter_to_str(self._metadata[c][0:n_rows])
+                        for c in col_to_show
+                    ]
+                ).T
+                mt_bot = np.array(
+                    [
+                        _convert_iter_to_str(self._metadata[c][-n_rows:])
+                        for c in col_to_show
+                    ]
+                ).T
+            else:
+                mt_top = np.ndarray(shape=(n_rows, 0))
+                mt_bot = np.ndarray(shape=(n_rows, 0))
+            table = np.vstack(
+                (
+                    np.hstack(
+                        (
+                            self.index[0:n_rows, None],
+                            self.values[0:n_rows],
+                            mt_top,
+                            ends,
+                        ),
+                        dtype=object,
+                    ),
+                    np.array([["..." for _ in range(len(headers))]], dtype=object),
+                    np.hstack(
+                        (
+                            self.index[-n_rows:, None],
+                            self.values[-n_rows:],
+                            mt_bot,
+                            ends,
+                        ),
+                        dtype=object,
+                    ),
+                )
+            )
+        else:
+            ends = np.array([end] * len(self))
+            if len(col_to_show):
+                mt = np.array(
+                    [_convert_iter_to_str(self._metadata[c]) for c in col_to_show]
+                ).T
+            else:
+                mt = np.ndarray(shape=(len(self), 0))
+            table = np.hstack(
+                (
+                    self.index[:, None],
+                    self.values,
+                    mt,
+                    ends,
+                ),
+                dtype=object,
+            )
 
-        return tabulate(data, headers="keys", tablefmt="plain") + "\n" + bottom
+        return tabulate(table, headers=headers, tablefmt="plain") + "\n" + bottom
 
     def __str__(self):
         return self.__repr__()
