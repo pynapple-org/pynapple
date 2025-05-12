@@ -331,7 +331,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         bottom = f"shape: {self.shape}, time unit: sec."
 
         if len(self) == 0:
-            return tabulate(tabular_data=[], headers=headers) + bottom
+            return tabulate(tabular_data=[], headers=headers) + "\n" + bottom
 
         # We rarely want to print everything as it can be very big.
         if len(self) > max_rows:
