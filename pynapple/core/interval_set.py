@@ -217,14 +217,18 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
 
         else:
             if end is None:
-                # Require iterable of (start, end) tuples
-                try:
-                    start_end_array = np.array(list(start)).reshape(-1, 2)
-                    start, end = zip(*start_end_array)
-                except (TypeError, ValueError):
-                    raise ValueError(
-                        "Unable to Interpret the input. Please provide a list of start-end pairs."
-                    )
+                # Catch if start is not shape (0, 2)
+                if is_array_like(start) and start.shape==(0,2):
+                    start, end = np.array([]), np.array([])
+                else:
+                    # Require iterable of (start, end) tuples
+                    try:
+                        start_end_array = np.array(list(start)).reshape(-1, 2)
+                        start, end = zip(*start_end_array)
+                    except (TypeError, ValueError):
+                        raise ValueError(
+                            "Unable to Interpret the input. Please provide a list of start-end pairs."
+                        )
 
             args = {"start": start, "end": end}
 

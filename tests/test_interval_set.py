@@ -152,6 +152,16 @@ def test_create_iset_from_us():
     np.testing.assert_array_almost_equal(start * 1e-6, ep.start)
     np.testing.assert_array_almost_equal(end * 1e-6, ep.end)
 
+def test_create_empty_iset():
+    ep = nap.IntervalSet(start=[], end=[])
+    assert ep.shape == (0, 2)
+
+    ep = nap.IntervalSet(start=[], end=[], metadata={'label':[]})
+    assert ep.shape == (0, 2)
+
+    ep = nap.IntervalSet(start=np.ndarray(shape=(0,2)))
+    assert ep.shape == (0, 2)
+
 
 def test_modify_iset():
     start = np.around(np.array([0, 10, 16], dtype=np.float64), 9)
@@ -380,6 +390,12 @@ def test_drop_short_intervals():
     np.testing.assert_array_almost_equal(
         ep.drop_short_intervals(5.0 * 1e6, time_units="us"), ep2
     )
+
+    # Dropping to create empty intervals
+    ep = nap.IntervalSet(start=[0, 2, 5], end=[1, 3, 6], metadata={'label':[1,2,3]})
+    ep = ep.drop_short_intervals(1.5)
+    assert ep.shape == (0, 2)
+    assert len(ep.label) == 0
 
 
 def test_drop_long_intervals():
