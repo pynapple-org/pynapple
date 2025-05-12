@@ -448,6 +448,7 @@ def _convert_iter_to_str(array):
     This function converts an array of arrays to array of strings.
     This help avoids a DeprecationWarning from numpy when printing an object with metadata
     """
+    array = np.array(array)
     if array.ndim > 1:
         shape = array.shape
         array_str = np.empty(shape[0], dtype=object)
@@ -457,10 +458,7 @@ def _convert_iter_to_str(array):
                 array_str[i] = np.array2string(arr, precision=2)
         return array_str
     else:
-        if hasattr(array, "dtype"):
-            if np.issubdtype(array.dtype, np.floating):
-                return np.around(array, decimals=2).astype(str)
-            else:
-                return array.astype(str)
+        if np.issubdtype(array.dtype, np.floating):
+            return np.around(array, decimals=2).astype(str)
         else:
-            return array
+            return array.astype(str)
