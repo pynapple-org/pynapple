@@ -699,29 +699,29 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         start = 0
         for i in range(len(ep)):
-            t = ts.get(ep[i, 0], ep[i, 1])
-            tmp = self.get(ep[i, 0], ep[i, 1])
-
-            if len(t) and len(tmp):
+            t = ts.t[ts.get_slice(ep[i, 0], ep[i, 1])]
+            xp = self.t[self.get_slice(ep[i, 0], ep[i, 1])]
+            fp = self.d[self.get_slice(ep[i, 0], ep[i, 1])]
+            if len(t) and len(xp):
                 if self.values.ndim == 1:
                     new_d[start : start + len(t)] = np.interp(
-                        t.index.values,
-                        tmp.index.values,
-                        tmp.values,
+                        t,
+                        xp,
+                        fp,
                         left=left,
                         right=right,
                     )
                 else:
                     interpolated_values = np.apply_along_axis(
                         lambda row: np.interp(
-                            t.index.values,
-                            tmp.index.values,
+                            t,
+                            xp,
                             row,
                             left=left,
                             right=right,
                         ),
                         0,
-                        tmp.values,
+                        fp,
                     )
                     new_d[start : start + len(t), ...] = interpolated_values
 

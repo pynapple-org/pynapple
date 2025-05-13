@@ -1252,6 +1252,13 @@ class TestTsd:
         tsd2 = tsd.interpolate(ts, ep)
         assert len(tsd2) == 0
 
+    def test_interpolate_with_single_time_point(self, tsd):
+        y = np.array([0.5])
+        tsd = nap.Tsd(t=np.arange(0, 101), d=np.arange(0, 101))
+        ts = nap.Ts(t=y)
+        tsd2 = tsd.interpolate(ts)
+        np.testing.assert_array_almost_equal(y, tsd2.values)
+
     def test_derivative(self, tsd):
         times = np.arange(0, 10, 0.001)
         data = np.sin(times)
