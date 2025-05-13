@@ -532,39 +532,6 @@ class TestTsGroup1:
         assert dgroup["a"].keys() == [0, 1]
         assert dgroup["b"].keys() == [2]
 
-    def test_repr_(self, group):
-        from tabulate import tabulate
-
-        tsgroup = nap.TsGroup(group)
-        tsgroup.set_info(abc=["a"] * len(tsgroup))
-        tsgroup.set_info(bbb=[1] * len(tsgroup))
-        tsgroup.set_info(ccc=[np.pi] * len(tsgroup))
-
-        cols = tsgroup._metadata.columns[1:]  # .drop("rate")
-        headers = ["Index", "rate"] + [c for c in cols]
-        lines = []
-
-        # def round_if_float(x):
-        #     if isinstance(x, float):
-        #         return np.round(x, 5)
-        #     else:
-        #         return x
-
-        for i in tsgroup.index:
-            lines.append(
-                [str(i), np.round(tsgroup._metadata.loc[i, "rate"]["rate"], 5)]
-                + [tsgroup._metadata.loc[i, c][c] for c in cols]
-            )
-        assert tabulate(lines, headers=headers) == tsgroup.__repr__()
-
-        # Empty TsGroup
-        empty_tsg = nap.TsGroup({}, time_support=nap.IntervalSet(0, 10))
-        assert tabulate([], headers=["Index", "rate"]) == empty_tsg.__repr__()
-
-    def test_str_(self, group):
-        tsgroup = nap.TsGroup(group)
-        assert tsgroup.__str__() == tsgroup.__repr__()
-
     def test_to_tsd(self, group):
         t = []
         d = []

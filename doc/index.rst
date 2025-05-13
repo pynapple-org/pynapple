@@ -79,7 +79,7 @@ pynapple: python neural analysis package
 
     .. grid-item-card:: Timestamps
         :text-align: center
-        :link: ./user_guide/01_introduction_to_pynapple.html#nap-tsgroup-group-of-timestamps
+        :link: ./user_guide/01_introduction_to_pynapple.html#nap-ts-timestamps
 
         .. image:: _static/example_thumbs/tsgroup.svg
             :width: 120px
