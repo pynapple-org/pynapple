@@ -26,10 +26,17 @@ from numpy.lib.mixins import NDArrayOperatorsMixin
 from scipy import signal
 from tabulate import tabulate
 
-from ._core_functions import _bin_average, _convolve, _dropna, _restrict, _threshold
+from ._core_functions import (
+    _bin_average,
+    _convolve,
+    _count,
+    _dropna,
+    _restrict,
+    _threshold,
+)
 from .base_class import _Base
 from .interval_set import IntervalSet
-from .metadata_class import _MetadataMixin, add_meta_docstring
+from .metadata_class import _MetadataMixin, add_meta_docstring, add_or_convert_metadata
 from .time_index import TsIndex
 from .utils import (
     _concatenate_tsd,
@@ -566,6 +573,90 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         return self.convolve(window)
 
+    def decimate(self, down, order=8, filter_type="iir", ep=None):
+        """
+        Downsample the time series by an integer factor after an antialiasing filter.
+
+        As default, applies an antialiasing Chebyshev type I filter and downsample.
+        The filter is a low pass-filter, if ``filter_type`` is set to "fir",
+        applies a 30 point filter with Hamming window.
+
+        Parameters
+        ----------
+        down : int
+            The down-sampling factor.
+        order : int, optional
+            The order of the filter. Default is 8.
+        filter_type : literal, "iir" or "fir".
+            The filter type. Default is "iir".
+        ep: IntervalSet
+            The epoch over which applying the decimate algorithm.
+
+        Example
+        -------
+        .. plot::
+            :include-source: True
+            :caption: Downsample with decimate
+
+            >>> import pynapple as nap
+            >>> import numpy as np
+            >>> import matplotlib.pyplot as plt
+            >>> noisy_data = np.random.rand(100) + np.sin(np.linspace(0, 2 * np.pi, 100))
+            >>> tsd = nap.Tsd(t=np.arange(100), d=noisy_data)
+            >>> new_tsd = tsd.decimate(down=4)
+            >>> plt.plot(tsd, color="k", label="original") #doctest: +ELLIPSIS
+            [<matplotlib.lines.Line2D at ...
+            >>> plt.plot(new_tsd, color="r", marker="o", label="decimate") #doctest: +ELLIPSIS
+            [<matplotlib.lines.Line2D at ...
+            >>> plt.plot(tsd[::4], color="g", marker="o", label="naive downsample") #doctest: +ELLIPSIS
+            [<matplotlib.lines.Line2D at ...
+            >>> plt.legend() #doctest: +ELLIPSIS
+            <matplotlib.legend.Legend at ...
+            >>> plt.show()
+
+        """
+        if not isinstance(down, int):
+            raise IOError(
+                "Invalid value for 'down': Parameter 'down' should be of type int."
+            )
+        if not isinstance(order, int) or order <= 0:
+            raise IOError(
+                "Invalid value for 'order': Parameter 'order' should be a positive int."
+            )
+        if filter_type not in ["fir", "iir"]:
+            raise IOError("'filter_type' should be one of 'fir', 'iir'.")
+
+        if ep is None:
+            ep = self.time_support
+
+        if not isinstance(ep, IntervalSet):
+            raise IOError("ep should be an object of type IntervalSet")
+
+        # apply scipy filter
+        _, n_vals = _count(self.t, ep.start, ep.end, dtype=np.int32)
+        deltas = np.ceil(n_vals / down).astype(int)
+        tot_samples = np.sum(deltas)
+        new_data = np.zeros((tot_samples, *self.d.shape[1:]))
+        new_time = np.zeros(tot_samples)
+        i_start = 0
+        for e, d in zip(ep, deltas):
+            slc = self.get_slice(start=e.start[0], end=e.end[0])
+            # TODO: remove conversion when add jax backend is available
+            new_data[i_start : i_start + d] = signal.decimate(
+                np.asarray(self.d[slc]),
+                down,
+                n=order,
+                ftype=filter_type,
+                axis=0,
+                zero_phase=True,
+            )
+            new_time[i_start : i_start + d] = self.t[slc][::down]
+            i_start += d
+
+        return _initialize_tsd_output(
+            self, new_data, time_index=new_time, time_support=ep
+        )
+
     def interpolate(self, ts, ep=None, left=None, right=None):
         """Wrapper of the numpy linear interpolation method. See [numpy interpolate](https://numpy.org/doc/stable/reference/generated/numpy.interp.html)
         for an explanation of the parameters.
@@ -608,33 +699,94 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         start = 0
         for i in range(len(ep)):
-            t = ts.get(ep[i, 0], ep[i, 1])
-            tmp = self.get(ep[i, 0], ep[i, 1])
-
-            if len(t) and len(tmp):
+            t = ts.t[ts.get_slice(ep[i, 0], ep[i, 1])]
+            xp = self.t[self.get_slice(ep[i, 0], ep[i, 1])]
+            fp = self.d[self.get_slice(ep[i, 0], ep[i, 1])]
+            if len(t) and len(xp):
                 if self.values.ndim == 1:
                     new_d[start : start + len(t)] = np.interp(
-                        t.index.values,
-                        tmp.index.values,
-                        tmp.values,
+                        t,
+                        xp,
+                        fp,
                         left=left,
                         right=right,
                     )
                 else:
                     interpolated_values = np.apply_along_axis(
                         lambda row: np.interp(
-                            t.index.values,
-                            tmp.index.values,
+                            t,
+                            xp,
                             row,
                             left=left,
                             right=right,
                         ),
                         0,
-                        tmp.values,
+                        fp,
                     )
                     new_d[start : start + len(t), ...] = interpolated_values
 
             start += len(t)
+
+        return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)
+
+    def derivative(self, ep=None):
+        """Computes the derivative of the time series with respect to time. Wraps numpy.gradient.
+
+        Parameters
+        ----------
+        ep : IntervalSet, optional
+            The epochs to calculate derivatives. If None, the time support of Tsd is used.
+
+        Returns
+        -------
+        Tsd, TsdFrame or TsdTensor
+            The derivative of the time series.
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsd = nap.Tsd(t=np.arange(5), d=np.arange(0, 10, 2))
+        >>> tsd_derivative = tsd.derivative()
+        >>> tsd_derivative
+        Time (s)
+        ----------  --
+        0            2
+        1            2
+        2            2
+        3            2
+        4            2
+        dtype: float64, shape: (5,)
+        """
+        if ep is None:
+            ep = self.time_support
+        else:
+            if not isinstance(ep, IntervalSet):
+                raise IOError("ep should be an object of type IntervalSet")
+
+        new_t = self.restrict(ep).index
+
+        new_shape = (
+            len(new_t) if self.values.ndim == 1 else (len(new_t),) + self.shape[1:]
+        )
+        new_d = np.full(new_shape, np.nan)
+
+        start = 0
+        for i in range(len(ep)):
+            tmp = self.get(ep[i, 0], ep[i, 1])
+
+            if len(tmp):
+                if self.values.ndim == 1:
+                    new_d[start : start + len(tmp)] = np.gradient(
+                        tmp.values, tmp.index.values
+                    )
+                else:
+                    # Compute gradient along first axis (time)
+                    new_d[start : start + len(tmp)] = np.gradient(
+                        tmp.values, tmp.index.values, axis=0
+                    )
+
+            start += len(tmp)
 
         return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)
 
@@ -704,7 +856,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 output[i, 0 : lengths[i]] = self.values[sl]
         if align == "end":
             for i, sl in enumerate(slices):
-                output[i, -lengths[i] :] = self.values[sl]
+                output[i, n_t - lengths[i] :] = self.values[sl]
 
         if output.ndim > 2:
             output = np.moveaxis(output, source=[0, 1], destination=[-2, -1])
@@ -1079,6 +1231,8 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         self.nap_class = self.__class__.__name__
         # initialize metadata for class attributes
         _MetadataMixin.__init__(self)
+        # to test compatibility with pandas
+        # self._metadata = pd.DataFrame(index=self.metadata_index)
         # get current list of attributes
         self._class_attributes = self.__dir__()
         self._class_attributes.append("_class_attributes")
@@ -1158,36 +1312,64 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                 table = np.ndarray(shape=(0, self.shape[1] + 1))
                 end = []
 
-            # Adding metadata if any.
-            col_names = self._metadata.columns.values
-            if len(col_names):
-                ends = np.array([end] * self._metadata.shape[1])
-                table = np.vstack(
-                    (
-                        table,
-                        np.array([["Metadata"] + [" "] * (table.shape[1] - 1)]),
-                        [["--------"] * table.shape[1]],
-                        np.hstack(
-                            (
-                                col_names[:, None],
-                                _convert_iter_to_str(
-                                    self._metadata.values[0:max_cols].T
-                                ),
-                                ends,
-                            ),
-                            dtype=object,
-                        ),
-                        np.array([[" "] * table.shape[1]]),
-                    ),
-                    dtype=object,
-                )
+        # Adding metadata if any.
+        try:
+            metadata = self._metadata
+            row_names = metadata.columns
+        except Exception:
+            # Necessary for backward compatibility when saving IntervalSet as pickle
+            row_names = []
 
-            if len(table):
-                return (
-                    tabulate(table, headers=headers, colalign=("left",)) + "\n" + bottom
-                )
+        if len(row_names):
+            n_rows = len(row_names)
+            max_metarows = 2
+
+            if n_rows > max_metarows:
+                row_names = np.hstack((row_names[0:2]))[:, None]
+                last_row = np.array(["..."] * table.shape[1])
+                n_rows = max_metarows
             else:
-                return tabulate([], headers=headers) + "\n" + bottom
+                row_names = np.array(row_names)[:, None]  # Vertically
+                last_row = np.ndarray(shape=(0, table.shape[1]))
+
+            ends = np.array([end] * n_rows)
+
+            formatted_metadata = np.array(
+                [
+                    _convert_iter_to_str(
+                        self._metadata.iloc[0 : table.shape[1] - 1][
+                            self._metadata.columns[k]
+                        ]
+                    )
+                    for k in range(
+                        n_rows
+                    )  # Which correspond to columns in the metadata object
+                ]
+            )
+
+            # Make metadata table
+            mtable = np.vstack(
+                (
+                    np.array([["Metadata"] + [" "] * (table.shape[1] - 1)]),
+                    np.hstack(
+                        (
+                            row_names,
+                            formatted_metadata,
+                            ends,
+                        ),
+                        dtype=object,
+                    ),
+                    last_row,
+                ),
+                dtype=object,
+            )
+            if table.shape[1] == mtable.shape[1]:
+                table = np.vstack((table, mtable))
+
+        if len(table):
+            return tabulate(table, headers=headers, colalign=("left",)) + "\n" + bottom
+        else:
+            return tabulate([], headers=headers) + "\n" + bottom
 
     def __setattr__(self, name, value):
         # necessary setter to allow metadata to be set as an attribute
@@ -1201,6 +1383,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         else:
             super().__setattr__(name, value)
 
+    @add_or_convert_metadata
     def __getattr__(self, name):
         # TsdFrame needs a custom __getattr__ to override default inherited from BaseTsd
 
@@ -1209,14 +1392,15 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         if name in ("__getstate__", "__setstate__", "__reduce__", "__reduce_ex__"):
             raise AttributeError(name)
 
-        try:
-            metadata = self._metadata
-        except (AttributeError, RecursionError):
-            metadata = pd.DataFrame(index=self.columns)
+        # try:
+        #     metadata = self._metadata
+        # except (AttributeError, RecursionError):
+        #     metadata = {}  # pd.DataFrame(index=self.columns)
+        metadata = self._metadata
 
         if name == "_metadata":
             return metadata
-        elif name in metadata.columns:
+        elif name in metadata.keys():
             return _MetadataMixin.__getattr__(self, name)
         else:
             return super().__getattr__(name)
@@ -1247,7 +1431,10 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         except IndexError:
             raise IndexError
 
+    @add_or_convert_metadata
     def __getitem__(self, key, *args, **kwargs):
+        if isinstance(key, tuple):
+            key = tuple(k.values if hasattr(k, "values") else k for k in key)
         if isinstance(key, Tsd):
             try:
                 assert np.issubdtype(key.dtype, np.bool_)
@@ -1273,10 +1460,6 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             else:
                 return _MetadataMixin.__getitem__(self, key)
         else:
-            if isinstance(key, pd.Series) and key.index.equals(self.columns):
-                # if indexing with a pd.Series from metadata, transform it to tuple with slice(None) in first position
-                key = (slice(None, None, None), key)
-
             output = self.values.__getitem__(key)
             columns = self.columns
 
@@ -1353,6 +1536,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         df.columns = self.columns.copy()
         return df
 
+    # @add_or_convert_metadata
     def save(self, filename):
         """
         Save TsdFrame object in npz format. The file will contain the timestamps, the
@@ -1407,7 +1591,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             end=self.time_support.end,
             columns=cols_name,
             type=np.array(["TsdFrame"], dtype=np.str_),
-            _metadata=self._metadata.to_dict(),  # save metadata as dictionary
+            _metadata=dict(self._metadata),  # save metadata as dictionary
         )
 
         return
@@ -1553,81 +1737,109 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"]}
         >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
         >>> print(tsdframe)
-        Time (s)    0         1         2
-        ----------  --------  --------  --------
-        0.0         1.0       1.0       1.0
-        1.0         1.0       1.0       1.0
-        2.0         1.0       1.0       1.0
-        3.0         1.0       1.0       1.0
-        4.0         1.0       1.0       1.0
+        Time (s)    0    1    2
+        ----------  ---  ---  ---
+        0.0         1.0  1.0  1.0
+        1.0         1.0  1.0  1.0
+        2.0         1.0  1.0  1.0
+        3.0         1.0  1.0  1.0
+        4.0         1.0  1.0  1.0
         Metadata
-        --------    --------  --------  --------
-        l1          1         2         3
-        l2          x         x         y
+        ----------  ---  ---  ---
+        l1          1    2    3
+        l2          x    x    y
         dtype: float64, shape: (5, 3)
 
         To access a single metadata row (transposed to column):
 
         >>> tsdframe.get_info("l1")
-        0    1
-        1    2
-        2    3
-        Name: l1, dtype: int64
+        array([1, 2, 3])
 
         To access multiple metadata rows (transposed to columns):
 
         >>> tsdframe.get_info(["l1", "l2"])
-           l1 l2
-        0   1  x
-        1   2  x
-        2   3  y
-
-        To access metadata of a single column (transposed to row):
-
-        >>> tsdframe.get_info(0)
-        rate    0.667223
-        l1             1
-        l2             x
-        Name: 0, dtype: object
-
-        To access metadata of multiple columns (transposed to rows):
-
-        >>> tsdframe.get_info([0, 1])
-               rate  l1 l2
-        0  0.667223   1  x
-        1  1.334445   2  x
-
-        To access metadata of a single column and metadata key:
-
-        >>> tsdframe.get_info((0, "l1"))
-        np.int64(1)
+             l1    l2
+        0    1     x
+        1    2     x
+        2    3     y
 
         To access metadata as an attribute:
 
         >>> tsdframe.l1
-        0    1
-        1    2
-        2    3
-        Name: l1, dtype: int64
+        array([1, 2, 3])
 
         To access metadata as a key:
 
         >>> tsdframe["l1"]
-        0    1
-        1    2
-        2    3
-        Name: l1, dtype: int64
+        array([1, 2, 3])
 
         Multiple metadata columns can be accessed as keys:
 
         >>> tsdframe[["l1", "l2"]]
-           l1 l2
-        0   1  x
-        1   2  x
-        2   3  y
+             l1    l2
+        0    1     x
+        1    2     x
+        2    3     y
         """
         return _MetadataMixin.get_info(self, key)
 
+    @add_meta_docstring("drop_info")
+    def drop_info(self, key):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"], "l3": [4, 5, 6]}
+        >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
+        >>> print(tsdframe)
+        Time (s)    0    1    2
+        ----------  ---  ---  ---
+        0.0         1.0  1.0  1.0
+        1.0         1.0  1.0  1.0
+        2.0         1.0  1.0  1.0
+        3.0         1.0  1.0  1.0
+        4.0         1.0  1.0  1.0
+        Metadata
+        ----------  ---  ---  ---
+        l1          1    2    3
+        l2          x    x    y
+        l3          4    5    6
+        dtype: float64, shape: (5, 3)
+
+        To drop a single metadata row:
+
+        >>> tsdframe.drop_info("l1")
+        >>> tsdframe
+        Time (s)    0    1    2
+        ----------  ---  ---  ---
+        0.0         1.0  1.0  1.0
+        1.0         1.0  1.0  1.0
+        2.0         1.0  1.0  1.0
+        3.0         1.0  1.0  1.0
+        4.0         1.0  1.0  1.0
+        Metadata
+        ----------  ---  ---  ---
+        l2          x    x    y
+        l3          4    5    6
+        dtype: float64, shape: (5, 3)
+
+        To drop multiple metadata rows:
+
+        >>> tsdframe.drop_info(["l2", "l3"])
+        >>> tsdframe
+          Time (s)    0    1    2
+        ----------  ---  ---  ---
+                 0    1    1    1
+                 1    1    1    1
+                 2    1    1    1
+                 3    1    1    1
+                 4    1    1    1
+        dtype: float64, shape: (5, 3)
+        """
+        return _MetadataMixin.drop_info(self, key)
+
+    @add_or_convert_metadata
     @add_meta_docstring("groupby")
     def groupby(self, by, get_group=None):
         """

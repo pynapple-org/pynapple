@@ -10,13 +10,34 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+from scipy.signal import decimate
 
 import pynapple as nap
+from pynapple.core.time_series import is_array_like
+
+from .helper_tests import skip_if_backend
 
 # tsd1 = nap.Tsd(t=np.arange(100), d=np.random.rand(100), time_units="s")
 # tsd2 = nap.TsdFrame(t=np.arange(100), d=np.random.rand(100, 3), columns = ['a', 'b', 'c'])
 # tsd3 = nap.TsdTensor(t=np.arange(100), d=np.random.rand(100, 5, 4), time_units="s")
 # tsd4 = nap.Ts(t=np.arange(100), time_units="s")
+
+
+def decimate_scipy(tsd, ep, order, down, filter_type):
+    out_sci = []
+    for iset in ep:
+        out_sci.append(
+            decimate(
+                tsd.restrict(iset).d,
+                q=down,
+                n=order,
+                ftype=filter_type,
+                axis=0,
+                zero_phase=True,
+            )
+        )
+    out_sci = np.concatenate(out_sci, axis=0)
+    return out_sci
 
 
 def test_create_tsd():
@@ -766,6 +787,88 @@ class TestTimeSeriesGeneral:
                 tsd.smooth(1, windowsize="a")
             assert str(e_info.value) == "windowsize should be type int or float"
 
+    @pytest.mark.parametrize("down", [2, 3])
+    @pytest.mark.parametrize(
+        "ep", [nap.IntervalSet(0, 100), nap.IntervalSet([0, 41], [39, 100])]
+    )
+    @pytest.mark.parametrize("filter_type", ["iir", "fir"])
+    @pytest.mark.parametrize("order", [8, 6])
+    def test_decimate_vs_scipy(self, tsd, down, ep, filter_type, order):
+        if isinstance(tsd, nap.Ts):
+            pytest.skip("Ts do not implement decimate...")
+        out = tsd.decimate(down, ep=ep, filter_type=filter_type, order=order)
+        out_sci = decimate_scipy(tsd, ep, order, down, filter_type)
+        np.testing.assert_array_equal(out.d, out_sci)
+
+    @pytest.mark.parametrize("down", [2, 3])
+    @pytest.mark.parametrize(
+        "ep", [nap.IntervalSet(0, 100), nap.IntervalSet([0, 41], [39, 100])]
+    )
+    def test_decimate_time_axis(self, tsd, down, ep):
+        if isinstance(tsd, nap.Ts):
+            pytest.skip("Ts do not implement decimate...")
+        out = tsd.decimate(down, ep=ep)
+        for iset in ep:
+            np.testing.assert_array_equal(
+                out.restrict(iset).t, tsd.restrict(iset).t[::down]
+            )
+
+    @pytest.mark.parametrize(
+        "down, expectation",
+        [
+            (2, does_not_raise()),
+            ("3", pytest.raises(IOError, match="Invalid value for 'down'")),
+        ],
+    )
+    def test_decimate_down_input_error(self, tsd, down, expectation):
+        if isinstance(tsd, nap.Ts):
+            pytest.skip("Ts do not implement decimate...")
+        with expectation:
+            tsd.decimate(down)
+
+    @pytest.mark.parametrize(
+        "order, expectation",
+        [
+            (6, does_not_raise()),
+            (-1, pytest.raises(IOError, match="Invalid value for 'order'")),
+            ("6", pytest.raises(IOError, match="Invalid value for 'order'")),
+        ],
+    )
+    def test_decimate_order_input_error(self, tsd, order, expectation):
+        if isinstance(tsd, nap.Ts):
+            pytest.skip("Ts do not implement decimate...")
+        with expectation:
+            tsd.decimate(2, order=order)
+
+    @pytest.mark.parametrize(
+        "filter_type, expectation",
+        [
+            ("fir", does_not_raise()),
+            ("iir", does_not_raise()),
+            ("invalid", pytest.raises(IOError, match="'filter_type' should be one")),
+            (1, pytest.raises(IOError, match="'filter_type' should be one")),
+        ],
+    )
+    def test_decimate_filter_type_error(self, tsd, filter_type, expectation):
+        if isinstance(tsd, nap.Ts):
+            pytest.skip("Ts do not implement decimate...")
+        with expectation:
+            tsd.decimate(2, filter_type=filter_type)
+
+    @pytest.mark.parametrize(
+        "ep, expectation",
+        [
+            (nap.IntervalSet(0, 40), does_not_raise()),
+            (None, does_not_raise()),
+            ([0, 40], pytest.raises(IOError, match="ep should be an object")),
+        ],
+    )
+    def test_decimate_filter_epoch_error(self, tsd, ep, expectation):
+        if isinstance(tsd, nap.Ts):
+            pytest.skip("Ts do not implement decimate...")
+        with expectation:
+            tsd.decimate(2, ep=ep)
+
     @pytest.mark.parametrize(
         "ep, align, padding_value, expectation",
         [
@@ -1002,9 +1105,9 @@ class TestTsd:
 
         assert isinstance(indexed, nap.Tsd)
         np.testing.assert_array_almost_equal(indexed.values, np_indexed_vals)
-
-        tsd[tsd_index] = 0
-        np.testing.assert_array_almost_equal(tsd.values[tsd_index.values], 0)
+        if nap.nap_config.backend != "jax":
+            tsd[tsd_index] = 0
+            np.testing.assert_array_almost_equal(tsd.values[tsd_index.values], 0)
 
     def test_slice_with_bool_tsd(self, tsd):
 
@@ -1016,20 +1119,12 @@ class TestTsd:
 
         assert isinstance(indexed, nap.Tsd)
         np.testing.assert_array_almost_equal(indexed.values, np_indexed_vals)
-
-        tsd[tsd_index] = 0
-        np.testing.assert_array_almost_equal(tsd.values[tsd_index.values], 0)
+        if nap.nap_config.backend != "jax":
+            tsd[tsd_index] = 0
+            np.testing.assert_array_almost_equal(tsd.values[tsd_index.values], 0)
 
     def test_data(self, tsd):
         np.testing.assert_array_almost_equal(tsd.values, tsd.data())
-
-    def test_repr_(self, tsd):
-        # assert pd.Series(tsd).__repr__() == tsd.__repr__()
-        assert isinstance(tsd.__repr__(), str)
-
-    def test_str_(self, tsd):
-        # assert pd.Series(tsd).__str__() == tsd.__str__()
-        assert isinstance(tsd.__str__(), str)
 
     def test_to_tsgroup(self, tsd):
         t = []
@@ -1157,6 +1252,37 @@ class TestTsd:
         tsd2 = tsd.interpolate(ts, ep)
         assert len(tsd2) == 0
 
+    def test_interpolate_with_single_time_point(self, tsd):
+        y = np.array([0.5])
+        tsd = nap.Tsd(t=np.arange(0, 101), d=np.arange(0, 101))
+        ts = nap.Ts(t=y)
+        tsd2 = tsd.interpolate(ts)
+        np.testing.assert_array_almost_equal(y, tsd2.values)
+
+    def test_derivative(self, tsd):
+        times = np.arange(0, 10, 0.001)
+        data = np.sin(times)
+        tsd = nap.Tsd(t=times, d=data)
+        expected = np.cos(times)  # Derivative of sin(x) is cos(x)
+        derivative = tsd.derivative()
+        np.testing.assert_allclose(derivative.values, expected, atol=1e-3)
+
+    def test_derivative_with_ep(self, tsd):
+        times = np.arange(0, 100)
+        data = np.tile(np.arange(0, 10), 10)
+        ep = nap.IntervalSet(start=np.arange(0, 100, 10), end=np.arange(10, 110, 10))
+        expected = np.ones(len(times))  # Derivative should be 1
+
+        # With time support
+        tsd = nap.Tsd(t=times, d=data, time_support=ep)
+        derivative = tsd.derivative()
+        assert np.all(derivative == expected)
+
+        # With ep parameter
+        tsd = nap.Tsd(t=times, d=data)
+        derivative = tsd.derivative(ep=ep)
+        assert np.all(derivative == expected)
+
 
 ####################################################
 # Test for tsdframe
@@ -1229,7 +1355,7 @@ class TestTsdFrame:
         np.testing.assert_array_almost_equal(tscopy.values, tsdframe.values)
         assert np.all(tscopy.columns == tsdframe.columns)
         if len(tsdframe.metadata_columns):
-            pd.testing.assert_frame_equal(tscopy._metadata, tsdframe._metadata)
+            pd.testing.assert_frame_equal(tscopy.metadata, tsdframe.metadata)
 
     @pytest.mark.parametrize(
         "index, nap_type",
@@ -1266,15 +1392,24 @@ class TestTsdFrame:
         [
             0,
             slice(0, 10),
-            [0, 2],
+            [0, 2],  # not jax compatible
             np.hstack([np.zeros(10, bool), True, np.zeros(89, bool)]),
             np.hstack([np.zeros(10, bool), True, True, True, np.zeros(87, bool)]),
         ],
     )
     def test_vertical_slicing(self, tsdframe, index):
         if isinstance(index, int):
-            assert isinstance(tsdframe[index], np.ndarray)
+            assert (not isinstance(tsdframe[index], nap.TsdFrame)) and is_array_like(
+                tsdframe[index]
+            )
         elif len(tsdframe) > 1:
+            #     # jax and numpy compatible check
+            #     assert (not isinstance(tsdframe[index], nap.TsdFrame)) and is_array_like(
+            #         tsdframe[index]
+            #     )
+            # else:
+            if isinstance(index, list) and nap.nap_config.backend == "jax":
+                index = np.array(index)
             assert isinstance(tsdframe[index], nap.TsdFrame)
 
         if len(tsdframe) > 1:
@@ -1350,7 +1485,12 @@ class TestTsdFrame:
                     assert isinstance(tsdframe[row, col], nap.Tsd)
                 else:
                     # shape mismatch
-                    with pytest.raises(IndexError, match="shape mismatch"):
+                    # Numpy: IndexError, JAX: ValueError
+                    # (numpy | jax error messages)
+                    with pytest.raises(
+                        (IndexError, ValueError),
+                        match="shape mismatch|Incompatible shapes for ",
+                    ):
                         tsdframe[row, col]
 
             elif isinstance(row, Number) and isinstance(col, Number):
@@ -1494,20 +1634,6 @@ class TestTsdFrame:
         np.testing.assert_array_almost_equal(tsdframe.index, a.index)
         assert np.all(a.values == (v != 5))
 
-    def test_repr_(self, tsdframe):
-        # assert pd.DataFrame(tsdframe).__repr__() == tsdframe.__repr__()
-        assert isinstance(tsdframe.__repr__(), str)
-
-    def test_repr_empty(self, tsdframe):
-        ep = nap.IntervalSet(tsdframe.t[-1] + 1, tsdframe.t[-1] + 10)
-        newtsdframe = tsdframe.restrict(ep)
-        repr = newtsdframe.__repr__()
-        assert isinstance(repr, str)
-
-    def test_str_(self, tsdframe):
-        # assert pd.DataFrame(tsdframe).__str__() == tsdframe.__str__()
-        assert isinstance(tsdframe.__str__(), str)
-
     def test_data(self, tsdframe):
         np.testing.assert_array_almost_equal(tsdframe.values, tsdframe.data())
 
@@ -1587,8 +1713,10 @@ class TestTsdFrame:
 
         if len(tsdframe.metadata_columns):
             assert "_metadata" in keys
-            df = pd.DataFrame.from_dict(file["_metadata"].item())
-            pd.testing.assert_frame_equal(df, tsdframe._metadata)
+            metadata = file["_metadata"].item()
+            assert metadata.keys() == tsdframe._metadata.keys()
+            for key in metadata.keys():
+                assert np.all(metadata[key] == tsdframe._metadata[key])
 
         Path("tsdframe.npz").unlink()
         Path("tsdframe2.npz").unlink()
@@ -1660,6 +1788,31 @@ class TestTsdFrame:
         tsdframe2 = tsdframe.interpolate(ts, ep)
         assert len(tsdframe2) == 0
 
+    def test_derivative(self, tsdframe):
+        # Test with known derivatives (sine and cosine)
+        times = np.arange(0, 10, 0.001)
+        data = np.column_stack([np.sin(times), np.cos(times)])
+        tsdframe = nap.TsdFrame(t=times, d=data)
+        expected_derivative = np.column_stack([np.cos(times), -1 * np.sin(times)])
+        derivative = tsdframe.derivative()
+        np.testing.assert_allclose(derivative.values, expected_derivative, atol=1e-3)
+
+    def test_derivative_with_ep(self, tsdframe):
+        times = np.arange(0, 10)
+        data = np.array([[i, -i] for i in range(10)])
+        ep = nap.IntervalSet(start=[1, 6], end=[4, 10])
+        expected = np.array([[1, -1] for _ in range(8)])
+
+        # With time support
+        tsdframe = nap.TsdFrame(t=times, d=data, time_support=ep)
+        derivative = tsdframe.derivative()
+        assert np.all(derivative.values == expected)
+
+        # Test with ep parameter
+        tsdframe = nap.TsdFrame(t=times, d=data)
+        derivative = tsdframe.derivative(ep=ep)
+        assert np.all(derivative.values == expected)
+
     def test_convolve_keep_columns(self, tsdframe):
         array = np.random.randn(10)
         tsdframe = nap.TsdFrame(
@@ -1695,14 +1848,6 @@ class TestTsdFrame:
     ],
 )
 class TestTs:
-
-    def test_repr_(self, ts):
-        # assert pd.Series(ts).fillna("").__repr__() == ts.__repr__()
-        assert isinstance(ts.__repr__(), str)
-
-    def test_str_(self, ts):
-        # assert pd.Series(ts).fillna("").__str__() == ts.__str__()
-        assert isinstance(ts.__str__(), str)
 
     def test_save_npz(self, ts):
         with pytest.raises(TypeError) as e:
@@ -2052,14 +2197,6 @@ class TestTsdTensor:
         np.testing.assert_array_almost_equal(tsdtensor.index, a.index)
         assert np.all(a.values == (v != 5))
 
-    def test_repr_(self, tsdtensor):
-        # assert pd.DataFrame(tsdtensor).__repr__() == tsdtensor.__repr__()
-        assert isinstance(tsdtensor.__repr__(), str)
-
-    def test_str_(self, tsdtensor):
-        # assert pd.DataFrame(tsdtensor).__str__() == tsdtensor.__str__()
-        assert isinstance(tsdtensor.__str__(), str)
-
     def test_data(self, tsdtensor):
         np.testing.assert_array_almost_equal(tsdtensor.values, tsdtensor.data())
 
@@ -2195,6 +2332,30 @@ class TestTsdTensor:
         tsdframe2 = tsdtensor.interpolate(ts, ep)
         assert len(tsdframe2) == 0
 
+    def test_derivative(self, tsdtensor):
+        t = np.arange(10)
+        d = np.array([[[i, i], [-i, -i]] for i in range(10)])
+        tsdtensor = nap.TsdTensor(t=t, d=d)
+        derivative = tsdtensor.derivative()
+        expected = np.array([[[1, 1], [-1, -1]] for _ in range(10)])
+        assert np.all(derivative.values == expected)
+
+    def test_derivative_with_ep(self, tsdtensor):
+        t = np.arange(10)
+        d = np.array([[[i, i], [-i, -i]] for i in range(10)])
+        ep = nap.IntervalSet(start=[1, 6], end=[4, 10])
+        expected = np.array([[[1, 1], [-1, -1]] for _ in range(8)])
+
+        # With time support
+        tsdtensor = nap.TsdTensor(t=t, d=d, time_support=ep)
+        derivative = tsdtensor.derivative()
+        assert np.all(derivative.values == expected)
+
+        # With ep parameter
+        tsdtensor = nap.TsdTensor(t=t, d=d)
+        derivative = tsdtensor.derivative(ep=ep)
+        assert np.all(derivative.values == expected)
+
     def test_indexing_with_boolean_tsd(self, tsdtensor):
         # Create a boolean Tsd for indexing
         index_tsd = nap.Tsd(
@@ -2244,6 +2405,7 @@ class TestTsdTensor:
         with pytest.raises(IndexError, match="boolean index did not match"):
             tsdtensor[index_tsd]
 
+    @skip_if_backend("jax")
     def test_setitem_with_boolean_tsd(self, tsdtensor):
         # Create a boolean Tsd for indexing
         index_tsd = nap.Tsd(

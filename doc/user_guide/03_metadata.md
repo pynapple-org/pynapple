@@ -150,6 +150,13 @@ tsgroup.label=["MUA", "good", "good", "good"]
 print(tsgroup)
 ```
 
+## Allowed data types
+As long as the length of the metadata container matches the length of the object (number of columns for `TsdFrame` and number of indices for `IntervalSet` and `TsGroup`), elements of the metadata can be any data type.
+```{code-cell} ipython3
+tsgroup.coords = [[1,0],[0,1],[1,1],[2,1]]
+print(tsgroup)
+```
+
 ## Accessing metadata
 Metadata is stored as a pandas DataFrame, which can be previewed using the `metadata` attribute.
 ```{code-cell} ipython3
@@ -183,11 +190,12 @@ tsgroup.set_info(label=["A", "B", "C", "D"])
 print(tsgroup)
 ```
 
-## Allowed data types
-As long as the length of the metadata container matches the length of the object (number of columns for `TsdFrame` and number of indices for `IntervalSet` and `TsGroup`), elements of the metadata can be any data type.
+## Dropping metadata
+To drop metadata, use the `drop_info()` method. Multiple metadata columns can be dropped by passing a list of metadata names.
 ```{code-cell} ipython3
-tsgroup.coords = [[1,0],[0,1],[1,1],[2,1]]
-print(tsgroup.coords)
+print(tsgroup, "\n")
+tsgroup.drop_info("coords")
+print(tsgroup)
 ```
 
 ## Using metadata to slice objects

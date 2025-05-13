@@ -44,7 +44,8 @@ extensions = [
     'sphinx_copybutton',  # Adds copy button to code blocks
     'sphinx_design',  # For layout components
     'myst_nb',
-    'sphinx_contributors'
+    'sphinx_contributors',
+    'matplotlib.sphinxext.plot_directive'
     # 'sphinxcontrib.apidoc'
     # 'sphinx_gallery.gen_gallery',    
     # 'myst_sphinx_gallery',
@@ -148,8 +149,12 @@ napoleon_numpy_docstring = True
 
 nitpicky = True
 
-nb_execution_timeout = 60 * 15  # Set timeout in seconds (e.g., 15 minutes)
+# Set timeout in seconds (e.g., 15 minutes)
+nb_execution_timeout = 60 * 15
 
+# Execute notebooks during the build:
+nb_execution_mode = "cache"
+nb_execution_raise_on_error = True
 
 
 
