@@ -79,8 +79,9 @@ jobs:
           python -m pip install --upgrade pip
           pip install .[dev,doc]
       - name: Build documentation
-        run: |
-          sphinx-build -b html doc/ doc/_build
+        run: |          
+          cd doc
+          make html
       - name: Check html
         uses: chabad360/htmlproofer@master
         with:
