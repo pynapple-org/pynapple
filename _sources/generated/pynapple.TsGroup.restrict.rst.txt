@@ -1,0 +1,6 @@
+pynapple.TsGroup.restrict
+=========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.restrict

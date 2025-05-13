@@ -1,0 +1,14 @@
+﻿pynapple.process.correlograms
+=============================
+
+.. automodule:: pynapple.process.correlograms
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      compute_autocorrelogram
+      compute_crosscorrelogram
+      compute_eventcorrelogram
+   

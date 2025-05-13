@@ -1,0 +1,18 @@
+﻿pynapple.process.tuning\_curves
+===============================
+
+.. automodule:: pynapple.process.tuning_curves
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      compute_1d_mutual_info
+      compute_1d_tuning_curves
+      compute_1d_tuning_curves_continuous
+      compute_2d_mutual_info
+      compute_2d_tuning_curves
+      compute_2d_tuning_curves_continuous
+      compute_discrete_tuning_curves
+   

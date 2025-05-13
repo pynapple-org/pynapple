@@ -1,0 +1,6 @@
+pynapple.TsdFrame.save
+======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.save
