@@ -1,5 +1,16 @@
 # Releases
 
+### 0.9.0 (2025-05-13)
+
+- New private class: `_MetadataMixin` and `_Metadata(UserDict)` (core/metadata_class.py). Can be inherited by:
+    - IntervalSet
+    - TsdFrame
+    - TsGroup 
+  This class assumes that whatever is inheriting it has the private property `self._initialized`.
+  `metadata`: public read-only view of metadata
+- Add a decimate method to _BaseTsd.
+- Adds support for a new derivative method which wraps `np.gradient` with support for epochs and time index
+
 ### 0.8.5 (2025-03-24)
 
 - Implements `nap.build_tensor` and `nap.warp_tensor` for trial-based data.
