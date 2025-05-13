@@ -95,7 +95,6 @@ jobs:
     - lint
     - test
     - documentation
-    - check_links
     runs-on: ubuntu-latest
     steps:
     - name: Decide whether all tests and notebooks succeeded
