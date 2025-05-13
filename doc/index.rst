@@ -66,7 +66,7 @@ pynapple: python neural analysis package
         :link: ./user_guide/01_introduction_to_pynapple.html#instantiating-pynapple-objects
 
         .. image:: _static/example_thumbs/tsd.svg
-            :width: 120px
+            :width: 100px
             :class: dark-light
 
     .. grid-item-card:: Intervals
@@ -74,7 +74,7 @@ pynapple: python neural analysis package
         :link: ./user_guide/01_introduction_to_pynapple.html#nap-intervalset-intervals
 
         .. image:: _static/example_thumbs/interval.svg
-            :width: 120px
+            :width: 100px
             :class: dark-light
 
     .. grid-item-card:: Timestamps
@@ -82,7 +82,7 @@ pynapple: python neural analysis package
         :link: ./user_guide/01_introduction_to_pynapple.html#nap-ts-timestamps
 
         .. image:: _static/example_thumbs/tsgroup.svg
-            :width: 120px
+            :width: 100px
             :class: dark-light
 
     .. grid-item-card:: Time alignment
@@ -90,7 +90,7 @@ pynapple: python neural analysis package
         :link: ./user_guide/01_introduction_to_pynapple.html#restricting-time-series-to-epochs
 
         .. image:: _static/example_thumbs/interaction.svg
-            :width: 120px
+            :width: 100px
             :class: dark-light
 
 .. grid:: 1 1 6 6
@@ -101,7 +101,7 @@ pynapple: python neural analysis package
       :link: ./user_guide/07_decoding.html
 
       .. image:: _static/example_thumbs/decoding.svg
-         :width: 120px
+         :width: 100px
          :class: dark-light
 
    .. grid-item-card:: Perievent
@@ -109,7 +109,7 @@ pynapple: python neural analysis package
       :link: ./user_guide/08_perievent.html
 
       .. image:: _static/example_thumbs/perievent.svg
-         :width: 120px
+         :width: 100px
          :class: dark-light
 
    .. grid-item-card:: Correlation
@@ -117,7 +117,7 @@ pynapple: python neural analysis package
       :link: ./user_guide/05_correlograms.html
 
       .. image:: _static/example_thumbs/correlation.svg
-         :width: 120px
+         :width: 100px
          :class: dark-light
 
    .. grid-item-card:: Tuning curves
@@ -125,7 +125,7 @@ pynapple: python neural analysis package
       :link: ./user_guide/06_tuning_curves.html
 
       .. image:: _static/example_thumbs/tuningcurves.svg
-         :width: 120px
+         :width: 100px
          :class: dark-light
 
    .. grid-item-card:: Spectrogram
@@ -133,7 +133,7 @@ pynapple: python neural analysis package
       :link: ./user_guide/11_wavelets.html
 
       .. image:: _static/example_thumbs/wavelets.svg
-         :width: 120px
+         :width: 100px
          :class: dark-light
 
    .. grid-item-card:: Filtering
@@ -141,7 +141,7 @@ pynapple: python neural analysis package
       :link: ./user_guide/12_filtering.html
 
       .. image:: _static/example_thumbs/filtering.svg
-         :width: 120px
+         :width: 100px
          :class: dark-light
 
 
