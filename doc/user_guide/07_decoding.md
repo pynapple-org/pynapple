@@ -27,7 +27,7 @@ Pynapple supports 1 dimensional and 2 dimensional bayesian decoding. The functio
 
 
 :::{hint}
-Input to the bayesian decoding functions always include the tuning curves computed from `nap.compute_1d_tuning_curves` or `nap.compute_2d_tuning_curves`.
+Input to the bayesian decoding functions always include the tuning curves computed from [`nap.compute_1d_tuning_curves`](pynapple.process.tuning_curves.compute_1d_tuning_curves) or [`nap.compute_2d_tuning_curves`](pynapple.process.tuning_curves.compute_2d_tuning_curves).
 :::
 
 ## 1-dimensional decoding

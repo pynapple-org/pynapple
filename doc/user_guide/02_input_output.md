@@ -135,7 +135,7 @@ print(type(z.d))
 
 ## Saving as NPZ
 
-Pynapple objects have `save` methods to save them as npz files. 
+Pynapple objects have [`save`](pynapple.Tsd.save) methods to save them as npz files. 
 
 ```{code-cell} ipython3
 tsd = nap.Tsd(t=np.arange(10), d=np.arange(10))
@@ -282,7 +282,7 @@ if project_path not in os.listdir("."):
 
 ```
 
-We can load a folder containing multiple animals and sessions with the `Folders` class. The method `nap.load_folder` provides a shortcut.
+We can load a folder containing multiple animals and sessions with the `Folders` class. The method [`nap.load_folder`](pynapple.io.misc.load_folder) provides a shortcut.
 
 
 ```{code-cell} ipython3

@@ -36,7 +36,7 @@ print(ts_group)
 ## Autocorrelograms
 
 We can compute their autocorrelograms meaning the number of spikes of a neuron observed in a time windows centered around its own spikes.
-For this we can use the function `compute_autocorrelogram`.
+For this we can use the function [`compute_autocorrelogram`](pynapple.compute_autocorrelogram).
 We need to specifiy the `binsize` and `windowsize` to bin the spike train.
 
 ```{code-cell} ipython3
