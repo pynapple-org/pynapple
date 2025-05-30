@@ -115,7 +115,6 @@ def _initialize_tsd_output(
     kwargs = kwargs if kwargs is not None else {}
 
     if isinstance(values, np.ndarray) or is_array_like(values):
-
         # if time and ep are passed use them, otherwise strip from inp
         time_index = input_object.index if time_index is None else time_index
 
@@ -179,10 +178,10 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 )
             self.values = d
 
-        assert len(self.index) == len(
-            self.values
-        ), "Length of values {} does not match length of index {}".format(
-            len(self.values), len(self.index)
+        assert len(self.index) == len(self.values), (
+            "Length of values {} does not match length of index {}".format(
+                len(self.values), len(self.index)
+            )
         )
 
         if isinstance(time_support, IntervalSet) and len(self.index):
@@ -257,7 +256,6 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         return np.asarray(self.values, dtype=dtype)
 
     def __array_ufunc__(self, ufunc, method, *args, **kwargs):
-
         if method == "__call__":
             new_args = []
             n_object = 0
@@ -1223,9 +1221,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         if c is None or len(c) != self.values.shape[1]:
             c = np.arange(self.values.shape[1], dtype="int")
         else:
-            assert (
-                len(c) == self.values.shape[1]
-            ), "Number of columns should match the second dimension of d"
+            assert len(c) == self.values.shape[1], (
+                "Number of columns should match the second dimension of d"
+            )
 
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
@@ -2585,3 +2583,63 @@ class Ts(_Base):
             output = output[:, -np.max(n_ep) :]
 
         return output
+
+    def time_diff(self, alpha=0.5, ep=None):
+        """Computes the differences between subsequent timestamps.
+
+        Parameters
+        ----------
+        alpha : float, optional
+            The midpoint between each pair of subsequent timepoints which will become the index of the output Tsd.
+        ep : IntervalSet, optional
+            The epochs to calculate time differences over. If None, the time support of Tsd is used.
+
+        Returns
+        -------
+        Tsd
+            The time differences of the timepoints.
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> ts = nap.Ts(t=[1, 3, 5, 6, 8, 12])
+        >>> tsd_time_diffs = ts.time_diffs()
+        >>> tsd_time_diffs
+        Time (s)
+        ----------  --
+        2            2
+        4            2
+        5.5          1
+        7            2
+        10           4
+        dtype: float64, shape: (5,)
+        """
+        if not isinstance(alpha, float):
+            raise RuntimeError("Parameter alpha should be float type")
+
+        alpha = np.clip(alpha, 0, 1)
+
+        if ep is None:
+            ep = self.time_support
+        else:
+            if not isinstance(ep, IntervalSet):
+                raise IOError("ep should be an object of type IntervalSet")
+
+        n = len(self.restrict(ep).index)
+        new_d = np.full(n - len(ep), np.nan)
+        new_t = np.full(n - len(ep), np.nan)
+
+        start = 0
+        for i in range(len(ep)):
+            tmp = self.get(ep[i, 0], ep[i, 1])
+
+            if len(tmp) > 1:
+                diff = tmp.index.values[1:] - tmp.index.values[:-1]
+                new_d[start : start + len(tmp) - 1] = diff
+                new_t[start : start + len(tmp) - 1] = (
+                    tmp.index.values[:-1] + alpha * diff
+                )
+                start += len(tmp) - 1
+
+        return _initialize_tsd_output(self, new_d, time_index=new_t, time_support=ep)

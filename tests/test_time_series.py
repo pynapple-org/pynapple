@@ -567,7 +567,6 @@ class TestTimeSeriesGeneral:
 
     def test_dropna(self, tsd):
         if not isinstance(tsd, nap.Ts):
-
             new_tsd = tsd.dropna()
             np.testing.assert_array_equal(tsd.index.values, new_tsd.index.values)
             np.testing.assert_array_equal(tsd.values, new_tsd.values)
@@ -602,7 +601,6 @@ class TestTimeSeriesGeneral:
 
     def test_convolve_raise_errors(self, tsd):
         if not isinstance(tsd, nap.Ts):
-
             with pytest.raises(IOError) as e_info:
                 tsd.convolve([1, 2, 3])
             assert (
@@ -933,7 +931,6 @@ class TestTimeSeriesGeneral:
     ],
 )
 class TestTsd:
-
     @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
     def test_bin_average_time_support(self, tsd, delta_ep):
         ep = nap.IntervalSet(
@@ -1096,7 +1093,6 @@ class TestTsd:
         )
 
     def test_slice_with_bool_tsd(self, tsd):
-
         thr = 0.5
         tsd_index = tsd > thr
         raw_values = tsd.values
@@ -1110,7 +1106,6 @@ class TestTsd:
             np.testing.assert_array_almost_equal(tsd.values[tsd_index.values], 0)
 
     def test_slice_with_bool_tsd(self, tsd):
-
         thr = 0.5
         tsd_index = tsd > thr
         raw_values = tsd.values
@@ -1190,7 +1185,6 @@ class TestTsd:
         Path("tsd2.npz").unlink()
 
     def test_interpolate(self, tsd):
-
         y = np.arange(0, 1001)
 
         tsd = nap.Tsd(t=np.arange(0, 101), d=y[0::10])
@@ -1317,7 +1311,6 @@ class TestTsd:
     ],
 )
 class TestTsdFrame:
-
     @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
     def test_bin_average_time_support(self, tsdframe, delta_ep):
         ep = nap.IntervalSet(
@@ -1722,7 +1715,6 @@ class TestTsdFrame:
         Path("tsdframe2.npz").unlink()
 
     def test_interpolate(self, tsdframe):
-
         y = np.arange(0, 1001)
         data_stack = np.stack(
             [
@@ -1848,7 +1840,6 @@ class TestTsdFrame:
     ],
 )
 class TestTs:
-
     def test_save_npz(self, ts):
         with pytest.raises(TypeError) as e:
             ts.save(dict)
@@ -2053,6 +2044,25 @@ class TestTs:
         expected[np.isnan(expected)] = -1
         np.testing.assert_array_almost_equal(tensor, expected)
 
+    def test_time_diff(self, ts):
+        ep = nap.IntervalSet(
+            start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
+        )
+
+        expected_values = np.concatenate(
+            [np.diff(ts.get(ep[i, 0], ep[i, 1]).index) for i in range(len(ep))]
+        )
+        values = ts.time_diff(ep=ep)
+        np.testing.assert_array_almost_equal(values, expected_values)
+
+        for alpha in np.linspace(0, 1, 10):
+            expected_index = []
+            for i in range(len(ep)):
+                slice = ts.get(ep[i, 0], ep[i, 1]).index
+                expected_index.extend(slice[:-1] + alpha * np.diff(slice))
+            index = ts.time_diff(ep=ep, alpha=alpha).index
+            np.testing.assert_array_almost_equal(index, expected_index)
+
 
 ####################################################
 # Test for tsdtensor
@@ -2064,7 +2074,6 @@ class TestTs:
     ],
 )
 class TestTsdTensor:
-
     @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
     def test_bin_average_time_support(self, delta_ep, tsdtensor):
         ep = nap.IntervalSet(
@@ -2256,7 +2265,6 @@ class TestTsdTensor:
         Path("tsdtensor2.npz").unlink()
 
     def test_interpolate(self, tsdtensor):
-
         y = np.arange(0, 1001)
         data_stack = np.stack(
             [
