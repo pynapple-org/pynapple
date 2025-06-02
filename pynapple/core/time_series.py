@@ -2627,9 +2627,9 @@ class Ts(_Base):
             if not isinstance(ep, IntervalSet):
                 raise IOError("ep should be an object of type IntervalSet")
 
-        n = len(self.restrict(ep).index)
-        new_d = np.full(n - len(ep), np.nan)
-        new_t = np.full(n - len(ep), np.nan)
+        n = len(self.restrict(ep).index) - len(ep)
+        new_d = np.full(n, np.nan)
+        new_t = np.full(n, np.nan)
 
         start = 0
         for i in range(len(ep)):
