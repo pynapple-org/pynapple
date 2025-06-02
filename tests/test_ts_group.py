@@ -44,7 +44,6 @@ def ts_group_one_group():
 
 
 class TestTsGroup1:
-
     def test_create_ts_group(self, group):
         tsgroup = nap.TsGroup(group)
         assert isinstance(tsgroup, UserDict)
@@ -576,7 +575,6 @@ class TestTsGroup1:
         )
 
     def test_to_tsd_runtime_errors(self, group):
-
         tsgroup = nap.TsGroup(group)
 
         with pytest.raises(Exception) as e_info:
@@ -685,8 +683,30 @@ class TestTsGroup1:
         with pytest.raises(RuntimeError, match=re.escape(expectation)):
             tsgroup.trial_count(ep, bin_size, align, padding_value, time_unit)
 
-    def test_save_npz(self, group):
+    def test_time_diff(self, group):
+        tsgroup = nap.TsGroup(group)
+        ep = nap.IntervalSet(
+            start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
+        )
 
+        alpha = np.random.rand()
+        time_diff_dict = tsgroup.time_diff(alpha=alpha, ep=ep)
+        for ts_idx in tsgroup.index:
+            expected_index = []
+            expected_values = []
+            for ep_idx in range(len(ep)):
+                slice = tsgroup[ts_idx].get(ep[ep_idx, 0], ep[ep_idx, 1]).index
+                expected_values.extend(np.diff(slice))
+                expected_index.extend(slice[:-1] + alpha * np.diff(slice))
+
+            np.testing.assert_array_almost_equal(
+                time_diff_dict[ts_idx].values, expected_values
+            )
+            np.testing.assert_array_almost_equal(
+                time_diff_dict[ts_idx].index, expected_index
+            )
+
+    def test_save_npz(self, group):
         group = {
             0: nap.Tsd(t=np.arange(0, 20), d=np.random.rand(20)),
             1: nap.Tsd(t=np.arange(0, 20, 0.5), d=np.random.rand(40)),

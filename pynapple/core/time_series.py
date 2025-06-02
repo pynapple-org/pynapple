@@ -2585,19 +2585,20 @@ class Ts(_Base):
         return output
 
     def time_diff(self, alpha=0.5, ep=None):
-        """Computes the differences between subsequent timestamps.
+        """
+        Computes the differences between subsequent timestamps.
 
         Parameters
         ----------
         alpha : float, optional
-            The midpoint between each pair of subsequent timepoints which will become the index of the output Tsd.
+            The midpoint between each pair of subsequent timepoints which will become the index of the output.
         ep : IntervalSet, optional
-            The epochs to calculate time differences over. If None, the time support of Tsd is used.
+            The epochs to calculate time differences over. If None, the time support of Ts is used.
 
         Returns
         -------
         Tsd
-            The time differences of the timepoints.
+            The time differences.
 
         Examples
         --------

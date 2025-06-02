@@ -2049,19 +2049,18 @@ class TestTs:
             start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
         )
 
+        alpha = np.random.rand()
         expected_values = np.concatenate(
             [np.diff(ts.get(ep[i, 0], ep[i, 1]).index) for i in range(len(ep))]
         )
-        values = ts.time_diff(ep=ep)
-        np.testing.assert_array_almost_equal(values, expected_values)
+        expected_index = []
+        for i in range(len(ep)):
+            slice = ts.get(ep[i, 0], ep[i, 1]).index
+            expected_index.extend(slice[:-1] + alpha * np.diff(slice))
 
-        for alpha in np.linspace(0, 1, 10):
-            expected_index = []
-            for i in range(len(ep)):
-                slice = ts.get(ep[i, 0], ep[i, 1]).index
-                expected_index.extend(slice[:-1] + alpha * np.diff(slice))
-            index = ts.time_diff(ep=ep, alpha=alpha).index
-            np.testing.assert_array_almost_equal(index, expected_index)
+        tsd = ts.time_diff(ep=ep, alpha=alpha)
+        np.testing.assert_array_almost_equal(tsd.values, expected_values)
+        np.testing.assert_array_almost_equal(tsd.index, expected_index)
 
 
 ####################################################
