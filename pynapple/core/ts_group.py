@@ -1036,7 +1036,7 @@ class TsGroup(UserDict, _MetadataMixin):
         Returns
         -------
         dict
-            A dictionary of Tsd, containing the time differences for each Ts in the group.
+            A dictionary of Tsd containing the time differences for each Ts in the group.
 
         Examples
         --------

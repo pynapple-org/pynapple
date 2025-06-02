@@ -11,6 +11,7 @@ from .filtering import (
     apply_lowpass_filter,
     get_filter_frequency_response,
 )
+from .isi import compute_isi_distribution
 from .perievent import (
     compute_event_trigger_average,
     compute_perievent,
