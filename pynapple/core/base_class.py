@@ -328,6 +328,68 @@ class _Base(abc.ABC):
 
         return self._define_instance(t, ep, values=d)
 
+    def time_diff(self, align="center", ep=None):
+        """
+        Computes the differences between subsequent timestamps.
+
+        Parameters
+        ----------
+        align: str, optional
+            Determines the time index of the resulting time differences:
+            'start': the start timepoint,
+            'center' [default]: the center of the interval between the two timepoints,
+            'end': the next timepoint
+        ep : IntervalSet, optional
+            The epochs to calculate time differences over. If None, the time support of the TsGroup is used.
+
+        Returns
+        -------
+        Tsd
+            The time differences.
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> ts = nap.Ts(t=[1, 3, 5, 6, 8, 12])
+        >>> ep = nap.IntervalSet(start=2, end=9, time_units='s')
+        >>> tsd_time_diffs = ts.time_diff(align="center", ep=ep)
+        >>> tsd_time_diffs
+        Time (s)
+        ----------  --
+        4            2
+        5.5          1
+        7            2
+        dtype: float64, shape: (3,)
+        """
+        if align not in ["start", "center", "end"]:
+            raise RuntimeError("align should be 'start', 'center' or 'end'")
+
+        if ep is None:
+            ep = self.time_support
+        else:
+            if not isinstance(ep, IntervalSet):
+                raise RuntimeError("ep should be an object of type IntervalSet")
+
+        n = len(self.restrict(ep).index) - len(ep)
+        new_d = np.full(n, np.nan)
+        new_t = np.full(n, np.nan)
+
+        start = 0
+        alpha = 0.0 if align == "start" else 0.5 if align == "center" else 1.0
+        for i in range(len(ep)):
+            tmp = self.get(ep[i, 0], ep[i, 1])
+
+            if len(tmp) > 1:
+                diff = tmp.index.values[1:] - tmp.index.values[:-1]
+                new_d[start : start + len(tmp) - 1] = diff
+                new_t[start : start + len(tmp) - 1] = (
+                    tmp.index.values[:-1] + alpha * diff
+                )
+                start += len(tmp) - 1
+
+        return self._define_instance(time_index=new_t, time_support=ep, values=new_d)
+
     def restrict(self, iset):
         """
         Restricts a time series object to a set of time intervals delimited by an IntervalSet object

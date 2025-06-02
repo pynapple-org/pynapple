@@ -2044,21 +2044,36 @@ class TestTs:
         expected[np.isnan(expected)] = -1
         np.testing.assert_array_almost_equal(tensor, expected)
 
+    @pytest.mark.parametrize(
+        "align, ep, expectation",
+        [
+            (5, nap.IntervalSet(0, 1), "align should be 'start', 'center' or 'end'"),
+            (
+                "one",
+                nap.IntervalSet(0, 1),
+                "align should be 'start', 'center' or 'end'",
+            ),
+            ("start", [], "ep should be an object of type IntervalSet"),
+        ],
+    )
+    def test_time_diff_runtime_errors(self, ts, align, ep, expectation):
+        with pytest.raises(RuntimeError, match=re.escape(expectation)):
+            ts.time_diff(align, ep)
+
     def test_time_diff(self, ts):
         ep = nap.IntervalSet(
             start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
         )
 
-        alpha = np.random.rand()
         expected_values = np.concatenate(
             [np.diff(ts.get(ep[i, 0], ep[i, 1]).index) for i in range(len(ep))]
         )
         expected_index = []
         for i in range(len(ep)):
             slice = ts.get(ep[i, 0], ep[i, 1]).index
-            expected_index.extend(slice[:-1] + alpha * np.diff(slice))
+            expected_index.extend(slice[:-1] + 0.5 * np.diff(slice))
 
-        tsd = ts.time_diff(ep=ep, alpha=alpha)
+        tsd = ts.time_diff(ep=ep)
         np.testing.assert_array_almost_equal(tsd.values, expected_values)
         np.testing.assert_array_almost_equal(tsd.index, expected_index)
 

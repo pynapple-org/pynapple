@@ -683,14 +683,31 @@ class TestTsGroup1:
         with pytest.raises(RuntimeError, match=re.escape(expectation)):
             tsgroup.trial_count(ep, bin_size, align, padding_value, time_unit)
 
+    @pytest.mark.parametrize(
+        "align, ep, expectation",
+        [
+            (1, nap.IntervalSet(0, 1), "align should be 'start', 'center' or 'end'"),
+            (
+                "one",
+                nap.IntervalSet(0, 1),
+                "align should be 'start', 'center' or 'end'",
+            ),
+            ("start", [], "ep should be an object of type IntervalSet"),
+        ],
+    )
+    def test_time_diff_runtime_errors(self, group, align, ep, expectation):
+        tsgroup = nap.TsGroup(group)
+        with pytest.raises(RuntimeError, match=re.escape(expectation)):
+            tsgroup.time_diff(align, ep)
+
     def test_time_diff(self, group):
         tsgroup = nap.TsGroup(group)
         ep = nap.IntervalSet(
             start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
         )
 
-        alpha = np.random.rand()
-        time_diff_dict = tsgroup.time_diff(alpha=alpha, ep=ep)
+        alpha = 0.5
+        time_diff_dict = tsgroup.time_diff(ep=ep)
         for ts_idx in tsgroup.index:
             expected_index = []
             expected_values = []

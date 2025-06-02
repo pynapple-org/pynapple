@@ -1022,14 +1022,17 @@ class TsGroup(UserDict, _MetadataMixin):
 
         return output
 
-    def time_diff(self, alpha=0.5, ep=None):
+    def time_diff(self, align="center", ep=None):
         """
         Computes the differences between subsequent timestamps.
 
         Parameters
         ----------
-        alpha : float, optional
-            The midpoint between each pair of subsequent timepoints which will become the index of the output.
+        align: str, optional
+            Determines the time index of the resulting time differences:
+            'start': the start timepoint,
+            'center' [default]: the center of the interval between the two timepoints,
+            'end': the next timepoint
         ep : IntervalSet, optional
             The epochs to calculate time differences over. If None, the time support of the TsGroup is used.
 
@@ -1048,7 +1051,7 @@ class TsGroup(UserDict, _MetadataMixin):
         }
         >>> tsgroup = nap.TsGroup(tmp)
         >>> ep = nap.IntervalSet(start=2, end=9, time_units='s')
-        >>> time_diffs = tsgroup.time_diff(alpha=0.5, ep=ep)
+        >>> time_diffs = tsgroup.time_diff(align="center", ep=ep)
         {0: Time (s)
         ----------  --
         4            2
@@ -1065,19 +1068,17 @@ class TsGroup(UserDict, _MetadataMixin):
         8            2
         dtype: float64, shape: (3,)}
         """
-        if not isinstance(alpha, float):
-            raise RuntimeError("Parameter alpha should be float type")
-
-        alpha = np.clip(alpha, 0, 1)
+        if align not in ["start", "center", "end"]:
+            raise RuntimeError("align should be 'start', 'center' or 'end'")
 
         if ep is None:
             ep = self.time_support
         if not isinstance(ep, IntervalSet):
-            raise TypeError("Argument ep should be of type IntervalSet or None")
+            raise RuntimeError("ep should be an object of type IntervalSet")
 
         time_diffs = {}
         for k in self.data:
-            time_diffs[k] = self.data[k].time_diff(alpha=alpha, ep=ep)
+            time_diffs[k] = self.data[k].time_diff(align=align, ep=ep)
 
         return time_diffs
 
