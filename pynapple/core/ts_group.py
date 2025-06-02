@@ -1073,8 +1073,9 @@ class TsGroup(UserDict, _MetadataMixin):
 
         if ep is None:
             ep = self.time_support
-        if not isinstance(ep, IntervalSet):
-            raise RuntimeError("ep should be an object of type IntervalSet")
+        else:
+            if not isinstance(ep, IntervalSet):
+                raise IOError("ep should be an object of type IntervalSet")
 
         time_diffs = {}
         for k in self.data:

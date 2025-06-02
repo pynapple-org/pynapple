@@ -684,21 +684,28 @@ class TestTsGroup1:
             tsgroup.trial_count(ep, bin_size, align, padding_value, time_unit)
 
     @pytest.mark.parametrize(
-        "align, ep, expectation",
+        "align, expectation",
         [
-            (1, nap.IntervalSet(0, 1), "align should be 'start', 'center' or 'end'"),
-            (
-                "one",
-                nap.IntervalSet(0, 1),
-                "align should be 'start', 'center' or 'end'",
-            ),
-            ("start", [], "ep should be an object of type IntervalSet"),
+            ("a", "align should be 'start', 'center' or 'end'"),
         ],
     )
-    def test_time_diff_runtime_errors(self, group, align, ep, expectation):
+    def test_time_diff_runtime_errors(self, group, align, expectation):
         tsgroup = nap.TsGroup(group)
         with pytest.raises(RuntimeError, match=re.escape(expectation)):
-            tsgroup.time_diff(align, ep)
+            tsgroup.time_diff(align=align)
+
+    @pytest.mark.parametrize(
+        "ep, expectation",
+        [
+            (nap.IntervalSet(0, 40), does_not_raise()),
+            (None, does_not_raise()),
+            ([0, 40], pytest.raises(IOError, match="ep should be an object")),
+        ],
+    )
+    def test_time_diff_epoch_error(self, group, ep, expectation):
+        tsgroup = nap.TsGroup(group)
+        with expectation:
+            tsgroup.time_diff(ep=ep)
 
     def test_time_diff(self, group):
         tsgroup = nap.TsGroup(group)

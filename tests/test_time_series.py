@@ -861,7 +861,7 @@ class TestTimeSeriesGeneral:
             ([0, 40], pytest.raises(IOError, match="ep should be an object")),
         ],
     )
-    def test_decimate_filter_epoch_error(self, tsd, ep, expectation):
+    def test_decimate_epoch_error(self, tsd, ep, expectation):
         if isinstance(tsd, nap.Ts):
             pytest.skip("Ts do not implement decimate...")
         with expectation:
@@ -919,6 +919,28 @@ class TestTimeSeriesGeneral:
             tensor = tsd.to_trial_tensor(ep, align="end", padding_value=-1)
             expected[np.isnan(expected)] = -1
             np.testing.assert_array_almost_equal(tensor, expected)
+
+    @pytest.mark.parametrize(
+        "align, expectation",
+        [
+            ("a", "align should be 'start', 'center' or 'end'"),
+        ],
+    )
+    def test_time_diff_runtime_errors(self, tsd, align, expectation):
+        with pytest.raises(RuntimeError, match=re.escape(expectation)):
+            tsd.time_diff(align=align)
+
+    @pytest.mark.parametrize(
+        "ep, expectation",
+        [
+            (nap.IntervalSet(0, 40), does_not_raise()),
+            (None, does_not_raise()),
+            ([0, 40], pytest.raises(IOError, match="ep should be an object")),
+        ],
+    )
+    def test_time_diff_epoch_error(self, tsd, ep, expectation):
+        with expectation:
+            tsd.time_diff(ep=ep)
 
 
 ####################################################
@@ -2043,22 +2065,6 @@ class TestTs:
         tensor = ts.trial_count(ep, bin_size=1, align="start", padding_value=-1)
         expected[np.isnan(expected)] = -1
         np.testing.assert_array_almost_equal(tensor, expected)
-
-    @pytest.mark.parametrize(
-        "align, ep, expectation",
-        [
-            (5, nap.IntervalSet(0, 1), "align should be 'start', 'center' or 'end'"),
-            (
-                "one",
-                nap.IntervalSet(0, 1),
-                "align should be 'start', 'center' or 'end'",
-            ),
-            ("start", [], "ep should be an object of type IntervalSet"),
-        ],
-    )
-    def test_time_diff_runtime_errors(self, ts, align, ep, expectation):
-        with pytest.raises(RuntimeError, match=re.escape(expectation)):
-            ts.time_diff(align, ep)
 
     def test_time_diff(self, ts):
         ep = nap.IntervalSet(
