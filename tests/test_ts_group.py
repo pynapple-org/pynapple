@@ -707,27 +707,116 @@ class TestTsGroup1:
         with expectation:
             tsgroup.time_diff(ep=ep)
 
-    def test_time_diff(self, group):
+    @pytest.mark.parametrize(
+        "align, ep, expectation",
+        [
+            # default arguments
+            (
+                None,
+                None,
+                {
+                    0: nap.Tsd(d=np.ones(199), t=np.arange(0.5, 199.5)),
+                    1: nap.Tsd(d=np.full(399, 0.5), t=np.arange(0.25, 199.5, 0.5)),
+                    2: nap.Tsd(d=np.full(1499, 0.2), t=np.arange(0.1, 299.8, 0.2)),
+                },
+            ),
+            # empty time support
+            (
+                "start",
+                nap.IntervalSet(start=[], end=[]),
+                {i: nap.Tsd(d=[], t=[]) for i in range(3)},
+            ),
+            # empty epoch
+            (
+                "start",
+                nap.IntervalSet(start=[10, 50, 300], end=[20, 60, 310]),
+                {
+                    0: nap.Tsd(
+                        d=np.ones(20),
+                        t=np.concatenate([np.arange(10, 20), np.arange(50, 60)]),
+                    ),
+                    1: nap.Tsd(
+                        d=np.full(40, 0.5),
+                        t=np.concatenate(
+                            [np.arange(10, 20, 0.5), np.arange(50, 60, 0.5)]
+                        ),
+                    ),
+                    2: nap.Tsd(
+                        d=np.full(100, 0.2),
+                        t=np.concatenate(
+                            [np.arange(10, 20, 0.2), np.arange(50, 60, 0.2)]
+                        ),
+                    ),
+                },
+            ),
+            # single point in epoch
+            (
+                "start",
+                nap.IntervalSet(start=[10, 50, 299.8], end=[20, 60, 300]),
+                {
+                    0: nap.Tsd(
+                        d=np.ones(20),
+                        t=np.concatenate([np.arange(10, 20), np.arange(50, 60)]),
+                    ),
+                    1: nap.Tsd(
+                        d=np.full(40, 0.5),
+                        t=np.concatenate(
+                            [np.arange(10, 20, 0.5), np.arange(50, 60, 0.5)]
+                        ),
+                    ),
+                    2: nap.Tsd(
+                        d=np.full(100, 0.2),
+                        t=np.concatenate(
+                            [np.arange(10, 20, 0.2), np.arange(50, 60, 0.2)]
+                        ),
+                    ),
+                },
+            ),
+            # two points in epoch
+            (
+                "start",
+                nap.IntervalSet(start=[10, 50, 299.6], end=[20, 60, 300]),
+                {
+                    0: nap.Tsd(
+                        d=np.ones(20),
+                        t=np.concatenate([np.arange(10, 20), np.arange(50, 60)]),
+                    ),
+                    1: nap.Tsd(
+                        d=np.full(40, 0.5),
+                        t=np.concatenate(
+                            [np.arange(10, 20, 0.5), np.arange(50, 60, 0.5)]
+                        ),
+                    ),
+                    2: nap.Tsd(
+                        d=np.full(101, 0.2),
+                        t=np.concatenate(
+                            [np.arange(10, 20, 0.2), np.arange(50, 60, 0.2), [299.6]]
+                        ),
+                    ),
+                },
+            ),
+        ],
+    )
+    def test_time_diff(self, group, align, ep, expectation):
         tsgroup = nap.TsGroup(group)
-        ep = nap.IntervalSet(
-            start=np.arange(0, 100, 20), end=np.arange(0, 100, 20) + np.arange(0, 10, 2)
-        )
 
-        alpha = 0.5
-        time_diff_dict = tsgroup.time_diff(ep=ep)
+        if align is None:
+            actual = tsgroup.time_diff(ep=ep)
+        else:
+            actual = tsgroup.time_diff(align=align, ep=ep)
+
+        assert isinstance(actual, dict)
+        assert len(actual) == len(tsgroup)
+        assert len(actual) == len(expectation)
+
         for ts_idx in tsgroup.index:
-            expected_index = []
-            expected_values = []
-            for ep_idx in range(len(ep)):
-                slice = tsgroup[ts_idx].get(ep[ep_idx, 0], ep[ep_idx, 1]).index
-                expected_values.extend(np.diff(slice))
-                expected_index.extend(slice[:-1] + alpha * np.diff(slice))
-
+            assert ts_idx in actual
+            assert isinstance(actual[ts_idx], nap.Tsd)
             np.testing.assert_array_almost_equal(
-                time_diff_dict[ts_idx].values, expected_values
+                actual[ts_idx].times(), expectation[ts_idx].times()
             )
             np.testing.assert_array_almost_equal(
-                time_diff_dict[ts_idx].index, expected_index
+                actual[ts_idx].values, expectation[ts_idx].values
             )
 
     def test_save_npz(self, group):

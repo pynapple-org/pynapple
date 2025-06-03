@@ -1308,6 +1308,12 @@ class TestTsd:
             ("end", None, nap.Tsd(d=np.ones(99), t=np.arange(1, 100))),
             ("center", None, nap.Tsd(d=np.ones(99), t=np.arange(0.5, 99.5))),
             ("start", None, nap.Tsd(d=np.ones(99), t=np.arange(0, 99))),
+            # empty time support
+            (
+                "start",
+                nap.IntervalSet(start=[], end=[]),
+                nap.Tsd(d=[], t=[]),
+            ),
             # empty epoch
             (
                 "start",
@@ -2115,6 +2121,12 @@ class TestTs:
             ("end", None, nap.Tsd(d=np.ones(99), t=np.arange(1, 100))),
             ("center", None, nap.Tsd(d=np.ones(99), t=np.arange(0.5, 99.5))),
             ("start", None, nap.Tsd(d=np.ones(99), t=np.arange(0, 99))),
+            # empty time support
+            (
+                "start",
+                nap.IntervalSet(start=[], end=[]),
+                nap.Tsd(d=[], t=[]),
+            ),
             # empty epoch
             (
                 "start",
