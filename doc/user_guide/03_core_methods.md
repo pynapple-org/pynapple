@@ -458,6 +458,73 @@ plt.xlabel("Trial time")
 plt.show()
 ```
 
+### `time_diff`
+
+`time_diff` computes the time differences between subsequent timepoints.
+
+```{code-cell} ipython3
+:tags: [hide-input]
+ts = nap.Ts(t=[1,5,6,12,16,18,19])
+print(ts)
+```
+
+```{code-cell} ipython3
+time_diffs = ts.time_diff(align="center")
+print(time_diffs)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.plot(ts.fillna(0), "|", label="ts", markersize=20, mew=3)
+plt.plot(time_diffs, "o-", label="new_tsd_center")
+for center, time_diff in zip(time_diffs.times(), time_diffs.values):
+    plt.plot([center, center], [-.25, time_diff], linestyle="--", c="black", zorder=-1)
+plt.legend(loc="lower right")
+plt.xlabel("Time (s)")
+plt.ylabel("Time differences (s)")
+plt.title('ts.time_diff(align="center")')
+plt.legend(bbox_to_anchor=(1.0, 0.5, 0.5, 0.5))
+plt.show()
+```
+
+```{code-cell} ipython3
+time_diffs = ts.time_diff(align="end")
+print(time_diffs)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.plot(ts.fillna(0), "|", label="ts", markersize=20, mew=3)
+plt.plot(time_diffs, "o-", label="new_tsd_end")
+for center, time_diff in zip(time_diffs.times(), time_diffs.values):
+    plt.plot([center, center], [-.25, time_diff], linestyle="--", c="black", zorder=-1)
+plt.legend(loc="lower right")
+plt.xlabel("Time (s)")
+plt.ylabel("Time differences (s)")
+plt.title('ts.time_diff(align="end")')
+plt.legend(bbox_to_anchor=(1.0, 0.5, 0.5, 0.5))
+plt.show()
+```
+
+```{code-cell} ipython3
+time_diffs = ts.time_diff(align="start")
+print(time_diffs)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.plot(ts.fillna(0), "|", label="ts", markersize=20, mew=3)
+plt.plot(time_diffs, "o-", label="new_tsd_start")
+for center, time_diff in zip(time_diffs.times(), time_diffs.values):
+    plt.plot([center, center], [-.25, time_diff], linestyle="--", c="black", zorder=-1)
+plt.legend(loc="lower right")
+plt.xlabel("Time (s)")
+plt.ylabel("Time differences (s)")
+plt.title('ts.time_diff(align="start")')
+plt.legend(bbox_to_anchor=(1.0, 0.5, 0.5, 0.5))
+plt.show()
+```
+
 ### Mapping between `TsGroup` and `Tsd`
 
 It's is possible to transform a `TsGroup` to `Tsd` with the method
