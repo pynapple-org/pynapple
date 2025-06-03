@@ -371,3 +371,66 @@ def compute_eventcorrelogram(
         crosscorrs = crosscorrs / newgroup.get_info("rate")
 
     return crosscorrs.astype("float")
+
+
+def compute_isi_distribution(
+    data,
+    nb_bins=None,
+    log_scale=False,
+    ep=None,
+):
+    """
+    Computes the interspike interval distribution.
+
+    Parameters
+    ----------
+    data : Ts/Tsd/TsGroup
+        The Ts/Tds/TsGroup to compute the interspike interval distribution for.
+    nb_bins : int
+        Number of bins in the distribution.
+    log_scale=False,
+        Whether or not to log transform the distribution.
+    ep : IntervalSet, optional
+        The epoch on which interspike intervals are computed.
+        If None, the epoch is the time support of the input.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame to hold the distribution data.
+
+    """
+    if type(data) not in [nap.Ts, nap.Tsd, nap.TsGroup]:
+        raise TypeError("data should be a Ts, Tsd or TsGroup.")
+
+    if not isinstance(nb_bins, int):
+        raise TypeError("nb_bins should be of type int.")
+
+    if not isinstance(log_scale, bool):
+        raise TypeError("log_scale should be of type bool.")
+
+    if ep is None:
+        ep = data.time_support
+
+    time_diffs = data.time_diff(ep=ep)
+
+    if type(time_diffs) is dict:
+        min_isi = min([isi for time_diff in time_diffs.values() for isi in time_diff])
+        max_isi = max([isi for time_diff in time_diffs.values() for isi in time_diff])
+    else:
+        min_isi, max_isi = time_diffs.values.min(), time_diffs.values.max()
+    bins = (
+        np.geomspace(min_isi, max_isi, nb_bins + 1)
+        if log_scale
+        else np.linspace(min_isi, max_isi, nb_bins + 1)
+    )
+    bin_centers = (bins[:-1] + bins[1:]) / 2
+
+    counts = {}
+    if type(time_diffs) is dict:
+        for i in time_diffs:
+            counts[i] = np.histogram(time_diffs[i].values, bins)[0]
+    else:
+        counts[0] = np.histogram(time_diffs.values, bins)[0]
+
+    return pd.DataFrame(index=bin_centers, data=counts)

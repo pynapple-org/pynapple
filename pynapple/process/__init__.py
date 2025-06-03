@@ -2,6 +2,7 @@ from .correlograms import (
     compute_autocorrelogram,
     compute_crosscorrelogram,
     compute_eventcorrelogram,
+    compute_isi_distribution,
 )
 from .decoding import decode_1d, decode_2d
 from .filtering import (
@@ -11,7 +12,6 @@ from .filtering import (
     apply_lowpass_filter,
     get_filter_frequency_response,
 )
-from .isi import compute_isi_distribution
 from .perievent import (
     compute_event_trigger_average,
     compute_perievent,
