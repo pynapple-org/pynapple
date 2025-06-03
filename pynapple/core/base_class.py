@@ -371,7 +371,7 @@ class _Base(abc.ABC):
             if not isinstance(ep, IntervalSet):
                 raise IOError("ep should be an object of type IntervalSet")
 
-        n = len(self.restrict(ep).index) - len(ep)
+        n = max(len(self.restrict(ep).index) - 1, 0)
         new_d = np.full(n, np.nan)
         new_t = np.full(n, np.nan)
 
@@ -388,7 +388,9 @@ class _Base(abc.ABC):
                 )
                 start += len(tmp) - 1
 
-        return self._define_instance(time_index=new_t, time_support=ep, values=new_d)
+        return self._define_instance(
+            time_index=new_t[:start], time_support=ep, values=new_d[:start]
+        )
 
     def restrict(self, iset):
         """
