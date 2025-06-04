@@ -1,6 +1,6 @@
 """Tests of correlograms for `pynapple` package."""
 
-from itertools import combinations
+from itertools import accumulate, combinations
 
 import numpy as np
 import pandas as pd
@@ -183,7 +183,7 @@ def test_correlograms_type_errors_group(func, args, msg):
         (
             nap.compute_eventcorrelogram,
             (get_group(), [1, 2, 3], 1, 1),
-            "Invalid type. Parameter event must be of type \(<class 'pynapple.core.time_series.Ts'>, <class 'pynapple.core.time_series.Tsd'>\).",
+            r"Invalid type. Parameter event must be of type \(<class 'pynapple.core.time_series.Ts'>, <class 'pynapple.core.time_series.Tsd'>\).",
         ),
     ],
 )
@@ -519,3 +519,89 @@ def test_crosscorrelogram_reverse():
     cc = nap.compute_crosscorrelogram(get_group2(), 1, 100, reverse=True)
     assert isinstance(cc, pd.DataFrame)
     assert list(cc.keys()) == [(1, 0)]
+
+
+@pytest.mark.parametrize(
+    "args, msg",
+    [
+        (
+            ([], 2),
+            "data should be a Ts, Tsd or TsGroup.",
+        ),
+        ((get_group(), []), "nb_bins should be of type int."),
+        ((get_group(), 2, []), "log_scale should be of type bool."),
+        (
+            (get_group(), 2, True, []),
+            "ep should be an object of type IntervalSet",
+        ),
+    ],
+)
+def test_compute_isi_distribution_type_errors(args, msg):
+    with pytest.raises(TypeError, match=msg):
+        nap.compute_isi_distribution(*args)
+
+
+@pytest.mark.parametrize(
+    "data, nb_bins, log_scale, expected",
+    [
+        # typical case
+        (
+            nap.Ts(list(accumulate(range(11)))),
+            10,
+            False,
+            pd.DataFrame(
+                index=np.arange(1.45, 10.45, 0.9), data=np.ones(10), columns=[0]
+            ),
+        ),
+        # more bins
+        (
+            nap.Ts(list(accumulate(range(21)))),
+            20,
+            False,
+            pd.DataFrame(
+                index=np.arange(1.475, 20.475, 0.95), data=np.ones(20), columns=[0]
+            ),
+        ),
+        # log scale
+        (
+            nap.Ts([0] + list(accumulate(np.logspace(-1, 1, 10)))),
+            10,
+            True,
+            pd.DataFrame(
+                index=np.sqrt(
+                    np.geomspace(0.1, 10, 11)[:-1] * np.geomspace(0.1, 10, 11)[1:]
+                ),
+                data=np.ones(10),
+                columns=[0],
+            ),
+        ),
+        # TsGroup
+        (
+            nap.TsGroup(
+                {
+                    0: nap.Ts(list(accumulate(range(11)))),
+                    1: nap.Ts(list(accumulate(range(11)))),
+                }
+            ),
+            10,
+            False,
+            pd.DataFrame(
+                index=np.arange(1.45, 10.45, 0.9), data=np.ones((10, 2)), columns=[0, 1]
+            ),
+        ),
+        # Tsd
+        (
+            nap.Tsd(t=list(accumulate(range(11))), d=np.ones(11)),
+            10,
+            False,
+            pd.DataFrame(
+                index=np.arange(1.45, 10.45, 0.9), data=np.ones(10), columns=[0]
+            ),
+        ),
+    ],
+)
+def test_compute_isi_distribution(data, nb_bins, log_scale, expected):
+    actual = nap.compute_isi_distribution(data, nb_bins, log_scale)
+    np.testing.assert_array_almost_equal(actual.values, expected.values)
+    np.testing.assert_array_almost_equal(actual.index, expected.index)
+    np.testing.assert_array_almost_equal(actual.columns, expected.columns)

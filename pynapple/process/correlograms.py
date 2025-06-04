@@ -375,7 +375,7 @@ def compute_eventcorrelogram(
 
 def compute_isi_distribution(
     data,
-    nb_bins=None,
+    nb_bins,
     log_scale=False,
     ep=None,
 ):
@@ -411,6 +411,9 @@ def compute_isi_distribution(
 
     if ep is None:
         ep = data.time_support
+    else:
+        if not isinstance(ep, nap.IntervalSet):
+            raise TypeError("ep should be an object of type IntervalSet")
 
     time_diffs = data.time_diff(ep=ep)
 
@@ -419,12 +422,14 @@ def compute_isi_distribution(
         max_isi = max([isi for time_diff in time_diffs.values() for isi in time_diff])
     else:
         min_isi, max_isi = time_diffs.values.min(), time_diffs.values.max()
-    bins = (
-        np.geomspace(min_isi, max_isi, nb_bins + 1)
-        if log_scale
-        else np.linspace(min_isi, max_isi, nb_bins + 1)
-    )
-    bin_centers = (bins[:-1] + bins[1:]) / 2
+    if log_scale:
+        bins = np.geomspace(min_isi, max_isi, nb_bins + 1)
+        bin_centers = np.sqrt(bins[:-1] * bins[1:])
+    else:
+        bins = np.linspace(min_isi, max_isi, nb_bins + 1)
+        bin_centers = (bins[:-1] + bins[1:]) / 2
+    print(min_isi)
+    print(max_isi)
 
     counts = {}
     if type(time_diffs) is dict:
