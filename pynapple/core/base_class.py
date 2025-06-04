@@ -489,8 +489,8 @@ class _Base(abc.ABC):
         """
         Get a slice from the time series data based on the start and end values with the specified mode.
 
-        For a given time t, mode `before_t` means you want the timepoint right before t to start the slice.
-        Mode `after_t` means you want the timepoint right after t to start the slice.
+        For a given time t, mode `before_t` means you want the time point right before t to start the slice.
+        Mode `after_t` means you want the time point right after t to start the slice.
 
         Parameters
         ----------
@@ -628,6 +628,7 @@ class _Base(abc.ABC):
             tot_tps = idx_end - idx_start
             if tot_tps > n_points:
                 rounding = tot_tps % n_points
+                print(rounding)
                 step = tot_tps // n_points
                 idx_end -= rounding
 

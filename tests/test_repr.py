@@ -92,6 +92,12 @@ class TestObjectRepr:
                     "l3": np.random.randn(3),
                 },
             },
+            {
+                "t": np.arange(100),
+                "d": np.random.rand(100, 16),
+                "columns": np.arange(16),
+                "metadata": {f"x{i}": np.arange(16) for i in range(5)},
+            },
         ],
     )
     def test_repr_tsdframe(self, terminal_size, kwargs):
