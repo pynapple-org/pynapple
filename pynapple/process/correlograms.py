@@ -428,8 +428,6 @@ def compute_isi_distribution(
     else:
         bins = np.linspace(min_isi, max_isi, nb_bins + 1)
         bin_centers = (bins[:-1] + bins[1:]) / 2
-    print(min_isi)
-    print(max_isi)
 
     counts = {}
     if type(time_diffs) is dict:

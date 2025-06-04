@@ -71,3 +71,14 @@ eventcorrs = nap.compute_eventcorrelogram(
     )
 print(eventcorrs)
 ```
+
+## Interspike interval distribution
+
+The interspike interval distribution shows how the time differences between subsequent spikes are distributed.
+
+```{code-cell} ipython3
+isi_distribution = nap.compute_isi_distribution(
+    data=ts_group, nb_bins=10, ep=epoch
+    )
+print(isi_distribution)
+```
