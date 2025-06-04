@@ -11,7 +11,9 @@ kernelspec:
   name: python3
 ---
 
-# Correlograms of discrete events
+# Analysis of discrete events
+
+## Correlograms
 
 ```{code-cell} ipython3
 :tags: [hide-cell]
@@ -33,7 +35,7 @@ ts_group = nap.TsGroup({0: ts1, 1: ts2}, time_support=epoch)
 print(ts_group)
 ```
 
-## Autocorrelograms
+### Autocorrelograms
 
 We can compute their autocorrelograms meaning the number of spikes of a neuron observed in a time windows centered around its own spikes.
 For this we can use the function `compute_autocorrelogram`.
@@ -48,7 +50,7 @@ print(autocorrs)
 The variable `autocorrs` is a pandas DataFrame with the center of the bins 
 for the index and each column is an autocorrelogram of one unit in the `TsGroup`.
 
-## Cross-correlograms
+### Cross-correlograms
 
 Cross-correlograms are computed between pairs of neurons.
 
@@ -61,7 +63,7 @@ print(crosscorrs)
 
 Column name `(0, 1)` is read as cross-correlogram of neuron 0 and 1 with neuron 0 being the reference time.
 
-## Event-correlograms
+### Event-correlograms
 
 Event-correlograms count the number of event in the `TsGroup` based on an `event` timestamps object. 
 
@@ -74,7 +76,7 @@ print(eventcorrs)
 
 ## Interspike interval distribution
 
-The interspike interval distribution shows how the time differences between subsequent spikes are distributed.
+The interspike interval distribution shows how the time differences between subsequent spikes (events) are distributed.
 
 ```{code-cell} ipython3
 isi_distribution = nap.compute_isi_distribution(

@@ -30,7 +30,7 @@ Metadata <user_guide/03_metadata>
 
 :::{card} High-level analysis
 ```{toctree}
-Correlograms of discrete events <user_guide/05_correlograms>
+Analysis of discrete events <user_guide/05_discrete_events>
 ```
 
 ```{toctree}
