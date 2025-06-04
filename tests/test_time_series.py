@@ -935,10 +935,10 @@ class TestTimeSeriesGeneral:
         [
             (nap.IntervalSet(0, 40), does_not_raise()),
             (None, does_not_raise()),
-            ([0, 40], pytest.raises(IOError, match="ep should be an object")),
+            ([0, 40], pytest.raises(TypeError, match="ep should be an object")),
         ],
     )
-    def test_time_diff_epoch_error(self, tsd, ep, expectation):
+    def test_time_diff_type_errors(self, tsd, ep, expectation):
         with expectation:
             tsd.time_diff(ep=ep)
 

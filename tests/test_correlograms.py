@@ -1,5 +1,6 @@
 """Tests of correlograms for `pynapple` package."""
 
+from contextlib import nullcontext as does_not_raise
 from itertools import accumulate, combinations
 
 import numpy as np
@@ -522,22 +523,42 @@ def test_crosscorrelogram_reverse():
 
 
 @pytest.mark.parametrize(
-    "args, msg",
+    "args, expectation",
     [
         (
             ([], 2),
-            "data should be a Ts, Tsd or TsGroup.",
+            pytest.raises(TypeError, match="data should be a Ts, Tsd or TsGroup."),
         ),
-        ((get_group(), []), "nb_bins should be of type int."),
-        ((get_group(), 2, []), "log_scale should be of type bool."),
+        (
+            (get_group(), 2, True, nap.IntervalSet(0, 100)),
+            does_not_raise(),
+        ),
+        (
+            (nap.Ts([1, 2]), 2, True, nap.IntervalSet(0, 100)),
+            does_not_raise(),
+        ),
+        (
+            (nap.Tsd(t=[1, 2], d=[1, 1]), 2, True, nap.IntervalSet(0, 100)),
+            does_not_raise(),
+        ),
+        (
+            (get_group(), []),
+            pytest.raises(TypeError, match="nb_bins should be of type int."),
+        ),
+        (
+            (get_group(), 2, []),
+            pytest.raises(TypeError, match="log_scale should be of type bool."),
+        ),
         (
             (get_group(), 2, True, []),
-            "ep should be an object of type IntervalSet",
+            pytest.raises(
+                TypeError, match="ep should be an object of type IntervalSet"
+            ),
         ),
     ],
 )
-def test_compute_isi_distribution_type_errors(args, msg):
-    with pytest.raises(TypeError, match=msg):
+def test_compute_isi_distribution_type_errors(args, expectation):
+    with expectation:
         nap.compute_isi_distribution(*args)
 
 

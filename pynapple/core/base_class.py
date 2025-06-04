@@ -369,7 +369,7 @@ class _Base(abc.ABC):
             ep = self.time_support
         else:
             if not isinstance(ep, IntervalSet):
-                raise IOError("ep should be an object of type IntervalSet")
+                raise TypeError("ep should be an object of type IntervalSet")
 
         n = max(len(self.restrict(ep).index) - 1, 0)
         new_d = np.full(n, np.nan)

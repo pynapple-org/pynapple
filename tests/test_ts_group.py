@@ -699,7 +699,7 @@ class TestTsGroup1:
         [
             (nap.IntervalSet(0, 40), does_not_raise()),
             (None, does_not_raise()),
-            ([0, 40], pytest.raises(IOError, match="ep should be an object")),
+            ([0, 40], pytest.raises(TypeError, match="ep should be an object")),
         ],
     )
     def test_time_diff_epoch_error(self, group, ep, expectation):
