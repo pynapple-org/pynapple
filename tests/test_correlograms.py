@@ -544,7 +544,7 @@ def test_compute_isi_distribution_type_errors(args, msg):
 @pytest.mark.parametrize(
     "data, nb_bins, log_scale, expected",
     [
-        # typical case
+        # basic case
         (
             nap.Ts(list(accumulate(range(11)))),
             10,
