@@ -628,7 +628,6 @@ class _Base(abc.ABC):
             tot_tps = idx_end - idx_start
             if tot_tps > n_points:
                 rounding = tot_tps % n_points
-                print(rounding)
                 step = tot_tps // n_points
                 idx_end -= rounding
 
