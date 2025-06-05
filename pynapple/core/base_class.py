@@ -371,7 +371,7 @@ class _Base(abc.ABC):
             if not isinstance(ep, IntervalSet):
                 raise TypeError("ep should be an object of type IntervalSet")
 
-        n = max(len(self.restrict(ep).index) - 1, 0)
+        n = max(len(self) - 1, 0)
         new_d = np.full(n, np.nan)
         new_t = np.full(n, np.nan)
 
