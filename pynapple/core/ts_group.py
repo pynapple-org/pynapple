@@ -1030,9 +1030,9 @@ class TsGroup(UserDict, _MetadataMixin):
         ----------
         align: str, optional
             Determines the time index of the resulting time differences:
-            'start': the start timepoint,
-            'center' [default]: the center of the interval between the two timepoints,
-            'end': the next timepoint
+             - "start" : the start of the interval between two timestamps.
+             - "center" [default]: the center of the interval between two timestamps.
+             - "end" : the end of the interval between two timestamps.
         ep : IntervalSet, optional
             The epochs to calculate time differences over. If None, the time support of the TsGroup is used.
 
@@ -1068,15 +1068,6 @@ class TsGroup(UserDict, _MetadataMixin):
         8            2
         dtype: float64, shape: (3,)}
         """
-        if align not in ["start", "center", "end"]:
-            raise RuntimeError("align should be 'start', 'center' or 'end'")
-
-        if ep is None:
-            ep = self.time_support
-        else:
-            if not isinstance(ep, IntervalSet):
-                raise TypeError("ep should be an object of type IntervalSet")
-
         time_diffs = {}
         for k in self.data:
             time_diffs[k] = self.data[k].time_diff(align=align, ep=ep)

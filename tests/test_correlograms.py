@@ -527,7 +527,10 @@ def test_crosscorrelogram_reverse():
     [
         (
             ([], 2),
-            pytest.raises(TypeError, match="data should be a Ts, Tsd or TsGroup."),
+            pytest.raises(
+                TypeError,
+                match="data should be a Ts, TsGroup, Tsd, TsdFrame, TsdTensor.",
+            ),
         ),
         (
             (get_group(), 2, True, nap.IntervalSet(0, 100)),

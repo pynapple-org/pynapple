@@ -14,6 +14,16 @@ from .time_index import TsIndex
 from .utils import check_filename, convert_to_numpy_array
 
 
+def add_base_docstring(base_func, sep="\n"):
+    base_doc = getattr(_Base, base_func).__doc__
+
+    def _decorator(func):
+        func.__doc__ = sep.join([base_doc, func.__doc__])
+        return func
+
+    return _decorator
+
+
 class _Base(abc.ABC):
     """
     Abstract base class for time series and timestamps objects.
@@ -336,9 +346,9 @@ class _Base(abc.ABC):
         ----------
         align: str, optional
             Determines the time index of the resulting time differences:
-            'start': the start timepoint,
-            'center' [default]: the center of the interval between the two timepoints,
-            'end': the next timepoint
+             - "start" : the start of the interval between two timestamps.
+             - "center" [default]: the center of the interval between two timestamps.
+             - "end" : the end of the interval between two timestamps.
         ep : IntervalSet, optional
             The epochs to calculate time differences over. If None, the time support of the TsGroup is used.
 
@@ -347,20 +357,6 @@ class _Base(abc.ABC):
         Tsd
             The time differences.
 
-        Examples
-        --------
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> ts = nap.Ts(t=[1, 3, 5, 6, 8, 12])
-        >>> ep = nap.IntervalSet(start=2, end=9, time_units='s')
-        >>> tsd_time_diffs = ts.time_diff(align="center", ep=ep)
-        >>> tsd_time_diffs
-        Time (s)
-        ----------  --
-        4            2
-        5.5          1
-        7            2
-        dtype: float64, shape: (3,)
         """
         if align not in ["start", "center", "end"]:
             raise RuntimeError("align should be 'start', 'center' or 'end'")
@@ -372,8 +368,8 @@ class _Base(abc.ABC):
                 raise TypeError("ep should be an object of type IntervalSet")
 
         n = max(len(self) - 1, 0)
-        new_d = np.full(n, np.nan)
-        new_t = np.full(n, np.nan)
+        new_d = np.empty(n)
+        new_t = np.empty(n)
 
         start = 0
         alpha = 0.0 if align == "start" else 0.5 if align == "center" else 1.0

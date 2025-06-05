@@ -34,7 +34,7 @@ from ._core_functions import (
     _restrict,
     _threshold,
 )
-from .base_class import _Base
+from .base_class import _Base, add_base_docstring
 from .interval_set import IntervalSet
 from .metadata_class import _MetadataMixin, add_meta_docstring, add_or_convert_metadata
 from .time_index import TsIndex
@@ -1534,6 +1534,26 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         df.columns = self.columns.copy()
         return df
 
+    @add_base_docstring("time_diff")
+    def time_diff(self, align="center", ep=None):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> ts = nap.Ts(t=[1, 3, 5, 6, 8, 12])
+        >>> ep = nap.IntervalSet(start=2, end=9, time_units='s')
+        >>> tsd_time_diffs = ts.time_diff(align="center", ep=ep)
+        >>> tsd_time_diffs
+        Time (s)
+        ----------  --
+        4            2
+        5.5          1
+        7            2
+        dtype: float64, shape: (3,)
+        """
+        return _Base.time_diff(self, align, ep)
+
     # @add_or_convert_metadata
     def save(self, filename):
         """
@@ -2221,6 +2241,26 @@ class Tsd(_BaseTsd):
         time_support = IntervalSet(start=ns, end=ne)
         return Tsd(t=t, d=d, time_support=time_support)
 
+    @add_base_docstring("time_diff")
+    def time_diff(self, align="center", ep=None):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> ts = nap.Tsd(t=[1, 3, 5, 6, 8, 12], d=[2, 2, 2, 3, 4, 5])
+        >>> ep = nap.IntervalSet(start=2, end=9, time_units='s')
+        >>> tsd_time_diffs = tsd.time_diff(align="center", ep=ep)
+        >>> tsd_time_diffs
+        Time (s)
+        ----------  --
+        4            2
+        5.5          1
+        7            2
+        dtype: float64, shape: (3,)
+        """
+        return _Base.time_diff(self, align, ep)
+
     def to_tsgroup(self):
         """
         Convert Tsd to a TsGroup by grouping timestamps with the same values.
@@ -2583,3 +2623,23 @@ class Ts(_Base):
             output = output[:, -np.max(n_ep) :]
 
         return output
+
+    @add_base_docstring("time_diff")
+    def time_diff(self, align="center", ep=None):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> ts = nap.Ts(t=[1, 3, 5, 6, 8, 12])
+        >>> ep = nap.IntervalSet(start=2, end=9, time_units='s')
+        >>> tsd_time_diffs = ts.time_diff(align="center", ep=ep)
+        >>> tsd_time_diffs
+        Time (s)
+        ----------  --
+        4            2
+        5.5          1
+        7            2
+        dtype: float64, shape: (3,)
+        """
+        return _Base.time_diff(self, align, ep)

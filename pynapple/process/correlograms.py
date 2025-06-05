@@ -384,11 +384,11 @@ def compute_isi_distribution(
 
     Parameters
     ----------
-    data : Ts/Tsd/TsGroup
-        The Ts/Tds/TsGroup to compute the interspike interval distribution for.
+    data : Ts, TsGroup, Tsd, TsdFrame or TsdTensor
+        The Ts, TsGroup, Tsd, TsdFrame or TsdTensor to compute the interspike interval distribution for.
     nb_bins : int
         Number of bins in the distribution.
-    log_scale=False,
+    log_scale=False
         Whether or not to log transform the distribution.
     ep : IntervalSet, optional
         The epoch on which interspike intervals are computed.
@@ -400,8 +400,8 @@ def compute_isi_distribution(
         DataFrame to hold the distribution data.
 
     """
-    if type(data) not in [nap.Ts, nap.Tsd, nap.TsGroup]:
-        raise TypeError("data should be a Ts, Tsd or TsGroup.")
+    if not isinstance(data, (nap.base_class._Base, nap.TsGroup)):
+        raise TypeError("data should be a Ts, TsGroup, Tsd, TsdFrame, TsdTensor.")
 
     if not isinstance(nb_bins, int):
         raise TypeError("nb_bins should be of type int.")
@@ -411,9 +411,6 @@ def compute_isi_distribution(
 
     if ep is None:
         ep = data.time_support
-    else:
-        if not isinstance(ep, nap.IntervalSet):
-            raise TypeError("ep should be an object of type IntervalSet")
 
     time_diffs = data.time_diff(ep=ep)
 
