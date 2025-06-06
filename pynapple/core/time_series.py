@@ -1015,6 +1015,26 @@ class TsdTensor(_BaseTsd):
             index = np.array([index])
         return _initialize_tsd_output(self, output, time_index=index)
 
+    @add_base_docstring("time_diff")
+    def time_diff(self, align="center", ep=None):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsdtensor = nap.TsdTensor(t=[1, 3, 5, 6, 8, 12], d=np.ones((6,6,6)))
+        >>> ep = nap.IntervalSet(start=2, end=9, time_units='s')
+        >>> tsd_time_diffs = tsdtensor.time_diff(align="center", ep=ep)
+        >>> tsd_time_diffs
+        Time (s)
+        ----------  --
+        4            2
+        5.5          1
+        7            2
+        dtype: float64, shape: (3,)
+        """
+        return _Base.time_diff(self, align, ep)
+
     def save(self, filename):
         """
         Save TsdTensor object in npz format. The file will contain the timestamps, the
@@ -1541,9 +1561,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         --------
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> ts = nap.Ts(t=[1, 3, 5, 6, 8, 12])
+        >>> tsdframe = nap.TsdFrame(t=[1, 3, 5, 6, 8, 12], d=np.ones((6, 2)))
         >>> ep = nap.IntervalSet(start=2, end=9, time_units='s')
-        >>> tsd_time_diffs = ts.time_diff(align="center", ep=ep)
+        >>> tsd_time_diffs = tsdframe.time_diff(align="center", ep=ep)
         >>> tsd_time_diffs
         Time (s)
         ----------  --
@@ -2248,7 +2268,7 @@ class Tsd(_BaseTsd):
         --------
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> ts = nap.Tsd(t=[1, 3, 5, 6, 8, 12], d=[2, 2, 2, 3, 4, 5])
+        >>> tsd = nap.Tsd(t=[1, 3, 5, 6, 8, 12], d=[2, 2, 2, 3, 4, 5])
         >>> ep = nap.IntervalSet(start=2, end=9, time_units='s')
         >>> tsd_time_diffs = tsd.time_diff(align="center", ep=ep)
         >>> tsd_time_diffs
