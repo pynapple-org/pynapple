@@ -1344,18 +1344,18 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
             if n_rows > max_metarows:
                 row_names = np.hstack((row_names[0:2]))[:, None]
-                last_row = np.array(["..."] * table.shape[1])
+                last_row = ["..."]
                 n_rows = max_metarows
             else:
                 row_names = np.array(row_names)[:, None]  # Vertically
-                last_row = np.ndarray(shape=(0, table.shape[1]))
+                last_row = []  # np.ndarray(shape=(0, table.shape[1]))
 
             ends = np.array([end] * n_rows)
 
             formatted_metadata = np.array(
                 [
                     _convert_iter_to_str(
-                        self._metadata.iloc[0 : table.shape[1] - 1][
+                        self._metadata.iloc[0 : table.shape[1] - len(end) - 1][
                             self._metadata.columns[k]
                         ]
                     )
@@ -1366,21 +1366,31 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             )
 
             # Make metadata table
-            mtable = np.vstack(
-                (
-                    np.array([["Metadata"] + [" "] * (table.shape[1] - 1)]),
-                    np.hstack(
-                        (
-                            row_names,
-                            formatted_metadata,
-                            ends,
-                        ),
-                        dtype=object,
+            try:
+                tmp = np.hstack(
+                    (
+                        row_names,
+                        formatted_metadata,
+                        ends,
                     ),
-                    last_row,
-                ),
-                dtype=object,
-            )
+                    dtype=object,
+                )
+                mtable = np.vstack(
+                    (
+                        np.array([["Metadata"] + [" "] * (tmp.shape[1] - 1)]),
+                        tmp,
+                    ),
+                    dtype=object,
+                )
+
+                if len(last_row):
+                    mtable = np.vstack(
+                        (mtable, last_row * mtable.shape[1]), dtype=object
+                    )
+
+            except ValueError:
+                mtable = np.empty(shape=(0, 0))
+
             if table.shape[1] == mtable.shape[1]:
                 table = np.vstack((table, mtable))
 
