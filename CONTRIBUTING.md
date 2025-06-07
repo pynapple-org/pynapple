@@ -16,7 +16,7 @@ conda create --name pynapple pip python=3.8
 conda activate pynapple
 
 # Install in editable mode with dev dependencies
-pip install -e .[dev,docs]
+pip install -e ".[dev,docs]"
 ```
 
 Note: If you're an external contributor, you'll likely want to fork the repository first with your own GitHub account, and then set up an `upstream` remote branch:
@@ -42,17 +42,28 @@ git commit -m "Your commit message"
 git push origin your-branch-name
 ```
 
-## Testing, linting, and building docs
+## Testing and linting
 
-Helpful commands for running tests and generating documentation are defined in the root `Makefile`. These are generally kept in sync with the Github Actions defined in `.github/workflows`.
+You can run the tests and code linters locally using `tox`. This is generally kept in sync with the Github Actions defined in `.github/workflows` via the [`tox.ini`](tox.ini) file.
 
 ```bash
-# Run tests
-make test
+# Install tox
+pip install tox tox-conda
 
-# Run linter
-make lint
+# Run tests and linter
+tox
+```
 
-# Build documentation
-make docs
+## Generating docs
+
+The user documentation is generated using Sphinx and can be built using the Makefile in the `doc/` folder:
+
+```bash
+cd doc && make html
+```
+
+You can also start a development server that will watch for changes with `sphinx-autobuild`:
+
+```bash
+sphinx-autobuild . _build/html
 ```

@@ -52,7 +52,7 @@ git clone https://github.com/pynapple-org/pynapple.git
 cd pynapple
 
 # Install in editable mode with `-e` or, equivalently, `--editable`
-pip install -e .
+pip install -e ".[dev]"
 ```
 
-See GitHub for our full contribution guidelines.
+See our full contributor guide on [GitHub](https://github.com/pynapple-org/pynapple) for more details.
