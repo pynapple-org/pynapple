@@ -1045,13 +1045,11 @@ class TsGroup(UserDict, _MetadataMixin):
         --------
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> tmp = { 0:nap.Ts(t=[1, 3, 5, 6, 8, 12], time_units='s'),
-        1:nap.Ts(t=[2, 8, 9, 13, 14, 17], time_units='s'),
-        2:nap.Ts(t=[1, 2, 5, 7, 9, 12], time_units='s'),
-        }
+        >>> tmp = { 0:nap.Ts(t=[1, 3, 5, 6, 8, 12], time_units='s'),1:nap.Ts(t=[2, 8, 9, 13, 14, 17], time_units='s'), 2:nap.Ts(t=[1, 2, 5, 7, 9, 12], time_units='s')}
         >>> tsgroup = nap.TsGroup(tmp)
         >>> ep = nap.IntervalSet(start=2, end=9, time_units='s')
         >>> time_diffs = tsgroup.time_diff(align="center", ep=ep)
+        >>> time_diffs
         {0: Time (s)
         ----------  --
         4            2
