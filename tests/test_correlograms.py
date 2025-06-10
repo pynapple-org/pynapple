@@ -525,39 +525,64 @@ def test_crosscorrelogram_reverse():
 @pytest.mark.parametrize(
     "args, expectation",
     [
+        # data
         (
-            ([], 2),
+            ([],),
             pytest.raises(
                 TypeError,
                 match="data should be a Ts, TsGroup, Tsd, TsdFrame, TsdTensor.",
             ),
         ),
         (
-            (get_group(), 2, True, nap.IntervalSet(0, 100)),
+            (nap.Ts([1, 2]),),
             does_not_raise(),
         ),
         (
-            (nap.Ts([1, 2]), 2, True, nap.IntervalSet(0, 100)),
+            (get_group(),),
             does_not_raise(),
         ),
         (
-            (nap.Tsd(t=[1, 2], d=[1, 1]), 2, True, nap.IntervalSet(0, 100)),
+            (nap.Tsd(t=[1, 2], d=[1, 1]),),
             does_not_raise(),
         ),
         (
-            (get_group(), []),
-            pytest.raises(TypeError, match="nb_bins should be of type int."),
+            (nap.TsdFrame(t=[1, 2, 3], d=np.ones((3, 2))),),
+            does_not_raise(),
         ),
+        (
+            (nap.TsdTensor(t=[1, 2, 3], d=np.ones((3, 2, 2))),),
+            does_not_raise(),
+        ),
+        # bins
+        (
+            (get_group(), 2.0),
+            pytest.raises(
+                TypeError, match="bins should be either int, list or np.ndarray."
+            ),
+        ),
+        (
+            (get_group(), "2.0"),
+            pytest.raises(
+                TypeError, match="bins should be either int, list or np.ndarray."
+            ),
+        ),
+        ((get_group(), 2), does_not_raise()),
+        ((get_group(), [1, 2, 3]), does_not_raise()),
+        ((get_group(), np.array((10,))), does_not_raise()),
+        # log_scale
         (
             (get_group(), 2, []),
             pytest.raises(TypeError, match="log_scale should be of type bool."),
         ),
+        ((get_group(), 2, True), does_not_raise()),
+        # ep
         (
-            (get_group(), 2, True, []),
+            (get_group(), 2, True, [0, 100]),
             pytest.raises(
                 TypeError, match="ep should be an object of type IntervalSet"
             ),
         ),
+        ((get_group(), 2, True, nap.IntervalSet([0, 100])), does_not_raise()),
     ],
 )
 def test_compute_isi_distribution_type_errors(args, expectation):
@@ -566,66 +591,66 @@ def test_compute_isi_distribution_type_errors(args, expectation):
 
 
 @pytest.mark.parametrize(
-    "data, nb_bins, log_scale, expected",
+    "args, expectation",
     [
-        # basic case
         (
-            nap.Ts(list(accumulate(range(11)))),
-            10,
-            False,
-            pd.DataFrame(
-                index=np.arange(1.45, 10.45, 0.9), data=np.ones(10), columns=[0]
+            (get_group(), -1),
+            pytest.raises(ValueError, match="`bins` must be positive, when an integer"),
+        ),
+        (
+            (get_group(), [1, 2, 3, 4, 2, 5]),
+            pytest.raises(
+                ValueError, match="`bins` must increase monotonically, when an array"
             ),
         ),
-        # more bins
         (
-            nap.Ts(list(accumulate(range(21)))),
-            20,
-            False,
-            pd.DataFrame(
-                index=np.arange(1.475, 20.475, 0.95), data=np.ones(20), columns=[0]
-            ),
-        ),
-        # log scale
-        (
-            nap.Ts([0] + list(accumulate(np.logspace(-1, 1, 10)))),
-            10,
-            True,
-            pd.DataFrame(
-                index=np.sqrt(
-                    np.geomspace(0.1, 10, 11)[:-1] * np.geomspace(0.1, 10, 11)[1:]
-                ),
-                data=np.ones(10),
-                columns=[0],
-            ),
-        ),
-        # TsGroup
-        (
-            nap.TsGroup(
-                {
-                    0: nap.Ts(list(accumulate(range(11)))),
-                    1: nap.Ts(list(accumulate(range(11)))),
-                }
-            ),
-            10,
-            False,
-            pd.DataFrame(
-                index=np.arange(1.45, 10.45, 0.9), data=np.ones((10, 2)), columns=[0, 1]
-            ),
-        ),
-        # Tsd
-        (
-            nap.Tsd(t=list(accumulate(range(11))), d=np.ones(11)),
-            10,
-            False,
-            pd.DataFrame(
-                index=np.arange(1.45, 10.45, 0.9), data=np.ones(10), columns=[0]
-            ),
+            (get_group(), np.ones((10, 2))),
+            pytest.raises(ValueError, match="`bins` must be 1d, when an array"),
         ),
     ],
 )
-def test_compute_isi_distribution(data, nb_bins, log_scale, expected):
-    actual = nap.compute_isi_distribution(data, nb_bins, log_scale)
-    np.testing.assert_array_almost_equal(actual.values, expected.values)
-    np.testing.assert_array_almost_equal(actual.index, expected.index)
-    np.testing.assert_array_almost_equal(actual.columns, expected.columns)
+def test_compute_isi_distribution_value_errors(args, expectation):
+    with expectation:
+        nap.compute_isi_distribution(*args)
+
+
+@pytest.mark.parametrize(
+    "data",
+    [
+        nap.Ts(list(accumulate(range(11)))),
+        nap.TsGroup(
+            {
+                0: nap.Ts(list(accumulate(range(11)))),
+                1: nap.Ts(list(accumulate(range(21)))),
+            }
+        ),
+        nap.Tsd(t=list(accumulate(range(11))), d=np.ones(11)),
+        nap.TsdFrame(t=list(accumulate(range(11))), d=np.ones((11, 2))),
+        nap.TsdTensor(t=list(accumulate(range(11))), d=np.ones((11, 2, 2))),
+    ],
+)
+@pytest.mark.parametrize("bins", [10, np.linspace(0, 10, 10), np.geomspace(1, 100, 10)])
+@pytest.mark.parametrize(
+    "ep", [None, nap.IntervalSet([0, 20]), nap.IntervalSet([0, 5])]
+)
+def test_compute_isi_distribution(data, bins, ep):
+    actual = nap.compute_isi_distribution(data, bins=bins, ep=ep)
+    assert isinstance(actual, pd.DataFrame)
+
+    time_diff = data.time_diff(ep=ep)
+    if not isinstance(time_diff, dict):
+        time_diff = {0: time_diff}
+    if isinstance(data, nap.TsGroup) and isinstance(bins, int):
+        min_isi = min([isi for isis in time_diff.values() for isi in isis])
+        max_isi = max([isi for isis in time_diff.values() for isi in isis])
+        bins = np.linspace(min_isi, max_isi, bins + 1)
+
+    for i in time_diff:
+        expected_values, expected_edges = np.histogram(time_diff[i].values, bins=bins)
+        expected_index = expected_edges[:-1] + np.diff(expected_edges) / 2
+        np.testing.assert_array_almost_equal(actual[i].to_numpy(), expected_values)
+        np.testing.assert_array_almost_equal(actual.index, expected_index)
+
+    np.testing.assert_array_almost_equal(
+        actual.columns, list(data.keys()) if isinstance(data, nap.TsGroup) else [0]
+    )

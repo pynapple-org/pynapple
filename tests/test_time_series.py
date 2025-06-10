@@ -942,6 +942,52 @@ class TestTimeSeriesGeneral:
         with expectation:
             tsd.time_diff(ep=ep)
 
+    @pytest.mark.parametrize(
+        "align, ep, expected",
+        [
+            # default arguments
+            (None, None, nap.Tsd(d=np.ones(99), t=np.arange(0.5, 99.5))),
+            # alignment
+            ("end", None, nap.Tsd(d=np.ones(99), t=np.arange(1, 100))),
+            ("center", None, nap.Tsd(d=np.ones(99), t=np.arange(0.5, 99.5))),
+            ("start", None, nap.Tsd(d=np.ones(99), t=np.arange(0, 99))),
+            # empty time support
+            (
+                "start",
+                nap.IntervalSet(start=[], end=[]),
+                nap.Tsd(d=[], t=[]),
+            ),
+            # empty epoch
+            (
+                "start",
+                nap.IntervalSet(start=[10, 50, 100], end=[20, 60, 110]),
+                nap.Tsd(d=np.ones(20), t=list(range(10, 20)) + list(range(50, 60))),
+            ),
+            # single point in epoch
+            (
+                "start",
+                nap.IntervalSet(start=[10, 50, 99], end=[20, 60, 100]),
+                nap.Tsd(d=np.ones(20), t=list(range(10, 20)) + list(range(50, 60))),
+            ),
+            # two points in epoch
+            (
+                "start",
+                nap.IntervalSet(start=[10, 50, 98], end=[20, 60, 100]),
+                nap.Tsd(
+                    d=np.ones(21),
+                    t=np.concatenate([np.arange(10, 20), np.arange(50, 60), [98]]),
+                ),
+            ),
+        ],
+    )
+    def test_time_diff(self, tsd, align, ep, expected):
+        if align is None:
+            actual = tsd.time_diff(ep=ep)
+        else:
+            actual = tsd.time_diff(align=align, ep=ep)
+        np.testing.assert_array_almost_equal(actual.values, expected.values)
+        np.testing.assert_array_almost_equal(actual.index, expected.index)
+
 
 ####################################################
 # Test for tsd
@@ -1298,52 +1344,6 @@ class TestTsd:
         tsd = nap.Tsd(t=times, d=data)
         derivative = tsd.derivative(ep=ep)
         assert np.all(derivative == expected)
-
-    @pytest.mark.parametrize(
-        "align, ep, expected",
-        [
-            # default arguments
-            (None, None, nap.Tsd(d=np.ones(99), t=np.arange(0.5, 99.5))),
-            # alignment
-            ("end", None, nap.Tsd(d=np.ones(99), t=np.arange(1, 100))),
-            ("center", None, nap.Tsd(d=np.ones(99), t=np.arange(0.5, 99.5))),
-            ("start", None, nap.Tsd(d=np.ones(99), t=np.arange(0, 99))),
-            # empty time support
-            (
-                "start",
-                nap.IntervalSet(start=[], end=[]),
-                nap.Tsd(d=[], t=[]),
-            ),
-            # empty epoch
-            (
-                "start",
-                nap.IntervalSet(start=[10, 50, 100], end=[20, 60, 110]),
-                nap.Tsd(d=np.ones(20), t=list(range(10, 20)) + list(range(50, 60))),
-            ),
-            # single point in epoch
-            (
-                "start",
-                nap.IntervalSet(start=[10, 50, 99], end=[20, 60, 100]),
-                nap.Tsd(d=np.ones(20), t=list(range(10, 20)) + list(range(50, 60))),
-            ),
-            # two points in epoch
-            (
-                "start",
-                nap.IntervalSet(start=[10, 50, 98], end=[20, 60, 100]),
-                nap.Tsd(
-                    d=np.ones(21),
-                    t=np.concatenate([np.arange(10, 20), np.arange(50, 60), [98]]),
-                ),
-            ),
-        ],
-    )
-    def test_time_diff(self, tsd, align, ep, expected):
-        if align is None:
-            actual = tsd.time_diff(ep=ep)
-        else:
-            actual = tsd.time_diff(align=align, ep=ep)
-        np.testing.assert_array_almost_equal(actual.values, expected.values)
-        np.testing.assert_array_almost_equal(actual.index, expected.index)
 
 
 ####################################################
@@ -2111,52 +2111,6 @@ class TestTs:
         tensor = ts.trial_count(ep, bin_size=1, align="start", padding_value=-1)
         expected[np.isnan(expected)] = -1
         np.testing.assert_array_almost_equal(tensor, expected)
-
-    @pytest.mark.parametrize(
-        "align, ep, expected",
-        [
-            # default arguments
-            (None, None, nap.Tsd(d=np.ones(99), t=np.arange(0.5, 99.5))),
-            # alignment
-            ("end", None, nap.Tsd(d=np.ones(99), t=np.arange(1, 100))),
-            ("center", None, nap.Tsd(d=np.ones(99), t=np.arange(0.5, 99.5))),
-            ("start", None, nap.Tsd(d=np.ones(99), t=np.arange(0, 99))),
-            # empty time support
-            (
-                "start",
-                nap.IntervalSet(start=[], end=[]),
-                nap.Tsd(d=[], t=[]),
-            ),
-            # empty epoch
-            (
-                "start",
-                nap.IntervalSet(start=[10, 50, 100], end=[20, 60, 110]),
-                nap.Tsd(d=np.ones(20), t=list(range(10, 20)) + list(range(50, 60))),
-            ),
-            # single point in epoch
-            (
-                "start",
-                nap.IntervalSet(start=[10, 50, 99], end=[20, 60, 100]),
-                nap.Tsd(d=np.ones(20), t=list(range(10, 20)) + list(range(50, 60))),
-            ),
-            # two points in epoch
-            (
-                "start",
-                nap.IntervalSet(start=[10, 50, 98], end=[20, 60, 100]),
-                nap.Tsd(
-                    d=np.ones(21),
-                    t=np.concatenate([np.arange(10, 20), np.arange(50, 60), [98]]),
-                ),
-            ),
-        ],
-    )
-    def test_time_diff(self, ts, align, ep, expected):
-        if align is None:
-            actual = ts.time_diff(ep=ep)
-        else:
-            actual = ts.time_diff(align=align, ep=ep)
-        np.testing.assert_array_almost_equal(actual.values, expected.values)
-        np.testing.assert_array_almost_equal(actual.index, expected.index)
 
 
 ####################################################
