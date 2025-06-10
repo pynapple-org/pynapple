@@ -375,7 +375,7 @@ def compute_eventcorrelogram(
 
 def compute_isi_distribution(
     data,
-    nb_bins,
+    bins=10,
     log_scale=False,
     ep=None,
 ):
@@ -386,8 +386,9 @@ def compute_isi_distribution(
     ----------
     data : Ts, TsGroup, Tsd, TsdFrame or TsdTensor
         The Ts, TsGroup, Tsd, TsdFrame or TsdTensor to compute the interspike interval distribution for.
-    nb_bins : int
-        Number of bins in the distribution.
+    bins : int or sequence of scalars
+        If bins is an int, it defines the number of equal-width bins in the given range (10, by default).
+        If bins is a sequence, it defines a monotonically increasing array of bin edges, including the rightmost edge, allowing for non-uniform bin widths.
     log_scale=False
         Whether or not to log transform the distribution.
     ep : IntervalSet, optional
@@ -403,8 +404,8 @@ def compute_isi_distribution(
     if not isinstance(data, (nap.base_class._Base, nap.TsGroup)):
         raise TypeError("data should be a Ts, TsGroup, Tsd, TsdFrame, TsdTensor.")
 
-    if not isinstance(nb_bins, int):
-        raise TypeError("nb_bins should be of type int.")
+    if not isinstance(bins, (int, list, np.ndarray)):
+        raise TypeError("bins should be either int, list or np.ndarray.")
 
     if not isinstance(log_scale, bool):
         raise TypeError("log_scale should be of type bool.")
@@ -414,23 +415,37 @@ def compute_isi_distribution(
 
     time_diffs = data.time_diff(ep=ep)
 
-    if type(time_diffs) is dict:
-        min_isi = min([isi for time_diff in time_diffs.values() for isi in time_diff])
-        max_isi = max([isi for time_diff in time_diffs.values() for isi in time_diff])
+    if np.ndim(bins) == 0:
+        if bins < 1:
+            raise ValueError("`bins` must be positive, when an integer")
+        if type(time_diffs) is dict:
+            min_isi = min(
+                [isi for time_diff in time_diffs.values() for isi in time_diff]
+            )
+            max_isi = max(
+                [isi for time_diff in time_diffs.values() for isi in time_diff]
+            )
+        else:
+            min_isi, max_isi = time_diffs.values.min(), time_diffs.values.max()
+        if log_scale:
+            bin_edges = np.geomspace(min_isi, max_isi, bins + 1)
+            bin_centers = np.sqrt(bin_edges[:-1] * bin_edges[1:])
+        else:
+            bin_edges = np.linspace(min_isi, max_isi, bins + 1)
+            bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+    elif np.ndim(bins) == 1:
+        bin_edges = np.asarray(bins)
+        if np.any(bin_edges[:-1] > bin_edges[1:]):
+            raise ValueError("`bins` must increase monotonically, when an array")
+        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
     else:
-        min_isi, max_isi = time_diffs.values.min(), time_diffs.values.max()
-    if log_scale:
-        bins = np.geomspace(min_isi, max_isi, nb_bins + 1)
-        bin_centers = np.sqrt(bins[:-1] * bins[1:])
-    else:
-        bins = np.linspace(min_isi, max_isi, nb_bins + 1)
-        bin_centers = (bins[:-1] + bins[1:]) / 2
+        raise ValueError("`bins` must be 1d, when an array")
 
     counts = {}
     if type(time_diffs) is dict:
         for i in time_diffs:
-            counts[i] = np.histogram(time_diffs[i].values, bins)[0]
+            counts[i] = np.histogram(time_diffs[i].values, bin_edges)[0]
     else:
-        counts[0] = np.histogram(time_diffs.values, bins)[0]
+        counts[0] = np.histogram(time_diffs.values, bin_edges)[0]
 
     return pd.DataFrame(index=bin_centers, data=counts)
