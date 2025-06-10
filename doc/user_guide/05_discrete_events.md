@@ -77,7 +77,7 @@ print(eventcorrs)
 ## Interspike interval (ISI) distribution
 
 The interspike interval distribution shows how the time differences between subsequent spikes (events) are distributed.
-The `log_scale` parameter allows for using log space bins.
+Setting the optional parameter `log_scale=True` allows for using log space bins.
 
 ```{code-cell} ipython3
 isi_distribution = nap.compute_isi_distribution(
