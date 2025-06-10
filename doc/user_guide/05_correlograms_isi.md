@@ -76,6 +76,7 @@ print(eventcorrs)
 
 The interspike interval distribution shows how the time differences between subsequent spikes (events) are distributed.
 The input can be any object with timestamps. Passing an `ep` restricts the computation to the given epoch.
+The output will be a dataframe with the bin centres as index and containing the corresponding ISI counts per unit.
 
 ```{code-cell} ipython3
 isi_distribution = nap.compute_isi_distribution(
