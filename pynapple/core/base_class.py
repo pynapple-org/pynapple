@@ -350,7 +350,7 @@ class _Base(abc.ABC):
              - "center" [default]: the center of the interval between two timestamps.
              - "end" : the end of the interval between two timestamps.
         ep : IntervalSet, optional
-            The epochs to calculate time differences over. If None, the time support of the TsGroup is used.
+            The epochs to calculate time differences over. If None, the time support of the object is used.
 
         Returns
         -------
