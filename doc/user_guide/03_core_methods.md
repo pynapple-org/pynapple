@@ -473,11 +473,12 @@ ts = nap.Ts(t=[1,5,6,12,16,18,19])
 time_diffs = ts.time_diff(align="center")
 print(time_diffs)
 ```
-Setting `align="center"` sets the reference time point to the midpoint between the timestamps used to calculate the time difference. Setting `align="start"` or `align="end"` sets the reference time point to the earlier or later timestamp, respectively.
+Setting `align="center"` sets the reference time point to the midpoint between the timestamps used to calculate the time difference.
+Setting `align="start"` or `align="end"` sets the reference time point to the earlier or later timestamp, respectively.
 ```{code-cell} ipython3
 :tags: [hide-input]
 fig, axs = plt.subplots(3, 1, layout="constrained", figsize=(5,6))
-for ax, align in zip(axs, ["start", "center", "end"]):
+for ax, align in zip(axs, ["center", "start", "end"]):
     time_diffs = ts.time_diff(align=align)
     ax.plot(ts.fillna(0), "|", label="ts", markersize=20, mew=3)
     ax.plot(time_diffs, "o-", label="new_tsd")

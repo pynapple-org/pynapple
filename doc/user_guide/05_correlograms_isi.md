@@ -11,9 +11,7 @@ kernelspec:
   name: python3
 ---
 
-# Analysis of discrete events
-
-## Correlograms
+# Correlograms & ISI
 
 ```{code-cell} ipython3
 :tags: [hide-cell]
@@ -35,7 +33,7 @@ ts_group = nap.TsGroup({0: ts1, 1: ts2}, time_support=epoch)
 print(ts_group)
 ```
 
-### Autocorrelograms
+## Autocorrelograms
 
 We can compute their autocorrelograms meaning the number of spikes of a neuron observed in a time windows centered around its own spikes.
 For this we can use the function `compute_autocorrelogram`.
@@ -50,7 +48,7 @@ print(autocorrs)
 The variable `autocorrs` is a pandas DataFrame with the center of the bins 
 for the index and each column is an autocorrelogram of one unit in the `TsGroup`.
 
-### Cross-correlograms
+## Cross-correlograms
 
 Cross-correlograms are computed between pairs of neurons.
 
@@ -63,7 +61,7 @@ print(crosscorrs)
 
 Column name `(0, 1)` is read as cross-correlogram of neuron 0 and 1 with neuron 0 being the reference time.
 
-### Event-correlograms
+## Event-correlograms
 
 Event-correlograms count the number of event in the `TsGroup` based on an `event` timestamps object. 
 
@@ -77,11 +75,11 @@ print(eventcorrs)
 ## Interspike interval (ISI) distribution
 
 The interspike interval distribution shows how the time differences between subsequent spikes (events) are distributed.
-Setting the optional parameter `log_scale=True` allows for using log space bins.
+The input can be any object with timestamps. Passing an `ep` restricts the computation to the given epoch.
 
 ```{code-cell} ipython3
 isi_distribution = nap.compute_isi_distribution(
-    data=ts_group, nb_bins=10, ep=epoch
+    data=ts_group, bins=10, ep=epoch
     )
 print(isi_distribution)
 ```
@@ -99,6 +97,32 @@ for col in isi_distribution.columns:
         edgecolor='none'
     )
 plt.xlabel("ISI (s)")
+plt.ylabel("Count")
+plt.legend(title="Unit")
+plt.show()
+```
+
+The `bins` argument allows for choosing either the number of bins as an integer or the bin edges as an array directly:
+```{code-cell} ipython3
+isi_distribution = nap.compute_isi_distribution(
+    data=ts_group, bins=np.linspace(0, 3, 10), ep=epoch
+    )
+print(isi_distribution)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+for col in isi_distribution.columns:
+    plt.bar(
+        isi_distribution.index,
+        isi_distribution[col].values,
+        width=np.diff(isi_distribution.index).mean(),
+        alpha=0.5,
+        label=col,
+        align='center',
+        edgecolor='none'
+    )
+plt.xlabel("log ISI (s)")
 plt.ylabel("Count")
 plt.legend(title="Unit")
 plt.show()
