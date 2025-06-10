@@ -74,7 +74,7 @@ eventcorrs = nap.compute_eventcorrelogram(
 print(eventcorrs)
 ```
 
-## Interspike interval distribution (ISI)
+## Interspike interval (ISI) distribution
 
 The interspike interval distribution shows how the time differences between subsequent spikes (events) are distributed.
 The `log_scale` parameter allows for using log space bins.
