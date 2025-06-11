@@ -1,7 +1,7 @@
 """Tests of correlograms for `pynapple` package."""
 
 from contextlib import nullcontext as does_not_raise
-from itertools import accumulate, combinations
+from itertools import combinations
 
 import numpy as np
 import pandas as pd
@@ -598,7 +598,7 @@ def test_compute_isi_distribution_type_errors(args, expectation):
             pytest.raises(ValueError, match="`bins` must be positive, when an integer"),
         ),
         (
-            (get_group(), [1, 2, 3, 4, 2, 5]),
+            (get_group(), [1, 2, 3, 2, 4]),
             pytest.raises(
                 ValueError, match="`bins` must increase monotonically, when an array"
             ),
@@ -617,21 +617,40 @@ def test_compute_isi_distribution_value_errors(args, expectation):
 @pytest.mark.parametrize(
     "data",
     [
-        nap.Ts(list(accumulate(range(11)))),
+        nap.Ts(t=np.sort(np.random.uniform(0, 1000, 2000))),
         nap.TsGroup(
             {
-                0: nap.Ts(list(accumulate(range(11)))),
-                1: nap.Ts(list(accumulate(range(21)))),
+                0: nap.Ts(t=np.sort(np.random.uniform(0, 1000, 2000))),
+                1: nap.Ts(t=np.sort(np.random.uniform(0, 1000, 1000))),
             }
         ),
-        nap.Tsd(t=list(accumulate(range(11))), d=np.ones(11)),
-        nap.TsdFrame(t=list(accumulate(range(11))), d=np.ones((11, 2))),
-        nap.TsdTensor(t=list(accumulate(range(11))), d=np.ones((11, 2, 2))),
+        nap.Tsd(t=np.sort(np.random.uniform(0, 1000, 1000)), d=np.ones(1000)),
+        nap.TsdFrame(t=np.sort(np.random.uniform(0, 1000, 1000)), d=np.ones((1000, 2))),
+        nap.TsdTensor(
+            t=np.sort(np.random.uniform(0, 1000, 1000)), d=np.ones((1000, 2, 2))
+        ),
     ],
 )
-@pytest.mark.parametrize("bins", [10, np.linspace(0, 10, 10), np.geomspace(1, 100, 10)])
 @pytest.mark.parametrize(
-    "ep", [None, nap.IntervalSet([0, 20]), nap.IntervalSet([0, 5])]
+    "bins",
+    [
+        1,
+        10,
+        np.linspace(0, 10, 10),
+        np.linspace(0, 2000, 100),
+        np.linspace(0, 2000, 1000),
+        np.geomspace(1, 100, 100),
+    ],
+)
+@pytest.mark.parametrize(
+    "ep",
+    [
+        None,
+        nap.IntervalSet([0, 10]),
+        nap.IntervalSet([0, 100]),
+        nap.IntervalSet([0, 2000]),
+        nap.IntervalSet([0, 4000]),
+    ],
 )
 def test_compute_isi_distribution(data, bins, ep):
     actual = nap.compute_isi_distribution(data, bins=bins, ep=ep)

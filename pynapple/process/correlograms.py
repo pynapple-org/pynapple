@@ -389,8 +389,8 @@ def compute_isi_distribution(
     bins : int or sequence of scalars
         If bins is an int, it defines the number of equal-width bins in the given range (10, by default).
         If bins is a sequence, it defines a monotonically increasing array of bin edges, including the rightmost edge, allowing for non-uniform bin widths.
-    log_scale=False
-        Whether or not to log transform the distribution.
+    log_scale: bool, optional
+        If True, the computed ISI's are log-transformed. Default is False.
     ep : IntervalSet, optional
         The epoch on which interspike intervals are computed.
         If None, the epoch is the time support of the input.
@@ -414,38 +414,29 @@ def compute_isi_distribution(
         ep = data.time_support
 
     time_diffs = data.time_diff(ep=ep)
+    if not isinstance(time_diffs, dict):
+        time_diffs = {0: time_diffs}
+
+    if log_scale:
+        time_diffs = {k: np.log(v) for k, v in time_diffs.items()}
 
     if np.ndim(bins) == 0:
         if bins < 1:
             raise ValueError("`bins` must be positive, when an integer")
-        if type(time_diffs) is dict:
-            min_isi = min(
-                [isi for time_diff in time_diffs.values() for isi in time_diff]
-            )
-            max_isi = max(
-                [isi for time_diff in time_diffs.values() for isi in time_diff]
-            )
-        else:
-            min_isi, max_isi = time_diffs.values.min(), time_diffs.values.max()
-        if log_scale:
-            bin_edges = np.geomspace(min_isi, max_isi, bins + 1)
-            bin_centers = np.sqrt(bin_edges[:-1] * bin_edges[1:])
-        else:
-            bin_edges = np.linspace(min_isi, max_isi, bins + 1)
-            bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+        min_isi = min([isi for time_diff in time_diffs.values() for isi in time_diff])
+        max_isi = max([isi for time_diff in time_diffs.values() for isi in time_diff])
+        bin_edges = np.linspace(min_isi, max_isi, bins + 1)
     elif np.ndim(bins) == 1:
         bin_edges = np.asarray(bins)
         if np.any(bin_edges[:-1] > bin_edges[1:]):
             raise ValueError("`bins` must increase monotonically, when an array")
-        bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
     else:
         raise ValueError("`bins` must be 1d, when an array")
 
+    bin_centers = (bin_edges[:-1] + bin_edges[1:]) / 2
+
     counts = {}
-    if type(time_diffs) is dict:
-        for i in time_diffs:
-            counts[i] = np.histogram(time_diffs[i].values, bin_edges)[0]
-    else:
-        counts[0] = np.histogram(time_diffs.values, bin_edges)[0]
+    for i in time_diffs:
+        counts[i] = np.histogram(time_diffs[i].values, bin_edges)[0]
 
     return pd.DataFrame(index=bin_centers, data=counts)

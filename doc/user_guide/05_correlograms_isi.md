@@ -128,3 +128,29 @@ plt.ylabel("Count")
 plt.legend(title="Unit")
 plt.show()
 ```
+
+The `log_scale` argument allows for applying the log-transform to the ISIs:
+```{code-cell} ipython3
+isi_distribution = nap.compute_isi_distribution(
+    data=ts_group, bins=10, log_scale=True, ep=epoch
+    )
+print(isi_distribution)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+for col in isi_distribution.columns:
+    plt.bar(
+        isi_distribution.index,
+        isi_distribution[col].values,
+        width=np.diff(isi_distribution.index).mean(),
+        alpha=0.5,
+        label=col,
+        align='center',
+        edgecolor='none'
+    )
+plt.xlabel("log ISI (s)")
+plt.ylabel("Count")
+plt.legend(title="Unit")
+plt.show()
+```
