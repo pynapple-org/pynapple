@@ -70,8 +70,7 @@ Getting Started
 
 ### Installation
 
-The best way to install pynapple is with pip within a new [conda](https://docs.conda.io/en/latest/) environment :
-
+The best way to install pynapple is with pip inside a new [conda](https://docs.conda.io/en/latest/) environment:
     
 ``` {.sourceCode .shell}
 $ conda create --name pynapple pip python=3.8
@@ -79,21 +78,10 @@ $ conda activate pynapple
 $ pip install pynapple
 ```
 
-or directly from the source code:
-
-``` {.sourceCode .shell}
-$ conda create --name pynapple pip python=3.8
-$ conda activate pynapple
-$ # clone the repository
-$ git clone https://github.com/pynapple-org/pynapple.git
-$ cd pynapple
-$ # Install in editable mode with `-e` or, equivalently, `--editable`
-$ pip install -e .
-```
 > **Note**
-> The package is now using a pyproject.toml file for installation and dependencies management. If you want to run the tests, use pip install -e .[dev]
+> The package uses a pyproject.toml file for installation and dependencies management.
 
-This procedure will install all the dependencies including 
+Running `pip install pynapple` will install all the dependencies, including: 
 
 -   pandas
 -   numpy
@@ -102,6 +90,8 @@ This procedure will install all the dependencies including
 -   pynwb 2.0
 -   tabulate
 -   h5py
+
+For development, see the [contributor guide](CONTRIBUTING.md) for steps to install from source code.
 
 <!-- For spyder users, it is recommended to install spyder after installing pynapple with :
 
@@ -174,3 +164,7 @@ This package was developped by Guillaume Viejo
 (<https://github.com/gviejo>) and other members of the Peyrache Lab.
 
 <!-- Logo: Sofia Skromne Carrasco, 2021. -->
+
+## Contributing
+
+We welcome contributions, including documentation improvements. For more information, see the [contributor guide](CONTRIBUTING.md).

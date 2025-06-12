@@ -14,12 +14,12 @@ kernelspec:
 Spectrogram
 ===========
 
-This tutorial covers the use of `nap.compute_wavelet_transform` to do continuous wavelet transform. By default, pynapple uses Morlet wavelets.
+This tutorial covers the use of [`nap.compute_wavelet_transform`](pynapple.process.wavelets.compute_wavelet_transform) to do continuous wavelet transform. By default, pynapple uses Morlet wavelets.
 
 Wavelet are a great tool for capturing changes of spectral characteristics of a signal over time. As neural signals change
 and develop over time, wavelet decompositions can aid both visualization and analysis.
 
-The function `nap.generate_morlet_filterbank` can help parametrize and visualize the Morlet wavelets.
+The function [`nap.generate_morlet_filterbank`](pynapple.process.wavelets.generate_morlet_filterbank) can help parametrize and visualize the Morlet wavelets.
 
 
 ```{code-cell} ipython3
@@ -72,7 +72,7 @@ ax[2].set_title("Dummy Signal")
 Visualizing the Morlet Wavelets
 -------------------------------
 We will be decomposing our dummy signal using wavelets of different frequencies. These wavelets
-can be examined using the `generate_morlet_filterbank` function. Here we will use the default parameters
+can be examined using the [`generate_morlet_filterbank`](pynapple.process.wavelets.generate_morlet_filterbank) function. Here we will use the default parameters
 to define a Morlet filter bank. This function is a good way to visually inspect the quality of the wavelets.
 
 
@@ -169,7 +169,7 @@ Both of these parameters can be tweaked to control for the trade-off between tim
 ***
 Continuous wavelet transform
 ----------------------------
-Here we will use the `compute_wavelet_transform` function to decompose our signal using the filter bank shown
+Here we will use the [`compute_wavelet_transform`](pynapple.process.wavelets.compute_wavelet_transform) function to decompose our signal using the filter bank shown
 above. Wavelet decomposition breaks down a signal into its constituent wavelets, capturing both time and
 frequency information for analysis. We will calculate this decomposition and plot it's corresponding
 scalogram (which is another name for time frequency decomposition using wavelets).

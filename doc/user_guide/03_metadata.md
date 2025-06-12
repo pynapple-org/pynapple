@@ -123,7 +123,7 @@ print(tsdframe)
 ```
 
 ## Adding metadata after initialization
-After creation, metadata can be added using the class method `set_info()`. Additionally, single metadata fields can be added as a dictionary-like key or as an attribute, with a few noted exceptions outlined below.
+After creation, metadata can be added using the class method [`set_info()`](pynapple.TsdFrame.set_info). Additionally, single metadata fields can be added as a dictionary-like key or as an attribute, with a few noted exceptions outlined below.
 
 ```{admonition} Note
 The remaining metadata examples will be shown on a `TsGroup` object; however, all examples can be directly applied to `IntervalSet` and `TsdFrame` objects.
@@ -163,7 +163,7 @@ Metadata is stored as a pandas DataFrame, which can be previewed using the `meta
 print(tsgroup.metadata)
 ```
 
-Single metadata columns (or lists of columns) can be retrieved using the `get_info()` class method:
+Single metadata columns (or lists of columns) can be retrieved using the [`get_info()`](pynapple.TsGroup.get_info) class method:
 ```{code-cell} ipython3
 print(tsgroup.get_info("region"))
 ```
@@ -191,7 +191,7 @@ print(tsgroup)
 ```
 
 ## Dropping metadata
-To drop metadata, use the `drop_info()` method. Multiple metadata columns can be dropped by passing a list of metadata names.
+To drop metadata, use the [`drop_info()`](pynapple.TsGroup.drop_info) method. Multiple metadata columns can be dropped by passing a list of metadata names.
 ```{code-cell} ipython3
 print(tsgroup, "\n")
 tsgroup.drop_info("coords")
@@ -205,7 +205,7 @@ print(tsgroup[tsgroup.label == "A"])
 ```
 
 ## `groupby`: Using metadata to group objects
-Similar to pandas, metadata can be used to group objects based on one or more metadata columns using the object method `groupby`, where the first argument is the metadata columns name(s) to group by. This function returns a dictionary with keys corresponding to unique groups and values corresponding to object indices belonging to each group.
+Similar to pandas, metadata can be used to group objects based on one or more metadata columns using the object method [`groupby`](pynapple.TsGroup.groupby), where the first argument is the metadata columns name(s) to group by. This function returns a dictionary with keys corresponding to unique groups and values corresponding to object indices belonging to each group.
 ```{code-cell} ipython3
 print(tsgroup,"\n")
 print(tsgroup.groupby("region"))
