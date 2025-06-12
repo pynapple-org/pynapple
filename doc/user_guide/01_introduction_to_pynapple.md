@@ -433,7 +433,7 @@ Some functions have been doubled given the nature of the data. For instance, com
 
 **[Discrete correlograms & ISI](05_correlograms_isi)**
 
-This module analyses discrete events, for example by computing the cross-correlograms of a population of neurons.
+This module analyses discrete events, specifically correlograms (for example by computing the cross-correlograms of a population of neurons) and interspike interval (ISI) distributions.
 
 **[Bayesian decoding](07_decoding)**
 
