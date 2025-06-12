@@ -1016,15 +1016,15 @@ class TsdTensor(_BaseTsd):
         return _initialize_tsd_output(self, output, time_index=index)
 
     @add_base_docstring("time_diff")
-    def time_diff(self, align="center", ep=None):
+    def time_diff(self, align="center", epochs=None):
         """
         Examples
         --------
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tsdtensor = nap.TsdTensor(t=[1, 3, 5, 6, 8, 12], d=np.ones((6,6,6)))
-        >>> ep = nap.IntervalSet(start=2, end=9, time_units='s')
-        >>> tsd_time_diffs = tsdtensor.time_diff(align="center", ep=ep)
+        >>> epochs = nap.IntervalSet(start=2, end=9, time_units='s')
+        >>> tsd_time_diffs = tsdtensor.time_diff(align="center", epochs=epochs)
         >>> tsd_time_diffs
         Time (s)
         ----------  --
@@ -1033,7 +1033,7 @@ class TsdTensor(_BaseTsd):
         7            2
         dtype: float64, shape: (3,)
         """
-        return _Base.time_diff(self, align, ep)
+        return _Base.time_diff(self, align, epochs)
 
     def save(self, filename):
         """
@@ -1565,15 +1565,15 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         return df
 
     @add_base_docstring("time_diff")
-    def time_diff(self, align="center", ep=None):
+    def time_diff(self, align="center", epochs=None):
         """
         Examples
         --------
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tsdframe = nap.TsdFrame(t=[1, 3, 5, 6, 8, 12], d=np.ones((6, 2)))
-        >>> ep = nap.IntervalSet(start=2, end=9, time_units='s')
-        >>> tsd_time_diffs = tsdframe.time_diff(align="center", ep=ep)
+        >>> epochs = nap.IntervalSet(start=2, end=9, time_units='s')
+        >>> tsd_time_diffs = tsdframe.time_diff(align="center", epochs=epochs)
         >>> tsd_time_diffs
         Time (s)
         ----------  --
@@ -1582,7 +1582,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         7            2
         dtype: float64, shape: (3,)
         """
-        return _Base.time_diff(self, align, ep)
+        return _Base.time_diff(self, align, epochs)
 
     # @add_or_convert_metadata
     def save(self, filename):
@@ -2272,15 +2272,15 @@ class Tsd(_BaseTsd):
         return Tsd(t=t, d=d, time_support=time_support)
 
     @add_base_docstring("time_diff")
-    def time_diff(self, align="center", ep=None):
+    def time_diff(self, align="center", epochs=None):
         """
         Examples
         --------
         >>> import pynapple as nap
         >>> import numpy as np
         >>> tsd = nap.Tsd(t=[1, 3, 5, 6, 8, 12], d=[2, 2, 2, 3, 4, 5])
-        >>> ep = nap.IntervalSet(start=2, end=9, time_units='s')
-        >>> tsd_time_diffs = tsd.time_diff(align="center", ep=ep)
+        >>> epochs = nap.IntervalSet(start=2, end=9, time_units='s')
+        >>> tsd_time_diffs = tsd.time_diff(align="center", epochs=epochs)
         >>> tsd_time_diffs
         Time (s)
         ----------  --
@@ -2289,7 +2289,7 @@ class Tsd(_BaseTsd):
         7            2
         dtype: float64, shape: (3,)
         """
-        return _Base.time_diff(self, align, ep)
+        return _Base.time_diff(self, align, epochs)
 
     def to_tsgroup(self):
         """
@@ -2655,15 +2655,15 @@ class Ts(_Base):
         return output
 
     @add_base_docstring("time_diff")
-    def time_diff(self, align="center", ep=None):
+    def time_diff(self, align="center", epochs=None):
         """
         Examples
         --------
         >>> import pynapple as nap
         >>> import numpy as np
         >>> ts = nap.Ts(t=[1, 3, 5, 6, 8, 12])
-        >>> ep = nap.IntervalSet(start=2, end=9, time_units='s')
-        >>> tsd_time_diffs = ts.time_diff(align="center", ep=ep)
+        >>> epochs = nap.IntervalSet(start=2, end=9, time_units='s')
+        >>> tsd_time_diffs = ts.time_diff(align="center", epochs=epochs)
         >>> tsd_time_diffs
         Time (s)
         ----------  --
@@ -2672,4 +2672,4 @@ class Ts(_Base):
         7            2
         dtype: float64, shape: (3,)
         """
-        return _Base.time_diff(self, align, ep)
+        return _Base.time_diff(self, align, epochs)

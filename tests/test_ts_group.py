@@ -695,20 +695,25 @@ class TestTsGroup1:
             tsgroup.time_diff(align=align)
 
     @pytest.mark.parametrize(
-        "ep, expectation",
+        "epochs, expectation",
         [
             (nap.IntervalSet(0, 40), does_not_raise()),
             (None, does_not_raise()),
-            ([0, 40], pytest.raises(TypeError, match="ep should be an object")),
+            (
+                [0, 40],
+                pytest.raises(
+                    TypeError, match="epochs should be an object of type IntervalSet"
+                ),
+            ),
         ],
     )
-    def test_time_diff_epoch_error(self, group, ep, expectation):
+    def test_time_diff_epoch_error(self, group, epochs, expectation):
         tsgroup = nap.TsGroup(group)
         with expectation:
-            tsgroup.time_diff(ep=ep)
+            tsgroup.time_diff(epochs=epochs)
 
     @pytest.mark.parametrize(
-        "align, ep, expectation",
+        "align, epochs, expectation",
         [
             # default arguments
             (
@@ -726,7 +731,7 @@ class TestTsGroup1:
                 nap.IntervalSet(start=[], end=[]),
                 {i: nap.Tsd(d=[], t=[]) for i in range(3)},
             ),
-            # empty epoch
+            # empty epochs
             (
                 "start",
                 nap.IntervalSet(start=[10, 50, 300], end=[20, 60, 310]),
@@ -749,7 +754,17 @@ class TestTsGroup1:
                     ),
                 },
             ),
-            # single point in epoch
+            # single epoch
+            (
+                "start",
+                nap.IntervalSet(start=[10, 50]),
+                {
+                    0: nap.Tsd(d=np.ones(40), t=np.arange(10, 50)),
+                    1: nap.Tsd(d=np.full(80, 0.5), t=np.arange(10, 50, 0.5)),
+                    2: nap.Tsd(d=np.full(200, 0.2), t=np.arange(10, 50, 0.2)),
+                },
+            ),
+            # single point in epochs
             (
                 "start",
                 nap.IntervalSet(start=[10, 50, 299.8], end=[20, 60, 300]),
@@ -772,7 +787,7 @@ class TestTsGroup1:
                     ),
                 },
             ),
-            # two points in epoch
+            # two points in epochs
             (
                 "start",
                 nap.IntervalSet(start=[10, 50, 299.6], end=[20, 60, 300]),
@@ -797,13 +812,13 @@ class TestTsGroup1:
             ),
         ],
     )
-    def test_time_diff(self, group, align, ep, expectation):
+    def test_time_diff(self, group, align, epochs, expectation):
         tsgroup = nap.TsGroup(group)
 
         if align is None:
-            actual = tsgroup.time_diff(ep=ep)
+            actual = tsgroup.time_diff(epochs=epochs)
         else:
-            actual = tsgroup.time_diff(align=align, ep=ep)
+            actual = tsgroup.time_diff(align=align, epochs=epochs)
 
         assert isinstance(actual, dict)
         assert len(actual) == len(tsgroup)

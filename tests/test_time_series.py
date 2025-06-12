@@ -931,19 +931,24 @@ class TestTimeSeriesGeneral:
             tsd.time_diff(align=align)
 
     @pytest.mark.parametrize(
-        "ep, expectation",
+        "epochs, expectation",
         [
             (nap.IntervalSet(0, 40), does_not_raise()),
             (None, does_not_raise()),
-            ([0, 40], pytest.raises(TypeError, match="ep should be an object")),
+            (
+                [0, 40],
+                pytest.raises(
+                    TypeError, match="epochs should be an object of type IntervalSet"
+                ),
+            ),
         ],
     )
-    def test_time_diff_type_errors(self, tsd, ep, expectation):
+    def test_time_diff_type_errors(self, tsd, epochs, expectation):
         with expectation:
-            tsd.time_diff(ep=ep)
+            tsd.time_diff(epochs=epochs)
 
     @pytest.mark.parametrize(
-        "align, ep, expected",
+        "align, epochs, expected",
         [
             # default arguments
             (None, None, nap.Tsd(d=np.ones(99), t=np.arange(0.5, 99.5))),
@@ -957,19 +962,25 @@ class TestTimeSeriesGeneral:
                 nap.IntervalSet(start=[], end=[]),
                 nap.Tsd(d=[], t=[]),
             ),
-            # empty epoch
+            # empty epochs
             (
                 "start",
                 nap.IntervalSet(start=[10, 50, 100], end=[20, 60, 110]),
                 nap.Tsd(d=np.ones(20), t=list(range(10, 20)) + list(range(50, 60))),
             ),
-            # single point in epoch
+            # single epoch
+            (
+                "start",
+                nap.IntervalSet(start=[10, 30]),
+                nap.Tsd(d=np.ones(20), t=list(range(10, 30))),
+            ),
+            # single point in epochs
             (
                 "start",
                 nap.IntervalSet(start=[10, 50, 99], end=[20, 60, 100]),
                 nap.Tsd(d=np.ones(20), t=list(range(10, 20)) + list(range(50, 60))),
             ),
-            # two points in epoch
+            # two points in epochs
             (
                 "start",
                 nap.IntervalSet(start=[10, 50, 98], end=[20, 60, 100]),
@@ -980,11 +991,11 @@ class TestTimeSeriesGeneral:
             ),
         ],
     )
-    def test_time_diff(self, tsd, align, ep, expected):
+    def test_time_diff(self, tsd, align, epochs, expected):
         if align is None:
-            actual = tsd.time_diff(ep=ep)
+            actual = tsd.time_diff(epochs=epochs)
         else:
-            actual = tsd.time_diff(align=align, ep=ep)
+            actual = tsd.time_diff(align=align, epochs=epochs)
         np.testing.assert_array_almost_equal(actual.values, expected.values)
         np.testing.assert_array_almost_equal(actual.index, expected.index)
 

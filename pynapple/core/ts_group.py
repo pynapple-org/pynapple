@@ -1022,7 +1022,7 @@ class TsGroup(UserDict, _MetadataMixin):
 
         return output
 
-    def time_diff(self, align="center", ep=None):
+    def time_diff(self, align="center", epochs=None):
         """
         Computes the differences between subsequent timestamps.
 
@@ -1033,8 +1033,9 @@ class TsGroup(UserDict, _MetadataMixin):
              - "start" : the start of the interval between two timestamps.
              - "center" [default]: the center of the interval between two timestamps.
              - "end" : the end of the interval between two timestamps.
-        ep : IntervalSet, optional
-            The epochs to calculate time differences over. If None, the time support of the TsGroup is used.
+        epochs : IntervalSet, optional
+            The epochs on which interspike intervals are computed.
+            If None, the time support of the input is used.
 
         Returns
         -------
@@ -1047,8 +1048,8 @@ class TsGroup(UserDict, _MetadataMixin):
         >>> import numpy as np
         >>> tmp = { 0:nap.Ts(t=[1, 3, 5, 6, 8, 12], time_units='s'),1:nap.Ts(t=[2, 8, 9, 13, 14, 17], time_units='s'), 2:nap.Ts(t=[1, 2, 5, 7, 9, 12], time_units='s')}
         >>> tsgroup = nap.TsGroup(tmp)
-        >>> ep = nap.IntervalSet(start=2, end=9, time_units='s')
-        >>> time_diffs = tsgroup.time_diff(align="center", ep=ep)
+        >>> epochs = nap.IntervalSet(start=2, end=9, time_units='s')
+        >>> time_diffs = tsgroup.time_diff(align="center", epochs=epochs)
         >>> time_diffs
         {0: Time (s)
         ----------  --
@@ -1066,11 +1067,9 @@ class TsGroup(UserDict, _MetadataMixin):
         8            2
         dtype: float64, shape: (3,)}
         """
-        time_diffs = {}
-        for k in self.data:
-            time_diffs[k] = self.data[k].time_diff(align=align, ep=ep)
-
-        return time_diffs
+        return {
+            k: v.time_diff(align=align, epochs=epochs) for k, v in self.data.items()
+        }
 
     def get(self, start, end=None, time_units="s"):
         """Slice the `TsGroup` object from `start` to `end` such that all the timestamps within the group satisfy `start<=t<=end`.

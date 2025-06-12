@@ -575,11 +575,11 @@ def test_crosscorrelogram_reverse():
             pytest.raises(TypeError, match="log_scale should be of type bool."),
         ),
         ((get_group(), 2, True), does_not_raise()),
-        # ep
+        # epochs
         (
             (get_group(), 2, True, [0, 100]),
             pytest.raises(
-                TypeError, match="ep should be an object of type IntervalSet"
+                TypeError, match="epochs should be an object of type IntervalSet"
             ),
         ),
         ((get_group(), 2, True, nap.IntervalSet([0, 100])), does_not_raise()),
@@ -636,6 +636,7 @@ def test_compute_isi_distribution_value_errors(args, expectation):
     [
         1,
         10,
+        list(range(0, 10)),
         np.linspace(0, 10, 10),
         np.linspace(0, 2000, 100),
         np.linspace(0, 2000, 1000),
@@ -643,20 +644,21 @@ def test_compute_isi_distribution_value_errors(args, expectation):
     ],
 )
 @pytest.mark.parametrize(
-    "ep",
+    "epochs",
     [
         None,
         nap.IntervalSet([0, 10]),
         nap.IntervalSet([0, 100]),
         nap.IntervalSet([0, 2000]),
         nap.IntervalSet([0, 4000]),
+        nap.IntervalSet([0, 11, 21], [10, 20, 60]),
     ],
 )
-def test_compute_isi_distribution(data, bins, ep):
-    actual = nap.compute_isi_distribution(data, bins=bins, ep=ep)
+def test_compute_isi_distribution(data, bins, epochs):
+    actual = nap.compute_isi_distribution(data, bins=bins, epochs=epochs)
     assert isinstance(actual, pd.DataFrame)
 
-    time_diff = data.time_diff(ep=ep)
+    time_diff = data.time_diff(epochs=epochs)
     if not isinstance(time_diff, dict):
         time_diff = {0: time_diff}
     if isinstance(data, nap.TsGroup) and isinstance(bins, int):

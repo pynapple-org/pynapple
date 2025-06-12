@@ -460,9 +460,12 @@ plt.show()
 
 ### `time_diff`
 
-`Ts`, `Tsd`, `TsdFrame`, `TsdTensor`, and `TsGroup` all have the method `time_diff`, which computes the time differences between subsequent timepoints. For example, if a `Ts` object contained a set of spike times, `time_diff` would compute the inter-spike interval (ISI).
+`Ts`, `Tsd`, `TsdFrame`, `TsdTensor`, and `TsGroup` all have the method `time_diff`, which computes the time differences between subsequent timepoints. 
+For example, if a `Ts` object contained a set of spike times, `time_diff` would compute the inter-spike interval (ISI).
 
-This method returns a new `Tsd` object, with values corresponding to each time difference, and time indices corresponding to the reference time point associated with each time difference. The reference time point can be adjusted by the optional `align` parameter, which can be set to  `"start"`, `"center"`, or `"end"` (the default being `"center"`).
+This method returns a new `Tsd` object, with values being each time difference, and time indices being their reference time point. 
+Passing `epochs` restricts the computation to the given epochs.
+The reference time point can be adjusted by the optional `align` parameter, which can be set to  `"start"`, `"center"`, or `"end"` (the default being `"center"`).
 
 ```{code-cell} ipython3
 :tags: [hide-input]

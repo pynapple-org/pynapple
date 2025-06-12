@@ -431,7 +431,7 @@ The `process` module of pynapple contains submodules that group methods that can
 Some functions have been doubled given the nature of the data. For instance, computing a 1d tuning curves from spiking activity requires the `nap.compute_1d_tuning_curves`. The same function for calcium imaging data which is a continuous time series is available with `nap.compute_1d_tuning_curves_continuous`. 
 :::
 
-**[Discrete correlograms](05_correlograms_isi)**
+**[Discrete correlograms & ISI](05_correlograms_isi)**
 
 This module analyses discrete events, for example by computing the cross-correlograms of a population of neurons.
 
