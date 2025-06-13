@@ -400,6 +400,27 @@ def compute_isi_distribution(
     pandas.DataFrame
         DataFrame to hold the distribution data.
 
+    Examples
+    -------
+    >>> import numpy as np; np.random.seed(42)
+    >>> import pynapple as nap
+    >>> ts1 = nap.Ts(t=np.sort(np.random.uniform(0, 1000, 2000)), time_units="s")
+    >>> ts2 = nap.Ts(t=np.sort(np.random.uniform(0, 1000, 1000)), time_units="s")
+    >>> epochs = nap.IntervalSet(start=0, end=1000, time_units="s")
+    >>> ts_group = nap.TsGroup({0: ts1, 1: ts2}, time_support=epochs)
+    >>> isi_distribution = nap.compute_isi_distribution(data=ts_group, bins=10, epochs=epochs)
+    >>> isi_distribution
+                 0    1
+    0.322415  1474  477
+    0.966402   378  237
+    1.610388   100  140
+    2.254375    34   67
+    2.898362    12   39
+    3.542349     1   17
+    4.186335     0   12
+    4.830322     0    6
+    5.474309     0    2
+    6.118296     0    2
     """
     if not isinstance(data, (nap.base_class._Base, nap.TsGroup)):
         raise TypeError("data should be a Ts, TsGroup, Tsd, TsdFrame, TsdTensor.")
