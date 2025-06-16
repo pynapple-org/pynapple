@@ -1646,6 +1646,9 @@ class TsGroup(UserDict, _MetadataMixin):
         if "_metadata" in file:  # load metadata if it exists
             if file["_metadata"]:  # check that metadata is not empty
                 metainfo = file["_metadata"].item()
+                # check if first field is a dictionary, meaning it was saved from a pandas.DataFrame
+                if isinstance(next(iter(metainfo.values())), dict):
+                    metainfo = pd.DataFrame.from_dict(metainfo)
                 tsgroup.set_info(metainfo)
 
         metainfo = {}

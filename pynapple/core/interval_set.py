@@ -617,7 +617,10 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         ep = cls(start=file["start"], end=file["end"])
         if "_metadata" in file:  # load metadata if it exists
             if file["_metadata"]:  # check that metadata is not empty
-                metadata = pd.DataFrame.from_dict(file["_metadata"].item())
+                metadata = file["_metadata"].item()
+                # check if first field is a dictionary, meaning it was saved from a pandas.DataFrame
+                if isinstance(next(iter(metadata.values())), dict):
+                    metadata = pd.DataFrame.from_dict(metadata)
                 ep.set_info(metadata)
         return ep
 
