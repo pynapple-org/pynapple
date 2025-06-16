@@ -82,6 +82,9 @@ jobs:
         run: |          
           cd doc
           make html
+      - name: Start tmate session for debugging
+        if: failure()
+        uses: mxschmitt/action-tmate@v3
       - name: Check html
         uses: chabad360/htmlproofer@master
         with:
