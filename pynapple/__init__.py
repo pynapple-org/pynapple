@@ -1,5 +1,4 @@
-from importlib.metadata import PackageNotFoundError as _PackageNotFoundError
-from importlib.metadata import version as _get_version
+__version__ = "0.9.2"
 
 from .core import (
     IntervalSet,
@@ -13,9 +12,3 @@ from .core import (
 )
 from .io import *
 from .process import *
-
-try:
-    __version__ = _get_version("pynapple")
-except _PackageNotFoundError:
-    # package is not installed
-    pass
