@@ -461,6 +461,6 @@ def _convert_iter_to_str(array):
         if np.issubdtype(array.dtype, np.floating):
             return np.around(array, decimals=2).astype(str)
         elif array.dtype == np.dtype("O"):
-            return np.array(["".join(a.astype(str)) for a in array])
+            return np.array(["".join(a.astype(str)) if hasattr(a, "astype") else str(a) for a in array])
         else:
             return array.astype(str)
