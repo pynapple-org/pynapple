@@ -450,6 +450,44 @@ plt.xlabel("Trial time")
 plt.show()
 ```
 
+### `time_diff`
+
+`Ts`, `Tsd`, `TsdFrame`, `TsdTensor`, and `TsGroup` all have the method `time_diff`, which computes the time differences between subsequent timepoints. 
+For example, if a `Ts` object contained a set of spike times, `time_diff` would compute the inter-spike interval (ISI).
+
+This method returns a new `Tsd` object, with values being each time difference, and time indices being their reference time point. 
+Passing `epochs` restricts the computation to the given epochs.
+The reference time point can be adjusted by the optional `align` parameter, which can be set to  `"start"`, `"center"`, or `"end"` (the default being `"center"`).
+
+```{code-cell} ipython3
+:tags: [hide-input]
+ts = nap.Ts(t=[1,5,6,12,16,18,19])
+```
+
+```{code-cell} ipython3
+time_diffs = ts.time_diff(align="center")
+print(time_diffs)
+```
+Setting `align="center"` sets the reference time point to the midpoint between the timestamps used to calculate the time difference.
+Setting `align="start"` or `align="end"` sets the reference time point to the earlier or later timestamp, respectively.
+```{code-cell} ipython3
+:tags: [hide-input]
+fig, axs = plt.subplots(3, 1, layout="constrained", figsize=(5,6))
+for ax, align in zip(axs, ["center", "start", "end"]):
+    time_diffs = ts.time_diff(align=align)
+    ax.plot(ts.fillna(0), "|", label="ts", markersize=20, mew=3)
+    ax.plot(time_diffs, "o-", label="new_tsd")
+    ax.set_ylabel("Time diffs (s)")
+    ax.set_title(f'ts.time_diff(align="{align}")')
+    if align != "end":
+        ax.set_xticks([])
+    for center, time_diff in zip(time_diffs.times(), time_diffs.values):
+        ax.plot([center, center], [-.25, time_diff], linestyle="--", c="black", zorder=-1)
+ax.set_xlabel("Time (s)")
+axs[0].legend(bbox_to_anchor=(1.05, 0.5, 0.5, 0.5))
+plt.show()
+```
+
 ### Mapping between `TsGroup` and `Tsd`
 
 It's is possible to transform a `TsGroup` to `Tsd` with the method

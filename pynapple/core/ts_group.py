@@ -1022,6 +1022,55 @@ class TsGroup(UserDict, _MetadataMixin):
 
         return output
 
+    def time_diff(self, align="center", epochs=None):
+        """
+        Computes the differences between subsequent timestamps.
+
+        Parameters
+        ----------
+        align: str, optional
+            Determines the time index of the resulting time differences:
+             - "start" : the start of the interval between two timestamps.
+             - "center" [default]: the center of the interval between two timestamps.
+             - "end" : the end of the interval between two timestamps.
+        epochs : IntervalSet, optional
+            The epochs on which interspike intervals are computed.
+            If None, the time support of the input is used.
+
+        Returns
+        -------
+        dict
+            A dictionary of Tsd containing the time differences for each Ts in the group.
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tmp = { 0:nap.Ts(t=[1, 3, 5, 6, 8, 12], time_units='s'),1:nap.Ts(t=[2, 8, 9, 13, 14, 17], time_units='s'), 2:nap.Ts(t=[1, 2, 5, 7, 9, 12], time_units='s')}
+        >>> tsgroup = nap.TsGroup(tmp)
+        >>> epochs = nap.IntervalSet(start=2, end=9, time_units='s')
+        >>> time_diffs = tsgroup.time_diff(align="center", epochs=epochs)
+        >>> time_diffs
+        {0: Time (s)
+        ----------  --
+        4            2
+        5.5          1
+        7            2
+        dtype: float64, shape: (3,), 1: Time (s)
+        ----------  --
+        5            6
+        8.5          1
+        dtype: float64, shape: (2,), 2: Time (s)
+        ----------  --
+        3.5          3
+        6            2
+        8            2
+        dtype: float64, shape: (3,)}
+        """
+        return {
+            k: v.time_diff(align=align, epochs=epochs) for k, v in self.data.items()
+        }
+
     def get(self, start, end=None, time_units="s"):
         """Slice the `TsGroup` object from `start` to `end` such that all the timestamps within the group satisfy `start<=t<=end`.
         If `end` is None, only the timepoint closest to `start` is returned.
@@ -1273,7 +1322,7 @@ class TsGroup(UserDict, _MetadataMixin):
             if not ignore_metadata:
                 if tsg1.metadata_columns != tsg.metadata_columns:
                     raise ValueError(
-                        f"TsGroup at position {i+2} has different metadata columns from previous TsGroup objects. "
+                        f"TsGroup at position {i + 2} has different metadata columns from previous TsGroup objects. "
                         "Set `ignore_metadata=True` to bypass the check."
                     )
                 metadata.merge(tsg._metadata)
@@ -1282,7 +1331,7 @@ class TsGroup(UserDict, _MetadataMixin):
                 key_overlap = keys.intersection(tsg.keys())
                 if key_overlap:
                     raise ValueError(
-                        f"TsGroup at position {i+2} has overlapping keys {key_overlap} with previous TsGroup objects. "
+                        f"TsGroup at position {i + 2} has overlapping keys {key_overlap} with previous TsGroup objects. "
                         "Set `reset_index=True` to bypass the check."
                     )
                 keys.update(tsg.keys())
@@ -1297,7 +1346,7 @@ class TsGroup(UserDict, _MetadataMixin):
                     rtol=0,
                 ):
                     raise ValueError(
-                        f"TsGroup at position {i+2} has different time support from previous TsGroup objects. "
+                        f"TsGroup at position {i + 2} has different time support from previous TsGroup objects. "
                         "Set `reset_time_support=True` to bypass the check."
                     )
                 time_support = tsg1.time_support

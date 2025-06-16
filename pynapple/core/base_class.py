@@ -14,6 +14,16 @@ from .time_index import TsIndex
 from .utils import check_filename, convert_to_numpy_array
 
 
+def add_base_docstring(base_func, sep="\n"):
+    base_doc = getattr(_Base, base_func).__doc__
+
+    def _decorator(func):
+        func.__doc__ = sep.join([base_doc, func.__doc__])
+        return func
+
+    return _decorator
+
+
 class _Base(abc.ABC):
     """
     Abstract base class for time series and timestamps objects.
@@ -327,6 +337,57 @@ class _Base(abc.ABC):
         t, d = _count(time_array, starts, ends, bin_size, dtype=dtype)
 
         return self._define_instance(t, ep, values=d)
+
+    def time_diff(self, align="center", epochs=None):
+        """
+        Computes the differences between subsequent timestamps.
+
+        Parameters
+        ----------
+        align: str, optional
+            Determines the time index of the resulting time differences:
+             - "start" : the start of the interval between two timestamps.
+             - "center" [default]: the center of the interval between two timestamps.
+             - "end" : the end of the interval between two timestamps.
+        epochs : IntervalSet, optional
+            The epochs on which interspike intervals are computed.
+            If None, the time support of the input is used.
+
+        Returns
+        -------
+        Tsd
+            The time differences.
+
+        """
+        if align not in ["start", "center", "end"]:
+            raise RuntimeError("align should be 'start', 'center' or 'end'")
+
+        if epochs is None:
+            epochs = self.time_support
+        else:
+            if not isinstance(epochs, IntervalSet):
+                raise TypeError("epochs should be an object of type IntervalSet")
+
+        n = max(len(self) - 1, 0)
+        new_d = np.empty(n)
+        new_t = np.empty(n)
+
+        start = 0
+        alpha = 0.0 if align == "start" else 0.5 if align == "center" else 1.0
+        for i in range(len(epochs)):
+            tmp = self.get(epochs[i, 0], epochs[i, 1])
+
+            if len(tmp) > 1:
+                diff = tmp.index.values[1:] - tmp.index.values[:-1]
+                new_d[start : start + len(tmp) - 1] = diff
+                new_t[start : start + len(tmp) - 1] = (
+                    tmp.index.values[:-1] + alpha * diff
+                )
+                start += len(tmp) - 1
+
+        return self._define_instance(
+            time_index=new_t[:start], time_support=epochs, values=new_d[:start]
+        )
 
     def restrict(self, iset):
         """
