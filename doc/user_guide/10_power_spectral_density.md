@@ -57,7 +57,7 @@ plt.xlabel("Time (s)")
 Computing FFT
 --------------------------------------
 
-To compute the FFT of a signal, you can use the function `nap.compute_fft`. With `norm=True`, the output of the FFT is divided by the length of the signal.
+To compute the FFT of a signal, you can use the function [`nap.compute_fft`](pynapple.process.spectrum.compute_fft). With `norm=True`, the output of the FFT is divided by the length of the signal.
 
 
 ```{code-cell} ipython3
@@ -111,7 +111,7 @@ except ValueError as e:
 Computing power spectral density (PSD)
 --------------------------------------
 
-Power spectral density can be returned through the function `compute_power_spectral_density`. Contrary to `compute_fft`, the
+Power spectral density can be returned through the function [`compute_power_spectral_density`](pynapple.process.spectrum.compute_power_spectral_density). Contrary to `compute_fft`, the
 output is real-valued.
 
 ```{code-cell} ipython3
@@ -131,7 +131,7 @@ plt.xlim(0, 20)
 Computing mean PSD
 ------------------
 
-It is possible to compute an average PSD over multiple epochs with the function `nap.compute_mean_power_spectral_density`.
+It is possible to compute an average PSD over multiple epochs with the function [`nap.compute_mean_power_spectral_density`](pynapple.process.spectrum.compute_mean_power_spectral_density).
 
 In this case, the argument `interval_size` determines the duration of each epochs upon which the FFT is computed.
 If not epochs is passed, the function will split the `time_support`.
@@ -160,4 +160,4 @@ plt.xlabel("Frequency (Hz)")
 
 ```
 
-As we can see, `nap.compute_mean_power_spectral_density` was able to smooth out the noise.
+As we can see, [`nap.compute_mean_power_spectral_density`](pynapple.process.spectrum.compute_mean_power_spectral_density) was able to smooth out the noise.

@@ -48,9 +48,9 @@ sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_par
 Instantiating pynapple objects
 ------------------------------
 
-### `nap.Tsd`: 1-dimensional time serie
+### [`nap.Tsd`](pynapple.Tsd): 1-dimensional time series
 
-If you have a 1-dimensional time series, you use the `nap.Tsd` object. The arguments `t` and `d` are the arguments for timestamps and data.
+If you have a 1-dimensional time series, you use the [`nap.Tsd`](pynapple.Tsd) object. The arguments `t` and `d` are the arguments for timestamps and data.
 
 
 ```{code-cell} ipython3
@@ -60,9 +60,9 @@ print(tsd)
 ```
 
 
-### `nap.TsdFrame`: 2-dimensional time series
+### [`nap.TsdFrame`](pynapple.TsdFrame): 2-dimensional time series
 
-If you have a 2-dimensional time series, you use the `nap.TsdFrame` object. The arguments `t` and `d` are the arguments for timestamps and data. You can add the argument `columns` to label each columns.
+If you have a 2-dimensional time series, you use the [`nap.TsdFrame`](pynapple.TsdFrame) object. The arguments `t` and `d` are the arguments for timestamps and data. You can add the argument `columns` to label each columns.
 
 
 ```{code-cell} ipython3
@@ -73,9 +73,9 @@ tsdframe = nap.TsdFrame(
 print(tsdframe)
 ```
 
-### `nap.TsdTensor`: n-dimensionals time series
+### [`nap.TsdTensor`](pynapple.TsdTensor): n-dimensional time series
 
-If you have larger than 2 dimensions time series (typically movies), you use the `nap.TsdTensor` object . The arguments `t` and `d` are the arguments for timestamps and data.
+If you have larger than 2 dimensions time series (typically movies), you use the [`nap.TsdTensor`](pynapple.TsdTensor) object . The arguments `t` and `d` are the arguments for timestamps and data.
 
 
 ```{code-cell} ipython3
@@ -86,9 +86,9 @@ tsdtensor = nap.TsdTensor(
 print(tsdtensor)
 ```
 
-### `nap.IntervalSet`: intervals
+### [`nap.IntervalSet`](pynapple.IntervalSet): intervals
 
-The `IntervalSet` object stores multiple epochs with a common time unit in a table format. The epochs are strictly _non-overlapping_. Both `start` and `end` arguments are necessary.
+The [`IntervalSet`](pynapple.IntervalSet) object stores multiple epochs with a common time unit in a table format. The epochs are strictly _non-overlapping_. Both `start` and `end` arguments are necessary.
 
 
 ```{code-cell} ipython3
@@ -98,9 +98,9 @@ print(epochs)
 
 ```
 
-### `nap.Ts`: timestamps
+### [`nap.Ts`](pynapple.Ts): timestamps
 
-`Ts` object stores timestamps data (typically spike times or reward times). The argument `t` for timestamps is necessary.
+The [`Ts`](pynapple.Ts) object stores timestamps data (typically spike times or reward times). The argument `t` for timestamps is necessary.
 
 
 ```{code-cell} ipython3
@@ -109,10 +109,10 @@ ts = nap.Ts(t=np.sort(np.random.uniform(0, 100, 10)))
 print(ts)
 ```
 
-### `nap.TsGroup`: group of timestamps
+### [`nap.TsGroup`](pynapple.TsGroup): group of timestamps
 
 
-`TsGroup` is a dictionnary that stores multiple time series with different time stamps (.i.e. a group of neurons with different spike times from one session). The first argument `data` can be a dictionnary of `Ts`, `Tsd` or numpy 1d array.
+[`TsGroup`](pynapple.TsGroup) is a dictionnary that stores multiple time series with different time stamps (.i.e. a group of neurons with different spike times from one session). The first argument `data` can be a dictionnary of `Ts`, `Tsd` or numpy 1d array.
 
 
 ```{code-cell} ipython3
@@ -182,7 +182,7 @@ print(tsd.time_support)
 
 ### Restricting time series to epochs
 
-The central function of pynapple is the `restrict` method of `Ts`, `Tsd`, `TsdFrame` and `TsGroup`. The argument is an `IntervalSet` object. Only time points within the intervals of the `IntervalSet` object are returned. The time support of the time series is updated accordingly.
+The central function of pynapple is the [`restrict`](pynapple.Tsd.restrict) method of `Ts`, `Tsd`, `TsdFrame` and `TsGroup`. The argument is an `IntervalSet` object. Only time points within the intervals of the `IntervalSet` object are returned. The time support of the time series is updated accordingly.
 
 
 ```{code-cell} ipython3
@@ -294,7 +294,7 @@ print(tsdframe, "\n")
 print(tsdframe[3])
 ```
 
-The `loc` method can be used to slice column-based only :
+The [`loc`](pynapple.TsdFrame.loc) method can be used to slice column-based only:
 
 ```
 print(tsdframe.loc[3])
@@ -304,13 +304,13 @@ print(tsdframe.loc[3])
 
 `TsGroup` object can be indexed to return directly the timestamp object or sliced to return a new `TsGroup`. 
 
-Indexing :
+Indexing:
 
 ```{code-cell} ipython3
 print(tsgroup[0], "\n")
 ```
 
-Slicing :
+Slicing:
 
 
 ```{code-cell} ipython3
@@ -323,9 +323,9 @@ Core functions
 
 Objects have methods that can help transform and refine time series. This is a non exhaustive list.
 
-### Binning : counting events
+### Binning: counting events
 
-Time series objects have the `count` method that count the number of timestamps. This is typically used when counting number of spikes within a particular bin over multiple intervals. The returned object is a `Tsd` or `TsdFrame` with the timestamps being the center of the bins.
+Time series objects have the [`count`](pynapple.Tsd.count) method that count the number of timestamps. This is typically used when counting number of spikes within a particular bin over multiple intervals. The returned object is a `Tsd` or `TsdFrame` with the timestamps being the center of the bins.
 
 
 ```{code-cell} ipython3
@@ -336,7 +336,7 @@ print(count)
 
 ### Thresholding
 
-Some time series have specific methods. The `threshold` method of `Tsd` returns a new `Tsd` with all the data above or below a given value.
+Some time series have specific methods. The [`threshold`](pynapple.Tsd.threshold) method of `Tsd` returns a new `Tsd` with all the data above or below a given value.
 
 ```{code-cell} ipython3
 tsd = nap.Tsd(t=np.arange(10), d=np.random.rand(10))
@@ -358,7 +358,7 @@ print(tsd.threshold(0.5, "below").time_support)
 
 ### Time-bin averaging of data
 
-Many analyses requires to bring time series to the same rates and same dimensions. A quick way to downsample a time series to match in size for example a count array is to bin average. The `bin_average` method takes a bin size in unit of time.
+Many analyses requires to bring time series to the same rates and same dimensions. A quick way to downsample a time series to match in size for example a count array is to bin average. The [`bin_average`](pynapple.TsdFrame.bin_average) method takes a bin size in unit of time.
 
 ```{code-cell} ipython3
 tsdframe = nap.TsdFrame(t=np.arange(0, 100)/10, d=np.random.randn(100,3))
@@ -428,7 +428,7 @@ Overview of advanced analysis
 The `process` module of pynapple contains submodules that group methods that can be applied for high level analysis. All of the method are directly available from the `nap` namespace.
 
 :::{important}
-Some functions have been doubled given the nature of the data. For instance, computing a 1d tuning curves from spiking activity requires the `nap.compute_1d_tuning_curves`. The same function for calcium imaging data which is a continuous time series is available with `nap.compute_1d_tuning_curves_continuous`. 
+Some functions have been doubled given the nature of the data. For instance, computing a 1d tuning curves from spiking activity requires the [`nap.compute_1d_tuning_curves`](pynapple.process.tuning_curves.compute_1d_tuning_curves). The same function for calcium imaging data which is a continuous time series is available with [`nap.compute_1d_tuning_curves_continuous`](pynapple.process.tuning_curves.compute_1d_tuning_curves_continuous). 
 :::
 
 **[Discrete correlograms & ISI](05_correlograms_isi)**
