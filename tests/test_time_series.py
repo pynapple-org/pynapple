@@ -567,7 +567,6 @@ class TestTimeSeriesGeneral:
 
     def test_dropna(self, tsd):
         if not isinstance(tsd, nap.Ts):
-
             new_tsd = tsd.dropna()
             np.testing.assert_array_equal(tsd.index.values, new_tsd.index.values)
             np.testing.assert_array_equal(tsd.values, new_tsd.values)
@@ -602,7 +601,6 @@ class TestTimeSeriesGeneral:
 
     def test_convolve_raise_errors(self, tsd):
         if not isinstance(tsd, nap.Ts):
-
             with pytest.raises(IOError) as e_info:
                 tsd.convolve([1, 2, 3])
             assert (
@@ -863,7 +861,7 @@ class TestTimeSeriesGeneral:
             ([0, 40], pytest.raises(IOError, match="ep should be an object")),
         ],
     )
-    def test_decimate_filter_epoch_error(self, tsd, ep, expectation):
+    def test_decimate_epoch_error(self, tsd, ep, expectation):
         if isinstance(tsd, nap.Ts):
             pytest.skip("Ts do not implement decimate...")
         with expectation:
@@ -922,6 +920,85 @@ class TestTimeSeriesGeneral:
             expected[np.isnan(expected)] = -1
             np.testing.assert_array_almost_equal(tensor, expected)
 
+    @pytest.mark.parametrize(
+        "align, expectation",
+        [
+            ("a", "align should be 'start', 'center' or 'end'"),
+        ],
+    )
+    def test_time_diff_runtime_errors(self, tsd, align, expectation):
+        with pytest.raises(RuntimeError, match=re.escape(expectation)):
+            tsd.time_diff(align=align)
+
+    @pytest.mark.parametrize(
+        "epochs, expectation",
+        [
+            (nap.IntervalSet(0, 40), does_not_raise()),
+            (None, does_not_raise()),
+            (
+                [0, 40],
+                pytest.raises(
+                    TypeError, match="epochs should be an object of type IntervalSet"
+                ),
+            ),
+        ],
+    )
+    def test_time_diff_type_errors(self, tsd, epochs, expectation):
+        with expectation:
+            tsd.time_diff(epochs=epochs)
+
+    @pytest.mark.parametrize(
+        "align, epochs, expected",
+        [
+            # default arguments
+            (None, None, nap.Tsd(d=np.ones(99), t=np.arange(0.5, 99.5))),
+            # alignment
+            ("end", None, nap.Tsd(d=np.ones(99), t=np.arange(1, 100))),
+            ("center", None, nap.Tsd(d=np.ones(99), t=np.arange(0.5, 99.5))),
+            ("start", None, nap.Tsd(d=np.ones(99), t=np.arange(0, 99))),
+            # empty time support
+            (
+                "start",
+                nap.IntervalSet(start=[], end=[]),
+                nap.Tsd(d=[], t=[]),
+            ),
+            # empty epochs
+            (
+                "start",
+                nap.IntervalSet(start=[10, 50, 100], end=[20, 60, 110]),
+                nap.Tsd(d=np.ones(20), t=list(range(10, 20)) + list(range(50, 60))),
+            ),
+            # single epoch
+            (
+                "start",
+                nap.IntervalSet(start=[10, 30]),
+                nap.Tsd(d=np.ones(20), t=list(range(10, 30))),
+            ),
+            # single point in epochs
+            (
+                "start",
+                nap.IntervalSet(start=[10, 50, 99], end=[20, 60, 100]),
+                nap.Tsd(d=np.ones(20), t=list(range(10, 20)) + list(range(50, 60))),
+            ),
+            # two points in epochs
+            (
+                "start",
+                nap.IntervalSet(start=[10, 50, 98], end=[20, 60, 100]),
+                nap.Tsd(
+                    d=np.ones(21),
+                    t=np.concatenate([np.arange(10, 20), np.arange(50, 60), [98]]),
+                ),
+            ),
+        ],
+    )
+    def test_time_diff(self, tsd, align, epochs, expected):
+        if align is None:
+            actual = tsd.time_diff(epochs=epochs)
+        else:
+            actual = tsd.time_diff(align=align, epochs=epochs)
+        np.testing.assert_array_almost_equal(actual.values, expected.values)
+        np.testing.assert_array_almost_equal(actual.index, expected.index)
+
 
 ####################################################
 # Test for tsd
@@ -933,7 +1010,6 @@ class TestTimeSeriesGeneral:
     ],
 )
 class TestTsd:
-
     @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
     def test_bin_average_time_support(self, tsd, delta_ep):
         ep = nap.IntervalSet(
@@ -1096,7 +1172,6 @@ class TestTsd:
         )
 
     def test_slice_with_bool_tsd(self, tsd):
-
         thr = 0.5
         tsd_index = tsd > thr
         raw_values = tsd.values
@@ -1110,7 +1185,6 @@ class TestTsd:
             np.testing.assert_array_almost_equal(tsd.values[tsd_index.values], 0)
 
     def test_slice_with_bool_tsd(self, tsd):
-
         thr = 0.5
         tsd_index = tsd > thr
         raw_values = tsd.values
@@ -1190,7 +1264,6 @@ class TestTsd:
         Path("tsd2.npz").unlink()
 
     def test_interpolate(self, tsd):
-
         y = np.arange(0, 1001)
 
         tsd = nap.Tsd(t=np.arange(0, 101), d=y[0::10])
@@ -1317,7 +1390,6 @@ class TestTsd:
     ],
 )
 class TestTsdFrame:
-
     @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
     def test_bin_average_time_support(self, tsdframe, delta_ep):
         ep = nap.IntervalSet(
@@ -1722,7 +1794,6 @@ class TestTsdFrame:
         Path("tsdframe2.npz").unlink()
 
     def test_interpolate(self, tsdframe):
-
         y = np.arange(0, 1001)
         data_stack = np.stack(
             [
@@ -1848,7 +1919,6 @@ class TestTsdFrame:
     ],
 )
 class TestTs:
-
     def test_save_npz(self, ts):
         with pytest.raises(TypeError) as e:
             ts.save(dict)
@@ -2064,7 +2134,6 @@ class TestTs:
     ],
 )
 class TestTsdTensor:
-
     @pytest.mark.parametrize("delta_ep", [(1, -1), (-1, -1), (1, 1)])
     def test_bin_average_time_support(self, delta_ep, tsdtensor):
         ep = nap.IntervalSet(
@@ -2256,7 +2325,6 @@ class TestTsdTensor:
         Path("tsdtensor2.npz").unlink()
 
     def test_interpolate(self, tsdtensor):
-
         y = np.arange(0, 1001)
         data_stack = np.stack(
             [

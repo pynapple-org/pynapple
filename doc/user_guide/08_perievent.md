@@ -36,7 +36,7 @@ stim = nap.Tsd(
 ts1 = nap.Ts(t=np.sort(np.random.uniform(0, 1000, 2000)), time_units="s")
 ```
 
-The function `compute_perievent` align timestamps to a particular set of timestamps.
+The function [`compute_perievent`](pynapple.process.perievent.compute_perievent) align timestamps to a particular set of timestamps.
 
 ```{code-cell} ipython3
 peth = nap.compute_perievent(
@@ -54,8 +54,7 @@ metadata column that indicates the center timestamps.
 ### Raster plot
 
 It is then easy to create a raster plot around the times of the 
-stimulation event by calling the `to_tsd` function of pynapple 
-to "flatten" the TsGroup `peth`.
+stimulation event by calling the [`to_tsd`](pynapple.TsGroup.to_tsd) function of pynapple to "flatten" the TsGroup `peth`.
 
 ```{code-cell} ipython3
 plt.figure(figsize=(10, 6))
@@ -73,11 +72,11 @@ plt.axvline(0.0)
 ```
 
 The same function can be applied to a group of neurons. 
-In this case, it returns a dict of `TsGroup`
+In this case, it returns a dict of `TsGroup`.
 
 ## Event trigger average
 
-The function `compute_event_trigger_average` compute the average feature around a particular event time.
+The function [`compute_event_trigger_average`](pynapple.process.perievent.compute_event_trigger_average) compute the average feature around a particular event time.
 
 ```{code-cell}
 :tags: [hide-cell]
@@ -103,7 +102,7 @@ print(eta)
 
 ## Peri-Event continuous time series
 
-The function `nap.compute_perievent_continuous` align a time series of any dimensions around events.
+The function [`nap.compute_perievent_continuous`](pynapple.process.perievent.compute_perievent_continuous) align a time series of any dimensions around events.
 
 ```{code-cell}
 :tags: [hide-cell]
@@ -122,7 +121,7 @@ perievent = nap.compute_perievent_continuous(
 print(perievent)
 ```
 
-The object perievent is now of shape (number of bins, (dimensions of input), number of events ) : 
+The object perievent is now of shape (number of bins, (dimensions of input), number of events):
 
 
 ```{code-cell}

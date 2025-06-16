@@ -34,7 +34,7 @@ from ._core_functions import (
     _restrict,
     _threshold,
 )
-from .base_class import _Base
+from .base_class import _Base, add_base_docstring
 from .interval_set import IntervalSet
 from .metadata_class import _MetadataMixin, add_meta_docstring, add_or_convert_metadata
 from .time_index import TsIndex
@@ -115,7 +115,6 @@ def _initialize_tsd_output(
     kwargs = kwargs if kwargs is not None else {}
 
     if isinstance(values, np.ndarray) or is_array_like(values):
-
         # if time and ep are passed use them, otherwise strip from inp
         time_index = input_object.index if time_index is None else time_index
 
@@ -257,7 +256,6 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         return np.asarray(self.values, dtype=dtype)
 
     def __array_ufunc__(self, ufunc, method, *args, **kwargs):
-
         if method == "__call__":
             new_args = []
             n_object = 0
@@ -1017,6 +1015,26 @@ class TsdTensor(_BaseTsd):
             index = np.array([index])
         return _initialize_tsd_output(self, output, time_index=index)
 
+    @add_base_docstring("time_diff")
+    def time_diff(self, align="center", epochs=None):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsdtensor = nap.TsdTensor(t=[1, 3, 5, 6, 8, 12], d=np.ones((6,6,6)))
+        >>> epochs = nap.IntervalSet(start=2, end=9, time_units='s')
+        >>> tsd_time_diffs = tsdtensor.time_diff(align="center", epochs=epochs)
+        >>> tsd_time_diffs
+        Time (s)
+        ----------  --
+        4            2
+        5.5          1
+        7            2
+        dtype: float64, shape: (3,)
+        """
+        return _Base.time_diff(self, align, epochs)
+
     def save(self, filename):
         """
         Save TsdTensor object in npz format. The file will contain the timestamps, the
@@ -1545,6 +1563,26 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         df.index.name = "Time (" + str(units) + ")"
         df.columns = self.columns.copy()
         return df
+
+    @add_base_docstring("time_diff")
+    def time_diff(self, align="center", epochs=None):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsdframe = nap.TsdFrame(t=[1, 3, 5, 6, 8, 12], d=np.ones((6, 2)))
+        >>> epochs = nap.IntervalSet(start=2, end=9, time_units='s')
+        >>> tsd_time_diffs = tsdframe.time_diff(align="center", epochs=epochs)
+        >>> tsd_time_diffs
+        Time (s)
+        ----------  --
+        4            2
+        5.5          1
+        7            2
+        dtype: float64, shape: (3,)
+        """
+        return _Base.time_diff(self, align, epochs)
 
     # @add_or_convert_metadata
     def save(self, filename):
@@ -2233,6 +2271,26 @@ class Tsd(_BaseTsd):
         time_support = IntervalSet(start=ns, end=ne)
         return Tsd(t=t, d=d, time_support=time_support)
 
+    @add_base_docstring("time_diff")
+    def time_diff(self, align="center", epochs=None):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsd = nap.Tsd(t=[1, 3, 5, 6, 8, 12], d=[2, 2, 2, 3, 4, 5])
+        >>> epochs = nap.IntervalSet(start=2, end=9, time_units='s')
+        >>> tsd_time_diffs = tsd.time_diff(align="center", epochs=epochs)
+        >>> tsd_time_diffs
+        Time (s)
+        ----------  --
+        4            2
+        5.5          1
+        7            2
+        dtype: float64, shape: (3,)
+        """
+        return _Base.time_diff(self, align, epochs)
+
     def to_tsgroup(self):
         """
         Convert Tsd to a TsGroup by grouping timestamps with the same values.
@@ -2595,3 +2653,23 @@ class Ts(_Base):
             output = output[:, -np.max(n_ep) :]
 
         return output
+
+    @add_base_docstring("time_diff")
+    def time_diff(self, align="center", epochs=None):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> ts = nap.Ts(t=[1, 3, 5, 6, 8, 12])
+        >>> epochs = nap.IntervalSet(start=2, end=9, time_units='s')
+        >>> tsd_time_diffs = ts.time_diff(align="center", epochs=epochs)
+        >>> tsd_time_diffs
+        Time (s)
+        ----------  --
+        4            2
+        5.5          1
+        7            2
+        dtype: float64, shape: (3,)
+        """
+        return _Base.time_diff(self, align, epochs)

@@ -2,6 +2,7 @@ from .correlograms import (
     compute_autocorrelogram,
     compute_crosscorrelogram,
     compute_eventcorrelogram,
+    compute_isi_distribution,
 )
 from .decoding import decode_1d, decode_2d
 from .filtering import (

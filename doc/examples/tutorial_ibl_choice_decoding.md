@@ -97,7 +97,7 @@ stim_on_intervals = nap.IntervalSet(
 )
 ```
 
-Now, use `build_tensor` to align the neural data to these stimulus windows and bin it in 0.1s time bins.
+Now, use [`build_tensor`](pynapple.process.warping.build_tensor) to align the neural data to these stimulus windows and bin it in 0.1s time bins.
 
 ```{code-cell} ipython3
 trial_aligned_binned_spikes = nap.build_tensor(

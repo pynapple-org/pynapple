@@ -371,3 +371,90 @@ def compute_eventcorrelogram(
         crosscorrs = crosscorrs / newgroup.get_info("rate")
 
     return crosscorrs.astype("float")
+
+
+def compute_isi_distribution(
+    data,
+    bins=10,
+    log_scale=False,
+    epochs=None,
+):
+    """
+    Computes the interspike interval distribution.
+
+    Parameters
+    ----------
+    data : Ts, TsGroup, Tsd, TsdFrame or TsdTensor
+        The Ts, TsGroup, Tsd, TsdFrame or TsdTensor to compute the interspike interval distribution for.
+    bins : int or sequence of scalars
+        If bins is an int, it defines the number of equal-width bins in the given range (10, by default).
+        If bins is a sequence, it defines a monotonically increasing array of bin edges, including the rightmost edge, allowing for non-uniform bin widths.
+    log_scale: bool, optional
+        If True, the computed ISI's are log-transformed. Default is False.
+    epochs : IntervalSet, optional
+        The epochs on which interspike intervals are computed.
+        If None, the time support of the input is used.
+
+    Returns
+    -------
+    pandas.DataFrame
+        DataFrame to hold the distribution data.
+
+    Examples
+    -------
+    >>> import numpy as np; np.random.seed(42)
+    >>> import pynapple as nap
+    >>> ts1 = nap.Ts(t=np.sort(np.random.uniform(0, 1000, 2000)), time_units="s")
+    >>> ts2 = nap.Ts(t=np.sort(np.random.uniform(0, 1000, 1000)), time_units="s")
+    >>> epochs = nap.IntervalSet(start=0, end=1000, time_units="s")
+    >>> ts_group = nap.TsGroup({0: ts1, 1: ts2}, time_support=epochs)
+    >>> isi_distribution = nap.compute_isi_distribution(data=ts_group, bins=10, epochs=epochs)
+    >>> isi_distribution
+                 0    1
+    0.322415  1474  477
+    0.966402   378  237
+    1.610388   100  140
+    2.254375    34   67
+    2.898362    12   39
+    3.542349     1   17
+    4.186335     0   12
+    4.830322     0    6
+    5.474309     0    2
+    6.118296     0    2
+    """
+    if not isinstance(data, (nap.base_class._Base, nap.TsGroup)):
+        raise TypeError("data should be a Ts, TsGroup, Tsd, TsdFrame, TsdTensor.")
+
+    if not isinstance(bins, (int, list, np.ndarray)):
+        raise TypeError("bins should be either int, list or np.ndarray.")
+
+    if not isinstance(log_scale, bool):
+        raise TypeError("log_scale should be of type bool.")
+
+    if epochs is None:
+        epochs = data.time_support
+
+    time_diffs = data.time_diff(epochs=epochs)
+    if not isinstance(time_diffs, dict):
+        time_diffs = {0: time_diffs}
+
+    if log_scale:
+        time_diffs = {k: np.log(v) for k, v in time_diffs.items()}
+
+    if np.ndim(bins) == 0:
+        if bins < 1:
+            raise ValueError("`bins` must be positive, when an integer")
+        all_time_diffs = np.hstack([time_diff.d for time_diff in time_diffs.values()])
+        min_isi, max_isi = np.min(all_time_diffs), np.max(all_time_diffs)
+        bin_edges = np.linspace(min_isi, max_isi, bins + 1)
+    elif np.ndim(bins) == 1:
+        bin_edges = np.asarray(bins)
+        if np.any(bin_edges[:-1] > bin_edges[1:]):
+            raise ValueError("`bins` must increase monotonically, when an array")
+    else:
+        raise ValueError("`bins` must be 1d, when an array")
+
+    return pd.DataFrame(
+        index=(bin_edges[:-1] + bin_edges[1:]) / 2,
+        data={i: np.histogram(time_diffs[i].values, bin_edges)[0] for i in time_diffs},
+    )

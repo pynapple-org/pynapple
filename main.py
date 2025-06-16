@@ -1,6 +1,6 @@
 """
-    Minimal working example
-    
+Minimal working example
+
 """
 
 import matplotlib.pyplot as plt

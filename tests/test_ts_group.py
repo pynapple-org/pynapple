@@ -44,7 +44,6 @@ def ts_group_one_group():
 
 
 class TestTsGroup1:
-
     def test_create_ts_group(self, group):
         tsgroup = nap.TsGroup(group)
         assert isinstance(tsgroup, UserDict)
@@ -576,7 +575,6 @@ class TestTsGroup1:
         )
 
     def test_to_tsd_runtime_errors(self, group):
-
         tsgroup = nap.TsGroup(group)
 
         with pytest.raises(Exception) as e_info:
@@ -685,8 +683,158 @@ class TestTsGroup1:
         with pytest.raises(RuntimeError, match=re.escape(expectation)):
             tsgroup.trial_count(ep, bin_size, align, padding_value, time_unit)
 
-    def test_save_npz(self, group):
+    @pytest.mark.parametrize(
+        "align, expectation",
+        [
+            ("a", "align should be 'start', 'center' or 'end'"),
+        ],
+    )
+    def test_time_diff_runtime_errors(self, group, align, expectation):
+        tsgroup = nap.TsGroup(group)
+        with pytest.raises(RuntimeError, match=re.escape(expectation)):
+            tsgroup.time_diff(align=align)
 
+    @pytest.mark.parametrize(
+        "epochs, expectation",
+        [
+            (nap.IntervalSet(0, 40), does_not_raise()),
+            (None, does_not_raise()),
+            (
+                [0, 40],
+                pytest.raises(
+                    TypeError, match="epochs should be an object of type IntervalSet"
+                ),
+            ),
+        ],
+    )
+    def test_time_diff_epoch_error(self, group, epochs, expectation):
+        tsgroup = nap.TsGroup(group)
+        with expectation:
+            tsgroup.time_diff(epochs=epochs)
+
+    @pytest.mark.parametrize(
+        "align, epochs, expectation",
+        [
+            # default arguments
+            (
+                None,
+                None,
+                {
+                    0: nap.Tsd(d=np.ones(199), t=np.arange(0.5, 199.5)),
+                    1: nap.Tsd(d=np.full(399, 0.5), t=np.arange(0.25, 199.5, 0.5)),
+                    2: nap.Tsd(d=np.full(1499, 0.2), t=np.arange(0.1, 299.8, 0.2)),
+                },
+            ),
+            # empty time support
+            (
+                "start",
+                nap.IntervalSet(start=[], end=[]),
+                {i: nap.Tsd(d=[], t=[]) for i in range(3)},
+            ),
+            # empty epochs
+            (
+                "start",
+                nap.IntervalSet(start=[10, 50, 300], end=[20, 60, 310]),
+                {
+                    0: nap.Tsd(
+                        d=np.ones(20),
+                        t=np.concatenate([np.arange(10, 20), np.arange(50, 60)]),
+                    ),
+                    1: nap.Tsd(
+                        d=np.full(40, 0.5),
+                        t=np.concatenate(
+                            [np.arange(10, 20, 0.5), np.arange(50, 60, 0.5)]
+                        ),
+                    ),
+                    2: nap.Tsd(
+                        d=np.full(100, 0.2),
+                        t=np.concatenate(
+                            [np.arange(10, 20, 0.2), np.arange(50, 60, 0.2)]
+                        ),
+                    ),
+                },
+            ),
+            # single epoch
+            (
+                "start",
+                nap.IntervalSet(start=[10, 50]),
+                {
+                    0: nap.Tsd(d=np.ones(40), t=np.arange(10, 50)),
+                    1: nap.Tsd(d=np.full(80, 0.5), t=np.arange(10, 50, 0.5)),
+                    2: nap.Tsd(d=np.full(200, 0.2), t=np.arange(10, 50, 0.2)),
+                },
+            ),
+            # single point in epochs
+            (
+                "start",
+                nap.IntervalSet(start=[10, 50, 299.8], end=[20, 60, 300]),
+                {
+                    0: nap.Tsd(
+                        d=np.ones(20),
+                        t=np.concatenate([np.arange(10, 20), np.arange(50, 60)]),
+                    ),
+                    1: nap.Tsd(
+                        d=np.full(40, 0.5),
+                        t=np.concatenate(
+                            [np.arange(10, 20, 0.5), np.arange(50, 60, 0.5)]
+                        ),
+                    ),
+                    2: nap.Tsd(
+                        d=np.full(100, 0.2),
+                        t=np.concatenate(
+                            [np.arange(10, 20, 0.2), np.arange(50, 60, 0.2)]
+                        ),
+                    ),
+                },
+            ),
+            # two points in epochs
+            (
+                "start",
+                nap.IntervalSet(start=[10, 50, 299.6], end=[20, 60, 300]),
+                {
+                    0: nap.Tsd(
+                        d=np.ones(20),
+                        t=np.concatenate([np.arange(10, 20), np.arange(50, 60)]),
+                    ),
+                    1: nap.Tsd(
+                        d=np.full(40, 0.5),
+                        t=np.concatenate(
+                            [np.arange(10, 20, 0.5), np.arange(50, 60, 0.5)]
+                        ),
+                    ),
+                    2: nap.Tsd(
+                        d=np.full(101, 0.2),
+                        t=np.concatenate(
+                            [np.arange(10, 20, 0.2), np.arange(50, 60, 0.2), [299.6]]
+                        ),
+                    ),
+                },
+            ),
+        ],
+    )
+    def test_time_diff(self, group, align, epochs, expectation):
+        tsgroup = nap.TsGroup(group)
+
+        if align is None:
+            actual = tsgroup.time_diff(epochs=epochs)
+        else:
+            actual = tsgroup.time_diff(align=align, epochs=epochs)
+
+        assert isinstance(actual, dict)
+        assert len(actual) == len(tsgroup)
+        assert len(actual) == len(expectation)
+
+        for ts_idx in tsgroup.index:
+            assert ts_idx in actual
+            assert isinstance(actual[ts_idx], nap.Tsd)
+            np.testing.assert_array_almost_equal(
+                actual[ts_idx].times(), expectation[ts_idx].times()
+            )
+            np.testing.assert_array_almost_equal(
+                actual[ts_idx].values, expectation[ts_idx].values
+            )
+
+    def test_save_npz(self, group):
         group = {
             0: nap.Tsd(t=np.arange(0, 20), d=np.random.rand(20)),
             1: nap.Tsd(t=np.arange(0, 20, 0.5), d=np.random.rand(40)),

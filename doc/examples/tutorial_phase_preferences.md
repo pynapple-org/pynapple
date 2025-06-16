@@ -161,7 +161,7 @@ ax1.margins(0)
 Filtering Theta
 ---------------
 
-As expected, there is a strong 8Hz component during REM sleep. We can filter it using the function `nap.apply_bandpass_filter`.
+As expected, there is a strong 8Hz component during REM sleep. We can filter it using the function [`nap.apply_bandpass_filter`](pynapple.process.filtering.apply_bandpass_filter).
 
 
 ```{code-cell} ipython3
@@ -211,7 +211,7 @@ plt.show()
 Finding Phase of Spikes
 -----------------------
 Now that we have the phase of our theta wavelet, and our spike times, we can find the phase firing preferences
-of each of the units using the `compute_1d_tuning_curves` function.
+of each of the units using the [`compute_1d_tuning_curves`](pynapple.process.tuning_curves.compute_1d_tuning_curves) function.
 
 We will start by throwing away cells which do not have a high enough firing rate during our interval.
 
@@ -243,7 +243,7 @@ plt.show()
 ```
 
 There is clearly a strong modulation for the third neuron.
-Finally, we can use the function `value_from` to align each spikes to the corresponding phase position and overlay
+Finally, we can use the function [`value_from`](pynapple.Ts.value_from) to align each spikes to the corresponding phase position and overlay
 it with the LFP.
 
 
