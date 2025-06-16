@@ -282,7 +282,7 @@ class _MetadataMixin:
                     self._metadata[k] = np.array([v])
                     self._metadata[k].setflags(write=False)
 
-                elif hasattr(v, "__len__"):
+                elif hasattr(v, "__len__") and not isinstance(v, dict):
                     # object that has a length
                     if len(self.metadata_index) == len(v):
                         self._metadata[k] = np.array(v)
