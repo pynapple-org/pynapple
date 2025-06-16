@@ -16,10 +16,10 @@ Filtering
 
 The filtering module holds the functions for frequency manipulation :
 
-- `nap.apply_bandstop_filter`
-- `nap.apply_lowpass_filter`
-- `nap.apply_highpass_filter`
-- `nap.apply_bandpass_filter`
+- [`nap.apply_bandstop_filter`](pynapple.process.filtering.apply_bandstop_filter)
+- [`nap.apply_lowpass_filter`](pynapple.process.filtering.apply_lowpass_filter)
+- [`nap.apply_highpass_filter`](pynapple.process.filtering.apply_highpass_filter)
+- [`nap.apply_bandpass_filter`](pynapple.process.filtering.apply_bandpass_filter)
 
 The functions have similar calling signatures. For example, to filter a 1000 Hz signal between
 10 and 20 Hz using a Butterworth filter:
@@ -28,9 +28,7 @@ The functions have similar calling signatures. For example, to filter a 1000 Hz 
 >>> new_tsd = nap.apply_bandpass_filter(tsd, (10, 20), fs=1000, mode='butter')
 ```
 
-Currently, the filtering module provides two methods for frequency manipulation: `butter`
-for a recursive Butterworth filter and `sinc` for a Windowed-sinc convolution. This notebook provides
-a comparison of the two methods.
+Currently, the filtering module provides two methods for frequency manipulation: `butter` for a recursive Butterworth filter and `sinc` for a Windowed-sinc convolution. This notebook provides a comparison of the two methods.
 
 
 ```{code-cell} ipython3
@@ -85,7 +83,7 @@ plt.xlim(0, 100)
 ```
 
 Let's say we would like to see only the 10 Hz component.
-We can use the function `apply_bandpass_filter` with mode `butter` for Butterworth.
+We can use the function [`apply_bandpass_filter`](pynapple.process.filtering.apply_bandpass_filter) with mode `butter` for Butterworth.
 
 
 ```{code-cell} ipython3
@@ -167,8 +165,7 @@ Inspecting frequency responses of a filter
 ------------------------------------------
 
 We can inspect the frequency response of a filter by plotting its FFT.
-To do this, we can use the `get_filter_frequency_response` function, which returns a pandas Series with the frequencies
-as the index and the amplitude as values.
+To do this, we can use the [`get_filter_frequency_response`](pynapple.process.filtering.get_filter_frequency_response) function, which returns a pandas Series with the frequencies as the index and the amplitude as values.
 
 Let's extract the frequency response of a Butterworth filter and a sinc low-pass filter.
 
@@ -214,9 +211,7 @@ print(f"Transition band butterworth filter: ({int(tb_butter[0])}Hz, {int(tb_butt
 print(f"Transition band sinc filter: ({int(tb_sinc[0])}Hz, {int(tb_sinc[1])}Hz)")
 ```
 
-The frequency band with response close to one will be preserved by the filtering (pass band),
-the band with response close to zero will be discarded (stop band), and the band in between will be partially attenuated
-(transition band).
+The frequency band with response close to one will be preserved by the filtering (pass band), the band with response close to zero will be discarded (stop band), and the band in between will be partially attenuated (transition band).
 
 
 :::{note}

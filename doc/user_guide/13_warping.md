@@ -17,8 +17,8 @@ Trial-based tensors & time warping
 The warping module contains functions for constructing trial-based tensors.
 If the input is a TsGroup containing the activity of a population of neurons:
 
-- `nap.build_tensor` returns a tensor of shape (number of neurons, number of trials, number of time bins) with padded values if unequal trial intervals.
-- `nap.warp_tensor` returns a tensor of shape (number of neurons, number of trials, number of time bins) with linearly warped time bins.
+- [`nap.build_tensor`](pynapple.process.warping.build_tensor) returns a tensor of shape (number of neurons, number of trials, number of time bins) with padded values if unequal trial intervals.
+- [`nap.warp_tensor`](pynapple.process.warping.warp_tensor) returns a tensor of shape (number of neurons, number of trials, number of time bins) with linearly warped time bins.
 
 Both functions works for all time series object (`Tsd`, `TsdFrame` and `TsdTensor`) and timestamp objects (`Ts` and `TsGroup`). See examples below.
 
@@ -35,7 +35,7 @@ sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_par
 `nap.build_tensor`
 ------------------
 
-The function `nap.build_tensor` slices a time series object or timestamps object for each interval of an `IntervalSet` object and returns 
+The function [`nap.build_tensor`](pynapple.process.warping.build_tensor) slices a time series object or timestamps object for each interval of an `IntervalSet` object and returns 
 a numpy array. The intervals can be of unequal durations. 
 
 ```{code-cell} ipython3
@@ -140,7 +140,7 @@ plt.show()
 `nap.warp_tensor`
 -----------------
 
-The function `nap.warp_tensor` is similar to `build_tensor`, but time is stretched linearly for each interval depending on
+The function [`nap.warp_tensor`](pynapple.process.warping.warp_tensor) is similar to `build_tensor`, but time is stretched linearly for each interval depending on
 the parameter `num_bins`. In other words, the number of bins between the start and end of an epoch is always `num_bins`, but
 the duration of each bin can vary across epochs.
 
