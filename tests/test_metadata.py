@@ -501,6 +501,26 @@ class TestIntervalSetMetadata:
         with get_key_exp:
             np.testing.assert_array_almost_equal(iset_meta[name], np.ones(4))
 
+    def test_iset_metadata_load_old_npz(self, iset_meta):
+        """
+        Test loading an old NPZ file format for IntervalSet, where metadata is saved as a dictionary using the pandas DataFrame method `to_dict`
+        """
+        fname = "iset_old.npz"
+        np.savez(
+            fname,
+            start=iset_meta.values[:, 0],
+            end=iset_meta.values[:, 1],
+            type=np.array(["IntervalSet"], dtype=np.str_),
+            _metadata=iset_meta.metadata.to_dict(),
+        )
+
+        data = nap.load_file(fname)
+        np.testing.assert_array_equal(
+            data._metadata["label"], iset_meta._metadata["label"]
+        )
+        # cleaning
+        Path(fname).unlink()
+
 
 ##############
 ## TsdFrame ##
@@ -646,6 +666,33 @@ class TestTsdFrameMetadata:
         # make sure it doesn't access metadata if its an existing key
         with get_key_exp:
             np.testing.assert_array_almost_equal(tsdframe_meta[name], np.ones(4))
+
+    def test_tsdframe_metadata_load_old_npz(self, tsdframe_meta):
+        """
+        Test loading an old NPZ file format for TsdFrame, where metadata is saved as a dictionary using the pandas DataFrame method `to_dict`
+        """
+        fname = "tsdframe_old.npz"
+        cols_name = tsdframe_meta.columns
+        if cols_name.dtype == np.dtype("O"):
+            cols_name = cols_name.astype(str)
+
+        np.savez(
+            fname,
+            t=tsdframe_meta.index.values,
+            d=tsdframe_meta.values[:],
+            start=tsdframe_meta.time_support.start,
+            end=tsdframe_meta.time_support.end,
+            columns=cols_name,
+            type=np.array(["TsdFrame"], dtype=np.str_),
+            _metadata=tsdframe_meta.metadata.to_dict(),  # save metadata as dictionary
+        )
+
+        data = nap.load_file(fname)
+        np.testing.assert_array_equal(
+            data._metadata["l2"], tsdframe_meta._metadata["l2"]
+        )
+        # cleaning
+        Path(fname).unlink()
 
 
 #############
@@ -796,6 +843,49 @@ class TestTsGroupMetadata:
         """
         tsgroup_meta._metadata.drop("rate")
         assert "rate" not in tsgroup_meta.metadata_columns
+
+    def test_tsgroup_metadata_load_old_npz(self, tsgroup_meta):
+        """
+        Test loading an old NPZ file format for TsGroup, where metadata is saved as a dictionary using the pandas DataFrame method `to_dict`
+        """
+        fname = "tsgroup_old.npz"
+        dicttosave = {"type": np.array(["TsGroup"], dtype=np.str_)}
+        # don't save rate in metadata since it will be re-added when loading
+        dicttosave["_metadata"] = tsgroup_meta.metadata.drop(columns="rate").to_dict()
+        nt = 0
+        for n in tsgroup_meta.index:
+            nt += len(tsgroup_meta[n])
+
+        times = np.zeros(nt)
+        data = np.full(nt, np.nan)
+        index = np.zeros(nt, dtype=np.int64)
+        k = 0
+        for n in tsgroup_meta.index:
+            kl = len(tsgroup_meta[n])
+            times[k : k + kl] = tsgroup_meta[n].index
+            index[k : k + kl] = int(n)
+            k += kl
+
+        idx = np.argsort(times)
+        times = times[idx]
+        index = index[idx]
+
+        dicttosave["t"] = times
+        dicttosave["index"] = index
+        if not np.all(np.isnan(data)):
+            dicttosave["d"] = data[idx]
+        dicttosave["keys"] = np.array(tsgroup_meta.keys())
+        dicttosave["start"] = tsgroup_meta.time_support.start
+        dicttosave["end"] = tsgroup_meta.time_support.end
+
+        np.savez(fname, **dicttosave)
+
+        data = nap.load_file(fname)
+        np.testing.assert_array_equal(
+            data._metadata["label"], tsgroup_meta._metadata["label"]
+        )
+        # cleaning
+        Path(fname).unlink()
 
 
 ##################

@@ -739,5 +739,11 @@ class _Base(abc.ABC):
         if "_metadata" in file:  # load metadata if it exists
             if file["_metadata"]:  # check if metadata is not empty
                 m = file["_metadata"].item()
+                # check if first field is a dictionary, meaning it was saved from a pandas.DataFrame
+                if isinstance(next(iter(m.values())), dict):
+                    import pandas as pd
+
+                    m = pd.DataFrame.from_dict(m)
+
                 ts.set_info(m)
         return ts
