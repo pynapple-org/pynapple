@@ -1,0 +1,53 @@
+﻿pynapple.Ts
+===========
+
+.. currentmodule:: pynapple
+
+.. autoclass:: Ts
+   :members:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~Ts.__init__
+      ~Ts.as_series
+      ~Ts.as_units
+      ~Ts.copy
+      ~Ts.count
+      ~Ts.end_time
+      ~Ts.fillna
+      ~Ts.find_support
+      ~Ts.get
+      ~Ts.get_slice
+      ~Ts.restrict
+      ~Ts.save
+      ~Ts.start_time
+      ~Ts.time_diff
+      ~Ts.times
+      ~Ts.trial_count
+      ~Ts.value_from
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~Ts.end
+      ~Ts.shape
+      ~Ts.start
+      ~Ts.t
+      ~Ts.index
+      ~Ts.rate
+      ~Ts.time_support
+   
+   

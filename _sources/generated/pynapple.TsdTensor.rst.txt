@@ -1,0 +1,64 @@
+﻿pynapple.TsdTensor
+==================
+
+.. currentmodule:: pynapple
+
+.. autoclass:: TsdTensor
+   :members:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~TsdTensor.__init__
+      ~TsdTensor.as_array
+      ~TsdTensor.bin_average
+      ~TsdTensor.convolve
+      ~TsdTensor.copy
+      ~TsdTensor.count
+      ~TsdTensor.data
+      ~TsdTensor.decimate
+      ~TsdTensor.derivative
+      ~TsdTensor.dropna
+      ~TsdTensor.end_time
+      ~TsdTensor.find_support
+      ~TsdTensor.get
+      ~TsdTensor.get_slice
+      ~TsdTensor.interpolate
+      ~TsdTensor.restrict
+      ~TsdTensor.save
+      ~TsdTensor.smooth
+      ~TsdTensor.start_time
+      ~TsdTensor.time_diff
+      ~TsdTensor.times
+      ~TsdTensor.to_numpy
+      ~TsdTensor.to_trial_tensor
+      ~TsdTensor.value_from
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~TsdTensor.d
+      ~TsdTensor.end
+      ~TsdTensor.ndim
+      ~TsdTensor.shape
+      ~TsdTensor.size
+      ~TsdTensor.start
+      ~TsdTensor.t
+      ~TsdTensor.values
+      ~TsdTensor.index
+      ~TsdTensor.rate
+      ~TsdTensor.time_support
+   
+   

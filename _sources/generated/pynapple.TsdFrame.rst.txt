@@ -1,0 +1,76 @@
+﻿pynapple.TsdFrame
+=================
+
+.. currentmodule:: pynapple
+
+.. autoclass:: TsdFrame
+   :members:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~TsdFrame.__init__
+      ~TsdFrame.as_array
+      ~TsdFrame.as_dataframe
+      ~TsdFrame.as_units
+      ~TsdFrame.bin_average
+      ~TsdFrame.convolve
+      ~TsdFrame.copy
+      ~TsdFrame.count
+      ~TsdFrame.data
+      ~TsdFrame.decimate
+      ~TsdFrame.derivative
+      ~TsdFrame.drop_info
+      ~TsdFrame.dropna
+      ~TsdFrame.end_time
+      ~TsdFrame.find_support
+      ~TsdFrame.get
+      ~TsdFrame.get_info
+      ~TsdFrame.get_slice
+      ~TsdFrame.groupby
+      ~TsdFrame.groupby_apply
+      ~TsdFrame.interpolate
+      ~TsdFrame.restrict
+      ~TsdFrame.save
+      ~TsdFrame.set_info
+      ~TsdFrame.smooth
+      ~TsdFrame.start_time
+      ~TsdFrame.time_diff
+      ~TsdFrame.times
+      ~TsdFrame.to_numpy
+      ~TsdFrame.to_trial_tensor
+      ~TsdFrame.value_from
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~TsdFrame.d
+      ~TsdFrame.end
+      ~TsdFrame.loc
+      ~TsdFrame.metadata
+      ~TsdFrame.metadata_columns
+      ~TsdFrame.ndim
+      ~TsdFrame.shape
+      ~TsdFrame.size
+      ~TsdFrame.start
+      ~TsdFrame.t
+      ~TsdFrame.columns
+      ~TsdFrame.values
+      ~TsdFrame.index
+      ~TsdFrame.rate
+      ~TsdFrame.time_support
+      ~TsdFrame.metadata_index
+   
+   

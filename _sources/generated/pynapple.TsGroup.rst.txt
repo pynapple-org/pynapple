@@ -1,0 +1,65 @@
+﻿pynapple.TsGroup
+================
+
+.. currentmodule:: pynapple
+
+.. autoclass:: TsGroup
+   :members:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~TsGroup.__init__
+      ~TsGroup.clear
+      ~TsGroup.copy
+      ~TsGroup.count
+      ~TsGroup.drop_info
+      ~TsGroup.fromkeys
+      ~TsGroup.get
+      ~TsGroup.get_info
+      ~TsGroup.getby_category
+      ~TsGroup.getby_intervals
+      ~TsGroup.getby_threshold
+      ~TsGroup.groupby
+      ~TsGroup.groupby_apply
+      ~TsGroup.items
+      ~TsGroup.keys
+      ~TsGroup.merge
+      ~TsGroup.merge_group
+      ~TsGroup.pop
+      ~TsGroup.popitem
+      ~TsGroup.restrict
+      ~TsGroup.save
+      ~TsGroup.set_info
+      ~TsGroup.setdefault
+      ~TsGroup.time_diff
+      ~TsGroup.to_tsd
+      ~TsGroup.trial_count
+      ~TsGroup.update
+      ~TsGroup.value_from
+      ~TsGroup.values
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~TsGroup.metadata
+      ~TsGroup.metadata_columns
+      ~TsGroup.rates
+      ~TsGroup.index
+      ~TsGroup.time_support
+      ~TsGroup.nap_class
+      ~TsGroup.metadata_index
+   
+   

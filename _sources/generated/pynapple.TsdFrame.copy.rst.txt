@@ -1,0 +1,6 @@
+pynapple.TsdFrame.copy
+======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.copy

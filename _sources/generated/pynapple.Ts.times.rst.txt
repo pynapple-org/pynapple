@@ -1,0 +1,6 @@
+pynapple.Ts.times
+=================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Ts.times
