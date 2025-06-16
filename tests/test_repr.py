@@ -166,6 +166,15 @@ class TestObjectRepr:
                     "l3": np.random.randn(3),
                 },
             },
+            {
+                "start": np.array([0, 10, 16]),
+                "end": np.array([5, 15, 20]),
+                "metadata": {
+                    "l1": np.array([np.array([str(i)],dtype="object") for i in range(3)]),
+                    "l2": np.array([np.array([str(i), str(i+1)],dtype="object") for i in range(3)]),
+                    "l3": np.random.randn(3),
+                },
+            },
         ],
     )
     def test_repr_intervalset(self, terminal_size, kwargs):

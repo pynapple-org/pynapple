@@ -1,5 +1,9 @@
 # Releases
 
+### 0.9.1 (2025-06-04)
+
+- Fix TsdFrame `__repr__`
+
 ### 0.9.0 (2025-05-13)
 
 - New private class: `_MetadataMixin` and `_Metadata(UserDict)` (core/metadata_class.py). Can be inherited by:
