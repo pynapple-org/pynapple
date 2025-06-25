@@ -44,9 +44,9 @@ from .utils import (
     _get_terminal_size,
     _split_tsd,
     _TsdFrameSliceHelper,
+    add_docstring_to,
     convert_to_array,
     is_array_like,
-    add_docstring_to,
 )
 
 
@@ -179,10 +179,10 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 )
             self.values = d
 
-        assert len(self.index) == len(self.values), (
-            "Length of values {} does not match length of index {}".format(
-                len(self.values), len(self.index)
-            )
+        assert len(self.index) == len(
+            self.values
+        ), "Length of values {} does not match length of index {}".format(
+            len(self.values), len(self.index)
         )
 
         if isinstance(time_support, IntervalSet) and len(self.index):
@@ -1264,9 +1264,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         if c is None or len(c) != self.values.shape[1]:
             c = np.arange(self.values.shape[1], dtype="int")
         else:
-            assert len(c) == self.values.shape[1], (
-                "Number of columns should match the second dimension of d"
-            )
+            assert (
+                len(c) == self.values.shape[1]
+            ), "Number of columns should match the second dimension of d"
 
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
