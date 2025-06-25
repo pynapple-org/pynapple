@@ -34,7 +34,7 @@ from ._core_functions import (
     _restrict,
     _threshold,
 )
-from .base_class import _Base, add_base_docstring
+from .base_class import _Base
 from .interval_set import IntervalSet
 from .metadata_class import _MetadataMixin, add_meta_docstring, add_or_convert_metadata
 from .time_index import TsIndex
@@ -46,6 +46,7 @@ from .utils import (
     _TsdFrameSliceHelper,
     convert_to_array,
     is_array_like,
+    add_docstring_to,
 )
 
 
@@ -178,10 +179,10 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 )
             self.values = d
 
-        assert len(self.index) == len(
-            self.values
-        ), "Length of values {} does not match length of index {}".format(
-            len(self.values), len(self.index)
+        assert len(self.index) == len(self.values), (
+            "Length of values {} does not match length of index {}".format(
+                len(self.values), len(self.index)
+            )
         )
 
         if isinstance(time_support, IntervalSet) and len(self.index):
@@ -1015,7 +1016,29 @@ class TsdTensor(_BaseTsd):
             index = np.array([index])
         return _initialize_tsd_output(self, output, time_index=index)
 
-    @add_base_docstring("time_diff")
+    @add_docstring_to(_Base, "value_from")
+    def value_from(self, data, ep=None, mode="closest"):
+        """
+        Examples
+        --------
+        In this example, the tsdtensor object will receive the closest values in time from a tsd.
+
+        >>> import pynapple as nap
+        >>> import numpy as np; np.random.seed(42)
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
+        >>> tsdtensor_before = nap.TsdTensor(t=t, d=np.random.randint(0, 1, (len(t), 3, 3)), time_units='s')
+        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+        >>> tsdtensor_after = tsdtensor_before.value_from(tsd, ep, mode='closest')
+
+        tsdtensor_after is the same size as tsdtensor_before restricted to ep.
+
+        >>> print(len(tsdtensor_before.restrict(ep)), len(tsdtensor_after))
+            53 53
+        """
+        return _Base.value_from(self, data, ep, mode)
+
+    @add_docstring_to(_Base, "time_diff")
     def time_diff(self, align="center", epochs=None):
         """
         Examples
@@ -1241,9 +1264,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         if c is None or len(c) != self.values.shape[1]:
             c = np.arange(self.values.shape[1], dtype="int")
         else:
-            assert (
-                len(c) == self.values.shape[1]
-            ), "Number of columns should match the second dimension of d"
+            assert len(c) == self.values.shape[1], (
+                "Number of columns should match the second dimension of d"
+            )
 
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
@@ -1564,7 +1587,29 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         df.columns = self.columns.copy()
         return df
 
-    @add_base_docstring("time_diff")
+    @add_docstring_to(_Base, "value_from")
+    def value_from(self, data, ep=None, mode="closest"):
+        """
+        Examples
+        --------
+        In this example, the tsdframe object will receive the closest values in time from a tsd.
+
+        >>> import pynapple as nap
+        >>> import numpy as np; np.random.seed(42)
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
+        >>> tsdframe_before = nap.TsdFrame(t=t, d=np.random.randint(0, 1, (len(t), 3)), time_units='s')
+        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+        >>> tsdframe_after = tsdframe_before.value_from(tsd, ep, mode='closest')
+
+        tsdframe_after is the same size as tsdframe_before restricted to ep.
+
+        >>> print(len(tsdframe_before.restrict(ep)), len(tsdframe_after))
+            53 53
+        """
+        return _Base.value_from(self, data, ep, mode)
+
+    @add_docstring_to(_Base, "time_diff")
     def time_diff(self, align="center", epochs=None):
         """
         Examples
@@ -2271,7 +2316,33 @@ class Tsd(_BaseTsd):
         time_support = IntervalSet(start=ns, end=ne)
         return Tsd(t=t, d=d, time_support=time_support)
 
-    @add_base_docstring("time_diff")
+    @add_docstring_to(_Base, "value_from")
+    def value_from(self, data, ep=None, mode="closest"):
+        """
+        Examples
+        --------
+        In this example, the tsd object will receive the closest values in time from another tsd.
+
+        >>> import pynapple as nap
+        >>> import numpy as np; np.random.seed(42)
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
+        >>> tsd_before = nap.Tsd(t=t, d=np.linspace(0, 1, len(t)), time_units='s')
+        >>> tsd_from = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+
+        The variable tsd_before is a timestamp object with its own values.
+        The tsd_from object contains other values and ep contains intervals to restrict the operation.
+
+        >>> tsd_after = tsd_before.value_from(tsd_from, ep, mode='closest')
+
+        tsd_after is the same size as tsd_before restricted to ep.
+
+        >>> print(len(tsd_before.restrict(ep)), len(tsd_after))
+            53 53
+        """
+        return _Base.value_from(self, data, ep, mode)
+
+    @add_docstring_to(_Base, "time_diff")
     def time_diff(self, align="center", epochs=None):
         """
         Examples
@@ -2654,7 +2725,33 @@ class Ts(_Base):
 
         return output
 
-    @add_base_docstring("time_diff")
+    @add_docstring_to(_Base, "value_from")
+    def value_from(self, data, ep=None, mode="closest"):
+        """
+        Examples
+        --------
+        In this example, the ts object will receive the closest values in time from tsd.
+
+        >>> import pynapple as nap
+        >>> import numpy as np; np.random.seed(42)
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
+        >>> ts = nap.Ts(t=t, time_units='s')
+        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+
+        The variable ts is a timestamp object.
+        The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
+
+        >>> newts = ts.value_from(tsd, ep, mode='closest')
+
+        newts is the same size as ts restrict to ep.
+
+        >>> print(len(ts.restrict(ep)), len(newts))
+            53 53
+        """
+        return _Base.value_from(self, data, ep, mode)
+
+    @add_docstring_to(_Base, "time_diff")
     def time_diff(self, align="center", epochs=None):
         """
         Examples

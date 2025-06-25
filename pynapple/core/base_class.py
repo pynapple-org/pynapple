@@ -14,16 +14,6 @@ from .time_index import TsIndex
 from .utils import check_filename, convert_to_numpy_array
 
 
-def add_base_docstring(base_func, sep="\n"):
-    base_doc = getattr(_Base, base_func).__doc__
-
-    def _decorator(func):
-        func.__doc__ = sep.join([base_doc, func.__doc__])
-        return func
-
-    return _decorator
-
-
 class _Base(abc.ABC):
     """
     Abstract base class for time series and timestamps objects.
@@ -196,27 +186,6 @@ class _Base(abc.ABC):
         -------
         out : Tsd, TsdFrame or TsdTensor
             Object with the new values
-
-        Examples
-        --------
-        In this example, the ts object will receive the closest values in time from tsd.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
-        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
-
-        The variable ts is a timestamp object.
-        The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
-
-        >>> newts = ts.value_from(tsd, ep, mode='closest')
-
-        newts is the same size as ts restrict to ep.
-
-        >>> print(len(ts.restrict(ep)), len(newts))
-            52 52
         """
         if not isinstance(data, _Base) and not hasattr(data, "values"):
             raise TypeError(

@@ -148,11 +148,7 @@ def is_array_like(obj):
     # not_tsd_type = not isinstance(obj, _AbstractTsd)
 
     return (
-        has_shape
-        and has_dtype
-        and has_ndim
-        and is_indexable
-        and is_iterable
+        has_shape and has_dtype and has_ndim and is_indexable and is_iterable
         # and not_tsd_type
     )
 
@@ -469,3 +465,13 @@ def _convert_iter_to_str(array):
             )
         else:
             return array.astype(str)
+
+
+def add_docstring_to(_class, base_func, sep="\n"):
+    base_doc = getattr(_class, base_func).__doc__
+
+    def _decorator(func):
+        func.__doc__ = sep.join([base_doc, func.__doc__])
+        return func
+
+    return _decorator
