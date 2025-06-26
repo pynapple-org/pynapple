@@ -1016,6 +1016,33 @@ class TsdTensor(_BaseTsd):
             index = np.array([index])
         return _initialize_tsd_output(self, output, time_index=index)
 
+    @add_docstring("count", _Base)
+    def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
+        """
+        Examples
+        --------
+        This example shows how to count timestamps within bins of 0.1 second.
+
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
+        >>> tsdtensor = nap.Tsd(t=t, d=np.random.randint(0, 1, (len(t), 4, 4)), time_units='s')
+        >>> bincount = tsdtensor.count(0.1)
+
+        An epoch can be specified:
+
+        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
+        >>> bincount = tsdtensor.count(0.1, ep=ep)
+
+        bincount automatically inherits ep as time support:
+
+        >>> bincount.time_support
+        index    start    end
+            0      100    800
+        shape: (1, 2), time unit: sec.
+        """
+        return _Base.count(self, bin_size, ep, time_units, dtype)
+
     @add_docstring("restrict", _Base)
     def restrict(self, iset):
         """
@@ -1609,6 +1636,33 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         df.index.name = "Time (" + str(units) + ")"
         df.columns = self.columns.copy()
         return df
+
+    @add_docstring("count", _Base)
+    def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
+        """
+        Examples
+        --------
+        This example shows how to count timestamps within bins of 0.1 second.
+
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
+        >>> tsdframe = nap.Tsd(t=t, d=np.random.randint(0, 1, (len(t), 4)), time_units='s')
+        >>> bincount = tsdframe.count(0.1)
+
+        An epoch can be specified:
+
+        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
+        >>> bincount = tsdframe.count(0.1, ep=ep)
+
+        bincount automatically inherits ep as time support:
+
+        >>> bincount.time_support
+        index    start    end
+            0      100    800
+        shape: (1, 2), time unit: sec.
+        """
+        return _Base.count(self, bin_size, ep, time_units, dtype)
 
     @add_docstring("restrict", _Base)
     def restrict(self, iset):
@@ -2362,6 +2416,33 @@ class Tsd(_BaseTsd):
         time_support = IntervalSet(start=ns, end=ne)
         return Tsd(t=t, d=d, time_support=time_support)
 
+    @add_docstring("count", _Base)
+    def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
+        """
+        Examples
+        --------
+        This example shows how to count timestamps within bins of 0.1 second.
+
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
+        >>> tsd = nap.Tsd(t=t, d=np.random.randint(0, 1, len(t)), time_units='s')
+        >>> bincount = tsd.count(0.1)
+
+        An epoch can be specified:
+
+        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
+        >>> bincount = tsd.count(0.1, ep=ep)
+
+        bincount automatically inherits ep as time support:
+
+        >>> bincount.time_support
+        index    start    end
+            0      100    800
+        shape: (1, 2), time unit: sec.
+        """
+        return _Base.count(self, bin_size, ep, time_units, dtype)
+
     @add_docstring("restrict", _Base)
     def restrict(self, iset):
         """
@@ -2793,6 +2874,33 @@ class Ts(_Base):
             output = output[:, -np.max(n_ep) :]
 
         return output
+
+    @add_docstring("count", _Base)
+    def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
+        """
+        Examples
+        --------
+        This example shows how to count timestamps within bins of 0.1 second.
+
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
+        >>> ts = nap.Ts(t=t, time_units='s')
+        >>> bincount = ts.count(0.1)
+
+        An epoch can be specified:
+
+        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
+        >>> bincount = ts.count(0.1, ep=ep)
+
+        bincount automatically inherits ep as time support:
+
+        >>> bincount.time_support
+        index    start    end
+            0      100    800
+        shape: (1, 2), time unit: sec.
+        """
+        return _Base.count(self, bin_size, ep, time_units, dtype)
 
     @add_docstring("restrict", _Base)
     def restrict(self, iset):

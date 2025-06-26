@@ -371,24 +371,6 @@ class _Base(abc.ABC):
         -------
         Ts, Tsd, TsdFrame or TsdTensor
             Tsd object restricted to ep
-
-        Examples
-        --------
-        The Ts object is restrict to the intervals defined by ep.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> ep = nap.IntervalSet(start=0, end=500, time_units='s')
-        >>> newts = ts.restrict(ep)
-
-        The time support of newts automatically inherit the epochs defined by ep.
-
-        >>> newts.time_support
-            start    end
-        0    0.0  500.0
-
         """
         if not isinstance(iset, IntervalSet):
             raise TypeError("Argument should be IntervalSet")
