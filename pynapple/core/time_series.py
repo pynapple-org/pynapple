@@ -44,7 +44,7 @@ from .utils import (
     _get_terminal_size,
     _split_tsd,
     _TsdFrameSliceHelper,
-    add_docstring_to,
+    add_docstring,
     convert_to_array,
     is_array_like,
 )
@@ -1016,7 +1016,30 @@ class TsdTensor(_BaseTsd):
             index = np.array([index])
         return _initialize_tsd_output(self, output, time_index=index)
 
-    @add_docstring_to(_Base, "value_from")
+    @add_docstring("restrict", _Base)
+    def restrict(self, iset):
+        """
+        Examples
+        --------
+        The TsdTensor object is restricted to the intervals defined by ep.
+
+        >>> import pynapple as nap
+        >>> import numpy as np; np.random.seed(42)
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
+        >>> tsdtensor = nap.TsdTensor(t=t, d=np.random.randint(0, 1, (len(t), 4, 4)), time_units='s')
+        >>> ep = nap.IntervalSet(start=0, end=500, time_units='s')
+        >>> newtsdtensor = tsdtensor.restrict(ep)
+
+        newtsdtensor automatically inherits the epochs defined by ep.
+
+        >>> newtsdtensor.time_support
+        index    start    end
+            0        0    500
+        shape: (1, 2), time unit: sec.
+        """
+        return _Base.restrict(self, iset)
+
+    @add_docstring("value_from", _Base)
     def value_from(self, data, ep=None, mode="closest"):
         """
         Examples
@@ -1038,7 +1061,7 @@ class TsdTensor(_BaseTsd):
         """
         return _Base.value_from(self, data, ep, mode)
 
-    @add_docstring_to(_Base, "time_diff")
+    @add_docstring("time_diff", _Base)
     def time_diff(self, align="center", epochs=None):
         """
         Examples
@@ -1587,7 +1610,30 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         df.columns = self.columns.copy()
         return df
 
-    @add_docstring_to(_Base, "value_from")
+    @add_docstring("restrict", _Base)
+    def restrict(self, iset):
+        """
+        Examples
+        --------
+        The TsdFrame object is restricted to the intervals defined by ep.
+
+        >>> import pynapple as nap
+        >>> import numpy as np; np.random.seed(42)
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
+        >>> tsdframe = nap.TsdFrame(t=t, d=np.random.randint(0, 1, (len(t), 4)), time_units='s')
+        >>> ep = nap.IntervalSet(start=0, end=500, time_units='s')
+        >>> newtsdframe = tsdframe.restrict(ep)
+
+        newtsdframe automatically inherits the epochs defined by ep.
+
+        >>> newtsdframe.time_support
+        index    start    end
+            0        0    500
+        shape: (1, 2), time unit: sec.
+        """
+        return _Base.restrict(self, iset)
+
+    @add_docstring("value_from", _Base)
     def value_from(self, data, ep=None, mode="closest"):
         """
         Examples
@@ -1609,7 +1655,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         """
         return _Base.value_from(self, data, ep, mode)
 
-    @add_docstring_to(_Base, "time_diff")
+    @add_docstring("time_diff", _Base)
     def time_diff(self, align="center", epochs=None):
         """
         Examples
@@ -2316,7 +2362,30 @@ class Tsd(_BaseTsd):
         time_support = IntervalSet(start=ns, end=ne)
         return Tsd(t=t, d=d, time_support=time_support)
 
-    @add_docstring_to(_Base, "value_from")
+    @add_docstring("restrict", _Base)
+    def restrict(self, iset):
+        """
+        Examples
+        --------
+        The Tsd object is restricted to the intervals defined by ep.
+
+        >>> import pynapple as nap
+        >>> import numpy as np; np.random.seed(42)
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
+        >>> tsd = nap.Tsd(t=t, d=np.random.randint(0, 1, len(t)), time_units='s')
+        >>> ep = nap.IntervalSet(start=0, end=500, time_units='s')
+        >>> newtsd = tsd.restrict(ep)
+
+        newtsd automatically inherits the epochs defined by ep.
+
+        >>> newtsd.time_support
+        index    start    end
+            0        0    500
+        shape: (1, 2), time unit: sec.
+        """
+        return _Base.restrict(self, iset)
+
+    @add_docstring("value_from", _Base)
     def value_from(self, data, ep=None, mode="closest"):
         """
         Examples
@@ -2342,7 +2411,7 @@ class Tsd(_BaseTsd):
         """
         return _Base.value_from(self, data, ep, mode)
 
-    @add_docstring_to(_Base, "time_diff")
+    @add_docstring("time_diff", _Base)
     def time_diff(self, align="center", epochs=None):
         """
         Examples
@@ -2725,7 +2794,30 @@ class Ts(_Base):
 
         return output
 
-    @add_docstring_to(_Base, "value_from")
+    @add_docstring("restrict", _Base)
+    def restrict(self, iset):
+        """
+        Examples
+        --------
+        The Ts object is restricted to the intervals defined by ep.
+
+        >>> import pynapple as nap
+        >>> import numpy as np; np.random.seed(42)
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
+        >>> ts = nap.Ts(t=t, time_units='s')
+        >>> ep = nap.IntervalSet(start=0, end=500, time_units='s')
+        >>> newts = ts.restrict(ep)
+
+        newts automatically inherits the epochs defined by ep.
+
+        >>> newts.time_support
+        index    start    end
+            0        0    500
+        shape: (1, 2), time unit: sec.
+        """
+        return _Base.restrict(self, iset)
+
+    @add_docstring("value_from", _Base)
     def value_from(self, data, ep=None, mode="closest"):
         """
         Examples
@@ -2751,7 +2843,7 @@ class Ts(_Base):
         """
         return _Base.value_from(self, data, ep, mode)
 
-    @add_docstring_to(_Base, "time_diff")
+    @add_docstring("time_diff", _Base)
     def time_diff(self, align="center", epochs=None):
         """
         Examples

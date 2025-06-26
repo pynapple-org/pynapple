@@ -471,11 +471,16 @@ def _convert_iter_to_str(array):
             return array.astype(str)
 
 
-def add_docstring_to(_class, base_func, sep="\n"):
-    base_doc = getattr(_class, base_func).__doc__
+def add_docstring(method_name, cls):
+    """Prepend super-class docstrings."""
+    attr = getattr(cls, method_name, None)
+    if attr is None:
+        raise AttributeError(f"{cls.__name__} has no attribute {method_name}!")
+    doc = attr.__doc__
 
-    def _decorator(func):
-        func.__doc__ = sep.join([base_doc, func.__doc__])
+    # Decorator to add the docstring
+    def wrapper(func):
+        func.__doc__ = "\n".join([doc, func.__doc__])  # Combine docstrings
         return func
 
-    return _decorator
+    return wrapper
