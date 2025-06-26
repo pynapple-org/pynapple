@@ -38,9 +38,9 @@ class _Base(abc.ABC):
             self.index = TsIndex(convert_to_numpy_array(t, "t"), time_units)
 
         if time_support is not None:
-            assert isinstance(
-                time_support, IntervalSet
-            ), "time_support should be an IntervalSet"
+            assert isinstance(time_support, IntervalSet), (
+                "time_support should be an IntervalSet"
+            )
 
         # Restrict should occur in the inherited class
         if len(self.index):
@@ -471,24 +471,6 @@ class _Base(abc.ABC):
         ValueError
             - If start or end is not a number.
             - If start is greater than end.
-
-        Examples
-        --------
-        >>> import pynapple as nap
-
-        >>> ts = nap.Ts(t = [0, 1, 2, 3])
-
-        >>> # slice over a range
-        >>> start, end = 1.2, 2.6
-        >>> print(ts.get_slice(start, end))  # returns `slice(2, 3, None)`
-        >>> start, end = 1., 2.
-        >>> print(ts.get_slice(start, end, mode="forward"))  # returns `slice(1, 3, None)`
-
-        >>> # slice a single value
-        >>> start = 1.2
-        >>> print(ts.get_slice(start))  # returns `slice(1, 2, None)`
-        >>> start = 2.
-        >>> print(ts.get_slice(start)) # returns `slice(2, 3, None)`
         """
         mode = "closest_t" if end is None else "restrict"
         return self._get_slice(

@@ -179,10 +179,10 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 )
             self.values = d
 
-        assert len(self.index) == len(
-            self.values
-        ), "Length of values {} does not match length of index {}".format(
-            len(self.values), len(self.index)
+        assert len(self.index) == len(self.values), (
+            "Length of values {} does not match length of index {}".format(
+                len(self.values), len(self.index)
+            )
         )
 
         if isinstance(time_support, IntervalSet) and len(self.index):
@@ -1016,6 +1016,29 @@ class TsdTensor(_BaseTsd):
             index = np.array([index])
         return _initialize_tsd_output(self, output, time_index=index)
 
+    @add_docstring("get_slice", _Base)
+    def get_slice(self, start, end=None, time_unit="s"):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsdtensor = nap.TsdTensor(t = [0, 1, 2, 3], d = np.random.randint(0, 1, (4, 3, 3)))
+
+        >>> # slice over a range
+        >>> tsdtensor.get_slice(1.2, 2.6)
+        slice(np.int64(2), np.int64(3), None)
+        >>> tsdtensor.get_slice(1.0, 2.0, mode="forward")
+        slice(np.int64(1), np.int64(3), None)
+
+        >>> # slice a single value
+        >>> tsdtensor.get_slice(1.2)
+        slice(np.int64(1), np.int64(2), None)
+        >>> tsdtensor.get_slice(2.0))
+        slice(np.int64(2), np.int64(3), None)
+        """
+        return _Base.get_slice(self, start, end, time_unit)
+
     @add_docstring("count", _Base)
     def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
         """
@@ -1314,9 +1337,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         if c is None or len(c) != self.values.shape[1]:
             c = np.arange(self.values.shape[1], dtype="int")
         else:
-            assert (
-                len(c) == self.values.shape[1]
-            ), "Number of columns should match the second dimension of d"
+            assert len(c) == self.values.shape[1], (
+                "Number of columns should match the second dimension of d"
+            )
 
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
@@ -1636,6 +1659,29 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         df.index.name = "Time (" + str(units) + ")"
         df.columns = self.columns.copy()
         return df
+
+    @add_docstring("get_slice", _Base)
+    def get_slice(self, start, end=None, time_unit="s"):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tsdframe = nap.TsdFrame(t = [0, 1, 2, 3], d = np.random.randint(0, 1, (4, 3)))
+
+        >>> # slice over a range
+        >>> tsdframe.get_slice(1.2, 2.6)
+        slice(np.int64(2), np.int64(3), None)
+        >>> tsdframe.get_slice(1.0, 2.0, mode="forward")
+        slice(np.int64(1), np.int64(3), None)
+
+        >>> # slice a single value
+        >>> tsdframe.get_slice(1.2)
+        slice(np.int64(1), np.int64(2), None)
+        >>> tsdframe.get_slice(2.0))
+        slice(np.int64(2), np.int64(3), None)
+        """
+        return _Base.get_slice(self, start, end, time_unit)
 
     @add_docstring("count", _Base)
     def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
@@ -2416,6 +2462,28 @@ class Tsd(_BaseTsd):
         time_support = IntervalSet(start=ns, end=ne)
         return Tsd(t=t, d=d, time_support=time_support)
 
+    @add_docstring("get_slice", _Base)
+    def get_slice(self, start, end=None, time_unit="s"):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> tsd = nap.Tsd(t = [0, 1, 2, 3], d = [1, 1, 1, 1])
+
+        >>> # slice over a range
+        >>> tsd.get_slice(1.2, 2.6)
+        slice(np.int64(2), np.int64(3), None)
+        >>> tsd.get_slice(1.0, 2.0, mode="forward")
+        slice(np.int64(1), np.int64(3), None)
+
+        >>> # slice a single value
+        >>> tsd.get_slice(1.2)
+        slice(np.int64(1), np.int64(2), None)
+        >>> tsd.get_slice(2.0))
+        slice(np.int64(2), np.int64(3), None)
+        """
+        return _Base.get_slice(self, start, end, time_unit)
+
     @add_docstring("count", _Base)
     def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
         """
@@ -2874,6 +2942,28 @@ class Ts(_Base):
             output = output[:, -np.max(n_ep) :]
 
         return output
+
+    @add_docstring("get_slice", _Base)
+    def get_slice(self, start, end=None, time_unit="s"):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> ts = nap.Ts(t = [0, 1, 2, 3])
+
+        >>> # slice over a range
+        >>> ts.get_slice(1.2, 2.6)
+        slice(np.int64(2), np.int64(3), None)
+        >>> ts.get_slice(1.0, 2.0, mode="forward")
+        slice(np.int64(1), np.int64(3), None)
+
+        >>> # slice a single value
+        >>> ts.get_slice(1.2)
+        slice(np.int64(1), np.int64(2), None)
+        >>> ts.get_slice(2.0))
+        slice(np.int64(2), np.int64(3), None)
+        """
+        return _Base.get_slice(self, start, end, time_unit)
 
     @add_docstring("count", _Base)
     def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
