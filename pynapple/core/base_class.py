@@ -38,9 +38,9 @@ class _Base(abc.ABC):
             self.index = TsIndex(convert_to_numpy_array(t, "t"), time_units)
 
         if time_support is not None:
-            assert isinstance(time_support, IntervalSet), (
-                "time_support should be an IntervalSet"
-            )
+            assert isinstance(
+                time_support, IntervalSet
+            ), "time_support should be an IntervalSet"
 
         # Restrict should occur in the inherited class
         if len(self.index):
