@@ -250,27 +250,6 @@ class _Base(abc.ABC):
         -------
         out: Tsd
             A Tsd object indexed by the center of the bins.
-
-        Examples
-        --------
-        This example shows how to count events within bins of 0.1 second.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> bincount = ts.count(0.1)
-
-        An epoch can be specified:
-
-        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
-        >>> bincount = ts.count(0.1, ep=ep)
-
-        And bincount automatically inherit ep as time support:
-
-        >>> bincount.time_support
-            start    end
-        0  100.0  800.0
         """
 
         if bin_size is not None:

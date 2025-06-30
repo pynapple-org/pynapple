@@ -1025,16 +1025,16 @@ class TsdTensor(_BaseTsd):
         >>> import numpy as np
         >>> tsdtensor = nap.TsdTensor(t = [0, 1, 2, 3], d = np.random.randint(0, 1, (4, 3, 3)))
 
-        >>> # slice over a range
+        Slice over a range:
         >>> tsdtensor.get_slice(1.2, 2.6)
         slice(np.int64(2), np.int64(3), None)
-        >>> tsdtensor.get_slice(1.0, 2.0, mode="forward")
+        >>> tsdtensor.get_slice(1.0, 2.0)
         slice(np.int64(1), np.int64(3), None)
 
-        >>> # slice a single value
+        Slice a single value:
         >>> tsdtensor.get_slice(1.2)
         slice(np.int64(1), np.int64(2), None)
-        >>> tsdtensor.get_slice(2.0))
+        >>> tsdtensor.get_slice(2.0)
         slice(np.int64(2), np.int64(3), None)
         """
         return _Base.get_slice(self, start, end, time_unit)
@@ -1049,7 +1049,7 @@ class TsdTensor(_BaseTsd):
         >>> import pynapple as nap
         >>> import numpy as np
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> tsdtensor = nap.Tsd(t=t, d=np.random.randint(0, 1, (len(t), 4, 4)), time_units='s')
+        >>> tsdtensor = nap.TsdTensor(t=t, d=np.random.randint(0, 1, (len(t), 4, 4)), time_units='s')
         >>> bincount = tsdtensor.count(0.1)
 
         An epoch can be specified:
@@ -1060,8 +1060,8 @@ class TsdTensor(_BaseTsd):
         bincount automatically inherits ep as time support:
 
         >>> bincount.time_support
-        index    start    end
-            0      100    800
+          index    start    end
+              0      100    800
         shape: (1, 2), time unit: sec.
         """
         return _Base.count(self, bin_size, ep, time_units, dtype)
@@ -1083,8 +1083,8 @@ class TsdTensor(_BaseTsd):
         newtsdtensor automatically inherits the epochs defined by ep.
 
         >>> newtsdtensor.time_support
-        index    start    end
-            0        0    500
+          index    start    end
+              0        0    500
         shape: (1, 2), time unit: sec.
         """
         return _Base.restrict(self, iset)
@@ -1104,10 +1104,10 @@ class TsdTensor(_BaseTsd):
         >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
         >>> tsdtensor_after = tsdtensor_before.value_from(tsd, ep, mode='closest')
 
-        tsdtensor_after is the same size as tsdtensor_before restricted to ep.
+        tsdtensor_after is the same length as tsdtensor_before restricted to ep.
 
         >>> print(len(tsdtensor_before.restrict(ep)), len(tsdtensor_after))
-            53 53
+        53 53
         """
         return _Base.value_from(self, data, ep, mode)
 
@@ -1669,16 +1669,16 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> import numpy as np
         >>> tsdframe = nap.TsdFrame(t = [0, 1, 2, 3], d = np.random.randint(0, 1, (4, 3)))
 
-        >>> # slice over a range
+        Slice over a range:
         >>> tsdframe.get_slice(1.2, 2.6)
         slice(np.int64(2), np.int64(3), None)
-        >>> tsdframe.get_slice(1.0, 2.0, mode="forward")
+        >>> tsdframe.get_slice(1.0, 2.0)
         slice(np.int64(1), np.int64(3), None)
 
-        >>> # slice a single value
+        Slice a single value:
         >>> tsdframe.get_slice(1.2)
         slice(np.int64(1), np.int64(2), None)
-        >>> tsdframe.get_slice(2.0))
+        >>> tsdframe.get_slice(2.0)
         slice(np.int64(2), np.int64(3), None)
         """
         return _Base.get_slice(self, start, end, time_unit)
@@ -1693,7 +1693,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> import pynapple as nap
         >>> import numpy as np
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> tsdframe = nap.Tsd(t=t, d=np.random.randint(0, 1, (len(t), 4)), time_units='s')
+        >>> tsdframe = nap.TsdFrame(t=t, d=np.random.randint(0, 1, (len(t), 4)), time_units='s')
         >>> bincount = tsdframe.count(0.1)
 
         An epoch can be specified:
@@ -1704,8 +1704,8 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         bincount automatically inherits ep as time support:
 
         >>> bincount.time_support
-        index    start    end
-            0      100    800
+          index    start    end
+              0      100    800
         shape: (1, 2), time unit: sec.
         """
         return _Base.count(self, bin_size, ep, time_units, dtype)
@@ -1727,8 +1727,8 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         newtsdframe automatically inherits the epochs defined by ep.
 
         >>> newtsdframe.time_support
-        index    start    end
-            0        0    500
+          index    start    end
+              0        0    500
         shape: (1, 2), time unit: sec.
         """
         return _Base.restrict(self, iset)
@@ -1748,10 +1748,10 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
         >>> tsdframe_after = tsdframe_before.value_from(tsd, ep, mode='closest')
 
-        tsdframe_after is the same size as tsdframe_before restricted to ep.
+        tsdframe_after is the same length as tsdframe_before restricted to ep.
 
         >>> print(len(tsdframe_before.restrict(ep)), len(tsdframe_after))
-            53 53
+        53 53
         """
         return _Base.value_from(self, data, ep, mode)
 
@@ -2470,16 +2470,16 @@ class Tsd(_BaseTsd):
         >>> import pynapple as nap
         >>> tsd = nap.Tsd(t = [0, 1, 2, 3], d = [1, 1, 1, 1])
 
-        >>> # slice over a range
+        Slice over a range:
         >>> tsd.get_slice(1.2, 2.6)
         slice(np.int64(2), np.int64(3), None)
-        >>> tsd.get_slice(1.0, 2.0, mode="forward")
+        >>> tsd.get_slice(1.0, 2.0)
         slice(np.int64(1), np.int64(3), None)
 
-        >>> # slice a single value
+        Slice a single value:
         >>> tsd.get_slice(1.2)
         slice(np.int64(1), np.int64(2), None)
-        >>> tsd.get_slice(2.0))
+        >>> tsd.get_slice(2.0)
         slice(np.int64(2), np.int64(3), None)
         """
         return _Base.get_slice(self, start, end, time_unit)
@@ -2505,8 +2505,8 @@ class Tsd(_BaseTsd):
         bincount automatically inherits ep as time support:
 
         >>> bincount.time_support
-        index    start    end
-            0      100    800
+          index    start    end
+              0      100    800
         shape: (1, 2), time unit: sec.
         """
         return _Base.count(self, bin_size, ep, time_units, dtype)
@@ -2528,8 +2528,8 @@ class Tsd(_BaseTsd):
         newtsd automatically inherits the epochs defined by ep.
 
         >>> newtsd.time_support
-        index    start    end
-            0        0    500
+          index    start    end
+              0        0    500
         shape: (1, 2), time unit: sec.
         """
         return _Base.restrict(self, iset)
@@ -2553,10 +2553,10 @@ class Tsd(_BaseTsd):
 
         >>> tsd_after = tsd_before.value_from(tsd_from, ep, mode='closest')
 
-        tsd_after is the same size as tsd_before restricted to ep.
+        tsd_after is the same length as tsd_before restricted to ep.
 
         >>> print(len(tsd_before.restrict(ep)), len(tsd_after))
-            53 53
+        53 53
         """
         return _Base.value_from(self, data, ep, mode)
 
@@ -2951,16 +2951,16 @@ class Ts(_Base):
         >>> import pynapple as nap
         >>> ts = nap.Ts(t = [0, 1, 2, 3])
 
-        >>> # slice over a range
+        Slice over a range:
         >>> ts.get_slice(1.2, 2.6)
         slice(np.int64(2), np.int64(3), None)
-        >>> ts.get_slice(1.0, 2.0, mode="forward")
+        >>> ts.get_slice(1.0, 2.0)
         slice(np.int64(1), np.int64(3), None)
 
-        >>> # slice a single value
+        Slice a single value:
         >>> ts.get_slice(1.2)
         slice(np.int64(1), np.int64(2), None)
-        >>> ts.get_slice(2.0))
+        >>> ts.get_slice(2.0)
         slice(np.int64(2), np.int64(3), None)
         """
         return _Base.get_slice(self, start, end, time_unit)
@@ -2986,8 +2986,8 @@ class Ts(_Base):
         bincount automatically inherits ep as time support:
 
         >>> bincount.time_support
-        index    start    end
-            0      100    800
+          index    start    end
+              0      100    800
         shape: (1, 2), time unit: sec.
         """
         return _Base.count(self, bin_size, ep, time_units, dtype)
@@ -3009,8 +3009,8 @@ class Ts(_Base):
         newts automatically inherits the epochs defined by ep.
 
         >>> newts.time_support
-        index    start    end
-            0        0    500
+          index    start    end
+              0        0    500
         shape: (1, 2), time unit: sec.
         """
         return _Base.restrict(self, iset)
@@ -3026,18 +3026,75 @@ class Ts(_Base):
         >>> import numpy as np; np.random.seed(42)
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
         >>> ts = nap.Ts(t=t, time_units='s')
+        >>> ts
+        Time (s)
+        1.0
+        13.0
+        20.0
+        21.0
+        34.0
+        58.0
+        71.0
+        ...
+        897.0
+        931.0
+        942.0
+        955.0
+        957.0
+        975.0
+        shape: 94
+
         >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
+        >>> tsd
+        Time (s)
+        ----------  -----------
+        0.0         0.449754
+        1.0         0.39515
+        2.0         0.926659
+        3.0         0.727272
+        4.0         0.326541
+        5.0         0.570444
+        ...
+        994.0       0.876665
+        995.0       0.417506
+        996.0       0.461943
+        997.0       0.990341
+        998.0       0.000237524
+        999.0       0.185473
+        dtype: float64, shape: (1000,)
+
         >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+        >>> ep
+          index    start    end
+              0        0    500
+        shape: (1, 2), time unit: sec.
 
         The variable ts is a timestamp object.
         The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
 
         >>> newts = ts.value_from(tsd, ep, mode='closest')
+        >>> newts
+        Time (s)
+        ----------  ---------
+        1.0         0.39515
+        13.0        0.607034
+        20.0        0.293488
+        21.0        0.0140798
+        34.0        0.665922
+        58.0        0.598865
+        ...
+        466.0       0.48037
+        474.0       0.0368219
+        475.0       0.133852
+        476.0       0.013672
+        484.0       0.757081
+        491.0       0.878221
+        dtype: float64, shape: (53,)
 
-        newts is the same size as ts restrict to ep.
+        newts is the same length as ts when restricted to ep.
 
         >>> print(len(ts.restrict(ep)), len(newts))
-            53 53
+        53 53
         """
         return _Base.value_from(self, data, ep, mode)
 
