@@ -81,6 +81,115 @@ def _validate_tuning_inputs(func):
     return wrapper
 
 
+def compute_tuning_curves(group, features, num_bins, epoch=None, bounds=None):
+    """
+    Computes n-dimensional tuning curves relative to n features.
+
+    Parameters
+    ----------
+    group : TsGroup, TsdFrame or dict of Ts/Tsd object.
+        The group of Ts/Tsd for which the tuning curves will be computed
+        You may also pass a TsdFrame with smoothed rates (recommended).
+    features : TsdFrame
+        The features (i.e. one column per feature).
+    num_bins : int or list
+        Number of bins in the tuning curves (can be separate for each feature dimension, if list provided)
+    epoch : IntervalSet, optional
+        The epoch on which tuning curves are computed.
+        If None, the epoch is the time support of the feature.
+    bounds : list, optional
+        The min and max boundaries of the tuning curves given as:
+        [[min_x1, min_x2, ...], [max_x1, max_x2, ...]]
+        If None, the boundaries are inferred from the target features
+
+    Returns
+    -------
+    tuple
+        A tuple containing: \n
+        tc (dict): Dictionary of the tuning curves.\n
+        bin_centers (list): List of bins center for each dimension
+
+    Raises
+    ------
+    ValueError
+        If num_bins is a list with a different length than the number of feature dimensions.
+        If bounds is not of length 2 or if the lengths of mins and maxs do not match the number of feature dimensions.
+
+    """
+
+    # test group
+    # if isinstance(group, nap.TsdFrame):
+    #    group = group.restrict(ep)
+    # elif isinstance(group, nap.TsGroup):
+    #    group = group.restrict(ep)
+    # elif isinstance(group, dict):
+    #    group = nap.TsGroup(group, time_support=ep)
+    # else:
+    #    raise TypeError("Unknown format for group")
+
+    # test features
+    if isinstance(features, nap.Tsd):
+        features = nap.TsdFrame(
+            d=features, t=features.times(), ep=features.time_support
+        )
+    elif not isinstance(features, nap.TsdFrame):
+        raise TypeError("feature should be a Tsd or TsdFrame")
+
+    # test num_bins
+    if isinstance(num_bins, list):
+        if len(num_bins) != features.shape[1]:
+            raise ValueError(
+                "If num_bins is a list, it should have the same length as the number of feature dimensions."
+            )
+    elif not isinstance(num_bins, int):
+        raise TypeError(
+            "num_bins should be of type int or list with length equal to number of feature dimensions."
+        )
+    else:
+        num_bins = [num_bins] * features.shape[1]
+    num_dims = features.shape[1]
+
+    # test minmax
+    if bounds is not None:
+        if len(bounds) != 2:
+            raise ValueError(
+                "bounds should be of length 2, containing mins and maxs for each feature."
+            )
+        if len(bounds[0]) != features.shape[1] or len(bounds[1]) != features.shape[1]:
+            raise ValueError(
+                "bounds should have the same length as the number of feature dimensions."
+            )
+
+    # test ep
+    if epoch is None:
+        epoch = features.time_support
+    else:
+        features = features.restrict(epoch)
+
+    # Occupancy
+    if bounds is None:
+        occupancy, bin_edges = np.histogramdd(features.values, bins=num_bins)
+    else:
+        bin_edges = [
+            np.linspace(low, high, n + 1)
+            for low, high, n in zip(bounds[0], bounds[1], num_bins, strict=True)
+        ]
+        occupancy, _ = np.histogramdd(features.values, bins=bin_edges)
+    occupancy[occupancy == 0] = np.nan  # avoid /0
+
+    # Tuning curves
+    tcs = {}
+    group_vals = {d: group.value_from(features[:, d], epoch) for d in range(num_dims)}
+    for n in group.keys():
+        data = np.column_stack(
+            [group_vals[d][n].values.flatten() for d in range(num_dims)]
+        )
+        count, _ = np.histogramdd(data, bins=bin_edges)
+        tcs[n] = (count / occupancy) * features.rate
+
+    return tcs, [e[:-1] + np.diff(e) / 2 for e in bin_edges]
+
+
 @_validate_tuning_inputs
 def compute_discrete_tuning_curves(group, dict_ep):
     """
