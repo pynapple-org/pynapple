@@ -1197,26 +1197,26 @@ class TsdTensor(_BaseTsd):
 
         tsdtensor is a timestamp tensor with values.
 
-        >>> tsd_from = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
+        >>> tsd_from = nap.Tsd(t=np.arange(0,1000), d=np.random.choice([1,2,3], 1000), time_units='s')
         >>> tsd_from
         Time (s)
-        ----------  ---------
-        0.0         0.897436
-        1.0         0.463381
-        2.0         0.622937
-        3.0         0.747872
-        4.0         0.0348652
-        5.0         0.894921
-        6.0         0.860127
+        ----------  --
+        0.0          3
+        1.0          3
+        2.0          2
+        3.0          1
+        4.0          1
+        5.0          3
+        6.0          1
         ...
-        993.0       0.447603
-        994.0       0.55782
-        995.0       0.166034
-        996.0       0.613473
-        997.0       0.363101
-        998.0       0.897186
-        999.0       0.168854
-        dtype: float64, shape: (1000,)
+        993.0        1
+        994.0        1
+        995.0        1
+        996.0        1
+        997.0        2
+        998.0        1
+        999.0        1
+        dtype: int64, shape: (1000,)
 
         tsd_from contains other values.
 
@@ -1231,23 +1231,23 @@ class TsdTensor(_BaseTsd):
         >>> tsd_after = tsdtensor.value_from(tsd_from, ep, mode='closest')
         >>> tsd_after
         Time (s)
-        ----------  ---------
-        1.0         0.463381
-        13.0        0.0354224
-        20.0        0.695714
-        21.0        0.0487836
-        34.0        0.864493
-        58.0        0.258688
-        71.0        0.840122
+        ----------  --
+        1.0          3
+        13.0         3
+        20.0         2
+        21.0         1
+        34.0         2
+        58.0         1
+        71.0         2
         ...
-        459.0       0.149704
-        466.0       0.178446
-        474.0       0.141774
-        475.0       0.27454
-        476.0       0.597047
-        484.0       0.603219
-        491.0       0.401188
-        dtype: float64, shape: (53,)
+        459.0        1
+        466.0        3
+        474.0        3
+        475.0        3
+        476.0        3
+        484.0        2
+        491.0        2
+        dtype: int64, shape: (53,)
 
         tsd_after is the same length as tsdtensor restricted to ep.
 
@@ -1986,28 +1986,28 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
         tsdframe is a timestamp table with values.
 
-        >>> tsd_from = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
+        >>> tsd_from = nap.Tsd(t=np.arange(0,1000), d=np.random.choice([1,2,3], 1000), time_units='s')
         >>> tsd_from
         Time (s)
-        ----------  --------
-        0.0         0.679845
-        1.0         0.739909
-        2.0         0.238236
-        3.0         0.377729
-        4.0         0.534327
-        5.0         0.496561
-        6.0         0.389618
+        ----------  --
+        0.0          3
+        1.0          1
+        2.0          3
+        3.0          1
+        4.0          3
+        5.0          1
+        6.0          2
         ...
-        993.0       0.88371
-        994.0       0.442024
-        995.0       0.330889
-        996.0       0.448778
-        997.0       0.66939
-        998.0       0.145757
-        999.0       0.449434
-        dtype: float64, shape: (1000,)
+        993.0        1
+        994.0        2
+        995.0        3
+        996.0        1
+        997.0        3
+        998.0        2
+        999.0        3
+        dtype: int64, shape: (1000,)
 
-        tsd_from contains other values.
+        tsd_from contains values, for example the tracking data.
 
         >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
         >>> ep
@@ -2020,25 +2020,25 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> tsd_after = tsdframe.value_from(tsd_from, ep, mode='closest')
         >>> tsd_after
         Time (s)
-        ----------  --------
-        1.0         0.739909
-        13.0        0.956801
-        20.0        0.553703
-        21.0        0.212728
-        34.0        0.836964
-        58.0        0.253682
-        71.0        0.436336
+        ----------  --
+        1.0          1
+        13.0         3
+        20.0         3
+        21.0         2
+        34.0         1
+        58.0         3
+        71.0         3
         ...
-        459.0       0.377726
-        466.0       0.481088
-        474.0       0.89743
-        475.0       0.526578
-        476.0       0.80075
-        484.0       0.505508
-        491.0       0.805315
-        dtype: float64, shape: (53,)
+        459.0        2
+        466.0        2
+        474.0        3
+        475.0        1
+        476.0        2
+        484.0        2
+        491.0        3
+        dtype: int64, shape: (53,)
 
-        tsd_after is the same length as tsdframe restricted to ep.
+        tsd_after is the same length as ts when restricted to ep.
 
         >>> print(len(tsdframe.restrict(ep)), len(tsd_after))
         53 53
@@ -2849,23 +2849,25 @@ class Tsd(_BaseTsd):
         >>> import pynapple as nap
         >>> import numpy as np; np.random.seed(42)
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
-        >>> tsd_before = nap.Tsd(t=t, d=np.random.randn(len(t)), time_units='s')
+        >>> tsd_before = nap.Tsd(t=t, d=np.random.rand(len(t)), time_units='s')
         >>> tsd_before
         Time (s)
         ----------  ---------
-        1.0         -2.17833
-        13.0        -1.0439
-        20.0         0.172694
-        21.0         0.324199
-        34.0         0.74586
-        58.0        -1.83658
+        1.0         0.449754
+        13.0        0.39515
+        20.0        0.926659
+        21.0        0.727272
+        34.0        0.326541
+        58.0        0.570444
+        71.0        0.520834
         ...
-        897.0       -0.762627
-        931.0        0.168659
-        942.0       -1.32188
-        955.0       -0.668247
-        957.0       -0.137291
-        975.0        1.40132
+        875.0       0.0648922
+        897.0       0.253915
+        931.0       0.246876
+        942.0       0.696304
+        955.0       0.712271
+        957.0       0.148087
+        975.0       0.99774
         dtype: float64, shape: (94,)
 
         tsd_before is a timestamp object with data.
@@ -2878,23 +2880,26 @@ class Tsd(_BaseTsd):
 
         ep is an IntervalSet object defining the epochs.
 
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
         >>> tsd_after = tsd_before.restrict(ep)
         >>> tsd_after
         Time (s)
-        ----------  ---------
-        1.0         -2.17833
-        13.0        -1.0439
-        20.0         0.172694
-        21.0         0.324199
-        34.0         0.74586
-        58.0        -1.83658
+        ----------  --------
+        1.0         0.449754
+        13.0        0.39515
+        20.0        0.926659
+        21.0        0.727272
+        34.0        0.326541
+        58.0        0.570444
+        71.0        0.520834
         ...
-        466.0        2.28723
-        474.0        1.62292
-        475.0        0.823733
-        476.0        0.293059
-        484.0        0.89663
-        491.0       -0.610322
+        459.0       0.110891
+        466.0       0.439337
+        474.0       0.201719
+        475.0       0.895764
+        476.0       0.47537
+        484.0       0.563276
+        491.0       0.695516
         dtype: float64, shape: (53,)
 
         tsd_after is a timestamp object restricted to the epochs.
@@ -2934,27 +2939,28 @@ class Tsd(_BaseTsd):
 
         tsd_before is a timestamp object with values.
 
-        >>> tsd_from = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
-        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+        >>> tsd_from = nap.Tsd(t=np.arange(0,1000), d=np.random.choice([1,2,3], 1000), time_units='s')
         >>> tsd_from
         Time (s)
-        ----------  ---------
-        0.0         0.266781
-        1.0         0.976615
-        2.0         0.411037
-        3.0         0.0330507
-        4.0         0.345071
-        5.0         0.634351
+        ----------  --
+        0.0          3
+        1.0          1
+        2.0          2
+        3.0          2
+        4.0          2
+        5.0          3
+        6.0          1
         ...
-        994.0       0.906514
-        995.0       0.571319
-        996.0       0.662112
-        997.0       0.543779
-        998.0       0.864493
-        999.0       0.73391
-        dtype: float64, shape: (1000,)
+        993.0        1
+        994.0        2
+        995.0        1
+        996.0        1
+        997.0        2
+        998.0        2
+        999.0        2
+        dtype: int64, shape: (1000,)
 
-        tsd_from contains other values.
+        tsd_from contains values, for example the tracking data.
 
         >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
         >>> ep
@@ -2967,23 +2973,25 @@ class Tsd(_BaseTsd):
         >>> tsd_after = tsd_before.value_from(tsd_from, ep, mode='closest')
         >>> tsd_after
         Time (s)
-        ----------  --------
-        1.0         0.976615
-        13.0        0.24216
-        20.0        0.150718
-        21.0        0.508199
-        34.0        0.67569
-        58.0        0.668988
+        ----------  --
+        1.0          1
+        13.0         2
+        20.0         3
+        21.0         2
+        34.0         3
+        58.0         1
+        71.0         2
         ...
-        466.0       0.481145
-        474.0       0.597278
-        475.0       0.986257
-        476.0       0.536591
-        484.0       0.133117
-        491.0       0.397164
-        dtype: float64, shape: (53,)
+        459.0        3
+        466.0        1
+        474.0        3
+        475.0        1
+        476.0        2
+        484.0        3
+        491.0        1
+        dtype: int64, shape: (53,)
 
-        tsd_after is the same length as tsd_before restricted to ep.
+        tsd_after is the same length as ts when restricted to ep.
 
         >>> print(len(tsd_before.restrict(ep)), len(tsd_after))
         53 53
@@ -3552,24 +3560,26 @@ class Ts(_Base):
 
         ts is a timestamp object.
 
-        >>> tsd_from = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
+        >>> tsd_from = nap.Tsd(t=np.arange(0,1000), d=np.random.choice([1,2,3], 1000), time_units='s')
         >>> tsd_from
         Time (s)
-        ----------  -----------
-        0.0         0.449754
-        1.0         0.39515
-        2.0         0.926659
-        3.0         0.727272
-        4.0         0.326541
-        5.0         0.570444
+        ----------  --
+        0.0          2
+        1.0          2
+        2.0          2
+        3.0          2
+        4.0          3
+        5.0          3
+        6.0          2
         ...
-        994.0       0.876665
-        995.0       0.417506
-        996.0       0.461943
-        997.0       0.990341
-        998.0       0.000237524
-        999.0       0.185473
-        dtype: float64, shape: (1000,)
+        993.0        1
+        994.0        1
+        995.0        2
+        996.0        2
+        997.0        2
+        998.0        1
+        999.0        3
+        dtype: int64, shape: (1000,)
 
         tsd_from contains values, for example the tracking data.
 
@@ -3584,21 +3594,23 @@ class Ts(_Base):
         >>> tsd_after = ts.value_from(tsd_from, ep, mode='closest')
         >>> tsd_after
         Time (s)
-        ----------  ---------
-        1.0         0.39515
-        13.0        0.607034
-        20.0        0.293488
-        21.0        0.0140798
-        34.0        0.665922
-        58.0        0.598865
+        ----------  --
+        1.0          2
+        13.0         3
+        20.0         3
+        21.0         1
+        34.0         3
+        58.0         1
+        71.0         1
         ...
-        466.0       0.48037
-        474.0       0.0368219
-        475.0       0.133852
-        476.0       0.013672
-        484.0       0.757081
-        491.0       0.878221
-        dtype: float64, shape: (53,)
+        459.0        3
+        466.0        2
+        474.0        2
+        475.0        1
+        476.0        3
+        484.0        1
+        491.0        3
+        dtype: int64, shape: (53,)
 
         tsd_after is the same length as ts when restricted to ep.
 
