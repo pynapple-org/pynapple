@@ -127,7 +127,7 @@ def compute_tuning_curves(group, features, num_bins, epoch=None, bounds=None):
     # else:
     #    raise TypeError("Unknown format for group")
 
-    # test features
+    # check features
     if isinstance(features, nap.Tsd):
         features = nap.TsdFrame(
             d=features, t=features.times(), ep=features.time_support
@@ -135,7 +135,7 @@ def compute_tuning_curves(group, features, num_bins, epoch=None, bounds=None):
     elif not isinstance(features, nap.TsdFrame):
         raise TypeError("feature should be a Tsd or TsdFrame")
 
-    # test num_bins
+    # check num_bins
     if isinstance(num_bins, list):
         if len(num_bins) != features.shape[1]:
             raise ValueError(
@@ -149,7 +149,7 @@ def compute_tuning_curves(group, features, num_bins, epoch=None, bounds=None):
         num_bins = [num_bins] * features.shape[1]
     num_dims = features.shape[1]
 
-    # test minmax
+    # check minmax
     if bounds is not None:
         if len(bounds) != 2:
             raise ValueError(
@@ -160,7 +160,7 @@ def compute_tuning_curves(group, features, num_bins, epoch=None, bounds=None):
                 "bounds should have the same length as the number of feature dimensions."
             )
 
-    # test ep
+    # check ep
     if epoch is None:
         epoch = features.time_support
     else:
@@ -175,17 +175,34 @@ def compute_tuning_curves(group, features, num_bins, epoch=None, bounds=None):
             for low, high, n in zip(bounds[0], bounds[1], num_bins, strict=True)
         ]
         occupancy, _ = np.histogramdd(features.values, bins=bin_edges)
-    occupancy[occupancy == 0] = np.nan  # avoid /0
+    occupancy[occupancy == 0] = np.nan
 
     # Tuning curves
-    tcs = {}
     group_vals = {d: group.value_from(features[:, d], epoch) for d in range(num_dims)}
-    for n in group.keys():
-        data = np.column_stack(
-            [group_vals[d][n].values.flatten() for d in range(num_dims)]
-        )
-        count, _ = np.histogramdd(data, bins=bin_edges)
-        tcs[n] = (count / occupancy) * features.rate
+    if isinstance(group, nap.TsGroup):
+        tcs = {}
+        for n in group.keys():
+            data = np.column_stack(
+                [group_vals[d][n].values.flatten() for d in range(num_dims)]
+            )
+            count, _ = np.histogramdd(data, bins=bin_edges)
+            tcs[n] = (count / occupancy) * features.rate
+    else:
+        idxs = [
+            np.clip(
+                np.digitize(group_vals[d].values, bin_edges[d]) - 1, 0, num_bins[d] - 1
+            )
+            for d in range(num_dims)
+        ]
+        flat = np.ravel_multi_index(tuple(idxs), num_bins)
+        flat_bins = np.prod(num_bins)
+        sums = np.zeros((flat_bins, group.shape[1]))
+        counts = np.zeros(flat_bins, dtype=int)
+        np.add.at(sums, flat, group.values)
+        np.add.at(counts, flat, 1)
+        means = sums / counts[:, None]
+        tcs = means.reshape((*num_bins, group.shape[1])).transpose(-1, *range(num_dims))
+        tcs[:, occupancy == np.nan] = np.nan
 
     return tcs, [e[:-1] + np.diff(e) / 2 for e in bin_edges]
 

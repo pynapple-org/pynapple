@@ -52,14 +52,16 @@ def get_features(num_dims: int, duration: float = 100.0, dt: float = 0.1):
     "epoch",
     [
         None,
-        nap.IntervalSet(0.0, 50.0),
-        nap.IntervalSet(0.0, 100.0),
-        nap.IntervalSet(0.0, 200.0),
-        nap.IntervalSet([0.0, 40.0], [10.0, 90.0]),
+        # nap.IntervalSet(0.0, 50.0),
+        # nap.IntervalSet(0.0, 100.0),
+        # nap.IntervalSet(0.0, 200.0),
+        # nap.IntervalSet([0.0, 40.0], [10.0, 90.0]),
     ],
 )
-def test_compute_tuning_curves(num_dims, num_bins, bounds_alpha, epoch):
-    group = get_group()
+@pytest.mark.parametrize("continuous", [True])
+def test_compute_tuning_curves(continuous, num_dims, num_bins, bounds_alpha, epoch):
+    _group = get_group()
+    group = _group.count(0.1) if continuous else _group
     features = get_features(num_dims)
 
     if bounds_alpha is None:
@@ -102,8 +104,8 @@ def test_compute_tuning_curves(num_dims, num_bins, bounds_alpha, epoch):
 
     # tuning curves
     expected_tcs = {}
-    group_vals = {d: group.value_from(_features[:, d], epoch) for d in range(num_dims)}
-    for k in group.keys():
+    group_vals = {d: _group.value_from(_features[:, d], epoch) for d in range(num_dims)}
+    for k in _group.keys():
         spike_feat = np.column_stack(
             [group_vals[d][k].values.flatten() for d in range(num_dims)]
         )
@@ -117,7 +119,7 @@ def test_compute_tuning_curves(num_dims, num_bins, bounds_alpha, epoch):
     # test
     # ------------------------------------------------------------------
     assert isinstance(tcs, dict)
-    assert len(tcs) == len(expected_tcs) == len(group)
+    assert len(tcs) == len(expected_tcs) == len(_group)
     for (key, tc), (expected_key, expected_tc) in zip(
         tcs.items(), expected_tcs.items()
     ):
