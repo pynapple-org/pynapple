@@ -1023,7 +1023,7 @@ class TsdTensor(_BaseTsd):
         --------
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> tsdtensor = nap.TsdTensor(t = [0, 1, 2, 3], d = np.random.randint(0, 1, (4, 3, 3)))
+        >>> tsdtensor = nap.TsdTensor(t = [0, 1, 2, 3], d = np.random.randn(4, 3, 3))
 
         Slice over a range:
         >>> tsdtensor.get_slice(1.2, 2.6)
@@ -1047,22 +1047,62 @@ class TsdTensor(_BaseTsd):
         This example shows how to count timestamps within bins of 0.1 second.
 
         >>> import pynapple as nap
-        >>> import numpy as np
+        >>> import numpy as np; np.random.seed(42)
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> tsdtensor = nap.TsdTensor(t=t, d=np.random.randint(0, 1, (len(t), 4, 4)), time_units='s')
-        >>> bincount = tsdtensor.count(0.1)
+        >>> tsdtensor = nap.TsdTensor(t=t, d=np.random.randn(len(t), 4, 4), time_units='s')
+        >>> tsdtensor
+        Time (s)
+        ----------  -------------------------------
+        1.0         [[-2.178334 ...  0.324199] ...]
+        13.0        [[-1.875677 ... -0.906721] ...]
+        20.0        [[0.326845 ... 0.736122] ...]
+        21.0        [[1.62292 ... 0.89663] ...]
+        34.0        [[-0.870305 ...  2.943663] ...]
+        58.0        [[-0.441766 ... -1.426479] ...]
+        ...
+        897.0       [[ 0.962199 ... -0.370506] ...]
+        931.0       [[-0.511451 ...  0.5125  ] ...]
+        942.0       [[-0.828463 ...  0.300192] ...]
+        955.0       [[-1.193155 ...  0.247027] ...]
+        957.0       [[1.638941 ... 0.236425] ...]
+        975.0       [[ 0.393912 ... -1.180782] ...]
+        dtype: float64, shape: (94, 4, 4)
 
-        An epoch can be specified:
+        tsdtensor is a timestamp tensor with data.
 
-        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+        >>> ep
+          index    start    end
+              0        0    500
+        shape: (1, 2), time unit: sec.
+
+        ep is an IntervalSet object defining the epochs.
+
         >>> bincount = tsdtensor.count(0.1, ep=ep)
-
-        bincount automatically inherits ep as time support:
-
+        >>> bincount
+        Time (s)
+        ----------  --
+        0.05         0
+        0.15         0
+        0.25         0
+        0.35         0
+        0.45         0
+        0.55         0
+        ...
+        499.45       0
+        499.55       0
+        499.65       0
+        499.75       0
+        499.85       0
+        499.95       0
+        dtype: int64, shape: (5000,)
         >>> bincount.time_support
           index    start    end
-              0      100    800
+              0        0    500
         shape: (1, 2), time unit: sec.
+
+        bincount automatically inherits ep as time support.
+
         """
         return _Base.count(self, bin_size, ep, time_units, dtype)
 
@@ -1071,21 +1111,58 @@ class TsdTensor(_BaseTsd):
         """
         Examples
         --------
-        The TsdTensor object is restricted to the intervals defined by ep.
-
         >>> import pynapple as nap
         >>> import numpy as np; np.random.seed(42)
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> tsdtensor = nap.TsdTensor(t=t, d=np.random.randint(0, 1, (len(t), 4, 4)), time_units='s')
-        >>> ep = nap.IntervalSet(start=0, end=500, time_units='s')
-        >>> newtsdtensor = tsdtensor.restrict(ep)
+        >>> tsdtensor_before = nap.TsdTensor(t=t, d=np.random.randn(len(t), 4, 4), time_units='s')
+        >>> tsdtensor_before
+        Time (s)
+        ----------  -------------------------------
+        1.0         [[-2.178334 ...  0.324199] ...]
+        13.0        [[-1.875677 ... -0.906721] ...]
+        20.0        [[0.326845 ... 0.736122] ...]
+        21.0        [[1.62292 ... 0.89663] ...]
+        34.0        [[-0.870305 ...  2.943663] ...]
+        58.0        [[-0.441766 ... -1.426479] ...]
+        ...
+        897.0       [[ 0.962199 ... -0.370506] ...]
+        931.0       [[-0.511451 ...  0.5125  ] ...]
+        942.0       [[-0.828463 ...  0.300192] ...]
+        955.0       [[-1.193155 ...  0.247027] ...]
+        957.0       [[1.638941 ... 0.236425] ...]
+        975.0       [[ 0.393912 ... -1.180782] ...]
+        dtype: float64, shape: (94, 4, 4)
 
-        newtsdtensor automatically inherits the epochs defined by ep.
+        tsdtensor_before is a timestamp tensor with data.
 
-        >>> newtsdtensor.time_support
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+        >>> ep
           index    start    end
               0        0    500
         shape: (1, 2), time unit: sec.
+
+        ep is an IntervalSet object defining the epochs.
+
+        >>> tsdtensor_after = tsdtensor_before.restrict(ep)
+        >>> tsdtensor_after
+        Time (s)
+        ----------  -------------------------------
+        1.0         [[-2.178334 ...  0.324199] ...]
+        13.0        [[-1.875677 ... -0.906721] ...]
+        20.0        [[0.326845 ... 0.736122] ...]
+        21.0        [[1.62292 ... 0.89663] ...]
+        34.0        [[-0.870305 ...  2.943663] ...]
+        58.0        [[-0.441766 ... -1.426479] ...]
+        ...
+        466.0       [[-1.045913 ...  1.601238] ...]
+        474.0       [[ 1.354845 ... -0.382483] ...]
+        475.0       [[ 1.347856 ... -2.011918] ...]
+        476.0       [[-0.218104 ... -0.019882] ...]
+        484.0       [[0.454563 ... 0.636631] ...]
+        491.0       [[ 0.618141 ... -0.10405 ] ...]
+        dtype: float64, shape: (53, 4, 4)
+
+        tsdtensor_after is a timestamp tensor restricted to the epochs.
         """
         return _Base.restrict(self, iset)
 
@@ -1099,45 +1176,46 @@ class TsdTensor(_BaseTsd):
         >>> import pynapple as nap
         >>> import numpy as np; np.random.seed(42)
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
-        >>> tsdtensor = nap.TsdTensor(t=t, d=np.random.randint(0, 1, (len(t), 3, 3)), time_units='s')
+        >>> tsdtensor = nap.TsdTensor(t=t, d=np.random.randn(len(t), 3, 3), time_units='s')
         >>> tsdtensor
         Time (s)
-        ----------  ---------------
-        1.0         [[0 ... 0] ...]
-        13.0        [[0 ... 0] ...]
-        20.0        [[0 ... 0] ...]
-        21.0        [[0 ... 0] ...]
-        34.0        [[0 ... 0] ...]
-        58.0        [[0 ... 0] ...]
-        71.0        [[0 ... 0] ...]
+        ----------  -------------------------------
+        1.0         [[-2.178334 ...  0.172694] ...]
+        13.0        [[0.659191 ... 1.070985] ...]
+        20.0        [[0.636305 ... 0.476043] ...]
+        21.0        [[-1.123898 ...  1.726516] ...]
+        34.0        [[-0.779702 ... -0.150534] ...]
+        58.0        [[0.423943 ... 2.287226] ...]
         ...
-        897.0       [[0 ... 0] ...]
-        931.0       [[0 ... 0] ...]
-        942.0       [[0 ... 0] ...]
-        955.0       [[0 ... 0] ...]
-        957.0       [[0 ... 0] ...]
-        975.0       [[0 ... 0] ...]
-        dtype: int64, shape: (94, 3, 3)
+        897.0       [[1.444173 ... 0.175421] ...]
+        931.0       [[ 0.995858 ... -0.019882] ...]
+        942.0       [[-0.80603  ...  0.286974] ...]
+        955.0       [[ 0.636631 ... -0.883157] ...]
+        957.0       [[-0.0971   ...  1.138171] ...]
+        975.0       [[ 1.194182 ... -1.499837] ...]
+        dtype: float64, shape: (94, 3, 3)
 
         tsdtensor is a timestamp tensor with values.
 
         >>> tsd_from = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
         >>> tsd_from
         Time (s)
-        ----------  -----------
-        0.0         0.449754
-        1.0         0.39515
-        2.0         0.926659
-        3.0         0.727272
-        4.0         0.326541
-        5.0         0.570444
+        ----------  ---------
+        0.0         0.897436
+        1.0         0.463381
+        2.0         0.622937
+        3.0         0.747872
+        4.0         0.0348652
+        5.0         0.894921
+        6.0         0.860127
         ...
-        994.0       0.876665
-        995.0       0.417506
-        996.0       0.461943
-        997.0       0.990341
-        998.0       0.000237524
-        999.0       0.185473
+        993.0       0.447603
+        994.0       0.55782
+        995.0       0.166034
+        996.0       0.613473
+        997.0       0.363101
+        998.0       0.897186
+        999.0       0.168854
         dtype: float64, shape: (1000,)
 
         tsd_from contains other values.
@@ -1154,19 +1232,21 @@ class TsdTensor(_BaseTsd):
         >>> tsd_after
         Time (s)
         ----------  ---------
-        1.0         0.39515
-        13.0        0.607034
-        20.0        0.293488
-        21.0        0.0140798
-        34.0        0.665922
-        58.0        0.598865
+        1.0         0.463381
+        13.0        0.0354224
+        20.0        0.695714
+        21.0        0.0487836
+        34.0        0.864493
+        58.0        0.258688
+        71.0        0.840122
         ...
-        466.0       0.48037
-        474.0       0.0368219
-        475.0       0.133852
-        476.0       0.013672
-        484.0       0.757081
-        491.0       0.878221
+        459.0       0.149704
+        466.0       0.178446
+        474.0       0.141774
+        475.0       0.27454
+        476.0       0.597047
+        484.0       0.603219
+        491.0       0.401188
         dtype: float64, shape: (53,)
 
         tsd_after is the same length as tsdtensor restricted to ep.
@@ -1732,7 +1812,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         --------
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> tsdframe = nap.TsdFrame(t = [0, 1, 2, 3], d = np.random.randint(0, 1, (4, 3)))
+        >>> tsdframe = nap.TsdFrame(t = [0, 1, 2, 3], d = np.random.randn(4, 3))
 
         Slice over a range:
         >>> tsdframe.get_slice(1.2, 2.6)
@@ -1756,22 +1836,62 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         This example shows how to count timestamps within bins of 0.1 second.
 
         >>> import pynapple as nap
-        >>> import numpy as np
+        >>> import numpy as np; np.random.seed(42)
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> tsdframe = nap.TsdFrame(t=t, d=np.random.randint(0, 1, (len(t), 4)), time_units='s')
-        >>> bincount = tsdframe.count(0.1)
+        >>> tsdframe = nap.TsdFrame(t=t, d=np.random.randn(len(t), 4), time_units='s')
+        >>> tsdframe
+        Time (s)    0         1         2         3
+        ----------  --------  --------  --------  --------
+        1.0         -2.17833  -1.0439   0.17269   0.3242
+        13.0        0.74586   -1.83658  0.56446   0.0255
+        20.0        0.47319   0.65919   2.34075   1.07099
+        21.0        0.09642   0.4191    -0.95303  -1.04787
+        34.0        -1.87568  -1.36678  0.63631   -0.90672
+        58.0        0.47604   1.30366   0.21159   0.59704
+        ...         ...       ...       ...       ...
+        897.0       -0.98723  -0.49116  -1.20912  1.58914
+        931.0       -0.75691  -0.87508  -1.32561  -0.77121
+        942.0       -0.49489  -0.04948  -0.64532  -1.60061
+        955.0       -1.51457  0.67966   -0.12279  0.64889
+        957.0       0.78028   0.15108   -1.23173  0.18958
+        975.0       1.3996    -0.44743  0.34062   -0.01378
+        dtype: float64, shape: (94, 4)
 
-        An epoch can be specified:
+        tsdframe_before is a timestamp table with data.
 
-        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+        >>> ep
+          index    start    end
+              0        0    500
+        shape: (1, 2), time unit: sec.
+
+        ep is an IntervalSet object defining the epochs.
+
         >>> bincount = tsdframe.count(0.1, ep=ep)
-
-        bincount automatically inherits ep as time support:
-
+        >>> bincount
+        Time (s)
+        ----------  --
+        0.05         0
+        0.15         0
+        0.25         0
+        0.35         0
+        0.45         0
+        0.55         0
+        ...
+        499.45       0
+        499.55       0
+        499.65       0
+        499.75       0
+        499.85       0
+        499.95       0
+        dtype: int64, shape: (5000,)
         >>> bincount.time_support
           index    start    end
-              0      100    800
+              0        0    500
         shape: (1, 2), time unit: sec.
+
+        bincount automatically inherits ep as time support.
+
         """
         return _Base.count(self, bin_size, ep, time_units, dtype)
 
@@ -1780,21 +1900,58 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         """
         Examples
         --------
-        The TsdFrame object is restricted to the intervals defined by ep.
-
         >>> import pynapple as nap
         >>> import numpy as np; np.random.seed(42)
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> tsdframe = nap.TsdFrame(t=t, d=np.random.randint(0, 1, (len(t), 4)), time_units='s')
-        >>> ep = nap.IntervalSet(start=0, end=500, time_units='s')
-        >>> newtsdframe = tsdframe.restrict(ep)
+        >>> tsdframe_before = nap.TsdFrame(t=t, d=np.random.randn(len(t), 4), time_units='s')
+        >>> tsdframe_before
+        Time (s)    0         1         2         3
+        ----------  --------  --------  --------  --------
+        1.0         -2.17833  -1.0439   0.17269   0.3242
+        13.0        0.74586   -1.83658  0.56446   0.0255
+        20.0        0.47319   0.65919   2.34075   1.07099
+        21.0        0.09642   0.4191    -0.95303  -1.04787
+        34.0        -1.87568  -1.36678  0.63631   -0.90672
+        58.0        0.47604   1.30366   0.21159   0.59704
+        ...         ...       ...       ...       ...
+        897.0       -0.98723  -0.49116  -1.20912  1.58914
+        931.0       -0.75691  -0.87508  -1.32561  -0.77121
+        942.0       -0.49489  -0.04948  -0.64532  -1.60061
+        955.0       -1.51457  0.67966   -0.12279  0.64889
+        957.0       0.78028   0.15108   -1.23173  0.18958
+        975.0       1.3996    -0.44743  0.34062   -0.01378
+        dtype: float64, shape: (94, 4)
 
-        newtsdframe automatically inherits the epochs defined by ep.
+        tsdframe_before is a timestamp table with data.
 
-        >>> newtsdframe.time_support
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+        >>> ep
           index    start    end
               0        0    500
         shape: (1, 2), time unit: sec.
+
+        ep is an IntervalSet object defining the epochs.
+
+        >>> tsdframe_after = tsdframe_before.restrict(ep)
+        >>> tsdframe_after
+        Time (s)    0         1         2         3
+        ----------  --------  --------  --------  --------
+        1.0         -2.17833  -1.0439   0.17269   0.3242
+        13.0        0.74586   -1.83658  0.56446   0.0255
+        20.0        0.47319   0.65919   2.34075   1.07099
+        21.0        0.09642   0.4191    -0.95303  -1.04787
+        34.0        -1.87568  -1.36678  0.63631   -0.90672
+        58.0        0.47604   1.30366   0.21159   0.59704
+        ...         ...       ...       ...       ...
+        466.0       -0.16531  -0.68718  0.06835   -0.40941
+        474.0       1.88955   -0.6758   -0.91341  -0.45503
+        475.0       -0.41276  0.59564   -1.99154  0.42603
+        476.0       -0.54129  0.77682   -0.04764  0.51869
+        484.0       -0.3914   0.43802   1.66377   -0.73924
+        491.0       -0.10719  -0.48622  1.59298   -0.43394
+        dtype: float64, shape: (53, 4)
+
+        tsdframe_after is a timestamp table restricted to the epochs.
         """
         return _Base.restrict(self, iset)
 
@@ -1808,44 +1965,46 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> import pynapple as nap
         >>> import numpy as np; np.random.seed(42)
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
-        >>> tsdframe = nap.TsdFrame(t=t, d=np.random.randint(0, 1, (len(t), 3)), time_units='s')
+        >>> tsdframe = nap.TsdFrame(t=t, d=np.random.randn(len(t), 3), time_units='s')
         >>> tsdframe
-        Time (s)    0    1    2
-        ----------  ---  ---  ---
-        1.0         0    0    0
-        13.0        0    0    0
-        20.0        0    0    0
-        21.0        0    0    0
-        34.0        0    0    0
-        58.0        0    0    0
-        ...         ...  ...  ...
-        897.0       0    0    0
-        931.0       0    0    0
-        942.0       0    0    0
-        955.0       0    0    0
-        957.0       0    0    0
-        975.0       0    0    0
-        dtype: int64, shape: (94, 3)
+        Time (s)    0         1         2
+        ----------  --------  --------  --------
+        1.0         -2.17833  -1.0439   0.17269
+        13.0        0.3242    0.74586   -1.83658
+        20.0        0.56446   0.0255    0.47319
+        21.0        0.65919   2.34075   1.07099
+        34.0        0.09642   0.4191    -0.95303
+        58.0        -1.04787  -1.87568  -1.36678
+        ...         ...       ...       ...
+        897.0       1.95128   -0.04009  0.52944
+        931.0       -0.18389  -0.09008  -0.50588
+        942.0       0.05074   0.4946    1.67831
+        955.0       -1.87447  1.61082   0.52796
+        957.0       -0.36776  -0.54772  1.04368
+        975.0       0.22898   -1.53407  0.36307
+        dtype: float64, shape: (94, 3)
 
         tsdframe is a timestamp table with values.
 
         >>> tsd_from = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
         >>> tsd_from
         Time (s)
-        ----------  -----------
-        0.0         0.449754
-        1.0         0.39515
-        2.0         0.926659
-        3.0         0.727272
-        4.0         0.326541
-        5.0         0.570444
+        ----------  --------
+        0.0         0.679845
+        1.0         0.739909
+        2.0         0.238236
+        3.0         0.377729
+        4.0         0.534327
+        5.0         0.496561
+        6.0         0.389618
         ...
-        994.0       0.876665
-        995.0       0.417506
-        996.0       0.461943
-        997.0       0.990341
-        998.0       0.000237524
-        999.0       0.185473
+        993.0       0.88371
+        994.0       0.442024
+        995.0       0.330889
+        996.0       0.448778
+        997.0       0.66939
+        998.0       0.145757
+        999.0       0.449434
         dtype: float64, shape: (1000,)
 
         tsd_from contains other values.
@@ -1861,20 +2020,22 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> tsd_after = tsdframe.value_from(tsd_from, ep, mode='closest')
         >>> tsd_after
         Time (s)
-        ----------  ---------
-        1.0         0.39515
-        13.0        0.607034
-        20.0        0.293488
-        21.0        0.0140798
-        34.0        0.665922
-        58.0        0.598865
+        ----------  --------
+        1.0         0.739909
+        13.0        0.956801
+        20.0        0.553703
+        21.0        0.212728
+        34.0        0.836964
+        58.0        0.253682
+        71.0        0.436336
         ...
-        466.0       0.48037
-        474.0       0.0368219
-        475.0       0.133852
-        476.0       0.013672
-        484.0       0.757081
-        491.0       0.878221
+        459.0       0.377726
+        466.0       0.481088
+        474.0       0.89743
+        475.0       0.526578
+        476.0       0.80075
+        484.0       0.505508
+        491.0       0.805315
         dtype: float64, shape: (53,)
 
         tsd_after is the same length as tsdframe restricted to ep.
@@ -2621,22 +2782,62 @@ class Tsd(_BaseTsd):
         This example shows how to count timestamps within bins of 0.1 second.
 
         >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> tsd = nap.Tsd(t=t, d=np.random.randint(0, 1, len(t)), time_units='s')
-        >>> bincount = tsd.count(0.1)
+        >>> import numpy as np; np.random.seed(42)
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
+        >>> tsd = nap.Tsd(t=t, d=np.random.randn(len(t)), time_units='s')
+        >>> tsd
+        Time (s)
+        ----------  ---------
+        1.0         -2.17833
+        13.0        -1.0439
+        20.0         0.172694
+        21.0         0.324199
+        34.0         0.74586
+        58.0        -1.83658
+        ...
+        897.0       -0.762627
+        931.0        0.168659
+        942.0       -1.32188
+        955.0       -0.668247
+        957.0       -0.137291
+        975.0        1.40132
+        dtype: float64, shape: (94,)
 
-        An epoch can be specified:
+        tsd is a timestamp object with data.
 
-        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+        >>> ep
+          index    start    end
+              0        0    500
+        shape: (1, 2), time unit: sec.
+
+        ep is an IntervalSet object defining the epochs.
+
         >>> bincount = tsd.count(0.1, ep=ep)
-
-        bincount automatically inherits ep as time support:
-
+        >>> bincount
+        Time (s)
+        ----------  --
+        0.05         0
+        0.15         0
+        0.25         0
+        0.35         0
+        0.45         0
+        0.55         0
+        ...
+        499.45       0
+        499.55       0
+        499.65       0
+        499.75       0
+        499.85       0
+        499.95       0
+        dtype: int64, shape: (5000,)
         >>> bincount.time_support
           index    start    end
-              0      100    800
+              0        0    500
         shape: (1, 2), time unit: sec.
+
+        bincount automatically inherits ep as time support.
+
         """
         return _Base.count(self, bin_size, ep, time_units, dtype)
 
@@ -2645,21 +2846,58 @@ class Tsd(_BaseTsd):
         """
         Examples
         --------
-        The Tsd object is restricted to the intervals defined by ep.
-
         >>> import pynapple as nap
         >>> import numpy as np; np.random.seed(42)
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> tsd = nap.Tsd(t=t, d=np.random.randint(0, 1, len(t)), time_units='s')
-        >>> ep = nap.IntervalSet(start=0, end=500, time_units='s')
-        >>> newtsd = tsd.restrict(ep)
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
+        >>> tsd_before = nap.Tsd(t=t, d=np.random.randn(len(t)), time_units='s')
+        >>> tsd_before
+        Time (s)
+        ----------  ---------
+        1.0         -2.17833
+        13.0        -1.0439
+        20.0         0.172694
+        21.0         0.324199
+        34.0         0.74586
+        58.0        -1.83658
+        ...
+        897.0       -0.762627
+        931.0        0.168659
+        942.0       -1.32188
+        955.0       -0.668247
+        957.0       -0.137291
+        975.0        1.40132
+        dtype: float64, shape: (94,)
 
-        newtsd automatically inherits the epochs defined by ep.
+        tsd_before is a timestamp object with data.
 
-        >>> newtsd.time_support
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+        >>> ep
           index    start    end
               0        0    500
         shape: (1, 2), time unit: sec.
+
+        ep is an IntervalSet object defining the epochs.
+
+        >>> tsd_after = tsd_before.restrict(ep)
+        >>> tsd_after
+        Time (s)
+        ----------  ---------
+        1.0         -2.17833
+        13.0        -1.0439
+        20.0         0.172694
+        21.0         0.324199
+        34.0         0.74586
+        58.0        -1.83658
+        ...
+        466.0        2.28723
+        474.0        1.62292
+        475.0        0.823733
+        476.0        0.293059
+        484.0        0.89663
+        491.0       -0.610322
+        dtype: float64, shape: (53,)
+
+        tsd_after is a timestamp object restricted to the epochs.
         """
         return _Base.restrict(self, iset)
 
@@ -2673,44 +2911,47 @@ class Tsd(_BaseTsd):
         >>> import pynapple as nap
         >>> import numpy as np; np.random.seed(42)
         >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
-        >>> tsd_before = nap.Tsd(t=t, d=np.linspace(0, 1, len(t)), time_units='s')
+        >>> tsd_before = nap.Tsd(t=t, d=np.random.rand(len(t)), time_units='s')
         >>> tsd_before
         Time (s)
         ----------  ---------
-        1.0         0
-        13.0        0.0107527
-        20.0        0.0215054
-        21.0        0.0322581
-        34.0        0.0430108
-        58.0        0.0537634
+        1.0         0.449754
+        13.0        0.39515
+        20.0        0.926659
+        21.0        0.727272
+        34.0        0.326541
+        58.0        0.570444
+        71.0        0.520834
         ...
-        897.0       0.946237
-        931.0       0.956989
-        942.0       0.967742
-        955.0       0.978495
-        957.0       0.989247
-        975.0       1
+        875.0       0.0648922
+        897.0       0.253915
+        931.0       0.246876
+        942.0       0.696304
+        955.0       0.712271
+        957.0       0.148087
+        975.0       0.99774
         dtype: float64, shape: (94,)
 
         tsd_before is a timestamp object with values.
 
         >>> tsd_from = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
         >>> tsd_from
         Time (s)
-        ----------  -----------
-        0.0         0.449754
-        1.0         0.39515
-        2.0         0.926659
-        3.0         0.727272
-        4.0         0.326541
-        5.0         0.570444
+        ----------  ---------
+        0.0         0.266781
+        1.0         0.976615
+        2.0         0.411037
+        3.0         0.0330507
+        4.0         0.345071
+        5.0         0.634351
         ...
-        994.0       0.876665
-        995.0       0.417506
-        996.0       0.461943
-        997.0       0.990341
-        998.0       0.000237524
-        999.0       0.185473
+        994.0       0.906514
+        995.0       0.571319
+        996.0       0.662112
+        997.0       0.543779
+        998.0       0.864493
+        999.0       0.73391
         dtype: float64, shape: (1000,)
 
         tsd_from contains other values.
@@ -2726,20 +2967,20 @@ class Tsd(_BaseTsd):
         >>> tsd_after = tsd_before.value_from(tsd_from, ep, mode='closest')
         >>> tsd_after
         Time (s)
-        ----------  ---------
-        1.0         0.39515
-        13.0        0.607034
-        20.0        0.293488
-        21.0        0.0140798
-        34.0        0.665922
-        58.0        0.598865
+        ----------  --------
+        1.0         0.976615
+        13.0        0.24216
+        20.0        0.150718
+        21.0        0.508199
+        34.0        0.67569
+        58.0        0.668988
         ...
-        466.0       0.48037
-        474.0       0.0368219
-        475.0       0.133852
-        476.0       0.013672
-        484.0       0.757081
-        491.0       0.878221
+        466.0       0.481145
+        474.0       0.597278
+        475.0       0.986257
+        476.0       0.536591
+        484.0       0.133117
+        491.0       0.397164
         dtype: float64, shape: (53,)
 
         tsd_after is the same length as tsd_before restricted to ep.
@@ -3162,22 +3403,62 @@ class Ts(_Base):
         This example shows how to count timestamps within bins of 0.1 second.
 
         >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
+        >>> import numpy as np; np.random.seed(42)
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
         >>> ts = nap.Ts(t=t, time_units='s')
-        >>> bincount = ts.count(0.1)
+        >>> ts
+        Time (s)
+        1.0
+        13.0
+        20.0
+        21.0
+        34.0
+        58.0
+        71.0
+        ...
+        897.0
+        931.0
+        942.0
+        955.0
+        957.0
+        975.0
+        shape: 94
 
-        An epoch can be specified:
+        ts is a timestamp object.
 
-        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+        >>> ep
+          index    start    end
+              0        0    500
+        shape: (1, 2), time unit: sec.
+
+        ep is an IntervalSet object defining the epochs.
+
         >>> bincount = ts.count(0.1, ep=ep)
-
-        bincount automatically inherits ep as time support:
-
+        >>> bincount
+        Time (s)
+        ----------  --
+        0.05         0
+        0.15         0
+        0.25         0
+        0.35         0
+        0.45         0
+        0.55         0
+        ...
+        499.45       0
+        499.55       0
+        499.65       0
+        499.75       0
+        499.85       0
+        499.95       0
+        dtype: int64, shape: (5000,)
         >>> bincount.time_support
           index    start    end
-              0      100    800
+              0        0    500
         shape: (1, 2), time unit: sec.
+
+        bincount automatically inherits ep as time support.
+
         """
         return _Base.count(self, bin_size, ep, time_units, dtype)
 
@@ -3186,21 +3467,57 @@ class Ts(_Base):
         """
         Examples
         --------
-        The Ts object is restricted to the intervals defined by ep.
-
         >>> import pynapple as nap
         >>> import numpy as np; np.random.seed(42)
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> ep = nap.IntervalSet(start=0, end=500, time_units='s')
-        >>> newts = ts.restrict(ep)
+        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
+        >>> ts_before = nap.Ts(t=t, time_units='s')
+        >>> ts_before
+        Time (s)
+        1.0
+        13.0
+        20.0
+        21.0
+        34.0
+        58.0
+        71.0
+        ...
+        897.0
+        931.0
+        942.0
+        955.0
+        957.0
+        975.0
+        shape: 94
 
-        newts automatically inherits the epochs defined by ep.
+        ts_before is a timestamp object.
 
-        >>> newts.time_support
+        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
+        >>> ep
           index    start    end
               0        0    500
         shape: (1, 2), time unit: sec.
+
+        ep is an IntervalSet object defining the epochs.
+
+        >>> ts_after = ts_before.restrict(ep)
+        >>> ts_after
+        Time (s)
+        1.0
+        13.0
+        20.0
+        21.0
+        34.0
+        58.0
+        ...
+        466.0
+        474.0
+        475.0
+        476.0
+        484.0
+        491.0
+        shape: 53
+
+        ts_after is a timestamp object restricted to the epochs.
         """
         return _Base.restrict(self, iset)
 
