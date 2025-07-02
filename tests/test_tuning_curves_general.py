@@ -5,12 +5,13 @@ from contextlib import nullcontext as does_not_raise
 
 import numpy as np
 import pytest
+import scipy
 
 import pynapple as nap
 
 
 def get_group(
-    n_units: int = 2, duration: float = 100.0, mean_rate_hz: float = 5.0
+    n_units: int, duration: float = 100.0, mean_rate_hz: float = 5.0
 ) -> nap.TsGroup:
     units = {}
     for k in range(n_units):
@@ -24,55 +25,63 @@ def get_group(
 
 def get_features(num_dims: int, duration: float = 100.0, dt: float = 0.1):
     t = np.arange(0.0, duration, dt)
-
     # Saw‑tooth features, each phase‑shifted so they differ
     data = np.column_stack([(t + i / num_dims) % 1.0 for i in range(num_dims)])
-
     # Wrap in a TsdFrame with a matching time_support
     return nap.TsdFrame(t=t, d=data, time_support=nap.IntervalSet(0.0, duration))
 
 
 @pytest.mark.parametrize(
-    "num_dims, num_bins",
+    "group",
     [
-        (num_dims, num_bins)
-        for num_dims in range(1, 4)
-        for num_bins in (
-            [1, 5, 10]
-            + [
-                list(tup)
-                for tup in itertools.product([1, 5, 10], repeat=num_dims)
-                if num_dims > 1
-            ]
-        )
+        group.count(0.1) if continuous else group
+        for continuous in [False, True]
+        for n_units in range(1, 4)
+        if (group := get_group(n_units))
     ],
 )
-@pytest.mark.parametrize("bounds_alpha", [None, 0.0, 0.2])
 @pytest.mark.parametrize(
-    "epoch",
+    "features, bins",
+    [
+        (get_features(D), bins)
+        for D in range(1, 4)
+        for bins in (
+            [2, 5, 10]
+            + [list(tup) for tup in itertools.product([2, 5, 10], repeat=D) if D > 1]
+        )
+    ]
+    + [
+        (
+            nap.Tsd(
+                t=tsdframe.times(),
+                d=tsdframe.values.flatten(),
+                time_support=tsdframe.time_support,
+            ),
+            num_bins,
+        )
+        for num_bins in [2, 5, 10]
+        if (tsdframe := get_features(num_dims=1))
+    ],
+)
+@pytest.mark.parametrize("range_alpha", [None, 0.0, 0.5])
+@pytest.mark.parametrize(
+    "epochs",
     [
         None,
-        # nap.IntervalSet(0.0, 50.0),
-        # nap.IntervalSet(0.0, 100.0),
-        # nap.IntervalSet(0.0, 200.0),
-        # nap.IntervalSet([0.0, 40.0], [10.0, 90.0]),
+        nap.IntervalSet(0.0, 50.0),
+        nap.IntervalSet(0.0, 100.0),
+        nap.IntervalSet(0.0, 200.0),
+        nap.IntervalSet([0.0, 40.0], [10.0, 90.0]),
     ],
 )
-@pytest.mark.parametrize("continuous", [True])
-def test_compute_tuning_curves(continuous, num_dims, num_bins, bounds_alpha, epoch):
-    _group = get_group()
-    group = _group.count(0.1) if continuous else _group
-    features = get_features(num_dims)
-
-    if bounds_alpha is None:
-        bounds = None
+def test_compute_tuning_curves(group, features, bins, range_alpha, epochs):
+    if range_alpha is None:
+        range = None
     else:
         full_min = np.nanmin(features.values, axis=0)
         full_max = np.nanmax(features.values, axis=0)
         span = full_max - full_min
-        bounds = np.vstack(
-            [full_min + bounds_alpha * span, full_max - bounds_alpha * span]
-        )  # shape (2, num_dims)
+        range = np.c_[full_min + range_alpha * span, full_max - range_alpha * span]
 
     # ------------------------------------------------------------------
     # compute actual
@@ -80,37 +89,50 @@ def test_compute_tuning_curves(continuous, num_dims, num_bins, bounds_alpha, epo
     tcs, tc_bins = nap.compute_tuning_curves(
         group=group,
         features=features,
-        num_bins=num_bins,
-        bounds=bounds,
-        epoch=epoch,
+        bins=bins,
+        range=range,
+        epochs=epochs,
     )
 
     # ------------------------------------------------------------------
     # compute expected
     # ------------------------------------------------------------------
-    _features = features if epoch is None else features.restrict(epoch)
-    _num_bins = [num_bins] * num_dims if isinstance(num_bins, int) else num_bins
-
-    # build edges identical to what the function *should* have used
-    if bounds is None:
-        occupancy, bin_edges = np.histogramdd(_features.values, bins=_num_bins)
+    if epochs is None:
+        epochs = features.time_support
+        group = group.restrict(epochs)
     else:
-        bin_edges = [
-            np.linspace(low, high, n + 1)
-            for low, high, n in zip(bounds[0], bounds[1], _num_bins, strict=True)
-        ]
-        occupancy, _ = np.histogramdd(_features.values, bins=bin_edges)
-    occupancy[occupancy == 0] = np.nan  # avoid /0
+        features = features.restrict(epochs)
+        group = group.restrict(epochs)
 
-    # tuning curves
-    expected_tcs = {}
-    group_vals = {d: _group.value_from(_features[:, d], epoch) for d in range(num_dims)}
-    for k in _group.keys():
-        spike_feat = np.column_stack(
-            [group_vals[d][k].values.flatten() for d in range(num_dims)]
+    if isinstance(features, nap.Tsd):
+        features = nap.TsdFrame(
+            d=features.values,
+            t=features.times(),
+            time_support=features.time_support,
         )
-        counts, _ = np.histogramdd(spike_feat, bins=bin_edges)
-        expected_tcs[k] = (counts / occupancy) * _features.rate
+
+    # Occupancy
+    occupancy, bin_edges = np.histogramdd(features.values, bins=bins, range=range)
+    occupancy[occupancy == 0] = np.nan
+
+    # Tuning curves
+    expected_tcs = {}
+    if isinstance(group, nap.TsGroup):
+        for n in group.keys():
+            count, _ = np.histogramdd(
+                group[n].value_from(features, epochs).values,
+                bins=bin_edges,
+            )
+            expected_tcs[n] = (count / occupancy) * features.rate
+    else:
+        _expected_tcs = scipy.stats.binned_statistic_dd(
+            group.value_from(features, epochs).values,
+            values=group.values.T,
+            bins=bin_edges,
+        ).statistic
+        _expected_tcs[:, np.isnan(occupancy)] = np.nan
+        for k, tc in zip(group.columns, _expected_tcs):
+            expected_tcs[k] = tc
 
     # expected bin centres
     expected_tc_bins = [e[:-1] + np.diff(e) / 2 for e in bin_edges]
@@ -119,20 +141,18 @@ def test_compute_tuning_curves(continuous, num_dims, num_bins, bounds_alpha, epo
     # test
     # ------------------------------------------------------------------
     assert isinstance(tcs, dict)
-    assert len(tcs) == len(expected_tcs) == len(_group)
+    assert len(tcs) == len(expected_tcs)
     for (key, tc), (expected_key, expected_tc) in zip(
         tcs.items(), expected_tcs.items()
     ):
         assert key == expected_key
         assert isinstance(tc, np.ndarray)
-        assert tc.ndim == num_dims
-        assert tc.shape == tuple(_num_bins)
-        np.testing.assert_almost_equal(tc, expected_tc)
+        assert tc.shape == expected_tc.shape
+        np.testing.assert_allclose(tc, expected_tc)
 
     assert isinstance(tc_bins, list)
-    assert len(tc_bins) == len(expected_tc_bins) == num_dims
-    for bins, expected_bins, expected_size in zip(tc_bins, expected_tc_bins, _num_bins):
+    assert len(tc_bins) == len(expected_tc_bins)
+    for bins, expected_bins in zip(tc_bins, expected_tc_bins):
         assert isinstance(bins, np.ndarray)
-        assert bins.ndim == 1
-        assert bins.size == expected_size
+        assert bins.shape == expected_bins.shape
         np.testing.assert_allclose(bins, expected_bins)

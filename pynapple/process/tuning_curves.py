@@ -10,6 +10,7 @@ from functools import wraps
 
 import numpy as np
 import pandas as pd
+from scipy.stats import binned_statistic_dd
 
 from .. import core as nap
 
@@ -81,7 +82,7 @@ def _validate_tuning_inputs(func):
     return wrapper
 
 
-def compute_tuning_curves(group, features, num_bins, epoch=None, bounds=None):
+def compute_tuning_curves(group, features, bins, range=None, epochs=None):
     """
     Computes n-dimensional tuning curves relative to n features.
 
@@ -89,18 +90,25 @@ def compute_tuning_curves(group, features, num_bins, epoch=None, bounds=None):
     ----------
     group : TsGroup, TsdFrame or dict of Ts/Tsd object.
         The group of Ts/Tsd for which the tuning curves will be computed
-        You may also pass a TsdFrame with smoothed rates (recommended).
-    features : TsdFrame
+    features : Tsd/TsdFrame
         The features (i.e. one column per feature).
-    num_bins : int or list
-        Number of bins in the tuning curves (can be separate for each feature dimension, if list provided)
-    epoch : IntervalSet, optional
-        The epoch on which tuning curves are computed.
-        If None, the epoch is the time support of the feature.
-    bounds : list, optional
-        The min and max boundaries of the tuning curves given as:
-        [[min_x1, min_x2, ...], [max_x1, max_x2, ...]]
-        If None, the boundaries are inferred from the target features
+    bins : sequence or int
+        The bin specification:
+
+        * A sequence of arrays describing the monotonically increasing bin
+          edges along each dimension.
+        * The number of bins for each dimension (nx, ny, ... =bins)
+        * The number of bins for all dimensions (nx=ny=...=bins).
+    range : sequence, optional
+        A sequence of entries per feature, each an optional (lower, upper) tuple giving
+        the outer bin edges to be used if the edges are not given explicitly in
+        `bins`.
+        An entry of None in the sequence results in the minimum and maximum
+        values being used for the corresponding dimension.
+        The default, None, is equivalent to passing a tuple of D None values.
+    epochs : IntervalSet, optional
+        The epochs on which tuning curves are computed.
+        If None, the epochs are the time support of the features.
 
     Returns
     -------
@@ -109,100 +117,54 @@ def compute_tuning_curves(group, features, num_bins, epoch=None, bounds=None):
         tc (dict): Dictionary of the tuning curves.\n
         bin_centers (list): List of bins center for each dimension
 
-    Raises
-    ------
-    ValueError
-        If num_bins is a list with a different length than the number of feature dimensions.
-        If bounds is not of length 2 or if the lengths of mins and maxs do not match the number of feature dimensions.
-
     """
 
-    # test group
-    # if isinstance(group, nap.TsdFrame):
-    #    group = group.restrict(ep)
-    # elif isinstance(group, nap.TsGroup):
-    #    group = group.restrict(ep)
-    # elif isinstance(group, dict):
-    #    group = nap.TsGroup(group, time_support=ep)
-    # else:
-    #    raise TypeError("Unknown format for group")
+    # check group
+    if isinstance(group, dict):
+        group = nap.TsGroup(group)
+    elif not isinstance(group, nap.TsGroup | nap.TsdFrame):
+        raise TypeError("Unknown format for group")
+
+    # check ep
+    if epochs is None:
+        epochs = features.time_support
+        group = group.restrict(epochs)
+    else:
+        features = features.restrict(epochs)
+        group = group.restrict(epochs)
 
     # check features
     if isinstance(features, nap.Tsd):
         features = nap.TsdFrame(
-            d=features, t=features.times(), ep=features.time_support
+            d=features.values,
+            t=features.times(),
+            time_support=features.time_support,
         )
     elif not isinstance(features, nap.TsdFrame):
         raise TypeError("feature should be a Tsd or TsdFrame")
 
-    # check num_bins
-    if isinstance(num_bins, list):
-        if len(num_bins) != features.shape[1]:
-            raise ValueError(
-                "If num_bins is a list, it should have the same length as the number of feature dimensions."
-            )
-    elif not isinstance(num_bins, int):
-        raise TypeError(
-            "num_bins should be of type int or list with length equal to number of feature dimensions."
-        )
-    else:
-        num_bins = [num_bins] * features.shape[1]
-    num_dims = features.shape[1]
-
-    # check minmax
-    if bounds is not None:
-        if len(bounds) != 2:
-            raise ValueError(
-                "bounds should be of length 2, containing mins and maxs for each feature."
-            )
-        if len(bounds[0]) != features.shape[1] or len(bounds[1]) != features.shape[1]:
-            raise ValueError(
-                "bounds should have the same length as the number of feature dimensions."
-            )
-
-    # check ep
-    if epoch is None:
-        epoch = features.time_support
-    else:
-        features = features.restrict(epoch)
-
-    # Occupancy
-    if bounds is None:
-        occupancy, bin_edges = np.histogramdd(features.values, bins=num_bins)
-    else:
-        bin_edges = [
-            np.linspace(low, high, n + 1)
-            for low, high, n in zip(bounds[0], bounds[1], num_bins, strict=True)
-        ]
-        occupancy, _ = np.histogramdd(features.values, bins=bin_edges)
+    # occupancy
+    occupancy, bin_edges = np.histogramdd(features.values, bins=bins, range=range)
     occupancy[occupancy == 0] = np.nan
 
-    # Tuning curves
-    group_vals = {d: group.value_from(features[:, d], epoch) for d in range(num_dims)}
+    # tuning curves
+    tcs = {}
     if isinstance(group, nap.TsGroup):
-        tcs = {}
         for n in group.keys():
-            data = np.column_stack(
-                [group_vals[d][n].values.flatten() for d in range(num_dims)]
+            count, _ = np.histogramdd(
+                group[n].value_from(features, epochs).values,
+                bins=bin_edges,
             )
-            count, _ = np.histogramdd(data, bins=bin_edges)
             tcs[n] = (count / occupancy) * features.rate
     else:
-        idxs = [
-            np.clip(
-                np.digitize(group_vals[d].values, bin_edges[d]) - 1, 0, num_bins[d] - 1
-            )
-            for d in range(num_dims)
-        ]
-        flat = np.ravel_multi_index(tuple(idxs), num_bins)
-        flat_bins = np.prod(num_bins)
-        sums = np.zeros((flat_bins, group.shape[1]))
-        counts = np.zeros(flat_bins, dtype=int)
-        np.add.at(sums, flat, group.values)
-        np.add.at(counts, flat, 1)
-        means = sums / counts[:, None]
-        tcs = means.reshape((*num_bins, group.shape[1])).transpose(-1, *range(num_dims))
-        tcs[:, occupancy == np.nan] = np.nan
+        _tcs = binned_statistic_dd(
+            group.value_from(features, epochs).values,
+            values=group.values.T,
+            bins=bin_edges,
+        ).statistic
+        _tcs[:, np.isnan(occupancy)] = np.nan
+        for k, tc in zip(group.columns, _tcs):
+            tcs[k] = tc
 
     return tcs, [e[:-1] + np.diff(e) / 2 for e in bin_edges]
 
