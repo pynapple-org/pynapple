@@ -178,7 +178,6 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
             )
         tcs = (tcs / occupancy) * fs
     else:
-        print(group.value_from(features, epochs).values)
         tcs = binned_statistic_dd(
             group.value_from(features, epochs).values,
             values=group.values.T,
@@ -201,6 +200,7 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
     )
 
 
+@_validate_tuning_inputs
 def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     warnings.warn(
         "compute_1d_tuning_curves is deprecated and will be removed in v1.0; "
@@ -222,6 +222,7 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     )
 
 
+@_validate_tuning_inputs
 def compute_1d_tuning_curves_continuous(
     tsdframe, feature, nb_bins, ep=None, minmax=None
 ):
@@ -245,6 +246,7 @@ def compute_1d_tuning_curves_continuous(
     )
 
 
+@_validate_tuning_inputs
 def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
     warnings.warn(
         "compute_2d_tuning_curves is deprecated and will be removed in v1.0; "
@@ -266,6 +268,7 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
     return tcs, bins
 
 
+@_validate_tuning_inputs
 def compute_2d_tuning_curves_continuous(
     tsdframe, features, nb_bins, ep=None, minmax=None
 ):
