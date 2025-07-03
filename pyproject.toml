@@ -28,7 +28,8 @@ dependencies = [
     "pynwb>=2.0.0",
     "tabulate",
     "h5py",
-    "rich"
+    "rich",
+    "xarray>=2023.1.0",
 ]
 requires-python = ">=3.8"
 

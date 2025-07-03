@@ -6,15 +6,16 @@ from contextlib import nullcontext as does_not_raise
 import numpy as np
 import pytest
 import scipy
+import xarray as xr
 
 import pynapple as nap
 
 
 def get_group(
-    n_units: int, duration: float = 100.0, mean_rate_hz: float = 5.0
+    num_units: int, duration: float = 100.0, mean_rate_hz: float = 5.0
 ) -> nap.TsGroup:
     units = {}
-    for k in range(n_units):
+    for k in range(num_units):
         n_spikes = np.random.poisson(mean_rate_hz * duration)
         spike_times = np.random.uniform(0.0, duration, size=n_spikes)
         spike_times.sort()
@@ -28,7 +29,142 @@ def get_features(num_dims: int, duration: float = 100.0, dt: float = 0.1):
     # Saw‑tooth features, each phase‑shifted so they differ
     data = np.column_stack([(t + i / num_dims) % 1.0 for i in range(num_dims)])
     # Wrap in a TsdFrame with a matching time_support
-    return nap.TsdFrame(t=t, d=data, time_support=nap.IntervalSet(0.0, duration))
+    return nap.TsdFrame(
+        t=t,
+        d=data,
+        time_support=nap.IntervalSet(0.0, duration),
+        columns=[f"col{i}" for i in range(num_dims)],
+    )
+
+
+@pytest.mark.parametrize(
+    "group, features, kwargs, expectation",
+    [
+        # group
+        (
+            [1],
+            get_features(1),
+            {},
+            pytest.raises(
+                TypeError, match="group should be a Tsd, TsdFrame, TsGroup, or dict."
+            ),
+        ),
+        (
+            None,
+            get_features(1),
+            {},
+            pytest.raises(
+                TypeError, match="group should be a Tsd, TsdFrame, TsGroup, or dict."
+            ),
+        ),
+        (get_group(1), get_features(1), {}, does_not_raise()),
+        (get_group(3), get_features(1), {}, does_not_raise()),
+        (get_group(1).count(0.1), get_features(1), {}, does_not_raise()),
+        (get_group(3).count(0.1), get_features(1), {}, does_not_raise()),
+        (nap.Tsd(t=[1, 2, 3], d=[1, 1, 1]), get_features(1), {}, does_not_raise()),
+        ({1: nap.Ts([1, 2, 3])}, get_features(1), {}, does_not_raise()),
+        (
+            {1: nap.Ts([1, 2, 3]), 2: nap.Ts([1, 2, 3])},
+            get_features(1),
+            {},
+            does_not_raise(),
+        ),
+        # features
+        (
+            get_group(1),
+            [1],
+            {},
+            pytest.raises(TypeError, match="features should be a Tsd or TsdFrame"),
+        ),
+        (
+            get_group(1),
+            None,
+            {},
+            pytest.raises(TypeError, match="features should be a Tsd or TsdFrame"),
+        ),
+        (
+            get_group(1),
+            nap.Tsd(d=[1, 1, 1], t=[1, 2, 3]),
+            {},
+            does_not_raise(),
+        ),
+        (
+            get_group(1),
+            get_features(3),
+            {},
+            does_not_raise(),
+        ),
+        # epochs
+        (
+            get_group(1),
+            get_features(1),
+            {"epochs": 1},
+            pytest.raises(TypeError, match="epochs should be an IntervalSet."),
+        ),
+        (
+            get_group(1),
+            get_features(1),
+            {"epochs": [1, 2]},
+            pytest.raises(TypeError, match="epochs should be an IntervalSet."),
+        ),
+        (
+            get_group(1),
+            get_features(1),
+            {"epochs": None},
+            does_not_raise(),
+        ),
+        (
+            get_group(1),
+            get_features(1),
+            {"epochs": nap.IntervalSet(0.0, 50.0)},
+            does_not_raise(),
+        ),
+        (
+            get_group(1),
+            get_features(1),
+            {"epochs": nap.IntervalSet([0.0, 30.0], [10.0, 50.0])},
+            does_not_raise(),
+        ),
+        (
+            get_group(1),
+            get_features(1),
+            {"epochs": nap.IntervalSet([0.0, 1000.0])},
+            pytest.warns(
+                UserWarning,
+                match="The passed epochs are larger than the time support of the features,"
+                "this will artificially increase the outer bins of the tuning curves.",
+            ),
+        ),
+        # fs
+        (
+            get_group(1),
+            get_features(1),
+            {"fs": "1"},
+            pytest.raises(TypeError, match="fs should be a number"),
+        ),
+        (
+            get_group(1),
+            get_features(1),
+            {"fs": []},
+            pytest.raises(TypeError, match="fs should be a number"),
+        ),
+        (
+            get_group(1),
+            get_features(1),
+            {"fs": 1},
+            does_not_raise(),
+        ),
+        (
+            get_group(1),
+            get_features(1),
+            {"fs": 1.0},
+            does_not_raise(),
+        ),
+    ],
+)
+def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation):
+    with expectation:
+        nap.compute_tuning_curves(group, features, **kwargs)
 
 
 @pytest.mark.parametrize(
@@ -86,7 +222,7 @@ def test_compute_tuning_curves(group, features, bins, range_alpha, epochs):
     # ------------------------------------------------------------------
     # compute actual
     # ------------------------------------------------------------------
-    tcs, tc_bins = nap.compute_tuning_curves(
+    tcs = nap.compute_tuning_curves(
         group=group,
         features=features,
         bins=bins,
@@ -99,40 +235,38 @@ def test_compute_tuning_curves(group, features, bins, range_alpha, epochs):
     # ------------------------------------------------------------------
     if epochs is None:
         epochs = features.time_support
-        group = group.restrict(epochs)
     else:
         features = features.restrict(epochs)
-        group = group.restrict(epochs)
+    group = group.restrict(epochs)
 
     if isinstance(features, nap.Tsd):
         features = nap.TsdFrame(
             d=features.values,
             t=features.times(),
             time_support=features.time_support,
+            columns=["f0"],
         )
 
-    # Occupancy
-    occupancy, bin_edges = np.histogramdd(features.values, bins=bins, range=range)
+    # occupancy
+    occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
     occupancy[occupancy == 0] = np.nan
 
-    # Tuning curves
-    expected_tcs = {}
+    # tuning curves
     if isinstance(group, nap.TsGroup):
-        for n in group.keys():
+        expected_tcs = np.zeros([len(group), *occupancy.shape])
+        for i, n in enumerate(group.keys()):
             count, _ = np.histogramdd(
                 group[n].value_from(features, epochs).values,
                 bins=bin_edges,
             )
-            expected_tcs[n] = (count / occupancy) * features.rate
+            expected_tcs[i] = (count / occupancy) * 0.1
     else:
-        _expected_tcs = scipy.stats.binned_statistic_dd(
+        expected_tcs = scipy.stats.binned_statistic_dd(
             group.value_from(features, epochs).values,
             values=group.values.T,
             bins=bin_edges,
         ).statistic
-        _expected_tcs[:, np.isnan(occupancy)] = np.nan
-        for k, tc in zip(group.columns, _expected_tcs):
-            expected_tcs[k] = tc
+        expected_tcs[:, np.isnan(occupancy)] = np.nan
 
     # expected bin centres
     expected_tc_bins = [e[:-1] + np.diff(e) / 2 for e in bin_edges]
@@ -140,19 +274,15 @@ def test_compute_tuning_curves(group, features, bins, range_alpha, epochs):
     # ------------------------------------------------------------------
     # test
     # ------------------------------------------------------------------
-    assert isinstance(tcs, dict)
-    assert len(tcs) == len(expected_tcs)
-    for (key, tc), (expected_key, expected_tc) in zip(
-        tcs.items(), expected_tcs.items()
-    ):
-        assert key == expected_key
-        assert isinstance(tc, np.ndarray)
-        assert tc.shape == expected_tc.shape
-        np.testing.assert_allclose(tc, expected_tc)
 
-    assert isinstance(tc_bins, list)
-    assert len(tc_bins) == len(expected_tc_bins)
-    for bins, expected_bins in zip(tc_bins, expected_tc_bins):
-        assert isinstance(bins, np.ndarray)
-        assert bins.shape == expected_bins.shape
-        np.testing.assert_allclose(bins, expected_bins)
+    # values
+    assert isinstance(tcs, xr.DataArray)
+    np.testing.assert_allclose(tcs, expected_tcs)
+
+    # labels
+    units = group.keys() if isinstance(group, nap.TsGroup) else group.columns
+    assert "unit" in tcs.coords
+    assert np.all(tcs.coords["unit"] == units)
+    for dim, (dim_label, bins) in enumerate(list(tcs.coords.items())[1:]):
+        assert dim_label == features.columns[dim]
+        np.testing.assert_allclose(bins, expected_tc_bins[dim])
