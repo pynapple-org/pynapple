@@ -7,7 +7,7 @@ from numbers import Number
 
 import numpy as np
 import pandas as pd
-from scipy.signal import butter, sosfiltfilt, sosfreqz
+from scipy.signal import butter, filtfilt, sosfiltfilt, sosfreqz
 
 from .. import core as nap
 
@@ -510,3 +510,84 @@ def get_filter_frequency_response(
         )
     else:
         raise ValueError("Unrecognized filter mode. Choose either 'butter' or 'sinc'")
+
+
+def detect_oscillatory_events(
+    lfp, epoch, freq_band, thresh_band, duration_band, min_inter_duration, wsize=51
+):
+    """
+    Simple helper for detecting oscillatory events (e.g. ripples, spindles)
+
+    Parameters
+    ----------
+    lfp : Tsd
+        Should be a single channel raw lfp
+    epoch : IntervalSet
+        The epoch for restricting the detection
+    freq_band : tuple
+        The (low, high) frequency to bandpass the signal
+    thresh_band : tuple
+        The (min, max) value for thresholding the normalized squared signal after filtering
+    duration_band : tuple
+        The (min, max) duration of an event in second
+    min_inter_duration : float
+        The minimum duration between two events otherwise they are merged (in seconds)
+    wsize : int, optional
+        The size of the window for digitial filtering
+
+    Returns
+    -------
+    IntervalSet
+        The interval set of detected events with metadata containing
+        the power, amplitude, and peak_time
+    """
+    lfp = lfp.restrict(epoch)
+    frequency = lfp.rate
+    signal = apply_bandpass_filter(lfp, freq_band, frequency)
+    squared_signal = np.square(signal.values)
+    window = np.ones(wsize) / wsize
+
+    nSS = filtfilt(window, 1, squared_signal)
+    nSS = (nSS - np.mean(nSS))/np.std(nSS)
+    nSS = nap.Tsd(t = signal.index.values, d=nSS, time_support=epoch)
+
+    # Detect oscillation periods by thresholding normalized signal
+    nSS2 = nSS.threshold(thresh_band[0], method='above')
+    nSS3 = nSS2.threshold(thresh_band[1], method='below')
+
+    # Exclude oscillation where min_duration < length < max_duration
+    osc_ep = nSS3.time_support
+    osc_ep = osc_ep.drop_short_intervals(duration_band[0], time_units = 's')
+    osc_ep = osc_ep.drop_long_intervals(duration_band[1], time_units = 's')
+
+    # Merge if inter-oscillation period is too short
+    osc_ep = osc_ep.merge_close_intervals(min_inter_duration, time_units = 's')
+
+    # Compute power, amplitude, and peak_time for each interval
+    powers = []
+    amplitudes = []
+    peak_times = []
+
+    for s, e in osc_ep.values:
+        seg = signal.restrict(nap.IntervalSet(s, e))
+        if len(seg) == 0:
+            powers.append(np.nan)
+            amplitudes.append(np.nan)
+            peak_times.append(np.nan)
+            continue
+        power = np.mean(np.square(seg))
+        power_db = 10 * np.log10(power)
+        amplitude = np.max(np.abs(seg.values))
+        peak_idx = np.argmax(np.abs(seg.values))
+        peak_time = seg.index.values[peak_idx]
+        powers.append(power_db)
+        amplitudes.append(amplitude)
+        peak_times.append(peak_time)
+
+    metadata = {
+        "power": powers,
+        "amplitude": amplitudes,
+        "peak_time": peak_times,
+    }
+
+    return nap.IntervalSet(start=osc_ep.start, end=osc_ep.end, metadata=metadata)
