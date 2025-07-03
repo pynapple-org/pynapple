@@ -142,7 +142,7 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
     elif not isinstance(features, nap.TsdFrame):
         raise TypeError("features should be a Tsd or TsdFrame.")
 
-    # check ep
+    # check epochs
     if epochs is None:
         epochs = features.time_support
     elif isinstance(epochs, nap.IntervalSet):
@@ -159,7 +159,7 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
 
     # check rate
     if fs is None:
-        fs = np.mean(features.time_diff(epochs=epochs).values)
+        fs = 1 / np.mean(features.time_diff(epochs=epochs).values)
     else:
         if not isinstance(fs, (int, float)):
             raise TypeError("fs should be a number (int or float)")

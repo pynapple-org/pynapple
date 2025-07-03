@@ -250,7 +250,7 @@ def test_compute_1d_tuning_curves(args, kwargs, expected):
         (
             (get_group(), get_features(), 10),
             {"ep": nap.IntervalSet(0, 400)},
-            np.ones((10, 10)) * 0.25,
+            np.ones((10, 10)) * 0.5,
         ),
         (
             (get_group(), get_features(), 10),
