@@ -469,7 +469,7 @@ def test_compute_1d_tuning_curves_continuous(args, kwargs, expected):
     if "minmax" in kwargs:
         tmp = np.linspace(kwargs["minmax"][0], kwargs["minmax"][1], nb_bins + 1)
     else:
-        tmp = np.linspace(np.min(args[1]), np.max(args[1]), nb_bins + 1)
+        tmp = np.linspace(np.min(feature), np.max(feature), nb_bins + 1)
     np.testing.assert_almost_equal(tmp[0:-1] + np.diff(tmp) / 2, tc.index.values)
     # Array
     np.testing.assert_almost_equal(tc.values, expected)
@@ -495,13 +495,13 @@ def test_compute_1d_tuning_curves_continuous(args, kwargs, expected):
             ),
             2,
             {},
-            {"x": np.array([[1, 0], [0, 0]]), "y": np.array([[2, 0], [0, 0]])},
+            {"x": np.ones((2, 2)), "y": np.ones((2, 2)) * 2},
         ),
         (
             nap.Tsd(t=np.arange(0, 100), d=np.hstack((np.ones((100,)) * 2))),
             2,
             {},
-            {0: np.array([[2, 0], [0, 0]])},
+            {0: np.ones((2, 2)) * 2},
         ),
         (
             nap.TsdFrame(
@@ -510,7 +510,7 @@ def test_compute_1d_tuning_curves_continuous(args, kwargs, expected):
             ),
             (1, 2),
             {},
-            {0: np.array([[1.0, 0.0]]), 1: np.array([[2.0, 0.0]])},
+            {0: np.array([[1.0, 1.0]]), 1: np.array([[2.0, 2.0]])},
         ),
         (
             nap.TsdFrame(

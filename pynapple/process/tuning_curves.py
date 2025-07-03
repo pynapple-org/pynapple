@@ -168,21 +168,23 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
     occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
     occupancy[occupancy == 0] = np.nan
 
-    # tuning curves
+    # tunning curves
     if isinstance(group, nap.TsGroup):
         tcs = np.zeros([len(group), *occupancy.shape])
         for i, n in enumerate(group):
-            count, _ = np.histogramdd(
+            tcs[i], _ = np.histogramdd(
                 group[n].value_from(features, epochs).values,
                 bins=bin_edges,
             )
-            tcs[i] = (count / occupancy) * fs
+        tcs = (tcs / occupancy) * fs
     else:
+        print(group.value_from(features, epochs).values)
         tcs = binned_statistic_dd(
             group.value_from(features, epochs).values,
             values=group.values.T,
             bins=bin_edges,
         ).statistic
+        tcs[np.isnan(tcs)] = 0.0
         tcs[:, np.isnan(occupancy)] = np.nan
 
     return xr.DataArray(

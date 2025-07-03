@@ -247,19 +247,17 @@ def test_compute_tuning_curves(group, features, bins, range_alpha, epochs):
             columns=["f0"],
         )
 
-    # occupancy
+    fs = 10.0
     occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
-    occupancy[occupancy == 0] = np.nan
-
-    # tuning curves
     if isinstance(group, nap.TsGroup):
+        occupancy[occupancy == 0] = np.nan
         expected_tcs = np.zeros([len(group), *occupancy.shape])
-        for i, n in enumerate(group.keys()):
+        for i, n in enumerate(group):
             count, _ = np.histogramdd(
                 group[n].value_from(features, epochs).values,
                 bins=bin_edges,
             )
-            expected_tcs[i] = (count / occupancy) * 0.1
+            expected_tcs[i] = (count / occupancy) * fs
     else:
         expected_tcs = scipy.stats.binned_statistic_dd(
             group.value_from(features, epochs).values,
