@@ -129,7 +129,7 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
             t=group.times(),
             time_support=group.time_support,
         )
-    elif not isinstance(group, nap.TsGroup | nap.TsdFrame):
+    elif not isinstance(group, (nap.TsGroup, nap.TsdFrame)):
         raise TypeError("group should be a Tsd, TsdFrame, TsGroup, or dict.")
 
     # check features
