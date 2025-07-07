@@ -11,7 +11,6 @@ from functools import wraps
 import numpy as np
 import pandas as pd
 import xarray as xr
-from scipy.stats import binned_statistic_dd
 
 from .. import core as nap
 
@@ -157,40 +156,46 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
         raise TypeError("epochs should be an IntervalSet.")
     group = group.restrict(epochs)
 
-    # check rate
+    # check fs
     if fs is None:
         fs = 1 / np.mean(features.time_diff(epochs=epochs).values)
-    else:
-        if not isinstance(fs, (int, float)):
-            raise TypeError("fs should be a number (int or float)")
+    if not isinstance(fs, (int, float)):
+        raise TypeError("fs should be a number (int or float)")
 
     # occupancy
     occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
     occupancy[occupancy == 0] = np.nan
 
     # tunning curves
+    keys = group.keys() if isinstance(group, nap.TsGroup) else group.columns
+    tcs = np.zeros([len(keys), *occupancy.shape])
     if isinstance(group, nap.TsGroup):
-        tcs = np.zeros([len(group), *occupancy.shape])
-        for i, n in enumerate(group):
-            tcs[i], _ = np.histogramdd(
-                group[n].value_from(features, epochs).values,
-                bins=bin_edges,
+        for i, n in enumerate(keys):
+            tcs[i] = (
+                np.histogramdd(
+                    group[n].value_from(features, epochs),
+                    bins=bin_edges,
+                )[0]
+                / occupancy
+                * fs
             )
-        tcs = (tcs / occupancy) * fs
     else:
-        tcs = binned_statistic_dd(
-            group.value_from(features, epochs).values,
-            values=group.values.T,
-            bins=bin_edges,
-        ).statistic
-        tcs[np.isnan(tcs)] = 0.0
-        tcs[:, np.isnan(occupancy)] = np.nan
+        values = group.value_from(features, epochs)
+        for i, n in enumerate(keys):
+            tcs[i] = (
+                np.histogramdd(
+                    values,
+                    weights=group.values[:, i],
+                    bins=bin_edges,
+                )[0]
+                / occupancy
+            )
 
     return xr.DataArray(
         tcs,
         name="tuning curves",
         coords={
-            "unit": group.keys() if isinstance(group, nap.TsGroup) else group.columns,
+            "unit": keys,
             **{
                 (f"f{feature}" if isinstance(feature, int) else feature): e[:-1]
                 + np.diff(e) / 2

@@ -5,35 +5,23 @@ from contextlib import nullcontext as does_not_raise
 
 import numpy as np
 import pytest
-import scipy
 import xarray as xr
 
 import pynapple as nap
 
 
-def get_group(
-    num_units: int, duration: float = 100.0, mean_rate_hz: float = 5.0
-) -> nap.TsGroup:
-    units = {}
-    for k in range(num_units):
-        n_spikes = np.random.poisson(mean_rate_hz * duration)
-        spike_times = np.random.uniform(0.0, duration, size=n_spikes)
-        spike_times.sort()
-        units[k] = nap.Ts(t=spike_times)
-
-    return nap.TsGroup(units)
+def get_group(n):
+    return nap.TsGroup(
+        {i: nap.Ts(t=np.arange(0, 200, 10**i)) for i in range(-1, n - 1)}
+    )
 
 
-def get_features(num_dims: int, duration: float = 100.0, dt: float = 0.1):
-    t = np.arange(0.0, duration, dt)
-    # Saw‑tooth features, each phase‑shifted so they differ
-    data = np.column_stack([(t + i / num_dims) % 1.0 for i in range(num_dims)])
-    # Wrap in a TsdFrame with a matching time_support
+def get_features(n, fs=10.0):
     return nap.TsdFrame(
-        t=t,
-        d=data,
-        time_support=nap.IntervalSet(0.0, duration),
-        columns=[f"col{i}" for i in range(num_dims)],
+        t=np.arange(0, 200, 1 / fs),
+        d=np.stack([np.arange(0, 200, 1 / fs) % i for i in range(1, n + 1)], axis=1),
+        time_support=nap.IntervalSet(0, 200),
+        columns=[f"f{i}" for i in range(1, n + 1)],
     )
 
 
@@ -167,6 +155,7 @@ def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation)
         nap.compute_tuning_curves(group, features, **kwargs)
 
 
+@pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
     "group",
     [
@@ -177,14 +166,15 @@ def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation)
     ],
 )
 @pytest.mark.parametrize(
-    "features, bins",
+    "features, bins, fs",
     [
-        (get_features(D), bins)
+        (get_features(D, fs=10.0 if fs is None else fs), bins, fs)
         for D in range(1, 4)
         for bins in (
             [2, 5, 10]
             + [list(tup) for tup in itertools.product([2, 5, 10], repeat=D) if D > 1]
         )
+        for fs in [None, 1.0, 10.0]
     ]
     + [
         (
@@ -194,9 +184,11 @@ def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation)
                 time_support=tsdframe.time_support,
             ),
             num_bins,
+            fs,
         )
+        for fs in [None, 1.0, 10.0]
         for num_bins in [2, 5, 10]
-        if (tsdframe := get_features(num_dims=1))
+        if (tsdframe := get_features(1, fs=10.0 if fs is None else fs))
     ],
 )
 @pytest.mark.parametrize("range_alpha", [None, 0.0, 0.5])
@@ -210,7 +202,7 @@ def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation)
         nap.IntervalSet([0.0, 40.0], [10.0, 90.0]),
     ],
 )
-def test_compute_tuning_curves(group, features, bins, range_alpha, epochs):
+def test_compute_tuning_curves(group, features, bins, range_alpha, epochs, fs):
     if range_alpha is None:
         range = None
     else:
@@ -228,6 +220,7 @@ def test_compute_tuning_curves(group, features, bins, range_alpha, epochs):
         bins=bins,
         range=range,
         epochs=epochs,
+        fs=fs,
     )
 
     # ------------------------------------------------------------------
@@ -239,6 +232,9 @@ def test_compute_tuning_curves(group, features, bins, range_alpha, epochs):
         features = features.restrict(epochs)
     group = group.restrict(epochs)
 
+    if fs is None:
+        fs = 1 / np.mean(features.time_diff(epochs=epochs))
+
     if isinstance(features, nap.Tsd):
         features = nap.TsdFrame(
             d=features.values,
@@ -247,24 +243,29 @@ def test_compute_tuning_curves(group, features, bins, range_alpha, epochs):
             columns=["f0"],
         )
 
-    fs = 10.0
     occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
+    occupancy[occupancy == 0] = np.nan
+
+    keys = group.keys() if isinstance(group, nap.TsGroup) else group.columns
+    expected_tcs = np.zeros([len(keys), *occupancy.shape])
     if isinstance(group, nap.TsGroup):
-        occupancy[occupancy == 0] = np.nan
-        expected_tcs = np.zeros([len(group), *occupancy.shape])
-        for i, n in enumerate(group):
+        for i, n in enumerate(keys):
             count, _ = np.histogramdd(
                 group[n].value_from(features, epochs).values,
                 bins=bin_edges,
             )
             expected_tcs[i] = (count / occupancy) * fs
     else:
-        expected_tcs = scipy.stats.binned_statistic_dd(
-            group.value_from(features, epochs).values,
-            values=group.values.T,
-            bins=bin_edges,
-        ).statistic
-        expected_tcs[:, np.isnan(occupancy)] = np.nan
+        values = group.value_from(features, epochs)
+        for i, n in enumerate(keys):
+            expected_tcs[i] = (
+                np.histogramdd(
+                    values,
+                    weights=group.values[:, i],
+                    bins=bin_edges,
+                )[0]
+                / occupancy
+            )
 
     # expected bin centres
     expected_tc_bins = [e[:-1] + np.diff(e) / 2 for e in bin_edges]
@@ -278,9 +279,8 @@ def test_compute_tuning_curves(group, features, bins, range_alpha, epochs):
     np.testing.assert_allclose(tcs, expected_tcs)
 
     # labels
-    units = group.keys() if isinstance(group, nap.TsGroup) else group.columns
     assert "unit" in tcs.coords
-    assert np.all(tcs.coords["unit"] == units)
+    assert np.all(tcs.coords["unit"] == keys)
     for dim, (dim_label, bins) in enumerate(list(tcs.coords.items())[1:]):
         assert dim_label == features.columns[dim]
         np.testing.assert_allclose(bins, expected_tc_bins[dim])
