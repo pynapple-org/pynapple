@@ -170,26 +170,25 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
     keys = group.keys() if isinstance(group, nap.TsGroup) else group.columns
     tcs = np.zeros([len(keys), *occupancy.shape])
     if isinstance(group, nap.TsGroup):
+        # SPIKES
         for i, n in enumerate(keys):
             tcs[i] = (
                 np.histogramdd(
                     group[n].value_from(features, epochs),
                     bins=bin_edges,
                 )[0]
-                / occupancy
                 * fs
             )
     else:
+        # RATES
         values = group.value_from(features, epochs)
         for i, n in enumerate(keys):
-            tcs[i] = (
-                np.histogramdd(
-                    values,
-                    weights=group.values[:, i],
-                    bins=bin_edges,
-                )[0]
-                / occupancy
-            )
+            tcs[i] = np.histogramdd(
+                values,
+                weights=group.values[:, i],
+                bins=bin_edges,
+            )[0]
+    tcs /= occupancy
 
     return xr.DataArray(
         tcs,

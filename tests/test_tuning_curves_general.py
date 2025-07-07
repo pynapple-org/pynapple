@@ -254,18 +254,16 @@ def test_compute_tuning_curves(group, features, bins, range_alpha, epochs, fs):
                 group[n].value_from(features, epochs).values,
                 bins=bin_edges,
             )
-            expected_tcs[i] = (count / occupancy) * fs
+            expected_tcs[i] = count * fs
     else:
         values = group.value_from(features, epochs)
         for i, n in enumerate(keys):
-            expected_tcs[i] = (
-                np.histogramdd(
-                    values,
-                    weights=group.values[:, i],
-                    bins=bin_edges,
-                )[0]
-                / occupancy
-            )
+            expected_tcs[i] = np.histogramdd(
+                values,
+                weights=group.values[:, i],
+                bins=bin_edges,
+            )[0]
+    expected_tcs /= occupancy
 
     # expected bin centres
     expected_tc_bins = [e[:-1] + np.diff(e) / 2 for e in bin_edges]
