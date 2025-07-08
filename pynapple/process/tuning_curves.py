@@ -145,12 +145,6 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
     if epochs is None:
         epochs = features.time_support
     elif isinstance(epochs, nap.IntervalSet):
-        if features.time_support.tot_length() < epochs.tot_length():
-            warnings.warn(
-                "The passed epochs are larger than the time support of the features,"
-                "this will artificially increase the outer bins of the tuning curves.",
-                UserWarning,
-            )
         features = features.restrict(epochs)
     else:
         raise TypeError("epochs should be an IntervalSet.")

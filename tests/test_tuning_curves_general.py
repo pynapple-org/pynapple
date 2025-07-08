@@ -117,11 +117,7 @@ def get_features(n, fs=10.0):
             get_group(1),
             get_features(1),
             {"epochs": nap.IntervalSet([0.0, 1000.0])},
-            pytest.warns(
-                UserWarning,
-                match="The passed epochs are larger than the time support of the features,"
-                "this will artificially increase the outer bins of the tuning curves.",
-            ),
+            does_not_raise(),
         ),
         # fs
         (
