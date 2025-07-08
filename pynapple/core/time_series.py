@@ -2765,6 +2765,7 @@ class Tsd(_BaseTsd):
         >>> tsd = nap.Tsd(t = [0, 1, 2, 3], d = [1, 1, 1, 1])
 
         Slice over a range:
+        
         >>> tsd.get_slice(1.2, 2.6)
         slice(np.int64(2), np.int64(3), None)
         >>> tsd.get_slice(1.0, 2.0)
