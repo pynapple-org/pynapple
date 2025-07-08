@@ -1,7 +1,6 @@
 """
 
 Pynapple time series are containers specialized for neurophysiological time series.
-
 They provides standardized time representation, plus various functions for manipulating times series with identical sampling frequency.
 
 Multiple time series object are available depending on the shape of the data.
@@ -1026,14 +1025,14 @@ class TsdTensor(_BaseTsd):
         >>> tsdtensor = nap.TsdTensor(t = [0, 1, 2, 3], d = np.random.randn(4, 3, 3))
 
         Slice over a range:
-        
+
         >>> tsdtensor.get_slice(1.2, 2.6)
         slice(np.int64(2), np.int64(3), None)
         >>> tsdtensor.get_slice(1.0, 2.0)
         slice(np.int64(1), np.int64(3), None)
 
         Slice a single value:
-        
+
         >>> tsdtensor.get_slice(1.2)
         slice(np.int64(1), np.int64(2), None)
         >>> tsdtensor.get_slice(2.0)
@@ -1080,24 +1079,24 @@ class TsdTensor(_BaseTsd):
 
         ep is an IntervalSet object defining the epochs.
 
-        >>> bincount = tsdtensor.count(0.1, ep=ep)
+        >>> bincount = tsdtensor.count(10.0, ep=ep)
         >>> bincount
         Time (s)
         ----------  --
-        0.05         0
-        0.15         0
-        0.25         0
-        0.35         0
-        0.45         0
-        0.55         0
+        5.0          1
+        15.0         1
+        25.0         2
+        35.0         1
+        45.0         0
+        55.0         1
         ...
-        499.45       0
-        499.55       0
-        499.65       0
-        499.75       0
-        499.85       0
-        499.95       0
-        dtype: int64, shape: (5000,)
+        445.0        0
+        455.0        3
+        465.0        1
+        475.0        3
+        485.0        1
+        495.0        1
+        dtype: int64, shape: (50,)
         >>> bincount.time_support
           index    start    end
               0        0    500
@@ -1817,14 +1816,14 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> tsdframe = nap.TsdFrame(t = [0, 1, 2, 3], d = np.random.randn(4, 3))
 
         Slice over a range:
-        
+
         >>> tsdframe.get_slice(1.2, 2.6)
         slice(np.int64(2), np.int64(3), None)
         >>> tsdframe.get_slice(1.0, 2.0)
         slice(np.int64(1), np.int64(3), None)
 
         Slice a single value:
-        
+
         >>> tsdframe.get_slice(1.2)
         slice(np.int64(1), np.int64(2), None)
         >>> tsdframe.get_slice(2.0)
@@ -1871,24 +1870,24 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
         ep is an IntervalSet object defining the epochs.
 
-        >>> bincount = tsdframe.count(0.1, ep=ep)
+        >>> bincount = tsdframe.count(10.0, ep=ep)
         >>> bincount
         Time (s)
         ----------  --
-        0.05         0
-        0.15         0
-        0.25         0
-        0.35         0
-        0.45         0
-        0.55         0
+        5.0          1
+        15.0         1
+        25.0         2
+        35.0         1
+        45.0         0
+        55.0         1
         ...
-        499.45       0
-        499.55       0
-        499.65       0
-        499.75       0
-        499.85       0
-        499.95       0
-        dtype: int64, shape: (5000,)
+        445.0        0
+        455.0        3
+        465.0        1
+        475.0        3
+        485.0        1
+        495.0        1
+        dtype: int64, shape: (50,)
         >>> bincount.time_support
           index    start    end
               0        0    500
@@ -2765,14 +2764,14 @@ class Tsd(_BaseTsd):
         >>> tsd = nap.Tsd(t = [0, 1, 2, 3], d = [1, 1, 1, 1])
 
         Slice over a range:
-        
+
         >>> tsd.get_slice(1.2, 2.6)
         slice(np.int64(2), np.int64(3), None)
         >>> tsd.get_slice(1.0, 2.0)
         slice(np.int64(1), np.int64(3), None)
 
         Slice a single value:
-        
+
         >>> tsd.get_slice(1.2)
         slice(np.int64(1), np.int64(2), None)
         >>> tsd.get_slice(2.0)
@@ -2819,24 +2818,24 @@ class Tsd(_BaseTsd):
 
         ep is an IntervalSet object defining the epochs.
 
-        >>> bincount = tsd.count(0.1, ep=ep)
+        >>> bincount = tsd.count(10.0, ep=ep)
         >>> bincount
         Time (s)
         ----------  --
-        0.05         0
-        0.15         0
-        0.25         0
-        0.35         0
-        0.45         0
-        0.55         0
+        5.0          1
+        15.0         1
+        25.0         2
+        35.0         1
+        45.0         0
+        55.0         1
         ...
-        499.45       0
-        499.55       0
-        499.65       0
-        499.75       0
-        499.85       0
-        499.95       0
-        dtype: int64, shape: (5000,)
+        445.0        0
+        455.0        3
+        465.0        1
+        475.0        3
+        485.0        1
+        495.0        1
+        dtype: int64, shape: (50,)
         >>> bincount.time_support
           index    start    end
               0        0    500
@@ -3396,14 +3395,14 @@ class Ts(_Base):
         >>> ts = nap.Ts(t = [0, 1, 2, 3])
 
         Slice over a range:
-        
+
         >>> ts.get_slice(1.2, 2.6)
         slice(np.int64(2), np.int64(3), None)
         >>> ts.get_slice(1.0, 2.0)
         slice(np.int64(1), np.int64(3), None)
 
         Slice a single value:
-        
+
         >>> ts.get_slice(1.2)
         slice(np.int64(1), np.int64(2), None)
         >>> ts.get_slice(2.0)
@@ -3450,24 +3449,24 @@ class Ts(_Base):
 
         ep is an IntervalSet object defining the epochs.
 
-        >>> bincount = ts.count(0.1, ep=ep)
+        >>> bincount = ts.count(10.0, ep=ep)
         >>> bincount
         Time (s)
         ----------  --
-        0.05         0
-        0.15         0
-        0.25         0
-        0.35         0
-        0.45         0
-        0.55         0
+        5.0          1
+        15.0         1
+        25.0         2
+        35.0         1
+        45.0         0
+        55.0         1
         ...
-        499.45       0
-        499.55       0
-        499.65       0
-        499.75       0
-        499.85       0
-        499.95       0
-        dtype: int64, shape: (5000,)
+        445.0        0
+        455.0        3
+        465.0        1
+        475.0        3
+        485.0        1
+        495.0        1
+        dtype: int64, shape: (50,)
         >>> bincount.time_support
           index    start    end
               0        0    500
