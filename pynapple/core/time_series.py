@@ -1824,6 +1824,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         slice(np.int64(1), np.int64(3), None)
 
         Slice a single value:
+        
         >>> tsdframe.get_slice(1.2)
         slice(np.int64(1), np.int64(2), None)
         >>> tsdframe.get_slice(2.0)
