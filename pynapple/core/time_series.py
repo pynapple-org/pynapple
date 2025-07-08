@@ -3400,6 +3400,7 @@ class Ts(_Base):
         slice(np.int64(1), np.int64(3), None)
 
         Slice a single value:
+        
         >>> ts.get_slice(1.2)
         slice(np.int64(1), np.int64(2), None)
         >>> ts.get_slice(2.0)
