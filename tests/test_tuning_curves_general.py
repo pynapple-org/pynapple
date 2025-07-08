@@ -1,6 +1,5 @@
 """Tests of tuning curves for `pynapple` package."""
 
-import itertools
 from contextlib import nullcontext as does_not_raise
 
 import numpy as np
@@ -22,7 +21,7 @@ def get_features(n, fs=10.0):
         d=np.stack(
             [np.arange(0, 100, 1 / fs) % 10 * i for i in range(1, n + 1)], axis=1
         ),
-        columns=[f"f{i}" for i in range(n)],
+        columns=[f"feature{i}" for i in range(n)],
     )
 
 
@@ -159,6 +158,51 @@ def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation)
 @pytest.mark.parametrize(
     "group, features, kwargs, expected",
     [
+        # single rate unit, single feature
+        (
+            get_group(1).count(1.0),
+            get_features(1),
+            {},
+            xr.DataArray(
+                np.full((1, 10), 10.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+            ),
+        ),
+        # multiple rate units, single feature
+        (
+            get_group(2).count(1.0),
+            get_features(1),
+            {},
+            xr.DataArray(
+                np.concatenate([np.full((1, 10), 10.0), np.full((1, 10), 1.0)]),
+                dims=["unit", "feature0"],
+                coords={
+                    "unit": [1, 2],
+                    "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                },
+            ),
+        ),
+        # multiple rate units, multiple features
+        (
+            get_group(2).count(1.0),
+            get_features(2),
+            {},
+            xr.DataArray(
+                np.stack(
+                    [
+                        np.where(np.eye(10), 10.0, np.nan),
+                        np.where(np.eye(10), 1.0, np.nan),
+                    ]
+                ),
+                dims=["unit", "feature0", "feature1"],
+                coords={
+                    "unit": [1, 2],
+                    "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                    "feature1": np.linspace(0, 19.8, 11)[:-1] + 0.99,
+                },
+            ),
+        ),
         # single unit, single feature
         (
             get_group(1),
@@ -166,8 +210,8 @@ def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation)
             {},
             xr.DataArray(
                 np.full((1, 10), 10.0),
-                dims=["unit", "f0"],
-                coords={"unit": [1], "f0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
             ),
         ),
         # multiple units, single feature
@@ -177,8 +221,11 @@ def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation)
             {},
             xr.DataArray(
                 np.concatenate([np.full((1, 10), 10.0), np.full((1, 10), 1.0)]),
-                dims=["unit", "f0"],
-                coords={"unit": [1, 2], "f0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                dims=["unit", "feature0"],
+                coords={
+                    "unit": [1, 2],
+                    "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                },
             ),
         ),
         # multiple units, multiple features
@@ -193,26 +240,41 @@ def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation)
                         np.where(np.eye(10), 1.0, np.nan),
                     ]
                 ),
-                dims=["unit", "f0", "f1"],
+                dims=["unit", "feature0", "feature1"],
                 coords={
                     "unit": [1, 2],
-                    "f0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
-                    "f1": np.linspace(0, 19.8, 11)[:-1] + 0.99,
+                    "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                    "feature1": np.linspace(0, 19.8, 11)[:-1] + 0.99,
                 },
             ),
         ),
-        # single unit, single feature, specified bins
+        # single unit, single feature, specified number of bins
         (
             get_group(1),
             get_features(1),
             {"bins": 5},
             xr.DataArray(
                 np.full((1, 5), 10.0),
-                dims=["unit", "f0"],
-                coords={"unit": [1], "f0": np.linspace(0, 9.9, 6)[:-1] + 0.99},
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 6)[:-1] + 0.99},
             ),
         ),
-        # single unit, multiple features, specified bins
+        # single unit, multiple features, specified number of bins
+        (
+            get_group(1),
+            get_features(2),
+            {"bins": 5},
+            xr.DataArray(
+                np.where(np.eye(5), 10.0, np.nan)[None, :],
+                dims=["unit", "feature0", "feature1"],
+                coords={
+                    "unit": [1],
+                    "feature0": np.linspace(0, 9.9, 6)[:-1] + 0.99,
+                    "feature1": np.linspace(0, 19.8, 6)[:-1] + 1.98,
+                },
+            ),
+        ),
+        # single unit, multiple features, specified number of bins per feature
         (
             get_group(1),
             get_features(2),
@@ -229,11 +291,37 @@ def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation)
                         ]
                     ]
                 ),
-                dims=["unit", "f0", "f1"],
+                dims=["unit", "feature0", "feature1"],
                 coords={
                     "unit": [1],
-                    "f0": np.linspace(0, 9.9, 6)[:-1] + 0.99,
-                    "f1": np.linspace(0, 19.8, 5)[:-1] + 2.475,
+                    "feature0": np.linspace(0, 9.9, 6)[:-1] + 0.99,
+                    "feature1": np.linspace(0, 19.8, 5)[:-1] + 2.475,
+                },
+            ),
+        ),
+        # single unit, single feature, specified bins
+        (
+            get_group(1),
+            get_features(1),
+            {"bins": [np.linspace(0, 10, 6)]},
+            xr.DataArray(
+                np.full((1, 5), 10.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.arange(1, 11, 2)},
+            ),
+        ),
+        # single unit, multiple features, specified bins
+        (
+            get_group(1),
+            get_features(2),
+            {"bins": [np.linspace(0, 10, 6), np.linspace(0, 20, 6)]},
+            xr.DataArray(
+                np.where(np.eye(5), 10.0, np.nan)[None, :],
+                dims=["unit", "feature0", "feature1"],
+                coords={
+                    "unit": [1],
+                    "feature0": np.arange(1, 11, 2),
+                    "feature1": np.arange(2, 22, 4),
                 },
             ),
         ),
@@ -244,8 +332,97 @@ def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation)
             {"range": [(0, 5)]},
             xr.DataArray(
                 np.full((1, 10), 10.0),
-                dims=["unit", "f0"],
-                coords={"unit": [1], "f0": np.linspace(0, 5.0, 11)[:-1] + 0.25},
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25},
+            ),
+        ),
+        # single unit, multiple features, specified range per feature
+        (
+            get_group(1),
+            get_features(2),
+            {"range": [(0, 5), (0, 10)]},
+            xr.DataArray(
+                np.where(np.eye(10), 10.0, np.nan)[None, :],
+                dims=["unit", "feature0", "feature1"],
+                coords={
+                    "unit": [1],
+                    "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25,
+                    "feature1": np.linspace(0, 10.0, 11)[:-1] + 0.5,
+                },
+            ),
+        ),
+        # single unit, single feature, specified range and number of bins
+        (
+            get_group(1),
+            get_features(1),
+            {"bins": 10, "range": [(0, 5)]},
+            xr.DataArray(
+                np.full((1, 10), 10.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25},
+            ),
+        ),
+        # single unit, multiple features, specified range per feature and number of bins
+        (
+            get_group(1),
+            get_features(2),
+            {"bins": 10, "range": [(0, 5), (0, 10)]},
+            xr.DataArray(
+                np.where(np.eye(10), 10.0, np.nan)[None, :],
+                dims=["unit", "feature0", "feature1"],
+                coords={
+                    "unit": [1],
+                    "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25,
+                    "feature1": np.linspace(0, 10.0, 11)[:-1] + 0.5,
+                },
+            ),
+        ),
+        # single unit, multiple features, specified range and number of bins per feature
+        (
+            get_group(1),
+            get_features(2),
+            {"bins": (10, 10), "range": [(0, 5), (0, 10)]},
+            xr.DataArray(
+                np.where(np.eye(10), 10.0, np.nan)[None, :],
+                dims=["unit", "feature0", "feature1"],
+                coords={
+                    "unit": [1],
+                    "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25,
+                    "feature1": np.linspace(0, 10.0, 11)[:-1] + 0.5,
+                },
+            ),
+        ),
+        # single unit, single feature, specified epochs (smaller)
+        (
+            get_group(1),
+            get_features(1),
+            {"epochs": nap.IntervalSet([0.0, 50.0])},
+            xr.DataArray(
+                np.full((1, 10), 10.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+            ),
+        ),
+        # single unit, single feature, specified epochs (larger)
+        (
+            get_group(1),
+            get_features(1),
+            {"epochs": nap.IntervalSet([0.0, 200.0])},
+            xr.DataArray(
+                np.full((1, 10), 10.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+            ),
+        ),
+        # single unit, single feature, specified epochs (multiple)
+        (
+            get_group(1),
+            get_features(1),
+            {"epochs": nap.IntervalSet([0.0, 50.0], [20.0, 70.0])},
+            xr.DataArray(
+                np.full((1, 10), 10.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
             ),
         ),
     ],

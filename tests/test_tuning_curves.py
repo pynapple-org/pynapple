@@ -475,6 +475,7 @@ def test_compute_1d_tuning_curves_continuous(args, kwargs, expected):
     np.testing.assert_almost_equal(tc.values, expected)
 
 
+@pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
     "tsdframe, nb_bins, kwargs, expected",
     [

@@ -164,7 +164,6 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
 
     # occupancy
     occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
-    occupancy[occupancy == 0] = np.nan
 
     # tunning curves
     keys = group.keys() if isinstance(group, nap.TsGroup) else group.columns
@@ -172,23 +171,26 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
     if isinstance(group, nap.TsGroup):
         # SPIKES
         for i, n in enumerate(keys):
-            tcs[i] = (
-                np.histogramdd(
-                    group[n].value_from(features, epochs),
-                    bins=bin_edges,
-                )[0]
-                * fs
-            )
+            tcs[i] = np.histogramdd(
+                group[n].value_from(features, epochs),
+                bins=bin_edges,
+            )[0]
+        occupancy[occupancy == 0.0] = np.nan
+        tcs = (tcs / occupancy) * fs
     else:
         # RATES
         values = group.value_from(features, epochs)
+        counts = np.histogramdd(values, bins=bin_edges)[0]
+        counts[counts == 0] = np.nan
         for i, n in enumerate(keys):
             tcs[i] = np.histogramdd(
                 values,
                 weights=group.values[:, i],
                 bins=bin_edges,
             )[0]
-    tcs /= occupancy
+        tcs /= counts
+        tcs[np.isnan(tcs)] = 0.0
+        tcs[:, occupancy == 0.0] = np.nan
 
     return xr.DataArray(
         tcs,
@@ -196,7 +198,7 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
         coords={
             "unit": keys,
             **{
-                (f"f{feature}" if isinstance(feature, int) else feature): e[:-1]
+                (f"feature{feature}" if isinstance(feature, int) else feature): e[:-1]
                 + np.diff(e) / 2
                 for feature, e in zip(features.columns, bin_edges)
             },
@@ -221,7 +223,7 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     )
     return pd.DataFrame(
         xarray.values.T,
-        index=xarray.coords["f0"].values,
+        index=xarray.coords["feature0"].values,
         columns=xarray.coords["unit"].values,
     )
 
@@ -245,7 +247,7 @@ def compute_1d_tuning_curves_continuous(
     )
     return pd.DataFrame(
         xarray.values.T,
-        index=xarray.coords["f0"].values,
+        index=xarray.coords["feature0"].values,
         columns=xarray.coords["unit"].values,
     )
 
