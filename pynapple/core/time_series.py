@@ -1817,6 +1817,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         >>> tsdframe = nap.TsdFrame(t = [0, 1, 2, 3], d = np.random.randn(4, 3))
 
         Slice over a range:
+        
         >>> tsdframe.get_slice(1.2, 2.6)
         slice(np.int64(2), np.int64(3), None)
         >>> tsdframe.get_slice(1.0, 2.0)
