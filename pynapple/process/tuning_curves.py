@@ -207,17 +207,16 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
         DeprecationWarning,
         stacklevel=2,
     )
-    xarray = compute_tuning_curves(
-        group,
-        feature,
-        nb_bins,
-        range=None if minmax is None else [minmax],
-        epochs=ep,
-    )
-    return pd.DataFrame(
-        xarray.values.T,
-        index=xarray.coords["feature0"].values,
-        columns=xarray.coords["unit"].values,
+    return (
+        compute_tuning_curves(
+            group,
+            feature,
+            nb_bins,
+            range=None if minmax is None else [minmax],
+            epochs=ep,
+        )
+        .to_pandas()
+        .T
     )
 
 
@@ -231,17 +230,16 @@ def compute_1d_tuning_curves_continuous(
         DeprecationWarning,
         stacklevel=2,
     )
-    xarray = compute_tuning_curves(
-        tsdframe,
-        feature,
-        nb_bins,
-        range=None if minmax is None else [minmax],
-        epochs=ep,
-    )
-    return pd.DataFrame(
-        xarray.values.T,
-        index=xarray.coords["feature0"].values,
-        columns=xarray.coords["unit"].values,
+    return (
+        compute_tuning_curves(
+            tsdframe,
+            feature,
+            nb_bins,
+            range=None if minmax is None else [minmax],
+            epochs=ep,
+        )
+        .to_pandas()
+        .T
     )
 
 
