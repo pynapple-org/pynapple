@@ -69,7 +69,7 @@ To decode, we need to compute tuning curves in 1D.
 
 ```python
 tuning_curves_1d = nap.compute_tuning_curves(
-    tsgroup, feature, bins=61, range=[(0, 2 * np.pi)]
+    tsgroup, feature, bins=61, range=(0, 2 * np.pi)
 )
 ```
 

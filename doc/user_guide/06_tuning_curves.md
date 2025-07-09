@@ -112,7 +112,7 @@ tuning_curves_1d = nap.compute_tuning_curves(
     group=tsgroup,
     features=feature,
     bins=120, 
-    range=[(0, 2*np.pi)]
+    range=(0, 2*np.pi)
     )
 tuning_curves_1d
 ```
@@ -261,7 +261,7 @@ tuning_curves_1d = nap.compute_tuning_curves(
     group=tsdframe,
     features=feature,
     bins=120,
-    range=[(0, 2*np.pi)]
+    range=(0, 2*np.pi)
     )
 tuning_curves_1d
 ```

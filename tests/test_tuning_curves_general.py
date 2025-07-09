@@ -119,6 +119,28 @@ def get_features(n, fs=10.0):
             {"epochs": nap.IntervalSet([0.0, 1000.0])},
             does_not_raise(),
         ),
+        # range
+        (
+            get_group(1),
+            get_features(2),
+            {"range": (0, 1)},
+            pytest.raises(
+                ValueError,
+                match="range should be a sequence of tuples, one for each feature.",
+            ),
+        ),
+        (
+            get_group(1),
+            get_features(1),
+            {"range": (0, 1)},
+            does_not_raise(),
+        ),
+        (
+            get_group(1),
+            get_features(1),
+            {"range": [(0, 1)]},
+            does_not_raise(),
+        ),
         # fs
         (
             get_group(1),

@@ -156,6 +156,15 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
     if not isinstance(fs, (int, float)):
         raise TypeError("fs should be a number (int or float)")
 
+    # check range
+    if range is not None and isinstance(range, tuple):
+        if features.shape[1] == 1:
+            range = [range]
+        else:
+            raise ValueError(
+                "range should be a sequence of tuples, one for each feature."
+            )
+
     # occupancy
     occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
 

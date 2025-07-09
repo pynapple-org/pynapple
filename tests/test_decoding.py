@@ -19,7 +19,7 @@ def get_testing_set_1d():
     group = nap.TsGroup({i: nap.Ts(t=np.arange(0, 50) + 50 * i) for i in range(2)})
     tc = (
         nap.compute_tuning_curves(
-            group=group, features=feature, bins=2, range=[(-0.5, 1.5)]
+            group=group, features=feature, bins=2, range=(-0.5, 1.5)
         )
         .to_pandas()
         .T

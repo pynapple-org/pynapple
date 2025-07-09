@@ -108,7 +108,7 @@ tuning_curves = nap.compute_tuning_curves(
     features=angle, 
     bins=61, 
     epochs=epochs[epochs.tags == "wake"],
-    range=[(0, 2 * np.pi)]
+    range=(0, 2 * np.pi)
     )
 ```
 

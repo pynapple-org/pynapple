@@ -131,7 +131,7 @@ wake_ep = data["position_time_support"]
 
 # COMPUTING TUNING CURVES
 tuning_curves = nap.compute_tuning_curves(
-    spikes, head_direction, 120, epochs=wake_ep, range=[(0, 2 * np.pi)]
+    spikes, head_direction, 120, epochs=wake_ep, range=(0, 2 * np.pi)
 )
 
 # PLOT
