@@ -17,8 +17,12 @@ import pynapple as nap
 def get_testing_set_1d():
     feature = nap.Tsd(t=np.arange(0, 100, 1), d=np.repeat(np.arange(0, 2), 50))
     group = nap.TsGroup({i: nap.Ts(t=np.arange(0, 50) + 50 * i) for i in range(2)})
-    tc = nap.compute_1d_tuning_curves(
-        group=group, feature=feature, nb_bins=2, minmax=(-0.5, 1.5)
+    tc = (
+        nap.compute_tuning_curves(
+            group=group, features=feature, bins=2, range=[(-0.5, 1.5)]
+        )
+        .to_pandas()
+        .T
     )
     ep = nap.IntervalSet(start=0, end=100)
     return feature, group, tc, ep
@@ -131,9 +135,11 @@ def get_testing_set_2d():
         }
     )
 
-    tc, xy = nap.compute_2d_tuning_curves(
-        group=group, features=features, nb_bins=2, minmax=(-0.5, 1.5, -0.5, 1.5)
+    tc = nap.compute_tuning_curves(
+        group=group, features=features, bins=2, range=[(-0.5, 1.5), (-0.5, 1.5)]
     )
+    xy = [tc.coords[dim].values for dim in tc.coords if dim != "unit"]
+    tc = {c: tc.sel(unit=c).values for c in tc.coords["unit"].values}
     ep = nap.IntervalSet(start=0, end=100)
     return features, group, tc, ep, tuple(xy)
 

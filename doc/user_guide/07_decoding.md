@@ -66,9 +66,9 @@ epoch = nap.IntervalSet(0, 10)
 To decode, we need to compute tuning curves in 1D.
 
 ```{code-cell} ipython3
-tcurves_1d = nap.compute_1d_tuning_curves(
-    tsgroup, feature, nb_bins=61, minmax=(0, 2 * np.pi)
-)
+tcurves_1d = nap.compute_tuning_curves(
+    tsgroup, feature, bins=61, range=[(0, 2 * np.pi)]
+).to_pandas().T
 ```
 
 We can display the tuning curves of each neurons
