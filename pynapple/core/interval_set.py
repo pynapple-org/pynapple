@@ -1266,7 +1266,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         Apply a numpy function:
 
         >>> ep.groupby_apply("l2", np.mean)
-        {'x': 6.75, 'y': 26.5}
+        {'x': np.float64(6.75), 'y': np.float64(26.5)}
 
         Apply a custom function:
 
@@ -1289,16 +1289,23 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         ... )
         >>> feature = nap.Tsd(t=np.arange(40), d=np.concatenate([np.zeros(20), np.ones(20)]))
         >>> func_kwargs = {
-        >>>     "group": tsg,
-        >>>     "feature": feature,
-        >>>     "nb_bins": 2,
-        >>> }
-        >>> ep.groupby_apply("l2", nap.compute_1d_tuning_curves, input_key="ep", **func_kwargs)
-        {'x':              1         2         3
-         0.25  1.025641  1.823362  4.216524
-         0.75       NaN       NaN       NaN,
-         'y':              1         2         3
-         0.25       NaN       NaN       NaN
-         0.75  1.025641  1.978022  4.835165}
+        ...     "group": tsg,
+        ...     "features": feature,
+        ...     "bins": 2,
+        ... }
+        >>> ep.groupby_apply("l2", nap.compute_tuning_curves, input_key="epochs", **func_kwargs)
+        {'x': <xarray.DataArray (unit: 3, feature0: 2)> Size: 48B
+        array([[       nan, 1.        ],
+               [       nan, 1.77777778],
+               [       nan, 4.11111111]])
+        Coordinates:
+          * unit      (unit) int64 24B 1 2 3
+          * feature0  (feature0) float64 16B -0.25 0.25, 'y': <xarray.DataArray (unit: 3, feature0: 2)> Size: 48B
+        array([[       nan, 1.        ],
+               [       nan, 1.92857143],
+               [       nan, 4.71428571]])
+        Coordinates:
+          * unit      (unit) int64 24B 1 2 3
+          * feature0  (feature0) float64 16B 0.75 1.25}
         """
         return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)

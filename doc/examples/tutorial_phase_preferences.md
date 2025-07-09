@@ -199,7 +199,7 @@ plt.show()
 Finding Phase of Spikes
 -----------------------
 Now that we have the phase of our theta wavelet, and our spike times, we can find the phase firing preferences
-of each of the units using the [`compute_1d_tuning_curves`](pynapple.process.tuning_curves.compute_1d_tuning_curves) function.
+of each of the units using the [`compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves) function.
 
 We will start by throwing away cells which do not have a high enough firing rate during our interval.
 
