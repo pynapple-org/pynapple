@@ -123,7 +123,7 @@ import numpy as np
 import pynapple as nap
 
 # LOADING DATA FROM NWB
-data = nap.load_file("doc/user_guide/A2929-200711.nwb")
+data = nap.load_file("A2929-200711.nwb")
 
 spikes = data["units"]
 head_direction = data["ry"]
