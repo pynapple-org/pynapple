@@ -188,7 +188,6 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
 
     return xr.DataArray(
         tcs,
-        name="Response",
         coords={
             "unit": keys,
             **{

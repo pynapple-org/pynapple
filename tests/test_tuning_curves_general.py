@@ -424,9 +424,6 @@ def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation)
     ],
 )
 def test_compute_tuning_curves(group, features, kwargs, expected):
-    tcs = nap.compute_tuning_curves(group, features, **kwargs)
-    assert isinstance(tcs, xr.DataArray)
-    for dim in expected.coords.keys():
-        assert dim in tcs.coords
-        np.testing.assert_allclose(tcs.coords[dim].values, expected.coords[dim].values)
-    np.testing.assert_allclose(tcs, expected)
+    xr.testing.assert_allclose(
+        nap.compute_tuning_curves(group, features, **kwargs), expected
+    )
