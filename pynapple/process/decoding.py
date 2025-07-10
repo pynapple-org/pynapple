@@ -313,7 +313,7 @@ def decode(tuning_curves, group, epochs, bin_size, time_units="s", features=None
     if isinstance(group, (dict, nap.TsGroup)):
         numcells = len(group)
 
-        if tuning_curves.coords.sizes["unit"] != numcells:
+        if tuning_curves.sizes["unit"] != numcells:
             raise RuntimeError("Different shapes for tuning_curves and group")
 
         if not np.all(tuning_curves.coords["unit"] == np.array(list(group.keys()))):
@@ -325,7 +325,7 @@ def decode(tuning_curves, group, epochs, bin_size, time_units="s", features=None
     elif isinstance(group, nap.TsdFrame):
         numcells = group.shape[1]
 
-        if tuning_curves.coords.sizes["unit"] != numcells:
+        if tuning_curves.sizes["unit"] != numcells:
             raise RuntimeError("Different shapes for tuning_curves and group")
 
         if not np.all(tuning_curves.coords["unit"] == group.columns):
