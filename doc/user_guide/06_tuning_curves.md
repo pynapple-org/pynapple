@@ -114,13 +114,13 @@ tuning_curves_1d = nap.compute_tuning_curves(
     features=feature,
     bins=120, 
     range=(0, 2*np.pi),
-    feature_names=[("head direction", "rad")]
+    feature_names=["feature"]
     )
 tuning_curves_1d
 ```
 
 ```{code-cell} ipython3
-tuning_curves_1d.plot.line(x="head direction", add_legend=False)
+tuning_curves_1d.plot.line(x="feature", add_legend=False)
 plt.ylabel("Firing rate (Hz)")
 plt.show()
 ```
@@ -138,7 +138,7 @@ plt.ylabel("Feature")
 plt.xlim(0, 2)
 plt.xlabel("Time (s)")
 plt.subplot(122)
-plt.plot(tuning_curves_1d[3].values, tuning_curves_1d.coords["head direction"], label="Tuning curve (unit=3)")
+plt.plot(tuning_curves_1d[3].values, tuning_curves_1d.coords["feature"], label="Tuning curve (unit=3)")
 plt.xlabel("Firing rate (Hz)")
 plt.legend()
 plt.show()
@@ -267,13 +267,13 @@ tuning_curves_1d = nap.compute_tuning_curves(
     features=feature,
     bins=120,
     range=(0, 2*np.pi),
-    feature_names=[("head direction", "rad")]
+    feature_names=["feature"]
     )
 tuning_curves_1d
 ```
 
 ```{code-cell} ipython3
-tuning_curves_1d.plot.line(x="head direction", add_legend=False)
+tuning_curves_1d.plot.line(x="feature", add_legend=False)
 plt.ylabel("Firing rate (Hz)")
 plt.show()
 ```
