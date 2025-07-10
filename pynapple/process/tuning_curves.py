@@ -90,9 +90,9 @@ def compute_tuning_curves(
 
     Parameters
     ----------
-    group : TsGroup, TsdFrame or dict of Ts/Tsd object.
-        The group of Ts/Tsd for which the tuning curves will be computed
-    features : Tsd/TsdFrame
+    group : TsGroup, TsdFrame or dict of Ts or Tsd objects.
+        The group of Ts or Tsd for which the tuning curves will be computed
+    features : Tsd, TsdFrame
         The features (i.e. one column per feature).
     bins : sequence or int
         The bin specification:
@@ -123,7 +123,7 @@ def compute_tuning_curves(
 
     Returns
     -------
-    xarray
+    xarray.DataArray
         An xarray DataArray containing the tuning curves with labeled dimensions.
     """
 
