@@ -8,8 +8,8 @@
 """Tests of decoding for `pynapple` package."""
 
 import numpy as np
-import pandas as pd
 import pytest
+import xarray as xr
 
 import pynapple as nap
 
@@ -17,20 +17,16 @@ import pynapple as nap
 def get_testing_set_1d():
     feature = nap.Tsd(t=np.arange(0, 100, 1), d=np.repeat(np.arange(0, 2), 50))
     group = nap.TsGroup({i: nap.Ts(t=np.arange(0, 50) + 50 * i) for i in range(2)})
-    tc = (
-        nap.compute_tuning_curves(
-            group=group, features=feature, bins=2, range=(-0.5, 1.5)
-        )
-        .to_pandas()
-        .T
+    tc = nap.compute_tuning_curves(
+        group=group, features=feature, bins=2, range=(-0.5, 1.5)
     )
-    ep = nap.IntervalSet(start=0, end=100)
-    return feature, group, tc, ep
+    epochs = nap.IntervalSet(start=0, end=100)
+    return feature, group, tc, epochs
 
 
 def test_decode_1d():
-    feature, group, tc, ep = get_testing_set_1d()
-    decoded, proba = nap.decode_1d(tc, group, ep, bin_size=1)
+    feature, group, tc, epochs = get_testing_set_1d()
+    decoded, proba = nap.decode(tc, group, epochs, bin_size=1)
     assert isinstance(decoded, nap.Tsd)
     assert isinstance(proba, nap.TsdFrame)
     np.testing.assert_array_almost_equal(feature.values, decoded.values)
@@ -43,9 +39,9 @@ def test_decode_1d():
 
 
 def test_decode_1d_with_TsdFrame():
-    feature, group, tc, ep = get_testing_set_1d()
-    count = group.count(bin_size=1, ep=ep)
-    decoded, proba = nap.decode_1d(tc, count, ep, bin_size=1)
+    feature, group, tc, epochs = get_testing_set_1d()
+    count = group.count(bin_size=1, ep=epochs)
+    decoded, proba = nap.decode(tc, count, epochs, bin_size=1)
     assert isinstance(decoded, nap.Tsd)
     assert isinstance(proba, nap.TsdFrame)
     np.testing.assert_array_almost_equal(feature.values, decoded.values)
@@ -58,9 +54,8 @@ def test_decode_1d_with_TsdFrame():
 
 
 def test_decode_1d_with_feature():
-    feature, group, tc, ep = get_testing_set_1d()
-    decoded, proba = nap.decode_1d(tc, group, ep, bin_size=1, feature=feature)
-    np.testing.assert_array_almost_equal(feature.values, decoded.values)
+    feature, group, tc, epochs = get_testing_set_1d()
+    decoded, proba = nap.decode(tc, group, epochs, bin_size=1, features=feature)
     assert isinstance(decoded, nap.Tsd)
     assert isinstance(proba, nap.TsdFrame)
     np.testing.assert_array_almost_equal(feature.values, decoded.values)
@@ -73,10 +68,9 @@ def test_decode_1d_with_feature():
 
 
 def test_decode_1d_with_dict():
-    feature, group, tc, ep = get_testing_set_1d()
+    feature, group, tc, epochs = get_testing_set_1d()
     group = dict(group)
-    decoded, proba = nap.decode_1d(tc, group, ep, bin_size=1, feature=feature)
-    np.testing.assert_array_almost_equal(feature.values, decoded.values)
+    decoded, proba = nap.decode(tc, group, epochs, bin_size=1, features=feature)
     assert isinstance(decoded, nap.Tsd)
     assert isinstance(proba, nap.TsdFrame)
     np.testing.assert_array_almost_equal(feature.values, decoded.values)
@@ -89,35 +83,35 @@ def test_decode_1d_with_dict():
 
 
 def test_decode_1d_with_wrong_feature():
-    feature, group, tc, ep = get_testing_set_1d()
+    feature, group, tc, epochs = get_testing_set_1d()
     with pytest.raises(RuntimeError) as e_info:
-        nap.decode_1d(tc, group, ep, bin_size=1, feature=[1, 2, 3])
-    assert str(e_info.value) == "Unknown format for feature in decode_1d"
+        nap.decode(tc, group, epochs, bin_size=1, features=[1, 2, 3])
+    assert str(e_info.value) == "Features should be a TsdFrame or Tsd."
 
 
 def test_decode_1d_with_time_units():
-    feature, group, tc, ep = get_testing_set_1d()
+    feature, group, tc, epochs = get_testing_set_1d()
     for t, tu in zip([1, 1e3, 1e6], ["s", "ms", "us"]):
-        decoded, proba = nap.decode_1d(tc, group, ep, 1.0 * t, time_units=tu)
+        decoded, proba = nap.decode(tc, group, epochs, 1.0 * t, time_units=tu)
         np.testing.assert_array_almost_equal(feature.values, decoded.values)
 
 
 def test_decoded_1d_raise_errors():
-    feature, group, tc, ep = get_testing_set_1d()
+    feature, group, tc, epochs = get_testing_set_1d()
     with pytest.raises(Exception) as e_info:
-        nap.decode_1d(tc, np.random.rand(10), ep, 1)
+        nap.decode(tc, np.random.rand(10), epochs, 1)
     assert str(e_info.value) == "Unknown format for group"
 
-    feature, group, tc, ep = get_testing_set_1d()
-    tc[2] = np.random.rand(2)
+    feature, group, tc, epochs = get_testing_set_1d()
+    _tc = xr.DataArray(data=np.random.rand(10, 3), dims=["time", "unit"])
     with pytest.raises(Exception) as e_info:
-        nap.decode_1d(tc, group, ep, 1)
+        nap.decode(_tc, group, epochs, 1)
     assert str(e_info.value) == "Different shapes for tuning_curves and group"
 
-    feature, group, tc, ep = get_testing_set_1d()
-    tc.columns = [0, 2]
+    feature, group, tc, epochs = get_testing_set_1d()
+    tc.coords["unit"] = [0, 2]
     with pytest.raises(Exception) as e_info:
-        nap.decode_1d(tc, group, ep, 1)
+        nap.decode(tc, group, epochs, 1)
     assert str(e_info.value) == "Different indices for tuning curves and group keys"
 
 
@@ -138,18 +132,16 @@ def get_testing_set_2d():
     tc = nap.compute_tuning_curves(
         group=group, features=features, bins=2, range=[(-0.5, 1.5), (-0.5, 1.5)]
     )
-    xy = [tc.coords[dim].values for dim in tc.coords if dim != "unit"]
-    tc = {c: tc.sel(unit=c).values for c in tc.coords["unit"].values}
-    ep = nap.IntervalSet(start=0, end=100)
-    return features, group, tc, ep, tuple(xy)
+    epochs = nap.IntervalSet(start=0, end=100)
+    return features, group, tc, epochs
 
 
 def test_decode_2d():
-    features, group, tc, ep, xy = get_testing_set_2d()
-    decoded, proba = nap.decode_2d(tc, group, ep, 1, xy)
+    features, group, tc, epochs = get_testing_set_2d()
+    decoded, proba = nap.decode(tc, group, epochs, 1)
 
     assert isinstance(decoded, nap.TsdFrame)
-    assert isinstance(proba, np.ndarray)
+    assert isinstance(proba, nap.TsdTensor)
     np.testing.assert_array_almost_equal(features.values, decoded.values)
     assert len(decoded) == 100
     assert len(proba) == 100
@@ -165,12 +157,12 @@ def test_decode_2d():
 
 
 def test_decode_2d_with_TsdFrame():
-    features, group, tc, ep, xy = get_testing_set_2d()
-    count = group.count(bin_size=1, ep=ep)
-    decoded, proba = nap.decode_2d(tc, count, ep, 1, xy)
+    features, group, tc, epochs = get_testing_set_2d()
+    count = group.count(bin_size=1, ep=epochs)
+    decoded, proba = nap.decode(tc, count, epochs, 1)
 
     assert isinstance(decoded, nap.TsdFrame)
-    assert isinstance(proba, np.ndarray)
+    assert isinstance(proba, nap.TsdTensor)
     np.testing.assert_array_almost_equal(features.values, decoded.values)
     assert len(decoded) == 100
     assert len(proba) == 100
@@ -186,12 +178,12 @@ def test_decode_2d_with_TsdFrame():
 
 
 def test_decode_2d_with_dict():
-    features, group, tc, ep, xy = get_testing_set_2d()
+    features, group, tc, epochs = get_testing_set_2d()
     group = dict(group)
-    decoded, proba = nap.decode_2d(tc, group, ep, 1, xy)
+    decoded, proba = nap.decode(tc, group, epochs, 1)
 
     assert isinstance(decoded, nap.TsdFrame)
-    assert isinstance(proba, np.ndarray)
+    assert isinstance(proba, nap.TsdTensor)
     np.testing.assert_array_almost_equal(features.values, decoded.values)
     assert len(decoded) == 100
     assert len(proba) == 100
@@ -207,32 +199,32 @@ def test_decode_2d_with_dict():
 
 
 def test_decode_2d_with_feature():
-    features, group, tc, ep, xy = get_testing_set_2d()
-    decoded, proba = nap.decode_2d(tc, group, ep, 1, xy)
+    features, group, tc, epochs = get_testing_set_2d()
+    decoded, proba = nap.decode(tc, group, epochs, 1)
     np.testing.assert_array_almost_equal(features.values, decoded.values)
 
 
 def test_decode_2d_with_time_units():
-    features, group, tc, ep, xy = get_testing_set_2d()
+    features, group, tc, epochs = get_testing_set_2d()
     for t, tu in zip([1, 1e3, 1e6], ["s", "ms", "us"]):
-        decoded, proba = nap.decode_2d(tc, group, ep, 1.0 * t, xy, time_units=tu)
+        decoded, proba = nap.decode(tc, group, epochs, 1.0 * t, time_units=tu)
         np.testing.assert_array_almost_equal(features.values, decoded.values)
 
 
 def test_decoded_2d_raise_errors():
-    features, group, tc, ep, xy = get_testing_set_2d()
+    features, group, tc, epochs = get_testing_set_2d()
     with pytest.raises(Exception) as e_info:
-        nap.decode_2d(tc, np.random.rand(10), ep, 1, xy)
+        nap.decode(tc, np.random.rand(10), epochs, 1)
     assert str(e_info.value) == "Unknown format for group"
 
-    features, group, tc, ep, xy = get_testing_set_2d()
-    tc[5] = np.random.rand(2, 2)
+    features, group, tc, epochs = get_testing_set_2d()
+    tc = xr.DataArray(data=np.random.rand(10, 3), dims=["time", "unit"])
     with pytest.raises(Exception) as e_info:
-        nap.decode_2d(tc, group, ep, 1, xy)
+        nap.decode(tc, group, epochs, 1)
     assert str(e_info.value) == "Different shapes for tuning_curves and group"
 
-    features, group, tc, ep, xy = get_testing_set_2d()
-    tc = {k: tc[i] for k, i in zip(np.arange(0, 40, 10), tc.keys())}
+    features, group, tc, epochs = get_testing_set_2d()
+    tc.coords["unit"] = [0, 2, 4, 6]
     with pytest.raises(Exception) as e_info:
-        nap.decode_2d(tc, group, ep, 1, xy)
+        nap.decode(tc, group, epochs, 1)
     assert str(e_info.value) == "Different indices for tuning curves and group keys"

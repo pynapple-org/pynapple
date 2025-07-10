@@ -313,26 +313,25 @@ def decode(tuning_curves, group, epochs, bin_size, time_units="s", features=None
     if isinstance(group, (dict, nap.TsGroup)):
         numcells = len(group)
 
-        if tuning_curves.coords.dims["unit"] != numcells:
+        if tuning_curves.coords.sizes["unit"] != numcells:
             raise RuntimeError("Different shapes for tuning_curves and group")
 
-        if not np.all(tuning_curves.coords["unit"] == np.array(group.keys())):
+        if not np.all(tuning_curves.coords["unit"] == np.array(list(group.keys()))):
             raise RuntimeError("Different indices for tuning curves and group keys")
 
         if isinstance(group, dict):
-            newgroup = nap.TsGroup(group, time_support=epochs)
-        count = newgroup.count(bin_size, epochs, time_units)
+            group = nap.TsGroup(group, time_support=epochs)
+        count = group.count(bin_size, epochs, time_units)
     elif isinstance(group, nap.TsdFrame):
-        numcells = newgroup.shape[1]
+        numcells = group.shape[1]
 
-        if tuning_curves.coords.dims["unit"] != numcells:
+        if tuning_curves.coords.sizes["unit"] != numcells:
             raise RuntimeError("Different shapes for tuning_curves and group")
 
-        if not np.all(tuning_curves.coords["unit"] == np.array(group.keys())):
+        if not np.all(tuning_curves.coords["unit"] == group.columns):
             raise RuntimeError("Different indices for tuning curves and group keys")
 
         count = group
-        newgroup = group.restrict(epochs)
     else:
         raise RuntimeError("Unknown format for group")
 
@@ -348,23 +347,25 @@ def decode(tuning_curves, group, epochs, bin_size, time_units="s", features=None
             raise RuntimeError("Number of features and tuning_curves do not match.")
 
         bins = []
-        # for i in range(len(tuning_curve_bins)):
-        #    diff = np.diff(tuning_curve_bins[i])
-        #    _bins = tuning_curve_bins[i][:-1] - diff / 2
-        #    _bins = np.hstack(
-        #        (_bins, [_bins[-1] + diff[-1], _bins[-1] + 2 * diff[-1]])
-        #    )  # assuming the size of the last 2 bins is equal
-        #    bins.append(_bins)
-
+        for dim in tuning_curves.dims[1:]:
+            centers = tuning_curves.coords[dim].values
+            diffs = np.diff(centers)
+            edges = centers[:-1] - diffs / 2
+            bins.append(
+                np.concatenate(
+                    (
+                        edges,
+                        [edges[-1] + diffs[-1], edges[-1] + 2 * diffs[-1]],
+                    )
+                )
+            )
         occupancy, _ = np.histogramdd(features, bins)
         occupancy = occupancy.flatten()
     else:
-        raise RuntimeError("Features should be a TsdFrame.")
+        raise RuntimeError("Features should be a TsdFrame or Tsd.")
 
     # Transforming to pure numpy array
-    tc = np.array([tuning_curves[i] for i in tuning_curves.keys()])
-    tc = tc.reshape(tc.shape[0], np.prod(tc.shape[1:]))
-    tc = tc.T
+    tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
     ct = count.values
     bin_size_s = nap.TsIndex.format_timestamps(
         np.array([bin_size], dtype=np.float64), time_units
@@ -380,46 +381,35 @@ def decode(tuning_curves, group, epochs, bin_size, time_units="s", features=None
     p = p1 * p2 * p3
     p = p / p.sum(1)[:, np.newaxis]
 
-    # idxmax = np.argmax(p, 1)
+    idxmax = np.argmax(p, 1)
 
-    # n_bins_per_feature = [
-    #    tuning_curve_bins[i].shape[0] for i in range(len(tuning_curve_bins))
-    # ]
-    # p = p.reshape(
-    #    p.shape[0],
-    #    *n_bins_per_feature,
-    # )
-    # p = getattr(nap, f"Tsd{'Tensor' if p.ndim > 2 else 'Frame'}")(
-    #    t=count.index,
-    #    d=p,
-    #    time_support=ep,
-    # )
+    p = p.reshape(p.shape[0], *tuning_curves.shape[1:])
+    p = getattr(nap, f"Tsd{'Tensor' if p.ndim > 2 else 'Frame'}")(
+        t=count.index,
+        d=p,
+        time_support=epochs,
+    )
 
-    # idxmax = np.unravel_index(idxmax, n_bins_per_feature)
+    idxmax = np.unravel_index(idxmax, tuning_curves.shape[1:])
 
-    # if features is not None:
-    #    cols = features.columns
-    # else:
-    #    cols = np.arange(len(tuning_curve_bins))
+    if tuning_curves.ndim == 2:
+        decoded = nap.Tsd(
+            t=count.index,
+            d=tuning_curves.coords[tuning_curves.dims[1]][idxmax[0]].values,
+            time_support=epochs,
+        )
+    else:
+        decoded = nap.TsdFrame(
+            t=count.index,
+            d=np.stack(
+                [
+                    tuning_curves.coords[dim][idxmax[i]]
+                    for i, dim in enumerate(tuning_curves.dims[1:])
+                ],
+                axis=1,
+            ),
+            time_support=epochs,
+            columns=tuning_curves.dims[1:],
+        )
 
-    # if len(tuning_curve_bins) == 1:
-    #    decoded = nap.Tsd(
-    #        t=count.index,
-    #        d=tuning_curve_bins[0][idxmax[0]],
-    #        time_support=ep,
-    #    )
-    # else:
-    #    decoded = nap.TsdFrame(
-    #        t=count.index,
-    #        d=np.stack(
-    #            [
-    #                tuning_curve_bins[i][idxmax[i]]
-    #                for i in range(len(tuning_curve_bins))
-    #            ],
-    #            axis=1,
-    #        ),
-    #        time_support=ep,
-    #        columns=cols,
-    #    )
-
-    return p
+    return decoded, p
