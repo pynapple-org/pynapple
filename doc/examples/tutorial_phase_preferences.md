@@ -1,16 +1,17 @@
 ---
-jupytext:
-  text_representation:
-    extension: .md
-    format_name: myst
-    format_version: 0.13
-    jupytext_version: 1.16.4
-kernelspec:
-  display_name: Python 3
-  language: python
-  name: python3
+jupyter:
+  jupytext:
+    default_lexer: ipython3
+    text_representation:
+      extension: .md
+      format_name: markdown
+      format_version: '1.3'
+      jupytext_version: 1.17.2
+  kernelspec:
+    display_name: pynapple
+    language: python
+    name: python3
 ---
-
 
 Spikes-phase coupling
 =====================
@@ -20,8 +21,7 @@ with spiking data, to find phase preferences of spiking units.
 
 Specifically, we will examine LFP and spiking data from a period of REM sleep, after traversal of a linear track.
 
-
-```{code-cell} ipython3
+```python
 import math
 import os
 
@@ -43,8 +43,7 @@ Downloading the data
 ------------------
 Let's download the data and save it locally
 
-
-```{code-cell} ipython3
+```python
 path = "Achilles_10252013_EEG.nwb"
 if path not in os.listdir("."):
     r = requests.get(f"https://osf.io/2dfvp/download", stream=True)
@@ -59,8 +58,7 @@ Loading the data
 ------------------
 Let's load and print the full dataset.
 
-
-```{code-cell} ipython3
+```python
 data = nap.load_file(path)
 FS = 1250  # We know from the methods of the paper
 print(data)
@@ -71,8 +69,7 @@ Selecting slices
 -----------------------------------
 For later visualization, we define an interval of 3 seconds of data during REM sleep.
 
-
-```{code-cell} ipython3
+```python
 ep_ex_rem = nap.IntervalSet(
     data["rem"]["start"][0] + 97.0,
     data["rem"]["start"][0] + 100.0,
@@ -81,8 +78,7 @@ ep_ex_rem = nap.IntervalSet(
 
 Here we restrict the lfp to the REM epochs.
 
-
-```{code-cell} ipython3
+```python
 tsd_rem = data["eeg"][:,0].restrict(data["rem"])
 
 # We will also extract spike times from all units in our dataset
@@ -95,8 +91,7 @@ Plotting the LFP Activity
 -----------------------------------
 We should first plot our REM Local Field Potential data.
 
-
-```{code-cell} ipython3
+```python
 fig, ax = plt.subplots(1, constrained_layout=True, figsize=(10, 3))
 ax.plot(tsd_rem.restrict(ep_ex_rem))
 ax.set_title("REM Local Field Potential")
@@ -114,23 +109,20 @@ frequencies present in the data.
 
 We must define the frequency set that we'd like to use for our decomposition.
 
-
-```{code-cell} ipython3
+```python
 freqs = np.geomspace(5, 200, 25)
 ```
 
 We compute the wavelet transform on our LFP data (only during the example interval).
 
-
-```{code-cell} ipython3
+```python
 cwt_rem = nap.compute_wavelet_transform(tsd_rem.restrict(ep_ex_rem), fs=FS, freqs=freqs)
 ```
 
 ***
 Now let's plot the calculated wavelet scalogram.
 
-
-```{code-cell} ipython3
+```python
 # Define wavelet decomposition plotting function
 def plot_timefrequency(freqs, powers, ax=None):
     im = ax.imshow(np.abs(powers), aspect="auto")
@@ -163,15 +155,13 @@ Filtering Theta
 
 As expected, there is a strong 8Hz component during REM sleep. We can filter it using the function [`nap.apply_bandpass_filter`](pynapple.process.filtering.apply_bandpass_filter).
 
-
-```{code-cell} ipython3
+```python
 theta_band = nap.apply_bandpass_filter(tsd_rem, cutoff=(6.0, 10.0), fs=FS)
 ```
 
 We can plot the original signal and the filtered signal.
 
-
-```{code-cell} ipython3
+```python
 plt.figure(constrained_layout=True, figsize=(12, 3))
 plt.plot(tsd_rem.restrict(ep_ex_rem), alpha=0.5)
 plt.plot(theta_band.restrict(ep_ex_rem))
@@ -185,8 +175,7 @@ Computing phase
 
 From the filtered signal, it is easy to get the phase using the Hilbert transform. Here we use scipy Hilbert method.
 
-
-```{code-cell} ipython3
+```python
 from scipy import signal
 
 theta_phase = nap.Tsd(t=theta_band.t, d=np.angle(signal.hilbert(theta_band)))
@@ -194,8 +183,7 @@ theta_phase = nap.Tsd(t=theta_band.t, d=np.angle(signal.hilbert(theta_band)))
 
 Let's plot the phase.
 
-
-```{code-cell} ipython3
+```python
 plt.figure(constrained_layout=True, figsize=(12, 3))
 plt.subplot(211)
 plt.plot(tsd_rem.restrict(ep_ex_rem), alpha=0.5)
@@ -211,50 +199,43 @@ plt.show()
 Finding Phase of Spikes
 -----------------------
 Now that we have the phase of our theta wavelet, and our spike times, we can find the phase firing preferences
-of each of the units using the [`compute_1d_tuning_curves`](pynapple.process.tuning_curves.compute_1d_tuning_curves) function.
+of each of the units using the [`compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves) function.
 
 We will start by throwing away cells which do not have a high enough firing rate during our interval.
 
-
-```{code-cell} ipython3
+```python
 spikes = spikes[spikes.rate > 5.0]
 ```
 
 The feature is the theta phase during REM sleep.
 
-
-```{code-cell} ipython3
-phase_modulation = nap.compute_1d_tuning_curves(
-    group=spikes, feature=theta_phase, nb_bins=61, minmax=(-np.pi, np.pi)
+```python
+phase_modulation = nap.compute_tuning_curves(
+    group=spikes, features=theta_phase, bins=61, range=(-np.pi, np.pi)
 )
 ```
 
 Let's plot the first 3 neurons.
 
-
-```{code-cell} ipython3
-plt.figure(constrained_layout=True, figsize = (12, 3))
-for i in range(3):
-    plt.subplot(1,3,i+1)
-    plt.plot(phase_modulation.iloc[:,i])
-    plt.xlabel("Phase (rad)")
-    plt.ylabel("Firing rate (Hz)")
-plt.show()
+```python
+phase_modulation=phase_modulation.rename({"feature0": "Phase"})
+phase_modulation.name="Firing Rate"
+phase_modulation.attrs["units"]="Hz"
+phase_modulation.coords["Phase"].attrs["units"]="rad"
+phase_modulation[:3].plot(row="unit", col_wrap=3, sharey=False)
 ```
 
 There is clearly a strong modulation for the third neuron.
 Finally, we can use the function [`value_from`](pynapple.Ts.value_from) to align each spikes to the corresponding phase position and overlay
 it with the LFP.
 
-
-```{code-cell} ipython3
+```python
 spike_phase = spikes[spikes.index[3]].value_from(theta_phase)
 ```
 
 Let's plot it.
 
-
-```{code-cell} ipython3
+```python
 plt.figure(constrained_layout=True, figsize=(12, 3))
 plt.subplot(211)
 plt.plot(tsd_rem.restrict(ep_ex_rem), alpha=0.5)

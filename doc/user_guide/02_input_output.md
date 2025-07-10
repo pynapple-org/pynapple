@@ -113,7 +113,7 @@ You can still apply any high level function of pynapple. For example here, we co
 
 
 ```{code-cell} ipython3
-tc = nap.compute_1d_tuning_curves(data['units'], data['y'], 10)
+tc = nap.compute_tuning_curves(data['units'], data['y'], 10)
 
 ```
 

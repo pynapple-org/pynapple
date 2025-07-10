@@ -76,82 +76,6 @@ def test_compute_discrete_tuning_curves_errors(group, dict_ep, expected_exceptio
 
 
 @pytest.mark.parametrize(
-    "group, feature, nb_bins, ep, minmax, expected_exception",
-    [
-        ("a", get_feature(), 10, get_ep(), (0, 1), "group should be a TsGroup."),
-        (
-            get_group(),
-            "a",
-            10,
-            get_ep(),
-            (0, 1),
-            r"feature should be a Tsd \(or TsdFrame with 1 column only\)",
-        ),
-        (
-            get_group(),
-            get_feature(),
-            "a",
-            get_ep(),
-            (0, 1),
-            r"nb_bins should be of type int \(or tuple with \(int, int\) for 2D tuning curves\).",
-        ),
-        (get_group(), get_feature(), 10, "a", (0, 1), r"ep should be an IntervalSet"),
-        (
-            get_group(),
-            get_feature(),
-            10,
-            get_ep(),
-            1,
-            r"minmax should be a tuple\/list of 2 numbers",
-        ),
-    ],
-)
-def test_compute_1d_tuning_curves_errors(
-    group, feature, nb_bins, ep, minmax, expected_exception
-):
-    with pytest.raises(TypeError, match=expected_exception):
-        nap.compute_1d_tuning_curves(group, feature, nb_bins, ep, minmax)
-
-
-@pytest.mark.parametrize(
-    "group, features, nb_bins, ep, minmax, expected_exception",
-    [
-        ("a", get_features(), 10, get_ep(), (0, 1), "group should be a TsGroup."),
-        (
-            get_group(),
-            "a",
-            10,
-            get_ep(),
-            (0, 1),
-            r"features should be a TsdFrame with 2 columns",
-        ),
-        (
-            get_group(),
-            get_features(),
-            "a",
-            get_ep(),
-            (0, 1),
-            r"nb_bins should be of type int \(or tuple with \(int, int\) for 2D tuning curves\).",
-        ),
-        (get_group(), get_features(), 10, "a", (0, 1), r"ep should be an IntervalSet"),
-        (
-            get_group(),
-            get_features(),
-            10,
-            get_ep(),
-            1,
-            r"minmax should be a tuple\/list of 2 numbers",
-        ),
-    ],
-)
-def test_compute_2d_tuning_curves_errors(
-    group, features, nb_bins, ep, minmax, expected_exception
-):
-    with pytest.raises(TypeError, match=expected_exception):
-        nap.compute_2d_tuning_curves(group, features, nb_bins, ep, minmax)
-
-
-@pytest.mark.parametrize(
     "tc, feature, ep, minmax, bitssec, expected_exception",
     [
         (
@@ -255,171 +179,6 @@ def test_compute_2d_mutual_info_errors(
         nap.compute_2d_mutual_info(dict_tc, features, ep, minmax, bitssec)
 
 
-@pytest.mark.parametrize(
-    "tsdframe, feature, nb_bins, ep, minmax, expected_exception",
-    [
-        (
-            "a",
-            get_feature(),
-            10,
-            get_ep(),
-            (0, 1),
-            "Argument tsdframe should be of type Tsd or TsdFrame.",
-        ),
-        (
-            get_tsdframe(),
-            "a",
-            10,
-            get_ep(),
-            (0, 1),
-            r"feature should be a Tsd \(or TsdFrame with 1 column only\)",
-        ),
-        (
-            get_tsdframe(),
-            get_feature(),
-            "a",
-            get_ep(),
-            (0, 1),
-            r"nb_bins should be of type int \(or tuple with \(int, int\) for 2D tuning curves\).",
-        ),
-        (
-            get_tsdframe(),
-            get_feature(),
-            10,
-            "a",
-            (0, 1),
-            r"ep should be an IntervalSet",
-        ),
-        (
-            get_tsdframe(),
-            get_feature(),
-            10,
-            get_ep(),
-            1,
-            r"minmax should be a tuple\/list of 2 numbers",
-        ),
-    ],
-)
-def test_compute_1d_tuning_curves_continuous_errors(
-    tsdframe, feature, nb_bins, ep, minmax, expected_exception
-):
-    with pytest.raises(TypeError, match=expected_exception):
-        nap.compute_1d_tuning_curves_continuous(tsdframe, feature, nb_bins, ep, minmax)
-
-
-@pytest.mark.parametrize(
-    "tsdframe, features, nb_bins, ep, minmax, expected_exception",
-    [
-        (
-            "a",
-            get_features(),
-            10,
-            get_ep(),
-            (0, 1),
-            "Argument tsdframe should be of type Tsd or TsdFrame.",
-        ),
-        (
-            get_tsdframe(),
-            "a",
-            10,
-            get_ep(),
-            (0, 1),
-            r"features should be a TsdFrame with 2 columns",
-        ),
-        (
-            get_tsdframe(),
-            get_features(),
-            "a",
-            get_ep(),
-            (0, 1),
-            r"nb_bins should be of type int \(or tuple with \(int, int\) for 2D tuning curves\).",
-        ),
-        (
-            get_tsdframe(),
-            get_features(),
-            10,
-            "a",
-            (0, 1),
-            r"ep should be an IntervalSet",
-        ),
-        (
-            get_tsdframe(),
-            get_features(),
-            10,
-            get_ep(),
-            1,
-            r"minmax should be a tuple\/list of 2 numbers",
-        ),
-    ],
-)
-def test_compute_2d_tuning_curves_continuous_errors(
-    tsdframe, features, nb_bins, ep, minmax, expected_exception
-):
-    with pytest.raises(TypeError, match=expected_exception):
-        nap.compute_2d_tuning_curves_continuous(tsdframe, features, nb_bins, ep, minmax)
-
-
-########################
-# ValueError test
-########################
-@pytest.mark.parametrize(
-    "func, args, minmax, expected",
-    [
-        (
-            nap.compute_1d_tuning_curves,
-            (get_group(), get_feature(), 10),
-            (0, 1, 2),
-            "minmax should be of length 2.",
-        ),
-        (
-            nap.compute_1d_tuning_curves_continuous,
-            (get_tsdframe(), get_feature(), 10),
-            (0, 1, 2),
-            "minmax should be of length 2.",
-        ),
-        (
-            nap.compute_2d_tuning_curves,
-            (get_group(), get_features(), 10),
-            (0, 1, 2),
-            "minmax should be of length 4.",
-        ),
-        (
-            nap.compute_2d_tuning_curves_continuous,
-            (get_tsdframe(), get_features(), 10),
-            (0, 1, 2),
-            "minmax should be of length 4.",
-        ),
-        (
-            nap.compute_2d_tuning_curves,
-            (get_group(), nap.TsdFrame(t=np.arange(10), d=np.ones((10, 3))), 10),
-            (0, 1),
-            "features should have 2 columns only.",
-        ),
-        (
-            nap.compute_1d_tuning_curves,
-            (get_group(), nap.TsdFrame(t=np.arange(10), d=np.ones((10, 3))), 10),
-            (0, 1),
-            r"feature should be a Tsd \(or TsdFrame with 1 column only\)",
-        ),
-        (
-            nap.compute_2d_tuning_curves,
-            (get_group(), get_features(), (0, 1, 2)),
-            (0, 1, 2, 3),
-            r"nb_bins should be of type int \(or tuple with \(int, int\) for 2D tuning curves\).",
-        ),
-        (
-            nap.compute_2d_tuning_curves_continuous,
-            (get_tsdframe(), get_features(), (0, 1, 2)),
-            (0, 1, 2, 3),
-            r"nb_bins should be of type int \(or tuple with \(int, int\) for 2D tuning curves\).",
-        ),
-    ],
-)
-def test_compute_tuning_curves_value_error(func, args, minmax, expected):
-    with pytest.raises(ValueError, match=expected):
-        func(*args, minmax=minmax)
-
-
 ########################
 # Normal test
 ########################
@@ -491,7 +250,7 @@ def test_compute_1d_tuning_curves(args, kwargs, expected):
         (
             (get_group(), get_features(), 10),
             {"ep": nap.IntervalSet(0, 400)},
-            np.ones((10, 10)) * 0.25,
+            np.ones((10, 10)) * 0.5,
         ),
         (
             (get_group(), get_features(), 10),
@@ -710,12 +469,13 @@ def test_compute_1d_tuning_curves_continuous(args, kwargs, expected):
     if "minmax" in kwargs:
         tmp = np.linspace(kwargs["minmax"][0], kwargs["minmax"][1], nb_bins + 1)
     else:
-        tmp = np.linspace(np.min(args[1]), np.max(args[1]), nb_bins + 1)
+        tmp = np.linspace(np.min(feature), np.max(feature), nb_bins + 1)
     np.testing.assert_almost_equal(tmp[0:-1] + np.diff(tmp) / 2, tc.index.values)
     # Array
     np.testing.assert_almost_equal(tc.values, expected)
 
 
+@pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
     "tsdframe, nb_bins, kwargs, expected",
     [
@@ -736,13 +496,13 @@ def test_compute_1d_tuning_curves_continuous(args, kwargs, expected):
             ),
             2,
             {},
-            {"x": np.array([[1, 0], [0, 0]]), "y": np.array([[2, 0], [0, 0]])},
+            {"x": np.ones((2, 2)), "y": np.ones((2, 2)) * 2},
         ),
         (
             nap.Tsd(t=np.arange(0, 100), d=np.hstack((np.ones((100,)) * 2))),
             2,
             {},
-            {0: np.array([[2, 0], [0, 0]])},
+            {0: np.ones((2, 2)) * 2},
         ),
         (
             nap.TsdFrame(
@@ -751,7 +511,7 @@ def test_compute_1d_tuning_curves_continuous(args, kwargs, expected):
             ),
             (1, 2),
             {},
-            {0: np.array([[1.0, 0.0]]), 1: np.array([[2.0, 0.0]])},
+            {0: np.array([[1.0, 1.0]]), 1: np.array([[2.0, 2.0]])},
         ),
         (
             nap.TsdFrame(

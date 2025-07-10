@@ -1,14 +1,16 @@
 ---
-jupytext:
-  text_representation:
-    extension: .md
-    format_name: myst
-    format_version: 0.13
-    jupytext_version: 1.16.4
-kernelspec:
-  display_name: Python 3
-  language: python
-  name: python3
+jupyter:
+  jupytext:
+    default_lexer: ipython3
+    text_representation:
+      extension: .md
+      format_name: markdown
+      format_version: '1.3'
+      jupytext_version: 1.17.2
+  kernelspec:
+    display_name: pynapple
+    language: python
+    name: python3
 ---
 
 # Tuning curves
@@ -19,13 +21,7 @@ and 2-dimensional tuning curves (for example firing rate as a function
 of position). It can also compute average firing rate for different 
 epochs (for example firing rate for different epochs of stimulus presentation).
 
-:::{important}
-If you are using calcium imaging data with the activity of the cell as a continuous transient, the function to call ends with `_continuous` for continuous time series (e.g. [`compute_1d_tuning_curves_continuous`](pynapple.process.tuning_curves.compute_1d_tuning_curves_continuous)).
-:::
-
-
-```{code-cell} ipython3
-:tags: [hide-cell]
+```python tags=["hide-cell"]
 import pynapple as nap
 import numpy as np
 import matplotlib.pyplot as plt
@@ -35,9 +31,7 @@ custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
 ```
 
-```{code-cell}
-:tags: [hide-cell]
-
+```python tags=["hide-cell"]
 group = {
     0: nap.Ts(t=np.sort(np.random.uniform(0, 100, 10))),
     1: nap.Ts(t=np.sort(np.random.uniform(0, 100, 20))),
@@ -47,11 +41,14 @@ group = {
 tsgroup = nap.TsGroup(group)
 ```
 
+<!-- #region -->
 ## From epochs
 
 
-The epochs should be stored in a dictionnary: 
-```{code-cell} ipython3
+The epochs should be stored in a dictionnary:
+<!-- #endregion -->
+
+```python
 dict_ep =  {
                 "stim0": nap.IntervalSet(start=0, end=20),
                 "stim1":nap.IntervalSet(start=30, end=70)
@@ -62,21 +59,17 @@ dict_ep =  {
 The output is a pandas DataFrame where each column is a unit in the `TsGroup` and each row is one `IntervalSet` type.
 The value is the mean firing rate of the neuron during this set of intervals.
 
-```{code-cell} ipython3
+```python
 mean_fr = nap.compute_discrete_tuning_curves(tsgroup, dict_ep)
 
 pprint(mean_fr)
 ```
 
-
 ## From timestamps activity
   
-### 1-dimension tuning curves
+### 1-dimensional tuning curves
 
-
-```{code-cell} ipython3
-:tags: [hide-cell]
-
+```python tags=["hide-cell"]
 from scipy.ndimage import gaussian_filter1d
 
 # Fake Tuning curves
@@ -105,38 +98,36 @@ tsgroup = nap.TsGroup(
 ```
 
 Mandatory arguments are `TsGroup`, `Tsd` (or `TsdFrame` with 1 column only) 
-and `nb_bins` for number of bins of the tuning curves.
+and `bins` for number of bins of the tuning curves.
 
-If an `IntervalSet` is passed with `ep`, everything is restricted to `ep`
+If an `IntervalSet` is passed with `epochs`, everything is restricted to `epochs`
 otherwise the time support of the feature is used.
 
-The min and max of the tuning curve is by default the min and max of the feature. This can be tweaked with the argument `minmax`.
+The min and max of the tuning curve is by default the min and max of the feature. This can be tweaked with the argument `range`.
 
-The output is a pandas DataFrame. Each column is a unit from `TsGroup` argument. The index of the DataFrame carries the center of the bin in feature space.
+The output is an `xarray.DataArray` with a unit and feature dimension.
 
-```{code-cell} ipython3
-tuning_curve = nap.compute_1d_tuning_curves(
+```python
+tuning_curves_1d = nap.compute_tuning_curves(
     group=tsgroup,
-    feature=feature,
-    nb_bins=120, 
-    minmax=(0, 2*np.pi)
+    features=feature,
+    bins=120, 
+    range=(0, 2*np.pi)
     )
-
-print(tuning_curve)
+tuning_curves_1d
 ```
 
-```{code-cell} ipython3
-plt.figure()
-plt.plot(tuning_curve)
+```python
+tuning_curves_1d.plot.line(x="feature0", add_legend=False)
 plt.xlabel("Feature space")
 plt.ylabel("Firing rate (Hz)")
 plt.show()
 ```
 
-Internally, the function is calling the method [`value_from`](pynapple.Tsd.value_from) which maps timestamps to their closest values in time from a `Tsd` object. It is then possible to validate the tuning curves by displaying the timestamps as well as their associated values. 
+Internally, the function is calling the method [`value_from`](pynapple.Tsd.value_from) which maps timestamps to their closest values in time from a `Tsd` object.  
+It is then possible to validate the tuning curves by displaying the timestamps as well as their associated values.
 
-```{code-cell} ipython3
-:tags: [hide-input]
+```python tags=["hide-input"]
 plt.figure()
 plt.subplot(121)
 plt.plot(tsgroup[3].value_from(feature), 'o')
@@ -145,7 +136,7 @@ plt.ylabel("Feature")
 plt.xlim(0, 2)
 plt.xlabel("Time (s)")
 plt.subplot(122)
-plt.plot(tuning_curve[3].values, tuning_curve[3].index.values, label="Tuning curve (unit=3)")
+plt.plot(tuning_curves_1d[3].values, tuning_curves_1d.coords["feature0"], label="Tuning curve (unit=3)")
 plt.xlabel("Firing rate (Hz)")
 plt.legend()
 plt.show()
@@ -153,8 +144,7 @@ plt.show()
 
 ### 2-dimensional tuning curves
 
-```{code-cell} ipython3
-:tags: [hide-cell]
+```python tags=["hide-cell"]
 dt = 0.01
 T = 10
 epoch = nap.IntervalSet(start=0, end=T, time_units="s")
@@ -173,33 +163,34 @@ tsgroup = nap.TsGroup({
 }, time_support=epoch)
 ```
 
-The `group` argument must be a `TsGroup` object.
-The `features` argument must be a 2-columns `TsdFrame` object.
-`nb_bins` can be an int or a tuple of 2 ints.
- 
-```{code-cell} ipython3
-tcurves2d, binsxy = nap.compute_2d_tuning_curves(
+The `group` argument must be a `TsGroup` object.  
+The `features` argument must be a 2-columns `TsdFrame` object.  
+`bins` can be an int or a tuple of 2 ints.  
+`range` can be a list of two `(min, max)` tuples.
+
+```python
+tuning_curves_2d = nap.compute_tuning_curves(
     group=tsgroup, 
     features=features, 
-    nb_bins=(5,5),
-    minmax=(-1, 1, -1, 1)
+    bins=(5,5),
+    range=[(-1, 1), (-1, 1)]
 )
-pprint(tcurves2d)
+tuning_curves_2d
 ```
 
-`tcurves2d` is a dictionnary with each key a unit in `TsGroup`. `binsxy` is a numpy array representing the centers of the bins and is useful for plotting tuning curves. Bins that have never been visited by the feature have been assigned a NaN value.
+`tuning_curve_2d` is an `xarray.DataArray` with three dimensions: one for the units of `TsGroup` and 2 for the features, the coordinates contain the centers of the bins.  
+Bins that have never been visited by the feature have been assigned a NaN value.
 
 Checking the accuracy of the tuning curves can be bone by displaying the spikes aligned to the features with the function `value_from` which assign to each spikes the corresponding features value for unit 0.
 
-```{code-cell} ipython3
+```python
 ts_to_features = tsgroup[0].value_from(features)
 print(ts_to_features)
 ```
+
 `tsgroup[0]` which is a `Ts` object has been transformed to a `TsdFrame` object with each timestamps (spike times) being associated with a features value.
 
-```{code-cell} ipython3
-:tags: [hide-input]
-
+```python tags=["hide-input"]
 
 plt.figure()
 plt.subplot(121)
@@ -216,7 +207,7 @@ extents = (
     np.min(features["b"]),
     np.max(features["b"]),
 )
-plt.imshow(tcurves2d[0], 
+plt.imshow(tuning_curves_2d[0], 
     origin="lower", extent=extents, cmap="viridis",
     aspect='auto'
     )
@@ -229,17 +220,13 @@ plt.tight_layout()
 plt.show()
 ```
 
-
 ## From continuous activity
 
-Tuning curves compute with the following functions are usually made with 
-data from calcium imaging activities.
+Tuning curves computed in the following matter are usually made with data from calcium imaging activities.
 
 ### 1-dimensional tuning curves
 
-```{code-cell} ipython3
-:tags: [hide-cell]
-
+```python tags=["hide-cell"]
 from scipy.ndimage import gaussian_filter1d
 
 # Fake Tuning curves
@@ -267,34 +254,28 @@ tsdframe = nap.TsdFrame(
     )
 ```
 
-Arguments are `TsdFrame` (for example continuous calcium data), `Tsd` or `TsdFrame` for the 1-d feature and `nb_bins` for the number of bins.
+The same function `nap.compute_tuning_curves` can also take a `TsdFrame` (for example continuous calcium data) as input.
 
-```{code-cell} ipython3
-
-tuning_curves = nap.compute_1d_tuning_curves_continuous(
-    tsdframe=tsdframe,
-    feature=feature,
-    nb_bins=120,
-    minmax=(0, 2*np.pi)
+```python
+tuning_curves_1d = nap.compute_tuning_curves(
+    group=tsdframe,
+    features=feature,
+    bins=120,
+    range=(0, 2*np.pi)
     )
-
-print(tuning_curves)
+tuning_curves_1d
 ```
 
-```{code-cell} ipython3
-plt.figure()
-plt.plot(tuning_curves)
+```python
+tuning_curves_1d.plot.line(x="feature0", add_legend=False)
 plt.xlabel("Feature space")
-plt.ylabel("Mean activity")
+plt.ylabel("Firing rate (Hz)")
 plt.show()
 ```
 
 ### 2-dimensional tuning curves
 
-
-```{code-cell} ipython3
-:tags: [hide-cell]
-
+```python tags=["hide-cell"]
 dt = 0.01
 T = 10
 epoch = nap.IntervalSet(start=0, end=T, time_units="s")
@@ -315,20 +296,16 @@ tsdframe = nap.TsdFrame(
     )
 ```
 
-Arguments are `TsdFrame` (for example continuous calcium data), `Tsd` or `TsdFrame` for the 1-d feature and `nb_bins` for the number of bins.
-
-```{code-cell} ipython3
-
-tuning_curves, xy = nap.compute_2d_tuning_curves_continuous(
-    tsdframe=tsdframe,
+```python
+tuning_curves_2d = nap.compute_tuning_curves(
+    group=tsdframe,
     features=features,
-    nb_bins=5,    
+    bins=5,    
     )
-
-print(tuning_curves)
+tuning_curves_2d
 ```
 
-```{code-cell} ipython3
+```python
 plt.figure()
 plt.subplot(121)
 plt.plot(features["b"], features["a"], label="features")
@@ -343,7 +320,7 @@ extents = (
     np.min(features["b"]),
     np.max(features["b"]),
 )
-plt.imshow(tuning_curves[0], 
+plt.imshow(tuning_curves_2d[0], 
     origin="lower", extent=extents, cmap="viridis",
     aspect='auto'
     )
@@ -356,5 +333,6 @@ plt.tight_layout()
 plt.show()
 ```
 
+```python
 
-
+```
