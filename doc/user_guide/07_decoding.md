@@ -1,21 +1,20 @@
 ---
-jupyter:
-  jupytext:
-    default_lexer: ipython3
-    text_representation:
-      extension: .md
-      format_name: markdown
-      format_version: '1.3'
-      jupytext_version: 1.17.2
-  kernelspec:
-    display_name: pynapple
-    language: python
-    name: python3
+jupytext:
+  text_representation:
+    extension: .md
+    format_name: myst
+    format_version: 0.13
+    jupytext_version: 1.16.4
+kernelspec:
+  display_name: Python 3
+  language: python
+  name: python3
 ---
 
 # Decoding
 
-```python tags=["hide-cell"]
+```{code-cell} ipython3
+:tags: [hide-cell]
 import pynapple as nap
 import numpy as np
 import pandas as pd
@@ -26,7 +25,8 @@ sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_par
 ```
 
 <!-- #region -->
-Pynapple supports 1 dimensional and 2 dimensional bayesian decoding. The function returns the decoded feature as well as the probabilities for each timestamps. 
+Pynapple supports n-dimensional bayesian decoding. 
+The function returns the decoded feature as well as the probabilities for each timestamp. 
 
 
 :::{hint}
@@ -36,7 +36,8 @@ Input to the bayesian decoding functions always include the tuning curves comput
 ## 1-dimensional decoding
 <!-- #endregion -->
 
-```python tags=["hide-cell"]
+```{code-cell} ipython3
+:tags: [hide-cell]
 from scipy.ndimage import gaussian_filter1d
 
 # Fake Tuning curves
@@ -67,26 +68,27 @@ epoch = nap.IntervalSet(0, 10)
 
 To decode, we need to compute tuning curves in 1D.
 
-```python
+```{code-cell} ipython3
 tuning_curves_1d = nap.compute_tuning_curves(
-    tsgroup, feature, bins=61, range=(0, 2 * np.pi)
+    tsgroup, feature, bins=61, range=(0, 2 * np.pi), feature_names=["feature"]
 )
 ```
 
 We can display the tuning curves of each neurons
 
-```python tags=["hide-input"]
-tuning_curves_1d.plot.line(x="feature0", add_legend=False)
-plt.xlabel("Feature position")
-plt.ylabel("Rate (Hz)")
+```{code-cell} ipython3
+:tags: [hide-input]
+tuning_curves_1d.name = "Firing rate"
+tuning_curves_1d.attrs["unit"] = "Hz"
+tuning_curves_1d.plot.line(x="feature", add_legend=False)
 plt.show()
 ```
 
 `nap.decode_1d` performs bayesian decoding:
 
-```python
+```{code-cell} ipython3
 decoded, proba_feature = nap.decode_1d(
-    tuning_curves=tcurves_1d.to_pandas().T, # 1D tuning curves
+    tuning_curves=tuning_curves_1d.to_pandas().T, # 1D tuning curves
     group=tsgroup, # Spiking activity
     ep=epoch, # Small epoch
     bin_size=0.06,  # How to bin the spike trains
@@ -96,7 +98,8 @@ decoded, proba_feature = nap.decode_1d(
 
 `decoded` is `Tsd` object containing the decoded feature value. `proba_feature` is a `TsdFrame` containing the probabilities of being in a particular feature bin over time.
 
-```python tags=["hide-input"]
+```{code-cell} ipython3
+:tags: [hide-input]
 plt.figure(figsize=(12, 6))
 plt.subplot(211)
 plt.plot(feature.restrict(epoch), label="True")
@@ -112,7 +115,8 @@ plt.show()
 
 ## 2-dimensional decoding
 
-```python tags=["hide-cell"]
+```{code-cell} ipython3
+:tags: [hide-cell]
 dt = 0.1
 epochs = nap.IntervalSet(start=0, end=1000, time_units="s")
 features = np.vstack((np.cos(np.arange(0, 1000, dt)), np.sin(np.arange(0, 1000, dt)))).T
@@ -138,7 +142,7 @@ ts_group = nap.TsGroup(ts_group, time_support=epoch)
 
 To decode, we need to compute tuning curves in 2D.
 
-```python
+```{code-cell} ipython3
 tuning_curves_2d = nap.compute_tuning_curves(
     group=ts_group, # Spiking activity of 12 neurons
     features=features, # 2-dimensional features
@@ -150,13 +154,17 @@ tuning_curves_2d = nap.compute_tuning_curves(
 
 We can display the tuning curves of each neuron
 
-```python
+```{code-cell} ipython3
+:tags: [hide-input]
+tuning_curves_2d.name = "Firing rate"
+tuning_curves_2d.attrs["unit"] = "Hz"
 tuning_curves_2d.plot(row="unit", col_wrap=6)
+plt.show()
 ```
 
 `nap.decode_2d` performs bayesian decoding:
 
-```python
+```{code-cell} ipython3
 tcs = {c: tuning_curves_2d.sel(unit=c).values for c in tuning_curves_2d.coords["unit"].values}
 bins = [tuning_curves_2d.coords[dim].values for dim in tuning_curves_2d.coords if dim != "unit"]
 
@@ -170,7 +178,8 @@ decoded, proba_feature = nap.decode_2d(
 )
 ```
 
-```python tags=["hide-input"]
+```{code-cell} ipython3
+:tags: [hide-input]
 plt.figure(figsize=(15, 5))
 plt.subplot(131)
 plt.plot(features["a"].get(0,20), label="True")
@@ -200,8 +209,4 @@ plt.title("Feature b")
 plt.legend()
 plt.tight_layout()
 plt.show()
-```
-
-```python
-
 ```
