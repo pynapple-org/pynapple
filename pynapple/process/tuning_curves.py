@@ -82,7 +82,9 @@ def _validate_tuning_inputs(func):
     return wrapper
 
 
-def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=None):
+def compute_tuning_curves(
+    group, features, bins=10, range=None, epochs=None, fs=None, feature_names=None
+):
     """
     Computes n-dimensional tuning curves relative to n features.
 
@@ -112,6 +114,12 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
     fs : float, optional
         The exact sampling frequency of the features used to normalise the tuning curves.
         Unit should match that of the features. If not passed, it is estimated.
+    feature_names : sequence, optional
+        A sequence of names (and optionally units) for the features.
+        If not passed, the column names in `features` are used.
+        If those are not set, they are set to `feature0`, `feature1`, etc.
+        You can also pass a list of tuples [(name, unit), ...] to set both names
+        and units in the resulting xarray.DataArray.
 
     Returns
     -------
@@ -140,6 +148,29 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
         )
     elif not isinstance(features, nap.TsdFrame):
         raise TypeError("features should be a Tsd or TsdFrame.")
+
+    # check feature names
+    if feature_names is None:
+        _feature_names = features.columns
+        _feature_units = [None] * len(_feature_names)
+    else:
+        if not isinstance(feature_names, list):
+            raise TypeError("feature_names should be a sequence of strings or tuples.")
+        if len(feature_names) != features.shape[1]:
+            raise ValueError("feature_names should match the number of features.")
+        _feature_names = []
+        _feature_units = []
+        for feature in feature_names:
+            if isinstance(feature, str):
+                _feature_names.append(feature)
+                _feature_units.append(None)
+            elif isinstance(feature, tuple) and len(feature) == 2:
+                _feature_names.append(feature[0])
+                _feature_units.append(feature[1])
+            else:
+                raise TypeError(
+                    "feature_names should be a sequence of strings or tuples of strings."
+                )
 
     # check epochs
     if epochs is None:
@@ -200,11 +231,17 @@ def compute_tuning_curves(group, features, bins=10, range=None, epochs=None, fs=
         coords={
             "unit": keys,
             **{
-                (f"feature{feature}" if isinstance(feature, int) else feature): e[:-1]
-                + np.diff(e) / 2
-                for feature, e in zip(features.columns, bin_edges)
+                str(feature_name): (
+                    str(feature_name),
+                    e[:-1] + np.diff(e) / 2,
+                    {} if unit is None else {"units": unit},
+                )
+                for feature_name, unit, e in zip(
+                    _feature_names, _feature_units, bin_edges
+                )
             },
         },
+        attrs={"occupancy": occupancy, "bin_edges": bin_edges},
     )
 
 

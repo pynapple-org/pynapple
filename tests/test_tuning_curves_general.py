@@ -166,6 +166,75 @@ def get_features(n, fs=10.0):
             {"fs": 1.0},
             does_not_raise(),
         ),
+        # feature names
+        (
+            get_group(1),
+            get_features(1),
+            {"feature_names": "feature0"},
+            pytest.raises(
+                TypeError,
+                match="feature_names should be a sequence of strings or tuples.",
+            ),
+        ),
+        (
+            get_group(1),
+            get_features(1),
+            {"feature_names": 0},
+            pytest.raises(
+                TypeError,
+                match="feature_names should be a sequence of strings or tuples.",
+            ),
+        ),
+        (
+            get_group(1),
+            get_features(1),
+            {"feature_names": ["feature0"]},
+            does_not_raise(),
+        ),
+        (
+            get_group(1),
+            get_features(1),
+            {"feature_names": ["feature0", "feature1"]},
+            pytest.raises(
+                ValueError, match="feature_names should match the number of features."
+            ),
+        ),
+        (
+            get_group(1),
+            get_features(1),
+            {"feature_names": [1]},
+            pytest.raises(
+                TypeError,
+                match="feature_names should be a sequence of strings or tuples of strings.",
+            ),
+        ),
+        (
+            get_group(1),
+            get_features(1),
+            {"feature_names": [(1,)]},
+            pytest.raises(
+                TypeError,
+                match="feature_names should be a sequence of strings or tuples of strings.",
+            ),
+        ),
+        (
+            get_group(1),
+            get_features(1),
+            {"feature_names": [("feature0", "x")]},
+            does_not_raise(),
+        ),
+        (
+            get_group(1),
+            get_features(2),
+            {"feature_names": [("feature0", "x"), "feature1"]},
+            does_not_raise(),
+        ),
+        (
+            get_group(1),
+            get_features(2),
+            {"feature_names": [("feature0", "unit0"), ("feature1", "unit1")]},
+            does_not_raise(),
+        ),
     ],
 )
 def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation):
@@ -441,6 +510,73 @@ def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation)
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+            ),
+        ),
+        # single unit, single feature, specified feature name
+        (
+            get_group(1),
+            get_features(1),
+            {"feature_names": ["f0"]},
+            xr.DataArray(
+                np.full((1, 10), 10.0),
+                dims=["unit", "f0"],
+                coords={"unit": [1], "f0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+            ),
+        ),
+        # single unit, single feature, specified feature name and unit
+        (
+            get_group(1),
+            get_features(1),
+            {"feature_names": [("f0", "unit0")]},
+            xr.DataArray(
+                np.full((1, 10), 10.0),
+                dims=["unit", "f0"],
+                coords={
+                    "unit": [1],
+                    "f0": (
+                        "f0",
+                        np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                        {"units": "unit0"},
+                    ),
+                },
+            ),
+        ),
+        # single unit, multiple features, specified feature names
+        (
+            get_group(1),
+            get_features(2),
+            {"feature_names": ["f0", "f1"]},
+            xr.DataArray(
+                np.where(np.eye(10), 10.0, np.nan)[None, :],
+                dims=["unit", "f0", "f1"],
+                coords={
+                    "unit": [1],
+                    "f0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                    "f1": np.linspace(0, 19.8, 11)[:-1] + 0.99,
+                },
+            ),
+        ),
+        # single unit, multiple features, specified feature names and units
+        (
+            get_group(1),
+            get_features(2),
+            {"feature_names": [("f0", "unit0"), ("f1", "unit1")]},
+            xr.DataArray(
+                np.where(np.eye(10), 10.0, np.nan)[None, :],
+                dims=["unit", "f0", "f1"],
+                coords={
+                    "unit": [1],
+                    "f0": (
+                        "f0",
+                        np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                        {"units": "unit0"},
+                    ),
+                    "f1": (
+                        "f1",
+                        np.linspace(0, 19.8, 11)[:-1] + 0.99,
+                        {"units": "unit1"},
+                    ),
+                },
             ),
         ),
     ],
