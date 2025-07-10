@@ -90,7 +90,7 @@ def compute_tuning_curves(
 
     Parameters
     ----------
-    group : TsGroup, TsdFrame or dict of Ts or Tsd objects.
+    group : TsGroup, TsdFrame or dict of Ts, Tsd objects.
         The group of Ts or Tsd for which the tuning curves will be computed
     features : Tsd, TsdFrame
         The features (i.e. one column per feature).
@@ -124,7 +124,7 @@ def compute_tuning_curves(
     Returns
     -------
     xarray.DataArray
-        An xarray DataArray containing the tuning curves with labeled dimensions.
+        An xarray.DataArray containing the tuning curves with labeled dimensions.
     """
 
     # check group
