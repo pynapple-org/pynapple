@@ -3,6 +3,7 @@ Decoding functions for timestamps data (spike times). The first argument is alwa
 """
 
 import numpy as np
+import xarray as xr
 
 from .. import core as nap
 
@@ -264,7 +265,7 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
     return decoded, p
 
 
-def decode(tuning_curves, group, epochs, bin_size, time_units="s", features=None):
+def decode(tuning_curves, group, epochs, bin_size, time_units="s"):
     """
     Performs Bayesian decoding over n-dimensional features.
 
@@ -288,10 +289,6 @@ def decode(tuning_curves, group, epochs, bin_size, time_units="s", features=None
         Bin size. Default is second. Use the parameter time_units to change it.
     time_units : str, optional
         Time unit of the bin size ('s' [default], 'ms', 'us').
-    features : TsdFrame
-        The features used to compute the tuning curves.
-        Used to correct for occupancy.
-        If feature is not passed, the occupancy is uniform.
 
     Returns
     -------
@@ -308,6 +305,12 @@ def decode(tuning_curves, group, epochs, bin_size, time_units="s", features=None
         If indexes don't match between tuning_curves and group.
 
     """
+
+    # check tuning curves
+    if not isinstance(tuning_curves, (xr.DataArray)):
+        raise TypeError(
+            "tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves"
+        )
 
     # check group
     if isinstance(group, (dict, nap.TsGroup)):
@@ -335,34 +338,10 @@ def decode(tuning_curves, group, epochs, bin_size, time_units="s", features=None
     else:
         raise RuntimeError("Unknown format for group")
 
-    # occupancy
-    if features is None:
-        occupancy = np.ones_like(tuning_curves[0]).flatten()
-    elif isinstance(features, (nap.TsdFrame, nap.Tsd)):
-        if isinstance(features, nap.Tsd):
-            features = nap.TsdFrame(
-                t=features.times(), d=features.values, time_support=epochs
-            )
-        if tuning_curves.ndim - 1 != features.shape[1]:
-            raise RuntimeError("Number of features and tuning_curves do not match.")
-
-        bins = []
-        for dim in tuning_curves.dims[1:]:
-            centers = tuning_curves.coords[dim].values
-            diffs = np.diff(centers)
-            edges = centers[:-1] - diffs / 2
-            bins.append(
-                np.concatenate(
-                    (
-                        edges,
-                        [edges[-1] + diffs[-1], edges[-1] + 2 * diffs[-1]],
-                    )
-                )
-            )
-        occupancy, _ = np.histogramdd(features, bins)
-        occupancy = occupancy.flatten()
+    if "occupancy" in tuning_curves.dims:
+        occupancy = tuning_curves.coords["occupancy"].values.flatten()
     else:
-        raise RuntimeError("Features should be a TsdFrame or Tsd.")
+        occupancy = np.ones_like(tuning_curves[0]).flatten()
 
     # Transforming to pure numpy array
     tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T

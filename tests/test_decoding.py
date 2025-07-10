@@ -53,24 +53,10 @@ def test_decode_1d_with_TsdFrame():
     np.testing.assert_array_almost_equal(proba.values, tmp)
 
 
-def test_decode_1d_with_feature():
-    feature, group, tc, epochs = get_testing_set_1d()
-    decoded, proba = nap.decode(tc, group, epochs, bin_size=1, features=feature)
-    assert isinstance(decoded, nap.Tsd)
-    assert isinstance(proba, nap.TsdFrame)
-    np.testing.assert_array_almost_equal(feature.values, decoded.values)
-    assert len(decoded) == 100
-    assert len(proba) == 100
-    tmp = np.ones((100, 2))
-    tmp[50:, 0] = 0.0
-    tmp[0:50, 1] = 0.0
-    np.testing.assert_array_almost_equal(proba.values, tmp)
-
-
 def test_decode_1d_with_dict():
     feature, group, tc, epochs = get_testing_set_1d()
     group = dict(group)
-    decoded, proba = nap.decode(tc, group, epochs, bin_size=1, features=feature)
+    decoded, proba = nap.decode(tc, group, epochs, bin_size=1)
     assert isinstance(decoded, nap.Tsd)
     assert isinstance(proba, nap.TsdFrame)
     np.testing.assert_array_almost_equal(feature.values, decoded.values)
@@ -80,13 +66,6 @@ def test_decode_1d_with_dict():
     tmp[50:, 0] = 0.0
     tmp[0:50, 1] = 0.0
     np.testing.assert_array_almost_equal(proba.values, tmp)
-
-
-def test_decode_1d_with_wrong_feature():
-    feature, group, tc, epochs = get_testing_set_1d()
-    with pytest.raises(RuntimeError) as e_info:
-        nap.decode(tc, group, epochs, bin_size=1, features=[1, 2, 3])
-    assert str(e_info.value) == "Features should be a TsdFrame or Tsd."
 
 
 def test_decode_1d_with_time_units():
@@ -196,12 +175,6 @@ def test_decode_2d_with_dict():
     tmp[1:50:2, 0] = 1
     tmp[51:100:2, 1] = 1
     np.testing.assert_array_almost_equal(proba[:, :, 1], tmp)
-
-
-def test_decode_2d_with_feature():
-    features, group, tc, epochs = get_testing_set_2d()
-    decoded, proba = nap.decode(tc, group, epochs, 1)
-    np.testing.assert_array_almost_equal(features.values, decoded.values)
 
 
 def test_decode_2d_with_time_units():
