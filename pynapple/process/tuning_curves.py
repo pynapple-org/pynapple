@@ -83,7 +83,14 @@ def _validate_tuning_inputs(func):
 
 
 def compute_tuning_curves(
-    group, features, bins=10, range=None, epochs=None, fs=None, feature_names=None
+    group,
+    features,
+    bins=10,
+    range=None,
+    epochs=None,
+    fs=None,
+    feature_names=None,
+    return_pandas=False,
 ):
     """
     Computes n-dimensional tuning curves relative to n features.
@@ -96,7 +103,6 @@ def compute_tuning_curves(
         The features (i.e. one column per feature).
     bins : sequence or int
         The bin specification:
-
         * A sequence of arrays describing the monotonically increasing bin
           edges along each dimension.
         * The number of bins for each dimension (nx, ny, ... =bins)
@@ -114,17 +120,21 @@ def compute_tuning_curves(
     fs : float, optional
         The exact sampling frequency of the features used to normalise the tuning curves.
         Unit should match that of the features. If not passed, it is estimated.
-    feature_names : sequence, optional
-        A sequence of names (and optionally units) for the features.
-        If not passed, the column names in `features` are used.
-        If those are not set, they are set to `feature0`, `feature1`, etc.
-        You can also pass a list of tuples [(name, unit), ...] to set both names
-        and units in the resulting xarray.DataArray.
+    feature_names : list, optional
+        A list of feature names. If not passed, the column names in `features` are used.
+    return_pandas : bool, optional
+        If True, the function returns a pandas.DataFrame instead of an xarray.DataArray.
+        Note that this will not work if the features are not 1D and that occupancy and bin edges
+        will not be stored as attributes.
 
     Returns
     -------
     xarray.DataArray
-        An xarray.DataArray containing the tuning curves with labeled dimensions.
+        An xarray.DataArray containing the tuning curves with bin centres as coordinates.
+        The bin edges and occupancy are stored as attributes.
+
+    Examples
+    --------
     """
 
     # check group
@@ -151,26 +161,14 @@ def compute_tuning_curves(
 
     # check feature names
     if feature_names is None:
-        _feature_names = features.columns
-        _feature_units = [None] * len(_feature_names)
+        feature_names = features.columns
     else:
-        if not isinstance(feature_names, list):
-            raise TypeError("feature_names should be a sequence of strings or tuples.")
+        if not isinstance(feature_names, list) or not all(
+            isinstance(n, str) for n in feature_names
+        ):
+            raise TypeError("feature_names should be a list of strings.")
         if len(feature_names) != features.shape[1]:
             raise ValueError("feature_names should match the number of features.")
-        _feature_names = []
-        _feature_units = []
-        for feature in feature_names:
-            if isinstance(feature, str):
-                _feature_names.append(feature)
-                _feature_units.append(None)
-            elif isinstance(feature, tuple) and len(feature) == 2:
-                _feature_names.append(feature[0])
-                _feature_units.append(feature[1])
-            else:
-                raise TypeError(
-                    "feature_names should be a sequence of strings or tuples of strings."
-                )
 
     # check epochs
     if epochs is None:
@@ -226,23 +224,24 @@ def compute_tuning_curves(
         tcs[np.isnan(tcs)] = 0.0
         tcs[:, occupancy == 0.0] = np.nan
 
-    return xr.DataArray(
-        tcs,
-        coords={
-            "unit": keys,
-            **{
-                str(feature_name): (
-                    str(feature_name),
-                    e[:-1] + np.diff(e) / 2,
-                    {} if unit is None else {"units": unit},
-                )
-                for feature_name, unit, e in zip(
-                    _feature_names, _feature_units, bin_edges
-                )
+    if return_pandas and features.shape[1] == 1:
+        return pd.DataFrame(
+            tcs.T,
+            index=bin_edges[0][:-1] + np.diff(bin_edges[0]) / 2,
+            columns=keys,
+        )
+    else:
+        return xr.DataArray(
+            tcs,
+            coords={
+                "unit": keys,
+                **{
+                    str(feature_name): e[:-1] + np.diff(e) / 2
+                    for feature_name, e in zip(feature_names, bin_edges)
+                },
             },
-        },
-        attrs={"occupancy": occupancy, "bin_edges": bin_edges},
-    )
+            attrs={"occupancy": occupancy, "bin_edges": bin_edges},
+        )
 
 
 @_validate_tuning_inputs
