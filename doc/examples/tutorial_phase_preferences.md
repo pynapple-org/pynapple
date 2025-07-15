@@ -39,7 +39,7 @@ sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_par
 ***
 Downloading the data
 ------------------
-Let's download the data and save it locally
+Let's download the data and save it locally.
 
 ```{code-cell} ipython3
 path = "Achilles_10252013_EEG.nwb"
