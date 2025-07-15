@@ -70,7 +70,7 @@ print(data)
 Head-Direction Tuning Curves
 ------------------
 
-To plot head-direction tuning curves, we need the spike timings and the orientation of the animal.  
+To plot head-direction tuning curves, we need the spike timings and the orientation of the animal.
 These quantities are stored in the variables 'units' and 'ry'.
 
 ```{code-cell} ipython3
@@ -87,17 +87,17 @@ print(spikes)
 
 Here, rate is the mean firing rate of the unit. Location indicates the brain region the unit was recorded from, and group refers to the shank number on which the cell was located.
 
-This dataset contains units recorded from the anterior thalamus. Head-direction (HD) cells are found in the anterodorsal nucleus of the thalamus (henceforth referred to as ADn).  
-Units were also recorded from nearby thalamic nuclei in this animal.  
-For the purposes of our tutorial, we are interested in the units recorded in ADn.  
-We can restrict ourselves to analysis of these units rather easily, using Pynapple.  
+This dataset contains units recorded from the anterior thalamus. Head-direction (HD) cells are found in the anterodorsal nucleus of the thalamus (henceforth referred to as ADn).
+Units were also recorded from nearby thalamic nuclei in this animal.
+For the purposes of our tutorial, we are interested in the units recorded in ADn.
+We can restrict ourselves to analysis of these units rather easily, using Pynapple.
 
 ```{code-cell} ipython3
 spikes_adn = spikes.getby_category("location")["adn"]  # Select only those units that are in ADn
 print(spikes_adn)
 ```
 
-Let's compute some head-direction tuning curves.  
+Let's compute some head-direction tuning curves.
 To do this in Pynapple, all you need is a single line of code!
 
 Let's plot firing rate of ADn units as a function of heading direction, i.e. a head-direction tuning curve:
@@ -114,14 +114,14 @@ tuning_curves = nap.compute_tuning_curves(
 tuning_curves
 ```
 
-The output is an `xarray.DataArray` with one dimension representing units, and another for head-direction angles.  
+The output is an `xarray.DataArray` with one dimension representing units, and another for head-direction angles.
 Let's compute the preferred angle quickly as follows:
 
 ```{code-cell} ipython3
 pref_ang = tuning_curves.idxmax(dim="head_direction")
 ```
 
-For easier visualization, we will color our plots according to the preferred angle of the cell.  
+For easier visualization, we will color our plots according to the preferred angle of the cell.
 To do so, we will normalize the range of angles we have, over a colormap.
 
 ```{code-cell} ipython3
@@ -179,7 +179,7 @@ Decoding
 Now that we have HD tuning curves, we can go one step further. Using only the population activity of ADn units, we can decode the direction the animal is looking in. 
 We will then compare this to the real head-direction of the animal, and discover that population activity in the ADn indeed codes for HD.
 
-To decode the population activity, we will be using a bayesian decoder as implemented in Pynapple.  
+To decode the population activity, we will be using a bayesian decoder as implemented in Pynapple.
 Again, just a single line of code!
 
 ```{code-cell} ipython3
@@ -276,7 +276,7 @@ plt.show()
 ```
 
 <!-- #region -->
-From this probability distribution, we observe that the decoded HD closely matches the actual HD.  
+From this probability distribution, we observe that the decoded HD closely matches the actual HD.
 Hence, the population activity in ADn is a reliable estimate of the heading direction of the animal.
 
 I hope this tutorial was helpful. If you have any questions, comments or suggestions, please feel free to reach out to the Pynapple Team!
