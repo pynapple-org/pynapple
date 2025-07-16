@@ -215,7 +215,7 @@ phase_modulation = nap.compute_tuning_curves(
     features=theta_phase, 
     bins=61, 
     range=(-np.pi, np.pi), 
-    feature_names=[("Phase", "rad")]
+    feature_names=["Phase"]
 )
 ```
 
@@ -224,6 +224,7 @@ Let's plot the first 3 neurons.
 ```{code-cell} ipython3
 phase_modulation.name="Firing Rate"
 phase_modulation.attrs["units"]="Hz"
+phase_modulation.coords["Phase"].attrs["unit"]="rad"
 phase_modulation[:3].plot(row="unit", col_wrap=3, sharey=False)
 plt.show()
 ```
