@@ -397,6 +397,31 @@ def test_compute_2d_mutual_info_errors(
                 match="feature_names should be a list of strings.",
             ),
         ),
+        # return pandas
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_pandas": 1},
+            pytest.raises(
+                TypeError,
+                match="return_pandas should be a boolean.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_pandas": "1"},
+            pytest.raises(
+                TypeError,
+                match="return_pandas should be a boolean.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_pandas": True},
+            does_not_raise(),
+        ),
     ],
 )
 def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation):

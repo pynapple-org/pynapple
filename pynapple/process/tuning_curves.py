@@ -285,6 +285,10 @@ def compute_tuning_curves(
                 "range should be a sequence of tuples, one for each feature."
             )
 
+    # check return_pandas
+    if not isinstance(return_pandas, bool):
+        raise TypeError("return_pandas should be a boolean.")
+
     # occupancy
     occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
 
