@@ -97,7 +97,7 @@ def compute_tuning_curves(
 
     Parameters
     ----------
-    group : TsGroup, TsdFrame or dict of Ts, Tsd objects.
+    group : TsGroup, TsdFrame or dict of Ts, Tsd
         The group of Ts or Tsd for which the tuning curves will be computed
     features : Tsd, TsdFrame
         The features (i.e. one column per feature).
@@ -161,7 +161,13 @@ def compute_tuning_curves(
     We can specify the number of bins for each feature:
 
     >>> features = nap.TsdFrame(
-    ...     d=np.stack([np.arange(0, 100, 0.1) % 1, np.arange(0, 100, 0.1) % 2], axis=1),
+    ...     d=np.stack(
+    ...         [
+    ...             np.arange(0, 100, 0.1) % 1,
+    ...             np.arange(0, 100, 0.1) % 2
+    ...         ],
+    ...         axis=1
+    ...     ),
     ...     t=np.arange(0, 100, 0.1)
     ... )
     >>> tcs = nap.compute_tuning_curves(group, features, bins=[5, 3])
@@ -188,7 +194,11 @@ def compute_tuning_curves(
 
     Or even specify the bin edges directly:
 
-    >>> tcs = nap.compute_tuning_curves(group, features, bins=[np.linspace(0, 1, 5), np.linspace(0, 2, 3)])
+    >>> tcs = nap.compute_tuning_curves(
+    ...     group,
+    ...     features,
+    ...     bins=[np.linspace(0, 1, 5), np.linspace(0, 2, 3)]
+    ... )
     >>> tcs
     <xarray.DataArray (unit: 2, 0: 4, 1: 2)> Size: 128B
     array([[[10.        , 10.        ],
