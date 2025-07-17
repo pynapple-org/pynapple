@@ -53,7 +53,8 @@ def collect_similar_parameter_names(package, root_name=None, similarity_cutoff=0
             param_names = list(sig.parameters)
             for par in param_names:
                 if par in results:
-                    continue  # exact name already exists
+                    results[par].append((par, path))
+                    continue  # exact name already exists store
                 match = difflib.get_close_matches(par, results.keys(), n=1, cutoff=similarity_cutoff)
                 if match:
                     results[match[0]].append((par, path))
@@ -91,14 +92,23 @@ def collect_similar_parameter_names(package, root_name=None, similarity_cutoff=0
 
 
 if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Check for inconsistent parameter naming.")
+    parser.add_argument(
+        "--threshold", "-t", type=float, default=0.9,
+        help="Similarity threshold (between 0 and 1) for grouping parameter names (default: 0.9)"
+    )
+    args = parser.parse_args()
+
     logger = logging.getLogger("check_parameter_naming")
     logging.basicConfig(level=logging.INFO, format="%(levelname)s: %(message)s")
 
-    params = collect_similar_parameter_names(nap, similarity_cutoff=0.9)
+    params = collect_similar_parameter_names(nap, similarity_cutoff=args.threshold)
 
     # Filter out parameter names that occur only once
     for name, occurrences in list(params.items()):
-        if len(occurrences) == 1:
+        if all(o == name for o, _ in occurrences):
             params.pop(name)
 
     if params:
