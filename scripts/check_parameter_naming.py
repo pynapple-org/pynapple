@@ -125,7 +125,7 @@ if __name__ == "__main__":
                 msg_lines.append(f"\t- {path}: {param_name}\n")
             msg_lines.append("\n")
 
-        logger.error("".join(msg_lines))
+        logger.warning("".join(msg_lines))
         sys.exit(1)
     else:
         logger.info("No parameter naming inconsistencies found.")
