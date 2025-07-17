@@ -119,6 +119,7 @@ jobs:
     - lint
     - test
     - documentation
+    - check-param-naming
     runs-on: ubuntu-latest
     steps:
     - name: Decide whether all tests and notebooks succeeded
