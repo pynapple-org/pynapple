@@ -48,7 +48,7 @@ jobs:
       - name: Check parameter name consistency
         run: python scripts/check_parameter_naming.py
   test:
-    needs: lint
+    needs: [lint, check-param-naming]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
