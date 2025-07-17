@@ -5,6 +5,12 @@ import logging
 import sys
 import pynapple as nap
 
+VALID_PAIRS = [
+    {"ep", "sep"},
+    {"ts", "tsd"},
+    {"args", "kwargs"},
+    {"channel", "n_channels"},
+]
 
 def collect_similar_parameter_names(package, root_name=None, similarity_cutoff=0.8):
     """
@@ -56,7 +62,7 @@ def collect_similar_parameter_names(package, root_name=None, similarity_cutoff=0
                     results[par].append((par, path))
                     continue  # exact name already exists store
                 match = difflib.get_close_matches(par, results.keys(), n=1, cutoff=similarity_cutoff)
-                if match:
+                if match and not {match[0], par} in VALID_PAIRS:
                     results[match[0]].append((par, path))
                 else:
                     results[par] = [(par, path)]
@@ -96,7 +102,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description="Check for inconsistent parameter naming.")
     parser.add_argument(
-        "--threshold", "-t", type=float, default=0.9,
+        "--threshold", "-t", type=float, default=0.8,
         help="Similarity threshold (between 0 and 1) for grouping parameter names (default: 0.9)"
     )
     args = parser.parse_args()
