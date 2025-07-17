@@ -279,9 +279,9 @@ def decode(tuning_curves, group, epochs, bin_size, time_units="s"):
     Parameters
     ----------
     tuning_curves : xr.DataArray
-        Tuning curves as outputed by `compute_tuning_curves` (one for each neuron).
+        Tuning curves as outputed by `compute_tuning_curves` (one for each unit).
     group : TsGroup, TsdFrame or dict of Ts/Tsd object.
-        A group of neurons with the same keys as tuning_curves dictionary.
+        A group of neurons with the same keys as the tuning curves.
         You may also pass a TsdFrame with smoothed rates (recommended).
     epochs : IntervalSet
         The epochs on which decoding is computed
@@ -307,7 +307,7 @@ def decode(tuning_curves, group, epochs, bin_size, time_units="s"):
     """
 
     # check tuning curves
-    if not isinstance(tuning_curves, (xr.DataArray)):
+    if not isinstance(tuning_curves, xr.DataArray):
         raise TypeError(
             "tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves"
         )
