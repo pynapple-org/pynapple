@@ -16,7 +16,7 @@ Calcium Imaging
 
 Working with calcium data.
 
-As example dataset, we will be working with a recording of a freely-moving mouse imaged with a Miniscope (1-photon imaging).  
+As example dataset, we will be working with a recording of a freely-moving mouse imaged with a Miniscope (1-photon imaging).
 The area recorded for this experiment is the postsubiculum - a region that is known to contain head-direction cells, or cells that fire when the animal's head is pointing in a specific direction.
 
 The NWB file for the example is hosted on [OSF](https://osf.io/sbnaw). We show below how to stream it.

@@ -109,7 +109,7 @@ tuning_curves.plot(row="unit", col_wrap=4, figsize=(15, 7))
 plt.show()
 ```
 
-Let's plot the spikes of unit 1, which has a nice grid.  
+Let's plot the spikes of unit 1, which has a nice grid.
 Here, I use the [`value_from`](pynapple.Ts.value_from) function to assign to each spike the closest position in time.
 
 ```{code-cell} ipython3

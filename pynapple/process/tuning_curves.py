@@ -83,14 +83,21 @@ def _validate_tuning_inputs(func):
 
 
 def compute_tuning_curves(
-    group, features, bins=10, range=None, epochs=None, fs=None, feature_names=None
+    group,
+    features,
+    bins=10,
+    range=None,
+    epochs=None,
+    fs=None,
+    feature_names=None,
+    return_pandas=False,
 ):
     """
     Computes n-dimensional tuning curves relative to n features.
 
     Parameters
     ----------
-    group : TsGroup, TsdFrame or dict of Ts, Tsd objects.
+    group : TsGroup, TsdFrame or dict of Ts, Tsd
         The group of Ts or Tsd for which the tuning curves will be computed
     features : Tsd, TsdFrame
         The features (i.e. one column per feature).
@@ -114,17 +121,121 @@ def compute_tuning_curves(
     fs : float, optional
         The exact sampling frequency of the features used to normalise the tuning curves.
         Unit should match that of the features. If not passed, it is estimated.
-    feature_names : sequence, optional
-        A sequence of names (and optionally units) for the features.
-        If not passed, the column names in `features` are used.
-        If those are not set, they are set to `feature0`, `feature1`, etc.
-        You can also pass a list of tuples [(name, unit), ...] to set both names
-        and units in the resulting xarray.DataArray.
+    feature_names : list, optional
+        A list of feature names. If not passed, the column names in `features` are used.
+    return_pandas : bool, optional
+        If True, the function returns a pandas.DataFrame instead of an xarray.DataArray.
+        Note that this will not work if the features are not 1D and that occupancy and bin edges
+        will not be stored as attributes.
 
     Returns
     -------
     xarray.DataArray
-        An xarray.DataArray containing the tuning curves with labeled dimensions.
+        A tensor containing the tuning curves with labeled bin centres.
+        The bin edges and occupancy are stored as attributes.
+
+    Examples
+    --------
+    In the simplest case, we can pass a group of spikes per neuron and a single feature:
+
+    >>> import pynapple as nap
+    >>> import numpy as np; np.random.seed(42)
+    >>> group = {
+    ...     1: nap.Ts(np.arange(0, 100, 0.1)),
+    ...     2: nap.Ts(np.arange(0, 100, 0.2))
+    ... }
+    >>> feature = nap.Tsd(d=np.arange(0, 100, 0.1) % 1, t=np.arange(0, 100, 0.1))
+    >>> tcs = nap.compute_tuning_curves(group, feature, bins=10)
+    >>> tcs
+    <xarray.DataArray (unit: 2, 0: 10)> Size: 160B
+    array([[10., 10., 10., 10., 10., 10., 10., 10., 10., 10.],
+           [10.,  0., 10.,  0., 10.,  0., 10.,  0., 10.,  0.]])
+    Coordinates:
+      * unit     (unit) int64 16B 1 2
+      * 0        (0) float64 80B 0.045 0.135 0.225 0.315 ... 0.585 0.675 0.765 0.855
+     Attributes:
+        occupancy:  [100. 100. 100. 100. 100. 100. 100. 100. 100. 100.]
+        bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...
+
+    The function can also take multiple features, in which case it computes n-dimensional tuning curves.
+    We can specify the number of bins for each feature:
+
+    >>> features = nap.TsdFrame(
+    ...     d=np.stack(
+    ...         [
+    ...             np.arange(0, 100, 0.1) % 1,
+    ...             np.arange(0, 100, 0.1) % 2
+    ...         ],
+    ...         axis=1
+    ...     ),
+    ...     t=np.arange(0, 100, 0.1)
+    ... )
+    >>> tcs = nap.compute_tuning_curves(group, features, bins=[5, 3])
+    >>> tcs
+    <xarray.DataArray (unit: 2, 0: 5, 1: 3)> Size: 240B
+    array([[[10., 10., nan],
+            [10., 10., 10.],
+            [10., nan, 10.],
+            [10., 10., 10.],
+            [nan, 10., 10.]],
+    ...
+           [[ 5.,  5., nan],
+            [ 5., 10.,  0.],
+            [ 5., nan,  5.],
+            [10.,  0.,  5.],
+            [nan,  5.,  5.]]])
+    Coordinates:
+      * unit     (unit) int64 16B 1 2
+      * 0        (0) float64 40B 0.09 0.27 0.45 0.63 0.81
+      * 1        (1) float64 24B 0.3167 0.95 1.583
+     Attributes:
+        occupancy:  [[100. 100.  nan]\\n [100.  50.  50.]\\n [100.  nan 100.]\\n [ 5...
+        bin_edges:  [array([0.  , 0.18, 0.36, 0.54, 0.72, 0.9 ]), array([0.      ...
+
+    Or even specify the bin edges directly:
+
+    >>> tcs = nap.compute_tuning_curves(
+    ...     group,
+    ...     features,
+    ...     bins=[np.linspace(0, 1, 5), np.linspace(0, 2, 3)]
+    ... )
+    >>> tcs
+    <xarray.DataArray (unit: 2, 0: 4, 1: 2)> Size: 128B
+    array([[[10.        , 10.        ],
+            [10.        , 10.        ],
+            [10.        , 10.        ],
+            [10.        , 10.        ]],
+    ...
+           [[ 6.66666667,  6.66666667],
+            [ 5.        ,  5.        ],
+            [ 3.33333333,  3.33333333],
+            [ 5.        ,  5.        ]]])
+    Coordinates:
+      * unit     (unit) int64 16B 1 2
+      * 0        (0) float64 32B 0.125 0.375 0.625 0.875
+      * 1        (1) float64 16B 0.5 1.5
+     Attributes:
+        occupancy:  [[150. 150.]\\n [100. 100.]\\n [150. 150.]\\n [100. 100.]]
+        bin_edges:  [array([0.  , 0.25, 0.5 , 0.75, 1.  ]), array([0., 1., 2.])]
+
+    In all of these cases, it is also possible to pass continuous values instead of spikes (e.g. calcium imaging data):
+
+    >>> group = nap.TsdFrame(d=np.random.rand(2000, 3), t=np.arange(0, 100, 0.05))
+    >>> tcs = nap.compute_tuning_curves(group, feature, bins=10)
+    >>> tcs
+    <xarray.DataArray (unit: 3, 0: 10)> Size: 240B
+    array([[0.49147343, 0.50190395, 0.50971339, 0.50128013, 0.54332711,
+            0.49712328, 0.49594611, 0.5110517 , 0.52247351, 0.52057658],
+           [0.51132036, 0.46410557, 0.47732505, 0.49830908, 0.53523019,
+            0.53099429, 0.48668499, 0.44198555, 0.49222208, 0.47453398],
+           [0.46591801, 0.50662914, 0.46875882, 0.48734997, 0.51836574,
+            0.50722266, 0.48943577, 0.49730095, 0.47944075, 0.48623693]])
+    Coordinates:
+      * unit     (unit) int64 24B 0 1 2
+      * 0        (0) float64 80B 0.045 0.135 0.225 0.315 ... 0.585 0.675 0.765 0.855
+     Attributes:
+        occupancy:  [100. 100. 100. 100. 100. 100. 100. 100. 100. 100.]
+        bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...
     """
 
     # check group
@@ -151,26 +262,14 @@ def compute_tuning_curves(
 
     # check feature names
     if feature_names is None:
-        _feature_names = features.columns
-        _feature_units = [None] * len(_feature_names)
+        feature_names = features.columns
     else:
-        if not isinstance(feature_names, list):
-            raise TypeError("feature_names should be a sequence of strings or tuples.")
+        if not isinstance(feature_names, list) or not all(
+            isinstance(n, str) for n in feature_names
+        ):
+            raise TypeError("feature_names should be a list of strings.")
         if len(feature_names) != features.shape[1]:
             raise ValueError("feature_names should match the number of features.")
-        _feature_names = []
-        _feature_units = []
-        for feature in feature_names:
-            if isinstance(feature, str):
-                _feature_names.append(feature)
-                _feature_units.append(None)
-            elif isinstance(feature, tuple) and len(feature) == 2:
-                _feature_names.append(feature[0])
-                _feature_units.append(feature[1])
-            else:
-                raise TypeError(
-                    "feature_names should be a sequence of strings or tuples of strings."
-                )
 
     # check epochs
     if epochs is None:
@@ -195,6 +294,10 @@ def compute_tuning_curves(
             raise ValueError(
                 "range should be a sequence of tuples, one for each feature."
             )
+
+    # check return_pandas
+    if not isinstance(return_pandas, bool):
+        raise TypeError("return_pandas should be a boolean.")
 
     # occupancy
     occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
@@ -226,23 +329,24 @@ def compute_tuning_curves(
         tcs[np.isnan(tcs)] = 0.0
         tcs[:, occupancy == 0.0] = np.nan
 
-    return xr.DataArray(
-        tcs,
-        coords={
-            "unit": keys,
-            **{
-                str(feature_name): (
-                    str(feature_name),
-                    e[:-1] + np.diff(e) / 2,
-                    {} if unit is None else {"units": unit},
-                )
-                for feature_name, unit, e in zip(
-                    _feature_names, _feature_units, bin_edges
-                )
+    if return_pandas and features.shape[1] == 1:
+        return pd.DataFrame(
+            tcs.T,
+            index=bin_edges[0][:-1] + np.diff(bin_edges[0]) / 2,
+            columns=keys,
+        )
+    else:
+        return xr.DataArray(
+            tcs,
+            coords={
+                "unit": keys,
+                **{
+                    str(feature_name): e[:-1] + np.diff(e) / 2
+                    for feature_name, e in zip(feature_names, bin_edges)
+                },
             },
-        },
-        attrs={"occupancy": occupancy, "bin_edges": bin_edges},
-    )
+            attrs={"occupancy": occupancy, "bin_edges": bin_edges},
+        )
 
 
 @_validate_tuning_inputs
@@ -342,19 +446,20 @@ def compute_discrete_tuning_curves(group, dict_ep):
     The function returns a pandas DataFrame with each row being a key of the dictionary of epochs
     and each column being a neurons.
 
-       This function can typically being used for a set of stimulus being presented for multiple epochs.
-    An example of the dictionary is :
+    This function can typically being used for a set of stimulus being presented for multiple epochs.
+    An example of the dictionary is:
 
-        >>> dict_ep =  {
-                "stim0": nap.IntervalSet(start=0, end=1),
-                "stim1":nap.IntervalSet(start=2, end=3)
-            }
+    >>> dict_ep =  {
+            "stim0": nap.IntervalSet(start=0, end=1),
+            "stim1":nap.IntervalSet(start=2, end=3)
+        }
+
     In this case, the function will return a pandas DataFrame :
 
-        >>> tc
-                   neuron0    neuron1    neuron2
-        stim0        0 Hz       1 Hz       2 Hz
-        stim1        3 Hz       4 Hz       5 Hz
+    >>> tc
+               neuron0    neuron1    neuron2
+    stim0        0 Hz       1 Hz       2 Hz
+    stim1        3 Hz       4 Hz       5 Hz
 
 
     Parameters
