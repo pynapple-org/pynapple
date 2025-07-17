@@ -94,3 +94,12 @@ if __name__ == "__main__":
         if len(occurrences) == 1:
             params.pop(name)
 
+    matches = []
+    for name, occurrences in params.items():
+        matches.append(f"{name}:\n")
+        for occurrence in occurrences:
+            matches.append(f"\t- {occurrence[1]}: {occurrence[0]}\n")
+        matches.append("\n")
+
+    if params:
+        raise ValueError("Inconsistency in parameter naming fonund!\n\n" + "".join(matches))
