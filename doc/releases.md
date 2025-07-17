@@ -1,5 +1,16 @@
 # Releases
 
+### 0.9.2 (2025-06-16)
+
+- Implement `time_diff` method for time series objects
+- Implement `nap.compute_isi_distribution`, which uses `time_diff` to compute the distribution of inter spike intervals
+- Fix IntervalSet and TsGroup `__repr__`
+- Fix backward compatibility for loading old npz files. 
+
+### 0.9.1 (2025-06-04)
+
+- Fix TsdFrame `__repr__`
+
 ### 0.9.0 (2025-05-13)
 
 - New private class: `_MetadataMixin` and `_Metadata(UserDict)` (core/metadata_class.py). Can be inherited by:

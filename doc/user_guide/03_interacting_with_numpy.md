@@ -62,7 +62,7 @@ print(tsdframe.as_dataframe())
 
 Attributes
 ----------
-The numpy array is accesible with the attributes `.values`, `.d` and functions `.as_array()`, `to_numpy()`.
+The numpy array is accesible with the attributes `.values`, `.d` and functions [`as_array()`](pynapple.Tsd.as_array), [`to_numpy()`](pynapple.Tsd.to_numpy).
 The time index array is a `TsIndex` object accessible with `.index` or `.t`.
 `.shape` and `.ndim` are also accessible.
 

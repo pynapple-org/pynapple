@@ -123,7 +123,7 @@ plt.show()
 ```
 
 Let's plot the spikes of unit 1 who has a nice grid
-Here I use the function `value_from` to assign to each spike the closest position in time.
+Here I use the function [`value_from`](pynapple.Ts.value_from) to assign to each spike the closest position in time.
 
 
 ```{code-cell} ipython3

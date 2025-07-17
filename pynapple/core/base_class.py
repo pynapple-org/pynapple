@@ -186,27 +186,6 @@ class _Base(abc.ABC):
         -------
         out : Tsd, TsdFrame or TsdTensor
             Object with the new values
-
-        Examples
-        --------
-        In this example, the ts object will receive the closest values in time from tsd.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100))) # random times
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> tsd = nap.Tsd(t=np.arange(0,1000), d=np.random.rand(1000), time_units='s')
-        >>> ep = nap.IntervalSet(start = 0, end = 500, time_units = 's')
-
-        The variable ts is a timestamp object.
-        The tsd object containing the values, for example the tracking data, and the epoch to restrict the operation.
-
-        >>> newts = ts.value_from(tsd, ep, mode='closest')
-
-        newts is the same size as ts restrict to ep.
-
-        >>> print(len(ts.restrict(ep)), len(newts))
-            52 52
         """
         if not isinstance(data, _Base) and not hasattr(data, "values"):
             raise TypeError(
@@ -271,27 +250,6 @@ class _Base(abc.ABC):
         -------
         out: Tsd
             A Tsd object indexed by the center of the bins.
-
-        Examples
-        --------
-        This example shows how to count events within bins of 0.1 second.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> bincount = ts.count(0.1)
-
-        An epoch can be specified:
-
-        >>> ep = nap.IntervalSet(start = 100, end = 800, time_units = 's')
-        >>> bincount = ts.count(0.1, ep=ep)
-
-        And bincount automatically inherit ep as time support:
-
-        >>> bincount.time_support
-            start    end
-        0  100.0  800.0
         """
 
         if bin_size is not None:
@@ -328,6 +286,57 @@ class _Base(abc.ABC):
 
         return self._define_instance(t, ep, values=d)
 
+    def time_diff(self, align="center", epochs=None):
+        """
+        Computes the differences between subsequent timestamps.
+
+        Parameters
+        ----------
+        align: str, optional
+            Determines the time index of the resulting time differences:
+             - "start" : the start of the interval between two timestamps.
+             - "center" [default]: the center of the interval between two timestamps.
+             - "end" : the end of the interval between two timestamps.
+        epochs : IntervalSet, optional
+            The epochs on which interspike intervals are computed.
+            If None, the time support of the input is used.
+
+        Returns
+        -------
+        Tsd
+            The time differences.
+
+        """
+        if align not in ["start", "center", "end"]:
+            raise RuntimeError("align should be 'start', 'center' or 'end'")
+
+        if epochs is None:
+            epochs = self.time_support
+        else:
+            if not isinstance(epochs, IntervalSet):
+                raise TypeError("epochs should be an object of type IntervalSet")
+
+        n = max(len(self) - 1, 0)
+        new_d = np.empty(n)
+        new_t = np.empty(n)
+
+        start = 0
+        alpha = 0.0 if align == "start" else 0.5 if align == "center" else 1.0
+        for i in range(len(epochs)):
+            tmp = self.get(epochs[i, 0], epochs[i, 1])
+
+            if len(tmp) > 1:
+                diff = tmp.index.values[1:] - tmp.index.values[:-1]
+                new_d[start : start + len(tmp) - 1] = diff
+                new_t[start : start + len(tmp) - 1] = (
+                    tmp.index.values[:-1] + alpha * diff
+                )
+                start += len(tmp) - 1
+
+        return self._define_instance(
+            time_index=new_t[:start], time_support=epochs, values=new_d[:start]
+        )
+
     def restrict(self, iset):
         """
         Restricts a time series object to a set of time intervals delimited by an IntervalSet object
@@ -341,24 +350,6 @@ class _Base(abc.ABC):
         -------
         Ts, Tsd, TsdFrame or TsdTensor
             Tsd object restricted to ep
-
-        Examples
-        --------
-        The Ts object is restrict to the intervals defined by ep.
-
-        >>> import pynapple as nap
-        >>> import numpy as np
-        >>> t = np.unique(np.sort(np.random.randint(0, 1000, 100)))
-        >>> ts = nap.Ts(t=t, time_units='s')
-        >>> ep = nap.IntervalSet(start=0, end=500, time_units='s')
-        >>> newts = ts.restrict(ep)
-
-        The time support of newts automatically inherit the epochs defined by ep.
-
-        >>> newts.time_support
-            start    end
-        0    0.0  500.0
-
         """
         if not isinstance(iset, IntervalSet):
             raise TypeError("Argument should be IntervalSet")
@@ -459,24 +450,6 @@ class _Base(abc.ABC):
         ValueError
             - If start or end is not a number.
             - If start is greater than end.
-
-        Examples
-        --------
-        >>> import pynapple as nap
-
-        >>> ts = nap.Ts(t = [0, 1, 2, 3])
-
-        >>> # slice over a range
-        >>> start, end = 1.2, 2.6
-        >>> print(ts.get_slice(start, end))  # returns `slice(2, 3, None)`
-        >>> start, end = 1., 2.
-        >>> print(ts.get_slice(start, end, mode="forward"))  # returns `slice(1, 3, None)`
-
-        >>> # slice a single value
-        >>> start = 1.2
-        >>> print(ts.get_slice(start))  # returns `slice(1, 2, None)`
-        >>> start = 2.
-        >>> print(ts.get_slice(start)) # returns `slice(2, 3, None)`
         """
         mode = "closest_t" if end is None else "restrict"
         return self._get_slice(
@@ -678,5 +651,11 @@ class _Base(abc.ABC):
         if "_metadata" in file:  # load metadata if it exists
             if file["_metadata"]:  # check if metadata is not empty
                 m = file["_metadata"].item()
+                # check if first field is a dictionary, meaning it was saved from a pandas.DataFrame
+                if isinstance(next(iter(m.values())), dict):
+                    import pandas as pd
+
+                    m = pd.DataFrame.from_dict(m)
+
                 ts.set_info(m)
         return ts

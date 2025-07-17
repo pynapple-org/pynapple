@@ -13,14 +13,14 @@ kernelspec:
 
 # Tuning curves
 
-Pynapple can compute 1 dimension tuning curves 
+Pynapple can compute 1-dimensional tuning curves 
 (for example firing rate as a function of angular direction) 
-and 2 dimension tuning curves ( for example firing rate as a function 
+and 2-dimensional tuning curves (for example firing rate as a function 
 of position). It can also compute average firing rate for different 
 epochs (for example firing rate for different epochs of stimulus presentation).
 
 :::{important}
-If you are using calcium imaging data with the activity of the cell as a continuous transient, the function to call ends with `_continuous` for continuous time series (e.g. `compute_1d_tuning_curves_continuous`).
+If you are using calcium imaging data with the activity of the cell as a continuous transient, the function to call ends with `_continuous` for continuous time series (e.g. [`compute_1d_tuning_curves_continuous`](pynapple.process.tuning_curves.compute_1d_tuning_curves_continuous)).
 :::
 
 
@@ -47,10 +47,10 @@ group = {
 tsgroup = nap.TsGroup(group)
 ```
 
-## from epochs
+## From epochs
 
 
-The epochs should be stored in a dictionnary : 
+The epochs should be stored in a dictionnary: 
 ```{code-cell} ipython3
 dict_ep =  {
                 "stim0": nap.IntervalSet(start=0, end=20),
@@ -58,7 +58,7 @@ dict_ep =  {
             }
 ```
 
-`nap.compute_discrete_tuning_curves` takes a `TsGroup` for spiking activity and a dictionary of epochs. 
+[`nap.compute_discrete_tuning_curves`](pynapple.process.tuning_curves.compute_discrete_tuning_curves) takes a `TsGroup` for spiking activity and a dictionary of epochs. 
 The output is a pandas DataFrame where each column is a unit in the `TsGroup` and each row is one `IntervalSet` type.
 The value is the mean firing rate of the neuron during this set of intervals.
 
@@ -69,7 +69,7 @@ pprint(mean_fr)
 ```
 
 
-## from timestamps activity
+## From timestamps activity
   
 ### 1-dimension tuning curves
 
@@ -133,10 +133,7 @@ plt.ylabel("Firing rate (Hz)")
 plt.show()
 ```
 
-Internally, the function is calling the method `value_from` which maps a timestamps 
-to its closest value in time from a `Tsd` object.
-It is then possible to validate the tuning curves by displaying the 
-timestamps as well as their associated values. 
+Internally, the function is calling the method [`value_from`](pynapple.Tsd.value_from) which maps timestamps to their closest values in time from a `Tsd` object. It is then possible to validate the tuning curves by displaying the timestamps as well as their associated values. 
 
 ```{code-cell} ipython3
 :tags: [hide-input]
@@ -154,12 +151,7 @@ plt.legend()
 plt.show()
 ```
 
-
-
-
-
-
-### 2-dimension tuning curves
+### 2-dimensional tuning curves
 
 ```{code-cell} ipython3
 :tags: [hide-cell]
@@ -238,12 +230,12 @@ plt.show()
 ```
 
 
-## from continuous activity
+## From continuous activity
 
 Tuning curves compute with the following functions are usually made with 
 data from calcium imaging activities.
 
-### 1-dimension tuning curves
+### 1-dimensional tuning curves
 
 ```{code-cell} ipython3
 :tags: [hide-cell]
@@ -297,7 +289,7 @@ plt.ylabel("Mean activity")
 plt.show()
 ```
 
-### 2-dimension tuning curves
+### 2-dimensional tuning curves
 
 
 ```{code-cell} ipython3

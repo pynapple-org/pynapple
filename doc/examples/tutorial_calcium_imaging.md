@@ -161,7 +161,7 @@ plt.show()
 
 It looks like this could be a head-direction cell. One important property of head-directions cells however, is that their firing with respect to head-direction is stable. To check for their stability, we can split our recording in two and compute a tuning curve for each half of the recording.
 
-We start by finding the midpoint of the recording, using the function `get_intervals_center`. Using this, then create one new IntervalSet with two rows, one for each half of the recording.
+We start by finding the midpoint of the recording, using the function [`get_intervals_center`](pynapple.IntervalSet.get_intervals_center). Using this, then create one new IntervalSet with two rows, one for each half of the recording.
 
 
 ```{code-cell} ipython3

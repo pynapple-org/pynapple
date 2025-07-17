@@ -23,7 +23,7 @@ custom_params = {"axes.spines.right": False, "axes.spines.top": False, "figure.f
 sns.set_context("paper") 
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.3, rc=custom_params)
 ```
-## Time series method
+## Time series methods
 
 ```{code-cell} ipython3
 :tags: [hide-cell]
@@ -40,8 +40,7 @@ tsd = nap.Tsd(t=np.arange(0, 100, 1), d=np.sin(np.arange(0, 10, 0.1)))
 
 ### `restrict`
 
-`restrict` is used to get time points within an `IntervalSet`. This method is available 
-for `TsGroup`, `Tsd`, `TsdFrame`, `TsdTensor` and `Ts` objects.
+[`restrict`](pynapple.Tsd.restrict) is used to get time points within an `IntervalSet`. This method is available for `TsGroup`, `Tsd`, `TsdFrame`, `TsdTensor` and `Ts` objects.
 
 ```{code-cell} ipython3
 tsdframe.restrict(epochs) 
@@ -66,7 +65,7 @@ print(tsdframe.restrict(epochs).time_support)
 
 ### `count`
 
-`count` the number of timestamps within bins or epochs of an `IntervalSet` object.
+[`count`](pynapple.Tsd.count) returns the number of timestamps within bins or epochs of an `IntervalSet` object.
 This method is available for `TsGroup`, `Tsd`, `TsdFrame`, `TsdTensor` and `Ts` objects.
 
 With a defined bin size:
@@ -150,11 +149,7 @@ print("Tensor shape = ", tensor.shape)
 
 ### `bin_average`
 
-`bin_average` downsample time series by averaging data point falling within a bin.
-This method is available for `Tsd`, `TsdFrame` and `TsdTensor`.
-While `bin_average` is good for downsampling with precise control of the resulting bins, it does not apply any 
-antialiasing filter. The function `decimate` is also available for down-sampling 
-without aliasing.
+[`bin_average`](pynapple.Tsd.bin_average) downsamples time series by averaging data point falling within a bin. This method is available for `Tsd`, `TsdFrame` and `TsdTensor`. While `bin_average` is good for downsampling with precise control of the resulting bins, it does not apply any antialiasing filter. The function [`decimate`](pynapple.Tsd.decimate) is also available for down-sampling without aliasing.
 
 ```{code-cell} ipython3
 tsdframe.bin_average(3.5)
@@ -176,7 +171,7 @@ plt.show()
 
 ### `decimate`
 
-`decimate` downsample the time series by an integer factor after an antialiasing filter.
+The [`decimate`](pynapple.Tsd.decimate) method downsamples the time series by an integer factor after an antialiasing filter.
 
 ```{code-cell} ipython3
 :tags: [hide-input]
@@ -208,7 +203,7 @@ plt.show()
 
 ### `interpolate`
 
-The`interpolate` method of `Tsd`, `TsdFrame` and `TsdTensor` can be used to fill gaps in a time series. It is a wrapper of [`numpy.interp`](https://numpy.org/devdocs/reference/generated/numpy.interp.html).
+The [`interpolate`](pynapple.Tsd.interpolate) method of `Tsd`, `TsdFrame` and `TsdTensor` can be used to fill gaps in a time series. It is a wrapper of [`numpy.interp`](https://numpy.org/devdocs/reference/generated/numpy.interp.html).
 
 
 
@@ -238,8 +233,7 @@ plt.show()
 
 ### `value_from`
 
-By default, `value_from` assign to timestamps the closest value in time 
-from another time series. Let's define the time series we want to assign values from.
+By default, [`value_from`](pynapple.Tsd.value_from) assigns to timestamps the closest value in time from another time series. Let's define the time series we want to assign values from.
 
 For every timestamps in `tsgroup`, we want to assign the closest value in time from `tsd`.
 
@@ -322,9 +316,7 @@ ts.value_from(tsd, ep=ep, mode="before")
 
 ### `threshold`
 
-The method `threshold` of `Tsd` returns a new `Tsd` with all the data above or 
-below a certain threshold. Default is `above`. The time support
-of the new `Tsd` object get updated accordingly.
+The method [`threshold`](pynapple.Tsd.threshold) of `Tsd` returns a new `Tsd` with all the data above or below a certain threshold. Default is `above`. The time support of the new `Tsd` object get updated accordingly.
 
 ```{code-cell} ipython3
 :tags: [hide-cell]
@@ -355,7 +347,7 @@ plt.show()
 
 ### `derivative`
 
-The `derivative` method of `Tsd`, `TsdFrame` and `TsdTensor` can be used to calculate the derivative of a time series with respect to time. It is a wrapper of [`numpy.gradient`](https://numpy.org/devdocs/reference/generated/numpy.gradient.html).
+The [`derivative`](pynapple.Tsd.derivative) method of `Tsd`, `TsdFrame` and `TsdTensor` can be used to calculate the derivative of a time series with respect to time. It is a wrapper of [`numpy.gradient`](https://numpy.org/devdocs/reference/generated/numpy.gradient.html).
 
 
 ```{code-cell} ipython3
@@ -387,7 +379,7 @@ plt.show()
 
 ### `to_trial_tensor`
 
-`Tsd`, `TsdFrame`, and `TsdTensor` all have the method `to_trial_tensor`, which creates a numpy array from an `IntervalSet` by slicing the time series. The resulting tensor has shape (shape of time series, number of trials, number of time points), where the first dimension(s) is dependent on the object. 
+`Tsd`, `TsdFrame`, and `TsdTensor` all have the method [`to_trial_tensor`](pynapple.Tsd.to_trial_tensor), which creates a numpy array from an `IntervalSet` by slicing the time series. The resulting tensor has shape (shape of time series, number of trials, number of time points), where the first dimension(s) is dependent on the object. 
 
 ```{code-cell} ipython3
 tsd = nap.Tsd(t=np.arange(0, 100, 1), d=np.sin(np.arange(0, 10, 0.1))) 
@@ -458,10 +450,48 @@ plt.xlabel("Trial time")
 plt.show()
 ```
 
+### `time_diff`
+
+`Ts`, `Tsd`, `TsdFrame`, `TsdTensor`, and `TsGroup` all have the method `time_diff`, which computes the time differences between subsequent timepoints. 
+For example, if a `Ts` object contained a set of spike times, `time_diff` would compute the inter-spike interval (ISI).
+
+This method returns a new `Tsd` object, with values being each time difference, and time indices being their reference time point. 
+Passing `epochs` restricts the computation to the given epochs.
+The reference time point can be adjusted by the optional `align` parameter, which can be set to  `"start"`, `"center"`, or `"end"` (the default being `"center"`).
+
+```{code-cell} ipython3
+:tags: [hide-input]
+ts = nap.Ts(t=[1,5,6,12,16,18,19])
+```
+
+```{code-cell} ipython3
+time_diffs = ts.time_diff(align="center")
+print(time_diffs)
+```
+Setting `align="center"` sets the reference time point to the midpoint between the timestamps used to calculate the time difference.
+Setting `align="start"` or `align="end"` sets the reference time point to the earlier or later timestamp, respectively.
+```{code-cell} ipython3
+:tags: [hide-input]
+fig, axs = plt.subplots(3, 1, layout="constrained", figsize=(5,6))
+for ax, align in zip(axs, ["center", "start", "end"]):
+    time_diffs = ts.time_diff(align=align)
+    ax.plot(ts.fillna(0), "|", label="ts", markersize=20, mew=3)
+    ax.plot(time_diffs, "o-", label="new_tsd")
+    ax.set_ylabel("Time diffs (s)")
+    ax.set_title(f'ts.time_diff(align="{align}")')
+    if align != "end":
+        ax.set_xticks([])
+    for center, time_diff in zip(time_diffs.times(), time_diffs.values):
+        ax.plot([center, center], [-.25, time_diff], linestyle="--", c="black", zorder=-1)
+ax.set_xlabel("Time (s)")
+axs[0].legend(bbox_to_anchor=(1.05, 0.5, 0.5, 0.5))
+plt.show()
+```
+
 ### Mapping between `TsGroup` and `Tsd`
 
 It's is possible to transform a `TsGroup` to `Tsd` with the method
-`to_tsd` and a `Tsd` to `TsGroup` with the method `to_tsgroup`.
+[`to_tsd`](pynapple.TsGroup.to_tsd) and a `Tsd` to `TsGroup` with the method [`to_tsgroup`](pynapple.Tsd.to_tsgroup).
 
 This is useful to flatten the activity of a population in a single array.
 
@@ -473,7 +503,7 @@ print(tsd)
 The object `tsd` contains all the timestamps of the `tsgroup` with
 the associated value being the index of the unit in the `TsGroup`.
 
-The method `to_tsgroup` converts the `Tsd` object back to the original `TsGroup`. 
+The method [`to_tsgroup`](pynapple.Tsd.to_tsgroup) converts the `Tsd` object back to the original `TsGroup`. 
 
 ```{code-cell} ipython3
 back_to_tsgroup = tsd.to_tsgroup()
@@ -515,11 +545,9 @@ plt.tight_layout()
 plt.show()
 ```
 
-### Special slicing : TsdFrame
+### Special slicing: TsdFrame
 
-For users that are familiar with pandas, `TsdFrame` is the closest object to a [DataFrame](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html).
-but there are distinctive behavior when slicing the object. `TsdFrame` behaves primarily like a numpy array. This section
-lists all the possible ways of slicing `TsdFrame`.
+For users that are familiar with pandas, [`TsdFrame`](pynapple.TsdFrame) is the closest object to a [DataFrame](https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html), but there are distinctive behavior when slicing the object. `TsdFrame` behaves primarily like a numpy array. This section lists all the possible ways of slicing `TsdFrame`.
 
 #### 1. If not column labels are passed 
 
@@ -528,7 +556,7 @@ tsdframe = nap.TsdFrame(t=np.arange(4), d=np.random.randn(4,3))
 print(tsdframe)
 ```
 
-Slicing should be done like numpy array :
+Slicing should be done like numpy array:
 
 ```{code-cell} ipython3
 tsdframe[0]
@@ -551,14 +579,14 @@ recording device it corresponds to.
 tsdframe = nap.TsdFrame(t=np.arange(4), d=np.random.randn(4,4), columns = [3, 2, 0, 1])
 print(tsdframe)
 ```
-In this case, indexing like numpy still has priority which can led to confusing behavior :
+In this case, indexing like numpy still has priority which can led to confusing behavior:
 
 ```{code-cell} ipython3
 tsdframe[:, [0, 2]]
 ```
 Note how this corresponds to column labels 3 and 0.  
 
-To slice using column labels only, the `TsdFrame` object has the `loc` method similar to Pandas :
+To slice using column labels only, the `TsdFrame` object has the [`loc`](pynapple.TsdFrame.loc) method similar to Pandas:
 
 ```{code-cell} ipython3
 tsdframe.loc[[0, 2]]
@@ -574,7 +602,7 @@ tsdframe = nap.TsdFrame(t=np.arange(4), d=np.random.randn(4,3), columns = ["kiwi
 print(tsdframe)
 ```
 
-When the column labels are all strings, it is possible to use either direct bracket indexing or using the `loc` method:
+When the column labels are all strings, it is possible to use either direct bracket indexing or using the [`loc`](pynapple.TsdFrame.loc) method:
 
 ```{code-cell} ipython3
 print(tsdframe['kiwi'])
@@ -596,7 +624,7 @@ Direct bracket indexing only works if the column label is a string.
 print(tsdframe['kiwi'])
 ```
 
-To slice with mixed types, it is best to use the `loc` method :
+To slice with mixed types, it is best to use the [`loc`](pynapple.TsdFrame.loc) method:
 
 ```{code-cell} ipython3
 print(tsdframe.loc[['kiwi', np.pi]])
@@ -607,7 +635,6 @@ In general, it is probably a bad idea to mix types when labelling columns.
 
 ## Interval sets methods
  
-
 ### Interaction between epochs 
 
 Intervals can be combined in different ways. 
@@ -619,7 +646,7 @@ print(epoch1, "\n")
 print(epoch2, "\n")
 ```
 
-#### `union`
+#### [`union`](pynapple.IntervalSet.union)
 
 ```{code-cell} ipython3
 epoch = epoch1.union(epoch2)
@@ -644,7 +671,7 @@ plt.show()
 
 
 
-#### `intersect`
+#### [`intersect`](pynapple.IntervalSet.intersect)
 
 ```{code-cell} ipython3
 epoch = epoch1.intersect(epoch2)
@@ -667,7 +694,7 @@ plt.title("Intersection")
 plt.show()
 ```
 
-#### `set_diff`
+#### [`set_diff`](pynapple.IntervalSet.set_diff)
 
 ```{code-cell} ipython3
 epoch = epoch1.set_diff(epoch2)
@@ -690,10 +717,9 @@ plt.title("Difference")
 plt.show()
 ```
 
-### `split`
+### [`split`](pynapple.IntervalSet.split)
 
-Useful for chunking time series, the `split` method splits an `IntervalSet` in a new
-`IntervalSet` based on the `interval_size` argument.
+Useful for chunking time series, the [`split`](pynapple.IntervalSet.split) method splits an `IntervalSet` in a new `IntervalSet` based on the `interval_size` argument.
 
 ```{code-cell} ipython3
 epoch = nap.IntervalSet(start=0, end=100)
@@ -708,7 +734,7 @@ epoch = nap.IntervalSet(start=[5, 30], end=[6, 45])
 print(epoch)
 ```
 
-#### `drop_short_intervals`
+#### [`drop_short_intervals`](pynapple.IntervalSet.drop_short_intervals)
 
 ```{code-cell} ipython3
 print(
@@ -716,7 +742,7 @@ print(
     )
 ```
 
-#### `drop_long_intervals`
+#### [`drop_long_intervals`](pynapple.IntervalSet.drop_long_intervals)
 
 ```{code-cell} ipython3
 print(
@@ -724,7 +750,7 @@ print(
     )
 ```
 
-#### `merge_close_intervals`
+#### [`merge_close_intervals`](pynapple.IntervalSet.merge_close_intervals)
 
 ```{code-cell} ipython3
 :tags: [hide-input]

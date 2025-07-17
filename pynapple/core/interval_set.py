@@ -338,21 +338,26 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             n_rows = max_rows // 2
             ends = np.array([end] * n_rows)
             if len(col_to_show):
-                mt_top = np.array(
-                    [
-                        _convert_iter_to_str(self._metadata[c][0:n_rows])
-                        for c in col_to_show
-                    ]
-                ).T
-                mt_bot = np.array(
-                    [
-                        _convert_iter_to_str(self._metadata[c][-n_rows:])
-                        for c in col_to_show
-                    ]
-                ).T
+                try:
+                    mt_top = np.array(
+                        [
+                            _convert_iter_to_str(self._metadata[c][0:n_rows])
+                            for c in col_to_show
+                        ]
+                    ).T
+                    mt_bot = np.array(
+                        [
+                            _convert_iter_to_str(self._metadata[c][-n_rows:])
+                            for c in col_to_show
+                        ]
+                    ).T
+                except Exception:
+                    mt_top = np.ndarray(shape=(n_rows, 0))
+                    mt_bot = np.ndarray(shape=(n_rows, 0))
             else:
                 mt_top = np.ndarray(shape=(n_rows, 0))
                 mt_bot = np.ndarray(shape=(n_rows, 0))
+
             table = np.vstack(
                 (
                     np.hstack(
@@ -612,7 +617,10 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         ep = cls(start=file["start"], end=file["end"])
         if "_metadata" in file:  # load metadata if it exists
             if file["_metadata"]:  # check that metadata is not empty
-                metadata = pd.DataFrame.from_dict(file["_metadata"].item())
+                metadata = file["_metadata"].item()
+                # check if first field is a dictionary, meaning it was saved from a pandas.DataFrame
+                if isinstance(next(iter(metadata.values())), dict):
+                    metadata = pd.DataFrame.from_dict(metadata)
                 ep.set_info(metadata)
         return ep
 
