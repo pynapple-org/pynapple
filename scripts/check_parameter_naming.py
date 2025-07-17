@@ -1,8 +1,9 @@
 import difflib
 import inspect
-import types
 import logging
 import sys
+import types
+
 import pynapple as nap
 
 VALID_PAIRS = [
@@ -11,6 +12,7 @@ VALID_PAIRS = [
     {"args", "kwargs"},
     {"channel", "n_channels"},
 ]
+
 
 def collect_similar_parameter_names(package, root_name=None, similarity_cutoff=0.8):
     """
@@ -61,7 +63,9 @@ def collect_similar_parameter_names(package, root_name=None, similarity_cutoff=0
                 if par in results:
                     results[par].append((par, path))
                     continue  # exact name already exists store
-                match = difflib.get_close_matches(par, results.keys(), n=1, cutoff=similarity_cutoff)
+                match = difflib.get_close_matches(
+                    par, results.keys(), n=1, cutoff=similarity_cutoff
+                )
                 if match and not {match[0], par} in VALID_PAIRS:
                     results[match[0]].append((par, path))
                 else:
@@ -75,18 +79,18 @@ def collect_similar_parameter_names(package, root_name=None, similarity_cutoff=0
         visited_ids.add(id(obj))
 
         if inspect.isfunction(obj) or inspect.ismethod(obj):
-            if getattr(obj, '__module__', '').startswith(root_name):
+            if getattr(obj, "__module__", "").startswith(root_name):
                 process_function(obj, path_prefix)
 
         elif inspect.isclass(obj):
-            if getattr(obj, '__module__', '').startswith(root_name):
+            if getattr(obj, "__module__", "").startswith(root_name):
                 for name, member in inspect.getmembers(obj):
                     if name.startswith("_"):
                         continue
                     walk(member, f"{path_prefix}.{name}")
 
         elif isinstance(obj, types.ModuleType):
-            if not getattr(obj, '__name__', '').startswith(root_name):
+            if not getattr(obj, "__name__", "").startswith(root_name):
                 return  # external module, skip
             for name, member in inspect.getmembers(obj):
                 if name.startswith("_"):
@@ -100,10 +104,15 @@ def collect_similar_parameter_names(package, root_name=None, similarity_cutoff=0
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(description="Check for inconsistent parameter naming.")
+    parser = argparse.ArgumentParser(
+        description="Check for inconsistent parameter naming."
+    )
     parser.add_argument(
-        "--threshold", "-t", type=float, default=0.8,
-        help="Similarity threshold (between 0 and 1) for grouping parameter names (default: 0.9)"
+        "--threshold",
+        "-t",
+        type=float,
+        default=0.8,
+        help="Similarity threshold (between 0 and 1) for grouping parameter names (default: 0.9)",
     )
     args = parser.parse_args()
 
