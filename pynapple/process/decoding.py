@@ -79,7 +79,7 @@ def decode_bayes(
     99.5         1
     dtype: float64, shape: (100,)
 
-    `decode` is a `Tsd` object containing the decoded feature for each time bin.
+    decode is a `Tsd` object containing the decoded feature for each time bin.
 
     >>> p
     Time (s)    0    1
@@ -101,9 +101,9 @@ def decode_bayes(
     99.5        0.0  1.0
     dtype: float64, shape: (100, 2)
 
-    `p` is a `TsdFrame` object containing the probability distribution for each time bin.
+    p is a `TsdFrame` object containing the probability distribution for each time bin.
 
-    The function also works for multiple features, in which case it does n-dimensional decoding.
+    The function also works for multiple features, in which case it does n-dimensional decoding:
 
     >>> features = nap.TsdFrame(
     ...     t=np.arange(0, 100, 1),
@@ -139,7 +139,7 @@ def decode_bayes(
     99.5        1.0  1.0
     dtype: float64, shape: (100, 2)
 
-    `decode` is now a `TsdFrame` object containing the decoded features for each time bin.
+    decoded is now a `TsdFrame` object containing the decoded features for each time bin.
 
     >>> p
     Time (s)
@@ -161,14 +161,10 @@ def decode_bayes(
     99.5        [[0., 0.] ...]
     dtype: float64, shape: (100, 2, 2)
 
-    and `p` is a `TsdTensor` object containing the probability distribution for each time bin.
+    and p is a `TsdTensor` object containing the probability distribution for each time bin.
 
     It is also possible to pass continuous values instead of spikes (e.g. smoothed spike counts):
 
-    >>> features = nap.TsdFrame(
-    ...     t=np.arange(0, 100, 1),
-    ...     d=np.vstack((np.repeat(np.arange(0, 2), 50), np.tile(np.arange(0, 2), 50))).T,
-    ... )
     >>> group = group.count(1).smooth(2)
     >>> tuning_curves = nap.compute_tuning_curves(group, features, bins=2, range=[(-.5, 1.5)]*2)
     >>> decoded, p = nap.decode_bayes(tuning_curves, group, epochs=epochs, bin_size=1)
