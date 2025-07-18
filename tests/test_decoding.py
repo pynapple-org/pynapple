@@ -78,10 +78,28 @@ def get_testing_set_n(n_features=1, binned=False):
             ),
         ),
         (
+            {"tuning_curves": get_testing_set_n(2, binned=True)["tuning_curves"]},
+            pytest.raises(
+                ValueError,
+                match="Different shapes for tuning_curves and group.",
+            ),
+        ),
+        (
             {
                 "tuning_curves": get_testing_set_n()["tuning_curves"].assign_coords(
                     unit=[2, 3]
                 )
+            },
+            pytest.raises(
+                ValueError,
+                match="Different indices for tuning curves and group keys.",
+            ),
+        ),
+        (
+            {
+                "tuning_curves": get_testing_set_n(binned=True)[
+                    "tuning_curves"
+                ].assign_coords(unit=[2, 3])
             },
             pytest.raises(
                 ValueError,
