@@ -50,7 +50,7 @@ def decode(tuning_curves, group, epochs, bin_size, time_units="s", use_occupancy
     # check tuning curves
     if not isinstance(tuning_curves, xr.DataArray):
         raise TypeError(
-            "tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves"
+            "tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves."
         )
 
     # check group
@@ -58,10 +58,10 @@ def decode(tuning_curves, group, epochs, bin_size, time_units="s", use_occupancy
         numcells = len(group)
 
         if tuning_curves.sizes["unit"] != numcells:
-            raise ValueError("Different shapes for tuning_curves and group")
+            raise ValueError("Different shapes for tuning_curves and group.")
 
         if not np.all(tuning_curves.coords["unit"] == np.array(list(group.keys()))):
-            raise ValueError("Different indices for tuning curves and group keys")
+            raise ValueError("Different indices for tuning curves and group keys.")
 
         if isinstance(group, dict):
             group = nap.TsGroup(group, time_support=epochs)
@@ -70,10 +70,10 @@ def decode(tuning_curves, group, epochs, bin_size, time_units="s", use_occupancy
         numcells = group.shape[1]
 
         if tuning_curves.sizes["unit"] != numcells:
-            raise ValueError("Different shapes for tuning_curves and group")
+            raise ValueError("Different shapes for tuning_curves and group.")
 
         if not np.all(tuning_curves.coords["unit"] == group.columns):
-            raise ValueError("Different indices for tuning curves and group keys")
+            raise ValueError("Different indices for tuning curves and group keys.")
 
         count = group
     else:
@@ -82,7 +82,7 @@ def decode(tuning_curves, group, epochs, bin_size, time_units="s", use_occupancy
     if use_occupancy:
         if "occupancy" not in tuning_curves.attrs:
             raise ValueError(
-                "use_occupancy set to True but no occupancy found in tuning curves"
+                "use_occupancy set to True but no occupancy found in tuning curves."
             )
         occupancy = tuning_curves.attrs["occupancy"]
         if occupancy.shape != tuning_curves.shape[1:]:

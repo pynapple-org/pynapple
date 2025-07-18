@@ -63,7 +63,7 @@ index = np.digitize(feature, bins)-1
 
 count = np.random.poisson(tc[index])>0
 tsgroup = nap.TsGroup({i:nap.Ts(timestep[count[:,i]]) for i in range(N)})
-epoch = nap.IntervalSet(0, 10)
+epochs = nap.IntervalSet(0, 10)
 ```
 
 To decode, we need to compute tuning curves in 1D.
@@ -74,7 +74,7 @@ tuning_curves_1d = nap.compute_tuning_curves(
 )
 ```
 
-We can display the tuning curves of each neurons
+We can display the tuning curve of each neuron:
 
 ```{code-cell} ipython3
 :tags: [hide-input]
@@ -84,31 +84,31 @@ tuning_curves_1d.plot.line(x="feature", add_legend=False)
 plt.show()
 ```
 
-`nap.decode_1d` performs bayesian decoding:
+`nap.decode` performs bayesian decoding:
 
 ```{code-cell} ipython3
-decoded, proba_feature = nap.decode_1d(
-    tuning_curves=tuning_curves_1d.to_pandas().T, # 1D tuning curves
+decoded, proba_feature = nap.decode(
+    tuning_curves=tuning_curves_1d, # 1D tuning curves
     group=tsgroup, # Spiking activity
-    ep=epoch, # Small epoch
+    epochs=epochs, # Small epoch
     bin_size=0.06,  # How to bin the spike trains
-    feature=feature, # Features
 )
 ```
 
-`decoded` is `Tsd` object containing the decoded feature value. `proba_feature` is a `TsdFrame` containing the probabilities of being in a particular feature bin over time.
+`decoded` is a `Tsd` object containing the decoded feature value.
+`proba_feature` is a `TsdFrame` containing the probabilities of being in a particular feature bin over time.
 
 ```{code-cell} ipython3
 :tags: [hide-input]
 plt.figure(figsize=(12, 6))
 plt.subplot(211)
-plt.plot(feature.restrict(epoch), label="True")
+plt.plot(feature.restrict(epochs), label="True")
 plt.plot(decoded, label="Decoded")
 plt.legend()
-plt.xlim(epoch[0,0], epoch[0,1])
+plt.xlim(epochs[0,0], epochs[0,1])
 plt.subplot(212)
 plt.imshow(proba_feature.values.T, aspect="auto", origin="lower", cmap="viridis")
-plt.xticks([0, len(decoded)], epoch.values[0])
+plt.xticks([0, len(decoded)], epochs.values[0])
 plt.xlabel("Time (s)")
 plt.show()
 ```
@@ -123,7 +123,7 @@ features = np.vstack((np.cos(np.arange(0, 1000, dt)), np.sin(np.arange(0, 1000, 
 features = nap.TsdFrame(t=np.arange(0, 1000, dt),
     d=features,
     time_units="s",
-    time_support=epoch,
+    time_support=epochs,
     columns=["a", "b"],
 )
 
@@ -137,10 +137,10 @@ for i in range(12):
     ts = times[(alpha >= bins[i, 0]) & (alpha <= bins[i + 1, 1])]
     ts_group[i] = nap.Ts(ts, time_units="us")
 
-ts_group = nap.TsGroup(ts_group, time_support=epoch)
+ts_group = nap.TsGroup(ts_group, time_support=epochs)
 ```
 
-To decode, we need to compute tuning curves in 2D.
+To decode two dimensions, we need to compute tuning curves in 2D:
 
 ```{code-cell} ipython3
 tuning_curves_2d = nap.compute_tuning_curves(
@@ -152,7 +152,7 @@ tuning_curves_2d = nap.compute_tuning_curves(
 )
 ```
 
-We can display the tuning curves of each neuron
+We can again display the tuning curve of each neuron:
 
 ```{code-cell} ipython3
 :tags: [hide-input]
@@ -162,19 +162,14 @@ tuning_curves_2d.plot(row="unit", col_wrap=6)
 plt.show()
 ```
 
-`nap.decode_2d` performs bayesian decoding:
+and `nap.decode` again performs bayesian decoding:
 
 ```{code-cell} ipython3
-tcs = {c: tuning_curves_2d.sel(unit=c).values for c in tuning_curves_2d.coords["unit"].values}
-bins = [tuning_curves_2d.coords[dim].values for dim in tuning_curves_2d.coords if dim != "unit"]
-
-decoded, proba_feature = nap.decode_2d(
-    tuning_curves=tcs, # 2D tuning curves
+decoded, proba_feature = nap.decode(
+    tuning_curves=tuning_curves_2d, # 2D tuning curves
     group=ts_group, # Spiking activity
-    ep=epoch, # Epoch
+    epochs=epochs, # Epoch
     bin_size=0.1,  # How to bin the spike trains
-    xy=bins, # Features position
-    features=features, # Features
 )
 ```
 

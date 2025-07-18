@@ -1,6 +1,7 @@
 """Tests of decoding for `pynapple` package."""
 
 from contextlib import nullcontext as does_not_raise
+from itertools import product
 
 import numpy as np
 import pytest
@@ -8,21 +9,39 @@ import pytest
 import pynapple as nap
 
 
-def get_testing_set_n(n_units=1, n_features=1, binned=False):
-    features = nap.TsdFrame(
-        t=np.arange(0, 100, 1),
-        d=np.stack([np.repeat(np.arange(0, 2), 50) for _ in range(n_features)], axis=1),
-    )
-    group = nap.TsGroup(
-        {i: nap.Ts(t=np.arange(0, 50) + 50 * i) for i in range(n_units)}
-    )
+def get_testing_set_n(n_features=1, binned=False):
+    combos = np.array(list(product([0, 1], repeat=n_features)))  # (2^F, F)
+    reps = 5
+    feature_data = np.tile(combos, (reps, 1))  # (T, F)
+    times = np.arange(len(feature_data))
+
+    features = nap.TsdFrame(t=times, d=feature_data)
+    epochs = nap.IntervalSet(start=0, end=len(times))
+
+    group = {
+        i: nap.Ts(t=times[np.all(feature_data == combo, axis=1)])
+        for i, combo in enumerate(combos)
+    }
+
     if binned:
-        group = group.count(bin_size=1)
-    tc = nap.compute_tuning_curves(
-        group=group, features=features, bins=2, range=[(-0.5, 1.5)] * n_features
+        group = nap.TsGroup(group).count(bin_size=1, ep=epochs)
+        group = nap.TsdFrame(
+            group.times() - 0.5,
+            group.values,
+            time_support=epochs,
+        )
+
+    tuning_curves = nap.compute_tuning_curves(
+        group, features, bins=2, range=[(-0.5, 1.5)] * n_features
     )
-    epochs = nap.IntervalSet(start=0, end=100)
-    return {"tuning_curves": tc, "group": group, "epochs": epochs, "bin_size": 1}
+
+    return {
+        "features": features,
+        "tuning_curves": tuning_curves,
+        "group": group,
+        "epochs": epochs,
+        "bin_size": 1,
+    }
 
 
 @pytest.mark.filterwarnings("ignore")
@@ -34,50 +53,44 @@ def get_testing_set_n(n_units=1, n_features=1, binned=False):
             {"tuning_curves": []},
             pytest.raises(
                 TypeError,
-                match="tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves",
+                match="tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves.",
             ),
         ),
         (
             {"tuning_curves": 1},
             pytest.raises(
                 TypeError,
-                match="tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves",
+                match="tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves.",
             ),
         ),
         (
             {"tuning_curves": get_testing_set_n()["tuning_curves"].to_pandas().T},
             pytest.raises(
                 TypeError,
-                match="tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves",
+                match="tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves.",
             ),
         ),
         (
-            {"tuning_curves": get_testing_set_n(n_units=2)["tuning_curves"]},
+            {"tuning_curves": get_testing_set_n(2)["tuning_curves"]},
             pytest.raises(
                 ValueError,
-                match="Different shapes for tuning_curves and group",
+                match="Different shapes for tuning_curves and group.",
             ),
         ),
         (
             {
-                "tuning_curves": get_testing_set_n(n_units=1)[
-                    "tuning_curves"
-                ].assign_coords(unit=[3])
+                "tuning_curves": get_testing_set_n()["tuning_curves"].assign_coords(
+                    unit=[2, 3]
+                )
             },
             pytest.raises(
                 ValueError,
-                match="Different indices for tuning curves and group keys",
+                match="Different indices for tuning curves and group keys.",
             ),
         ),
         ({}, does_not_raise()),
-        (get_testing_set_n(1, 2), does_not_raise()),
-        (get_testing_set_n(1, 3), does_not_raise()),
-        (get_testing_set_n(2, 1), does_not_raise()),
-        (get_testing_set_n(2, 2), does_not_raise()),
-        (get_testing_set_n(2, 3), does_not_raise()),
-        (get_testing_set_n(3, 1), does_not_raise()),
-        (get_testing_set_n(3, 2), does_not_raise()),
-        (get_testing_set_n(3, 3), does_not_raise()),
+        (get_testing_set_n(1), does_not_raise()),
+        (get_testing_set_n(2), does_not_raise()),
         # group
         (
             {"group": []},
@@ -97,15 +110,23 @@ def get_testing_set_n(n_units=1, n_features=1, binned=False):
             {"group": get_testing_set_n(2)["group"]},
             pytest.raises(
                 ValueError,
-                match="Different shapes for tuning_curves and group",
+                match="Different shapes for tuning_curves and group.",
             ),
         ),
         (
-            {"group": nap.TsGroup({2: nap.Ts(t=np.arange(0, 50))})},
+            {
+                "group": nap.TsGroup(
+                    {2: nap.Ts(t=np.arange(0, 50)), 3: nap.Ts(t=np.arange(0, 50))}
+                )
+            },
             pytest.raises(
                 ValueError,
-                match="Different indices for tuning curves and group keys",
+                match="Different indices for tuning curves and group keys.",
             ),
+        ),
+        (
+            {"group": nap.TsGroup(get_testing_set_n()["group"])},
+            does_not_raise(),
         ),
         (
             {"group": get_testing_set_n(binned=True)["group"]},
@@ -129,7 +150,7 @@ def get_testing_set_n(n_units=1, n_features=1, binned=False):
             },
             pytest.raises(
                 ValueError,
-                match="use_occupancy set to True but no occupancy found in tuning curves",
+                match="use_occupancy set to True but no occupancy found in tuning curves.",
             ),
         ),
         (
@@ -151,89 +172,43 @@ def get_testing_set_n(n_units=1, n_features=1, binned=False):
     ],
 )
 def test_decode_type_errors(overwrite_default_args, expectation):
-    default_args = get_testing_set_n(1)
+    default_args = get_testing_set_n()
     default_args.update(overwrite_default_args)
+    default_args.pop("features")
     with expectation:
         nap.decode(**default_args)
 
 
-# def test_decode_1d():
-#    feature, group, tc, epochs = get_testing_set_n(1)
-#    decoded, proba = nap.decode(tc, group, epochs, bin_size=1)
-#    assert isinstance(decoded, nap.Tsd)
-#    assert isinstance(proba, nap.TsdFrame)
-#    np.testing.assert_array_almost_equal(feature.values, decoded.values)
-#    assert len(decoded) == 100
-#    assert len(proba) == 100
-#    tmp = np.ones((100, 2))
-#    tmp[50:, 0] = 0.0
-#    tmp[0:50, 1] = 0.0
-#    np.testing.assert_array_almost_equal(proba.values, tmp)
-#
-#
-# def test_decode_1d_with_TsdFrame():
-#    feature, group, tc, epochs = get_testing_set_n(1)
-#    count = group.count(bin_size=1, ep=epochs)
-#    decoded, proba = nap.decode(tc, count, epochs, bin_size=1)
-#    assert isinstance(decoded, nap.Tsd)
-#    assert isinstance(proba, nap.TsdFrame)
-#    np.testing.assert_array_almost_equal(feature.values, decoded.values)
-#    assert len(decoded) == 100
-#    assert len(proba) == 100
-#    tmp = np.ones((100, 2))
-#    tmp[50:, 0] = 0.0
-#    tmp[0:50, 1] = 0.0
-#    np.testing.assert_array_almost_equal(proba.values, tmp)
-#
-#
-# def test_decode_1d_with_occupancy():
-#    feature, group, tc, epochs = get_testing_set_n(1)
-#    decoded, proba = nap.decode(tc, group, epochs, bin_size=1, use_occupancy=True)
-#    np.testing.assert_array_almost_equal(feature.values, decoded.values)
-#    assert isinstance(decoded, nap.Tsd)
-#    assert isinstance(proba, nap.TsdFrame)
-#    np.testing.assert_array_almost_equal(feature.values, decoded.values)
-#
-#
-# def test_decode_1d_with_dict():
-#    feature, group, tc, epochs = get_testing_set_n(1)
-#    group = dict(group)
-#    decoded, proba = nap.decode(tc, group, epochs, bin_size=1)
-#    assert isinstance(decoded, nap.Tsd)
-#    assert isinstance(proba, nap.TsdFrame)
-#    np.testing.assert_array_almost_equal(feature.values, decoded.values)
-#    assert len(decoded) == 100
-#    assert len(proba) == 100
-#    tmp = np.ones((100, 2))
-#    tmp[50:, 0] = 0.0
-#    tmp[0:50, 1] = 0.0
-#    np.testing.assert_array_almost_equal(proba.values, tmp)
-#
-#
-# def test_decode_1d_with_time_units():
-#    feature, group, tc, epochs = get_testing_set_n(1)
-#    for t, tu in zip([1, 1e3, 1e6], ["s", "ms", "us"]):
-#        decoded, proba = nap.decode(tc, group, epochs, 1.0 * t, time_units=tu)
-#        np.testing.assert_array_almost_equal(feature.values, decoded.values)
-#
-#
-# def test_decoded_1d_raise_errors():
-#    feature, group, tc, epochs = get_testing_set_n(1)
-#    with pytest.raises(Exception) as e_info:
-#        nap.decode(tc, np.random.rand(10), epochs, 1)
-#    assert str(e_info.value) == "Unknown format for group"
-#
-#    feature, group, tc, epochs = get_testing_set_n(1)
-#    _tc = xr.DataArray(data=np.random.rand(10, 3), dims=["time", "unit"])
-#    with pytest.raises(Exception) as e_info:
-#        nap.decode(_tc, group, epochs, 1)
-#    assert str(e_info.value) == "Different shapes for tuning_curves and group"
-#
-#    feature, group, tc, epochs = get_testing_set_n(1)
-#    tc.coords["unit"] = [0, 2]
-#    with pytest.raises(Exception) as e_info:
-#        nap.decode(tc, group, epochs, 1)
-#    assert str(e_info.value) == "Different indices for tuning curves and group keys"
+@pytest.mark.parametrize("use_occupancy", [True, False])
+@pytest.mark.parametrize("n_features", [1, 2, 3])
+@pytest.mark.parametrize("binned", [True, False])
+def test_decode(n_features, binned, use_occupancy):
+    features, tuning_curves, group, epochs, bin_size = get_testing_set_n(
+        n_features, binned=binned
+    ).values()
+    decoded, proba = nap.decode(
+        tuning_curves=tuning_curves,
+        group=group,
+        epochs=epochs,
+        bin_size=bin_size,
+        time_units="s",
+        use_occupancy=use_occupancy,
+    )
+
+    assert isinstance(decoded, nap.Tsd if features.shape[1] == 1 else nap.TsdFrame)
+    np.testing.assert_array_almost_equal(decoded.values, features.values.squeeze())
+
+    assert isinstance(
+        proba,
+        nap.TsdFrame if features.shape[1] == 1 else nap.TsdTensor,
+    )
+    expected_proba = np.zeros((len(features), *tuning_curves.shape[1:]))
+    target_indices = [np.arange(len(features))] + [
+        features[:, d] for d in range(features.shape[1])
+    ]
+    expected_proba[tuple(target_indices)] = 1.0
+    np.testing.assert_array_almost_equal(proba.values, expected_proba)
+
 
 # ------------------------------------------------------------------------------------
 # OLD DECODING TESTS
