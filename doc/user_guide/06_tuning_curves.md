@@ -41,29 +41,7 @@ group = {
 tsgroup = nap.TsGroup(group)
 ```
 
-<!-- #region -->
-## From epochs
-
-When computing from epochs, you should store them in a dictionary:
-<!-- #endregion -->
-
-```{code-cell} ipython3
-dict_ep =  {
-                "stim0": nap.IntervalSet(start=0, end=20),
-                "stim1":nap.IntervalSet(start=30, end=70)
-}
-```
-
-[`nap.compute_discrete_tuning_curves`](pynapple.process.tuning_curves.compute_discrete_tuning_curves) takes a `TsGroup` for spiking activity and a dictionary of epochs. 
-The output is a pandas DataFrame where each column is a unit in the `TsGroup` and each row is one `IntervalSet`.
-The output will be the mean firing rate of the neuron during this set of intervals.
-
-```{code-cell} ipython3
-mean_fr = nap.compute_discrete_tuning_curves(tsgroup, dict_ep)
-print(mean_fr)
-```
-
-## From timestamps
+## From timestamps or continuous activity
   
 ```{code-cell} ipython3
 :tags: [hide-cell]
@@ -354,4 +332,24 @@ tuning_curves_2d.name="ΔF/F"
 tuning_curves_2d.attrs["unit"]="a.u."
 tuning_curves_2d.plot(col="unit")
 plt.show()
+```
+
+## From epochs
+
+When computing from epochs, you should store them in a dictionary:
+
+```{code-cell} ipython3
+dict_ep =  {
+                "stim0": nap.IntervalSet(start=0, end=20),
+                "stim1":nap.IntervalSet(start=30, end=70)
+}
+```
+
+[`nap.compute_discrete_tuning_curves`](pynapple.process.tuning_curves.compute_discrete_tuning_curves) takes a `TsGroup` for spiking activity and a dictionary of epochs. 
+The output is a pandas DataFrame where each column is a unit in the `TsGroup` and each row is one `IntervalSet`.
+The output will be the mean firing rate of the neuron during this set of intervals.
+
+```{code-cell} ipython3
+mean_fr = nap.compute_discrete_tuning_curves(tsgroup, dict_ep)
+print(mean_fr)
 ```
