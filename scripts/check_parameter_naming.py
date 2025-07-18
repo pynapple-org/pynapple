@@ -84,10 +84,11 @@ def collect_similar_parameter_names(package, root_name=None, similarity_cutoff=0
 
         elif inspect.isclass(obj):
             if getattr(obj, "__module__", "").startswith(root_name):
-                for name, member in inspect.getmembers(obj):
-                    if name.startswith("_"):
-                        continue
-                    walk(member, f"{path_prefix}.{name}")
+                for attr in inspect.classify_class_attrs(obj):
+                    # attrs is a convenient named tuple with fields
+                    # (name, kind, defining_class, object)
+                    if attr.kind == "method":
+                        process_function(attr.object, f"{path_prefix}.{attr.name}")
 
         elif isinstance(obj, types.ModuleType):
             if not getattr(obj, "__name__", "").startswith(root_name):
