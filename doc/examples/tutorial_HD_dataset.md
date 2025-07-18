@@ -183,7 +183,7 @@ To decode the population activity, we will be using a bayesian decoder as implem
 Again, just a single line of code!
 
 ```{code-cell} ipython3
-decoded, proba_feature = nap.decode(
+decoded, proba_feature = nap.decode_bayes(
     tuning_curves=tuning_curves,
     group=spikes_adn,
     epochs=epochs[epochs.tags == "wake"],

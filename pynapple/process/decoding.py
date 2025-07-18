@@ -10,7 +10,9 @@ import xarray as xr
 from .. import core as nap
 
 
-def decode(tuning_curves, group, epochs, bin_size, time_units="s", use_occupancy=False):
+def decode_bayes(
+    tuning_curves, group, epochs, bin_size, time_units="s", use_occupancy=False
+):
     """
     Performs Bayesian decoding over n-dimensional features.
 
@@ -25,7 +27,7 @@ def decode(tuning_curves, group, epochs, bin_size, time_units="s", use_occupancy
     ----------
     tuning_curves : xr.DataArray
         Tuning curves as outputed by `compute_tuning_curves` (one for each unit).
-    group : TsGroup, TsdFrame or dict of Ts/Tsd object.
+    group : TsGroup, TsdFrame or dict of Ts, Tsd
         A group of neurons with the same keys as the tuning curves.
         You may also pass a TsdFrame with smoothed rates (recommended).
     epochs : IntervalSet
@@ -160,7 +162,7 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
         occupancy, _ = np.histogram(feature.values, bins)
     else:
         raise RuntimeError("Unknown format for feature in decode_1d")
-    return decode(
+    return decode_bayes(
         xr.DataArray(
             data=tuning_curves.values,
             coords={
@@ -201,7 +203,7 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
             features[:, 0].values, features[:, 1].values, [binsxy[0], binsxy[1]]
         )
         occupancy = occupancy.flatten()
-    return decode(
+    return decode_bayes(
         xr.DataArray(
             data=[tuning_curves[i] for i in indexes],
             coords={"unit": indexes, "0": xy[0], "1": xy[1]},

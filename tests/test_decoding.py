@@ -171,22 +171,22 @@ def get_testing_set_n(n_features=1, binned=False):
         ),
     ],
 )
-def test_decode_type_errors(overwrite_default_args, expectation):
+def test_decode_bayes_type_errors(overwrite_default_args, expectation):
     default_args = get_testing_set_n()
     default_args.update(overwrite_default_args)
     default_args.pop("features")
     with expectation:
-        nap.decode(**default_args)
+        nap.decode_bayes(**default_args)
 
 
 @pytest.mark.parametrize("use_occupancy", [True, False])
 @pytest.mark.parametrize("n_features", [1, 2, 3])
 @pytest.mark.parametrize("binned", [True, False])
-def test_decode(n_features, binned, use_occupancy):
+def test_decode_bayes(n_features, binned, use_occupancy):
     features, tuning_curves, group, epochs, bin_size = get_testing_set_n(
         n_features, binned=binned
     ).values()
-    decoded, proba = nap.decode(
+    decoded, proba = nap.decode_bayes(
         tuning_curves=tuning_curves,
         group=group,
         epochs=epochs,

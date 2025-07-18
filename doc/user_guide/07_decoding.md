@@ -84,10 +84,10 @@ tuning_curves_1d.plot.line(x="feature", add_legend=False)
 plt.show()
 ```
 
-`nap.decode` performs bayesian decoding:
+`nap.decode_bayes` performs bayesian decoding:
 
 ```{code-cell} ipython3
-decoded, proba_feature = nap.decode(
+decoded, proba_feature = nap.decode_bayes(
     tuning_curves=tuning_curves_1d, # 1D tuning curves
     group=tsgroup, # Spiking activity
     epochs=epochs, # Small epoch
@@ -162,10 +162,10 @@ tuning_curves_2d.plot(row="unit", col_wrap=6)
 plt.show()
 ```
 
-and `nap.decode` again performs bayesian decoding:
+and `nap.decode_bayes` again performs bayesian decoding:
 
 ```{code-cell} ipython3
-decoded, proba_feature = nap.decode(
+decoded, proba_feature = nap.decode_bayes(
     tuning_curves=tuning_curves_2d, # 2D tuning curves
     group=ts_group, # Spiking activity
     epochs=epochs, # Epoch
