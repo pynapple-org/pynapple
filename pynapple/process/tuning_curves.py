@@ -264,8 +264,10 @@ def compute_tuning_curves(
     if feature_names is None:
         feature_names = features.columns
     else:
-        if not isinstance(feature_names, list) or not all(
-            isinstance(n, str) for n in feature_names
+        if (
+            not hasattr(feature_names, "__len__")
+            or isinstance(feature_names, str)
+            or not all(isinstance(n, str) for n in feature_names)
         ):
             raise TypeError("feature_names should be a list of strings.")
         if len(feature_names) != features.shape[1]:
@@ -329,30 +331,27 @@ def compute_tuning_curves(
         tcs[np.isnan(tcs)] = 0.0
         tcs[:, occupancy == 0.0] = np.nan
 
-    if return_pandas and features.shape[1] == 1:
-        return pd.DataFrame(
-            tcs.T,
-            index=bin_edges[0][:-1] + np.diff(bin_edges[0]) / 2,
-            columns=keys,
-        )
-    else:
-        return xr.DataArray(
-            tcs,
-            coords={
-                "unit": keys,
-                **{
-                    str(feature_name): e[:-1] + np.diff(e) / 2
-                    for feature_name, e in zip(feature_names, bin_edges)
-                },
+    tcs = xr.DataArray(
+        tcs,
+        coords={
+            "unit": keys,
+            **{
+                str(feature_name): e[:-1] + np.diff(e) / 2
+                for feature_name, e in zip(feature_names, bin_edges)
             },
-            attrs={"occupancy": occupancy, "bin_edges": bin_edges},
-        )
+        },
+        attrs={"occupancy": occupancy, "bin_edges": bin_edges},
+    )
+    if return_pandas:
+        return tcs.to_pandas().T
+    else:
+        return tcs
 
 
 @_validate_tuning_inputs
 def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     warnings.warn(
-        "compute_1d_tuning_curves is deprecated and will be removed in v1.0; "
+        "compute_1d_tuning_curves is deprecated and will be removed in a future version;"
         "use compute_tuning_curves instead.",
         DeprecationWarning,
         stacklevel=2,
@@ -375,7 +374,7 @@ def compute_1d_tuning_curves_continuous(
     tsdframe, feature, nb_bins, ep=None, minmax=None
 ):
     warnings.warn(
-        "compute_1d_tuning_curves_continuous is deprecated and will be removed in v1.0; "
+        "compute_1d_tuning_curves_continuous is deprecated and will be removed in a future version;"
         "use compute_tuning_curves instead.",
         DeprecationWarning,
         stacklevel=2,
@@ -396,7 +395,7 @@ def compute_1d_tuning_curves_continuous(
 @_validate_tuning_inputs
 def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
     warnings.warn(
-        "compute_2d_tuning_curves is deprecated and will be removed in v1.0; "
+        "compute_2d_tuning_curves is deprecated and will be removed in a future version;"
         "use compute_tuning_curves instead.",
         DeprecationWarning,
         stacklevel=2,
@@ -420,7 +419,7 @@ def compute_2d_tuning_curves_continuous(
     tsdframe, features, nb_bins, ep=None, minmax=None
 ):
     warnings.warn(
-        "compute_2d_tuning_curves_continuous is deprecated and will be removed in v1.0; "
+        "compute_2d_tuning_curves_continuous is deprecated and will be removed in a future version;"
         "use compute_tuning_curves instead.",
         DeprecationWarning,
         stacklevel=2,
