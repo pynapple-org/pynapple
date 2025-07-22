@@ -11,7 +11,7 @@ from .. import core as nap
 
 
 def decode_bayes(
-    tuning_curves, group, epochs, bin_size, time_units="s", use_occupancy=False
+    tuning_curves, group, epochs, bin_size, time_units="s", uniform_prior=True
 ):
     """
     Performs Bayesian decoding over n-dimensional features.
@@ -36,9 +36,10 @@ def decode_bayes(
         Bin size. Default is second. Use the parameter time_units to change it.
     time_units : str, optional
         Time unit of the bin size ('s' [default], 'ms', 'us').
-    use_occupancy : bool, optional
-        If True, uses the occupancy from the tuning curves to adjust the probability distribution.
-        If False, uses a uniform distribution. Default is False.
+    uniform_prior : bool, optional
+        If True (default), uses a uniform distribution as a prior.
+        If False, uses the occupancy from the tuning curves as a prior over the feature
+        probability distribution.
 
     Returns
     -------
@@ -221,17 +222,14 @@ def decode_bayes(
     else:
         raise TypeError("Unknown format for group.")
 
-    if use_occupancy:
+    if uniform_prior:
+        occupancy = np.ones_like(tuning_curves[0]).flatten()
+    else:
         if "occupancy" not in tuning_curves.attrs:
             raise ValueError(
-                "use_occupancy set to True but no occupancy found in tuning curves."
+                "uniform_prior set to False but no occupancy found in tuning curves."
             )
-        occupancy = tuning_curves.attrs["occupancy"]
-        if occupancy.shape != tuning_curves.shape[1:]:
-            raise ValueError("Occupancy shape does not match tuning curves shape.")
-        occupancy = occupancy.flatten()
-    else:
-        occupancy = np.ones_like(tuning_curves[0]).flatten()
+        occupancy = tuning_curves.attrs["occupancy"].flatten()
 
     # Transforming to pure numpy array
     tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
@@ -253,11 +251,19 @@ def decode_bayes(
     idxmax = np.argmax(p, 1)
 
     p = p.reshape(p.shape[0], *tuning_curves.shape[1:])
-    p = getattr(nap, f"Tsd{'Tensor' if p.ndim > 2 else 'Frame'}")(
-        t=count.index,
-        d=p,
-        time_support=epochs,
-    )
+    if p.ndim > 2:
+        p = nap.TsdTensor(
+            t=count.index,
+            d=p,
+            time_support=epochs,
+        )
+    else:
+        p = nap.TsdFrame(
+            t=count.index,
+            d=p,
+            time_support=epochs,
+            columns=tuning_curves.coords[tuning_curves.dims[1]].values,
+        )
 
     idxmax = np.unravel_index(idxmax, tuning_curves.shape[1:])
 
@@ -286,7 +292,7 @@ def decode_bayes(
 
 def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
     warnings.warn(
-        "decode_1d is deprecated and will be removed in v1.0; use decode instead.",
+        "decode_1d is deprecated and will be removed in a future version; use decode instead.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -315,13 +321,13 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
         ep,
         bin_size,
         time_units=time_units,
-        use_occupancy=feature is not None,
+        uniform_prior=feature is None,
     )
 
 
 def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=None):
     warnings.warn(
-        "decode_2d is deprecated and will be removed in v1.0; use decode instead.",
+        "decode_2d is deprecated and will be removed in a future version; use decode instead.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -353,5 +359,5 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
         ep,
         bin_size,
         time_units=time_units,
-        use_occupancy=features is not None,
+        uniform_prior=features is None,
     )

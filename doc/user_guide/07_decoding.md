@@ -24,17 +24,23 @@ custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
 ```
 
-<!-- #region -->
-Pynapple supports n-dimensional bayesian decoding. 
-The function returns the decoded feature as well as the probabilities for each timestamp. 
+Input to the decoding functions always includes:
+ - `tuning_curves`, computed using [`nap.compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves).
+ - `group`, a group of units as a `TsGroup` (spikes), `TsdFrame` (e.g. smoothed rates), or dict of `Ts`/`Tsd`.
+ - `epochs`, to restrict decoding to certain intervals.
+ - `bin_size`, for when you pass spikes.
 
+## Bayesian decoding
+Pynapple supports n-dimensional decoding from spikes in the form of Bayesian decoding with a Poisson assumption. 
+In addition to the default arguments, users can set `uniform_prior=False` to use the occupancy as a prior over the feature distribution. 
+By default `uniform_prior=True`, and a uniform prior is used.
 
-:::{hint}
-Input to the bayesian decoding functions always include the tuning curves computed using [`nap.compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves).
+:::{important}
+Bayesian decoding should only be used with spike or rate data, as these can be assumed to follow a Poisson distribution!
 :::
 
-## 1-dimensional decoding
-<!-- #endregion -->
+
+### 1-dimensional Bayesian decoding
 
 ```{code-cell} ipython3
 :tags: [hide-cell]
@@ -66,15 +72,13 @@ tsgroup = nap.TsGroup({i:nap.Ts(timestep[count[:,i]]) for i in range(N)})
 epochs = nap.IntervalSet(0, 10)
 ```
 
-To decode, we need to compute tuning curves in 1D.
+First, we compute the tuning curves:
 
 ```{code-cell} ipython3
 tuning_curves_1d = nap.compute_tuning_curves(
     tsgroup, feature, bins=61, range=(0, 2 * np.pi), feature_names=["feature"]
 )
 ```
-
-We can display the tuning curve of each neuron:
 
 ```{code-cell} ipython3
 :tags: [hide-input]
@@ -84,14 +88,14 @@ tuning_curves_1d.plot.line(x="feature", add_legend=False)
 plt.show()
 ```
 
-`nap.decode_bayes` performs bayesian decoding:
+We can then use `nap.decode_bayes` for Bayesian decoding:
 
 ```{code-cell} ipython3
 decoded, proba_feature = nap.decode_bayes(
-    tuning_curves=tuning_curves_1d, # 1D tuning curves
-    group=tsgroup, # Spiking activity
-    epochs=epochs, # Small epoch
-    bin_size=0.06,  # How to bin the spike trains
+    tuning_curves=tuning_curves_1d,
+    group=tsgroup,
+    epochs=epochs,
+    bin_size=0.06,
 )
 ```
 
@@ -113,7 +117,7 @@ plt.xlabel("Time (s)")
 plt.show()
 ```
 
-## 2-dimensional decoding
+### 2-dimensional Bayesian decoding
 
 ```{code-cell} ipython3
 :tags: [hide-cell]
@@ -140,19 +144,18 @@ for i in range(12):
 ts_group = nap.TsGroup(ts_group, time_support=epochs)
 ```
 
-To decode two dimensions, we need to compute tuning curves in 2D:
+Decoding also works with multiple dimensions.
+First, we compute the tuning curves:
 
 ```{code-cell} ipython3
 tuning_curves_2d = nap.compute_tuning_curves(
-    group=ts_group, # Spiking activity of 12 neurons
-    features=features, # 2-dimensional features
+    group=ts_group,
+    features=features, # containing 2 features
     bins=10,
     epochs=epochs,
-    range=[(-1.0, 1.0), (-1.0, 1.0)], # Minmax of the features
+    range=[(-1.0, 1.0), (-1.0, 1.0)], # range can be specified for each feature
 )
 ```
-
-We can again display the tuning curve of each neuron:
 
 ```{code-cell} ipython3
 :tags: [hide-input]
@@ -162,14 +165,14 @@ tuning_curves_2d.plot(row="unit", col_wrap=6)
 plt.show()
 ```
 
-and `nap.decode_bayes` again performs bayesian decoding:
+and then, `nap.decode_bayes` again performs bayesian decoding:
 
 ```{code-cell} ipython3
 decoded, proba_feature = nap.decode_bayes(
-    tuning_curves=tuning_curves_2d, # 2D tuning curves
-    group=ts_group, # Spiking activity
-    epochs=epochs, # Epoch
-    bin_size=0.1,  # How to bin the spike trains
+    tuning_curves=tuning_curves_2d,
+    group=ts_group,
+    epochs=epochs,
+    bin_size=0.1,
 )
 ```
 

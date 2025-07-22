@@ -158,33 +158,21 @@ def get_testing_set_n(n_features=1, binned=False):
             get_testing_set_n(3, binned=True),
             does_not_raise(),
         ),
-        # use_occupancy
+        # uniform_prior
         (
             {
-                "use_occupancy": True,
+                "uniform_prior": False,
                 "tuning_curves": (lambda x: (x.attrs.clear(), x)[1])(
                     get_testing_set_n()["tuning_curves"]
                 ),
             },
             pytest.raises(
                 ValueError,
-                match="use_occupancy set to True but no occupancy found in tuning curves.",
+                match="uniform_prior set to False but no occupancy found in tuning curves.",
             ),
         ),
         (
-            {
-                "use_occupancy": True,
-                "tuning_curves": get_testing_set_n(1)["tuning_curves"].assign_attrs(
-                    {"occupancy": np.array([1, 2, 3])}
-                ),
-            },
-            pytest.raises(
-                ValueError,
-                match="Occupancy shape does not match tuning curves shape.",
-            ),
-        ),
-        (
-            {"use_occupancy": True},
+            {"uniform_prior": True},
             does_not_raise(),
         ),
     ],
@@ -197,10 +185,10 @@ def test_decode_bayes_type_errors(overwrite_default_args, expectation):
         nap.decode_bayes(**default_args)
 
 
-@pytest.mark.parametrize("use_occupancy", [True, False])
+@pytest.mark.parametrize("uniform_prior", [True, False])
 @pytest.mark.parametrize("n_features", [1, 2, 3])
 @pytest.mark.parametrize("binned", [True, False])
-def test_decode_bayes(n_features, binned, use_occupancy):
+def test_decode_bayes(n_features, binned, uniform_prior):
     features, tuning_curves, group, epochs, bin_size = get_testing_set_n(
         n_features, binned=binned
     ).values()
@@ -210,7 +198,7 @@ def test_decode_bayes(n_features, binned, use_occupancy):
         epochs=epochs,
         bin_size=bin_size,
         time_units="s",
-        use_occupancy=use_occupancy,
+        uniform_prior=uniform_prior,
     )
 
     assert isinstance(decoded, nap.Tsd if features.shape[1] == 1 else nap.TsdFrame)
