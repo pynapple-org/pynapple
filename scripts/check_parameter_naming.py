@@ -38,7 +38,6 @@ VALID_PAIRS = [
     *({a, b} for (a, b) in itertools.combinations(["ends", "end", "end1", "end2"], r=2)),
     {"windowsize", "window"},
     {"windowsize", "windows"},
-
 ]
 
 
@@ -246,7 +245,7 @@ if __name__ == "__main__":
                 for path in grouped_info[param_name]:
                     msg_lines.append(f"\t\t- {path}\n")
             msg_lines.append("\n")
-        logger.warning("".join(msg_lines))
+        logger.error("".join(msg_lines))
         sys.exit(1)
     else:
         logger.info("No parameter naming inconsistencies found.")
