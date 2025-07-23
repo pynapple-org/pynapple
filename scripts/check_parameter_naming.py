@@ -1,12 +1,8 @@
 import ast
 import difflib
-import inspect
 import itertools
-import logging
 import os
 import pathlib
-import sys
-import types
 from collections import defaultdict
 from typing import Dict, List, Optional
 
