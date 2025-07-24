@@ -18,27 +18,27 @@ def get_testing_set_n(n_features=1, binned=False):
     features = nap.TsdFrame(t=times, d=feature_data)
     epochs = nap.IntervalSet(start=0, end=len(times))
 
-    group = {
+    data = {
         i: nap.Ts(t=times[np.all(feature_data == combo, axis=1)])
         for i, combo in enumerate(combos)
     }
 
     if binned:
-        group = nap.TsGroup(group).count(bin_size=1, ep=epochs)
-        group = nap.TsdFrame(
-            group.times() - 0.5,
-            group.values,
+        frame = nap.TsGroup(data).count(bin_size=1, ep=epochs)
+        data = nap.TsdFrame(
+            frame.times() - 0.5,
+            frame.values,
             time_support=epochs,
         )
 
     tuning_curves = nap.compute_tuning_curves(
-        group, features, bins=2, range=[(-0.5, 1.5)] * n_features
+        data, features, bins=2, range=[(-0.5, 1.5)] * n_features
     )
 
     return {
         "features": features,
         "tuning_curves": tuning_curves,
-        "group": group,
+        "data": data,
         "epochs": epochs,
         "bin_size": 1,
     }
@@ -74,14 +74,14 @@ def get_testing_set_n(n_features=1, binned=False):
             {"tuning_curves": get_testing_set_n(2)["tuning_curves"]},
             pytest.raises(
                 ValueError,
-                match="Different shapes for tuning_curves and group.",
+                match="Different shapes for tuning_curves and data.",
             ),
         ),
         (
             {"tuning_curves": get_testing_set_n(2, binned=True)["tuning_curves"]},
             pytest.raises(
                 ValueError,
-                match="Different shapes for tuning_curves and group.",
+                match="Different shapes for tuning_curves and data.",
             ),
         ),
         (
@@ -92,7 +92,7 @@ def get_testing_set_n(n_features=1, binned=False):
             },
             pytest.raises(
                 ValueError,
-                match="Different indices for tuning curves and group keys.",
+                match="Different indices for tuning curves and data keys.",
             ),
         ),
         (
@@ -103,51 +103,51 @@ def get_testing_set_n(n_features=1, binned=False):
             },
             pytest.raises(
                 ValueError,
-                match="Different indices for tuning curves and group keys.",
+                match="Different indices for tuning curves and data keys.",
             ),
         ),
         ({}, does_not_raise()),
         (get_testing_set_n(1), does_not_raise()),
         (get_testing_set_n(2), does_not_raise()),
-        # group
+        # data
         (
-            {"group": []},
+            {"data": []},
             pytest.raises(
                 TypeError,
-                match="Unknown format for group.",
+                match="Unknown format for data.",
             ),
         ),
         (
-            {"group": 1},
+            {"data": 1},
             pytest.raises(
                 TypeError,
-                match="Unknown format for group.",
+                match="Unknown format for data.",
             ),
         ),
         (
-            {"group": get_testing_set_n(2)["group"]},
+            {"data": get_testing_set_n(2)["data"]},
             pytest.raises(
                 ValueError,
-                match="Different shapes for tuning_curves and group.",
+                match="Different shapes for tuning_curves and data.",
             ),
         ),
         (
             {
-                "group": nap.TsGroup(
+                "data": nap.TsGroup(
                     {2: nap.Ts(t=np.arange(0, 50)), 3: nap.Ts(t=np.arange(0, 50))}
                 )
             },
             pytest.raises(
                 ValueError,
-                match="Different indices for tuning curves and group keys.",
+                match="Different indices for tuning curves and data keys.",
             ),
         ),
         (
-            {"group": nap.TsGroup(get_testing_set_n()["group"])},
+            {"data": nap.TsGroup(get_testing_set_n()["data"])},
             does_not_raise(),
         ),
         (
-            {"group": get_testing_set_n(binned=True)["group"]},
+            {"data": get_testing_set_n(binned=True)["data"]},
             does_not_raise(),
         ),
         (
@@ -189,12 +189,12 @@ def test_decode_bayes_type_errors(overwrite_default_args, expectation):
 @pytest.mark.parametrize("n_features", [1, 2, 3])
 @pytest.mark.parametrize("binned", [True, False])
 def test_decode_bayes(n_features, binned, uniform_prior):
-    features, tuning_curves, group, epochs, bin_size = get_testing_set_n(
+    features, tuning_curves, data, epochs, bin_size = get_testing_set_n(
         n_features, binned=binned
     ).values()
     decoded, proba = nap.decode_bayes(
         tuning_curves=tuning_curves,
-        group=group,
+        data=data,
         epochs=epochs,
         bin_size=bin_size,
         time_units="s",

@@ -11,7 +11,7 @@ from .. import core as nap
 
 
 def decode_bayes(
-    tuning_curves, group, epochs, bin_size, time_units="s", uniform_prior=True
+    tuning_curves, data, epochs, bin_size, time_units="s", uniform_prior=True
 ):
     """
     Performs Bayesian decoding over n-dimensional features.
@@ -27,8 +27,8 @@ def decode_bayes(
     ----------
     tuning_curves : xr.DataArray
         Tuning curves as outputed by `compute_tuning_curves` (one for each unit).
-    group : TsGroup, TsdFrame or dict of Ts, Tsd
-        A group of neurons with the same keys as the tuning curves.
+    data : TsGroup, TsdFrame or dict of Ts, Tsd
+        Neural activity with the same keys as the tuning curves.
         You may also pass a TsdFrame with smoothed rates (recommended).
     epochs : IntervalSet
         The epochs on which decoding is computed
@@ -166,9 +166,9 @@ def decode_bayes(
 
     It is also possible to pass continuous values instead of spikes (e.g. smoothed spike counts):
 
-    >>> group = group.count(1).smooth(2)
-    >>> tuning_curves = nap.compute_tuning_curves(group, features, bins=2, range=[(-.5, 1.5)]*2)
-    >>> decoded, p = nap.decode_bayes(tuning_curves, group, epochs=epochs, bin_size=1)
+    >>> frame = group.count(1).smooth(2)
+    >>> tuning_curves = nap.compute_tuning_curves(frame, features, bins=2, range=[(-.5, 1.5)]*2)
+    >>> decoded, p = nap.decode_bayes(tuning_curves, frame, epochs=epochs, bin_size=1)
     >>> decoded
     Time (s)    0    1
     ----------  ---  ---
@@ -196,31 +196,31 @@ def decode_bayes(
             "tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves."
         )
 
-    # check group
-    if isinstance(group, (dict, nap.TsGroup)):
-        numcells = len(group)
+    # check data
+    if isinstance(data, (dict, nap.TsGroup)):
+        numcells = len(data)
 
         if tuning_curves.sizes["unit"] != numcells:
-            raise ValueError("Different shapes for tuning_curves and group.")
+            raise ValueError("Different shapes for tuning_curves and data.")
 
-        if not np.all(tuning_curves.coords["unit"] == np.array(list(group.keys()))):
-            raise ValueError("Different indices for tuning curves and group keys.")
+        if not np.all(tuning_curves.coords["unit"] == np.array(list(data.keys()))):
+            raise ValueError("Different indices for tuning curves and data keys.")
 
-        if isinstance(group, dict):
-            group = nap.TsGroup(group, time_support=epochs)
-        count = group.count(bin_size, epochs, time_units)
-    elif isinstance(group, nap.TsdFrame):
-        numcells = group.shape[1]
+        if isinstance(data, dict):
+            data = nap.TsGroup(data, time_support=epochs)
+        count = data.count(bin_size, epochs, time_units)
+    elif isinstance(data, nap.TsdFrame):
+        numcells = data.shape[1]
 
         if tuning_curves.sizes["unit"] != numcells:
-            raise ValueError("Different shapes for tuning_curves and group.")
+            raise ValueError("Different shapes for tuning_curves and data.")
 
-        if not np.all(tuning_curves.coords["unit"] == group.columns):
-            raise ValueError("Different indices for tuning curves and group keys.")
+        if not np.all(tuning_curves.coords["unit"] == data.columns):
+            raise ValueError("Different indices for tuning curves and data keys.")
 
-        count = group
+        count = data
     else:
-        raise TypeError("Unknown format for group.")
+        raise TypeError("Unknown format for data.")
 
     if uniform_prior:
         occupancy = np.ones_like(tuning_curves[0]).flatten()

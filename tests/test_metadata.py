@@ -2388,7 +2388,7 @@ class TestGroupbyApplyFunctions:
             "label",
             nap.compute_tuning_curves,
             "epochs",
-            group=tsgroup_gba,
+            data=tsgroup_gba,
             features=feature,
             bins=5,
         )

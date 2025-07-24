@@ -27,7 +27,7 @@ def get_features_n(n, fs=10.0):
 
 
 @pytest.mark.parametrize(
-    "group, features, kwargs, expectation",
+    "data, features, kwargs, expectation",
     [
         # group
         (
@@ -35,7 +35,7 @@ def get_features_n(n, fs=10.0):
             get_features_n(1),
             {},
             pytest.raises(
-                TypeError, match="group should be a Tsd, TsdFrame, TsGroup, or dict."
+                TypeError, match="data should be a Tsd, TsdFrame, TsGroup, or dict."
             ),
         ),
         (
@@ -43,7 +43,7 @@ def get_features_n(n, fs=10.0):
             get_features_n(1),
             {},
             pytest.raises(
-                TypeError, match="group should be a Tsd, TsdFrame, TsGroup, or dict."
+                TypeError, match="data should be a Tsd, TsdFrame, TsGroup, or dict."
             ),
         ),
         (get_group_n(1), get_features_n(1), {}, does_not_raise()),
@@ -293,13 +293,13 @@ def get_features_n(n, fs=10.0):
         ),
     ],
 )
-def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation):
+def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
     with expectation:
-        nap.compute_tuning_curves(group, features, **kwargs)
+        nap.compute_tuning_curves(data, features, **kwargs)
 
 
 @pytest.mark.parametrize(
-    "group, features, kwargs, expected",
+    "data, features, kwargs, expected",
     [
         # single rate unit, single feature
         (
@@ -609,8 +609,8 @@ def test_compute_tuning_curves_type_errors(group, features, kwargs, expectation)
         ),
     ],
 )
-def test_compute_tuning_curves(group, features, kwargs, expected):
-    tcs = nap.compute_tuning_curves(group, features, **kwargs)
+def test_compute_tuning_curves(data, features, kwargs, expected):
+    tcs = nap.compute_tuning_curves(data, features, **kwargs)
     if isinstance(expected, pd.DataFrame):
         pd.testing.assert_frame_equal(tcs, expected)
     else:

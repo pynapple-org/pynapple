@@ -1,6 +1,5 @@
 """
-Functions to compute tuning curves for features in 1 dimension or 2 dimension.
-
+Functions to compute n-dimensional tuning curves.
 """
 
 import inspect
@@ -83,7 +82,7 @@ def _validate_tuning_inputs(func):
 
 
 def compute_tuning_curves(
-    group,
+    data,
     features,
     bins=10,
     range=None,
@@ -97,8 +96,8 @@ def compute_tuning_curves(
 
     Parameters
     ----------
-    group : TsGroup, TsdFrame or dict of Ts, Tsd
-        The group of Ts or Tsd for which the tuning curves will be computed
+    data : TsGroup, TsdFrame or dict of Ts, Tsd
+        The data for which the tuning curves will be computed.
     features : Tsd, TsdFrame
         The features (i.e. one column per feature).
     bins : sequence or int
@@ -153,7 +152,7 @@ def compute_tuning_curves(
     Coordinates:
       * unit     (unit) int64 16B 1 2
       * 0        (0) float64 80B 0.045 0.135 0.225 0.315 ... 0.585 0.675 0.765 0.855
-     Attributes:
+    Attributes:
         occupancy:  [100. 100. 100. 100. 100. 100. 100. 100. 100. 100.]
         bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...
 
@@ -188,7 +187,7 @@ def compute_tuning_curves(
       * unit     (unit) int64 16B 1 2
       * 0        (0) float64 40B 0.09 0.27 0.45 0.63 0.81
       * 1        (1) float64 24B 0.3167 0.95 1.583
-     Attributes:
+    Attributes:
         occupancy:  [[100. 100.  nan]\\n [100.  50.  50.]\\n [100.  nan 100.]\\n [ 5...
         bin_edges:  [array([0.  , 0.18, 0.36, 0.54, 0.72, 0.9 ]), array([0.      ...
 
@@ -214,14 +213,14 @@ def compute_tuning_curves(
       * unit     (unit) int64 16B 1 2
       * 0        (0) float64 32B 0.125 0.375 0.625 0.875
       * 1        (1) float64 16B 0.5 1.5
-     Attributes:
+    Attributes:
         occupancy:  [[150. 150.]\\n [100. 100.]\\n [150. 150.]\\n [100. 100.]]
         bin_edges:  [array([0.  , 0.25, 0.5 , 0.75, 1.  ]), array([0., 1., 2.])]
 
     In all of these cases, it is also possible to pass continuous values instead of spikes (e.g. calcium imaging data):
 
-    >>> group = nap.TsdFrame(d=np.random.rand(2000, 3), t=np.arange(0, 100, 0.05))
-    >>> tcs = nap.compute_tuning_curves(group, feature, bins=10)
+    >>> frame = nap.TsdFrame(d=np.random.rand(2000, 3), t=np.arange(0, 100, 0.05))
+    >>> tcs = nap.compute_tuning_curves(frame, feature, bins=10)
     >>> tcs
     <xarray.DataArray (unit: 3, 0: 10)> Size: 240B
     array([[0.49147343, 0.50190395, 0.50971339, 0.50128013, 0.54332711,
@@ -233,22 +232,22 @@ def compute_tuning_curves(
     Coordinates:
       * unit     (unit) int64 24B 0 1 2
       * 0        (0) float64 80B 0.045 0.135 0.225 0.315 ... 0.585 0.675 0.765 0.855
-     Attributes:
+    Attributes:
         occupancy:  [100. 100. 100. 100. 100. 100. 100. 100. 100. 100.]
         bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...
     """
 
-    # check group
-    if isinstance(group, dict):
-        group = nap.TsGroup(group)
-    if isinstance(group, nap.Tsd):
-        group = nap.TsdFrame(
-            d=group.values,
-            t=group.times(),
-            time_support=group.time_support,
+    # check data
+    if isinstance(data, dict):
+        data = nap.TsGroup(data)
+    if isinstance(data, nap.Tsd):
+        data = nap.TsdFrame(
+            d=data.values,
+            t=data.times(),
+            time_support=data.time_support,
         )
-    elif not isinstance(group, (nap.TsGroup, nap.TsdFrame)):
-        raise TypeError("group should be a Tsd, TsdFrame, TsGroup, or dict.")
+    elif not isinstance(data, (nap.TsGroup, nap.TsdFrame)):
+        raise TypeError("data should be a Tsd, TsdFrame, TsGroup, or dict.")
 
     # check features
     if isinstance(features, nap.Tsd):
@@ -280,7 +279,7 @@ def compute_tuning_curves(
         features = features.restrict(epochs)
     else:
         raise TypeError("epochs should be an IntervalSet.")
-    group = group.restrict(epochs)
+    data = data.restrict(epochs)
 
     # check fs
     if fs is None:
@@ -305,26 +304,26 @@ def compute_tuning_curves(
     occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
 
     # tunning curves
-    keys = group.keys() if isinstance(group, nap.TsGroup) else group.columns
+    keys = data.keys() if isinstance(data, nap.TsGroup) else data.columns
     tcs = np.zeros([len(keys), *occupancy.shape])
-    if isinstance(group, nap.TsGroup):
+    if isinstance(data, nap.TsGroup):
         # SPIKES
         for i, n in enumerate(keys):
             tcs[i] = np.histogramdd(
-                group[n].value_from(features, epochs),
+                data[n].value_from(features, epochs),
                 bins=bin_edges,
             )[0]
         occupancy[occupancy == 0.0] = np.nan
         tcs = (tcs / occupancy) * fs
     else:
         # RATES
-        values = group.value_from(features, epochs)
+        values = data.value_from(features, epochs)
         counts = np.histogramdd(values, bins=bin_edges)[0]
         counts[counts == 0] = np.nan
         for i, n in enumerate(keys):
             tcs[i] = np.histogramdd(
                 values,
-                weights=group.values[:, i],
+                weights=data.values[:, i],
                 bins=bin_edges,
             )[0]
         tcs /= counts

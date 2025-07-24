@@ -22,7 +22,7 @@ tuning_curves = nap.compute_tuning_curves(
     120,
     epochs=wake_ep,
     range=(0, 2 * np.pi),
-    feature_names=[("head direction", "rad")],
+    feature_names=["head direction"],
 )
 
 # PLOT

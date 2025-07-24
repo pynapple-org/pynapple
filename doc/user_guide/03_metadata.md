@@ -271,7 +271,7 @@ An anonymous function can also be used to apply a function where the grouped obj
 
 ```{code-cell} ipython3
 func = lambda x: nap.compute_tuning_curves(
-    group=tsgroup, 
+    data=tsgroup, 
     features=feature, 
     bins=2, 
     epochs=x)
@@ -285,7 +285,7 @@ intervalset.groupby_apply(
     "choice", 
     nap.compute_tuning_curves, 
     input_key="epochs", 
-    group=tsgroup, 
+    data=tsgroup, 
     features=feature, 
     bins=2)
 ```
