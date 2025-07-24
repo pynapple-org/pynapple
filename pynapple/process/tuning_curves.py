@@ -349,6 +349,9 @@ def compute_tuning_curves(
 
 @_validate_tuning_inputs
 def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
+    """
+    Deprecated, use `compute_tuning_curves` instead.
+    """
     warnings.warn(
         "compute_1d_tuning_curves is deprecated and will be removed in a future version;"
         "use compute_tuning_curves instead.",
@@ -372,6 +375,9 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
 def compute_1d_tuning_curves_continuous(
     tsdframe, feature, nb_bins, ep=None, minmax=None
 ):
+    """
+    Deprecated, use `compute_tuning_curves` instead.
+    """
     warnings.warn(
         "compute_1d_tuning_curves_continuous is deprecated and will be removed in a future version;"
         "use compute_tuning_curves instead.",
@@ -393,6 +399,9 @@ def compute_1d_tuning_curves_continuous(
 
 @_validate_tuning_inputs
 def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
+    """
+    Deprecated, use `compute_tuning_curves` instead.
+    """
     warnings.warn(
         "compute_2d_tuning_curves is deprecated and will be removed in a future version;"
         "use compute_tuning_curves instead.",
@@ -417,6 +426,9 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
 def compute_2d_tuning_curves_continuous(
     tsdframe, features, nb_bins, ep=None, minmax=None
 ):
+    """
+    Deprecated, use `compute_tuning_curves` instead.
+    """
     warnings.warn(
         "compute_2d_tuning_curves_continuous is deprecated and will be removed in a future version;"
         "use compute_tuning_curves instead.",
