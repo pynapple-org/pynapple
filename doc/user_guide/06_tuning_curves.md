@@ -319,7 +319,6 @@ units=[]
 for i, mu in enumerate(bin_centers):
     units.append(np.exp(kappa * np.cos(alpha - mu))) # wrapped Gaussian
 units = np.stack(units, axis=1)
-units = (units-np.mean(units, axis=0)) / np.std(units, axis=0)
 tsdframe = nap.TsdFrame(t=features.times(), d=units)
 ```
 
