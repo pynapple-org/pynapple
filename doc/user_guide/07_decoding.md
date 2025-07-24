@@ -144,7 +144,7 @@ To decode, we need to compute tuning curves in 2D.
 
 ```{code-cell} ipython3
 tuning_curves_2d = nap.compute_tuning_curves(
-    group=ts_group, # Spiking activity of 12 neurons
+    data=ts_group, # Spiking activity of 12 neurons
     features=features, # 2-dimensional features
     bins=10,
     epochs=epochs,

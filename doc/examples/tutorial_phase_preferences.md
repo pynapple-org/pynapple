@@ -211,7 +211,7 @@ The feature is the theta phase during REM sleep.
 
 ```{code-cell} ipython3
 phase_modulation = nap.compute_tuning_curves(
-    group=spikes, 
+    data=spikes, 
     features=theta_phase, 
     bins=61, 
     range=(-np.pi, np.pi), 

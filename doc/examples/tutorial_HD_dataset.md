@@ -104,7 +104,7 @@ Let's plot firing rate of ADn units as a function of heading direction, i.e. a h
 
 ```{code-cell} ipython3
 tuning_curves = nap.compute_tuning_curves(
-    group=spikes_adn, 
+    data=spikes_adn, 
     features=angle, 
     bins=61, 
     epochs=epochs[epochs.tags == "wake"],

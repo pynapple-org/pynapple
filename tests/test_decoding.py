@@ -19,7 +19,7 @@ def get_testing_set_1d():
     group = nap.TsGroup({i: nap.Ts(t=np.arange(0, 50) + 50 * i) for i in range(2)})
     tc = (
         nap.compute_tuning_curves(
-            group=group, features=feature, bins=2, range=(-0.5, 1.5)
+            data=group, features=feature, bins=2, range=(-0.5, 1.5)
         )
         .to_pandas()
         .T
@@ -136,7 +136,7 @@ def get_testing_set_2d():
     )
 
     tc = nap.compute_tuning_curves(
-        group=group, features=features, bins=2, range=[(-0.5, 1.5), (-0.5, 1.5)]
+        data=group, features=features, bins=2, range=[(-0.5, 1.5), (-0.5, 1.5)]
     )
     xy = [tc.coords[dim].values for dim in tc.coords if dim != "unit"]
     tc = {c: tc.sel(unit=c).values for c in tc.coords["unit"].values}
