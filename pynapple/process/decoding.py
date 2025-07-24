@@ -291,6 +291,9 @@ def decode_bayes(
 
 
 def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
+    """
+    Deprecated, use `decode` instead.
+    """
     warnings.warn(
         "decode_1d is deprecated and will be removed in a future version; use decode instead.",
         DeprecationWarning,
@@ -326,6 +329,9 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
 
 
 def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=None):
+    """
+    Deprecated, use `decode` instead.
+    """
     warnings.warn(
         "decode_2d is deprecated and will be removed in a future version; use decode instead.",
         DeprecationWarning,
