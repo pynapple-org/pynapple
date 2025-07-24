@@ -311,10 +311,16 @@ features = nap.TsdFrame(
 
 
 # Calcium activity
-tsdframe = nap.TsdFrame(
-    t=timestep,
-    d=np.random.randn(len(timestep), 2)
-    )
+ft = features.values
+alpha = np.arctan2(ft[:, 1], ft[:, 0])
+bin_centers = np.linspace(-np.pi, np.pi, 6)
+kappa = 4.0
+units=[]
+for i, mu in enumerate(bin_centers):
+    units.append(np.exp(kappa * np.cos(alpha - mu))) # wrapped Gaussian
+units = np.stack(units, axis=1)
+units = (units-np.mean(units, axis=0)) / np.std(units, axis=0)
+tsdframe = nap.TsdFrame(t=features.times(), d=units)
 ```
 
 ```{code-cell} ipython3
@@ -330,7 +336,7 @@ tuning_curves_2d
 ```{code-cell} ipython3
 tuning_curves_2d.name="ΔF/F"
 tuning_curves_2d.attrs["unit"]="a.u."
-tuning_curves_2d.plot(col="unit")
+tuning_curves_2d.plot(col="unit", col_wrap=3)
 plt.show()
 ```
 
