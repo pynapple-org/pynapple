@@ -55,11 +55,11 @@ def decode_bayes(
 
     >>> import pynapple as nap
     >>> import numpy as np
-    >>> group = nap.TsGroup({i: nap.Ts(t=np.arange(0, 50) + 50 * i) for i in range(2)})
+    >>> data = nap.TsGroup({i: nap.Ts(t=np.arange(0, 50) + 50 * i) for i in range(2)})
     >>> feature = nap.Tsd(t=np.arange(0, 100, 1), d=np.repeat(np.arange(0, 2), 50))
-    >>> tuning_curves = nap.compute_tuning_curves(group, feature, bins=2, range=(-.5, 1.5))
+    >>> tuning_curves = nap.compute_tuning_curves(data, feature, bins=2, range=(-.5, 1.5))
     >>> epochs = nap.IntervalSet([0, 100])
-    >>> decoded, p = nap.decode_bayes(tuning_curves, group, epochs=epochs, bin_size=1)
+    >>> decoded, p = nap.decode_bayes(tuning_curves, data, epochs=epochs, bin_size=1)
     >>> decoded
     Time (s)
     ----------  --
@@ -110,7 +110,7 @@ def decode_bayes(
     ...     t=np.arange(0, 100, 1),
     ...     d=np.vstack((np.repeat(np.arange(0, 2), 50), np.tile(np.arange(0, 2), 50))).T,
     ... )
-    >>> group = nap.TsGroup(
+    >>> data = nap.TsGroup(
     ...     {
     ...         0: nap.Ts(np.arange(0, 50, 2)),
     ...         1: nap.Ts(np.arange(1, 51, 2)),
@@ -118,8 +118,8 @@ def decode_bayes(
     ...         3: nap.Ts(np.arange(51, 101, 2)),
     ...     }
     ... )
-    >>> tuning_curves = nap.compute_tuning_curves(group, features, bins=2, range=[(-.5, 1.5)]*2)
-    >>> decoded, p = nap.decode_bayes(tuning_curves, group, epochs=epochs, bin_size=1)
+    >>> tuning_curves = nap.compute_tuning_curves(data, features, bins=2, range=[(-.5, 1.5)]*2)
+    >>> decoded, p = nap.decode_bayes(tuning_curves, data, epochs=epochs, bin_size=1)
     >>> decoded
     Time (s)    0    1
     ----------  ---  ---
@@ -166,9 +166,9 @@ def decode_bayes(
 
     It is also possible to pass continuous values instead of spikes (e.g. smoothed spike counts):
 
-    >>> frame = group.count(1).smooth(2)
-    >>> tuning_curves = nap.compute_tuning_curves(frame, features, bins=2, range=[(-.5, 1.5)]*2)
-    >>> decoded, p = nap.decode_bayes(tuning_curves, frame, epochs=epochs, bin_size=1)
+    >>> data = data.count(1).smooth(2)
+    >>> tuning_curves = nap.compute_tuning_curves(data, features, bins=2, range=[(-.5, 1.5)]*2)
+    >>> decoded, p = nap.decode_bayes(tuning_curves, data, epochs=epochs, bin_size=1)
     >>> decoded
     Time (s)    0    1
     ----------  ---  ---
@@ -295,7 +295,7 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
     Deprecated, use `decode` instead.
     """
     warnings.warn(
-        "decode_1d is deprecated and will be removed in a future version; use decode instead.",
+        "decode_1d is deprecated and will be removed in a future version; use decode_bayes instead.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -333,7 +333,7 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
     Deprecated, use `decode` instead.
     """
     warnings.warn(
-        "decode_2d is deprecated and will be removed in a future version; use decode instead.",
+        "decode_2d is deprecated and will be removed in a future version; use decode_bayes instead.",
         DeprecationWarning,
         stacklevel=2,
     )
