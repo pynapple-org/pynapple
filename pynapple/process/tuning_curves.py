@@ -277,7 +277,7 @@ def compute_tuning_curves(
 
     # check range
     if range is not None and isinstance(range, tuple):
-        if features.shape[1] == 1:
+        if features.ndim == 1 or features.shape[1] == 1:
             range = [range]
         else:
             raise ValueError(
