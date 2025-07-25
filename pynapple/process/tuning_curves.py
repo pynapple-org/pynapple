@@ -257,7 +257,9 @@ def compute_tuning_curves(
             or not all(isinstance(n, str) for n in feature_names)
         ):
             raise TypeError("feature_names should be a list of strings.")
-        if len(feature_names) != features.shape[1]:
+        if len(feature_names) != (
+            1 if isinstance(features, nap.Tsd) else features.shape[-1]
+        ):
             raise ValueError("feature_names should match the number of features.")
 
     # check epochs
