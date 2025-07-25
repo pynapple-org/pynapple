@@ -96,7 +96,7 @@ def compute_tuning_curves(
 
     Parameters
     ----------
-    data : TsGroup, TsdFrame or dict of Ts, Tsd
+    data : TsGroup, TsdFrame, Ts, Tsd
         The data for which the tuning curves will be computed.
     features : Tsd, TsdFrame
         The features (i.e. one column per feature).
@@ -238,30 +238,18 @@ def compute_tuning_curves(
     """
 
     # check data
-    if isinstance(data, dict):
-        data = nap.TsGroup(data)
-    if isinstance(data, nap.Tsd):
-        data = nap.TsdFrame(
-            d=data.values,
-            t=data.times(),
-            time_support=data.time_support,
-        )
-    elif not isinstance(data, (nap.TsGroup, nap.TsdFrame)):
-        raise TypeError("data should be a Tsd, TsdFrame, TsGroup, or dict.")
+    if not isinstance(data, (nap.TsdFrame, nap.TsGroup, nap.Ts, nap.Tsd)):
+        raise TypeError("data should be a TsdFrame, TsGroup, Ts, or Tsd.")
 
     # check features
-    if isinstance(features, nap.Tsd):
-        features = nap.TsdFrame(
-            d=features.values,
-            t=features.times(),
-            time_support=features.time_support,
-        )
-    elif not isinstance(features, nap.TsdFrame):
+    if not isinstance(features, (nap.TsdFrame, nap.Tsd)):
         raise TypeError("features should be a Tsd or TsdFrame.")
 
     # check feature names
     if feature_names is None:
-        feature_names = features.columns
+        feature_names = (
+            features.columns if isinstance(features, nap.TsdFrame) else ["0"]
+        )
     else:
         if (
             not hasattr(feature_names, "__len__")
@@ -269,7 +257,9 @@ def compute_tuning_curves(
             or not all(isinstance(n, str) for n in feature_names)
         ):
             raise TypeError("feature_names should be a list of strings.")
-        if len(feature_names) != features.shape[1]:
+        if len(feature_names) != (
+            1 if isinstance(features, nap.Tsd) else features.shape[-1]
+        ):
             raise ValueError("feature_names should match the number of features.")
 
     # check epochs
@@ -289,7 +279,7 @@ def compute_tuning_curves(
 
     # check range
     if range is not None and isinstance(range, tuple):
-        if features.shape[1] == 1:
+        if features.ndim == 1 or features.shape[1] == 1:
             range = [range]
         else:
             raise ValueError(
@@ -304,10 +294,16 @@ def compute_tuning_curves(
     occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
 
     # tunning curves
-    keys = data.keys() if isinstance(data, nap.TsGroup) else data.columns
+    keys = (
+        data.keys()
+        if isinstance(data, nap.TsGroup)
+        else data.columns if isinstance(data, nap.TsdFrame) else [0]
+    )
     tcs = np.zeros([len(keys), *occupancy.shape])
-    if isinstance(data, nap.TsGroup):
+    if isinstance(data, (nap.TsGroup, nap.Ts)):
         # SPIKES
+        if isinstance(data, nap.Ts):
+            data = {0: data}
         for i, n in enumerate(keys):
             tcs[i] = np.histogramdd(
                 data[n].value_from(features, epochs),
@@ -318,12 +314,14 @@ def compute_tuning_curves(
     else:
         # RATES
         values = data.value_from(features, epochs)
+        if isinstance(data, nap.Tsd):
+            data = np.expand_dims(data.values, -1)
         counts = np.histogramdd(values, bins=bin_edges)[0]
         counts[counts == 0] = np.nan
         for i, n in enumerate(keys):
             tcs[i] = np.histogramdd(
                 values,
-                weights=data.values[:, i],
+                weights=data[:, i],
                 bins=bin_edges,
             )[0]
         tcs /= counts
