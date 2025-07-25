@@ -18,13 +18,15 @@ def get_testing_set_n(n_features=1, binned=False):
     features = nap.TsdFrame(t=times, d=feature_data)
     epochs = nap.IntervalSet(start=0, end=len(times))
 
-    data = {
-        i: nap.Ts(t=times[np.all(feature_data == combo, axis=1)])
-        for i, combo in enumerate(combos)
-    }
+    data = nap.TsGroup(
+        {
+            i: nap.Ts(t=times[np.all(feature_data == combo, axis=1)])
+            for i, combo in enumerate(combos)
+        }
+    )
 
     if binned:
-        frame = nap.TsGroup(data).count(bin_size=1, ep=epochs)
+        frame = data.count(bin_size=1, ep=epochs)
         data = nap.TsdFrame(
             frame.times() - 0.5,
             frame.values,
@@ -141,10 +143,6 @@ def get_testing_set_n(n_features=1, binned=False):
                 ValueError,
                 match="Different indices for tuning curves and data keys.",
             ),
-        ),
-        (
-            {"data": nap.TsGroup(get_testing_set_n()["data"])},
-            does_not_raise(),
         ),
         (
             {"data": get_testing_set_n(binned=True)["data"]},

@@ -27,9 +27,9 @@ def decode_bayes(
     ----------
     tuning_curves : xr.DataArray
         Tuning curves as outputed by `compute_tuning_curves` (one for each unit).
-    data : TsGroup, TsdFrame or dict of Ts, Tsd
+    data : TsGroup or TsdFrame
         Neural activity with the same keys as the tuning curves.
-        You may also pass a TsdFrame with smoothed rates (recommended).
+        You may also pass a TsdFrame with smoothed counts (recommended).
     epochs : IntervalSet
         The epochs on which decoding is computed
     bin_size : float
@@ -197,30 +197,16 @@ def decode_bayes(
         )
 
     # check data
-    if isinstance(data, (dict, nap.TsGroup)):
-        numcells = len(data)
-
-        if tuning_curves.sizes["unit"] != numcells:
-            raise ValueError("Different shapes for tuning_curves and data.")
-
-        if not np.all(tuning_curves.coords["unit"] == np.array(list(data.keys()))):
-            raise ValueError("Different indices for tuning curves and data keys.")
-
-        if isinstance(data, dict):
-            data = nap.TsGroup(data, time_support=epochs)
-        count = data.count(bin_size, epochs, time_units)
-    elif isinstance(data, nap.TsdFrame):
-        numcells = data.shape[1]
-
-        if tuning_curves.sizes["unit"] != numcells:
-            raise ValueError("Different shapes for tuning_curves and data.")
-
-        if not np.all(tuning_curves.coords["unit"] == data.columns):
-            raise ValueError("Different indices for tuning curves and data keys.")
-
-        count = data
-    else:
+    if isinstance(data, nap.TsGroup):
+        data = data.count(bin_size, epochs, time_units)
+    elif not isinstance(data, nap.TsdFrame):
         raise TypeError("Unknown format for data.")
+
+    # check match
+    if tuning_curves.sizes["unit"] != data.shape[1]:
+        raise ValueError("Different shapes for tuning_curves and data.")
+    if not np.all(tuning_curves.coords["unit"] == data.columns.values):
+        raise ValueError("Different indices for tuning curves and data keys.")
 
     if uniform_prior:
         occupancy = np.ones_like(tuning_curves[0]).flatten()
@@ -233,7 +219,7 @@ def decode_bayes(
 
     # Transforming to pure numpy array
     tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
-    ct = count.values
+    ct = data.values
     bin_size_s = nap.TsIndex.format_timestamps(
         np.array([bin_size], dtype=np.float64), time_units
     )[0]
@@ -253,13 +239,13 @@ def decode_bayes(
     p = p.reshape(p.shape[0], *tuning_curves.shape[1:])
     if p.ndim > 2:
         p = nap.TsdTensor(
-            t=count.index,
+            t=data.index,
             d=p,
             time_support=epochs,
         )
     else:
         p = nap.TsdFrame(
-            t=count.index,
+            t=data.index,
             d=p,
             time_support=epochs,
             columns=tuning_curves.coords[tuning_curves.dims[1]].values,
@@ -269,13 +255,13 @@ def decode_bayes(
 
     if tuning_curves.ndim == 2:
         decoded = nap.Tsd(
-            t=count.index,
+            t=data.index,
             d=tuning_curves.coords[tuning_curves.dims[1]][idxmax[0]].values,
             time_support=epochs,
         )
     else:
         decoded = nap.TsdFrame(
-            t=count.index,
+            t=data.index,
             d=np.stack(
                 [
                     tuning_curves.coords[dim][idxmax[i]]
@@ -320,7 +306,7 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
             },
             attrs={"occupancy": occupancy},
         ),
-        group,
+        nap.TsGroup(group) if isinstance(group, dict) else group,
         ep,
         bin_size,
         time_units=time_units,
@@ -361,7 +347,7 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
             coords={"unit": indexes, "0": xy[0], "1": xy[1]},
             attrs={"occupancy": occupancy},
         ),
-        group,
+        nap.TsGroup(group) if isinstance(group, dict) else group,
         ep,
         bin_size,
         time_units=time_units,
