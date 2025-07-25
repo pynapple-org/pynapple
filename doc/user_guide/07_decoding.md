@@ -28,7 +28,8 @@ Input to the decoding functions always includes:
  - `tuning_curves`, computed using [`nap.compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves).
  - `data`, neural activity as a `TsGroup` (spikes), `TsdFrame` (e.g. smoothed rates), or dict of `Ts`/`Tsd`.
  - `epochs`, to restrict decoding to certain intervals.
- - `bin_size`, for when you pass spikes.
+ - `bin_size`, the size of the bins in which to count the data (spikes only).
+ - `time_units`, the units of `bin_size`, defaulting to seconds.
 
 ## Bayesian decoding
 Pynapple supports n-dimensional decoding from spikes in the form of Bayesian decoding with a Poisson assumption. 
