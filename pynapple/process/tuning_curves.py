@@ -313,7 +313,7 @@ def compute_tuning_curves(
         # RATES
         values = data.value_from(features, epochs)
         if isinstance(data, nap.Tsd):
-            data = np.expand_dims(data.values, -2)
+            data = np.expand_dims(data.values, -1)
         counts = np.histogramdd(values, bins=bin_edges)[0]
         counts[counts == 0] = np.nan
         for i, n in enumerate(keys):
