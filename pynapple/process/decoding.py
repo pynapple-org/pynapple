@@ -11,7 +11,7 @@ from .. import core as nap
 
 
 def decode_bayes(
-    tuning_curves, group, epochs, bin_size, time_units="s", uniform_prior=True
+    tuning_curves, data, epochs, bin_size, time_units="s", uniform_prior=True
 ):
     """
     Performs Bayesian decoding over n-dimensional features.
@@ -27,9 +27,9 @@ def decode_bayes(
     ----------
     tuning_curves : xr.DataArray
         Tuning curves as outputed by `compute_tuning_curves` (one for each unit).
-    group : TsGroup, TsdFrame or dict of Ts, Tsd
-        A group of neurons with the same keys as the tuning curves.
-        You may also pass a TsdFrame with smoothed rates (recommended).
+    data : TsGroup or TsdFrame
+        Neural activity with the same keys as the tuning curves.
+        You may also pass a TsdFrame with smoothed counts (recommended).
     epochs : IntervalSet
         The epochs on which decoding is computed
     bin_size : float
@@ -55,11 +55,11 @@ def decode_bayes(
 
     >>> import pynapple as nap
     >>> import numpy as np
-    >>> group = nap.TsGroup({i: nap.Ts(t=np.arange(0, 50) + 50 * i) for i in range(2)})
+    >>> data = nap.TsGroup({i: nap.Ts(t=np.arange(0, 50) + 50 * i) for i in range(2)})
     >>> feature = nap.Tsd(t=np.arange(0, 100, 1), d=np.repeat(np.arange(0, 2), 50))
-    >>> tuning_curves = nap.compute_tuning_curves(group, feature, bins=2, range=(-.5, 1.5))
+    >>> tuning_curves = nap.compute_tuning_curves(data, feature, bins=2, range=(-.5, 1.5))
     >>> epochs = nap.IntervalSet([0, 100])
-    >>> decoded, p = nap.decode_bayes(tuning_curves, group, epochs=epochs, bin_size=1)
+    >>> decoded, p = nap.decode_bayes(tuning_curves, data, epochs=epochs, bin_size=1)
     >>> decoded
     Time (s)
     ----------  --
@@ -110,7 +110,7 @@ def decode_bayes(
     ...     t=np.arange(0, 100, 1),
     ...     d=np.vstack((np.repeat(np.arange(0, 2), 50), np.tile(np.arange(0, 2), 50))).T,
     ... )
-    >>> group = nap.TsGroup(
+    >>> data = nap.TsGroup(
     ...     {
     ...         0: nap.Ts(np.arange(0, 50, 2)),
     ...         1: nap.Ts(np.arange(1, 51, 2)),
@@ -118,8 +118,8 @@ def decode_bayes(
     ...         3: nap.Ts(np.arange(51, 101, 2)),
     ...     }
     ... )
-    >>> tuning_curves = nap.compute_tuning_curves(group, features, bins=2, range=[(-.5, 1.5)]*2)
-    >>> decoded, p = nap.decode_bayes(tuning_curves, group, epochs=epochs, bin_size=1)
+    >>> tuning_curves = nap.compute_tuning_curves(data, features, bins=2, range=[(-.5, 1.5)]*2)
+    >>> decoded, p = nap.decode_bayes(tuning_curves, data, epochs=epochs, bin_size=1)
     >>> decoded
     Time (s)    0    1
     ----------  ---  ---
@@ -166,9 +166,9 @@ def decode_bayes(
 
     It is also possible to pass continuous values instead of spikes (e.g. smoothed spike counts):
 
-    >>> group = group.count(1).smooth(2)
-    >>> tuning_curves = nap.compute_tuning_curves(group, features, bins=2, range=[(-.5, 1.5)]*2)
-    >>> decoded, p = nap.decode_bayes(tuning_curves, group, epochs=epochs, bin_size=1)
+    >>> data = data.count(1).smooth(2)
+    >>> tuning_curves = nap.compute_tuning_curves(data, features, bins=2, range=[(-.5, 1.5)]*2)
+    >>> decoded, p = nap.decode_bayes(tuning_curves, data, epochs=epochs, bin_size=1)
     >>> decoded
     Time (s)    0    1
     ----------  ---  ---
@@ -196,31 +196,17 @@ def decode_bayes(
             "tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves."
         )
 
-    # check group
-    if isinstance(group, (dict, nap.TsGroup)):
-        numcells = len(group)
+    # check data
+    if isinstance(data, nap.TsGroup):
+        data = data.count(bin_size, epochs, time_units)
+    elif not isinstance(data, nap.TsdFrame):
+        raise TypeError("Unknown format for data.")
 
-        if tuning_curves.sizes["unit"] != numcells:
-            raise ValueError("Different shapes for tuning_curves and group.")
-
-        if not np.all(tuning_curves.coords["unit"] == np.array(list(group.keys()))):
-            raise ValueError("Different indices for tuning curves and group keys.")
-
-        if isinstance(group, dict):
-            group = nap.TsGroup(group, time_support=epochs)
-        count = group.count(bin_size, epochs, time_units)
-    elif isinstance(group, nap.TsdFrame):
-        numcells = group.shape[1]
-
-        if tuning_curves.sizes["unit"] != numcells:
-            raise ValueError("Different shapes for tuning_curves and group.")
-
-        if not np.all(tuning_curves.coords["unit"] == group.columns):
-            raise ValueError("Different indices for tuning curves and group keys.")
-
-        count = group
-    else:
-        raise TypeError("Unknown format for group.")
+    # check match
+    if tuning_curves.sizes["unit"] != data.shape[1]:
+        raise ValueError("Different shapes for tuning_curves and data.")
+    if not np.all(tuning_curves.coords["unit"] == data.columns.values):
+        raise ValueError("Different indices for tuning curves and data keys.")
 
     if uniform_prior:
         occupancy = np.ones_like(tuning_curves[0]).flatten()
@@ -233,7 +219,7 @@ def decode_bayes(
 
     # Transforming to pure numpy array
     tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
-    ct = count.values
+    ct = data.values
     bin_size_s = nap.TsIndex.format_timestamps(
         np.array([bin_size], dtype=np.float64), time_units
     )[0]
@@ -253,13 +239,13 @@ def decode_bayes(
     p = p.reshape(p.shape[0], *tuning_curves.shape[1:])
     if p.ndim > 2:
         p = nap.TsdTensor(
-            t=count.index,
+            t=data.index,
             d=p,
             time_support=epochs,
         )
     else:
         p = nap.TsdFrame(
-            t=count.index,
+            t=data.index,
             d=p,
             time_support=epochs,
             columns=tuning_curves.coords[tuning_curves.dims[1]].values,
@@ -269,13 +255,13 @@ def decode_bayes(
 
     if tuning_curves.ndim == 2:
         decoded = nap.Tsd(
-            t=count.index,
+            t=data.index,
             d=tuning_curves.coords[tuning_curves.dims[1]][idxmax[0]].values,
             time_support=epochs,
         )
     else:
         decoded = nap.TsdFrame(
-            t=count.index,
+            t=data.index,
             d=np.stack(
                 [
                     tuning_curves.coords[dim][idxmax[i]]
@@ -576,8 +562,11 @@ def decode_template(
 
 
 def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
+    """
+    Deprecated, use `decode` instead.
+    """
     warnings.warn(
-        "decode_1d is deprecated and will be removed in a future version; use decode instead.",
+        "decode_1d is deprecated and will be removed in a future version; use decode_bayes instead.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -602,7 +591,7 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
             },
             attrs={"occupancy": occupancy},
         ),
-        group,
+        nap.TsGroup(group) if isinstance(group, dict) else group,
         ep,
         bin_size,
         time_units=time_units,
@@ -611,8 +600,11 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
 
 
 def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=None):
+    """
+    Deprecated, use `decode` instead.
+    """
     warnings.warn(
-        "decode_2d is deprecated and will be removed in a future version; use decode instead.",
+        "decode_2d is deprecated and will be removed in a future version; use decode_bayes instead.",
         DeprecationWarning,
         stacklevel=2,
     )
@@ -640,7 +632,7 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
             coords={"unit": indexes, "0": xy[0], "1": xy[1]},
             attrs={"occupancy": occupancy},
         ),
-        group,
+        nap.TsGroup(group) if isinstance(group, dict) else group,
         ep,
         bin_size,
         time_units=time_units,

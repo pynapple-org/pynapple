@@ -73,8 +73,8 @@ tsgroup = nap.TsGroup(
 ```
 
 When computing from general time-series, mandatory arguments are:
-* a `TsGroup`, `Tsd`, or `TsdFrame` containing the neural activity of one or more units.
-* a `Tsd` or `TsdFrame` containing one or more features.
+* `data`: a `TsGroup` (or single `Ts`) or TsdFrame (or single `Tsd`) containing the neural activity of one or more units.
+* `features`: a `Tsd` or `TsdFrame` containing one or more features.
 
 By default, 10 bins are used for all features, but you can specify the number of bins,
 or the bin edges explicitly, using the `bins` argument.
@@ -101,7 +101,7 @@ you can set `return_pandas=True`. Note that this will not return the occupancy a
 
 ```{code-cell} ipython3
 tuning_curves_1d = nap.compute_tuning_curves(
-    group=tsgroup,
+    data=tsgroup,
     features=feature,
     bins=120, 
     range=(0, 2*np.pi),
@@ -186,7 +186,7 @@ tsgroup = nap.TsGroup({
 If you pass more than 1 feature, a multi-dimensional tuning curve is computed:
 ```{code-cell} ipython3
 tuning_curves_2d = nap.compute_tuning_curves(
-    group=tsgroup, 
+    data=tsgroup, 
     features=features, 
     bins=(5,5),
     range=[(-1, 1), (-1, 1)],
@@ -275,7 +275,7 @@ In that case, we can simply pass a `Tsd` or `TsdFrame` as group:
 
 ```{code-cell} ipython3
 tuning_curves_1d = nap.compute_tuning_curves(
-    group=tsdframe,
+    data=tsdframe,
     features=feature,
     bins=120,
     range=(0, 2*np.pi),
@@ -311,15 +311,20 @@ features = nap.TsdFrame(
 
 
 # Calcium activity
-tsdframe = nap.TsdFrame(
-    t=timestep,
-    d=np.random.randn(len(timestep), 2)
-    )
+ft = features.values
+alpha = np.arctan2(ft[:, 1], ft[:, 0])
+bin_centers = np.linspace(-np.pi, np.pi, 6)
+kappa = 4.0
+units=[]
+for i, mu in enumerate(bin_centers):
+    units.append(np.exp(kappa * np.cos(alpha - mu))) # wrapped Gaussian
+units = np.stack(units, axis=1)
+tsdframe = nap.TsdFrame(t=features.times(), d=units)
 ```
 
 ```{code-cell} ipython3
 tuning_curves_2d = nap.compute_tuning_curves(
-    group=tsdframe,
+    data=tsdframe,
     features=features,
     bins=5,
     feature_names=["a", "b"]
@@ -330,7 +335,7 @@ tuning_curves_2d
 ```{code-cell} ipython3
 tuning_curves_2d.name="ΔF/F"
 tuning_curves_2d.attrs["unit"]="a.u."
-tuning_curves_2d.plot(col="unit")
+tuning_curves_2d.plot(col="unit", col_wrap=3)
 plt.show()
 ```
 
@@ -340,8 +345,8 @@ When computing from epochs, you should store them in a dictionary:
 
 ```{code-cell} ipython3
 dict_ep =  {
-                "stim0": nap.IntervalSet(start=0, end=20),
-                "stim1":nap.IntervalSet(start=30, end=70)
+    "stim0": nap.IntervalSet(start=0, end=20),
+    "stim1":nap.IntervalSet(start=30, end=70)
 }
 ```
 

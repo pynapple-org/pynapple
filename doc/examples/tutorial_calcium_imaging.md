@@ -157,4 +157,6 @@ Authors
 ^^^
 Sofia Skromne Carrasco
 
+Wolf De Wulf
+
 :::
