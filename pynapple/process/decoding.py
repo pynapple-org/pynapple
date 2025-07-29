@@ -1,15 +1,116 @@
 """
-Decoding functions.
+Functions to decode n-dimensional features.
 """
 
+import inspect
 import warnings
+from functools import wraps
 
 import numpy as np
 import xarray as xr
+from scipy.spatial.distance import cdist
 
 from .. import core as nap
 
 
+def _validate_decoding_inputs(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Validate each positional argument
+        sig = inspect.signature(func)
+        kwargs = sig.bind_partial(*args, **kwargs).arguments
+
+        # check tuning curves
+        tuning_curves = kwargs["tuning_curves"]
+        if not isinstance(tuning_curves, xr.DataArray):
+            raise TypeError(
+                "tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves."
+            )
+
+        # check data
+        data = kwargs["data"]
+        if isinstance(data, nap.TsGroup):
+            data = data.count(
+                kwargs["bin_size"],
+                kwargs.get("epochs", None),
+                kwargs.get("time_units", "s"),
+            )
+        elif not isinstance(data, nap.TsdFrame):
+            raise TypeError("Unknown format for data.")
+        kwargs["data"] = data
+
+        # check match
+        if tuning_curves.sizes["unit"] != data.shape[1]:
+            raise ValueError("Different shapes for tuning_curves and data.")
+        if not np.all(tuning_curves.coords["unit"] == data.columns.values):
+            raise ValueError("Different indices for tuning curves and data keys.")
+
+        if (
+            "uniform_prior" in kwargs
+            and not kwargs["uniform_prior"]
+            and "occupancy" not in tuning_curves.attrs
+        ):
+            raise ValueError(
+                "uniform_prior set to False but no occupancy found in tuning curves."
+            )
+
+        # Call the original function with validated inputs
+        return func(**kwargs)
+
+    return wrapper
+
+
+def _format_decoding_outputs(func):
+    @wraps(func)
+    def wrapper(tuning_curves, data, epochs, *args, **kwargs):
+        p = func(tuning_curves, data, epochs, *args, **kwargs)
+        idxmax = np.argmax(p, 1)
+
+        # Fromat probability distribution
+        p = p.reshape(p.shape[0], *tuning_curves.shape[1:])
+        if p.ndim > 2:
+            p = nap.TsdTensor(
+                t=data.index,
+                d=p,
+                time_support=epochs,
+            )
+        else:
+            p = nap.TsdFrame(
+                t=data.index,
+                d=p,
+                time_support=epochs,
+                columns=tuning_curves.coords[tuning_curves.dims[1]].values,
+            )
+
+        # Format decoded
+        idxmax = np.unravel_index(idxmax, tuning_curves.shape[1:])
+        if tuning_curves.ndim == 2:
+            decoded = nap.Tsd(
+                t=data.index,
+                d=tuning_curves.coords[tuning_curves.dims[1]][idxmax[0]].values,
+                time_support=epochs,
+            )
+        else:
+            decoded = nap.TsdFrame(
+                t=data.index,
+                d=np.stack(
+                    [
+                        tuning_curves.coords[dim][idxmax[i]]
+                        for i, dim in enumerate(tuning_curves.dims[1:])
+                    ],
+                    axis=1,
+                ),
+                time_support=epochs,
+                columns=tuning_curves.dims[1:],
+            )
+
+        return decoded, p
+
+    return wrapper
+
+
+@_validate_decoding_inputs
+@_format_decoding_outputs
 def decode_bayes(
     tuning_curves, data, epochs, bin_size, time_units="s", uniform_prior=True
 ):
@@ -189,35 +290,12 @@ def decode_bayes(
     98.5        1.0  1.0
     dtype: float64, shape: (98, 2)
     """
+    occupancy = (
+        np.ones_like(tuning_curves[0]).flatten()
+        if uniform_prior
+        else tuning_curves.attrs["occupancy"].flatten()
+    )
 
-    # check tuning curves
-    if not isinstance(tuning_curves, xr.DataArray):
-        raise TypeError(
-            "tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves."
-        )
-
-    # check data
-    if isinstance(data, nap.TsGroup):
-        data = data.count(bin_size, epochs, time_units)
-    elif not isinstance(data, nap.TsdFrame):
-        raise TypeError("Unknown format for data.")
-
-    # check match
-    if tuning_curves.sizes["unit"] != data.shape[1]:
-        raise ValueError("Different shapes for tuning_curves and data.")
-    if not np.all(tuning_curves.coords["unit"] == data.columns.values):
-        raise ValueError("Different indices for tuning curves and data keys.")
-
-    if uniform_prior:
-        occupancy = np.ones_like(tuning_curves[0]).flatten()
-    else:
-        if "occupancy" not in tuning_curves.attrs:
-            raise ValueError(
-                "uniform_prior set to False but no occupancy found in tuning curves."
-            )
-        occupancy = tuning_curves.attrs["occupancy"].flatten()
-
-    # Transforming to pure numpy array
     tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
     ct = data.values
     bin_size_s = nap.TsIndex.format_timestamps(
@@ -232,55 +310,16 @@ def decode_bayes(
     p3 = np.nanprod(tc**ct2, -1)
 
     p = p1 * p2 * p3
-    p = p / p.sum(1)[:, np.newaxis]
-
-    idxmax = np.argmax(p, 1)
-
-    p = p.reshape(p.shape[0], *tuning_curves.shape[1:])
-    if p.ndim > 2:
-        p = nap.TsdTensor(
-            t=data.index,
-            d=p,
-            time_support=epochs,
-        )
-    else:
-        p = nap.TsdFrame(
-            t=data.index,
-            d=p,
-            time_support=epochs,
-            columns=tuning_curves.coords[tuning_curves.dims[1]].values,
-        )
-
-    idxmax = np.unravel_index(idxmax, tuning_curves.shape[1:])
-
-    if tuning_curves.ndim == 2:
-        decoded = nap.Tsd(
-            t=data.index,
-            d=tuning_curves.coords[tuning_curves.dims[1]][idxmax[0]].values,
-            time_support=epochs,
-        )
-    else:
-        decoded = nap.TsdFrame(
-            t=data.index,
-            d=np.stack(
-                [
-                    tuning_curves.coords[dim][idxmax[i]]
-                    for i, dim in enumerate(tuning_curves.dims[1:])
-                ],
-                axis=1,
-            ),
-            time_support=epochs,
-            columns=tuning_curves.dims[1:],
-        )
-
-    return decoded, p
+    return p / p.sum(1)[:, np.newaxis]
 
 
+@_validate_decoding_inputs
+@_format_decoding_outputs
 def decode_template(
-    tuning_curves, group, epochs, bin_size, time_units="s", uniform_prior=True
+    tuning_curves, data, epochs, bin_size, metric="correlation", time_units="s"
 ):
     """
-    Performs Bayesian decoding over n-dimensional features.
+    Performs template matching decoding over n-dimensional features.
 
     See:
     Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
@@ -293,19 +332,17 @@ def decode_template(
     ----------
     tuning_curves : xr.DataArray
         Tuning curves as outputed by `compute_tuning_curves` (one for each unit).
-    group : TsGroup, TsdFrame or dict of Ts, Tsd
-        A group of neurons with the same keys as the tuning curves.
-        You may also pass a TsdFrame with smoothed rates (recommended).
+    data : TsGroup or TsdFrame
+        Neural activity with the same keys as the tuning curves.
+        You may also pass a TsdFrame with smoothed counts (recommended).
     epochs : IntervalSet
         The epochs on which decoding is computed
     bin_size : float
         Bin size. Default is second. Use the parameter time_units to change it.
+    metric : str, optional
+        The distance metric to use for template matching. Default is 'correlation'.
     time_units : str, optional
         Time unit of the bin size ('s' [default], 'ms', 'us').
-    uniform_prior : bool, optional
-        If True (default), uses a uniform distribution as a prior.
-        If False, uses the occupancy from the tuning curves as a prior over the feature
-        probability distribution.
 
     Returns
     -------
@@ -455,105 +492,12 @@ def decode_template(
     98.5        1.0  1.0
     dtype: float64, shape: (98, 2)
     """
-
-    # check tuning curves
-    if not isinstance(tuning_curves, xr.DataArray):
-        raise TypeError(
-            "tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves."
-        )
-
-    # check group
-    if isinstance(group, (dict, nap.TsGroup)):
-        numcells = len(group)
-
-        if tuning_curves.sizes["unit"] != numcells:
-            raise ValueError("Different shapes for tuning_curves and group.")
-
-        if not np.all(tuning_curves.coords["unit"] == np.array(list(group.keys()))):
-            raise ValueError("Different indices for tuning curves and group keys.")
-
-        if isinstance(group, dict):
-            group = nap.TsGroup(group, time_support=epochs)
-        count = group.count(bin_size, epochs, time_units)
-    elif isinstance(group, nap.TsdFrame):
-        numcells = group.shape[1]
-
-        if tuning_curves.sizes["unit"] != numcells:
-            raise ValueError("Different shapes for tuning_curves and group.")
-
-        if not np.all(tuning_curves.coords["unit"] == group.columns):
-            raise ValueError("Different indices for tuning curves and group keys.")
-
-        count = group
-    else:
-        raise TypeError("Unknown format for group.")
-
-    if uniform_prior:
-        occupancy = np.ones_like(tuning_curves[0]).flatten()
-    else:
-        if "occupancy" not in tuning_curves.attrs:
-            raise ValueError(
-                "uniform_prior set to False but no occupancy found in tuning curves."
-            )
-        occupancy = tuning_curves.attrs["occupancy"].flatten()
-
-    # Transforming to pure numpy array
     tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
-    ct = count.values
-    bin_size_s = nap.TsIndex.format_timestamps(
-        np.array([bin_size], dtype=np.float64), time_units
-    )[0]
+    ct = data.values
 
-    p1 = np.exp(-bin_size_s * np.nansum(tc, 1))
-    p2 = occupancy / occupancy.sum()
-
-    ct2 = np.tile(ct[:, np.newaxis, :], (1, tc.shape[0], 1))
-
-    p3 = np.nanprod(tc**ct2, -1)
-
-    p = p1 * p2 * p3
-    p = p / p.sum(1)[:, np.newaxis]
-
-    idxmax = np.argmax(p, 1)
-
-    p = p.reshape(p.shape[0], *tuning_curves.shape[1:])
-    if p.ndim > 2:
-        p = nap.TsdTensor(
-            t=count.index,
-            d=p,
-            time_support=epochs,
-        )
-    else:
-        p = nap.TsdFrame(
-            t=count.index,
-            d=p,
-            time_support=epochs,
-            columns=tuning_curves.coords[tuning_curves.dims[1]].values,
-        )
-
-    idxmax = np.unravel_index(idxmax, tuning_curves.shape[1:])
-
-    if tuning_curves.ndim == 2:
-        decoded = nap.Tsd(
-            t=count.index,
-            d=tuning_curves.coords[tuning_curves.dims[1]][idxmax[0]].values,
-            time_support=epochs,
-        )
-    else:
-        decoded = nap.TsdFrame(
-            t=count.index,
-            d=np.stack(
-                [
-                    tuning_curves.coords[dim][idxmax[i]]
-                    for i, dim in enumerate(tuning_curves.dims[1:])
-                ],
-                axis=1,
-            ),
-            time_support=epochs,
-            columns=tuning_curves.dims[1:],
-        )
-
-    return decoded, p
+    dist = cdist(ct, tc, metric=metric)
+    sim = 1 / (dist + 1e-12)
+    return sim / sim.sum(axis=1, keepdims=True)
 
 
 # -------------------------------------------------------------------------------------
