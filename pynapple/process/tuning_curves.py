@@ -1,6 +1,5 @@
 """
 Functions to compute tuning curves for features in 1 dimension or 2 dimension.
-
 """
 
 import inspect
