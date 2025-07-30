@@ -183,17 +183,11 @@ To decode the population activity, we will be using a bayesian decoder as implem
 Again, just a single line of code!
 
 ```{code-cell} ipython3
-print(tuning_curves.to_pandas().T)
-print(spikes_adn)
-```
-
-```{code-cell} ipython3
-decoded, proba_feature = nap.decode_1d(
-    tuning_curves=tuning_curves.to_pandas().T,
-    group=spikes_adn,
-    ep=epochs[epochs.tags == "wake"],
-    bin_size=0.1,  # second
-    feature=angle,
+decoded, proba_feature = nap.decode_bayes(
+    tuning_curves=tuning_curves,
+    data=spikes_adn,
+    epochs=epochs[epochs.tags == "wake"],
+    bin_size=0.1,
 )
 ```
 
@@ -203,7 +197,7 @@ What does this look like?
 print(decoded)
 ```
 
-The variable 'decoded' contains the most probable angle, and 'proba_feature' that contains the probability of a given angular bin at a given time point:
+The variable 'decoded' contains the most probable angle, and 'proba_feature' contains the probability of a given angular bin at a given time point:
 
 ```{code-cell} ipython3
 print(proba_feature)

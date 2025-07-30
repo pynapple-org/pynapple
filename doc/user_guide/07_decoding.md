@@ -24,17 +24,24 @@ custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
 ```
 
-<!-- #region -->
-Pynapple supports n-dimensional bayesian decoding. 
-The function returns the decoded feature as well as the probabilities for each timestamp. 
+Input to the decoding functions always includes:
+ - `tuning_curves`, computed using [`nap.compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves).
+ - `data`, neural activity as a `TsGroup` (spikes) or `TsdFrame` (smoothed counts).
+ - `epochs`, to restrict decoding to certain intervals.
+ - `bin_size`, the size of the bins in which to count the data (spikes only).
+ - `time_units`, the units of `bin_size`, defaulting to seconds.
 
+## Bayesian decoding
+Pynapple supports n-dimensional decoding from spikes in the form of Bayesian decoding with a Poisson assumption. 
+In addition to the default arguments, users can set `uniform_prior=False` to use the occupancy as a prior over the feature distribution. 
+By default `uniform_prior=True`, and a uniform prior is used.
 
-:::{hint}
-Input to the bayesian decoding functions always include the tuning curves computed using [`nap.compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves).
+:::{important}
+Bayesian decoding should only be used with spike or rate data, as these can be assumed to follow a Poisson distribution!
 :::
 
-## 1-dimensional decoding
-<!-- #endregion -->
+
+### 1-dimensional Bayesian decoding
 
 ```{code-cell} ipython3
 :tags: [hide-cell]
@@ -63,18 +70,16 @@ index = np.digitize(feature, bins)-1
 
 count = np.random.poisson(tc[index])>0
 tsgroup = nap.TsGroup({i:nap.Ts(timestep[count[:,i]]) for i in range(N)})
-epoch = nap.IntervalSet(0, 10)
+epochs = nap.IntervalSet(0, 10)
 ```
 
-To decode, we need to compute tuning curves in 1D.
+First, we compute the tuning curves:
 
 ```{code-cell} ipython3
 tuning_curves_1d = nap.compute_tuning_curves(
     tsgroup, feature, bins=61, range=(0, 2 * np.pi), feature_names=["feature"]
 )
 ```
-
-We can display the tuning curves of each neurons
 
 ```{code-cell} ipython3
 :tags: [hide-input]
@@ -84,75 +89,90 @@ tuning_curves_1d.plot.line(x="feature", add_legend=False)
 plt.show()
 ```
 
-`nap.decode_1d` performs bayesian decoding:
+We can then use `nap.decode_bayes` for Bayesian decoding:
 
 ```{code-cell} ipython3
-decoded, proba_feature = nap.decode_1d(
-    tuning_curves=tuning_curves_1d.to_pandas().T, # 1D tuning curves
-    group=tsgroup, # Spiking activity
-    ep=epoch, # Small epoch
-    bin_size=0.06,  # How to bin the spike trains
-    feature=feature, # Features
+decoded, proba_feature = nap.decode_bayes(
+    tuning_curves=tuning_curves_1d,
+    data=tsgroup,
+    epochs=epochs,
+    bin_size=0.06,
 )
 ```
 
-`decoded` is `Tsd` object containing the decoded feature value. `proba_feature` is a `TsdFrame` containing the probabilities of being in a particular feature bin over time.
+`decoded` is a `Tsd` object containing the decoded feature value.
+`proba_feature` is a `TsdFrame` containing the probabilities of being in a particular feature bin over time.
 
 ```{code-cell} ipython3
 :tags: [hide-input]
-plt.figure(figsize=(12, 6))
-plt.subplot(211)
-plt.plot(feature.restrict(epoch), label="True")
-plt.plot(decoded, label="Decoded")
-plt.legend()
-plt.xlim(epoch[0,0], epoch[0,1])
-plt.subplot(212)
-plt.imshow(proba_feature.values.T, aspect="auto", origin="lower", cmap="viridis")
-plt.xticks([0, len(decoded)], epoch.values[0])
-plt.xlabel("Time (s)")
+fig, (ax1, ax2) = plt.subplots(figsize=(8, 5), nrows=2, ncols=1, sharex=True)
+ax1.plot(
+    np.linspace(0, len(decoded), len(feature.restrict(epochs))),
+    feature.restrict(epochs),
+    label="True",
+)
+ax1.scatter(
+    np.linspace(0, len(decoded), len(decoded)),
+    decoded,
+    label="Decoded",
+    c="orange",
+)
+ax1.legend(
+    frameon=False,
+    bbox_to_anchor=(1.0, 1.0),
+)
+ax1.set_xlim(epochs[0, 0], epochs[0, 1])
+im = ax2.imshow(proba_feature.values.T, aspect="auto", origin="lower", cmap="viridis")
+cbar_ax = fig.add_axes([0.93, 0.1, 0.015, 0.36])
+fig.colorbar(im, cax=cbar_ax, label="Probability")
+ax2.set_xticks([0, len(decoded)], epochs.values[0])
+ax2.set_yticks([])
+ax2.set_xlabel("Time (s)", labelpad=-20)
 plt.show()
 ```
 
-## 2-dimensional decoding
+### 2-dimensional Bayesian decoding
 
 ```{code-cell} ipython3
 :tags: [hide-cell]
 dt = 0.1
 epochs = nap.IntervalSet(start=0, end=1000, time_units="s")
 features = np.vstack((np.cos(np.arange(0, 1000, dt)), np.sin(np.arange(0, 1000, dt)))).T
-features = nap.TsdFrame(t=np.arange(0, 1000, dt),
+features = nap.TsdFrame(
+    t=np.arange(0, 1000, dt),
     d=features,
     time_units="s",
-    time_support=epoch,
+    time_support=epochs,
     columns=["a", "b"],
 )
 
 times = features.as_units("us").index.values
 ft = features.values
 alpha = np.arctan2(ft[:, 1], ft[:, 0])
-bins = np.repeat(np.linspace(-np.pi, np.pi, 13)[::, np.newaxis], 2, 1)
-bins += np.array([-2 * np.pi / 24, 2 * np.pi / 24])
+bin_centers = np.linspace(-np.pi, np.pi, 12)
+kappa = 4.0
 ts_group = {}
-for i in range(12):
-    ts = times[(alpha >= bins[i, 0]) & (alpha <= bins[i + 1, 1])]
+for i, mu in enumerate(bin_centers):
+    weights = np.exp(kappa * np.cos(alpha - mu))  # wrapped Gaussian
+    weights /= np.max(weights)  # normalize to 0–1
+    mask = weights > 0.5
+    ts = times[mask]
     ts_group[i] = nap.Ts(ts, time_units="us")
-
-ts_group = nap.TsGroup(ts_group, time_support=epoch)
+ts_group = nap.TsGroup(ts_group)
 ```
 
-To decode, we need to compute tuning curves in 2D.
+Decoding also works with multiple dimensions.
+First, we compute the tuning curves:
 
 ```{code-cell} ipython3
 tuning_curves_2d = nap.compute_tuning_curves(
-    data=ts_group, # Spiking activity of 12 neurons
-    features=features, # 2-dimensional features
+    data=ts_group,
+    features=features, # containing 2 features
     bins=10,
     epochs=epochs,
-    range=[(-1.0, 1.0), (-1.0, 1.0)], # Minmax of the features
+    range=[(-1.0, 1.0), (-1.0, 1.0)], # range can be specified for each feature
 )
 ```
-
-We can display the tuning curves of each neuron
 
 ```{code-cell} ipython3
 :tags: [hide-input]
@@ -162,51 +182,51 @@ tuning_curves_2d.plot(row="unit", col_wrap=6)
 plt.show()
 ```
 
-`nap.decode_2d` performs bayesian decoding:
+and then, `nap.decode_bayes` again performs bayesian decoding:
 
 ```{code-cell} ipython3
-tcs = {c: tuning_curves_2d.sel(unit=c).values for c in tuning_curves_2d.coords["unit"].values}
-bins = [tuning_curves_2d.coords[dim].values for dim in tuning_curves_2d.coords if dim != "unit"]
-
-decoded, proba_feature = nap.decode_2d(
-    tuning_curves=tcs, # 2D tuning curves
-    group=ts_group, # Spiking activity
-    ep=epoch, # Epoch
-    bin_size=0.1,  # How to bin the spike trains
-    xy=bins, # Features position
-    features=features, # Features
+decoded, proba_feature = nap.decode_bayes(
+    tuning_curves=tuning_curves_2d,
+    data=ts_group,
+    epochs=epochs,
+    bin_size=0.2,
 )
 ```
 
 ```{code-cell} ipython3
 :tags: [hide-input]
-plt.figure(figsize=(15, 5))
-plt.subplot(131)
-plt.plot(features["a"].get(0,20), label="True")
-plt.plot(decoded["a"].get(0,20), label="Decoded")
-plt.legend()
-plt.xlabel("Time (s)")
-plt.ylabel("Feature a")
-plt.subplot(132)
-plt.plot(features["b"].get(0,20), label="True")
-plt.plot(decoded["b"].get(0,20), label="Decoded")
-plt.legend()
-plt.xlabel("Time (s)")
-plt.title("Feature b")
-plt.subplot(133)
-plt.plot(
-    features["a"].get(0,20),
-    features["b"].get(0,20),
+fig, (ax1, ax2, ax3) = plt.subplots(figsize=(8, 3), nrows=1, ncols=3, sharey=True)
+ax1.plot(features["a"].get(0, 20), label="True")
+ax1.scatter(
+    decoded["a"].get(0, 20).times(),
+    decoded["a"].get(0, 20),
+    label="Decoded",
+    c="orange",
+)
+ax1.set_title("Feature a")
+ax1.set_xlabel("Time (s)")
+
+ax2.plot(features["b"].get(0, 20), label="True")
+ax2.scatter(
+    decoded["b"].get(0, 20).times(),
+    decoded["b"].get(0, 20),
+    label="Decoded",
+    c="orange",
+)
+ax2.set_xlabel("Time (s)")
+ax2.set_title("Feature b")
+
+ax3.plot(
+    features["a"].get(0, 20),
+    features["b"].get(0, 20),
     label="True",
 )
-plt.plot(
-    decoded["a"].get(0,20),
-    decoded["b"].get(0,20),
+ax3.scatter(
+    decoded["a"].get(0, 20),
+    decoded["b"].get(0, 20),
     label="Decoded",
+    c="orange",
 )
-plt.xlabel("Feature a")
-plt.title("Feature b")
-plt.legend()
-plt.tight_layout()
+ax3.set_title("Combined")
 plt.show()
 ```
