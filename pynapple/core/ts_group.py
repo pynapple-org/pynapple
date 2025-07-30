@@ -1925,12 +1925,16 @@ class TsGroup(UserDict, _MetadataMixin):
         ...     d=np.concatenate([np.zeros(20), np.ones(20)]),
         ...     time_support=nap.IntervalSet(np.array([[0, 5], [10, 12], [20, 33]])),
         ... )
-        >>> tsgroup.groupby_apply("l2", nap.compute_1d_tuning_curves, feature=feature, nb_bins=2)
-        {'x':          0         1
-         0.25  1.15  2.044444
-         0.75  1.15  2.217857,
-         'y':              2
-         0.25  3.833333
-         0.75  4.353571}
+        >>> print(tsgroup.groupby_apply("l2", nap.compute_tuning_curves, features=feature, bins=2))
+        {'x': <xarray.DataArray (unit: 2, feature0: 2)> Size: 32B
+        array([[1.        , 1.        ],
+               [1.77777778, 1.92857143]])
+        Coordinates:
+          * unit      (unit) int64 16B 0 1
+          * feature0  (feature0) float64 16B 0.25 0.75, 'y': <xarray.DataArray (unit: 1, feature0: 2)> Size: 16B
+        array([[3.33333333, 3.78571429]])
+        Coordinates:
+          * unit      (unit) int64 8B 2
+          * feature0  (feature0) float64 16B 0.25 0.75}
         """
         return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)
