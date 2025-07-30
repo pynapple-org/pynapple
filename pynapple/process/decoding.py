@@ -184,23 +184,23 @@ def decode_bayes(
     decode is a `Tsd` object containing the decoded feature for each time bin.
 
     >>> p
-    Time (s)    0    1
-    ----------  ---  ---
-    0.5         1.0  0.0
-    1.5         1.0  0.0
-    2.5         1.0  0.0
-    3.5         1.0  0.0
-    4.5         1.0  0.0
-    5.5         1.0  0.0
-    6.5         1.0  0.0
-    ...         ...  ...
-    93.5        0.0  1.0
-    94.5        0.0  1.0
-    95.5        0.0  1.0
-    96.5        0.0  1.0
-    97.5        0.0  1.0
-    98.5        0.0  1.0
-    99.5        0.0  1.0
+    Time (s)    0.0    1.0
+    ----------  -----  -----
+    0.5         1.0    0.0
+    1.5         1.0    0.0
+    2.5         1.0    0.0
+    3.5         1.0    0.0
+    4.5         1.0    0.0
+    5.5         1.0    0.0
+    6.5         1.0    0.0
+    ...         ...    ...
+    93.5        0.0    1.0
+    94.5        0.0    1.0
+    95.5        0.0    1.0
+    96.5        0.0    1.0
+    97.5        0.0    1.0
+    98.5        0.0    1.0
+    99.5        0.0    1.0
     dtype: float64, shape: (100, 2)
 
     p is a `TsdFrame` object containing the probability distribution for each time bin.
@@ -322,11 +322,9 @@ def decode_template(
     Performs template matching decoding over n-dimensional features.
 
     See:
-    Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
-    (1998). Interpreting neuronal population activity by
-    reconstruction: unified framework with application to
-    hippocampal place cells. Journal of neurophysiology, 79(2),
-    1017-1044.
+    Vollan, A. Z., Gardner, R. J., Moser, M. B., & Moser, E. I. (2025).
+    Left–right-alternating theta sweeps in entorhinal–hippocampal maps of space.
+    Nature, 639(8004), 995–1005.
 
     Parameters
     ----------
@@ -339,8 +337,15 @@ def decode_template(
         The epochs on which decoding is computed
     bin_size : float
         Bin size. Default is second. Use the parameter time_units to change it.
-    metric : str, optional
-        The distance metric to use for template matching. Default is 'correlation'.
+    metric : str or callable, optional
+        The distance metric to use for template matching.
+        This is passed to `scipy.spatial.distance.cdist`,
+        If a string, the distance function can be ‘braycurtis’, ‘canberra’,
+        ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’,
+        ‘hamming’, ‘jaccard’, ‘jensenshannon’, ‘kulczynski1’, ‘mahalanobis’,
+        ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’,
+        ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’.
+        Default is 'correlation'.
     time_units : str, optional
         Time unit of the bin size ('s' [default], 'ms', 'us').
 
@@ -362,7 +367,7 @@ def decode_template(
     >>> feature = nap.Tsd(t=np.arange(0, 100, 1), d=np.repeat(np.arange(0, 2), 50))
     >>> tuning_curves = nap.compute_tuning_curves(group, feature, bins=2, range=(-.5, 1.5))
     >>> epochs = nap.IntervalSet([0, 100])
-    >>> decoded, p = nap.decode_bayes(tuning_curves, group, epochs=epochs, bin_size=1)
+    >>> decoded, p = nap.decode_template(tuning_curves, group, epochs=epochs, bin_size=1)
     >>> decoded
     Time (s)
     ----------  --
@@ -386,23 +391,23 @@ def decode_template(
     decode is a `Tsd` object containing the decoded feature for each time bin.
 
     >>> p
-    Time (s)    0    1
-    ----------  ---  ---
-    0.5         1.0  0.0
-    1.5         1.0  0.0
-    2.5         1.0  0.0
-    3.5         1.0  0.0
-    4.5         1.0  0.0
-    5.5         1.0  0.0
-    6.5         1.0  0.0
-    ...         ...  ...
-    93.5        0.0  1.0
-    94.5        0.0  1.0
-    95.5        0.0  1.0
-    96.5        0.0  1.0
-    97.5        0.0  1.0
-    98.5        0.0  1.0
-    99.5        0.0  1.0
+    Time (s)    0.0    1.0
+    ----------  -----  -----
+    0.5         1.0    0.0
+    1.5         1.0    0.0
+    2.5         1.0    0.0
+    3.5         1.0    0.0
+    4.5         1.0    0.0
+    5.5         1.0    0.0
+    6.5         1.0    0.0
+    ...         ...    ...
+    93.5        0.0    1.0
+    94.5        0.0    1.0
+    95.5        0.0    1.0
+    96.5        0.0    1.0
+    97.5        0.0    1.0
+    98.5        0.0    1.0
+    99.5        0.0    1.0
     dtype: float64, shape: (100, 2)
 
     p is a `TsdFrame` object containing the probability distribution for each time bin.
@@ -422,7 +427,7 @@ def decode_template(
     ...     }
     ... )
     >>> tuning_curves = nap.compute_tuning_curves(group, features, bins=2, range=[(-.5, 1.5)]*2)
-    >>> decoded, p = nap.decode_bayes(tuning_curves, group, epochs=epochs, bin_size=1)
+    >>> decoded, p = nap.decode_template(tuning_curves, group, epochs=epochs, bin_size=1)
     >>> decoded
     Time (s)    0    1
     ----------  ---  ---
@@ -447,50 +452,48 @@ def decode_template(
 
     >>> p
     Time (s)
-    ----------  --------------
-    0.5         [[1., 0.] ...]
-    1.5         [[0., 1.] ...]
-    2.5         [[1., 0.] ...]
-    3.5         [[0., 1.] ...]
-    4.5         [[1., 0.] ...]
-    5.5         [[0., 1.] ...]
-    6.5         [[1., 0.] ...]
+    ----------  ------------------------
+    0.5         [[1.0e+00, 7.5e-13] ...]
+    1.5         [[7.5e-13, 1.0e+00] ...]
+    2.5         [[1.0e+00, 7.5e-13] ...]
+    3.5         [[7.5e-13, 1.0e+00] ...]
+    4.5         [[1.0e+00, 7.5e-13] ...]
+    5.5         [[7.5e-13, 1.0e+00] ...]
     ...
-    93.5        [[0., 0.] ...]
-    94.5        [[0., 0.] ...]
-    95.5        [[0., 0.] ...]
-    96.5        [[0., 0.] ...]
-    97.5        [[0., 0.] ...]
-    98.5        [[0., 0.] ...]
-    99.5        [[0., 0.] ...]
+    95.5        [[7.5e-13, 7.5e-13] ...]
+    96.5        [[7.5e-13, 7.5e-13] ...]
+    97.5        [[7.5e-13, 7.5e-13] ...]
+    98.5        [[7.5e-13, 7.5e-13] ...]
+    99.5        [[7.5e-13, 7.5e-13] ...]
     dtype: float64, shape: (100, 2, 2)
 
     and p is a `TsdTensor` object containing the probability distribution for each time bin.
 
-    It is also possible to pass continuous values instead of spikes (e.g. smoothed spike counts):
+    It is also possible to pass continuous values instead of spikes (e.g. calcium imaging):
 
-    >>> group = group.count(1).smooth(2)
+    >>> time = np.arange(0,100, 0.1)
+    >>> group = nap.TsdFrame(t=time, d=np.stack([time % 0.5, time %1], axis=1))
     >>> tuning_curves = nap.compute_tuning_curves(group, features, bins=2, range=[(-.5, 1.5)]*2)
     >>> decoded, p = nap.decode_bayes(tuning_curves, group, epochs=epochs, bin_size=1)
     >>> decoded
     Time (s)    0    1
     ----------  ---  ---
-    0.5         0.0  1.0
-    1.5         0.0  1.0
-    2.5         0.0  1.0
-    3.5         0.0  1.0
-    4.5         0.0  0.0
-    5.5         0.0  0.0
-    6.5         0.0  0.0
+    0.0         0.0  0.0
+    0.1         0.0  0.0
+    0.2         0.0  0.0
+    0.3         0.0  0.0
+    0.4         0.0  0.0
+    0.5         1.0  1.0
+    0.6         1.0  1.0
     ...         ...  ...
-    92.5        1.0  0.0
-    93.5        1.0  0.0
-    94.5        1.0  0.0
-    95.5        1.0  1.0
-    96.5        1.0  1.0
-    97.5        1.0  1.0
-    98.5        1.0  1.0
-    dtype: float64, shape: (98, 2)
+    99.3        0.0  0.0
+    99.4        0.0  0.0
+    99.5        1.0  1.0
+    99.6        1.0  1.0
+    99.7        1.0  1.0
+    99.8        1.0  1.0
+    99.9        1.0  1.0
+    dtype: float64, shape: (1000, 2)
     """
     tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
     ct = data.values
