@@ -198,6 +198,18 @@ tsgroup.drop_info("coords")
 print(tsgroup)
 ```
 
+## Restricting metadata
+Instead of dropping multiple metadata fields, you may want to restrict to a set of specified fields, i.e. select which columns to keep. For this operation, use the [`restrict_info()`](pynapple.TsGroup.restrict_info) method. Multiple metadata columns can be kept by passing a list of metadata names.
+```{code-cell} ipython3
+import copy
+tsgroup2 = copy.deepcopy(tsgroup)
+tsgroup2.restrict_info("region")
+print(tsgroup2)
+```
+```{admonition} Note
+The `rate` column will always be kept for a `TsGroup`.
+```
+
 ## Using metadata to slice objects
 Metadata can be used to slice or filter objects based on metadata values.
 ```{code-cell} ipython3

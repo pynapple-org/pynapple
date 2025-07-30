@@ -2371,6 +2371,65 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         """
         return _MetadataMixin.drop_info(self, key)
 
+    @add_meta_docstring("restrict_info")
+    def restrict_info(self, key):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"], "l3": [4, 5, 6]}
+        >>> tsdframe = nap.TsdFrame(t=np.arange(5), d=np.ones((5, 3)), metadata=metadata)
+        >>> print(tsdframe)
+        Time (s)    0    1    2
+        ----------  ---  ---  ---
+        0.0         1.0  1.0  1.0
+        1.0         1.0  1.0  1.0
+        2.0         1.0  1.0  1.0
+        3.0         1.0  1.0  1.0
+        4.0         1.0  1.0  1.0
+        Metadata
+        ----------  ---  ---  ---
+        l1          1    2    3
+        l2          x    x    y
+        l3          4    5    6
+        dtype: float64, shape: (5, 3)
+
+        To restrict to multiple metadata rows:
+
+        >>> tsdframe.restrict_info(["l2", "l3"])
+        >>> tsdframe
+        Time (s)    0    1    2
+        ----------  ---  ---  ---
+        0.0         1.0  1.0  1.0
+        1.0         1.0  1.0  1.0
+        2.0         1.0  1.0  1.0
+        3.0         1.0  1.0  1.0
+        4.0         1.0  1.0  1.0
+        Metadata
+        ----------  ---  ---  ---
+        l2          x    x    y
+        l3          4    5    6
+        dtype: float64, shape: (5, 3)
+
+        To restrict to a single metadata row:
+
+        >>> tsdframe.restrict_info("l2")
+        >>> tsdframe
+          Time (s)    0    1    2
+        ----------  ---  ---  ---
+                 0    1    1    1
+                 1    1    1    1
+                 2    1    1    1
+                 3    1    1    1
+                 4    1    1    1
+        Metadata
+        ----------  ---  ---  ---
+        l2          x    x    y
+        dtype: float64, shape: (5, 3)
+        """
+        return _MetadataMixin.restrict_info(self, key)
+
     @add_or_convert_metadata
     @add_meta_docstring("groupby")
     def groupby(self, by, get_group=None):

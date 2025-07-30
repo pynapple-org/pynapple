@@ -1464,6 +1464,75 @@ class TestMetadata:
         if isinstance(drop, list) and ("label" in drop):
             assert "label" in obj.metadata_columns
 
+    def test_restrict_metadata(self, obj, obj_len):
+        """
+        Test for restricting metadata with restrict_info.
+        """
+        info = np.ones(obj_len)
+        obj.set_info(l1=info, l2=info * 2, l3=info * 3)
+        for col in ["l1", "l2", "l3"]:
+            assert col in obj.metadata_columns
+
+        # restrict to 1 key
+        obj.restrict_info("l1")
+        assert "l1" in obj.metadata_columns
+        for col in ["l2", "l3"]:
+            assert col not in obj.metadata_columns
+
+        # rate should always be present in TsGroup
+        if isinstance(obj, nap.TsGroup):
+            assert "rate" in obj.metadata_columns
+
+        # restrict to multiple keys
+        obj.set_info(l2=info * 2, l3=info * 3, l4=info * 4)
+        obj.restrict_info(["l1", "l2"])
+        for col in ["l1", "l2"]:
+            assert col in obj.metadata_columns
+        for col in ["l3", "l4"]:
+            assert col not in obj.metadata_columns
+
+        # rate should always be present in TsGroup
+        if isinstance(obj, nap.TsGroup):
+            assert "rate" in obj.metadata_columns
+
+    @pytest.mark.parametrize(
+        "keep, error",
+        [
+            (
+                "not_info",
+                pytest.raises(
+                    KeyError,
+                    match=r"Metadata column\(s\) \['not_info'\] not found",
+                ),
+            ),
+            (
+                ["not_info", "not_info2"],
+                pytest.raises(
+                    KeyError,
+                    match=r"Metadata column\(s\) \['not_info', 'not_info2'\] not found",
+                ),
+            ),
+            (
+                ["label", 0],
+                pytest.raises(KeyError, match=r"Metadata column\(s\) \[0\] not found"),
+            ),
+            (0, pytest.raises(TypeError, match="Invalid metadata column")),
+        ],
+    )
+    def test_restrict_metadata_error(self, obj, obj_len, keep, error):
+        """
+        Test for errors when dropping metadata.
+        """
+        info = np.ones(obj_len)
+        obj.set_info(label=info, other=info * 2)
+
+        with error:
+            obj.restrict_info(keep)
+
+        # make sure nothing gets dropped
+        assert "label" in obj.metadata_columns
+        assert "other" in obj.metadata_columns
+
     # test naming overlap of shared attributes
     @pytest.mark.parametrize(
         "name",

@@ -165,3 +165,5 @@ your
 # Ignore npz files from testing:
 tests/*.npz
 .vscode/settings.json
+doc/user_guide/MyProject/sub-A2929/A2929-200711/stimulus-fish.json
+doc/user_guide/memmap.dat
