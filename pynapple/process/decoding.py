@@ -13,7 +13,7 @@ from scipy.spatial.distance import cdist
 from .. import core as nap
 
 
-def _validate_decoding_inputs(func):
+def _format_decoding_inputs(func):
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Validate each positional argument
@@ -60,64 +60,68 @@ def _validate_decoding_inputs(func):
     return wrapper
 
 
-def _format_decoding_outputs(func):
-    @wraps(func)
-    def wrapper(tuning_curves, data, epochs, *args, **kwargs):
-        p = func(tuning_curves, data, epochs, *args, **kwargs)
-        idxmax = np.argmax(p, 1)
+def _format_decoding_outputs(p, tuning_curves, data, epochs):
+    idxmax = np.argmax(p, 1)
 
-        # Fromat probability distribution
-        p = p.reshape(p.shape[0], *tuning_curves.shape[1:])
-        if p.ndim > 2:
-            p = nap.TsdTensor(
-                t=data.index,
-                d=p,
-                time_support=epochs,
-            )
-        else:
-            p = nap.TsdFrame(
-                t=data.index,
-                d=p,
-                time_support=epochs,
-                columns=tuning_curves.coords[tuning_curves.dims[1]].values,
-            )
+    # Fromat probability distribution
+    p = p.reshape(p.shape[0], *tuning_curves.shape[1:])
+    if p.ndim > 2:
+        p = nap.TsdTensor(
+            t=data.index,
+            d=p,
+            time_support=epochs,
+        )
+    else:
+        p = nap.TsdFrame(
+            t=data.index,
+            d=p,
+            time_support=epochs,
+            columns=tuning_curves.coords[tuning_curves.dims[1]].values,
+        )
 
-        # Format decoded
-        idxmax = np.unravel_index(idxmax, tuning_curves.shape[1:])
-        if tuning_curves.ndim == 2:
-            decoded = nap.Tsd(
-                t=data.index,
-                d=tuning_curves.coords[tuning_curves.dims[1]][idxmax[0]].values,
-                time_support=epochs,
-            )
-        else:
-            decoded = nap.TsdFrame(
-                t=data.index,
-                d=np.stack(
-                    [
-                        tuning_curves.coords[dim][idxmax[i]]
-                        for i, dim in enumerate(tuning_curves.dims[1:])
-                    ],
-                    axis=1,
-                ),
-                time_support=epochs,
-                columns=tuning_curves.dims[1:],
-            )
+    # Format decoded
+    idxmax = np.unravel_index(idxmax, tuning_curves.shape[1:])
+    if tuning_curves.ndim == 2:
+        decoded = nap.Tsd(
+            t=data.index,
+            d=tuning_curves.coords[tuning_curves.dims[1]][idxmax[0]].values,
+            time_support=epochs,
+        )
+    else:
+        decoded = nap.TsdFrame(
+            t=data.index,
+            d=np.stack(
+                [
+                    tuning_curves.coords[dim][idxmax[i]]
+                    for i, dim in enumerate(tuning_curves.dims[1:])
+                ],
+                axis=1,
+            ),
+            time_support=epochs,
+            columns=tuning_curves.dims[1:],
+        )
 
-        return decoded, p
-
-    return wrapper
+    return decoded, p
 
 
-@_validate_decoding_inputs
-@_format_decoding_outputs
+@_format_decoding_inputs
 def decode_bayes(
     tuning_curves, data, epochs, bin_size, time_units="s", uniform_prior=True
 ):
     """
     Performs Bayesian decoding over n-dimensional features.
 
-    See:
+    The algorithm is as follows:
+
+        1. For every time bin, we compute the distance between the neural activity
+           and the tuning curves using the chosen distance metric.
+        2. We rescale the distance to [0,1].
+        3. We transform the distance to similarity = 1 - distance.
+        4. We compute an estimated probability distribution by normalizing every time bin,
+           i.e. dividing by the sum over all feature bins.
+        5. For every time bin, the decoded feature bin is the one that corresponds to the maximum estimated probability.
+
+    See:\n
     Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
     (1998). Interpreting neuronal population activity by
     reconstruction: unified framework with application to
@@ -310,18 +314,28 @@ def decode_bayes(
     p3 = np.nanprod(tc**ct2, -1)
 
     p = p1 * p2 * p3
-    return p / p.sum(1)[:, np.newaxis]
+    p = p / p.sum(1)[:, np.newaxis]
+    return _format_decoding_outputs(p, tuning_curves, data, epochs)
 
 
-@_validate_decoding_inputs
-@_format_decoding_outputs
+@_format_decoding_inputs
 def decode_template(
     tuning_curves, data, epochs, bin_size, metric="correlation", time_units="s"
 ):
     """
     Performs template matching decoding over n-dimensional features.
 
-    See:
+    The algorithm is as follows:
+
+        1. For every time bin, we compute the distance between the neural activity
+           and the tuning curves using the chosen distance metric.
+        2. We rescale the distance to [0,1].
+        3. We transform the distance to similarity = 1 - distance.
+        4. We compute an estimated probability distribution by normalizing every time bin,
+           i.e. dividing by the sum over all feature bins.
+        5. For every time bin, the decoded feature bin is the one that corresponds to the maximum estimated probability.
+
+    See:\n
     Vollan, A. Z., Gardner, R. J., Moser, M. B., & Moser, E. I. (2025).
     Left–right-alternating theta sweeps in entorhinal–hippocampal maps of space.
     Nature, 639(8004), 995–1005.
@@ -452,19 +466,22 @@ def decode_template(
 
     >>> p
     Time (s)
-    ----------  ------------------------
-    0.5         [[1.0e+00, 7.5e-13] ...]
-    1.5         [[7.5e-13, 1.0e+00] ...]
-    2.5         [[1.0e+00, 7.5e-13] ...]
-    3.5         [[7.5e-13, 1.0e+00] ...]
-    4.5         [[1.0e+00, 7.5e-13] ...]
-    5.5         [[7.5e-13, 1.0e+00] ...]
+    ----------  --------------
+    0.5         [[1., 0.] ...]
+    1.5         [[0., 1.] ...]
+    2.5         [[1., 0.] ...]
+    3.5         [[0., 1.] ...]
+    4.5         [[1., 0.] ...]
+    5.5         [[0., 1.] ...]
+    6.5         [[1., 0.] ...]
     ...
-    95.5        [[7.5e-13, 7.5e-13] ...]
-    96.5        [[7.5e-13, 7.5e-13] ...]
-    97.5        [[7.5e-13, 7.5e-13] ...]
-    98.5        [[7.5e-13, 7.5e-13] ...]
-    99.5        [[7.5e-13, 7.5e-13] ...]
+    93.5        [[0., 0.] ...]
+    94.5        [[0., 0.] ...]
+    95.5        [[0., 0.] ...]
+    96.5        [[0., 0.] ...]
+    97.5        [[0., 0.] ...]
+    98.5        [[0., 0.] ...]
+    99.5        [[0., 0.] ...]
     dtype: float64, shape: (100, 2, 2)
 
     and p is a `TsdTensor` object containing the probability distribution for each time bin.
@@ -498,9 +515,15 @@ def decode_template(
     tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
     ct = data.values
 
+    # compute distance matrix
     dist = cdist(ct, tc, metric=metric)
-    sim = 1 / (dist + 1e-12)
-    return sim / sim.sum(axis=1, keepdims=True)
+    # rescale to [0, 1]
+    dist = (dist - np.min(dist, keepdims=True)) / np.ptp(dist, keepdims=True)
+    # transform to similarity
+    sim = 1 - dist
+    # normalize
+    p = sim / sim.sum(axis=1, keepdims=True)
+    return _format_decoding_outputs(p, tuning_curves, data, epochs)
 
 
 # -------------------------------------------------------------------------------------
