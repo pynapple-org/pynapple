@@ -299,7 +299,7 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
         raise RuntimeError("Unknown format for feature in decode_1d")
     return decode_bayes(
         xr.DataArray(
-            data=tuning_curves.values,
+            data=tuning_curves.values.T,
             coords={
                 "unit": tuning_curves.columns.values,
                 "0": tuning_curves.index.values,

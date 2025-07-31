@@ -222,7 +222,7 @@ def test_decode_bayes(n_features, binned, uniform_prior):
 @pytest.mark.filterwarnings("ignore")
 def get_testing_set_1d():
     feature = nap.Tsd(t=np.arange(0, 100, 1), d=np.repeat(np.arange(0, 2), 50))
-    group = nap.TsGroup({i: nap.Ts(t=np.arange(0, 50) + 50 * i) for i in range(2)})
+    group = nap.TsGroup({i: nap.Ts(t=np.arange(0, 50) + 50 * i) for i in range(3)})
     tc = nap.compute_1d_tuning_curves(
         group=group, feature=feature, nb_bins=2, minmax=(-0.5, 1.5)
     )
