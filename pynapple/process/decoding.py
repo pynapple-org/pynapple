@@ -111,15 +111,35 @@ def decode_bayes(
     """
     Performs Bayesian decoding over n-dimensional features.
 
-    The algorithm is as follows:
+    The algorithm is based on Bayes' rule:
 
-        1. For every time bin, we compute the distance between the neural activity
-           and the tuning curves using the chosen distance metric.
-        2. We rescale the distance to [0,1].
-        3. We transform the distance to similarity = 1 - distance.
-        4. We compute an estimated probability distribution by normalizing every time bin,
-           i.e. dividing by the sum over all feature bins.
-        5. For every time bin, the decoded feature bin is the one that corresponds to the maximum estimated probability.
+    .. math::
+
+        P(x|n) \\propto P(n|x) P(x)
+
+    where:
+
+    - :math:`P(x|n)` is the **posterior probability** of the feature value given the observed neural activity.
+    - :math:`P(n|x)` is the **likelihood** of the neural activity given the feature value.
+    - :math:`P(x)` is the **prior** probability of the feature value.
+
+    Mapping this to the function:
+
+    - :math:`P(x|n)` is the estimated probability distribution over the decoded feature for each time bin.
+      This is the output of the function. The decoded value is the one with the maximum posterior probability.
+    - :math:`P(n|x)` is determined by the tuning curves. Assuming spikes follow a Poisson distribution and
+      neurons are conditionally independent:
+
+      .. math::
+
+          P(n|x) = \\prod_{i=1}^{N} P(n_i|x) = \\prod_{i=1}^{N} \\frac{\\lambda_i^{n_i} e^{-\\lambda_i}}{n_i!}
+
+      where :math:`\\lambda_i` is the expected firing rate of neuron :math:`i` at feature value :math:`x`,
+      and :math:`n_i` is the spike count of neuron :math:`i`.
+
+    - :math:`P(x)` depends on the value of the ``uniform_prior`` argument.
+      If ``uniform_prior=True``, it is a uniform distribution over feature values.
+      If ``uniform_prior=False``, it is based on the occupancy (i.e. the time spent in each feature bin during tuning curve estimation).
 
     See:\n
     Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
@@ -320,7 +340,7 @@ def decode_bayes(
 
 @_format_decoding_inputs
 def decode_template(
-    tuning_curves, data, epochs, bin_size, metric="correlation", time_units="s"
+    tuning_curves, data, epochs, bin_size, metric="euclidean", time_units="s"
 ):
     """
     Performs template matching decoding over n-dimensional features.
@@ -336,9 +356,11 @@ def decode_template(
         5. For every time bin, the decoded feature bin is the one that corresponds to the maximum estimated probability.
 
     See:\n
-    Vollan, A. Z., Gardner, R. J., Moser, M. B., & Moser, E. I. (2025).
-    Left–right-alternating theta sweeps in entorhinal–hippocampal maps of space.
-    Nature, 639(8004), 995–1005.
+    Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
+    (1998). Interpreting neuronal population activity by
+    reconstruction: unified framework with application to
+    hippocampal place cells. Journal of neurophysiology, 79(2),
+    1017-1044.
 
     Parameters
     ----------
