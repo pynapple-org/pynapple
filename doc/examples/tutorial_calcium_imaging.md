@@ -23,6 +23,7 @@ The NWB file for the example is hosted on [OSF](https://osf.io/sbnaw). We show b
 
 ```{code-cell} ipython3
 :tags: [hide-output]
+import numpy as np
 import pynapple as nap
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -149,6 +150,53 @@ set_metadata(half1[4]).plot(ax=ax1)
 ax1.set_title("First half")
 set_metadata(half2[4]).plot(ax=ax2)
 ax2.set_title("Second half")
+plt.show()
+```
+
+***
+Calcium decoding
+---------------------
+
+Given some tuning curves, we can also try to decode head direction from the population.
+For calcium imaging data, Pynapple has `decode_template`, which implements a template matching algorithm.
+
+```{code-cell} ipython3
+epochs = nap.IntervalSet([10, 100])
+decoded, dist = nap.decode_template(
+    tuning_curves=tuning_curves,
+    data=transients,
+    epochs=epochs,
+    bin_size=0.1,
+    metric="correlation"
+)
+```
+
+```{code-cell} ipython3
+fig, (ax1, ax2) = plt.subplots(figsize=(8, 5), nrows=2, ncols=1, sharex=True)
+angle=angle.restrict(epochs)
+ax1.plot(
+    angle.times(),
+    angle.values,
+    label="True",
+)
+ax1.scatter(
+    decoded.times(),
+    decoded.values,
+    label="Decoded",
+    c="orange",
+)
+ax1.legend(
+    frameon=False,
+    bbox_to_anchor=(1.0, 1.0),
+)
+ax1.set_ylabel("Angle [rad]")
+#ax1.set_yticks([0, 2*np.pi], ["0", "2π"])
+im = ax2.imshow(dist.values.T, aspect="auto", origin="lower", cmap="inferno_r", extent=(10.0, 100.0, 0.0, 2*np.pi))
+cbar_ax = fig.add_axes([0.93, 0.1, 0.015, 0.36])
+fig.colorbar(im, cax=cbar_ax, label="Distance")
+ax2.set_xlabel("Time (s)", labelpad=-20)
+ax2.set_ylabel("Angle [rad]")
+#ax2.set_yticks([0, 2*np.pi], ["0", "2π"])
 plt.show()
 ```
 
