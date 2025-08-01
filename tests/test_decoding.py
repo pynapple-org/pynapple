@@ -236,7 +236,7 @@ def test_decode_template(n_features, binned, metric):
     features, tuning_curves, data, epochs, bin_size = get_testing_set_n(
         n_features, binned=binned
     ).values()
-    decoded, proba = nap.decode_template(
+    decoded, dist = nap.decode_template(
         tuning_curves=tuning_curves,
         data=data,
         epochs=epochs,
@@ -249,15 +249,9 @@ def test_decode_template(n_features, binned, metric):
     np.testing.assert_array_almost_equal(decoded.values, features.values.squeeze())
 
     assert isinstance(
-        proba,
+        dist,
         nap.TsdFrame if features.shape[1] == 1 else nap.TsdTensor,
     )
-    expected_proba = np.zeros((len(features), *tuning_curves.shape[1:]))
-    target_indices = [np.arange(len(features))] + [
-        features[:, d] for d in range(features.shape[1])
-    ]
-    expected_proba[tuple(target_indices)] = 1.0
-    np.testing.assert_array_almost_equal(proba.values, expected_proba)
 
 
 # ------------------------------------------------------------------------------------

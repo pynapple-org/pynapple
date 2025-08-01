@@ -60,10 +60,17 @@ def _format_decoding_inputs(func):
     return wrapper
 
 
-def _format_decoding_outputs(p, tuning_curves, data, epochs):
-    idxmax = np.argmax(p, 1)
+def _format_decoding_outputs(p, tuning_curves, data, epochs, greater_is_better):
+    # Get the index of the decoded class
+    filler = -np.inf if greater_is_better else np.inf
+    filled = np.where(np.isnan(p), filler, p)
+    idx = getattr(np, "argmax" if greater_is_better else "argmin")(filled, axis=1)
 
-    # Fromat probability distribution
+    # Replace with -1 where all values were NaN
+    all_nan = np.isnan(p).all(axis=1)
+    idx[all_nan] = -1
+
+    # Format probability distribution
     p = p.reshape(p.shape[0], *tuning_curves.shape[1:])
     if p.ndim > 2:
         p = nap.TsdTensor(
@@ -79,24 +86,32 @@ def _format_decoding_outputs(p, tuning_curves, data, epochs):
             columns=tuning_curves.coords[tuning_curves.dims[1]].values,
         )
 
-    # Format decoded
-    idxmax = np.unravel_index(idxmax, tuning_curves.shape[1:])
+    # Format decoded index
+    shape = tuning_curves.shape[1:]
+    valid = idx != -1
+
     if tuning_curves.ndim == 2:
+        decoded_values = np.full(len(idx), np.nan)
+        decoded_values[valid] = tuning_curves.coords[tuning_curves.dims[1]].values[
+            idx[valid]
+        ]
         decoded = nap.Tsd(
             t=data.index,
-            d=tuning_curves.coords[tuning_curves.dims[1]][idxmax[0]].values,
+            d=decoded_values,
             time_support=epochs,
         )
     else:
+        # unravel valid indices only
+        unraveled = [np.full(len(idx), np.nan) for _ in shape]
+        unraveled_indices = np.unravel_index(idx[valid], shape)
+        for i in range(len(shape)):
+            unraveled[i][valid] = tuning_curves.coords[
+                tuning_curves.dims[1 + i]
+            ].values[unraveled_indices[i]]
+
         decoded = nap.TsdFrame(
             t=data.index,
-            d=np.stack(
-                [
-                    tuning_curves.coords[dim][idxmax[i]]
-                    for i, dim in enumerate(tuning_curves.dims[1:])
-                ],
-                axis=1,
-            ),
+            d=np.stack(unraveled, axis=1),
             time_support=epochs,
             columns=tuning_curves.dims[1:],
         )
@@ -154,7 +169,7 @@ def decode_bayes(
         Tuning curves as outputed by `compute_tuning_curves` (one for each unit).
     data : TsGroup or TsdFrame
         Neural activity with the same keys as the tuning curves.
-        You may also pass a TsdFrame with smoothed counts (recommended).
+        You may also pass a TsdFrame with smoothed counts.
     epochs : IntervalSet
         The epochs on which decoding is computed
     bin_size : float
@@ -169,10 +184,9 @@ def decode_bayes(
     Returns
     -------
     Tsd
-        The decoded feature
+        The decoded feature.
     TsdFrame, TsdTensor
-        The probability distribution of the decoded trajectory for each time bin
-
+        The probability distribution of the decoded trajectory for each time bin.
 
     Examples
     --------
@@ -335,25 +349,23 @@ def decode_bayes(
 
     p = p1 * p2 * p3
     p = p / p.sum(1)[:, np.newaxis]
-    return _format_decoding_outputs(p, tuning_curves, data, epochs)
+    return _format_decoding_outputs(
+        p, tuning_curves, data, epochs, greater_is_better=True
+    )
 
 
 @_format_decoding_inputs
 def decode_template(
-    tuning_curves, data, epochs, bin_size, metric="euclidean", time_units="s"
+    tuning_curves, data, epochs, bin_size, metric="correlation", time_units="s"
 ):
     """
     Performs template matching decoding over n-dimensional features.
 
-    The algorithm is as follows:
+    The algorithm is based on the following steps:
 
         1. For every time bin, we compute the distance between the neural activity
            and the tuning curves using the chosen distance metric.
-        2. We rescale the distance to [0,1].
-        3. We transform the distance to similarity = 1 - distance.
-        4. We compute an estimated probability distribution by normalizing every time bin,
-           i.e. dividing by the sum over all feature bins.
-        5. For every time bin, the decoded feature bin is the one that corresponds to the maximum estimated probability.
+        5. For every time bin, the decoded feature bin is the one that lies closest to the tuning curves.
 
     See:\n
     Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
@@ -368,7 +380,7 @@ def decode_template(
         Tuning curves as outputed by `compute_tuning_curves` (one for each unit).
     data : TsGroup or TsdFrame
         Neural activity with the same keys as the tuning curves.
-        You may also pass a TsdFrame with smoothed counts (recommended).
+        You may also pass a TsdFrame with smoothed counts.
     epochs : IntervalSet
         The epochs on which decoding is computed
     bin_size : float
@@ -390,8 +402,7 @@ def decode_template(
     Tsd
         The decoded feature
     TsdFrame, TsdTensor
-        The probability distribution of the decoded trajectory for each time bin
-
+        The distance matrix between the neural activity and the tuning curves for each time bin.
 
     Examples
     --------
@@ -429,21 +440,19 @@ def decode_template(
     >>> p
     Time (s)    0.0    1.0
     ----------  -----  -----
-    0.5         1.0    0.0
-    1.5         1.0    0.0
-    2.5         1.0    0.0
-    3.5         1.0    0.0
-    4.5         1.0    0.0
-    5.5         1.0    0.0
-    6.5         1.0    0.0
+    0.5         0.0    2.0
+    1.5         0.0    2.0
+    2.5         0.0    2.0
+    3.5         0.0    2.0
+    4.5         0.0    2.0
+    5.5         0.0    2.0
     ...         ...    ...
-    93.5        0.0    1.0
-    94.5        0.0    1.0
-    95.5        0.0    1.0
-    96.5        0.0    1.0
-    97.5        0.0    1.0
-    98.5        0.0    1.0
-    99.5        0.0    1.0
+    94.5        2.0    0.0
+    95.5        2.0    0.0
+    96.5        2.0    0.0
+    97.5        2.0    0.0
+    98.5        2.0    0.0
+    99.5        2.0    0.0
     dtype: float64, shape: (100, 2)
 
     p is a `TsdFrame` object containing the probability distribution for each time bin.
@@ -488,22 +497,20 @@ def decode_template(
 
     >>> p
     Time (s)
-    ----------  --------------
-    0.5         [[1., 0.] ...]
-    1.5         [[0., 1.] ...]
-    2.5         [[1., 0.] ...]
-    3.5         [[0., 1.] ...]
-    4.5         [[1., 0.] ...]
-    5.5         [[0., 1.] ...]
-    6.5         [[1., 0.] ...]
+    ----------  --------------------------
+    0.5         [[0.      , 1.333333] ...]
+    1.5         [[1.333333, 0.      ] ...]
+    2.5         [[0.      , 1.333333] ...]
+    3.5         [[1.333333, 0.      ] ...]
+    4.5         [[0.      , 1.333333] ...]
+    5.5         [[1.333333, 0.      ] ...]
     ...
-    93.5        [[0., 0.] ...]
-    94.5        [[0., 0.] ...]
-    95.5        [[0., 0.] ...]
-    96.5        [[0., 0.] ...]
-    97.5        [[0., 0.] ...]
-    98.5        [[0., 0.] ...]
-    99.5        [[0., 0.] ...]
+    94.5        [[1.333333, 1.333333] ...]
+    95.5        [[1.333333, 1.333333] ...]
+    96.5        [[1.333333, 1.333333] ...]
+    97.5        [[1.333333, 1.333333] ...]
+    98.5        [[1.333333, 1.333333] ...]
+    99.5        [[1.333333, 1.333333] ...]
     dtype: float64, shape: (100, 2, 2)
 
     and p is a `TsdTensor` object containing the probability distribution for each time bin.
@@ -537,15 +544,13 @@ def decode_template(
     tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
     ct = data.values
 
-    # compute distance matrix
-    dist = cdist(ct, tc, metric=metric)
-    # rescale to [0, 1]
-    dist = (dist - np.min(dist, keepdims=True)) / np.ptp(dist, keepdims=True)
-    # transform to similarity
-    sim = 1 - dist
-    # normalize
-    p = sim / sim.sum(axis=1, keepdims=True)
-    return _format_decoding_outputs(p, tuning_curves, data, epochs)
+    return _format_decoding_outputs(
+        cdist(ct, tc, metric=metric),
+        tuning_curves,
+        data,
+        epochs,
+        greater_is_better=False,
+    )
 
 
 # -------------------------------------------------------------------------------------
