@@ -139,9 +139,7 @@ color = xr.DataArray(
 To make the tuning curves look nice, we will smooth them before plotting:
 
 ```{code-cell} ipython3
-from scipy.ndimage import gaussian_filter1d
-
-tuning_curves.values = gaussian_filter1d(
+tuning_curves.values = scipy.ndimage.gaussian_filter1d(
     tuning_curves.values, 
     sigma=3, 
     axis=1, 
@@ -232,7 +230,7 @@ Ideally, the bins with the highest probability correspond to the bins with the m
 ```{code-cell} ipython3
 smoothed = scipy.ndimage.gaussian_filter(
     proba_feature, 1
-)  # Smoothening the probability distribution
+)  # Smoothing the probability distribution
 
 # Create a DataFrame with the smoothed distribution
 p_feature = pd.DataFrame(
