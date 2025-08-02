@@ -548,20 +548,20 @@ def detect_oscillatory_events(
     window = np.ones(wsize) / wsize
 
     nSS = filtfilt(window, 1, squared_signal)
-    nSS = (nSS - np.mean(nSS))/np.std(nSS)
-    nSS = nap.Tsd(t = signal.index.values, d=nSS, time_support=epoch)
+    nSS = (nSS - np.mean(nSS)) / np.std(nSS)
+    nSS = nap.Tsd(t=signal.index.values, d=nSS, time_support=epoch)
 
     # Detect oscillation periods by thresholding normalized signal
-    nSS2 = nSS.threshold(thresh_band[0], method='above')
-    nSS3 = nSS2.threshold(thresh_band[1], method='below')
+    nSS2 = nSS.threshold(thresh_band[0], method="above")
+    nSS3 = nSS2.threshold(thresh_band[1], method="below")
 
     # Exclude oscillation where min_duration < length < max_duration
     osc_ep = nSS3.time_support
-    osc_ep = osc_ep.drop_short_intervals(duration_band[0], time_units = 's')
-    osc_ep = osc_ep.drop_long_intervals(duration_band[1], time_units = 's')
+    osc_ep = osc_ep.drop_short_intervals(duration_band[0], time_units="s")
+    osc_ep = osc_ep.drop_long_intervals(duration_band[1], time_units="s")
 
     # Merge if inter-oscillation period is too short
-    osc_ep = osc_ep.merge_close_intervals(min_inter_duration, time_units = 's')
+    osc_ep = osc_ep.merge_close_intervals(min_inter_duration, time_units="s")
 
     # Compute power, amplitude, and peak_time for each interval
     powers = []

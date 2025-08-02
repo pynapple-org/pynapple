@@ -481,7 +481,7 @@ def test_compare_sinc_kernel():
 
     ikernel = nap.process.filtering._compute_spectral_inversion(kernel)
     ikernel2 = kernel2 * -1.0
-    ikernel2[len(kernel2) // 2] = 1.0 + ikernel2[len(kernel2) // 2]
+    ikernel2[len(ikernel2) // 2] = 1.0 + ikernel2[len(kernel2) // 2]
     np.testing.assert_allclose(ikernel, ikernel2)
 
 
@@ -555,7 +555,8 @@ def test_detect_oscillatory_events(freq_band, thresh_band, start, end):
     ts = nap.Tsd(t=t, d=signal)
     epoch = nap.IntervalSet(start=0, end=duration)
     osc_ep = nap.filtering.detect_oscillatory_events(
-        ts, epoch, freq_band, thresh_band, (min_dur, max_dur), min_inter)
+        ts, epoch, freq_band, thresh_band, (min_dur, max_dur), min_inter
+    )
 
     assert len(osc_ep) == 1  # Only one event in given freq_band
 
