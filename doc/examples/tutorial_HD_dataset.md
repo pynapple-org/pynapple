@@ -141,15 +141,12 @@ To make the tuning curves look nice, we will smooth them before plotting:
 ```{code-cell} ipython3
 from scipy.ndimage import gaussian_filter1d
 
-tmp = np.concatenate(
-    [
-        tuning_curves.values, 
-        tuning_curves.values, 
-        tuning_curves.values
-    ], 
-    axis=1)
-tmp = gaussian_filter1d(tmp, sigma=3, axis=1)
-tuning_curves.values = tmp[:, tuning_curves.shape[1]:2*tuning_curves.shape[1]]
+tuning_curves.values = gaussian_filter1d(
+    tuning_curves.values, 
+    sigma=3, 
+    axis=1, 
+    mode="wrap" # important for circular variables!
+)
 ```
 
 What does this look like? Let's plot them!
@@ -180,7 +177,7 @@ Now that we have HD tuning curves, we can go one step further. Using only the po
 We will then compare this to the real head-direction of the animal, and discover that population activity in the ADn indeed codes for HD.
 
 To decode the population activity, we will be using a bayesian decoder as implemented in Pynapple.
-Again, just a single line of code!
+Again, just a single line of code:
 
 ```{code-cell} ipython3
 decoded, proba_feature = nap.decode_bayes(
@@ -197,7 +194,7 @@ What does this look like?
 print(decoded)
 ```
 
-The variable 'decoded' contains the most probable angle, and 'proba_feature' contains the probability of a given angular bin at a given time point:
+The variable ``decoded`` contains the most probable angle, and ``proba_feature`` contains the probability of a given angular bin at a given time point:
 
 ```{code-cell} ipython3
 print(proba_feature)
@@ -227,10 +224,10 @@ plt.ylabel("Neurons")
 plt.show()
 ```
 
-From this plot, we can see that the decoder is able to estimate the head-direction based on the population activity in ADn. Amazing!
+From this plot, we can see that the decoder is able to estimate the head-direction based on the population activity in ADn.
 
-What does the probability distribution in this example event look like?
-Ideally, the bins with the highest probability will correspond to the bins having the most spikes. Let's plot the probability matrix to visualize this.
+We can also visualize the probability distribution.
+Ideally, the bins with the highest probability correspond to the bins with the most spikes. 
 
 ```{code-cell} ipython3
 smoothed = scipy.ndimage.gaussian_filter(
@@ -270,8 +267,7 @@ plt.show()
 ```
 
 <!-- #region -->
-From this probability distribution, we observe that the decoded HD closely matches the actual HD.
-Hence, the population activity in ADn is a reliable estimate of the heading direction of the animal.
+The decoded HD closely matches the actual HD, and thus the population activity in ADn is a reliable estimate of the heading direction of the animal.
 
 I hope this tutorial was helpful. If you have any questions, comments or suggestions, please feel free to reach out to the Pynapple Team!
 
