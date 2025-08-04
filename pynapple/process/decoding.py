@@ -361,11 +361,8 @@ def decode_template(
     """
     Performs template matching decoding over n-dimensional features.
 
-    The algorithm is based on the following steps:
-
-        1. For every time bin, we compute the distance between the neural activity
-           and the tuning curves using the chosen distance metric.
-        5. For every time bin, the decoded feature bin is the one that lies closest to the tuning curves.
+    The algorithm computes the distance between the observed neural activity and the tuning curves for every time bin.
+    The decoded feature at each time bin corresponds to the tuning curve bin with the smallest distance.
 
     See:\n
     Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
