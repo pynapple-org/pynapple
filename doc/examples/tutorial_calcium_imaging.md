@@ -202,7 +202,7 @@ im = ax3.imshow(
     extent=(epochs.start[0], epochs.end[0], 0.0, 2*np.pi)
 )
 cbar_ax3 = fig.add_axes([0.95, ax3.get_position().y0, 0.015, ax3.get_position().height])
-fig.colorbar(im, cax=cbar_ax3, label="Distance")
+fig.colorbar(im, cax=cbar_ax3, label="Norm. distance")
 ax3.set_xlabel("Time (s)")
 ax3.set_ylabel("Angle [rad]")
 plt.show()
@@ -271,14 +271,16 @@ for metric in metrics:
 
 ```{code-cell} ipython3
 :tags: [hide-input]
-# Visualize
+sorted_items = sorted(errors.items(), key=lambda item: np.median(item[1]))
+sorted_labels, sorted_values = zip(*sorted_items)
+
 fig, ax = plt.subplots(figsize=(8, 4))
 bp = ax.boxplot(
-    x=errors.values(), 
-    tick_labels=errors.keys(), 
+    x=sorted_values,
+    tick_labels=sorted_labels,
     showfliers=False
 )
-ax.set_ylabel("Angle [rad]")
+ax.set_ylabel("Angular error [rad]")
 
 # Add median labels
 for i, line in enumerate(bp['medians']):
