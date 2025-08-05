@@ -101,7 +101,6 @@ jobs:
               https://elifesciences.org/
             --ignore-status-codes 403
             --ignore-files "/.+\/html\/_static\/.+/"
-            --browser-user-agent "Mozilla/5.0 (X11; Linux x86_64)"
 
   check:
     if: always()
