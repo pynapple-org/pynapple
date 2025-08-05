@@ -271,6 +271,7 @@ def _make_tsd_frame(obj, lazy_loading=True):
 def _make_tsdframe_from_eventstable(obj):
     if hasattr(obj, "to_dataframe"):
         df = obj.to_dataframe().set_index("timestamp")
+        df = df.select_dtypes(include=np.number)
         return nap.TsdFrame(df)
     else:
         return None
