@@ -90,6 +90,9 @@ def iterate_over_nwb(nwbfile):
             elif len(obj.data.shape) == 1:
                 yield obj, {"id": oid, "type": "Tsd"}
 
+        elif obj.__class__.__name__ == "EventsTable":  # TODO
+            yield obj, {"id": oid, "type": "TsdFrame"}
+
 
 def _extract_compatible_data_from_nwbfile(nwbfile):
     """Extract all the NWB objects that can be converted to a pynapple object. If two objects have the same names, they
@@ -214,52 +217,63 @@ def _make_tsd_frame(obj, lazy_loading=True):
     """
     pynwb = importlib.import_module("pynwb")
 
-    d = obj.data
-    if not lazy_loading:
-        d = d[:]
-
-    if obj.timestamps is not None:
-        t = obj.timestamps[:]
+    if not hasattr(obj, "data"):
+        return _make_tsdframe_from_eventstable(obj)
     else:
-        t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
+        d = obj.data
+        if not lazy_loading:
+            d = d[:]
 
-    if isinstance(obj, pynwb.behavior.SpatialSeries):
-        if obj.data.shape[1] == 2:
-            columns = ["x", "y"]
-        elif obj.data.shape[1] == 3:
-            columns = ["x", "y", "z"]
+        if obj.timestamps is not None:
+            t = obj.timestamps[:]
+        else:
+            t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
+
+        if isinstance(obj, pynwb.behavior.SpatialSeries):
+            if obj.data.shape[1] == 2:
+                columns = ["x", "y"]
+            elif obj.data.shape[1] == 3:
+                columns = ["x", "y", "z"]
+            else:
+                columns = np.arange(obj.data.shape[1])
+
+        elif isinstance(obj, pynwb.ecephys.ElectricalSeries):
+            # (channel mapping)
+            try:
+                df = obj.electrodes.to_dataframe()
+                if hasattr(df, "label"):
+                    columns = df["label"].values
+                else:
+                    columns = df.index.values
+            except Exception:
+                columns = np.arange(obj.data.shape[1])
+
+        elif isinstance(obj, pynwb.ophys.RoiResponseSeries):
+            # (cell number)
+            try:
+                columns = obj.rois["id"][:]
+            except Exception:
+                columns = np.arange(obj.data.shape[1])
+
         else:
             columns = np.arange(obj.data.shape[1])
 
-    elif isinstance(obj, pynwb.ecephys.ElectricalSeries):
-        # (channel mapping)
-        try:
-            df = obj.electrodes.to_dataframe()
-            if hasattr(df, "label"):
-                columns = df["label"].values
-            else:
-                columns = df.index.values
-        except Exception:
+        if len(columns) >= d.shape[1]:  # Weird sometimes if background ID added
+            columns = columns[0 : obj.data.shape[1]]
+        else:
             columns = np.arange(obj.data.shape[1])
 
-    elif isinstance(obj, pynwb.ophys.RoiResponseSeries):
-        # (cell number)
-        try:
-            columns = obj.rois["id"][:]
-        except Exception:
-            columns = np.arange(obj.data.shape[1])
+        data = nap.TsdFrame(t=t, d=d, columns=columns, load_array=not lazy_loading)
 
+        return data
+
+
+def _make_tsdframe_from_eventstable(obj):
+    if hasattr(obj, "to_dataframe"):
+        df = obj.to_dataframe().set_index("timestamp")
+        return nap.TsdFrame(df)
     else:
-        columns = np.arange(obj.data.shape[1])
-
-    if len(columns) >= d.shape[1]:  # Weird sometimes if background ID added
-        columns = columns[0 : obj.data.shape[1]]
-    else:
-        columns = np.arange(obj.data.shape[1])
-
-    data = nap.TsdFrame(t=t, d=d, columns=columns, load_array=not lazy_loading)
-
-    return data
+        return None
 
 
 def _make_tsgroup(obj, **kwargs):
