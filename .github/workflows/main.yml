@@ -89,18 +89,15 @@ jobs:
         uses: chabad360/htmlproofer@master
         with:
           directory: "doc/_build/html"
-          arguments: >-
-            --checks Links,Scripts
-            --assume-extension
-            --check-external-hash
-            --ignore-urls
-              https://fonts.gstatic.com,
-              https://mkdocs-gallery.github.io,
-              ./doc/_build/html/_static/,
-              https://www.nature.com/articles/s41593-022-01020-w,
-              https://elifesciences.org/
-            --ignore-status-codes 403
+          # The directory to scan
+          arguments: 
+            --checks Links,Scripts 
+            --ignore-urls "https://fonts.gstatic.com,https://mkdocs-gallery.github.io,./doc/_build/html/_static/,https://www.nature.com/articles/s41593-022-01020-w" 
+            --assume-extension 
+            --check-external-hash 
+            --ignore-status-codes 403, 406
             --ignore-files "/.+\/html\/_static\/.+/"
+          # The arguments to pass to HTMLProofer
 
   check:
     if: always()
