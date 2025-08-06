@@ -230,10 +230,9 @@ def test_decode_bayes(n_features, binned, uniform_prior):
 
 
 @pytest.mark.parametrize("metric", ["correlation", "euclidean", "cosine"])
-@pytest.mark.parametrize("uniform_prior", [True, False])
 @pytest.mark.parametrize("n_features", [1, 2, 3])
 @pytest.mark.parametrize("binned", [True, False])
-def test_decode_template(n_features, binned, metric, uniform_prior):
+def test_decode_template(n_features, binned, metric):
     features, tuning_curves, data, epochs, bin_size = get_testing_set_n(
         n_features, binned=binned
     ).values()
@@ -244,7 +243,6 @@ def test_decode_template(n_features, binned, metric, uniform_prior):
         metric=metric,
         bin_size=bin_size,
         time_units="s",
-        uniform_prior=uniform_prior,
     )
 
     assert isinstance(decoded, nap.Tsd if features.shape[1] == 1 else nap.TsdFrame)

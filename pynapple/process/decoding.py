@@ -362,7 +362,6 @@ def decode_template(
     bin_size,
     metric="correlation",
     time_units="s",
-    uniform_prior=True,
 ):
     """
     Performs template matching decoding over n-dimensional features.
@@ -371,12 +370,11 @@ def decode_template(
 
     .. math::
 
-        \\hat{x}(t) = \\arg\\max\\limits_{x} dist(P(x)*f(x), n(t))
+        \\hat{x}(t) = \\arg\\max\\limits_{x} dist(f(x), n(t))
 
     where:
 
     - :math:`f(x)` is the the tuning curve function.
-    - :math:`P(x)` is the prior, which can be uniform or based on the occupancy distribution.
     - :math:`n(t)` is input neural activity at time :math:`t`.
     - :math:`dist` is a distance metric.
 
@@ -419,9 +417,6 @@ def decode_template(
             For example, if your tuning curves contain NaN values, you should not use 'hamming', as it does not handle NaNs.
     time_units : str, optional
         Time unit of the bin size ('s' [default], 'ms', 'us').
-    uniform_prior : bool, optional
-        If True (default), uses a uniform distribution as a prior.
-        If False, scales the tuning curves using the occupancy distribution before computing distances.
 
     Returns
     -------
@@ -567,16 +562,11 @@ def decode_template(
     99.9        1.0  1.0
     dtype: float64, shape: (1000, 2)
     """
-    tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
+    tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1)
     ct = data.values
 
-    if not uniform_prior:
-        occupancy = tuning_curves.attrs["occupancy"].flatten()
-        occupancy /= occupancy.sum()
-        tc *= occupancy
-
     return _format_decoding_outputs(
-        cdist(ct, tc, metric=metric),
+        cdist(ct, tc.T, metric=metric),
         tuning_curves,
         data,
         epochs,
