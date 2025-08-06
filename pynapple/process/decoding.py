@@ -60,28 +60,28 @@ def _format_decoding_inputs(func):
     return wrapper
 
 
-def _format_decoding_outputs(p, tuning_curves, data, epochs, greater_is_better):
+def _format_decoding_outputs(dist, tuning_curves, data, epochs, greater_is_better):
     # Get the index of the decoded class
     filler = -np.inf if greater_is_better else np.inf
-    filled = np.where(np.isnan(p), filler, p)
+    filled = np.where(np.isnan(dist), filler, dist)
     idx = getattr(np, "argmax" if greater_is_better else "argmin")(filled, axis=1)
 
     # Replace with -1 where all values were NaN
-    all_nan = np.isnan(p).all(axis=1)
+    all_nan = np.isnan(dist).all(axis=1)
     idx[all_nan] = -1
 
     # Format probability distribution
-    p = p.reshape(p.shape[0], *tuning_curves.shape[1:])
-    if p.ndim > 2:
-        p = nap.TsdTensor(
+    dist = dist.reshape(dist.shape[0], *tuning_curves.shape[1:])
+    if dist.ndim > 2:
+        dist = nap.TsdTensor(
             t=data.index,
-            d=p,
+            d=dist,
             time_support=epochs,
         )
     else:
-        p = nap.TsdFrame(
+        dist = nap.TsdFrame(
             t=data.index,
-            d=p,
+            d=dist,
             time_support=epochs,
             columns=tuning_curves.coords[tuning_curves.dims[1]].values,
         )
@@ -116,7 +116,7 @@ def _format_decoding_outputs(p, tuning_curves, data, epochs, greater_is_better):
             columns=tuning_curves.dims[1:],
         )
 
-    return decoded, p
+    return decoded, dist
 
 
 @_format_decoding_inputs
@@ -166,7 +166,7 @@ def decode_bayes(
     Parameters
     ----------
     tuning_curves : xr.DataArray
-        Tuning curves as outputed by `compute_tuning_curves` (one for each unit).
+        Tuning curves as outputed by `compute_tuning_curves`.
     data : TsGroup or TsdFrame
         Neural activity with the same keys as the tuning curves.
         You may also pass a TsdFrame with smoothed counts.
@@ -356,10 +356,29 @@ def decode_bayes(
 
 @_format_decoding_inputs
 def decode_template(
-    tuning_curves, data, epochs, bin_size, metric="correlation", time_units="s"
+    tuning_curves,
+    data,
+    epochs,
+    bin_size,
+    metric="correlation",
+    time_units="s",
+    uniform_prior=True,
 ):
     """
     Performs template matching decoding over n-dimensional features.
+
+    The algorithm decodes as follow:
+
+    .. math::
+
+        \\hat{x}(t) = \\arg\\max\\limits_{x} dist(P(x)*f(x), n(t))
+
+    where:
+
+    - :math:`f(x)` is the the tuning curve function.
+    - :math:`P(x)` is the prior, which can be uniform or based on the occupancy distribution.
+    - :math:`n(t)` is input neural activity at time :math:`t`.
+    - :math:`dist` is a distance metric.
 
     The algorithm computes the distance between the observed neural activity and the tuning curves for every time bin.
     The decoded feature at each time bin corresponds to the tuning curve bin with the smallest distance.
@@ -371,10 +390,13 @@ def decode_template(
     hippocampal place cells. Journal of neurophysiology, 79(2),
     1017-1044.
 
+    See ``scipy.spatial.distance.cdist`` for available distance metrics and how they are computed:
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html
+
     Parameters
     ----------
     tuning_curves : xr.DataArray
-        Tuning curves as outputed by `compute_tuning_curves` (one for each unit).
+        Tuning curves as outputed by `compute_tuning_curves`.
     data : TsGroup or TsdFrame
         Neural activity with the same keys as the tuning curves.
         You may also pass a TsdFrame with smoothed counts.
@@ -384,15 +406,22 @@ def decode_template(
         Bin size. Default is second. Use the parameter time_units to change it.
     metric : str or callable, optional
         The distance metric to use for template matching.
-        This is passed to `scipy.spatial.distance.cdist`,
+        This is passed to `scipy.spatial.distance.cdist`.
         If a string, the distance function can be ‘braycurtis’, ‘canberra’,
         ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’,
         ‘hamming’, ‘jaccard’, ‘jensenshannon’, ‘kulczynski1’, ‘mahalanobis’,
         ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’,
         ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’.
         Default is 'correlation'.
+
+        .. note::
+            Some metrics may not be suitable for all types of data.
+            For example, if your tuning curves contain NaN values, you should not use 'hamming', as it does not handle NaNs.
     time_units : str, optional
         Time unit of the bin size ('s' [default], 'ms', 'us').
+    uniform_prior : bool, optional
+        If True (default), uses a uniform distribution as a prior.
+        If False, scales the tuning curves using the occupancy distribution before computing distances.
 
     Returns
     -------
@@ -411,7 +440,7 @@ def decode_template(
     >>> feature = nap.Tsd(t=np.arange(0, 100, 1), d=np.repeat(np.arange(0, 2), 50))
     >>> tuning_curves = nap.compute_tuning_curves(group, feature, bins=2, range=(-.5, 1.5))
     >>> epochs = nap.IntervalSet([0, 100])
-    >>> decoded, p = nap.decode_template(tuning_curves, group, epochs=epochs, bin_size=1)
+    >>> decoded, dist = nap.decode_template(tuning_curves, group, epochs=epochs, bin_size=1)
     >>> decoded
     Time (s)
     ----------  --
@@ -452,7 +481,7 @@ def decode_template(
     99.5        2.0    0.0
     dtype: float64, shape: (100, 2)
 
-    p is a `TsdFrame` object containing the probability distribution for each time bin.
+    dist is a `TsdFrame` object containing the distances for each time bin.
 
     The function also works for multiple features, in which case it does n-dimensional decoding:
 
@@ -469,7 +498,7 @@ def decode_template(
     ...     }
     ... )
     >>> tuning_curves = nap.compute_tuning_curves(group, features, bins=2, range=[(-.5, 1.5)]*2)
-    >>> decoded, p = nap.decode_template(tuning_curves, group, epochs=epochs, bin_size=1)
+    >>> decoded, dist = nap.decode_template(tuning_curves, group, epochs=epochs, bin_size=1)
     >>> decoded
     Time (s)    0    1
     ----------  ---  ---
@@ -492,7 +521,7 @@ def decode_template(
 
     decoded is now a `TsdFrame` object containing the decoded features for each time bin.
 
-    >>> p
+    >>> dist
     Time (s)
     ----------  --------------------------
     0.5         [[0.      , 1.333333] ...]
@@ -510,14 +539,14 @@ def decode_template(
     99.5        [[1.333333, 1.333333] ...]
     dtype: float64, shape: (100, 2, 2)
 
-    and p is a `TsdTensor` object containing the probability distribution for each time bin.
+    and dist is a `TsdTensor` object containing the distances for each time bin.
 
     It is also possible to pass continuous values instead of spikes (e.g. calcium imaging):
 
     >>> time = np.arange(0,100, 0.1)
     >>> group = nap.TsdFrame(t=time, d=np.stack([time % 0.5, time %1], axis=1))
     >>> tuning_curves = nap.compute_tuning_curves(group, features, bins=2, range=[(-.5, 1.5)]*2)
-    >>> decoded, p = nap.decode_bayes(tuning_curves, group, epochs=epochs, bin_size=1)
+    >>> decoded, dist = nap.decode_template(tuning_curves, group, epochs=epochs, bin_size=1)
     >>> decoded
     Time (s)    0    1
     ----------  ---  ---
@@ -540,6 +569,11 @@ def decode_template(
     """
     tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
     ct = data.values
+
+    if not uniform_prior:
+        occupancy = tuning_curves.attrs["occupancy"].flatten()
+        occupancy /= occupancy.sum()
+        tc *= occupancy
 
     return _format_decoding_outputs(
         cdist(ct, tc, metric=metric),
