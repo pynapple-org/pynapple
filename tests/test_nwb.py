@@ -664,6 +664,7 @@ def test_path_utility_func(full_path_to_key, expected):
     for k in full_path_to_key:
         assert expected[k] == out[k]
 
+
 def test_events_tables_load(tmp_path):
     url = "https://osf.io/7grz4/download"
     temp_file = tmp_path / "test_events_table.nwb"
@@ -677,18 +678,15 @@ def test_events_tables_load(tmp_path):
     # Now load with nap
     dat = nap.NWBFile(temp_file)
     np.testing.assert_array_equal(
-        dat["ttl_events"]["pulse_value"].d, np.array([55,  1,  2,  3, 31])
+        dat["ttl_events"]["pulse_value"].d, np.array([55, 1, 2, 3, 31])
     )
     np.testing.assert_array_equal(
         dat["ttl_events"].t,
-        np.array([6820.092244, 6821.208244, 6822.210644, 6822.711364, 6825.934244])
+        np.array([6820.092244, 6821.208244, 6822.210644, 6822.711364, 6825.934244]),
     )
     np.testing.assert_array_equal(
-        dat["stimulus_presentations"].d,
-        np.array([[0., 1.0024],
-               [1., 0.99484]])
+        dat["stimulus_presentations"].d, np.array([[0.0, 1.0024], [1.0, 0.99484]])
     )
     np.testing.assert_array_equal(
-        dat["stimulus_presentations"].t,
-        np.array([6821.208244, 6825.208244])
+        dat["stimulus_presentations"].t, np.array([6821.208244, 6825.208244])
     )
