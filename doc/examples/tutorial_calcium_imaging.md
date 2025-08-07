@@ -216,23 +216,23 @@ to see which metrics are supported, here are a couple examples:
 ```{code-cell} ipython3
 :tags: [hide-input]
 metrics = [
-    "braycurtis",
-    "canberra",
     "chebyshev",
+    "dice",
+    "canberra",
+    "sqeuclidean",
+    "minkowski",
+    "euclidean",
     "cityblock",
+    "mahalanobis",
     "correlation",
     "cosine",
-    "dice",
-    "euclidean",
-    "jensenshannon",
-    "mahalanobis",
-    "minkowski",
     "seuclidean",
-    "sqeuclidean",
+    "braycurtis",
+    "jensenshannon",
 ]
 
-fig, axs = plt.subplots(len(metrics), 1, figsize=(8,32), sharex=True, sharey=True)
-for metric, ax in zip(metrics, axs.flatten()):
+fig, axs = plt.subplots(5, 1, figsize=(8,12), sharex=True, sharey=True)
+for metric, ax in zip(metrics[-5:], axs.flatten()):
     decoded, dist = nap.decode_template(
         tuning_curves=tuning_curves,
         data=transients,
@@ -244,6 +244,7 @@ for metric, ax in zip(metrics, axs.flatten()):
     dist_norm = (dist - np.min(dist.values, axis=1, keepdims=True)) / np.ptp(
         dist.values, axis=1, keepdims=True
     )
+    ax.plot(angle.restrict(epochs), label="True")
     im = ax.imshow(
         dist_norm.values.T, 
         aspect="auto", 
@@ -256,11 +257,11 @@ for metric, ax in zip(metrics, axs.flatten()):
         ax.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
         ax.set_yticks([])
         ax.spines['left'].set_visible(False)
-    ax.set_title(metric)
-cbar_ax = fig.add_axes([0.95, ax.get_position().y0, 0.015, ax.get_position().height])
-fig.colorbar(im, cax=cbar_ax, label="Norm. distance", cmap="inferno_r")
+    ax.set_ylabel(metric)
+cbar_ax = fig.add_axes([0.92, ax.get_position().y0, 0.015, ax.get_position().height])
+cbar=fig.colorbar(im, cax=cbar_ax)
+cbar.set_label("Norm. distance")
 ax.set_xlabel("Time (s)")
-ax.set_ylabel("Angle [rad]")
 plt.show()
 ```
 
@@ -294,14 +295,12 @@ sorted_items = sorted(errors.items(), key=lambda item: np.median(item[1]))
 sorted_labels, sorted_values = zip(*sorted_items)
 
 fig, ax = plt.subplots(figsize=(8, 8))
-vp = ax.violinplot(
-    dataset=sorted_values,
-    showmeans=False,
-    showmedians=True,
-    vert=False  # Make it horizontal
+bp = ax.boxplot(
+    x=sorted_values,
+    tick_labels=sorted_labels,
+    vert=False,
+    showfliers=False
 )
-ax.set_yticks(range(1, len(sorted_labels) + 1))
-ax.set_yticklabels(sorted_labels)
 ax.set_xlabel("Angular error [rad]")
 plt.show()
 ```
