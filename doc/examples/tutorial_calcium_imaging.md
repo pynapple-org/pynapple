@@ -166,7 +166,7 @@ decoded, dist = nap.decode_template(
     data=transients,
     epochs=epochs,
     bin_size=0.1,
-    metric="correlation"
+    metric="correlation",
 )
 ```
 
@@ -216,30 +216,49 @@ to see which metrics are supported, here are a couple examples:
 ```{code-cell} ipython3
 :tags: [hide-input]
 metrics = [
-    "correlation", 
-    "cosine", 
-    "euclidean", 
-    "braycurtis", 
-    "canberra", 
+    "braycurtis",
+    "canberra",
+    "chebyshev",
+    "cityblock",
+    "correlation",
+    "cosine",
+    "dice",
+    "euclidean",
+    "jensenshannon",
+    "mahalanobis",
+    "minkowski",
+    "seuclidean",
+    "sqeuclidean",
 ]
 
-fig, axs = plt.subplots(len(metrics), 1, figsize=(8,8), sharex=True)
-for metric, ax in zip(metrics, axs):
+fig, axs = plt.subplots(len(metrics), 1, figsize=(8,32), sharex=True, sharey=True)
+for metric, ax in zip(metrics, axs.flatten()):
     decoded, dist = nap.decode_template(
         tuning_curves=tuning_curves,
         data=transients,
         bin_size=0.1,
         metric=metric,
-        epochs=epochs
+        epochs=epochs,
+    )
+    # normalize distance for better visualization
+    dist_norm = (dist - np.min(dist.values, axis=1, keepdims=True)) / np.ptp(
+        dist.values, axis=1, keepdims=True
     )
     im = ax.imshow(
-        dist.values.T, 
+        dist_norm.values.T, 
         aspect="auto", 
         origin="lower", 
         cmap="inferno_r", 
         extent=(epochs.start[0], epochs.end[0], 0.0, 2*np.pi)
     )
-    plt.colorbar(im, cmap="inferno", label=metric)
+    if metric != metrics[-1]:
+        ax.spines['bottom'].set_visible(False)
+        ax.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+        ax.set_yticks([])
+        ax.spines['left'].set_visible(False)
+    ax.set_title(metric)
+cbar_ax = fig.add_axes([0.95, ax.get_position().y0, 0.015, ax.get_position().height])
+fig.colorbar(im, cax=cbar_ax, label="Norm. distance", cmap="inferno_r")
 ax.set_xlabel("Time (s)")
 ax.set_ylabel("Angle [rad]")
 plt.show()
@@ -262,7 +281,7 @@ for metric in metrics:
         data=transients,
         bin_size=0.1,
         metric=metric,
-        epochs=halves.loc[[1]]
+        epochs=halves.loc[[1]],
     )
     errors[metric] = absolute_angular_error(
         angle.interpolate(decoded).values, decoded.values
@@ -281,6 +300,7 @@ bp = ax.boxplot(
     showfliers=False
 )
 ax.set_ylabel("Angular error [rad]")
+plt.setp(ax.get_xticklabels(), rotation=90)
 
 # Add median labels
 for i, line in enumerate(bp['medians']):
@@ -289,16 +309,16 @@ for i, line in enumerate(bp['medians']):
     ax.text(
         median_x,
         median_y + 0.1,
-        f"{median_y:.3f}",
+        f"{median_y:.2f}",
         va="center",
         ha="center",
-        fontsize=9,
+        fontsize=7,
         color="black",
     )
 plt.show()
 ```
 
-In this case, the `braycurtis` distance yields the lowest angular error.
+In this case, the `jensenshannon` distance yields the lowest angular error.
 
 :::{card}
 Authors
