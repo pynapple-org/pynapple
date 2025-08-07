@@ -293,32 +293,20 @@ for metric in metrics:
 sorted_items = sorted(errors.items(), key=lambda item: np.median(item[1]))
 sorted_labels, sorted_values = zip(*sorted_items)
 
-fig, ax = plt.subplots(figsize=(8, 4))
-bp = ax.boxplot(
-    x=sorted_values,
-    tick_labels=sorted_labels,
-    showfliers=False
+fig, ax = plt.subplots(figsize=(8, 8))
+vp = ax.violinplot(
+    dataset=sorted_values,
+    showmeans=False,
+    showmedians=True,
+    vert=False  # Make it horizontal
 )
-ax.set_ylabel("Angular error [rad]")
-plt.setp(ax.get_xticklabels(), rotation=90)
-
-# Add median labels
-for i, line in enumerate(bp['medians']):
-    median_y = line.get_ydata()[0]
-    median_x = line.get_xdata().mean()
-    ax.text(
-        median_x,
-        median_y + 0.1,
-        f"{median_y:.2f}",
-        va="center",
-        ha="center",
-        fontsize=7,
-        color="black",
-    )
+ax.set_yticks(range(1, len(sorted_labels) + 1))
+ax.set_yticklabels(sorted_labels)
+ax.set_xlabel("Angular error [rad]")
 plt.show()
 ```
 
-In this case, the `jensenshannon` distance yields the lowest angular error.
+In this case, `jensenshannon` yields the lowest angular error.
 
 :::{card}
 Authors
