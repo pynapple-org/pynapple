@@ -370,7 +370,7 @@ def decode_template(
 
     .. math::
 
-        \\hat{x}(t) = \\arg\\max\\limits_{x} dist(f(x), n(t))
+        \\hat{x}(t) = \\arg\\min\\limits_{x} [dist(f(x), n(t))]
 
     where:
 

@@ -443,3 +443,6 @@ ax3.scatter(
 ax3.set_title("Combined")
 plt.show()
 ```
+
+Take a look at the [tutorial on calcium imaging](../examples/tutorial_calcium_imaging.md) 
+for an application of template matching with real data and a comparison of various distance metrics!
