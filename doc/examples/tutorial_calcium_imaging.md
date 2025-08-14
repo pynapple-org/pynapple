@@ -209,7 +209,7 @@ plt.show()
 ```
 
 The distance metric you choose can influence how well we decode.
-Internally, ``decode_template`` uses `scipy.spatial.distance.cdist` to compute the distance matrix, 
+Internally, ``decode_template`` uses `scipy.spatial.distance.cdist` to compute the distance matrix; 
 you can take a look at [its documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html) 
 to see which metrics are supported, here are a couple examples:
 
