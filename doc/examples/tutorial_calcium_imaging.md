@@ -156,7 +156,7 @@ plt.show()
 Calcium decoding
 ---------------------
 
-Given some tuning curves, we can also try to decode head direction from the population.
+Given some tuning curves, we can also try to decode head direction from the population activity.
 For calcium imaging data, Pynapple has `decode_template`, which implements a template matching algorithm.
 
 ```{code-cell} ipython3
