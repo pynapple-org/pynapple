@@ -265,7 +265,7 @@ plt.show()
 ```
 
 <!-- #region -->
-The decoded HD closely matches the actual HD, and thus the population activity in ADn is a reliable estimate of the heading direction of the animal.
+The decoded HD (dashed grey line) closely matches the actual HD (solid white line), and thus the population activity in ADn is a reliable estimate of the heading direction of the animal.
 
 I hope this tutorial was helpful. If you have any questions, comments or suggestions, please feel free to reach out to the Pynapple Team!
 
