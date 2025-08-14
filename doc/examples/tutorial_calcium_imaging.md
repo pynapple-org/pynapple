@@ -265,7 +265,7 @@ ax.set_xlabel("Time (s)")
 plt.show()
 ```
 
-We recommend to try out a bunch and see which one works best for you.
+We recommend trying a bunch to see which one works best for you.
 In the case of head direction, we can quantify how well we decode using the absolute angular error.
 To get a fair estimate of error, we will compute the tuning curves on the first half of the data 
 and compute the error for predictions of the second half.
