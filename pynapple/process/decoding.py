@@ -24,7 +24,7 @@ def _format_decoding_inputs(func):
         tuning_curves = kwargs["tuning_curves"]
         if not isinstance(tuning_curves, xr.DataArray):
             raise TypeError(
-                "tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves."
+                "tuning_curves should be an xr.DataArray as computed by compute_tuning_curves."
             )
 
         # check data
@@ -166,7 +166,7 @@ def decode_bayes(
     Parameters
     ----------
     tuning_curves : xr.DataArray
-        Tuning curves as outputed by `compute_tuning_curves`.
+        Tuning curves as computed by `compute_tuning_curves`.
     data : TsGroup or TsdFrame
         Neural activity with the same keys as the tuning curves.
         You may also pass a TsdFrame with smoothed counts.
@@ -186,7 +186,7 @@ def decode_bayes(
     Tsd
         The decoded feature.
     TsdFrame, TsdTensor
-        The probability distribution of the decoded trajectory for each time bin.
+        The probability distribution of the decoded feature for each time bin.
 
     Examples
     --------
@@ -394,7 +394,7 @@ def decode_template(
     Parameters
     ----------
     tuning_curves : xr.DataArray
-        Tuning curves as outputed by `compute_tuning_curves`.
+        Tuning curves as computed by `compute_tuning_curves`.
     data : TsGroup or TsdFrame
         Neural activity with the same keys as the tuning curves.
         You may also pass a TsdFrame with smoothed counts.

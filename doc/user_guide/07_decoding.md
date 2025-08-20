@@ -30,9 +30,9 @@ For any other type of data (and also for spike data), you can use [`decode_templ
 
 Input to both decoding functions always includes:
  - `tuning_curves`, computed using [`compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves).
- - `data`, neural activity as a `TsGroup` (spikes) or `TsdFrame` (smoothed counts).
+ - `data`, neural activity as a `TsGroup` (spikes) or `TsdFrame` (smoothed counts or calcium activity or any other time series).
  - `epochs`, to restrict decoding to certain intervals.
- - `bin_size`, the size of the bins in which to count the data (spikes only).
+ - `bin_size`, the size of the bins in which to count timestamps when data is a `TsGroup` object.
  - `time_units`, the units of `bin_size`, defaulting to seconds.
 
 ## Bayesian decoding
