@@ -23,6 +23,7 @@ The NWB file for the example is hosted on [OSF](https://osf.io/sbnaw). We show b
 
 ```{code-cell} ipython3
 :tags: [hide-output]
+import numpy as np
 import pynapple as nap
 import matplotlib.pyplot as plt
 import seaborn as sns
@@ -91,7 +92,6 @@ As you can see, we have a longer recording for our tracking of the animal's head
 
 ```{code-cell} ipython3
 transients.time_support
-angle.time_support
 ```
 
 ***
@@ -133,24 +133,179 @@ We start by finding the midpoint of the recording, using the function [`get_inte
 center = transients.time_support.get_intervals_center()
 
 halves = nap.IntervalSet(
-	start = [transients.time_support.start[0], center.t[0]],
+    start = [transients.time_support.start[0], center.t[0]],
     end = [center.t[0], transients.time_support.end[0]]
-    )
+)
 ```
 
 Now, we can compute the tuning curves for each half of the recording and plot the tuning curves again.
 
 ```{code-cell} ipython3
-half1 = nap.compute_tuning_curves(transients, angle, bins = 120, epochs = halves.loc[[0]])
-half2 = nap.compute_tuning_curves(transients, angle, bins = 120, epochs = halves.loc[[1]])
+tuning_curves_half1 = nap.compute_tuning_curves(transients, angle, bins = 120, epochs = halves.loc[[0]])
+tuning_curves_half2 = nap.compute_tuning_curves(transients, angle, bins = 120, epochs = halves.loc[[1]])
 
 fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 5))
-set_metadata(half1[4]).plot(ax=ax1)
+set_metadata(tuning_curves_half1[4]).plot(ax=ax1)
 ax1.set_title("First half")
-set_metadata(half2[4]).plot(ax=ax2)
+set_metadata(tuning_curves_half2[4]).plot(ax=ax2)
 ax2.set_title("Second half")
 plt.show()
 ```
+
+***
+Calcium decoding
+---------------------
+
+Given some tuning curves, we can also try to decode head direction from the population activity.
+For calcium imaging data, Pynapple has `decode_template`, which implements a template matching algorithm.
+
+```{code-cell} ipython3
+epochs = nap.IntervalSet([50, 150])
+decoded, dist = nap.decode_template(
+    tuning_curves=tuning_curves,
+    data=transients,
+    epochs=epochs,
+    bin_size=0.1,
+    metric="correlation",
+)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+# normalize distance for better visualization
+dist_norm = (dist - np.min(dist.values, axis=1, keepdims=True)) / np.ptp(
+    dist.values, axis=1, keepdims=True
+)
+
+fig, (ax1, ax2, ax3) = plt.subplots(figsize=(8, 8), nrows=3, ncols=1, sharex=True)
+ax1.plot(angle.restrict(epochs), label="True")
+ax1.scatter(decoded.times(), decoded.values, label="Decoded", c="orange")
+ax1.legend(frameon=False, bbox_to_anchor=(1.0, 1.0))
+ax1.set_ylabel("Angle [rad]")
+
+im = ax2.imshow(
+    dist.values.T, 
+    aspect="auto", 
+    origin="lower", 
+    cmap="inferno_r", 
+    extent=(epochs.start[0], epochs.end[0], 0.0, 2*np.pi)
+)
+ax2.set_ylabel("Angle [rad]")
+cbar_ax2 = fig.add_axes([0.95, ax2.get_position().y0, 0.015, ax2.get_position().height])
+fig.colorbar(im, cax=cbar_ax2, label="Distance")
+
+im = ax3.imshow(
+    dist_norm.values.T, 
+    aspect="auto", 
+    origin="lower", 
+    cmap="inferno_r", 
+    extent=(epochs.start[0], epochs.end[0], 0.0, 2*np.pi)
+)
+cbar_ax3 = fig.add_axes([0.95, ax3.get_position().y0, 0.015, ax3.get_position().height])
+fig.colorbar(im, cax=cbar_ax3, label="Norm. distance")
+ax3.set_xlabel("Time (s)")
+ax3.set_ylabel("Angle [rad]")
+plt.show()
+```
+
+The distance metric you choose can influence how well we decode.
+Internally, ``decode_template`` uses `scipy.spatial.distance.cdist` to compute the distance matrix; 
+you can take a look at [its documentation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html) 
+to see which metrics are supported. Here are a couple examples:
+
+```{code-cell} ipython3
+:tags: [hide-input]
+metrics = [
+    "chebyshev",
+    "dice",
+    "canberra",
+    "sqeuclidean",
+    "minkowski",
+    "euclidean",
+    "cityblock",
+    "mahalanobis",
+    "correlation",
+    "cosine",
+    "seuclidean",
+    "braycurtis",
+    "jensenshannon",
+]
+
+fig, axs = plt.subplots(5, 1, figsize=(8,12), sharex=True, sharey=True)
+for metric, ax in zip(metrics[-5:], axs.flatten()):
+    decoded, dist = nap.decode_template(
+        tuning_curves=tuning_curves,
+        data=transients,
+        bin_size=0.1,
+        metric=metric,
+        epochs=epochs,
+    )
+    # normalize distance for better visualization
+    dist_norm = (dist - np.min(dist.values, axis=1, keepdims=True)) / np.ptp(
+        dist.values, axis=1, keepdims=True
+    )
+    ax.plot(angle.restrict(epochs), label="True")
+    im = ax.imshow(
+        dist_norm.values.T, 
+        aspect="auto", 
+        origin="lower", 
+        cmap="inferno_r", 
+        extent=(epochs.start[0], epochs.end[0], 0.0, 2*np.pi)
+    )
+    if metric != metrics[-1]:
+        ax.spines['bottom'].set_visible(False)
+        ax.tick_params(axis='x', which='both', bottom=False, top=False, labelbottom=False)
+        ax.set_yticks([])
+        ax.spines['left'].set_visible(False)
+    ax.set_ylabel(metric)
+cbar_ax = fig.add_axes([0.92, ax.get_position().y0, 0.015, ax.get_position().height])
+cbar=fig.colorbar(im, cax=cbar_ax)
+cbar.set_label("Norm. distance")
+ax.set_xlabel("Time (s)")
+plt.show()
+```
+
+We recommend trying a bunch to see which one works best for you.
+In the case of head direction, we can quantify how well we decode using the absolute angular error.
+To get a fair estimate of error, we will compute the tuning curves on the first half of the data 
+and compute the error for predictions of the second half.
+
+```{code-cell} ipython3
+def absolute_angular_error(x, y):
+    return np.abs(np.angle(np.exp(1j * (x - y))))
+
+# Compute errors
+errors = {}
+for metric in metrics:
+    decoded, dist = nap.decode_template(
+        tuning_curves=tuning_curves_half1,
+        data=transients,
+        bin_size=0.1,
+        metric=metric,
+        epochs=halves.loc[[1]],
+    )
+    errors[metric] = absolute_angular_error(
+        angle.interpolate(decoded).values, decoded.values
+    )
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+sorted_items = sorted(errors.items(), key=lambda item: np.median(item[1]))
+sorted_labels, sorted_values = zip(*sorted_items)
+
+fig, ax = plt.subplots(figsize=(8, 8))
+bp = ax.boxplot(
+    x=sorted_values,
+    tick_labels=sorted_labels,
+    vert=False,
+    showfliers=False
+)
+ax.set_xlabel("Angular error [rad]")
+plt.show()
+```
+
+In this case, `jensenshannon` yields the lowest angular error.
 
 :::{card}
 Authors

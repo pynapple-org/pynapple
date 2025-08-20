@@ -90,7 +90,13 @@ jobs:
         with:
           directory: "doc/_build/html"
           # The directory to scan
-          arguments: --checks Links,Scripts --ignore-urls "https://fonts.gstatic.com,https://mkdocs-gallery.github.io,./doc/_build/html/_static/,https://www.nature.com/articles/s41593-022-01020-w" --assume-extension --check-external-hash --ignore-status-codes 403 --ignore-files "/.+\/html\/_static\/.+/"
+          arguments: 
+            --checks Links,Scripts 
+            --ignore-urls "https://fonts.gstatic.com,https://mkdocs-gallery.github.io,./doc/_build/html/_static/,https://www.nature.com/articles/s41593-022-01020-w,https://elifesciences.org/reviewed-preprints/85786" 
+            --assume-extension 
+            --check-external-hash 
+            --ignore-status-codes 403 
+            --ignore-files "/.+\/html\/_static\/.+/"
           # The arguments to pass to HTMLProofer
 
   check:

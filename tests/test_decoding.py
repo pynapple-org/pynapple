@@ -55,21 +55,21 @@ def get_testing_set_n(n_features=1, binned=False):
             {"tuning_curves": []},
             pytest.raises(
                 TypeError,
-                match="tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves.",
+                match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
             ),
         ),
         (
             {"tuning_curves": 1},
             pytest.raises(
                 TypeError,
-                match="tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves.",
+                match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
             ),
         ),
         (
             {"tuning_curves": get_testing_set_n()["tuning_curves"].to_pandas().T},
             pytest.raises(
                 TypeError,
-                match="tuning_curves should be an xr.DataArray as outputed by compute_tuning_curves.",
+                match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
             ),
         ),
         (
@@ -156,6 +156,21 @@ def get_testing_set_n(n_features=1, binned=False):
             get_testing_set_n(3, binned=True),
             does_not_raise(),
         ),
+    ],
+)
+def test_decode_input_errors(overwrite_default_args, expectation):
+    default_args = get_testing_set_n()
+    default_args.update(overwrite_default_args)
+    default_args.pop("features")
+    with expectation:
+        nap.decode_bayes(**default_args)
+        nap.decode_template(**default_args)
+
+
+@pytest.mark.filterwarnings("ignore")
+@pytest.mark.parametrize(
+    "overwrite_default_args, expectation",
+    [
         # uniform_prior
         (
             {
@@ -175,7 +190,7 @@ def get_testing_set_n(n_features=1, binned=False):
         ),
     ],
 )
-def test_decode_bayes_type_errors(overwrite_default_args, expectation):
+def test_decode_bayes_input_errors(overwrite_default_args, expectation):
     default_args = get_testing_set_n()
     default_args.update(overwrite_default_args)
     default_args.pop("features")
@@ -212,6 +227,31 @@ def test_decode_bayes(n_features, binned, uniform_prior):
     ]
     expected_proba[tuple(target_indices)] = 1.0
     np.testing.assert_array_almost_equal(proba.values, expected_proba)
+
+
+@pytest.mark.parametrize("metric", ["correlation", "euclidean", "cosine"])
+@pytest.mark.parametrize("n_features", [1, 2, 3])
+@pytest.mark.parametrize("binned", [True, False])
+def test_decode_template(n_features, binned, metric):
+    features, tuning_curves, data, epochs, bin_size = get_testing_set_n(
+        n_features, binned=binned
+    ).values()
+    decoded, dist = nap.decode_template(
+        tuning_curves=tuning_curves,
+        data=data,
+        epochs=epochs,
+        metric=metric,
+        bin_size=bin_size,
+        time_units="s",
+    )
+
+    assert isinstance(decoded, nap.Tsd if features.shape[1] == 1 else nap.TsdFrame)
+    np.testing.assert_array_almost_equal(decoded.values, features.values.squeeze())
+
+    assert isinstance(
+        dist,
+        nap.TsdFrame if features.shape[1] == 1 else nap.TsdTensor,
+    )
 
 
 # ------------------------------------------------------------------------------------
