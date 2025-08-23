@@ -526,13 +526,14 @@ def test_get_filter_frequency_response_error():
 
 
 @pytest.mark.parametrize(
-    "freq_band, thresh_band, start, end",
+    "freq_band, thresh_band, num_events, start, end",
     [
-        ((10, 30), (1, 10), 0, 2),
-        ((40, 60), (1, 10), 3, 5),
+        ((10, 30), (1, 10), 1, 0, 2),
+        ((40, 60), (1, 10), 1, 3, 5),
+        ((100, 150), (1, 10), 0, None, None),
     ],
 )
-def test_detect_oscillatory_events(freq_band, thresh_band, start, end):
+def test_detect_oscillatory_events(freq_band, thresh_band, num_events, start, end):
     fs = 1000
     duration = 5
     min_dur = 0.1
@@ -558,18 +559,19 @@ def test_detect_oscillatory_events(freq_band, thresh_band, start, end):
         ts, epoch, freq_band, thresh_band, (min_dur, max_dur), min_inter
     )
 
-    assert len(osc_ep) == 1  # Only one event in given freq_band
+    assert len(osc_ep) == num_events  # Only one event in given freq_band
 
-    # Start and end should be close to actuals +/- a small amount
-    detected_start = osc_ep.start[0]
-    detected_end = osc_ep.end[0]
-    assert np.isclose(start, detected_start, atol=0.05)
-    assert np.isclose(end, detected_end, atol=0.05)
+    if num_events > 0:
+        # Start and end should be close to actuals +/- a small amount
+        detected_start = osc_ep.start[0]
+        detected_end = osc_ep.end[0]
+        assert np.isclose(start, detected_start, atol=0.05)
+        assert np.isclose(end, detected_end, atol=0.05)
 
-    # Check we store power, amplitude, and peak_time
-    for key in ["power", "amplitude", "peak_time"]:
-        assert key in osc_ep._metadata
+        # Check we store power, amplitude, and peak_time
+        for key in ["power", "amplitude", "peak_time"]:
+            assert key in osc_ep._metadata
 
-    # Check peak_time is within the interval
-    peak_time = osc_ep._metadata["peak_time"][0]
-    assert start <= peak_time <= end
+        # Check peak_time is within the interval
+        peak_time = osc_ep._metadata["peak_time"][0]
+        assert start <= peak_time <= end

@@ -513,15 +513,22 @@ def get_filter_frequency_response(
 
 
 def detect_oscillatory_events(
-    lfp, epoch, freq_band, thresh_band, duration_band, min_inter_duration, wsize=51
+    data,
+    epoch,
+    freq_band,
+    thresh_band,
+    duration_band,
+    min_inter_duration,
+    fs=None,
+    wsize=51,
 ):
     """
     Simple helper for detecting oscillatory events (e.g. ripples, spindles)
 
     Parameters
     ----------
-    lfp : Tsd
-        Should be a single channel raw lfp
+    data : Tsd
+        1-dimensional time series
     epoch : IntervalSet
         The epoch for restricting the detection
     freq_band : tuple
@@ -532,8 +539,10 @@ def detect_oscillatory_events(
         The (min, max) duration of an event in second
     min_inter_duration : float
         The minimum duration between two events otherwise they are merged (in seconds)
+    fs : float, optional
+        The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.
     wsize : int, optional
-        The size of the window for digitial filtering
+        The size of the window for digital filtering
 
     Returns
     -------
@@ -541,9 +550,12 @@ def detect_oscillatory_events(
         The interval set of detected events with metadata containing
         the power, amplitude, and peak_time
     """
-    lfp = lfp.restrict(epoch)
-    frequency = lfp.rate
-    signal = apply_bandpass_filter(lfp, freq_band, frequency)
+    data = data.restrict(epoch)
+
+    if fs is None:
+        fs = data.rate
+
+    signal = apply_bandpass_filter(data, freq_band, fs)
     squared_signal = np.square(signal.values)
     window = np.ones(wsize) / wsize
 
@@ -569,7 +581,7 @@ def detect_oscillatory_events(
     peak_times = []
 
     for s, e in osc_ep.values:
-        seg = signal.restrict(nap.IntervalSet(s, e))
+        seg = signal.get(s, e)
         if len(seg) == 0:
             powers.append(np.nan)
             amplitudes.append(np.nan)
