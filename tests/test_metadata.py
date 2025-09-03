@@ -9,6 +9,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+import xarray
 
 import pynapple as nap
 from pynapple.core.metadata_class import _Metadata
@@ -1855,18 +1856,18 @@ class TestMetadata:
             "func, ep, err",
             [
                 (  # input_key is not string
-                    nap.compute_1d_tuning_curves,
+                    nap.compute_tuning_curves,
                     1,
                     pytest.raises(TypeError, match="input_key must be a string"),
                 ),
                 (  # input_key does not exist in function
-                    nap.compute_1d_tuning_curves,
+                    nap.compute_tuning_curves,
                     "epp",
                     pytest.raises(KeyError, match="does not have input parameter"),
                 ),
                 (  # function missing required inputs, or incorrect input type
-                    nap.compute_1d_tuning_curves,
-                    "ep",
+                    nap.compute_tuning_curves,
+                    "epochs",
                     pytest.raises(TypeError),
                 ),
             ],
@@ -2444,7 +2445,7 @@ class TestGroupbyApplyFunctions:
 
     def test_metadata_groupby_apply_tuning_curves(self, tsgroup_gba, iset_gba):
         """
-        Test for groupby_apply with nap.compute_1d_tuning_curves when:
+        Test for groupby_apply with nap.compute_tuning_curves when:
         1. a TsGroup is grouped
         2. an IntervalSet is grouped
         and makes sure the outputs are different.
@@ -2454,30 +2455,31 @@ class TestGroupbyApplyFunctions:
         # apply to intervalset
         out = iset_gba.groupby_apply(
             "label",
-            nap.compute_1d_tuning_curves,
-            "ep",
-            group=tsgroup_gba,
-            feature=feature,
-            nb_bins=5,
+            nap.compute_tuning_curves,
+            "epochs",
+            data=tsgroup_gba,
+            features=feature,
+            bins=5,
         )
         for grp, idx in iset_gba.groupby("label").items():
-            tmp = nap.compute_1d_tuning_curves(
-                tsgroup_gba, feature, nb_bins=5, ep=iset_gba[idx]
+            tmp = nap.compute_tuning_curves(
+                tsgroup_gba, feature, bins=5, epochs=iset_gba[idx]
             )
-            pd.testing.assert_frame_equal(out[grp], tmp)
+            xarray.testing.assert_identical(out[grp], tmp)
 
         # apply to tsgroup
         out2 = tsgroup_gba.groupby_apply(
             "label",
-            nap.compute_1d_tuning_curves,
-            feature=feature,
-            nb_bins=5,
+            nap.compute_tuning_curves,
+            features=feature,
+            bins=5,
         )
+
         # make sure groups are different
         assert out2.keys() != out.keys()
         for grp, idx in tsgroup_gba.groupby("label").items():
-            tmp = nap.compute_1d_tuning_curves(tsgroup_gba[idx], feature, nb_bins=5)
-            pd.testing.assert_frame_equal(out2[grp], tmp)
+            tmp = nap.compute_tuning_curves(tsgroup_gba[idx], feature, bins=5)
+            xarray.testing.assert_identical(out2[grp], tmp)
 
     def test_metadata_groupby_apply_tsgroup_lambda(self, tsgroup_gba):
         """
