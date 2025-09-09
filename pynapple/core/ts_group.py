@@ -1843,6 +1843,52 @@ class TsGroup(UserDict, _MetadataMixin):
         """
         return _MetadataMixin.drop_info(self, key)
 
+    @add_meta_docstring("restrict_info")
+    def restrict_info(self, key):
+        """
+        Note
+        ----
+        The `rate` column is always kept in the metadata, even if it is not specified in `key`.
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tmp = {0:nap.Ts(t=np.arange(0,200), time_units='s'),
+        ... 1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
+        ... 2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
+        ... }
+        >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"], "l3": [4, 5, 6]}
+        >>> tsgroup = nap.TsGroup(tmp,metadata=metadata)
+        >>> print(tsgroup)
+          Index     rate    l1  l2      l3
+        -------  -------  ----  ----  ----
+              0  0.66722     1  x        4
+              1  1.33445     2  x        5
+              2  4.00334     3  y        6
+
+        To restrict to multiple metadata columns:
+
+        >>> tsgroup.restrict_info(["l2", "l3"])
+        >>> tsgroup
+          Index     rate  l2      l3
+        -------  -------  ----  ----
+              0  0.66722  x        4
+              1  1.33445  x        5
+              2  4.00334  y        6
+
+        To restrict to a single metadata column:
+
+        >>> tsgroup.drop_info("l2")
+        >>> tsgroup
+          Index     rate  l2
+        -------  -------  ----
+              0  0.66722  x
+              1  1.33445  x
+              2  4.00334  y
+        """
+        return _MetadataMixin.restrict_info(self, key)
+
     @add_or_convert_metadata
     @add_meta_docstring("groupby")
     def groupby(self, by, get_group=None):

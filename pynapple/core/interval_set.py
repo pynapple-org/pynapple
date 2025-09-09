@@ -1198,6 +1198,45 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         """
         return _MetadataMixin.drop_info(self, key)
 
+    @add_meta_docstring("restrict_info")
+    def restrict_info(self, key):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> times = np.array([[0, 5], [10, 12], [20, 33]])
+        >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"], "l3": [4, 5, 6]}
+        >>> ep = nap.IntervalSet(tmp,metadata=metadata)
+        >>> ep
+          index    start    end    l1  l2      l3
+              0        0      5     1  x        4
+              1       10     12     2  x        5
+              2       20     33     3  y        6
+        shape: (3, 2), time unit: sec.
+
+        To restrict to multiple metadata columns:
+
+        >>> ep.restrict_info(["l2", "l3"])
+        >>> ep
+          index    start    end  l2      l3
+              0        0      5  x        4
+              1       10     12  x        5
+              2       20     33  y        6
+        shape: (3, 2), time unit: sec.
+
+        To restrict to a single metadata column:
+
+        >>> ep.restrict_info("l2")
+        >>> ep
+          index    start    end  l2
+              0        0      5  x
+              1       10     12  x
+              2       20     33  y
+        shape: (3, 2), time unit: sec.
+        """
+        return _MetadataMixin.restrict_info(self, key)
+
     @add_or_convert_metadata
     @add_meta_docstring("groupby")
     def groupby(self, by, get_group=None):
