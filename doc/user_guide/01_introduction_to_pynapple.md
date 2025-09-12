@@ -427,10 +427,6 @@ Overview of advanced analysis
 
 The `process` module of pynapple contains submodules that group methods that can be applied for high level analysis. All of the method are directly available from the `nap` namespace.
 
-:::{important}
-Some functions have been doubled given the nature of the data. For instance, computing a 1d tuning curves from spiking activity requires the [`nap.compute_1d_tuning_curves`](pynapple.process.tuning_curves.compute_1d_tuning_curves). The same function for calcium imaging data which is a continuous time series is available with [`nap.compute_1d_tuning_curves_continuous`](pynapple.process.tuning_curves.compute_1d_tuning_curves_continuous). 
-:::
-
 **[Discrete correlograms & ISI](05_correlograms_isi)**
 
 This module analyses discrete events, specifically correlograms (for example by computing the cross-correlograms of a population of neurons) and interspike interval (ISI) distributions.

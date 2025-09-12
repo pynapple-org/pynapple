@@ -11,7 +11,6 @@ kernelspec:
   name: python3
 ---
 
-
 Streaming data from DANDI
 =========================
 
@@ -29,7 +28,6 @@ The data can be found on the DANDI Archive in [Dandiset 000582](https://dandiarc
 DANDI
 -----
 DANDI allows you to stream data without downloading all the files. In this case the data extracted from the NWB file are stored in the nwb-cache folder.
-
 
 ```{code-cell} ipython3
 from pynwb import NWBHDF5IO
@@ -63,14 +61,12 @@ fs = CachingFileSystem(
 # next, open the file
 file = h5py.File(fs.open(s3_url, "rb"))
 io = NWBHDF5IO(file=file, load_namespaces=True)
-
-print(io)
+io
 ```
 
 Pynapple
 --------
 If opening the NWB works, you can start streaming data straight into pynapple with the `NWBFile` class.
-
 
 ```{code-cell} ipython3
 import pynapple as nap
@@ -82,49 +78,39 @@ custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
 
 nwb = nap.NWBFile(io.read())
-
-print(nwb)
+nwb
 ```
 
 We can load the spikes as a TsGroup for inspection.
 
-
 ```{code-cell} ipython3
 units = nwb["units"]
-
-print(units)
+units
 ```
 
-As well as the position
-
+As well as the position:
 
 ```{code-cell} ipython3
 position = nwb["SpatialSeriesLED1"]
 ```
 
-Here we compute the 2d tuning curves
-
+Here, we compute the 2d tuning curves:
 
 ```{code-cell} ipython3
-tc, binsxy = nap.compute_2d_tuning_curves(units, position, 20)
+tuning_curves = nap.compute_tuning_curves(units, position, 20)
 ```
 
-Let's plot the tuning curves
-
+Let's plot the tuning curves:
 
 ```{code-cell} ipython3
-plt.figure(figsize=(15, 7))
-for i in tc.keys():
-    plt.subplot(2, 4, i + 1)
-    plt.imshow(tc[i], origin="lower", aspect="auto")
-    plt.title("Unit {}".format(i))
-plt.tight_layout()
+tuning_curves.name="Firing Rate"
+tuning_curves.attrs["units"] = "Hz"
+tuning_curves.plot(row="unit", col_wrap=4, figsize=(15, 7))
 plt.show()
 ```
 
-Let's plot the spikes of unit 1 who has a nice grid
-Here I use the function [`value_from`](pynapple.Ts.value_from) to assign to each spike the closest position in time.
-
+Let's plot the spikes of unit 1, which has a nice grid.
+Here, I use the [`value_from`](pynapple.Ts.value_from) function to assign to each spike the closest position in time.
 
 ```{code-cell} ipython3
 plt.figure(figsize=(15, 6))
@@ -135,7 +121,7 @@ extent = (
     np.min(position["y"]),
     np.max(position["y"]),
 )
-plt.imshow(tc[1], origin="lower", extent=extent, aspect="auto")
+plt.imshow(tuning_curves[1], origin="lower", extent=extent, aspect="auto")
 plt.xlabel("x")
 plt.ylabel("y")
 

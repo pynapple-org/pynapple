@@ -407,6 +407,39 @@ class _MetadataMixin:
                 f"Invalid metadata column {key}. Metadata columns are {self.metadata_columns}"
             )
 
+    def restrict_info(self, key):
+        """
+        Restrict metadata columns to a key or list of keys.
+
+        Parameters
+        ----------
+        key : str or list of str
+            Metadata column name(s) to restrict to.
+
+        Returns
+        -------
+        None
+        """
+        if isinstance(key, Number):
+            raise TypeError(
+                f"Invalid metadata column {key}. Metadata columns are {self.metadata_columns}"
+            )
+        if isinstance(key, str):
+            key = [key]
+
+        no_keep = [k for k in key if k not in self.metadata_columns]
+        if no_keep:
+            raise KeyError(
+                f"Metadata column(s) {no_keep} not found. Metadata columns are {self.metadata_columns}"
+            )
+
+        drop_keys = set(self.metadata_columns) - set(key)
+        for k in drop_keys:
+            if (self.nap_class == "TsGroup") and (k == "rate"):
+                continue  # cannot drop TsGroup 'rate'
+            else:
+                del self._metadata[k]
+
     def groupby(self, by, get_group=None):
         """
         Group pynapple object by metadata name(s).

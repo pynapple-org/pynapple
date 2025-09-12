@@ -1,6 +1,5 @@
 """
-Functions to compute tuning curves for features in 1 dimension or 2 dimension.
-
+Functions to compute n-dimensional tuning curves.
 """
 
 import inspect
@@ -10,6 +9,7 @@ from functools import wraps
 
 import numpy as np
 import pandas as pd
+import xarray as xr
 
 from .. import core as nap
 
@@ -81,6 +81,372 @@ def _validate_tuning_inputs(func):
     return wrapper
 
 
+def compute_tuning_curves(
+    data,
+    features,
+    bins=10,
+    range=None,
+    epochs=None,
+    fs=None,
+    feature_names=None,
+    return_pandas=False,
+):
+    """
+    Computes n-dimensional tuning curves relative to n features.
+
+    Parameters
+    ----------
+    data : TsGroup, TsdFrame, Ts, Tsd
+        The data for which the tuning curves will be computed.
+    features : Tsd, TsdFrame
+        The features (i.e. one column per feature).
+    bins : sequence or int
+        The bin specification:
+
+        * A sequence of arrays describing the monotonically increasing bin
+          edges along each dimension.
+        * The number of bins for each dimension (nx, ny, ... =bins)
+        * The number of bins for all dimensions (nx=ny=...=bins).
+    range : sequence, optional
+        A sequence of entries per feature, each an optional (lower, upper) tuple giving
+        the outer bin edges to be used if the edges are not given explicitly in
+        `bins`.
+        An entry of None in the sequence results in the minimum and maximum
+        values being used for the corresponding dimension.
+        The default, None, is equivalent to passing a tuple of D None values.
+    epochs : IntervalSet, optional
+        The epochs on which tuning curves are computed.
+        If None, the epochs are the time support of the features.
+    fs : float, optional
+        The exact sampling frequency of the features used to normalise the tuning curves.
+        Unit should match that of the features. If not passed, it is estimated.
+    feature_names : list, optional
+        A list of feature names. If not passed, the column names in `features` are used.
+    return_pandas : bool, optional
+        If True, the function returns a pandas.DataFrame instead of an xarray.DataArray.
+        Note that this will not work if the features are not 1D and that occupancy and bin edges
+        will not be stored as attributes.
+
+    Returns
+    -------
+    xarray.DataArray
+        A tensor containing the tuning curves with labeled bin centres.
+        The bin edges and occupancy are stored as attributes.
+
+    Examples
+    --------
+    In the simplest case, we can pass a group of spikes per neuron and a single feature:
+
+    >>> import pynapple as nap
+    >>> import numpy as np; np.random.seed(42)
+    >>> group = {
+    ...     1: nap.Ts(np.arange(0, 100, 0.1)),
+    ...     2: nap.Ts(np.arange(0, 100, 0.2))
+    ... }
+    >>> feature = nap.Tsd(d=np.arange(0, 100, 0.1) % 1, t=np.arange(0, 100, 0.1))
+    >>> tcs = nap.compute_tuning_curves(group, feature, bins=10)
+    >>> tcs
+    <xarray.DataArray (unit: 2, 0: 10)> Size: 160B
+    array([[10., 10., 10., 10., 10., 10., 10., 10., 10., 10.],
+           [10.,  0., 10.,  0., 10.,  0., 10.,  0., 10.,  0.]])
+    Coordinates:
+      * unit     (unit) int64 16B 1 2
+      * 0        (0) float64 80B 0.045 0.135 0.225 0.315 ... 0.585 0.675 0.765 0.855
+    Attributes:
+        occupancy:  [100. 100. 100. 100. 100. 100. 100. 100. 100. 100.]
+        bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...
+
+    The function can also take multiple features, in which case it computes n-dimensional tuning curves.
+    We can specify the number of bins for each feature:
+
+    >>> features = nap.TsdFrame(
+    ...     d=np.stack(
+    ...         [
+    ...             np.arange(0, 100, 0.1) % 1,
+    ...             np.arange(0, 100, 0.1) % 2
+    ...         ],
+    ...         axis=1
+    ...     ),
+    ...     t=np.arange(0, 100, 0.1)
+    ... )
+    >>> tcs = nap.compute_tuning_curves(group, features, bins=[5, 3])
+    >>> tcs
+    <xarray.DataArray (unit: 2, 0: 5, 1: 3)> Size: 240B
+    array([[[10., 10., nan],
+            [10., 10., 10.],
+            [10., nan, 10.],
+            [10., 10., 10.],
+            [nan, 10., 10.]],
+    ...
+           [[ 5.,  5., nan],
+            [ 5., 10.,  0.],
+            [ 5., nan,  5.],
+            [10.,  0.,  5.],
+            [nan,  5.,  5.]]])
+    Coordinates:
+      * unit     (unit) int64 16B 1 2
+      * 0        (0) float64 40B 0.09 0.27 0.45 0.63 0.81
+      * 1        (1) float64 24B 0.3167 0.95 1.583
+    Attributes:
+        occupancy:  [[100. 100.  nan]\\n [100.  50.  50.]\\n [100.  nan 100.]\\n [ 5...
+        bin_edges:  [array([0.  , 0.18, 0.36, 0.54, 0.72, 0.9 ]), array([0.      ...
+
+    Or even specify the bin edges directly:
+
+    >>> tcs = nap.compute_tuning_curves(
+    ...     group,
+    ...     features,
+    ...     bins=[np.linspace(0, 1, 5), np.linspace(0, 2, 3)]
+    ... )
+    >>> tcs
+    <xarray.DataArray (unit: 2, 0: 4, 1: 2)> Size: 128B
+    array([[[10.        , 10.        ],
+            [10.        , 10.        ],
+            [10.        , 10.        ],
+            [10.        , 10.        ]],
+    ...
+           [[ 6.66666667,  6.66666667],
+            [ 5.        ,  5.        ],
+            [ 3.33333333,  3.33333333],
+            [ 5.        ,  5.        ]]])
+    Coordinates:
+      * unit     (unit) int64 16B 1 2
+      * 0        (0) float64 32B 0.125 0.375 0.625 0.875
+      * 1        (1) float64 16B 0.5 1.5
+    Attributes:
+        occupancy:  [[150. 150.]\\n [100. 100.]\\n [150. 150.]\\n [100. 100.]]
+        bin_edges:  [array([0.  , 0.25, 0.5 , 0.75, 1.  ]), array([0., 1., 2.])]
+
+    In all of these cases, it is also possible to pass continuous values instead of spikes (e.g. calcium imaging data):
+
+    >>> frame = nap.TsdFrame(d=np.random.rand(2000, 3), t=np.arange(0, 100, 0.05))
+    >>> tcs = nap.compute_tuning_curves(frame, feature, bins=10)
+    >>> tcs
+    <xarray.DataArray (unit: 3, 0: 10)> Size: 240B
+    array([[0.49147343, 0.50190395, 0.50971339, 0.50128013, 0.54332711,
+            0.49712328, 0.49594611, 0.5110517 , 0.52247351, 0.52057658],
+           [0.51132036, 0.46410557, 0.47732505, 0.49830908, 0.53523019,
+            0.53099429, 0.48668499, 0.44198555, 0.49222208, 0.47453398],
+           [0.46591801, 0.50662914, 0.46875882, 0.48734997, 0.51836574,
+            0.50722266, 0.48943577, 0.49730095, 0.47944075, 0.48623693]])
+    Coordinates:
+      * unit     (unit) int64 24B 0 1 2
+      * 0        (0) float64 80B 0.045 0.135 0.225 0.315 ... 0.585 0.675 0.765 0.855
+    Attributes:
+        occupancy:  [100. 100. 100. 100. 100. 100. 100. 100. 100. 100.]
+        bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...
+    """
+
+    # check data
+    if not isinstance(data, (nap.TsdFrame, nap.TsGroup, nap.Ts, nap.Tsd)):
+        raise TypeError("data should be a TsdFrame, TsGroup, Ts, or Tsd.")
+
+    # check features
+    if not isinstance(features, (nap.TsdFrame, nap.Tsd)):
+        raise TypeError("features should be a Tsd or TsdFrame.")
+
+    # check feature names
+    if feature_names is None:
+        feature_names = (
+            features.columns if isinstance(features, nap.TsdFrame) else ["0"]
+        )
+    else:
+        if (
+            not hasattr(feature_names, "__len__")
+            or isinstance(feature_names, str)
+            or not all(isinstance(n, str) for n in feature_names)
+        ):
+            raise TypeError("feature_names should be a list of strings.")
+        if len(feature_names) != (
+            1 if isinstance(features, nap.Tsd) else features.shape[-1]
+        ):
+            raise ValueError("feature_names should match the number of features.")
+
+    # check epochs
+    if epochs is None:
+        epochs = features.time_support
+    elif isinstance(epochs, nap.IntervalSet):
+        features = features.restrict(epochs)
+    else:
+        raise TypeError("epochs should be an IntervalSet.")
+    data = data.restrict(epochs)
+
+    # check fs
+    if fs is None:
+        fs = 1 / np.mean(features.time_diff(epochs=epochs).values)
+    if not isinstance(fs, (int, float)):
+        raise TypeError("fs should be a number (int or float)")
+
+    # check range
+    if range is not None and isinstance(range, tuple):
+        if features.ndim == 1 or features.shape[1] == 1:
+            range = [range]
+        else:
+            raise ValueError(
+                "range should be a sequence of tuples, one for each feature."
+            )
+
+    # check return_pandas
+    if not isinstance(return_pandas, bool):
+        raise TypeError("return_pandas should be a boolean.")
+
+    # occupancy
+    occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
+
+    # tunning curves
+    keys = (
+        data.keys()
+        if isinstance(data, nap.TsGroup)
+        else data.columns if isinstance(data, nap.TsdFrame) else [0]
+    )
+    tcs = np.zeros([len(keys), *occupancy.shape])
+    if isinstance(data, (nap.TsGroup, nap.Ts)):
+        # SPIKES
+        if isinstance(data, nap.Ts):
+            data = {0: data}
+        for i, n in enumerate(keys):
+            tcs[i] = np.histogramdd(
+                data[n].value_from(features, epochs),
+                bins=bin_edges,
+            )[0]
+        occupancy[occupancy == 0.0] = np.nan
+        tcs = (tcs / occupancy) * fs
+    else:
+        # RATES
+        values = data.value_from(features, epochs)
+        if isinstance(data, nap.Tsd):
+            data = np.expand_dims(data.values, -1)
+        counts = np.histogramdd(values, bins=bin_edges)[0]
+        counts[counts == 0] = np.nan
+        for i, n in enumerate(keys):
+            tcs[i] = np.histogramdd(
+                values,
+                weights=data[:, i],
+                bins=bin_edges,
+            )[0]
+        tcs /= counts
+        tcs[np.isnan(tcs)] = 0.0
+        tcs[:, occupancy == 0.0] = np.nan
+
+    tcs = xr.DataArray(
+        tcs,
+        coords={
+            "unit": keys,
+            **{
+                str(feature_name): e[:-1] + np.diff(e) / 2
+                for feature_name, e in zip(feature_names, bin_edges)
+            },
+        },
+        attrs={"occupancy": occupancy, "bin_edges": bin_edges},
+    )
+    if return_pandas:
+        return tcs.to_pandas().T
+    else:
+        return tcs
+
+
+@_validate_tuning_inputs
+def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
+    """
+    Deprecated, use `compute_tuning_curves` instead.
+    """
+    warnings.warn(
+        "compute_1d_tuning_curves is deprecated and will be removed in a future version;"
+        "use compute_tuning_curves instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return (
+        compute_tuning_curves(
+            group,
+            feature,
+            nb_bins,
+            range=None if minmax is None else [minmax],
+            epochs=ep,
+        )
+        .to_pandas()
+        .T
+    )
+
+
+@_validate_tuning_inputs
+def compute_1d_tuning_curves_continuous(
+    tsdframe, feature, nb_bins, ep=None, minmax=None
+):
+    """
+    Deprecated, use `compute_tuning_curves` instead.
+    """
+    warnings.warn(
+        "compute_1d_tuning_curves_continuous is deprecated and will be removed in a future version;"
+        "use compute_tuning_curves instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return (
+        compute_tuning_curves(
+            tsdframe,
+            feature,
+            nb_bins,
+            range=None if minmax is None else [minmax],
+            epochs=ep,
+        )
+        .to_pandas()
+        .T
+    )
+
+
+@_validate_tuning_inputs
+def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
+    """
+    Deprecated, use `compute_tuning_curves` instead.
+    """
+    warnings.warn(
+        "compute_2d_tuning_curves is deprecated and will be removed in a future version;"
+        "use compute_tuning_curves instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    xarray = compute_tuning_curves(
+        group,
+        features,
+        nb_bins,
+        range=(
+            None if minmax is None else [[minmax[0], minmax[1]], [minmax[2], minmax[3]]]
+        ),
+        epochs=ep,
+    )
+    tcs = {c: xarray.sel(unit=c).values for c in xarray.coords["unit"].values}
+    bins = [xarray.coords[dim].values for dim in xarray.coords if dim != "unit"]
+    return tcs, bins
+
+
+@_validate_tuning_inputs
+def compute_2d_tuning_curves_continuous(
+    tsdframe, features, nb_bins, ep=None, minmax=None
+):
+    """
+    Deprecated, use `compute_tuning_curves` instead.
+    """
+    warnings.warn(
+        "compute_2d_tuning_curves_continuous is deprecated and will be removed in a future version;"
+        "use compute_tuning_curves instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    xarray = compute_tuning_curves(
+        tsdframe,
+        features,
+        nb_bins,
+        range=(
+            None if minmax is None else [[minmax[0], minmax[1]], [minmax[2], minmax[3]]]
+        ),
+        epochs=ep,
+    )
+    tcs = {c: xarray.sel(unit=c).values for c in xarray.coords["unit"].values}
+    bins = [xarray.coords[dim].values for dim in xarray.coords if dim != "unit"]
+    return tcs, bins
+
+
 @_validate_tuning_inputs
 def compute_discrete_tuning_curves(group, dict_ep):
     """
@@ -88,19 +454,20 @@ def compute_discrete_tuning_curves(group, dict_ep):
     The function returns a pandas DataFrame with each row being a key of the dictionary of epochs
     and each column being a neurons.
 
-       This function can typically being used for a set of stimulus being presented for multiple epochs.
-    An example of the dictionary is :
+    This function can typically being used for a set of stimulus being presented for multiple epochs.
+    An example of the dictionary is:
 
-        >>> dict_ep =  {
-                "stim0": nap.IntervalSet(start=0, end=1),
-                "stim1":nap.IntervalSet(start=2, end=3)
-            }
+    >>> dict_ep =  {
+            "stim0": nap.IntervalSet(start=0, end=1),
+            "stim1":nap.IntervalSet(start=2, end=3)
+        }
+
     In this case, the function will return a pandas DataFrame :
 
-        >>> tc
-                   neuron0    neuron1    neuron2
-        stim0        0 Hz       1 Hz       2 Hz
-        stim1        3 Hz       4 Hz       5 Hz
+    >>> tc
+               neuron0    neuron1    neuron2
+    stim0        0 Hz       1 Hz       2 Hz
+    stim1        3 Hz       4 Hz       5 Hz
 
 
     Parameters
@@ -130,148 +497,6 @@ def compute_discrete_tuning_curves(group, dict_ep):
         tuning_curves.loc[k] = tuning_curves.loc[k] / dict_ep[k].tot_length("s")
 
     return tuning_curves
-
-
-@_validate_tuning_inputs
-def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
-    """
-    Computes 1-dimensional tuning curves relative to a 1d feature.
-
-    Parameters
-    ----------
-    group : TsGroup
-        The group of Ts/Tsd for which the tuning curves will be computed
-    feature : Tsd (or TsdFrame with 1 column only)
-        The 1-dimensional target feature (e.g. head-direction)
-    nb_bins : int
-        Number of bins in the tuning curve
-    ep : IntervalSet, optional
-        The epoch on which tuning curves are computed.
-        If None, the epoch is the time support of the feature.
-    minmax : tuple or list, optional
-        The min and max boundaries of the tuning curves.
-        If None, the boundaries are inferred from the target feature
-
-    Returns
-    -------
-    pandas.DataFrame
-        DataFrame to hold the tuning curves
-
-    Raises
-    ------
-    RuntimeError
-        If group is not a TsGroup object.
-
-    """
-    if minmax is not None and len(minmax) != 2:
-        raise ValueError("minmax should be of length 2.")
-    if ep is None:
-        ep = feature.time_support
-
-    if minmax is None:
-        bins = np.linspace(np.nanmin(feature), np.nanmax(feature), nb_bins + 1)
-    else:
-        bins = np.linspace(minmax[0], minmax[1], nb_bins + 1)
-
-    idx = bins[0:-1] + np.diff(bins) / 2
-
-    tuning_curves = pd.DataFrame(index=idx, columns=list(group.keys()))
-
-    group_value = group.value_from(feature, ep)
-
-    occupancy, _ = np.histogram(feature.restrict(ep).values, bins)
-
-    for k in group_value:
-        count, _ = np.histogram(group_value[k].values, bins)
-        count = count / occupancy
-        tuning_curves[k] = count
-        tuning_curves[k] = count * feature.rate
-
-    return tuning_curves
-
-
-@_validate_tuning_inputs
-def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
-    """
-    Computes 2-dimensional tuning curves relative to a 2d features
-
-    Parameters
-    ----------
-    group : TsGroup
-        The group of Ts/Tsd for which the tuning curves will be computed
-    features : TsdFrame
-        The 2d features (i.e. 2 columns features).
-    nb_bins : int or tuple
-        Number of bins in the tuning curves (separate for 2 feature dimensions if tuple provided)
-    ep : IntervalSet, optional
-        The epoch on which tuning curves are computed.
-        If None, the epoch is the time support of the feature.
-    minmax : tuple or list, optional
-        The min and max boundaries of the tuning curves given as:
-        (minx, maxx, miny, maxy)
-        If None, the boundaries are inferred from the target features
-
-    Returns
-    -------
-    tuple
-        A tuple containing: \n
-        tc (dict): Dictionary of the tuning curves with dimensions (nb_bins, nb_bins).\n
-        xy (list): List of bins center in the two dimensions
-
-    Raises
-    ------
-    RuntimeError
-        If group is not a TsGroup object or if features is not 2 columns only.
-
-    """
-    if minmax is not None and len(minmax) != 4:
-        raise ValueError("minmax should be of length 4.")
-
-    if isinstance(nb_bins, tuple) and len(nb_bins) != 2:
-        raise ValueError(
-            "nb_bins should be of type int (or tuple with (int, int) for 2D tuning curves)."
-        )
-
-    if isinstance(nb_bins, int):
-        nb_bins = (nb_bins, nb_bins)
-
-    if ep is None:
-        ep = features.time_support
-    else:
-        features = features.restrict(ep)
-
-    groups_value = {}
-    binsxy = {}
-
-    for i in range(2):
-        groups_value[i] = group.value_from(features[:, i], ep)
-        if minmax is None:
-            bins = np.linspace(
-                np.nanmin(features[:, i]), np.nanmax(features[:, i]), nb_bins[i] + 1
-            )
-        else:
-            bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins[i] + 1)
-        binsxy[i] = bins
-
-    occupancy, _, _ = np.histogram2d(
-        features[:, 0].values.flatten(),
-        features[:, 1].values.flatten(),
-        [binsxy[0], binsxy[1]],
-    )
-
-    tc = {}
-    for n in group.keys():
-        count, _, _ = np.histogram2d(
-            groups_value[0][n].values.flatten(),
-            groups_value[1][n].values.flatten(),
-            [binsxy[0], binsxy[1]],
-        )
-        count = count / occupancy
-        tc[n] = count * features.rate
-
-    xy = [binsxy[i][0:-1] + np.diff(binsxy[i]) / 2 for i in range(2)]
-
-    return tc, xy
 
 
 @_validate_tuning_inputs
@@ -424,174 +649,3 @@ def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=Fals
         SI = SI / fr[:, 0, 0]
         SI = pd.DataFrame(index=idx, columns=["SI"], data=SI)
         return SI
-
-
-@_validate_tuning_inputs
-def compute_1d_tuning_curves_continuous(
-    tsdframe, feature, nb_bins, ep=None, minmax=None
-):
-    """
-    Computes 1-dimensional tuning curves relative to a feature with continuous data.
-
-    Parameters
-    ----------
-    tsdframe : Tsd or TsdFrame
-        Input data (e.g. continuous calcium data
-        where each column is the calcium activity of one neuron)
-    feature : Tsd (or TsdFrame with 1 column only)
-        The 1-dimensional target feature (e.g. head-direction)
-    nb_bins : int
-        Number of bins in the tuning curves
-    ep : IntervalSet, optional
-        The epoch on which tuning curves are computed.
-        If None, the epoch is the time support of the feature.
-    minmax : tuple or list, optional
-        The min and max boundaries of the tuning curves.
-        If None, the boundaries are inferred from the target feature
-
-    Returns
-    -------
-    pandas.DataFrame to hold the tuning curves
-
-    Raises
-    ------
-    RuntimeError
-        If tsdframe is not a Tsd or a TsdFrame object.
-
-    """
-    if minmax is not None and len(minmax) != 2:
-        raise ValueError("minmax should be of length 2.")
-
-    feature = np.squeeze(feature)
-
-    if isinstance(ep, nap.IntervalSet):
-        feature = feature.restrict(ep)
-        tsdframe = tsdframe.restrict(ep)
-    else:
-        tsdframe = tsdframe.restrict(feature.time_support)
-
-    if isinstance(tsdframe, nap.Tsd):
-        tsdframe = tsdframe[:, np.newaxis]
-
-    if minmax is None:
-        bins = np.linspace(np.nanmin(feature), np.nanmax(feature), nb_bins + 1)
-    else:
-        bins = np.linspace(minmax[0], minmax[1], nb_bins + 1)
-
-    align_times = tsdframe.value_from(feature)
-    idx = np.digitize(align_times.values, bins) - 1
-
-    tc = np.zeros((len(bins) - 1, tsdframe.shape[1]))
-    for i in range(0, nb_bins):
-        tc[i] = np.mean(tsdframe.values[idx == i], axis=0)
-    tc[np.isnan(tc)] = 0.0
-
-    # Assigning nans if bin is not visited.
-    occupancy, _ = np.histogram(feature, bins)
-    tc[occupancy == 0.0] = np.nan
-
-    tc = pd.DataFrame(
-        index=bins[0:-1] + np.diff(bins) / 2, data=tc, columns=tsdframe.columns
-    )
-    return tc
-
-
-@_validate_tuning_inputs
-def compute_2d_tuning_curves_continuous(
-    tsdframe, features, nb_bins, ep=None, minmax=None
-):
-    """
-    Computes 2-dimensional tuning curves relative to a 2d feature with continuous data.
-
-    Parameters
-    ----------
-    tsdframe : Tsd or TsdFrame
-        Input data (e.g. continuous calcium data
-        where each column is the calcium activity of one neuron)
-    features : TsdFrame
-        The 2d feature (two columns)
-    nb_bins : int or tuple
-        Number of bins in the tuning curves (separate for 2 feature dimensions if tuple provided)
-    ep : IntervalSet, optional
-        The epoch on which tuning curves are computed.
-        If None, the epoch is the time support of the feature.
-    minmax : tuple or list, optional
-        The min and max boundaries of the tuning curves.
-        Should be a tuple of minx, maxx, miny, maxy
-        If None, the boundaries are inferred from the target feature
-
-    Returns
-    -------
-    tuple
-        A tuple containing: \n
-        tc (dict): Dictionary of the tuning curves with dimensions (nb_bins, nb_bins).\n
-        xy (list): List of bins center in the two dimensions
-
-    Raises
-    ------
-    RuntimeError
-        If tsdframe is not a Tsd/TsdFrame or if features is not 2 columns
-
-    """
-    if minmax is not None and len(minmax) != 4:
-        raise ValueError("minmax should be of length 4.")
-
-    if isinstance(nb_bins, tuple) and len(nb_bins) != 2:
-        raise ValueError(
-            "nb_bins should be of type int (or tuple with (int, int) for 2D tuning curves)."
-        )
-
-    if isinstance(ep, nap.IntervalSet):
-        features = features.restrict(ep)
-        tsdframe = tsdframe.restrict(ep)
-    else:
-        tsdframe = tsdframe.restrict(features.time_support)
-
-    if isinstance(tsdframe, nap.Tsd):
-        tsdframe = tsdframe[:, np.newaxis]
-
-    if isinstance(nb_bins, int):
-        nb_bins = (nb_bins, nb_bins)
-
-    binsxy = []
-    idxs = []
-
-    for i in range(2):
-        if minmax is None:
-            bins = np.linspace(
-                np.nanmin(features[:, i]), np.nanmax(features[:, i]), nb_bins[i] + 1
-            )
-        else:
-            bins = np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins[i] + 1)
-
-        align_times = tsdframe.value_from(features[:, i], ep)
-        idxs.append(np.digitize(align_times.values.flatten(), bins) - 1)
-        binsxy.append(bins)
-
-    idxs = np.transpose(np.array(idxs))
-
-    tc = np.zeros((tsdframe.shape[1], nb_bins[0], nb_bins[1]))
-
-    for i in range(nb_bins[0]):
-        for j in range(nb_bins[1]):
-            tc[:, i, j] = np.mean(
-                tsdframe.values[np.logical_and(idxs[:, 0] == i, idxs[:, 1] == j)], 0
-            )
-
-    tc[np.isnan(tc)] = 0.0
-
-    # Assigning nans if bin is not visited.
-    occupancy, _, _ = np.histogram2d(
-        features[:, 0].values.flatten(),
-        features[:, 1].values.flatten(),
-        [binsxy[0], binsxy[1]],
-    )
-    occupancy = occupancy[np.newaxis, :, :]
-    occupancy = np.repeat(occupancy, len(tc), axis=0)
-    tc[occupancy == 0.0] = np.nan
-
-    xy = [binsxy[i][0:-1] + np.diff(binsxy[i]) / 2 for i in range(2)]
-
-    tc = {c: tc[i] for i, c in enumerate(tsdframe.columns)}
-
-    return tc, xy

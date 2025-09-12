@@ -1,16 +1,162 @@
 """
-Decoding functions for timestamps data (spike times). The first argument is always a tuning curves object.
+Functions to decode n-dimensional features.
 """
 
+import inspect
+import warnings
+from functools import wraps
+
 import numpy as np
+import xarray as xr
+from scipy.spatial.distance import cdist
 
 from .. import core as nap
 
 
-def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
+def _format_decoding_inputs(func):
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        # Validate each positional argument
+        sig = inspect.signature(func)
+        kwargs = sig.bind_partial(*args, **kwargs).arguments
+
+        # check tuning curves
+        tuning_curves = kwargs["tuning_curves"]
+        if not isinstance(tuning_curves, xr.DataArray):
+            raise TypeError(
+                "tuning_curves should be an xr.DataArray as computed by compute_tuning_curves."
+            )
+
+        # check data
+        data = kwargs["data"]
+        if isinstance(data, nap.TsGroup):
+            data = data.count(
+                kwargs["bin_size"],
+                kwargs.get("epochs", None),
+                kwargs.get("time_units", "s"),
+            )
+        elif not isinstance(data, nap.TsdFrame):
+            raise TypeError("Unknown format for data.")
+        kwargs["data"] = data
+
+        # check match
+        if tuning_curves.sizes["unit"] != data.shape[1]:
+            raise ValueError("Different shapes for tuning_curves and data.")
+        if not np.all(tuning_curves.coords["unit"] == data.columns.values):
+            raise ValueError("Different indices for tuning curves and data keys.")
+
+        if (
+            "uniform_prior" in kwargs
+            and not kwargs["uniform_prior"]
+            and "occupancy" not in tuning_curves.attrs
+        ):
+            raise ValueError(
+                "uniform_prior set to False but no occupancy found in tuning curves."
+            )
+
+        # Call the original function with validated inputs
+        return func(**kwargs)
+
+    return wrapper
+
+
+def _format_decoding_outputs(dist, tuning_curves, data, epochs, greater_is_better):
+    # Get the index of the decoded class
+    filler = -np.inf if greater_is_better else np.inf
+    filled = np.where(np.isnan(dist), filler, dist)
+    idx = getattr(np, "argmax" if greater_is_better else "argmin")(filled, axis=1)
+
+    # Replace with -1 where all values were NaN
+    all_nan = np.isnan(dist).all(axis=1)
+    idx[all_nan] = -1
+
+    # Format probability distribution
+    dist = dist.reshape(dist.shape[0], *tuning_curves.shape[1:])
+    if dist.ndim > 2:
+        dist = nap.TsdTensor(
+            t=data.index,
+            d=dist,
+            time_support=epochs,
+        )
+    else:
+        dist = nap.TsdFrame(
+            t=data.index,
+            d=dist,
+            time_support=epochs,
+            columns=tuning_curves.coords[tuning_curves.dims[1]].values,
+        )
+
+    # Format decoded index
+    shape = tuning_curves.shape[1:]
+    valid = idx != -1
+
+    if tuning_curves.ndim == 2:
+        decoded_values = np.full(len(idx), np.nan)
+        decoded_values[valid] = tuning_curves.coords[tuning_curves.dims[1]].values[
+            idx[valid]
+        ]
+        decoded = nap.Tsd(
+            t=data.index,
+            d=decoded_values,
+            time_support=epochs,
+        )
+    else:
+        # unravel valid indices only
+        unraveled = [np.full(len(idx), np.nan) for _ in shape]
+        unraveled_indices = np.unravel_index(idx[valid], shape)
+        for i in range(len(shape)):
+            unraveled[i][valid] = tuning_curves.coords[
+                tuning_curves.dims[1 + i]
+            ].values[unraveled_indices[i]]
+
+        decoded = nap.TsdFrame(
+            t=data.index,
+            d=np.stack(unraveled, axis=1),
+            time_support=epochs,
+            columns=tuning_curves.dims[1:],
+        )
+
+    return decoded, dist
+
+
+@_format_decoding_inputs
+def decode_bayes(
+    tuning_curves, data, epochs, bin_size, time_units="s", uniform_prior=True
+):
     """
-    Perform Bayesian decoding over a one dimensional feature.
-    See:
+    Performs Bayesian decoding over n-dimensional features.
+
+    The algorithm is based on Bayes' rule:
+
+    .. math::
+
+        P(x|n) \\propto P(n|x) P(x)
+
+    where:
+
+    - :math:`P(x|n)` is the **posterior probability** of the feature value given the observed neural activity.
+    - :math:`P(n|x)` is the **likelihood** of the neural activity given the feature value.
+    - :math:`P(x)` is the **prior** probability of the feature value.
+
+    Mapping this to the function:
+
+    - :math:`P(x|n)` is the estimated probability distribution over the decoded feature for each time bin.
+      This is the output of the function. The decoded value is the one with the maximum posterior probability.
+    - :math:`P(n|x)` is determined by the tuning curves. Assuming spikes follow a Poisson distribution and
+      neurons are conditionally independent:
+
+      .. math::
+
+          P(n|x) = \\prod_{i=1}^{N} P(n_i|x) = \\prod_{i=1}^{N} \\frac{\\lambda_i^{n_i} e^{-\\lambda_i}}{n_i!}
+
+      where :math:`\\lambda_i` is the expected firing rate of neuron :math:`i` at feature value :math:`x`,
+      and :math:`n_i` is the spike count of neuron :math:`i`.
+
+    - :math:`P(x)` depends on the value of the ``uniform_prior`` argument.
+      If ``uniform_prior=True``, it is a uniform distribution over feature values.
+      If ``uniform_prior=False``, it is based on the occupancy (i.e. the time spent in each feature bin during tuning curve estimation).
+
+    See:\n
     Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
     (1998). Interpreting neuronal population activity by
     reconstruction: unified framework with application to
@@ -19,66 +165,429 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
 
     Parameters
     ----------
-    tuning_curves : pandas.DataFrame
-        Each column is the tuning curve of one neuron relative to the feature.
-        Index should be the center of the bin.
-    group : TsGroup, TsdFrame or dict of Ts/Tsd object.
-        A group of neurons with the same index as tuning curves column names.
-        You may also pass a TsdFrame with smoothed rates (recommended).
-    ep : IntervalSet
-        The epoch on which decoding is computed
+    tuning_curves : xr.DataArray
+        Tuning curves as computed by `compute_tuning_curves`.
+    data : TsGroup or TsdFrame
+        Neural activity with the same keys as the tuning curves.
+        You may also pass a TsdFrame with smoothed counts.
+    epochs : IntervalSet
+        The epochs on which decoding is computed
     bin_size : float
         Bin size. Default is second. Use the parameter time_units to change it.
     time_units : str, optional
         Time unit of the bin size ('s' [default], 'ms', 'us').
-    feature : Tsd, optional
-        The 1d feature used to compute the tuning curves. Used to correct for occupancy.
-        If feature is not passed, the occupancy is uniform.
+    uniform_prior : bool, optional
+        If True (default), uses a uniform distribution as a prior.
+        If False, uses the occupancy from the tuning curves as a prior over the feature
+        probability distribution.
+
+    Returns
+    -------
+    Tsd
+        The decoded feature.
+    TsdFrame, TsdTensor
+        The probability distribution of the decoded feature for each time bin.
+
+    Examples
+    --------
+    In the simplest case, we can decode a single feature (e.g., position) from a group of neurons:
+
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> data = nap.TsGroup({i: nap.Ts(t=np.arange(0, 50) + 50 * i) for i in range(2)})
+    >>> feature = nap.Tsd(t=np.arange(0, 100, 1), d=np.repeat(np.arange(0, 2), 50))
+    >>> tuning_curves = nap.compute_tuning_curves(data, feature, bins=2, range=(-.5, 1.5))
+    >>> epochs = nap.IntervalSet([0, 100])
+    >>> decoded, p = nap.decode_bayes(tuning_curves, data, epochs=epochs, bin_size=1)
+    >>> decoded
+    Time (s)
+    ----------  --
+    0.5          0
+    1.5          0
+    2.5          0
+    3.5          0
+    4.5          0
+    5.5          0
+    6.5          0
+    ...
+    93.5         1
+    94.5         1
+    95.5         1
+    96.5         1
+    97.5         1
+    98.5         1
+    99.5         1
+    dtype: float64, shape: (100,)
+
+    decode is a `Tsd` object containing the decoded feature for each time bin.
+
+    >>> p
+    Time (s)    0.0    1.0
+    ----------  -----  -----
+    0.5         1.0    0.0
+    1.5         1.0    0.0
+    2.5         1.0    0.0
+    3.5         1.0    0.0
+    4.5         1.0    0.0
+    5.5         1.0    0.0
+    6.5         1.0    0.0
+    ...         ...    ...
+    93.5        0.0    1.0
+    94.5        0.0    1.0
+    95.5        0.0    1.0
+    96.5        0.0    1.0
+    97.5        0.0    1.0
+    98.5        0.0    1.0
+    99.5        0.0    1.0
+    dtype: float64, shape: (100, 2)
+
+    p is a `TsdFrame` object containing the probability distribution for each time bin.
+
+    The function also works for multiple features, in which case it does n-dimensional decoding:
+
+    >>> features = nap.TsdFrame(
+    ...     t=np.arange(0, 100, 1),
+    ...     d=np.vstack((np.repeat(np.arange(0, 2), 50), np.tile(np.arange(0, 2), 50))).T,
+    ... )
+    >>> data = nap.TsGroup(
+    ...     {
+    ...         0: nap.Ts(np.arange(0, 50, 2)),
+    ...         1: nap.Ts(np.arange(1, 51, 2)),
+    ...         2: nap.Ts(np.arange(50, 100, 2)),
+    ...         3: nap.Ts(np.arange(51, 101, 2)),
+    ...     }
+    ... )
+    >>> tuning_curves = nap.compute_tuning_curves(data, features, bins=2, range=[(-.5, 1.5)]*2)
+    >>> decoded, p = nap.decode_bayes(tuning_curves, data, epochs=epochs, bin_size=1)
+    >>> decoded
+    Time (s)    0    1
+    ----------  ---  ---
+    0.5         0.0  0.0
+    1.5         0.0  1.0
+    2.5         0.0  0.0
+    3.5         0.0  1.0
+    4.5         0.0  0.0
+    5.5         0.0  1.0
+    6.5         0.0  0.0
+    ...         ...  ...
+    93.5        1.0  1.0
+    94.5        1.0  0.0
+    95.5        1.0  1.0
+    96.5        1.0  0.0
+    97.5        1.0  1.0
+    98.5        1.0  0.0
+    99.5        1.0  1.0
+    dtype: float64, shape: (100, 2)
+
+    decoded is now a `TsdFrame` object containing the decoded features for each time bin.
+
+    >>> p
+    Time (s)
+    ----------  --------------
+    0.5         [[1., 0.] ...]
+    1.5         [[0., 1.] ...]
+    2.5         [[1., 0.] ...]
+    3.5         [[0., 1.] ...]
+    4.5         [[1., 0.] ...]
+    5.5         [[0., 1.] ...]
+    6.5         [[1., 0.] ...]
+    ...
+    93.5        [[0., 0.] ...]
+    94.5        [[0., 0.] ...]
+    95.5        [[0., 0.] ...]
+    96.5        [[0., 0.] ...]
+    97.5        [[0., 0.] ...]
+    98.5        [[0., 0.] ...]
+    99.5        [[0., 0.] ...]
+    dtype: float64, shape: (100, 2, 2)
+
+    and p is a `TsdTensor` object containing the probability distribution for each time bin.
+
+    It is also possible to pass continuous values instead of spikes (e.g. smoothed spike counts):
+
+    >>> data = data.count(1).smooth(2)
+    >>> tuning_curves = nap.compute_tuning_curves(data, features, bins=2, range=[(-.5, 1.5)]*2)
+    >>> decoded, p = nap.decode_bayes(tuning_curves, data, epochs=epochs, bin_size=1)
+    >>> decoded
+    Time (s)    0    1
+    ----------  ---  ---
+    0.5         0.0  1.0
+    1.5         0.0  1.0
+    2.5         0.0  1.0
+    3.5         0.0  1.0
+    4.5         0.0  0.0
+    5.5         0.0  0.0
+    6.5         0.0  0.0
+    ...         ...  ...
+    92.5        1.0  0.0
+    93.5        1.0  0.0
+    94.5        1.0  0.0
+    95.5        1.0  1.0
+    96.5        1.0  1.0
+    97.5        1.0  1.0
+    98.5        1.0  1.0
+    dtype: float64, shape: (98, 2)
+    """
+    occupancy = (
+        np.ones_like(tuning_curves[0]).flatten()
+        if uniform_prior
+        else tuning_curves.attrs["occupancy"].flatten()
+    )
+
+    tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
+    ct = data.values
+    bin_size_s = nap.TsIndex.format_timestamps(
+        np.array([bin_size], dtype=np.float64), time_units
+    )[0]
+
+    p1 = np.exp(-bin_size_s * np.nansum(tc, 1))
+    p2 = occupancy / occupancy.sum()
+
+    ct2 = np.tile(ct[:, np.newaxis, :], (1, tc.shape[0], 1))
+
+    p3 = np.nanprod(tc**ct2, -1)
+
+    p = p1 * p2 * p3
+    p = p / p.sum(1)[:, np.newaxis]
+    return _format_decoding_outputs(
+        p, tuning_curves, data, epochs, greater_is_better=True
+    )
+
+
+@_format_decoding_inputs
+def decode_template(
+    tuning_curves,
+    data,
+    epochs,
+    bin_size,
+    metric="correlation",
+    time_units="s",
+):
+    """
+    Performs template matching decoding over n-dimensional features.
+
+    The algorithm decodes as follow:
+
+    .. math::
+
+        \\hat{x}(t) = \\arg\\min\\limits_{x} [dist(f(x), n(t))]
+
+    where:
+
+    - :math:`f(x)` is the the tuning curve function.
+    - :math:`n(t)` is input neural activity at time :math:`t`.
+    - :math:`dist` is a distance metric.
+
+    The algorithm computes the distance between the observed neural activity and the tuning curves for every time bin.
+    The decoded feature at each time bin corresponds to the tuning curve bin with the smallest distance.
+
+    See:\n
+    Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
+    (1998). Interpreting neuronal population activity by
+    reconstruction: unified framework with application to
+    hippocampal place cells. Journal of neurophysiology, 79(2),
+    1017-1044.
+
+    See ``scipy.spatial.distance.cdist`` for available distance metrics and how they are computed:
+    https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html
+
+    Parameters
+    ----------
+    tuning_curves : xr.DataArray
+        Tuning curves as computed by `compute_tuning_curves`.
+    data : TsGroup or TsdFrame
+        Neural activity with the same keys as the tuning curves.
+        You may also pass a TsdFrame with smoothed counts.
+    epochs : IntervalSet
+        The epochs on which decoding is computed
+    bin_size : float
+        Bin size. Default is second. Use the parameter time_units to change it.
+    metric : str or callable, optional
+        The distance metric to use for template matching.
+        This is passed to `scipy.spatial.distance.cdist`.
+        If a string, the distance function can be ‘braycurtis’, ‘canberra’,
+        ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’,
+        ‘hamming’, ‘jaccard’, ‘jensenshannon’, ‘kulczynski1’, ‘mahalanobis’,
+        ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’,
+        ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’.
+        Default is 'correlation'.
+
+        .. note::
+            Some metrics may not be suitable for all types of data.
+            For example, if your tuning curves contain NaN values, you should not use 'hamming', as it does not handle NaNs.
+    time_units : str, optional
+        Time unit of the bin size ('s' [default], 'ms', 'us').
 
     Returns
     -------
     Tsd
         The decoded feature
-    TsdFrame
-        The probability distribution of the decoded feature for each time bin
+    TsdFrame, TsdTensor
+        The distance matrix between the neural activity and the tuning curves for each time bin.
 
-    Raises
-    ------
-    RuntimeError
-        If group is not a dict of Ts/Tsd or TsGroup.
-        If different size of neurons for tuning_curves and group.
-        If indexes don't match between tuning_curves and group.
+    Examples
+    --------
+    In the simplest case, we can decode a single feature (e.g., position) from a group of neurons:
+
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> group = nap.TsGroup({i: nap.Ts(t=np.arange(0, 50) + 50 * i) for i in range(2)})
+    >>> feature = nap.Tsd(t=np.arange(0, 100, 1), d=np.repeat(np.arange(0, 2), 50))
+    >>> tuning_curves = nap.compute_tuning_curves(group, feature, bins=2, range=(-.5, 1.5))
+    >>> epochs = nap.IntervalSet([0, 100])
+    >>> decoded, dist = nap.decode_template(tuning_curves, group, epochs=epochs, bin_size=1)
+    >>> decoded
+    Time (s)
+    ----------  --
+    0.5          0
+    1.5          0
+    2.5          0
+    3.5          0
+    4.5          0
+    5.5          0
+    6.5          0
+    ...
+    93.5         1
+    94.5         1
+    95.5         1
+    96.5         1
+    97.5         1
+    98.5         1
+    99.5         1
+    dtype: float64, shape: (100,)
+
+    decode is a `Tsd` object containing the decoded feature for each time bin.
+
+    >>> p
+    Time (s)    0.0    1.0
+    ----------  -----  -----
+    0.5         0.0    2.0
+    1.5         0.0    2.0
+    2.5         0.0    2.0
+    3.5         0.0    2.0
+    4.5         0.0    2.0
+    5.5         0.0    2.0
+    ...         ...    ...
+    94.5        2.0    0.0
+    95.5        2.0    0.0
+    96.5        2.0    0.0
+    97.5        2.0    0.0
+    98.5        2.0    0.0
+    99.5        2.0    0.0
+    dtype: float64, shape: (100, 2)
+
+    dist is a `TsdFrame` object containing the distances for each time bin.
+
+    The function also works for multiple features, in which case it does n-dimensional decoding:
+
+    >>> features = nap.TsdFrame(
+    ...     t=np.arange(0, 100, 1),
+    ...     d=np.vstack((np.repeat(np.arange(0, 2), 50), np.tile(np.arange(0, 2), 50))).T,
+    ... )
+    >>> group = nap.TsGroup(
+    ...     {
+    ...         0: nap.Ts(np.arange(0, 50, 2)),
+    ...         1: nap.Ts(np.arange(1, 51, 2)),
+    ...         2: nap.Ts(np.arange(50, 100, 2)),
+    ...         3: nap.Ts(np.arange(51, 101, 2)),
+    ...     }
+    ... )
+    >>> tuning_curves = nap.compute_tuning_curves(group, features, bins=2, range=[(-.5, 1.5)]*2)
+    >>> decoded, dist = nap.decode_template(tuning_curves, group, epochs=epochs, bin_size=1)
+    >>> decoded
+    Time (s)    0    1
+    ----------  ---  ---
+    0.5         0.0  0.0
+    1.5         0.0  1.0
+    2.5         0.0  0.0
+    3.5         0.0  1.0
+    4.5         0.0  0.0
+    5.5         0.0  1.0
+    6.5         0.0  0.0
+    ...         ...  ...
+    93.5        1.0  1.0
+    94.5        1.0  0.0
+    95.5        1.0  1.0
+    96.5        1.0  0.0
+    97.5        1.0  1.0
+    98.5        1.0  0.0
+    99.5        1.0  1.0
+    dtype: float64, shape: (100, 2)
+
+    decoded is now a `TsdFrame` object containing the decoded features for each time bin.
+
+    >>> dist
+    Time (s)
+    ----------  --------------------------
+    0.5         [[0.      , 1.333333] ...]
+    1.5         [[1.333333, 0.      ] ...]
+    2.5         [[0.      , 1.333333] ...]
+    3.5         [[1.333333, 0.      ] ...]
+    4.5         [[0.      , 1.333333] ...]
+    5.5         [[1.333333, 0.      ] ...]
+    ...
+    94.5        [[1.333333, 1.333333] ...]
+    95.5        [[1.333333, 1.333333] ...]
+    96.5        [[1.333333, 1.333333] ...]
+    97.5        [[1.333333, 1.333333] ...]
+    98.5        [[1.333333, 1.333333] ...]
+    99.5        [[1.333333, 1.333333] ...]
+    dtype: float64, shape: (100, 2, 2)
+
+    and dist is a `TsdTensor` object containing the distances for each time bin.
+
+    It is also possible to pass continuous values instead of spikes (e.g. calcium imaging):
+
+    >>> time = np.arange(0,100, 0.1)
+    >>> group = nap.TsdFrame(t=time, d=np.stack([time % 0.5, time %1], axis=1))
+    >>> tuning_curves = nap.compute_tuning_curves(group, features, bins=2, range=[(-.5, 1.5)]*2)
+    >>> decoded, dist = nap.decode_template(tuning_curves, group, epochs=epochs, bin_size=1)
+    >>> decoded
+    Time (s)    0    1
+    ----------  ---  ---
+    0.0         0.0  0.0
+    0.1         0.0  0.0
+    0.2         0.0  0.0
+    0.3         0.0  0.0
+    0.4         0.0  0.0
+    0.5         1.0  1.0
+    0.6         1.0  1.0
+    ...         ...  ...
+    99.3        0.0  0.0
+    99.4        0.0  0.0
+    99.5        1.0  1.0
+    99.6        1.0  1.0
+    99.7        1.0  1.0
+    99.8        1.0  1.0
+    99.9        1.0  1.0
+    dtype: float64, shape: (1000, 2)
     """
-    if isinstance(group, nap.TsdFrame):
-        newgroup = group.restrict(ep)
+    tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1)
+    ct = data.values
 
-        if tuning_curves.shape[1] != newgroup.shape[1]:
-            raise RuntimeError("Different shapes for tuning_curves and group")
+    return _format_decoding_outputs(
+        cdist(ct, tc.T, metric=metric),
+        tuning_curves,
+        data,
+        epochs,
+        greater_is_better=False,
+    )
 
-        if not np.all(tuning_curves.columns.values == np.array(newgroup.columns)):
-            raise RuntimeError("Different indices for tuning curves and group keys")
 
-        count = group
+# -------------------------------------------------------------------------------------
+# Deprecated functions for backward compatibility
+# -------------------------------------------------------------------------------------
 
-    elif isinstance(group, nap.TsGroup):
-        newgroup = group.restrict(ep)
 
-        if tuning_curves.shape[1] != len(newgroup):
-            raise RuntimeError("Different shapes for tuning_curves and group")
-
-        if not np.all(tuning_curves.columns.values == np.array(newgroup.keys())):
-            raise RuntimeError("Different indices for tuning curves and group keys")
-
-        # Bin spikes
-        count = newgroup.count(bin_size, ep, time_units)
-
-    elif isinstance(group, dict):
-        newgroup = nap.TsGroup(group, time_support=ep)
-        count = newgroup.count(bin_size, ep, time_units)
-
-    else:
-        raise RuntimeError("Unknown format for group")
-
+def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
+    """
+    Deprecated, use `decode` instead.
+    """
+    warnings.warn(
+        "decode_1d is deprecated and will be removed in a future version; use decode_bayes instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     # Occupancy
     if feature is None:
         occupancy = np.ones(tuning_curves.shape[0])
@@ -91,122 +600,34 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
         occupancy, _ = np.histogram(feature.values, bins)
     else:
         raise RuntimeError("Unknown format for feature in decode_1d")
-
-    # Transforming to pure numpy array
-    tc = tuning_curves.values
-    ct = count.values
-
-    bin_size_s = nap.TsIndex.format_timestamps(
-        np.array([bin_size], dtype=np.float64), time_units
-    )[0]
-
-    p1 = np.exp(-bin_size_s * tc.sum(1))
-    p2 = occupancy / occupancy.sum()
-
-    ct2 = np.tile(ct[:, np.newaxis, :], (1, tc.shape[0], 1))
-
-    p3 = np.prod(tc**ct2, -1)
-
-    p = p1 * p2 * p3
-    p = p / p.sum(1)[:, np.newaxis]
-
-    idxmax = np.argmax(p, 1)
-
-    p = nap.TsdFrame(
-        t=count.index, d=p, time_support=ep, columns=tuning_curves.index.values
+    return decode_bayes(
+        xr.DataArray(
+            data=tuning_curves.values.T,
+            coords={
+                "unit": tuning_curves.columns.values,
+                "0": tuning_curves.index.values,
+            },
+            attrs={"occupancy": occupancy},
+        ),
+        nap.TsGroup(group) if isinstance(group, dict) else group,
+        ep,
+        bin_size,
+        time_units=time_units,
+        uniform_prior=feature is None,
     )
-
-    decoded = nap.Tsd(
-        t=count.index, d=tuning_curves.index.values[idxmax], time_support=ep
-    )
-
-    return decoded, p
 
 
 def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=None):
     """
-    Performs Bayesian decoding over 2 dimensional features.
-
-    See:
-    Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
-    (1998). Interpreting neuronal population activity by
-    reconstruction: unified framework with application to
-    hippocampal place cells. Journal of neurophysiology, 79(2),
-    1017-1044.
-
-    Parameters
-    ----------
-    tuning_curves : dict
-        Dictionary of 2d tuning curves (one for each neuron).
-    group : TsGroup, TsdFrame or dict of Ts/Tsd object.
-        A group of neurons with the same keys as tuning_curves dictionary.
-        You may also pass a TsdFrame with smoothed rates (recommended).
-    ep : IntervalSet
-        The epoch on which decoding is computed
-    bin_size : float
-        Bin size. Default is second. Use the parameter time_units to change it.
-    xy : tuple
-        A tuple of bin positions for the tuning curves i.e. xy=(x,y)
-    time_units : str, optional
-        Time unit of the bin size ('s' [default], 'ms', 'us').
-    features : TsdFrame
-        The 2 columns features used to compute the tuning curves. Used to correct for occupancy.
-        If feature is not passed, the occupancy is uniform.
-
-    Returns
-    -------
-    Tsd
-        The decoded feature in 2d
-    numpy.ndarray
-        The probability distribution of the decoded trajectory for each time bin
-
-    Raises
-    ------
-    RuntimeError
-        If group is not a dict of Ts/Tsd or TsGroup.
-        If different size of neurons for tuning_curves and group.
-        If indexes don't match between tuning_curves and group.
-
+    Deprecated, use `decode` instead.
     """
-
-    if type(group) is nap.TsdFrame:
-        newgroup = group.restrict(ep)
-        numcells = newgroup.shape[1]
-
-        if len(tuning_curves) != numcells:
-            raise RuntimeError("Different shapes for tuning_curves and group")
-
-        if not np.all(
-            np.array(list(tuning_curves.keys())) == np.array(newgroup.columns)
-        ):
-            raise RuntimeError("Different indices for tuning curves and group keys")
-
-        count = group
-
-    elif type(group) is nap.TsGroup:
-        newgroup = group.restrict(ep)
-        numcells = len(newgroup)
-
-        if len(tuning_curves) != numcells:
-            raise RuntimeError("Different shapes for tuning_curves and group")
-
-        if not np.all(
-            np.array(list(tuning_curves.keys())) == np.array(newgroup.keys())
-        ):
-            raise RuntimeError("Different indices for tuning curves and group keys")
-
-        count = newgroup.count(bin_size, ep, time_units)
-
-    elif type(group) is dict:
-        newgroup = nap.TsGroup(group, time_support=ep)
-        count = newgroup.count(bin_size, ep, time_units)
-
-    else:
-        raise RuntimeError("Unknown format for group")
-
-    indexes = list(tuning_curves.keys())
-
+    warnings.warn(
+        "decode_2d is deprecated and will be removed in a future version; use decode_bayes instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
     # Occupancy
+    indexes = list(tuning_curves.keys())
     if features is None:
         occupancy = np.ones_like(tuning_curves[indexes[0]]).flatten()
     else:
@@ -223,42 +644,15 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
             features[:, 0].values, features[:, 1].values, [binsxy[0], binsxy[1]]
         )
         occupancy = occupancy.flatten()
-
-    # Transforming to pure numpy array
-    tc = np.array([tuning_curves[i] for i in tuning_curves.keys()])
-    tc = tc.reshape(tc.shape[0], np.prod(tc.shape[1:]))
-    tc = tc.T
-    ct = count.values
-    bin_size_s = nap.TsIndex.format_timestamps(
-        np.array([bin_size], dtype=np.float64), time_units
-    )[0]
-
-    p1 = np.exp(-bin_size_s * np.nansum(tc, 1))
-    p2 = occupancy / occupancy.sum()
-
-    ct2 = np.tile(ct[:, np.newaxis, :], (1, tc.shape[0], 1))
-
-    p3 = np.nanprod(tc**ct2, -1)
-
-    p = p1 * p2 * p3
-    p = p / p.sum(1)[:, np.newaxis]
-
-    idxmax = np.argmax(p, 1)
-
-    p = p.reshape(p.shape[0], len(xy[0]), len(xy[1]))
-
-    idxmax2d = np.unravel_index(idxmax, (len(xy[0]), len(xy[1])))
-
-    if features is not None:
-        cols = features.columns
-    else:
-        cols = np.arange(2)
-
-    decoded = nap.TsdFrame(
-        t=count.index,
-        d=np.vstack((xy[0][idxmax2d[0]], xy[1][idxmax2d[1]])).T,
-        time_support=ep,
-        columns=cols,
+    return decode_bayes(
+        xr.DataArray(
+            data=[tuning_curves[i] for i in indexes],
+            coords={"unit": indexes, "0": xy[0], "1": xy[1]},
+            attrs={"occupancy": occupancy},
+        ),
+        nap.TsGroup(group) if isinstance(group, dict) else group,
+        ep,
+        bin_size,
+        time_units=time_units,
+        uniform_prior=features is None,
     )
-
-    return decoded, p

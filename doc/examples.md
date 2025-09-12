@@ -24,15 +24,7 @@ Streaming data from Dandi <examples/tutorial_pynapple_dandi>
 :::{card} 
 ```{toctree}
 :maxdepth: 3
-Computing calcium imaging tuning curves <examples/tutorial_calcium_imaging>
-```
-:::
-
-
-:::{card} 
-```{toctree}
-:maxdepth: 3
-Example perievent <examples/tutorial_human_dataset>
+Analyzing calcium imaging data <examples/tutorial_calcium_imaging>
 ```
 :::
 

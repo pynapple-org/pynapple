@@ -5,13 +5,625 @@ from contextlib import nullcontext as does_not_raise
 import numpy as np
 import pandas as pd
 import pytest
+import xarray as xr
 
 import pynapple as nap
 
 
-########################
-# Type Error
-########################
+def get_group_n(n):
+    return nap.TsGroup(
+        {i + 1: nap.Ts(t=np.arange(0, 100, 10 ** (i - 1))) for i in range(n)}
+    )
+
+
+def get_features_n(n, fs=10.0):
+    return nap.TsdFrame(
+        t=np.arange(0, 100, 1 / fs),
+        d=np.stack(
+            [np.arange(0, 100, 1 / fs) % 10 * i for i in range(1, n + 1)], axis=1
+        ),
+        columns=[f"feature{i}" for i in range(n)],
+    )
+
+
+@pytest.mark.parametrize(
+    "data, features, kwargs, expectation",
+    [
+        # data
+        (
+            [1],
+            get_features_n(1),
+            {},
+            pytest.raises(
+                TypeError, match="data should be a TsdFrame, TsGroup, Ts, or Tsd."
+            ),
+        ),
+        (
+            None,
+            get_features_n(1),
+            {},
+            pytest.raises(
+                TypeError, match="data should be a TsdFrame, TsGroup, Ts, or Tsd."
+            ),
+        ),
+        (
+            {1: nap.Ts([1, 2, 3])},
+            get_features_n(1),
+            {},
+            pytest.raises(
+                TypeError, match="data should be a TsdFrame, TsGroup, Ts, or Tsd."
+            ),
+        ),
+        (get_group_n(1), get_features_n(1), {}, does_not_raise()),
+        (get_group_n(3), get_features_n(1), {}, does_not_raise()),
+        (get_group_n(1).count(0.1), get_features_n(1), {}, does_not_raise()),
+        (get_group_n(3).count(0.1), get_features_n(1), {}, does_not_raise()),
+        (nap.Tsd(t=[1, 2, 3], d=[1, 1, 1]), get_features_n(1), {}, does_not_raise()),
+        (nap.Ts([1, 2, 3]), get_features_n(1), {}, does_not_raise()),
+        # features
+        (
+            get_group_n(1),
+            [1],
+            {},
+            pytest.raises(TypeError, match="features should be a Tsd or TsdFrame"),
+        ),
+        (
+            get_group_n(1),
+            None,
+            {},
+            pytest.raises(TypeError, match="features should be a Tsd or TsdFrame"),
+        ),
+        (
+            get_group_n(1),
+            nap.Tsd(d=[1, 1, 1], t=[1, 2, 3]),
+            {},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(3),
+            {},
+            does_not_raise(),
+        ),
+        # epochs
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"epochs": 1},
+            pytest.raises(TypeError, match="epochs should be an IntervalSet."),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"epochs": [1, 2]},
+            pytest.raises(TypeError, match="epochs should be an IntervalSet."),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"epochs": None},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"epochs": nap.IntervalSet(0.0, 50.0)},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"epochs": nap.IntervalSet([0.0, 30.0], [10.0, 50.0])},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"epochs": nap.IntervalSet([0.0, 1000.0])},
+            does_not_raise(),
+        ),
+        # range
+        (
+            get_group_n(1),
+            get_features_n(2),
+            {"range": (0, 1)},
+            pytest.raises(
+                ValueError,
+                match="range should be a sequence of tuples, one for each feature.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"range": (0, 1)},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"range": [(0, 1)]},
+            does_not_raise(),
+        ),
+        # fs
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"fs": "1"},
+            pytest.raises(TypeError, match="fs should be a number"),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"fs": []},
+            pytest.raises(TypeError, match="fs should be a number"),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"fs": 1},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"fs": 1.0},
+            does_not_raise(),
+        ),
+        # feature names
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"feature_names": "feature0"},
+            pytest.raises(
+                TypeError,
+                match="feature_names should be a list of strings.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"feature_names": 0},
+            pytest.raises(
+                TypeError,
+                match="feature_names should be a list of strings.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"feature_names": [1]},
+            pytest.raises(
+                TypeError,
+                match="feature_names should be a list of strings.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"feature_names": [(1,)]},
+            pytest.raises(
+                TypeError,
+                match="feature_names should be a list of strings.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"feature_names": [(1, 1)]},
+            pytest.raises(
+                TypeError,
+                match="feature_names should be a list of strings.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"feature_names": ["feature0", "feature1"]},
+            pytest.raises(
+                ValueError, match="feature_names should match the number of features."
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"feature_names": ["feature0"]},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(2),
+            {"feature_names": ["feature0", "feature1"]},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"feature_names": np.array(["feature0"])},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(2),
+            {"feature_names": np.array(["feature0", "feature1"])},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"feature_names": ("feature0",)},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(2),
+            {"feature_names": ("feature0", "feature1")},
+            does_not_raise(),
+        ),
+        # return pandas
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_pandas": 1},
+            pytest.raises(
+                TypeError,
+                match="return_pandas should be a boolean.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_pandas": "1"},
+            pytest.raises(
+                TypeError,
+                match="return_pandas should be a boolean.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_pandas": True},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(2),
+            {"return_pandas": True},
+            pytest.raises(
+                ValueError,
+                match="Cannot convert arrays with 3 dimensions into pandas objects. Requires 2 or fewer dimensions.",
+            ),
+        ),
+    ],
+)
+def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
+    with expectation:
+        nap.compute_tuning_curves(data, features, **kwargs)
+
+
+@pytest.mark.parametrize(
+    "data, features, kwargs, expected",
+    [
+        # single rate unit, single feature
+        (
+            get_group_n(1).count(1.0),
+            get_features_n(1),
+            {},
+            xr.DataArray(
+                np.full((1, 10), 10.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+            ),
+        ),
+        # multiple rate units, single feature
+        (
+            get_group_n(2).count(1.0),
+            get_features_n(1),
+            {},
+            xr.DataArray(
+                np.concatenate([np.full((1, 10), 10.0), np.full((1, 10), 1.0)]),
+                dims=["unit", "feature0"],
+                coords={
+                    "unit": [1, 2],
+                    "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                },
+            ),
+        ),
+        # multiple rate units, multiple features
+        (
+            get_group_n(2).count(1.0),
+            get_features_n(2),
+            {},
+            xr.DataArray(
+                np.stack(
+                    [
+                        np.where(np.eye(10), 10.0, np.nan),
+                        np.where(np.eye(10), 1.0, np.nan),
+                    ]
+                ),
+                dims=["unit", "feature0", "feature1"],
+                coords={
+                    "unit": [1, 2],
+                    "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                    "feature1": np.linspace(0, 19.8, 11)[:-1] + 0.99,
+                },
+            ),
+        ),
+        # single unit, single feature
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {},
+            xr.DataArray(
+                np.full((1, 10), 10.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+            ),
+        ),
+        # multiple units, single feature
+        (
+            get_group_n(2),
+            get_features_n(1),
+            {},
+            xr.DataArray(
+                np.concatenate([np.full((1, 10), 10.0), np.full((1, 10), 1.0)]),
+                dims=["unit", "feature0"],
+                coords={
+                    "unit": [1, 2],
+                    "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                },
+            ),
+        ),
+        # multiple units, multiple features
+        (
+            get_group_n(2),
+            get_features_n(2),
+            {},
+            xr.DataArray(
+                np.stack(
+                    [
+                        np.where(np.eye(10), 10.0, np.nan),
+                        np.where(np.eye(10), 1.0, np.nan),
+                    ]
+                ),
+                dims=["unit", "feature0", "feature1"],
+                coords={
+                    "unit": [1, 2],
+                    "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                    "feature1": np.linspace(0, 19.8, 11)[:-1] + 0.99,
+                },
+            ),
+        ),
+        # single unit, single feature, specified number of bins
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"bins": 5},
+            xr.DataArray(
+                np.full((1, 5), 10.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 6)[:-1] + 0.99},
+            ),
+        ),
+        # single unit, multiple features, specified number of bins
+        (
+            get_group_n(1),
+            get_features_n(2),
+            {"bins": 5},
+            xr.DataArray(
+                np.where(np.eye(5), 10.0, np.nan)[None, :],
+                dims=["unit", "feature0", "feature1"],
+                coords={
+                    "unit": [1],
+                    "feature0": np.linspace(0, 9.9, 6)[:-1] + 0.99,
+                    "feature1": np.linspace(0, 19.8, 6)[:-1] + 1.98,
+                },
+            ),
+        ),
+        # single unit, multiple features, specified number of bins per feature
+        (
+            get_group_n(1),
+            get_features_n(2),
+            {"bins": (5, 4)},
+            xr.DataArray(
+                np.array(
+                    [
+                        [
+                            [10.0, np.nan, np.nan, np.nan],
+                            [10.0, 10.0, np.nan, np.nan],
+                            [np.nan, 10.0, 10.0, np.nan],
+                            [np.nan, np.nan, 10.0, 10.0],
+                            [np.nan, np.nan, np.nan, 10.0],
+                        ]
+                    ]
+                ),
+                dims=["unit", "feature0", "feature1"],
+                coords={
+                    "unit": [1],
+                    "feature0": np.linspace(0, 9.9, 6)[:-1] + 0.99,
+                    "feature1": np.linspace(0, 19.8, 5)[:-1] + 2.475,
+                },
+            ),
+        ),
+        # single unit, single feature, specified bins
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"bins": [np.linspace(0, 10, 6)]},
+            xr.DataArray(
+                np.full((1, 5), 10.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.arange(1, 11, 2)},
+            ),
+        ),
+        # single unit, multiple features, specified bins
+        (
+            get_group_n(1),
+            get_features_n(2),
+            {"bins": [np.linspace(0, 10, 6), np.linspace(0, 20, 6)]},
+            xr.DataArray(
+                np.where(np.eye(5), 10.0, np.nan)[None, :],
+                dims=["unit", "feature0", "feature1"],
+                coords={
+                    "unit": [1],
+                    "feature0": np.arange(1, 11, 2),
+                    "feature1": np.arange(2, 22, 4),
+                },
+            ),
+        ),
+        # single unit, single feature, specified range
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"range": [(0, 5)]},
+            xr.DataArray(
+                np.full((1, 10), 10.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25},
+            ),
+        ),
+        # single unit, multiple features, specified range per feature
+        (
+            get_group_n(1),
+            get_features_n(2),
+            {"range": [(0, 5), (0, 10)]},
+            xr.DataArray(
+                np.where(np.eye(10), 10.0, np.nan)[None, :],
+                dims=["unit", "feature0", "feature1"],
+                coords={
+                    "unit": [1],
+                    "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25,
+                    "feature1": np.linspace(0, 10.0, 11)[:-1] + 0.5,
+                },
+            ),
+        ),
+        # single unit, single feature, specified range and number of bins
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"bins": 10, "range": [(0, 5)]},
+            xr.DataArray(
+                np.full((1, 10), 10.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25},
+            ),
+        ),
+        # single unit, multiple features, specified range per feature and number of bins
+        (
+            get_group_n(1),
+            get_features_n(2),
+            {"bins": 10, "range": [(0, 5), (0, 10)]},
+            xr.DataArray(
+                np.where(np.eye(10), 10.0, np.nan)[None, :],
+                dims=["unit", "feature0", "feature1"],
+                coords={
+                    "unit": [1],
+                    "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25,
+                    "feature1": np.linspace(0, 10.0, 11)[:-1] + 0.5,
+                },
+            ),
+        ),
+        # single unit, multiple features, specified range and number of bins per feature
+        (
+            get_group_n(1),
+            get_features_n(2),
+            {"bins": (10, 10), "range": [(0, 5), (0, 10)]},
+            xr.DataArray(
+                np.where(np.eye(10), 10.0, np.nan)[None, :],
+                dims=["unit", "feature0", "feature1"],
+                coords={
+                    "unit": [1],
+                    "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25,
+                    "feature1": np.linspace(0, 10.0, 11)[:-1] + 0.5,
+                },
+            ),
+        ),
+        # single unit, single feature, specified epochs (smaller)
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"epochs": nap.IntervalSet([0.0, 50.0])},
+            xr.DataArray(
+                np.full((1, 10), 10.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+            ),
+        ),
+        # single unit, single feature, specified epochs (larger)
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"epochs": nap.IntervalSet([0.0, 200.0])},
+            xr.DataArray(
+                np.full((1, 10), 10.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+            ),
+        ),
+        # single unit, single feature, specified epochs (multiple)
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"epochs": nap.IntervalSet([0.0, 50.0], [20.0, 70.0])},
+            xr.DataArray(
+                np.full((1, 10), 10.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+            ),
+        ),
+        # single unit, single feature, specified feature name
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"feature_names": ["f0"]},
+            xr.DataArray(
+                np.full((1, 10), 10.0),
+                dims=["unit", "f0"],
+                coords={"unit": [1], "f0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+            ),
+        ),
+        # single unit, multiple features, specified feature names
+        (
+            get_group_n(1),
+            get_features_n(2),
+            {"feature_names": ["f0", "f1"]},
+            xr.DataArray(
+                np.where(np.eye(10), 10.0, np.nan)[None, :],
+                dims=["unit", "f0", "f1"],
+                coords={
+                    "unit": [1],
+                    "f0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                    "f1": np.linspace(0, 19.8, 11)[:-1] + 0.99,
+                },
+            ),
+        ),
+        # single unit, single feature, return_pandas=True
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_pandas": True},
+            xr.DataArray(
+                np.full((1, 10), 10.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+            )
+            .to_pandas()
+            .T,
+        ),
+    ],
+)
+def test_compute_tuning_curves(data, features, kwargs, expected):
+    tcs = nap.compute_tuning_curves(data, features, **kwargs)
+    if isinstance(expected, pd.DataFrame):
+        pd.testing.assert_frame_equal(tcs, expected)
+    else:
+        xr.testing.assert_allclose(tcs, expected)
+
+
+# ------------------------------------------------------------------------------------
+# DISCRETE TUNING CURVE TESTS
+# ------------------------------------------------------------------------------------
+
+
 def get_group():
     return nap.TsGroup({0: nap.Ts(t=np.arange(0, 100))})
 
@@ -75,80 +687,29 @@ def test_compute_discrete_tuning_curves_errors(group, dict_ep, expected_exceptio
         nap.compute_discrete_tuning_curves(group, dict_ep)
 
 
+@pytest.mark.parametrize("group", [get_group()])
 @pytest.mark.parametrize(
-    "group, feature, nb_bins, ep, minmax, expected_exception",
+    "dict_ep",
     [
-        ("a", get_feature(), 10, get_ep(), (0, 1), "group should be a TsGroup."),
-        (
-            get_group(),
-            "a",
-            10,
-            get_ep(),
-            (0, 1),
-            r"feature should be a Tsd \(or TsdFrame with 1 column only\)",
-        ),
-        (
-            get_group(),
-            get_feature(),
-            "a",
-            get_ep(),
-            (0, 1),
-            r"nb_bins should be of type int \(or tuple with \(int, int\) for 2D tuning curves\).",
-        ),
-        (get_group(), get_feature(), 10, "a", (0, 1), r"ep should be an IntervalSet"),
-        (
-            get_group(),
-            get_feature(),
-            10,
-            get_ep(),
-            1,
-            r"minmax should be a tuple\/list of 2 numbers",
-        ),
+        {0: nap.IntervalSet(start=0, end=50), 1: nap.IntervalSet(start=50, end=100)},
+        {
+            "0": nap.IntervalSet(start=0, end=50),
+            "1": nap.IntervalSet(start=50, end=100),
+        },
     ],
 )
-def test_compute_1d_tuning_curves_errors(
-    group, feature, nb_bins, ep, minmax, expected_exception
-):
-    with pytest.raises(TypeError, match=expected_exception):
-        nap.compute_1d_tuning_curves(group, feature, nb_bins, ep, minmax)
+def test_compute_discrete_tuning_curves(group, dict_ep):
+    tc = nap.compute_discrete_tuning_curves(group, dict_ep)
+    assert len(tc) == 2
+    assert list(tc.columns) == list(group.keys())
+    assert list(tc.index.values) == list(dict_ep.keys())
+    np.testing.assert_almost_equal(tc.iloc[0, 0], 51 / 50)
+    np.testing.assert_almost_equal(tc.iloc[1, 0], 1)
 
 
-@pytest.mark.parametrize(
-    "group, features, nb_bins, ep, minmax, expected_exception",
-    [
-        ("a", get_features(), 10, get_ep(), (0, 1), "group should be a TsGroup."),
-        (
-            get_group(),
-            "a",
-            10,
-            get_ep(),
-            (0, 1),
-            r"features should be a TsdFrame with 2 columns",
-        ),
-        (
-            get_group(),
-            get_features(),
-            "a",
-            get_ep(),
-            (0, 1),
-            r"nb_bins should be of type int \(or tuple with \(int, int\) for 2D tuning curves\).",
-        ),
-        (get_group(), get_features(), 10, "a", (0, 1), r"ep should be an IntervalSet"),
-        (
-            get_group(),
-            get_features(),
-            10,
-            get_ep(),
-            1,
-            r"minmax should be a tuple\/list of 2 numbers",
-        ),
-    ],
-)
-def test_compute_2d_tuning_curves_errors(
-    group, features, nb_bins, ep, minmax, expected_exception
-):
-    with pytest.raises(TypeError, match=expected_exception):
-        nap.compute_2d_tuning_curves(group, features, nb_bins, ep, minmax)
+# ------------------------------------------------------------------------------------
+# MUTUAL INFORMATION TESTS
+# ------------------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -253,285 +814,6 @@ def test_compute_2d_mutual_info_errors(
 ):
     with pytest.raises(TypeError, match=expected_exception):
         nap.compute_2d_mutual_info(dict_tc, features, ep, minmax, bitssec)
-
-
-@pytest.mark.parametrize(
-    "tsdframe, feature, nb_bins, ep, minmax, expected_exception",
-    [
-        (
-            "a",
-            get_feature(),
-            10,
-            get_ep(),
-            (0, 1),
-            "Argument tsdframe should be of type Tsd or TsdFrame.",
-        ),
-        (
-            get_tsdframe(),
-            "a",
-            10,
-            get_ep(),
-            (0, 1),
-            r"feature should be a Tsd \(or TsdFrame with 1 column only\)",
-        ),
-        (
-            get_tsdframe(),
-            get_feature(),
-            "a",
-            get_ep(),
-            (0, 1),
-            r"nb_bins should be of type int \(or tuple with \(int, int\) for 2D tuning curves\).",
-        ),
-        (
-            get_tsdframe(),
-            get_feature(),
-            10,
-            "a",
-            (0, 1),
-            r"ep should be an IntervalSet",
-        ),
-        (
-            get_tsdframe(),
-            get_feature(),
-            10,
-            get_ep(),
-            1,
-            r"minmax should be a tuple\/list of 2 numbers",
-        ),
-    ],
-)
-def test_compute_1d_tuning_curves_continuous_errors(
-    tsdframe, feature, nb_bins, ep, minmax, expected_exception
-):
-    with pytest.raises(TypeError, match=expected_exception):
-        nap.compute_1d_tuning_curves_continuous(tsdframe, feature, nb_bins, ep, minmax)
-
-
-@pytest.mark.parametrize(
-    "tsdframe, features, nb_bins, ep, minmax, expected_exception",
-    [
-        (
-            "a",
-            get_features(),
-            10,
-            get_ep(),
-            (0, 1),
-            "Argument tsdframe should be of type Tsd or TsdFrame.",
-        ),
-        (
-            get_tsdframe(),
-            "a",
-            10,
-            get_ep(),
-            (0, 1),
-            r"features should be a TsdFrame with 2 columns",
-        ),
-        (
-            get_tsdframe(),
-            get_features(),
-            "a",
-            get_ep(),
-            (0, 1),
-            r"nb_bins should be of type int \(or tuple with \(int, int\) for 2D tuning curves\).",
-        ),
-        (
-            get_tsdframe(),
-            get_features(),
-            10,
-            "a",
-            (0, 1),
-            r"ep should be an IntervalSet",
-        ),
-        (
-            get_tsdframe(),
-            get_features(),
-            10,
-            get_ep(),
-            1,
-            r"minmax should be a tuple\/list of 2 numbers",
-        ),
-    ],
-)
-def test_compute_2d_tuning_curves_continuous_errors(
-    tsdframe, features, nb_bins, ep, minmax, expected_exception
-):
-    with pytest.raises(TypeError, match=expected_exception):
-        nap.compute_2d_tuning_curves_continuous(tsdframe, features, nb_bins, ep, minmax)
-
-
-########################
-# ValueError test
-########################
-@pytest.mark.parametrize(
-    "func, args, minmax, expected",
-    [
-        (
-            nap.compute_1d_tuning_curves,
-            (get_group(), get_feature(), 10),
-            (0, 1, 2),
-            "minmax should be of length 2.",
-        ),
-        (
-            nap.compute_1d_tuning_curves_continuous,
-            (get_tsdframe(), get_feature(), 10),
-            (0, 1, 2),
-            "minmax should be of length 2.",
-        ),
-        (
-            nap.compute_2d_tuning_curves,
-            (get_group(), get_features(), 10),
-            (0, 1, 2),
-            "minmax should be of length 4.",
-        ),
-        (
-            nap.compute_2d_tuning_curves_continuous,
-            (get_tsdframe(), get_features(), 10),
-            (0, 1, 2),
-            "minmax should be of length 4.",
-        ),
-        (
-            nap.compute_2d_tuning_curves,
-            (get_group(), nap.TsdFrame(t=np.arange(10), d=np.ones((10, 3))), 10),
-            (0, 1),
-            "features should have 2 columns only.",
-        ),
-        (
-            nap.compute_1d_tuning_curves,
-            (get_group(), nap.TsdFrame(t=np.arange(10), d=np.ones((10, 3))), 10),
-            (0, 1),
-            r"feature should be a Tsd \(or TsdFrame with 1 column only\)",
-        ),
-        (
-            nap.compute_2d_tuning_curves,
-            (get_group(), get_features(), (0, 1, 2)),
-            (0, 1, 2, 3),
-            r"nb_bins should be of type int \(or tuple with \(int, int\) for 2D tuning curves\).",
-        ),
-        (
-            nap.compute_2d_tuning_curves_continuous,
-            (get_tsdframe(), get_features(), (0, 1, 2)),
-            (0, 1, 2, 3),
-            r"nb_bins should be of type int \(or tuple with \(int, int\) for 2D tuning curves\).",
-        ),
-    ],
-)
-def test_compute_tuning_curves_value_error(func, args, minmax, expected):
-    with pytest.raises(ValueError, match=expected):
-        func(*args, minmax=minmax)
-
-
-########################
-# Normal test
-########################
-@pytest.mark.parametrize("group", [get_group()])
-@pytest.mark.parametrize(
-    "dict_ep",
-    [
-        {0: nap.IntervalSet(start=0, end=50), 1: nap.IntervalSet(start=50, end=100)},
-        {
-            "0": nap.IntervalSet(start=0, end=50),
-            "1": nap.IntervalSet(start=50, end=100),
-        },
-    ],
-)
-def test_compute_discrete_tuning_curves(group, dict_ep):
-    tc = nap.compute_discrete_tuning_curves(group, dict_ep)
-    assert len(tc) == 2
-    assert list(tc.columns) == list(group.keys())
-    assert list(tc.index.values) == list(dict_ep.keys())
-    np.testing.assert_almost_equal(tc.iloc[0, 0], 51 / 50)
-    np.testing.assert_almost_equal(tc.iloc[1, 0], 1)
-
-
-@pytest.mark.filterwarnings("ignore")
-@pytest.mark.parametrize(
-    "args, kwargs, expected",
-    [
-        ((get_group(), get_feature(), 10), {}, np.array([10.0] + [0.0] * 9)[:, None]),
-        (
-            (get_group(), get_feature(), 10),
-            {"ep": get_ep()},
-            np.array([10.0] + [0.0] * 9)[:, None],
-        ),
-        (
-            (get_group(), get_feature(), 10),
-            {"minmax": (0, 0.9)},
-            np.array([10.0] + [0.0] * 9)[:, None],
-        ),
-        (
-            (get_group(), get_feature(), 20),
-            {"minmax": (0, 1.9)},
-            np.array([10.0] + [0.0] * 9 + [np.nan] * 10)[:, None],
-        ),
-    ],
-)
-def test_compute_1d_tuning_curves(args, kwargs, expected):
-    tc = nap.compute_1d_tuning_curves(*args, **kwargs)
-    # Columns
-    assert list(tc.columns) == list(args[0].keys())
-
-    # Index
-    assert len(tc) == args[2]
-    if "minmax" in kwargs:
-        tmp = np.linspace(kwargs["minmax"][0], kwargs["minmax"][1], args[2] + 1)
-    else:
-        tmp = np.linspace(np.min(args[1]), np.max(args[1]), args[2] + 1)
-    np.testing.assert_almost_equal(tmp[0:-1] + np.diff(tmp) / 2, tc.index.values)
-
-    # Array
-    np.testing.assert_almost_equal(tc.values, expected)
-
-
-@pytest.mark.filterwarnings("ignore")
-@pytest.mark.parametrize(
-    "args, kwargs, expected",
-    [
-        ((get_group(), get_features(), 10), {}, np.ones((10, 10)) * 0.5),
-        ((get_group(), get_features(), (10, 10)), {}, np.ones((10, 10)) * 0.5),
-        (
-            (get_group(), get_features(), 10),
-            {"ep": nap.IntervalSet(0, 400)},
-            np.ones((10, 10)) * 0.25,
-        ),
-        (
-            (get_group(), get_features(), 10),
-            {"minmax": (0, 100, 0, 100)},
-            np.ones((10, 10)) * 0.5,
-        ),
-        (
-            (get_group(), get_features(), 10),
-            {"minmax": (0, 200, 0, 100)},
-            np.vstack((np.ones((5, 10)) * 0.5, np.ones((5, 10)) * np.nan)),
-        ),
-    ],
-)
-def test_compute_2d_tuning_curves(args, kwargs, expected):
-    tc, xy = nap.compute_2d_tuning_curves(*args, **kwargs)
-    assert isinstance(tc, dict)
-
-    # Keys
-    assert list(tc.keys()) == list(args[0].keys())
-
-    # Index
-    assert isinstance(xy, list)
-    assert len(xy) == 2
-    nb_bins = args[2]
-    if isinstance(args[2], int):
-        nb_bins = (args[2], args[2])
-    if "minmax" in kwargs:
-        tmp1 = np.linspace(kwargs["minmax"][0], kwargs["minmax"][1], nb_bins[0] + 1)
-        tmp2 = np.linspace(kwargs["minmax"][2], kwargs["minmax"][3], nb_bins[1] + 1)
-    else:
-        tmp1 = np.linspace(np.min(args[1][:, 0]), np.max(args[1][:, 0]), nb_bins[0] + 1)
-        tmp2 = np.linspace(np.min(args[1][:, 1]), np.max(args[1][:, 1]), nb_bins[1] + 1)
-
-    np.testing.assert_almost_equal(tmp1[0:-1] + np.diff(tmp1) / 2, xy[0])
-    np.testing.assert_almost_equal(tmp2[0:-1] + np.diff(tmp2) / 2, xy[1])
-
-    # Values
-    for i in tc.keys():
-        assert tc[i].shape == nb_bins
-        np.testing.assert_almost_equal(tc[i], expected)
 
 
 @pytest.mark.filterwarnings("ignore")
@@ -663,6 +945,102 @@ def test_compute_2d_mutual_info(args, kwargs, expected):
     np.testing.assert_approx_equal(si.values, expected)
 
 
+# ------------------------------------------------------------------------------------
+# OLD TUNING CURVE TESTS
+# ------------------------------------------------------------------------------------
+
+
+@pytest.mark.filterwarnings("ignore")
+@pytest.mark.parametrize(
+    "args, kwargs, expected",
+    [
+        ((get_group(), get_feature(), 10), {}, np.array([10.0] + [0.0] * 9)[:, None]),
+        (
+            (get_group(), get_feature(), 10),
+            {"ep": get_ep()},
+            np.array([10.0] + [0.0] * 9)[:, None],
+        ),
+        (
+            (get_group(), get_feature(), 10),
+            {"minmax": (0, 0.9)},
+            np.array([10.0] + [0.0] * 9)[:, None],
+        ),
+        (
+            (get_group(), get_feature(), 20),
+            {"minmax": (0, 1.9)},
+            np.array([10.0] + [0.0] * 9 + [np.nan] * 10)[:, None],
+        ),
+    ],
+)
+def test_compute_1d_tuning_curves(args, kwargs, expected):
+    tc = nap.compute_1d_tuning_curves(*args, **kwargs)
+    # Columns
+    assert list(tc.columns) == list(args[0].keys())
+
+    # Index
+    assert len(tc) == args[2]
+    if "minmax" in kwargs:
+        tmp = np.linspace(kwargs["minmax"][0], kwargs["minmax"][1], args[2] + 1)
+    else:
+        tmp = np.linspace(np.min(args[1]), np.max(args[1]), args[2] + 1)
+    np.testing.assert_almost_equal(tmp[0:-1] + np.diff(tmp) / 2, tc.index.values)
+
+    # Array
+    np.testing.assert_almost_equal(tc.values, expected)
+
+
+@pytest.mark.filterwarnings("ignore")
+@pytest.mark.parametrize(
+    "args, kwargs, expected",
+    [
+        ((get_group(), get_features(), 10), {}, np.ones((10, 10)) * 0.5),
+        ((get_group(), get_features(), (10, 10)), {}, np.ones((10, 10)) * 0.5),
+        (
+            (get_group(), get_features(), 10),
+            {"ep": nap.IntervalSet(0, 400)},
+            np.ones((10, 10)) * 0.5,
+        ),
+        (
+            (get_group(), get_features(), 10),
+            {"minmax": (0, 100, 0, 100)},
+            np.ones((10, 10)) * 0.5,
+        ),
+        (
+            (get_group(), get_features(), 10),
+            {"minmax": (0, 200, 0, 100)},
+            np.vstack((np.ones((5, 10)) * 0.5, np.ones((5, 10)) * np.nan)),
+        ),
+    ],
+)
+def test_compute_2d_tuning_curves(args, kwargs, expected):
+    tc, xy = nap.compute_2d_tuning_curves(*args, **kwargs)
+    assert isinstance(tc, dict)
+
+    # Keys
+    assert list(tc.keys()) == list(args[0].keys())
+
+    # Index
+    assert isinstance(xy, list)
+    assert len(xy) == 2
+    nb_bins = args[2]
+    if isinstance(args[2], int):
+        nb_bins = (args[2], args[2])
+    if "minmax" in kwargs:
+        tmp1 = np.linspace(kwargs["minmax"][0], kwargs["minmax"][1], nb_bins[0] + 1)
+        tmp2 = np.linspace(kwargs["minmax"][2], kwargs["minmax"][3], nb_bins[1] + 1)
+    else:
+        tmp1 = np.linspace(np.min(args[1][:, 0]), np.max(args[1][:, 0]), nb_bins[0] + 1)
+        tmp2 = np.linspace(np.min(args[1][:, 1]), np.max(args[1][:, 1]), nb_bins[1] + 1)
+
+    np.testing.assert_almost_equal(tmp1[0:-1] + np.diff(tmp1) / 2, xy[0])
+    np.testing.assert_almost_equal(tmp2[0:-1] + np.diff(tmp2) / 2, xy[1])
+
+    # Values
+    for i in tc.keys():
+        assert tc[i].shape == nb_bins
+        np.testing.assert_almost_equal(tc[i], expected)
+
+
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
     "args, kwargs, expected",
@@ -710,12 +1088,13 @@ def test_compute_1d_tuning_curves_continuous(args, kwargs, expected):
     if "minmax" in kwargs:
         tmp = np.linspace(kwargs["minmax"][0], kwargs["minmax"][1], nb_bins + 1)
     else:
-        tmp = np.linspace(np.min(args[1]), np.max(args[1]), nb_bins + 1)
+        tmp = np.linspace(np.min(feature), np.max(feature), nb_bins + 1)
     np.testing.assert_almost_equal(tmp[0:-1] + np.diff(tmp) / 2, tc.index.values)
     # Array
     np.testing.assert_almost_equal(tc.values, expected)
 
 
+@pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
     "tsdframe, nb_bins, kwargs, expected",
     [
@@ -736,13 +1115,13 @@ def test_compute_1d_tuning_curves_continuous(args, kwargs, expected):
             ),
             2,
             {},
-            {"x": np.array([[1, 0], [0, 0]]), "y": np.array([[2, 0], [0, 0]])},
+            {"x": np.ones((2, 2)), "y": np.ones((2, 2)) * 2},
         ),
         (
             nap.Tsd(t=np.arange(0, 100), d=np.hstack((np.ones((100,)) * 2))),
             2,
             {},
-            {0: np.array([[2, 0], [0, 0]])},
+            {0: np.ones((2, 2)) * 2},
         ),
         (
             nap.TsdFrame(
@@ -751,7 +1130,7 @@ def test_compute_1d_tuning_curves_continuous(args, kwargs, expected):
             ),
             (1, 2),
             {},
-            {0: np.array([[1.0, 0.0]]), 1: np.array([[2.0, 0.0]])},
+            {0: np.array([[1.0, 1.0]]), 1: np.array([[2.0, 2.0]])},
         ),
         (
             nap.TsdFrame(
