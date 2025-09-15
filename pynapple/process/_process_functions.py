@@ -253,6 +253,6 @@ def _perievent_continuous(
             for i, slc in enumerate(slice_idx[col_idx]):
                 new_idx[:, i] = np.arange(slc[0], slc[1])
 
-                new_data_array[st : st + w_size, col_idx2] = data_array[new_idx]
+            new_data_array[w_start : w_start + w_size, col_idx] = data_array[new_idx]
 
         return new_data_array
