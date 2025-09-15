@@ -248,7 +248,6 @@ def _perievent_continuous(
 
         all_w_sizes = np.unique(w_sizes)
 
-        for w_size in all_w_sizes:
         unique_pairs = np.unique(np.column_stack([w_sizes, w_starts]), axis=0)
         for w_size, w_start in unique_pairs:
             col_idx = (w_sizes == w_size) & (w_starts == w_start)
