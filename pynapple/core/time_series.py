@@ -1535,7 +1535,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                             np.hstack(
                                 (
                                     self.index[0:n_rows, None],
-                                    np.round(self.values[0:n_rows, 0:max_cols], 5),
+                                    self.values[0:n_rows, 0:max_cols],
                                     ends,
                                 ),
                                 dtype=object,
@@ -1543,7 +1543,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                             np.array(
                                 [
                                     ["..."]
-                                    + ["..."] * np.minimum(max_cols, self.shape[1])
+                                    + [None] * np.minimum(max_cols, self.shape[1])
                                     + end
                                 ],
                                 dtype=object,
@@ -1551,7 +1551,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                             np.hstack(
                                 (
                                     self.index[-n_rows:, None],
-                                    np.round(self.values[-n_rows:, 0:max_cols], 5),
+                                    self.values[-n_rows:, 0:max_cols],
                                     ends,
                                 ),
                                 dtype=object,
@@ -1563,7 +1563,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     table = np.hstack(
                         (
                             self.index[:, None],
-                            np.round(self.values[:, 0:max_cols], 5),
+                            self.values[:, 0:max_cols],
                             ends,
                         ),
                         dtype=object,
