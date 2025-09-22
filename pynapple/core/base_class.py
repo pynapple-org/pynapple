@@ -215,7 +215,7 @@ class _Base(abc.ABC):
 
         return data._define_instance(time_index=t, time_support=time_support, values=d)
 
-    def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
+    def count(self, bins=None, ep=None, time_units="s", dtype=None):
         """
         Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
         You can call this function in multiple ways :
