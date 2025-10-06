@@ -56,7 +56,7 @@ def _validate_tuning_inputs(func):
             if not isinstance(kwargs["dict_ep"], dict):
                 raise TypeError("dict_ep should be a dictionary of IntervalSet")
             if not all(
-                [isinstance(v, nap.IntervalSet) for v in kwargs["dict_ep"].values()]
+                isinstance(v, nap.IntervalSet) for v in kwargs["dict_ep"].values()
             ):
                 raise TypeError("dict_ep argument should contain only IntervalSet.")
         if "tc" in kwargs:
@@ -655,7 +655,7 @@ def compute_2d_mutual_info_old(dict_tc, features, ep=None, minmax=None, bitssec=
 
 def compute_mutual_information(tuning_curves):
     """
-    Mutual information of a tuning curve.
+    Mutual information of an N-dimensional tuning curve.
 
     See:
 
