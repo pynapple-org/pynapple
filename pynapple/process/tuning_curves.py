@@ -67,107 +67,108 @@ def compute_tuning_curves(
     --------
     In the simplest case, we can pass a group of spikes per neuron and a single feature:
 
-    >>> import pynapple as nap
-    >>> import numpy as np; np.random.seed(42)
-    >>> group = {
-    ...     1: nap.Ts(np.arange(0, 100, 0.1)),
-    ...     2: nap.Ts(np.arange(0, 100, 0.2))
-    ... }
-    >>> feature = nap.Tsd(d=np.arange(0, 100, 0.1) % 1, t=np.arange(0, 100, 0.1))
-    >>> tcs = nap.compute_tuning_curves(group, feature, bins=10)
-    >>> tcs
-    <xarray.DataArray (unit: 2, 0: 10)> Size: 160B
-    array([[10., 10., 10., 10., 10., 10., 10., 10., 10., 10.],
-           [10.,  0., 10.,  0., 10.,  0., 10.,  0., 10.,  0.]])
-    Coordinates:
-      * unit     (unit) int64 16B 1 2
-      * 0        (0) float64 80B 0.045 0.135 0.225 0.315 ... 0.585 0.675 0.765 0.855
-    Attributes:
-        occupancy:  [100. 100. 100. 100. 100. 100. 100. 100. 100. 100.]
-        bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...
+        >>> import pynapple as nap
+        >>> import numpy as np; np.random.seed(42)
+        >>> group = nap.TsGroup({
+        ...     1: nap.Ts(np.arange(0, 100, 0.1)),
+        ...     2: nap.Ts(np.arange(0, 100, 0.2))
+        ... })
+        >>> feature = nap.Tsd(d=np.arange(0, 100, 0.1) % 1, t=np.arange(0, 100, 0.1))
+        >>> tcs = nap.compute_tuning_curves(group, feature, bins=10)
+        >>> tcs
+        <xarray.DataArray (unit: 2, 0: 10)> Size: 160B
+        array([[10., 10., 10., 10., 10., 10., 10., 10., 10., 10.],
+               [10.,  0., 10.,  0., 10.,  0., 10.,  0., 10.,  0.]])
+        Coordinates:
+          * unit     (unit) int64 16B 1 2
+          * 0        (0) float64 80B 0.045 0.135 0.225 0.315 ... 0.585 0.675 0.765 0.855
+        Attributes:
+            occupancy:  [100. 100. 100. 100. 100. 100. 100. 100. 100. 100.]
+            bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...
 
     The function can also take multiple features, in which case it computes n-dimensional tuning curves.
     We can specify the number of bins for each feature:
 
-    >>> features = nap.TsdFrame(
-    ...     d=np.stack(
-    ...         [
-    ...             np.arange(0, 100, 0.1) % 1,
-    ...             np.arange(0, 100, 0.1) % 2
-    ...         ],
-    ...         axis=1
-    ...     ),
-    ...     t=np.arange(0, 100, 0.1)
-    ... )
-    >>> tcs = nap.compute_tuning_curves(group, features, bins=[5, 3])
-    >>> tcs
-    <xarray.DataArray (unit: 2, 0: 5, 1: 3)> Size: 240B
-    array([[[10., 10., nan],
-            [10., 10., 10.],
-            [10., nan, 10.],
-            [10., 10., 10.],
-            [nan, 10., 10.]],
-    ...
-           [[ 5.,  5., nan],
-            [ 5., 10.,  0.],
-            [ 5., nan,  5.],
-            [10.,  0.,  5.],
-            [nan,  5.,  5.]]])
-    Coordinates:
-      * unit     (unit) int64 16B 1 2
-      * 0        (0) float64 40B 0.09 0.27 0.45 0.63 0.81
-      * 1        (1) float64 24B 0.3167 0.95 1.583
-    Attributes:
-        occupancy:  [[100. 100.  nan]\\n [100.  50.  50.]\\n [100.  nan 100.]\\n [ 5...
-        bin_edges:  [array([0.  , 0.18, 0.36, 0.54, 0.72, 0.9 ]), array([0.      ...
+        >>> features = nap.TsdFrame(
+        ...     d=np.stack(
+        ...         [
+        ...             np.arange(0, 100, 0.1) % 1,
+        ...             np.arange(0, 100, 0.1) % 2
+        ...         ],
+        ...         axis=1
+        ...     ),
+        ...     t=np.arange(0, 100, 0.1)
+        ... )
+        >>> tcs = nap.compute_tuning_curves(group, features, bins=[5, 3])
+        >>> tcs
+        <xarray.DataArray (unit: 2, 0: 5, 1: 3)> Size: 240B
+        array([[[10., 10., nan],
+                [10., 10., 10.],
+                [10., nan, 10.],
+                [10., 10., 10.],
+                [nan, 10., 10.]],
+        ...
+               [[ 5.,  5., nan],
+                [ 5., 10.,  0.],
+                [ 5., nan,  5.],
+                [10.,  0.,  5.],
+                [nan,  5.,  5.]]])
+        Coordinates:
+          * unit     (unit) int64 16B 1 2
+          * 0        (0) float64 40B 0.09 0.27 0.45 0.63 0.81
+          * 1        (1) float64 24B 0.3167 0.95 1.583
+        Attributes:
+            occupancy:  [[100. 100.  nan]\\n [100.  50.  50.]\\n [100.  nan 100.]\\n [ 5...
+            bin_edges:  [array([0.  , 0.18, 0.36, 0.54, 0.72, 0.9 ]), array([0.      ...
 
     Or even specify the bin edges directly:
 
-    >>> tcs = nap.compute_tuning_curves(
-    ...     group,
-    ...     features,
-    ...     bins=[np.linspace(0, 1, 5), np.linspace(0, 2, 3)]
-    ... )
-    >>> tcs
-    <xarray.DataArray (unit: 2, 0: 4, 1: 2)> Size: 128B
-    array([[[10.        , 10.        ],
-            [10.        , 10.        ],
-            [10.        , 10.        ],
-            [10.        , 10.        ]],
-    ...
-           [[ 6.66666667,  6.66666667],
-            [ 5.        ,  5.        ],
-            [ 3.33333333,  3.33333333],
-            [ 5.        ,  5.        ]]])
-    Coordinates:
-      * unit     (unit) int64 16B 1 2
-      * 0        (0) float64 32B 0.125 0.375 0.625 0.875
-      * 1        (1) float64 16B 0.5 1.5
-    Attributes:
-        occupancy:  [[150. 150.]\\n [100. 100.]\\n [150. 150.]\\n [100. 100.]]
-        bin_edges:  [array([0.  , 0.25, 0.5 , 0.75, 1.  ]), array([0., 1., 2.])]
+        >>> tcs = nap.compute_tuning_curves(
+        ...     group,
+        ...     features,
+        ...     bins=[np.linspace(0, 1, 5), np.linspace(0, 2, 3)]
+        ... )
+        >>> tcs
+        <xarray.DataArray (unit: 2, 0: 4, 1: 2)> Size: 128B
+        array([[[10.        , 10.        ],
+                [10.        , 10.        ],
+                [10.        , 10.        ],
+                [10.        , 10.        ]],
+        ...
+               [[ 6.66666667,  6.66666667],
+                [ 5.        ,  5.        ],
+                [ 3.33333333,  3.33333333],
+                [ 5.        ,  5.        ]]])
+        Coordinates:
+          * unit     (unit) int64 16B 1 2
+          * 0        (0) float64 32B 0.125 0.375 0.625 0.875
+          * 1        (1) float64 16B 0.5 1.5
+        Attributes:
+            occupancy:  [[150. 150.]\\n [100. 100.]\\n [150. 150.]\\n [100. 100.]]
+            bin_edges:  [array([0.  , 0.25, 0.5 , 0.75, 1.  ]), array([0., 1., 2.])]
 
     In all of these cases, it is also possible to pass continuous values instead of spikes (e.g. calcium imaging data):
 
-    >>> frame = nap.TsdFrame(d=np.random.rand(2000, 3), t=np.arange(0, 100, 0.05))
-    >>> tcs = nap.compute_tuning_curves(frame, feature, bins=10)
-    >>> tcs
-    <xarray.DataArray (unit: 3, 0: 10)> Size: 240B
-    array([[0.49147343, 0.50190395, 0.50971339, 0.50128013, 0.54332711,
-            0.49712328, 0.49594611, 0.5110517 , 0.52247351, 0.52057658],
-           [0.51132036, 0.46410557, 0.47732505, 0.49830908, 0.53523019,
-            0.53099429, 0.48668499, 0.44198555, 0.49222208, 0.47453398],
-           [0.46591801, 0.50662914, 0.46875882, 0.48734997, 0.51836574,
-            0.50722266, 0.48943577, 0.49730095, 0.47944075, 0.48623693]])
-    Coordinates:
-      * unit     (unit) int64 24B 0 1 2
-      * 0        (0) float64 80B 0.045 0.135 0.225 0.315 ... 0.585 0.675 0.765 0.855
-    Attributes:
-        occupancy:  [100. 100. 100. 100. 100. 100. 100. 100. 100. 100.]
-        bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...
+        >>> frame = nap.TsdFrame(d=np.random.rand(2000, 3), t=np.arange(0, 100, 0.05))
+        >>> tcs = nap.compute_tuning_curves(frame, feature, bins=10)
+        >>> tcs
+        <xarray.DataArray (unit: 3, 0: 10)> Size: 240B
+        array([[0.49147343, 0.50190395, 0.50971339, 0.50128013, 0.54332711,
+                0.49712328, 0.49594611, 0.5110517 , 0.52247351, 0.52057658],
+               [0.51132036, 0.46410557, 0.47732505, 0.49830908, 0.53523019,
+                0.53099429, 0.48668499, 0.44198555, 0.49222208, 0.47453398],
+               [0.46591801, 0.50662914, 0.46875882, 0.48734997, 0.51836574,
+                0.50722266, 0.48943577, 0.49730095, 0.47944075, 0.48623693]])
+        Coordinates:
+          * unit     (unit) int64 24B 0 1 2
+          * 0        (0) float64 80B 0.045 0.135 0.225 0.315 ... 0.585 0.675 0.765 0.855
+        Attributes:
+            occupancy:  [100. 100. 100. 100. 100. 100. 100. 100. 100. 100.]
+            bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...
     """
 
     # check data
+    print(type(data))
     if not isinstance(data, (nap.TsdFrame, nap.TsGroup, nap.Ts, nap.Tsd)):
         raise TypeError("data should be a TsdFrame, TsGroup, Ts, or Tsd.")
 
