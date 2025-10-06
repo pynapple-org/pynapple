@@ -350,7 +350,7 @@ dict_ep =  {
 }
 ```
 
-[`nap.compute_discrete_tuning_curves`](pynapple.process.tuning_curves_old.compute_discrete_tuning_curves) takes a `TsGroup` for spiking activity and a dictionary of epochs. 
+[`nap.compute_discrete_tuning_curves`](pynapple.process.tuning_curves.compute_discrete_tuning_curves) takes a `TsGroup` for spiking activity and a dictionary of epochs. 
 The output is a pandas DataFrame where each column is a unit in the `TsGroup` and each row is one `IntervalSet`.
 The output will be the mean firing rate of the neuron during this set of intervals.
 
