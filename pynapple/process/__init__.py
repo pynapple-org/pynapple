@@ -29,7 +29,6 @@ from .spectrum import (
     compute_power_spectral_density,
 )
 from .tuning_curves import (
-    compute_mutual_information,
     compute_1d_mutual_info,
     compute_1d_tuning_curves,
     compute_1d_tuning_curves_continuous,
@@ -37,6 +36,7 @@ from .tuning_curves import (
     compute_2d_tuning_curves,
     compute_2d_tuning_curves_continuous,
     compute_discrete_tuning_curves,
+    compute_mutual_information,
     compute_tuning_curves,
 )
 from .warping import build_tensor, warp_tensor
