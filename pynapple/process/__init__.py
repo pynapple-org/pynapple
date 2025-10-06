@@ -4,7 +4,8 @@ from .correlograms import (
     compute_eventcorrelogram,
     compute_isi_distribution,
 )
-from .decoding import decode_1d, decode_2d, decode_bayes, decode_template
+from .decoding import decode_bayes, decode_template
+from .decoding_old import decode_1d, decode_2d
 from .filtering import (
     apply_bandpass_filter,
     apply_bandstop_filter,
