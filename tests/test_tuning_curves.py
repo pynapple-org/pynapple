@@ -748,7 +748,7 @@ def get_testing_set(n_units=1, n_features=1, pattern="uniform"):
         attrs={"occupancy": np.ones(shape[1:]) / np.prod(shape[1:])},
     )
 
-    MI = xr.DataArray(
+    MI = pd.DataFrame(
         data=np.stack(
             [
                 np.full(n_units, expected_mi_per_sec),
@@ -756,11 +756,8 @@ def get_testing_set(n_units=1, n_features=1, pattern="uniform"):
             ],
             axis=1,
         ),
-        coords={
-            "unit": coords["unit"],
-            "bits": ["bits/sec", "bits/spike"],
-        },
-        dims=["unit", "bits"],
+        index=coords["unit"],
+        columns=["bits/sec", "bits/spike"],
     )
 
     return tuning_curves, MI
@@ -814,7 +811,7 @@ def test_compute_mutual_information_errors(tuning_curves, expectation):
 def test_compute_mutual_information(n_units, n_features, pattern):
     tuning_curves, expectation = get_testing_set(n_units, n_features, pattern)
     actual = nap.compute_mutual_information(tuning_curves)
-    xr.testing.assert_allclose(actual, expectation)
+    pd.testing.assert_frame_equal(actual, expectation)
 
 
 @pytest.mark.parametrize(
