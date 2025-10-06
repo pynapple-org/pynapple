@@ -301,7 +301,7 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
 
 
 @pytest.mark.parametrize(
-    "data, features, kwargs, expected",
+    "data, features, kwargs, expectation",
     [
         # single rate unit, single feature
         (
@@ -611,12 +611,12 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
         ),
     ],
 )
-def test_compute_tuning_curves(data, features, kwargs, expected):
+def test_compute_tuning_curves(data, features, kwargs, expectation):
     tcs = nap.compute_tuning_curves(data, features, **kwargs)
-    if isinstance(expected, pd.DataFrame):
-        pd.testing.assert_frame_equal(tcs, expected)
+    if isinstance(expectation, pd.DataFrame):
+        pd.testing.assert_frame_equal(tcs, expectation)
     else:
-        xr.testing.assert_allclose(tcs, expected)
+        xr.testing.assert_allclose(tcs, expectation)
 
 
 # ------------------------------------------------------------------------------------
@@ -656,7 +656,7 @@ def get_tsdframe():
 
 
 @pytest.mark.parametrize(
-    "group, dict_ep, expected_exception",
+    "group, dict_ep, expectation",
     [
         (
             "a",
@@ -682,8 +682,8 @@ def get_tsdframe():
         ),
     ],
 )
-def test_compute_discrete_tuning_curves_errors(group, dict_ep, expected_exception):
-    with expected_exception:
+def test_compute_discrete_tuning_curves_errors(group, dict_ep, expectation):
+    with expectation:
         nap.compute_discrete_tuning_curves(group, dict_ep)
 
 
@@ -712,8 +712,114 @@ def test_compute_discrete_tuning_curves(group, dict_ep):
 # ------------------------------------------------------------------------------------
 
 
+def get_testing_set(n_units=1, n_features=1, pattern="uniform"):
+    dims = ["unit"] + [f"dim_{i}" for i in range(n_features)]
+    coords = {"unit": np.arange(n_units)}
+    shape = (n_units,) + (2,) * n_features  # 2 bins per feature, for simplicity
+    for i in range(n_features):
+        coords[f"dim_{i}"] = np.arange(2)
+
+    # Build tuning curves
+    data = np.zeros(shape)
+
+    if pattern == "uniform":
+        data[:] = 1.0
+        expected_mi_per_sec = 0.0
+        expected_mi_per_spike = 0.0
+
+    elif pattern == "onehot":
+        # Each unit fires in a unique location only
+        for u in range(n_units):
+            index = [u] + [0] * n_features
+            data[tuple(index)] = 1.0
+
+        n_bins = np.prod(shape[1:])
+        expected_mi_per_spike = np.log2(n_bins)
+        mean_rate = 1.0 / n_bins
+        expected_mi_per_sec = mean_rate * expected_mi_per_spike
+
+    else:
+        raise ValueError("Unknown firing_pattern. Use 'uniform' or 'onehot'.")
+
+    tuning_curves = xr.DataArray(
+        data,
+        coords=coords,
+        dims=dims,
+        attrs={"occupancy": np.ones(shape[1:]) / np.prod(shape[1:])},
+    )
+
+    MI = xr.DataArray(
+        data=np.stack(
+            [
+                np.full(n_units, expected_mi_per_sec),
+                np.full(n_units, expected_mi_per_spike),
+            ],
+            axis=1,
+        ),
+        coords={
+            "unit": coords["unit"],
+            "bits": ["bits/sec", "bits/spike"],
+        },
+        dims=["unit", "bits"],
+    )
+
+    return tuning_curves, MI
+
+
 @pytest.mark.parametrize(
-    "tc, feature, ep, minmax, bitssec, expected_exception",
+    "tuning_curves, expectation",
+    [
+        # tuning_curves
+        (
+            [],
+            pytest.raises(
+                TypeError,
+                match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
+            ),
+        ),
+        (
+            1,
+            pytest.raises(
+                TypeError,
+                match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
+            ),
+        ),
+        (
+            get_testing_set()[0].to_pandas().T,
+            pytest.raises(
+                TypeError,
+                match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
+            ),
+        ),
+        (get_testing_set(1, 1)[0], does_not_raise()),
+        (get_testing_set(1, 2)[0], does_not_raise()),
+        (get_testing_set(1, 3)[0], does_not_raise()),
+        (get_testing_set(2, 1)[0], does_not_raise()),
+        (get_testing_set(2, 2)[0], does_not_raise()),
+        (get_testing_set(2, 3)[0], does_not_raise()),
+    ],
+)
+def test_compute_mutual_information_errors(tuning_curves, expectation):
+    with expectation:
+        nap.compute_mutual_information(tuning_curves)
+
+
+@pytest.mark.parametrize(
+    "n_units, n_features",
+    [(1, 1), (1, 2), (1, 3)],
+)
+@pytest.mark.parametrize(
+    "pattern",
+    ["uniform", "onehot"],
+)
+def test_compute_mutual_information(n_units, n_features, pattern):
+    tuning_curves, expectation = get_testing_set(n_units, n_features, pattern)
+    actual = nap.compute_mutual_information(tuning_curves)
+    xr.testing.assert_allclose(actual, expectation)
+
+
+@pytest.mark.parametrize(
+    "tc, feature, ep, minmax, bitssec, expectation",
     [
         (
             "a",
@@ -757,15 +863,13 @@ def test_compute_discrete_tuning_curves(group, dict_ep):
         ),
     ],
 )
-def test_compute_1d_mutual_info_errors(
-    tc, feature, ep, minmax, bitssec, expected_exception
-):
-    with pytest.raises(TypeError, match=expected_exception):
+def test_compute_1d_mutual_info_errors(tc, feature, ep, minmax, bitssec, expectation):
+    with pytest.raises(TypeError, match=expectation):
         nap.compute_1d_mutual_info(tc, feature, ep, minmax, bitssec)
 
 
 @pytest.mark.parametrize(
-    "dict_tc, features, ep, minmax, bitssec, expected_exception",
+    "dict_tc, features, ep, minmax, bitssec, expectation",
     [
         (
             "a",
@@ -810,15 +914,15 @@ def test_compute_1d_mutual_info_errors(
     ],
 )
 def test_compute_2d_mutual_info_errors(
-    dict_tc, features, ep, minmax, bitssec, expected_exception
+    dict_tc, features, ep, minmax, bitssec, expectation
 ):
-    with pytest.raises(TypeError, match=expected_exception):
+    with pytest.raises(TypeError, match=expectation):
         nap.compute_2d_mutual_info(dict_tc, features, ep, minmax, bitssec)
 
 
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
-    "args, kwargs, expected",
+    "args, kwargs, expectation",
     [
         (
             (
@@ -862,7 +966,7 @@ def test_compute_2d_mutual_info_errors(
         ),
     ],
 )
-def test_compute_1d_mutual_info(args, kwargs, expected):
+def test_compute_1d_mutual_info(args, kwargs, expectation):
     tc = args[0]
     feature = args[1]
     si = nap.compute_1d_mutual_info(tc, feature, **kwargs)
@@ -870,12 +974,12 @@ def test_compute_1d_mutual_info(args, kwargs, expected):
     assert list(si.columns) == ["SI"]
     if isinstance(tc, pd.DataFrame):
         assert list(si.index.values) == list(tc.columns)
-    np.testing.assert_approx_equal(si.values, expected)
+    np.testing.assert_approx_equal(si.values, expectation)
 
 
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
-    "args, kwargs, expected",
+    "args, kwargs, expectation",
     [
         (
             (
@@ -934,7 +1038,7 @@ def test_compute_1d_mutual_info(args, kwargs, expected):
         ),
     ],
 )
-def test_compute_2d_mutual_info(args, kwargs, expected):
+def test_compute_2d_mutual_info(args, kwargs, expectation):
     dict_tc = args[0]
     features = args[1]
     si = nap.compute_2d_mutual_info(dict_tc, features, **kwargs)
@@ -942,7 +1046,7 @@ def test_compute_2d_mutual_info(args, kwargs, expected):
     assert list(si.columns) == ["SI"]
     if isinstance(dict_tc, dict):
         assert list(si.index.values) == list(dict_tc.keys())
-    np.testing.assert_approx_equal(si.values, expected)
+    np.testing.assert_approx_equal(si.values, expectation)
 
 
 # ------------------------------------------------------------------------------------
@@ -952,7 +1056,7 @@ def test_compute_2d_mutual_info(args, kwargs, expected):
 
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
-    "args, kwargs, expected",
+    "args, kwargs, expectation",
     [
         ((get_group(), get_feature(), 10), {}, np.array([10.0] + [0.0] * 9)[:, None]),
         (
@@ -972,7 +1076,7 @@ def test_compute_2d_mutual_info(args, kwargs, expected):
         ),
     ],
 )
-def test_compute_1d_tuning_curves(args, kwargs, expected):
+def test_compute_1d_tuning_curves(args, kwargs, expectation):
     tc = nap.compute_1d_tuning_curves(*args, **kwargs)
     # Columns
     assert list(tc.columns) == list(args[0].keys())
@@ -986,12 +1090,12 @@ def test_compute_1d_tuning_curves(args, kwargs, expected):
     np.testing.assert_almost_equal(tmp[0:-1] + np.diff(tmp) / 2, tc.index.values)
 
     # Array
-    np.testing.assert_almost_equal(tc.values, expected)
+    np.testing.assert_almost_equal(tc.values, expectation)
 
 
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
-    "args, kwargs, expected",
+    "args, kwargs, expectation",
     [
         ((get_group(), get_features(), 10), {}, np.ones((10, 10)) * 0.5),
         ((get_group(), get_features(), (10, 10)), {}, np.ones((10, 10)) * 0.5),
@@ -1012,7 +1116,7 @@ def test_compute_1d_tuning_curves(args, kwargs, expected):
         ),
     ],
 )
-def test_compute_2d_tuning_curves(args, kwargs, expected):
+def test_compute_2d_tuning_curves(args, kwargs, expectation):
     tc, xy = nap.compute_2d_tuning_curves(*args, **kwargs)
     assert isinstance(tc, dict)
 
@@ -1038,12 +1142,12 @@ def test_compute_2d_tuning_curves(args, kwargs, expected):
     # Values
     for i in tc.keys():
         assert tc[i].shape == nb_bins
-        np.testing.assert_almost_equal(tc[i], expected)
+        np.testing.assert_almost_equal(tc[i], expectation)
 
 
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
-    "args, kwargs, expected",
+    "args, kwargs, expectation",
     [
         (
             (get_tsdframe(), get_feature(), 10),
@@ -1077,7 +1181,7 @@ def test_compute_2d_tuning_curves(args, kwargs, expected):
         ),
     ],
 )
-def test_compute_1d_tuning_curves_continuous(args, kwargs, expected):
+def test_compute_1d_tuning_curves_continuous(args, kwargs, expectation):
     tsdframe, feature, nb_bins = args
     tc = nap.compute_1d_tuning_curves_continuous(tsdframe, feature, nb_bins, **kwargs)
     # Columns
@@ -1091,12 +1195,12 @@ def test_compute_1d_tuning_curves_continuous(args, kwargs, expected):
         tmp = np.linspace(np.min(feature), np.max(feature), nb_bins + 1)
     np.testing.assert_almost_equal(tmp[0:-1] + np.diff(tmp) / 2, tc.index.values)
     # Array
-    np.testing.assert_almost_equal(tc.values, expected)
+    np.testing.assert_almost_equal(tc.values, expectation)
 
 
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
-    "tsdframe, nb_bins, kwargs, expected",
+    "tsdframe, nb_bins, kwargs, expectation",
     [
         (
             nap.TsdFrame(
@@ -1161,7 +1265,7 @@ def test_compute_1d_tuning_curves_continuous(args, kwargs, expected):
         ),
     ],
 )
-def test_compute_2d_tuning_curves_continuous(tsdframe, nb_bins, kwargs, expected):
+def test_compute_2d_tuning_curves_continuous(tsdframe, nb_bins, kwargs, expectation):
     features = nap.TsdFrame(
         t=np.arange(100), d=np.tile(np.array([[0, 0, 1, 1], [0, 1, 0, 1]]), 25).T
     )
@@ -1195,4 +1299,4 @@ def test_compute_2d_tuning_curves_continuous(tsdframe, nb_bins, kwargs, expected
     # Values
     for i in tc.keys():
         assert tc[i].shape == nb_bins
-        np.testing.assert_almost_equal(tc[i], expected[i])
+        np.testing.assert_almost_equal(tc[i], expectation[i])

@@ -297,7 +297,9 @@ def compute_tuning_curves(
     keys = (
         data.keys()
         if isinstance(data, nap.TsGroup)
-        else data.columns if isinstance(data, nap.TsdFrame) else [0]
+        else data.columns
+        if isinstance(data, nap.TsdFrame)
+        else [0]
     )
     tcs = np.zeros([len(keys), *occupancy.shape])
     if isinstance(data, (nap.TsGroup, nap.Ts)):
@@ -500,7 +502,7 @@ def compute_discrete_tuning_curves(group, dict_ep):
 
 
 @_validate_tuning_inputs
-def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
+def compute_1d_mutual_info_old(tc, feature, ep=None, minmax=None, bitssec=False):
     """
     Mutual information of a tuning curve computed from a 1-d feature.
 
@@ -569,7 +571,7 @@ def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
 
 
 @_validate_tuning_inputs
-def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=False):
+def compute_2d_mutual_info_old(dict_tc, features, ep=None, minmax=None, bitssec=False):
     """
     Mutual information of a tuning curve computed from 2-d features.
 
@@ -649,3 +651,145 @@ def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=Fals
         SI = SI / fr[:, 0, 0]
         SI = pd.DataFrame(index=idx, columns=["SI"], data=SI)
         return SI
+
+
+def compute_mutual_information(tuning_curves):
+    """
+    Mutual information of a tuning curve.
+
+    See:
+
+    Skaggs, W. E., McNaughton, B. L., & Gothard, K. M. (1993).
+    An information-theoretic approach to deciphering the hippocampal code.
+    In Advances in neural information processing systems (pp. 1030-1037).
+
+    Parameters
+    ----------
+    tuning_curves : xarray.DataArray
+        As outputted by `compute_tuning_curves`.
+
+    Returns
+    -------
+    xarray.DataArray
+        An array containing the spatial information per unit, in both bits/sec and bits/spike.
+    """
+    if not isinstance(tuning_curves, xr.DataArray):
+        raise TypeError(
+            "tuning_curves should be an xr.DataArray as computed by compute_tuning_curves."
+        )
+
+    fx = tuning_curves.values
+    axes = tuple(range(1, fx.ndim))
+    fr_keepdims = np.nansum(
+        fx * tuning_curves.attrs["occupancy"], axis=axes, keepdims=True
+    )
+    fr_scalar = np.squeeze(fr_keepdims, axis=axes)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        fxfr = fx / fr_keepdims
+        logfx = np.log2(fxfr)
+    logfx[~np.isfinite(logfx)] = 0.0
+    MI_bits_per_sec = np.nansum(
+        tuning_curves.attrs["occupancy"] * fx * logfx, axis=axes
+    )
+    with np.errstate(divide="ignore", invalid="ignore"):
+        MI_bits_per_spike = MI_bits_per_sec / fr_scalar
+
+    return xr.DataArray(
+        data=np.stack([MI_bits_per_sec, MI_bits_per_spike], axis=1),
+        coords={
+            "unit": tuning_curves.coords["unit"],
+            "bits": ["bits/sec", "bits/spike"],
+        },
+    )
+
+
+@_validate_tuning_inputs
+def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=False):
+    warnings.warn(
+        "compute_2d_mutual_info is deprecated and will be removed in a future version;"
+        "use compute_mutual_information instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    if type(dict_tc) is dict:
+        tcs = xr.DataArray(
+            np.array([dict_tc[i] for i in dict_tc.keys()]),
+            coords={"unit": list(dict_tc.keys())},
+            dims=["unit", "0", "1"],
+        )
+    else:
+        tcs = xr.DataArray(
+            dict_tc,
+            coords={"unit": np.arange(len(dict_tc))},
+            dims=["unit", "0", "1"],
+        )
+
+    nb_bins = (tcs.shape[1] + 1, tcs.shape[2] + 1)
+    bins = []
+    for i in range(2):
+        if minmax is None:
+            bins.append(
+                np.linspace(
+                    np.nanmin(features[:, i]), np.nanmax(features[:, i]), nb_bins[i]
+                )
+            )
+        else:
+            bins.append(
+                np.linspace(minmax[i + i % 2], minmax[i + 1 + i % 2], nb_bins[i])
+            )
+
+    if isinstance(ep, nap.IntervalSet):
+        features = features.restrict(ep)
+
+    occupancy, _, _ = np.histogram2d(
+        features[:, 0].values.flatten(),
+        features[:, 1].values.flatten(),
+        [bins[0], bins[1]],
+    )
+    occupancy = occupancy / occupancy.sum()
+
+    tcs.attrs["occupancy"] = occupancy
+    MI = compute_mutual_information(tcs)
+
+    if bitssec:
+        return pd.DataFrame(MI.sel(bits="bits/sec").values, columns=["SI"])
+    else:
+        return pd.DataFrame(MI.sel(bits="bits/spike").values, columns=["SI"])
+
+
+@_validate_tuning_inputs
+def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
+    warnings.warn(
+        "compute_1d_mutual_info is deprecated and will be removed in a future version;"
+        "use compute_mutual_information instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    if isinstance(tc, pd.DataFrame):
+        tcs = xr.DataArray(
+            tc.values.T, coords={"unit": tc.columns.values, "0": tc.index}
+        )
+    else:
+        tcs = xr.DataArray(
+            tc.T, coords={"unit": np.arange(tc.shape[1])}, dims=["unit", "0"]
+        )
+
+    nb_bins = tc.shape[0] + 1
+    if minmax is None:
+        bins = np.linspace(np.nanmin(feature), np.nanmax(feature), nb_bins)
+    else:
+        bins = np.linspace(minmax[0], minmax[1], nb_bins)
+
+    if isinstance(ep, nap.IntervalSet):
+        occupancy, _ = np.histogram(feature.restrict(ep).values, bins)
+    else:
+        occupancy, _ = np.histogram(feature.values, bins)
+    occupancy = occupancy / occupancy.sum()
+    tcs.attrs["occupancy"] = occupancy
+    MI = compute_mutual_information(tcs)
+
+    if bitssec:
+        return pd.DataFrame(MI.sel(bits="bits/sec").values, columns=["SI"])
+    else:
+        return pd.DataFrame(MI.sel(bits="bits/spike").values, columns=["SI"])
