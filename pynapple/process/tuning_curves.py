@@ -168,7 +168,6 @@ def compute_tuning_curves(
     """
 
     # check data
-    print(type(data))
     if not isinstance(data, (nap.TsdFrame, nap.TsGroup, nap.Ts, nap.Tsd)):
         raise TypeError("data should be a TsdFrame, TsGroup, Ts, or Tsd.")
 
