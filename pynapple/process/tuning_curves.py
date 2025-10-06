@@ -297,9 +297,7 @@ def compute_tuning_curves(
     keys = (
         data.keys()
         if isinstance(data, nap.TsGroup)
-        else data.columns
-        if isinstance(data, nap.TsdFrame)
-        else [0]
+        else data.columns if isinstance(data, nap.TsdFrame) else [0]
     )
     tcs = np.zeros([len(keys), *occupancy.shape])
     if isinstance(data, (nap.TsGroup, nap.Ts)):

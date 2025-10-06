@@ -769,7 +769,6 @@ def get_testing_set(n_units=1, n_features=1, pattern="uniform"):
 @pytest.mark.parametrize(
     "tuning_curves, expectation",
     [
-        # tuning_curves
         (
             [],
             pytest.raises(
