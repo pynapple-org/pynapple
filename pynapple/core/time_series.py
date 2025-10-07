@@ -178,10 +178,10 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 )
             self.values = d
 
-        assert len(self.index) == self.values.shape[0], (
-            "Length of values {} does not match length of index {}".format(
-                self.values.shape[0], len(self.index)
-            )
+        assert (
+            len(self.index) == self.values.shape[0]
+        ), "Length of values {} does not match length of index {}".format(
+            self.values.shape[0], len(self.index)
         )
 
         if isinstance(time_support, IntervalSet) and len(self.index):
@@ -1483,9 +1483,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         if c is None or len(c) != self.values.shape[1]:
             c = np.arange(self.values.shape[1], dtype="int")
         else:
-            assert len(c) == self.values.shape[1], (
-                "Number of columns should match the second dimension of d"
-            )
+            assert (
+                len(c) == self.values.shape[1]
+            ), "Number of columns should match the second dimension of d"
 
         self.columns = pd.Index(c)
         self.nap_class = self.__class__.__name__
