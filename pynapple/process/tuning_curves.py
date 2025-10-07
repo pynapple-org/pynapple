@@ -280,7 +280,7 @@ def compute_tuning_curves(
 
 def compute_mutual_information(tuning_curves):
     """
-    Mutual information of an n-dimensional tuning curve.
+    Computes mutual information from n-dimensional tuning curves.
 
     Parameters
     ----------
@@ -289,7 +289,7 @@ def compute_mutual_information(tuning_curves):
 
     Returns
     -------
-    pd.DataFrame
+    pandas.DataFrame
         A table containing the spatial information per unit, in both bits/sec and bits/spike.
 
     References
@@ -298,26 +298,56 @@ def compute_mutual_information(tuning_curves):
            An information-theoretic approach to deciphering the hippocampal code.
            In Advances in neural information processing systems (pp. 1030-1037).
 
+    Examples
+    --------
+    We can compute the mutual information between a variable and a set of neurons' firing from the tuning curves:
+
+        >>> import pynapple as nap
+        >>> import numpy as np; np.random.seed(42)
+        >>> epoch = nap.IntervalSet([0, 100])
+        >>> t = np.arange(0, 100, 0.01)
+        >>> feature = nap.Tsd(t=t, d=np.clip(t*0.01 + np.random.normal(0, 0.02, len(t)), 0, 1), time_support=epoch)
+        >>> group = nap.TsGroup({
+        ...     1: nap.Ts(t[(feature.values >= 0.2) & (feature.values < 0.3)]),
+        ...     2: nap.Ts(t[(feature.values >= 0.7) & (feature.values < 0.8)])
+        ... }, time_support=epoch)
+        >>> tcs = nap.compute_tuning_curves(group, feature, bins=10)
+        >>> tcs
+        <xarray.DataArray (unit: 2, 0: 10)> Size: 160B
+        array([[  0.,   0., 100.,   0.,   0.,   0.,   0.,   0.,   0.,   0.],
+               [  0.,   0.,   0.,   0.,   0.,   0.,   0., 100.,   0.,   0.]])
+        Coordinates:
+          * unit     (unit) int64 16B 1 2
+          * 0        (0) float64 80B 0.05 0.15 0.25 0.35 0.45 0.55 0.65 0.75 0.85 0.95
+        Attributes:
+            occupancy:  [ 985. 1009. 1014.  996.  993. 1008.  991. 1008.  999.  997.]
+            bin_edges:  [array([0. , 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ])]
+        >>> MI = nap.compute_mutual_information(tcs)
+        >>> MI
+            bits/sec  bits/spike
+        1  33.480966    3.301870
+        2  33.369159    3.310432
     """
     if not isinstance(tuning_curves, xr.DataArray):
         raise TypeError(
             "tuning_curves should be an xr.DataArray as computed by compute_tuning_curves."
         )
 
+    if "occupancy" not in tuning_curves.attrs:
+        raise ValueError("No occupancy found in tuning curves.")
+    occupancy = tuning_curves.attrs["occupancy"]
+    occupancy = occupancy / np.nansum(occupancy)
+
     fx = tuning_curves.values
     axes = tuple(range(1, fx.ndim))
-    fr_keepdims = np.nansum(
-        fx * tuning_curves.attrs["occupancy"], axis=axes, keepdims=True
-    )
+    fr_keepdims = np.nansum(fx * occupancy, axis=axes, keepdims=True)
     fr_scalar = np.squeeze(fr_keepdims, axis=axes)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         fxfr = fx / fr_keepdims
         logfx = np.log2(fxfr)
     logfx[~np.isfinite(logfx)] = 0.0
-    MI_bits_per_sec = np.nansum(
-        tuning_curves.attrs["occupancy"] * fx * logfx, axis=axes
-    )
+    MI_bits_per_sec = np.nansum(occupancy * fx * logfx, axis=axes)
     with np.errstate(divide="ignore", invalid="ignore"):
         MI_bits_per_spike = MI_bits_per_sec / fr_scalar
 
@@ -556,6 +586,9 @@ def compute_2d_tuning_curves_continuous(
 
 @_validate_tuning_inputs
 def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=False):
+    """
+    Deprecated, use `compute_mutual_information` instead.
+    """
     warnings.warn(
         "compute_2d_mutual_info is deprecated and will be removed in a future version;"
         "use compute_mutual_information instead.",
@@ -608,6 +641,9 @@ def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=Fals
 
 @_validate_tuning_inputs
 def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
+    """
+    Deprecated, use `compute_mutual_information` instead.
+    """
     warnings.warn(
         "compute_1d_mutual_info is deprecated and will be removed in a future version;"
         "use compute_mutual_information instead.",
