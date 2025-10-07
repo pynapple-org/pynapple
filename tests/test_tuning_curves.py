@@ -1063,6 +1063,82 @@ def test_compute_2d_mutual_info(args, kwargs, expected):
 # ------------------------------------------------------------------------------------
 
 
+@pytest.mark.parametrize(
+    "group, feature, nb_bins, ep, minmax, expected_exception",
+    [
+        ("a", get_feature(), 10, get_ep(), (0, 1), "group should be a TsGroup."),
+        (
+            get_group(),
+            "a",
+            10,
+            get_ep(),
+            (0, 1),
+            r"feature should be a Tsd \(or TsdFrame with 1 column only\)",
+        ),
+        (
+            get_group(),
+            get_feature(),
+            "a",
+            get_ep(),
+            (0, 1),
+            r"nb_bins should be of type int \(or tuple with \(int, int\) for 2D tuning curves\).",
+        ),
+        (get_group(), get_feature(), 10, "a", (0, 1), r"ep should be an IntervalSet"),
+        (
+            get_group(),
+            get_feature(),
+            10,
+            get_ep(),
+            1,
+            r"minmax should be a tuple\/list of 2 numbers",
+        ),
+    ],
+)
+def test_compute_1d_tuning_curves_errors(
+    group, feature, nb_bins, ep, minmax, expected_exception
+):
+    with pytest.raises(TypeError, match=expected_exception):
+        nap.compute_1d_tuning_curves(group, feature, nb_bins, ep, minmax)
+
+
+@pytest.mark.parametrize(
+    "group, features, nb_bins, ep, minmax, expected_exception",
+    [
+        ("a", get_features(), 10, get_ep(), (0, 1), "group should be a TsGroup."),
+        (
+            get_group(),
+            "a",
+            10,
+            get_ep(),
+            (0, 1),
+            r"features should be a TsdFrame with 2 columns",
+        ),
+        (
+            get_group(),
+            get_features(),
+            "a",
+            get_ep(),
+            (0, 1),
+            r"nb_bins should be of type int \(or tuple with \(int, int\) for 2D tuning curves\).",
+        ),
+        (get_group(), get_features(), 10, "a", (0, 1), r"ep should be an IntervalSet"),
+        (
+            get_group(),
+            get_features(),
+            10,
+            get_ep(),
+            1,
+            r"minmax should be a tuple\/list of 2 numbers",
+        ),
+    ],
+)
+def test_compute_2d_tuning_curves_errors(
+    group, features, nb_bins, ep, minmax, expected_exception
+):
+    with pytest.raises(TypeError, match=expected_exception):
+        nap.compute_2d_tuning_curves(group, features, nb_bins, ep, minmax)
+
+
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
     "args, kwargs, expectation",
