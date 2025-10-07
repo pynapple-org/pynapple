@@ -787,7 +787,13 @@ def get_testing_set(n_units=1, n_features=1, pattern="uniform"):
                 match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
             ),
         ),
-        (get_testing_set(1, 1)[0], does_not_raise()),
+        (
+            (lambda x: (x.attrs.clear(), x)[1])(get_testing_set()[0]),
+            pytest.raises(
+                ValueError,
+                match="No occupancy found in tuning curves.",
+            ),
+        ),
         (get_testing_set(1, 2)[0], does_not_raise()),
         (get_testing_set(1, 3)[0], does_not_raise()),
         (get_testing_set(2, 1)[0], does_not_raise()),
