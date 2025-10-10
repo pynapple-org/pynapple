@@ -1705,15 +1705,18 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
     def __getitem__(self, key, *args, **kwargs):
         if isinstance(key, tuple):
             key = tuple(k.values if hasattr(k, "values") else k for k in key)
-        if isinstance(key, Tsd):
+        if isinstance(key, (Tsd, TsdFrame)):
             try:
                 assert np.issubdtype(key.dtype, np.bool_)
             except AssertionError:
                 raise ValueError(
-                    "When indexing with a Tsd, it must contain boolean values"
+                    "When indexing with a Tsd or TsdFrame, it must contain boolean values"
                 )
-            key = key.d
-        elif isinstance(key, str):
+            if isinstance(key, TsdFrame):
+                return self.values.__getitem__(key.d)
+            else:
+                key = key.d
+        if isinstance(key, str):
             if key in self.columns:
                 with warnings.catch_warnings():
                     # ignore deprecated warning for loc

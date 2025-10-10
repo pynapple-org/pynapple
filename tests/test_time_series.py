@@ -1604,6 +1604,27 @@ class TestTsdFrame:
                         output, tsdframe.values[row, col]
                     )
 
+    def test_tsd_indexing(self, tsdframe):
+        tsd_index = tsdframe[:, 0] > 0
+        output = tsdframe[tsd_index]
+        np.testing.assert_array_almost_equal(
+            output.values, tsdframe.values[tsd_index.values]
+        )
+        assert isinstance(output, nap.TsdFrame)
+
+        with pytest.raises(ValueError, match="must contain boolean values"):
+            tsdframe[tsd_index + 1]
+
+        tsdframe_index = tsdframe > 0
+        output = tsdframe[tsdframe_index]
+        np.testing.assert_array_almost_equal(
+            output, tsdframe.values[tsdframe_index.values]
+        )
+        assert isinstance(output, np.ndarray)
+
+        with pytest.raises(ValueError, match="must contain boolean values"):
+            tsdframe[tsdframe_index + 1]
+
     @pytest.mark.parametrize("index", [0, [0, 2]])
     def test_str_indexing(self, tsdframe, index):
         columns = tsdframe.columns
