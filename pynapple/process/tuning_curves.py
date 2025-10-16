@@ -282,6 +282,28 @@ def compute_mutual_information(tuning_curves):
     """
     Computes mutual information from n-dimensional tuning curves.
 
+    This function implements Skaggs et al.'s [1] metric to quantify
+    the information content of a neuron's firing with respect to a variable
+    (e.g., position), based on its tuning curve.
+
+    The mutual information in bits per second is given by:
+
+    .. math::
+
+        I_\\text{bits/s} = \\sum_x P(x) \\lambda(x) \\log_2 \\left( \\frac{\\lambda(x)}{\\bar{\\lambda}} \\right)
+
+    where:
+
+    - :math:`P(x)` is the probability of being in bin :math:`x` (occupancy),
+    - :math:`\\lambda(x)` is the firing rate of the neuron in bin :math:`x`,
+    - :math:`\\bar{\\lambda}` is the overall mean firing rate.
+
+    The information per spike is computed by dividing the result by the mean firing rate:
+
+    .. math::
+
+        I_\\text{bits/spike} = \\frac{I}{\\bar{\\lambda}}
+
     Parameters
     ----------
     tuning_curves : xarray.DataArray

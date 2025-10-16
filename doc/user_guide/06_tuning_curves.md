@@ -61,6 +61,7 @@ tsgroup = nap.TsGroup(
     time_support = nap.IntervalSet(0, 100)
     )
 ```
+Computing tuning curves is done using [`compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves).
 
 When computing from general time-series, mandatory arguments are:
 * `data`: a `TsGroup` (or single `Ts`) or TsdFrame (or single `Tsd`) containing the neural activity of one or more units.
@@ -350,8 +351,7 @@ print(mean_fr)
 ```
 
 # Mutual information
-Given a set of tuning curves, you can use `compute_mutual_information` to compute the mutual information between the activity of the neurons and the features, no matter what dimension.
-
+Given a set of tuning curves, you can use [`compute_mutual_information`](pynapple.process.tuning_curves.compute_mutual_information) to compute the mutual information between the activity of the neurons and the features, no matter what dimension.
 ```{code-cell} ipython3
 MI = nap.compute_mutual_information(tuning_curves_1d)
 MI
@@ -361,3 +361,5 @@ MI
 MI = nap.compute_mutual_information(tuning_curves_2d)
 MI
 ```
+Take a look at the tutorial on [head direction cells](../examples/tutorial_HD_dataset.md) for a realistic example.
+
