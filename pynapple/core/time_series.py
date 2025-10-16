@@ -178,10 +178,10 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 )
             self.values = d
 
-        assert len(self.index) == len(
-            self.values
+        assert (
+            len(self.index) == self.values.shape[0]
         ), "Length of values {} does not match length of index {}".format(
-            len(self.values), len(self.index)
+            self.values.shape[0], len(self.index)
         )
 
         if isinstance(time_support, IntervalSet) and len(self.index):
