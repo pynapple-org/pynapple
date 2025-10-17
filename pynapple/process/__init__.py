@@ -36,6 +36,7 @@ from .tuning_curves import (
     compute_2d_tuning_curves,
     compute_2d_tuning_curves_continuous,
     compute_discrete_tuning_curves,
+    compute_mutual_information,
     compute_tuning_curves,
 )
 from .warping import build_tensor, warp_tensor

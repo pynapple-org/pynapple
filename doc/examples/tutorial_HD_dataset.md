@@ -19,7 +19,7 @@ The NWB file for the example is hosted on [OSF](https://osf.io/jb2gd). We show b
 The entire dataset can be downloaded [here](https://dandiarchive.org/dandiset/000056).
 
 ```{code-cell} ipython3
-:tags: [hide-output]
+:tags: [remove-output]
 import scipy
 import pandas as pd
 import numpy as np
@@ -74,6 +74,7 @@ To plot head-direction tuning curves, we need the spike timings and the orientat
 These quantities are stored in the variables 'units' and 'ry'.
 
 ```{code-cell} ipython3
+:tags: [remove-output]
 spikes = data["units"]  # Get spike timings
 epochs = data["epochs"]  # Get the behavioural epochs (in this case, sleep and wakefulness)
 angle = data["ry"]  # Get the tracked orientation of the animal
@@ -100,8 +101,6 @@ print(spikes_adn)
 Let's compute some head-direction tuning curves.
 To do this in Pynapple, all you need is a single line of code!
 
-Let's plot firing rate of ADn units as a function of heading direction, i.e. a head-direction tuning curve:
-
 ```{code-cell} ipython3
 tuning_curves = nap.compute_tuning_curves(
     data=spikes_adn, 
@@ -115,7 +114,35 @@ tuning_curves
 ```
 
 The output is an `xarray.DataArray` with one dimension representing units, and another for head-direction angles.
-Let's compute the preferred angle quickly as follows:
+
+***
+Computing information and selecting HD cells
+------------------
+
+We can use `compute_mutual_information` to compute the mutual information between the activity of each unit and the head direction of the mouse:
+
+```{code-cell} ipython3
+MI = nap.compute_mutual_information(tuning_curves)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+axs = MI.hist(sharey=True)
+axs[0][0].set_ylabel("# neurons")
+plt.show()
+```
+
+We can use this as a score to select the neurons that are most modulated by HD:
+
+```{code-cell} ipython3
+top_n = 20
+best_neurons = MI.sort_values(by="bits/sec", ascending=False).head(top_n).index
+tuning_curves = tuning_curves.sel(unit=best_neurons).sortby("unit")
+spikes_adn = spikes_adn[best_neurons]
+best_neurons
+```
+
+We can then compute the preferred angle of every neuron quickly as follows:
 
 ```{code-cell} ipython3
 pref_ang = tuning_curves.idxmax(dim="head_direction")
@@ -273,6 +300,8 @@ I hope this tutorial was helpful. If you have any questions, comments or suggest
 :::{card}
 Authors
 ^^^
+Wolf de Wulf
+
 Dhruv Mehrotra
 
 Guillaume Viejo
