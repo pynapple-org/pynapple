@@ -30,9 +30,11 @@ def compute_tuning_curves(
     Parameters
     ----------
     data : TsGroup, TsdFrame, Ts, Tsd
-        The data for which the tuning curves will be computed.
+        The data for which the tuning curves will be computed. This usually corresponds to the activity of the
+        neurons, either as spike times (TsGroup or Ts) or continuous values (TsdFrame or Tsd).
     features : Tsd, TsdFrame
-        The features (i.e. one column per feature).
+        The features (i.e. one column per feature). This usually corresponds to behavioral variables such as
+        position, head direction, speed, etc.
     bins : sequence or int
         The bin specification:
 
@@ -307,7 +309,7 @@ def compute_mutual_information(tuning_curves):
     Parameters
     ----------
     tuning_curves : xarray.DataArray
-        As outputted by `compute_tuning_curves`.
+        As computed by `compute_tuning_curves`.
 
     Returns
     -------

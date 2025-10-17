@@ -114,6 +114,11 @@ tuning_curves
 ```
 
 The output is an `xarray.DataArray` with one dimension representing units, and another for head-direction angles.
+
+***
+Computing information and selecting HD cells
+------------------
+
 We can use `compute_mutual_information` to compute the mutual information between the activity of each unit and the head direction of the mouse:
 
 ```{code-cell} ipython3
@@ -295,6 +300,8 @@ I hope this tutorial was helpful. If you have any questions, comments or suggest
 :::{card}
 Authors
 ^^^
+Wolf de Wulf
+
 Dhruv Mehrotra
 
 Guillaume Viejo

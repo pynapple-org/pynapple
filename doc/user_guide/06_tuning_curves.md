@@ -64,7 +64,7 @@ tsgroup = nap.TsGroup(
 Computing tuning curves is done using [`compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves).
 
 When computing from general time-series, mandatory arguments are:
-* `data`: a `TsGroup` (or single `Ts`) or TsdFrame (or single `Tsd`) containing the neural activity of one or more units.
+* `data`: a `TsGroup` (or single `Ts`) or `TsdFrame` (or single `Tsd`) containing the neural activity of one or more units.
 * `features`: a `Tsd` or `TsdFrame` containing one or more features.
 
 By default, 10 bins are used for all features, but you can specify the number of bins,
