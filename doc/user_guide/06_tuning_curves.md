@@ -352,6 +352,8 @@ print(mean_fr)
 
 # Mutual information
 Given a set of tuning curves, you can use [`compute_mutual_information`](pynapple.process.tuning_curves.compute_mutual_information) to compute the mutual information between the activity of the neurons and the features, no matter what dimension.
+See the [Skaggs et al. (1992)](https://proceedings.neurips.cc/paper/1992/hash/5dd9db5e033da9c6fb5ba83c7a7ebea9-Abstract.html) paper for more information on what mutual information computes.
+
 ```{code-cell} ipython3
 MI = nap.compute_mutual_information(tuning_curves_1d)
 MI
@@ -362,4 +364,5 @@ MI = nap.compute_mutual_information(tuning_curves_2d)
 MI
 ```
 Take a look at the tutorial on [head direction cells](../examples/tutorial_HD_dataset.md) for a realistic example.
+
 

@@ -808,7 +808,7 @@ def test_compute_mutual_information_errors(tuning_curves, expectation):
 
 @pytest.mark.parametrize(
     "n_units, n_features",
-    [(1, 1), (1, 2), (1, 3)],
+    [(1, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3)],
 )
 @pytest.mark.parametrize(
     "pattern",
