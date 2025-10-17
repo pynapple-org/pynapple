@@ -150,7 +150,7 @@ def compute_tuning_curves(
             occupancy:  [[150. 150.]\\n [100. 100.]\\n [150. 150.]\\n [100. 100.]]
             bin_edges:  [array([0.  , 0.25, 0.5 , 0.75, 1.  ]), array([0., 1., 2.])]
 
-    In all of these cases, it is also possible to pass continuous values instead of spikes (e.g. calcium imaging data):
+    In all of these cases, it is also possible to pass continuous values instead of spikes (e.g. calcium imaging data), in that case the mean response is computed:
 
         >>> frame = nap.TsdFrame(d=np.random.rand(2000, 3), t=np.arange(0, 100, 0.05))
         >>> tcs = nap.compute_tuning_curves(frame, feature, bins=10)
@@ -226,7 +226,7 @@ def compute_tuning_curves(
     # occupancy
     occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
 
-    # tunning curves
+    # tuning curves
     keys = (
         data.keys()
         if isinstance(data, nap.TsGroup)
@@ -271,6 +271,107 @@ def compute_tuning_curves(
             },
         },
         attrs={"occupancy": occupancy, "bin_edges": bin_edges},
+    )
+    if return_pandas:
+        return tcs.to_pandas().T
+    else:
+        return tcs
+
+
+def compute_discrete_tuning_curves(data, epochs_dict, return_pandas=False):
+    """
+    Compute discrete tuning curves using a dictionary of epochs.
+
+    Parameters
+    ----------
+    data : TsGroup, TsdFrame, Ts, Tsd
+        The data for which the tuning curves will be computed.
+    epochs_dict : dict
+        Dictionary of IntervalSets.
+    return_pandas : bool, optional
+        If True, the function returns a pandas.DataFrame instead of an xarray.DataArray.
+
+    Examples
+    --------
+    This function is typically used for a set of discrete stimuli being presented for multiple epochs.
+
+        >>> import pynapple as nap
+        >>> import numpy as np; np.random.seed(42)
+        >>> epochs_dict =  {
+        ...     "stim0": nap.IntervalSet(start=0, end=30),
+        ...     "stim1":nap.IntervalSet(start=60, end=90)
+        ... }
+        >>> group = nap.TsGroup({
+        ...     1: nap.Ts(np.arange(0, 100, 0.1)),
+        ...     2: nap.Ts(np.arange(0, 100, 0.2))
+        ... })
+        >>> tcs = nap.compute_discrete_tuning_curves(group, epochs_dict)
+        >>> tcs
+        <xarray.DataArray (unit: 2, epochs: 2)> Size: 32B
+        array([[10.03333333, 10.03333333],
+               [ 5.03333333,  5.03333333]])
+        Coordinates:
+          * unit     (unit) int64 16B 1 2
+          * epochs   (epochs) <U5 40B 'stim0' 'stim1'
+
+    You can also pass a TsdFrame (e.g. calcium imaging data), in that case the response is computed:
+
+        >>> frame = nap.TsdFrame(d=np.random.rand(2000, 3), t=np.arange(0, 100, 0.05))
+        >>> tcs = nap.compute_discrete_tuning_curves(frame, epochs_dict)
+        >>> tcs
+        <xarray.DataArray (unit: 3, epochs: 2)> Size: 48B
+        array([[0.50946668, 0.50897635],
+               [0.48343249, 0.48191892],
+               [0.50063158, 0.48748094]])
+        Coordinates:
+          * unit     (unit) int64 24B 0 1 2
+          * epochs   (epochs) <U5 40B 'stim0' 'stim1'
+
+    Returns
+    -------
+    xarray.DataArray
+        A tensor containing the tuning curves with labeled epochs.
+    """
+    # check data
+    if not isinstance(data, (nap.TsdFrame, nap.TsGroup, nap.Ts, nap.Tsd)):
+        raise TypeError("data should be a TsdFrame, TsGroup, Ts, or Tsd.")
+
+    # check epochs_dict
+    if not isinstance(epochs_dict, dict) or not all(
+        isinstance(epoch, nap.IntervalSet) for epoch in epochs_dict.values()
+    ):
+        raise TypeError("epochs_dict should be a dictionary of IntervalSets.")
+
+    # check return_pandas
+    if not isinstance(return_pandas, bool):
+        raise TypeError("return_pandas should be a boolean.")
+
+    # tuning curves
+    keys = (
+        data.keys()
+        if isinstance(data, nap.TsGroup)
+        else data.columns if isinstance(data, nap.TsdFrame) else [0]
+    )
+    tcs = np.empty((len(keys), len(epochs_dict)))
+    if isinstance(data, (nap.TsGroup, nap.Ts)):
+        # SPIKES
+        if isinstance(data, nap.Ts):
+            data = {0: data}
+        for epoch_idx, epoch in enumerate(epochs_dict.values()):
+            for unit_idx, unit_label in enumerate(keys):
+                tcs[unit_idx, epoch_idx] = float(len(data[unit_label].restrict(epoch)))
+            tcs[:, epoch_idx] = tcs[:, epoch_idx] / epoch.tot_length("s")
+    else:
+        # RATES
+        if isinstance(data, nap.Tsd):
+            data = np.expand_dims(data.values, -1)
+        for epoch_idx, epoch in enumerate(epochs_dict.values()):
+            for unit_idx in range(len(keys)):
+                tcs[unit_idx, epoch_idx] = np.mean(data[:, unit_idx].restrict(epoch))
+
+    tcs = xr.DataArray(
+        tcs,
+        coords={"unit": keys, "epochs": list(epochs_dict.keys())},
     )
     if return_pandas:
         return tcs.to_pandas().T
@@ -450,58 +551,6 @@ def _validate_tuning_inputs(func):
         return func(**kwargs)
 
     return wrapper
-
-
-@_validate_tuning_inputs
-def compute_discrete_tuning_curves(group, dict_ep):
-    """
-    Compute discrete tuning curves of a TsGroup using a dictionary of epochs.
-    The function returns a pandas DataFrame with each row being a key of the dictionary of epochs
-    and each column being a neurons.
-
-    This function can typically being used for a set of stimulus being presented for multiple epochs.
-    An example of the dictionary is:
-
-    >>> dict_ep =  {
-    ...     "stim0": nap.IntervalSet(start=0, end=1),
-    ...     "stim1":nap.IntervalSet(start=2, end=3)
-    ... }
-
-    In this case, the function will return a pandas DataFrame :
-
-    >>> tc
-               neuron0    neuron1    neuron2
-    stim0        0 Hz       1 Hz       2 Hz
-    stim1        3 Hz       4 Hz       5 Hz
-
-
-    Parameters
-    ----------
-    group : nap.TsGroup
-        The group of Ts/Tsd for which the tuning curves will be computed
-    dict_ep : dict
-        Dictionary of IntervalSets
-
-    Returns
-    -------
-    pandas.DataFrame
-        Table of firing rate for each neuron and each IntervalSet
-
-    Raises
-    ------
-    RuntimeError
-        If group is not a TsGroup object.
-    """
-    idx = np.sort(list(dict_ep.keys()))
-    tuning_curves = pd.DataFrame(index=idx, columns=list(group.keys()), data=0.0)
-
-    for k in dict_ep.keys():
-        for n in group.keys():
-            tuning_curves.loc[k, n] = float(len(group[n].restrict(dict_ep[k])))
-
-        tuning_curves.loc[k] = tuning_curves.loc[k] / dict_ep[k].tot_length("s")
-
-    return tuning_curves
 
 
 @_validate_tuning_inputs

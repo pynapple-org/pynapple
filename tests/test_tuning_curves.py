@@ -624,87 +624,217 @@ def test_compute_tuning_curves(data, features, kwargs, expectation):
 # ------------------------------------------------------------------------------------
 
 
-def get_group():
-    return nap.TsGroup({0: nap.Ts(t=np.arange(0, 100))})
-
-
-def get_feature():
-    return nap.Tsd(
-        t=np.arange(0, 100, 0.1),
-        d=np.arange(0, 100, 0.1) % 1.0,
-        time_support=nap.IntervalSet(0, 100),
-    )
-
-
-def get_features():
-    tmp = np.vstack(
-        (np.repeat(np.arange(0, 100), 10), np.tile(np.arange(0, 100), 10))
-    ).T
-    return nap.TsdFrame(
-        t=np.arange(0, 200, 0.1),
-        d=np.vstack((tmp, tmp[::-1])),
-        time_support=nap.IntervalSet(0, 200),
-    )
-
-
-def get_ep():
-    return nap.IntervalSet(start=0, end=50)
-
-
-def get_tsdframe():
-    return nap.TsdFrame(t=np.arange(0, 100), d=np.ones((100, 2)))
-
-
 @pytest.mark.parametrize(
-    "group, dict_ep, expectation",
+    "data, epochs_dict, kwargs, expectation",
     [
+        # data
         (
-            "a",
-            {
-                0: nap.IntervalSet(start=0, end=50),
-                1: nap.IntervalSet(start=50, end=100),
-            },
-            pytest.raises(TypeError, match="group should be a TsGroup."),
-        ),
-        (
-            get_group(),
-            "a",
+            [1],
+            {},
+            {},
             pytest.raises(
-                TypeError, match="dict_ep should be a dictionary of IntervalSet"
+                TypeError, match="data should be a TsdFrame, TsGroup, Ts, or Tsd."
             ),
         ),
         (
-            get_group(),
-            {0: "a", 1: nap.IntervalSet(start=50, end=100)},
+            None,
+            {},
+            {},
             pytest.raises(
-                TypeError, match="dict_ep argument should contain only IntervalSet."
+                TypeError, match="data should be a TsdFrame, TsGroup, Ts, or Tsd."
             ),
+        ),
+        (
+            {1: nap.Ts([1, 2, 3])},
+            {},
+            {},
+            pytest.raises(
+                TypeError, match="data should be a TsdFrame, TsGroup, Ts, or Tsd."
+            ),
+        ),
+        (get_group_n(1), {}, {}, does_not_raise()),
+        (get_group_n(3), {}, {}, does_not_raise()),
+        (get_group_n(1).count(0.1), {}, {}, does_not_raise()),
+        (get_group_n(3).count(0.1), {}, {}, does_not_raise()),
+        (nap.Tsd(t=[1, 2, 3], d=[1, 1, 1]), {}, {}, does_not_raise()),
+        (nap.Ts([1, 2, 3]), {}, {}, does_not_raise()),
+        # epochs_dict
+        (
+            get_group_n(1),
+            1,
+            {},
+            pytest.raises(
+                TypeError, match="epochs_dict should be a dictionary of IntervalSets."
+            ),
+        ),
+        (
+            get_group_n(1),
+            None,
+            {},
+            pytest.raises(
+                TypeError, match="epochs_dict should be a dictionary of IntervalSets."
+            ),
+        ),
+        (
+            get_group_n(1),
+            nap.IntervalSet(0, 100),
+            {},
+            pytest.raises(
+                TypeError, match="epochs_dict should be a dictionary of IntervalSets."
+            ),
+        ),
+        (
+            get_group_n(1),
+            [nap.IntervalSet(0, 100)],
+            {},
+            pytest.raises(
+                TypeError, match="epochs_dict should be a dictionary of IntervalSets."
+            ),
+        ),
+        (
+            get_group_n(1),
+            {"0": nap.IntervalSet(0, 100), "1": 0},
+            {},
+            pytest.raises(
+                TypeError, match="epochs_dict should be a dictionary of IntervalSets."
+            ),
+        ),
+        (
+            get_group_n(1),
+            {"0": nap.IntervalSet(0, 100)},
+            {},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            {"0": nap.IntervalSet(0, 100), "1": nap.IntervalSet(0, 50)},
+            {},
+            does_not_raise(),
+        ),
+        # return pandas
+        (
+            get_group_n(1),
+            {},
+            {"return_pandas": 1},
+            pytest.raises(
+                TypeError,
+                match="return_pandas should be a boolean.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            {},
+            {"return_pandas": "1"},
+            pytest.raises(
+                TypeError,
+                match="return_pandas should be a boolean.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            {},
+            {"return_pandas": True},
+            does_not_raise(),
         ),
     ],
 )
-def test_compute_discrete_tuning_curves_errors(group, dict_ep, expectation):
+def test_compute_discrete_tuning_curves_type_errors(
+    data, epochs_dict, kwargs, expectation
+):
     with expectation:
-        nap.compute_discrete_tuning_curves(group, dict_ep)
+        nap.compute_discrete_tuning_curves(data, epochs_dict, **kwargs)
 
 
-@pytest.mark.parametrize("group", [get_group()])
 @pytest.mark.parametrize(
-    "dict_ep",
+    "data, epochs_dict, kwargs, expectation",
     [
-        {0: nap.IntervalSet(start=0, end=50), 1: nap.IntervalSet(start=50, end=100)},
-        {
-            "0": nap.IntervalSet(start=0, end=50),
-            "1": nap.IntervalSet(start=50, end=100),
-        },
+        # single rate unit, single epoch
+        (
+            get_group_n(1).count(1.0),
+            {"0": nap.IntervalSet(0, 50)},
+            {},
+            xr.DataArray(
+                [[10.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1], "epochs": ["0"]},
+            ),
+        ),
+        # two rate units, single epoch
+        (
+            get_group_n(2).count(1.0),
+            {"0": nap.IntervalSet(0, 50)},
+            {},
+            xr.DataArray(
+                [[10.0], [1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0"]},
+            ),
+        ),
+        # two rate units, multiple epochs
+        (
+            get_group_n(2).count(1.0),
+            {"0": nap.IntervalSet(0, 50), "1": nap.IntervalSet(50, 100)},
+            {},
+            xr.DataArray(
+                [[10.0, 10.0], [1.0, 1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0", "1"]},
+            ),
+        ),
+        # single unit, single epoch
+        (
+            get_group_n(1),
+            {"0": nap.IntervalSet(50, 100)},
+            {},
+            xr.DataArray(
+                [[10.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1], "epochs": ["0"]},
+            ),
+        ),
+        # two units, single epoch
+        (
+            get_group_n(2),
+            {"0": nap.IntervalSet(0, 100)},
+            {},
+            xr.DataArray(
+                [[10.0], [1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0"]},
+            ),
+        ),
+        # two units, multiple epochs
+        (
+            get_group_n(2),
+            {"0": nap.IntervalSet(0, 100), "1": nap.IntervalSet(50, 100)},
+            {},
+            xr.DataArray(
+                [[10.0, 10.0], [1.0, 1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0", "1"]},
+            ),
+        ),
+        # two units, multiple epochs, return_pandas=True
+        (
+            get_group_n(2),
+            {"0": nap.IntervalSet(0, 100), "1": nap.IntervalSet(50, 100)},
+            {"return_pandas": True},
+            xr.DataArray(
+                [[10.0, 10.0], [1.0, 1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0", "1"]},
+            )
+            .to_pandas()
+            .T,
+        ),
     ],
 )
-def test_compute_discrete_tuning_curves(group, dict_ep):
-    tc = nap.compute_discrete_tuning_curves(group, dict_ep)
-    assert len(tc) == 2
-    assert list(tc.columns) == list(group.keys())
-    assert list(tc.index.values) == list(dict_ep.keys())
-    np.testing.assert_almost_equal(tc.iloc[0, 0], 51 / 50)
-    np.testing.assert_almost_equal(tc.iloc[1, 0], 1)
+def test_compute_discrete_tuning_curves(data, epochs_dict, kwargs, expectation):
+    tcs = nap.compute_discrete_tuning_curves(data, epochs_dict, **kwargs)
+    if isinstance(expectation, pd.DataFrame):
+        pd.testing.assert_frame_equal(tcs, expectation)
+    else:
+        xr.testing.assert_allclose(tcs, expectation)
 
 
 # ------------------------------------------------------------------------------------
@@ -823,6 +953,37 @@ def test_compute_mutual_information(n_units, n_features, pattern):
 # ------------------------------------------------------------------------------------
 # OLD MUTUAL INFORMATION TESTS
 # ------------------------------------------------------------------------------------
+
+
+def get_group():
+    return nap.TsGroup({0: nap.Ts(t=np.arange(0, 100))})
+
+
+def get_feature():
+    return nap.Tsd(
+        t=np.arange(0, 100, 0.1),
+        d=np.arange(0, 100, 0.1) % 1.0,
+        time_support=nap.IntervalSet(0, 100),
+    )
+
+
+def get_features():
+    tmp = np.vstack(
+        (np.repeat(np.arange(0, 100), 10), np.tile(np.arange(0, 100), 10))
+    ).T
+    return nap.TsdFrame(
+        t=np.arange(0, 200, 0.1),
+        d=np.vstack((tmp, tmp[::-1])),
+        time_support=nap.IntervalSet(0, 200),
+    )
+
+
+def get_ep():
+    return nap.IntervalSet(start=0, end=50)
+
+
+def get_tsdframe():
+    return nap.TsdFrame(t=np.arange(0, 100), d=np.ones((100, 2)))
 
 
 @pytest.mark.parametrize(

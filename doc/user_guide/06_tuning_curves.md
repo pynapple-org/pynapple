@@ -335,19 +335,19 @@ plt.show()
 When computing from epochs, you should store them in a dictionary:
 
 ```{code-cell} ipython3
-dict_ep =  {
+epochs_dict =  {
     "stim0": nap.IntervalSet(start=0, end=20),
     "stim1":nap.IntervalSet(start=30, end=70)
 }
 ```
+You can then compute the tuning curves using [`nap.compute_discrete_tuning_curves`](pynapple.process.tuning_curves.compute_discrete_tuning_curves).
+You can pass either a `TsGroup` for spikes, or a `TsdFrame` for rates/calcium activity.
 
-[`nap.compute_discrete_tuning_curves`](pynapple.process.tuning_curves.compute_discrete_tuning_curves) takes a `TsGroup` for spiking activity and a dictionary of epochs. 
-The output is a pandas DataFrame where each column is a unit in the `TsGroup` and each row is one `IntervalSet`.
-The output will be the mean firing rate of the neuron during this set of intervals.
+The output is an `xarray.DataArray` with labeled dimensions:
 
 ```{code-cell} ipython3
-mean_fr = nap.compute_discrete_tuning_curves(tsgroup, dict_ep)
-print(mean_fr)
+tuning_curves = nap.compute_discrete_tuning_curves(tsgroup, epochs_dict)
+tuning_curves
 ```
 
 # Mutual information
