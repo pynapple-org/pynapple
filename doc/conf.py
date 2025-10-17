@@ -22,7 +22,7 @@ sys.path.insert(0, os.path.abspath("sphinxext"))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = "pynapple"
-copyright = f'2021-{time.strftime("%Y")}'
+copyright = f"2021-{time.strftime('%Y')}"
 author = "Guillaume Viejo"
 from importlib.metadata import version
 
@@ -42,6 +42,7 @@ extensions = [
     "sphinx.ext.coverage",
     "sphinx.ext.viewcode",  # Links to source code
     "sphinx.ext.doctest",
+    "sphinx.ext.intersphinx",
     "sphinx_copybutton",  # Adds copy button to code blocks
     "sphinx_design",  # For layout components
     "myst_nb",
@@ -73,6 +74,15 @@ autodoc_default_options = {
     "members": True,
     "inherited-members": True,
     "show-inheritance": True,
+}
+
+# Intersphinx setup
+intersphinx_mapping = {
+    "matplotlib": ("https://matplotlib.org/stable/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "python": ("https://docs.python.org/3/", None),
+    "pandas": ("https://pandas.pydata.org/docs/", None),
+    "xarray": ("https://docs.xarray.dev/en/stable/", None),
 }
 
 # apidoc_module_dir = '../pynapple'
