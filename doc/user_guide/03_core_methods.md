@@ -73,10 +73,16 @@ tsdframe.in_interval(epochs)
 ```{code-cell} ipython3
 :tags: [hide-input]
 plt.figure()
+plt.subplot(2,1,1)
+plt.plot(tsdframe)
+[plt.axvspan(s, e, alpha=0.2) for s, e in epochs.values]
+plt.xlim(0, 100)
+plt.subplot(2,1,2)
 plt.plot(tsdframe.in_interval(epochs))
 plt.xlabel("Time (s)")
 plt.title("tsdframe.in_interval(epochs)")
 plt.xlim(0, 100)
+plt.tight_layout()
 plt.show()
 ```
 
