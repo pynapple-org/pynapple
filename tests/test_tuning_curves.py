@@ -648,7 +648,7 @@ def test_compute_tuning_curves(data, features, kwargs, expectation):
         # data
         (
             [1],
-            {},
+            {"0": nap.IntervalSet(0, 100)},
             {},
             pytest.raises(
                 TypeError, match="data should be a TsdFrame, TsGroup, Ts, or Tsd."
@@ -656,7 +656,7 @@ def test_compute_tuning_curves(data, features, kwargs, expectation):
         ),
         (
             None,
-            {},
+            {"0": nap.IntervalSet(0, 100)},
             {},
             pytest.raises(
                 TypeError, match="data should be a TsdFrame, TsGroup, Ts, or Tsd."
@@ -664,18 +664,33 @@ def test_compute_tuning_curves(data, features, kwargs, expectation):
         ),
         (
             {1: nap.Ts([1, 2, 3])},
-            {},
+            {"0": nap.IntervalSet(0, 100)},
             {},
             pytest.raises(
                 TypeError, match="data should be a TsdFrame, TsGroup, Ts, or Tsd."
             ),
         ),
-        (get_group_n(1), {}, {}, does_not_raise()),
-        (get_group_n(3), {}, {}, does_not_raise()),
-        (get_group_n(1).count(0.1), {}, {}, does_not_raise()),
-        (get_group_n(3).count(0.1), {}, {}, does_not_raise()),
-        (nap.Tsd(t=[1, 2, 3], d=[1, 1, 1]), {}, {}, does_not_raise()),
-        (nap.Ts([1, 2, 3]), {}, {}, does_not_raise()),
+        (get_group_n(1), {"0": nap.IntervalSet(0, 100)}, {}, does_not_raise()),
+        (get_group_n(3), {"0": nap.IntervalSet(0, 100)}, {}, does_not_raise()),
+        (
+            get_group_n(1).count(0.1),
+            {"0": nap.IntervalSet(0, 100)},
+            {},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(3).count(0.1),
+            {"0": nap.IntervalSet(0, 100)},
+            {},
+            does_not_raise(),
+        ),
+        (
+            nap.Tsd(t=[1, 2, 3], d=[1, 1, 1]),
+            {"0": nap.IntervalSet(0, 100)},
+            {},
+            does_not_raise(),
+        ),
+        (nap.Ts([1, 2, 3]), {"0": nap.IntervalSet(0, 100)}, {}, does_not_raise()),
         # epochs_dict
         (
             get_group_n(1),
@@ -732,7 +747,7 @@ def test_compute_tuning_curves(data, features, kwargs, expectation):
         # return pandas
         (
             get_group_n(1),
-            {},
+            {"0": nap.IntervalSet(0, 100)},
             {"return_pandas": 2},
             pytest.raises(
                 TypeError,
@@ -741,7 +756,7 @@ def test_compute_tuning_curves(data, features, kwargs, expectation):
         ),
         (
             get_group_n(1),
-            {},
+            {"0": nap.IntervalSet(0, 100)},
             {"return_pandas": "1"},
             pytest.raises(
                 TypeError,
@@ -750,25 +765,25 @@ def test_compute_tuning_curves(data, features, kwargs, expectation):
         ),
         (
             get_group_n(1),
-            {},
+            {"0": nap.IntervalSet(0, 100)},
             {"return_pandas": True},
             does_not_raise(),
         ),
         (
             get_group_n(1),
-            {},
+            {"0": nap.IntervalSet(0, 100)},
             {"return_pandas": False},
             does_not_raise(),
         ),
         (
             get_group_n(1),
-            {},
+            {"0": nap.IntervalSet(0, 100)},
             {"return_pandas": 0},
             does_not_raise(),
         ),
         (
             get_group_n(1),
-            {},
+            {"0": nap.IntervalSet(0, 100)},
             {"return_pandas": 1},
             does_not_raise(),
         ),

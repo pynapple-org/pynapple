@@ -342,8 +342,10 @@ def compute_discrete_tuning_curves(data, epochs_dict, return_pandas=False):
         raise TypeError("data should be a TsdFrame, TsGroup, Ts, or Tsd.")
 
     # check epochs_dict
-    if not isinstance(epochs_dict, dict) or not all(
-        isinstance(epoch, nap.IntervalSet) for epoch in epochs_dict.values()
+    if (
+        not isinstance(epochs_dict, dict)
+        or len(epochs_dict) == 0
+        or not all(isinstance(epoch, nap.IntervalSet) for epoch in epochs_dict.values())
     ):
         raise TypeError("epochs_dict should be a dictionary of IntervalSets.")
 
@@ -364,7 +366,7 @@ def compute_discrete_tuning_curves(data, epochs_dict, return_pandas=False):
     if isinstance(data, (nap.TsGroup, nap.Ts)):
         # SPIKES
         if isinstance(data, nap.Ts):
-            data = {0: data}
+            data = nap.TsGroup({0: data}, time_support=data.time_support)
         tcs = np.stack(
             [
                 data.restrict(epoch).count().values.sum(axis=0) / epoch.tot_length("s")
@@ -375,7 +377,11 @@ def compute_discrete_tuning_curves(data, epochs_dict, return_pandas=False):
     else:
         # RATES
         if isinstance(data, nap.Tsd):
-            data = np.expand_dims(data.values, -1)
+            data = nap.TsdFrame(
+                d=np.expand_dims(data.values, -1),
+                t=data.times(),
+                time_support=data.time_support,
+            )
         tcs = np.stack(
             [
                 data.restrict(epoch).values.mean(axis=0)
