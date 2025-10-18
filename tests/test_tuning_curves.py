@@ -832,6 +832,31 @@ def test_compute_discrete_tuning_curves_type_errors(
                 coords={"unit": [1, 2], "epochs": ["0", "1"]},
             ),
         ),
+        # two rate units, multiple epochs, overlapping
+        (
+            get_group_n(2).count(1.0),
+            {"0": nap.IntervalSet(0, 100), "1": nap.IntervalSet(50, 100)},
+            {},
+            xr.DataArray(
+                [[10.0, 10.0], [1.0, 1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0", "1"]},
+            ),
+        ),
+        # two rate units, multiple epochs, multiple intervals
+        (
+            get_group_n(2).count(1.0),
+            {
+                "0": nap.IntervalSet([0, 20], [10, 30]),
+                "1": nap.IntervalSet([50, 70], [60, 80]),
+            },
+            {},
+            xr.DataArray(
+                [[10.0, 10.0], [1.0, 1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0", "1"]},
+            ),
+        ),
         # single unit, single epoch
         (
             get_group_n(1),
@@ -857,10 +882,35 @@ def test_compute_discrete_tuning_curves_type_errors(
         # two units, multiple epochs
         (
             get_group_n(2),
+            {"0": nap.IntervalSet(0, 49.9999), "1": nap.IntervalSet(50, 100)},
+            {},
+            xr.DataArray(
+                [[10.0, 10.0], [1.0, 1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0", "1"]},
+            ),
+        ),
+        # two units, multiple epochs, overlapping
+        (
+            get_group_n(2),
             {"0": nap.IntervalSet(0, 100), "1": nap.IntervalSet(50, 100)},
             {},
             xr.DataArray(
                 [[10.0, 10.0], [1.0, 1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0", "1"]},
+            ),
+        ),
+        # two units, multiple epochs, multiple intervals
+        (
+            get_group_n(2),
+            {
+                "0": nap.IntervalSet([0, 20], [10, 30]),
+                "1": nap.IntervalSet([50, 70], [60, 80]),
+            },
+            {},
+            xr.DataArray(
+                [[10.1, 10.1], [1.1, 1.1]],
                 dims=["unit", "epochs"],
                 coords={"unit": [1, 2], "epochs": ["0", "1"]},
             ),
