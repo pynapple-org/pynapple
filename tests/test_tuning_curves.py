@@ -263,7 +263,7 @@ def get_features_n(n, fs=10.0):
         (
             get_group_n(1),
             get_features_n(1),
-            {"return_pandas": 1},
+            {"return_pandas": 2},
             pytest.raises(
                 TypeError,
                 match="return_pandas should be a boolean.",
@@ -281,7 +281,25 @@ def get_features_n(n, fs=10.0):
         (
             get_group_n(1),
             get_features_n(1),
+            {"return_pandas": 0},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_pandas": 1},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
             {"return_pandas": True},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_pandas": False},
             does_not_raise(),
         ),
         (
@@ -715,7 +733,7 @@ def test_compute_tuning_curves(data, features, kwargs, expectation):
         (
             get_group_n(1),
             {},
-            {"return_pandas": 1},
+            {"return_pandas": 2},
             pytest.raises(
                 TypeError,
                 match="return_pandas should be a boolean.",
@@ -734,6 +752,24 @@ def test_compute_tuning_curves(data, features, kwargs, expectation):
             get_group_n(1),
             {},
             {"return_pandas": True},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            {},
+            {"return_pandas": False},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            {},
+            {"return_pandas": 0},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            {},
+            {"return_pandas": 1},
             does_not_raise(),
         ),
     ],

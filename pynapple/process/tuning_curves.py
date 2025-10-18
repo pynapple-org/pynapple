@@ -220,7 +220,7 @@ def compute_tuning_curves(
             )
 
     # check return_pandas
-    if not isinstance(return_pandas, bool):
+    if not isinstance(return_pandas, bool) or return_pandas == 1 or return_pandas == 0:
         raise TypeError("return_pandas should be a boolean.")
 
     # occupancy
@@ -343,7 +343,7 @@ def compute_discrete_tuning_curves(data, epochs_dict, return_pandas=False):
         raise TypeError("epochs_dict should be a dictionary of IntervalSets.")
 
     # check return_pandas
-    if not isinstance(return_pandas, bool):
+    if not isinstance(return_pandas, bool) or return_pandas == 1 or return_pandas == 0:
         raise TypeError("return_pandas should be a boolean.")
 
     # tuning curves
