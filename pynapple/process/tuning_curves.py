@@ -220,7 +220,11 @@ def compute_tuning_curves(
             )
 
     # check return_pandas
-    if not isinstance(return_pandas, bool) or return_pandas == 1 or return_pandas == 0:
+    if (
+        return_pandas != 1
+        and return_pandas != 0
+        and not isinstance(return_pandas, bool)
+    ):
         raise TypeError("return_pandas should be a boolean.")
 
     # occupancy
@@ -294,6 +298,7 @@ def compute_discrete_tuning_curves(data, epochs_dict, return_pandas=False):
     Examples
     --------
     This function is typically used for a set of discrete stimuli being presented for multiple epochs.
+    The stimulus epochs can overlap, though note that epochs within an IntervalSet can not overlap.
 
         >>> import pynapple as nap
         >>> import numpy as np; np.random.seed(42)
@@ -343,7 +348,11 @@ def compute_discrete_tuning_curves(data, epochs_dict, return_pandas=False):
         raise TypeError("epochs_dict should be a dictionary of IntervalSets.")
 
     # check return_pandas
-    if not isinstance(return_pandas, bool) or return_pandas == 1 or return_pandas == 0:
+    if (
+        return_pandas != 1
+        and return_pandas != 0
+        and not isinstance(return_pandas, bool)
+    ):
         raise TypeError("return_pandas should be a boolean.")
 
     # tuning curves
@@ -352,22 +361,28 @@ def compute_discrete_tuning_curves(data, epochs_dict, return_pandas=False):
         if isinstance(data, nap.TsGroup)
         else data.columns if isinstance(data, nap.TsdFrame) else [0]
     )
-    tcs = np.empty((len(keys), len(epochs_dict)))
     if isinstance(data, (nap.TsGroup, nap.Ts)):
         # SPIKES
         if isinstance(data, nap.Ts):
             data = {0: data}
-        for epoch_idx, epoch in enumerate(epochs_dict.values()):
-            for unit_idx, unit_label in enumerate(keys):
-                tcs[unit_idx, epoch_idx] = float(len(data[unit_label].restrict(epoch)))
-            tcs[:, epoch_idx] = tcs[:, epoch_idx] / epoch.tot_length("s")
+        tcs = np.stack(
+            [
+                data.restrict(epoch).count().values.sum(axis=0) / epoch.tot_length("s")
+                for epoch in epochs_dict.values()
+            ],
+            axis=1,
+        )
     else:
         # RATES
         if isinstance(data, nap.Tsd):
             data = np.expand_dims(data.values, -1)
-        for epoch_idx, epoch in enumerate(epochs_dict.values()):
-            for unit_idx in range(len(keys)):
-                tcs[unit_idx, epoch_idx] = np.mean(data[:, unit_idx].restrict(epoch))
+        tcs = np.stack(
+            [
+                data.restrict(epoch).values.mean(axis=0)
+                for epoch in epochs_dict.values()
+            ],
+            axis=1,
+        )
 
     tcs = xr.DataArray(
         tcs,
