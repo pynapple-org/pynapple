@@ -282,9 +282,9 @@ def compute_tuning_curves(
         return tcs
 
 
-def compute_discrete_tuning_curves(data, epochs_dict, return_pandas=False):
+def compute_response_per_epoch(data, epochs_dict, return_pandas=False):
     """
-    Compute discrete tuning curves using a dictionary of epochs.
+    Compute mean response per epoch, given a dictionary of epochs.
 
     Parameters
     ----------
@@ -310,7 +310,7 @@ def compute_discrete_tuning_curves(data, epochs_dict, return_pandas=False):
         ...     1: nap.Ts(np.arange(0, 100, 0.1)),
         ...     2: nap.Ts(np.arange(0, 100, 0.2))
         ... })
-        >>> tcs = nap.compute_discrete_tuning_curves(group, epochs_dict)
+        >>> tcs = nap.compute_response_per_epoch(group, epochs_dict)
         >>> tcs
         <xarray.DataArray (unit: 2, epochs: 2)> Size: 32B
         array([[10.03333333, 10.03333333],
@@ -322,7 +322,7 @@ def compute_discrete_tuning_curves(data, epochs_dict, return_pandas=False):
     You can also pass a TsdFrame (e.g. calcium imaging data), in that case the response is computed:
 
         >>> frame = nap.TsdFrame(d=np.random.rand(2000, 3), t=np.arange(0, 100, 0.05))
-        >>> tcs = nap.compute_discrete_tuning_curves(frame, epochs_dict)
+        >>> tcs = nap.compute_response_per_epoch(frame, epochs_dict)
         >>> tcs
         <xarray.DataArray (unit: 3, epochs: 2)> Size: 48B
         array([[0.50946668, 0.50897635],
@@ -674,6 +674,21 @@ def compute_2d_tuning_curves_continuous(
     tcs = {c: xarray.sel(unit=c).values for c in xarray.coords["unit"].values}
     bins = [xarray.coords[dim].values for dim in xarray.coords if dim != "unit"]
     return tcs, bins
+
+
+@_validate_tuning_inputs
+def compute_discrete_tuning_curves(group, dict_ep):
+    """
+    Deprecated, use `compute_response_per_epoch` instead.
+    """
+    warnings.warn(
+        "compute_discrete_tuning_curves is deprecated and will be removed in a future version;"
+        "use compute_response_per_epoch instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+
+    return compute_response_per_epoch(group, dict_ep, return_pandas=True)
 
 
 @_validate_tuning_inputs

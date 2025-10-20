@@ -340,13 +340,13 @@ epochs_dict =  {
     "stim1":nap.IntervalSet(start=30, end=70)
 }
 ```
-You can then compute the tuning curves using [`nap.compute_discrete_tuning_curves`](pynapple.process.tuning_curves.compute_discrete_tuning_curves).
+You can then compute the tuning curves using [`nap.compute_response_per_epoch`](pynapple.process.tuning_curves.compute_response_per_epoch).
 You can pass either a `TsGroup` for spikes, or a `TsdFrame` for rates/calcium activity.
 
 The output is an `xarray.DataArray` with labeled dimensions:
 
 ```{code-cell} ipython3
-tuning_curves = nap.compute_discrete_tuning_curves(tsgroup, epochs_dict)
+tuning_curves = nap.compute_response_per_epoch(tsgroup, epochs_dict)
 tuning_curves
 ```
 

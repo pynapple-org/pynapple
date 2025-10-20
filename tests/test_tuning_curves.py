@@ -789,11 +789,9 @@ def test_compute_tuning_curves(data, features, kwargs, expectation):
         ),
     ],
 )
-def test_compute_discrete_tuning_curves_type_errors(
-    data, epochs_dict, kwargs, expectation
-):
+def test_compute_response_per_epoch_type_errors(data, epochs_dict, kwargs, expectation):
     with expectation:
-        nap.compute_discrete_tuning_curves(data, epochs_dict, **kwargs)
+        nap.compute_response_per_epoch(data, epochs_dict, **kwargs)
 
 
 @pytest.mark.parametrize(
@@ -930,8 +928,8 @@ def test_compute_discrete_tuning_curves_type_errors(
         ),
     ],
 )
-def test_compute_discrete_tuning_curves(data, epochs_dict, kwargs, expectation):
-    tcs = nap.compute_discrete_tuning_curves(data, epochs_dict, **kwargs)
+def test_compute_response_per_epoch(data, epochs_dict, kwargs, expectation):
+    tcs = nap.compute_response_per_epoch(data, epochs_dict, **kwargs)
     if isinstance(expectation, pd.DataFrame):
         pd.testing.assert_frame_equal(tcs, expectation)
     else:
@@ -1323,6 +1321,60 @@ def test_compute_2d_mutual_info(args, kwargs, expected):
 # ------------------------------------------------------------------------------------
 # OLD TUNING CURVE TESTS
 # ------------------------------------------------------------------------------------
+
+
+@pytest.mark.filterwarnings("ignore")
+@pytest.mark.parametrize(
+    "group, dict_ep, expectation",
+    [
+        (
+            "a",
+            {
+                0: nap.IntervalSet(start=0, end=50),
+                1: nap.IntervalSet(start=50, end=100),
+            },
+            pytest.raises(TypeError, match="group should be a TsGroup."),
+        ),
+        (
+            get_group(),
+            "a",
+            pytest.raises(
+                TypeError, match="dict_ep should be a dictionary of IntervalSet"
+            ),
+        ),
+        (
+            get_group(),
+            {0: "a", 1: nap.IntervalSet(start=50, end=100)},
+            pytest.raises(
+                TypeError, match="dict_ep argument should contain only IntervalSet."
+            ),
+        ),
+    ],
+)
+def test_compute_discrete_tuning_curves_errors(group, dict_ep, expectation):
+    with expectation:
+        nap.compute_discrete_tuning_curves(group, dict_ep)
+
+
+@pytest.mark.filterwarnings("ignore")
+@pytest.mark.parametrize("group", [get_group()])
+@pytest.mark.parametrize(
+    "dict_ep",
+    [
+        {0: nap.IntervalSet(start=0, end=50), 1: nap.IntervalSet(start=50, end=100)},
+        {
+            "0": nap.IntervalSet(start=0, end=50),
+            "1": nap.IntervalSet(start=50, end=100),
+        },
+    ],
+)
+def test_compute_discrete_tuning_curves(group, dict_ep):
+    tc = nap.compute_discrete_tuning_curves(group, dict_ep)
+    assert len(tc) == 2
+    assert list(tc.columns) == list(group.keys())
+    assert list(tc.index.values) == list(dict_ep.keys())
+    np.testing.assert_almost_equal(tc.iloc[0, 0], 51 / 50)
+    np.testing.assert_almost_equal(tc.iloc[1, 0], 1)
 
 
 @pytest.mark.parametrize(
