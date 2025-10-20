@@ -259,7 +259,7 @@ def get_features_n(n, fs=10.0):
             {"feature_names": ("feature0", "feature1")},
             does_not_raise(),
         ),
-        # return pandas
+        # return_pandas
         (
             get_group_n(1),
             get_features_n(1),
@@ -292,6 +292,49 @@ def get_features_n(n, fs=10.0):
                 ValueError,
                 match="Cannot convert arrays with 3 dimensions into pandas objects. Requires 2 or fewer dimensions.",
             ),
+        ),
+        # return_counts
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_counts": 2},
+            pytest.raises(
+                TypeError,
+                match="return_counts should be a boolean.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_counts": "1"},
+            pytest.raises(
+                TypeError,
+                match="return_counts should be a boolean.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_counts": 0},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_counts": 1},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_counts": True},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_counts": False},
+            does_not_raise(),
         ),
     ],
 )
@@ -608,6 +651,48 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
             )
             .to_pandas()
             .T,
+        ),
+        # single unit, single feature, return_counts=True
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_counts": True},
+            xr.DataArray(
+                np.full((1, 10), 100.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+            ),
+        ),
+        # single unit, single feature, return_counts=True
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_counts": True},
+            xr.DataArray(
+                np.full((1, 10), 100.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+            ),
+        ),
+        # multiple units, multiple features, return_counts=True
+        (
+            get_group_n(2),
+            get_features_n(2),
+            {"return_counts": True},
+            xr.DataArray(
+                np.stack(
+                    [
+                        np.where(np.eye(10), 100.0, 0.0),
+                        np.where(np.eye(10), 10.0, 0.0),
+                    ]
+                ),
+                dims=["unit", "feature0", "feature1"],
+                coords={
+                    "unit": [1, 2],
+                    "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                    "feature1": np.linspace(0, 19.8, 11)[:-1] + 0.99,
+                },
+            ),
         ),
     ],
 )
