@@ -305,20 +305,35 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
 
         out = func._implementation(*new_args, **kwargs)
 
-        if func in [np.transpose]:
-            return out
-
         # Special case for array with symmetrical shapes and some functions like sum
         if self.ndim > 1 and np.all(self.shape[0] == np.array(self.shape)):
-            # The output should have fewer dimensions
-            if out.ndim < self.ndim:
-                # Need to check axis
-                sig = inspect.signature(func)
-                bound = sig.bind_partial(*new_args, **kwargs)
+            # Need to check axis
+            sig = inspect.signature(func)
+            bound = sig.bind_partial(*new_args, **kwargs)
+            if out.ndim < self.ndim:  # Case it reduces dimensions
                 axis = bound.arguments.get("axis", None)
                 # If axis = 0, the time axis disappear so should return a numpy array
                 if axis == 0:
                     return out
+            else:  # ndim is the same
+                if func in [np.flip, np.flipud, np.rollaxis]:
+                    axis = bound.arguments.get("axis", None)
+                    if axis is None or axis == 0:
+                        return out
+                if func is np.transpose:
+                    axes = bound.arguments.get("axes", None)
+                    if axes is None or (isinstance(axes, tuple) and axes[0] != 0):
+                        return out
+                if func is np.moveaxis:
+                    source = bound.arguments.get("source", None)
+                    destination = bound.arguments.get("destination", None)
+                    if source == 0 or destination == 0:
+                        return out
+                if func is np.swapaxes:
+                    axis1 = bound.arguments.get("axis1", None)
+                    axis2 = bound.arguments.get("axis2", None)
+                    if axis1 == 0 or axis2 == 0:
+                        return out
 
         return _initialize_tsd_output(self, out)
 

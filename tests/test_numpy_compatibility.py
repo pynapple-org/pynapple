@@ -544,3 +544,46 @@ def test_square_arrays(tsd, func, kwargs):
             assert not isinstance(a, np.ndarray)
             np.testing.assert_array_almost_equal(a.index, tsd.index)
             np.testing.assert_array_almost_equal(a.values, b)
+
+
+@pytest.mark.parametrize(
+    "tsd",
+    [
+        nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 10, 10), time_units="s"),
+    ],
+)
+@pytest.mark.parametrize(
+    "func, kwargs, expected_type",
+    [
+        ("transpose", {}, np.ndarray),
+        ("transpose", {"axes": (2, 0, 1)}, np.ndarray),
+        ("transpose", {"axes": (0, 2, 1)}, nap.TsdTensor),
+        ("moveaxis", {"source": 0, "destination": 1}, np.ndarray),
+        ("moveaxis", {"source": 1, "destination": 0}, np.ndarray),
+        ("moveaxis", {"source": 2, "destination": 1}, nap.TsdTensor),
+        ("swapaxes", {"axis1": 0, "axis2": 1}, np.ndarray),
+        ("swapaxes", {"axis1": 1, "axis2": 2}, nap.TsdTensor),
+        ("swapaxes", {"axis1": 2, "axis2": 0}, np.ndarray),
+        ("rollaxis", {"axis": 0, "start": 1}, np.ndarray),
+        ("rollaxis", {"axis": 1, "start": 0}, nap.TsdTensor),
+        ("rollaxis", {"axis": 2, "start": 0}, nap.TsdTensor),
+        ("flipud", {}, np.ndarray),
+        ("fliplr", {}, nap.TsdTensor),
+        ("flip", {"axis": 0}, np.ndarray),
+        ("flip", {"axis": 1}, nap.TsdTensor),
+        ("flip", {"axis": 2}, nap.TsdTensor),
+    ],
+)
+def test_axis_moving(tsd, func, kwargs, expected_type):
+    a = getattr(np, func)(tsd, **kwargs)
+    b = getattr(np, func)(tsd.values, **kwargs)
+
+    assert isinstance(a, expected_type)
+
+    if not isinstance(a, np.ndarray):
+        np.testing.assert_array_almost_equal(a.index, tsd.index)
+
+    if hasattr(a, "values"):
+        np.testing.assert_array_almost_equal(a.values, b)
+    else:
+        np.testing.assert_array_almost_equal(a, b)
