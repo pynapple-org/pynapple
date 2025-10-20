@@ -22,6 +22,10 @@ jobs:
         # https://stackoverflow.com/a/68959339
         with:
           fetch-depth: 0
+          tags: true
+      # Ensure all tags are present
+      - run: git fetch --tags
+
       - uses: actions/setup-python@v5
       - name: Install dependencies
         run: |
