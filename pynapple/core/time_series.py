@@ -16,7 +16,6 @@ Most of the same functions are available through all classes. Objects behaves li
 
 import abc
 import importlib
-import inspect
 import warnings
 from numbers import Number
 
