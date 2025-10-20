@@ -355,6 +355,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(10, 100.0),
+                    "bin_edges": [np.linspace(0, 9.9, 11)],
+                },
             ),
         ),
         # multiple rate units, single feature
@@ -368,6 +373,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 coords={
                     "unit": [1, 2],
                     "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(10, 100.0),
+                    "bin_edges": [np.linspace(0, 9.9, 11)],
                 },
             ),
         ),
@@ -389,6 +399,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
                     "feature1": np.linspace(0, 19.8, 11)[:-1] + 0.99,
                 },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(np.eye(10), 100.0, 0.0),
+                    "bin_edges": [np.linspace(0, i * 9.9, 11) for i in range(1, 3)],
+                },
             ),
         ),
         # single unit, single feature
@@ -400,6 +415,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(10, 100.0),
+                    "bin_edges": [np.linspace(0, 9.9, 11)],
+                },
             ),
         ),
         # multiple units, single feature
@@ -413,6 +433,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 coords={
                     "unit": [1, 2],
                     "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(10, 100.0),
+                    "bin_edges": [np.linspace(0, 9.9, 11)],
                 },
             ),
         ),
@@ -434,6 +459,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
                     "feature1": np.linspace(0, 19.8, 11)[:-1] + 0.99,
                 },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(np.eye(10), 100.0, np.nan),
+                    "bin_edges": [np.linspace(0, i * 9.9, 11) for i in range(1, 3)],
+                },
             ),
         ),
         # single unit, single feature, specified number of bins
@@ -445,6 +475,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 5), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 6)[:-1] + 0.99},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(5, 200.0),
+                    "bin_edges": [np.linspace(0, 9.9, 6)],
+                },
             ),
         ),
         # single unit, multiple features, specified number of bins
@@ -459,6 +494,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "unit": [1],
                     "feature0": np.linspace(0, 9.9, 6)[:-1] + 0.99,
                     "feature1": np.linspace(0, 19.8, 6)[:-1] + 1.98,
+                },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(np.eye(5), 200.0, np.nan),
+                    "bin_edges": [np.linspace(0, i * 9.9, 6) for i in range(1, 3)],
                 },
             ),
         ),
@@ -485,6 +525,19 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "feature0": np.linspace(0, 9.9, 6)[:-1] + 0.99,
                     "feature1": np.linspace(0, 19.8, 5)[:-1] + 2.475,
                 },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.array(
+                        [
+                            [200.0, np.nan, np.nan, np.nan],
+                            [50.0, 150.0, np.nan, np.nan],
+                            [np.nan, 100.0, 100.0, np.nan],
+                            [np.nan, np.nan, 150.0, 50.0],
+                            [np.nan, np.nan, np.nan, 200.0],
+                        ]
+                    ),
+                    "bin_edges": [np.linspace(0, 9.9, 6), np.linspace(0, 19.8, 5)],
+                },
             ),
         ),
         # single unit, single feature, specified bins
@@ -496,6 +549,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 5), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.arange(1, 11, 2)},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(5, 200.0),
+                    "bin_edges": [np.linspace(0, 10, 6)],
+                },
             ),
         ),
         # single unit, multiple features, specified bins
@@ -511,6 +569,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "feature0": np.arange(1, 11, 2),
                     "feature1": np.arange(2, 22, 4),
                 },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(np.eye(5), 200.0, np.nan),
+                    "bin_edges": [np.linspace(0, i * 10, 6) for i in range(1, 3)],
+                },
             ),
         ),
         # single unit, single feature, specified range
@@ -522,6 +585,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.concatenate([np.full(9, 50.0), [60]]),
+                    "bin_edges": [np.linspace(0, 5.0, 11)],
+                },
             ),
         ),
         # single unit, multiple features, specified range per feature
@@ -537,6 +605,16 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25,
                     "feature1": np.linspace(0, 10.0, 11)[:-1] + 0.5,
                 },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(
+                        np.eye(10),
+                        50.0
+                        + 10.0 * (np.arange(10) == 9)[:, None] * (np.arange(10) == 9),
+                        np.nan,
+                    ),
+                    "bin_edges": [np.linspace(0, i * 5, 11) for i in range(1, 3)],
+                },
             ),
         ),
         # single unit, single feature, specified range and number of bins
@@ -548,6 +626,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.concatenate([np.full(9, 50.0), [60]]),
+                    "bin_edges": [np.linspace(0, 5.0, 11)],
+                },
             ),
         ),
         # single unit, multiple features, specified range per feature and number of bins
@@ -562,6 +645,16 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "unit": [1],
                     "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25,
                     "feature1": np.linspace(0, 10.0, 11)[:-1] + 0.5,
+                },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(
+                        np.eye(10),
+                        50.0
+                        + 10.0 * (np.arange(10) == 9)[:, None] * (np.arange(10) == 9),
+                        np.nan,
+                    ),
+                    "bin_edges": [np.linspace(0, i * 5, 11) for i in range(1, 3)],
                 },
             ),
         ),
@@ -578,6 +671,16 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25,
                     "feature1": np.linspace(0, 10.0, 11)[:-1] + 0.5,
                 },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(
+                        np.eye(10),
+                        50.0
+                        + 10.0 * (np.arange(10) == 9)[:, None] * (np.arange(10) == 9),
+                        np.nan,
+                    ),
+                    "bin_edges": [np.linspace(0, i * 5, 11) for i in range(1, 3)],
+                },
             ),
         ),
         # single unit, single feature, specified epochs (smaller)
@@ -589,6 +692,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.concatenate([[51], np.full(9, 50.0)]),
+                    "bin_edges": [np.linspace(0, 9.9, 11)],
+                },
             ),
         ),
         # single unit, single feature, specified epochs (larger)
@@ -600,6 +708,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(10, 100.0),
+                    "bin_edges": [np.linspace(0, 9.9, 11)],
+                },
             ),
         ),
         # single unit, single feature, specified epochs (multiple)
@@ -611,6 +724,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.concatenate([[42], np.full(9, 40.0)]),
+                    "bin_edges": [np.linspace(0, 9.9, 11)],
+                },
             ),
         ),
         # single unit, single feature, specified feature name
@@ -622,6 +740,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "f0"],
                 coords={"unit": [1], "f0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(10, 100.0),
+                    "bin_edges": [np.linspace(0, 9.9, 11)],
+                },
             ),
         ),
         # single unit, multiple features, specified feature names
@@ -637,6 +760,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "f0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
                     "f1": np.linspace(0, 19.8, 11)[:-1] + 0.99,
                 },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(np.eye(10), 100.0, np.nan),
+                    "bin_edges": [np.linspace(0, i * 9.9, 11) for i in range(1, 3)],
+                },
             ),
         ),
         # single unit, single feature, return_pandas=True
@@ -648,6 +776,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(10, 100.0),
+                    "bin_edges": [np.linspace(0, i * 9.9, 11) for i in range(1, 2)],
+                },
             )
             .to_pandas()
             .T,
@@ -661,6 +794,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 100.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(10, 100.0),
+                    "bin_edges": [np.linspace(0, i * 9.9, 11) for i in range(1, 2)],
+                },
             ),
         ),
         # multiple units, multiple features, return_counts=True
@@ -681,6 +819,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
                     "feature1": np.linspace(0, 19.8, 11)[:-1] + 0.99,
                 },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(np.eye(10), 100.0, np.nan),
+                    "bin_edges": [np.linspace(0, i * 9.9, 11) for i in range(1, 3)],
+                },
             ),
         ),
     ],
@@ -691,6 +834,18 @@ def test_compute_tuning_curves(data, features, kwargs, expectation):
         pd.testing.assert_frame_equal(tcs, expectation)
     else:
         xr.testing.assert_allclose(tcs, expectation)
+        for attribute in expectation.attrs:
+            assert attribute in tcs.attrs
+            if isinstance(expectation.attrs[attribute], (np.ndarray, float)):
+                print(tcs.attrs[attribute])
+                np.testing.assert_array_almost_equal(
+                    tcs.attrs[attribute], expectation.attrs[attribute]
+                )
+            else:
+                for i in range(len(expectation.attrs[attribute])):
+                    np.testing.assert_array_almost_equal(
+                        tcs.attrs[attribute][i], expectation.attrs[attribute][i]
+                    )
 
 
 # ------------------------------------------------------------------------------------
