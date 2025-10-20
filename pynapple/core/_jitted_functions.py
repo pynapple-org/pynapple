@@ -15,8 +15,10 @@ def jitrestrict(time_array, starts, ends):
     t = 0
     x = 0
 
-    while ends[k] < time_array[t]:
+    while k < m and ends[k] < time_array[t]:
         k += 1
+    if k == m:
+        return np.empty(0, dtype=np.int64)
 
     while k < m:
         # Outside
