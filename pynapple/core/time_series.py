@@ -16,6 +16,7 @@ Most of the same functions are available through all classes. Objects behaves li
 
 import abc
 import importlib
+import inspect
 import warnings
 from numbers import Number
 
@@ -303,6 +304,22 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 new_args.append(a)
 
         out = func._implementation(*new_args, **kwargs)
+
+        if func in [np.transpose]:
+            return out
+
+        # Special case for array with symmetrical shapes and some functions like sum
+        if self.ndim > 1 and np.all(self.shape[0] == np.array(self.shape)):
+            # The output should have fewer dimensions
+            if out.ndim < self.ndim:
+                # Need to check axis
+                sig = inspect.signature(func)
+                bound = sig.bind_partial(*new_args, **kwargs)
+                axis = bound.arguments.get("axis", None)
+                # If axis = 0, the time axis disappear so should return a numpy array
+                if axis == 0:
+                    return out
+
         return _initialize_tsd_output(self, out)
 
     def as_array(self):

@@ -1,3 +1,5 @@
+from numbers import Number
+
 import numpy as np
 import numpy.core.umath as _umath
 import pytest
@@ -500,3 +502,45 @@ class Test_Time_Series_1:
     def test_fft(self, tsd):
         with pytest.raises(TypeError):
             np.fft.fft(tsd)
+
+
+@pytest.mark.parametrize(
+    "tsd",
+    [
+        nap.TsdFrame(
+            t=np.arange(10),
+            d=np.random.rand(10, 10),
+        ),
+        nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 10, 10), time_units="s"),
+    ],
+)
+@pytest.mark.parametrize(
+    "func, kwargs",
+    [
+        ("sum", {}),
+        ("sum", {"axis": 0}),
+        ("sum", {"axis": 1}),
+        ("sum", {"axis": -1}),
+        ("sum", {"axis": (0, 1)}),
+    ],
+)
+def test_square_arrays(tsd, func, kwargs):
+    a = getattr(np, func)(tsd, **kwargs)
+    b = getattr(np, func)(tsd.values, **kwargs)
+
+    if "axis" in kwargs:
+        axis = kwargs["axis"]
+    else:
+        axis = None
+
+    if axis is None or np.isscalar(b):
+        assert np.isscalar(a)
+        assert a == b
+    else:
+        if axis == 0:
+            assert isinstance(a, (np.ndarray, Number))
+            np.testing.assert_array_almost_equal(a, b)
+        else:
+            assert not isinstance(a, np.ndarray)
+            np.testing.assert_array_almost_equal(a.index, tsd.index)
+            np.testing.assert_array_almost_equal(a.values, b)
