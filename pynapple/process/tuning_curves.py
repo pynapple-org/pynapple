@@ -287,7 +287,7 @@ def compute_tuning_curves(
                 for feature_name, e in zip(feature_names, bin_edges)
             },
         },
-        attrs={"occupancy": occupancy, "bin_edges": bin_edges},
+        attrs={"occupancy": occupancy, "bin_edges": bin_edges, "fs": fs},
     )
     if return_pandas:
         return tcs.to_pandas().T
