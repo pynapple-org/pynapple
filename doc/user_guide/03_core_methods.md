@@ -63,6 +63,30 @@ print(epochs)
 print(tsdframe.restrict(epochs).time_support) 
 ```
 
+### `in_interval`
+
+[`in_interval`](pynapple.Tsd.in_interval) is similar to [`restrict`](pynapple.Tsd.restrict), except instead of returning the restricted time series, it returns a `Tsd` of booleans for each time point indicating whether or not it falls within the intervals of an `IntervalSet`.
+
+```{code-cell} ipython3
+tsdframe.in_interval(epochs) 
+```
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.figure()
+plt.subplot(2,1,1)
+plt.plot(tsdframe)
+[plt.axvspan(s, e, alpha=0.2) for s, e in epochs.values]
+plt.xlim(0, 100)
+plt.subplot(2,1,2)
+plt.plot(tsdframe.in_interval(epochs))
+plt.xlabel("Time (s)")
+plt.title("tsdframe.in_interval(epochs)")
+plt.xlim(0, 100)
+plt.tight_layout()
+plt.show()
+```
+
+
 ### `count`
 
 [`count`](pynapple.Tsd.count) returns the number of timestamps within bins or epochs of an `IntervalSet` object.

@@ -362,6 +362,32 @@ class _Base(abc.ABC):
         data = None if not hasattr(self, "values") else self.values[idx]
         return self._define_instance(time_array[idx], iset, values=data)
 
+    def in_interval(self, iset):
+        """
+        Check which timestamps of the time series are within the intervals defined by an IntervalSet object
+
+        Parameters
+        ----------
+        iset : IntervalSet
+            the IntervalSet object
+
+        Returns
+        -------
+        Tsd
+            A Tsd of indicating which timestamps are within the intervals
+        """
+        if not isinstance(iset, IntervalSet):
+            raise TypeError("Argument should be IntervalSet")
+
+        time_array = self.index.values
+        starts = iset.start
+        ends = iset.end
+
+        idx = _restrict(time_array, starts, ends)
+        mask = np.zeros_like(time_array, dtype=bool)
+        mask[idx] = True
+        return self._define_instance(time_array, self.time_support, values=mask)
+
     def copy(self):
         """Copy the data, index and time support"""
         data = getattr(self, "values", None)

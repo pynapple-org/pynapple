@@ -1167,6 +1167,38 @@ class TsdTensor(_BaseTsd):
         """
         return _Base.restrict(self, iset)
 
+    @add_docstring("in_interval", _Base)
+    def in_interval(self, iset):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> t = np.arange(100)
+        >>> ep = nap.IntervalSet(start=0, end=50)
+        >>> tsdtensor = nap.TsdTensor(t=t, d=np.random.randn(len(t), 4, 4))
+        >>> tsdtensor.in_interval(ep)
+        Time (s)
+        ----------  --
+        0.0          1
+        1.0          1
+        2.0          1
+        3.0          1
+        4.0          1
+        5.0          1
+        6.0          1
+        ...
+        93.0         0
+        94.0         0
+        95.0         0
+        96.0         0
+        97.0         0
+        98.0         0
+        99.0         0
+        dtype: bool, shape: (100,)
+        """
+        return _Base.in_interval(self, iset)
+
     @add_docstring("value_from", _Base)
     def value_from(self, data, ep=None, mode="closest"):
         """
@@ -1960,6 +1992,38 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         tsdframe_after is a timestamp table restricted to the epochs.
         """
         return _Base.restrict(self, iset)
+
+    @add_docstring("in_interval", _Base)
+    def in_interval(self, iset):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> t = np.arange(100)
+        >>> ep = nap.IntervalSet(start=0, end=50)
+        >>> tsdframe = nap.TsdFrame(t=t, d=np.random.randn(len(t), 4))
+        >>> tsdframe.in_interval(ep)
+        Time (s)
+        ----------  --
+        0.0          1
+        1.0          1
+        2.0          1
+        3.0          1
+        4.0          1
+        5.0          1
+        6.0          1
+        ...
+        93.0         0
+        94.0         0
+        95.0         0
+        96.0         0
+        97.0         0
+        98.0         0
+        99.0         0
+        dtype: bool, shape: (100,)
+        """
+        return _Base.in_interval(self, iset)
 
     @add_docstring("value_from", _Base)
     def value_from(self, data, ep=None, mode="closest"):
@@ -2973,6 +3037,38 @@ class Tsd(_BaseTsd):
         """
         return _Base.restrict(self, iset)
 
+    @add_docstring("in_interval", _Base)
+    def in_interval(self, iset):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> t = np.arange(100)
+        >>> ep = nap.IntervalSet(start=0, end=50)
+        >>> tsd = nap.Tsd(t=t, d=np.random.randn(len(t)))
+        >>> tsd.in_interval(ep)
+        Time (s)
+        ----------  --
+        0.0          1
+        1.0          1
+        2.0          1
+        3.0          1
+        4.0          1
+        5.0          1
+        6.0          1
+        ...
+        93.0         0
+        94.0         0
+        95.0         0
+        96.0         0
+        97.0         0
+        98.0         0
+        99.0         0
+        dtype: bool, shape: (100,)
+        """
+        return _Base.in_interval(self, iset)
+
     @add_docstring("value_from", _Base)
     def value_from(self, data, ep=None, mode="closest"):
         """
@@ -3597,6 +3693,38 @@ class Ts(_Base):
         ts_after is a timestamp object restricted to the epochs.
         """
         return _Base.restrict(self, iset)
+
+    @add_docstring("in_interval", _Base)
+    def in_interval(self, iset):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> t = np.arange(100)
+        >>> ep = nap.IntervalSet(start=0, end=50)
+        >>> ts = nap.Ts(t)
+        >>> ts.in_interval(ep)
+        Time (s)
+        ----------  --
+        0.0          1
+        1.0          1
+        2.0          1
+        3.0          1
+        4.0          1
+        5.0          1
+        6.0          1
+        ...
+        93.0         0
+        94.0         0
+        95.0         0
+        96.0         0
+        97.0         0
+        98.0         0
+        99.0         0
+        dtype: bool, shape: (100,)
+        """
+        return _Base.in_interval(self, iset)
 
     @add_docstring("value_from", _Base)
     def value_from(self, data, ep=None, mode="closest"):

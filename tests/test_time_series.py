@@ -539,6 +539,29 @@ class TestTimeSeriesGeneral:
         np.testing.assert_approx_equal(tsd2.time_support.start[0], ep.start[0])
         np.testing.assert_approx_equal(tsd2.time_support.end[0], ep.end[0])
 
+    @pytest.mark.parametrize(
+        "ep, true_inds, false_inds",
+        [
+            (nap.IntervalSet(start=0, end=50), np.arange(51), np.arange(51, 100)),
+            (
+                nap.IntervalSet(start=[0, 20], end=[10, 30]),
+                np.hstack((np.arange(11), np.arange(20, 31))),
+                np.hstack((np.arange(11, 20), np.arange(31, 100))),
+            ),
+        ],
+    )
+    def test_in_interval(self, tsd, ep, true_inds, false_inds):
+        tsd2 = tsd.in_interval(ep)
+        assert isinstance(tsd2, nap.Tsd)
+        assert all(tsd2.time_support.start == tsd.time_support.start)
+        assert all(tsd2.time_support.end == tsd.time_support.end)
+        assert all(tsd2[true_inds] == True)
+        assert all(tsd2[false_inds] == False)
+
+    def test_in_interval_error(self, tsd):
+        with pytest.raises(TypeError, match=r"Argument should be IntervalSet"):
+            tsd.in_interval([0, 1])
+
     def test_get_interval(self, tsd):
         tsd2 = tsd.get(10, 20)
         assert len(tsd2) == 11
