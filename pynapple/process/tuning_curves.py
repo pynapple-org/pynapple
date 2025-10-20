@@ -255,7 +255,7 @@ def compute_tuning_curves(
             data = {0: data}
         for i, n in enumerate(keys):
             tcs[i] = np.histogramdd(
-                data[n].value_from(features, epochs),
+                data[n].value_from(features),
                 bins=bin_edges,
             )[0]
         occupancy[occupancy == 0.0] = np.nan
@@ -263,7 +263,7 @@ def compute_tuning_curves(
             tcs = (tcs / occupancy) * fs
     else:
         # RATES
-        values = data.value_from(features, epochs)
+        values = data.value_from(features)
         if isinstance(data, nap.Tsd):
             data = np.expand_dims(data.values, -1)
         counts = np.histogramdd(values, bins=bin_edges)[0]
