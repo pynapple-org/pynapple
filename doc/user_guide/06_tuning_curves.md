@@ -152,6 +152,40 @@ plt.legend()
 plt.show()
 ```
 
+It is also possible to just get the spike counts per bins. This can be done by setting the argument `return_counts=True`.
+The output is also a `xarray.DataArray` with the same dimensions as the tuning curves.
+
+```{code-cell} ipython3
+spike_counts = nap.compute_tuning_curves(
+    data=tsgroup,
+    features=feature,
+    bins=30, 
+    range=(0, 2*np.pi),
+    feature_names=["feature"],
+    return_counts=True
+    )
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.figure()
+plt.subplot(131)
+plt.plot(tsgroup[3].value_from(feature), 'o')
+plt.plot(feature, label="feature")
+plt.ylabel("Feature")
+plt.xlim(0, 2)
+plt.xlabel("Time (s)")
+plt.subplot(132)
+plt.plot(tuning_curves_1d[3].values, tuning_curves_1d.coords["feature"])
+plt.xlabel("Firing rate (Hz)")
+plt.subplot(133)
+plt.barh(spike_counts.coords["feature"], width=spike_counts[3].values, height=np.mean(np.diff(spike_counts.coords["feature"])))
+plt.xlabel("Spike count")
+plt.tight_layout()
+plt.show()
+```
+
+
 ### 2D tuning curves from spikes
 
 ```{code-cell} ipython3
