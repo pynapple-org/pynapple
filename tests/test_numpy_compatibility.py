@@ -522,6 +522,7 @@ class Test_Time_Series_1:
         ("sum", {"axis": 1}),
         ("sum", {"axis": -1}),
         ("sum", {"axis": (0, 1)}),
+        ("sum", {"axis": None}),
     ],
 )
 def test_square_arrays(tsd, func, kwargs):
@@ -549,13 +550,15 @@ def test_square_arrays(tsd, func, kwargs):
 @pytest.mark.parametrize(
     "tsd",
     [
+        nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+        nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 10)),
         nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 10, 10), time_units="s"),
     ],
 )
 @pytest.mark.parametrize(
     "func, kwargs, expected_type",
     [
-        ("transpose", {}, np.ndarray),
+        ("transpose", {}, (nap.Tsd, np.ndarray)),
         ("transpose", {"axes": (2, 0, 1)}, np.ndarray),
         ("transpose", {"axes": (0, 2, 1)}, nap.TsdTensor),
         ("moveaxis", {"source": 0, "destination": 1}, np.ndarray),
@@ -565,18 +568,28 @@ def test_square_arrays(tsd, func, kwargs):
         ("swapaxes", {"axis1": 1, "axis2": 2}, nap.TsdTensor),
         ("swapaxes", {"axis1": 2, "axis2": 0}, np.ndarray),
         ("rollaxis", {"axis": 0, "start": 1}, np.ndarray),
-        ("rollaxis", {"axis": 1, "start": 0}, nap.TsdTensor),
-        ("rollaxis", {"axis": 2, "start": 0}, nap.TsdTensor),
+        ("rollaxis", {"axis": 1, "start": 0}, np.ndarray),
+        ("rollaxis", {"axis": 1, "start": 2}, (nap.TsdTensor, nap.TsdFrame)),
         ("flipud", {}, np.ndarray),
-        ("fliplr", {}, nap.TsdTensor),
+        ("fliplr", {}, (nap.TsdFrame, nap.TsdTensor)),
         ("flip", {"axis": 0}, np.ndarray),
-        ("flip", {"axis": 1}, nap.TsdTensor),
+        ("flip", {"axis": None}, np.ndarray),
+        ("flip", {"axis": 1}, (nap.TsdFrame, nap.TsdTensor)),
         ("flip", {"axis": 2}, nap.TsdTensor),
+        ("rot90", {}, np.ndarray),
+        ("rot90", {"k": 2}, np.ndarray),
+        ("roll", {"shift": 2, "axis": 0}, np.ndarray),
+        ("roll", {"shift": -2, "axis": 1}, (nap.TsdFrame, nap.TsdTensor)),
+        ("roll", {"shift": 1, "axis": 2}, nap.TsdTensor),
     ],
 )
 def test_axis_moving(tsd, func, kwargs, expected_type):
+    try:
+        b = getattr(np, func)(tsd.values, **kwargs)
+    except (ValueError, RuntimeError):
+        pytest.skip("Skipping invalid axis operation")
+
     a = getattr(np, func)(tsd, **kwargs)
-    b = getattr(np, func)(tsd.values, **kwargs)
 
     assert isinstance(a, expected_type)
 
