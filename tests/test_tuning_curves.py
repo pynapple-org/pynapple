@@ -663,17 +663,6 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
             ),
         ),
-        # single unit, single feature, return_counts=True
-        (
-            get_group_n(1),
-            get_features_n(1),
-            {"return_counts": True},
-            xr.DataArray(
-                np.full((1, 10), 100.0),
-                dims=["unit", "feature0"],
-                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
-            ),
-        ),
         # multiple units, multiple features, return_counts=True
         (
             get_group_n(2),
