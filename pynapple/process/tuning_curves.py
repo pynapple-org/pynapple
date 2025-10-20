@@ -23,6 +23,7 @@ def compute_tuning_curves(
     fs=None,
     feature_names=None,
     return_pandas=False,
+    return_counts=False,
 ):
     """
     Computes n-dimensional tuning curves relative to n features.
@@ -61,6 +62,11 @@ def compute_tuning_curves(
         If True, the function returns a pandas.DataFrame instead of an xarray.DataArray.
         Note that this will not work if the features are not 1D and that occupancy and bin edges
         will not be stored as attributes.
+    return_counts : bool, optional
+        If True, does not divide the spike counts by occupancy, but returns the counts directly.
+        The occupancy is stored in the xarray attributes, so the division can be performed after any
+        particular processing steps.
+        If the input is a TsdFrame, this does not do anything.
 
     Returns
     -------
@@ -229,6 +235,14 @@ def compute_tuning_curves(
     ):
         raise TypeError("return_pandas should be a boolean.")
 
+    # check return_counts
+    if (
+        return_counts != 1
+        and return_counts != 0
+        and not isinstance(return_counts, bool)
+    ):
+        raise TypeError("return_counts should be a boolean.")
+
     # occupancy
     occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
 
@@ -245,14 +259,15 @@ def compute_tuning_curves(
             data = {0: data}
         for i, n in enumerate(keys):
             tcs[i] = np.histogramdd(
-                data[n].value_from(features, epochs),
+                data[n].value_from(features),
                 bins=bin_edges,
             )[0]
         occupancy[occupancy == 0.0] = np.nan
-        tcs = (tcs / occupancy) * fs
+        if not return_counts:
+            tcs = (tcs / occupancy) * fs
     else:
         # RATES
-        values = data.value_from(features, epochs)
+        values = data.value_from(features)
         if isinstance(data, nap.Tsd):
             data = np.expand_dims(data.values, -1)
         counts = np.histogramdd(values, bins=bin_edges)[0]
@@ -276,7 +291,7 @@ def compute_tuning_curves(
                 for feature_name, e in zip(feature_names, bin_edges)
             },
         },
-        attrs={"occupancy": occupancy, "bin_edges": bin_edges},
+        attrs={"occupancy": occupancy, "bin_edges": bin_edges, "fs": fs},
     )
     if return_pandas:
         return tcs.to_pandas().T
