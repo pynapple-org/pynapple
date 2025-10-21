@@ -293,7 +293,14 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         if func in [np.split, np.array_split, np.dsplit, np.hsplit, np.vsplit]:
             return _split_tsd(func, *args, **kwargs)
 
-        if func in [np.concatenate, np.vstack, np.hstack, np.dstack, np.column_stack]:
+        if func in [
+            np.concatenate,
+            np.vstack,
+            np.hstack,
+            np.dstack,
+            np.column_stack,
+            np.stack,
+        ]:
             return _concatenate_tsd(func, *args, **kwargs)
 
         new_args = []

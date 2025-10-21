@@ -318,10 +318,11 @@ def _concatenate_tsd(func, *args, **kwargs):
                     if len(new_kwargs["columns"]) != output.shape[1]:
                         new_kwargs = {}
                 return args[0][0]._define_instance(
-                    time_index = time_indexes[0],
-                    time_support = time_supports[0],
-                    values = output,
-                    **new_kwargs) # Dropping metadata in this case
+                    time_index=time_indexes[0],
+                    time_support=time_supports[0],
+                    values=output,
+                    **new_kwargs,
+                )  # Dropping metadata in this case
             else:
                 if not time_equal and not support_equal:
                     msg = "Time indexes and time supports are not all equals up to pynapple precision. Returning numpy array!"
@@ -508,7 +509,7 @@ def modifies_time_axis(func, new_args, kwargs):
     if func is np.flipud:
         return True
     if func in [np.squeeze]:
-        return False # This one should be handled by _initialize_tsd_output
+        return False  # This one should be handled by _initialize_tsd_output
 
     try:
         sig = inspect.signature(func)
@@ -539,7 +540,7 @@ def modifies_time_axis(func, new_args, kwargs):
         if axis == 0:
             return True
     if func is np.roll:
-        shift = bound.arguments.get("shift", None) # This one should be always pass
+        shift = bound.arguments.get("shift", None)  # This one should be always pass
         if axis == 0 and shift != 0:
             return True
     if axis is not inspect._empty:
@@ -552,7 +553,9 @@ def modifies_time_axis(func, new_args, kwargs):
                 normalized_axis = axis if axis >= 0 else axis + ndim
             except Exception:
                 normalized_axis = axis
-            if normalized_axis == 0 and ndim > 1: # If og ndim is 1, axis 0 can't be moved
+            if (
+                normalized_axis == 0 and ndim > 1
+            ):  # If og ndim is 1, axis 0 can't be moved
                 return True
         else:
             # unknown ndim: if axis == 0 or axis is None -> assume it affects axis 0
