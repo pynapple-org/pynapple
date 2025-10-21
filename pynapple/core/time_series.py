@@ -287,6 +287,17 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         ]:
             return NotImplemented
 
+        # This should be implemented at some point
+        if func in [
+            np.take,
+            np.take_along_axis,
+            np.extract,
+            np.compress,
+            np.choose,
+            np.select,
+        ]:
+            return NotImplemented
+
         if hasattr(np.fft, func.__name__):
             return NotImplemented
 
