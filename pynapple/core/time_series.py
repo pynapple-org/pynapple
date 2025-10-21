@@ -293,7 +293,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         if func in [np.split, np.array_split, np.dsplit, np.hsplit, np.vsplit]:
             return _split_tsd(func, *args, **kwargs)
 
-        if func in [np.concatenate, np.vstack, np.hstack, np.dstack]:
+        if func in [np.concatenate, np.vstack, np.hstack, np.dstack, np.column_stack]:
             return _concatenate_tsd(func, *args, **kwargs)
 
         new_args = []
@@ -1012,6 +1012,8 @@ class TsdTensor(_BaseTsd):
             key = tuple(k.values if isinstance(k, Tsd) else k for k in key)
             output = self.values.__getitem__(key)
             index = self.index.__getitem__(key[0])
+            if index.ndim > 1:
+                index = np.squeeze(index)
         else:
             output = self.values.__getitem__(key)
             index = self.index.__getitem__(key)
@@ -1775,7 +1777,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
             if isinstance(key, tuple):
                 index = self.index.__getitem__(key[0])
-                if len(key) == 2:
+                if index.ndim > 1:
+                    index = np.squeeze(index)
+                if len(key) == 2 and key[1] is not None:
                     columns = self.columns.__getitem__(key[1])
             else:
                 index = self.index.__getitem__(key)
@@ -2791,6 +2795,8 @@ class Tsd(_BaseTsd):
 
         if isinstance(key, tuple):
             index = self.index.__getitem__(key[0])
+            if index.ndim > 1:
+                index = np.squeeze(index)
         elif isinstance(key, Number):
             index = np.array([key])
         else:
@@ -3369,6 +3375,8 @@ class Ts(_Base):
     def __getitem__(self, key):
         if isinstance(key, tuple):
             index = self.index.__getitem__(key[0])
+            if index.ndim > 1:
+                index = np.squeeze(index)
         else:
             index = self.index.__getitem__(key)
 

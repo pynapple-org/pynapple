@@ -312,9 +312,16 @@ def _concatenate_tsd(func, *args, **kwargs):
             support_equal = _check_time_equals([x.values for x in time_supports])
 
             if time_equal and support_equal:
-                return nap_class(
-                    t=time_indexes[0], d=output, time_support=time_supports[0]
-                )
+                new_kwargs = {}
+                if len(columns):
+                    new_kwargs = {"columns": np.hstack([c for c in columns])}
+                    if len(new_kwargs["columns"]) != output.shape[1]:
+                        new_kwargs = {}
+                return args[0][0]._define_instance(
+                    time_index = time_indexes[0],
+                    time_support = time_supports[0],
+                    values = output,
+                    **new_kwargs) # Dropping metadata in this case
             else:
                 if not time_equal and not support_equal:
                     msg = "Time indexes and time supports are not all equals up to pynapple precision. Returning numpy array!"
@@ -500,8 +507,14 @@ def modifies_time_axis(func, new_args, kwargs):
     """
     if func is np.flipud:
         return True
+    if func in [np.squeeze]:
+        return False # This one should be handled by _initialize_tsd_output
 
-    sig = inspect.signature(func)
+    try:
+        sig = inspect.signature(func)
+    except (TypeError, ValueError):
+        return True  # conservative
+
     bound = sig.bind_partial(*new_args, **kwargs)
     bound.apply_defaults()
 
@@ -517,9 +530,18 @@ def modifies_time_axis(func, new_args, kwargs):
                 break
 
     ndim = getattr(arr, "ndim", None)
+    if ndim is None:
+        return True  # conservative
 
     ### 1) single-axis arguments ###
     axis = bound.arguments.get("axis", inspect._empty)
+    if func is np.flip:
+        if axis == 0:
+            return True
+    if func is np.roll:
+        shift = bound.arguments.get("shift", None) # This one should be always pass
+        if axis == 0 and shift != 0:
+            return True
     if axis is not inspect._empty:
         # axis=None usually means "all axes" for reductions => affects axis 0
         if axis is None:
@@ -527,10 +549,10 @@ def modifies_time_axis(func, new_args, kwargs):
         # axis might be negative; normalize if ndim known
         if ndim is not None:
             try:
-                norm = axis if axis >= 0 else axis + ndim
+                normalized_axis = axis if axis >= 0 else axis + ndim
             except Exception:
-                norm = axis
-            if norm == 0:
+                normalized_axis = axis
+            if normalized_axis == 0 and ndim > 1: # If og ndim is 1, axis 0 can't be moved
                 return True
         else:
             # unknown ndim: if axis == 0 or axis is None -> assume it affects axis 0
