@@ -536,31 +536,18 @@ def modifies_time_axis(func, new_args, kwargs):
 
     ### 1) single-axis arguments ###
     axis = bound.arguments.get("axis", inspect._empty)
-    if func is np.flip:
-        if axis == 0:
-            return True
-    if func is np.roll:
-        shift = bound.arguments.get("shift", None)  # This one should be always pass
-        if axis == 0 and shift != 0:
-            return True
     if axis is not inspect._empty:
         # axis=None usually means "all axes" for reductions => affects axis 0
-        if axis is None:
+        if (axis is None) or (axis == 0):
+            return True
+        if isinstance(axis, tuple) and 0 in axis:
             return True
         # axis might be negative; normalize if ndim known
-        if ndim is not None:
-            try:
-                normalized_axis = axis if axis >= 0 else axis + ndim
-            except Exception:
-                normalized_axis = axis
-            if (
-                normalized_axis == 0 and ndim > 1
-            ):  # If og ndim is 1, axis 0 can't be moved
+        if (axis < 0) and (ndim > 1):
+            normalized_axis = axis + ndim
+            if normalized_axis == 0:
                 return True
-        else:
-            # unknown ndim: if axis == 0 or axis is None -> assume it affects axis 0
-            if axis == 0:
-                return True
+
     # Special case for np.rollaxis
     if func is np.rollaxis:
         start = bound.arguments.get("start", 0)
@@ -575,17 +562,10 @@ def modifies_time_axis(func, new_args, kwargs):
     axes = bound.arguments.get("axes", inspect._empty)
     if axes is not inspect._empty:
         if axes is None:
-            # axes=None => reverse axes order; if ndim > 1 then axis 0 moves to last position
-            if ndim is None:
-                return True  # conservative
-            return ndim > 1 and 0 != (ndim - 1)
+            return ndim > 1
         if _arg_as_sequence(axes):
             # if axis 0 is not at position 0 after permutation, it's moved
-            try:
-                idx = list(axes).index(0)
-            except ValueError:
-                # axis 0 not present? that's odd, but assume modified
-                return True
+            idx = list(axes).index(0)
             # idx is new position of original axis 0
             if idx != 0:
                 return True
@@ -596,22 +576,18 @@ def modifies_time_axis(func, new_args, kwargs):
         if val is not inspect._empty:
             if val is None:
                 continue
-            if _arg_as_sequence(val):
-                if 0 in val:
-                    return True
-            else:
-                if val == 0:
-                    return True
+            elif (_arg_as_sequence(val)) and (0 in val):
+                return True
+            elif val == 0:
+                return True
 
     ### 4) swapaxes / similar ###
     axis1 = bound.arguments.get("axis1", inspect._empty)
     axis2 = bound.arguments.get("axis2", inspect._empty)
-    if axis1 is not inspect._empty:
-        if axis1 == 0:
-            return True
-    if axis2 is not inspect._empty:
-        if axis2 == 0:
-            return True
+    if (axis1 is not inspect._empty) and (axis1 == 0):
+        return True
+    if (axis2 is not inspect._empty) and (axis2 == 0):
+        return True
 
     # If none of the checks triggered, assume axis 0 is not modified.
     return False
