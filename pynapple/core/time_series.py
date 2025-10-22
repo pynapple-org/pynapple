@@ -72,7 +72,12 @@ def _get_class(data):
 
 
 def _initialize_tsd_output(
-    input_object, values, time_index=None, time_support=None, kwargs=None
+    input_object,
+    values,
+    time_index=None,
+    time_support=None,
+    drop_metadata=False,
+    kwargs=None,
 ):
     """
     Initialize the output object for time series data, ensuring proper alignment of time indices
@@ -128,7 +133,7 @@ def _initialize_tsd_output(
             cls = _get_class(values)
 
             # if out will be a tsdframe implement kwargs logic
-            if cls is TsdFrame:
+            if (cls is TsdFrame) and (not drop_metadata):
                 # get eventual setting
                 cols = kwargs.get("columns", None)
                 metadata = kwargs.get("metadata", None)
@@ -327,7 +332,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         if modifies_time_axis(func, new_args, kwargs):
             return out
         else:
-            return _initialize_tsd_output(self, out)
+            return _initialize_tsd_output(self, out, drop_metadata=True)
 
     def as_array(self):
         """
