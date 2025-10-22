@@ -660,7 +660,7 @@ def test_square_arrays(tsd, func, kwargs):
         assert np.isscalar(a)
         assert a == b
     else:
-        if axis == 0:
+        if (axis == 0) or (isinstance(axis, tuple) and 0 in axis):
             assert isinstance(a, (np.ndarray, Number))
             np.testing.assert_array_almost_equal(a, b)
         else:
@@ -692,7 +692,7 @@ def test_square_arrays(tsd, func, kwargs):
         (
             "rollaxis",
             {"axis": 0, "start": 1},
-            {"Tsd": nap.Tsd, "TsdFrame": np.ndarray, "TsdTensor": np.ndarray},
+            {"Tsd": np.ndarray, "TsdFrame": np.ndarray, "TsdTensor": np.ndarray},
         ),
         ("rollaxis", {"axis": 1, "start": 0}, np.ndarray),
         ("rollaxis", {"axis": 1, "start": 2}, (nap.TsdTensor, nap.TsdFrame)),
@@ -746,6 +746,11 @@ def test_axis_moving(tsd, func, kwargs, expected_type):
         ("expand_dims", {"axis": 0}, np.ndarray),
         ("expand_dims", {"axis": 1}, (nap.TsdFrame, nap.TsdTensor)),
         ("expand_dims", {"axis": -1}, (nap.TsdFrame, nap.TsdTensor)),
+        (
+            "expand_dims",
+            {"axis": -2},
+            {"Tsd": np.ndarray, "TsdFrame": nap.TsdTensor, "TsdTensor": nap.TsdTensor},
+        ),
         ("squeeze", {}, (nap.Tsd, nap.TsdFrame, nap.TsdTensor)),
         (
             "ravel",

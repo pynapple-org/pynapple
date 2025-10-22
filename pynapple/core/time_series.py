@@ -295,6 +295,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             np.compress,
             np.choose,
             np.select,
+            np.delete,
         ]:
             return NotImplemented
 

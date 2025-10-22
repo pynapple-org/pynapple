@@ -508,7 +508,7 @@ def modifies_time_axis(func, new_args, kwargs):
     """
     if func is np.flipud:
         return True
-    if func in [np.squeeze]:
+    if func is np.squeeze:
         return False  # This one should be handled by _initialize_tsd_output
 
     try:
@@ -540,29 +540,34 @@ def modifies_time_axis(func, new_args, kwargs):
         # axis=None usually means "all axes" for reductions => affects axis 0
         if (axis is None) or (axis == 0):
             return True
-        if isinstance(axis, tuple) and 0 in axis:
+        if isinstance(axis, tuple) and (0 in axis):
             return True
         # axis might be negative; normalize if ndim known
-        if (axis < 0) and (ndim > 1):
+        if axis < 0:
             normalized_axis = axis + ndim
-            if normalized_axis == 0:
-                return True
+            if func is np.expand_dims:
+                if normalized_axis == -1:
+                    # normalized_axis will be -1 when expanding first dimension
+                    # normalized_axis = 0 will expand in the second dimension
+                    return True
+            else:
+                if normalized_axis == 0:
+                    return True
 
     # Special case for np.rollaxis
     if func is np.rollaxis:
-        start = bound.arguments.get("start", 0)
-        if start == 0:
+        if bound.arguments.get("start", 0) == 0:
             return True
+    # special case for np.rot90
     if func is np.rot90:
-        axes = bound.arguments.get("axes", (0, 1))
-        if 0 in axes:
+        if 0 in bound.arguments.get("axes", (0, 1)):
             return True
 
     ### 2) multi-axis permutation (e.g., transpose) ###
     axes = bound.arguments.get("axes", inspect._empty)
     if axes is not inspect._empty:
         if axes is None:
-            return ndim > 1
+            return True  # all axes permuted => affects axis 0
         if _arg_as_sequence(axes):
             # if axis 0 is not at position 0 after permutation, it's moved
             idx = list(axes).index(0)
