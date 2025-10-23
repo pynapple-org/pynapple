@@ -24,7 +24,7 @@ def _format_decoding_inputs(func):
         tuning_curves = kwargs["tuning_curves"]
         if not isinstance(tuning_curves, xr.DataArray):
             raise TypeError(
-                "tuning_curves should be an xr.DataArray as computed by compute_tuning_curves."
+                "tuning_curves should be an xarray.DataArray as computed by compute_tuning_curves."
             )
 
         # check data
@@ -156,16 +156,17 @@ def decode_bayes(
       If ``uniform_prior=True``, it is a uniform distribution over feature values.
       If ``uniform_prior=False``, it is based on the occupancy (i.e. the time spent in each feature bin during tuning curve estimation).
 
-    See:\n
-    Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
-    (1998). Interpreting neuronal population activity by
-    reconstruction: unified framework with application to
-    hippocampal place cells. Journal of neurophysiology, 79(2),
-    1017-1044.
+    References
+    ----------
+    .. [1] Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
+           (1998). Interpreting neuronal population activity by
+           reconstruction: unified framework with application to
+           hippocampal place cells. Journal of neurophysiology, 79(2),
+           1017-1044.
 
     Parameters
     ----------
-    tuning_curves : xr.DataArray
+    tuning_curves : xarray.DataArray
         Tuning curves as computed by `compute_tuning_curves`.
     data : TsGroup or TsdFrame
         Neural activity with the same keys as the tuning curves.
@@ -381,19 +382,19 @@ def decode_template(
     The algorithm computes the distance between the observed neural activity and the tuning curves for every time bin.
     The decoded feature at each time bin corresponds to the tuning curve bin with the smallest distance.
 
-    See:\n
-    Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
-    (1998). Interpreting neuronal population activity by
-    reconstruction: unified framework with application to
-    hippocampal place cells. Journal of neurophysiology, 79(2),
-    1017-1044.
+    See :func:`scipy.spatial.distance.cdist` for available distance metrics and how they are computed.
 
-    See ``scipy.spatial.distance.cdist`` for available distance metrics and how they are computed:
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html
+    References
+    ----------
+    .. [1] Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
+           (1998). Interpreting neuronal population activity by
+           reconstruction: unified framework with application to
+           hippocampal place cells. Journal of neurophysiology, 79(2),
+           1017-1044.
 
     Parameters
     ----------
-    tuning_curves : xr.DataArray
+    tuning_curves : xarray.DataArray
         Tuning curves as computed by `compute_tuning_curves`.
     data : TsGroup or TsdFrame
         Neural activity with the same keys as the tuning curves.
@@ -401,20 +402,26 @@ def decode_template(
     epochs : IntervalSet
         The epochs on which decoding is computed
     bin_size : float
-        Bin size. Default is second. Use the parameter time_units to change it.
+        Bin size. Default is second. Use the parameter `time_units` to change it.
     metric : str or callable, optional
         The distance metric to use for template matching.
-        This is passed to `scipy.spatial.distance.cdist`.
-        If a string, the distance function can be ‘braycurtis’, ‘canberra’,
-        ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’,
-        ‘hamming’, ‘jaccard’, ‘jensenshannon’, ‘kulczynski1’, ‘mahalanobis’,
-        ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’,
-        ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’.
-        Default is 'correlation'.
+
+        If a string, passed to :func:`scipy.spatial.distance.cdist`, must be one of:
+        ``braycurtis``, ``canberra``, ``chebyshev``, ``cityblock``, ``correlation``,
+        ``cosine``, ``dice``, ``euclidean``, ``hamming``, ``jaccard``, ``jensenshannon``,
+        ``kulczynski1``, ``mahalanobis``, ``matching``, ``minkowski``, ``rogerstanimoto``,
+        ``russellrao``, ``seuclidean``, ``sokalmichener``, ``sokalsneath``,
+        ``sqeuclidean`` or ``yule``.
+
+        Default is ``correlation``.
 
         .. note::
-            Some metrics may not be suitable for all types of data.
-            For example, if your tuning curves contain NaN values, you should not use 'hamming', as it does not handle NaNs.
+           Some metrics may not be suitable for all types of data.
+           For example, metrics such as ``hamming`` do not handle NaN values.
+
+        If a callable, it must have the signature ``metric(u, v) -> float`` and
+        return the distance between two 1D arrays.
+
     time_units : str, optional
         Time unit of the bin size ('s' [default], 'ms', 'us').
 
@@ -422,7 +429,7 @@ def decode_template(
     -------
     Tsd
         The decoded feature
-    TsdFrame, TsdTensor
+    TsdFrame or TsdTensor
         The distance matrix between the neural activity and the tuning curves for each time bin.
 
     Examples
@@ -581,7 +588,9 @@ def decode_template(
 
 def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
     """
-    Deprecated, use `decode` instead.
+    .. deprecated:: 0.9.2
+          `decode_1d` will be removed in Pynapple 0.10.0, it is replaced by
+          `decode_bayes` because the latter works for N dimensions.
     """
     warnings.warn(
         "decode_1d is deprecated and will be removed in a future version; use decode_bayes instead.",
@@ -619,7 +628,9 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
 
 def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=None):
     """
-    Deprecated, use `decode` instead.
+    .. deprecated:: 0.9.2
+          `decode_2d` will be removed in Pynapple 0.10.0, it is replaced by
+          `decode_bayes` because the latter works for N dimensions.
     """
     warnings.warn(
         "decode_2d is deprecated and will be removed in a future version; use decode_bayes instead.",

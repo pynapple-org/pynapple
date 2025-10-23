@@ -312,6 +312,11 @@ def compute_response_per_epoch(data, epochs_dict, return_pandas=False):
     return_pandas : bool, optional
         If True, the function returns a pandas.DataFrame instead of an xarray.DataArray.
 
+    Returns
+    -------
+    xarray.DataArray
+        A tensor containing the tuning curves with labeled epochs.
+
     Examples
     --------
     This function is typically used for a set of discrete stimuli being presented for multiple epochs.
@@ -348,11 +353,6 @@ def compute_response_per_epoch(data, epochs_dict, return_pandas=False):
         Coordinates:
           * unit     (unit) int64 24B 0 1 2
           * epochs   (epochs) <U5 40B 'stim0' 'stim1'
-
-    Returns
-    -------
-    xarray.DataArray
-        A tensor containing the tuning curves with labeled epochs.
     """
     # check data
     if not isinstance(data, (nap.TsdFrame, nap.TsGroup, nap.Ts, nap.Tsd)):
@@ -443,6 +443,12 @@ def compute_mutual_information(tuning_curves):
 
         I_\\text{bits/spike} = \\frac{I}{\\bar{\\lambda}}
 
+    References
+    ----------
+    .. [1] Skaggs, W. E., McNaughton, B. L., & Gothard, K. M. (1993).
+           An information-theoretic approach to deciphering the hippocampal code.
+           In Advances in neural information processing systems (pp. 1030-1037).
+
     Parameters
     ----------
     tuning_curves : xarray.DataArray
@@ -452,12 +458,6 @@ def compute_mutual_information(tuning_curves):
     -------
     pandas.DataFrame
         A table containing the spatial information per unit, in both bits/sec and bits/spike.
-
-    References
-    ----------
-    .. [1] Skaggs, W. E., McNaughton, B. L., & Gothard, K. M. (1993).
-           An information-theoretic approach to deciphering the hippocampal code.
-           In Advances in neural information processing systems (pp. 1030-1037).
 
     Examples
     --------
@@ -594,7 +594,9 @@ def _validate_tuning_inputs(func):
 @_validate_tuning_inputs
 def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     """
-    Deprecated, use `compute_tuning_curves` instead.
+    .. deprecated:: 0.9.2
+          `compute_1d_tuning_curves` will be removed in Pynapple 0.10.0, it is replaced by
+          `compute_tuning_curves` because the latter works for N dimensions.
     """
     warnings.warn(
         "compute_1d_tuning_curves is deprecated and will be removed in a future version;"
@@ -620,7 +622,9 @@ def compute_1d_tuning_curves_continuous(
     tsdframe, feature, nb_bins, ep=None, minmax=None
 ):
     """
-    Deprecated, use `compute_tuning_curves` instead.
+    .. deprecated:: 0.9.2
+          `compute_1d_tuning_curves` will be removed in Pynapple 0.10.0, it is replaced by
+          `compute_tuning_curves` because the latter works for N dimensions and continuous data.
     """
     warnings.warn(
         "compute_1d_tuning_curves_continuous is deprecated and will be removed in a future version;"
@@ -644,7 +648,9 @@ def compute_1d_tuning_curves_continuous(
 @_validate_tuning_inputs
 def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
     """
-    Deprecated, use `compute_tuning_curves` instead.
+    .. deprecated:: 0.9.2
+          `compute_1d_tuning_curves` will be removed in Pynapple 0.10.0, it is replaced by
+          `compute_tuning_curves` because the latter works for N dimensions.
     """
     warnings.warn(
         "compute_2d_tuning_curves is deprecated and will be removed in a future version;"
@@ -671,7 +677,9 @@ def compute_2d_tuning_curves_continuous(
     tsdframe, features, nb_bins, ep=None, minmax=None
 ):
     """
-    Deprecated, use `compute_tuning_curves` instead.
+    .. deprecated:: 0.9.2
+          `compute_1d_tuning_curves` will be removed in Pynapple 0.10.0, it is replaced by
+          `compute_tuning_curves` because the latter works for N dimensions and continuous data.
     """
     warnings.warn(
         "compute_2d_tuning_curves_continuous is deprecated and will be removed in a future version;"
@@ -696,7 +704,9 @@ def compute_2d_tuning_curves_continuous(
 @_validate_tuning_inputs
 def compute_discrete_tuning_curves(group, dict_ep):
     """
-    Deprecated, use `compute_response_per_epoch` instead.
+    .. deprecated:: 0.9.2
+          `compute_discrete_tuning_curves` will be removed in Pynapple 0.10.0, it is replaced by
+          `compute_response_per_epoch`.
     """
     warnings.warn(
         "compute_discrete_tuning_curves is deprecated and will be removed in a future version;"
@@ -711,7 +721,9 @@ def compute_discrete_tuning_curves(group, dict_ep):
 @_validate_tuning_inputs
 def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=False):
     """
-    Deprecated, use `compute_mutual_information` instead.
+    .. deprecated:: 0.9.2
+          `compute_2d_mutual_info` will be removed in Pynapple 0.10.0, it is replaced by
+          `compute_mutual_information` because the latter works for N dimensions.
     """
     warnings.warn(
         "compute_2d_mutual_info is deprecated and will be removed in a future version;"
@@ -766,7 +778,9 @@ def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=Fals
 @_validate_tuning_inputs
 def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
     """
-    Deprecated, use `compute_mutual_information` instead.
+    .. deprecated:: 0.9.2
+          `compute_1d_mutual_info` will be removed in Pynapple 0.10.0, it is replaced by
+          `compute_mutual_information` because the latter works for N dimensions.
     """
     warnings.warn(
         "compute_1d_mutual_info is deprecated and will be removed in a future version;"
