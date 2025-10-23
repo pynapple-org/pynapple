@@ -452,7 +452,7 @@ def compute_mutual_information(tuning_curves):
     Parameters
     ----------
     tuning_curves : xarray.DataArray
-        As computed by `compute_tuning_curves`.
+        Tuning curves as computed by :func:`compute_tuning_curves`.
 
     Returns
     -------

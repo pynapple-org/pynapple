@@ -39,7 +39,7 @@ def _format_decoding_inputs(func):
             raise TypeError("Unknown format for data.")
         kwargs["data"] = data
 
-        # check match
+        # check match tuning curves and data
         if tuning_curves.sizes["unit"] != data.shape[1]:
             raise ValueError("Different shapes for tuning_curves and data.")
         if not np.all(tuning_curves.coords["unit"] == data.columns.values):
@@ -53,6 +53,18 @@ def _format_decoding_inputs(func):
             raise ValueError(
                 "uniform_prior set to False but no occupancy found in tuning curves."
             )
+
+        # check match data and bin_size
+        if isinstance(data, (nap.Tsd, nap.TsdFrame)):
+            actual_bin_size = np.mean(data.time_diff().values)
+            # actual_bin_size = nap.TsIndex.format_timestamps(
+            #    np.array([np.mean(data.time_diff().values)], dtype=np.float64),
+            #    time_units,
+            # )[0]
+            if not np.isclose(actual_bin_size, kwargs["bin_size"]):
+                raise ValueError(
+                    "passed bin_size too different from actual data bin size."
+                )
 
         # Call the original function with validated inputs
         return func(**kwargs)
@@ -167,14 +179,14 @@ def decode_bayes(
     Parameters
     ----------
     tuning_curves : xarray.DataArray
-        Tuning curves as computed by `compute_tuning_curves`.
+        Tuning curves as computed by :func:`~pynapple.process.tuning_curves.compute_tuning_curves`.
     data : TsGroup or TsdFrame
         Neural activity with the same keys as the tuning curves.
         You may also pass a TsdFrame with smoothed counts.
     epochs : IntervalSet
         The epochs on which decoding is computed
     bin_size : float
-        Bin size. Default is second. Use the parameter time_units to change it.
+        Bin size. Default is second. Use ``time_units`` to change it.
     time_units : str, optional
         Time unit of the bin size ('s' [default], 'ms', 'us').
     uniform_prior : bool, optional
@@ -395,14 +407,14 @@ def decode_template(
     Parameters
     ----------
     tuning_curves : xarray.DataArray
-        Tuning curves as computed by `compute_tuning_curves`.
+        Tuning curves as computed by :func:`~pynapple.process.tuning_curves.compute_tuning_curves`.
     data : TsGroup or TsdFrame
         Neural activity with the same keys as the tuning curves.
         You may also pass a TsdFrame with smoothed counts.
     epochs : IntervalSet
         The epochs on which decoding is computed
     bin_size : float
-        Bin size. Default is second. Use the parameter `time_units` to change it.
+        Bin size. Default is second. Use ``time_units`` to change it.
     metric : str or callable, optional
         The distance metric to use for template matching.
 

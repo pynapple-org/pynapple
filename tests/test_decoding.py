@@ -42,7 +42,7 @@ def get_testing_set_n(n_features=1, binned=False):
         "tuning_curves": tuning_curves,
         "data": data,
         "epochs": epochs,
-        "bin_size": 1,
+        "bin_size": 1.0,
     }
 
 
@@ -55,21 +55,21 @@ def get_testing_set_n(n_features=1, binned=False):
             {"tuning_curves": []},
             pytest.raises(
                 TypeError,
-                match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
+                match="tuning_curves should be an xarray.DataArray as computed by compute_tuning_curves.",
             ),
         ),
         (
             {"tuning_curves": 1},
             pytest.raises(
                 TypeError,
-                match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
+                match="tuning_curves should be an xarray.DataArray as computed by compute_tuning_curves.",
             ),
         ),
         (
             {"tuning_curves": get_testing_set_n()["tuning_curves"].to_pandas().T},
             pytest.raises(
                 TypeError,
-                match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
+                match="tuning_curves should be an xarray.DataArray as computed by compute_tuning_curves.",
             ),
         ),
         (
@@ -155,6 +155,14 @@ def get_testing_set_n(n_features=1, binned=False):
         (
             get_testing_set_n(3, binned=True),
             does_not_raise(),
+        ),
+        # bin_size
+        (
+            {"data": get_testing_set_n(binned=True)["data"], "bin_size": 2.0},
+            pytest.raises(
+                ValueError,
+                match="passed bin_size too different from actual data bin size.",
+            ),
         ),
     ],
 )
