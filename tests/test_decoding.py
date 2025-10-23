@@ -158,11 +158,29 @@ def get_testing_set_n(n_features=1, binned=False):
         ),
         # bin_size
         (
+            {"data": get_testing_set_n(binned=True)["data"], "bin_size": None},
+            pytest.raises(
+                ValueError,
+                match="bin_size should be a number.",
+            ),
+        ),
+        (
+            {"data": get_testing_set_n(binned=True)["data"], "bin_size": "1.0"},
+            pytest.raises(
+                ValueError,
+                match="bin_size should be a number.",
+            ),
+        ),
+        (
             {"data": get_testing_set_n(binned=True)["data"], "bin_size": 2.0},
             pytest.raises(
                 ValueError,
                 match="passed bin_size too different from actual data bin size.",
             ),
+        ),
+        (
+            {"data": get_testing_set_n(binned=True)["data"], "bin_size": 1.0},
+            does_not_raise(),
         ),
     ],
 )

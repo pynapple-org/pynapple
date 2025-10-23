@@ -18,7 +18,9 @@ def _format_decoding_inputs(func):
     def wrapper(*args, **kwargs):
         # Validate each positional argument
         sig = inspect.signature(func)
-        kwargs = sig.bind_partial(*args, **kwargs).arguments
+        bound = sig.bind(*args, **kwargs)
+        bound.apply_defaults()
+        kwargs = bound.arguments
 
         # check tuning curves
         tuning_curves = kwargs["tuning_curves"]
@@ -29,13 +31,27 @@ def _format_decoding_inputs(func):
 
         # check data
         data = kwargs["data"]
-        if isinstance(data, nap.TsGroup):
+        if isinstance(data, nap.TsdFrame):
+            # check match bin_size
+            actual_bin_size = np.mean(data.time_diff().values)
+            passed_bin_size = kwargs["bin_size"]
+            if not isinstance(passed_bin_size, (int, float)):
+                raise ValueError("bin_size should be a number.")
+            if not np.isclose(
+                actual_bin_size,
+                nap.TsIndex.format_timestamps(
+                    np.array([passed_bin_size], dtype=np.float64),
+                    units=kwargs["time_units"],
+                ),
+            )[0]:
+                raise ValueError(
+                    "passed bin_size too different from actual data bin size."
+                )
+        elif isinstance(data, nap.TsGroup):
             data = data.count(
-                kwargs["bin_size"],
-                kwargs.get("epochs", None),
-                kwargs.get("time_units", "s"),
+                kwargs["bin_size"], kwargs["epochs"], kwargs["time_units"]
             )
-        elif not isinstance(data, nap.TsdFrame):
+        else:
             raise TypeError("Unknown format for data.")
         kwargs["data"] = data
 
@@ -53,18 +69,6 @@ def _format_decoding_inputs(func):
             raise ValueError(
                 "uniform_prior set to False but no occupancy found in tuning curves."
             )
-
-        # check match data and bin_size
-        if isinstance(data, (nap.Tsd, nap.TsdFrame)):
-            actual_bin_size = np.mean(data.time_diff().values)
-            # actual_bin_size = nap.TsIndex.format_timestamps(
-            #    np.array([np.mean(data.time_diff().values)], dtype=np.float64),
-            #    time_units,
-            # )[0]
-            if not np.isclose(actual_bin_size, kwargs["bin_size"]):
-                raise ValueError(
-                    "passed bin_size too different from actual data bin size."
-                )
 
         # Call the original function with validated inputs
         return func(**kwargs)
