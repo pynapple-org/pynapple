@@ -98,13 +98,17 @@ tuning_curves_1d.plot.line(x="Circular feature", add_legend=False)
 plt.show()
 ```
 
-We can then use `nap.decode_bayes` for Bayesian decoding:
+We can then use `nap.decode_bayes` for Bayesian decoding.
+We will use the `smoothing` and `smoothing_window` arguments to additionally smooth the
+spike counts, this often helps with decoding:
 
 ```{code-cell} ipython3
 decoded, proba_feature = nap.decode_bayes(
     tuning_curves=tuning_curves_1d,
     data=tsgroup,
     epochs=epochs,
+    smoothing="gaussian",
+    smoothing_window=0.1,
     bin_size=0.06,
 )
 ```
@@ -201,7 +205,9 @@ decoded, proba_feature = nap.decode_bayes(
     tuning_curves=tuning_curves_2d,
     data=ts_group,
     epochs=epochs,
-    bin_size=0.2,
+    smoothing="gaussian",
+    smoothing_window=0.2,
+    bin_size=0.1,
 )
 ```
 
