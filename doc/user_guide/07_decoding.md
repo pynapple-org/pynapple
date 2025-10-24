@@ -32,6 +32,8 @@ Input to both decoding functions always includes:
  - `tuning_curves`, computed using [`compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves).
  - `data`, neural activity as a `TsGroup` (spikes) or `TsdFrame` (smoothed counts or calcium activity or any other time series).
  - `epochs`, to restrict decoding to certain intervals.
+ - `smoothing`, type of smoothing to apply to `data`, defaults to `None`, indicating no smoothing, but can be `gaussian` or `uniform`.
+ - `smoothing_window`, smoothing window to use if `smoothing` is provided.
  - `bin_size`, the size of the bins in which to count timestamps when data is a `TsGroup` object.
  - `time_units`, the units of `bin_size`, defaulting to seconds.
 
@@ -40,7 +42,7 @@ When using Bayesian decoding, users can additionally set `uniform_prior=False` t
 By default `uniform_prior=True`, and a uniform prior is used.
 
 :::{important}
-Bayesian decoding should only be used with spike or rate data, as these can be assumed to follow a Poisson distribution!
+Bayesian decoding should only be used with spike (`TsGroup`) or spike count (`TsdFrame`) data, as these can be assumed to follow a Poisson distribution!
 :::
 
 
@@ -401,7 +403,7 @@ decoded, dist = nap.decode_template(
     tuning_curves=tuning_curves_2d,
     data=tsdframe,
     epochs=epochs,
-    bin_size=0.2,
+    bin_size=0.01,
     metric="correlation"
 )
 ```
