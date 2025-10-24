@@ -156,6 +156,67 @@ def get_testing_set_n(n_features=1, binned=False, bin_size=1.0, time_units="s"):
             get_testing_set_n(3, binned=True),
             does_not_raise(),
         ),
+        # smoothing
+        (
+            {"smoothing": "1"},
+            pytest.raises(
+                ValueError,
+                match="smoothing should be one of 'gaussian' or 'uniform'.",
+            ),
+        ),
+        (
+            {"smoothing": 1},
+            pytest.raises(
+                ValueError,
+                match="smoothing should be one of 'gaussian' or 'uniform'.",
+            ),
+        ),
+        (
+            {"smoothing": "gaussian", "smoothing_window": 1},
+            does_not_raise(),
+        ),
+        (
+            {"smoothing": "uniform", "smoothing_window": 1},
+            does_not_raise(),
+        ),
+        (
+            {
+                "data": get_testing_set_n(binned=True)["data"],
+                "smoothing": "gaussian",
+                "smoothing_window": 1,
+            },
+            does_not_raise(),
+        ),
+        (
+            {
+                **get_testing_set_n(2, binned=True),
+                "smoothing": "gaussian",
+                "smoothing_window": 1,
+            },
+            does_not_raise(),
+        ),
+        # smoothing_window
+        (
+            {"smoothing": "gaussian"},
+            pytest.raises(
+                ValueError,
+                match="smoothing_window should be a number.",
+            ),
+        ),
+        (
+            {"smoothing": "gaussian", "smoothing_window": "1"},
+            pytest.raises(
+                ValueError,
+                match="smoothing_window should be a number.",
+            ),
+        ),
+        (
+            {"smoothing": "gaussian", "smoothing_window": []},
+            pytest.raises(
+                ValueError,
+                match="smoothing_window should be a number.",
+            ),
+        ),
         # bin_size
         (
             {"data": get_testing_set_n(binned=True)["data"], "bin_size": None},

@@ -70,6 +70,21 @@ def _format_decoding_inputs(func):
                 "uniform_prior set to False but no occupancy found in tuning curves."
             )
 
+        # smooth
+        smoothing = kwargs["smoothing"]
+        smoothing_window = kwargs["smoothing_window"]
+        if smoothing is not None:
+            if smoothing not in ["gaussian", "uniform"]:
+                raise ValueError("smoothing should be one of 'gaussian' or 'uniform'.")
+            if not isinstance(smoothing_window, (int, float)):
+                raise ValueError("smoothing_window should be a number.")
+            if smoothing_window == "gaussian":
+                data = data.smooth(smoothing_window, time_units=kwargs["time_units"])
+            else:
+                data = data.convolve(
+                    np.ones(int(smoothing_window / kwargs["bin_size"]))
+                )
+
         # Call the original function with validated inputs
         return func(**kwargs)
 
@@ -137,7 +152,14 @@ def _format_decoding_outputs(dist, tuning_curves, data, epochs, greater_is_bette
 
 @_format_decoding_inputs
 def decode_bayes(
-    tuning_curves, data, epochs, bin_size, time_units="s", uniform_prior=True
+    tuning_curves,
+    data,
+    epochs,
+    bin_size,
+    smoothing=None,
+    smoothing_window=None,
+    time_units="s",
+    uniform_prior=True,
 ):
     """
     Performs Bayesian decoding over n-dimensional features.
@@ -190,9 +212,13 @@ def decode_bayes(
     epochs : IntervalSet
         The epochs on which decoding is computed
     bin_size : float
-        Bin size. Default is second. Use ``time_units`` to change it.
+        Bin size. Default in seconds. Use ``time_units`` to change it.
+    smoothing : str, optional
+        Type of smoothing to apply to the binned spikes counts (``None`` [default], ``gaussian``, ``uniform``).
+    smoothing_window : float, optional
+        Size smoothing window. Default in seconds. Use ``time_units`` to change it.
     time_units : str, optional
-        Time unit of the bin size ('s' [default], 'ms', 'us').
+        Time unit of the bin size (``s`` [default], ``ms``, ``us``).
     uniform_prior : bool, optional
         If True (default), uses a uniform distribution as a prior.
         If False, uses the occupancy from the tuning curves as a prior over the feature
@@ -378,6 +404,8 @@ def decode_template(
     epochs,
     bin_size,
     metric="correlation",
+    smoothing=None,
+    smoothing_window=None,
     time_units="s",
 ):
     """
@@ -437,9 +465,12 @@ def decode_template(
 
         If a callable, it must have the signature ``metric(u, v) -> float`` and
         return the distance between two 1D arrays.
-
+    smoothing : str, optional
+        Type of smoothing to apply to the binned spikes counts (``None`` [default], ``gaussian``, ``uniform``).
+    smoothing_window : float, optional
+        Size smoothing window. Default in seconds. Use ``time_units`` to change it.
     time_units : str, optional
-        Time unit of the bin size ('s' [default], 'ms', 'us').
+        Time unit of the bin size (``s`` [default], ``ms``, ``us``).
 
     Returns
     -------
