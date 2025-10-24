@@ -78,11 +78,10 @@ def _format_decoding_inputs(func):
                 raise ValueError("smoothing should be one of 'gaussian' or 'uniform'.")
             if not isinstance(smoothing_window, (int, float)):
                 raise ValueError("smoothing_window should be a number.")
-            if smoothing_window == "gaussian":
+            if smoothing == "gaussian":
                 data = data.smooth(
                     smoothing_window,
                     time_units=kwargs["time_units"],
-                    ep=kwargs["epochs"],
                 )
             else:
                 data = data.convolve(
