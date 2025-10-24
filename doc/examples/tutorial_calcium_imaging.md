@@ -161,6 +161,7 @@ For calcium imaging data, Pynapple has `decode_template`, which implements a tem
 
 ```{code-cell} ipython3
 epochs = nap.IntervalSet([50, 150])
+transients = transients.bin_average(0.1, epochs)
 decoded, dist = nap.decode_template(
     tuning_curves=tuning_curves,
     data=transients,

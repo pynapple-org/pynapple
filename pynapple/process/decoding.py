@@ -49,7 +49,7 @@ def _format_decoding_inputs(func):
                 )
         elif isinstance(data, nap.TsGroup):
             data = data.count(
-                kwargs["bin_size"], kwargs["epochs"], kwargs["time_units"]
+                kwargs["bin_size"], kwargs["epochs"], time_units=kwargs["time_units"]
             )
         else:
             raise TypeError("Unknown format for data.")

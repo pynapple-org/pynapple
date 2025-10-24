@@ -9,7 +9,7 @@ import pytest
 import pynapple as nap
 
 
-def get_testing_set_n(n_features=1, binned=False):
+def get_testing_set_n(n_features=1, binned=False, bin_size=1.0, time_units="s"):
     combos = np.array(list(product([0, 1], repeat=n_features)))  # (2^F, F)
     reps = 5
     feature_data = np.tile(combos, (reps, 1))  # (T, F)
@@ -26,7 +26,7 @@ def get_testing_set_n(n_features=1, binned=False):
     )
 
     if binned:
-        frame = data.count(bin_size=1, ep=epochs)
+        frame = data.count(bin_size=bin_size, ep=epochs, time_units=time_units)
         data = nap.TsdFrame(
             frame.times() - 0.5,
             frame.values,
@@ -42,7 +42,7 @@ def get_testing_set_n(n_features=1, binned=False):
         "tuning_curves": tuning_curves,
         "data": data,
         "epochs": epochs,
-        "bin_size": 1.0,
+        "bin_size": bin_size,
     }
 
 
@@ -227,16 +227,17 @@ def test_decode_bayes_input_errors(overwrite_default_args, expectation):
 @pytest.mark.parametrize("uniform_prior", [True, False])
 @pytest.mark.parametrize("n_features", [1, 2, 3])
 @pytest.mark.parametrize("binned", [True, False])
-def test_decode_bayes(n_features, binned, uniform_prior):
+@pytest.mark.parametrize("bin_size, time_units", [(1.0, "s"), (1e3, "ms"), (1e6, "us")])
+def test_decode_bayes(n_features, binned, bin_size, time_units, uniform_prior):
     features, tuning_curves, data, epochs, bin_size = get_testing_set_n(
-        n_features, binned=binned
+        n_features, binned=binned, bin_size=bin_size, time_units=time_units
     ).values()
     decoded, proba = nap.decode_bayes(
         tuning_curves=tuning_curves,
         data=data,
         epochs=epochs,
         bin_size=bin_size,
-        time_units="s",
+        time_units=time_units,
         uniform_prior=uniform_prior,
     )
 
@@ -258,9 +259,10 @@ def test_decode_bayes(n_features, binned, uniform_prior):
 @pytest.mark.parametrize("metric", ["correlation", "euclidean", "cosine"])
 @pytest.mark.parametrize("n_features", [1, 2, 3])
 @pytest.mark.parametrize("binned", [True, False])
-def test_decode_template(n_features, binned, metric):
+@pytest.mark.parametrize("bin_size, time_units", [(1.0, "s"), (1e3, "ms"), (1e6, "us")])
+def test_decode_template(metric, n_features, binned, bin_size, time_units):
     features, tuning_curves, data, epochs, bin_size = get_testing_set_n(
-        n_features, binned=binned
+        n_features, binned=binned, bin_size=bin_size, time_units=time_units
     ).values()
     decoded, dist = nap.decode_template(
         tuning_curves=tuning_curves,
@@ -268,7 +270,7 @@ def test_decode_template(n_features, binned, metric):
         epochs=epochs,
         metric=metric,
         bin_size=bin_size,
-        time_units="s",
+        time_units=time_units,
     )
 
     assert isinstance(decoded, nap.Tsd if features.shape[1] == 1 else nap.TsdFrame)
