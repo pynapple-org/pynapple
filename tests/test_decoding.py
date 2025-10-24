@@ -288,8 +288,14 @@ def test_decode_bayes_input_errors(overwrite_default_args, expectation):
 @pytest.mark.parametrize("uniform_prior", [True, False])
 @pytest.mark.parametrize("n_features", [1, 2, 3])
 @pytest.mark.parametrize("binned", [True, False])
-@pytest.mark.parametrize("bin_size, time_units", [(1.0, "s"), (1e3, "ms"), (1e6, "us")])
-def test_decode_bayes(n_features, binned, bin_size, time_units, uniform_prior):
+@pytest.mark.parametrize("smoothing", ["gaussian", "uniform"])
+@pytest.mark.parametrize(
+    "bin_size, smoothing_window, time_units",
+    [(1.0, 2.0, "s"), (1e3, 2e3, "ms"), (1e6, 2e6, "us")],
+)
+def test_decode_bayes(
+    n_features, binned, bin_size, smoothing, smoothing_window, time_units, uniform_prior
+):
     features, tuning_curves, data, epochs, bin_size = get_testing_set_n(
         n_features, binned=binned, bin_size=bin_size, time_units=time_units
     ).values()
@@ -298,6 +304,8 @@ def test_decode_bayes(n_features, binned, bin_size, time_units, uniform_prior):
         data=data,
         epochs=epochs,
         bin_size=bin_size,
+        smoothing=smoothing,
+        smoothing_window=smoothing_window,
         time_units=time_units,
         uniform_prior=uniform_prior,
     )
@@ -320,8 +328,14 @@ def test_decode_bayes(n_features, binned, bin_size, time_units, uniform_prior):
 @pytest.mark.parametrize("metric", ["correlation", "euclidean", "cosine"])
 @pytest.mark.parametrize("n_features", [1, 2, 3])
 @pytest.mark.parametrize("binned", [True, False])
-@pytest.mark.parametrize("bin_size, time_units", [(1.0, "s"), (1e3, "ms"), (1e6, "us")])
-def test_decode_template(metric, n_features, binned, bin_size, time_units):
+@pytest.mark.parametrize("smoothing", [None, "gaussian", "uniform"])
+@pytest.mark.parametrize(
+    "bin_size, smoothing_window, time_units",
+    [(1.0, 2.0, "s"), (1e3, 2e3, "ms"), (1e6, 2e6, "us")],
+)
+def test_decode_template(
+    metric, n_features, binned, bin_size, smoothing, smoothing_window, time_units
+):
     features, tuning_curves, data, epochs, bin_size = get_testing_set_n(
         n_features, binned=binned, bin_size=bin_size, time_units=time_units
     ).values()
@@ -331,6 +345,8 @@ def test_decode_template(metric, n_features, binned, bin_size, time_units):
         epochs=epochs,
         metric=metric,
         bin_size=bin_size,
+        smoothing=smoothing,
+        smoothing_window=smoothing_window,
         time_units=time_units,
     )
 
