@@ -601,7 +601,7 @@ def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     warnings.warn(
         "compute_1d_tuning_curves is deprecated and will be removed in a future version;"
         "use compute_tuning_curves instead.",
-        DeprecationWarning,
+        FutureWarning,
         stacklevel=2,
     )
     return (
@@ -629,7 +629,7 @@ def compute_1d_tuning_curves_continuous(
     warnings.warn(
         "compute_1d_tuning_curves_continuous is deprecated and will be removed in a future version;"
         "use compute_tuning_curves instead.",
-        DeprecationWarning,
+        FutureWarning,
         stacklevel=2,
     )
     return (
@@ -655,7 +655,7 @@ def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
     warnings.warn(
         "compute_2d_tuning_curves is deprecated and will be removed in a future version;"
         "use compute_tuning_curves instead.",
-        DeprecationWarning,
+        FutureWarning,
         stacklevel=2,
     )
     xarray = compute_tuning_curves(
@@ -684,7 +684,7 @@ def compute_2d_tuning_curves_continuous(
     warnings.warn(
         "compute_2d_tuning_curves_continuous is deprecated and will be removed in a future version;"
         "use compute_tuning_curves instead.",
-        DeprecationWarning,
+        FutureWarning,
         stacklevel=2,
     )
     xarray = compute_tuning_curves(
@@ -711,7 +711,7 @@ def compute_discrete_tuning_curves(group, dict_ep):
     warnings.warn(
         "compute_discrete_tuning_curves is deprecated and will be removed in a future version;"
         "use compute_response_per_epoch instead.",
-        DeprecationWarning,
+        FutureWarning,
         stacklevel=2,
     )
 
@@ -728,7 +728,7 @@ def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=Fals
     warnings.warn(
         "compute_2d_mutual_info is deprecated and will be removed in a future version;"
         "use compute_mutual_information instead.",
-        DeprecationWarning,
+        FutureWarning,
         stacklevel=2,
     )
     if type(dict_tc) is dict:
@@ -785,7 +785,7 @@ def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
     warnings.warn(
         "compute_1d_mutual_info is deprecated and will be removed in a future version;"
         "use compute_mutual_information instead.",
-        DeprecationWarning,
+        FutureWarning,
         stacklevel=2,
     )
     if isinstance(tc, pd.DataFrame):

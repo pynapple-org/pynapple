@@ -31,6 +31,7 @@ def _format_decoding_inputs(func):
 
         # check data
         data = kwargs["data"]
+        was_continuous = True
         if isinstance(data, nap.TsdFrame):
             # check match bin_size
             actual_bin_size = np.mean(data.time_diff().values)
@@ -51,6 +52,7 @@ def _format_decoding_inputs(func):
             data = data.count(
                 kwargs["bin_size"], kwargs["epochs"], time_units=kwargs["time_units"]
             )
+            was_continuous = True
         else:
             raise TypeError("Unknown format for data.")
         kwargs["data"] = data
@@ -84,10 +86,13 @@ def _format_decoding_inputs(func):
                     time_units=kwargs["time_units"],
                 )
             else:
+                smoothing_window_bins = int(smoothing_window / kwargs["bin_size"])
                 data = data.convolve(
-                    np.ones(int(smoothing_window / kwargs["bin_size"])),
+                    np.ones(smoothing_window_bins),
                     ep=kwargs["epochs"],
                 )
+                if was_continuous:
+                    data = data / smoothing_window_bins
 
         # Call the original function with validated inputs
         return func(**kwargs)
@@ -645,7 +650,7 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
     """
     warnings.warn(
         "decode_1d is deprecated and will be removed in a future version; use decode_bayes instead.",
-        DeprecationWarning,
+        FutureWarning,
         stacklevel=2,
     )
     # Occupancy
@@ -685,7 +690,7 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
     """
     warnings.warn(
         "decode_2d is deprecated and will be removed in a future version; use decode_bayes instead.",
-        DeprecationWarning,
+        FutureWarning,
         stacklevel=2,
     )
     # Occupancy
