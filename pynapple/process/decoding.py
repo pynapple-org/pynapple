@@ -55,7 +55,6 @@ def _format_decoding_inputs(func):
             was_continuous = True
         else:
             raise TypeError("Unknown format for data.")
-        kwargs["data"] = data
 
         # check match tuning curves and data
         if tuning_curves.sizes["unit"] != data.shape[1]:
@@ -86,13 +85,16 @@ def _format_decoding_inputs(func):
                     time_units=kwargs["time_units"],
                 )
             else:
-                smoothing_window_bins = int(smoothing_window / kwargs["bin_size"])
+                smoothing_window_bins = max(
+                    1, int(smoothing_window / kwargs["bin_size"])
+                )
                 data = data.convolve(
                     np.ones(smoothing_window_bins),
                     ep=kwargs["epochs"],
                 )
                 if was_continuous:
                     data = data / smoothing_window_bins
+        kwargs["data"] = data
 
         # Call the original function with validated inputs
         return func(**kwargs)

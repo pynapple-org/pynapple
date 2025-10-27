@@ -288,10 +288,10 @@ def test_decode_bayes_input_errors(overwrite_default_args, expectation):
 @pytest.mark.parametrize("uniform_prior", [True, False])
 @pytest.mark.parametrize("n_features", [1, 2, 3])
 @pytest.mark.parametrize("binned", [True, False])
-@pytest.mark.parametrize("smoothing", ["gaussian", "uniform"])
+@pytest.mark.parametrize("smoothing", [None, "gaussian", "uniform"])
 @pytest.mark.parametrize(
     "bin_size, smoothing_window, time_units",
-    [(1.0, 2.0, "s"), (1e3, 2e3, "ms"), (1e6, 2e6, "us")],
+    [(1.0, 0.5, "s"), (1e3, 5e2, "ms"), (1e6, 5e5, "us")],
 )
 def test_decode_bayes(
     n_features, binned, bin_size, smoothing, smoothing_window, time_units, uniform_prior
@@ -309,6 +309,7 @@ def test_decode_bayes(
         time_units=time_units,
         uniform_prior=uniform_prior,
     )
+    features = decoded.value_from(features, ep=decoded.time_support, mode="before")
 
     assert isinstance(decoded, nap.Tsd if features.shape[1] == 1 else nap.TsdFrame)
     np.testing.assert_array_almost_equal(decoded.values, features.values.squeeze())
@@ -317,7 +318,7 @@ def test_decode_bayes(
         proba,
         nap.TsdFrame if features.shape[1] == 1 else nap.TsdTensor,
     )
-    expected_proba = np.zeros((len(features), *tuning_curves.shape[1:]))
+    expected_proba = np.zeros((len(features), *tuning_curves.shape[0:]))
     target_indices = [np.arange(len(features))] + [
         features[:, d] for d in range(features.shape[1])
     ]
@@ -331,7 +332,7 @@ def test_decode_bayes(
 @pytest.mark.parametrize("smoothing", [None, "gaussian", "uniform"])
 @pytest.mark.parametrize(
     "bin_size, smoothing_window, time_units",
-    [(1.0, 2.0, "s"), (1e3, 2e3, "ms"), (1e6, 2e6, "us")],
+    [(1.0, 0.5, "s"), (1e3, 5e2, "ms"), (1e6, 5e5, "us")],
 )
 def test_decode_template(
     metric, n_features, binned, bin_size, smoothing, smoothing_window, time_units
