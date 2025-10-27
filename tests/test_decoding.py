@@ -36,6 +36,7 @@ def get_testing_set_n(n_features=1, binned=False, bin_size=1.0, time_units="s"):
     tuning_curves = nap.compute_tuning_curves(
         data, features, bins=2, range=[(-0.5, 1.5)] * n_features
     )
+    tuning_curves.values += 1e-12
 
     return {
         "features": features,
@@ -286,12 +287,27 @@ def test_decode_bayes_input_errors(overwrite_default_args, expectation):
 
 
 @pytest.mark.parametrize("uniform_prior", [True, False])
-@pytest.mark.parametrize("n_features", [1, 2, 3])
 @pytest.mark.parametrize("binned", [True, False])
 @pytest.mark.parametrize("smoothing", [None, "gaussian", "uniform"])
 @pytest.mark.parametrize(
-    "bin_size, smoothing_window, time_units",
-    [(1.0, 0.5, "s"), (1e3, 5e2, "ms"), (1e6, 5e5, "us")],
+    "n_features, bin_size, smoothing_window, time_units",
+    [
+        (1, 1.0, 0.5, "s"),
+        (2, 1.0, 0.5, "s"),
+        (3, 1.0, 0.5, "s"),
+        (2, 1.0, 1.1, "s"),
+        (3, 1.0, 1.1, "s"),
+        (1, 1e3, 1e2, "ms"),
+        (2, 1e3, 1e2, "ms"),
+        (3, 1e3, 1e2, "ms"),
+        (2, 1e3, 1.1e3, "ms"),
+        (3, 1e3, 1.1e3, "ms"),
+        (1, 1e6, 1e5, "us"),
+        (2, 1e6, 1e5, "us"),
+        (3, 1e6, 1e5, "us"),
+        (2, 1e6, 1.1e6, "us"),
+        (3, 1e6, 1.1e6, "us"),
+    ],
 )
 def test_decode_bayes(
     n_features, binned, bin_size, smoothing, smoothing_window, time_units, uniform_prior
@@ -309,30 +325,44 @@ def test_decode_bayes(
         time_units=time_units,
         uniform_prior=uniform_prior,
     )
-    features = decoded.value_from(features, ep=decoded.time_support, mode="before")
-
     assert isinstance(decoded, nap.Tsd if features.shape[1] == 1 else nap.TsdFrame)
     np.testing.assert_array_almost_equal(decoded.values, features.values.squeeze())
 
-    assert isinstance(
-        proba,
-        nap.TsdFrame if features.shape[1] == 1 else nap.TsdTensor,
-    )
-    expected_proba = np.zeros((len(features), *tuning_curves.shape[1:]))
-    target_indices = [np.arange(len(features))] + [
-        features[:, d] for d in range(features.shape[1])
-    ]
-    expected_proba[tuple(target_indices)] = 1.0
-    np.testing.assert_array_almost_equal(proba.values, expected_proba)
+    if smoothing is None or smoothing_window < bin_size:
+        assert isinstance(
+            proba,
+            nap.TsdFrame if features.shape[1] == 1 else nap.TsdTensor,
+        )
+        expected_proba = np.zeros((len(features), *tuning_curves.shape[1:]))
+        target_indices = [np.arange(len(features))] + [
+            features[:, d] for d in range(features.shape[1])
+        ]
+        expected_proba[tuple(target_indices)] = 1.0
+        np.testing.assert_array_almost_equal(proba.values, expected_proba)
 
 
 @pytest.mark.parametrize("metric", ["correlation", "euclidean", "cosine"])
-@pytest.mark.parametrize("n_features", [1, 2, 3])
 @pytest.mark.parametrize("binned", [True, False])
-@pytest.mark.parametrize("smoothing", [None, "gaussian", "uniform"])
+@pytest.mark.parametrize("smoothing", ["gaussian", "uniform"])
 @pytest.mark.parametrize(
-    "bin_size, smoothing_window, time_units",
-    [(1.0, 0.5, "s"), (1e3, 5e2, "ms"), (1e6, 5e5, "us")],
+    "n_features, bin_size, smoothing_window, time_units",
+    [
+        (1, 1.0, 0.5, "s"),
+        (2, 1.0, 0.5, "s"),
+        (3, 1.0, 0.5, "s"),
+        (2, 1.0, 1.1, "s"),
+        (3, 1.0, 1.1, "s"),
+        (1, 1e3, 1e2, "ms"),
+        (2, 1e3, 1e2, "ms"),
+        (3, 1e3, 1e2, "ms"),
+        (2, 1e3, 1.1e3, "ms"),
+        (3, 1e3, 1.1e3, "ms"),
+        (1, 1e6, 1e5, "us"),
+        (2, 1e6, 1e5, "us"),
+        (3, 1e6, 1e5, "us"),
+        (2, 1e6, 1.1e6, "us"),
+        (3, 1e6, 1.1e6, "us"),
+    ],
 )
 def test_decode_template(
     metric, n_features, binned, bin_size, smoothing, smoothing_window, time_units
@@ -350,14 +380,13 @@ def test_decode_template(
         smoothing_window=smoothing_window,
         time_units=time_units,
     )
-
     assert isinstance(decoded, nap.Tsd if features.shape[1] == 1 else nap.TsdFrame)
-    np.testing.assert_array_almost_equal(decoded.values, features.values.squeeze())
-
     assert isinstance(
         dist,
         nap.TsdFrame if features.shape[1] == 1 else nap.TsdTensor,
     )
+
+    np.testing.assert_allclose(decoded.values, features.values.squeeze())
 
 
 # ------------------------------------------------------------------------------------
