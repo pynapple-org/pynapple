@@ -318,7 +318,7 @@ def test_decode_bayes(
         proba,
         nap.TsdFrame if features.shape[1] == 1 else nap.TsdTensor,
     )
-    expected_proba = np.zeros((len(features), *tuning_curves.shape[0:]))
+    expected_proba = np.zeros((len(features), *tuning_curves.shape[1:]))
     target_indices = [np.arange(len(features))] + [
         features[:, d] for d in range(features.shape[1])
     ]
