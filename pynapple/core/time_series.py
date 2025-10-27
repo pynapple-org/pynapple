@@ -46,6 +46,7 @@ from .utils import (
     add_docstring,
     convert_to_array,
     is_array_like,
+    modifies_time_axis,
 )
 
 
@@ -71,7 +72,12 @@ def _get_class(data):
 
 
 def _initialize_tsd_output(
-    input_object, values, time_index=None, time_support=None, kwargs=None
+    input_object,
+    values,
+    time_index=None,
+    time_support=None,
+    drop_metadata=False,
+    kwargs=None,
 ):
     """
     Initialize the output object for time series data, ensuring proper alignment of time indices
@@ -127,7 +133,7 @@ def _initialize_tsd_output(
             cls = _get_class(values)
 
             # if out will be a tsdframe implement kwargs logic
-            if cls is TsdFrame:
+            if (cls is TsdFrame) and (not drop_metadata):
                 # get eventual setting
                 cols = kwargs.get("columns", None)
                 metadata = kwargs.get("metadata", None)
@@ -286,13 +292,32 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         ]:
             return NotImplemented
 
+        # This should be implemented at some point
+        if func in [
+            np.take,
+            np.take_along_axis,
+            np.extract,
+            np.compress,
+            np.choose,
+            np.select,
+            np.delete,
+        ]:
+            return NotImplemented
+
         if hasattr(np.fft, func.__name__):
             return NotImplemented
 
         if func in [np.split, np.array_split, np.dsplit, np.hsplit, np.vsplit]:
             return _split_tsd(func, *args, **kwargs)
 
-        if func in [np.concatenate, np.vstack, np.hstack, np.dstack]:
+        if func in [
+            np.concatenate,
+            np.vstack,
+            np.hstack,
+            np.dstack,
+            np.column_stack,
+            np.stack,
+        ]:
             return _concatenate_tsd(func, *args, **kwargs)
 
         new_args = []
@@ -303,7 +328,11 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
                 new_args.append(a)
 
         out = func._implementation(*new_args, **kwargs)
-        return _initialize_tsd_output(self, out)
+
+        if modifies_time_axis(func, new_args, kwargs):
+            return out
+        else:
+            return _initialize_tsd_output(self, out, drop_metadata=True)
 
     def as_array(self):
         """
@@ -1007,6 +1036,8 @@ class TsdTensor(_BaseTsd):
             key = tuple(k.values if isinstance(k, Tsd) else k for k in key)
             output = self.values.__getitem__(key)
             index = self.index.__getitem__(key[0])
+            if index.ndim > 1:
+                index = np.squeeze(index)
         else:
             output = self.values.__getitem__(key)
             index = self.index.__getitem__(key)
@@ -1770,7 +1801,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
             if isinstance(key, tuple):
                 index = self.index.__getitem__(key[0])
-                if len(key) == 2:
+                if index.ndim > 1:
+                    index = np.squeeze(index)
+                if len(key) == 2 and key[1] is not None:
                     columns = self.columns.__getitem__(key[1])
             else:
                 index = self.index.__getitem__(key)
@@ -2786,6 +2819,8 @@ class Tsd(_BaseTsd):
 
         if isinstance(key, tuple):
             index = self.index.__getitem__(key[0])
+            if index.ndim > 1:
+                index = np.squeeze(index)
         elif isinstance(key, Number):
             index = np.array([key])
         else:
@@ -3364,6 +3399,8 @@ class Ts(_Base):
     def __getitem__(self, key):
         if isinstance(key, tuple):
             index = self.index.__getitem__(key[0])
+            if index.ndim > 1:
+                index = np.squeeze(index)
         else:
             index = self.index.__getitem__(key)
 

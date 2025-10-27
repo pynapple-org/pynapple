@@ -2,8 +2,10 @@
 Utility functions
 """
 
+import inspect
 import os
 import warnings
+from collections.abc import Sequence
 from itertools import combinations
 from numbers import Number
 from pathlib import Path
@@ -310,9 +312,17 @@ def _concatenate_tsd(func, *args, **kwargs):
             support_equal = _check_time_equals([x.values for x in time_supports])
 
             if time_equal and support_equal:
-                return nap_class(
-                    t=time_indexes[0], d=output, time_support=time_supports[0]
-                )
+                new_kwargs = {}
+                if len(columns):
+                    new_kwargs = {"columns": np.hstack([c for c in columns])}
+                    if len(new_kwargs["columns"]) != output.shape[1]:
+                        new_kwargs = {}
+                return args[0][0]._define_instance(
+                    time_index=time_indexes[0],
+                    time_support=time_supports[0],
+                    values=output,
+                    **new_kwargs,
+                )  # Dropping metadata in this case
             else:
                 if not time_equal and not support_equal:
                     msg = "Time indexes and time supports are not all equals up to pynapple precision. Returning numpy array!"
@@ -484,3 +494,105 @@ def add_docstring(method_name, cls):
         return func
 
     return wrapper
+
+
+def _arg_as_sequence(x):
+    return isinstance(x, Sequence) and not isinstance(x, (str, bytes))
+
+
+def modifies_time_axis(func, new_args, kwargs):
+    """
+    Return True if calling func(*new_args, **kwargs) would modify/move axis 0.
+    Uses inspect.signature(bind_partial + apply_defaults) to get effective args.
+    Conservative: if we can't determine array ndim, assume it *may* modify axis 0.
+    """
+    if func is np.flipud:
+        return True
+    if func is np.squeeze:
+        return False  # This one should be handled by _initialize_tsd_output
+
+    try:
+        sig = inspect.signature(func)
+    except (TypeError, ValueError):
+        return True  # conservative
+
+    bound = sig.bind_partial(*new_args, **kwargs)
+    bound.apply_defaults()
+
+    # Helper to get first array-like from positional args (conservative)
+    arr = None
+    if new_args:
+        arr = new_args[0]
+    else:
+        # try common kw names
+        for name in ("a", "arr", "array", "x", "m"):
+            if name in bound.arguments:
+                arr = bound.arguments[name]
+                break
+
+    ndim = getattr(arr, "ndim", None)
+    if ndim is None:
+        return True  # conservative
+
+    ### 1) single-axis arguments ###
+    axis = bound.arguments.get("axis", inspect._empty)
+    if axis is not inspect._empty:
+        # axis=None usually means "all axes" for reductions => affects axis 0
+        if (axis is None) or (axis == 0):
+            return True
+        if isinstance(axis, tuple) and (0 in axis):
+            return True
+        # axis might be negative; normalize if ndim known
+        if axis < 0:
+            normalized_axis = axis + ndim
+            if func is np.expand_dims:
+                if normalized_axis == -1:
+                    # normalized_axis will be -1 when expanding first dimension
+                    # normalized_axis = 0 will expand in the second dimension
+                    return True
+            else:
+                if normalized_axis == 0:
+                    return True
+
+    # Special case for np.rollaxis
+    if func is np.rollaxis:
+        if bound.arguments.get("start", 0) == 0:
+            return True
+    # special case for np.rot90
+    if func is np.rot90:
+        if 0 in bound.arguments.get("axes", (0, 1)):
+            return True
+
+    ### 2) multi-axis permutation (e.g., transpose) ###
+    axes = bound.arguments.get("axes", inspect._empty)
+    if axes is not inspect._empty:
+        if axes is None:
+            return True  # all axes permuted => affects axis 0
+        if _arg_as_sequence(axes):
+            # if axis 0 is not at position 0 after permutation, it's moved
+            idx = list(axes).index(0)
+            # idx is new position of original axis 0
+            if idx != 0:
+                return True
+
+    ### 3) moveaxis: source/destination can be ints or sequences ###
+    for name in ("source", "destination"):
+        val = bound.arguments.get(name, inspect._empty)
+        if val is not inspect._empty:
+            if val is None:
+                continue
+            elif (_arg_as_sequence(val)) and (0 in val):
+                return True
+            elif val == 0:
+                return True
+
+    ### 4) swapaxes / similar ###
+    axis1 = bound.arguments.get("axis1", inspect._empty)
+    axis2 = bound.arguments.get("axis2", inspect._empty)
+    if (axis1 is not inspect._empty) and (axis1 == 0):
+        return True
+    if (axis2 is not inspect._empty) and (axis2 == 0):
+        return True
+
+    # If none of the checks triggered, assume axis 0 is not modified.
+    return False
