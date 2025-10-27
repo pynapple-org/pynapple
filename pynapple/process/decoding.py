@@ -647,7 +647,7 @@ def decode_template(
 def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
     """
     .. deprecated:: 0.9.2
-          `decode_1d` will be removed in Pynapple 0.10.0, it is replaced by
+          `decode_1d` will be removed in Pynapple 1.0.0, it is replaced by
           `decode_bayes` because the latter works for N dimensions.
     """
     warnings.warn(
@@ -687,7 +687,7 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
 def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=None):
     """
     .. deprecated:: 0.9.2
-          `decode_2d` will be removed in Pynapple 0.10.0, it is replaced by
+          `decode_2d` will be removed in Pynapple 1.0.0, it is replaced by
           `decode_bayes` because the latter works for N dimensions.
     """
     warnings.warn(

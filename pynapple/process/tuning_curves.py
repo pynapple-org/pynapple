@@ -595,7 +595,7 @@ def _validate_tuning_inputs(func):
 def compute_1d_tuning_curves(group, feature, nb_bins, ep=None, minmax=None):
     """
     .. deprecated:: 0.9.2
-          `compute_1d_tuning_curves` will be removed in Pynapple 0.10.0, it is replaced by
+          `compute_1d_tuning_curves` will be removed in Pynapple 1.0.0, it is replaced by
           `compute_tuning_curves` because the latter works for N dimensions.
     """
     warnings.warn(
@@ -623,7 +623,7 @@ def compute_1d_tuning_curves_continuous(
 ):
     """
     .. deprecated:: 0.9.2
-          `compute_1d_tuning_curves` will be removed in Pynapple 0.10.0, it is replaced by
+          `compute_1d_tuning_curves` will be removed in Pynapple 1.0.0, it is replaced by
           `compute_tuning_curves` because the latter works for N dimensions and continuous data.
     """
     warnings.warn(
@@ -649,7 +649,7 @@ def compute_1d_tuning_curves_continuous(
 def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
     """
     .. deprecated:: 0.9.2
-          `compute_1d_tuning_curves` will be removed in Pynapple 0.10.0, it is replaced by
+          `compute_1d_tuning_curves` will be removed in Pynapple 1.0.0, it is replaced by
           `compute_tuning_curves` because the latter works for N dimensions.
     """
     warnings.warn(
@@ -678,7 +678,7 @@ def compute_2d_tuning_curves_continuous(
 ):
     """
     .. deprecated:: 0.9.2
-          `compute_1d_tuning_curves` will be removed in Pynapple 0.10.0, it is replaced by
+          `compute_1d_tuning_curves` will be removed in Pynapple 1.0.0, it is replaced by
           `compute_tuning_curves` because the latter works for N dimensions and continuous data.
     """
     warnings.warn(
@@ -705,7 +705,7 @@ def compute_2d_tuning_curves_continuous(
 def compute_discrete_tuning_curves(group, dict_ep):
     """
     .. deprecated:: 0.9.2
-          `compute_discrete_tuning_curves` will be removed in Pynapple 0.10.0, it is replaced by
+          `compute_discrete_tuning_curves` will be removed in Pynapple 1.0.0, it is replaced by
           `compute_response_per_epoch`.
     """
     warnings.warn(
@@ -722,7 +722,7 @@ def compute_discrete_tuning_curves(group, dict_ep):
 def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=False):
     """
     .. deprecated:: 0.9.2
-          `compute_2d_mutual_info` will be removed in Pynapple 0.10.0, it is replaced by
+          `compute_2d_mutual_info` will be removed in Pynapple 1.0.0, it is replaced by
           `compute_mutual_information` because the latter works for N dimensions.
     """
     warnings.warn(
@@ -779,7 +779,7 @@ def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=Fals
 def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
     """
     .. deprecated:: 0.9.2
-          `compute_1d_mutual_info` will be removed in Pynapple 0.10.0, it is replaced by
+          `compute_1d_mutual_info` will be removed in Pynapple 1.0.0, it is replaced by
           `compute_mutual_information` because the latter works for N dimensions.
     """
     warnings.warn(
