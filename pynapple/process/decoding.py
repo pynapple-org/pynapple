@@ -18,28 +18,45 @@ def _format_decoding_inputs(func):
     def wrapper(*args, **kwargs):
         # Validate each positional argument
         sig = inspect.signature(func)
-        kwargs = sig.bind_partial(*args, **kwargs).arguments
+        bound = sig.bind(*args, **kwargs)
+        bound.apply_defaults()
+        kwargs = bound.arguments
 
         # check tuning curves
         tuning_curves = kwargs["tuning_curves"]
         if not isinstance(tuning_curves, xr.DataArray):
             raise TypeError(
-                "tuning_curves should be an xr.DataArray as computed by compute_tuning_curves."
+                "tuning_curves should be an xarray.DataArray as computed by compute_tuning_curves."
             )
 
         # check data
         data = kwargs["data"]
-        if isinstance(data, nap.TsGroup):
+        was_continuous = True
+        if isinstance(data, nap.TsdFrame):
+            # check match bin_size
+            actual_bin_size = np.mean(data.time_diff().values)
+            passed_bin_size = kwargs["bin_size"]
+            if not isinstance(passed_bin_size, (int, float)):
+                raise ValueError("bin_size should be a number.")
+            if not np.isclose(
+                actual_bin_size,
+                nap.TsIndex.format_timestamps(
+                    np.array([passed_bin_size], dtype=np.float64),
+                    units=kwargs["time_units"],
+                ),
+            )[0]:
+                raise ValueError(
+                    "passed bin_size too different from actual data bin size."
+                )
+        elif isinstance(data, nap.TsGroup):
             data = data.count(
-                kwargs["bin_size"],
-                kwargs.get("epochs", None),
-                kwargs.get("time_units", "s"),
+                kwargs["bin_size"], kwargs["epochs"], time_units=kwargs["time_units"]
             )
-        elif not isinstance(data, nap.TsdFrame):
+            was_continuous = True
+        else:
             raise TypeError("Unknown format for data.")
-        kwargs["data"] = data
 
-        # check match
+        # check match tuning curves and data
         if tuning_curves.sizes["unit"] != data.shape[1]:
             raise ValueError("Different shapes for tuning_curves and data.")
         if not np.all(tuning_curves.coords["unit"] == data.columns.values):
@@ -53,6 +70,31 @@ def _format_decoding_inputs(func):
             raise ValueError(
                 "uniform_prior set to False but no occupancy found in tuning curves."
             )
+
+        # smooth
+        smoothing = kwargs["smoothing"]
+        smoothing_window = kwargs["smoothing_window"]
+        if smoothing is not None:
+            if smoothing not in ["gaussian", "uniform"]:
+                raise ValueError("smoothing should be one of 'gaussian' or 'uniform'.")
+            if not isinstance(smoothing_window, (int, float)):
+                raise ValueError("smoothing_window should be a number.")
+            if smoothing == "gaussian":
+                data = data.smooth(
+                    smoothing_window,
+                    time_units=kwargs["time_units"],
+                )
+            else:
+                smoothing_window_bins = max(
+                    1, int(smoothing_window / kwargs["bin_size"])
+                )
+                data = data.convolve(
+                    np.ones(smoothing_window_bins),
+                    ep=kwargs["epochs"],
+                )
+                if was_continuous:
+                    data = data / smoothing_window_bins
+        kwargs["data"] = data
 
         # Call the original function with validated inputs
         return func(**kwargs)
@@ -121,7 +163,14 @@ def _format_decoding_outputs(dist, tuning_curves, data, epochs, greater_is_bette
 
 @_format_decoding_inputs
 def decode_bayes(
-    tuning_curves, data, epochs, bin_size, time_units="s", uniform_prior=True
+    tuning_curves,
+    data,
+    epochs,
+    bin_size,
+    smoothing=None,
+    smoothing_window=None,
+    time_units="s",
+    uniform_prior=True,
 ):
     """
     Performs Bayesian decoding over n-dimensional features.
@@ -156,26 +205,31 @@ def decode_bayes(
       If ``uniform_prior=True``, it is a uniform distribution over feature values.
       If ``uniform_prior=False``, it is based on the occupancy (i.e. the time spent in each feature bin during tuning curve estimation).
 
-    See:\n
-    Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
-    (1998). Interpreting neuronal population activity by
-    reconstruction: unified framework with application to
-    hippocampal place cells. Journal of neurophysiology, 79(2),
-    1017-1044.
+    References
+    ----------
+    .. [1] Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
+           (1998). Interpreting neuronal population activity by
+           reconstruction: unified framework with application to
+           hippocampal place cells. Journal of neurophysiology, 79(2),
+           1017-1044.
 
     Parameters
     ----------
-    tuning_curves : xr.DataArray
-        Tuning curves as computed by `compute_tuning_curves`.
+    tuning_curves : xarray.DataArray
+        Tuning curves as computed by :func:`~pynapple.process.tuning_curves.compute_tuning_curves`.
     data : TsGroup or TsdFrame
         Neural activity with the same keys as the tuning curves.
         You may also pass a TsdFrame with smoothed counts.
     epochs : IntervalSet
         The epochs on which decoding is computed
     bin_size : float
-        Bin size. Default is second. Use the parameter time_units to change it.
+        Bin size. Default in seconds. Use ``time_units`` to change it.
+    smoothing : str, optional
+        Type of smoothing to apply to the binned spikes counts (``None`` [default], ``gaussian``, ``uniform``).
+    smoothing_window : float, optional
+        Size smoothing window. Default in seconds. Use ``time_units`` to change it.
     time_units : str, optional
-        Time unit of the bin size ('s' [default], 'ms', 'us').
+        Time unit of the bin size (``s`` [default], ``ms``, ``us``).
     uniform_prior : bool, optional
         If True (default), uses a uniform distribution as a prior.
         If False, uses the occupancy from the tuning curves as a prior over the feature
@@ -361,6 +415,8 @@ def decode_template(
     epochs,
     bin_size,
     metric="correlation",
+    smoothing=None,
+    smoothing_window=None,
     time_units="s",
 ):
     """
@@ -381,48 +437,57 @@ def decode_template(
     The algorithm computes the distance between the observed neural activity and the tuning curves for every time bin.
     The decoded feature at each time bin corresponds to the tuning curve bin with the smallest distance.
 
-    See:\n
-    Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
-    (1998). Interpreting neuronal population activity by
-    reconstruction: unified framework with application to
-    hippocampal place cells. Journal of neurophysiology, 79(2),
-    1017-1044.
+    See :func:`scipy.spatial.distance.cdist` for available distance metrics and how they are computed.
 
-    See ``scipy.spatial.distance.cdist`` for available distance metrics and how they are computed:
-    https://docs.scipy.org/doc/scipy/reference/generated/scipy.spatial.distance.cdist.html
+    References
+    ----------
+    .. [1] Zhang, K., Ginzburg, I., McNaughton, B. L., & Sejnowski, T. J.
+           (1998). Interpreting neuronal population activity by
+           reconstruction: unified framework with application to
+           hippocampal place cells. Journal of neurophysiology, 79(2),
+           1017-1044.
 
     Parameters
     ----------
-    tuning_curves : xr.DataArray
-        Tuning curves as computed by `compute_tuning_curves`.
+    tuning_curves : xarray.DataArray
+        Tuning curves as computed by :func:`~pynapple.process.tuning_curves.compute_tuning_curves`.
     data : TsGroup or TsdFrame
         Neural activity with the same keys as the tuning curves.
         You may also pass a TsdFrame with smoothed counts.
     epochs : IntervalSet
         The epochs on which decoding is computed
     bin_size : float
-        Bin size. Default is second. Use the parameter time_units to change it.
+        Bin size. Default is second. Use ``time_units`` to change it.
     metric : str or callable, optional
         The distance metric to use for template matching.
-        This is passed to `scipy.spatial.distance.cdist`.
-        If a string, the distance function can be ‘braycurtis’, ‘canberra’,
-        ‘chebyshev’, ‘cityblock’, ‘correlation’, ‘cosine’, ‘dice’, ‘euclidean’,
-        ‘hamming’, ‘jaccard’, ‘jensenshannon’, ‘kulczynski1’, ‘mahalanobis’,
-        ‘matching’, ‘minkowski’, ‘rogerstanimoto’, ‘russellrao’, ‘seuclidean’,
-        ‘sokalmichener’, ‘sokalsneath’, ‘sqeuclidean’, ‘yule’.
-        Default is 'correlation'.
+
+        If a string, passed to :func:`scipy.spatial.distance.cdist`, must be one of:
+        ``braycurtis``, ``canberra``, ``chebyshev``, ``cityblock``, ``correlation``,
+        ``cosine``, ``dice``, ``euclidean``, ``hamming``, ``jaccard``, ``jensenshannon``,
+        ``kulczynski1``, ``mahalanobis``, ``matching``, ``minkowski``, ``rogerstanimoto``,
+        ``russellrao``, ``seuclidean``, ``sokalmichener``, ``sokalsneath``,
+        ``sqeuclidean`` or ``yule``.
+
+        Default is ``correlation``.
 
         .. note::
-            Some metrics may not be suitable for all types of data.
-            For example, if your tuning curves contain NaN values, you should not use 'hamming', as it does not handle NaNs.
+           Some metrics may not be suitable for all types of data.
+           For example, metrics such as ``hamming`` do not handle NaN values.
+
+        If a callable, it must have the signature ``metric(u, v) -> float`` and
+        return the distance between two 1D arrays.
+    smoothing : str, optional
+        Type of smoothing to apply to the binned spikes counts (``None`` [default], ``gaussian``, ``uniform``).
+    smoothing_window : float, optional
+        Size smoothing window. Default in seconds. Use ``time_units`` to change it.
     time_units : str, optional
-        Time unit of the bin size ('s' [default], 'ms', 'us').
+        Time unit of the bin size (``s`` [default], ``ms``, ``us``).
 
     Returns
     -------
     Tsd
         The decoded feature
-    TsdFrame, TsdTensor
+    TsdFrame or TsdTensor
         The distance matrix between the neural activity and the tuning curves for each time bin.
 
     Examples
@@ -581,11 +646,13 @@ def decode_template(
 
 def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
     """
-    Deprecated, use `decode` instead.
+    .. deprecated:: 0.9.2
+          `decode_1d` will be removed in Pynapple 1.0.0, it is replaced by
+          `decode_bayes` because the latter works for N dimensions.
     """
     warnings.warn(
         "decode_1d is deprecated and will be removed in a future version; use decode_bayes instead.",
-        DeprecationWarning,
+        FutureWarning,
         stacklevel=2,
     )
     # Occupancy
@@ -619,11 +686,13 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
 
 def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=None):
     """
-    Deprecated, use `decode` instead.
+    .. deprecated:: 0.9.2
+          `decode_2d` will be removed in Pynapple 1.0.0, it is replaced by
+          `decode_bayes` because the latter works for N dimensions.
     """
     warnings.warn(
         "decode_2d is deprecated and will be removed in a future version; use decode_bayes instead.",
-        DeprecationWarning,
+        FutureWarning,
         stacklevel=2,
     )
     # Occupancy

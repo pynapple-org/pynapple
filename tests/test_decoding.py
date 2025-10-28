@@ -9,7 +9,7 @@ import pytest
 import pynapple as nap
 
 
-def get_testing_set_n(n_features=1, binned=False):
+def get_testing_set_n(n_features=1, binned=False, bin_size=1.0, time_units="s"):
     combos = np.array(list(product([0, 1], repeat=n_features)))  # (2^F, F)
     reps = 5
     feature_data = np.tile(combos, (reps, 1))  # (T, F)
@@ -26,7 +26,7 @@ def get_testing_set_n(n_features=1, binned=False):
     )
 
     if binned:
-        frame = data.count(bin_size=1, ep=epochs)
+        frame = data.count(bin_size=bin_size, ep=epochs, time_units=time_units)
         data = nap.TsdFrame(
             frame.times() - 0.5,
             frame.values,
@@ -36,13 +36,14 @@ def get_testing_set_n(n_features=1, binned=False):
     tuning_curves = nap.compute_tuning_curves(
         data, features, bins=2, range=[(-0.5, 1.5)] * n_features
     )
+    tuning_curves.values += 1e-12
 
     return {
         "features": features,
         "tuning_curves": tuning_curves,
         "data": data,
         "epochs": epochs,
-        "bin_size": 1,
+        "bin_size": bin_size,
     }
 
 
@@ -55,21 +56,21 @@ def get_testing_set_n(n_features=1, binned=False):
             {"tuning_curves": []},
             pytest.raises(
                 TypeError,
-                match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
+                match="tuning_curves should be an xarray.DataArray as computed by compute_tuning_curves.",
             ),
         ),
         (
             {"tuning_curves": 1},
             pytest.raises(
                 TypeError,
-                match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
+                match="tuning_curves should be an xarray.DataArray as computed by compute_tuning_curves.",
             ),
         ),
         (
             {"tuning_curves": get_testing_set_n()["tuning_curves"].to_pandas().T},
             pytest.raises(
                 TypeError,
-                match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
+                match="tuning_curves should be an xarray.DataArray as computed by compute_tuning_curves.",
             ),
         ),
         (
@@ -156,6 +157,93 @@ def get_testing_set_n(n_features=1, binned=False):
             get_testing_set_n(3, binned=True),
             does_not_raise(),
         ),
+        # smoothing
+        (
+            {"smoothing": "1"},
+            pytest.raises(
+                ValueError,
+                match="smoothing should be one of 'gaussian' or 'uniform'.",
+            ),
+        ),
+        (
+            {"smoothing": 1},
+            pytest.raises(
+                ValueError,
+                match="smoothing should be one of 'gaussian' or 'uniform'.",
+            ),
+        ),
+        (
+            {"smoothing": "gaussian", "smoothing_window": 1},
+            does_not_raise(),
+        ),
+        (
+            {"smoothing": "uniform", "smoothing_window": 1},
+            does_not_raise(),
+        ),
+        (
+            {
+                "data": get_testing_set_n(binned=True)["data"],
+                "smoothing": "gaussian",
+                "smoothing_window": 1,
+            },
+            does_not_raise(),
+        ),
+        (
+            {
+                **get_testing_set_n(2, binned=True),
+                "smoothing": "gaussian",
+                "smoothing_window": 1,
+            },
+            does_not_raise(),
+        ),
+        # smoothing_window
+        (
+            {"smoothing": "gaussian"},
+            pytest.raises(
+                ValueError,
+                match="smoothing_window should be a number.",
+            ),
+        ),
+        (
+            {"smoothing": "gaussian", "smoothing_window": "1"},
+            pytest.raises(
+                ValueError,
+                match="smoothing_window should be a number.",
+            ),
+        ),
+        (
+            {"smoothing": "gaussian", "smoothing_window": []},
+            pytest.raises(
+                ValueError,
+                match="smoothing_window should be a number.",
+            ),
+        ),
+        # bin_size
+        (
+            {"data": get_testing_set_n(binned=True)["data"], "bin_size": None},
+            pytest.raises(
+                ValueError,
+                match="bin_size should be a number.",
+            ),
+        ),
+        (
+            {"data": get_testing_set_n(binned=True)["data"], "bin_size": "1.0"},
+            pytest.raises(
+                ValueError,
+                match="bin_size should be a number.",
+            ),
+        ),
+        (
+            {"data": get_testing_set_n(binned=True)["data"], "bin_size": 2.0},
+            pytest.raises(
+                ValueError,
+                match="passed bin_size too different from actual data bin size.",
+            ),
+        ),
+        (
+            {"data": get_testing_set_n(binned=True)["data"], "bin_size": 1.0},
+            does_not_raise(),
+        ),
     ],
 )
 def test_decode_input_errors(overwrite_default_args, expectation):
@@ -199,42 +287,88 @@ def test_decode_bayes_input_errors(overwrite_default_args, expectation):
 
 
 @pytest.mark.parametrize("uniform_prior", [True, False])
-@pytest.mark.parametrize("n_features", [1, 2, 3])
 @pytest.mark.parametrize("binned", [True, False])
-def test_decode_bayes(n_features, binned, uniform_prior):
+@pytest.mark.parametrize("smoothing", [None, "gaussian", "uniform"])
+@pytest.mark.parametrize(
+    "n_features, bin_size, smoothing_window, time_units",
+    [
+        (1, 1.0, 0.5, "s"),
+        (2, 1.0, 0.5, "s"),
+        (3, 1.0, 0.5, "s"),
+        (2, 1.0, 1.1, "s"),
+        (3, 1.0, 1.1, "s"),
+        (1, 1e3, 1e2, "ms"),
+        (2, 1e3, 1e2, "ms"),
+        (3, 1e3, 1e2, "ms"),
+        (2, 1e3, 1.1e3, "ms"),
+        (3, 1e3, 1.1e3, "ms"),
+        (1, 1e6, 1e5, "us"),
+        (2, 1e6, 1e5, "us"),
+        (3, 1e6, 1e5, "us"),
+        (2, 1e6, 1.1e6, "us"),
+        (3, 1e6, 1.1e6, "us"),
+    ],
+)
+def test_decode_bayes(
+    n_features, binned, bin_size, smoothing, smoothing_window, time_units, uniform_prior
+):
     features, tuning_curves, data, epochs, bin_size = get_testing_set_n(
-        n_features, binned=binned
+        n_features, binned=binned, bin_size=bin_size, time_units=time_units
     ).values()
     decoded, proba = nap.decode_bayes(
         tuning_curves=tuning_curves,
         data=data,
         epochs=epochs,
         bin_size=bin_size,
-        time_units="s",
+        smoothing=smoothing,
+        smoothing_window=smoothing_window,
+        time_units=time_units,
         uniform_prior=uniform_prior,
     )
-
     assert isinstance(decoded, nap.Tsd if features.shape[1] == 1 else nap.TsdFrame)
     np.testing.assert_array_almost_equal(decoded.values, features.values.squeeze())
 
-    assert isinstance(
-        proba,
-        nap.TsdFrame if features.shape[1] == 1 else nap.TsdTensor,
-    )
-    expected_proba = np.zeros((len(features), *tuning_curves.shape[1:]))
-    target_indices = [np.arange(len(features))] + [
-        features[:, d] for d in range(features.shape[1])
-    ]
-    expected_proba[tuple(target_indices)] = 1.0
-    np.testing.assert_array_almost_equal(proba.values, expected_proba)
+    if smoothing is None or smoothing_window < bin_size:
+        assert isinstance(
+            proba,
+            nap.TsdFrame if features.shape[1] == 1 else nap.TsdTensor,
+        )
+        expected_proba = np.zeros((len(features), *tuning_curves.shape[1:]))
+        target_indices = [np.arange(len(features))] + [
+            features[:, d] for d in range(features.shape[1])
+        ]
+        expected_proba[tuple(target_indices)] = 1.0
+        np.testing.assert_array_almost_equal(proba.values, expected_proba)
 
 
 @pytest.mark.parametrize("metric", ["correlation", "euclidean", "cosine"])
-@pytest.mark.parametrize("n_features", [1, 2, 3])
 @pytest.mark.parametrize("binned", [True, False])
-def test_decode_template(n_features, binned, metric):
+@pytest.mark.parametrize("smoothing", ["gaussian", "uniform"])
+@pytest.mark.parametrize(
+    "n_features, bin_size, smoothing_window, time_units",
+    [
+        (1, 1.0, 0.5, "s"),
+        (2, 1.0, 0.5, "s"),
+        (3, 1.0, 0.5, "s"),
+        (2, 1.0, 1.1, "s"),
+        (3, 1.0, 1.1, "s"),
+        (1, 1e3, 1e2, "ms"),
+        (2, 1e3, 1e2, "ms"),
+        (3, 1e3, 1e2, "ms"),
+        (2, 1e3, 1.1e3, "ms"),
+        (3, 1e3, 1.1e3, "ms"),
+        (1, 1e6, 1e5, "us"),
+        (2, 1e6, 1e5, "us"),
+        (3, 1e6, 1e5, "us"),
+        (2, 1e6, 1.1e6, "us"),
+        (3, 1e6, 1.1e6, "us"),
+    ],
+)
+def test_decode_template(
+    metric, n_features, binned, bin_size, smoothing, smoothing_window, time_units
+):
     features, tuning_curves, data, epochs, bin_size = get_testing_set_n(
-        n_features, binned=binned
+        n_features, binned=binned, bin_size=bin_size, time_units=time_units
     ).values()
     decoded, dist = nap.decode_template(
         tuning_curves=tuning_curves,
@@ -242,16 +376,17 @@ def test_decode_template(n_features, binned, metric):
         epochs=epochs,
         metric=metric,
         bin_size=bin_size,
-        time_units="s",
+        smoothing=smoothing,
+        smoothing_window=smoothing_window,
+        time_units=time_units,
     )
-
     assert isinstance(decoded, nap.Tsd if features.shape[1] == 1 else nap.TsdFrame)
-    np.testing.assert_array_almost_equal(decoded.values, features.values.squeeze())
-
     assert isinstance(
         dist,
         nap.TsdFrame if features.shape[1] == 1 else nap.TsdTensor,
     )
+
+    np.testing.assert_allclose(decoded.values, features.values.squeeze())
 
 
 # ------------------------------------------------------------------------------------
