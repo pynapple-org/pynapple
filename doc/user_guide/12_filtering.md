@@ -14,7 +14,7 @@ kernelspec:
 Filtering
 =========
 
-The filtering module holds the functions for frequency manipulation :
+The filtering module holds the functions for frequency manipulation:
 
 - [`nap.apply_bandstop_filter`](pynapple.process.filtering.apply_bandstop_filter)
 - [`nap.apply_lowpass_filter`](pynapple.process.filtering.apply_lowpass_filter)
@@ -376,4 +376,77 @@ plt.legend()
 plt.xlabel("Number of dimensions")
 plt.ylabel("Time (s)")
 plt.title("Low pass filtering benchmark")
+```
+
+
+***
+Detecting Oscillatory Events
+---------------------------
+
+The filtering module also provides a method [`detect_oscillatory_events`](pynapple.process.filtering.detect_oscillatory_events) to automatically detect intervals containing oscillatory events (such as ripples or spindles) in a signal.
+
+To demonstrate, let's create a synthetic signal where a fast oscillation (e.g., 40 Hz) occurs in a noisy signal:
+
+```{code-cell} ipython3
+# Parameters
+fs = 1000  # Sampling frequency (Hz)
+duration = 3  # seconds
+t = np.linspace(0, duration, int(fs * duration))
+
+# 40 Hz oscillation
+osc = np.sin(2 * np.pi * 40 * t)
+signal = np.zeros_like(t) + 0.2 * np.random.randn(len(t))
+mask = (t > 1) & (t < 1.5)
+signal[mask] += osc[mask]
+
+# Create Tsd object
+ts = nap.Tsd(t=t, d=signal)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+
+# Plot the signal
+plt.figure(figsize=(15, 4))
+plt.plot(ts, label="Signal (40 Hz oscillation)")
+plt.xlabel("Time (s)")
+plt.ylabel("Amplitude")
+plt.title("Signal with oscillatory bursts")
+plt.legend()
+plt.show()
+```
+
+Now, let's use [`detect_oscillatory_events`](pynapple.process.filtering.detect_oscillatory_events) to find the oscillation intervals. The function will return the detected intervals as an `IntervalSet` along with metadata containing peak times.
+
+```{code-cell} ipython3
+# Define detection parameters
+freq_band = (35, 45)  # Bandpass filter for 40 Hz
+thres_band = (1, 10)  # Thresholds for normalized squared signal
+min_dur = 0.03        # Minimum event duration (s)
+max_dur = 1           # Maximum event duration (s)
+min_inter = 0.02      # Minimum interval between events (s)
+epoch = nap.IntervalSet(start=0, end=duration)
+
+# Detect oscillatory events
+osc_ep = nap.filtering.detect_oscillatory_events(
+    ts, epoch, freq_band, thres_band, (min_dur, max_dur), min_inter
+)
+
+print("Detected intervals:\n", osc_ep)
+```
+
+Let's visualize the detected intervals and peaks on the original signal:
+
+```{code-cell} ipython3
+:tags: [hide-input]
+
+plt.figure(figsize=(15, 4))
+plt.plot(ts, label="Signal")
+for s, e in osc_ep.values:
+    plt.axvspan(s, e, color="orange", alpha=0.3)
+plt.xlabel("Time (s)")
+plt.ylabel("Amplitude")
+plt.title("Detected oscillatory events")
+plt.legend()
+plt.show()
 ```

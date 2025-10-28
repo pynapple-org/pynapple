@@ -113,7 +113,7 @@ You can still apply any high level function of pynapple. For example here, we co
 
 
 ```{code-cell} ipython3
-tc = nap.compute_1d_tuning_curves(data['units'], data['y'], 10)
+tc = nap.compute_tuning_curves(data['units'], data['y'], 10)
 
 ```
 
@@ -212,7 +212,7 @@ It is possible to use Higher level library like [zarr](https://zarr.readthedocs.
 ```{code-cell} ipython3
 import zarr
 zarr_array = zarr.zeros((10000, 5), chunks=(1000, 5), dtype='i4')
-timestep = np.arange(len(zarr_array))
+timestep = np.arange(zarr_array.shape[0])
 
 tsdframe = nap.TsdFrame(t=timestep, d=zarr_array)
 ```

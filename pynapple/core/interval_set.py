@@ -1198,6 +1198,45 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         """
         return _MetadataMixin.drop_info(self, key)
 
+    @add_meta_docstring("restrict_info")
+    def restrict_info(self, key):
+        """
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> times = np.array([[0, 5], [10, 12], [20, 33]])
+        >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"], "l3": [4, 5, 6]}
+        >>> ep = nap.IntervalSet(tmp,metadata=metadata)
+        >>> ep
+          index    start    end    l1  l2      l3
+              0        0      5     1  x        4
+              1       10     12     2  x        5
+              2       20     33     3  y        6
+        shape: (3, 2), time unit: sec.
+
+        To restrict to multiple metadata columns:
+
+        >>> ep.restrict_info(["l2", "l3"])
+        >>> ep
+          index    start    end  l2      l3
+              0        0      5  x        4
+              1       10     12  x        5
+              2       20     33  y        6
+        shape: (3, 2), time unit: sec.
+
+        To restrict to a single metadata column:
+
+        >>> ep.restrict_info("l2")
+        >>> ep
+          index    start    end  l2
+              0        0      5  x
+              1       10     12  x
+              2       20     33  y
+        shape: (3, 2), time unit: sec.
+        """
+        return _MetadataMixin.restrict_info(self, key)
+
     @add_or_convert_metadata
     @add_meta_docstring("groupby")
     def groupby(self, by, get_group=None):
@@ -1266,7 +1305,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         Apply a numpy function:
 
         >>> ep.groupby_apply("l2", np.mean)
-        {'x': 6.75, 'y': 26.5}
+        {'x': np.float64(6.75), 'y': np.float64(26.5)}
 
         Apply a custom function:
 
@@ -1289,16 +1328,29 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         ... )
         >>> feature = nap.Tsd(t=np.arange(40), d=np.concatenate([np.zeros(20), np.ones(20)]))
         >>> func_kwargs = {
-        >>>     "group": tsg,
-        >>>     "feature": feature,
-        >>>     "nb_bins": 2,
-        >>> }
-        >>> ep.groupby_apply("l2", nap.compute_1d_tuning_curves, input_key="ep", **func_kwargs)
-        {'x':              1         2         3
-         0.25  1.025641  1.823362  4.216524
-         0.75       NaN       NaN       NaN,
-         'y':              1         2         3
-         0.25       NaN       NaN       NaN
-         0.75  1.025641  1.978022  4.835165}
+        ...     "data": tsg,
+        ...     "features": feature,
+        ...     "bins": 2,
+        ... }
+        >>> ep.groupby_apply("l2", nap.compute_tuning_curves, input_key="epochs", **func_kwargs)
+        {'x': <xarray.DataArray (unit: 3, 0: 2)> Size: 48B
+        array([[       nan, 1.        ],
+               [       nan, 1.77777778],
+               [       nan, 4.11111111]])
+        Coordinates:
+          * unit     (unit) int64 24B 1 2 3
+          * 0        (0) float64 16B -0.25 0.25
+        Attributes:
+            occupancy:  [nan  9.]
+            bin_edges:  [array([-0.5,  0. ,  0.5])], 'y': <xarray.DataArray (unit: 3, 0: 2)> Size: 48B
+        array([[       nan, 1.        ],
+               [       nan, 1.92857143],
+               [       nan, 4.71428571]])
+        Coordinates:
+          * unit     (unit) int64 24B 1 2 3
+          * 0        (0) float64 16B 0.75 1.25
+        Attributes:
+            occupancy:  [nan 14.]
+            bin_edges:  [array([0.5, 1. , 1.5])]}
         """
         return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)

@@ -22,6 +22,12 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 New release :fire:
 ------------------
 
+### pynapple >= 0.10.0
+
+Tuning curves computation have been generated with the function `compute_tuning_curves`.
+It can now return a [xarray DataArray](https://docs.xarray.dev/en/stable/) instead of a Pandas DataFrame.
+
+
 ### pynapple >= 0.8.2
 
 The objects `IntervalSet`, `TsdFrame` and `TsGroup` inherits a new metadata class. It is now possible to add labels for 
@@ -38,27 +44,6 @@ nap.apply_bandpass_filter(signal, (10, 20), fs=1250)
 ```
 New functions includes power spectral density and Morlet wavelet decomposition. See the [documentation](https://pynapple-org.github.io/pynapple/reference/process/) for more details.
 
-### pynapple >= 0.6
-
-Starting with 0.6, [`IntervalSet`](https://pynapple-org.github.io/pynapple/reference/core/interval_set/) objects are behaving as immutable numpy ndarray. Before 0.6, you could select an interval within an `IntervalSet` object with:
-
-```python
-new_intervalset = intervalset.loc[[0]] # Selecting first interval
-```
-
-With pynapple>=0.6, the slicing is similar to numpy and it returns an `IntervalSet`
-
-```python
-new_intervalset = intervalset[0]
-```
-
-### pynapple >= 0.4
-
-Starting with 0.4, pynapple rely on the [numpy array container](https://numpy.org/doc/stable/user/basics.dispatch.html) approach instead of Pandas for the time series. Pynapple builtin functions will remain the same except for functions inherited from Pandas. 
-
-This allows for a better handling of returned objects.
-
-Additionaly, it is now possible to define time series objects with more than 2 dimensions with `TsdTensor`. You can also look at this [notebook](https://pynapple-org.github.io/pynapple/generated/gallery/tutorial_pynapple_numpy/) for a demonstration of numpy compatibilities.
 
 Community
 ---------
@@ -73,13 +58,11 @@ Getting Started
 The best way to install pynapple is with pip inside a new [conda](https://docs.conda.io/en/latest/) environment:
     
 ``` {.sourceCode .shell}
-$ conda create --name pynapple pip python=3.8
+$ conda create --name pynapple pip python=3.11
 $ conda activate pynapple
 $ pip install pynapple
 ```
 
-> **Note**
-> The package uses a pyproject.toml file for installation and dependencies management.
 
 Running `pip install pynapple` will install all the dependencies, including: 
 
@@ -90,13 +73,14 @@ Running `pip install pynapple` will install all the dependencies, including:
 -   pynwb 2.0
 -   tabulate
 -   h5py
+-   xarray
 
 For development, see the [contributor guide](CONTRIBUTING.md) for steps to install from source code.
 
 <!-- For spyder users, it is recommended to install spyder after installing pynapple with :
 
 ``` {.sourceCode .shell}
-$ conda create --name pynapple pip python=3.8
+$ conda create --name pynapple pip python=3.11
 $ conda activate pynapple
 $ pip install pynapple
 $ pip install spyder
@@ -130,18 +114,20 @@ head_direction = data["ry"]
 wake_ep = data["position_time_support"]
 
 # COMPUTING TUNING CURVES
-tuning_curves = nap.compute_1d_tuning_curves(
-    spikes, head_direction, 120, ep=wake_ep, minmax=(0, 2 * np.pi)
+tuning_curves = nap.compute_tuning_curves(
+    spikes, head_direction, 120, epochs=wake_ep, range=(0, 2 * np.pi)
 )
 
-
 # PLOT
-plt.figure()
-for i in spikes:
-    plt.subplot(3, 5, i + 1, projection="polar")
-    plt.plot(tuning_curves[i])
-    plt.xticks([0, np.pi / 2, np.pi, 3 * np.pi / 2])
-
+g=tuning_curves.plot(
+    row="unit", 
+    col_wrap=5, 
+    subplot_kws={"projection": "polar"}, 
+    sharey=False
+)
+plt.xticks([0, np.pi / 2, np.pi, 3 * np.pi / 2])
+g.set_titles("")
+g.set_xlabels("")
 plt.show()
 ```
 Shown below, the final figure from the example code displays the firing rate of 15 neurons as a function of the direction of the head of the animal in the horizontal plane.

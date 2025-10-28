@@ -1843,6 +1843,52 @@ class TsGroup(UserDict, _MetadataMixin):
         """
         return _MetadataMixin.drop_info(self, key)
 
+    @add_meta_docstring("restrict_info")
+    def restrict_info(self, key):
+        """
+        Note
+        ----
+        The `rate` column is always kept in the metadata, even if it is not specified in `key`.
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tmp = {0:nap.Ts(t=np.arange(0,200), time_units='s'),
+        ... 1:nap.Ts(t=np.arange(0,200,0.5), time_units='s'),
+        ... 2:nap.Ts(t=np.arange(0,300,0.25), time_units='s'),
+        ... }
+        >>> metadata = {"l1": [1, 2, 3], "l2": ["x", "x", "y"], "l3": [4, 5, 6]}
+        >>> tsgroup = nap.TsGroup(tmp,metadata=metadata)
+        >>> print(tsgroup)
+          Index     rate    l1  l2      l3
+        -------  -------  ----  ----  ----
+              0  0.66722     1  x        4
+              1  1.33445     2  x        5
+              2  4.00334     3  y        6
+
+        To restrict to multiple metadata columns:
+
+        >>> tsgroup.restrict_info(["l2", "l3"])
+        >>> tsgroup
+          Index     rate  l2      l3
+        -------  -------  ----  ----
+              0  0.66722  x        4
+              1  1.33445  x        5
+              2  4.00334  y        6
+
+        To restrict to a single metadata column:
+
+        >>> tsgroup.drop_info("l2")
+        >>> tsgroup
+          Index     rate  l2
+        -------  -------  ----
+              0  0.66722  x
+              1  1.33445  x
+              2  4.00334  y
+        """
+        return _MetadataMixin.restrict_info(self, key)
+
     @add_or_convert_metadata
     @add_meta_docstring("groupby")
     def groupby(self, by, get_group=None):
@@ -1925,12 +1971,22 @@ class TsGroup(UserDict, _MetadataMixin):
         ...     d=np.concatenate([np.zeros(20), np.ones(20)]),
         ...     time_support=nap.IntervalSet(np.array([[0, 5], [10, 12], [20, 33]])),
         ... )
-        >>> tsgroup.groupby_apply("l2", nap.compute_1d_tuning_curves, feature=feature, nb_bins=2)
-        {'x':          0         1
-         0.25  1.15  2.044444
-         0.75  1.15  2.217857,
-         'y':              2
-         0.25  3.833333
-         0.75  4.353571}
+        >>> print(tsgroup.groupby_apply("l2", nap.compute_tuning_curves, features=feature, bins=2))
+        {'x': <xarray.DataArray (unit: 2, 0: 2)> Size: 32B
+        array([[1.        , 1.        ],
+               [1.77777778, 1.92857143]])
+        Coordinates:
+          * unit     (unit) int64 16B 0 1
+          * 0        (0) float64 16B 0.25 0.75
+        Attributes:
+            occupancy:  [ 9. 14.]
+            bin_edges:  [array([0. , 0.5, 1. ])], 'y': <xarray.DataArray (unit: 1, 0: 2)> Size: 16B
+        array([[3.33333333, 3.78571429]])
+        Coordinates:
+          * unit     (unit) int64 8B 2
+          * 0        (0) float64 16B 0.25 0.75
+        Attributes:
+            occupancy:  [ 9. 14.]
+            bin_edges:  [array([0. , 0.5, 1. ])]}
         """
         return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)

@@ -4,7 +4,7 @@ from .correlograms import (
     compute_eventcorrelogram,
     compute_isi_distribution,
 )
-from .decoding import decode_1d, decode_2d
+from .decoding import decode_1d, decode_2d, decode_bayes, decode_template
 from .filtering import (
     apply_bandpass_filter,
     apply_bandstop_filter,
@@ -36,6 +36,9 @@ from .tuning_curves import (
     compute_2d_tuning_curves,
     compute_2d_tuning_curves_continuous,
     compute_discrete_tuning_curves,
+    compute_mutual_information,
+    compute_response_per_epoch,
+    compute_tuning_curves,
 )
 from .warping import build_tensor, warp_tensor
 from .wavelets import compute_wavelet_transform, generate_morlet_filterbank

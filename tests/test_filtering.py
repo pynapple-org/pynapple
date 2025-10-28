@@ -523,3 +523,55 @@ def test_get_filter_frequency_response_error():
         ValueError, match="Unrecognized filter mode. Choose either 'butter' or 'sinc'"
     ):
         nap.get_filter_frequency_response(250, 1000, "lowpass", "a", 4, 0.02)
+
+
+@pytest.mark.parametrize(
+    "freq_band, thresh_band, num_events, start, end",
+    [
+        ((10, 30), (1, 10), 1, 0, 2),
+        ((40, 60), (1, 10), 1, 3, 5),
+        ((100, 150), (1, 10), 0, None, None),
+    ],
+)
+def test_detect_oscillatory_events(freq_band, thresh_band, num_events, start, end):
+    fs = 1000
+    duration = 5
+    min_dur = 0.1
+    max_dur = 2
+    min_inter = 0.02
+
+    t = np.linspace(0, duration, int(fs * duration), endpoint=False)
+    signal = np.zeros_like(t)
+
+    # 25 Hz oscillation from 0-2s
+    freq_1 = 25
+    mask1 = (t >= 0) & (t < 2)
+    signal[mask1] = np.sin(2 * np.pi * freq_1 * t[mask1])
+
+    # 50 Hz oscillation from 3-5s
+    freq_2 = 50
+    mask2 = (t >= 3) & (t < 5)
+    signal[mask2] = np.sin(2 * np.pi * freq_2 * t[mask2])
+
+    ts = nap.Tsd(t=t, d=signal)
+    epoch = nap.IntervalSet(start=0, end=duration)
+    osc_ep = nap.filtering.detect_oscillatory_events(
+        ts, epoch, freq_band, thresh_band, (min_dur, max_dur), min_inter
+    )
+
+    assert len(osc_ep) == num_events  # Only one event in given freq_band
+
+    if num_events > 0:
+        # Start and end should be close to actuals +/- a small amount
+        detected_start = osc_ep.start[0]
+        detected_end = osc_ep.end[0]
+        assert np.isclose(start, detected_start, atol=0.05)
+        assert np.isclose(end, detected_end, atol=0.05)
+
+        # Check we store power, amplitude, and peak_time
+        for key in ["power", "amplitude", "peak_time"]:
+            assert key in osc_ep._metadata
+
+        # Check peak_time is within the interval
+        peak_time = osc_ep._metadata["peak_time"][0]
+        assert start <= peak_time <= end

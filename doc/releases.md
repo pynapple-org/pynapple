@@ -1,5 +1,21 @@
 # Releases
 
+### 0.10.0 (2025-10-27)
+
+- Generalizing `nap.compute_tuning_curves`. It can take any time series object (Tsd, TsdFrame, TsGroup, TsdTensor) as input and 
+  work for any dimension of data.
+- `nap.compute_1d_tuning_curve`, `nap.compute_2d_tuning_curve`, `nap.compute_1d_tuning_curve_continuous`, `nap.compute_2d_tuning_curve_continuous`
+  are being deprecated in favor of the general `nap.compute_tuning_curves`.
+- Generalization of `nap.decode_1d` and `nap.decode_2d` to `nap.decode_bayes` for bayesian decoding of any dimension of data.
+- New function `nap.decode_template` for template matching decoding of any dimension of data.
+- Metadata can be restricted with `restrict_info`.
+- New function `detect_oscillatory_events` to detect oscillatory events in a Tsd object.
+- Fix TsdFrame `__repr__` for boolean data type.
+- Refactoring of `nap.compute_mutual_information` to take as input xarray tuning curves object.
+- `in_interval` method for IntervalSet to check if time points are within intervals.
+- Refactoring `nap.compute_discrete_tuning_curves` to `compute_response_per_epoch`.
+- Tuning curves function can return spike counts and occupancy separately.
+
 ### 0.9.2 (2025-06-16)
 
 - Implement `time_diff` method for time series objects
