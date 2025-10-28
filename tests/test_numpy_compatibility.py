@@ -963,6 +963,12 @@ def test_matmul_product(a, b, expected_type):
             "ij,jk->ik",
             np.ndarray,
         ),
+        (
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+            np.random.randn(5, 10),
+            "ij,ji->i",
+            nap.Tsd,
+        ),
     ],
 )
 def test_einsum(a, b, subscripts, expected_type):
