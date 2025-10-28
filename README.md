@@ -24,7 +24,7 @@ New release :fire:
 
 ### pynapple >= 0.10.0
 
-Tuning curves computation have been generated with the function `compute_tuning_curves`.
+Tuning curves computation have been generalized to n-dimensions with the function `compute_tuning_curves`.
 It can now return a [xarray DataArray](https://docs.xarray.dev/en/stable/) instead of a Pandas DataFrame.
 
 
