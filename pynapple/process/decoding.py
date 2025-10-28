@@ -88,10 +88,11 @@ def _format_decoding_inputs(func):
                 smoothing_window_bins = max(
                     1, int(smoothing_window / kwargs["bin_size"])
                 )
-                data = data.convolve(
-                    np.ones(smoothing_window_bins),
-                    ep=kwargs["epochs"],
-                )
+                if smoothing_window_bins > 1:
+                    data = data.convolve(
+                        np.ones(smoothing_window_bins),
+                        ep=kwargs["epochs"],
+                    )
                 if was_continuous:
                     data = data / smoothing_window_bins
         kwargs["data"] = data
@@ -382,29 +383,35 @@ def decode_bayes(
     98.5        1.0  1.0
     dtype: float64, shape: (98, 2)
     """
-    occupancy = (
+    prior = (
         np.ones_like(tuning_curves[0]).flatten()
         if uniform_prior
         else tuning_curves.attrs["occupancy"].flatten()
     )
+    prior = prior.astype(np.float64)
+    prior /= prior.sum()
 
-    tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
-    ct = data.values
+    rate_map = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
+    observed_counts = data.values
     bin_size_s = nap.TsIndex.format_timestamps(
         np.array([bin_size], dtype=np.float64), time_units
     )[0]
+    observed_counts_expanded = np.tile(
+        observed_counts[:, np.newaxis, :], (1, rate_map.shape[0], 1)
+    )
 
-    p1 = np.exp(-bin_size_s * np.nansum(tc, 1))
-    p2 = occupancy / occupancy.sum()
+    EPS = 1e-12
+    log_likelihood = np.nansum(
+        observed_counts_expanded * np.log(rate_map + EPS) - bin_size_s * rate_map,
+        axis=-1,
+    )
 
-    ct2 = np.tile(ct[:, np.newaxis, :], (1, tc.shape[0], 1))
+    log_posterior = log_likelihood + np.log(prior)
+    posterior = np.exp(log_posterior - log_posterior.max(axis=1, keepdims=True))
+    posterior /= posterior.sum(axis=1, keepdims=True)
 
-    p3 = np.nanprod(tc**ct2, -1)
-
-    p = p1 * p2 * p3
-    p = p / p.sum(1)[:, np.newaxis]
     return _format_decoding_outputs(
-        p, tuning_curves, data, epochs, greater_is_better=True
+        posterior, tuning_curves, data, epochs=None, greater_is_better=True
     )
 
 
