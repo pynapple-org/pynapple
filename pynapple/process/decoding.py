@@ -88,11 +88,10 @@ def _format_decoding_inputs(func):
                 smoothing_window_bins = max(
                     1, int(smoothing_window / kwargs["bin_size"])
                 )
-                if smoothing_window_bins > 1:
-                    data = data.convolve(
-                        np.ones(smoothing_window_bins),
-                        ep=kwargs["epochs"],
-                    )
+                data = data.convolve(
+                    np.ones(smoothing_window_bins),
+                    ep=kwargs["epochs"],
+                )
                 if was_continuous:
                     data = data / smoothing_window_bins
         kwargs["data"] = data
