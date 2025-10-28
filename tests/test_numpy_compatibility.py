@@ -843,3 +843,146 @@ def test_shape_change_2(tsd, slicing, expected_type):
         np.testing.assert_array_almost_equal(a.index, tsd.index)
     if hasattr(a, "values"):
         np.testing.assert_array_almost_equal(a.values, slicing(tsd.values))
+
+
+@pytest.mark.parametrize(
+    "a, b, expected_type",
+    [
+        (
+            nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+            nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+            float,
+        ),
+        (
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+            np.random.randn(5, 3),
+            nap.TsdFrame,
+        ),
+        (
+            nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 4, 2)),
+            np.random.rand(2, 3),
+            nap.TsdTensor,
+        ),
+        (
+            np.random.rand(5, 10),
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+            np.ndarray,
+        ),
+    ],
+)
+def test_dot_product(a, b, expected_type):
+    out = np.dot(a, b)
+
+    assert isinstance(out, expected_type)
+
+    if hasattr(a, "values") and hasattr(b, "values"):
+        out2 = np.dot(a.values, b.values)
+    elif hasattr(a, "values"):
+        out2 = np.dot(a.values, b)
+    elif hasattr(b, "values"):
+        out2 = np.dot(a, b.values)
+    else:
+        out2 = np.dot(a, b)
+
+    if hasattr(out, "values"):
+        np.testing.assert_array_almost_equal(out.values, out2)
+    else:
+        if isinstance(out2, float):
+            assert out == out2
+        else:
+            np.testing.assert_array_almost_equal(out, out2)
+
+
+@pytest.mark.parametrize(
+    "a, b, expected_type",
+    [
+        (
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+            np.random.randn(5, 3),
+            nap.TsdFrame,
+        ),
+        (
+            nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 4, 2)),
+            np.random.rand(2, 3),
+            nap.TsdTensor,
+        ),
+        (
+            np.random.rand(5, 10),
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+            np.ndarray,
+        ),
+    ],
+)
+def test_matmul_product(a, b, expected_type):
+    out = np.matmul(a, b)
+
+    assert isinstance(out, expected_type)
+
+    if hasattr(a, "values") and hasattr(b, "values"):
+        out2 = np.dot(a.values, b.values)
+    elif hasattr(a, "values"):
+        out2 = np.dot(a.values, b)
+    elif hasattr(b, "values"):
+        out2 = np.dot(a, b.values)
+    else:
+        out2 = np.dot(a, b)
+
+    if hasattr(out, "values"):
+        np.testing.assert_array_almost_equal(out.values, out2)
+    else:
+        if isinstance(out2, float):
+            assert out == out2
+        else:
+            np.testing.assert_array_almost_equal(out, out2)
+
+
+@pytest.mark.parametrize(
+    "a, b, subscripts, expected_type",
+    [
+        (
+            nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+            nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+            "i,i->",
+            float,
+        ),
+        (
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+            np.random.randn(5, 3),
+            "ij,jk->ik",
+            nap.TsdFrame,
+        ),
+        (
+            nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 4, 2)),
+            np.random.rand(2, 3),
+            "ijk,kl->ijl",
+            nap.TsdTensor,
+        ),
+        (
+            np.random.rand(5, 10),
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+            "ij,jk->ik",
+            np.ndarray,
+        ),
+    ],
+)
+def test_einsum(a, b, subscripts, expected_type):
+    out = np.einsum(subscripts, a, b)
+
+    assert isinstance(out, expected_type)
+
+    if hasattr(a, "values") and hasattr(b, "values"):
+        out2 = np.einsum(subscripts, a.values, b.values)
+    elif hasattr(a, "values"):
+        out2 = np.einsum(subscripts, a.values, b)
+    elif hasattr(b, "values"):
+        out2 = np.einsum(subscripts, a, b.values)
+    else:
+        out2 = np.einsum(subscripts, a, b)
+
+    if hasattr(out, "values"):
+        np.testing.assert_array_almost_equal(out.values, out2)
+    else:
+        if isinstance(out2, float):
+            assert out == out2
+        else:
+            np.testing.assert_array_almost_equal(out, out2)

@@ -514,7 +514,7 @@ def modifies_time_axis(func, new_args, kwargs):
     try:
         sig = inspect.signature(func)
     except (TypeError, ValueError):
-        return True  # conservative
+        return False
 
     bound = sig.bind_partial(*new_args, **kwargs)
     bound.apply_defaults()
@@ -532,7 +532,7 @@ def modifies_time_axis(func, new_args, kwargs):
 
     ndim = getattr(arr, "ndim", None)
     if ndim is None:
-        return True  # conservative
+        return False
 
     ### 1) single-axis arguments ###
     axis = bound.arguments.get("axis", inspect._empty)
