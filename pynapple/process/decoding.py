@@ -388,7 +388,7 @@ def decode_bayes(
         else tuning_curves.attrs["occupancy"].flatten()
     )
 
-    tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T + 1e-12
+    tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
     ct = data.values
     bin_size_s = nap.TsIndex.format_timestamps(
         np.array([bin_size], dtype=np.float64), time_units
