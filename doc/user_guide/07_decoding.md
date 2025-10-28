@@ -32,6 +32,8 @@ Input to both decoding functions always includes:
  - `tuning_curves`, computed using [`compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves).
  - `data`, neural activity as a `TsGroup` (spikes) or `TsdFrame` (smoothed counts or calcium activity or any other time series).
  - `epochs`, to restrict decoding to certain intervals.
+ - `smoothing`, type of smoothing to apply to `data`, defaults to `None`, indicating no smoothing, but can be `gaussian` or `uniform`.
+ - `smoothing_window`, smoothing window to use if `smoothing` is provided.
  - `bin_size`, the size of the bins in which to count timestamps when data is a `TsGroup` object.
  - `time_units`, the units of `bin_size`, defaulting to seconds.
 
@@ -40,7 +42,7 @@ When using Bayesian decoding, users can additionally set `uniform_prior=False` t
 By default `uniform_prior=True`, and a uniform prior is used.
 
 :::{important}
-Bayesian decoding should only be used with spike or rate data, as these can be assumed to follow a Poisson distribution!
+Bayesian decoding should only be used with spike (`TsGroup`) or spike count (`TsdFrame`) data, as these can be assumed to follow a Poisson distribution!
 :::
 
 
@@ -96,13 +98,17 @@ tuning_curves_1d.plot.line(x="Circular feature", add_legend=False)
 plt.show()
 ```
 
-We can then use `nap.decode_bayes` for Bayesian decoding:
+We can then use `nap.decode_bayes` for Bayesian decoding.
+We will use the `smoothing` and `smoothing_window` arguments to additionally smooth the
+spike counts, this often helps with decoding:
 
 ```{code-cell} ipython3
 decoded, proba_feature = nap.decode_bayes(
     tuning_curves=tuning_curves_1d,
     data=tsgroup,
     epochs=epochs,
+    smoothing="gaussian",
+    smoothing_window=0.1,
     bin_size=0.06,
 )
 ```
@@ -199,7 +205,9 @@ decoded, proba_feature = nap.decode_bayes(
     tuning_curves=tuning_curves_2d,
     data=ts_group,
     epochs=epochs,
-    bin_size=0.2,
+    smoothing="gaussian",
+    smoothing_window=0.2,
+    bin_size=0.1,
 )
 ```
 
@@ -401,7 +409,7 @@ decoded, dist = nap.decode_template(
     tuning_curves=tuning_curves_2d,
     data=tsdframe,
     epochs=epochs,
-    bin_size=0.2,
+    bin_size=0.01,
     metric="correlation"
 )
 ```
