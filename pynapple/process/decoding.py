@@ -52,7 +52,7 @@ def _format_decoding_inputs(func):
             data = data.count(
                 kwargs["bin_size"], kwargs["epochs"], time_units=kwargs["time_units"]
             )
-            was_continuous = True
+            was_continuous = False
         else:
             raise TypeError("Unknown format for data.")
 
