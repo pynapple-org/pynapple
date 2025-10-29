@@ -45,9 +45,7 @@ def _format_decoding_inputs(func):
                     units=kwargs["time_units"],
                 ),
             )[0]:
-                raise ValueError(
-                    "passed bin_size too different from actual data bin size."
-                )
+                warnings.warn("passed bin_size is different from actual data bin size.")
         elif isinstance(data, nap.TsGroup):
             data = data.count(
                 kwargs["bin_size"], kwargs["epochs"], time_units=kwargs["time_units"]
