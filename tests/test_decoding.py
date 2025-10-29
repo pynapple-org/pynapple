@@ -36,7 +36,6 @@ def get_testing_set_n(n_features=1, binned=False, bin_size=1.0, time_units="s"):
     tuning_curves = nap.compute_tuning_curves(
         data, features, bins=2, range=[(-0.5, 1.5)] * n_features
     )
-    tuning_curves.values += 1e-12
 
     return {
         "features": features,
@@ -343,7 +342,7 @@ def test_decode_bayes(
 
 @pytest.mark.parametrize("metric", ["correlation", "euclidean", "cosine"])
 @pytest.mark.parametrize("binned", [True, False])
-@pytest.mark.parametrize("smoothing", ["gaussian", "uniform"])
+@pytest.mark.parametrize("smoothing", [None, "gaussian", "uniform"])
 @pytest.mark.parametrize(
     "n_features, bin_size, smoothing_window, time_units",
     [
