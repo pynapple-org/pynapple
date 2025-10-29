@@ -112,7 +112,7 @@ def _format_decoding_outputs(dist, tuning_curves, data, epochs, greater_is_bette
     all_nan = np.isnan(dist).all(axis=1)
     idx[all_nan] = -1
 
-    # Format probability distribution
+    # Format probability/distance distribution
     dist = dist.reshape(dist.shape[0], *tuning_curves.shape[1:])
     if dist.ndim > 2:
         dist = nap.TsdTensor(
@@ -410,7 +410,7 @@ def decode_bayes(
     posterior /= posterior.sum(axis=1, keepdims=True)
 
     return _format_decoding_outputs(
-        posterior, tuning_curves, data, epochs=None, greater_is_better=True
+        posterior, tuning_curves, data, epochs, greater_is_better=True
     )
 
 
