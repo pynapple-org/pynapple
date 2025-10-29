@@ -156,67 +156,6 @@ def get_testing_set_n(n_features=1, binned=False, bin_size=1.0, time_units="s"):
             get_testing_set_n(3, binned=True),
             does_not_raise(),
         ),
-        # smoothing
-        (
-            {"smoothing": "1"},
-            pytest.raises(
-                ValueError,
-                match="smoothing should be one of 'gaussian' or 'uniform'.",
-            ),
-        ),
-        (
-            {"smoothing": 1},
-            pytest.raises(
-                ValueError,
-                match="smoothing should be one of 'gaussian' or 'uniform'.",
-            ),
-        ),
-        (
-            {"smoothing": "gaussian", "smoothing_window": 1},
-            does_not_raise(),
-        ),
-        (
-            {"smoothing": "uniform", "smoothing_window": 1},
-            does_not_raise(),
-        ),
-        (
-            {
-                "data": get_testing_set_n(binned=True)["data"],
-                "smoothing": "gaussian",
-                "smoothing_window": 1,
-            },
-            does_not_raise(),
-        ),
-        (
-            {
-                **get_testing_set_n(2, binned=True),
-                "smoothing": "gaussian",
-                "smoothing_window": 1,
-            },
-            does_not_raise(),
-        ),
-        # smoothing_window
-        (
-            {"smoothing": "gaussian"},
-            pytest.raises(
-                ValueError,
-                match="smoothing_window should be a number.",
-            ),
-        ),
-        (
-            {"smoothing": "gaussian", "smoothing_window": "1"},
-            pytest.raises(
-                ValueError,
-                match="smoothing_window should be a number.",
-            ),
-        ),
-        (
-            {"smoothing": "gaussian", "smoothing_window": []},
-            pytest.raises(
-                ValueError,
-                match="smoothing_window should be a number.",
-            ),
-        ),
         # bin_size
         (
             {"data": get_testing_set_n(binned=True)["data"], "bin_size": None},
@@ -234,9 +173,9 @@ def get_testing_set_n(n_features=1, binned=False, bin_size=1.0, time_units="s"):
         ),
         (
             {"data": get_testing_set_n(binned=True)["data"], "bin_size": 2.0},
-            pytest.raises(
-                ValueError,
-                match="passed bin_size too different from actual data bin size.",
+            pytest.warns(
+                UserWarning,
+                match="passed bin_size is different from actual data bin size.",
             ),
         ),
         (
@@ -246,6 +185,58 @@ def get_testing_set_n(n_features=1, binned=False, bin_size=1.0, time_units="s"):
     ],
 )
 def test_decode_input_errors(overwrite_default_args, expectation):
+    default_args = get_testing_set_n()
+    default_args.update(overwrite_default_args)
+    default_args.pop("features")
+    with expectation:
+        nap.decode_bayes(**default_args)
+        nap.decode_template(**default_args)
+
+
+@pytest.mark.filterwarnings("ignore")
+@pytest.mark.parametrize(
+    "overwrite_default_args, expectation",
+    [
+        # smoothing
+        (
+            {"sliding_window_size": "1"},
+            pytest.raises(
+                ValueError,
+                match="sliding_window_size should be a integer.",
+            ),
+        ),
+        (
+            {"sliding_window_size": 0},
+            pytest.raises(
+                ValueError,
+                match="sliding_window_size should be >= 1.",
+            ),
+        ),
+        (
+            {"sliding_window_size": 1},
+            does_not_raise(),
+        ),
+        (
+            {"sliding_window_size": None},
+            does_not_raise(),
+        ),
+        (
+            {
+                "data": get_testing_set_n(binned=True)["data"],
+                "sliding_window_size": 1,
+            },
+            does_not_raise(),
+        ),
+        (
+            {
+                **get_testing_set_n(2, binned=True),
+                "sliding_window_size": 1,
+            },
+            does_not_raise(),
+        ),
+    ],
+)
+def test_decode_input_errors_sliding_window_size(overwrite_default_args, expectation):
     default_args = get_testing_set_n()
     default_args.update(overwrite_default_args)
     default_args.pop("features")
@@ -287,29 +278,29 @@ def test_decode_bayes_input_errors(overwrite_default_args, expectation):
 
 @pytest.mark.parametrize("uniform_prior", [True, False])
 @pytest.mark.parametrize("binned", [True, False])
-@pytest.mark.parametrize("smoothing", [None, "gaussian", "uniform"])
+@pytest.mark.parametrize("sliding_window_size", [None, 1, 3])
 @pytest.mark.parametrize(
-    "n_features, bin_size, smoothing_window, time_units",
+    "n_features, bin_size, time_units",
     [
-        (1, 1.0, 0.5, "s"),
-        (2, 1.0, 0.5, "s"),
-        (3, 1.0, 0.5, "s"),
-        (2, 1.0, 1.1, "s"),
-        (3, 1.0, 1.1, "s"),
-        (1, 1e3, 1e2, "ms"),
-        (2, 1e3, 1e2, "ms"),
-        (3, 1e3, 1e2, "ms"),
-        (2, 1e3, 1.1e3, "ms"),
-        (3, 1e3, 1.1e3, "ms"),
-        (1, 1e6, 1e5, "us"),
-        (2, 1e6, 1e5, "us"),
-        (3, 1e6, 1e5, "us"),
-        (2, 1e6, 1.1e6, "us"),
-        (3, 1e6, 1.1e6, "us"),
+        (1, 1.0, "s"),
+        (2, 1.0, "s"),
+        (3, 1.0, "s"),
+        (2, 1.0, "s"),
+        (3, 1.0, "s"),
+        (1, 1e3, "ms"),
+        (2, 1e3, "ms"),
+        (3, 1e3, "ms"),
+        (2, 1e3, "ms"),
+        (3, 1e3, "ms"),
+        (1, 1e6, "us"),
+        (2, 1e6, "us"),
+        (3, 1e6, "us"),
+        (2, 1e6, "us"),
+        (3, 1e6, "us"),
     ],
 )
 def test_decode_bayes(
-    n_features, binned, bin_size, smoothing, smoothing_window, time_units, uniform_prior
+    n_features, binned, bin_size, sliding_window_size, time_units, uniform_prior
 ):
     features, tuning_curves, data, epochs, bin_size = get_testing_set_n(
         n_features, binned=binned, bin_size=bin_size, time_units=time_units
@@ -319,15 +310,15 @@ def test_decode_bayes(
         data=data,
         epochs=epochs,
         bin_size=bin_size,
-        smoothing=smoothing,
-        smoothing_window=smoothing_window,
+        sliding_window_size=sliding_window_size,
         time_units=time_units,
         uniform_prior=uniform_prior,
     )
     assert isinstance(decoded, nap.Tsd if features.shape[1] == 1 else nap.TsdFrame)
-    np.testing.assert_array_almost_equal(decoded.values, features.values.squeeze())
 
-    if smoothing is None or smoothing_window < bin_size:
+    if sliding_window_size is None or sliding_window_size == 1:
+        np.testing.assert_array_almost_equal(decoded.values, features.values.squeeze())
+
         assert isinstance(
             proba,
             nap.TsdFrame if features.shape[1] == 1 else nap.TsdTensor,
@@ -342,29 +333,29 @@ def test_decode_bayes(
 
 @pytest.mark.parametrize("metric", ["correlation", "euclidean", "cosine"])
 @pytest.mark.parametrize("binned", [True, False])
-@pytest.mark.parametrize("smoothing", [None, "gaussian", "uniform"])
+@pytest.mark.parametrize("sliding_window_size", [None, 1, 3])
 @pytest.mark.parametrize(
-    "n_features, bin_size, smoothing_window, time_units",
+    "n_features, bin_size, time_units",
     [
-        (1, 1.0, 0.5, "s"),
-        (2, 1.0, 0.5, "s"),
-        (3, 1.0, 0.5, "s"),
-        (2, 1.0, 1.1, "s"),
-        (3, 1.0, 1.1, "s"),
-        (1, 1e3, 1e2, "ms"),
-        (2, 1e3, 1e2, "ms"),
-        (3, 1e3, 1e2, "ms"),
-        (2, 1e3, 1.1e3, "ms"),
-        (3, 1e3, 1.1e3, "ms"),
-        (1, 1e6, 1e5, "us"),
-        (2, 1e6, 1e5, "us"),
-        (3, 1e6, 1e5, "us"),
-        (2, 1e6, 1.1e6, "us"),
-        (3, 1e6, 1.1e6, "us"),
+        (1, 1.0, "s"),
+        (2, 1.0, "s"),
+        (3, 1.0, "s"),
+        (2, 1.0, "s"),
+        (3, 1.0, "s"),
+        (1, 1e3, "ms"),
+        (2, 1e3, "ms"),
+        (3, 1e3, "ms"),
+        (2, 1e3, "ms"),
+        (3, 1e3, "ms"),
+        (1, 1e6, "us"),
+        (2, 1e6, "us"),
+        (3, 1e6, "us"),
+        (2, 1e6, "us"),
+        (3, 1e6, "us"),
     ],
 )
 def test_decode_template(
-    metric, n_features, binned, bin_size, smoothing, smoothing_window, time_units
+    metric, n_features, binned, bin_size, sliding_window_size, time_units
 ):
     features, tuning_curves, data, epochs, bin_size = get_testing_set_n(
         n_features, binned=binned, bin_size=bin_size, time_units=time_units
@@ -375,8 +366,7 @@ def test_decode_template(
         epochs=epochs,
         metric=metric,
         bin_size=bin_size,
-        smoothing=smoothing,
-        smoothing_window=smoothing_window,
+        sliding_window_size=sliding_window_size,
         time_units=time_units,
     )
     assert isinstance(decoded, nap.Tsd if features.shape[1] == 1 else nap.TsdFrame)
@@ -385,7 +375,10 @@ def test_decode_template(
         nap.TsdFrame if features.shape[1] == 1 else nap.TsdTensor,
     )
 
-    np.testing.assert_allclose(decoded.values, features.values.squeeze())
+    if sliding_window_size is None or sliding_window_size == 1:
+        np.testing.assert_array_almost_equal(
+            decoded.values.astype(int), features.values.squeeze()
+        )
 
 
 # ------------------------------------------------------------------------------------

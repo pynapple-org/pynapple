@@ -70,20 +70,20 @@ def _format_decoding_inputs(func):
             )
 
         # smooth
-        sliding_window = kwargs["sliding_window"]
-        if sliding_window is not None:
-            if not isinstance(sliding_window, int):
-                raise ValueError("sliding_window should be a integer.")
-            if sliding_window < 1:
-                raise ValueError("sliding_window should be >= 1.")
+        sliding_window_size = kwargs["sliding_window_size"]
+        if sliding_window_size is not None:
+            if not isinstance(sliding_window_size, int):
+                raise ValueError("sliding_window_size should be a integer.")
+            if sliding_window_size < 1:
+                raise ValueError("sliding_window_size should be >= 1.")
             data = data.convolve(
-                np.ones(sliding_window),
+                np.ones(sliding_window_size),
                 ep=kwargs["epochs"],
             )
             if was_continuous:
-                data = data / sliding_window
+                data = data / sliding_window_size
             else:
-                bin_size = sliding_window * kwargs["bin_size"]
+                bin_size = sliding_window_size * kwargs["bin_size"]
                 kwargs["bin_size"] = bin_size
 
         kwargs["data"] = data
@@ -159,7 +159,7 @@ def decode_bayes(
     data,
     epochs,
     bin_size,
-    sliding_window=None,
+    sliding_window_size=None,
     time_units="s",
     uniform_prior=True,
 ):
@@ -215,10 +215,8 @@ def decode_bayes(
         The epochs on which decoding is computed
     bin_size : float
         Bin size. Default in seconds. Use ``time_units`` to change it.
-    smoothing : str, optional
-        Type of smoothing to apply to the binned spikes counts (``None`` [default], ``gaussian``, ``uniform``).
-    smoothing_window : float, optional
-        Size smoothing window. Default in seconds. Use ``time_units`` to change it.
+    sliding_window_size : int, optional
+        A uniform window can be convolved with the counts array for each neuron. Value should be >= 1.
     time_units : str, optional
         Time unit of the bin size (``s`` [default], ``ms``, ``us``).
     uniform_prior : bool, optional
@@ -412,7 +410,7 @@ def decode_template(
     epochs,
     bin_size,
     metric="correlation",
-    sliding_window=None,
+    sliding_window_size=None,
     time_units="s",
 ):
     """
@@ -472,10 +470,8 @@ def decode_template(
 
         If a callable, it must have the signature ``metric(u, v) -> float`` and
         return the distance between two 1D arrays.
-    smoothing : str, optional
-        Type of smoothing to apply to the binned spikes counts (``None`` [default], ``gaussian``, ``uniform``).
-    smoothing_window : float, optional
-        Size smoothing window. Default in seconds. Use ``time_units`` to change it.
+    sliding_window_size : int, optional
+        A uniform window can be convolved with the counts array for each neuron. Value should be >= 1.
     time_units : str, optional
         Time unit of the bin size (``s`` [default], ``ms``, ``us``).
 
