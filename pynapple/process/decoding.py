@@ -72,28 +72,22 @@ def _format_decoding_inputs(func):
             )
 
         # smooth
-        smoothing = kwargs["smoothing"]
-        smoothing_window = kwargs["smoothing_window"]
-        if smoothing is not None:
-            if smoothing not in ["gaussian", "uniform"]:
-                raise ValueError("smoothing should be one of 'gaussian' or 'uniform'.")
-            if not isinstance(smoothing_window, (int, float)):
-                raise ValueError("smoothing_window should be a number.")
-            if smoothing == "gaussian":
-                data = data.smooth(
-                    smoothing_window,
-                    time_units=kwargs["time_units"],
-                )
+        sliding_window = kwargs["sliding_window"]
+        if sliding_window is not None:
+            if not isinstance(sliding_window, int):
+                raise ValueError("sliding_window should be a integer.")
+            if sliding_window < 1:
+                raise ValueError("sliding_window should be >= 1.")
+            data = data.convolve(
+                np.ones(sliding_window),
+                ep=kwargs["epochs"],
+            )
+            if was_continuous:
+                data = data / sliding_window
             else:
-                smoothing_window_bins = max(
-                    1, int(smoothing_window / kwargs["bin_size"])
-                )
-                data = data.convolve(
-                    np.ones(smoothing_window_bins),
-                    ep=kwargs["epochs"],
-                )
-                if was_continuous:
-                    data = data / smoothing_window_bins
+                bin_size = sliding_window * kwargs["bin_size"]
+                kwargs["bin_size"] = bin_size
+
         kwargs["data"] = data
 
         # Call the original function with validated inputs
@@ -167,8 +161,7 @@ def decode_bayes(
     data,
     epochs,
     bin_size,
-    smoothing=None,
-    smoothing_window=None,
+    sliding_window=None,
     time_units="s",
     uniform_prior=True,
 ):
@@ -421,8 +414,7 @@ def decode_template(
     epochs,
     bin_size,
     metric="correlation",
-    smoothing=None,
-    smoothing_window=None,
+    sliding_window=None,
     time_units="s",
 ):
     """
