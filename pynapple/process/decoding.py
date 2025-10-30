@@ -45,14 +45,12 @@ def _format_decoding_inputs(func):
                     units=kwargs["time_units"],
                 ),
             )[0]:
-                raise ValueError(
-                    "passed bin_size too different from actual data bin size."
-                )
+                warnings.warn("passed bin_size is different from actual data bin size.")
         elif isinstance(data, nap.TsGroup):
             data = data.count(
                 kwargs["bin_size"], kwargs["epochs"], time_units=kwargs["time_units"]
             )
-            was_continuous = True
+            was_continuous = False
         else:
             raise TypeError("Unknown format for data.")
 
@@ -72,28 +70,22 @@ def _format_decoding_inputs(func):
             )
 
         # smooth
-        smoothing = kwargs["smoothing"]
-        smoothing_window = kwargs["smoothing_window"]
-        if smoothing is not None:
-            if smoothing not in ["gaussian", "uniform"]:
-                raise ValueError("smoothing should be one of 'gaussian' or 'uniform'.")
-            if not isinstance(smoothing_window, (int, float)):
-                raise ValueError("smoothing_window should be a number.")
-            if smoothing == "gaussian":
-                data = data.smooth(
-                    smoothing_window,
-                    time_units=kwargs["time_units"],
-                )
+        sliding_window_size = kwargs["sliding_window_size"]
+        if sliding_window_size is not None:
+            if not isinstance(sliding_window_size, int):
+                raise ValueError("sliding_window_size should be a integer.")
+            if sliding_window_size < 1:
+                raise ValueError("sliding_window_size should be >= 1.")
+            data = data.convolve(
+                np.ones(sliding_window_size),
+                ep=kwargs["epochs"],
+            )
+            if was_continuous:
+                data = data / sliding_window_size
             else:
-                smoothing_window_bins = max(
-                    1, int(smoothing_window / kwargs["bin_size"])
-                )
-                data = data.convolve(
-                    np.ones(smoothing_window_bins),
-                    ep=kwargs["epochs"],
-                )
-                if was_continuous:
-                    data = data / smoothing_window_bins
+                bin_size = sliding_window_size * kwargs["bin_size"]
+                kwargs["bin_size"] = bin_size
+
         kwargs["data"] = data
 
         # Call the original function with validated inputs
@@ -112,7 +104,7 @@ def _format_decoding_outputs(dist, tuning_curves, data, epochs, greater_is_bette
     all_nan = np.isnan(dist).all(axis=1)
     idx[all_nan] = -1
 
-    # Format probability distribution
+    # Format probability/distance distribution
     dist = dist.reshape(dist.shape[0], *tuning_curves.shape[1:])
     if dist.ndim > 2:
         dist = nap.TsdTensor(
@@ -167,8 +159,7 @@ def decode_bayes(
     data,
     epochs,
     bin_size,
-    smoothing=None,
-    smoothing_window=None,
+    sliding_window_size=None,
     time_units="s",
     uniform_prior=True,
 ):
@@ -224,10 +215,9 @@ def decode_bayes(
         The epochs on which decoding is computed
     bin_size : float
         Bin size. Default in seconds. Use ``time_units`` to change it.
-    smoothing : str, optional
-        Type of smoothing to apply to the binned spikes counts (``None`` [default], ``gaussian``, ``uniform``).
-    smoothing_window : float, optional
-        Size smoothing window. Default in seconds. Use ``time_units`` to change it.
+    sliding_window_size : int, optional
+        The size, in number of bins, for a uniform window to be convolved with the counts array for each neuron. Value should be >= 1.
+        If None (default), no smoothing is applied.
     time_units : str, optional
         Time unit of the bin size (``s`` [default], ``ms``, ``us``).
     uniform_prior : bool, optional
@@ -382,29 +372,35 @@ def decode_bayes(
     98.5        1.0  1.0
     dtype: float64, shape: (98, 2)
     """
-    occupancy = (
+    prior = (
         np.ones_like(tuning_curves[0]).flatten()
         if uniform_prior
         else tuning_curves.attrs["occupancy"].flatten()
     )
+    prior = prior.astype(np.float64)
+    prior /= prior.sum()
 
-    tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
-    ct = data.values
+    rate_map = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1).T
+    observed_counts = data.values
     bin_size_s = nap.TsIndex.format_timestamps(
         np.array([bin_size], dtype=np.float64), time_units
     )[0]
+    observed_counts_expanded = np.tile(
+        observed_counts[:, np.newaxis, :], (1, rate_map.shape[0], 1)
+    )
 
-    p1 = np.exp(-bin_size_s * np.nansum(tc, 1))
-    p2 = occupancy / occupancy.sum()
+    EPS = 1e-12
+    log_likelihood = np.nansum(
+        observed_counts_expanded * np.log(rate_map + EPS) - bin_size_s * rate_map,
+        axis=-1,
+    )
 
-    ct2 = np.tile(ct[:, np.newaxis, :], (1, tc.shape[0], 1))
+    log_posterior = log_likelihood + np.log(prior)
+    posterior = np.exp(log_posterior - log_posterior.max(axis=1, keepdims=True))
+    posterior /= posterior.sum(axis=1, keepdims=True)
 
-    p3 = np.nanprod(tc**ct2, -1)
-
-    p = p1 * p2 * p3
-    p = p / p.sum(1)[:, np.newaxis]
     return _format_decoding_outputs(
-        p, tuning_curves, data, epochs, greater_is_better=True
+        posterior, tuning_curves, data, epochs, greater_is_better=True
     )
 
 
@@ -415,8 +411,7 @@ def decode_template(
     epochs,
     bin_size,
     metric="correlation",
-    smoothing=None,
-    smoothing_window=None,
+    sliding_window_size=None,
     time_units="s",
 ):
     """
@@ -476,10 +471,9 @@ def decode_template(
 
         If a callable, it must have the signature ``metric(u, v) -> float`` and
         return the distance between two 1D arrays.
-    smoothing : str, optional
-        Type of smoothing to apply to the binned spikes counts (``None`` [default], ``gaussian``, ``uniform``).
-    smoothing_window : float, optional
-        Size smoothing window. Default in seconds. Use ``time_units`` to change it.
+    sliding_window_size : int, optional
+        The size, in number of bins, for a uniform window to be convolved with the counts array for each neuron. Value should be >= 1.
+        If None (default), no smoothing is applied.
     time_units : str, optional
         Time unit of the bin size (``s`` [default], ``ms``, ``us``).
 

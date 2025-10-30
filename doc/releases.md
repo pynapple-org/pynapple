@@ -1,5 +1,11 @@
 # Releases
 
+
+### 0.10.1 (2025-10-30)
+
+- Fixing smoothing for `nap.decode_bayes`.
+- Fixing `np.einsum`.
+
 ### 0.10.0 (2025-10-27)
 
 - Generalizing `nap.compute_tuning_curves`. It can take any time series object (Tsd, TsdFrame, TsGroup, TsdTensor) as input and 

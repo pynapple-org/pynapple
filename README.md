@@ -19,6 +19,15 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 
 ------------------------------------------------------------------------
 
+Learning pynapple
+-----------------
+
+Workshops are regularly organized by the [center for Computational Neuroscience ](https://www.simonsfoundation.org/flatiron/center-for-computational-neuroscience/) of the Flatiron institute 
+to teach pynapple & [NeMos](https://nemos.readthedocs.io/en/latest/) to new users. 
+
+**The next workshop will take place in New York City on February 2 - 5, 2026. Register [here](https://www.simonsfoundation.org/event/flatiron-ccn-neural-data-analysis-workshop/).**
+
+
 New release :fire:
 ------------------
 
