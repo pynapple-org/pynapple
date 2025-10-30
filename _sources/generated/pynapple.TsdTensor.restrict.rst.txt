@@ -1,0 +1,6 @@
+pynapple.TsdTensor.restrict
+===========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.restrict

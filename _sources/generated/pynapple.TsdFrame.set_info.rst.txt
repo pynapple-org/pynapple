@@ -1,0 +1,6 @@
+pynapple.TsdFrame.set\_info
+===========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.set_info
