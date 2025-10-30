@@ -216,7 +216,8 @@ def decode_bayes(
     bin_size : float
         Bin size. Default in seconds. Use ``time_units`` to change it.
     sliding_window_size : int, optional
-        A uniform window can be convolved with the counts array for each neuron. Value should be >= 1.
+        The size, in number of bins, for a uniform window to be convolved with the counts array for each neuron. Value should be >= 1.
+        If None (default), no smoothing is applied.
     time_units : str, optional
         Time unit of the bin size (``s`` [default], ``ms``, ``us``).
     uniform_prior : bool, optional
@@ -471,7 +472,8 @@ def decode_template(
         If a callable, it must have the signature ``metric(u, v) -> float`` and
         return the distance between two 1D arrays.
     sliding_window_size : int, optional
-        A uniform window can be convolved with the counts array for each neuron. Value should be >= 1.
+        The size, in number of bins, for a uniform window to be convolved with the counts array for each neuron. Value should be >= 1.
+        If None (default), no smoothing is applied.
     time_units : str, optional
         Time unit of the bin size (``s`` [default], ``ms``, ``us``).
 

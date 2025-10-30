@@ -32,7 +32,7 @@ Input to both decoding functions always includes:
  - `tuning_curves`, computed using [`compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves).
  - `data`, neural activity as a `TsGroup` (spikes) or `TsdFrame` (smoothed counts or calcium activity or any other time series).
  - `epochs`, to restrict decoding to certain intervals.
- - `sliding_window_size`, uniform convolution window size to smooth spike counts, only used if a `TsGroup` is passed (default is `None`, for no smoothing).
+ - `sliding_window_size`, uniform convolution window size (in number of bins) to smooth spike counts, only used if a `TsGroup` is passed (default is `None`, for no smoothing). This is equivalent to using a sliding window with overlapping bins.
  - `bin_size`, the size of the bins in which to count timestamps when data is a `TsGroup` object.
  - `time_units`, the units of `bin_size`, defaulting to seconds.
 
@@ -99,7 +99,7 @@ plt.show()
 
 We can then use [`decode_bayes`](pynapple.process.decoding.decode_bayes) for Bayesian decoding.
 We will use the `sliding_window_size` argument to additionally smooth the
-spike counts with a uniform convolution window, this often helps with decoding. 
+spike counts with a uniform convolution window (i.e. use a sliding window), which often helps with decoding. 
 
 ```{code-cell} ipython3
 decoded, proba_feature = nap.decode_bayes(
