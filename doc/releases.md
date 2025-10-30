@@ -1,7 +1,7 @@
 # Releases
 
 
-### 0.10.1 (2025-10-28)
+### 0.10.1 (2025-10-30)
 
 - Fixing smoothing for `nap.decode_bayes`.
 - Fixing `np.einsum`.
