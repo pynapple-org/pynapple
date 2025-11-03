@@ -1620,7 +1620,7 @@ class TsGroup(UserDict, _MetadataMixin):
         time_support = IntervalSet(file["start"], file["end"])
 
         if has_data:
-            data = file["data"]
+            data = file["d"]
 
         if "keys" in file.keys():
             keys = file["keys"]
