@@ -1224,7 +1224,10 @@ def get_testing_set(n_units=1, n_features=1, pattern="uniform"):
         data,
         coords=coords,
         dims=dims,
-        attrs={"occupancy": np.ones(shape[1:]) / np.prod(shape[1:])},
+        attrs={
+            "occupancy": np.ones(shape[1:]) / np.prod(shape[1:]),
+            # "rates": np.array([1.0] * n_units),
+        },
     )
 
     MI = pd.DataFrame(

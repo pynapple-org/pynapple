@@ -520,7 +520,8 @@ def compute_mutual_information(tuning_curves, rates=None):
 
     if fr is None:
         warnings.warn(
-            "estimating mean firing rates from tuning curves, they were not in the tuning curves nor passed.",
+            "Estimating mean firing rates from tuning curves,"
+            "they were not in the tuning curves nor passed.",
             UserWarning,
             stacklevel=2,
         )
@@ -528,7 +529,7 @@ def compute_mutual_information(tuning_curves, rates=None):
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        fxfr = fx / fr[(slice(None),) + (None,) * (fx.ndim - 1)]
+        fxfr = fx / np.array(fr)[(slice(None),) + (None,) * (fx.ndim - 1)]
         logfx = np.log2(fxfr)
     logfx[~np.isfinite(logfx)] = 0.0
 
