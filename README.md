@@ -19,6 +19,7 @@ pynapple is a light-weight python library for neurophysiological data analysis. 
 
 ------------------------------------------------------------------------
 
+
 Learning pynapple
 -----------------
 
