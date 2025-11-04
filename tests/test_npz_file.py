@@ -56,14 +56,14 @@ data = {
         {
             0: nap.Tsd(t=np.arange(0, 200), d=np.random.rand(200)),
             1: nap.Tsd(t=np.arange(0, 200, 0.5), d=np.arange(0, 200, 0.5)+1, time_units="s"),
-            2: nap.Tsd(t=np.arange(0, 300, 0.2), d=np.arange(0, 300, 0.2)+0.1, time_units="s"),
+            2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
         }
     ),
     "tsdgroup_minfo": nap.TsGroup(
     {
             0: nap.Tsd(t=np.arange(0, 200), d=np.random.rand(200)),
             1: nap.Tsd(t=np.arange(0, 200, 0.5), d=np.arange(0, 200, 0.5)+1, time_units="s"),
-            2: nap.Tsd(t=np.arange(0, 300, 0.2), d=np.arange(0, 300, 0.2)+0.1, time_units="s"),
+            2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
         },
         minfo=[1, 2, 3],
     ),
