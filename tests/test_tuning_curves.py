@@ -1226,7 +1226,7 @@ def get_testing_set(n_units=1, n_features=1, pattern="uniform"):
         dims=dims,
         attrs={
             "occupancy": np.ones(shape[1:]) / np.prod(shape[1:]),
-            # "rates": np.array([1.0] * n_units),
+            "rates": np.array([1.0] * n_units),
         },
     )
 
@@ -1246,9 +1246,11 @@ def get_testing_set(n_units=1, n_features=1, pattern="uniform"):
 
 
 @pytest.mark.parametrize(
-    "tuning_curves, expectation",
+    "tuning_curves, rates, expectation",
     [
+        # tuning_curves
         (
+            [],
             [],
             pytest.raises(
                 TypeError,
@@ -1257,6 +1259,7 @@ def get_testing_set(n_units=1, n_features=1, pattern="uniform"):
         ),
         (
             1,
+            [],
             pytest.raises(
                 TypeError,
                 match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
@@ -1264,6 +1267,7 @@ def get_testing_set(n_units=1, n_features=1, pattern="uniform"):
         ),
         (
             get_testing_set()[0].to_pandas().T,
+            [1],
             pytest.raises(
                 TypeError,
                 match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
@@ -1271,21 +1275,65 @@ def get_testing_set(n_units=1, n_features=1, pattern="uniform"):
         ),
         (
             (lambda x: (x.attrs.clear(), x)[1])(get_testing_set()[0]),
+            [1],
             pytest.raises(
                 ValueError,
                 match="No occupancy found in tuning curves.",
             ),
         ),
-        (get_testing_set(1, 2)[0], does_not_raise()),
-        (get_testing_set(1, 3)[0], does_not_raise()),
-        (get_testing_set(2, 1)[0], does_not_raise()),
-        (get_testing_set(2, 2)[0], does_not_raise()),
-        (get_testing_set(2, 3)[0], does_not_raise()),
+        (get_testing_set(1, 2)[0], [1], does_not_raise()),
+        (get_testing_set(1, 3)[0], [1], does_not_raise()),
+        (get_testing_set(2, 1)[0], [1, 1], does_not_raise()),
+        (get_testing_set(2, 2)[0], [1, 1], does_not_raise()),
+        (get_testing_set(2, 3)[0], [1, 1], does_not_raise()),
+        # rates
+        (
+            get_testing_set()[0],
+            1,
+            pytest.raises(
+                TypeError,
+                match="rates should be a list or array.",
+            ),
+        ),
+        (
+            get_testing_set()[0],
+            "1",
+            pytest.raises(
+                TypeError,
+                match="rates should be a list or array.",
+            ),
+        ),
+        (
+            get_testing_set()[0],
+            [],
+            pytest.raises(
+                ValueError,
+                match="dimension of rates should match that of the tuning curves.",
+            ),
+        ),
+        (
+            get_testing_set(2)[0],
+            [1.0],
+            pytest.raises(
+                ValueError,
+                match="dimension of rates should match that of the tuning curves.",
+            ),
+        ),
+        (
+            (lambda x: (x.attrs.pop("rates"), x)[1])(get_testing_set()[0]),
+            None,
+            # pytest.warns(UserWarning, match="Converting 't' to numpy.array."),
+            pytest.warns(
+                UserWarning,
+                match="Estimating mean firing rates from tuning curves, they were not in the tuning curves nor passed.",
+            ),
+        ),
+        (get_testing_set()[0], None, does_not_raise()),
     ],
 )
-def test_compute_mutual_information_errors(tuning_curves, expectation):
+def test_compute_mutual_information_errors(tuning_curves, rates, expectation):
     with expectation:
-        nap.compute_mutual_information(tuning_curves)
+        nap.compute_mutual_information(tuning_curves, rates)
 
 
 @pytest.mark.parametrize(

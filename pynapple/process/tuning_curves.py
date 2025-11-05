@@ -509,6 +509,14 @@ def compute_mutual_information(tuning_curves, rates=None):
             "tuning_curves should be an xr.DataArray as computed by compute_tuning_curves."
         )
 
+    if rates is not None:
+        if not isinstance(rates, (list, np.ndarray)):
+            raise TypeError("rates should be a list or array.")
+        if tuning_curves.shape[0] != len(rates):
+            raise ValueError(
+                "dimension of rates should match that of the tuning curves."
+            )
+
     if "occupancy" not in tuning_curves.attrs:
         raise ValueError("No occupancy found in tuning curves.")
     occupancy = tuning_curves.attrs["occupancy"]
@@ -520,7 +528,7 @@ def compute_mutual_information(tuning_curves, rates=None):
 
     if fr is None:
         warnings.warn(
-            "Estimating mean firing rates from tuning curves,"
+            "Estimating mean firing rates from tuning curves, "
             "they were not in the tuning curves nor passed.",
             UserWarning,
             stacklevel=2,
