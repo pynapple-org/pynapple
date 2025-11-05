@@ -125,6 +125,7 @@ def test_load_tsgroup(path, k):
         tmp.time_support.values, data[k].time_support.values
     )
 
+
 @pytest.mark.parametrize("path", [path])
 @pytest.mark.parametrize("k", ["tsdgroup", "tsdgroup_minfo"])
 def test_load_tsdgroup(path, k):
@@ -137,6 +138,7 @@ def test_load_tsdgroup(path, k):
     np.testing.assert_array_almost_equal(
         tmp.time_support.values, data[k].time_support.values
     )
+
 
 @pytest.mark.parametrize("path", [path])
 @pytest.mark.parametrize("k", ["tsgroup", "tsgroup_minfo"])
