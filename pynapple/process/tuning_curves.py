@@ -523,7 +523,7 @@ def compute_mutual_information(tuning_curves, rates=None):
     occupancy = occupancy / np.nansum(occupancy)
 
     fx = tuning_curves.values
-    fr = rates or tuning_curves.attrs.get("rates")
+    fr = rates if rates is not None else tuning_curves.attrs.get("rates")
     axes = tuple(range(1, fx.ndim))
 
     if fr is None:

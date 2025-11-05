@@ -1205,6 +1205,7 @@ def get_testing_set(n_units=1, n_features=1, pattern="uniform"):
         data[:] = 1.0
         expected_mi_per_sec = 0.0
         expected_mi_per_spike = 0.0
+        mean_rate = 1.0
 
     elif pattern == "onehot":
         # Each unit fires in a unique location only
@@ -1226,7 +1227,7 @@ def get_testing_set(n_units=1, n_features=1, pattern="uniform"):
         dims=dims,
         attrs={
             "occupancy": np.ones(shape[1:]) / np.prod(shape[1:]),
-            "rates": np.array([1.0] * n_units),
+            "rates": np.array([mean_rate] * n_units),
         },
     )
 
@@ -1336,6 +1337,7 @@ def test_compute_mutual_information_errors(tuning_curves, rates, expectation):
         nap.compute_mutual_information(tuning_curves, rates)
 
 
+@pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
     "n_units, n_features",
     [(1, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3)],
@@ -1344,9 +1346,33 @@ def test_compute_mutual_information_errors(tuning_curves, rates, expectation):
     "pattern",
     ["uniform", "onehot"],
 )
-def test_compute_mutual_information(n_units, n_features, pattern):
+@pytest.mark.parametrize(
+    "rate_scale",
+    ["in_tcs", "estimate", 0.5, 2.0],
+)
+def test_compute_mutual_information(n_units, n_features, pattern, rate_scale):
     tuning_curves, expectation = get_testing_set(n_units, n_features, pattern)
-    actual = nap.compute_mutual_information(tuning_curves)
+
+    if rate_scale == "in_tcs":
+        rates = None
+    elif rate_scale == "estimate":
+        rates = None
+        tuning_curves.attrs.pop("rates")
+    else:
+        rates = tuning_curves.attrs["rates"] * rate_scale
+        if pattern == "uniform":
+            expectation["bits/sec"] = np.log2(1.0 / rate_scale)
+            expectation["bits/spike"] = expectation["bits/sec"] / rates
+        elif pattern == "onehot":
+            n_bins = np.prod(tuning_curves.shape[1:])
+            expected_mi_per_spike = np.log2(n_bins)
+            expected_mi_per_sec = expected_mi_per_spike / n_bins
+            expectation["bits/sec"] = expected_mi_per_sec - np.log2(rate_scale) / n_bins
+            expectation["bits/spike"] = (
+                expected_mi_per_spike - np.log2(rate_scale)
+            ) / rate_scale
+
+    actual = nap.compute_mutual_information(tuning_curves, rates=rates)
     pd.testing.assert_frame_equal(actual, expectation)
 
 
