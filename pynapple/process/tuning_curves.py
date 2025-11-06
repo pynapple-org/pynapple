@@ -520,10 +520,11 @@ def compute_mutual_information(tuning_curves, rates=None):
     if "occupancy" not in tuning_curves.attrs:
         raise ValueError("No occupancy found in tuning curves.")
     occupancy = tuning_curves.attrs["occupancy"]
-    occupancy = occupancy / np.nansum(occupancy)
+    occupancy = occupancy / np.nansum(occupancy)  # (D1, D2, ..., Dn)
 
-    fx = tuning_curves.values
-    fr = tuning_curves.attrs.get("rates") if rates is None else rates
+    fx = tuning_curves.values  # (N, D1, D2, ...Dn)
+    fr = tuning_curves.attrs.get("rates") if rates is None else rates  # (N,)
+
     axes = tuple(range(1, fx.ndim))
 
     if fr is None:
@@ -533,17 +534,17 @@ def compute_mutual_information(tuning_curves, rates=None):
             UserWarning,
             stacklevel=2,
         )
-        fr = np.nansum(fx * occupancy, axis=axes)
+        fr = np.nansum(fx * occupancy, axis=axes)  # (N,)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        fxfr = fx / np.array(fr)[(slice(None),) + (None,) * (fx.ndim - 1)]
-        logfx = np.log2(fxfr)
+        fxfr = fx / np.expand_dims(fr, axis=axes)  # (N, D1, D2, ..., Dn)
+        logfx = np.log2(fxfr)  # (N, D1, D2, ..., Dn)
     logfx[~np.isfinite(logfx)] = 0.0
 
-    MI_bits_per_sec = np.nansum(occupancy * fx * logfx, axis=axes)
+    MI_bits_per_sec = np.nansum(occupancy * fx * logfx, axis=axes)  # (N,)
     with np.errstate(divide="ignore", invalid="ignore"):
-        MI_bits_per_spike = MI_bits_per_sec / fr
+        MI_bits_per_spike = MI_bits_per_sec / fr  # (N,)
 
     return pd.DataFrame(
         data=np.stack([MI_bits_per_sec, MI_bits_per_spike], axis=1),
