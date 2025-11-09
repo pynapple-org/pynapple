@@ -55,6 +55,6 @@ Trial-aligned choice decoding in International Brain Lab data <examples/tutorial
 :::{card} 
 ```{toctree}
 :maxdepth: 3
-Null distributions in neuroscience <examples/tutorial_null_distributions>
+Null distributions to classify grid cells <examples/tutorial_null_distributions>
 ```
 :::
