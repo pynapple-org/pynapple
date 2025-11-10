@@ -271,7 +271,7 @@ data_dir = os.environ.get("PYNAPPLE_DATA_DIR", ".")
 project_path = os.path.join(data_dir, "MyProject")
 
 
-if not os.path.exists(project_path+".zip"):
+if not os.path.exists(project_path):
   r = requests.get(f"https://osf.io/a9n6r/download", stream=True)
   block_size = 1024*1024
   with open(project_path+".zip", 'wb') as f:
@@ -280,7 +280,7 @@ if not os.path.exists(project_path+".zip"):
       f.write(data)
 
   with zipfile.ZipFile(project_path+".zip", 'r') as zip_ref:
-    zip_ref.extractall(".")
+    zip_ref.extractall(data_dir)
 
 ```
 
