@@ -42,8 +42,9 @@ Downloading the data
 First things first: let's find our file.
 
 ```{code-cell} ipython3
-path = "A0670-221213.nwb"
-if path not in os.listdir("."):
+data_dir = os.environ.get("PYNAPPLE_DATA_DIR", ".")
+path = os.path.join(data_dir, "A0670-221213.nwb")
+if not os.path.exists(path):
   r = requests.get(f"https://osf.io/sbnaw/download", stream=True)
   block_size = 1024*1024
   with open(path, 'wb') as f:

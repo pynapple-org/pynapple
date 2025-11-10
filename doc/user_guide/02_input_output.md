@@ -43,9 +43,10 @@ import os
 import requests, math
 import tqdm
 
-nwb_path = 'A2929-200711.nwb'
+data_dir = os.environ.get("PYNAPPLE_DATA_DIR", ".")
+nwb_path = os.path.join(data_dir, "A2929-200711.nwb")
 
-if nwb_path not in os.listdir("."):
+if not os.path.exists(nwb_path):
   r = requests.get(f"https://osf.io/fqht6/download", stream=True)
   block_size = 1024*1024
   with open(nwb_path, 'wb') as f:
@@ -266,10 +267,11 @@ print(sta)
 
 import zipfile
 
-project_path = "MyProject"
+data_dir = os.environ.get("PYNAPPLE_DATA_DIR", ".")
+project_path = os.path.join(data_dir, "MyProject")
 
 
-if project_path not in os.listdir("."):
+if not os.path.exists(project_path):
   r = requests.get(f"https://osf.io/a9n6r/download", stream=True)
   block_size = 1024*1024
   with open(project_path+".zip", 'wb') as f:
@@ -278,7 +280,7 @@ if project_path not in os.listdir("."):
       f.write(data)
 
   with zipfile.ZipFile(project_path+".zip", 'r') as zip_ref:
-    zip_ref.extractall(".")
+    zip_ref.extractall(data_dir)
 
 ```
 
