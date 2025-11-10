@@ -46,7 +46,7 @@ import tqdm
 data_dir = os.environ.get("PYNAPPLE_DATA_DIR", ".")
 nwb_path = os.path.join(data_dir, "A2929-200711.nwb")
 
-if os.path.exists(nwb_path):
+if not os.path.exists(nwb_path):
   r = requests.get(f"https://osf.io/fqht6/download", stream=True)
   block_size = 1024*1024
   with open(nwb_path, 'wb') as f:
