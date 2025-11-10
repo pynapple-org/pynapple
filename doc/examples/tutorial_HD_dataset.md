@@ -41,8 +41,9 @@ Downloading the data
 It's a small NWB file.
 
 ```{code-cell} ipython3
-path = "Mouse32-140822.nwb"
-if path not in os.listdir("."):
+data_dir = os.environ.get("PYNAPPLE_DATA_DIR", ".")
+path = os.path.join(data_dir, "Mouse32-140822.nwb")
+if not os.path.exists(path):
     r = requests.get(f"https://osf.io/jb2gd/download", stream=True)
     block_size = 1024*1024
     with open(path, 'wb') as f:
