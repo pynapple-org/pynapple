@@ -51,3 +51,10 @@ Example filtering <examples/tutorial_phase_preferences>
 Trial-aligned choice decoding in International Brain Lab data <examples/tutorial_ibl_choice_decoding>
 ```
 :::
+
+:::{card} 
+```{toctree}
+:maxdepth: 3
+Null distributions to test spatial firing <examples/tutorial_null_distributions>
+```
+:::
