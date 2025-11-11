@@ -16,7 +16,7 @@ Null distributions to test spatial firing
 
 Null distributions are ubiquitous in neuroscience. 
 The brain can be incredibly noisy, and thus we need to use adequate statistical quantification to separate meaningful observations from random fluctuations.
-While statistics can be daunting, most often designing the right statistical test comes down to coming up with a good null distribution.
+While statistics can be daunting, most often designing the right statistical test comes down to devising a good null distribution.
 A null distribution should reflect the expected behavior of the system under the assumption of no real effect, without introducing unnecessary assumptions or simplifications.
 We can then compare our observations to such a null distribution to decide whether there is an effect.
 
@@ -60,7 +60,7 @@ Downloading data from DANDI
 ---------------------------
 We will start by downloading some data off of DANDI.
 To do so, we need a dandiset ID, and a file path.
-In this tutorial we will use data from:  
+In this tutorial we will use data from [dandiset 000582](https://dandiarchive.org/dandiset/000582/draft), which was published in:  
 *Sargolini, Francesca, et al. “Conjunctive representation of position, direction, and velocity in entorhinal cortex.” Science 312.5774 (2006): 758-762*
 
 This dataset contains electrophysiology recordings from neurons in the entorhinal cortex, which are known to modulate their firing with position.
@@ -129,6 +129,8 @@ for ax, (unit_idx, unit_id) in zip(g.axs.flat, enumerate(units)):
     ax.set_title(f"unit={unit_id}\nSI={spatial_information['bits/spike'][unit_idx]:.2f}")
 plt.show()
 ```
+Some of these units seem to have clear spatial firing (e.g. unit 3), with localized firing fields and relatively high spatial information values.
+However, for units like unit 0 we can not say for certain that the pattern we see is not just caused by random activity.
 
 ***
 Randomization
@@ -149,14 +151,14 @@ Pynapple provides four methods for such shuffling:
 
 Let's apply them to an example neuron to look at their effect on spatial firing:
 ```{code-cell} ipython3
-jitter = nap.jitter_timestamps(units[3], max_jitter=1.0)
+jitter = nap.jitter_timestamps(units[3], max_jitter=2.0)
 resample = nap.resample_timestamps(units[3])
 shift = nap.shift_timestamps(units[3], min_shift=10.0)
 interval_shuffle = nap.shuffle_ts_intervals(units[3])
 
-fig, axs = plt.subplots(1, 5, figsize=(10, 2))
-for ax, (randomization_type, data) in zip(
-    axs,
+fig, axs = plt.subplots(3, 5, figsize=(10, 6))
+for (ax_spikes, ax_tc, ax_corr), (randomization_type, data) in zip(
+    axs.T,
     [
         ("true", units[3]),
         ("jitter", jitter),
@@ -165,25 +167,53 @@ for ax, (randomization_type, data) in zip(
         ("interval_shuffle", interval_shuffle),
     ],
 ):
-    ax.set_title(randomization_type.replace("_", "\n"))
-    ax.plot(position[:, 0], position[:, 1], color="black", linewidth=0.5, zorder=-1)
+    # Plot spike positions
+    ax_spikes.plot(position[:, 0], position[:, 1], color="black", linewidth=0.5, zorder=-1)
     positional_spikes = data.value_from(position)
-    ax.scatter(
-        positional_spikes[:, 0],
+    ax_spikes.scatter(
         positional_spikes[:, 1],
+        positional_spikes[:, 0],
         color="red",
         s=7,
         edgecolor="none",
         zorder=1
     )
-    ax.axis("off")
+    ax_spikes.yaxis.set_inverted(True)
+    ax_spikes.axis("off")
+    ax_spikes.set_title(randomization_type.replace("_", "\n"))
+
+    # Plot tuning curve
+    tuning_curve = nap.compute_tuning_curves(
+        data,
+        features=position,
+        feature_names=["X", "Y"],
+        range=[(-50, 50), (-50, 50)],
+        bins=40
+    )
+    tuning_curve.values = gaussian_filter_nan(tuning_curve.values, sigma=(0, 2, 2))
+    ax_tc.imshow(tuning_curve.values[0], cmap="viridis", extent=(-50, 50, -50, 50))
+    ax_tc.axis("off")
+
+    # Plot 2D autocorrelation
+    ax_corr.imshow(correlate2d(tuning_curve[0], tuning_curve[0]), cmap="viridis")
+    ax_corr.axis("off")
+fig.text(0.09, 0.44, "tuning\ncurve", rotation=90, ha="center")
+fig.text(0.09, 0.12, "auto\ncorrelation", rotation=90, ha="center")
 plt.show()
 ```
+Each of these methods seem to have different effects:
+- **Jittering**: does exactly that, the jitter in time also results in a jitter in position. 
+  We set the maximal jitter to 2 seconds, which likely matches the timescale of the movements of the animal.
+  The tuning curve and autocorrelation have not changed a lot, meaning we have not broken the relation between spiking and behavior. 
+  Thus, jittering might not be a good randomization method in this case, unless we increase the maximal jitter.
+- **Resampling**: gives us a uniform spread in position, the relation between spiking and behaviour is gone entirely.
+- **Shifting**: has the advantage of keeping the temporal relations between spikes, while only breaking the relation with position.
+- **Shuffling interspike intervals**: looks similar to shifting, it keeps the overall interspike interval distribution.
 
 ***
 Null distributions
 ------------------
-We will opt for random shifts, as those result in the least possible change in the spatial firing of the neurons, while still randomizing it.
+We will opt for random shifts.
 For each neuron, we will generate `N` pseudo-neurons and compute the mutual/spatial information.
 The resulting distributions of values are what we call the null distributions.
 ```{code-cell} ipython3
@@ -229,7 +259,7 @@ for ax, (unit_idx, unit_id) in zip(g.axs.flat, enumerate(units)):
     score = spatial_information['bits/spike'][unit_idx]
     pval = 1- np.sum(null <= score) / len(null)
     
-    ax.set_title(f"unit={unit_id}\nSI={score:.2f}\np={pval:.4f}{'*' if score>thresholds[unit_idx] else ''}")
+    ax.set_title(f"unit={unit_id}\nSI={score:.2f}\np={pval:.6f}{'*' if score>thresholds[unit_idx] else ''}")
 
     ax_hist = inset_axes(ax, width="100%", height="40%", loc="lower center",
                          bbox_to_anchor=(0, -1, 1, 1), bbox_transform=ax.transAxes, borderpad=0)
@@ -243,6 +273,9 @@ for ax, (unit_idx, unit_id) in zip(g.axs.flat, enumerate(units)):
         ax_hist.set_xlabel("spatial\ninformation\n(bits/spike)")
 plt.show()
 ```
+We can see that all our units are significantly modulated by position, some more so than others. 
+By visualizing the null distributions (blue histograms), the percentile thresholds (black lines), and the actual values (dashed red lines), we can get more nuance.
+We now also have approximate p-values to report.
 
 <!-- #region -->
 :::{card}
