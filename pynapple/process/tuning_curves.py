@@ -96,6 +96,8 @@ def compute_tuning_curves(
         Attributes:
             occupancy:  [100. 100. 100. 100. 100. 100. 100. 100. 100. 100.]
             bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...
+            fs:         10.0
+            rates:      [10.01001001  5.00500501]
 
     The function can also take multiple features, in which case it computes n-dimensional tuning curves.
     We can specify the number of bins for each feature:
@@ -131,6 +133,8 @@ def compute_tuning_curves(
         Attributes:
             occupancy:  [[100. 100.  nan]\\n [100.  50.  50.]\\n [100.  nan 100.]\\n [ 5...
             bin_edges:  [array([0.  , 0.18, 0.36, 0.54, 0.72, 0.9 ]), array([0.      ...
+            fs:         10.0
+            rates:      [10.01001001  5.00500501]
 
     Or even specify the bin edges directly:
 
@@ -157,6 +161,8 @@ def compute_tuning_curves(
         Attributes:
             occupancy:  [[150. 150.]\\n [100. 100.]\\n [150. 150.]\\n [100. 100.]]
             bin_edges:  [array([0.  , 0.25, 0.5 , 0.75, 1.  ]), array([0., 1., 2.])]
+            fs:         10.0
+            rates:      [10.01001001  5.00500501]
 
     In all of these cases, it is also possible to pass continuous values instead of spikes (e.g. calcium imaging data), in that case the mean response is computed:
 
@@ -256,7 +262,7 @@ def compute_tuning_curves(
     if isinstance(data, (nap.TsGroup, nap.Ts)):
         # SPIKES
         if isinstance(data, nap.Ts):
-            data = {0: data}
+            data = nap.TsGroup({0: data})
         for i, n in enumerate(keys):
             tcs[i] = np.histogramdd(
                 data[n].value_from(features),
@@ -282,6 +288,9 @@ def compute_tuning_curves(
         tcs[np.isnan(tcs)] = 0.0
         tcs[:, occupancy == 0.0] = np.nan
 
+    attrs = {"occupancy": occupancy, "bin_edges": bin_edges, "fs": fs}
+    if isinstance(data, nap.TsGroup):
+        attrs["rates"] = data.rates
     tcs = xr.DataArray(
         tcs,
         coords={
@@ -291,7 +300,7 @@ def compute_tuning_curves(
                 for feature_name, e in zip(feature_names, bin_edges)
             },
         },
-        attrs={"occupancy": occupancy, "bin_edges": bin_edges, "fs": fs},
+        attrs=attrs,
     )
     if return_pandas:
         return tcs.to_pandas().T
@@ -417,7 +426,7 @@ def compute_response_per_epoch(data, epochs_dict, return_pandas=False):
         return tcs
 
 
-def compute_mutual_information(tuning_curves):
+def compute_mutual_information(tuning_curves, rates=None):
     """
     Computes mutual information from n-dimensional tuning curves.
 
@@ -452,7 +461,11 @@ def compute_mutual_information(tuning_curves):
     Parameters
     ----------
     tuning_curves : xarray.DataArray
-        Tuning curves as computed by :func:`compute_tuning_curves`.
+        Tuning curves as computed by :func:`~pynapple.process.tuning_curves.compute_tuning_curves`.
+    rates : list or numpy.ndarray, optional
+        Mean firing rates of the units. By default :func:`~pynapple.process.tuning_curves.compute_tuning_curves` saves
+        the mean firing rates over the epochs of the tuning curves in the tuning curve objects.
+        This argument can be used to pass your own.
 
     Returns
     -------
@@ -483,6 +496,8 @@ def compute_mutual_information(tuning_curves):
         Attributes:
             occupancy:  [ 985. 1009. 1014.  996.  993. 1008.  991. 1008.  999.  997.]
             bin_edges:  [array([0. , 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ])]
+            fs:         100.0
+            rates:      [10.14 10.08]
         >>> MI = nap.compute_mutual_information(tcs)
         >>> MI
             bits/sec  bits/spike
@@ -494,23 +509,42 @@ def compute_mutual_information(tuning_curves):
             "tuning_curves should be an xr.DataArray as computed by compute_tuning_curves."
         )
 
+    if rates is not None:
+        if not isinstance(rates, (list, np.ndarray)):
+            raise TypeError("rates should be a list or array.")
+        if tuning_curves.shape[0] != len(rates):
+            raise ValueError(
+                "dimension of rates should match that of the tuning curves."
+            )
+
     if "occupancy" not in tuning_curves.attrs:
         raise ValueError("No occupancy found in tuning curves.")
     occupancy = tuning_curves.attrs["occupancy"]
-    occupancy = occupancy / np.nansum(occupancy)
+    occupancy = occupancy / np.nansum(occupancy)  # (D1, D2, ..., Dn)
 
-    fx = tuning_curves.values
+    fx = tuning_curves.values  # (N, D1, D2, ...Dn)
+    fr = tuning_curves.attrs.get("rates") if rates is None else rates  # (N,)
+
     axes = tuple(range(1, fx.ndim))
-    fr_keepdims = np.nansum(fx * occupancy, axis=axes, keepdims=True)
-    fr_scalar = np.squeeze(fr_keepdims, axis=axes)
+
+    if fr is None:
+        warnings.warn(
+            "Estimating mean firing rates from tuning curves, "
+            "they were not in the tuning curves nor passed.",
+            UserWarning,
+            stacklevel=2,
+        )
+        fr = np.nansum(fx * occupancy, axis=axes)  # (N,)
+
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        fxfr = fx / fr_keepdims
-        logfx = np.log2(fxfr)
+        fxfr = fx / np.expand_dims(fr, axis=axes)  # (N, D1, D2, ..., Dn)
+        logfx = np.log2(fxfr)  # (N, D1, D2, ..., Dn)
     logfx[~np.isfinite(logfx)] = 0.0
-    MI_bits_per_sec = np.nansum(occupancy * fx * logfx, axis=axes)
+
+    MI_bits_per_sec = np.nansum(occupancy * fx * logfx, axis=axes)  # (N,)
     with np.errstate(divide="ignore", invalid="ignore"):
-        MI_bits_per_spike = MI_bits_per_sec / fr_scalar
+        MI_bits_per_spike = MI_bits_per_sec / fr  # (N,)
 
     return pd.DataFrame(
         data=np.stack([MI_bits_per_sec, MI_bits_per_spike], axis=1),
