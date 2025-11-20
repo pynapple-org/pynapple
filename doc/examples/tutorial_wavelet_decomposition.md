@@ -51,8 +51,9 @@ Let's download the data and save it locally
 jupyter:
   outputs_hidden: false
 ---
-path = "Achilles_10252013_EEG.nwb"
-if path not in os.listdir("."):
+data_dir = os.environ.get("PYNAPPLE_DATA_DIR", ".")
+path = os.path.join(data_dir, "Achilles_10252013_EEG.nwb")
+if not os.path.exists(path):
     r = requests.get(f"https://osf.io/2dfvp/download", stream=True)
     block_size = 1024 * 1024
     with open(path, "wb") as f:
