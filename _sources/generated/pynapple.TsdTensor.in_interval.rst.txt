@@ -1,0 +1,6 @@
+pynapple.TsdTensor.in\_interval
+===============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.in_interval

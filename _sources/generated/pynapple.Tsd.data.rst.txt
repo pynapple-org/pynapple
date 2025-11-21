@@ -1,0 +1,6 @@
+pynapple.Tsd.data
+=================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Tsd.data
