@@ -149,13 +149,16 @@ Pynapple provides four methods for such shuffling:
 - [`shift_timestamps`](pynapple.process.randomize.shift_timestamps): shifts all timestamps by a random amount drawn from a given range, wrapping the end of the time support to the beginning.
 - [`shuffle_ts_intervals`](pynapple.process.randomize.shuffle_ts_intervals): randomizes timestamps by shuffling the intervals between them.
 
-Let's apply them to an example neuron to look at their effect on spatial firing:
+Let's apply them to an example neuron:
 ```{code-cell} ipython3
 jitter = nap.jitter_timestamps(units[3], max_jitter=2.0)
 resample = nap.resample_timestamps(units[3])
 shift = nap.shift_timestamps(units[3], min_shift=10.0)
 interval_shuffle = nap.shuffle_ts_intervals(units[3])
+```
+and plot them to look at their effect on spatial firing:
 
+```{code-cell} ipython3
 fig, axs = plt.subplots(3, 5, figsize=(10, 6))
 for (ax_spikes, ax_tc, ax_corr), (randomization_type, data) in zip(
     axs.T,
@@ -201,6 +204,9 @@ fig.text(0.09, 0.44, "tuning\ncurve", rotation=90, ha="center")
 fig.text(0.09, 0.12, "auto\ncorrelation", rotation=90, ha="center")
 plt.show()
 ```
+We are also visualizing the [two-dimensional autocorrelation](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.correlate2d.html)
+of the tuning curves here to highlight the breaking/maintaining of patterns.  
+
 Each of these methods seem to have different effects:
 - **Jittering**: does exactly that, the jitter in time also results in a jitter in position. 
   We set the maximal jitter to 2 seconds, which likely matches the timescale of the movements of the animal.
@@ -245,19 +251,29 @@ From a statistical view, we see the null distribution as an empirical distributi
 We want to determine how unlikely it is that the observed spatial information arose from our null distribution.
 
 Given a significance level, α, we assess whether the observed value lies in the extreme tail of the null distribution.
-If the probability (the p-value) of obtaining a spatial information value **as large as or larger than** the observed one is less than α, we reject the null hypothesis.
-Since we have empirical distributions, we use the percentile the approximate that probability/p-value.
+If the probability (the p-value) of obtaining a spatial information value **as large as or larger than** the observed one is less than α, we reject the null hypothesis:
 
 ```{code-cell} ipython3
-alpha = 0.01
-thresholds = np.nanpercentile(null_distributions, (1-alpha)*100, axis=1)
-spatial_units = tuning_curves.coords["unit"][spatial_information["bits/spike"].values > thresholds]
+alpha = 0.01 # significance level
+p_values = np.sum(
+    null_distributions.T >= spatial_information['bits/spike'].values, 
+    axis=0
+    ) / null_distributions.shape[1]
+spatial_units = tuning_curves.coords["unit"][p_values > alpha]
+```
 
+We can further also compute the exact spatial information values corresponding to our alpha:
+```{code-cell} ipython3
+thresholds = np.nanpercentile(null_distributions, (1-alpha)*100, axis=1)
+```
+
+Finally, we can visualize everything together:
+```{code-cell} ipython3
 g = tuning_curves_smooth.plot(col="unit")
 for ax, (unit_idx, unit_id) in zip(g.axs.flat, enumerate(units)):
     null = null_distributions[unit_idx]
     score = spatial_information['bits/spike'][unit_idx]
-    pval = 1- np.sum(null <= score) / len(null)
+    pval = p_values[unit_idx]
     
     ax.set_title(f"unit={unit_id}\nSI={score:.2f}\np={pval:.6f}{'*' if score>thresholds[unit_idx] else ''}")
 
