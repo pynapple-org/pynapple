@@ -24,6 +24,14 @@ Streaming data from Dandi <examples/tutorial_pynapple_dandi>
 :::{card} 
 ```{toctree}
 :maxdepth: 3
+Null distributions to test spatial firing <examples/tutorial_null_distributions>
+```
+:::
+
+
+:::{card} 
+```{toctree}
+:maxdepth: 3
 Analyzing calcium imaging data <examples/tutorial_calcium_imaging>
 ```
 :::
@@ -51,3 +59,5 @@ Example filtering <examples/tutorial_phase_preferences>
 Trial-aligned choice decoding in International Brain Lab data <examples/tutorial_ibl_choice_decoding>
 ```
 :::
+
+
