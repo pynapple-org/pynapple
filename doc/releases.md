@@ -1,5 +1,10 @@
 # Releases
 
+### 0.10.2 (2025-12-05)
+
+- New tutorial, `tutorial_null_distributions.md`, demonstrating how to use randomization methods to generate null distributions for testing spatial firing.
+- `compute_tuning_curves` include firing rates (rates) in the returned attributes
+- Fixed a key mismatch in `ts_group.py` for loading data from NPZ files, correcting `"data"` to `"d"`
 
 ### 0.10.1 (2025-10-30)
 
