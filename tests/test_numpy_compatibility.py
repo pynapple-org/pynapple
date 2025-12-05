@@ -992,3 +992,53 @@ def test_einsum(a, b, subscripts, expected_type):
             assert out == out2
         else:
             np.testing.assert_array_almost_equal(out, out2)
+
+
+@pytest.mark.parametrize(
+    "tsd",
+    [
+        nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+        nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+        nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 10)),
+        nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 5, 2)),
+    ],
+)
+@pytest.mark.parametrize(
+    "func, kwargs, expected_type",
+    [
+        ("cumsum", {"axis": 0}, "Tsd"),
+        ("cumsum", {"axis": 1}, "Tsd"),
+        ("cumprod", {"axis": 0}, "Tsd"),
+        ("cumprod", {"axis": 1}, "Tsd"),
+        ("nancumsum", {"axis": 0}, "Tsd"),
+        ("nancumsum", {"axis": 1}, "Tsd"),
+        ("unwrap", {}, "Tsd"),
+        ("clip", {"a_min": 0.2, "a_max": 0.8}, "Tsd"),
+        ("angle", {}, "Tsd"),
+        ("conj", {}, "Tsd"),
+        ("real", {}, "Tsd"),
+        ("imag", {}, "Tsd"),
+        ("round", {"decimals": 2}, "Tsd"),
+        ("fix", {}, "Tsd"),
+        ("isreal", {}, "Tsd"),
+        ("iscomplex", {}, "Tsd"),
+        ("copy", {}, "Tsd"),
+        ("asarray", {}, "ndarray"),
+        ("asanyarray", {}, "ndarray"),
+    ],
+)
+def test_same_shape(tsd, func, kwargs, expected_type):
+    try:
+        b = getattr(np, func)(tsd.values, **kwargs)
+    except (ValueError, RuntimeError):
+        pytest.skip("Skipping invalid axis operation")
+
+    a = getattr(np, func)(tsd, **kwargs)
+
+    assert expected_type in a.__class__.__name__
+
+    if expected_type == "Tsd":
+        np.testing.assert_array_almost_equal(a.index, tsd.index)
+        np.testing.assert_array_almost_equal(a.values, b)
+    else:
+        np.testing.assert_array_almost_equal(a, b)

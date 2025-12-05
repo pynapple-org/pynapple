@@ -511,6 +511,9 @@ def modifies_time_axis(func, new_args, kwargs):
     if func is np.squeeze:
         return False  # This one should be handled by _initialize_tsd_output
 
+    if func in (np.unwrap, np.copy, np.cumsum, np.nancumsum, np.cumprod, np.nancumprod):
+        return False
+
     try:
         sig = inspect.signature(func)
     except (TypeError, ValueError):
