@@ -1021,6 +1021,9 @@ def test_einsum(a, b, subscripts, expected_type):
         ("fix", {}, "Tsd"),
         ("isreal", {}, "Tsd"),
         ("iscomplex", {}, "Tsd"),
+        ("copy", {}, "Tsd"),
+        ("asarray", {}, "ndarray"),
+        ("asanyarray", {}, "ndarray"),
     ]
 )
 def test_same_shape(tsd, func, kwargs, expected_type):
