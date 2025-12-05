@@ -1,0 +1,6 @@
+pynapple.TsdTensor.save
+=======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.save

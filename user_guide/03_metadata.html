@@ -1,0 +1,1398 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Metadata &#8212; pynapple 0.10.2 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_contributors.css?v=f079e67e" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=f2caec9a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=11e62b30"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=c57da192"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/03_metadata';</script>
+    <link rel="icon" href="../_static/Pynapple_final_icon.png"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="Correlograms &amp; ISI" href="05_correlograms_isi.html" />
+    <link rel="prev" title="Core methods" href="03_core_methods.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.10.2" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.10.2 documentation - Home"/>
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.10.2 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About us
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="01_introduction_to_pynapple.html">Introduction to pynapple</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="02_input_output.html">Input-output &amp; lazy-loading</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="03_interacting_with_numpy.html">Interaction with numpy</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="03_core_methods.html">Core methods</a></li>
+</ul>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Metadata</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="05_correlograms_isi.html">Correlograms &amp; ISI</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="06_tuning_curves.html">Tuning curves</a></li>
+
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="07_decoding.html">Decoding</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="08_perievent.html">Perievent</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="09_randomization.html">Randomization</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="10_power_spectral_density.html">Power spectral density</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="11_wavelets.html">Wavelet decomposion</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="12_filtering.html">Filtering time series</a></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="13_warping.html">Building trial-based tensors</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../user_guide.html" class="nav-link">User guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Metadata</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <!-- #region -->
+<section id="metadata">
+<h1>Metadata<a class="headerlink" href="#metadata" title="Link to this heading">#</a></h1>
+<p>Metadata can be added to <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code>, <code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code>, and <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> objects at initialization or after an object has been created.</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">TsGroup</span></code> metadata is information associated with each Ts/Tsd object, such as brain region or unit type.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code> metadata is information associated with each interval, such as a trial label or stimulus condition.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> metadata is information associated with each column, such as a channel or position.</p></li>
+</ul>
+<section id="adding-metadata-at-initialization">
+<h2>Adding metadata at initialization<a class="headerlink" href="#adding-metadata-at-initialization" title="Link to this heading">#</a></h2>
+<p>At initialization, metadata can be passed via a dictionary or pandas DataFrame using the keyword argument <code class="docutils literal notranslate"><span class="pre">metadata</span></code>. The metadata name is taken from the dictionary key or DataFrame column, and it can be set to any string name with a couple class-specific exceptions.</p>
+<div class="admonition-class-specific-exceptions admonition">
+<p class="admonition-title">Class-specific exceptions</p>
+<ul class="simple">
+<li><p>If column names are supplied to <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code>, metadata cannot overlap with those names.</p></li>
+<li><p>The <code class="docutils literal notranslate"><span class="pre">rate</span></code> attribute for <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code> is stored with the metadata and cannot be overwritten.</p></li>
+</ul>
+</div>
+<p>The length of the metadata must match the length of the object it describes (see class examples below for more detail).</p>
+<!-- #endregion --><div class="cell tag_hide-cell docutils container">
+<details class="admonition hide above-input">
+<summary aria-label="Toggle hidden content">
+<p class="collapsed admonition-title">Show code cell content</p>
+<p class="expanded admonition-title">Hide code cell content</p>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+
+<span class="c1"># input parameters for TsGroup</span>
+<span class="n">group</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="mi">1</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">100</span><span class="p">))),</span>
+    <span class="mi">2</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">200</span><span class="p">))),</span>
+    <span class="mi">3</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">300</span><span class="p">))),</span>
+    <span class="mi">4</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">400</span><span class="p">))),</span>
+<span class="p">}</span>
+
+<span class="c1"># input parameters for IntervalSet</span>
+<span class="n">starts</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">35</span><span class="p">,</span><span class="mi">70</span><span class="p">]</span>
+<span class="n">ends</span> <span class="o">=</span> <span class="p">[</span><span class="mi">30</span><span class="p">,</span><span class="mi">65</span><span class="p">,</span><span class="mi">100</span><span class="p">]</span>
+
+<span class="c1"># input parameters for TsdFrame</span>
+<span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+<span class="n">d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">tile</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="p">(</span><span class="mi">5</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">columns</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</details>
+</div>
+<section id="tsgroup">
+<h3><code class="docutils literal notranslate"><span class="pre">TsGroup</span></code><a class="headerlink" href="#tsgroup" title="Link to this heading">#</a></h3>
+<p>Metadata added to <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code> must match the number of <code class="docutils literal notranslate"><span class="pre">Ts</span></code>/<code class="docutils literal notranslate"><span class="pre">Tsd</span></code> objects, or the length of its <code class="docutils literal notranslate"><span class="pre">index</span></code> property.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;region&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;pfc&quot;</span><span class="p">,</span> <span class="s2">&quot;pfc&quot;</span><span class="p">,</span> <span class="s2">&quot;hpc&quot;</span><span class="p">,</span> <span class="s2">&quot;hpc&quot;</span><span class="p">]}</span>
+
+<span class="n">tsgroup</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  Index     rate  region
+-------  -------  --------
+      1  1.00092  pfc
+      2  2.00183  pfc
+      3  3.00275  hpc
+      4  4.00366  hpc
+</pre></div>
+</div>
+</div>
+</div>
+<p>When initializing with a DataFrame, the index must align with the input dictionary keys (only when a dictionary is used to create the <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code>).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">metadata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="n">index</span><span class="o">=</span><span class="n">group</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span>
+    <span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;pfc&quot;</span><span class="p">,</span> <span class="s2">&quot;pfc&quot;</span><span class="p">,</span> <span class="s2">&quot;hpc&quot;</span><span class="p">,</span> <span class="s2">&quot;hpc&quot;</span><span class="p">],</span>
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;region&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">tsgroup</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  Index     rate  region
+-------  -------  --------
+      1  1.00092  pfc
+      2  2.00183  pfc
+      3  3.00275  hpc
+      4  4.00366  hpc
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="intervalset">
+<h3><code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code><a class="headerlink" href="#intervalset" title="Link to this heading">#</a></h3>
+<p>Metadata added to <code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code> must match the number of intervals, or the length of its <code class="docutils literal notranslate"><span class="pre">index</span></code> property.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;reward&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="s2">&quot;choice&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="s2">&quot;right&quot;</span><span class="p">,</span> <span class="s2">&quot;left&quot;</span><span class="p">],</span>    
+<span class="p">}</span>
+<span class="n">intervalset</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">starts</span><span class="p">,</span> <span class="n">ends</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">intervalset</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  index    start    end    reward  choice
+      0        0     30         1  left
+      1       35     65         0  right
+      2       70    100         1  left
+shape: (3, 2), time unit: sec.
+</pre></div>
+</div>
+</div>
+</div>
+<p>Metadata can be initialized as a DataFrame using the metadata argument, or it can be inferred when initializing an <code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code> with a DataFrame.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;left&quot;</span><span class="p">],</span> <span class="p">[</span><span class="mi">35</span><span class="p">,</span> <span class="mi">65</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;right&quot;</span><span class="p">],</span> <span class="p">[</span><span class="mi">70</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="s2">&quot;left&quot;</span><span class="p">]],</span> 
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;start&quot;</span><span class="p">,</span> <span class="s2">&quot;end&quot;</span><span class="p">,</span> <span class="s2">&quot;reward&quot;</span><span class="p">,</span> <span class="s2">&quot;choice&quot;</span><span class="p">]</span>
+    <span class="p">)</span>
+
+<span class="n">intervalset</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">intervalset</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  index    start    end    reward  choice
+      0        0     30         1  left
+      1       35     65         0  right
+      2       70    100         1  left
+shape: (3, 2), time unit: sec.
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="tsdframe">
+<h3><code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code><a class="headerlink" href="#tsdframe" title="Link to this heading">#</a></h3>
+<p>Metadata added to <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> must match the number of data columns, or the length of its <code class="docutils literal notranslate"><span class="pre">columns</span></code> property.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;color&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="s2">&quot;green&quot;</span><span class="p">],</span> 
+    <span class="s2">&quot;position&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span><span class="mi">20</span><span class="p">,</span><span class="mi">30</span><span class="p">],</span>
+    <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">]</span>
+    <span class="p">}</span>
+
+<span class="n">tsdframe</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">(</span><span class="n">d</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">],</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsdframe</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)    a    b     c
+----------  ---  ----  -----
+0.0         1    2     3
+1.0         1    2     3
+2.0         1    2     3
+3.0         1    2     3
+4.0         1    2     3
+Metadata
+color       red  blue  green
+position    10   20    30
+...         ...  ...   ...
+dtype: int64, shape: (5, 3)
+</pre></div>
+</div>
+</div>
+</div>
+<p>When initializing with a DataFrame, the DataFrame index must match the <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> columns.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">metadata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+    <span class="n">index</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">],</span>
+    <span class="n">data</span><span class="o">=</span><span class="p">[[</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">],</span> <span class="p">[</span><span class="s2">&quot;green&quot;</span><span class="p">,</span> <span class="mi">30</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">]],</span> 
+    <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;color&quot;</span><span class="p">,</span> <span class="s2">&quot;position&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">],</span>
+<span class="p">)</span>
+
+<span class="n">tsdframe</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">(</span><span class="n">d</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">],</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsdframe</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)    a    b     c
+----------  ---  ----  -----
+0.0         1    2     3
+1.0         1    2     3
+2.0         1    2     3
+3.0         1    2     3
+4.0         1    2     3
+Metadata
+color       red  blue  green
+position    10   20    30
+...         ...  ...   ...
+dtype: int64, shape: (5, 3)
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="adding-metadata-after-initialization">
+<h2>Adding metadata after initialization<a class="headerlink" href="#adding-metadata-after-initialization" title="Link to this heading">#</a></h2>
+<p>After creation, metadata can be added using the class method <a class="reference internal" href="../generated/pynapple.TsdFrame.set_info.html#pynapple.TsdFrame.set_info" title="pynapple.TsdFrame.set_info"><span class="xref myst py py-meth"><code class="docutils literal notranslate"><span class="pre">set_info()</span></code></span></a>. Additionally, single metadata fields can be added as a dictionary-like key or as an attribute, with a few noted exceptions outlined below.</p>
+<div class="admonition-note admonition">
+<p class="admonition-title">Note</p>
+<p>The remaining metadata examples will be shown on a <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code> object; however, all examples can be directly applied to <code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code> and <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> objects.</p>
+</div>
+<section id="set-info">
+<h3><code class="docutils literal notranslate"><span class="pre">set_info</span></code><a class="headerlink" href="#set-info" title="Link to this heading">#</a></h3>
+<p>Metadata can be passed as a dictionary or pandas DataFrame as the first positional argument, or metadata can be passed as name-value keyword arguments.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsgroup</span><span class="o">.</span><span class="n">set_info</span><span class="p">(</span><span class="n">unit_type</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;multi&quot;</span><span class="p">,</span> <span class="s2">&quot;single&quot;</span><span class="p">,</span> <span class="s2">&quot;single&quot;</span><span class="p">,</span> <span class="s2">&quot;single&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  Index     rate  region    unit_type
+-------  -------  --------  -----------
+      1  1.00092  pfc       multi
+      2  2.00183  pfc       single
+      3  3.00275  hpc       single
+      4  4.00366  hpc       single
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="using-dictionary-like-keys-square-brackets">
+<h3>Using dictionary-like keys (square brackets)<a class="headerlink" href="#using-dictionary-like-keys-square-brackets" title="Link to this heading">#</a></h3>
+<p>Most metadata names can set as a dictionary-like key (i.e. using square brackets). The only exceptions are for <code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code>, where the names “start” and “end” are reserved for class properties.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsgroup</span><span class="p">[</span><span class="s2">&quot;depth&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  Index     rate  region    unit_type      depth
+-------  -------  --------  -----------  -------
+      1  1.00092  pfc       multi              0
+      2  2.00183  pfc       single             1
+      3  3.00275  hpc       single             2
+      4  4.00366  hpc       single             3
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="using-attribute-assignment">
+<h3>Using attribute assignment<a class="headerlink" href="#using-attribute-assignment" title="Link to this heading">#</a></h3>
+<p>If the metadata name is unique from other class attributes and methods, and it is formatted properly (i.e. only alpha-numeric characters and underscores), it can be set as an attribute (i.e. using a <code class="docutils literal notranslate"><span class="pre">.</span></code> followed by the metadata name).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsgroup</span><span class="o">.</span><span class="n">label</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;MUA&quot;</span><span class="p">,</span> <span class="s2">&quot;good&quot;</span><span class="p">,</span> <span class="s2">&quot;good&quot;</span><span class="p">,</span> <span class="s2">&quot;good&quot;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  Index     rate  region    unit_type      depth  label
+-------  -------  --------  -----------  -------  -------
+      1  1.00092  pfc       multi              0  MUA
+      2  2.00183  pfc       single             1  good
+      3  3.00275  hpc       single             2  good
+      4  4.00366  hpc       single             3  good
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="allowed-data-types">
+<h2>Allowed data types<a class="headerlink" href="#allowed-data-types" title="Link to this heading">#</a></h2>
+<p>As long as the length of the metadata container matches the length of the object (number of columns for <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> and number of indices for <code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code> and <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code>), elements of the metadata can be any data type.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsgroup</span><span class="o">.</span><span class="n">coords</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">1</span><span class="p">,</span><span class="mi">0</span><span class="p">],[</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">1</span><span class="p">,</span><span class="mi">1</span><span class="p">],[</span><span class="mi">2</span><span class="p">,</span><span class="mi">1</span><span class="p">]]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  Index     rate  region    unit_type      depth  label    coords    ...
+-------  -------  --------  -----------  -------  -------  --------  -----
+      1  1.00092  pfc       multi              0  MUA      [1 0]     ...
+      2  2.00183  pfc       single             1  good     [0 1]     ...
+      3  3.00275  hpc       single             2  good     [1 1]     ...
+      4  4.00366  hpc       single             3  good     [2 1]     ...
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="accessing-metadata">
+<h2>Accessing metadata<a class="headerlink" href="#accessing-metadata" title="Link to this heading">#</a></h2>
+<p>Metadata is stored as a pandas DataFrame, which can be previewed using the <code class="docutils literal notranslate"><span class="pre">metadata</span></code> attribute.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="o">.</span><span class="n">metadata</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>       rate region unit_type  depth label  coords
+1  1.000916    pfc     multi      0   MUA  [1, 0]
+2  2.001832    pfc    single      1  good  [0, 1]
+3  3.002748    hpc    single      2  good  [1, 1]
+4  4.003665    hpc    single      3  good  [2, 1]
+</pre></div>
+</div>
+</div>
+</div>
+<p>Single metadata columns (or lists of columns) can be retrieved using the <a class="reference internal" href="../generated/pynapple.TsGroup.get_info.html#pynapple.TsGroup.get_info" title="pynapple.TsGroup.get_info"><span class="xref myst py py-meth"><code class="docutils literal notranslate"><span class="pre">get_info()</span></code></span></a> class method:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="o">.</span><span class="n">get_info</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>1    pfc
+2    pfc
+3    hpc
+4    hpc
+Name: region, dtype: object
+</pre></div>
+</div>
+</div>
+</div>
+<p>Similarly, metadata can be accessed using key indexing (i.e. square brakets)</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">[</span><span class="s2">&quot;region&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>1    pfc
+2    pfc
+3    hpc
+4    hpc
+Name: region, dtype: object
+</pre></div>
+</div>
+</div>
+</div>
+<div class="admonition-note admonition">
+<p class="admonition-title">Note</p>
+<p>Metadata names must be strings. Key indexing with an integer will produce different behavior based on object type.</p>
+</div>
+<p>Finally, metadata that can be set as an attribute can also be accessed as an attribute.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="o">.</span><span class="n">region</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>1    pfc
+2    pfc
+3    hpc
+4    hpc
+Name: region, dtype: object
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="overwriting-metadata">
+<h2>Overwriting metadata<a class="headerlink" href="#overwriting-metadata" title="Link to this heading">#</a></h2>
+<p>User-set metadata is mutable and can be overwritten.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">tsgroup</span><span class="o">.</span><span class="n">set_info</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;A&quot;</span><span class="p">,</span> <span class="s2">&quot;B&quot;</span><span class="p">,</span> <span class="s2">&quot;C&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  Index     rate  region    unit_type      depth  label    coords    ...
+-------  -------  --------  -----------  -------  -------  --------  -----
+      1  1.00092  pfc       multi              0  MUA      [1 0]     ...
+      2  2.00183  pfc       single             1  good     [0 1]     ...
+      3  3.00275  hpc       single             2  good     [1 1]     ...
+      4  4.00366  hpc       single             3  good     [2 1]     ... 
+
+  Index     rate  region    unit_type      depth  label    coords    ...
+-------  -------  --------  -----------  -------  -------  --------  -----
+      1  1.00092  pfc       multi              0  A        [1 0]     ...
+      2  2.00183  pfc       single             1  B        [0 1]     ...
+      3  3.00275  hpc       single             2  C        [1 1]     ...
+      4  4.00366  hpc       single             3  D        [2 1]     ...
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="dropping-metadata">
+<h2>Dropping metadata<a class="headerlink" href="#dropping-metadata" title="Link to this heading">#</a></h2>
+<p>To drop metadata, use the <a class="reference internal" href="../generated/pynapple.TsGroup.drop_info.html#pynapple.TsGroup.drop_info" title="pynapple.TsGroup.drop_info"><span class="xref myst py py-meth"><code class="docutils literal notranslate"><span class="pre">drop_info()</span></code></span></a> method. Multiple metadata columns can be dropped by passing a list of metadata names.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="n">tsgroup</span><span class="o">.</span><span class="n">drop_info</span><span class="p">(</span><span class="s2">&quot;coords&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  Index     rate  region    unit_type      depth  label    coords    ...
+-------  -------  --------  -----------  -------  -------  --------  -----
+      1  1.00092  pfc       multi              0  A        [1 0]     ...
+      2  2.00183  pfc       single             1  B        [0 1]     ...
+      3  3.00275  hpc       single             2  C        [1 1]     ...
+      4  4.00366  hpc       single             3  D        [2 1]     ... 
+
+  Index     rate  region    unit_type      depth  label
+-------  -------  --------  -----------  -------  -------
+      1  1.00092  pfc       multi              0  A
+      2  2.00183  pfc       single             1  B
+      3  3.00275  hpc       single             2  C
+      4  4.00366  hpc       single             3  D
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="restricting-metadata">
+<h2>Restricting metadata<a class="headerlink" href="#restricting-metadata" title="Link to this heading">#</a></h2>
+<p>Instead of dropping multiple metadata fields, you may want to restrict to a set of specified fields, i.e. select which columns to keep. For this operation, use the <a class="reference internal" href="../generated/pynapple.TsGroup.restrict_info.html#pynapple.TsGroup.restrict_info" title="pynapple.TsGroup.restrict_info"><span class="xref myst py py-meth"><code class="docutils literal notranslate"><span class="pre">restrict_info()</span></code></span></a> method. Multiple metadata columns can be kept by passing a list of metadata names.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">copy</span>
+<span class="n">tsgroup2</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">)</span>
+<span class="n">tsgroup2</span><span class="o">.</span><span class="n">restrict_info</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsgroup2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  Index     rate  region
+-------  -------  --------
+      1  1.00092  pfc
+      2  2.00183  pfc
+      3  3.00275  hpc
+      4  4.00366  hpc
+</pre></div>
+</div>
+</div>
+</div>
+<div class="admonition-note admonition">
+<p class="admonition-title">Note</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">rate</span></code> column will always be kept for a <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code>.</p>
+</div>
+</section>
+<section id="using-metadata-to-slice-objects">
+<h2>Using metadata to slice objects<a class="headerlink" href="#using-metadata-to-slice-objects" title="Link to this heading">#</a></h2>
+<p>Metadata can be used to slice or filter objects based on metadata values.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">[</span><span class="n">tsgroup</span><span class="o">.</span><span class="n">label</span> <span class="o">==</span> <span class="s2">&quot;A&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  Index     rate  region    unit_type      depth  label
+-------  -------  --------  -----------  -------  -------
+      1  1.00092  pfc       multi              0  A
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="groupby-using-metadata-to-group-objects">
+<h2><code class="docutils literal notranslate"><span class="pre">groupby</span></code>: Using metadata to group objects<a class="headerlink" href="#groupby-using-metadata-to-group-objects" title="Link to this heading">#</a></h2>
+<p>Similar to pandas, metadata can be used to group objects based on one or more metadata columns using the object method <a class="reference internal" href="../generated/pynapple.TsGroup.groupby.html#pynapple.TsGroup.groupby" title="pynapple.TsGroup.groupby"><span class="xref myst py py-meth"><code class="docutils literal notranslate"><span class="pre">groupby</span></code></span></a>, where the first argument is the metadata columns name(s) to group by. This function returns a dictionary with keys corresponding to unique groups and values corresponding to object indices belonging to each group.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="p">,</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsgroup</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  Index     rate  region    unit_type      depth  label
+-------  -------  --------  -----------  -------  -------
+      1  1.00092  pfc       multi              0  A
+      2  2.00183  pfc       single             1  B
+      3  3.00275  hpc       single             2  C
+      4  4.00366  hpc       single             3  D 
+
+{&#39;hpc&#39;: array([3, 4]), &#39;pfc&#39;: array([1, 2])}
+</pre></div>
+</div>
+</div>
+</div>
+<p>Grouping by multiple metadata columns should be passed as a list.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsgroup</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;region&quot;</span><span class="p">,</span><span class="s2">&quot;unit_type&quot;</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{(&#39;hpc&#39;, &#39;single&#39;): array([3, 4]),
+ (&#39;pfc&#39;, &#39;multi&#39;): array([1]),
+ (&#39;pfc&#39;, &#39;single&#39;): array([2])}
+</pre></div>
+</div>
+</div>
+</div>
+<p>The optional argument <code class="docutils literal notranslate"><span class="pre">get_group</span></code> can be provided to return a new object corresponding to a specific group.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tsgroup</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">,</span> <span class="n">get_group</span><span class="o">=</span><span class="s2">&quot;hpc&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  Index     rate  region    unit_type      depth  label
+-------  -------  --------  -----------  -------  -------
+      3  3.00275  hpc       single             2  C
+      4  4.00366  hpc       single             3  D
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="groupby-apply-applying-functions-to-object-groups">
+<h2><code class="docutils literal notranslate"><span class="pre">groupby_apply</span></code>: Applying functions to object groups<a class="headerlink" href="#groupby-apply-applying-functions-to-object-groups" title="Link to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">groupby_apply</span></code> object method allows a specific function to be applied to object groups. The first argument, same as <code class="docutils literal notranslate"><span class="pre">groupby</span></code>, is the metadata column(s) used to group the object. The second argument is the function to apply to each group. If only these two arguments are supplied, it is assumed that the grouped object is the first and only input to the applied function. This function returns a dictionary, where keys correspond to each unique group, and values correspond to the function output on each group.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">tsdframe</span><span class="p">,</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tsdframe</span><span class="o">.</span><span class="n">groupby_apply</span><span class="p">(</span><span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)    a    b     c
+----------  ---  ----  -----
+0.0         1    2     3
+1.0         1    2     3
+2.0         1    2     3
+3.0         1    2     3
+4.0         1    2     3
+Metadata
+color       red  blue  green
+position    10   20    30
+...         ...  ...   ...
+dtype: int64, shape: (5, 3) 
+
+{&#39;x&#39;: np.float64(1.5), &#39;y&#39;: np.float64(3.0)}
+</pre></div>
+</div>
+</div>
+</div>
+<p>If the applied function requires additional inputs, these can be passed as additional keyword arguments into <code class="docutils literal notranslate"><span class="pre">groupby_apply</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">feature</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span><span class="mi">1</span><span class="p">],</span> <span class="mi">50</span><span class="p">))</span>
+<span class="n">tsgroup</span><span class="o">.</span><span class="n">groupby_apply</span><span class="p">(</span>
+    <span class="s2">&quot;region&quot;</span><span class="p">,</span> 
+    <span class="n">nap</span><span class="o">.</span><span class="n">compute_tuning_curves</span><span class="p">,</span> 
+    <span class="n">features</span><span class="o">=</span><span class="n">feature</span><span class="p">,</span> 
+    <span class="n">bins</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;hpc&#39;: &lt;xarray.DataArray (unit: 2, 0: 2)&gt; Size: 32B
+ array([[3.12, 2.82],
+        [3.68, 4.26]])
+ Coordinates:
+   * unit     (unit) int64 16B 3 4
+   * 0        (0) float64 16B 0.25 0.75
+ Attributes:
+     occupancy:  [50. 50.]
+     bin_edges:  [array([0. , 0.5, 1. ])]
+     fs:         1.0
+     rates:      [3.         4.01010101],
+ &#39;pfc&#39;: &lt;xarray.DataArray (unit: 2, 0: 2)&gt; Size: 32B
+ array([[0.9 , 1.06],
+        [2.26, 1.74]])
+ Coordinates:
+   * unit     (unit) int64 16B 1 2
+   * 0        (0) float64 16B 0.25 0.75
+ Attributes:
+     occupancy:  [50. 50.]
+     bin_edges:  [array([0. , 0.5, 1. ])]
+     fs:         1.0
+     rates:      [0.98989899 2.02020202]}
+</pre></div>
+</div>
+</div>
+</div>
+<p>Alternatively, an anonymous function can be passed instead that defines additional arguments.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">func</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_tuning_curves</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">features</span><span class="o">=</span><span class="n">feature</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<span class="n">tsgroup</span><span class="o">.</span><span class="n">groupby_apply</span><span class="p">(</span><span class="s2">&quot;region&quot;</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;hpc&#39;: &lt;xarray.DataArray (unit: 2, 0: 2)&gt; Size: 32B
+ array([[3.12, 2.82],
+        [3.68, 4.26]])
+ Coordinates:
+   * unit     (unit) int64 16B 3 4
+   * 0        (0) float64 16B 0.25 0.75
+ Attributes:
+     occupancy:  [50. 50.]
+     bin_edges:  [array([0. , 0.5, 1. ])]
+     fs:         1.0
+     rates:      [3.         4.01010101],
+ &#39;pfc&#39;: &lt;xarray.DataArray (unit: 2, 0: 2)&gt; Size: 32B
+ array([[0.9 , 1.06],
+        [2.26, 1.74]])
+ Coordinates:
+   * unit     (unit) int64 16B 1 2
+   * 0        (0) float64 16B 0.25 0.75
+ Attributes:
+     occupancy:  [50. 50.]
+     bin_edges:  [array([0. , 0.5, 1. ])]
+     fs:         1.0
+     rates:      [0.98989899 2.02020202]}
+</pre></div>
+</div>
+</div>
+</div>
+<p>An anonymous function can also be used to apply a function where the grouped object is not the first input.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">func</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_tuning_curves</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">tsgroup</span><span class="p">,</span> 
+    <span class="n">features</span><span class="o">=</span><span class="n">feature</span><span class="p">,</span> 
+    <span class="n">bins</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> 
+    <span class="n">epochs</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+<span class="n">intervalset</span><span class="o">.</span><span class="n">groupby_apply</span><span class="p">(</span><span class="s2">&quot;choice&quot;</span><span class="p">,</span> <span class="n">func</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;left&#39;: &lt;xarray.DataArray (unit: 4, 0: 2)&gt; Size: 64B
+ array([[0.96774194, 1.2       ],
+        [2.12903226, 1.46666667],
+        [3.12903226, 3.33333333],
+        [2.77419355, 4.6       ]])
+ Coordinates:
+   * unit     (unit) int64 32B 1 2 3 4
+   * 0        (0) float64 16B 0.25 0.75
+ Attributes:
+     occupancy:  [31. 30.]
+     bin_edges:  [array([0. , 0.5, 1. ])]
+     fs:         1.0
+     rates:      [1.1        1.83333333 3.28333333 3.73333333],
+ &#39;right&#39;: &lt;xarray.DataArray (unit: 4, 0: 2)&gt; Size: 64B
+ array([[0.8       , 0.9375    ],
+        [2.26666667, 1.75      ],
+        [2.53333333, 1.75      ],
+        [4.66666667, 3.625     ]])
+ Coordinates:
+   * unit     (unit) int64 32B 1 2 3 4
+   * 0        (0) float64 16B 0.25 0.75
+ Attributes:
+     occupancy:  [15. 16.]
+     bin_edges:  [array([0. , 0.5, 1. ])]
+     fs:         1.0
+     rates:      [0.9        2.06666667 2.2        4.26666667]}
+</pre></div>
+</div>
+</div>
+</div>
+<p>Alternatively, the optional parameter <code class="docutils literal notranslate"><span class="pre">input_key</span></code> can be passed to specify which keyword argument the grouped object corresponds to. Other required arguments of the applied function need to be passed as keyword arguments.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">intervalset</span><span class="o">.</span><span class="n">groupby_apply</span><span class="p">(</span>
+    <span class="s2">&quot;choice&quot;</span><span class="p">,</span> 
+    <span class="n">nap</span><span class="o">.</span><span class="n">compute_tuning_curves</span><span class="p">,</span> 
+    <span class="n">input_key</span><span class="o">=</span><span class="s2">&quot;epochs&quot;</span><span class="p">,</span> 
+    <span class="n">data</span><span class="o">=</span><span class="n">tsgroup</span><span class="p">,</span> 
+    <span class="n">features</span><span class="o">=</span><span class="n">feature</span><span class="p">,</span> 
+    <span class="n">bins</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;left&#39;: &lt;xarray.DataArray (unit: 4, 0: 2)&gt; Size: 64B
+ array([[0.96774194, 1.2       ],
+        [2.12903226, 1.46666667],
+        [3.12903226, 3.33333333],
+        [2.77419355, 4.6       ]])
+ Coordinates:
+   * unit     (unit) int64 32B 1 2 3 4
+   * 0        (0) float64 16B 0.25 0.75
+ Attributes:
+     occupancy:  [31. 30.]
+     bin_edges:  [array([0. , 0.5, 1. ])]
+     fs:         1.0
+     rates:      [1.1        1.83333333 3.28333333 3.73333333],
+ &#39;right&#39;: &lt;xarray.DataArray (unit: 4, 0: 2)&gt; Size: 64B
+ array([[0.8       , 0.9375    ],
+        [2.26666667, 1.75      ],
+        [2.53333333, 1.75      ],
+        [4.66666667, 3.625     ]])
+ Coordinates:
+   * unit     (unit) int64 32B 1 2 3 4
+   * 0        (0) float64 16B 0.25 0.75
+ Attributes:
+     occupancy:  [15. 16.]
+     bin_edges:  [array([0. , 0.5, 1. ])]
+     fs:         1.0
+     rates:      [0.9        2.06666667 2.2        4.26666667]}
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="03_core_methods.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Core methods</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="05_correlograms_isi.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Correlograms &amp; ISI</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-metadata-at-initialization">Adding metadata at initialization</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tsgroup"><code class="docutils literal notranslate"><span class="pre">TsGroup</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#intervalset"><code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#tsdframe"><code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#adding-metadata-after-initialization">Adding metadata after initialization</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#set-info"><code class="docutils literal notranslate"><span class="pre">set_info</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-dictionary-like-keys-square-brackets">Using dictionary-like keys (square brackets)</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-attribute-assignment">Using attribute assignment</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#allowed-data-types">Allowed data types</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#accessing-metadata">Accessing metadata</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#overwriting-metadata">Overwriting metadata</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#dropping-metadata">Dropping metadata</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#restricting-metadata">Restricting metadata</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-metadata-to-slice-objects">Using metadata to slice objects</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#groupby-using-metadata-to-group-objects"><code class="docutils literal notranslate"><span class="pre">groupby</span></code>: Using metadata to group objects</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#groupby-apply-applying-functions-to-object-groups"><code class="docutils literal notranslate"><span class="pre">groupby_apply</span></code>: Applying functions to object groups</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/user_guide/03_metadata.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2025, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">pynapple authors</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.10.2</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

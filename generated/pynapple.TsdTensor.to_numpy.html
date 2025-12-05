@@ -1,0 +1,852 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>pynapple.TsdTensor.to_numpy &#8212; pynapple 0.10.2 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_contributors.css?v=f079e67e" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=f2caec9a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=11e62b30"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=c57da192"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'generated/pynapple.TsdTensor.to_numpy';</script>
+    <link rel="icon" href="../_static/Pynapple_final_icon.png"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pynapple.TsdTensor.to_trial_tensor" href="pynapple.TsdTensor.to_trial_tensor.html" />
+    <link rel="prev" title="pynapple.TsdTensor.times" href="pynapple.TsdTensor.times.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.10.2" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.10.2 documentation - Home"/>
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.10.2 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About us
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.Tsd.html">pynapple.Tsd</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.__init__.html">pynapple.Tsd.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.as_array.html">pynapple.Tsd.as_array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.as_series.html">pynapple.Tsd.as_series</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.as_units.html">pynapple.Tsd.as_units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.bin_average.html">pynapple.Tsd.bin_average</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.convolve.html">pynapple.Tsd.convolve</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.copy.html">pynapple.Tsd.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.count.html">pynapple.Tsd.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.data.html">pynapple.Tsd.data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.decimate.html">pynapple.Tsd.decimate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.derivative.html">pynapple.Tsd.derivative</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.dropna.html">pynapple.Tsd.dropna</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.end_time.html">pynapple.Tsd.end_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.find_support.html">pynapple.Tsd.find_support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.get.html">pynapple.Tsd.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.get_slice.html">pynapple.Tsd.get_slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.in_interval.html">pynapple.Tsd.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.interpolate.html">pynapple.Tsd.interpolate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.restrict.html">pynapple.Tsd.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.save.html">pynapple.Tsd.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.smooth.html">pynapple.Tsd.smooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.start_time.html">pynapple.Tsd.start_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.threshold.html">pynapple.Tsd.threshold</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.time_diff.html">pynapple.Tsd.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.times.html">pynapple.Tsd.times</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.to_numpy.html">pynapple.Tsd.to_numpy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.to_trial_tensor.html">pynapple.Tsd.to_trial_tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.to_tsgroup.html">pynapple.Tsd.to_tsgroup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.value_from.html">pynapple.Tsd.value_from</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.TsdFrame.html">pynapple.TsdFrame</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.__init__.html">pynapple.TsdFrame.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.as_array.html">pynapple.TsdFrame.as_array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.as_dataframe.html">pynapple.TsdFrame.as_dataframe</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.as_units.html">pynapple.TsdFrame.as_units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.bin_average.html">pynapple.TsdFrame.bin_average</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.convolve.html">pynapple.TsdFrame.convolve</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.copy.html">pynapple.TsdFrame.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.count.html">pynapple.TsdFrame.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.data.html">pynapple.TsdFrame.data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.decimate.html">pynapple.TsdFrame.decimate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.derivative.html">pynapple.TsdFrame.derivative</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.drop_info.html">pynapple.TsdFrame.drop_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.dropna.html">pynapple.TsdFrame.dropna</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.end_time.html">pynapple.TsdFrame.end_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.find_support.html">pynapple.TsdFrame.find_support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.get.html">pynapple.TsdFrame.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.get_info.html">pynapple.TsdFrame.get_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.get_slice.html">pynapple.TsdFrame.get_slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.groupby.html">pynapple.TsdFrame.groupby</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.groupby_apply.html">pynapple.TsdFrame.groupby_apply</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.in_interval.html">pynapple.TsdFrame.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.interpolate.html">pynapple.TsdFrame.interpolate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.restrict.html">pynapple.TsdFrame.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.restrict_info.html">pynapple.TsdFrame.restrict_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.save.html">pynapple.TsdFrame.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.set_info.html">pynapple.TsdFrame.set_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.smooth.html">pynapple.TsdFrame.smooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.start_time.html">pynapple.TsdFrame.start_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.time_diff.html">pynapple.TsdFrame.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.times.html">pynapple.TsdFrame.times</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.to_numpy.html">pynapple.TsdFrame.to_numpy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.to_trial_tensor.html">pynapple.TsdFrame.to_trial_tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.value_from.html">pynapple.TsdFrame.value_from</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 current active has-children"><a class="reference internal" href="pynapple.TsdTensor.html">pynapple.TsdTensor</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.__init__.html">pynapple.TsdTensor.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.as_array.html">pynapple.TsdTensor.as_array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.bin_average.html">pynapple.TsdTensor.bin_average</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.convolve.html">pynapple.TsdTensor.convolve</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.copy.html">pynapple.TsdTensor.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.count.html">pynapple.TsdTensor.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.data.html">pynapple.TsdTensor.data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.decimate.html">pynapple.TsdTensor.decimate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.derivative.html">pynapple.TsdTensor.derivative</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.dropna.html">pynapple.TsdTensor.dropna</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.end_time.html">pynapple.TsdTensor.end_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.find_support.html">pynapple.TsdTensor.find_support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.get.html">pynapple.TsdTensor.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.get_slice.html">pynapple.TsdTensor.get_slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.in_interval.html">pynapple.TsdTensor.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.interpolate.html">pynapple.TsdTensor.interpolate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.restrict.html">pynapple.TsdTensor.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.save.html">pynapple.TsdTensor.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.smooth.html">pynapple.TsdTensor.smooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.start_time.html">pynapple.TsdTensor.start_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.time_diff.html">pynapple.TsdTensor.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.times.html">pynapple.TsdTensor.times</a></li>
+<li class="toctree-l2 current active"><a class="current reference internal" href="#">pynapple.TsdTensor.to_numpy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.to_trial_tensor.html">pynapple.TsdTensor.to_trial_tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.value_from.html">pynapple.TsdTensor.value_from</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.IntervalSet.html">pynapple.IntervalSet</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.__init__.html">pynapple.IntervalSet.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.as_dataframe.html">pynapple.IntervalSet.as_dataframe</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.as_units.html">pynapple.IntervalSet.as_units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.drop_info.html">pynapple.IntervalSet.drop_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.drop_long_intervals.html">pynapple.IntervalSet.drop_long_intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.drop_short_intervals.html">pynapple.IntervalSet.drop_short_intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.get_info.html">pynapple.IntervalSet.get_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.get_intervals_center.html">pynapple.IntervalSet.get_intervals_center</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.groupby.html">pynapple.IntervalSet.groupby</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.groupby_apply.html">pynapple.IntervalSet.groupby_apply</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.in_interval.html">pynapple.IntervalSet.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.intersect.html">pynapple.IntervalSet.intersect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.merge_close_intervals.html">pynapple.IntervalSet.merge_close_intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.restrict_info.html">pynapple.IntervalSet.restrict_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.save.html">pynapple.IntervalSet.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.set_diff.html">pynapple.IntervalSet.set_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.set_info.html">pynapple.IntervalSet.set_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.split.html">pynapple.IntervalSet.split</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.time_span.html">pynapple.IntervalSet.time_span</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.tot_length.html">pynapple.IntervalSet.tot_length</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.union.html">pynapple.IntervalSet.union</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.Ts.html">pynapple.Ts</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.__init__.html">pynapple.Ts.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.as_series.html">pynapple.Ts.as_series</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.as_units.html">pynapple.Ts.as_units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.copy.html">pynapple.Ts.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.count.html">pynapple.Ts.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.end_time.html">pynapple.Ts.end_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.fillna.html">pynapple.Ts.fillna</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.find_support.html">pynapple.Ts.find_support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.get.html">pynapple.Ts.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.get_slice.html">pynapple.Ts.get_slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.in_interval.html">pynapple.Ts.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.restrict.html">pynapple.Ts.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.save.html">pynapple.Ts.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.start_time.html">pynapple.Ts.start_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.time_diff.html">pynapple.Ts.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.times.html">pynapple.Ts.times</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.trial_count.html">pynapple.Ts.trial_count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.value_from.html">pynapple.Ts.value_from</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.TsGroup.html">pynapple.TsGroup</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.__init__.html">pynapple.TsGroup.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.clear.html">pynapple.TsGroup.clear</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.copy.html">pynapple.TsGroup.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.count.html">pynapple.TsGroup.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.drop_info.html">pynapple.TsGroup.drop_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.fromkeys.html">pynapple.TsGroup.fromkeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.get.html">pynapple.TsGroup.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.get_info.html">pynapple.TsGroup.get_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.getby_category.html">pynapple.TsGroup.getby_category</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.getby_intervals.html">pynapple.TsGroup.getby_intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.getby_threshold.html">pynapple.TsGroup.getby_threshold</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.groupby.html">pynapple.TsGroup.groupby</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.groupby_apply.html">pynapple.TsGroup.groupby_apply</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.items.html">pynapple.TsGroup.items</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.keys.html">pynapple.TsGroup.keys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.merge.html">pynapple.TsGroup.merge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.merge_group.html">pynapple.TsGroup.merge_group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.pop.html">pynapple.TsGroup.pop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.popitem.html">pynapple.TsGroup.popitem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.restrict.html">pynapple.TsGroup.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.restrict_info.html">pynapple.TsGroup.restrict_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.save.html">pynapple.TsGroup.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.set_info.html">pynapple.TsGroup.set_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.setdefault.html">pynapple.TsGroup.setdefault</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.time_diff.html">pynapple.TsGroup.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.to_tsd.html">pynapple.TsGroup.to_tsd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.trial_count.html">pynapple.TsGroup.trial_count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.update.html">pynapple.TsGroup.update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.value_from.html">pynapple.TsGroup.value_from</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.values.html">pynapple.TsGroup.values</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.io.NWBFile.html">pynapple.io.NWBFile</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.__init__.html">pynapple.io.NWBFile.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.clear.html">pynapple.io.NWBFile.clear</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.close.html">pynapple.io.NWBFile.close</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.copy.html">pynapple.io.NWBFile.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.fromkeys.html">pynapple.io.NWBFile.fromkeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.get.html">pynapple.io.NWBFile.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.items.html">pynapple.io.NWBFile.items</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.keys.html">pynapple.io.NWBFile.keys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.pop.html">pynapple.io.NWBFile.pop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.popitem.html">pynapple.io.NWBFile.popitem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.setdefault.html">pynapple.io.NWBFile.setdefault</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.update.html">pynapple.io.NWBFile.update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.values.html">pynapple.io.NWBFile.values</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.io.NPZFile.html">pynapple.io.NPZFile</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NPZFile.__init__.html">pynapple.io.NPZFile.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NPZFile.load.html">pynapple.io.NPZFile.load</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="pynapple.io.misc.html">pynapple.io.misc</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.io.folder.Folder.html">pynapple.io.folder.Folder</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.__init__.html">pynapple.io.folder.Folder.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.clear.html">pynapple.io.folder.Folder.clear</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.copy.html">pynapple.io.folder.Folder.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.doc.html">pynapple.io.folder.Folder.doc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.expand.html">pynapple.io.folder.Folder.expand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.fromkeys.html">pynapple.io.folder.Folder.fromkeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.get.html">pynapple.io.folder.Folder.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.info.html">pynapple.io.folder.Folder.info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.items.html">pynapple.io.folder.Folder.items</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.keys.html">pynapple.io.folder.Folder.keys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.load.html">pynapple.io.folder.Folder.load</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.metadata.html">pynapple.io.folder.Folder.metadata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.pop.html">pynapple.io.folder.Folder.pop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.popitem.html">pynapple.io.folder.Folder.popitem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.save.html">pynapple.io.folder.Folder.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.setdefault.html">pynapple.io.folder.Folder.setdefault</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.update.html">pynapple.io.folder.Folder.update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.values.html">pynapple.io.folder.Folder.values</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.correlograms.html">pynapple.process.correlograms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.decoding.html">pynapple.process.decoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.filtering.html">pynapple.process.filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.perievent.html">pynapple.process.perievent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.randomize.html">pynapple.process.randomize</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.spectrum.html">pynapple.process.spectrum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.tuning_curves.html">pynapple.process.tuning_curves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.wavelets.html">pynapple.process.wavelets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.warping.html">pynapple.process.warping</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../api.html" class="nav-link">API reference</a></li>
+    
+    
+    <li class="breadcrumb-item"><a href="pynapple.TsdTensor.html" class="nav-link">pynapple.TsdTensor</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pynapple.TsdTensor.to_numpy</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pynapple-tsdtensor-to-numpy">
+<h1>pynapple.TsdTensor.to_numpy<a class="headerlink" href="#pynapple-tsdtensor-to-numpy" title="Link to this heading">#</a></h1>
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.TsdTensor.to_numpy">
+<span class="sig-prename descclassname"><span class="pre">TsdTensor.</span></span><span class="sig-name descname"><span class="pre">to_numpy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pynapple.TsdTensor.to_numpy" title="Link to this definition">#</a></dt>
+<dd><p>Return the data as a numpy.ndarray.</p>
+<p>Mostly useful for matplotlib plotting when calling <cite>plot(tsd)</cite>.</p>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="pynapple.TsdTensor.times.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">pynapple.TsdTensor.times</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="pynapple.TsdTensor.to_trial_tensor.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">pynapple.TsdTensor.to_trial_tensor</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.TsdTensor.to_numpy"><code class="docutils literal notranslate"><span class="pre">TsdTensor.to_numpy()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/generated/pynapple.TsdTensor.to_numpy.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2025, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">pynapple authors</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.10.2</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

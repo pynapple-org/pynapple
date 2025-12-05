@@ -1,0 +1,6 @@
+pynapple.TsdFrame.end\_time
+===========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.end_time

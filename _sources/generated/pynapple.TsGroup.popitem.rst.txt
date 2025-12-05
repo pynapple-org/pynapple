@@ -1,0 +1,6 @@
+pynapple.TsGroup.popitem
+========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.popitem

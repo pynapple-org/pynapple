@@ -1,0 +1,6 @@
+pynapple.TsdFrame.time\_diff
+============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.time_diff

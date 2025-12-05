@@ -1,0 +1,1657 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>pynapple.Ts &#8212; pynapple 0.10.2 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_contributors.css?v=f079e67e" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=f2caec9a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=11e62b30"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=c57da192"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'generated/pynapple.Ts';</script>
+    <link rel="icon" href="../_static/Pynapple_final_icon.png"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pynapple.Ts.__init__" href="pynapple.Ts.__init__.html" />
+    <link rel="prev" title="pynapple.IntervalSet.union" href="pynapple.IntervalSet.union.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.10.2" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.10.2 documentation - Home"/>
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.10.2 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About us
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.Tsd.html">pynapple.Tsd</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.__init__.html">pynapple.Tsd.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.as_array.html">pynapple.Tsd.as_array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.as_series.html">pynapple.Tsd.as_series</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.as_units.html">pynapple.Tsd.as_units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.bin_average.html">pynapple.Tsd.bin_average</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.convolve.html">pynapple.Tsd.convolve</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.copy.html">pynapple.Tsd.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.count.html">pynapple.Tsd.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.data.html">pynapple.Tsd.data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.decimate.html">pynapple.Tsd.decimate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.derivative.html">pynapple.Tsd.derivative</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.dropna.html">pynapple.Tsd.dropna</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.end_time.html">pynapple.Tsd.end_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.find_support.html">pynapple.Tsd.find_support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.get.html">pynapple.Tsd.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.get_slice.html">pynapple.Tsd.get_slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.in_interval.html">pynapple.Tsd.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.interpolate.html">pynapple.Tsd.interpolate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.restrict.html">pynapple.Tsd.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.save.html">pynapple.Tsd.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.smooth.html">pynapple.Tsd.smooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.start_time.html">pynapple.Tsd.start_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.threshold.html">pynapple.Tsd.threshold</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.time_diff.html">pynapple.Tsd.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.times.html">pynapple.Tsd.times</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.to_numpy.html">pynapple.Tsd.to_numpy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.to_trial_tensor.html">pynapple.Tsd.to_trial_tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.to_tsgroup.html">pynapple.Tsd.to_tsgroup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.value_from.html">pynapple.Tsd.value_from</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.TsdFrame.html">pynapple.TsdFrame</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.__init__.html">pynapple.TsdFrame.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.as_array.html">pynapple.TsdFrame.as_array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.as_dataframe.html">pynapple.TsdFrame.as_dataframe</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.as_units.html">pynapple.TsdFrame.as_units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.bin_average.html">pynapple.TsdFrame.bin_average</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.convolve.html">pynapple.TsdFrame.convolve</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.copy.html">pynapple.TsdFrame.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.count.html">pynapple.TsdFrame.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.data.html">pynapple.TsdFrame.data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.decimate.html">pynapple.TsdFrame.decimate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.derivative.html">pynapple.TsdFrame.derivative</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.drop_info.html">pynapple.TsdFrame.drop_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.dropna.html">pynapple.TsdFrame.dropna</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.end_time.html">pynapple.TsdFrame.end_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.find_support.html">pynapple.TsdFrame.find_support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.get.html">pynapple.TsdFrame.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.get_info.html">pynapple.TsdFrame.get_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.get_slice.html">pynapple.TsdFrame.get_slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.groupby.html">pynapple.TsdFrame.groupby</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.groupby_apply.html">pynapple.TsdFrame.groupby_apply</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.in_interval.html">pynapple.TsdFrame.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.interpolate.html">pynapple.TsdFrame.interpolate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.restrict.html">pynapple.TsdFrame.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.restrict_info.html">pynapple.TsdFrame.restrict_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.save.html">pynapple.TsdFrame.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.set_info.html">pynapple.TsdFrame.set_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.smooth.html">pynapple.TsdFrame.smooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.start_time.html">pynapple.TsdFrame.start_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.time_diff.html">pynapple.TsdFrame.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.times.html">pynapple.TsdFrame.times</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.to_numpy.html">pynapple.TsdFrame.to_numpy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.to_trial_tensor.html">pynapple.TsdFrame.to_trial_tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.value_from.html">pynapple.TsdFrame.value_from</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.TsdTensor.html">pynapple.TsdTensor</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.__init__.html">pynapple.TsdTensor.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.as_array.html">pynapple.TsdTensor.as_array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.bin_average.html">pynapple.TsdTensor.bin_average</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.convolve.html">pynapple.TsdTensor.convolve</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.copy.html">pynapple.TsdTensor.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.count.html">pynapple.TsdTensor.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.data.html">pynapple.TsdTensor.data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.decimate.html">pynapple.TsdTensor.decimate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.derivative.html">pynapple.TsdTensor.derivative</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.dropna.html">pynapple.TsdTensor.dropna</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.end_time.html">pynapple.TsdTensor.end_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.find_support.html">pynapple.TsdTensor.find_support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.get.html">pynapple.TsdTensor.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.get_slice.html">pynapple.TsdTensor.get_slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.in_interval.html">pynapple.TsdTensor.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.interpolate.html">pynapple.TsdTensor.interpolate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.restrict.html">pynapple.TsdTensor.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.save.html">pynapple.TsdTensor.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.smooth.html">pynapple.TsdTensor.smooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.start_time.html">pynapple.TsdTensor.start_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.time_diff.html">pynapple.TsdTensor.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.times.html">pynapple.TsdTensor.times</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.to_numpy.html">pynapple.TsdTensor.to_numpy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.to_trial_tensor.html">pynapple.TsdTensor.to_trial_tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.value_from.html">pynapple.TsdTensor.value_from</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.IntervalSet.html">pynapple.IntervalSet</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.__init__.html">pynapple.IntervalSet.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.as_dataframe.html">pynapple.IntervalSet.as_dataframe</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.as_units.html">pynapple.IntervalSet.as_units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.drop_info.html">pynapple.IntervalSet.drop_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.drop_long_intervals.html">pynapple.IntervalSet.drop_long_intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.drop_short_intervals.html">pynapple.IntervalSet.drop_short_intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.get_info.html">pynapple.IntervalSet.get_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.get_intervals_center.html">pynapple.IntervalSet.get_intervals_center</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.groupby.html">pynapple.IntervalSet.groupby</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.groupby_apply.html">pynapple.IntervalSet.groupby_apply</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.in_interval.html">pynapple.IntervalSet.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.intersect.html">pynapple.IntervalSet.intersect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.merge_close_intervals.html">pynapple.IntervalSet.merge_close_intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.restrict_info.html">pynapple.IntervalSet.restrict_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.save.html">pynapple.IntervalSet.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.set_diff.html">pynapple.IntervalSet.set_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.set_info.html">pynapple.IntervalSet.set_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.split.html">pynapple.IntervalSet.split</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.time_span.html">pynapple.IntervalSet.time_span</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.tot_length.html">pynapple.IntervalSet.tot_length</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.union.html">pynapple.IntervalSet.union</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">pynapple.Ts</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.__init__.html">pynapple.Ts.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.as_series.html">pynapple.Ts.as_series</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.as_units.html">pynapple.Ts.as_units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.copy.html">pynapple.Ts.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.count.html">pynapple.Ts.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.end_time.html">pynapple.Ts.end_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.fillna.html">pynapple.Ts.fillna</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.find_support.html">pynapple.Ts.find_support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.get.html">pynapple.Ts.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.get_slice.html">pynapple.Ts.get_slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.in_interval.html">pynapple.Ts.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.restrict.html">pynapple.Ts.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.save.html">pynapple.Ts.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.start_time.html">pynapple.Ts.start_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.time_diff.html">pynapple.Ts.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.times.html">pynapple.Ts.times</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.trial_count.html">pynapple.Ts.trial_count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.value_from.html">pynapple.Ts.value_from</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.TsGroup.html">pynapple.TsGroup</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.__init__.html">pynapple.TsGroup.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.clear.html">pynapple.TsGroup.clear</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.copy.html">pynapple.TsGroup.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.count.html">pynapple.TsGroup.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.drop_info.html">pynapple.TsGroup.drop_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.fromkeys.html">pynapple.TsGroup.fromkeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.get.html">pynapple.TsGroup.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.get_info.html">pynapple.TsGroup.get_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.getby_category.html">pynapple.TsGroup.getby_category</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.getby_intervals.html">pynapple.TsGroup.getby_intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.getby_threshold.html">pynapple.TsGroup.getby_threshold</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.groupby.html">pynapple.TsGroup.groupby</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.groupby_apply.html">pynapple.TsGroup.groupby_apply</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.items.html">pynapple.TsGroup.items</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.keys.html">pynapple.TsGroup.keys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.merge.html">pynapple.TsGroup.merge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.merge_group.html">pynapple.TsGroup.merge_group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.pop.html">pynapple.TsGroup.pop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.popitem.html">pynapple.TsGroup.popitem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.restrict.html">pynapple.TsGroup.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.restrict_info.html">pynapple.TsGroup.restrict_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.save.html">pynapple.TsGroup.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.set_info.html">pynapple.TsGroup.set_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.setdefault.html">pynapple.TsGroup.setdefault</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.time_diff.html">pynapple.TsGroup.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.to_tsd.html">pynapple.TsGroup.to_tsd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.trial_count.html">pynapple.TsGroup.trial_count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.update.html">pynapple.TsGroup.update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.value_from.html">pynapple.TsGroup.value_from</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.values.html">pynapple.TsGroup.values</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.io.NWBFile.html">pynapple.io.NWBFile</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.__init__.html">pynapple.io.NWBFile.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.clear.html">pynapple.io.NWBFile.clear</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.close.html">pynapple.io.NWBFile.close</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.copy.html">pynapple.io.NWBFile.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.fromkeys.html">pynapple.io.NWBFile.fromkeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.get.html">pynapple.io.NWBFile.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.items.html">pynapple.io.NWBFile.items</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.keys.html">pynapple.io.NWBFile.keys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.pop.html">pynapple.io.NWBFile.pop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.popitem.html">pynapple.io.NWBFile.popitem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.setdefault.html">pynapple.io.NWBFile.setdefault</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.update.html">pynapple.io.NWBFile.update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.values.html">pynapple.io.NWBFile.values</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.io.NPZFile.html">pynapple.io.NPZFile</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NPZFile.__init__.html">pynapple.io.NPZFile.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NPZFile.load.html">pynapple.io.NPZFile.load</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="pynapple.io.misc.html">pynapple.io.misc</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.io.folder.Folder.html">pynapple.io.folder.Folder</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.__init__.html">pynapple.io.folder.Folder.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.clear.html">pynapple.io.folder.Folder.clear</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.copy.html">pynapple.io.folder.Folder.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.doc.html">pynapple.io.folder.Folder.doc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.expand.html">pynapple.io.folder.Folder.expand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.fromkeys.html">pynapple.io.folder.Folder.fromkeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.get.html">pynapple.io.folder.Folder.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.info.html">pynapple.io.folder.Folder.info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.items.html">pynapple.io.folder.Folder.items</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.keys.html">pynapple.io.folder.Folder.keys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.load.html">pynapple.io.folder.Folder.load</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.metadata.html">pynapple.io.folder.Folder.metadata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.pop.html">pynapple.io.folder.Folder.pop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.popitem.html">pynapple.io.folder.Folder.popitem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.save.html">pynapple.io.folder.Folder.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.setdefault.html">pynapple.io.folder.Folder.setdefault</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.update.html">pynapple.io.folder.Folder.update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.values.html">pynapple.io.folder.Folder.values</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.correlograms.html">pynapple.process.correlograms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.decoding.html">pynapple.process.decoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.filtering.html">pynapple.process.filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.perievent.html">pynapple.process.perievent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.randomize.html">pynapple.process.randomize</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.spectrum.html">pynapple.process.spectrum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.tuning_curves.html">pynapple.process.tuning_curves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.wavelets.html">pynapple.process.wavelets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.warping.html">pynapple.process.warping</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../api.html" class="nav-link">API reference</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pynapple.Ts</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pynapple-ts">
+<h1>pynapple.Ts<a class="headerlink" href="#pynapple-ts" title="Link to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="pynapple.Ts">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pynapple.</span></span><span class="sig-name descname"><span class="pre">Ts</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_support</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/time_series.html#Ts"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.Ts" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <code class="xref py py-class docutils literal notranslate"><span class="pre">_Base</span></code></p>
+<p>Timestamps only object for a time series with only time index.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pynapple.Ts.rate">
+<span class="sig-name descname"><span class="pre">rate</span></span><a class="headerlink" href="#pynapple.Ts.rate" title="Link to this definition">#</a></dt>
+<dd><p>Frequency of the time series (Hz) computed over the time support</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pynapple.Ts.time_support">
+<span class="sig-name descname"><span class="pre">time_support</span></span><a class="headerlink" href="#pynapple.Ts.time_support" title="Link to this definition">#</a></dt>
+<dd><p>The time support of the time series</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pynapple.IntervalSet.html#pynapple.IntervalSet" title="pynapple.IntervalSet">IntervalSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">t</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_support</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/time_series.html#Ts.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.Ts.__init__" title="Link to this definition">#</a></dt>
+<dd><p>Ts Initializer</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>t</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em> or </em><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.Series.html#pandas.Series" title="(in pandas v2.3.3)"><em>pandas.Series</em></a>) – An object transformable in timestamps, or a pandas.Series equivalent (if d is None)</p></li>
+<li><p><strong>time_units</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – The time units in which times are specified (‘us’, ‘ms’, ‘s’ [default])</p></li>
+<li><p><strong>time_support</strong> (<a class="reference internal" href="pynapple.IntervalSet.html#pynapple.IntervalSet" title="pynapple.IntervalSet"><em>IntervalSet</em></a><em>, </em><em>optional</em>) – The time support of the Ts object</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<p class="rubric">Methods</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.Ts.__init__.html#pynapple.Ts.__init__" title="pynapple.Ts.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(t[, time_units, time_support])</p></td>
+<td><p>Ts Initializer</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.Ts.as_series.html#pynapple.Ts.as_series" title="pynapple.Ts.as_series"><code class="xref py py-obj docutils literal notranslate"><span class="pre">as_series</span></code></a>()</p></td>
+<td><p>Convert the Ts/Tsd object to a pandas.Series object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.Ts.as_units.html#pynapple.Ts.as_units" title="pynapple.Ts.as_units"><code class="xref py py-obj docutils literal notranslate"><span class="pre">as_units</span></code></a>([units])</p></td>
+<td><p>Returns a pandas Series with time expressed in the desired unit.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.Ts.copy.html#pynapple.Ts.copy" title="pynapple.Ts.copy"><code class="xref py py-obj docutils literal notranslate"><span class="pre">copy</span></code></a>()</p></td>
+<td><p>Copy the data, index and time support</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.Ts.count.html#pynapple.Ts.count" title="pynapple.Ts.count"><code class="xref py py-obj docutils literal notranslate"><span class="pre">count</span></code></a>([bin_size, ep, time_units, dtype])</p></td>
+<td><p>Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.Ts.end_time.html#pynapple.Ts.end_time" title="pynapple.Ts.end_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">end_time</span></code></a>([units])</p></td>
+<td><p>The last time index in the time series object</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.Ts.fillna.html#pynapple.Ts.fillna" title="pynapple.Ts.fillna"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fillna</span></code></a>(value)</p></td>
+<td><p>Similar to pandas fillna function.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.Ts.find_support.html#pynapple.Ts.find_support" title="pynapple.Ts.find_support"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_support</span></code></a>(min_gap[, time_units])</p></td>
+<td><p>find the smallest (to a min_gap resolution) IntervalSet containing all the times in the Tsd</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.Ts.get.html#pynapple.Ts.get" title="pynapple.Ts.get"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get</span></code></a>(start[, end, time_units])</p></td>
+<td><p>Slice the time series from <cite>start</cite> to <cite>end</cite> such that all the timestamps satisfy <cite>start&lt;=t&lt;=end</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.Ts.get_slice.html#pynapple.Ts.get_slice" title="pynapple.Ts.get_slice"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_slice</span></code></a>(start[, end, time_unit])</p></td>
+<td><p>Get a slice object from the time series data based on the start and end values such that all the timestamps satisfy <cite>start&lt;=t&lt;=end</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.Ts.in_interval.html#pynapple.Ts.in_interval" title="pynapple.Ts.in_interval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">in_interval</span></code></a>(iset)</p></td>
+<td><p>Check which timestamps of the time series are within the intervals defined by an IntervalSet object</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.Ts.restrict.html#pynapple.Ts.restrict" title="pynapple.Ts.restrict"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restrict</span></code></a>(iset)</p></td>
+<td><p>Restricts a time series object to a set of time intervals delimited by an IntervalSet object</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.Ts.save.html#pynapple.Ts.save" title="pynapple.Ts.save"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save</span></code></a>(filename)</p></td>
+<td><p>Save Ts object in npz format.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.Ts.start_time.html#pynapple.Ts.start_time" title="pynapple.Ts.start_time"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start_time</span></code></a>([units])</p></td>
+<td><p>The first time index in the time series object</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.Ts.time_diff.html#pynapple.Ts.time_diff" title="pynapple.Ts.time_diff"><code class="xref py py-obj docutils literal notranslate"><span class="pre">time_diff</span></code></a>([align, epochs])</p></td>
+<td><p>Computes the differences between subsequent timestamps.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.Ts.times.html#pynapple.Ts.times" title="pynapple.Ts.times"><code class="xref py py-obj docutils literal notranslate"><span class="pre">times</span></code></a>([units])</p></td>
+<td><p>The time index of the object, returned as np.double in the desired time units.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.Ts.trial_count.html#pynapple.Ts.trial_count" title="pynapple.Ts.trial_count"><code class="xref py py-obj docutils literal notranslate"><span class="pre">trial_count</span></code></a>(ep, bin_size[, align, ...])</p></td>
+<td><p>Return trial-based count tensor from an IntervalSet object.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.Ts.value_from.html#pynapple.Ts.value_from" title="pynapple.Ts.value_from"><code class="xref py py-obj docutils literal notranslate"><span class="pre">value_from</span></code></a>(data[, ep, mode])</p></td>
+<td><p>Replace the value with the closest value from Tsd/TsdFrame/TsdTensor argument</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Attributes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pynapple.Ts.end" title="pynapple.Ts.end"><code class="xref py py-obj docutils literal notranslate"><span class="pre">end</span></code></a></p></td>
+<td><p>The last time index in the time series</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pynapple.Ts.shape" title="pynapple.Ts.shape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shape</span></code></a></p></td>
+<td><p>The shape of the time series</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pynapple.Ts.start" title="pynapple.Ts.start"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start</span></code></a></p></td>
+<td><p>The first time index in the time series</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pynapple.Ts.t" title="pynapple.Ts.t"><code class="xref py py-obj docutils literal notranslate"><span class="pre">t</span></code></a></p></td>
+<td><p>The time index of the time series</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pynapple.Ts.index" title="pynapple.Ts.index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">index</span></code></a></p></td>
+<td><p>The time index of the time series</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id0" title="pynapple.Ts.rate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rate</span></code></a></p></td>
+<td><p>Frequency of the time series (Hz) computed over the time support</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id1" title="pynapple.Ts.time_support"><code class="xref py py-obj docutils literal notranslate"><span class="pre">time_support</span></code></a></p></td>
+<td><p>The time support of the time series</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.as_series">
+<span class="sig-name descname"><span class="pre">as_series</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/time_series.html#Ts.as_series"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.Ts.as_series" title="Link to this definition">#</a></dt>
+<dd><p>Convert the Ts/Tsd object to a pandas.Series object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>out</strong> – _</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.Series.html#pandas.Series" title="(in pandas v2.3.3)">pandas.Series</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.as_units">
+<span class="sig-name descname"><span class="pre">as_units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/time_series.html#Ts.as_units"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.Ts.as_units" title="Link to this definition">#</a></dt>
+<dd><p>Returns a pandas Series with time expressed in the desired unit.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>units</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – (‘us’, ‘ms’, ‘s’ [default])</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>the series object with adjusted times</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.Series.html#pandas.Series" title="(in pandas v2.3.3)">pandas.Series</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.copy">
+<span class="sig-name descname"><span class="pre">copy</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#pynapple.Ts.copy" title="Link to this definition">#</a></dt>
+<dd><p>Copy the data, index and time support</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.count">
+<span class="sig-name descname"><span class="pre">count</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">bin_size</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dtype</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/time_series.html#Ts.count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.Ts.count" title="Link to this definition">#</a></dt>
+<dd><p>Count occurences of events within bin_size or within a set of bins defined as an IntervalSet.
+You can call this function in multiple ways :</p>
+<p>1. <em>tsd.count(bin_size=1, time_units = ‘ms’)</em>
+-&gt; Count occurence of events within a 1 ms bin defined on the time support of the object.</p>
+<p>2. <em>tsd.count(1, ep=my_epochs)</em>
+-&gt; Count occurent of events within a 1 second bin defined on the IntervalSet my_epochs.</p>
+<p>3. <em>tsd.count(ep=my_bins)</em>
+-&gt; Count occurent of events within each epoch of the intervalSet object my_bins</p>
+<p>4. <em>tsd.count()</em>
+-&gt; Count occurent of events within each epoch of the time support.</p>
+<p>bin_size should be seconds unless specified.
+If bin_size is used and no epochs is passed, the data will be binned based on the time support of the object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>bin_size</strong> (<em>None</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – The bin size (default is second)</p></li>
+<li><p><strong>ep</strong> (<em>None</em><em> or </em><a class="reference internal" href="pynapple.IntervalSet.html#pynapple.IntervalSet" title="pynapple.IntervalSet"><em>IntervalSet</em></a><em>, </em><em>optional</em>) – IntervalSet to restrict the operation</p></li>
+<li><p><strong>time_units</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Time units of bin size (‘us’, ‘ms’, ‘s’ [default])</p></li>
+<li><p><strong>dtype</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#type" title="(in Python v3.14)"><em>type</em></a><em>, </em><em>optional</em>) – Data type for the count. Default is np.int64.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – A Tsd object indexed by the center of the bins.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pynapple.Tsd.html#pynapple.Tsd" title="pynapple.Tsd">Tsd</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>This example shows how to count timestamps within bins of 0.1 second.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span><span class="p">;</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">100</span><span class="p">)))</span> <span class="c1"># random times</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span>
+<span class="go">Time (s)</span>
+<span class="go">1.0</span>
+<span class="go">13.0</span>
+<span class="go">20.0</span>
+<span class="go">21.0</span>
+<span class="go">34.0</span>
+<span class="go">58.0</span>
+<span class="go">71.0</span>
+<span class="go">...</span>
+<span class="go">897.0</span>
+<span class="go">931.0</span>
+<span class="go">942.0</span>
+<span class="go">955.0</span>
+<span class="go">957.0</span>
+<span class="go">975.0</span>
+<span class="go">shape: 94</span>
+</pre></div>
+</div>
+<p>ts is a timestamp object.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span> <span class="n">time_units</span> <span class="o">=</span> <span class="s1">&#39;s&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end</span>
+<span class="go">      0        0    500</span>
+<span class="go">shape: (1, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>ep is an IntervalSet object defining the epochs.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">bincount</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="mf">10.0</span><span class="p">,</span> <span class="n">ep</span><span class="o">=</span><span class="n">ep</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bincount</span>
+<span class="go">Time (s)</span>
+<span class="go">----------  --</span>
+<span class="go">5.0          1</span>
+<span class="go">15.0         1</span>
+<span class="go">25.0         2</span>
+<span class="go">35.0         1</span>
+<span class="go">45.0         0</span>
+<span class="go">55.0         1</span>
+<span class="go">...</span>
+<span class="go">445.0        0</span>
+<span class="go">455.0        3</span>
+<span class="go">465.0        1</span>
+<span class="go">475.0        3</span>
+<span class="go">485.0        1</span>
+<span class="go">495.0        1</span>
+<span class="go">dtype: int64, shape: (50,)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">bincount</span><span class="o">.</span><span class="n">time_support</span>
+<span class="go">  index    start    end</span>
+<span class="go">      0        0    500</span>
+<span class="go">shape: (1, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>bincount automatically inherits ep as time support.</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pynapple.Ts.end">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">end</span></span><a class="headerlink" href="#pynapple.Ts.end" title="Link to this definition">#</a></dt>
+<dd><p>The last time index in the time series</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.end_time">
+<span class="sig-name descname"><span class="pre">end_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pynapple.Ts.end_time" title="Link to this definition">#</a></dt>
+<dd><p>The last time index in the time series object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>units</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – (‘us’, ‘ms’, ‘s’ [default])</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – _</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.float64</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.fillna">
+<span class="sig-name descname"><span class="pre">fillna</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/time_series.html#Ts.fillna"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.Ts.fillna" title="Link to this definition">#</a></dt>
+<dd><p>Similar to pandas fillna function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>value</strong> (<em>Number</em>) – Value for filling</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="pynapple.Tsd.html#pynapple.Tsd" title="pynapple.Tsd">Tsd</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.find_support">
+<span class="sig-name descname"><span class="pre">find_support</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">min_gap</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pynapple.Ts.find_support" title="Link to this definition">#</a></dt>
+<dd><p>find the smallest (to a min_gap resolution) IntervalSet containing all the times in the Tsd</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>min_gap</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – minimal interval between timestamps</p></li>
+<li><p><strong>time_units</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Time units of min gap</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Description</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pynapple.IntervalSet.html#pynapple.IntervalSet" title="pynapple.IntervalSet">IntervalSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.get">
+<span class="sig-name descname"><span class="pre">get</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pynapple.Ts.get" title="Link to this definition">#</a></dt>
+<dd><p>Slice the time series from <cite>start</cite> to <cite>end</cite> such that all the timestamps satisfy <cite>start&lt;=t&lt;=end</cite>.
+If <cite>end</cite> is None, only the timepoint closest to <cite>start</cite> is returned.</p>
+<p>By default, the time support doesn’t change. If you want to change the time support, use the <cite>restrict</cite> function.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – The start (or closest time point if <cite>end</cite> is None)</p></li>
+<li><p><strong>end</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> or </em><em>None</em>) – The end</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.get_slice">
+<span class="sig-name descname"><span class="pre">get_slice</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/time_series.html#Ts.get_slice"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.Ts.get_slice" title="Link to this definition">#</a></dt>
+<dd><p>Get a slice object from the time series data based on the start and end values such that all the timestamps satisfy <cite>start&lt;=t&lt;=end</cite>.
+If <cite>end</cite> is None, only the timepoint closest to <cite>start</cite> is returned.</p>
+<p>By default, the time support doesn’t change. If you want to change the time support, use the <cite>restrict</cite> function.</p>
+<p>This function is equivalent of calling the <cite>get</cite> method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – The starting value for the slice.</p></li>
+<li><p><strong>end</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – The ending value for the slice. Defaults to None.</p></li>
+<li><p><strong>time_unit</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – The time unit for the start and end values. Defaults to “s” (seconds).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>slice</strong> – A slice determining the start and end indices, with unit step
+Slicing the array will be equivalent to calling get: <cite>ts[s].t == ts.get(start, end).t</cite> with <cite>s</cite> being the slice object.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#slice" title="(in Python v3.14)">slice</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – <ul class="simple">
+<li><p>If start or end is not a number.
+    - If start is greater than end.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+</pre></div>
+</div>
+<p>Slice over a range:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span><span class="o">.</span><span class="n">get_slice</span><span class="p">(</span><span class="mf">1.2</span><span class="p">,</span> <span class="mf">2.6</span><span class="p">)</span>
+<span class="go">slice(np.int64(2), np.int64(3), None)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span><span class="o">.</span><span class="n">get_slice</span><span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">)</span>
+<span class="go">slice(np.int64(1), np.int64(3), None)</span>
+</pre></div>
+</div>
+<p>Slice a single value:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span><span class="o">.</span><span class="n">get_slice</span><span class="p">(</span><span class="mf">1.2</span><span class="p">)</span>
+<span class="go">slice(np.int64(1), np.int64(2), None)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span><span class="o">.</span><span class="n">get_slice</span><span class="p">(</span><span class="mf">2.0</span><span class="p">)</span>
+<span class="go">slice(np.int64(2), np.int64(3), None)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.in_interval">
+<span class="sig-name descname"><span class="pre">in_interval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/time_series.html#Ts.in_interval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.Ts.in_interval" title="Link to this definition">#</a></dt>
+<dd><p>Check which timestamps of the time series are within the intervals defined by an IntervalSet object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>iset</strong> (<a class="reference internal" href="pynapple.IntervalSet.html#pynapple.IntervalSet" title="pynapple.IntervalSet"><em>IntervalSet</em></a>) – the IntervalSet object</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A Tsd of indicating which timestamps are within the intervals</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pynapple.Tsd.html#pynapple.Tsd" title="pynapple.Tsd">Tsd</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">100</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span><span class="o">.</span><span class="n">in_interval</span><span class="p">(</span><span class="n">ep</span><span class="p">)</span>
+<span class="go">Time (s)</span>
+<span class="go">----------  --</span>
+<span class="go">0.0          1</span>
+<span class="go">1.0          1</span>
+<span class="go">2.0          1</span>
+<span class="go">3.0          1</span>
+<span class="go">4.0          1</span>
+<span class="go">5.0          1</span>
+<span class="go">6.0          1</span>
+<span class="go">...</span>
+<span class="go">93.0         0</span>
+<span class="go">94.0         0</span>
+<span class="go">95.0         0</span>
+<span class="go">96.0         0</span>
+<span class="go">97.0         0</span>
+<span class="go">98.0         0</span>
+<span class="go">99.0         0</span>
+<span class="go">dtype: bool, shape: (100,)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pynapple.Ts.index">
+<span class="sig-name descname"><span class="pre">index</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">TsIndex</span></em><a class="headerlink" href="#pynapple.Ts.index" title="Link to this definition">#</a></dt>
+<dd><p>The time index of the time series</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">rate</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><span class="pre">float</span></a></em><a class="headerlink" href="#id0" title="Link to this definition">#</a></dt>
+<dd><p>Frequency of the time series (Hz) computed over the time support</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.restrict">
+<span class="sig-name descname"><span class="pre">restrict</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">iset</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/time_series.html#Ts.restrict"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.Ts.restrict" title="Link to this definition">#</a></dt>
+<dd><p>Restricts a time series object to a set of time intervals delimited by an IntervalSet object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>iset</strong> (<a class="reference internal" href="pynapple.IntervalSet.html#pynapple.IntervalSet" title="pynapple.IntervalSet"><em>IntervalSet</em></a>) – the IntervalSet object</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Tsd object restricted to ep</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pynapple.Ts" title="pynapple.Ts">Ts</a>, <a class="reference internal" href="pynapple.Tsd.html#pynapple.Tsd" title="pynapple.Tsd">Tsd</a>, <a class="reference internal" href="pynapple.TsdFrame.html#pynapple.TsdFrame" title="pynapple.TsdFrame">TsdFrame</a> or <a class="reference internal" href="pynapple.TsdTensor.html#pynapple.TsdTensor" title="pynapple.TsdTensor">TsdTensor</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span><span class="p">;</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">100</span><span class="p">)))</span> <span class="c1"># random times</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts_before</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts_before</span>
+<span class="go">Time (s)</span>
+<span class="go">1.0</span>
+<span class="go">13.0</span>
+<span class="go">20.0</span>
+<span class="go">21.0</span>
+<span class="go">34.0</span>
+<span class="go">58.0</span>
+<span class="go">71.0</span>
+<span class="go">...</span>
+<span class="go">897.0</span>
+<span class="go">931.0</span>
+<span class="go">942.0</span>
+<span class="go">955.0</span>
+<span class="go">957.0</span>
+<span class="go">975.0</span>
+<span class="go">shape: 94</span>
+</pre></div>
+</div>
+<p>ts_before is a timestamp object.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span> <span class="n">time_units</span> <span class="o">=</span> <span class="s1">&#39;s&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end</span>
+<span class="go">      0        0    500</span>
+<span class="go">shape: (1, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>ep is an IntervalSet object defining the epochs.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ts_after</span> <span class="o">=</span> <span class="n">ts_before</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">ep</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts_after</span>
+<span class="go">Time (s)</span>
+<span class="go">1.0</span>
+<span class="go">13.0</span>
+<span class="go">20.0</span>
+<span class="go">21.0</span>
+<span class="go">34.0</span>
+<span class="go">58.0</span>
+<span class="go">...</span>
+<span class="go">466.0</span>
+<span class="go">474.0</span>
+<span class="go">475.0</span>
+<span class="go">476.0</span>
+<span class="go">484.0</span>
+<span class="go">491.0</span>
+<span class="go">shape: 53</span>
+</pre></div>
+</div>
+<p>ts_after is a timestamp object restricted to the epochs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/time_series.html#Ts.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.Ts.save" title="Link to this definition">#</a></dt>
+<dd><p>Save Ts object in npz format. The file will contain the timestamps and
+the time support.</p>
+<p>The main purpose of this function is to save small/medium sized timestamps
+object.</p>
+<p>You can load the object with <cite>nap.load_file</cite>. Keys are ‘t’, ‘start’ and ‘end’ and ‘type’.
+See the example below.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The filename</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.</span><span class="p">,</span> <span class="mf">1.</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;my_path/my_ts.npz&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To load you file, you can use the <cite>nap.load_file</cite> function :</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;my_path/my_ts.npz&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span>
+<span class="go">Time (s)</span>
+<span class="go">0.0</span>
+<span class="go">1.0</span>
+<span class="go">1.5</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.14)"><strong>RuntimeError</strong></a> – If filename is not str, path does not exist or filename is a directory.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pynapple.Ts.shape">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#pynapple.Ts.shape" title="Link to this definition">#</a></dt>
+<dd><p>The shape of the time series</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pynapple.Ts.start">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">start</span></span><a class="headerlink" href="#pynapple.Ts.start" title="Link to this definition">#</a></dt>
+<dd><p>The first time index in the time series</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.start_time">
+<span class="sig-name descname"><span class="pre">start_time</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pynapple.Ts.start_time" title="Link to this definition">#</a></dt>
+<dd><p>The first time index in the time series object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>units</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – (‘us’, ‘ms’, ‘s’ [default])</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – _</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>numpy.float64</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pynapple.Ts.t">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">t</span></span><a class="headerlink" href="#pynapple.Ts.t" title="Link to this definition">#</a></dt>
+<dd><p>The time index of the time series</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.time_diff">
+<span class="sig-name descname"><span class="pre">time_diff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">align</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'center'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/time_series.html#Ts.time_diff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.Ts.time_diff" title="Link to this definition">#</a></dt>
+<dd><p>Computes the differences between subsequent timestamps.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>align</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – <dl class="simple">
+<dt>Determines the time index of the resulting time differences:</dt><dd><ul>
+<li><p>”start” : the start of the interval between two timestamps.</p></li>
+<li><p>”center” [default]: the center of the interval between two timestamps.</p></li>
+<li><p>”end” : the end of the interval between two timestamps.</p></li>
+</ul>
+</dd>
+</dl>
+</p></li>
+<li><p><strong>epochs</strong> (<a class="reference internal" href="pynapple.IntervalSet.html#pynapple.IntervalSet" title="pynapple.IntervalSet"><em>IntervalSet</em></a><em>, </em><em>optional</em>) – The epochs on which interspike intervals are computed.
+If None, the time support of the input is used.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The time differences.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pynapple.Tsd.html#pynapple.Tsd" title="pynapple.Tsd">Tsd</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">12</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">epochs</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="mi">9</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tsd_time_diffs</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">time_diff</span><span class="p">(</span><span class="n">align</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="n">epochs</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tsd_time_diffs</span>
+<span class="go">Time (s)</span>
+<span class="go">----------  --</span>
+<span class="go">4            2</span>
+<span class="go">5.5          1</span>
+<span class="go">7            2</span>
+<span class="go">dtype: float64, shape: (3,)</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">time_support</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference internal" href="pynapple.IntervalSet.html#pynapple.IntervalSet" title="pynapple.core.interval_set.IntervalSet"><span class="pre">IntervalSet</span></a></em><a class="headerlink" href="#id1" title="Link to this definition">#</a></dt>
+<dd><p>The time support of the time series</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.times">
+<span class="sig-name descname"><span class="pre">times</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#pynapple.Ts.times" title="Link to this definition">#</a></dt>
+<dd><p>The time index of the object, returned as np.double in the desired time units.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>units</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – (‘us’, ‘ms’, ‘s’ [default])</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – the time indexes</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.trial_count">
+<span class="sig-name descname"><span class="pre">trial_count</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">ep</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bin_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">align</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'start'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">padding_value</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">nan</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_unit</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/time_series.html#Ts.trial_count"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.Ts.trial_count" title="Link to this definition">#</a></dt>
+<dd><p>Return trial-based count tensor from an IntervalSet object. The shape of the tensor array is
+(number of trials, number of time bins).</p>
+<p>The <cite>bin_size</cite> parameter determines the number of time bins.</p>
+<p>The <cite>align</cite> parameter controls how the time series are aligned. If <cite>align=”start”</cite>, the time
+series are aligned to the start of each trial. If <cite>align=”end”</cite>, the time series are aligned
+to the end of each trial.</p>
+<p>If trials have uneven durations, the returned array is padded. The parameter <cite>padding_value</cite>
+determines which value is used to pad the array. Default is NaN.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>ep</strong> (<a class="reference internal" href="pynapple.IntervalSet.html#pynapple.IntervalSet" title="pynapple.IntervalSet"><em>IntervalSet</em></a>) – Epochs holding the trials. Each interval can be of unequal size.</p></li>
+<li><p><strong>bin_size</strong> (<em>Number</em>) – The size of the time bins.</p></li>
+<li><p><strong>align</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – How to align the time series (‘start’ [default], ‘end’)</p></li>
+<li><p><strong>padding_value</strong> (<em>Number</em><em>, </em><em>optional</em>) – How to pad the array if unequal intervals. Default is np.nan.</p></li>
+<li><p><strong>time_unit</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Time units of the bin_size parameter (‘s’ [default], ‘ms’, ‘us’).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)">numpy.ndarray</a></p>
+</dd>
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.14)"><strong>RuntimeError</strong></a> – If <cite>time_unit</cite> not in [“s”, “ms”, “us”]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.Ts.value_from">
+<span class="sig-name descname"><span class="pre">value_from</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'closest'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/time_series.html#Ts.value_from"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.Ts.value_from" title="Link to this definition">#</a></dt>
+<dd><p>Replace the value with the closest value from Tsd/TsdFrame/TsdTensor argument</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="pynapple.Tsd.html#pynapple.Tsd" title="pynapple.Tsd"><em>Tsd</em></a><em>, </em><a class="reference internal" href="pynapple.TsdFrame.html#pynapple.TsdFrame" title="pynapple.TsdFrame"><em>TsdFrame</em></a><em> or </em><a class="reference internal" href="pynapple.TsdTensor.html#pynapple.TsdTensor" title="pynapple.TsdTensor"><em>TsdTensor</em></a>) – The object holding the values to replace.</p></li>
+<li><p><strong>ep</strong> (<a class="reference internal" href="pynapple.IntervalSet.html#pynapple.IntervalSet" title="pynapple.IntervalSet"><em>IntervalSet</em></a><em> (</em><em>optional</em><em>)</em>) – The IntervalSet object to restrict the operation.
+If None, the time support of the tsd input object is used.</p></li>
+<li><p><strong>mode</strong> (<em>literal</em><em>, </em><em>either 'closest'</em><em>, </em><em>'before'</em><em>, </em><em>'after'</em>) – If closest, replace value with value from Tsd/TsdFrame/TsdTensor, if before gets the
+first value before, if after the first value after.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – Object with the new values</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pynapple.Tsd.html#pynapple.Tsd" title="pynapple.Tsd">Tsd</a>, <a class="reference internal" href="pynapple.TsdFrame.html#pynapple.TsdFrame" title="pynapple.TsdFrame">TsdFrame</a> or <a class="reference internal" href="pynapple.TsdTensor.html#pynapple.TsdTensor" title="pynapple.TsdTensor">TsdTensor</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>In this example, the ts object will receive the closest values in time from tsd.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span><span class="p">;</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1000</span><span class="p">,</span> <span class="mi">100</span><span class="p">)))</span> <span class="c1"># random times</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ts</span>
+<span class="go">Time (s)</span>
+<span class="go">1.0</span>
+<span class="go">13.0</span>
+<span class="go">20.0</span>
+<span class="go">21.0</span>
+<span class="go">34.0</span>
+<span class="go">58.0</span>
+<span class="go">71.0</span>
+<span class="go">...</span>
+<span class="go">897.0</span>
+<span class="go">931.0</span>
+<span class="go">942.0</span>
+<span class="go">955.0</span>
+<span class="go">957.0</span>
+<span class="go">975.0</span>
+<span class="go">shape: 94</span>
+</pre></div>
+</div>
+<p>ts is a timestamp object.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tsd_from</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span><span class="mi">1000</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span><span class="mi">2</span><span class="p">,</span><span class="mi">3</span><span class="p">],</span> <span class="mi">1000</span><span class="p">),</span> <span class="n">time_units</span><span class="o">=</span><span class="s1">&#39;s&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tsd_from</span>
+<span class="go">Time (s)</span>
+<span class="go">----------  --</span>
+<span class="go">0.0          2</span>
+<span class="go">1.0          2</span>
+<span class="go">2.0          2</span>
+<span class="go">3.0          2</span>
+<span class="go">4.0          3</span>
+<span class="go">5.0          3</span>
+<span class="go">6.0          2</span>
+<span class="go">...</span>
+<span class="go">993.0        1</span>
+<span class="go">994.0        1</span>
+<span class="go">995.0        2</span>
+<span class="go">996.0        2</span>
+<span class="go">997.0        2</span>
+<span class="go">998.0        1</span>
+<span class="go">999.0        3</span>
+<span class="go">dtype: int64, shape: (1000,)</span>
+</pre></div>
+</div>
+<p>tsd_from contains values, for example the tracking data.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="mi">500</span><span class="p">,</span> <span class="n">time_units</span> <span class="o">=</span> <span class="s1">&#39;s&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end</span>
+<span class="go">      0        0    500</span>
+<span class="go">shape: (1, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>An epoch can be passed to restrict the operation.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tsd_after</span> <span class="o">=</span> <span class="n">ts</span><span class="o">.</span><span class="n">value_from</span><span class="p">(</span><span class="n">tsd_from</span><span class="p">,</span> <span class="n">ep</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;closest&#39;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tsd_after</span>
+<span class="go">Time (s)</span>
+<span class="go">----------  --</span>
+<span class="go">1.0          2</span>
+<span class="go">13.0         3</span>
+<span class="go">20.0         3</span>
+<span class="go">21.0         1</span>
+<span class="go">34.0         3</span>
+<span class="go">58.0         1</span>
+<span class="go">71.0         1</span>
+<span class="go">...</span>
+<span class="go">459.0        3</span>
+<span class="go">466.0        2</span>
+<span class="go">474.0        2</span>
+<span class="go">475.0        1</span>
+<span class="go">476.0        3</span>
+<span class="go">484.0        1</span>
+<span class="go">491.0        3</span>
+<span class="go">dtype: int64, shape: (53,)</span>
+</pre></div>
+</div>
+<p>tsd_after is the same length as ts when restricted to ep.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ts</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">ep</span><span class="p">)),</span> <span class="nb">len</span><span class="p">(</span><span class="n">tsd_after</span><span class="p">))</span>
+<span class="go">53 53</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="pynapple.IntervalSet.union.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">pynapple.IntervalSet.union</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="pynapple.Ts.__init__.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">pynapple.Ts.__init__</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts"><code class="docutils literal notranslate"><span class="pre">Ts</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.rate"><code class="docutils literal notranslate"><span class="pre">Ts.rate</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.time_support"><code class="docutils literal notranslate"><span class="pre">Ts.time_support</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.__init__"><code class="docutils literal notranslate"><span class="pre">Ts.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.as_series"><code class="docutils literal notranslate"><span class="pre">Ts.as_series()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.as_units"><code class="docutils literal notranslate"><span class="pre">Ts.as_units()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.copy"><code class="docutils literal notranslate"><span class="pre">Ts.copy()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.count"><code class="docutils literal notranslate"><span class="pre">Ts.count()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.end"><code class="docutils literal notranslate"><span class="pre">Ts.end</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.end_time"><code class="docutils literal notranslate"><span class="pre">Ts.end_time()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.fillna"><code class="docutils literal notranslate"><span class="pre">Ts.fillna()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.find_support"><code class="docutils literal notranslate"><span class="pre">Ts.find_support()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.get"><code class="docutils literal notranslate"><span class="pre">Ts.get()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.get_slice"><code class="docutils literal notranslate"><span class="pre">Ts.get_slice()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.in_interval"><code class="docutils literal notranslate"><span class="pre">Ts.in_interval()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.index"><code class="docutils literal notranslate"><span class="pre">Ts.index</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id0"><code class="docutils literal notranslate"><span class="pre">Ts.rate</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.restrict"><code class="docutils literal notranslate"><span class="pre">Ts.restrict()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.save"><code class="docutils literal notranslate"><span class="pre">Ts.save()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.shape"><code class="docutils literal notranslate"><span class="pre">Ts.shape</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.start"><code class="docutils literal notranslate"><span class="pre">Ts.start</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.start_time"><code class="docutils literal notranslate"><span class="pre">Ts.start_time()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.t"><code class="docutils literal notranslate"><span class="pre">Ts.t</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.time_diff"><code class="docutils literal notranslate"><span class="pre">Ts.time_diff()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1"><code class="docutils literal notranslate"><span class="pre">Ts.time_support</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.times"><code class="docutils literal notranslate"><span class="pre">Ts.times()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.trial_count"><code class="docutils literal notranslate"><span class="pre">Ts.trial_count()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.Ts.value_from"><code class="docutils literal notranslate"><span class="pre">Ts.value_from()</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/generated/pynapple.Ts.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2025, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">pynapple authors</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.10.2</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

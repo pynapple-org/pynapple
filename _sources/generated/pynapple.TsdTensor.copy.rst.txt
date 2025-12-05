@@ -1,0 +1,6 @@
+pynapple.TsdTensor.copy
+=======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.copy

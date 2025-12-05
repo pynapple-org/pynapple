@@ -1,0 +1,6 @@
+pynapple.TsdTensor.decimate
+===========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.decimate

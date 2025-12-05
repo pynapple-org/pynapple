@@ -1,0 +1,1165 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pynapple.process.filtering &#8212; pynapple 0.10.2 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_contributors.css?v=f079e67e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=f2caec9a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=11e62b30"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=c57da192"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pynapple/process/filtering';</script>
+    <link rel="icon" href="../../../_static/Pynapple_final_icon.png"/>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.10.2" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.10.2 documentation - Home"/>
+    <img src="../../../_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.10.2 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../about.html">
+    About us
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pynapple.process.filtering</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for pynapple.process.filtering</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Functions for highpass, lowpass, bandpass or bandstop filtering.&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+<span class="kn">from</span> <span class="nn">numbers</span> <span class="kn">import</span> <span class="n">Number</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">butter</span><span class="p">,</span> <span class="n">filtfilt</span><span class="p">,</span> <span class="n">sosfiltfilt</span><span class="p">,</span> <span class="n">sosfreqz</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">core</span> <span class="k">as</span> <span class="n">nap</span>
+
+
+<span class="k">def</span> <span class="nf">_validate_filtering_inputs</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># Validate each positional argument</span>
+        <span class="n">sig</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">bind_partial</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">arguments</span>
+
+        <span class="n">cutoff</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;cutoff&quot;</span><span class="p">]</span>
+        <span class="n">filter_type</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;filter_type&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">filter_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;lowpass&quot;</span><span class="p">,</span> <span class="s2">&quot;highpass&quot;</span><span class="p">]</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">Number</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">filter_type</span><span class="si">}</span><span class="s2"> filter require a single number. </span><span class="si">{</span><span class="n">cutoff</span><span class="si">}</span><span class="s2"> provided instead.&quot;</span>
+            <span class="p">)</span>
+        <span class="k">if</span> <span class="n">filter_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;bandpass&quot;</span><span class="p">,</span> <span class="s2">&quot;bandstop&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">Iterable</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">cutoff</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span>
+                <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">fq</span><span class="p">,</span> <span class="n">Number</span><span class="p">)</span> <span class="k">for</span> <span class="n">fq</span> <span class="ow">in</span> <span class="n">cutoff</span><span class="p">)</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">filter_type</span><span class="si">}</span><span class="s2"> filter require a tuple of two numbers. </span><span class="si">{</span><span class="n">cutoff</span><span class="si">}</span><span class="s2"> provided instead.&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;fs&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;fs&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;fs&quot;</span><span class="p">],</span> <span class="n">Number</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Invalid value for &#39;fs&#39;. Parameter &#39;fs&#39; should be of type float or int&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;order&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;order&quot;</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Invalid value for &#39;order&#39;: Parameter &#39;order&#39; should be of type int&quot;</span>
+                <span class="p">)</span>
+
+        <span class="k">if</span> <span class="s2">&quot;transition_bandwidth&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;transition_bandwidth&quot;</span><span class="p">],</span> <span class="nb">float</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;Invalid value for &#39;transition_bandwidth&#39;. &#39;transition_bandwidth&#39; should be of type float&quot;</span>
+                <span class="p">)</span>
+
+        <span class="c1"># Call the original function with validated inputs</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapper</span>
+
+
+<span class="k">def</span> <span class="nf">_get_butter_coefficients</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">filter_type</span><span class="p">,</span> <span class="n">sampling_frequency</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Calls scipy butter&quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">butter</span><span class="p">(</span><span class="n">order</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">,</span> <span class="n">btype</span><span class="o">=</span><span class="n">filter_type</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">sampling_frequency</span><span class="p">,</span> <span class="n">output</span><span class="o">=</span><span class="s2">&quot;sos&quot;</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_compute_butterworth_filter</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">,</span> <span class="n">sampling_frequency</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;bandpass&quot;</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a Butterworth filter to the provided signal.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">sos</span> <span class="o">=</span> <span class="n">_get_butter_coefficients</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">filter_type</span><span class="p">,</span> <span class="n">sampling_frequency</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">nap</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">get_backend</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;jax&quot;</span><span class="p">:</span>
+        <span class="kn">from</span> <span class="nn">pynajax.jax_process_filtering</span> <span class="kn">import</span> <span class="n">jax_sosfiltfilt</span>
+
+        <span class="n">out</span> <span class="o">=</span> <span class="n">jax_sosfiltfilt</span><span class="p">(</span>
+            <span class="n">sos</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">time_support</span><span class="o">.</span><span class="n">start</span><span class="p">,</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">time_support</span><span class="o">.</span><span class="n">end</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">out</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">d</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ep</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">time_support</span><span class="p">:</span>
+            <span class="n">slc</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">get_slice</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">ep</span><span class="o">.</span><span class="n">start</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">end</span><span class="o">=</span><span class="n">ep</span><span class="o">.</span><span class="n">end</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">slc</span><span class="p">]</span> <span class="o">=</span> <span class="n">sosfiltfilt</span><span class="p">(</span><span class="n">sos</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">d</span><span class="p">[</span><span class="n">slc</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">_define_instance</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">time_support</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="n">out</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_compute_spectral_inversion</span><span class="p">(</span><span class="n">kernel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the spectral inversion.</span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    kernel: ndarray</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    ndarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kernel</span> <span class="o">*=</span> <span class="o">-</span><span class="mf">1.0</span>
+    <span class="n">kernel</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">+</span> <span class="n">kernel</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">kernel</span>
+
+
+<span class="k">def</span> <span class="nf">_get_windowed_sinc_kernel</span><span class="p">(</span>
+    <span class="n">fc</span><span class="p">,</span> <span class="n">filter_type</span><span class="p">,</span> <span class="n">sampling_frequency</span><span class="p">,</span> <span class="n">transition_bandwidth</span><span class="o">=</span><span class="mf">0.02</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Get the windowed-sinc kernel.</span>
+<span class="sd">    Smith, S. (2003). Digital signal processing: a practical guide for engineers and scientists.</span>
+<span class="sd">    Chapter 16, equation 16-4</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    fc: float or tuple of float</span>
+<span class="sd">        Cutting frequency in Hz. Single float for &#39;lowpass&#39; and &#39;highpass&#39;. Tuple of float for</span>
+<span class="sd">        &#39;bandpass&#39; and &#39;bandstop&#39;.</span>
+<span class="sd">    filter_type: str</span>
+<span class="sd">        Either &#39;lowpass&#39;, &#39;highpass&#39;, &#39;bandstop&#39; or &#39;bandpass&#39;.</span>
+<span class="sd">    sampling_frequency: float</span>
+<span class="sd">        Sampling frequency in Hz.</span>
+<span class="sd">    transition_bandwidth: float</span>
+<span class="sd">        Percentage between 0 and 0.5</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    np.ndarray</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">M</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">rint</span><span class="p">(</span><span class="mf">4.0</span> <span class="o">/</span> <span class="n">transition_bandwidth</span><span class="p">))</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">M</span> <span class="o">//</span> <span class="mi">2</span><span class="p">),</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="n">M</span> <span class="o">//</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="n">fc</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">atleast_2d</span><span class="p">(</span><span class="n">fc</span> <span class="o">/</span> <span class="n">sampling_frequency</span><span class="p">))</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sinc</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">fc</span> <span class="o">*</span> <span class="n">x</span><span class="p">)</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="n">kernel</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">blackman</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="n">kernel</span> <span class="o">/</span> <span class="n">kernel</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">filter_type</span> <span class="o">==</span> <span class="s2">&quot;lowpass&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">kernel</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="k">elif</span> <span class="n">filter_type</span> <span class="o">==</span> <span class="s2">&quot;highpass&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_compute_spectral_inversion</span><span class="p">(</span><span class="n">kernel</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+    <span class="k">elif</span> <span class="n">filter_type</span> <span class="o">==</span> <span class="s2">&quot;bandstop&quot;</span><span class="p">:</span>
+        <span class="n">kernel</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">_compute_spectral_inversion</span><span class="p">(</span><span class="n">kernel</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">kernel</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">kernel</span>
+    <span class="k">elif</span> <span class="n">filter_type</span> <span class="o">==</span> <span class="s2">&quot;bandpass&quot;</span><span class="p">:</span>
+        <span class="n">kernel</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">_compute_spectral_inversion</span><span class="p">(</span><span class="n">kernel</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+        <span class="n">kernel</span> <span class="o">=</span> <span class="n">_compute_spectral_inversion</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">kernel</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">kernel</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span>
+
+
+<span class="k">def</span> <span class="nf">_compute_windowed_sinc_filter</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span> <span class="n">freq</span><span class="p">,</span> <span class="n">filter_type</span><span class="p">,</span> <span class="n">sampling_frequency</span><span class="p">,</span> <span class="n">transition_bandwidth</span><span class="o">=</span><span class="mf">0.02</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a windowed-sinc filter to the provided signal.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data: Tsd, TsdFrame or TsdTensor</span>
+
+<span class="sd">    freq: float or tuple of float</span>
+<span class="sd">        Cutting frequency in Hz. Single float for &#39;lowpass&#39; and &#39;highpass&#39;. Tuple of float for</span>
+<span class="sd">        &#39;bandpass&#39; and &#39;bandstop&#39;.</span>
+<span class="sd">    sampling_frequency: float</span>
+<span class="sd">        Sampling frequency in Hz.</span>
+<span class="sd">    filter_type: str</span>
+<span class="sd">        Either &#39;lowpass&#39;, &#39;highpass&#39;, &#39;bandstop&#39; or &#39;bandpass&#39;.</span>
+<span class="sd">    transition_bandwidth: float</span>
+<span class="sd">        Percentage between 0 and 0.5</span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tsd, TsdFrame or TsdTensor</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">kernel</span> <span class="o">=</span> <span class="n">_get_windowed_sinc_kernel</span><span class="p">(</span>
+        <span class="n">freq</span><span class="p">,</span> <span class="n">filter_type</span><span class="p">,</span> <span class="n">sampling_frequency</span><span class="p">,</span> <span class="n">transition_bandwidth</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">data</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
+
+
+<span class="nd">@_validate_filtering_inputs</span>
+<span class="k">def</span> <span class="nf">_compute_filter</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span>
+    <span class="n">cutoff</span><span class="p">,</span>
+    <span class="n">fs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;butter&quot;</span><span class="p">,</span>
+    <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">transition_bandwidth</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span>
+    <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;bandpass&quot;</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Filter the signal.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">time_series</span><span class="o">.</span><span class="n">_BaseTsd</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;Invalid value: </span><span class="si">{</span><span class="n">data</span><span class="si">}</span><span class="s2">. First argument should be of type Tsd, TsdFrame or TsdTensor&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">data</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;The input signal contains NaN values, which are not supported for filtering. &quot;</span>
+            <span class="s2">&quot;Please remove or handle NaNs before applying the filter. &quot;</span>
+            <span class="s2">&quot;You can use the `dropna()` method to drop all NaN values.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">fs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rate</span>
+
+    <span class="n">cutoff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;butter&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_compute_butterworth_filter</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">filter_type</span><span class="o">=</span><span class="n">filter_type</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="n">order</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;sinc&quot;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">_compute_windowed_sinc_filter</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">,</span> <span class="n">filter_type</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">transition_bandwidth</span><span class="o">=</span><span class="n">transition_bandwidth</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unrecognized filter mode. Choose either &#39;butter&#39; or &#39;sinc&#39;&quot;</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="apply_bandpass_filter">
+<a class="viewcode-back" href="../../../generated/pynapple.process.filtering.html#pynapple.process.filtering.apply_bandpass_filter">[docs]</a>
+<span class="k">def</span> <span class="nf">apply_bandpass_filter</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;butter&quot;</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">transition_bandwidth</span><span class="o">=</span><span class="mf">0.02</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a band-pass filter to the provided signal.</span>
+<span class="sd">    Mode can be :</span>
+
+<span class="sd">    - `&quot;butter&quot;` for Butterworth filter. In this case, `order` determines the order of the filter.</span>
+<span class="sd">    - `&quot;sinc&quot;` for Windowed-Sinc convolution. `transition_bandwidth` determines the transition bandwidth.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : Tsd, TsdFrame, or TsdTensor</span>
+<span class="sd">        The signal to be filtered.</span>
+<span class="sd">    cutoff : (Numeric, Numeric)</span>
+<span class="sd">        Cutoff frequencies in Hz.</span>
+<span class="sd">    fs : float, optional</span>
+<span class="sd">        The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.</span>
+<span class="sd">    mode : {&#39;butter&#39;, &#39;sinc&#39;}, optional</span>
+<span class="sd">        Filtering mode. Default is &#39;butter&#39;.</span>
+<span class="sd">    order : int, optional</span>
+<span class="sd">        The order of the Butterworth filter. Higher values result in sharper frequency cutoffs.</span>
+<span class="sd">        Default is 4.</span>
+<span class="sd">    transition_bandwidth : float, optional</span>
+<span class="sd">        The transition bandwidth. 0.2 corresponds to 20% of the frequency band between 0 and the sampling frequency.</span>
+<span class="sd">        The smaller the transition bandwidth, the larger the windowed-sinc kernel.</span>
+<span class="sd">        Default is 0.02.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    filtered_data : Tsd, TsdFrame, or TsdTensor</span>
+<span class="sd">        The filtered signal, with the same data type as the input.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If `data` is not a Tsd, TsdFrame, or TsdTensor.</span>
+<span class="sd">        If `cutoff` is not a tuple of two floats for &quot;bandpass&quot; and &quot;bandstop&quot; filters.</span>
+<span class="sd">        If `fs` is not float or None.</span>
+<span class="sd">        If `mode` is not &quot;butter&quot; or &quot;sinc&quot;.</span>
+<span class="sd">        If `order` is not an int.</span>
+<span class="sd">        If &quot;transition_bandwidth&quot; is not a float.</span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    For the Butterworth filter, the cutoff frequency is defined as the frequency at which the amplitude of the signal</span>
+<span class="sd">    is reduced by -3 dB (decibels).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_compute_filter</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">cutoff</span><span class="p">,</span>
+        <span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+        <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span>
+        <span class="n">transition_bandwidth</span><span class="o">=</span><span class="n">transition_bandwidth</span><span class="p">,</span>
+        <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;bandpass&quot;</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="apply_bandstop_filter">
+<a class="viewcode-back" href="../../../generated/pynapple.process.filtering.html#pynapple.process.filtering.apply_bandstop_filter">[docs]</a>
+<span class="k">def</span> <span class="nf">apply_bandstop_filter</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;butter&quot;</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">transition_bandwidth</span><span class="o">=</span><span class="mf">0.02</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a band-stop filter to the provided signal.</span>
+<span class="sd">    Mode can be :</span>
+
+<span class="sd">    - `&quot;butter&quot;` for Butterworth filter. In this case, `order` determines the order of the filter.</span>
+<span class="sd">    - `&quot;sinc&quot;` for Windowed-Sinc convolution. `transition_bandwidth` determines the transition bandwidth.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : Tsd, TsdFrame, or TsdTensor</span>
+<span class="sd">        The signal to be filtered.</span>
+<span class="sd">    cutoff : (Numeric, Numeric)</span>
+<span class="sd">        Cutoff frequencies in Hz.</span>
+<span class="sd">    fs : float, optional</span>
+<span class="sd">        The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.</span>
+<span class="sd">    mode : {&#39;butter&#39;, &#39;sinc&#39;}, optional</span>
+<span class="sd">        Filtering mode. Default is &#39;butter&#39;.</span>
+<span class="sd">    order : int, optional</span>
+<span class="sd">        The order of the Butterworth filter. Higher values result in sharper frequency cutoffs.</span>
+<span class="sd">        Default is 4.</span>
+<span class="sd">    transition_bandwidth : float, optional</span>
+<span class="sd">        The transition bandwidth. 0.2 corresponds to 20% of the frequency band between 0 and the sampling frequency.</span>
+<span class="sd">        The smaller the transition bandwidth, the larger the windowed-sinc kernel.</span>
+<span class="sd">        Default is 0.02.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    filtered_data : Tsd, TsdFrame, or TsdTensor</span>
+<span class="sd">        The filtered signal, with the same data type as the input.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If `data` is not a Tsd, TsdFrame, or TsdTensor.</span>
+<span class="sd">        If `cutoff` is not a tuple of two floats for &quot;bandpass&quot; and &quot;bandstop&quot; filters.</span>
+<span class="sd">        If `fs` is not float or None.</span>
+<span class="sd">        If `mode` is not &quot;butter&quot; or &quot;sinc&quot;.</span>
+<span class="sd">        If `order` is not an int.</span>
+<span class="sd">        If &quot;transition_bandwidth&quot; is not a float.</span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    For the Butterworth filter, the cutoff frequency is defined as the frequency at which the amplitude of the signal</span>
+<span class="sd">    is reduced by -3 dB (decibels).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_compute_filter</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">cutoff</span><span class="p">,</span>
+        <span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+        <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span>
+        <span class="n">transition_bandwidth</span><span class="o">=</span><span class="n">transition_bandwidth</span><span class="p">,</span>
+        <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;bandstop&quot;</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="apply_highpass_filter">
+<a class="viewcode-back" href="../../../generated/pynapple.process.filtering.html#pynapple.process.filtering.apply_highpass_filter">[docs]</a>
+<span class="k">def</span> <span class="nf">apply_highpass_filter</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;butter&quot;</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">transition_bandwidth</span><span class="o">=</span><span class="mf">0.02</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a high-pass filter to the provided signal.</span>
+<span class="sd">    Mode can be :</span>
+
+<span class="sd">    - `&quot;butter&quot;` for Butterworth filter. In this case, `order` determines the order of the filter.</span>
+<span class="sd">    - `&quot;sinc&quot;` for Windowed-Sinc convolution. `transition_bandwidth` determines the transition bandwidth.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : Tsd, TsdFrame, or TsdTensor</span>
+<span class="sd">        The signal to be filtered.</span>
+<span class="sd">    cutoff : Numeric</span>
+<span class="sd">        Cutoff frequency in Hz.</span>
+<span class="sd">    fs : float, optional</span>
+<span class="sd">        The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.</span>
+<span class="sd">    mode : {&#39;butter&#39;, &#39;sinc&#39;}, optional</span>
+<span class="sd">        Filtering mode. Default is &#39;butter&#39;.</span>
+<span class="sd">    order : int, optional</span>
+<span class="sd">        The order of the Butterworth filter. Higher values result in sharper frequency cutoffs.</span>
+<span class="sd">        Default is 4.</span>
+<span class="sd">    transition_bandwidth : float, optional</span>
+<span class="sd">        The transition bandwidth. 0.2 corresponds to 20% of the frequency band between 0 and the sampling frequency.</span>
+<span class="sd">        The smaller the transition bandwidth, the larger the windowed-sinc kernel.</span>
+<span class="sd">        Default is 0.02.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    filtered_data : Tsd, TsdFrame, or TsdTensor</span>
+<span class="sd">        The filtered signal, with the same data type as the input.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If `data` is not a Tsd, TsdFrame, or TsdTensor.</span>
+<span class="sd">        If `cutoff` is not a number.</span>
+<span class="sd">        If `fs` is not float or None.</span>
+<span class="sd">        If `mode` is not &quot;butter&quot; or &quot;sinc&quot;.</span>
+<span class="sd">        If `order` is not an int.</span>
+<span class="sd">        If &quot;transition_bandwidth&quot; is not a float.</span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    For the Butterworth filter, the cutoff frequency is defined as the frequency at which the amplitude of the signal</span>
+<span class="sd">    is reduced by -3 dB (decibels).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_compute_filter</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">cutoff</span><span class="p">,</span>
+        <span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+        <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span>
+        <span class="n">transition_bandwidth</span><span class="o">=</span><span class="n">transition_bandwidth</span><span class="p">,</span>
+        <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;highpass&quot;</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="apply_lowpass_filter">
+<a class="viewcode-back" href="../../../generated/pynapple.process.filtering.html#pynapple.process.filtering.apply_lowpass_filter">[docs]</a>
+<span class="k">def</span> <span class="nf">apply_lowpass_filter</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span> <span class="n">cutoff</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;butter&quot;</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">transition_bandwidth</span><span class="o">=</span><span class="mf">0.02</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply a low-pass filter to the provided signal.</span>
+<span class="sd">    Mode can be :</span>
+
+<span class="sd">    - `&quot;butter&quot;` for Butterworth filter. In this case, `order` determines the order of the filter.</span>
+<span class="sd">    - `&quot;sinc&quot;` for Windowed-Sinc convolution. `transition_bandwidth` determines the transition bandwidth.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : Tsd, TsdFrame, or TsdTensor</span>
+<span class="sd">        The signal to be filtered.</span>
+<span class="sd">    cutoff : Numeric</span>
+<span class="sd">        Cutoff frequency in Hz.</span>
+<span class="sd">    fs : float, optional</span>
+<span class="sd">        The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.</span>
+<span class="sd">    mode : {&#39;butter&#39;, &#39;sinc&#39;}, optional</span>
+<span class="sd">        Filtering mode. Default is &#39;butter&#39;.</span>
+<span class="sd">    order : int, optional</span>
+<span class="sd">        The order of the Butterworth filter. Higher values result in sharper frequency cutoffs.</span>
+<span class="sd">        Default is 4.</span>
+<span class="sd">    transition_bandwidth : float, optional</span>
+<span class="sd">        The transition bandwidth. 0.2 corresponds to 20% of the frequency band between 0 and the sampling frequency.</span>
+<span class="sd">        The smaller the transition bandwidth, the larger the windowed-sinc kernel.</span>
+<span class="sd">        Default is 0.02.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    filtered_data : Tsd, TsdFrame, or TsdTensor</span>
+<span class="sd">        The filtered signal, with the same data type as the input.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    ValueError</span>
+<span class="sd">        If `data` is not a Tsd, TsdFrame, or TsdTensor.</span>
+<span class="sd">        If `cutoff` is not a number.</span>
+<span class="sd">        If `fs` is not float or None.</span>
+<span class="sd">        If `mode` is not &quot;butter&quot; or &quot;sinc&quot;.</span>
+<span class="sd">        If `order` is not an int.</span>
+<span class="sd">        If &quot;transition_bandwidth&quot; is not a float.</span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    For the Butterworth filter, the cutoff frequency is defined as the frequency at which the amplitude of the signal</span>
+<span class="sd">    is reduced by -3 dB (decibels).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">_compute_filter</span><span class="p">(</span>
+        <span class="n">data</span><span class="p">,</span>
+        <span class="n">cutoff</span><span class="p">,</span>
+        <span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">,</span>
+        <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span>
+        <span class="n">order</span><span class="o">=</span><span class="n">order</span><span class="p">,</span>
+        <span class="n">transition_bandwidth</span><span class="o">=</span><span class="n">transition_bandwidth</span><span class="p">,</span>
+        <span class="n">filter_type</span><span class="o">=</span><span class="s2">&quot;lowpass&quot;</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="get_filter_frequency_response">
+<a class="viewcode-back" href="../../../generated/pynapple.process.filtering.html#pynapple.process.filtering.get_filter_frequency_response">[docs]</a>
+<span class="nd">@_validate_filtering_inputs</span>
+<span class="k">def</span> <span class="nf">get_filter_frequency_response</span><span class="p">(</span>
+    <span class="n">cutoff</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">filter_type</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">order</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">transition_bandwidth</span><span class="o">=</span><span class="mf">0.02</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Utility function to evaluate the frequency response of a particular type of filter. The arguments are the same</span>
+<span class="sd">    as the function `apply_lowpass_filter`, `apply_highpass_filter`, `apply_bandpass_filter` and</span>
+<span class="sd">    `apply_bandstop_filter`.</span>
+
+<span class="sd">    This function returns a pandas Series object with the index as frequencies.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cutoff : Numeric or tuple of Numeric</span>
+<span class="sd">        Cutoff frequency in Hz.</span>
+<span class="sd">    fs : float</span>
+<span class="sd">        The sampling frequency of the signal in Hz.</span>
+<span class="sd">    filter_type: str</span>
+<span class="sd">        Can be &quot;lowpass&quot;, &quot;highpass&quot;, &quot;bandpass&quot; or &quot;bandstop&quot;</span>
+<span class="sd">    mode: str</span>
+<span class="sd">        Can be &quot;butter&quot; or &quot;sinc&quot;.</span>
+<span class="sd">    order : int, optional</span>
+<span class="sd">        The order of the Butterworth filter. Higher values result in sharper frequency cutoffs.</span>
+<span class="sd">        Default is 4.</span>
+<span class="sd">    transition_bandwidth : float, optional</span>
+<span class="sd">        The transition bandwidth. 0.2 corresponds to 20% of the frequency band between 0 and the sampling frequency.</span>
+<span class="sd">        The smaller the transition bandwidth, the larger the windowed-sinc kernel.</span>
+<span class="sd">        Default is 0.02.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.Series</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cutoff</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">cutoff</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;butter&quot;</span><span class="p">:</span>
+        <span class="n">sos</span> <span class="o">=</span> <span class="n">_get_butter_coefficients</span><span class="p">(</span><span class="n">cutoff</span><span class="p">,</span> <span class="n">filter_type</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">order</span><span class="p">)</span>
+        <span class="n">w</span><span class="p">,</span> <span class="n">h</span> <span class="o">=</span> <span class="n">sosfreqz</span><span class="p">(</span><span class="n">sos</span><span class="p">,</span> <span class="n">worN</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">fs</span><span class="o">=</span><span class="n">fs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">index</span><span class="o">=</span><span class="n">w</span><span class="p">,</span> <span class="n">data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">h</span><span class="p">))</span>
+    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;sinc&quot;</span><span class="p">:</span>
+        <span class="n">kernel</span> <span class="o">=</span> <span class="n">_get_windowed_sinc_kernel</span><span class="p">(</span>
+            <span class="n">cutoff</span><span class="p">,</span> <span class="n">filter_type</span><span class="p">,</span> <span class="n">fs</span><span class="p">,</span> <span class="n">transition_bandwidth</span>
+        <span class="p">)</span>
+        <span class="n">fft_result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">kernel</span><span class="p">)</span>
+        <span class="n">fft_result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">fft_result</span><span class="p">)</span>
+        <span class="n">fft_freq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftfreq</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">kernel</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="mi">1</span> <span class="o">/</span> <span class="n">fs</span><span class="p">)</span>
+        <span class="n">fft_freq</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftshift</span><span class="p">(</span><span class="n">fft_freq</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span>
+            <span class="n">index</span><span class="o">=</span><span class="n">fft_freq</span><span class="p">[</span><span class="n">fft_freq</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">],</span> <span class="n">data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">fft_result</span><span class="p">[</span><span class="n">fft_freq</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Unrecognized filter mode. Choose either &#39;butter&#39; or &#39;sinc&#39;&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="detect_oscillatory_events">
+<a class="viewcode-back" href="../../../generated/pynapple.process.filtering.html#pynapple.process.filtering.detect_oscillatory_events">[docs]</a>
+<span class="k">def</span> <span class="nf">detect_oscillatory_events</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span>
+    <span class="n">epoch</span><span class="p">,</span>
+    <span class="n">freq_band</span><span class="p">,</span>
+    <span class="n">thresh_band</span><span class="p">,</span>
+    <span class="n">duration_band</span><span class="p">,</span>
+    <span class="n">min_inter_duration</span><span class="p">,</span>
+    <span class="n">fs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">wsize</span><span class="o">=</span><span class="mi">51</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Simple helper for detecting oscillatory events (e.g. ripples, spindles)</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : Tsd</span>
+<span class="sd">        1-dimensional time series</span>
+<span class="sd">    epoch : IntervalSet</span>
+<span class="sd">        The epoch for restricting the detection</span>
+<span class="sd">    freq_band : tuple</span>
+<span class="sd">        The (low, high) frequency to bandpass the signal</span>
+<span class="sd">    thresh_band : tuple</span>
+<span class="sd">        The (min, max) value for thresholding the normalized squared signal after filtering</span>
+<span class="sd">    duration_band : tuple</span>
+<span class="sd">        The (min, max) duration of an event in second</span>
+<span class="sd">    min_inter_duration : float</span>
+<span class="sd">        The minimum duration between two events otherwise they are merged (in seconds)</span>
+<span class="sd">    fs : float, optional</span>
+<span class="sd">        The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.</span>
+<span class="sd">    wsize : int, optional</span>
+<span class="sd">        The size of the window for digital filtering</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    IntervalSet</span>
+<span class="sd">        The interval set of detected events with metadata containing</span>
+<span class="sd">        the power, amplitude, and peak_time</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">fs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rate</span>
+
+    <span class="n">signal</span> <span class="o">=</span> <span class="n">apply_bandpass_filter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">freq_band</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span>
+    <span class="n">squared_signal</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="n">window</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">wsize</span><span class="p">)</span> <span class="o">/</span> <span class="n">wsize</span>
+
+    <span class="n">nSS</span> <span class="o">=</span> <span class="n">filtfilt</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">squared_signal</span><span class="p">)</span>
+    <span class="n">nSS</span> <span class="o">=</span> <span class="p">(</span><span class="n">nSS</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">nSS</span><span class="p">))</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">nSS</span><span class="p">)</span>
+    <span class="n">nSS</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">signal</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="n">nSS</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
+
+    <span class="c1"># Detect oscillation periods by thresholding normalized signal</span>
+    <span class="n">nSS2</span> <span class="o">=</span> <span class="n">nSS</span><span class="o">.</span><span class="n">threshold</span><span class="p">(</span><span class="n">thresh_band</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;above&quot;</span><span class="p">)</span>
+    <span class="n">nSS3</span> <span class="o">=</span> <span class="n">nSS2</span><span class="o">.</span><span class="n">threshold</span><span class="p">(</span><span class="n">thresh_band</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;below&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Exclude oscillation where min_duration &lt; length &lt; max_duration</span>
+    <span class="n">osc_ep</span> <span class="o">=</span> <span class="n">nSS3</span><span class="o">.</span><span class="n">time_support</span>
+    <span class="n">osc_ep</span> <span class="o">=</span> <span class="n">osc_ep</span><span class="o">.</span><span class="n">drop_short_intervals</span><span class="p">(</span><span class="n">duration_band</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">time_units</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+    <span class="n">osc_ep</span> <span class="o">=</span> <span class="n">osc_ep</span><span class="o">.</span><span class="n">drop_long_intervals</span><span class="p">(</span><span class="n">duration_band</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">time_units</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Merge if inter-oscillation period is too short</span>
+    <span class="n">osc_ep</span> <span class="o">=</span> <span class="n">osc_ep</span><span class="o">.</span><span class="n">merge_close_intervals</span><span class="p">(</span><span class="n">min_inter_duration</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Compute power, amplitude, and peak_time for each interval</span>
+    <span class="n">powers</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">amplitudes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">peak_times</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">osc_ep</span><span class="o">.</span><span class="n">values</span><span class="p">:</span>
+        <span class="n">seg</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">seg</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">powers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+            <span class="n">amplitudes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+            <span class="n">peak_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+            <span class="k">continue</span>
+        <span class="n">power</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">seg</span><span class="p">))</span>
+        <span class="n">power_db</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">power</span><span class="p">)</span>
+        <span class="n">amplitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
+        <span class="n">peak_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">values</span><span class="p">))</span>
+        <span class="n">peak_time</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">peak_idx</span><span class="p">]</span>
+        <span class="n">powers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">power_db</span><span class="p">)</span>
+        <span class="n">amplitudes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">amplitude</span><span class="p">)</span>
+        <span class="n">peak_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak_time</span><span class="p">)</span>
+
+    <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;power&quot;</span><span class="p">:</span> <span class="n">powers</span><span class="p">,</span>
+        <span class="s2">&quot;amplitude&quot;</span><span class="p">:</span> <span class="n">amplitudes</span><span class="p">,</span>
+        <span class="s2">&quot;peak_time&quot;</span><span class="p">:</span> <span class="n">peak_times</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">osc_ep</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">osc_ep</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2025, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">pynapple authors</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.10.2</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

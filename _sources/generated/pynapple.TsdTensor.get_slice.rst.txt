@@ -1,0 +1,6 @@
+pynapple.TsdTensor.get\_slice
+=============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.get_slice

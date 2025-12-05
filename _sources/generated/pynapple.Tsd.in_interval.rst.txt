@@ -1,0 +1,6 @@
+pynapple.Tsd.in\_interval
+=========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Tsd.in_interval

@@ -1,0 +1,6 @@
+pynapple.Tsd.to\_trial\_tensor
+==============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Tsd.to_trial_tensor

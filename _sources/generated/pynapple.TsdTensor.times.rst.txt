@@ -1,0 +1,6 @@
+pynapple.TsdTensor.times
+========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.times

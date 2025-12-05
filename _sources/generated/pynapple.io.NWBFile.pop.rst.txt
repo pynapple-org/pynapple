@@ -1,0 +1,6 @@
+pynapple.io.NWBFile.pop
+=======================
+
+.. currentmodule:: pynapple.io
+
+.. automethod:: NWBFile.pop

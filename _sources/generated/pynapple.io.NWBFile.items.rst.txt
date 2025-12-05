@@ -1,0 +1,6 @@
+pynapple.io.NWBFile.items
+=========================
+
+.. currentmodule:: pynapple.io
+
+.. automethod:: NWBFile.items

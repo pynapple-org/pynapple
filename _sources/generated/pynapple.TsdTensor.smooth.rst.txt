@@ -1,0 +1,6 @@
+pynapple.TsdTensor.smooth
+=========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.smooth

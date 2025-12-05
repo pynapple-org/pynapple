@@ -1,0 +1,6 @@
+pynapple.TsGroup.save
+=====================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.save

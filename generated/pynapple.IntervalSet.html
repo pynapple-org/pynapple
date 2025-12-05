@@ -1,0 +1,1962 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>pynapple.IntervalSet &#8212; pynapple 0.10.2 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_contributors.css?v=f079e67e" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=f2caec9a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=11e62b30"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=c57da192"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'generated/pynapple.IntervalSet';</script>
+    <link rel="icon" href="../_static/Pynapple_final_icon.png"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pynapple.IntervalSet.__init__" href="pynapple.IntervalSet.__init__.html" />
+    <link rel="prev" title="pynapple.TsdTensor.value_from" href="pynapple.TsdTensor.value_from.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.10.2" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.10.2 documentation - Home"/>
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.10.2 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About us
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.Tsd.html">pynapple.Tsd</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.__init__.html">pynapple.Tsd.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.as_array.html">pynapple.Tsd.as_array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.as_series.html">pynapple.Tsd.as_series</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.as_units.html">pynapple.Tsd.as_units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.bin_average.html">pynapple.Tsd.bin_average</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.convolve.html">pynapple.Tsd.convolve</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.copy.html">pynapple.Tsd.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.count.html">pynapple.Tsd.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.data.html">pynapple.Tsd.data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.decimate.html">pynapple.Tsd.decimate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.derivative.html">pynapple.Tsd.derivative</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.dropna.html">pynapple.Tsd.dropna</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.end_time.html">pynapple.Tsd.end_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.find_support.html">pynapple.Tsd.find_support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.get.html">pynapple.Tsd.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.get_slice.html">pynapple.Tsd.get_slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.in_interval.html">pynapple.Tsd.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.interpolate.html">pynapple.Tsd.interpolate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.restrict.html">pynapple.Tsd.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.save.html">pynapple.Tsd.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.smooth.html">pynapple.Tsd.smooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.start_time.html">pynapple.Tsd.start_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.threshold.html">pynapple.Tsd.threshold</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.time_diff.html">pynapple.Tsd.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.times.html">pynapple.Tsd.times</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.to_numpy.html">pynapple.Tsd.to_numpy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.to_trial_tensor.html">pynapple.Tsd.to_trial_tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.to_tsgroup.html">pynapple.Tsd.to_tsgroup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.value_from.html">pynapple.Tsd.value_from</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.TsdFrame.html">pynapple.TsdFrame</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.__init__.html">pynapple.TsdFrame.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.as_array.html">pynapple.TsdFrame.as_array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.as_dataframe.html">pynapple.TsdFrame.as_dataframe</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.as_units.html">pynapple.TsdFrame.as_units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.bin_average.html">pynapple.TsdFrame.bin_average</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.convolve.html">pynapple.TsdFrame.convolve</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.copy.html">pynapple.TsdFrame.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.count.html">pynapple.TsdFrame.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.data.html">pynapple.TsdFrame.data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.decimate.html">pynapple.TsdFrame.decimate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.derivative.html">pynapple.TsdFrame.derivative</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.drop_info.html">pynapple.TsdFrame.drop_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.dropna.html">pynapple.TsdFrame.dropna</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.end_time.html">pynapple.TsdFrame.end_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.find_support.html">pynapple.TsdFrame.find_support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.get.html">pynapple.TsdFrame.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.get_info.html">pynapple.TsdFrame.get_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.get_slice.html">pynapple.TsdFrame.get_slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.groupby.html">pynapple.TsdFrame.groupby</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.groupby_apply.html">pynapple.TsdFrame.groupby_apply</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.in_interval.html">pynapple.TsdFrame.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.interpolate.html">pynapple.TsdFrame.interpolate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.restrict.html">pynapple.TsdFrame.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.restrict_info.html">pynapple.TsdFrame.restrict_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.save.html">pynapple.TsdFrame.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.set_info.html">pynapple.TsdFrame.set_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.smooth.html">pynapple.TsdFrame.smooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.start_time.html">pynapple.TsdFrame.start_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.time_diff.html">pynapple.TsdFrame.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.times.html">pynapple.TsdFrame.times</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.to_numpy.html">pynapple.TsdFrame.to_numpy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.to_trial_tensor.html">pynapple.TsdFrame.to_trial_tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.value_from.html">pynapple.TsdFrame.value_from</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.TsdTensor.html">pynapple.TsdTensor</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.__init__.html">pynapple.TsdTensor.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.as_array.html">pynapple.TsdTensor.as_array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.bin_average.html">pynapple.TsdTensor.bin_average</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.convolve.html">pynapple.TsdTensor.convolve</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.copy.html">pynapple.TsdTensor.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.count.html">pynapple.TsdTensor.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.data.html">pynapple.TsdTensor.data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.decimate.html">pynapple.TsdTensor.decimate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.derivative.html">pynapple.TsdTensor.derivative</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.dropna.html">pynapple.TsdTensor.dropna</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.end_time.html">pynapple.TsdTensor.end_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.find_support.html">pynapple.TsdTensor.find_support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.get.html">pynapple.TsdTensor.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.get_slice.html">pynapple.TsdTensor.get_slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.in_interval.html">pynapple.TsdTensor.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.interpolate.html">pynapple.TsdTensor.interpolate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.restrict.html">pynapple.TsdTensor.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.save.html">pynapple.TsdTensor.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.smooth.html">pynapple.TsdTensor.smooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.start_time.html">pynapple.TsdTensor.start_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.time_diff.html">pynapple.TsdTensor.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.times.html">pynapple.TsdTensor.times</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.to_numpy.html">pynapple.TsdTensor.to_numpy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.to_trial_tensor.html">pynapple.TsdTensor.to_trial_tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.value_from.html">pynapple.TsdTensor.value_from</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1 current active has-children"><a class="current reference internal" href="#">pynapple.IntervalSet</a><details open="open"><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.__init__.html">pynapple.IntervalSet.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.as_dataframe.html">pynapple.IntervalSet.as_dataframe</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.as_units.html">pynapple.IntervalSet.as_units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.drop_info.html">pynapple.IntervalSet.drop_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.drop_long_intervals.html">pynapple.IntervalSet.drop_long_intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.drop_short_intervals.html">pynapple.IntervalSet.drop_short_intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.get_info.html">pynapple.IntervalSet.get_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.get_intervals_center.html">pynapple.IntervalSet.get_intervals_center</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.groupby.html">pynapple.IntervalSet.groupby</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.groupby_apply.html">pynapple.IntervalSet.groupby_apply</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.in_interval.html">pynapple.IntervalSet.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.intersect.html">pynapple.IntervalSet.intersect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.merge_close_intervals.html">pynapple.IntervalSet.merge_close_intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.restrict_info.html">pynapple.IntervalSet.restrict_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.save.html">pynapple.IntervalSet.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.set_diff.html">pynapple.IntervalSet.set_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.set_info.html">pynapple.IntervalSet.set_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.split.html">pynapple.IntervalSet.split</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.time_span.html">pynapple.IntervalSet.time_span</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.tot_length.html">pynapple.IntervalSet.tot_length</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.union.html">pynapple.IntervalSet.union</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.Ts.html">pynapple.Ts</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.__init__.html">pynapple.Ts.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.as_series.html">pynapple.Ts.as_series</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.as_units.html">pynapple.Ts.as_units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.copy.html">pynapple.Ts.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.count.html">pynapple.Ts.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.end_time.html">pynapple.Ts.end_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.fillna.html">pynapple.Ts.fillna</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.find_support.html">pynapple.Ts.find_support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.get.html">pynapple.Ts.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.get_slice.html">pynapple.Ts.get_slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.in_interval.html">pynapple.Ts.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.restrict.html">pynapple.Ts.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.save.html">pynapple.Ts.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.start_time.html">pynapple.Ts.start_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.time_diff.html">pynapple.Ts.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.times.html">pynapple.Ts.times</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.trial_count.html">pynapple.Ts.trial_count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.value_from.html">pynapple.Ts.value_from</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.TsGroup.html">pynapple.TsGroup</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.__init__.html">pynapple.TsGroup.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.clear.html">pynapple.TsGroup.clear</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.copy.html">pynapple.TsGroup.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.count.html">pynapple.TsGroup.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.drop_info.html">pynapple.TsGroup.drop_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.fromkeys.html">pynapple.TsGroup.fromkeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.get.html">pynapple.TsGroup.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.get_info.html">pynapple.TsGroup.get_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.getby_category.html">pynapple.TsGroup.getby_category</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.getby_intervals.html">pynapple.TsGroup.getby_intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.getby_threshold.html">pynapple.TsGroup.getby_threshold</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.groupby.html">pynapple.TsGroup.groupby</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.groupby_apply.html">pynapple.TsGroup.groupby_apply</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.items.html">pynapple.TsGroup.items</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.keys.html">pynapple.TsGroup.keys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.merge.html">pynapple.TsGroup.merge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.merge_group.html">pynapple.TsGroup.merge_group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.pop.html">pynapple.TsGroup.pop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.popitem.html">pynapple.TsGroup.popitem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.restrict.html">pynapple.TsGroup.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.restrict_info.html">pynapple.TsGroup.restrict_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.save.html">pynapple.TsGroup.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.set_info.html">pynapple.TsGroup.set_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.setdefault.html">pynapple.TsGroup.setdefault</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.time_diff.html">pynapple.TsGroup.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.to_tsd.html">pynapple.TsGroup.to_tsd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.trial_count.html">pynapple.TsGroup.trial_count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.update.html">pynapple.TsGroup.update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.value_from.html">pynapple.TsGroup.value_from</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.values.html">pynapple.TsGroup.values</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.io.NWBFile.html">pynapple.io.NWBFile</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.__init__.html">pynapple.io.NWBFile.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.clear.html">pynapple.io.NWBFile.clear</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.close.html">pynapple.io.NWBFile.close</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.copy.html">pynapple.io.NWBFile.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.fromkeys.html">pynapple.io.NWBFile.fromkeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.get.html">pynapple.io.NWBFile.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.items.html">pynapple.io.NWBFile.items</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.keys.html">pynapple.io.NWBFile.keys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.pop.html">pynapple.io.NWBFile.pop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.popitem.html">pynapple.io.NWBFile.popitem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.setdefault.html">pynapple.io.NWBFile.setdefault</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.update.html">pynapple.io.NWBFile.update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.values.html">pynapple.io.NWBFile.values</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.io.NPZFile.html">pynapple.io.NPZFile</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NPZFile.__init__.html">pynapple.io.NPZFile.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NPZFile.load.html">pynapple.io.NPZFile.load</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="pynapple.io.misc.html">pynapple.io.misc</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.io.folder.Folder.html">pynapple.io.folder.Folder</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.__init__.html">pynapple.io.folder.Folder.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.clear.html">pynapple.io.folder.Folder.clear</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.copy.html">pynapple.io.folder.Folder.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.doc.html">pynapple.io.folder.Folder.doc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.expand.html">pynapple.io.folder.Folder.expand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.fromkeys.html">pynapple.io.folder.Folder.fromkeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.get.html">pynapple.io.folder.Folder.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.info.html">pynapple.io.folder.Folder.info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.items.html">pynapple.io.folder.Folder.items</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.keys.html">pynapple.io.folder.Folder.keys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.load.html">pynapple.io.folder.Folder.load</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.metadata.html">pynapple.io.folder.Folder.metadata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.pop.html">pynapple.io.folder.Folder.pop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.popitem.html">pynapple.io.folder.Folder.popitem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.save.html">pynapple.io.folder.Folder.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.setdefault.html">pynapple.io.folder.Folder.setdefault</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.update.html">pynapple.io.folder.Folder.update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.values.html">pynapple.io.folder.Folder.values</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.correlograms.html">pynapple.process.correlograms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.decoding.html">pynapple.process.decoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.filtering.html">pynapple.process.filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.perievent.html">pynapple.process.perievent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.randomize.html">pynapple.process.randomize</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.spectrum.html">pynapple.process.spectrum</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.tuning_curves.html">pynapple.process.tuning_curves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.wavelets.html">pynapple.process.wavelets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.warping.html">pynapple.process.warping</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../api.html" class="nav-link">API reference</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pynapple.IntervalSet</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="pynapple-intervalset">
+<h1>pynapple.IntervalSet<a class="headerlink" href="#pynapple-intervalset" title="Link to this heading">#</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="pynapple.IntervalSet">
+<em class="property"><span class="k"><span class="pre">class</span></span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">pynapple.</span></span><span class="sig-name descname"><span class="pre">IntervalSet</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet" title="Link to this definition">#</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.lib.mixins.NDArrayOperatorsMixin.html#numpy.lib.mixins.NDArrayOperatorsMixin" title="(in NumPy v2.3)"><code class="xref py py-class docutils literal notranslate"><span class="pre">NDArrayOperatorsMixin</span></code></a>, <code class="xref py py-class docutils literal notranslate"><span class="pre">_MetadataMixin</span></code></p>
+<p>A class representing a (irregular) set of time intervals in elapsed time, with relative operations</p>
+<p>The <cite>IntervalSet</cite> object behaves like a numpy ndarray with the limitation that the object is not mutable.</p>
+<p>If start and end are not aligned, meaning that:</p>
+<ol class="arabic simple">
+<li><p>len(start) != len(end)</p></li>
+<li><p>end[i] &gt; start[i]</p></li>
+<li><p>start[i+1] &lt; end[i]</p></li>
+<li><p>start and end are not sorted,</p></li>
+</ol>
+<p>IntervalSet will try to “fix” the data by eliminating some of the start and end data points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>start</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em> or </em><em>number</em><em> or </em><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.3)"><em>pandas.DataFrame</em></a><em> or </em><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.Series.html#pandas.Series" title="(in pandas v2.3.3)"><em>pandas.Series</em></a><em> or </em><em>iterable</em><em> of </em><em>(</em><em>start</em><em>, </em><em>end</em><em>) </em><em>pairs</em>) – <p>Beginning of intervals.
+Alternatively, the <cite>end</cite> argument can be left out and <cite>start</cite> can be one of the following:</p>
+<ul>
+<li><p>IntervalSet</p></li>
+<li><p>pandas.DataFrame with columns [“start”, “end”]</p></li>
+<li><p>iterable of (start, end) pairs</p></li>
+<li><p>a single (start, end) pair</p></li>
+</ul>
+</p></li>
+<li><p><strong>end</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em> or </em><em>number</em><em> or </em><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.Series.html#pandas.Series" title="(in pandas v2.3.3)"><em>pandas.Series</em></a><em>, </em><em>optional</em>) – Ends of intervals.</p></li>
+<li><p><strong>time_units</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – Time unit of the intervals (‘us’, ‘ms’, ‘s’ [default])</p></li>
+<li><p><strong>metadata</strong> (<a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.3)"><em>pandas.DataFrame</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>optional</em>) – Metadata associated with each interval. Metadata names are pulled from DataFrame columns or dictionary keys.
+The length of the metadata should match the length of the intervals.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.14)"><strong>RuntimeError</strong></a> – If <cite>start</cite> and <cite>end</cite> arguments are of unknown type.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>Initialize an IntervalSet with a list of start and end times:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">start</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">end</span> <span class="o">=</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">33</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">end</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end</span>
+<span class="go">      0        0      5</span>
+<span class="go">      1       10     12</span>
+<span class="go">      2       20     33</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>Initialize an IntervalSet with an array of start and end pairs:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">12</span><span class="p">],</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">33</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end</span>
+<span class="go">      0        0      5</span>
+<span class="go">      1       10     12</span>
+<span class="go">      2       20     33</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>Initialize an IntervalSet with metadata:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">start</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">end</span> <span class="o">=</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">33</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">end</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span>
+<span class="go">  index    start    end     label</span>
+<span class="go">      0        0      5     a</span>
+<span class="go">      1       10     12     b</span>
+<span class="go">      2       20     33     c</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>Initialize an IntervalSet with a pandas DataFrame:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">df</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;start&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">],</span> <span class="s2">&quot;end&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">33</span><span class="p">],</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">]})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">df</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end     label</span>
+<span class="go">      0        0      5     a</span>
+<span class="go">      1       10     12     b</span>
+<span class="go">      2       20     33     c</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>Apply numpy functions to an IntervalSet:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">],</span> <span class="n">end</span><span class="o">=</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span><span class="mi">20</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end</span>
+<span class="go">      0        0      5</span>
+<span class="go">      1       10     20</span>
+<span class="go">shape: (2, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">ep</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<span class="go">UserWarning: Converting IntervalSet to numpy.array</span>
+<span class="go">array([[ 5.],</span>
+<span class="go">        [10.]])</span>
+</pre></div>
+</div>
+<p>Slicing an IntervalSet:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="p">[:,</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">array([ 0., 10.])</span>
+</pre></div>
+</div>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<span class="go">start    end</span>
+<span class="go">0        0      5</span>
+<span class="go">shape: (1, 2)</span>
+</pre></div>
+</div>
+<p>Modifying the <cite>IntervalSet</cite> will raise an error:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<span class="go">RuntimeError: IntervalSet is immutable. Starts and ends have been already sorted.</span>
+</pre></div>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">start</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.__init__" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<p class="rubric">Methods</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.IntervalSet.__init__.html#pynapple.IntervalSet.__init__" title="pynapple.IntervalSet.__init__"><code class="xref py py-obj docutils literal notranslate"><span class="pre">__init__</span></code></a>(start[, end, time_units, metadata])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.IntervalSet.as_dataframe.html#pynapple.IntervalSet.as_dataframe" title="pynapple.IntervalSet.as_dataframe"><code class="xref py py-obj docutils literal notranslate"><span class="pre">as_dataframe</span></code></a>()</p></td>
+<td><p>Convert the <cite>IntervalSet</cite> object to a pandas.DataFrame object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.IntervalSet.as_units.html#pynapple.IntervalSet.as_units" title="pynapple.IntervalSet.as_units"><code class="xref py py-obj docutils literal notranslate"><span class="pre">as_units</span></code></a>([units])</p></td>
+<td><p>returns a pandas DataFrame with time expressed in the desired unit</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.IntervalSet.drop_info.html#pynapple.IntervalSet.drop_info" title="pynapple.IntervalSet.drop_info"><code class="xref py py-obj docutils literal notranslate"><span class="pre">drop_info</span></code></a>(key)</p></td>
+<td><p>Drop metadata based on metadata column name.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.IntervalSet.drop_long_intervals.html#pynapple.IntervalSet.drop_long_intervals" title="pynapple.IntervalSet.drop_long_intervals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">drop_long_intervals</span></code></a>(threshold[, time_units])</p></td>
+<td><p>Drops the long intervals in the interval set with duration longer than <cite>threshold</cite>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.IntervalSet.drop_short_intervals.html#pynapple.IntervalSet.drop_short_intervals" title="pynapple.IntervalSet.drop_short_intervals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">drop_short_intervals</span></code></a>(threshold[, time_units])</p></td>
+<td><p>Drops the short intervals in the interval set with duration shorter than <cite>threshold</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.IntervalSet.get_info.html#pynapple.IntervalSet.get_info" title="pynapple.IntervalSet.get_info"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_info</span></code></a>(key)</p></td>
+<td><p>Returns metadata based on metadata column name or index.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.IntervalSet.get_intervals_center.html#pynapple.IntervalSet.get_intervals_center" title="pynapple.IntervalSet.get_intervals_center"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_intervals_center</span></code></a>([alpha])</p></td>
+<td><p>Returns by default the centers of each intervals.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.IntervalSet.groupby.html#pynapple.IntervalSet.groupby" title="pynapple.IntervalSet.groupby"><code class="xref py py-obj docutils literal notranslate"><span class="pre">groupby</span></code></a>(by[, get_group])</p></td>
+<td><p>Group pynapple object by metadata name(s).</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.IntervalSet.groupby_apply.html#pynapple.IntervalSet.groupby_apply" title="pynapple.IntervalSet.groupby_apply"><code class="xref py py-obj docutils literal notranslate"><span class="pre">groupby_apply</span></code></a>(by, func[, input_key])</p></td>
+<td><p>Apply a function to each group in a grouped pynapple object.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.IntervalSet.in_interval.html#pynapple.IntervalSet.in_interval" title="pynapple.IntervalSet.in_interval"><code class="xref py py-obj docutils literal notranslate"><span class="pre">in_interval</span></code></a>(tsd)</p></td>
+<td><p>finds out in which element of the interval set each point in a time series fits.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.IntervalSet.intersect.html#pynapple.IntervalSet.intersect" title="pynapple.IntervalSet.intersect"><code class="xref py py-obj docutils literal notranslate"><span class="pre">intersect</span></code></a>(a)</p></td>
+<td><p>Set intersection of IntervalSet</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.IntervalSet.merge_close_intervals.html#pynapple.IntervalSet.merge_close_intervals" title="pynapple.IntervalSet.merge_close_intervals"><code class="xref py py-obj docutils literal notranslate"><span class="pre">merge_close_intervals</span></code></a>(threshold[, time_units])</p></td>
+<td><p>Merges intervals that are very close.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.IntervalSet.restrict_info.html#pynapple.IntervalSet.restrict_info" title="pynapple.IntervalSet.restrict_info"><code class="xref py py-obj docutils literal notranslate"><span class="pre">restrict_info</span></code></a>(key)</p></td>
+<td><p>Restrict metadata columns to a key or list of keys.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.IntervalSet.save.html#pynapple.IntervalSet.save" title="pynapple.IntervalSet.save"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save</span></code></a>(filename)</p></td>
+<td><p>Save IntervalSet object in npz format.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.IntervalSet.set_diff.html#pynapple.IntervalSet.set_diff" title="pynapple.IntervalSet.set_diff"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_diff</span></code></a>(a)</p></td>
+<td><p>set difference of IntervalSet</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.IntervalSet.set_info.html#pynapple.IntervalSet.set_info" title="pynapple.IntervalSet.set_info"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_info</span></code></a>([metadata])</p></td>
+<td><p>Add metadata information about the object.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.IntervalSet.split.html#pynapple.IntervalSet.split" title="pynapple.IntervalSet.split"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split</span></code></a>(interval_size[, time_units])</p></td>
+<td><p>Split <cite>IntervalSet</cite> to a new <cite>IntervalSet</cite> with each interval being of size <cite>interval_size</cite>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.IntervalSet.time_span.html#pynapple.IntervalSet.time_span" title="pynapple.IntervalSet.time_span"><code class="xref py py-obj docutils literal notranslate"><span class="pre">time_span</span></code></a>()</p></td>
+<td><p>Time span of the interval set.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="pynapple.IntervalSet.tot_length.html#pynapple.IntervalSet.tot_length" title="pynapple.IntervalSet.tot_length"><code class="xref py py-obj docutils literal notranslate"><span class="pre">tot_length</span></code></a>([time_units])</p></td>
+<td><p>Total elapsed time in the set.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="pynapple.IntervalSet.union.html#pynapple.IntervalSet.union" title="pynapple.IntervalSet.union"><code class="xref py py-obj docutils literal notranslate"><span class="pre">union</span></code></a>(a)</p></td>
+<td><p>set union of IntervalSet</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p class="rubric">Attributes</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pynapple.IntervalSet.end" title="pynapple.IntervalSet.end"><code class="xref py py-obj docutils literal notranslate"><span class="pre">end</span></code></a></p></td>
+<td><p>The end times of each interval</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pynapple.IntervalSet.ends" title="pynapple.IntervalSet.ends"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ends</span></code></a></p></td>
+<td><p>Return the ends of the IntervalSet as a Ts object</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pynapple.IntervalSet.loc" title="pynapple.IntervalSet.loc"><code class="xref py py-obj docutils literal notranslate"><span class="pre">loc</span></code></a></p></td>
+<td><p>Slicing function to add compatibility with pandas DataFrame after removing it as a super class of IntervalSet</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pynapple.IntervalSet.metadata" title="pynapple.IntervalSet.metadata"><code class="xref py py-obj docutils literal notranslate"><span class="pre">metadata</span></code></a></p></td>
+<td><p>Returns a read-only version (copy) of the _metadata DataFrame</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pynapple.IntervalSet.metadata_columns" title="pynapple.IntervalSet.metadata_columns"><code class="xref py py-obj docutils literal notranslate"><span class="pre">metadata_columns</span></code></a></p></td>
+<td><p>List of metadata column names.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pynapple.IntervalSet.ndim" title="pynapple.IntervalSet.ndim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ndim</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pynapple.IntervalSet.shape" title="pynapple.IntervalSet.shape"><code class="xref py py-obj docutils literal notranslate"><span class="pre">shape</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pynapple.IntervalSet.size" title="pynapple.IntervalSet.size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">size</span></code></a></p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pynapple.IntervalSet.start" title="pynapple.IntervalSet.start"><code class="xref py py-obj docutils literal notranslate"><span class="pre">start</span></code></a></p></td>
+<td><p>The start times of each interval</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pynapple.IntervalSet.starts" title="pynapple.IntervalSet.starts"><code class="xref py py-obj docutils literal notranslate"><span class="pre">starts</span></code></a></p></td>
+<td><p>Return the starts of the IntervalSet as a Ts object</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pynapple.IntervalSet.values" title="pynapple.IntervalSet.values"><code class="xref py py-obj docutils literal notranslate"><span class="pre">values</span></code></a></p></td>
+<td><p>Array of start and end times</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pynapple.IntervalSet.index" title="pynapple.IntervalSet.index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">index</span></code></a></p></td>
+<td><p>Index of each interval, automatically set from 0 to n_intervals</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pynapple.IntervalSet.columns" title="pynapple.IntervalSet.columns"><code class="xref py py-obj docutils literal notranslate"><span class="pre">columns</span></code></a></p></td>
+<td><p>Column names of the IntervalSet, which are always [&quot;start&quot;, &quot;end&quot;]</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pynapple.IntervalSet.nap_class" title="pynapple.IntervalSet.nap_class"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nap_class</span></code></a></p></td>
+<td><p>The pynapple class name</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pynapple.IntervalSet.metadata_index" title="pynapple.IntervalSet.metadata_index"><code class="xref py py-obj docutils literal notranslate"><span class="pre">metadata_index</span></code></a></p></td>
+<td><p>Row index for metadata DataFrame.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.as_dataframe">
+<span class="sig-name descname"><span class="pre">as_dataframe</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.as_dataframe"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.as_dataframe" title="Link to this definition">#</a></dt>
+<dd><p>Convert the <cite>IntervalSet</cite> object to a pandas.DataFrame object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>out</strong> – _</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.3)">pandas.DataFrame</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.as_units">
+<span class="sig-name descname"><span class="pre">as_units</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.as_units"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.as_units" title="Link to this definition">#</a></dt>
+<dd><p>returns a pandas DataFrame with time expressed in the desired unit</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>units</strong> (<em>None</em><em>, </em><em>optional</em>) – ‘us’, ‘ms’, or ‘s’ [default]</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – DataFrame with adjusted times</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.3)">pandas.DataFrame</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.columns">
+<span class="sig-name descname"><span class="pre">columns</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><span class="pre">ndarray</span></a></em><a class="headerlink" href="#pynapple.IntervalSet.columns" title="Link to this definition">#</a></dt>
+<dd><p>Column names of the IntervalSet, which are always [“start”, “end”]</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.drop_info">
+<span class="sig-name descname"><span class="pre">drop_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.drop_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.drop_info" title="Link to this definition">#</a></dt>
+<dd><p>Drop metadata based on metadata column name. Operates in place.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> (<em>(</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>)</em>) – Metadata column name(s) to drop.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">12</span><span class="p">],</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">33</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;l1&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="s2">&quot;l2&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">],</span> <span class="s2">&quot;l3&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span><span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end    l1  l2      l3</span>
+<span class="go">      0        0      5     1  x        4</span>
+<span class="go">      1       10     12     2  x        5</span>
+<span class="go">      2       20     33     3  y        6</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>To drop a single metadata column:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">drop_info</span><span class="p">(</span><span class="s2">&quot;l1&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end  l2      l3</span>
+<span class="go">      0        0      5  x        4</span>
+<span class="go">      1       10     12  x        5</span>
+<span class="go">      2       20     33  y        6</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>To drop multiple metadata columns:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">drop_info</span><span class="p">([</span><span class="s2">&quot;l2&quot;</span><span class="p">,</span> <span class="s2">&quot;l3&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end</span>
+<span class="go">      0        0      5</span>
+<span class="go">      1       10     12</span>
+<span class="go">      2       20     33</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.drop_long_intervals">
+<span class="sig-name descname"><span class="pre">drop_long_intervals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">threshold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.drop_long_intervals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.drop_long_intervals" title="Link to this definition">#</a></dt>
+<dd><p>Drops the long intervals in the interval set with duration longer than <cite>threshold</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>threshold</strong> (<em>numeric</em>) – Time threshold for “long” intervals</p></li>
+<li><p><strong>time_units</strong> (<em>None</em><em>, </em><em>optional</em>) – The time units for the treshold (‘us’, ‘ms’, ‘s’ [default])</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – A copied IntervalSet with the dropped intervals</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pynapple.IntervalSet" title="pynapple.IntervalSet">IntervalSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.drop_short_intervals">
+<span class="sig-name descname"><span class="pre">drop_short_intervals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">threshold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.drop_short_intervals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.drop_short_intervals" title="Link to this definition">#</a></dt>
+<dd><p>Drops the short intervals in the interval set with duration shorter than <cite>threshold</cite>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>threshold</strong> (<em>numeric</em>) – Time threshold for “short” intervals</p></li>
+<li><p><strong>time_units</strong> (<em>None</em><em>, </em><em>optional</em>) – The time units for the treshold (‘us’, ‘ms’, ‘s’ [default])</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – A copied IntervalSet with the dropped intervals</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pynapple.IntervalSet" title="pynapple.IntervalSet">IntervalSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.end">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">end</span></span><a class="headerlink" href="#pynapple.IntervalSet.end" title="Link to this definition">#</a></dt>
+<dd><p>The end times of each interval</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.ends">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ends</span></span><a class="headerlink" href="#pynapple.IntervalSet.ends" title="Link to this definition">#</a></dt>
+<dd><p>Return the ends of the IntervalSet as a Ts object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The ends of the IntervalSet</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="pynapple.Ts.html#pynapple.Ts" title="pynapple.Ts">Ts</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.get_info">
+<span class="sig-name descname"><span class="pre">get_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.get_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.get_info" title="Link to this definition">#</a></dt>
+<dd><p>Returns metadata based on metadata column name or index.</p>
+<p>If the metadata name does not contain special nor overlaps with class attributes,
+it can also be accessed as an attribute.</p>
+<p>If the metadata name does not overlap with class-reserved keys,
+it can also be accessed as a key.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> – <ul class="simple">
+<li><p>str: metadata column name or metadata index (for TsdFrame with string column names)</p></li>
+<li><p>list of str: multiple metadata column names</p></li>
+</ul>
+</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>The metadata information based on the key provided.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a> or np.array or Any (for single location)</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#IndexError" title="(in Python v3.14)"><strong>IndexError</strong></a> – If the metadata index is not found.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">12</span><span class="p">],</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">33</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;l1&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="s2">&quot;l2&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">times</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end    l1  l2</span>
+<span class="go">      0        0      5     1  x</span>
+<span class="go">      1       10     12     2  x</span>
+<span class="go">      2       20     33     3  y</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>To access a single metadata column:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">get_info</span><span class="p">(</span><span class="s2">&quot;l1&quot;</span><span class="p">)</span>
+<span class="go">array([1, 2, 3])</span>
+</pre></div>
+</div>
+<p>To access multiple metadata columns:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">get_info</span><span class="p">([</span><span class="s2">&quot;l1&quot;</span><span class="p">,</span> <span class="s2">&quot;l2&quot;</span><span class="p">])</span>
+<span class="go">     l1    l2</span>
+<span class="go">0    1     x</span>
+<span class="go">1    2     x</span>
+<span class="go">2    3     y</span>
+</pre></div>
+</div>
+<p>To access metadata as an attribute:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">l1</span>
+<span class="go">array([1, 2, 3])</span>
+</pre></div>
+</div>
+<p>To access metadata as a key:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="p">[</span><span class="s2">&quot;l1&quot;</span><span class="p">]</span>
+<span class="go">array([1, 2, 3])</span>
+</pre></div>
+</div>
+<p>Multiple metadata columns can be accessed as keys:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="p">[[</span><span class="s2">&quot;l1&quot;</span><span class="p">,</span> <span class="s2">&quot;l2&quot;</span><span class="p">]]</span>
+<span class="go">     l1    l2</span>
+<span class="go">0    1     x</span>
+<span class="go">1    2     x</span>
+<span class="go">2    3     y</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.get_intervals_center">
+<span class="sig-name descname"><span class="pre">get_intervals_center</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">alpha</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.5</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.get_intervals_center"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.get_intervals_center" title="Link to this definition">#</a></dt>
+<dd><p>Returns by default the centers of each intervals.</p>
+<p>It is possible to bias the midpoint by changing the alpha parameter between [0, 1]
+For each epoch:
+t = start + (end-start)*alpha</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>alpha</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – The midpoint within each interval.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Timestamps object</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="pynapple.Ts.html#pynapple.Ts" title="pynapple.Ts">Ts</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.groupby">
+<span class="sig-name descname"><span class="pre">groupby</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">by</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">get_group</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.groupby"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.groupby" title="Link to this definition">#</a></dt>
+<dd><p>Group pynapple object by metadata name(s).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>by</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Metadata name(s) to group by.</p></li>
+<li><p><strong>get_group</strong> (<em>dictionary key</em><em>, </em><em>optional</em>) – Name of the group to return.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary of object indices (dictionary values) corresponding to each group (dictionary keys), or pynapple object corresponding to ‘get_group’ if it has been supplied.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a> or pynapple object</p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – If metadata name does not exist.</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">12</span><span class="p">],</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">33</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;l1&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;l2&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">times</span><span class="p">,</span><span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">ep</span><span class="p">)</span>
+<span class="go">  index    start    end    l1  l2</span>
+<span class="go">      0        0      5     1  x</span>
+<span class="go">      1       10     12     2  x</span>
+<span class="go">      2       20     33     2  y</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>Grouping by a single column:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;l2&quot;</span><span class="p">)</span>
+<span class="go">{&#39;x&#39;: [0, 1], &#39;y&#39;: [2]}</span>
+</pre></div>
+</div>
+<p>Grouping by multiple columns:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">groupby</span><span class="p">([</span><span class="s2">&quot;l1&quot;</span><span class="p">,</span><span class="s2">&quot;l2&quot;</span><span class="p">])</span>
+<span class="go">{(1, &#39;x&#39;): [0], (2, &#39;x&#39;): [1], (2, &#39;y&#39;): [2]}</span>
+</pre></div>
+</div>
+<p>Filtering to a specific group using the output dictionary:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">groups</span> <span class="o">=</span> <span class="n">ep</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;l2&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="p">[</span><span class="n">groups</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]]</span>
+<span class="go">  index    start    end    l1  l2</span>
+<span class="go">      0        0      5     1  x</span>
+<span class="go">      1       10     12     2  x</span>
+<span class="go">shape: (2, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>Filtering to a specific group using the get_group argument:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">groupby</span><span class="p">(</span><span class="s2">&quot;l2&quot;</span><span class="p">,</span> <span class="n">get_group</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+<span class="go">  index    start    end    l1  l2</span>
+<span class="go">      0        0      5     1  x</span>
+<span class="go">      1       10     12     2  x</span>
+<span class="go">shape: (2, 2), time unit: sec.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.groupby_apply">
+<span class="sig-name descname"><span class="pre">groupby_apply</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">by</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">func</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_key</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">func_kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.groupby_apply"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.groupby_apply" title="Link to this definition">#</a></dt>
+<dd><p>Apply a function to each group in a grouped pynapple object.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>by</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Metadata name(s) to group by.</p></li>
+<li><p><strong>func</strong> (<em>function</em>) – Function to apply to each group.</p></li>
+<li><p><strong>input_key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><em>None</em><em>, </em><em>optional</em>) – Input key that the grouped object will be passed as. If None, the grouped object will be passed as the first positional argument.</p></li>
+<li><p><strong>**func_kwargs</strong> (<em>optional</em>) – Additional keyword arguments to pass to the function. Any required positional arguments that are not the grouped object should be passed as keyword arguments.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>Dictionary of results from applying the function to each group, where the keys are the group names and the values are the results.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">12</span><span class="p">],</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">33</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;l1&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span> <span class="s2">&quot;l2&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">times</span><span class="p">,</span><span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="nb">print</span><span class="p">(</span><span class="n">ep</span><span class="p">)</span>
+<span class="go">  index    start    end    l1  l2</span>
+<span class="go">      0        0      5     1  x</span>
+<span class="go">      1       10     12     2  x</span>
+<span class="go">      2       20     33     2  y</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>Apply a numpy function:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">groupby_apply</span><span class="p">(</span><span class="s2">&quot;l2&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">)</span>
+<span class="go">{&#39;x&#39;: np.float64(6.75), &#39;y&#39;: np.float64(26.5)}</span>
+</pre></div>
+</div>
+<p>Apply a custom function:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">groupby_apply</span><span class="p">(</span><span class="s2">&quot;l2&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<span class="go">{&#39;x&#39;: 2, &#39;y&#39;: 1}</span>
+</pre></div>
+</div>
+<p>Apply a function with additional arguments:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">groupby_apply</span><span class="p">(</span><span class="s2">&quot;l2&quot;</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="go">{&#39;x&#39;: array([ 2.5, 11. ]), &#39;y&#39;: array([26.5])}</span>
+</pre></div>
+</div>
+<p>Applying a function with additional arguments, where the grouped object is not the first argument:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tsg</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="p">{</span>
+<span class="gp">... </span>        <span class="mi">1</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">40</span><span class="p">)),</span>
+<span class="gp">... </span>        <span class="mi">2</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span> <span class="n">time_units</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">),</span>
+<span class="gp">... </span>        <span class="mi">3</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">),</span> <span class="n">time_units</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="p">},</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">feature</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">40</span><span class="p">),</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">20</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">20</span><span class="p">)]))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">func_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+<span class="gp">... </span>    <span class="s2">&quot;data&quot;</span><span class="p">:</span> <span class="n">tsg</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s2">&quot;features&quot;</span><span class="p">:</span> <span class="n">feature</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="s2">&quot;bins&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+<span class="gp">... </span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">groupby_apply</span><span class="p">(</span><span class="s2">&quot;l2&quot;</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_tuning_curves</span><span class="p">,</span> <span class="n">input_key</span><span class="o">=</span><span class="s2">&quot;epochs&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">func_kwargs</span><span class="p">)</span>
+<span class="go">{&#39;x&#39;: &lt;xarray.DataArray (unit: 3, 0: 2)&gt; Size: 48B</span>
+<span class="go">array([[       nan, 1.        ],</span>
+<span class="go">       [       nan, 1.77777778],</span>
+<span class="go">       [       nan, 4.11111111]])</span>
+<span class="go">Coordinates:</span>
+<span class="go">  * unit     (unit) int64 24B 1 2 3</span>
+<span class="go">  * 0        (0) float64 16B -0.25 0.25</span>
+<span class="go">.. attribute:: occupancy</span>
+</pre></div>
+</div>
+<blockquote>
+<div><p>[nan  9.]</p>
+</div></blockquote>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.bin_edges">
+<span class="sig-name descname"><span class="pre">bin_edges</span></span><a class="headerlink" href="#pynapple.IntervalSet.bin_edges" title="Link to this definition">#</a></dt>
+<dd><p>[array([-0.5,  0. ,  0.5])], ‘y’: &lt;xarray.DataArray (unit: 3, 0: 2)&gt; Size: 48B</p>
+</dd></dl>
+
+<dl class="simple">
+<dt>array([[       nan, 1.        ],</dt><dd><p>[       nan, 1.92857143],
+[       nan, 4.71428571]])</p>
+</dd>
+<dt>Coordinates:</dt><dd><ul class="simple">
+<li><p>unit     (unit) int64 24B 1 2 3</p></li>
+<li><p>0        (0) float64 16B 0.75 1.25</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.occupancy">
+<span class="sig-name descname"><span class="pre">occupancy</span></span><a class="headerlink" href="#pynapple.IntervalSet.occupancy" title="Link to this definition">#</a></dt>
+<dd><p>[nan 14.]</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">bin_edges</span></span><a class="headerlink" href="#id0" title="Link to this definition">#</a></dt>
+<dd><p>[array([0.5, 1. , 1.5])]}</p>
+</dd></dl>
+
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.in_interval">
+<span class="sig-name descname"><span class="pre">in_interval</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tsd</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.in_interval"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.in_interval" title="Link to this definition">#</a></dt>
+<dd><p>finds out in which element of the interval set each point in a time series fits.</p>
+<p>NaNs for those that don’t fit an interval</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tsd</strong> (<a class="reference internal" href="pynapple.Tsd.html#pynapple.Tsd" title="pynapple.Tsd"><em>Tsd</em></a>) – The tsd to be binned</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – an array with the interval index labels for each time stamp (NaN) for timestamps not in IntervalSet</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)">numpy.ndarray</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.index">
+<span class="sig-name descname"><span class="pre">index</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><span class="pre">ndarray</span></a></em><a class="headerlink" href="#pynapple.IntervalSet.index" title="Link to this definition">#</a></dt>
+<dd><p>Index of each interval, automatically set from 0 to n_intervals</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.intersect">
+<span class="sig-name descname"><span class="pre">intersect</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.intersect"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.intersect" title="Link to this definition">#</a></dt>
+<dd><p>Set intersection of IntervalSet</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#pynapple.IntervalSet" title="pynapple.IntervalSet"><em>IntervalSet</em></a>) – the IntervalSet to intersect self with</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – _</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pynapple.IntervalSet" title="pynapple.IntervalSet">IntervalSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.loc">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">loc</span></span><a class="headerlink" href="#pynapple.IntervalSet.loc" title="Link to this definition">#</a></dt>
+<dd><p>Slicing function to add compatibility with pandas DataFrame after removing it as a super class of IntervalSet</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.merge_close_intervals">
+<span class="sig-name descname"><span class="pre">merge_close_intervals</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">threshold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.merge_close_intervals"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.merge_close_intervals" title="Link to this definition">#</a></dt>
+<dd><p>Merges intervals that are very close.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>threshold</strong> (<em>numeric</em>) – time threshold for the closeness of the intervals</p></li>
+<li><p><strong>time_units</strong> (<em>None</em><em>, </em><em>optional</em>) – time units for the threshold (‘us’, ‘ms’, ‘s’ [default])</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – a copied IntervalSet with merged intervals</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pynapple.IntervalSet" title="pynapple.IntervalSet">IntervalSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.metadata">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metadata</span></span><a class="headerlink" href="#pynapple.IntervalSet.metadata" title="Link to this definition">#</a></dt>
+<dd><p>Returns a read-only version (copy) of the _metadata DataFrame</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.metadata_columns">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">metadata_columns</span></span><a class="headerlink" href="#pynapple.IntervalSet.metadata_columns" title="Link to this definition">#</a></dt>
+<dd><p>List of metadata column names.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.metadata_index">
+<span class="sig-name descname"><span class="pre">metadata_index</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="pre">np.ndarray</span><span class="w"> </span><span class="p"><span class="pre">|</span></span><span class="w"> </span><span class="pre">pd.Index</span></em><a class="headerlink" href="#pynapple.IntervalSet.metadata_index" title="Link to this definition">#</a></dt>
+<dd><p>Row index for metadata DataFrame. This matches the index for TsGroup and IntervalSet, and the columns for TsdFrame.</p>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.nap_class">
+<span class="sig-name descname"><span class="pre">nap_class</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><span class="pre">str</span></a></em><a class="headerlink" href="#pynapple.IntervalSet.nap_class" title="Link to this definition">#</a></dt>
+<dd><p>The pynapple class name</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.ndim">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ndim</span></span><a class="headerlink" href="#pynapple.IntervalSet.ndim" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.restrict_info">
+<span class="sig-name descname"><span class="pre">restrict_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">key</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.restrict_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.restrict_info" title="Link to this definition">#</a></dt>
+<dd><p>Restrict metadata columns to a key or list of keys.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>key</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> of </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Metadata column name(s) to restrict to.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>None</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">12</span><span class="p">],</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">33</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;l1&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="s2">&quot;l2&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">],</span> <span class="s2">&quot;l3&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">4</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">6</span><span class="p">]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">tmp</span><span class="p">,</span><span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end    l1  l2      l3</span>
+<span class="go">      0        0      5     1  x        4</span>
+<span class="go">      1       10     12     2  x        5</span>
+<span class="go">      2       20     33     3  y        6</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>To restrict to multiple metadata columns:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">restrict_info</span><span class="p">([</span><span class="s2">&quot;l2&quot;</span><span class="p">,</span> <span class="s2">&quot;l3&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end  l2      l3</span>
+<span class="go">      0        0      5  x        4</span>
+<span class="go">      1       10     12  x        5</span>
+<span class="go">      2       20     33  y        6</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>To restrict to a single metadata column:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">restrict_info</span><span class="p">(</span><span class="s2">&quot;l2&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end  l2</span>
+<span class="go">      0        0      5  x</span>
+<span class="go">      1       10     12  x</span>
+<span class="go">      2       20     33  y</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.save">
+<span class="sig-name descname"><span class="pre">save</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.save"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.save" title="Link to this definition">#</a></dt>
+<dd><p>Save IntervalSet object in npz format. The file will contain the starts and ends.</p>
+<p>The main purpose of this function is to save small/medium sized IntervalSet
+objects. For example, you determined some epochs for one session that you want to save
+to avoid recomputing them.</p>
+<p>You can load the object with <cite>nap.load_file</cite>. Keys are ‘start’, ‘end’ and ‘type’.
+See the example below.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – The filename</p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">],</span> <span class="n">end</span><span class="o">=</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">12</span><span class="p">,</span> <span class="mi">33</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;my_ep.npz&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To load you file, you can use the <cite>nap.load_file</cite> function :</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="s2">&quot;my_path/my_ep.npz&quot;</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">   start   end</span>
+<span class="go">0    0.0   5.0</span>
+<span class="go">1   10.0  12.0</span>
+<span class="go">2   20.0  33.0</span>
+</pre></div>
+</div>
+<dl class="field-list simple">
+<dt class="field-odd">Raises<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.14)"><strong>RuntimeError</strong></a> – If filename is not str, path does not exist or filename is a directory.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.set_diff">
+<span class="sig-name descname"><span class="pre">set_diff</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.set_diff"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.set_diff" title="Link to this definition">#</a></dt>
+<dd><p>set difference of IntervalSet</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#pynapple.IntervalSet" title="pynapple.IntervalSet"><em>IntervalSet</em></a>) – the IntervalSet to set-substract from self</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – _</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pynapple.IntervalSet" title="pynapple.IntervalSet">IntervalSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.set_info">
+<span class="sig-name descname"><span class="pre">set_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">metadata</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.set_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.set_info" title="Link to this definition">#</a></dt>
+<dd><p>Add metadata information about the object. Metadata are saved as a dictionary.</p>
+<p>If the metadata name does not contain special nor overlaps with class attributes,
+it can also be set using attribute assignment.</p>
+<p>If the metadata name does not overlap with class-reserved keys,
+it can also be set using key assignment.</p>
+<p>Metadata entries (excluding “rate” for <cite>TsGroup</cite>) are mutable and can be overwritten.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>metadata</strong> (<a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.3)"><em>pandas.DataFrame</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em> or </em><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.Series.html#pandas.Series" title="(in pandas v2.3.3)"><em>pandas.Series</em></a><em>, </em><em>optional</em>) – <p>Object containing metadata information, where metadata names are extracted from column names (pandas.DataFrame), key names (dict), or index (pandas.DataFrame).</p>
+<ul>
+<li><p>If a pandas.DataFrame is passed, the index must match the metadata index.</p></li>
+<li><p>If a dictionary is passed, the length of each value must match the metadata index length.</p></li>
+<li><p>A pandas.Series can only be passed if the object has a single interval.</p></li>
+</ul>
+</p></li>
+<li><p><strong>**kwargs</strong> (<em>optional</em>) – Key-word arguments for setting metadata. Values can be either pandas.Series, numpy.ndarray, list or tuple, and must have the same length as the metadata index.
+If pandas.Series, the index must match the metadata index.
+If the object only has one index, non-iterable values are also accepted.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><ul class="simple">
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#ValueError" title="(in Python v3.14)"><strong>ValueError</strong></a> – <ul>
+<li><p>If metadata index does not match input index (pandas.DataFrame, pandas.Series)
+    - If input array length does not match metadata length (numpy.ndarray, list, tuple)</p></li>
+</ul>
+</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#RuntimeError" title="(in Python v3.14)"><strong>RuntimeError</strong></a> – If the metadata argument is passed as a pandas.Series (for more than one metadata index), numpy.ndarray, list or tuple.</p></li>
+<li><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#TypeError" title="(in Python v3.14)"><strong>TypeError</strong></a> – If key-word arguments are not of type <cite>pandas.Series</cite>, <cite>tuple</cite>, <cite>list</cite>, or <cite>numpy.ndarray</cite> and cannot be set.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">5</span><span class="p">],</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="mi">12</span><span class="p">],</span> <span class="p">[</span><span class="mi">20</span><span class="p">,</span> <span class="mi">33</span><span class="p">]])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>To add metadata with a pandas.DataFrame:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">metadata</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;left&#39;</span><span class="p">,</span><span class="s1">&#39;right&#39;</span><span class="p">,</span><span class="s1">&#39;left&#39;</span><span class="p">],</span> <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;choice&#39;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">set_info</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end     choice</span>
+<span class="go">      0        0      5     left</span>
+<span class="go">      1       10     12     right</span>
+<span class="go">      2       20     33     left</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>To add metadata with a dictionary:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;reward&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">set_info</span><span class="p">(</span><span class="n">metadata</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end     choice      reward</span>
+<span class="go">      0        0      5     left             1</span>
+<span class="go">      1       10     12     right            0</span>
+<span class="go">      2       20     33     left             1</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>To add metadata with a keyword argument (pd.Series, numpy.ndarray, list or tuple):</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">stim</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">Series</span><span class="p">(</span><span class="n">data</span> <span class="o">=</span> <span class="p">[</span><span class="mi">10</span><span class="p">,</span> <span class="o">-</span><span class="mi">23</span><span class="p">,</span> <span class="mi">12</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">set_info</span><span class="p">(</span><span class="n">stim</span><span class="o">=</span><span class="n">stim</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end     choice      reward    stim</span>
+<span class="go">      0        0      5     left             1      10</span>
+<span class="go">      1       10     12     right            0     -23</span>
+<span class="go">      2       20     33     left             1      12</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>To add metadata as an attribute:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">label</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;b&quot;</span><span class="p">,</span> <span class="s2">&quot;c&quot;</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end     choice      reward  label</span>
+<span class="go">      0        0      5     left             1  a</span>
+<span class="go">      1       10     12     right            0  b</span>
+<span class="go">      2       20     33     left             1  c</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>To add metadata as a key:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="p">[</span><span class="s2">&quot;error&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end     choice      reward  label      error</span>
+<span class="go">      0        0      5     left             1  a             0</span>
+<span class="go">      1       10     12     right            0  b             0</span>
+<span class="go">      2       20     33     left             1  c             0</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+<p>Metadata can be overwritten:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span><span class="o">.</span><span class="n">set_info</span><span class="p">(</span><span class="n">label</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">ep</span>
+<span class="go">  index    start    end     choice      reward  label      error</span>
+<span class="go">      0        0      5     left             1  x             0</span>
+<span class="go">      1       10     12     right            0  y             0</span>
+<span class="go">      2       20     33     left             1  z             0</span>
+<span class="go">shape: (3, 2), time unit: sec.</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.shape">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">shape</span></span><a class="headerlink" href="#pynapple.IntervalSet.shape" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.size">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">size</span></span><a class="headerlink" href="#pynapple.IntervalSet.size" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.split">
+<span class="sig-name descname"><span class="pre">split</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">interval_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.split"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.split" title="Link to this definition">#</a></dt>
+<dd><p>Split <cite>IntervalSet</cite> to a new <cite>IntervalSet</cite> with each interval being of size <cite>interval_size</cite>.</p>
+<p>Used mostly for chunking very large dataset or looping throught multiple epoch of same duration.</p>
+<p>This function skips the epochs that are shorter than <cite>interval_size</cite>.</p>
+<p>Note that intervals are strictly non-overlapping in pynapple. One microsecond is removed from contiguous intervals.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>interval_size</strong> (<em>Number</em>) – Description</p></li>
+<li><p><strong>time_units</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>optional</em>) – time units for the <cite>interval_size</cite> (‘us’, ‘ms’, ‘s’ [default])</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>New <cite>IntervalSet</cite> with equal sized intervals</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pynapple.IntervalSet" title="pynapple.IntervalSet">IntervalSet</a></p>
+</dd>
+<dt class="field-even">Raises<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/exceptions.html#IOError" title="(in Python v3.14)"><strong>IOError</strong></a> – If <cite>interval_size</cite> is not a Number or is below 0
+    If <cite>time_units</cite> is not a string</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.start">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">start</span></span><a class="headerlink" href="#pynapple.IntervalSet.start" title="Link to this definition">#</a></dt>
+<dd><p>The start times of each interval</p>
+</dd></dl>
+
+<dl class="py property">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.starts">
+<em class="property"><span class="k"><span class="pre">property</span></span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">starts</span></span><a class="headerlink" href="#pynapple.IntervalSet.starts" title="Link to this definition">#</a></dt>
+<dd><p>Return the starts of the IntervalSet as a Ts object</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p>The starts of the IntervalSet</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="pynapple.Ts.html#pynapple.Ts" title="pynapple.Ts">Ts</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.time_span">
+<span class="sig-name descname"><span class="pre">time_span</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.time_span"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.time_span" title="Link to this definition">#</a></dt>
+<dd><p>Time span of the interval set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>out</strong> – an IntervalSet with a single interval encompassing the whole IntervalSet</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference internal" href="#pynapple.IntervalSet" title="pynapple.IntervalSet">IntervalSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.tot_length">
+<span class="sig-name descname"><span class="pre">tot_length</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'s'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.tot_length"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.tot_length" title="Link to this definition">#</a></dt>
+<dd><p>Total elapsed time in the set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>time_units</strong> (<em>None</em><em>, </em><em>optional</em>) – The time units to return the result in (‘us’, ‘ms’, ‘s’ [default])</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – _</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.um">
+<span class="sig-name descname"><span class="pre">um</span></span><em class="property"><span class="w"> </span><span class="p"><span class="pre">=</span></span><span class="w"> </span><span class="pre">&lt;module</span> <span class="pre">'numpy._core.umath'</span> <span class="pre">from</span> <span class="pre">'/home/runner/.local/lib/python3.12/site-packages/numpy/_core/umath.py'&gt;</span></em><a class="headerlink" href="#pynapple.IntervalSet.um" title="Link to this definition">#</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.union">
+<span class="sig-name descname"><span class="pre">union</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">a</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/core/interval_set.html#IntervalSet.union"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.IntervalSet.union" title="Link to this definition">#</a></dt>
+<dd><p>set union of IntervalSet</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>a</strong> (<a class="reference internal" href="#pynapple.IntervalSet" title="pynapple.IntervalSet"><em>IntervalSet</em></a>) – the IntervalSet to union self with</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>out</strong> – _</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="#pynapple.IntervalSet" title="pynapple.IntervalSet">IntervalSet</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="pynapple.IntervalSet.values">
+<span class="sig-name descname"><span class="pre">values</span></span><em class="property"><span class="p"><span class="pre">:</span></span><span class="w"> </span><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><span class="pre">ndarray</span></a></em><a class="headerlink" href="#pynapple.IntervalSet.values" title="Link to this definition">#</a></dt>
+<dd><p>Array of start and end times</p>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="pynapple.TsdTensor.value_from.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">pynapple.TsdTensor.value_from</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="pynapple.IntervalSet.__init__.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">pynapple.IntervalSet.__init__</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet"><code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.__init__"><code class="docutils literal notranslate"><span class="pre">IntervalSet.__init__()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.as_dataframe"><code class="docutils literal notranslate"><span class="pre">IntervalSet.as_dataframe()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.as_units"><code class="docutils literal notranslate"><span class="pre">IntervalSet.as_units()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.columns"><code class="docutils literal notranslate"><span class="pre">IntervalSet.columns</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.drop_info"><code class="docutils literal notranslate"><span class="pre">IntervalSet.drop_info()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.drop_long_intervals"><code class="docutils literal notranslate"><span class="pre">IntervalSet.drop_long_intervals()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.drop_short_intervals"><code class="docutils literal notranslate"><span class="pre">IntervalSet.drop_short_intervals()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.end"><code class="docutils literal notranslate"><span class="pre">IntervalSet.end</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.ends"><code class="docutils literal notranslate"><span class="pre">IntervalSet.ends</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.get_info"><code class="docutils literal notranslate"><span class="pre">IntervalSet.get_info()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.get_intervals_center"><code class="docutils literal notranslate"><span class="pre">IntervalSet.get_intervals_center()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.groupby"><code class="docutils literal notranslate"><span class="pre">IntervalSet.groupby()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.groupby_apply"><code class="docutils literal notranslate"><span class="pre">IntervalSet.groupby_apply()</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.bin_edges"><code class="docutils literal notranslate"><span class="pre">IntervalSet.bin_edges</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.occupancy"><code class="docutils literal notranslate"><span class="pre">IntervalSet.occupancy</span></code></a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#id0"><code class="docutils literal notranslate"><span class="pre">IntervalSet.bin_edges</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.in_interval"><code class="docutils literal notranslate"><span class="pre">IntervalSet.in_interval()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.index"><code class="docutils literal notranslate"><span class="pre">IntervalSet.index</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.intersect"><code class="docutils literal notranslate"><span class="pre">IntervalSet.intersect()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.loc"><code class="docutils literal notranslate"><span class="pre">IntervalSet.loc</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.merge_close_intervals"><code class="docutils literal notranslate"><span class="pre">IntervalSet.merge_close_intervals()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.metadata"><code class="docutils literal notranslate"><span class="pre">IntervalSet.metadata</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.metadata_columns"><code class="docutils literal notranslate"><span class="pre">IntervalSet.metadata_columns</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.metadata_index"><code class="docutils literal notranslate"><span class="pre">IntervalSet.metadata_index</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.nap_class"><code class="docutils literal notranslate"><span class="pre">IntervalSet.nap_class</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.ndim"><code class="docutils literal notranslate"><span class="pre">IntervalSet.ndim</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.restrict_info"><code class="docutils literal notranslate"><span class="pre">IntervalSet.restrict_info()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.save"><code class="docutils literal notranslate"><span class="pre">IntervalSet.save()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.set_diff"><code class="docutils literal notranslate"><span class="pre">IntervalSet.set_diff()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.set_info"><code class="docutils literal notranslate"><span class="pre">IntervalSet.set_info()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.shape"><code class="docutils literal notranslate"><span class="pre">IntervalSet.shape</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.size"><code class="docutils literal notranslate"><span class="pre">IntervalSet.size</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.split"><code class="docutils literal notranslate"><span class="pre">IntervalSet.split()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.start"><code class="docutils literal notranslate"><span class="pre">IntervalSet.start</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.starts"><code class="docutils literal notranslate"><span class="pre">IntervalSet.starts</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.time_span"><code class="docutils literal notranslate"><span class="pre">IntervalSet.time_span()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.tot_length"><code class="docutils literal notranslate"><span class="pre">IntervalSet.tot_length()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.um"><code class="docutils literal notranslate"><span class="pre">IntervalSet.um</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.union"><code class="docutils literal notranslate"><span class="pre">IntervalSet.union()</span></code></a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.IntervalSet.values"><code class="docutils literal notranslate"><span class="pre">IntervalSet.values</span></code></a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/generated/pynapple.IntervalSet.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2025, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">pynapple authors</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.10.2</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

@@ -1,0 +1,13 @@
+﻿pynapple.process.wavelets
+=========================
+
+.. automodule:: pynapple.process.wavelets
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      compute_wavelet_transform
+      generate_morlet_filterbank
+   

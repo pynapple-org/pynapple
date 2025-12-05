@@ -1,0 +1,6 @@
+pynapple.io.NWBFile.close
+=========================
+
+.. currentmodule:: pynapple.io
+
+.. automethod:: NWBFile.close

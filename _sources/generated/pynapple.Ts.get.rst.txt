@@ -1,0 +1,6 @@
+pynapple.Ts.get
+===============
+
+.. currentmodule:: pynapple
+
+.. automethod:: Ts.get

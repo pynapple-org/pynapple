@@ -1,0 +1,15 @@
+﻿pynapple.process.randomize
+==========================
+
+.. automodule:: pynapple.process.randomize
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      jitter_timestamps
+      resample_timestamps
+      shift_timestamps
+      shuffle_ts_intervals
+   

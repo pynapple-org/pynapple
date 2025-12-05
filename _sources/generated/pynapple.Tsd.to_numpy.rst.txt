@@ -1,0 +1,6 @@
+pynapple.Tsd.to\_numpy
+======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Tsd.to_numpy

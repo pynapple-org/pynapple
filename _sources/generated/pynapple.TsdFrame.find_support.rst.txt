@@ -1,0 +1,6 @@
+pynapple.TsdFrame.find\_support
+===============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.find_support

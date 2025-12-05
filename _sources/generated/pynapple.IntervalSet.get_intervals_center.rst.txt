@@ -1,0 +1,6 @@
+pynapple.IntervalSet.get\_intervals\_center
+===========================================
+
+.. currentmodule:: pynapple
+
+.. automethod:: IntervalSet.get_intervals_center

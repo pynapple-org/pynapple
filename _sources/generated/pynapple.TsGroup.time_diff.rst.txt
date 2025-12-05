@@ -1,0 +1,6 @@
+pynapple.TsGroup.time\_diff
+===========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.time_diff

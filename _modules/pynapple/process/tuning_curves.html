@@ -1,0 +1,1421 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pynapple.process.tuning_curves &#8212; pynapple 0.10.2 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_contributors.css?v=f079e67e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=f2caec9a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=11e62b30"></script>
+    <script src="../../../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=c57da192"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pynapple/process/tuning_curves';</script>
+    <link rel="icon" href="../../../_static/Pynapple_final_icon.png"/>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.10.2" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.10.2 documentation - Home"/>
+    <img src="../../../_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.10.2 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../about.html">
+    About us
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pynapple.process.tuning_curves</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for pynapple.process.tuning_curves</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Functions to compute n-dimensional tuning curves.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">collections.abc</span> <span class="kn">import</span> <span class="n">Iterable</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">wraps</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">pandas</span> <span class="k">as</span> <span class="nn">pd</span>
+<span class="kn">import</span> <span class="nn">xarray</span> <span class="k">as</span> <span class="nn">xr</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">core</span> <span class="k">as</span> <span class="n">nap</span>
+
+
+<div class="viewcode-block" id="compute_tuning_curves">
+<a class="viewcode-back" href="../../../generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_tuning_curves">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_tuning_curves</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span>
+    <span class="n">features</span><span class="p">,</span>
+    <span class="n">bins</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
+    <span class="nb">range</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">fs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">feature_names</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">return_pandas</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">return_counts</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes n-dimensional tuning curves relative to n features.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : TsGroup, TsdFrame, Ts, Tsd</span>
+<span class="sd">        The data for which the tuning curves will be computed. This usually corresponds to the activity of the</span>
+<span class="sd">        neurons, either as spike times (TsGroup or Ts) or continuous values (TsdFrame or Tsd).</span>
+<span class="sd">    features : Tsd, TsdFrame</span>
+<span class="sd">        The features (i.e. one column per feature). This usually corresponds to behavioral variables such as</span>
+<span class="sd">        position, head direction, speed, etc.</span>
+<span class="sd">    bins : sequence or int</span>
+<span class="sd">        The bin specification:</span>
+
+<span class="sd">        * A sequence of arrays describing the monotonically increasing bin</span>
+<span class="sd">          edges along each dimension.</span>
+<span class="sd">        * The number of bins for each dimension (nx, ny, ... =bins)</span>
+<span class="sd">        * The number of bins for all dimensions (nx=ny=...=bins).</span>
+<span class="sd">    range : sequence, optional</span>
+<span class="sd">        A sequence of entries per feature, each an optional (lower, upper) tuple giving</span>
+<span class="sd">        the outer bin edges to be used if the edges are not given explicitly in</span>
+<span class="sd">        `bins`.</span>
+<span class="sd">        An entry of None in the sequence results in the minimum and maximum</span>
+<span class="sd">        values being used for the corresponding dimension.</span>
+<span class="sd">        The default, None, is equivalent to passing a tuple of D None values.</span>
+<span class="sd">    epochs : IntervalSet, optional</span>
+<span class="sd">        The epochs on which tuning curves are computed.</span>
+<span class="sd">        If None, the epochs are the time support of the features.</span>
+<span class="sd">    fs : float, optional</span>
+<span class="sd">        The exact sampling frequency of the features used to normalise the tuning curves.</span>
+<span class="sd">        Unit should match that of the features. If not passed, it is estimated.</span>
+<span class="sd">    feature_names : list, optional</span>
+<span class="sd">        A list of feature names. If not passed, the column names in `features` are used.</span>
+<span class="sd">    return_pandas : bool, optional</span>
+<span class="sd">        If True, the function returns a pandas.DataFrame instead of an xarray.DataArray.</span>
+<span class="sd">        Note that this will not work if the features are not 1D and that occupancy and bin edges</span>
+<span class="sd">        will not be stored as attributes.</span>
+<span class="sd">    return_counts : bool, optional</span>
+<span class="sd">        If True, does not divide the spike counts by occupancy, but returns the counts directly.</span>
+<span class="sd">        The occupancy is stored in the xarray attributes, so the division can be performed after any</span>
+<span class="sd">        particular processing steps.</span>
+<span class="sd">        If the input is a TsdFrame, this does not do anything.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.DataArray</span>
+<span class="sd">        A tensor containing the tuning curves with labeled bin centres.</span>
+<span class="sd">        The bin edges and occupancy are stored as attributes.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    In the simplest case, we can pass a group of spikes per neuron and a single feature:</span>
+
+<span class="sd">        &gt;&gt;&gt; import pynapple as nap</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np; np.random.seed(42)</span>
+<span class="sd">        &gt;&gt;&gt; group = nap.TsGroup({</span>
+<span class="sd">        ...     1: nap.Ts(np.arange(0, 100, 0.1)),</span>
+<span class="sd">        ...     2: nap.Ts(np.arange(0, 100, 0.2))</span>
+<span class="sd">        ... })</span>
+<span class="sd">        &gt;&gt;&gt; feature = nap.Tsd(d=np.arange(0, 100, 0.1) % 1, t=np.arange(0, 100, 0.1))</span>
+<span class="sd">        &gt;&gt;&gt; tcs = nap.compute_tuning_curves(group, feature, bins=10)</span>
+<span class="sd">        &gt;&gt;&gt; tcs</span>
+<span class="sd">        &lt;xarray.DataArray (unit: 2, 0: 10)&gt; Size: 160B</span>
+<span class="sd">        array([[10., 10., 10., 10., 10., 10., 10., 10., 10., 10.],</span>
+<span class="sd">               [10.,  0., 10.,  0., 10.,  0., 10.,  0., 10.,  0.]])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * unit     (unit) int64 16B 1 2</span>
+<span class="sd">          * 0        (0) float64 80B 0.045 0.135 0.225 0.315 ... 0.585 0.675 0.765 0.855</span>
+<span class="sd">        Attributes:</span>
+<span class="sd">            occupancy:  [100. 100. 100. 100. 100. 100. 100. 100. 100. 100.]</span>
+<span class="sd">            bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...</span>
+<span class="sd">            fs:         10.0</span>
+<span class="sd">            rates:      [10.01001001  5.00500501]</span>
+
+<span class="sd">    The function can also take multiple features, in which case it computes n-dimensional tuning curves.</span>
+<span class="sd">    We can specify the number of bins for each feature:</span>
+
+<span class="sd">        &gt;&gt;&gt; features = nap.TsdFrame(</span>
+<span class="sd">        ...     d=np.stack(</span>
+<span class="sd">        ...         [</span>
+<span class="sd">        ...             np.arange(0, 100, 0.1) % 1,</span>
+<span class="sd">        ...             np.arange(0, 100, 0.1) % 2</span>
+<span class="sd">        ...         ],</span>
+<span class="sd">        ...         axis=1</span>
+<span class="sd">        ...     ),</span>
+<span class="sd">        ...     t=np.arange(0, 100, 0.1)</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; tcs = nap.compute_tuning_curves(group, features, bins=[5, 3])</span>
+<span class="sd">        &gt;&gt;&gt; tcs</span>
+<span class="sd">        &lt;xarray.DataArray (unit: 2, 0: 5, 1: 3)&gt; Size: 240B</span>
+<span class="sd">        array([[[10., 10., nan],</span>
+<span class="sd">                [10., 10., 10.],</span>
+<span class="sd">                [10., nan, 10.],</span>
+<span class="sd">                [10., 10., 10.],</span>
+<span class="sd">                [nan, 10., 10.]],</span>
+<span class="sd">        ...</span>
+<span class="sd">               [[ 5.,  5., nan],</span>
+<span class="sd">                [ 5., 10.,  0.],</span>
+<span class="sd">                [ 5., nan,  5.],</span>
+<span class="sd">                [10.,  0.,  5.],</span>
+<span class="sd">                [nan,  5.,  5.]]])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * unit     (unit) int64 16B 1 2</span>
+<span class="sd">          * 0        (0) float64 40B 0.09 0.27 0.45 0.63 0.81</span>
+<span class="sd">          * 1        (1) float64 24B 0.3167 0.95 1.583</span>
+<span class="sd">        Attributes:</span>
+<span class="sd">            occupancy:  [[100. 100.  nan]\\n [100.  50.  50.]\\n [100.  nan 100.]\\n [ 5...</span>
+<span class="sd">            bin_edges:  [array([0.  , 0.18, 0.36, 0.54, 0.72, 0.9 ]), array([0.      ...</span>
+<span class="sd">            fs:         10.0</span>
+<span class="sd">            rates:      [10.01001001  5.00500501]</span>
+
+<span class="sd">    Or even specify the bin edges directly:</span>
+
+<span class="sd">        &gt;&gt;&gt; tcs = nap.compute_tuning_curves(</span>
+<span class="sd">        ...     group,</span>
+<span class="sd">        ...     features,</span>
+<span class="sd">        ...     bins=[np.linspace(0, 1, 5), np.linspace(0, 2, 3)]</span>
+<span class="sd">        ... )</span>
+<span class="sd">        &gt;&gt;&gt; tcs</span>
+<span class="sd">        &lt;xarray.DataArray (unit: 2, 0: 4, 1: 2)&gt; Size: 128B</span>
+<span class="sd">        array([[[10.        , 10.        ],</span>
+<span class="sd">                [10.        , 10.        ],</span>
+<span class="sd">                [10.        , 10.        ],</span>
+<span class="sd">                [10.        , 10.        ]],</span>
+<span class="sd">        ...</span>
+<span class="sd">               [[ 6.66666667,  6.66666667],</span>
+<span class="sd">                [ 5.        ,  5.        ],</span>
+<span class="sd">                [ 3.33333333,  3.33333333],</span>
+<span class="sd">                [ 5.        ,  5.        ]]])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * unit     (unit) int64 16B 1 2</span>
+<span class="sd">          * 0        (0) float64 32B 0.125 0.375 0.625 0.875</span>
+<span class="sd">          * 1        (1) float64 16B 0.5 1.5</span>
+<span class="sd">        Attributes:</span>
+<span class="sd">            occupancy:  [[150. 150.]\\n [100. 100.]\\n [150. 150.]\\n [100. 100.]]</span>
+<span class="sd">            bin_edges:  [array([0.  , 0.25, 0.5 , 0.75, 1.  ]), array([0., 1., 2.])]</span>
+<span class="sd">            fs:         10.0</span>
+<span class="sd">            rates:      [10.01001001  5.00500501]</span>
+
+<span class="sd">    In all of these cases, it is also possible to pass continuous values instead of spikes (e.g. calcium imaging data), in that case the mean response is computed:</span>
+
+<span class="sd">        &gt;&gt;&gt; frame = nap.TsdFrame(d=np.random.rand(2000, 3), t=np.arange(0, 100, 0.05))</span>
+<span class="sd">        &gt;&gt;&gt; tcs = nap.compute_tuning_curves(frame, feature, bins=10)</span>
+<span class="sd">        &gt;&gt;&gt; tcs</span>
+<span class="sd">        &lt;xarray.DataArray (unit: 3, 0: 10)&gt; Size: 240B</span>
+<span class="sd">        array([[0.49147343, 0.50190395, 0.50971339, 0.50128013, 0.54332711,</span>
+<span class="sd">                0.49712328, 0.49594611, 0.5110517 , 0.52247351, 0.52057658],</span>
+<span class="sd">               [0.51132036, 0.46410557, 0.47732505, 0.49830908, 0.53523019,</span>
+<span class="sd">                0.53099429, 0.48668499, 0.44198555, 0.49222208, 0.47453398],</span>
+<span class="sd">               [0.46591801, 0.50662914, 0.46875882, 0.48734997, 0.51836574,</span>
+<span class="sd">                0.50722266, 0.48943577, 0.49730095, 0.47944075, 0.48623693]])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * unit     (unit) int64 24B 0 1 2</span>
+<span class="sd">          * 0        (0) float64 80B 0.045 0.135 0.225 0.315 ... 0.585 0.675 0.765 0.855</span>
+<span class="sd">        Attributes:</span>
+<span class="sd">            occupancy:  [100. 100. 100. 100. 100. 100. 100. 100. 100. 100.]</span>
+<span class="sd">            bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># check data</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;data should be a TsdFrame, TsGroup, Ts, or Tsd.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># check features</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="p">(</span><span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;features should be a Tsd or TsdFrame.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># check feature names</span>
+    <span class="k">if</span> <span class="n">feature_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">feature_names</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="n">features</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">feature_names</span><span class="p">,</span> <span class="s2">&quot;__len__&quot;</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feature_names</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+            <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">feature_names</span><span class="p">)</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;feature_names should be a list of strings.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">feature_names</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span>
+            <span class="mi">1</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">)</span> <span class="k">else</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+        <span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;feature_names should match the number of features.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># check epochs</span>
+    <span class="k">if</span> <span class="n">epochs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">epochs</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">time_support</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">epochs</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">):</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">epochs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;epochs should be an IntervalSet.&quot;</span><span class="p">)</span>
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">epochs</span><span class="p">)</span>
+
+    <span class="c1"># check fs</span>
+    <span class="k">if</span> <span class="n">fs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">features</span><span class="o">.</span><span class="n">time_diff</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="n">epochs</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;fs should be a number (int or float)&quot;</span><span class="p">)</span>
+
+    <span class="c1"># check range</span>
+    <span class="k">if</span> <span class="nb">range</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">range</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">features</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">or</span> <span class="n">features</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="nb">range</span> <span class="o">=</span> <span class="p">[</span><span class="nb">range</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;range should be a sequence of tuples, one for each feature.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="c1"># check return_pandas</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">return_pandas</span> <span class="o">!=</span> <span class="mi">1</span>
+        <span class="ow">and</span> <span class="n">return_pandas</span> <span class="o">!=</span> <span class="mi">0</span>
+        <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">return_pandas</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;return_pandas should be a boolean.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># check return_counts</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">return_counts</span> <span class="o">!=</span> <span class="mi">1</span>
+        <span class="ow">and</span> <span class="n">return_counts</span> <span class="o">!=</span> <span class="mi">0</span>
+        <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">return_counts</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;return_counts should be a boolean.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># occupancy</span>
+    <span class="n">occupancy</span><span class="p">,</span> <span class="n">bin_edges</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span><span class="n">features</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bins</span><span class="p">,</span> <span class="nb">range</span><span class="o">=</span><span class="nb">range</span><span class="p">)</span>
+
+    <span class="c1"># tuning curves</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">)</span>
+        <span class="k">else</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">tcs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">keys</span><span class="p">),</span> <span class="o">*</span><span class="n">occupancy</span><span class="o">.</span><span class="n">shape</span><span class="p">])</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">)):</span>
+        <span class="c1"># SPIKES</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">({</span><span class="mi">0</span><span class="p">:</span> <span class="n">data</span><span class="p">})</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">keys</span><span class="p">):</span>
+            <span class="n">tcs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">.</span><span class="n">value_from</span><span class="p">(</span><span class="n">features</span><span class="p">),</span>
+                <span class="n">bins</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">,</span>
+            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">occupancy</span><span class="p">[</span><span class="n">occupancy</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">return_counts</span><span class="p">:</span>
+            <span class="n">tcs</span> <span class="o">=</span> <span class="p">(</span><span class="n">tcs</span> <span class="o">/</span> <span class="n">occupancy</span><span class="p">)</span> <span class="o">*</span> <span class="n">fs</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># RATES</span>
+        <span class="n">values</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">value_from</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span><span class="n">values</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">counts</span><span class="p">[</span><span class="n">counts</span> <span class="o">==</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">keys</span><span class="p">):</span>
+            <span class="n">tcs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogramdd</span><span class="p">(</span>
+                <span class="n">values</span><span class="p">,</span>
+                <span class="n">weights</span><span class="o">=</span><span class="n">data</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span>
+                <span class="n">bins</span><span class="o">=</span><span class="n">bin_edges</span><span class="p">,</span>
+            <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">tcs</span> <span class="o">/=</span> <span class="n">counts</span>
+        <span class="n">tcs</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">tcs</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">0.0</span>
+        <span class="n">tcs</span><span class="p">[:,</span> <span class="n">occupancy</span> <span class="o">==</span> <span class="mf">0.0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+    <span class="n">attrs</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;occupancy&quot;</span><span class="p">:</span> <span class="n">occupancy</span><span class="p">,</span> <span class="s2">&quot;bin_edges&quot;</span><span class="p">:</span> <span class="n">bin_edges</span><span class="p">,</span> <span class="s2">&quot;fs&quot;</span><span class="p">:</span> <span class="n">fs</span><span class="p">}</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">):</span>
+        <span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;rates&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rates</span>
+    <span class="n">tcs</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
+        <span class="n">tcs</span><span class="p">,</span>
+        <span class="n">coords</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="n">keys</span><span class="p">,</span>
+            <span class="o">**</span><span class="p">{</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">feature_name</span><span class="p">):</span> <span class="n">e</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">e</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
+                <span class="k">for</span> <span class="n">feature_name</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">feature_names</span><span class="p">,</span> <span class="n">bin_edges</span><span class="p">)</span>
+            <span class="p">},</span>
+        <span class="p">},</span>
+        <span class="n">attrs</span><span class="o">=</span><span class="n">attrs</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">return_pandas</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tcs</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tcs</span></div>
+
+
+
+<div class="viewcode-block" id="compute_response_per_epoch">
+<a class="viewcode-back" href="../../../generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_response_per_epoch">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_response_per_epoch</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">epochs_dict</span><span class="p">,</span> <span class="n">return_pandas</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute mean response per epoch, given a dictionary of epochs.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : TsGroup, TsdFrame, Ts, Tsd</span>
+<span class="sd">        The data for which the tuning curves will be computed.</span>
+<span class="sd">    epochs_dict : dict</span>
+<span class="sd">        Dictionary of IntervalSets.</span>
+<span class="sd">    return_pandas : bool, optional</span>
+<span class="sd">        If True, the function returns a pandas.DataFrame instead of an xarray.DataArray.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    xarray.DataArray</span>
+<span class="sd">        A tensor containing the tuning curves with labeled epochs.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    This function is typically used for a set of discrete stimuli being presented for multiple epochs.</span>
+<span class="sd">    The stimulus epochs can overlap, though note that epochs within an IntervalSet can not overlap.</span>
+
+<span class="sd">        &gt;&gt;&gt; import pynapple as nap</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np; np.random.seed(42)</span>
+<span class="sd">        &gt;&gt;&gt; epochs_dict =  {</span>
+<span class="sd">        ...     &quot;stim0&quot;: nap.IntervalSet(start=0, end=30),</span>
+<span class="sd">        ...     &quot;stim1&quot;:nap.IntervalSet(start=60, end=90)</span>
+<span class="sd">        ... }</span>
+<span class="sd">        &gt;&gt;&gt; group = nap.TsGroup({</span>
+<span class="sd">        ...     1: nap.Ts(np.arange(0, 100, 0.1)),</span>
+<span class="sd">        ...     2: nap.Ts(np.arange(0, 100, 0.2))</span>
+<span class="sd">        ... })</span>
+<span class="sd">        &gt;&gt;&gt; tcs = nap.compute_response_per_epoch(group, epochs_dict)</span>
+<span class="sd">        &gt;&gt;&gt; tcs</span>
+<span class="sd">        &lt;xarray.DataArray (unit: 2, epochs: 2)&gt; Size: 32B</span>
+<span class="sd">        array([[10.03333333, 10.03333333],</span>
+<span class="sd">               [ 5.03333333,  5.03333333]])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * unit     (unit) int64 16B 1 2</span>
+<span class="sd">          * epochs   (epochs) &lt;U5 40B &#39;stim0&#39; &#39;stim1&#39;</span>
+
+<span class="sd">    You can also pass a TsdFrame (e.g. calcium imaging data), in that case the response is computed:</span>
+
+<span class="sd">        &gt;&gt;&gt; frame = nap.TsdFrame(d=np.random.rand(2000, 3), t=np.arange(0, 100, 0.05))</span>
+<span class="sd">        &gt;&gt;&gt; tcs = nap.compute_response_per_epoch(frame, epochs_dict)</span>
+<span class="sd">        &gt;&gt;&gt; tcs</span>
+<span class="sd">        &lt;xarray.DataArray (unit: 3, epochs: 2)&gt; Size: 48B</span>
+<span class="sd">        array([[0.50946668, 0.50897635],</span>
+<span class="sd">               [0.48343249, 0.48191892],</span>
+<span class="sd">               [0.50063158, 0.48748094]])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * unit     (unit) int64 24B 0 1 2</span>
+<span class="sd">          * epochs   (epochs) &lt;U5 40B &#39;stim0&#39; &#39;stim1&#39;</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># check data</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;data should be a TsdFrame, TsGroup, Ts, or Tsd.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># check epochs_dict</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">epochs_dict</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+        <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">epochs_dict</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span>
+        <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">)</span> <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="n">epochs_dict</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;epochs_dict should be a dictionary of IntervalSets.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># check return_pandas</span>
+    <span class="k">if</span> <span class="p">(</span>
+        <span class="n">return_pandas</span> <span class="o">!=</span> <span class="mi">1</span>
+        <span class="ow">and</span> <span class="n">return_pandas</span> <span class="o">!=</span> <span class="mi">0</span>
+        <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">return_pandas</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;return_pandas should be a boolean.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># tuning curves</span>
+    <span class="n">keys</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">)</span>
+        <span class="k">else</span> <span class="n">data</span><span class="o">.</span><span class="n">columns</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">)):</span>
+        <span class="c1"># SPIKES</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">({</span><span class="mi">0</span><span class="p">:</span> <span class="n">data</span><span class="p">},</span> <span class="n">time_support</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">time_support</span><span class="p">)</span>
+        <span class="n">tcs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span><span class="o">.</span><span class="n">count</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">epoch</span><span class="o">.</span><span class="n">tot_length</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="n">epochs_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="p">],</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># RATES</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">):</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">(</span>
+                <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                <span class="n">t</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="p">(),</span>
+                <span class="n">time_support</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">time_support</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="n">tcs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+            <span class="p">[</span>
+                <span class="n">data</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="n">epochs_dict</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="p">],</span>
+            <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="p">)</span>
+
+    <span class="n">tcs</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
+        <span class="n">tcs</span><span class="p">,</span>
+        <span class="n">coords</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="n">keys</span><span class="p">,</span> <span class="s2">&quot;epochs&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">epochs_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">())},</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="n">return_pandas</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tcs</span><span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span><span class="o">.</span><span class="n">T</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">tcs</span></div>
+
+
+
+<div class="viewcode-block" id="compute_mutual_information">
+<a class="viewcode-back" href="../../../generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_mutual_information">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_mutual_information</span><span class="p">(</span><span class="n">tuning_curves</span><span class="p">,</span> <span class="n">rates</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Computes mutual information from n-dimensional tuning curves.</span>
+
+<span class="sd">    This function implements Skaggs et al.&#39;s [1] metric to quantify</span>
+<span class="sd">    the information content of a neuron&#39;s firing with respect to a variable</span>
+<span class="sd">    (e.g., position), based on its tuning curve.</span>
+
+<span class="sd">    The mutual information in bits per second is given by:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        I_\\text{bits/s} = \\sum_x P(x) \\lambda(x) \\log_2 \\left( \\frac{\\lambda(x)}{\\bar{\\lambda}} \\right)</span>
+
+<span class="sd">    where:</span>
+
+<span class="sd">    - :math:`P(x)` is the probability of being in bin :math:`x` (occupancy),</span>
+<span class="sd">    - :math:`\\lambda(x)` is the firing rate of the neuron in bin :math:`x`,</span>
+<span class="sd">    - :math:`\\bar{\\lambda}` is the overall mean firing rate.</span>
+
+<span class="sd">    The information per spike is computed by dividing the result by the mean firing rate:</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">        I_\\text{bits/spike} = \\frac{I}{\\bar{\\lambda}}</span>
+
+<span class="sd">    References</span>
+<span class="sd">    ----------</span>
+<span class="sd">    .. [1] Skaggs, W. E., McNaughton, B. L., &amp; Gothard, K. M. (1993).</span>
+<span class="sd">           An information-theoretic approach to deciphering the hippocampal code.</span>
+<span class="sd">           In Advances in neural information processing systems (pp. 1030-1037).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tuning_curves : xarray.DataArray</span>
+<span class="sd">        Tuning curves as computed by :func:`~pynapple.process.tuning_curves.compute_tuning_curves`.</span>
+<span class="sd">    rates : list or numpy.ndarray, optional</span>
+<span class="sd">        Mean firing rates of the units. By default :func:`~pynapple.process.tuning_curves.compute_tuning_curves` saves</span>
+<span class="sd">        the mean firing rates over the epochs of the tuning curves in the tuning curve objects.</span>
+<span class="sd">        This argument can be used to pass your own.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    pandas.DataFrame</span>
+<span class="sd">        A table containing the spatial information per unit, in both bits/sec and bits/spike.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    We can compute the mutual information between a variable and a set of neurons&#39; firing from the tuning curves:</span>
+
+<span class="sd">        &gt;&gt;&gt; import pynapple as nap</span>
+<span class="sd">        &gt;&gt;&gt; import numpy as np; np.random.seed(42)</span>
+<span class="sd">        &gt;&gt;&gt; epoch = nap.IntervalSet([0, 100])</span>
+<span class="sd">        &gt;&gt;&gt; t = np.arange(0, 100, 0.01)</span>
+<span class="sd">        &gt;&gt;&gt; feature = nap.Tsd(t=t, d=np.clip(t*0.01 + np.random.normal(0, 0.02, len(t)), 0, 1), time_support=epoch)</span>
+<span class="sd">        &gt;&gt;&gt; group = nap.TsGroup({</span>
+<span class="sd">        ...     1: nap.Ts(t[(feature.values &gt;= 0.2) &amp; (feature.values &lt; 0.3)]),</span>
+<span class="sd">        ...     2: nap.Ts(t[(feature.values &gt;= 0.7) &amp; (feature.values &lt; 0.8)])</span>
+<span class="sd">        ... }, time_support=epoch)</span>
+<span class="sd">        &gt;&gt;&gt; tcs = nap.compute_tuning_curves(group, feature, bins=10)</span>
+<span class="sd">        &gt;&gt;&gt; tcs</span>
+<span class="sd">        &lt;xarray.DataArray (unit: 2, 0: 10)&gt; Size: 160B</span>
+<span class="sd">        array([[  0.,   0., 100.,   0.,   0.,   0.,   0.,   0.,   0.,   0.],</span>
+<span class="sd">               [  0.,   0.,   0.,   0.,   0.,   0.,   0., 100.,   0.,   0.]])</span>
+<span class="sd">        Coordinates:</span>
+<span class="sd">          * unit     (unit) int64 16B 1 2</span>
+<span class="sd">          * 0        (0) float64 80B 0.05 0.15 0.25 0.35 0.45 0.55 0.65 0.75 0.85 0.95</span>
+<span class="sd">        Attributes:</span>
+<span class="sd">            occupancy:  [ 985. 1009. 1014.  996.  993. 1008.  991. 1008.  999.  997.]</span>
+<span class="sd">            bin_edges:  [array([0. , 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ])]</span>
+<span class="sd">            fs:         100.0</span>
+<span class="sd">            rates:      [10.14 10.08]</span>
+<span class="sd">        &gt;&gt;&gt; MI = nap.compute_mutual_information(tcs)</span>
+<span class="sd">        &gt;&gt;&gt; MI</span>
+<span class="sd">            bits/sec  bits/spike</span>
+<span class="sd">        1  33.480966    3.301870</span>
+<span class="sd">        2  33.369159    3.310432</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tuning_curves</span><span class="p">,</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="s2">&quot;tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">rates</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rates</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;rates should be a list or array.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">tuning_curves</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">rates</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;dimension of rates should match that of the tuning curves.&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">if</span> <span class="s2">&quot;occupancy&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">tuning_curves</span><span class="o">.</span><span class="n">attrs</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No occupancy found in tuning curves.&quot;</span><span class="p">)</span>
+    <span class="n">occupancy</span> <span class="o">=</span> <span class="n">tuning_curves</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;occupancy&quot;</span><span class="p">]</span>
+    <span class="n">occupancy</span> <span class="o">=</span> <span class="n">occupancy</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">occupancy</span><span class="p">)</span>  <span class="c1"># (D1, D2, ..., Dn)</span>
+
+    <span class="n">fx</span> <span class="o">=</span> <span class="n">tuning_curves</span><span class="o">.</span><span class="n">values</span>  <span class="c1"># (N, D1, D2, ...Dn)</span>
+    <span class="n">fr</span> <span class="o">=</span> <span class="n">tuning_curves</span><span class="o">.</span><span class="n">attrs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rates&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">rates</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">rates</span>  <span class="c1"># (N,)</span>
+
+    <span class="n">axes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">fx</span><span class="o">.</span><span class="n">ndim</span><span class="p">))</span>
+
+    <span class="k">if</span> <span class="n">fr</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+            <span class="s2">&quot;Estimating mean firing rates from tuning curves, &quot;</span>
+            <span class="s2">&quot;they were not in the tuning curves nor passed.&quot;</span><span class="p">,</span>
+            <span class="ne">UserWarning</span><span class="p">,</span>
+            <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">fr</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">fx</span> <span class="o">*</span> <span class="n">occupancy</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axes</span><span class="p">)</span>  <span class="c1"># (N,)</span>
+
+    <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">simplefilter</span><span class="p">(</span><span class="s2">&quot;ignore&quot;</span><span class="p">)</span>
+        <span class="n">fxfr</span> <span class="o">=</span> <span class="n">fx</span> <span class="o">/</span> <span class="n">np</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">fr</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axes</span><span class="p">)</span>  <span class="c1"># (N, D1, D2, ..., Dn)</span>
+        <span class="n">logfx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="n">fxfr</span><span class="p">)</span>  <span class="c1"># (N, D1, D2, ..., Dn)</span>
+    <span class="n">logfx</span><span class="p">[</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">logfx</span><span class="p">)]</span> <span class="o">=</span> <span class="mf">0.0</span>
+
+    <span class="n">MI_bits_per_sec</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nansum</span><span class="p">(</span><span class="n">occupancy</span> <span class="o">*</span> <span class="n">fx</span> <span class="o">*</span> <span class="n">logfx</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axes</span><span class="p">)</span>  <span class="c1"># (N,)</span>
+    <span class="k">with</span> <span class="n">np</span><span class="o">.</span><span class="n">errstate</span><span class="p">(</span><span class="n">divide</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">,</span> <span class="n">invalid</span><span class="o">=</span><span class="s2">&quot;ignore&quot;</span><span class="p">):</span>
+        <span class="n">MI_bits_per_spike</span> <span class="o">=</span> <span class="n">MI_bits_per_sec</span> <span class="o">/</span> <span class="n">fr</span>  <span class="c1"># (N,)</span>
+
+    <span class="k">return</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">MI_bits_per_sec</span><span class="p">,</span> <span class="n">MI_bits_per_spike</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">),</span>
+        <span class="n">index</span><span class="o">=</span><span class="n">tuning_curves</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;unit&quot;</span><span class="p">],</span>
+        <span class="n">columns</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;bits/sec&quot;</span><span class="p">,</span> <span class="s2">&quot;bits/spike&quot;</span><span class="p">],</span>
+    <span class="p">)</span></div>
+
+
+
+<span class="c1"># =====================================================================================</span>
+<span class="c1"># OLD FUNCTIONS, DEPRECATED</span>
+<span class="c1"># =====================================================================================</span>
+
+
+<span class="k">def</span> <span class="nf">_validate_tuning_inputs</span><span class="p">(</span><span class="n">func</span><span class="p">):</span>
+    <span class="nd">@wraps</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+    <span class="k">def</span> <span class="nf">wrapper</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># Validate each positional argument</span>
+        <span class="n">sig</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">func</span><span class="p">)</span>
+        <span class="n">kwargs</span> <span class="o">=</span> <span class="n">sig</span><span class="o">.</span><span class="n">bind_partial</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span><span class="o">.</span><span class="n">arguments</span>
+
+        <span class="k">if</span> <span class="s2">&quot;feature&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;feature&quot;</span><span class="p">],</span> <span class="p">(</span><span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="s2">&quot;feature should be a Tsd (or TsdFrame with 1 column only)&quot;</span>
+                <span class="p">)</span>
+            <span class="k">if</span> <span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;feature&quot;</span><span class="p">],</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;feature&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="s2">&quot;feature should be a Tsd (or TsdFrame with 1 column only)&quot;</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;features&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;features&quot;</span><span class="p">],</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;features should be a TsdFrame with 2 columns&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;features&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;features should have 2 columns only.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;nb_bins&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;nb_bins&quot;</span><span class="p">],</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="s2">&quot;nb_bins should be of type int (or tuple with (int, int) for 2D tuning curves).&quot;</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;group&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;group&quot;</span><span class="p">],</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;group should be a TsGroup.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;ep&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;ep&quot;</span><span class="p">],</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;ep should be an IntervalSet&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;minmax&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;minmax&quot;</span><span class="p">],</span> <span class="n">Iterable</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;minmax should be a tuple/list of 2 numbers&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;dict_ep&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;dict_ep&quot;</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;dict_ep should be a dictionary of IntervalSet&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span>
+                <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">)</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;dict_ep&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">()</span>
+            <span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;dict_ep argument should contain only IntervalSet.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;tc&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;tc&quot;</span><span class="p">],</span> <span class="p">(</span><span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="s2">&quot;Argument tc should be of type pandas.DataFrame or numpy.ndarray&quot;</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;dict_tc&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;dict_tc&quot;</span><span class="p">],</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                    <span class="s2">&quot;Argument dict_tc should be a dictionary of numpy.ndarray or numpy.ndarray.&quot;</span>
+                <span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;bitssec&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;bitssec&quot;</span><span class="p">],</span> <span class="nb">bool</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument bitssec should be of type bool&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="s2">&quot;tsdframe&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;tsdframe&quot;</span><span class="p">],</span> <span class="p">(</span><span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument tsdframe should be of type Tsd or TsdFrame.&quot;</span><span class="p">)</span>
+        <span class="c1"># Call the original function with validated inputs</span>
+        <span class="k">return</span> <span class="n">func</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">wrapper</span>
+
+
+<div class="viewcode-block" id="compute_1d_tuning_curves">
+<a class="viewcode-back" href="../../../generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_1d_tuning_curves">[docs]</a>
+<span class="nd">@_validate_tuning_inputs</span>
+<span class="k">def</span> <span class="nf">compute_1d_tuning_curves</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">nb_bins</span><span class="p">,</span> <span class="n">ep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">minmax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. deprecated:: 0.9.2</span>
+<span class="sd">          `compute_1d_tuning_curves` will be removed in Pynapple 1.0.0, it is replaced by</span>
+<span class="sd">          `compute_tuning_curves` because the latter works for N dimensions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+        <span class="s2">&quot;compute_1d_tuning_curves is deprecated and will be removed in a future version;&quot;</span>
+        <span class="s2">&quot;use compute_tuning_curves instead.&quot;</span><span class="p">,</span>
+        <span class="ne">FutureWarning</span><span class="p">,</span>
+        <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">compute_tuning_curves</span><span class="p">(</span>
+            <span class="n">group</span><span class="p">,</span>
+            <span class="n">feature</span><span class="p">,</span>
+            <span class="n">nb_bins</span><span class="p">,</span>
+            <span class="nb">range</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">minmax</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="n">minmax</span><span class="p">],</span>
+            <span class="n">epochs</span><span class="o">=</span><span class="n">ep</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">T</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="compute_1d_tuning_curves_continuous">
+<a class="viewcode-back" href="../../../generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_1d_tuning_curves_continuous">[docs]</a>
+<span class="nd">@_validate_tuning_inputs</span>
+<span class="k">def</span> <span class="nf">compute_1d_tuning_curves_continuous</span><span class="p">(</span>
+    <span class="n">tsdframe</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">nb_bins</span><span class="p">,</span> <span class="n">ep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">minmax</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. deprecated:: 0.9.2</span>
+<span class="sd">          `compute_1d_tuning_curves` will be removed in Pynapple 1.0.0, it is replaced by</span>
+<span class="sd">          `compute_tuning_curves` because the latter works for N dimensions and continuous data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+        <span class="s2">&quot;compute_1d_tuning_curves_continuous is deprecated and will be removed in a future version;&quot;</span>
+        <span class="s2">&quot;use compute_tuning_curves instead.&quot;</span><span class="p">,</span>
+        <span class="ne">FutureWarning</span><span class="p">,</span>
+        <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="n">compute_tuning_curves</span><span class="p">(</span>
+            <span class="n">tsdframe</span><span class="p">,</span>
+            <span class="n">feature</span><span class="p">,</span>
+            <span class="n">nb_bins</span><span class="p">,</span>
+            <span class="nb">range</span><span class="o">=</span><span class="kc">None</span> <span class="k">if</span> <span class="n">minmax</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[</span><span class="n">minmax</span><span class="p">],</span>
+            <span class="n">epochs</span><span class="o">=</span><span class="n">ep</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="o">.</span><span class="n">to_pandas</span><span class="p">()</span>
+        <span class="o">.</span><span class="n">T</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="compute_2d_tuning_curves">
+<a class="viewcode-back" href="../../../generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_2d_tuning_curves">[docs]</a>
+<span class="nd">@_validate_tuning_inputs</span>
+<span class="k">def</span> <span class="nf">compute_2d_tuning_curves</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">nb_bins</span><span class="p">,</span> <span class="n">ep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">minmax</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. deprecated:: 0.9.2</span>
+<span class="sd">          `compute_1d_tuning_curves` will be removed in Pynapple 1.0.0, it is replaced by</span>
+<span class="sd">          `compute_tuning_curves` because the latter works for N dimensions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+        <span class="s2">&quot;compute_2d_tuning_curves is deprecated and will be removed in a future version;&quot;</span>
+        <span class="s2">&quot;use compute_tuning_curves instead.&quot;</span><span class="p">,</span>
+        <span class="ne">FutureWarning</span><span class="p">,</span>
+        <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">xarray</span> <span class="o">=</span> <span class="n">compute_tuning_curves</span><span class="p">(</span>
+        <span class="n">group</span><span class="p">,</span>
+        <span class="n">features</span><span class="p">,</span>
+        <span class="n">nb_bins</span><span class="p">,</span>
+        <span class="nb">range</span><span class="o">=</span><span class="p">(</span>
+            <span class="kc">None</span> <span class="k">if</span> <span class="n">minmax</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[[</span><span class="n">minmax</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">minmax</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="p">[</span><span class="n">minmax</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">minmax</span><span class="p">[</span><span class="mi">3</span><span class="p">]]]</span>
+        <span class="p">),</span>
+        <span class="n">epochs</span><span class="o">=</span><span class="n">ep</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">tcs</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">xarray</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">unit</span><span class="o">=</span><span class="n">c</span><span class="p">)</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">xarray</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;unit&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">}</span>
+    <span class="n">bins</span> <span class="o">=</span> <span class="p">[</span><span class="n">xarray</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">xarray</span><span class="o">.</span><span class="n">coords</span> <span class="k">if</span> <span class="n">dim</span> <span class="o">!=</span> <span class="s2">&quot;unit&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">tcs</span><span class="p">,</span> <span class="n">bins</span></div>
+
+
+
+<div class="viewcode-block" id="compute_2d_tuning_curves_continuous">
+<a class="viewcode-back" href="../../../generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_2d_tuning_curves_continuous">[docs]</a>
+<span class="nd">@_validate_tuning_inputs</span>
+<span class="k">def</span> <span class="nf">compute_2d_tuning_curves_continuous</span><span class="p">(</span>
+    <span class="n">tsdframe</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">nb_bins</span><span class="p">,</span> <span class="n">ep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">minmax</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. deprecated:: 0.9.2</span>
+<span class="sd">          `compute_1d_tuning_curves` will be removed in Pynapple 1.0.0, it is replaced by</span>
+<span class="sd">          `compute_tuning_curves` because the latter works for N dimensions and continuous data.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+        <span class="s2">&quot;compute_2d_tuning_curves_continuous is deprecated and will be removed in a future version;&quot;</span>
+        <span class="s2">&quot;use compute_tuning_curves instead.&quot;</span><span class="p">,</span>
+        <span class="ne">FutureWarning</span><span class="p">,</span>
+        <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">xarray</span> <span class="o">=</span> <span class="n">compute_tuning_curves</span><span class="p">(</span>
+        <span class="n">tsdframe</span><span class="p">,</span>
+        <span class="n">features</span><span class="p">,</span>
+        <span class="n">nb_bins</span><span class="p">,</span>
+        <span class="nb">range</span><span class="o">=</span><span class="p">(</span>
+            <span class="kc">None</span> <span class="k">if</span> <span class="n">minmax</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[[</span><span class="n">minmax</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">minmax</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span> <span class="p">[</span><span class="n">minmax</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">minmax</span><span class="p">[</span><span class="mi">3</span><span class="p">]]]</span>
+        <span class="p">),</span>
+        <span class="n">epochs</span><span class="o">=</span><span class="n">ep</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">tcs</span> <span class="o">=</span> <span class="p">{</span><span class="n">c</span><span class="p">:</span> <span class="n">xarray</span><span class="o">.</span><span class="n">sel</span><span class="p">(</span><span class="n">unit</span><span class="o">=</span><span class="n">c</span><span class="p">)</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">xarray</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="s2">&quot;unit&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">}</span>
+    <span class="n">bins</span> <span class="o">=</span> <span class="p">[</span><span class="n">xarray</span><span class="o">.</span><span class="n">coords</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span><span class="o">.</span><span class="n">values</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">xarray</span><span class="o">.</span><span class="n">coords</span> <span class="k">if</span> <span class="n">dim</span> <span class="o">!=</span> <span class="s2">&quot;unit&quot;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">tcs</span><span class="p">,</span> <span class="n">bins</span></div>
+
+
+
+<div class="viewcode-block" id="compute_discrete_tuning_curves">
+<a class="viewcode-back" href="../../../generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_discrete_tuning_curves">[docs]</a>
+<span class="nd">@_validate_tuning_inputs</span>
+<span class="k">def</span> <span class="nf">compute_discrete_tuning_curves</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">dict_ep</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. deprecated:: 0.9.2</span>
+<span class="sd">          `compute_discrete_tuning_curves` will be removed in Pynapple 1.0.0, it is replaced by</span>
+<span class="sd">          `compute_response_per_epoch`.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+        <span class="s2">&quot;compute_discrete_tuning_curves is deprecated and will be removed in a future version;&quot;</span>
+        <span class="s2">&quot;use compute_response_per_epoch instead.&quot;</span><span class="p">,</span>
+        <span class="ne">FutureWarning</span><span class="p">,</span>
+        <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">compute_response_per_epoch</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">dict_ep</span><span class="p">,</span> <span class="n">return_pandas</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="compute_2d_mutual_info">
+<a class="viewcode-back" href="../../../generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_2d_mutual_info">[docs]</a>
+<span class="nd">@_validate_tuning_inputs</span>
+<span class="k">def</span> <span class="nf">compute_2d_mutual_info</span><span class="p">(</span><span class="n">dict_tc</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">ep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">minmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bitssec</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. deprecated:: 0.9.2</span>
+<span class="sd">          `compute_2d_mutual_info` will be removed in Pynapple 1.0.0, it is replaced by</span>
+<span class="sd">          `compute_mutual_information` because the latter works for N dimensions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+        <span class="s2">&quot;compute_2d_mutual_info is deprecated and will be removed in a future version;&quot;</span>
+        <span class="s2">&quot;use compute_mutual_information instead.&quot;</span><span class="p">,</span>
+        <span class="ne">FutureWarning</span><span class="p">,</span>
+        <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">type</span><span class="p">(</span><span class="n">dict_tc</span><span class="p">)</span> <span class="ow">is</span> <span class="nb">dict</span><span class="p">:</span>
+        <span class="n">tcs</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">dict_tc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">dict_tc</span><span class="o">.</span><span class="n">keys</span><span class="p">()]),</span>
+            <span class="n">coords</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">dict_tc</span><span class="o">.</span><span class="n">keys</span><span class="p">())},</span>
+            <span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;unit&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tcs</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
+            <span class="n">dict_tc</span><span class="p">,</span>
+            <span class="n">coords</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dict_tc</span><span class="p">))},</span>
+            <span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;unit&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;1&quot;</span><span class="p">],</span>
+        <span class="p">)</span>
+
+    <span class="n">nb_bins</span> <span class="o">=</span> <span class="p">(</span><span class="n">tcs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">tcs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="n">bins</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">minmax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">bins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">features</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]),</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">features</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]),</span> <span class="n">nb_bins</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">bins</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">minmax</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span><span class="p">],</span> <span class="n">minmax</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">i</span> <span class="o">%</span> <span class="mi">2</span><span class="p">],</span> <span class="n">nb_bins</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ep</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">):</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="n">features</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">ep</span><span class="p">)</span>
+
+    <span class="n">occupancy</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram2d</span><span class="p">(</span>
+        <span class="n">features</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+        <span class="n">features</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+        <span class="p">[</span><span class="n">bins</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">bins</span><span class="p">[</span><span class="mi">1</span><span class="p">]],</span>
+    <span class="p">)</span>
+    <span class="n">occupancy</span> <span class="o">=</span> <span class="n">occupancy</span> <span class="o">/</span> <span class="n">occupancy</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+
+    <span class="n">tcs</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;occupancy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">occupancy</span>
+    <span class="n">MI</span> <span class="o">=</span> <span class="n">compute_mutual_information</span><span class="p">(</span><span class="n">tcs</span><span class="p">)</span>
+
+    <span class="n">column</span> <span class="o">=</span> <span class="s2">&quot;bits/sec&quot;</span> <span class="k">if</span> <span class="n">bitssec</span> <span class="k">else</span> <span class="s2">&quot;bits/spike&quot;</span>
+    <span class="k">return</span> <span class="n">MI</span><span class="p">[[</span><span class="n">column</span><span class="p">]]</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="n">column</span><span class="p">:</span> <span class="s2">&quot;SI&quot;</span><span class="p">},</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="compute_1d_mutual_info">
+<a class="viewcode-back" href="../../../generated/pynapple.process.tuning_curves.html#pynapple.process.tuning_curves.compute_1d_mutual_info">[docs]</a>
+<span class="nd">@_validate_tuning_inputs</span>
+<span class="k">def</span> <span class="nf">compute_1d_mutual_info</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">ep</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">minmax</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">bitssec</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    .. deprecated:: 0.9.2</span>
+<span class="sd">          `compute_1d_mutual_info` will be removed in Pynapple 1.0.0, it is replaced by</span>
+<span class="sd">          `compute_mutual_information` because the latter works for N dimensions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+        <span class="s2">&quot;compute_1d_mutual_info is deprecated and will be removed in a future version;&quot;</span>
+        <span class="s2">&quot;use compute_mutual_information instead.&quot;</span><span class="p">,</span>
+        <span class="ne">FutureWarning</span><span class="p">,</span>
+        <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tc</span><span class="p">,</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">):</span>
+        <span class="n">tcs</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
+            <span class="n">tc</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">coords</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="n">tc</span><span class="o">.</span><span class="n">columns</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">:</span> <span class="n">tc</span><span class="o">.</span><span class="n">index</span><span class="p">}</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">tcs</span> <span class="o">=</span> <span class="n">xr</span><span class="o">.</span><span class="n">DataArray</span><span class="p">(</span>
+            <span class="n">tc</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">coords</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;unit&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">tc</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])},</span> <span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;unit&quot;</span><span class="p">,</span> <span class="s2">&quot;0&quot;</span><span class="p">]</span>
+        <span class="p">)</span>
+
+    <span class="n">nb_bins</span> <span class="o">=</span> <span class="n">tc</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span>
+    <span class="k">if</span> <span class="n">minmax</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nanmin</span><span class="p">(</span><span class="n">feature</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">nanmax</span><span class="p">(</span><span class="n">feature</span><span class="p">),</span> <span class="n">nb_bins</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">minmax</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">minmax</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">nb_bins</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ep</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">):</span>
+        <span class="n">occupancy</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">ep</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">occupancy</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">histogram</span><span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">bins</span><span class="p">)</span>
+    <span class="n">occupancy</span> <span class="o">=</span> <span class="n">occupancy</span> <span class="o">/</span> <span class="n">occupancy</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+    <span class="n">tcs</span><span class="o">.</span><span class="n">attrs</span><span class="p">[</span><span class="s2">&quot;occupancy&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">occupancy</span>
+    <span class="n">MI</span> <span class="o">=</span> <span class="n">compute_mutual_information</span><span class="p">(</span><span class="n">tcs</span><span class="p">)</span>
+
+    <span class="n">column</span> <span class="o">=</span> <span class="s2">&quot;bits/sec&quot;</span> <span class="k">if</span> <span class="n">bitssec</span> <span class="k">else</span> <span class="s2">&quot;bits/spike&quot;</span>
+    <span class="k">return</span> <span class="n">MI</span><span class="p">[[</span><span class="n">column</span><span class="p">]]</span><span class="o">.</span><span class="n">rename</span><span class="p">({</span><span class="n">column</span><span class="p">:</span> <span class="s2">&quot;SI&quot;</span><span class="p">},</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2025, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">pynapple authors</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.10.2</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

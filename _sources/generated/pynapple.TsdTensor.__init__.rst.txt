@@ -1,0 +1,6 @@
+pynapple.TsdTensor.\_\_init\_\_
+===============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.__init__

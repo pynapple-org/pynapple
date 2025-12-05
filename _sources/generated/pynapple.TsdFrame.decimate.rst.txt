@@ -1,0 +1,6 @@
+pynapple.TsdFrame.decimate
+==========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.decimate

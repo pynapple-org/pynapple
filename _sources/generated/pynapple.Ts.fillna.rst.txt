@@ -1,0 +1,6 @@
+pynapple.Ts.fillna
+==================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Ts.fillna

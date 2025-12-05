@@ -1,0 +1,6 @@
+pynapple.io.folder.Folder.expand
+================================
+
+.. currentmodule:: pynapple.io.folder
+
+.. automethod:: Folder.expand

@@ -1,0 +1,6 @@
+pynapple.Ts.value\_from
+=======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Ts.value_from

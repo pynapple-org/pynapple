@@ -1,0 +1,747 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>About us &#8212; pynapple 0.10.2 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx_contributors.css?v=f079e67e" />
+    <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=f2caec9a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="_static/documentation_options.js?v=11e62b30"></script>
+    <script src="_static/doctools.js?v=9bcbadda"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=c57da192"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'about';</script>
+    <link rel="icon" href="_static/Pynapple_final_icon.png"/>
+    <link rel="author" title="About these documents" href="#" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Releases" href="releases.html" />
+    <link rel="prev" title="pynapple.process.warping" href="generated/pynapple.process.warping.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.10.2" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.10.2 documentation - Home"/>
+    <img src="_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.10.2 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    About us
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    About us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">About us</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="about-us">
+<h1>About us<a class="headerlink" href="#about-us" title="Link to this heading">#</a></h1>
+<section id="history">
+<h2>History<a class="headerlink" href="#history" title="Link to this heading">#</a></h2>
+<p>This package somehow started about 20 years ago in Bruce McNaughton’s lab. David Redish started the <em>TSToolbox</em> package in Matlab.
+Another postdoc in the lab, Francesco Battaglia, then made major contributions to the package. Francesco passed it on to Adrien Peyrache and other trainees in Paris and The Netherlands.
+Around 2016-2017, Luke Sjulson started <em>TSToolbox2</em>, still in Matlab and which includes some important changes.</p>
+<p>In 2018, Francesco Battaglia started neuroseries, a Python package built on Pandas. It was quickly adopted by Guillaume Viejo, a postdoc in Adrien Peyrache lab at McGill university. Gradually, the majority of the lab was using it and new functions were constantly added.
+In 2021, Guillaume Viejo, Adrien Peyrache and other trainees decided to fork from neuroseries and started <em>pynapple</em>.
+The core of pynapple is largely built upon neuroseries. Some of the original changes to the TSToolbox made by Luke Sjulson were included in this package, especially the <em>time_support</em> property of all ts/tsd objects.</p>
+<p>Since 2023, the development of pynapple is lead by <a class="reference external" href="https://www.simonsfoundation.org/people/guillaume-viejo/">Guillaume Viejo</a>, <a class="reference external" href="https://www.simonsfoundation.org/people/edoardo-balzani/">Edoardo Balzani</a> and
+Sarah Jo Venditto at the Center for Computational Neuroscience of the Flatiron institute.</p>
+</section>
+<section id="development-lead">
+<h2>Development Lead<a class="headerlink" href="#development-lead" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Guillaume Viejo <a class="reference external" href="mailto:gviejo&#37;&#52;&#48;flatironinstitute&#46;org">gviejo<span>&#64;</span>flatironinstitute<span>&#46;</span>org</a></p></li>
+<li><p>Edoardo Balzani <a class="reference external" href="mailto:ebalzani&#37;&#52;&#48;flatironinstitute&#46;org">ebalzani<span>&#64;</span>flatironinstitute<span>&#46;</span>org</a></p></li>
+<li><p>Sarah Jo Venditto <a class="reference external" href="mailto:svenditto&#37;&#52;&#48;flatironinstitute&#46;org">svenditto<span>&#64;</span>flatironinstitute<span>&#46;</span>org</a></p></li>
+</ul>
+</section>
+<section id="contributors">
+<h2>Contributors<a class="headerlink" href="#contributors" title="Link to this heading">#</a></h2>
+<div class="sphinx-contributors sphinx-contributors--avatars docutils container">
+<ul class="sphinx-contributors_list">
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/4353798?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/4353798?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/gviejo">gviejo</a></p>
+<p class="sphinx-contributors_contributor__contributions">1104 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/18494745?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/18494745?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/sjvenditto">sjvenditto</a></p>
+<p class="sphinx-contributors_contributor__contributions">275 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/48769854?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/48769854?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/wulfdewolf">wulfdewolf</a></p>
+<p class="sphinx-contributors_contributor__contributions">249 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/28624715?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/28624715?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/BalzaniEdoardo">BalzaniEdoardo</a></p>
+<p class="sphinx-contributors_contributor__contributions">202 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/10400212?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/10400212?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/vigji">vigji</a></p>
+<p class="sphinx-contributors_contributor__contributions">78 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/35963902?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/35963902?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/kippfreud">kippfreud</a></p>
+<p class="sphinx-contributors_contributor__contributions">66 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/9942460?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/9942460?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/apeyrache">apeyrache</a></p>
+<p class="sphinx-contributors_contributor__contributions">45 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/27990509?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/27990509?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/GRVite">GRVite</a></p>
+<p class="sphinx-contributors_contributor__contributions">20 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/7265688?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/7265688?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/dlevenstein">dlevenstein</a></p>
+<p class="sphinx-contributors_contributor__contributions">19 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/1131461?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/1131461?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/jacobsimon">jacobsimon</a></p>
+<p class="sphinx-contributors_contributor__contributions">15 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/97355086?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/97355086?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/qian-chu">qian-chu</a></p>
+<p class="sphinx-contributors_contributor__contributions">15 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/95380616?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/95380616?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/dhruvm9">dhruvm9</a></p>
+<p class="sphinx-contributors_contributor__contributions">14 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/6338509?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/6338509?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/billbrod">billbrod</a></p>
+<p class="sphinx-contributors_contributor__contributions">12 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/93623128?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/93623128?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/SSkromne">SSkromne</a></p>
+<p class="sphinx-contributors_contributor__contributions">12 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/12663563?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/12663563?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/SaraMati">SaraMati</a></p>
+<p class="sphinx-contributors_contributor__contributions">11 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/18353968?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/18353968?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/danielsvedberg">danielsvedberg</a></p>
+<p class="sphinx-contributors_contributor__contributions">5 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/11480133?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/11480133?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/eschombu">eschombu</a></p>
+<p class="sphinx-contributors_contributor__contributions">5 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/6516674?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/6516674?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/cwindolf">cwindolf</a></p>
+<p class="sphinx-contributors_contributor__contributions">4 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/17097257?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/17097257?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/alejoe91">alejoe91</a></p>
+<p class="sphinx-contributors_contributor__contributions">3 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/69729525?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/69729525?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/clewis7">clewis7</a></p>
+<p class="sphinx-contributors_contributor__contributions">3 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/844306?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/844306?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/bendichter">bendichter</a></p>
+<p class="sphinx-contributors_contributor__contributions">2 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/3679296?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/3679296?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/magland">magland</a></p>
+<p class="sphinx-contributors_contributor__contributions">2 contributions</p>
+</div>
+</li>
+<li class="sphinx-contributors_list__item"><div class="sphinx-contributors_contributor docutils container">
+<img alt="https://avatars.githubusercontent.com/u/39889?v=4" class="sphinx-contributors_contributor__image" src="https://avatars.githubusercontent.com/u/39889?v=4" />
+<p class="sphinx-contributors_contributor__username"><a class="reference external" href="https://github.com/yarikoptic">yarikoptic</a></p>
+<p class="sphinx-contributors_contributor__contributions">1 contribution</p>
+</div>
+</li>
+</ul>
+</div>
+</section>
+<section id="special-credits">
+<h2>Special Credits<a class="headerlink" href="#special-credits" title="Link to this heading">#</a></h2>
+<p>Special thanks to Francesco P. Battaglia
+(<a class="github reference external" href="https://github.com/fpbattaglia">fpbattaglia</a>) for the development of the original
+<em>TSToolbox</em> (<a class="github reference external" href="https://github.com/PeyracheLab/TStoolbox">PeyracheLab/TStoolbox</a>) and
+<em>neuroseries</em> (<a class="github reference external" href="https://github.com/NeuroNetMem/neuroseries">NeuroNetMem/neuroseries</a>) packages,
+the latter constituting the core of <em>pynapple</em>.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="generated/pynapple.process.warping.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">pynapple.process.warping</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="releases.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Releases</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#history">History</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#development-lead">Development Lead</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#contributors">Contributors</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#special-credits">Special Credits</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/about.md.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2025, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">pynapple authors</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.10.2</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

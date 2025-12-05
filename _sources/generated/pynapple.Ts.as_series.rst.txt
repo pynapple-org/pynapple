@@ -1,0 +1,6 @@
+pynapple.Ts.as\_series
+======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Ts.as_series

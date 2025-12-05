@@ -1,0 +1,6 @@
+pynapple.TsdFrame.drop\_info
+============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.drop_info

@@ -1,0 +1,6 @@
+pynapple.TsdTensor.start\_time
+==============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.start_time

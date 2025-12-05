@@ -1,0 +1,6 @@
+pynapple.TsdTensor.derivative
+=============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.derivative

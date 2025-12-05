@@ -1,0 +1,16 @@
+﻿pynapple.io.misc
+================
+
+.. automodule:: pynapple.io.misc
+
+   
+   .. rubric:: Functions
+
+   .. autosummary::
+   
+      append_NWB_LFP
+      load_eeg
+      load_file
+      load_folder
+      load_session
+   

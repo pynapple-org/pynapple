@@ -1,0 +1,1243 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>pynapple.process.tuning_curves &#8212; pynapple 0.10.2 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.8ecb98da25f57f5357bf6f572d296f466b2cfe2517ffebfabe82451661e28f02.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_contributors.css?v=f079e67e" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=f2caec9a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../_static/documentation_options.js?v=11e62b30"></script>
+    <script src="../_static/doctools.js?v=9bcbadda"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=c57da192"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'generated/pynapple.process.tuning_curves';</script>
+    <link rel="icon" href="../_static/Pynapple_final_icon.png"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="pynapple.process.wavelets" href="pynapple.process.wavelets.html" />
+    <link rel="prev" title="pynapple.process.spectrum" href="pynapple.process.spectrum.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.10.2" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.10.2 documentation - Home"/>
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.10.2 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About us
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item">
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.Tsd.html">pynapple.Tsd</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.__init__.html">pynapple.Tsd.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.as_array.html">pynapple.Tsd.as_array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.as_series.html">pynapple.Tsd.as_series</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.as_units.html">pynapple.Tsd.as_units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.bin_average.html">pynapple.Tsd.bin_average</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.convolve.html">pynapple.Tsd.convolve</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.copy.html">pynapple.Tsd.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.count.html">pynapple.Tsd.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.data.html">pynapple.Tsd.data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.decimate.html">pynapple.Tsd.decimate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.derivative.html">pynapple.Tsd.derivative</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.dropna.html">pynapple.Tsd.dropna</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.end_time.html">pynapple.Tsd.end_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.find_support.html">pynapple.Tsd.find_support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.get.html">pynapple.Tsd.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.get_slice.html">pynapple.Tsd.get_slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.in_interval.html">pynapple.Tsd.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.interpolate.html">pynapple.Tsd.interpolate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.restrict.html">pynapple.Tsd.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.save.html">pynapple.Tsd.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.smooth.html">pynapple.Tsd.smooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.start_time.html">pynapple.Tsd.start_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.threshold.html">pynapple.Tsd.threshold</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.time_diff.html">pynapple.Tsd.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.times.html">pynapple.Tsd.times</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.to_numpy.html">pynapple.Tsd.to_numpy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.to_trial_tensor.html">pynapple.Tsd.to_trial_tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.to_tsgroup.html">pynapple.Tsd.to_tsgroup</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Tsd.value_from.html">pynapple.Tsd.value_from</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.TsdFrame.html">pynapple.TsdFrame</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.__init__.html">pynapple.TsdFrame.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.as_array.html">pynapple.TsdFrame.as_array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.as_dataframe.html">pynapple.TsdFrame.as_dataframe</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.as_units.html">pynapple.TsdFrame.as_units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.bin_average.html">pynapple.TsdFrame.bin_average</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.convolve.html">pynapple.TsdFrame.convolve</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.copy.html">pynapple.TsdFrame.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.count.html">pynapple.TsdFrame.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.data.html">pynapple.TsdFrame.data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.decimate.html">pynapple.TsdFrame.decimate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.derivative.html">pynapple.TsdFrame.derivative</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.drop_info.html">pynapple.TsdFrame.drop_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.dropna.html">pynapple.TsdFrame.dropna</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.end_time.html">pynapple.TsdFrame.end_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.find_support.html">pynapple.TsdFrame.find_support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.get.html">pynapple.TsdFrame.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.get_info.html">pynapple.TsdFrame.get_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.get_slice.html">pynapple.TsdFrame.get_slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.groupby.html">pynapple.TsdFrame.groupby</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.groupby_apply.html">pynapple.TsdFrame.groupby_apply</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.in_interval.html">pynapple.TsdFrame.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.interpolate.html">pynapple.TsdFrame.interpolate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.restrict.html">pynapple.TsdFrame.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.restrict_info.html">pynapple.TsdFrame.restrict_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.save.html">pynapple.TsdFrame.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.set_info.html">pynapple.TsdFrame.set_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.smooth.html">pynapple.TsdFrame.smooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.start_time.html">pynapple.TsdFrame.start_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.time_diff.html">pynapple.TsdFrame.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.times.html">pynapple.TsdFrame.times</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.to_numpy.html">pynapple.TsdFrame.to_numpy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.to_trial_tensor.html">pynapple.TsdFrame.to_trial_tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdFrame.value_from.html">pynapple.TsdFrame.value_from</a></li>
+</ul>
+</details></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.TsdTensor.html">pynapple.TsdTensor</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.__init__.html">pynapple.TsdTensor.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.as_array.html">pynapple.TsdTensor.as_array</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.bin_average.html">pynapple.TsdTensor.bin_average</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.convolve.html">pynapple.TsdTensor.convolve</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.copy.html">pynapple.TsdTensor.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.count.html">pynapple.TsdTensor.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.data.html">pynapple.TsdTensor.data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.decimate.html">pynapple.TsdTensor.decimate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.derivative.html">pynapple.TsdTensor.derivative</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.dropna.html">pynapple.TsdTensor.dropna</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.end_time.html">pynapple.TsdTensor.end_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.find_support.html">pynapple.TsdTensor.find_support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.get.html">pynapple.TsdTensor.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.get_slice.html">pynapple.TsdTensor.get_slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.in_interval.html">pynapple.TsdTensor.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.interpolate.html">pynapple.TsdTensor.interpolate</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.restrict.html">pynapple.TsdTensor.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.save.html">pynapple.TsdTensor.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.smooth.html">pynapple.TsdTensor.smooth</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.start_time.html">pynapple.TsdTensor.start_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.time_diff.html">pynapple.TsdTensor.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.times.html">pynapple.TsdTensor.times</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.to_numpy.html">pynapple.TsdTensor.to_numpy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.to_trial_tensor.html">pynapple.TsdTensor.to_trial_tensor</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsdTensor.value_from.html">pynapple.TsdTensor.value_from</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.IntervalSet.html">pynapple.IntervalSet</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.__init__.html">pynapple.IntervalSet.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.as_dataframe.html">pynapple.IntervalSet.as_dataframe</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.as_units.html">pynapple.IntervalSet.as_units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.drop_info.html">pynapple.IntervalSet.drop_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.drop_long_intervals.html">pynapple.IntervalSet.drop_long_intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.drop_short_intervals.html">pynapple.IntervalSet.drop_short_intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.get_info.html">pynapple.IntervalSet.get_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.get_intervals_center.html">pynapple.IntervalSet.get_intervals_center</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.groupby.html">pynapple.IntervalSet.groupby</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.groupby_apply.html">pynapple.IntervalSet.groupby_apply</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.in_interval.html">pynapple.IntervalSet.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.intersect.html">pynapple.IntervalSet.intersect</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.merge_close_intervals.html">pynapple.IntervalSet.merge_close_intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.restrict_info.html">pynapple.IntervalSet.restrict_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.save.html">pynapple.IntervalSet.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.set_diff.html">pynapple.IntervalSet.set_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.set_info.html">pynapple.IntervalSet.set_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.split.html">pynapple.IntervalSet.split</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.time_span.html">pynapple.IntervalSet.time_span</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.tot_length.html">pynapple.IntervalSet.tot_length</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.IntervalSet.union.html">pynapple.IntervalSet.union</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.Ts.html">pynapple.Ts</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.__init__.html">pynapple.Ts.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.as_series.html">pynapple.Ts.as_series</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.as_units.html">pynapple.Ts.as_units</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.copy.html">pynapple.Ts.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.count.html">pynapple.Ts.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.end_time.html">pynapple.Ts.end_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.fillna.html">pynapple.Ts.fillna</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.find_support.html">pynapple.Ts.find_support</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.get.html">pynapple.Ts.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.get_slice.html">pynapple.Ts.get_slice</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.in_interval.html">pynapple.Ts.in_interval</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.restrict.html">pynapple.Ts.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.save.html">pynapple.Ts.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.start_time.html">pynapple.Ts.start_time</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.time_diff.html">pynapple.Ts.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.times.html">pynapple.Ts.times</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.trial_count.html">pynapple.Ts.trial_count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.Ts.value_from.html">pynapple.Ts.value_from</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.TsGroup.html">pynapple.TsGroup</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.__init__.html">pynapple.TsGroup.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.clear.html">pynapple.TsGroup.clear</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.copy.html">pynapple.TsGroup.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.count.html">pynapple.TsGroup.count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.drop_info.html">pynapple.TsGroup.drop_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.fromkeys.html">pynapple.TsGroup.fromkeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.get.html">pynapple.TsGroup.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.get_info.html">pynapple.TsGroup.get_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.getby_category.html">pynapple.TsGroup.getby_category</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.getby_intervals.html">pynapple.TsGroup.getby_intervals</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.getby_threshold.html">pynapple.TsGroup.getby_threshold</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.groupby.html">pynapple.TsGroup.groupby</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.groupby_apply.html">pynapple.TsGroup.groupby_apply</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.items.html">pynapple.TsGroup.items</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.keys.html">pynapple.TsGroup.keys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.merge.html">pynapple.TsGroup.merge</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.merge_group.html">pynapple.TsGroup.merge_group</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.pop.html">pynapple.TsGroup.pop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.popitem.html">pynapple.TsGroup.popitem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.restrict.html">pynapple.TsGroup.restrict</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.restrict_info.html">pynapple.TsGroup.restrict_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.save.html">pynapple.TsGroup.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.set_info.html">pynapple.TsGroup.set_info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.setdefault.html">pynapple.TsGroup.setdefault</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.time_diff.html">pynapple.TsGroup.time_diff</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.to_tsd.html">pynapple.TsGroup.to_tsd</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.trial_count.html">pynapple.TsGroup.trial_count</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.update.html">pynapple.TsGroup.update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.value_from.html">pynapple.TsGroup.value_from</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.TsGroup.values.html">pynapple.TsGroup.values</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.io.NWBFile.html">pynapple.io.NWBFile</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.__init__.html">pynapple.io.NWBFile.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.clear.html">pynapple.io.NWBFile.clear</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.close.html">pynapple.io.NWBFile.close</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.copy.html">pynapple.io.NWBFile.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.fromkeys.html">pynapple.io.NWBFile.fromkeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.get.html">pynapple.io.NWBFile.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.items.html">pynapple.io.NWBFile.items</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.keys.html">pynapple.io.NWBFile.keys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.pop.html">pynapple.io.NWBFile.pop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.popitem.html">pynapple.io.NWBFile.popitem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.setdefault.html">pynapple.io.NWBFile.setdefault</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.update.html">pynapple.io.NWBFile.update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NWBFile.values.html">pynapple.io.NWBFile.values</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.io.NPZFile.html">pynapple.io.NPZFile</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NPZFile.__init__.html">pynapple.io.NPZFile.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.NPZFile.load.html">pynapple.io.NPZFile.load</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="pynapple.io.misc.html">pynapple.io.misc</a></li>
+<li class="toctree-l1 has-children"><a class="reference internal" href="pynapple.io.folder.Folder.html">pynapple.io.folder.Folder</a><details><summary><span class="toctree-toggle" role="presentation"><i class="fa-solid fa-chevron-down"></i></span></summary><ul>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.__init__.html">pynapple.io.folder.Folder.__init__</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.clear.html">pynapple.io.folder.Folder.clear</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.copy.html">pynapple.io.folder.Folder.copy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.doc.html">pynapple.io.folder.Folder.doc</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.expand.html">pynapple.io.folder.Folder.expand</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.fromkeys.html">pynapple.io.folder.Folder.fromkeys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.get.html">pynapple.io.folder.Folder.get</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.info.html">pynapple.io.folder.Folder.info</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.items.html">pynapple.io.folder.Folder.items</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.keys.html">pynapple.io.folder.Folder.keys</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.load.html">pynapple.io.folder.Folder.load</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.metadata.html">pynapple.io.folder.Folder.metadata</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.pop.html">pynapple.io.folder.Folder.pop</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.popitem.html">pynapple.io.folder.Folder.popitem</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.save.html">pynapple.io.folder.Folder.save</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.setdefault.html">pynapple.io.folder.Folder.setdefault</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.update.html">pynapple.io.folder.Folder.update</a></li>
+<li class="toctree-l2"><a class="reference internal" href="pynapple.io.folder.Folder.values.html">pynapple.io.folder.Folder.values</a></li>
+</ul>
+</details></li>
+</ul>
+<ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.correlograms.html">pynapple.process.correlograms</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.decoding.html">pynapple.process.decoding</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.filtering.html">pynapple.process.filtering</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.perievent.html">pynapple.process.perievent</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.randomize.html">pynapple.process.randomize</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.spectrum.html">pynapple.process.spectrum</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">pynapple.process.tuning_curves</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.wavelets.html">pynapple.process.wavelets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="pynapple.process.warping.html">pynapple.process.warping</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../api.html" class="nav-link">API reference</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pynapple.process.tuning_curves</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="module-pynapple.process.tuning_curves">
+<span id="pynapple-process-tuning-curves"></span><h1>pynapple.process.tuning_curves<a class="headerlink" href="#module-pynapple.process.tuning_curves" title="Link to this heading">#</a></h1>
+<p>Functions to compute n-dimensional tuning curves.</p>
+<p class="rubric">Functions</p>
+<div class="pst-scrollable-table-container"><table class="autosummary longtable table">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pynapple.process.tuning_curves.compute_1d_mutual_info" title="pynapple.process.tuning_curves.compute_1d_mutual_info"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_1d_mutual_info</span></code></a>(tc, feature[, ep, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pynapple.process.tuning_curves.compute_1d_tuning_curves" title="pynapple.process.tuning_curves.compute_1d_tuning_curves"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_1d_tuning_curves</span></code></a>(group, feature, nb_bins)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pynapple.process.tuning_curves.compute_1d_tuning_curves_continuous" title="pynapple.process.tuning_curves.compute_1d_tuning_curves_continuous"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_1d_tuning_curves_continuous</span></code></a>(...[, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pynapple.process.tuning_curves.compute_2d_mutual_info" title="pynapple.process.tuning_curves.compute_2d_mutual_info"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_2d_mutual_info</span></code></a>(dict_tc, features[, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pynapple.process.tuning_curves.compute_2d_tuning_curves" title="pynapple.process.tuning_curves.compute_2d_tuning_curves"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_2d_tuning_curves</span></code></a>(group, features, ...)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pynapple.process.tuning_curves.compute_2d_tuning_curves_continuous" title="pynapple.process.tuning_curves.compute_2d_tuning_curves_continuous"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_2d_tuning_curves_continuous</span></code></a>(...[, ...])</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pynapple.process.tuning_curves.compute_discrete_tuning_curves" title="pynapple.process.tuning_curves.compute_discrete_tuning_curves"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_discrete_tuning_curves</span></code></a>(group, dict_ep)</p></td>
+<td><p></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pynapple.process.tuning_curves.compute_mutual_information" title="pynapple.process.tuning_curves.compute_mutual_information"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_mutual_information</span></code></a>(tuning_curves[, ...])</p></td>
+<td><p>Computes mutual information from n-dimensional tuning curves.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#pynapple.process.tuning_curves.compute_response_per_epoch" title="pynapple.process.tuning_curves.compute_response_per_epoch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_response_per_epoch</span></code></a>(data, epochs_dict)</p></td>
+<td><p>Compute mean response per epoch, given a dictionary of epochs.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#pynapple.process.tuning_curves.compute_tuning_curves" title="pynapple.process.tuning_curves.compute_tuning_curves"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_tuning_curves</span></code></a>(data, features[, ...])</p></td>
+<td><p>Computes n-dimensional tuning curves relative to n features.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<dl class="py function">
+<dt class="sig sig-object py" id="pynapple.process.tuning_curves.compute_1d_mutual_info">
+<span class="sig-prename descclassname"><span class="pre">pynapple.process.tuning_curves.</span></span><span class="sig-name descname"><span class="pre">compute_1d_mutual_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bitssec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/process/tuning_curves.html#compute_1d_mutual_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.process.tuning_curves.compute_1d_mutual_info" title="Link to this definition">#</a></dt>
+<dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 0.9.2: </span><cite>compute_1d_mutual_info</cite> will be removed in Pynapple 1.0.0, it is replaced by
+<cite>compute_mutual_information</cite> because the latter works for N dimensions.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynapple.process.tuning_curves.compute_1d_tuning_curves">
+<span class="sig-prename descclassname"><span class="pre">pynapple.process.tuning_curves.</span></span><span class="sig-name descname"><span class="pre">compute_1d_tuning_curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nb_bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/process/tuning_curves.html#compute_1d_tuning_curves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.process.tuning_curves.compute_1d_tuning_curves" title="Link to this definition">#</a></dt>
+<dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 0.9.2: </span><cite>compute_1d_tuning_curves</cite> will be removed in Pynapple 1.0.0, it is replaced by
+<cite>compute_tuning_curves</cite> because the latter works for N dimensions.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynapple.process.tuning_curves.compute_1d_tuning_curves_continuous">
+<span class="sig-prename descclassname"><span class="pre">pynapple.process.tuning_curves.</span></span><span class="sig-name descname"><span class="pre">compute_1d_tuning_curves_continuous</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tsdframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nb_bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/process/tuning_curves.html#compute_1d_tuning_curves_continuous"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.process.tuning_curves.compute_1d_tuning_curves_continuous" title="Link to this definition">#</a></dt>
+<dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 0.9.2: </span><cite>compute_1d_tuning_curves</cite> will be removed in Pynapple 1.0.0, it is replaced by
+<cite>compute_tuning_curves</cite> because the latter works for N dimensions and continuous data.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynapple.process.tuning_curves.compute_2d_mutual_info">
+<span class="sig-prename descclassname"><span class="pre">pynapple.process.tuning_curves.</span></span><span class="sig-name descname"><span class="pre">compute_2d_mutual_info</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dict_tc</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bitssec</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/process/tuning_curves.html#compute_2d_mutual_info"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.process.tuning_curves.compute_2d_mutual_info" title="Link to this definition">#</a></dt>
+<dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 0.9.2: </span><cite>compute_2d_mutual_info</cite> will be removed in Pynapple 1.0.0, it is replaced by
+<cite>compute_mutual_information</cite> because the latter works for N dimensions.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynapple.process.tuning_curves.compute_2d_tuning_curves">
+<span class="sig-prename descclassname"><span class="pre">pynapple.process.tuning_curves.</span></span><span class="sig-name descname"><span class="pre">compute_2d_tuning_curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nb_bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/process/tuning_curves.html#compute_2d_tuning_curves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.process.tuning_curves.compute_2d_tuning_curves" title="Link to this definition">#</a></dt>
+<dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 0.9.2: </span><cite>compute_1d_tuning_curves</cite> will be removed in Pynapple 1.0.0, it is replaced by
+<cite>compute_tuning_curves</cite> because the latter works for N dimensions.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynapple.process.tuning_curves.compute_2d_tuning_curves_continuous">
+<span class="sig-prename descclassname"><span class="pre">pynapple.process.tuning_curves.</span></span><span class="sig-name descname"><span class="pre">compute_2d_tuning_curves_continuous</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tsdframe</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nb_bins</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">ep</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">minmax</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/process/tuning_curves.html#compute_2d_tuning_curves_continuous"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.process.tuning_curves.compute_2d_tuning_curves_continuous" title="Link to this definition">#</a></dt>
+<dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 0.9.2: </span><cite>compute_1d_tuning_curves</cite> will be removed in Pynapple 1.0.0, it is replaced by
+<cite>compute_tuning_curves</cite> because the latter works for N dimensions and continuous data.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynapple.process.tuning_curves.compute_discrete_tuning_curves">
+<span class="sig-prename descclassname"><span class="pre">pynapple.process.tuning_curves.</span></span><span class="sig-name descname"><span class="pre">compute_discrete_tuning_curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">group</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dict_ep</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/process/tuning_curves.html#compute_discrete_tuning_curves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.process.tuning_curves.compute_discrete_tuning_curves" title="Link to this definition">#</a></dt>
+<dd><div class="deprecated">
+<p><span class="versionmodified deprecated">Deprecated since version 0.9.2: </span><cite>compute_discrete_tuning_curves</cite> will be removed in Pynapple 1.0.0, it is replaced by
+<cite>compute_response_per_epoch</cite>.</p>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynapple.process.tuning_curves.compute_mutual_information">
+<span class="sig-prename descclassname"><span class="pre">pynapple.process.tuning_curves.</span></span><span class="sig-name descname"><span class="pre">compute_mutual_information</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tuning_curves</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rates</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/process/tuning_curves.html#compute_mutual_information"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.process.tuning_curves.compute_mutual_information" title="Link to this definition">#</a></dt>
+<dd><p>Computes mutual information from n-dimensional tuning curves.</p>
+<p>This function implements Skaggs et al.’s [1] metric to quantify
+the information content of a neuron’s firing with respect to a variable
+(e.g., position), based on its tuning curve.</p>
+<p>The mutual information in bits per second is given by:</p>
+<div class="math notranslate nohighlight">
+\[I_\text{bits/s} = \sum_x P(x) \lambda(x) \log_2 \left( \frac{\lambda(x)}{\bar{\lambda}} \right)\]</div>
+<p>where:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(P(x)\)</span> is the probability of being in bin <span class="math notranslate nohighlight">\(x\)</span> (occupancy),</p></li>
+<li><p><span class="math notranslate nohighlight">\(\lambda(x)\)</span> is the firing rate of the neuron in bin <span class="math notranslate nohighlight">\(x\)</span>,</p></li>
+<li><p><span class="math notranslate nohighlight">\(\bar{\lambda}\)</span> is the overall mean firing rate.</p></li>
+</ul>
+<p>The information per spike is computed by dividing the result by the mean firing rate:</p>
+<div class="math notranslate nohighlight">
+\[I_\text{bits/spike} = \frac{I}{\bar{\lambda}}\]</div>
+<p class="rubric">References</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id1" role="doc-footnote">
+<span class="label"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></span>
+<p>Skaggs, W. E., McNaughton, B. L., &amp; Gothard, K. M. (1993).
+An information-theoretic approach to deciphering the hippocampal code.
+In Advances in neural information processing systems (pp. 1030-1037).</p>
+</aside>
+</aside>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tuning_curves</strong> (<a class="reference external" href="https://docs.xarray.dev/en/stable/generated/xarray.DataArray.html#xarray.DataArray" title="(in xarray v2025.11.1)"><em>xarray.DataArray</em></a>) – Tuning curves as computed by <a class="reference internal" href="#pynapple.process.tuning_curves.compute_tuning_curves" title="pynapple.process.tuning_curves.compute_tuning_curves"><code class="xref py py-func docutils literal notranslate"><span class="pre">compute_tuning_curves()</span></code></a>.</p></li>
+<li><p><strong>rates</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em> or </em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>, </em><em>optional</em>) – Mean firing rates of the units. By default <a class="reference internal" href="#pynapple.process.tuning_curves.compute_tuning_curves" title="pynapple.process.tuning_curves.compute_tuning_curves"><code class="xref py py-func docutils literal notranslate"><span class="pre">compute_tuning_curves()</span></code></a> saves
+the mean firing rates over the epochs of the tuning curves in the tuning curve objects.
+This argument can be used to pass your own.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A table containing the spatial information per unit, in both bits/sec and bits/spike.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://pandas.pydata.org/docs/reference/api/pandas.DataFrame.html#pandas.DataFrame" title="(in pandas v2.3.3)">pandas.DataFrame</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>We can compute the mutual information between a variable and a set of neurons’ firing from the tuning curves:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span><span class="p">;</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">epoch</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">0.01</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">feature</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">t</span><span class="o">*</span><span class="mf">0.01</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.02</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">t</span><span class="p">)),</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">time_support</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">group</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">({</span>
+<span class="gp">... </span>    <span class="mi">1</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="p">[(</span><span class="n">feature</span><span class="o">.</span><span class="n">values</span> <span class="o">&gt;=</span> <span class="mf">0.2</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">values</span> <span class="o">&lt;</span> <span class="mf">0.3</span><span class="p">)]),</span>
+<span class="gp">... </span>    <span class="mi">2</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="p">[(</span><span class="n">feature</span><span class="o">.</span><span class="n">values</span> <span class="o">&gt;=</span> <span class="mf">0.7</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">feature</span><span class="o">.</span><span class="n">values</span> <span class="o">&lt;</span> <span class="mf">0.8</span><span class="p">)])</span>
+<span class="gp">... </span><span class="p">},</span> <span class="n">time_support</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tcs</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_tuning_curves</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tcs</span>
+<span class="go">&lt;xarray.DataArray (unit: 2, 0: 10)&gt; Size: 160B</span>
+<span class="go">array([[  0.,   0., 100.,   0.,   0.,   0.,   0.,   0.,   0.,   0.],</span>
+<span class="go">       [  0.,   0.,   0.,   0.,   0.,   0.,   0., 100.,   0.,   0.]])</span>
+<span class="go">Coordinates:</span>
+<span class="go">  * unit     (unit) int64 16B 1 2</span>
+<span class="go">  * 0        (0) float64 80B 0.05 0.15 0.25 0.35 0.45 0.55 0.65 0.75 0.85 0.95</span>
+<span class="go">Attributes:</span>
+<span class="go">    occupancy:  [ 985. 1009. 1014.  996.  993. 1008.  991. 1008.  999.  997.]</span>
+<span class="go">    bin_edges:  [array([0. , 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ])]</span>
+<span class="go">    fs:         100.0</span>
+<span class="go">    rates:      [10.14 10.08]</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">MI</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_mutual_information</span><span class="p">(</span><span class="n">tcs</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">MI</span>
+<span class="go">    bits/sec  bits/spike</span>
+<span class="go">1  33.480966    3.301870</span>
+<span class="go">2  33.369159    3.310432</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynapple.process.tuning_curves.compute_response_per_epoch">
+<span class="sig-prename descclassname"><span class="pre">pynapple.process.tuning_curves.</span></span><span class="sig-name descname"><span class="pre">compute_response_per_epoch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs_dict</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_pandas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/process/tuning_curves.html#compute_response_per_epoch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.process.tuning_curves.compute_response_per_epoch" title="Link to this definition">#</a></dt>
+<dd><p>Compute mean response per epoch, given a dictionary of epochs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="pynapple.TsGroup.html#pynapple.TsGroup" title="pynapple.TsGroup"><em>TsGroup</em></a><em>, </em><a class="reference internal" href="pynapple.TsdFrame.html#pynapple.TsdFrame" title="pynapple.TsdFrame"><em>TsdFrame</em></a><em>, </em><a class="reference internal" href="pynapple.Ts.html#pynapple.Ts" title="pynapple.Ts"><em>Ts</em></a><em>, </em><a class="reference internal" href="pynapple.Tsd.html#pynapple.Tsd" title="pynapple.Tsd"><em>Tsd</em></a>) – The data for which the tuning curves will be computed.</p></li>
+<li><p><strong>epochs_dict</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Dictionary of IntervalSets.</p></li>
+<li><p><strong>return_pandas</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, the function returns a pandas.DataFrame instead of an xarray.DataArray.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tensor containing the tuning curves with labeled epochs.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.xarray.dev/en/stable/generated/xarray.DataArray.html#xarray.DataArray" title="(in xarray v2025.11.1)">xarray.DataArray</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>This function is typically used for a set of discrete stimuli being presented for multiple epochs.
+The stimulus epochs can overlap, though note that epochs within an IntervalSet can not overlap.</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span><span class="p">;</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">epochs_dict</span> <span class="o">=</span>  <span class="p">{</span>
+<span class="gp">... </span>    <span class="s2">&quot;stim0&quot;</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="mi">30</span><span class="p">),</span>
+<span class="gp">... </span>    <span class="s2">&quot;stim1&quot;</span><span class="p">:</span><span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="mi">90</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">}</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">group</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">({</span>
+<span class="gp">... </span>    <span class="mi">1</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)),</span>
+<span class="gp">... </span>    <span class="mi">2</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">))</span>
+<span class="gp">... </span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tcs</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_response_per_epoch</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">epochs_dict</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tcs</span>
+<span class="go">&lt;xarray.DataArray (unit: 2, epochs: 2)&gt; Size: 32B</span>
+<span class="go">array([[10.03333333, 10.03333333],</span>
+<span class="go">       [ 5.03333333,  5.03333333]])</span>
+<span class="go">Coordinates:</span>
+<span class="go">  * unit     (unit) int64 16B 1 2</span>
+<span class="go">  * epochs   (epochs) &lt;U5 40B &#39;stim0&#39; &#39;stim1&#39;</span>
+</pre></div>
+</div>
+<p>You can also pass a TsdFrame (e.g. calcium imaging data), in that case the response is computed:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frame</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">(</span><span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tcs</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_response_per_epoch</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">epochs_dict</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tcs</span>
+<span class="go">&lt;xarray.DataArray (unit: 3, epochs: 2)&gt; Size: 48B</span>
+<span class="go">array([[0.50946668, 0.50897635],</span>
+<span class="go">       [0.48343249, 0.48191892],</span>
+<span class="go">       [0.50063158, 0.48748094]])</span>
+<span class="go">Coordinates:</span>
+<span class="go">  * unit     (unit) int64 24B 0 1 2</span>
+<span class="go">  * epochs   (epochs) &lt;U5 40B &#39;stim0&#39; &#39;stim1&#39;</span>
+</pre></div>
+</div>
+</dd></dl>
+
+<dl class="py function">
+<dt class="sig sig-object py" id="pynapple.process.tuning_curves.compute_tuning_curves">
+<span class="sig-prename descclassname"><span class="pre">pynapple.process.tuning_curves.</span></span><span class="sig-name descname"><span class="pre">compute_tuning_curves</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">epochs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">fs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">feature_names</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_pandas</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">return_counts</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/pynapple/process/tuning_curves.html#compute_tuning_curves"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#pynapple.process.tuning_curves.compute_tuning_curves" title="Link to this definition">#</a></dt>
+<dd><p>Computes n-dimensional tuning curves relative to n features.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference internal" href="pynapple.TsGroup.html#pynapple.TsGroup" title="pynapple.TsGroup"><em>TsGroup</em></a><em>, </em><a class="reference internal" href="pynapple.TsdFrame.html#pynapple.TsdFrame" title="pynapple.TsdFrame"><em>TsdFrame</em></a><em>, </em><a class="reference internal" href="pynapple.Ts.html#pynapple.Ts" title="pynapple.Ts"><em>Ts</em></a><em>, </em><a class="reference internal" href="pynapple.Tsd.html#pynapple.Tsd" title="pynapple.Tsd"><em>Tsd</em></a>) – The data for which the tuning curves will be computed. This usually corresponds to the activity of the
+neurons, either as spike times (TsGroup or Ts) or continuous values (TsdFrame or Tsd).</p></li>
+<li><p><strong>features</strong> (<a class="reference internal" href="pynapple.Tsd.html#pynapple.Tsd" title="pynapple.Tsd"><em>Tsd</em></a><em>, </em><a class="reference internal" href="pynapple.TsdFrame.html#pynapple.TsdFrame" title="pynapple.TsdFrame"><em>TsdFrame</em></a>) – The features (i.e. one column per feature). This usually corresponds to behavioral variables such as
+position, head direction, speed, etc.</p></li>
+<li><p><strong>bins</strong> (<em>sequence</em><em> or </em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – <p>The bin specification:</p>
+<ul>
+<li><p>A sequence of arrays describing the monotonically increasing bin
+edges along each dimension.</p></li>
+<li><p>The number of bins for each dimension (nx, ny, … =bins)</p></li>
+<li><p>The number of bins for all dimensions (nx=ny=…=bins).</p></li>
+</ul>
+</p></li>
+<li><p><strong>range</strong> (<em>sequence</em><em>, </em><em>optional</em>) – A sequence of entries per feature, each an optional (lower, upper) tuple giving
+the outer bin edges to be used if the edges are not given explicitly in
+<cite>bins</cite>.
+An entry of None in the sequence results in the minimum and maximum
+values being used for the corresponding dimension.
+The default, None, is equivalent to passing a tuple of D None values.</p></li>
+<li><p><strong>epochs</strong> (<a class="reference internal" href="pynapple.IntervalSet.html#pynapple.IntervalSet" title="pynapple.IntervalSet"><em>IntervalSet</em></a><em>, </em><em>optional</em>) – The epochs on which tuning curves are computed.
+If None, the epochs are the time support of the features.</p></li>
+<li><p><strong>fs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>optional</em>) – The exact sampling frequency of the features used to normalise the tuning curves.
+Unit should match that of the features. If not passed, it is estimated.</p></li>
+<li><p><strong>feature_names</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>, </em><em>optional</em>) – A list of feature names. If not passed, the column names in <cite>features</cite> are used.</p></li>
+<li><p><strong>return_pandas</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, the function returns a pandas.DataFrame instead of an xarray.DataArray.
+Note that this will not work if the features are not 1D and that occupancy and bin edges
+will not be stored as attributes.</p></li>
+<li><p><strong>return_counts</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, does not divide the spike counts by occupancy, but returns the counts directly.
+The occupancy is stored in the xarray attributes, so the division can be performed after any
+particular processing steps.
+If the input is a TsdFrame, this does not do anything.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p>A tensor containing the tuning curves with labeled bin centres.
+The bin edges and occupancy are stored as attributes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.xarray.dev/en/stable/generated/xarray.DataArray.html#xarray.DataArray" title="(in xarray v2025.11.1)">xarray.DataArray</a></p>
+</dd>
+</dl>
+<p class="rubric">Examples</p>
+<p>In the simplest case, we can pass a group of spikes per neuron and a single feature:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span><span class="p">;</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">group</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">({</span>
+<span class="gp">... </span>    <span class="mi">1</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)),</span>
+<span class="gp">... </span>    <span class="mi">2</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">))</span>
+<span class="gp">... </span><span class="p">})</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">feature</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span><span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">1</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tcs</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_tuning_curves</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tcs</span>
+<span class="go">&lt;xarray.DataArray (unit: 2, 0: 10)&gt; Size: 160B</span>
+<span class="go">array([[10., 10., 10., 10., 10., 10., 10., 10., 10., 10.],</span>
+<span class="go">       [10.,  0., 10.,  0., 10.,  0., 10.,  0., 10.,  0.]])</span>
+<span class="go">Coordinates:</span>
+<span class="go">  * unit     (unit) int64 16B 1 2</span>
+<span class="go">  * 0        (0) float64 80B 0.045 0.135 0.225 0.315 ... 0.585 0.675 0.765 0.855</span>
+<span class="go">Attributes:</span>
+<span class="go">    occupancy:  [100. 100. 100. 100. 100. 100. 100. 100. 100. 100.]</span>
+<span class="go">    bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...</span>
+<span class="go">    fs:         10.0</span>
+<span class="go">    rates:      [10.01001001  5.00500501]</span>
+</pre></div>
+</div>
+<p>The function can also take multiple features, in which case it computes n-dimensional tuning curves.
+We can specify the number of bins for each feature:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">features</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+<span class="gp">... </span>        <span class="p">[</span>
+<span class="gp">... </span>            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">1</span><span class="p">,</span>
+<span class="gp">... </span>            <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span> <span class="o">%</span> <span class="mi">2</span>
+<span class="gp">... </span>        <span class="p">],</span>
+<span class="gp">... </span>        <span class="n">axis</span><span class="o">=</span><span class="mi">1</span>
+<span class="gp">... </span>    <span class="p">),</span>
+<span class="gp">... </span>    <span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tcs</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_tuning_curves</span><span class="p">(</span><span class="n">group</span><span class="p">,</span> <span class="n">features</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="p">[</span><span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tcs</span>
+<span class="go">&lt;xarray.DataArray (unit: 2, 0: 5, 1: 3)&gt; Size: 240B</span>
+<span class="go">array([[[10., 10., nan],</span>
+<span class="go">        [10., 10., 10.],</span>
+<span class="go">        [10., nan, 10.],</span>
+<span class="go">        [10., 10., 10.],</span>
+<span class="go">        [nan, 10., 10.]],</span>
+<span class="go">...</span>
+<span class="go">       [[ 5.,  5., nan],</span>
+<span class="go">        [ 5., 10.,  0.],</span>
+<span class="go">        [ 5., nan,  5.],</span>
+<span class="go">        [10.,  0.,  5.],</span>
+<span class="go">        [nan,  5.,  5.]]])</span>
+<span class="go">Coordinates:</span>
+<span class="go">  * unit     (unit) int64 16B 1 2</span>
+<span class="go">  * 0        (0) float64 40B 0.09 0.27 0.45 0.63 0.81</span>
+<span class="go">  * 1        (1) float64 24B 0.3167 0.95 1.583</span>
+<span class="go">Attributes:</span>
+<span class="go">    occupancy:  [[100. 100.  nan]\n [100.  50.  50.]\n [100.  nan 100.]\n [ 5...</span>
+<span class="go">    bin_edges:  [array([0.  , 0.18, 0.36, 0.54, 0.72, 0.9 ]), array([0.      ...</span>
+<span class="go">    fs:         10.0</span>
+<span class="go">    rates:      [10.01001001  5.00500501]</span>
+</pre></div>
+</div>
+<p>Or even specify the bin edges directly:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">tcs</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_tuning_curves</span><span class="p">(</span>
+<span class="gp">... </span>    <span class="n">group</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">features</span><span class="p">,</span>
+<span class="gp">... </span>    <span class="n">bins</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">)]</span>
+<span class="gp">... </span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tcs</span>
+<span class="go">&lt;xarray.DataArray (unit: 2, 0: 4, 1: 2)&gt; Size: 128B</span>
+<span class="go">array([[[10.        , 10.        ],</span>
+<span class="go">        [10.        , 10.        ],</span>
+<span class="go">        [10.        , 10.        ],</span>
+<span class="go">        [10.        , 10.        ]],</span>
+<span class="go">...</span>
+<span class="go">       [[ 6.66666667,  6.66666667],</span>
+<span class="go">        [ 5.        ,  5.        ],</span>
+<span class="go">        [ 3.33333333,  3.33333333],</span>
+<span class="go">        [ 5.        ,  5.        ]]])</span>
+<span class="go">Coordinates:</span>
+<span class="go">  * unit     (unit) int64 16B 1 2</span>
+<span class="go">  * 0        (0) float64 32B 0.125 0.375 0.625 0.875</span>
+<span class="go">  * 1        (1) float64 16B 0.5 1.5</span>
+<span class="go">Attributes:</span>
+<span class="go">    occupancy:  [[150. 150.]\n [100. 100.]\n [150. 150.]\n [100. 100.]]</span>
+<span class="go">    bin_edges:  [array([0.  , 0.25, 0.5 , 0.75, 1.  ]), array([0., 1., 2.])]</span>
+<span class="go">    fs:         10.0</span>
+<span class="go">    rates:      [10.01001001  5.00500501]</span>
+</pre></div>
+</div>
+<p>In all of these cases, it is also possible to pass continuous values instead of spikes (e.g. calcium imaging data), in that case the mean response is computed:</p>
+<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">frame</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">(</span><span class="n">d</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">2000</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">100</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">))</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tcs</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_tuning_curves</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">feature</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">tcs</span>
+<span class="go">&lt;xarray.DataArray (unit: 3, 0: 10)&gt; Size: 240B</span>
+<span class="go">array([[0.49147343, 0.50190395, 0.50971339, 0.50128013, 0.54332711,</span>
+<span class="go">        0.49712328, 0.49594611, 0.5110517 , 0.52247351, 0.52057658],</span>
+<span class="go">       [0.51132036, 0.46410557, 0.47732505, 0.49830908, 0.53523019,</span>
+<span class="go">        0.53099429, 0.48668499, 0.44198555, 0.49222208, 0.47453398],</span>
+<span class="go">       [0.46591801, 0.50662914, 0.46875882, 0.48734997, 0.51836574,</span>
+<span class="go">        0.50722266, 0.48943577, 0.49730095, 0.47944075, 0.48623693]])</span>
+<span class="go">Coordinates:</span>
+<span class="go">  * unit     (unit) int64 24B 0 1 2</span>
+<span class="go">  * 0        (0) float64 80B 0.045 0.135 0.225 0.315 ... 0.585 0.675 0.765 0.855</span>
+<span class="go">Attributes:</span>
+<span class="go">    occupancy:  [100. 100. 100. 100. 100. 100. 100. 100. 100. 100.]</span>
+<span class="go">    bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...</span>
+</pre></div>
+</div>
+</dd></dl>
+
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="pynapple.process.spectrum.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">pynapple.process.spectrum</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="pynapple.process.wavelets.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">pynapple.process.wavelets</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav class="bd-toc-nav page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="visible nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.process.tuning_curves.compute_1d_mutual_info"><code class="docutils literal notranslate"><span class="pre">compute_1d_mutual_info()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.process.tuning_curves.compute_1d_tuning_curves"><code class="docutils literal notranslate"><span class="pre">compute_1d_tuning_curves()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.process.tuning_curves.compute_1d_tuning_curves_continuous"><code class="docutils literal notranslate"><span class="pre">compute_1d_tuning_curves_continuous()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.process.tuning_curves.compute_2d_mutual_info"><code class="docutils literal notranslate"><span class="pre">compute_2d_mutual_info()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.process.tuning_curves.compute_2d_tuning_curves"><code class="docutils literal notranslate"><span class="pre">compute_2d_tuning_curves()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.process.tuning_curves.compute_2d_tuning_curves_continuous"><code class="docutils literal notranslate"><span class="pre">compute_2d_tuning_curves_continuous()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.process.tuning_curves.compute_discrete_tuning_curves"><code class="docutils literal notranslate"><span class="pre">compute_discrete_tuning_curves()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.process.tuning_curves.compute_mutual_information"><code class="docutils literal notranslate"><span class="pre">compute_mutual_information()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.process.tuning_curves.compute_response_per_epoch"><code class="docutils literal notranslate"><span class="pre">compute_response_per_epoch()</span></code></a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pynapple.process.tuning_curves.compute_tuning_curves"><code class="docutils literal notranslate"><span class="pre">compute_tuning_curves()</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="../_sources/generated/pynapple.process.tuning_curves.rst.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div></div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2025, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">pynapple authors</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.10.2</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

@@ -1,0 +1,6 @@
+pynapple.Tsd.dropna
+===================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Tsd.dropna
