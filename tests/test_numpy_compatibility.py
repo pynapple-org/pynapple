@@ -993,6 +993,7 @@ def test_einsum(a, b, subscripts, expected_type):
         else:
             np.testing.assert_array_almost_equal(out, out2)
 
+
 @pytest.mark.parametrize(
     "tsd",
     [
@@ -1005,12 +1006,12 @@ def test_einsum(a, b, subscripts, expected_type):
 @pytest.mark.parametrize(
     "func, kwargs, expected_type",
     [
-        ("cumsum", {"axis":0}, "Tsd"),
-        ("cumsum", {"axis":1}, "Tsd"),
-        ("cumprod", {"axis":0}, "Tsd"),
-        ("cumprod", {"axis":1}, "Tsd"),
-        ("nancumsum", {"axis":0}, "Tsd"),
-        ("nancumsum", {"axis":1}, "Tsd"),
+        ("cumsum", {"axis": 0}, "Tsd"),
+        ("cumsum", {"axis": 1}, "Tsd"),
+        ("cumprod", {"axis": 0}, "Tsd"),
+        ("cumprod", {"axis": 1}, "Tsd"),
+        ("nancumsum", {"axis": 0}, "Tsd"),
+        ("nancumsum", {"axis": 1}, "Tsd"),
         ("unwrap", {}, "Tsd"),
         ("clip", {"a_min": 0.2, "a_max": 0.8}, "Tsd"),
         ("angle", {}, "Tsd"),
@@ -1024,7 +1025,7 @@ def test_einsum(a, b, subscripts, expected_type):
         ("copy", {}, "Tsd"),
         ("asarray", {}, "ndarray"),
         ("asanyarray", {}, "ndarray"),
-    ]
+    ],
 )
 def test_same_shape(tsd, func, kwargs, expected_type):
     try:
