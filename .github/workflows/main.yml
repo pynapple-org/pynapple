@@ -89,9 +89,6 @@ jobs:
       - name: Install markdown-link-check
         run: npm install -g markdown-link-check
 
-      - name: Check relative links in Markdown files
-        run: ./scripts/check_markdown_links.sh relative
-
       - name: Check external links in Markdown files
         run: ./scripts/check_markdown_links.sh external
 

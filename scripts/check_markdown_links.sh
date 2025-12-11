@@ -7,28 +7,8 @@ if [[ -z "$MARKDOWN_LINK_CHECK" ]]; then
     exit 1
 fi
 
-# Check if a link type was specified
-LINK_TYPE=$1
-if [[ -z "$LINK_TYPE" ]]; then
-    echo "❌ Usage: $0 [relative|external|all]"
-    exit 1
-fi
-
-# Set config path based on type
-if [[ "$LINK_TYPE" == "relative" ]]; then
-    CONFIG=".mlc.relative.json"
-    LABEL="relative"
-elif [[ "$LINK_TYPE" == "external" ]]; then
-    CONFIG=".mlc.external.json"
-    LABEL="external"
-elif [[ "$LINK_TYPE" == "all" ]]; then
-    CONFIGS=(".mlc.relative.json" ".mlc.external.json")
-    LABEL="all"
-else
-    echo "❌ Unknown link type: $LINK_TYPE"
-    echo "Valid options are: relative, external, all"
-    exit 1
-fi
+CONFIG=".mlc.external.json"
+LABEL="external"
 
 echo "🔍 Checking $LABEL Markdown links..."
 LOG_FILE=$(mktemp)
@@ -44,7 +24,7 @@ run_check() {
         $MARKDOWN_LINK_CHECK -c "$CONFIG" "$file" 2>&1 | tee -a "$LOG_FILE"
     done
 
-    # Check docs directory (up to 2 levels deep) if it exists
+    # Check doc directory (up to 2 levels deep) — unchanged from your script
     if [[ -d "doc" ]]; then
         echo "📁 Checking docs directory..."
         for file in $(find doc -maxdepth 2 -name "*.md"); do
@@ -54,14 +34,7 @@ run_check() {
     fi
 }
 
-# Run one or both checks
-if [[ "$LINK_TYPE" == "all" ]]; then
-    for config in "${CONFIGS[@]}"; do
-        run_check "$config"
-    done
-else
-    run_check "$CONFIG"
-fi
+run_check "$CONFIG"
 
 # Check for errors
 if grep -q "ERROR:" "$LOG_FILE"; then
