@@ -13,6 +13,20 @@ on:
       - ready_for_review
 
 jobs:
+  check-links:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install markdown-link-check
+        run: npm install -g markdown-link-check
+
+      - name: Check relative links in Markdown files
+        run: ./scripts/check_markdown_links.sh relative
+
+      - name: Check external links in Markdown files
+        run: ./scripts/check_markdown_links.sh external
+
   lint:
     runs-on: ubuntu-latest
     steps:
@@ -71,15 +85,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install markdown-link-check
-        run: npm install -g markdown-link-check
-
-      - name: Check relative links in Markdown files
-        run: ./scripts/check_markdown_links.sh relative
-
-      - name: Check external links in Markdown files
-        run: ./scripts/check_markdown_links.sh external
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -96,6 +101,15 @@ jobs:
       - name: Start tmate session for debugging
         if: failure()
         uses: mxschmitt/action-tmate@v3
+
+      - name: Install markdown-link-check
+        run: npm install -g markdown-link-check
+
+      - name: Check relative links in Markdown files
+        run: ./scripts/check_markdown_links.sh relative
+
+      - name: Check external links in Markdown files
+        run: ./scripts/check_markdown_links.sh external
 
       - name: Check html
         uses: chabad360/htmlproofer@master
