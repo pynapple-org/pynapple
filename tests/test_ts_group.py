@@ -1339,6 +1339,18 @@ class TestSubsample:
 
         assert len(subsampled[1]) == 0
 
+    def test_subsample_empty_tsd(self):
+        """Test subsampling with empty Tsd objects."""
+        tsd1 = nap.Tsd(t=np.arange(100), d=np.arange(100))
+        tsd2 = nap.Tsd(t=np.array([]), d=np.array([]))
+        ep = nap.IntervalSet(start=0, end=100)
+        tsgroup = nap.TsGroup({0: tsd1, 1: tsd2}, time_support=ep)
+
+        subsampled = tsgroup.subsample(0.5, seed=42)
+
+        assert len(subsampled[1]) == 0
+        assert hasattr(subsampled[1], "values")  # Should still be a Tsd
+
     @pytest.mark.parametrize(
         "fraction, expectation",
         [
