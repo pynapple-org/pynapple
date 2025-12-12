@@ -1990,3 +1990,106 @@ class TsGroup(UserDict, _MetadataMixin):
             bin_edges:  [array([0. , 0.5, 1. ])]}
         """
         return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)
+
+    def subsample(self, fraction, seed=None):
+        """
+        Randomly subsample timestamps in each element of the TsGroup.
+
+        This function randomly selects a fraction of the timestamps from each
+        Ts/Tsd object in the TsGroup using a fast mask-based approach.
+
+        Parameters
+        ----------
+        fraction : float
+            The fraction of timestamps to keep. Must be between 0 and 1.
+        seed : int, optional
+            Random seed for reproducibility. If None, no seed is set.
+
+        Returns
+        -------
+        TsGroup
+            A new TsGroup with subsampled timestamps.
+
+        Raises
+        ------
+        ValueError
+            If fraction is not between 0 and 1.
+        TypeError
+            If fraction is not a number.
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> tmp = {
+        ...     0: nap.Ts(t=np.arange(0, 100)),
+        ...     1: nap.Ts(t=np.arange(0, 100, 0.5)),
+        ...     2: nap.Ts(t=np.arange(0, 100, 0.25)),
+        ... }
+        >>> tsgroup = nap.TsGroup(tmp)
+        >>> tsgroup
+          Index     rate
+        -------  -------
+              0  1.0101
+              1  2.0202
+              2  4.0404
+
+        Subsample to keep exactly 50% of the timestamps:
+
+        >>> subsampled = tsgroup.subsample(0.5, seed=42)
+
+        """
+        if not isinstance(fraction, Number):
+            raise TypeError("fraction must be a number.")
+        if not 0 <= fraction <= 1:
+            raise ValueError("fraction must be between 0 and 1.")
+
+        if seed is not None:
+            rng = np.random.default_rng(seed)
+        else:
+            rng = np.random.default_rng()
+
+        newgr = {}
+        for k in self.index:
+            ts = self.data[k]
+            n_timestamps = len(ts)
+            if n_timestamps > 0:
+                # Calculate exact number to keep
+                n_keep = int(np.round(n_timestamps * fraction))
+                if n_keep == 0:
+                    idx = np.array([], dtype=int)
+                elif n_keep >= n_timestamps:
+                    idx = np.arange(n_timestamps)
+                else:
+                    # Use argpartition for O(n) selection of exactly n_keep indices
+                    random_values = rng.random(n_timestamps)
+                    idx = np.sort(np.argpartition(random_values, n_keep)[:n_keep])
+                new_times = ts.index.values[idx] if len(idx) > 0 else np.array([])
+                if hasattr(ts, "values"):
+                    # For Tsd objects, preserve the data values
+                    newgr[k] = Tsd(
+                        t=new_times,
+                        d=ts.values[idx] if len(idx) > 0 else np.array([]),
+                        time_support=self.time_support,
+                    )
+                else:
+                    # For Ts objects
+                    newgr[k] = Ts(t=new_times, time_support=self.time_support)
+            else:
+                # Keep empty Ts/Tsd with same time support
+                if hasattr(ts, "values"):
+                    newgr[k] = Tsd(
+                        t=np.array([]),
+                        d=np.array([]),
+                        time_support=self.time_support,
+                    )
+                else:
+                    newgr[k] = Ts(t=np.array([]), time_support=self.time_support)
+
+        cols = self._metadata.columns[1:]  # drop "rate"
+        return TsGroup(
+            newgr,
+            time_support=self.time_support,
+            bypass_check=True,
+            metadata=self._metadata[cols],
+        )
