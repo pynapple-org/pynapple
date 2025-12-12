@@ -1,0 +1,18 @@
+{
+  "ignorePatterns": [
+    { "pattern": "^\\." },
+    { "pattern": "^/" },
+    { "pattern": "^../" },
+    { "pattern": "^[^:]+$" },
+    { "pattern": "^https://fonts.gstatic.com" },
+    { "pattern": "^https://mkdocs-gallery.github.io" },
+    { "pattern": "^\\./doc/_build/html/_static/" },
+    { "pattern": "^https://www.nature.com/articles/s41593-022-01020-w" },
+    { "pattern": "^https://elifesciences.org/reviewed-preprints/85786" }
+  ],
+  "aliveStatusCodes": [200, 206, 302, 403, 0, 504],
+  "timeout": "20s",
+  "retryOn429": true,
+  "retryCount": 5,
+  "fallbackRetryDelay": "5s"
+}

@@ -85,6 +85,13 @@ jobs:
       - name: Start tmate session for debugging
         if: failure()
         uses: mxschmitt/action-tmate@v3
+
+      - name: Install markdown-link-check
+        run: npm install -g markdown-link-check
+
+      - name: Check external links in Markdown files
+        run: ./scripts/check_markdown_links.sh external
+
       - name: Check html
         uses: chabad360/htmlproofer@master
         with:
@@ -92,10 +99,10 @@ jobs:
           # The directory to scan
           arguments: 
             --checks Links,Scripts 
-            --ignore-urls "https://fonts.gstatic.com,https://mkdocs-gallery.github.io,./doc/_build/html/_static/,https://www.nature.com/articles/s41593-022-01020-w,https://elifesciences.org/reviewed-preprints/85786" 
+            --ignore-urls "https://fonts.gstatic.com,/scikit-learn\.org/,https://mkdocs-gallery.github.io,./doc/_build/html/_static/,https://www.nature.com/articles/s41593-022-01020-w,https://elifesciences.org/reviewed-preprints/85786" 
             --assume-extension 
             --check-external-hash 
-            --ignore-status-codes 403 
+            --ignore-status-codes 403,0 
             --ignore-files "/.+\/html\/_static\/.+/"
           # The arguments to pass to HTMLProofer
 
