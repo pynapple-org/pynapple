@@ -171,6 +171,62 @@ print(tensor, "\n")
 print("Tensor shape = ", tensor.shape)
 ```
 
+### `subsample`
+
+The [`subsample`](pynapple.TsGroup.subsample) method randomly subsamples timestamps in each element of a `TsGroup`. This is useful for creating smaller datasets for testing, cross-validation, or comparing analyses with matched sample sizes.
+
+```{code-cell} ipython3
+:tags: [hide-cell]
+np.random.seed(0)
+group_sub = {
+    0: nap.Ts(t=np.sort(np.random.uniform(0, 100, 100))),
+    1: nap.Ts(t=np.sort(np.random.uniform(0, 100, 200))),
+    2: nap.Ts(t=np.sort(np.random.uniform(0, 100, 300))),
+}
+tsgroup_sub = nap.TsGroup(group_sub, time_support=nap.IntervalSet(0, 100))
+```
+
+```{code-cell} ipython3
+print("Original TsGroup:")
+print(tsgroup_sub)
+```
+
+Subsample to keep 50% of timestamps with a fixed seed for reproducibility:
+
+```{code-cell} ipython3
+subsampled = tsgroup_sub.subsample(0.5, seed=42)
+print("\nSubsampled TsGroup (50%):")
+print(subsampled)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.figure(figsize=(10, 4))
+plt.subplot(1, 2, 1)
+for i, k in enumerate(tsgroup_sub.keys()):
+    plt.plot(tsgroup_sub[k].fillna(i), '|', markersize=5)
+plt.title("Original TsGroup")
+plt.xlabel("Time (s)")
+plt.yticks([0, 1, 2], ['Unit 0', 'Unit 1', 'Unit 2'])
+plt.xlim(0, 100)
+
+plt.subplot(1, 2, 2)
+for i, k in enumerate(subsampled.keys()):
+    plt.plot(subsampled[k].fillna(i), '|', markersize=5)
+plt.title("Subsampled (50%)")
+plt.xlabel("Time (s)")
+plt.yticks([0, 1, 2], ['Unit 0', 'Unit 1', 'Unit 2'])
+plt.xlim(0, 100)
+plt.tight_layout()
+plt.show()
+```
+
+The time support and metadata are preserved in the subsampled `TsGroup`:
+
+```{code-cell} ipython3
+print("Time support preserved:", np.allclose(tsgroup_sub.time_support.values, subsampled.time_support.values))
+```
+
 ### `bin_average`
 
 [`bin_average`](pynapple.Tsd.bin_average) downsamples time series by averaging data point falling within a bin. This method is available for `Tsd`, `TsdFrame` and `TsdTensor`. While `bin_average` is good for downsampling with precise control of the resulting bins, it does not apply any antialiasing filter. The function [`decimate`](pynapple.Tsd.decimate) is also available for down-sampling without aliasing.

@@ -1215,3 +1215,186 @@ def test_count_dtype(dtype, expectation, ts_group, ts_group_one_group):
         if dtype:
             assert np.issubdtype(count.dtype, dtype)
             assert np.issubdtype(count_one.dtype, dtype)
+
+
+class TestSubsample:
+    """Tests for the TsGroup.subsample method."""
+
+    def test_subsample_basic(self, group):
+        """Test basic subsampling with Ts objects."""
+        tsgroup = nap.TsGroup(group)
+        subsampled = tsgroup.subsample(0.5, seed=42)
+
+        assert isinstance(subsampled, nap.TsGroup)
+        assert len(subsampled) == len(tsgroup)
+
+        # Check that we have approximately 50% of timestamps (with some tolerance)
+        for k in tsgroup.keys():
+            original_len = len(tsgroup[k])
+            subsampled_len = len(subsampled[k])
+            # Allow 20% tolerance due to stochastic nature
+            assert subsampled_len <= original_len
+            assert subsampled_len >= 0
+
+    def test_subsample_with_tsd(self):
+        """Test subsampling preserves data values for Tsd objects."""
+        tsd1 = nap.Tsd(t=np.arange(100), d=np.arange(100) * 2)
+        tsd2 = nap.Tsd(t=np.arange(50), d=np.arange(50) * 3)
+        tsgroup = nap.TsGroup({0: tsd1, 1: tsd2})
+
+        subsampled = tsgroup.subsample(0.5, seed=42)
+
+        # Check that values are preserved (subsampled values should be subset of original)
+        for k in tsgroup.keys():
+            original_times = tsgroup[k].index.values
+            original_values = tsgroup[k].values
+            subsampled_times = subsampled[k].index.values
+            subsampled_values = subsampled[k].values
+
+            # Each subsampled timestamp should exist in original
+            for t, v in zip(subsampled_times, subsampled_values):
+                idx = np.where(original_times == t)[0]
+                assert len(idx) == 1
+                assert original_values[idx[0]] == v
+
+    def test_subsample_reproducibility(self, group):
+        """Test that using the same seed produces identical results."""
+        tsgroup = nap.TsGroup(group)
+
+        subsampled1 = tsgroup.subsample(0.5, seed=123)
+        subsampled2 = tsgroup.subsample(0.5, seed=123)
+
+        for k in tsgroup.keys():
+            np.testing.assert_array_equal(
+                subsampled1[k].index.values, subsampled2[k].index.values
+            )
+
+    def test_subsample_different_seeds(self, group):
+        """Test that different seeds produce different results."""
+        tsgroup = nap.TsGroup(group)
+
+        subsampled1 = tsgroup.subsample(0.5, seed=123)
+        subsampled2 = tsgroup.subsample(0.5, seed=456)
+
+        # At least one element should be different (very unlikely to be same)
+        any_different = False
+        for k in tsgroup.keys():
+            if not np.array_equal(
+                subsampled1[k].index.values, subsampled2[k].index.values
+            ):
+                any_different = True
+                break
+        assert any_different
+
+    def test_subsample_fraction_zero(self, group):
+        """Test that fraction=0 returns empty Ts objects."""
+        tsgroup = nap.TsGroup(group)
+        subsampled = tsgroup.subsample(0.0, seed=42)
+
+        for k in tsgroup.keys():
+            assert len(subsampled[k]) == 0
+
+    def test_subsample_fraction_one(self, group):
+        """Test that fraction=1 returns all timestamps."""
+        tsgroup = nap.TsGroup(group)
+        subsampled = tsgroup.subsample(1.0, seed=42)
+
+        for k in tsgroup.keys():
+            np.testing.assert_array_equal(
+                tsgroup[k].index.values, subsampled[k].index.values
+            )
+
+    def test_subsample_preserves_time_support(self, group):
+        """Test that time support is preserved."""
+        ep = nap.IntervalSet(start=0, end=100)
+        tsgroup = nap.TsGroup(group, time_support=ep)
+        subsampled = tsgroup.subsample(0.5, seed=42)
+
+        np.testing.assert_array_equal(
+            tsgroup.time_support.values, subsampled.time_support.values
+        )
+
+    def test_subsample_preserves_metadata(self):
+        """Test that metadata is preserved."""
+        ts1 = nap.Ts(t=np.arange(100))
+        ts2 = nap.Ts(t=np.arange(50))
+        metadata = {"label": ["A", "B"], "value": [1.0, 2.0]}
+        tsgroup = nap.TsGroup({0: ts1, 1: ts2}, metadata=metadata)
+
+        subsampled = tsgroup.subsample(0.5, seed=42)
+
+        assert "label" in subsampled._metadata.columns
+        assert "value" in subsampled._metadata.columns
+        np.testing.assert_array_equal(subsampled.get_info("label"), ["A", "B"])
+        np.testing.assert_array_equal(subsampled.get_info("value"), [1.0, 2.0])
+
+    def test_subsample_empty_ts(self):
+        """Test subsampling with empty Ts objects."""
+        ts1 = nap.Ts(t=np.arange(100))
+        ts2 = nap.Ts(t=np.array([]))
+        ep = nap.IntervalSet(start=0, end=100)
+        tsgroup = nap.TsGroup({0: ts1, 1: ts2}, time_support=ep)
+
+        subsampled = tsgroup.subsample(0.5, seed=42)
+
+        assert len(subsampled[1]) == 0
+
+    def test_subsample_empty_tsd(self):
+        """Test subsampling with empty Tsd objects."""
+        tsd1 = nap.Tsd(t=np.arange(100), d=np.arange(100))
+        tsd2 = nap.Tsd(t=np.array([]), d=np.array([]))
+        ep = nap.IntervalSet(start=0, end=100)
+        tsgroup = nap.TsGroup({0: tsd1, 1: tsd2}, time_support=ep)
+
+        subsampled = tsgroup.subsample(0.5, seed=42)
+
+        assert len(subsampled[1]) == 0
+        assert hasattr(subsampled[1], "values")  # Should still be a Tsd
+
+    @pytest.mark.parametrize(
+        "fraction, expectation",
+        [
+            (-0.1, pytest.raises(ValueError, match="fraction must be between 0 and 1")),
+            (1.1, pytest.raises(ValueError, match="fraction must be between 0 and 1")),
+            (2.0, pytest.raises(ValueError, match="fraction must be between 0 and 1")),
+        ],
+    )
+    def test_subsample_invalid_fraction_value(self, group, fraction, expectation):
+        """Test that invalid fraction values raise ValueError."""
+        tsgroup = nap.TsGroup(group)
+        with expectation:
+            tsgroup.subsample(fraction)
+
+    @pytest.mark.parametrize(
+        "fraction, expectation",
+        [
+            ("0.5", pytest.raises(TypeError, match="fraction must be a number")),
+            ([0.5], pytest.raises(TypeError, match="fraction must be a number")),
+            (None, pytest.raises(TypeError, match="fraction must be a number")),
+        ],
+    )
+    def test_subsample_invalid_fraction_type(self, group, fraction, expectation):
+        """Test that invalid fraction types raise TypeError."""
+        tsgroup = nap.TsGroup(group)
+        with expectation:
+            tsgroup.subsample(fraction)
+
+    def test_subsample_timestamps_are_sorted(self, group):
+        """Test that subsampled timestamps remain sorted."""
+        tsgroup = nap.TsGroup(group)
+        subsampled = tsgroup.subsample(0.5, seed=42)
+
+        for k in tsgroup.keys():
+            times = subsampled[k].index.values
+            assert np.all(np.diff(times) >= 0)
+
+    def test_subsample_timestamps_subset_of_original(self, group):
+        """Test that all subsampled timestamps exist in original."""
+        tsgroup = nap.TsGroup(group)
+        subsampled = tsgroup.subsample(0.5, seed=42)
+
+        for k in tsgroup.keys():
+            original_times = set(tsgroup[k].index.values)
+            subsampled_times = subsampled[k].index.values
+            for t in subsampled_times:
+                assert t in original_times
