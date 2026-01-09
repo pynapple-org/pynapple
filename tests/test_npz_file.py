@@ -52,6 +52,25 @@ data = {
         },
         minfo=[1, 2, 3],
     ),
+    "tsdgroup": nap.TsGroup(
+        {
+            0: nap.Tsd(t=np.arange(0, 200), d=np.random.rand(200)),
+            1: nap.Tsd(
+                t=np.arange(0, 200, 0.5), d=np.arange(0, 200, 0.5) + 1, time_units="s"
+            ),
+            2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
+        }
+    ),
+    "tsdgroup_minfo": nap.TsGroup(
+        {
+            0: nap.Tsd(t=np.arange(0, 200), d=np.random.rand(200)),
+            1: nap.Tsd(
+                t=np.arange(0, 200, 0.5), d=np.arange(0, 200, 0.5) + 1, time_units="s"
+            ),
+            2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
+        },
+        minfo=[1, 2, 3],
+    ),
     "iset": nap.IntervalSet(start=np.array([0.0, 5.0]), end=np.array([1.0, 6.0])),
     "iset_minfo": nap.IntervalSet(
         start=np.array([0.0, 5.0]), end=np.array([1.0, 6.0]), metadata={"minfo": [1, 2]}
@@ -82,6 +101,8 @@ def test_init(path):
         "tsdframe_minfo",
         "tsgroup",
         "tsgroup_minfo",
+        "tsdgroup",
+        "tsdgroup_minfo",
         "iset",
         "iset_minfo",
     ],
@@ -98,6 +119,20 @@ def test_load(path, k):
 @pytest.mark.parametrize("path", [path])
 @pytest.mark.parametrize("k", ["tsgroup", "tsgroup_minfo"])
 def test_load_tsgroup(path, k):
+    file_path = path / (k + ".npz")
+    file = nap.NPZFile(file_path)
+    tmp = file.load()
+    assert isinstance(tmp, type(data[k]))
+    assert tmp.keys() == data[k].keys()
+    assert np.all(tmp[neu] == data[k][neu] for neu in tmp.keys())
+    np.testing.assert_array_almost_equal(
+        tmp.time_support.values, data[k].time_support.values
+    )
+
+
+@pytest.mark.parametrize("path", [path])
+@pytest.mark.parametrize("k", ["tsdgroup", "tsdgroup_minfo"])
+def test_load_tsdgroup(path, k):
     file_path = path / (k + ".npz")
     file = nap.NPZFile(file_path)
     tmp = file.load()

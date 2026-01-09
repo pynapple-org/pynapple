@@ -3,6 +3,7 @@ import inspect
 import itertools
 import warnings
 from collections import UserDict
+from functools import wraps
 from numbers import Number
 from typing import Union
 
@@ -28,6 +29,7 @@ def add_or_convert_metadata(func):
     Decorator for backwards compatibility of objects picked with older versions of pynapple.
     """
 
+    @wraps(func)
     def _decorator(self, *args, **kwargs):
         if (
             (len(args) == 1)

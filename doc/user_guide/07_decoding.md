@@ -32,6 +32,7 @@ Input to both decoding functions always includes:
  - `tuning_curves`, computed using [`compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves).
  - `data`, neural activity as a `TsGroup` (spikes) or `TsdFrame` (smoothed counts or calcium activity or any other time series).
  - `epochs`, to restrict decoding to certain intervals.
+ - `sliding_window_size`, uniform convolution window size (in number of bins) to smooth spike counts, only used if a `TsGroup` is passed (default is `None`, for no smoothing). This is equivalent to using a sliding window with overlapping bins.
  - `bin_size`, the size of the bins in which to count timestamps when data is a `TsGroup` object.
  - `time_units`, the units of `bin_size`, defaulting to seconds.
 
@@ -40,7 +41,7 @@ When using Bayesian decoding, users can additionally set `uniform_prior=False` t
 By default `uniform_prior=True`, and a uniform prior is used.
 
 :::{important}
-Bayesian decoding should only be used with spike or rate data, as these can be assumed to follow a Poisson distribution!
+Bayesian decoding should only be used with spike (`TsGroup`) or spike count (`TsdFrame`) data, as these can be assumed to follow a Poisson distribution!
 :::
 
 
@@ -82,7 +83,7 @@ First, we compute the tuning curves:
 tuning_curves_1d = nap.compute_tuning_curves(
     tsgroup, 
     feature, 
-    bins=61, 
+    bins=60, 
     range=(0, 2 * np.pi), 
     feature_names=["Circular feature"]
 )
@@ -96,14 +97,17 @@ tuning_curves_1d.plot.line(x="Circular feature", add_legend=False)
 plt.show()
 ```
 
-We can then use `nap.decode_bayes` for Bayesian decoding:
+We can then use [`decode_bayes`](pynapple.process.decoding.decode_bayes) for Bayesian decoding.
+We will use the `sliding_window_size` argument to additionally smooth the
+spike counts with a uniform convolution window (i.e. use a sliding window), which often helps with decoding. 
 
 ```{code-cell} ipython3
 decoded, proba_feature = nap.decode_bayes(
     tuning_curves=tuning_curves_1d,
     data=tsgroup,
     epochs=epochs,
-    bin_size=0.06,
+    sliding_window_size=4,
+    bin_size=0.02,
 )
 ```
 
@@ -192,14 +196,15 @@ tuning_curves_2d.plot(row="unit", col_wrap=6)
 plt.show()
 ```
 
-and then, `nap.decode_bayes` again performs bayesian decoding:
+and then, [`decode_bayes`](pynapple.process.decoding.decode_bayes) again performs bayesian decoding:
 
 ```{code-cell} ipython3
 decoded, proba_feature = nap.decode_bayes(
     tuning_curves=tuning_curves_2d,
     data=ts_group,
     epochs=epochs,
-    bin_size=0.2,
+    sliding_window_size=2,
+    bin_size=0.05,
 )
 ```
 
@@ -298,13 +303,14 @@ tuning_curves_1d.plot.line(x="Circular feature", add_legend=False)
 plt.show()
 ```
 
-We can then use `nap.decode_template` for template matching:
+We can then use [`decode_template`](pynapple.process.decoding.decode_template) for template matching:
 
 ```{code-cell} ipython3
 decoded, dist = nap.decode_template(
     tuning_curves=tuning_curves_1d,
     data=tsgroup,
     epochs=epochs,
+    sliding_window_size=4,
     bin_size=0.05,
     metric="correlation"
 )
@@ -394,14 +400,14 @@ tuning_curves_2d.plot(row="unit", col_wrap=6)
 plt.show()
 ```
 
-and then, `nap.decode_template` again performs template matching:
+and then, [`decode_template`](pynapple.process.decoding.decode_template) again performs template matching:
 
 ```{code-cell} ipython3
 decoded, dist = nap.decode_template(
     tuning_curves=tuning_curves_2d,
     data=tsdframe,
     epochs=epochs,
-    bin_size=0.2,
+    bin_size=0.01,
     metric="correlation"
 )
 ```

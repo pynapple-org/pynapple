@@ -1,3 +1,6 @@
+import warnings
+from numbers import Number
+
 import numpy as np
 import numpy.core.umath as _umath
 import pytest
@@ -500,3 +503,542 @@ class Test_Time_Series_1:
     def test_fft(self, tsd):
         with pytest.raises(TypeError):
             np.fft.fft(tsd)
+
+
+@pytest.mark.parametrize(
+    "func, kwargs",
+    [
+        ("concatenate", {}),
+        ("concatenate", {"axis": 0}),
+        ("concatenate", {"axis": 1}),
+        ("concatenate", {"axis": 2}),
+        ("stack", {}),
+        ("stack", {"axis": 0}),
+        ("stack", {"axis": 1}),
+        ("stack", {"axis": 2}),
+        ("stack", {"axis": -1}),
+        ("vstack", {}),
+        ("hstack", {}),
+        ("dstack", {}),
+        ("column_stack", {}),
+    ],
+)
+@pytest.mark.parametrize(
+    "tsds",
+    [
+        (
+            nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+            nap.Tsd(t=np.arange(10) + 15, d=np.random.rand(10)),
+        ),
+        (
+            nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+            nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+        ),
+        (
+            nap.Tsd(t=np.arange(10) + 15, d=np.random.rand(10)),
+            nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+        ),
+        (
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+            nap.TsdFrame(t=np.arange(10) + 15, d=np.random.rand(10, 5)),
+        ),
+        (
+            nap.TsdFrame(t=np.arange(10) + 15, d=np.random.rand(10, 5)),
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+        ),
+        (
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+        ),
+        (
+            nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 5, 2)),
+            nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 5, 2)),
+        ),
+        (
+            nap.TsdTensor(t=np.arange(10) + 15, d=np.random.rand(10, 5, 2)),
+            nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 5, 2)),
+        ),
+    ],
+)
+def test_concatenate_all(func, kwargs, tsds):
+    tsd1, tsd2 = tsds
+    try:
+        b = getattr(np, func)((tsd1.values, tsd2.values), **kwargs)
+    except (ValueError, RuntimeError):
+        pytest.skip("Skipping invalid axis operation")
+
+    try:
+        with warnings.catch_warnings(record=True) as record:
+            warnings.simplefilter("always")
+            a = getattr(np, func)((tsd1, tsd2), **kwargs)
+    except (ValueError, RuntimeError) as e:
+        error_msg = str(e)
+        assert (
+            error_msg
+            == "The order of the time series indexes should be strictly increasing and non overlapping."
+        )
+        return
+
+    if a.ndim == tsd1.ndim:
+        if a.shape[0] == tsd1.shape[0] + tsd2.shape[0]:  # Stacking vertically
+            assert isinstance(a, tsd1.__class__)
+            np.testing.assert_array_almost_equal(
+                a.index, np.concatenate((tsd1.index, tsd2.index))
+            )
+            np.testing.assert_array_almost_equal(a.values, b)
+            np.testing.assert_array_equal(
+                np.vstack((tsd1.time_support.values, tsd2.time_support.values)),
+                a.time_support.values,
+            )
+        else:
+            # Check if operation was allowed
+            if isinstance(a, tsd1.__class__):
+                np.testing.assert_array_almost_equal(tsd1.index, tsd2.index)
+                np.testing.assert_array_almost_equal(a.values, b)
+                np.testing.assert_array_equal(a.index, tsd1.index)
+                if hasattr(tsd1, "columns") and hasattr(tsd2, "columns"):
+                    np.testing.assert_array_equal(
+                        a.columns, np.concatenate((tsd1.columns, tsd2.columns), axis=0)
+                    )
+            else:
+                assert isinstance(a, np.ndarray)
+                np.testing.assert_array_almost_equal(a, b)
+    else:
+        # Check if operation was allowed
+        if hasattr(a, "nap_class"):
+            np.testing.assert_array_almost_equal(tsd1.index, tsd2.index)
+            np.testing.assert_array_almost_equal(a.values, b)
+            np.testing.assert_array_equal(a.index, tsd1.index)
+            np.testing.assert_array_equal(
+                tsd1.time_support.values, tsd2.time_support.values
+            )
+        else:
+            assert isinstance(a, np.ndarray)
+            np.testing.assert_array_almost_equal(a, b)
+
+    if len(record) > 0:
+        warning_msg = str(record[0].message)
+        assert warning_msg in [
+            "Time indexes and time supports are not all equals up to pynapple precision. Returning numpy array!",
+            "Time indexes are not all equals up to pynapple precision. Returning numpy array!",
+            "Time supports are not all equals up to pynapple precision. Returning numpy array!",
+        ]
+        assert isinstance(a, np.ndarray)
+
+
+@pytest.mark.parametrize(
+    "tsd",
+    [
+        nap.TsdFrame(
+            t=np.arange(10),
+            d=np.random.rand(10, 10),
+        ),
+        nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 10, 10), time_units="s"),
+    ],
+)
+@pytest.mark.parametrize(
+    "func, kwargs",
+    [
+        ("sum", {}),
+        ("sum", {"axis": 0}),
+        ("sum", {"axis": 1}),
+        ("sum", {"axis": -1}),
+        ("sum", {"axis": (0, 1)}),
+        ("sum", {"axis": None}),
+    ],
+)
+def test_square_arrays(tsd, func, kwargs):
+    a = getattr(np, func)(tsd, **kwargs)
+    b = getattr(np, func)(tsd.values, **kwargs)
+
+    if "axis" in kwargs:
+        axis = kwargs["axis"]
+    else:
+        axis = None
+
+    if axis is None or np.isscalar(b):
+        assert np.isscalar(a)
+        assert a == b
+    else:
+        if (axis == 0) or (isinstance(axis, tuple) and 0 in axis):
+            assert isinstance(a, (np.ndarray, Number))
+            np.testing.assert_array_almost_equal(a, b)
+        else:
+            assert not isinstance(a, np.ndarray)
+            np.testing.assert_array_almost_equal(a.index, tsd.index)
+            np.testing.assert_array_almost_equal(a.values, b)
+
+
+@pytest.mark.parametrize(
+    "tsd",
+    [
+        nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+        nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 10)),
+        nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 10, 10), time_units="s"),
+    ],
+)
+@pytest.mark.parametrize(
+    "func, kwargs, expected_type",
+    [
+        ("transpose", {}, (nap.Tsd, np.ndarray)),
+        ("transpose", {"axes": (2, 0, 1)}, np.ndarray),
+        ("transpose", {"axes": (0, 2, 1)}, nap.TsdTensor),
+        ("moveaxis", {"source": 0, "destination": 1}, np.ndarray),
+        ("moveaxis", {"source": 1, "destination": 0}, np.ndarray),
+        ("moveaxis", {"source": 2, "destination": 1}, nap.TsdTensor),
+        ("swapaxes", {"axis1": 0, "axis2": 1}, np.ndarray),
+        ("swapaxes", {"axis1": 1, "axis2": 2}, nap.TsdTensor),
+        ("swapaxes", {"axis1": 2, "axis2": 0}, np.ndarray),
+        (
+            "rollaxis",
+            {"axis": 0, "start": 1},
+            {"Tsd": np.ndarray, "TsdFrame": np.ndarray, "TsdTensor": np.ndarray},
+        ),
+        ("rollaxis", {"axis": 1, "start": 0}, np.ndarray),
+        ("rollaxis", {"axis": 1, "start": 2}, (nap.TsdTensor, nap.TsdFrame)),
+        ("flipud", {}, np.ndarray),
+        ("fliplr", {}, (nap.TsdFrame, nap.TsdTensor)),
+        ("flip", {"axis": 0}, np.ndarray),
+        ("flip", {"axis": None}, np.ndarray),
+        ("flip", {"axis": 1}, (nap.TsdFrame, nap.TsdTensor)),
+        ("flip", {"axis": 2}, nap.TsdTensor),
+        ("rot90", {}, np.ndarray),
+        ("rot90", {"k": 2}, np.ndarray),
+        ("roll", {"shift": 2, "axis": 0}, np.ndarray),
+        ("roll", {"shift": -2, "axis": 1}, (nap.TsdFrame, nap.TsdTensor)),
+        ("roll", {"shift": 1, "axis": 2}, nap.TsdTensor),
+    ],
+)
+def test_axis_moving(tsd, func, kwargs, expected_type):
+    try:
+        b = getattr(np, func)(tsd.values, **kwargs)
+    except (ValueError, RuntimeError):
+        pytest.skip("Skipping invalid axis operation")
+
+    a = getattr(np, func)(tsd, **kwargs)
+
+    if isinstance(expected_type, dict):
+        assert isinstance(a, expected_type[tsd.nap_class])
+    else:
+        assert isinstance(a, expected_type)
+
+    if not isinstance(a, np.ndarray):
+        np.testing.assert_array_almost_equal(a.index, tsd.index)
+
+    if hasattr(a, "values"):
+        np.testing.assert_array_almost_equal(a.values, b)
+    else:
+        np.testing.assert_array_almost_equal(a, b)
+
+
+@pytest.mark.parametrize(
+    "tsd",
+    [
+        nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+        nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 10)),
+        nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 10, 10)),
+        nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 10, 1)),
+    ],
+)
+@pytest.mark.parametrize(
+    "func, kwargs, expected_type",
+    [
+        ("expand_dims", {"axis": 0}, np.ndarray),
+        ("expand_dims", {"axis": 1}, (nap.TsdFrame, nap.TsdTensor)),
+        ("expand_dims", {"axis": -1}, (nap.TsdFrame, nap.TsdTensor)),
+        (
+            "expand_dims",
+            {"axis": -2},
+            {"Tsd": np.ndarray, "TsdFrame": nap.TsdTensor, "TsdTensor": nap.TsdTensor},
+        ),
+        ("squeeze", {}, (nap.Tsd, nap.TsdFrame, nap.TsdTensor)),
+        (
+            "ravel",
+            {},
+            {"Tsd": nap.Tsd, "TsdFrame": np.ndarray, "TsdTensor": np.ndarray},
+        ),
+        (
+            "ravel",
+            {"order": "F"},
+            {"Tsd": nap.Tsd, "TsdFrame": np.ndarray, "TsdTensor": np.ndarray},
+        ),
+        (
+            "tile",
+            {"reps": 2},
+            {"Tsd": np.ndarray, "TsdFrame": nap.TsdFrame, "TsdTensor": nap.TsdTensor},
+        ),
+        (
+            "tile",
+            {"reps": (2, 1)},
+            {"Tsd": np.ndarray, "TsdFrame": np.ndarray, "TsdTensor": nap.TsdTensor},
+        ),
+        (
+            "tile",
+            {"reps": (1, 2)},
+            {"Tsd": np.ndarray, "TsdFrame": nap.TsdFrame, "TsdTensor": nap.TsdTensor},
+        ),
+    ],
+)
+def test_shape_change(tsd, func, kwargs, expected_type):
+    try:
+        b = getattr(np, func)(tsd.values, **kwargs)
+    except (ValueError, RuntimeError):
+        pytest.skip("Skipping invalid axis operation")
+
+    a = getattr(np, func)(tsd, **kwargs)
+
+    if isinstance(expected_type, dict):
+        assert isinstance(a, expected_type[tsd.nap_class])
+    else:
+        assert isinstance(a, expected_type)
+
+    if not isinstance(a, np.ndarray):
+        np.testing.assert_array_almost_equal(a.index, tsd.index)
+
+    if hasattr(a, "values"):
+        np.testing.assert_array_almost_equal(a.values, b)
+    else:
+        np.testing.assert_array_almost_equal(a, b)
+
+
+@pytest.mark.parametrize(
+    "tsd, slicing, expected_type",
+    [
+        (
+            nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+            lambda x: x[None, :],
+            np.ndarray,
+        ),
+        (
+            nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+            lambda x: x[:, None],
+            nap.TsdFrame,
+        ),
+        (
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 10)),
+            lambda x: x[:, None],
+            nap.TsdTensor,
+        ),
+        (
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 10)),
+            lambda x: x[:, :, None],
+            nap.TsdTensor,
+        ),
+        (
+            nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 10, 10)),
+            lambda x: x[:, None],
+            nap.TsdTensor,
+        ),
+        (
+            nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 10, 1)),
+            lambda x: x[None, :],
+            np.ndarray,
+        ),
+    ],
+)
+def test_shape_change_2(tsd, slicing, expected_type):
+    a = slicing(tsd)
+    assert isinstance(a, expected_type)
+    if hasattr(a, "index"):
+        np.testing.assert_array_almost_equal(a.index, tsd.index)
+    if hasattr(a, "values"):
+        np.testing.assert_array_almost_equal(a.values, slicing(tsd.values))
+
+
+@pytest.mark.parametrize(
+    "a, b, expected_type",
+    [
+        (
+            nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+            nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+            float,
+        ),
+        (
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+            np.random.randn(5, 3),
+            nap.TsdFrame,
+        ),
+        (
+            nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 4, 2)),
+            np.random.rand(2, 3),
+            nap.TsdTensor,
+        ),
+        (
+            np.random.rand(5, 10),
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+            np.ndarray,
+        ),
+    ],
+)
+def test_dot_product(a, b, expected_type):
+    out = np.dot(a, b)
+
+    assert isinstance(out, expected_type)
+
+    if hasattr(a, "values") and hasattr(b, "values"):
+        out2 = np.dot(a.values, b.values)
+    elif hasattr(a, "values"):
+        out2 = np.dot(a.values, b)
+    elif hasattr(b, "values"):
+        out2 = np.dot(a, b.values)
+    else:
+        out2 = np.dot(a, b)
+
+    if hasattr(out, "values"):
+        np.testing.assert_array_almost_equal(out.values, out2)
+    else:
+        if isinstance(out2, float):
+            assert out == out2
+        else:
+            np.testing.assert_array_almost_equal(out, out2)
+
+
+@pytest.mark.parametrize(
+    "a, b, expected_type",
+    [
+        (
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+            np.random.randn(5, 3),
+            nap.TsdFrame,
+        ),
+        (
+            nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 4, 2)),
+            np.random.rand(2, 3),
+            nap.TsdTensor,
+        ),
+        (
+            np.random.rand(5, 10),
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+            np.ndarray,
+        ),
+    ],
+)
+def test_matmul_product(a, b, expected_type):
+    out = np.matmul(a, b)
+
+    assert isinstance(out, expected_type)
+
+    if hasattr(a, "values") and hasattr(b, "values"):
+        out2 = np.dot(a.values, b.values)
+    elif hasattr(a, "values"):
+        out2 = np.dot(a.values, b)
+    elif hasattr(b, "values"):
+        out2 = np.dot(a, b.values)
+    else:
+        out2 = np.dot(a, b)
+
+    if hasattr(out, "values"):
+        np.testing.assert_array_almost_equal(out.values, out2)
+    else:
+        if isinstance(out2, float):
+            assert out == out2
+        else:
+            np.testing.assert_array_almost_equal(out, out2)
+
+
+@pytest.mark.parametrize(
+    "a, b, subscripts, expected_type",
+    [
+        (
+            nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+            nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+            "i,i->",
+            float,
+        ),
+        (
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+            np.random.randn(5, 3),
+            "ij,jk->ik",
+            nap.TsdFrame,
+        ),
+        (
+            nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 4, 2)),
+            np.random.rand(2, 3),
+            "ijk,kl->ijl",
+            nap.TsdTensor,
+        ),
+        (
+            np.random.rand(5, 10),
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+            "ij,jk->ik",
+            np.ndarray,
+        ),
+        (
+            nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+            np.random.randn(5, 10),
+            "ij,ji->i",
+            nap.Tsd,
+        ),
+    ],
+)
+def test_einsum(a, b, subscripts, expected_type):
+    out = np.einsum(subscripts, a, b)
+
+    assert isinstance(out, expected_type)
+
+    if hasattr(a, "values") and hasattr(b, "values"):
+        out2 = np.einsum(subscripts, a.values, b.values)
+    elif hasattr(a, "values"):
+        out2 = np.einsum(subscripts, a.values, b)
+    elif hasattr(b, "values"):
+        out2 = np.einsum(subscripts, a, b.values)
+    else:
+        out2 = np.einsum(subscripts, a, b)
+
+    if hasattr(out, "values"):
+        np.testing.assert_array_almost_equal(out.values, out2)
+    else:
+        if isinstance(out2, float):
+            assert out == out2
+        else:
+            np.testing.assert_array_almost_equal(out, out2)
+
+
+@pytest.mark.parametrize(
+    "tsd",
+    [
+        nap.Tsd(t=np.arange(10), d=np.random.rand(10)),
+        nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 5)),
+        nap.TsdFrame(t=np.arange(10), d=np.random.rand(10, 10)),
+        nap.TsdTensor(t=np.arange(10), d=np.random.rand(10, 5, 2)),
+    ],
+)
+@pytest.mark.parametrize(
+    "func, kwargs, expected_type",
+    [
+        ("cumsum", {"axis": 0}, "Tsd"),
+        ("cumsum", {"axis": 1}, "Tsd"),
+        ("cumprod", {"axis": 0}, "Tsd"),
+        ("cumprod", {"axis": 1}, "Tsd"),
+        ("nancumsum", {"axis": 0}, "Tsd"),
+        ("nancumsum", {"axis": 1}, "Tsd"),
+        ("unwrap", {}, "Tsd"),
+        ("clip", {"a_min": 0.2, "a_max": 0.8}, "Tsd"),
+        ("angle", {}, "Tsd"),
+        ("conj", {}, "Tsd"),
+        ("real", {}, "Tsd"),
+        ("imag", {}, "Tsd"),
+        ("round", {"decimals": 2}, "Tsd"),
+        ("fix", {}, "Tsd"),
+        ("isreal", {}, "Tsd"),
+        ("iscomplex", {}, "Tsd"),
+        ("copy", {}, "Tsd"),
+        ("asarray", {}, "ndarray"),
+        ("asanyarray", {}, "ndarray"),
+    ],
+)
+def test_same_shape(tsd, func, kwargs, expected_type):
+    try:
+        b = getattr(np, func)(tsd.values, **kwargs)
+    except (ValueError, RuntimeError):
+        pytest.skip("Skipping invalid axis operation")
+
+    a = getattr(np, func)(tsd, **kwargs)
+
+    assert expected_type in a.__class__.__name__
+
+    if expected_type == "Tsd":
+        np.testing.assert_array_almost_equal(a.index, tsd.index)
+        np.testing.assert_array_almost_equal(a.values, b)
+    else:
+        np.testing.assert_array_almost_equal(a, b)

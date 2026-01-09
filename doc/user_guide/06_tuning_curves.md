@@ -16,7 +16,7 @@ kernelspec:
 With Pynapple you can easily compute n-dimensional tuning curves
 (for example, firing rate as a function of 1D angular direction or firing rate as a function of 2D position).
 It is also possible to compute average firing rate for different epochs 
-(for example firing rate for different epochs of stimulus presentation).
+(for example, firing rate for different epochs of stimulus presentation).
 
 ```{code-cell} ipython3
 :tags: [hide-cell]
@@ -29,16 +29,6 @@ from pprint import pprint
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
 xr.set_options(display_expand_attrs=False)
-```
-
-```{code-cell} ipython3
-:tags: [hide-cell]
-group = {
-    0: nap.Ts(t=np.sort(np.random.uniform(0, 100, 10))),
-    1: nap.Ts(t=np.sort(np.random.uniform(0, 100, 20))),
-    2: nap.Ts(t=np.sort(np.random.uniform(0, 100, 30))),
-}
-tsgroup = nap.TsGroup(group)
 ```
 
 ## From timestamps or continuous activity
@@ -71,9 +61,10 @@ tsgroup = nap.TsGroup(
     time_support = nap.IntervalSet(0, 100)
     )
 ```
+Computing tuning curves is done using [`compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves).
 
 When computing from general time-series, mandatory arguments are:
-* `data`: a `TsGroup` (or single `Ts`) or TsdFrame (or single `Tsd`) containing the neural activity of one or more units.
+* `data`: a `TsGroup` (or single `Ts`) or `TsdFrame` (or single `Tsd`) containing the neural activity of one or more units.
 * `features`: a `Tsd` or `TsdFrame` containing one or more features.
 
 By default, 10 bins are used for all features, but you can specify the number of bins,
@@ -142,7 +133,7 @@ tuning_curves_1d.plot.line(x="feature", add_legend=False)
 plt.show()
 ```
 
-Internally, the `compute_tuning_curves` is calling the method [`value_from`](pynapple.Tsd.value_from) which maps timestamps to their closest values in time from a `Tsd` object.
+Internally, the `compute_tuning_curves` calls the [`value_from`](pynapple.Tsd.value_from) method which maps timestamps to their closest values in time from a `Tsd` object.
 It is then possible to validate the tuning curves by displaying the timestamps as well as their associated values.
 
 ```{code-cell} ipython3
@@ -160,6 +151,40 @@ plt.xlabel("Firing rate (Hz)")
 plt.legend()
 plt.show()
 ```
+
+It is also possible to just get the spike counts per bins. This can be done by setting the argument `return_counts=True`.
+The output is also a `xarray.DataArray` with the same dimensions as the tuning curves.
+
+```{code-cell} ipython3
+spike_counts = nap.compute_tuning_curves(
+    data=tsgroup,
+    features=feature,
+    bins=30, 
+    range=(0, 2*np.pi),
+    feature_names=["feature"],
+    return_counts=True
+    )
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.figure()
+plt.subplot(131)
+plt.plot(tsgroup[3].value_from(feature), 'o')
+plt.plot(feature, label="feature")
+plt.ylabel("Feature")
+plt.xlim(0, 2)
+plt.xlabel("Time (s)")
+plt.subplot(132)
+plt.plot(tuning_curves_1d[3].values, tuning_curves_1d.coords["feature"])
+plt.xlabel("Firing rate (Hz)")
+plt.subplot(133)
+plt.barh(spike_counts.coords["feature"], width=spike_counts[3].values, height=np.mean(np.diff(spike_counts.coords["feature"])))
+plt.xlabel("Spike count")
+plt.tight_layout()
+plt.show()
+```
+
 
 ### 2D tuning curves from spikes
 
@@ -344,17 +369,34 @@ plt.show()
 When computing from epochs, you should store them in a dictionary:
 
 ```{code-cell} ipython3
-dict_ep =  {
+epochs_dict =  {
     "stim0": nap.IntervalSet(start=0, end=20),
     "stim1":nap.IntervalSet(start=30, end=70)
 }
 ```
+You can then compute the tuning curves using [`nap.compute_response_per_epoch`](pynapple.process.tuning_curves.compute_response_per_epoch).
+You can pass either a `TsGroup` for spikes, or a `TsdFrame` for rates/calcium activity.
 
-[`nap.compute_discrete_tuning_curves`](pynapple.process.tuning_curves.compute_discrete_tuning_curves) takes a `TsGroup` for spiking activity and a dictionary of epochs. 
-The output is a pandas DataFrame where each column is a unit in the `TsGroup` and each row is one `IntervalSet`.
-The output will be the mean firing rate of the neuron during this set of intervals.
+The output is an `xarray.DataArray` with labeled dimensions:
 
 ```{code-cell} ipython3
-mean_fr = nap.compute_discrete_tuning_curves(tsgroup, dict_ep)
-print(mean_fr)
+tuning_curves = nap.compute_response_per_epoch(tsgroup, epochs_dict)
+tuning_curves
 ```
+
+# Mutual information
+Given a set of tuning curves, you can use [`compute_mutual_information`](pynapple.process.tuning_curves.compute_mutual_information) to compute the mutual information between the activity of the neurons and the features, no matter what dimension.
+See the [Skaggs et al. (1992)](https://proceedings.neurips.cc/paper/1992/hash/5dd9db5e033da9c6fb5ba83c7a7ebea9-Abstract.html) paper for more information on what mutual information computes.
+
+```{code-cell} ipython3
+MI = nap.compute_mutual_information(tuning_curves_1d)
+MI
+```
+
+```{code-cell} ipython3
+MI = nap.compute_mutual_information(tuning_curves_2d)
+MI
+```
+Take a look at the tutorial on [head direction cells](../examples/tutorial_HD_dataset.md) for a realistic example.
+
+

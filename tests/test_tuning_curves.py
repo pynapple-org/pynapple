@@ -1,4 +1,4 @@
-"""Tests of tuning curves for `pynapple` package."""
+"""Tests of N-dimensional tuning curves for `pynapple` package."""
 
 from contextlib import nullcontext as does_not_raise
 
@@ -259,11 +259,11 @@ def get_features_n(n, fs=10.0):
             {"feature_names": ("feature0", "feature1")},
             does_not_raise(),
         ),
-        # return pandas
+        # return_pandas
         (
             get_group_n(1),
             get_features_n(1),
-            {"return_pandas": 1},
+            {"return_pandas": 2},
             pytest.raises(
                 TypeError,
                 match="return_pandas should be a boolean.",
@@ -281,7 +281,25 @@ def get_features_n(n, fs=10.0):
         (
             get_group_n(1),
             get_features_n(1),
+            {"return_pandas": 0},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_pandas": 1},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
             {"return_pandas": True},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_pandas": False},
             does_not_raise(),
         ),
         (
@@ -293,6 +311,49 @@ def get_features_n(n, fs=10.0):
                 match="Cannot convert arrays with 3 dimensions into pandas objects. Requires 2 or fewer dimensions.",
             ),
         ),
+        # return_counts
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_counts": 2},
+            pytest.raises(
+                TypeError,
+                match="return_counts should be a boolean.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_counts": "1"},
+            pytest.raises(
+                TypeError,
+                match="return_counts should be a boolean.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_counts": 0},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_counts": 1},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_counts": True},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_counts": False},
+            does_not_raise(),
+        ),
     ],
 )
 def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
@@ -301,7 +362,7 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
 
 
 @pytest.mark.parametrize(
-    "data, features, kwargs, expected",
+    "data, features, kwargs, expectation",
     [
         # single rate unit, single feature
         (
@@ -312,6 +373,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(10, 100.0),
+                    "bin_edges": [np.linspace(0, 9.9, 11)],
+                },
             ),
         ),
         # multiple rate units, single feature
@@ -325,6 +391,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 coords={
                     "unit": [1, 2],
                     "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(10, 100.0),
+                    "bin_edges": [np.linspace(0, 9.9, 11)],
                 },
             ),
         ),
@@ -346,6 +417,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
                     "feature1": np.linspace(0, 19.8, 11)[:-1] + 0.99,
                 },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(np.eye(10), 100.0, 0.0),
+                    "bin_edges": [np.linspace(0, i * 9.9, 11) for i in range(1, 3)],
+                },
             ),
         ),
         # single unit, single feature
@@ -357,6 +433,12 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(10, 100.0),
+                    "bin_edges": [np.linspace(0, 9.9, 11)],
+                    "rates": [10.01001],
+                },
             ),
         ),
         # multiple units, single feature
@@ -370,6 +452,12 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 coords={
                     "unit": [1, 2],
                     "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(10, 100.0),
+                    "bin_edges": [np.linspace(0, 9.9, 11)],
+                    "rates": [10.01001, 1.001001],
                 },
             ),
         ),
@@ -391,6 +479,12 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
                     "feature1": np.linspace(0, 19.8, 11)[:-1] + 0.99,
                 },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(np.eye(10), 100.0, np.nan),
+                    "bin_edges": [np.linspace(0, i * 9.9, 11) for i in range(1, 3)],
+                    "rates": [10.01001, 1.001001],
+                },
             ),
         ),
         # single unit, single feature, specified number of bins
@@ -402,6 +496,12 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 5), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 6)[:-1] + 0.99},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(5, 200.0),
+                    "bin_edges": [np.linspace(0, 9.9, 6)],
+                    "rates": [10.01001],
+                },
             ),
         ),
         # single unit, multiple features, specified number of bins
@@ -416,6 +516,12 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "unit": [1],
                     "feature0": np.linspace(0, 9.9, 6)[:-1] + 0.99,
                     "feature1": np.linspace(0, 19.8, 6)[:-1] + 1.98,
+                },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(np.eye(5), 200.0, np.nan),
+                    "bin_edges": [np.linspace(0, i * 9.9, 6) for i in range(1, 3)],
+                    "rates": [10.01001],
                 },
             ),
         ),
@@ -442,6 +548,20 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "feature0": np.linspace(0, 9.9, 6)[:-1] + 0.99,
                     "feature1": np.linspace(0, 19.8, 5)[:-1] + 2.475,
                 },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.array(
+                        [
+                            [200.0, np.nan, np.nan, np.nan],
+                            [50.0, 150.0, np.nan, np.nan],
+                            [np.nan, 100.0, 100.0, np.nan],
+                            [np.nan, np.nan, 150.0, 50.0],
+                            [np.nan, np.nan, np.nan, 200.0],
+                        ]
+                    ),
+                    "bin_edges": [np.linspace(0, 9.9, 6), np.linspace(0, 19.8, 5)],
+                    "rates": [10.01001],
+                },
             ),
         ),
         # single unit, single feature, specified bins
@@ -453,6 +573,12 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 5), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.arange(1, 11, 2)},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(5, 200.0),
+                    "bin_edges": [np.linspace(0, 10, 6)],
+                    "rates": [10.01001],
+                },
             ),
         ),
         # single unit, multiple features, specified bins
@@ -468,6 +594,12 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "feature0": np.arange(1, 11, 2),
                     "feature1": np.arange(2, 22, 4),
                 },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(np.eye(5), 200.0, np.nan),
+                    "bin_edges": [np.linspace(0, i * 10, 6) for i in range(1, 3)],
+                    "rates": [10.01001],
+                },
             ),
         ),
         # single unit, single feature, specified range
@@ -479,6 +611,12 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.concatenate([np.full(9, 50.0), [60]]),
+                    "bin_edges": [np.linspace(0, 5.0, 11)],
+                    "rates": [10.01001],
+                },
             ),
         ),
         # single unit, multiple features, specified range per feature
@@ -494,6 +632,17 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25,
                     "feature1": np.linspace(0, 10.0, 11)[:-1] + 0.5,
                 },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(
+                        np.eye(10),
+                        50.0
+                        + 10.0 * (np.arange(10) == 9)[:, None] * (np.arange(10) == 9),
+                        np.nan,
+                    ),
+                    "bin_edges": [np.linspace(0, i * 5, 11) for i in range(1, 3)],
+                    "rates": [10.01001],
+                },
             ),
         ),
         # single unit, single feature, specified range and number of bins
@@ -505,6 +654,12 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.concatenate([np.full(9, 50.0), [60]]),
+                    "bin_edges": [np.linspace(0, 5.0, 11)],
+                    "rates": [10.01001],
+                },
             ),
         ),
         # single unit, multiple features, specified range per feature and number of bins
@@ -519,6 +674,17 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "unit": [1],
                     "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25,
                     "feature1": np.linspace(0, 10.0, 11)[:-1] + 0.5,
+                },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(
+                        np.eye(10),
+                        50.0
+                        + 10.0 * (np.arange(10) == 9)[:, None] * (np.arange(10) == 9),
+                        np.nan,
+                    ),
+                    "bin_edges": [np.linspace(0, i * 5, 11) for i in range(1, 3)],
+                    "rates": [10.01001],
                 },
             ),
         ),
@@ -535,6 +701,17 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "feature0": np.linspace(0, 5.0, 11)[:-1] + 0.25,
                     "feature1": np.linspace(0, 10.0, 11)[:-1] + 0.5,
                 },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(
+                        np.eye(10),
+                        50.0
+                        + 10.0 * (np.arange(10) == 9)[:, None] * (np.arange(10) == 9),
+                        np.nan,
+                    ),
+                    "bin_edges": [np.linspace(0, i * 5, 11) for i in range(1, 3)],
+                    "rates": [10.01001],
+                },
             ),
         ),
         # single unit, single feature, specified epochs (smaller)
@@ -546,6 +723,12 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.concatenate([[51], np.full(9, 50.0)]),
+                    "bin_edges": [np.linspace(0, 9.9, 11)],
+                    "rates": [10.02],
+                },
             ),
         ),
         # single unit, single feature, specified epochs (larger)
@@ -557,6 +740,12 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(10, 100.0),
+                    "bin_edges": [np.linspace(0, 9.9, 11)],
+                    "rates": [5],
+                },
             ),
         ),
         # single unit, single feature, specified epochs (multiple)
@@ -568,6 +757,12 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.concatenate([[42], np.full(9, 40.0)]),
+                    "bin_edges": [np.linspace(0, 9.9, 11)],
+                    "rates": [10.05],
+                },
             ),
         ),
         # single unit, single feature, specified feature name
@@ -579,6 +774,12 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "f0"],
                 coords={"unit": [1], "f0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(10, 100.0),
+                    "bin_edges": [np.linspace(0, 9.9, 11)],
+                    "rates": [10.01001],
+                },
             ),
         ),
         # single unit, multiple features, specified feature names
@@ -594,6 +795,12 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "f0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
                     "f1": np.linspace(0, 19.8, 11)[:-1] + 0.99,
                 },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(np.eye(10), 100.0, np.nan),
+                    "bin_edges": [np.linspace(0, i * 9.9, 11) for i in range(1, 3)],
+                    "rates": [10.01001],
+                },
             ),
         ),
         # single unit, single feature, return_pandas=True
@@ -605,22 +812,572 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 np.full((1, 10), 10.0),
                 dims=["unit", "feature0"],
                 coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(10, 100.0),
+                    "bin_edges": [np.linspace(0, i * 9.9, 11) for i in range(1, 2)],
+                    "rates": [10.01001],
+                },
+            )
+            .to_pandas()
+            .T,
+        ),
+        # single unit, single feature, return_counts=True
+        (
+            get_group_n(1),
+            get_features_n(1),
+            {"return_counts": True},
+            xr.DataArray(
+                np.full((1, 10), 100.0),
+                dims=["unit", "feature0"],
+                coords={"unit": [1], "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495},
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.full(10, 100.0),
+                    "bin_edges": [np.linspace(0, i * 9.9, 11) for i in range(1, 2)],
+                    "rates": [10.01001],
+                },
+            ),
+        ),
+        # multiple units, multiple features, return_counts=True
+        (
+            get_group_n(2),
+            get_features_n(2),
+            {"return_counts": True},
+            xr.DataArray(
+                np.stack(
+                    [
+                        np.where(np.eye(10), 100.0, 0.0),
+                        np.where(np.eye(10), 10.0, 0.0),
+                    ]
+                ),
+                dims=["unit", "feature0", "feature1"],
+                coords={
+                    "unit": [1, 2],
+                    "feature0": np.linspace(0, 9.9, 11)[:-1] + 0.495,
+                    "feature1": np.linspace(0, 19.8, 11)[:-1] + 0.99,
+                },
+                attrs={
+                    "fs": 10.0,
+                    "occupancy": np.where(np.eye(10), 100.0, np.nan),
+                    "bin_edges": [np.linspace(0, i * 9.9, 11) for i in range(1, 3)],
+                    "rates": [10.01001],
+                },
+            ),
+        ),
+    ],
+)
+def test_compute_tuning_curves(data, features, kwargs, expectation):
+    tcs = nap.compute_tuning_curves(data, features, **kwargs)
+    if isinstance(expectation, pd.DataFrame):
+        pd.testing.assert_frame_equal(tcs, expectation)
+    else:
+        xr.testing.assert_allclose(tcs, expectation)
+        for attribute in expectation.attrs:
+            assert attribute in tcs.attrs
+            if isinstance(expectation.attrs[attribute], (np.ndarray, float)):
+                print(tcs.attrs[attribute])
+                np.testing.assert_array_almost_equal(
+                    tcs.attrs[attribute], expectation.attrs[attribute]
+                )
+            else:
+                for i in range(len(expectation.attrs[attribute])):
+                    np.testing.assert_array_almost_equal(
+                        tcs.attrs[attribute][i], expectation.attrs[attribute][i]
+                    )
+
+
+# ------------------------------------------------------------------------------------
+# DISCRETE TUNING CURVE TESTS
+# ------------------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "data, epochs_dict, kwargs, expectation",
+    [
+        # data
+        (
+            [1],
+            {"0": nap.IntervalSet(0, 100)},
+            {},
+            pytest.raises(
+                TypeError, match="data should be a TsdFrame, TsGroup, Ts, or Tsd."
+            ),
+        ),
+        (
+            None,
+            {"0": nap.IntervalSet(0, 100)},
+            {},
+            pytest.raises(
+                TypeError, match="data should be a TsdFrame, TsGroup, Ts, or Tsd."
+            ),
+        ),
+        (
+            {1: nap.Ts([1, 2, 3])},
+            {"0": nap.IntervalSet(0, 100)},
+            {},
+            pytest.raises(
+                TypeError, match="data should be a TsdFrame, TsGroup, Ts, or Tsd."
+            ),
+        ),
+        (get_group_n(1), {"0": nap.IntervalSet(0, 100)}, {}, does_not_raise()),
+        (get_group_n(3), {"0": nap.IntervalSet(0, 100)}, {}, does_not_raise()),
+        (
+            get_group_n(1).count(0.1),
+            {"0": nap.IntervalSet(0, 100)},
+            {},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(3).count(0.1),
+            {"0": nap.IntervalSet(0, 100)},
+            {},
+            does_not_raise(),
+        ),
+        (
+            nap.Tsd(t=[1, 2, 3], d=[1, 1, 1]),
+            {"0": nap.IntervalSet(0, 100)},
+            {},
+            does_not_raise(),
+        ),
+        (nap.Ts([1, 2, 3]), {"0": nap.IntervalSet(0, 100)}, {}, does_not_raise()),
+        # epochs_dict
+        (
+            get_group_n(1),
+            1,
+            {},
+            pytest.raises(
+                TypeError, match="epochs_dict should be a dictionary of IntervalSets."
+            ),
+        ),
+        (
+            get_group_n(1),
+            None,
+            {},
+            pytest.raises(
+                TypeError, match="epochs_dict should be a dictionary of IntervalSets."
+            ),
+        ),
+        (
+            get_group_n(1),
+            nap.IntervalSet(0, 100),
+            {},
+            pytest.raises(
+                TypeError, match="epochs_dict should be a dictionary of IntervalSets."
+            ),
+        ),
+        (
+            get_group_n(1),
+            [nap.IntervalSet(0, 100)],
+            {},
+            pytest.raises(
+                TypeError, match="epochs_dict should be a dictionary of IntervalSets."
+            ),
+        ),
+        (
+            get_group_n(1),
+            {"0": nap.IntervalSet(0, 100), "1": 0},
+            {},
+            pytest.raises(
+                TypeError, match="epochs_dict should be a dictionary of IntervalSets."
+            ),
+        ),
+        (
+            get_group_n(1),
+            {"0": nap.IntervalSet(0, 100)},
+            {},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            {"0": nap.IntervalSet(0, 100), "1": nap.IntervalSet(0, 50)},
+            {},
+            does_not_raise(),
+        ),
+        # return pandas
+        (
+            get_group_n(1),
+            {"0": nap.IntervalSet(0, 100)},
+            {"return_pandas": 2},
+            pytest.raises(
+                TypeError,
+                match="return_pandas should be a boolean.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            {"0": nap.IntervalSet(0, 100)},
+            {"return_pandas": "1"},
+            pytest.raises(
+                TypeError,
+                match="return_pandas should be a boolean.",
+            ),
+        ),
+        (
+            get_group_n(1),
+            {"0": nap.IntervalSet(0, 100)},
+            {"return_pandas": True},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            {"0": nap.IntervalSet(0, 100)},
+            {"return_pandas": False},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            {"0": nap.IntervalSet(0, 100)},
+            {"return_pandas": 0},
+            does_not_raise(),
+        ),
+        (
+            get_group_n(1),
+            {"0": nap.IntervalSet(0, 100)},
+            {"return_pandas": 1},
+            does_not_raise(),
+        ),
+    ],
+)
+def test_compute_response_per_epoch_type_errors(data, epochs_dict, kwargs, expectation):
+    with expectation:
+        nap.compute_response_per_epoch(data, epochs_dict, **kwargs)
+
+
+@pytest.mark.parametrize(
+    "data, epochs_dict, kwargs, expectation",
+    [
+        # single rate unit, single epoch
+        (
+            get_group_n(1).count(1.0),
+            {"0": nap.IntervalSet(0, 50)},
+            {},
+            xr.DataArray(
+                [[10.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1], "epochs": ["0"]},
+            ),
+        ),
+        # two rate units, single epoch
+        (
+            get_group_n(2).count(1.0),
+            {"0": nap.IntervalSet(0, 50)},
+            {},
+            xr.DataArray(
+                [[10.0], [1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0"]},
+            ),
+        ),
+        # two rate units, multiple epochs
+        (
+            get_group_n(2).count(1.0),
+            {"0": nap.IntervalSet(0, 50), "1": nap.IntervalSet(50, 100)},
+            {},
+            xr.DataArray(
+                [[10.0, 10.0], [1.0, 1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0", "1"]},
+            ),
+        ),
+        # two rate units, multiple epochs, overlapping
+        (
+            get_group_n(2).count(1.0),
+            {"0": nap.IntervalSet(0, 100), "1": nap.IntervalSet(50, 100)},
+            {},
+            xr.DataArray(
+                [[10.0, 10.0], [1.0, 1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0", "1"]},
+            ),
+        ),
+        # two rate units, multiple epochs, multiple intervals
+        (
+            get_group_n(2).count(1.0),
+            {
+                "0": nap.IntervalSet([0, 20], [10, 30]),
+                "1": nap.IntervalSet([50, 70], [60, 80]),
+            },
+            {},
+            xr.DataArray(
+                [[10.0, 10.0], [1.0, 1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0", "1"]},
+            ),
+        ),
+        # single unit, single epoch
+        (
+            get_group_n(1),
+            {"0": nap.IntervalSet(50, 100)},
+            {},
+            xr.DataArray(
+                [[10.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1], "epochs": ["0"]},
+            ),
+        ),
+        # two units, single epoch
+        (
+            get_group_n(2),
+            {"0": nap.IntervalSet(0, 100)},
+            {},
+            xr.DataArray(
+                [[10.0], [1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0"]},
+            ),
+        ),
+        # two units, multiple epochs
+        (
+            get_group_n(2),
+            {"0": nap.IntervalSet(0, 49.9999), "1": nap.IntervalSet(50, 100)},
+            {},
+            xr.DataArray(
+                [[10.0, 10.0], [1.0, 1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0", "1"]},
+            ),
+        ),
+        # two units, multiple epochs, overlapping
+        (
+            get_group_n(2),
+            {"0": nap.IntervalSet(0, 100), "1": nap.IntervalSet(50, 100)},
+            {},
+            xr.DataArray(
+                [[10.0, 10.0], [1.0, 1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0", "1"]},
+            ),
+        ),
+        # two units, multiple epochs, multiple intervals
+        (
+            get_group_n(2),
+            {
+                "0": nap.IntervalSet([0, 20], [10, 30]),
+                "1": nap.IntervalSet([50, 70], [60, 80]),
+            },
+            {},
+            xr.DataArray(
+                [[10.1, 10.1], [1.1, 1.1]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0", "1"]},
+            ),
+        ),
+        # two units, multiple epochs, return_pandas=True
+        (
+            get_group_n(2),
+            {"0": nap.IntervalSet(0, 100), "1": nap.IntervalSet(50, 100)},
+            {"return_pandas": True},
+            xr.DataArray(
+                [[10.0, 10.0], [1.0, 1.0]],
+                dims=["unit", "epochs"],
+                coords={"unit": [1, 2], "epochs": ["0", "1"]},
             )
             .to_pandas()
             .T,
         ),
     ],
 )
-def test_compute_tuning_curves(data, features, kwargs, expected):
-    tcs = nap.compute_tuning_curves(data, features, **kwargs)
-    if isinstance(expected, pd.DataFrame):
-        pd.testing.assert_frame_equal(tcs, expected)
+def test_compute_response_per_epoch(data, epochs_dict, kwargs, expectation):
+    tcs = nap.compute_response_per_epoch(data, epochs_dict, **kwargs)
+    if isinstance(expectation, pd.DataFrame):
+        pd.testing.assert_frame_equal(tcs, expectation)
     else:
-        xr.testing.assert_allclose(tcs, expected)
+        xr.testing.assert_allclose(tcs, expectation)
 
 
 # ------------------------------------------------------------------------------------
-# DISCRETE TUNING CURVE TESTS
+# MUTUAL INFORMATION TESTS
+# ------------------------------------------------------------------------------------
+
+
+def get_testing_set(n_units=1, n_features=1, pattern="uniform"):
+    dims = ["unit"] + [f"dim_{i}" for i in range(n_features)]
+    coords = {"unit": np.arange(n_units)}
+    shape = (n_units,) + (2,) * n_features  # 2 bins per feature, for simplicity
+    for i in range(n_features):
+        coords[f"dim_{i}"] = np.arange(2)
+
+    # Build tuning curves
+    data = np.zeros(shape)
+
+    if pattern == "uniform":
+        data[:] = 1.0
+        expected_mi_per_sec = 0.0
+        expected_mi_per_spike = 0.0
+        mean_rate = 1.0
+
+    elif pattern == "onehot":
+        # Each unit fires in a unique location only
+        for u in range(n_units):
+            index = [u] + [0] * n_features
+            data[tuple(index)] = 1.0
+
+        n_bins = np.prod(shape[1:])
+        expected_mi_per_spike = np.log2(n_bins)
+        mean_rate = 1.0 / n_bins
+        expected_mi_per_sec = mean_rate * expected_mi_per_spike
+
+    else:
+        raise ValueError("Unknown firing_pattern. Use 'uniform' or 'onehot'.")
+
+    tuning_curves = xr.DataArray(
+        data,
+        coords=coords,
+        dims=dims,
+        attrs={
+            "occupancy": np.ones(shape[1:]) / np.prod(shape[1:]),
+            "rates": np.array([mean_rate] * n_units),
+        },
+    )
+
+    MI = pd.DataFrame(
+        data=np.stack(
+            [
+                np.full(n_units, expected_mi_per_sec),
+                np.full(n_units, expected_mi_per_spike),
+            ],
+            axis=1,
+        ),
+        index=coords["unit"],
+        columns=["bits/sec", "bits/spike"],
+    )
+
+    return tuning_curves, MI
+
+
+@pytest.mark.parametrize(
+    "tuning_curves, rates, expectation",
+    [
+        # tuning_curves
+        (
+            [],
+            [],
+            pytest.raises(
+                TypeError,
+                match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
+            ),
+        ),
+        (
+            1,
+            [],
+            pytest.raises(
+                TypeError,
+                match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
+            ),
+        ),
+        (
+            get_testing_set()[0].to_pandas().T,
+            [1],
+            pytest.raises(
+                TypeError,
+                match="tuning_curves should be an xr.DataArray as computed by compute_tuning_curves.",
+            ),
+        ),
+        (
+            (lambda x: (x.attrs.clear(), x)[1])(get_testing_set()[0]),
+            [1],
+            pytest.raises(
+                ValueError,
+                match="No occupancy found in tuning curves.",
+            ),
+        ),
+        (get_testing_set(1, 2)[0], [1], does_not_raise()),
+        (get_testing_set(1, 3)[0], [1], does_not_raise()),
+        (get_testing_set(2, 1)[0], [1, 1], does_not_raise()),
+        (get_testing_set(2, 2)[0], [1, 1], does_not_raise()),
+        (get_testing_set(2, 3)[0], [1, 1], does_not_raise()),
+        # rates
+        (
+            get_testing_set()[0],
+            1,
+            pytest.raises(
+                TypeError,
+                match="rates should be a list or array.",
+            ),
+        ),
+        (
+            get_testing_set()[0],
+            "1",
+            pytest.raises(
+                TypeError,
+                match="rates should be a list or array.",
+            ),
+        ),
+        (
+            get_testing_set()[0],
+            [],
+            pytest.raises(
+                ValueError,
+                match="dimension of rates should match that of the tuning curves.",
+            ),
+        ),
+        (
+            get_testing_set(2)[0],
+            [1.0],
+            pytest.raises(
+                ValueError,
+                match="dimension of rates should match that of the tuning curves.",
+            ),
+        ),
+        (
+            (lambda x: (x.attrs.pop("rates"), x)[1])(get_testing_set()[0]),
+            None,
+            # pytest.warns(UserWarning, match="Converting 't' to numpy.array."),
+            pytest.warns(
+                UserWarning,
+                match="Estimating mean firing rates from tuning curves, they were not in the tuning curves nor passed.",
+            ),
+        ),
+        (get_testing_set()[0], None, does_not_raise()),
+    ],
+)
+def test_compute_mutual_information_errors(tuning_curves, rates, expectation):
+    with expectation:
+        nap.compute_mutual_information(tuning_curves, rates)
+
+
+@pytest.mark.filterwarnings("ignore")
+@pytest.mark.parametrize(
+    "n_units, n_features",
+    [(1, 1), (1, 2), (1, 3), (2, 1), (2, 2), (2, 3)],
+)
+@pytest.mark.parametrize(
+    "pattern",
+    ["uniform", "onehot"],
+)
+@pytest.mark.parametrize(
+    "rate_scale",
+    ["in_tcs", "estimate", 0.5, 2.0],
+)
+def test_compute_mutual_information(n_units, n_features, pattern, rate_scale):
+    tuning_curves, expectation = get_testing_set(n_units, n_features, pattern)
+
+    if rate_scale == "in_tcs":
+        rates = None
+    elif rate_scale == "estimate":
+        rates = None
+        tuning_curves.attrs.pop("rates")
+    else:
+        rates = tuning_curves.attrs["rates"] * rate_scale
+        if pattern == "uniform":
+            expectation["bits/sec"] = np.log2(1.0 / rate_scale)
+            expectation["bits/spike"] = expectation["bits/sec"] / rates
+        elif pattern == "onehot":
+            n_bins = np.prod(tuning_curves.shape[1:])
+            expected_mi_per_spike = np.log2(n_bins)
+            expected_mi_per_sec = expected_mi_per_spike / n_bins
+            expectation["bits/sec"] = expected_mi_per_sec - np.log2(rate_scale) / n_bins
+            expectation["bits/spike"] = (
+                expected_mi_per_spike - np.log2(rate_scale)
+            ) / rate_scale
+
+    actual = nap.compute_mutual_information(tuning_curves, rates=rates)
+    pd.testing.assert_frame_equal(actual, expectation)
+
+
+# ------------------------------------------------------------------------------------
+# OLD MUTUAL INFORMATION TESTS
 # ------------------------------------------------------------------------------------
 
 
@@ -653,63 +1410,6 @@ def get_ep():
 
 def get_tsdframe():
     return nap.TsdFrame(t=np.arange(0, 100), d=np.ones((100, 2)))
-
-
-@pytest.mark.parametrize(
-    "group, dict_ep, expected_exception",
-    [
-        (
-            "a",
-            {
-                0: nap.IntervalSet(start=0, end=50),
-                1: nap.IntervalSet(start=50, end=100),
-            },
-            pytest.raises(TypeError, match="group should be a TsGroup."),
-        ),
-        (
-            get_group(),
-            "a",
-            pytest.raises(
-                TypeError, match="dict_ep should be a dictionary of IntervalSet"
-            ),
-        ),
-        (
-            get_group(),
-            {0: "a", 1: nap.IntervalSet(start=50, end=100)},
-            pytest.raises(
-                TypeError, match="dict_ep argument should contain only IntervalSet."
-            ),
-        ),
-    ],
-)
-def test_compute_discrete_tuning_curves_errors(group, dict_ep, expected_exception):
-    with expected_exception:
-        nap.compute_discrete_tuning_curves(group, dict_ep)
-
-
-@pytest.mark.parametrize("group", [get_group()])
-@pytest.mark.parametrize(
-    "dict_ep",
-    [
-        {0: nap.IntervalSet(start=0, end=50), 1: nap.IntervalSet(start=50, end=100)},
-        {
-            "0": nap.IntervalSet(start=0, end=50),
-            "1": nap.IntervalSet(start=50, end=100),
-        },
-    ],
-)
-def test_compute_discrete_tuning_curves(group, dict_ep):
-    tc = nap.compute_discrete_tuning_curves(group, dict_ep)
-    assert len(tc) == 2
-    assert list(tc.columns) == list(group.keys())
-    assert list(tc.index.values) == list(dict_ep.keys())
-    np.testing.assert_almost_equal(tc.iloc[0, 0], 51 / 50)
-    np.testing.assert_almost_equal(tc.iloc[1, 0], 1)
-
-
-# ------------------------------------------------------------------------------------
-# MUTUAL INFORMATION TESTS
-# ------------------------------------------------------------------------------------
 
 
 @pytest.mark.parametrize(
@@ -952,7 +1652,137 @@ def test_compute_2d_mutual_info(args, kwargs, expected):
 
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
-    "args, kwargs, expected",
+    "group, dict_ep, expectation",
+    [
+        (
+            "a",
+            {
+                0: nap.IntervalSet(start=0, end=50),
+                1: nap.IntervalSet(start=50, end=100),
+            },
+            pytest.raises(TypeError, match="group should be a TsGroup."),
+        ),
+        (
+            get_group(),
+            "a",
+            pytest.raises(
+                TypeError, match="dict_ep should be a dictionary of IntervalSet"
+            ),
+        ),
+        (
+            get_group(),
+            {0: "a", 1: nap.IntervalSet(start=50, end=100)},
+            pytest.raises(
+                TypeError, match="dict_ep argument should contain only IntervalSet."
+            ),
+        ),
+    ],
+)
+def test_compute_discrete_tuning_curves_errors(group, dict_ep, expectation):
+    with expectation:
+        nap.compute_discrete_tuning_curves(group, dict_ep)
+
+
+@pytest.mark.filterwarnings("ignore")
+@pytest.mark.parametrize("group", [get_group()])
+@pytest.mark.parametrize(
+    "dict_ep",
+    [
+        {0: nap.IntervalSet(start=0, end=50), 1: nap.IntervalSet(start=50, end=100)},
+        {
+            "0": nap.IntervalSet(start=0, end=50),
+            "1": nap.IntervalSet(start=50, end=100),
+        },
+    ],
+)
+def test_compute_discrete_tuning_curves(group, dict_ep):
+    tc = nap.compute_discrete_tuning_curves(group, dict_ep)
+    assert len(tc) == 2
+    assert list(tc.columns) == list(group.keys())
+    assert list(tc.index.values) == list(dict_ep.keys())
+    np.testing.assert_almost_equal(tc.iloc[0, 0], 51 / 50)
+    np.testing.assert_almost_equal(tc.iloc[1, 0], 1)
+
+
+@pytest.mark.parametrize(
+    "group, feature, nb_bins, ep, minmax, expected_exception",
+    [
+        ("a", get_feature(), 10, get_ep(), (0, 1), "group should be a TsGroup."),
+        (
+            get_group(),
+            "a",
+            10,
+            get_ep(),
+            (0, 1),
+            r"feature should be a Tsd \(or TsdFrame with 1 column only\)",
+        ),
+        (
+            get_group(),
+            get_feature(),
+            "a",
+            get_ep(),
+            (0, 1),
+            r"nb_bins should be of type int \(or tuple with \(int, int\) for 2D tuning curves\).",
+        ),
+        (get_group(), get_feature(), 10, "a", (0, 1), r"ep should be an IntervalSet"),
+        (
+            get_group(),
+            get_feature(),
+            10,
+            get_ep(),
+            1,
+            r"minmax should be a tuple\/list of 2 numbers",
+        ),
+    ],
+)
+def test_compute_1d_tuning_curves_errors(
+    group, feature, nb_bins, ep, minmax, expected_exception
+):
+    with pytest.raises(TypeError, match=expected_exception):
+        nap.compute_1d_tuning_curves(group, feature, nb_bins, ep, minmax)
+
+
+@pytest.mark.parametrize(
+    "group, features, nb_bins, ep, minmax, expected_exception",
+    [
+        ("a", get_features(), 10, get_ep(), (0, 1), "group should be a TsGroup."),
+        (
+            get_group(),
+            "a",
+            10,
+            get_ep(),
+            (0, 1),
+            r"features should be a TsdFrame with 2 columns",
+        ),
+        (
+            get_group(),
+            get_features(),
+            "a",
+            get_ep(),
+            (0, 1),
+            r"nb_bins should be of type int \(or tuple with \(int, int\) for 2D tuning curves\).",
+        ),
+        (get_group(), get_features(), 10, "a", (0, 1), r"ep should be an IntervalSet"),
+        (
+            get_group(),
+            get_features(),
+            10,
+            get_ep(),
+            1,
+            r"minmax should be a tuple\/list of 2 numbers",
+        ),
+    ],
+)
+def test_compute_2d_tuning_curves_errors(
+    group, features, nb_bins, ep, minmax, expected_exception
+):
+    with pytest.raises(TypeError, match=expected_exception):
+        nap.compute_2d_tuning_curves(group, features, nb_bins, ep, minmax)
+
+
+@pytest.mark.filterwarnings("ignore")
+@pytest.mark.parametrize(
+    "args, kwargs, expectation",
     [
         ((get_group(), get_feature(), 10), {}, np.array([10.0] + [0.0] * 9)[:, None]),
         (
@@ -972,7 +1802,7 @@ def test_compute_2d_mutual_info(args, kwargs, expected):
         ),
     ],
 )
-def test_compute_1d_tuning_curves(args, kwargs, expected):
+def test_compute_1d_tuning_curves(args, kwargs, expectation):
     tc = nap.compute_1d_tuning_curves(*args, **kwargs)
     # Columns
     assert list(tc.columns) == list(args[0].keys())
@@ -986,12 +1816,12 @@ def test_compute_1d_tuning_curves(args, kwargs, expected):
     np.testing.assert_almost_equal(tmp[0:-1] + np.diff(tmp) / 2, tc.index.values)
 
     # Array
-    np.testing.assert_almost_equal(tc.values, expected)
+    np.testing.assert_almost_equal(tc.values, expectation)
 
 
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
-    "args, kwargs, expected",
+    "args, kwargs, expectation",
     [
         ((get_group(), get_features(), 10), {}, np.ones((10, 10)) * 0.5),
         ((get_group(), get_features(), (10, 10)), {}, np.ones((10, 10)) * 0.5),
@@ -1012,7 +1842,7 @@ def test_compute_1d_tuning_curves(args, kwargs, expected):
         ),
     ],
 )
-def test_compute_2d_tuning_curves(args, kwargs, expected):
+def test_compute_2d_tuning_curves(args, kwargs, expectation):
     tc, xy = nap.compute_2d_tuning_curves(*args, **kwargs)
     assert isinstance(tc, dict)
 
@@ -1038,12 +1868,12 @@ def test_compute_2d_tuning_curves(args, kwargs, expected):
     # Values
     for i in tc.keys():
         assert tc[i].shape == nb_bins
-        np.testing.assert_almost_equal(tc[i], expected)
+        np.testing.assert_almost_equal(tc[i], expectation)
 
 
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
-    "args, kwargs, expected",
+    "args, kwargs, expectation",
     [
         (
             (get_tsdframe(), get_feature(), 10),
@@ -1077,7 +1907,7 @@ def test_compute_2d_tuning_curves(args, kwargs, expected):
         ),
     ],
 )
-def test_compute_1d_tuning_curves_continuous(args, kwargs, expected):
+def test_compute_1d_tuning_curves_continuous(args, kwargs, expectation):
     tsdframe, feature, nb_bins = args
     tc = nap.compute_1d_tuning_curves_continuous(tsdframe, feature, nb_bins, **kwargs)
     # Columns
@@ -1091,12 +1921,12 @@ def test_compute_1d_tuning_curves_continuous(args, kwargs, expected):
         tmp = np.linspace(np.min(feature), np.max(feature), nb_bins + 1)
     np.testing.assert_almost_equal(tmp[0:-1] + np.diff(tmp) / 2, tc.index.values)
     # Array
-    np.testing.assert_almost_equal(tc.values, expected)
+    np.testing.assert_almost_equal(tc.values, expectation)
 
 
 @pytest.mark.filterwarnings("ignore")
 @pytest.mark.parametrize(
-    "tsdframe, nb_bins, kwargs, expected",
+    "tsdframe, nb_bins, kwargs, expectation",
     [
         (
             nap.TsdFrame(
@@ -1161,7 +1991,7 @@ def test_compute_1d_tuning_curves_continuous(args, kwargs, expected):
         ),
     ],
 )
-def test_compute_2d_tuning_curves_continuous(tsdframe, nb_bins, kwargs, expected):
+def test_compute_2d_tuning_curves_continuous(tsdframe, nb_bins, kwargs, expectation):
     features = nap.TsdFrame(
         t=np.arange(100), d=np.tile(np.array([[0, 0, 1, 1], [0, 1, 0, 1]]), 25).T
     )
@@ -1195,4 +2025,4 @@ def test_compute_2d_tuning_curves_continuous(tsdframe, nb_bins, kwargs, expected
     # Values
     for i in tc.keys():
         assert tc[i].shape == nb_bins
-        np.testing.assert_almost_equal(tc[i], expected[i])
+        np.testing.assert_almost_equal(tc[i], expectation[i])
