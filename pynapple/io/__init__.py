@@ -10,7 +10,7 @@ from .misc import (
 )
 from .neo import (
     NeoReader,
-    load_file as load_neo_file,
+    # load_file as load_neo_file,
     # to_neo_analogsignal,
     # to_neo_spiketrain,
     # to_neo_epoch,

@@ -4,7 +4,7 @@ Pynapple interface for Neo (neural electrophysiology objects).
 Neo is a Python package for working with electrophysiology data in Python,
 supporting many file formats through a unified API.
 
-Data are lazy-loaded by default. The interface behaves like a dictionary.
+The interface behaves like a dictionary.
 
 For more information on Neo, see: https://neo.readthedocs.io/
 
@@ -12,13 +12,16 @@ Neo to Pynapple Object Conversion
 ---------------------------------
 The following Neo objects are converted to their pynapple equivalents:
 
-- neo.AnalogSignal -> Tsd, TsdFrame, or TsdTensor (depending on shape)
-- neo.IrregularlySampledSignal -> Tsd, TsdFrame, or TsdTensor (depending on shape)
+- 'neo.AnalogSignal' -> 'Tsd', `TsdFrame`, or `TsdTensor` (depending on shape) [lazy-loaded]
+- neo.IrregularlySampledSignal -> Tsd, TsdFrame, or TsdTensor (depending on shape) [lazy-loaded]
 - neo.SpikeTrain -> Ts
 - neo.SpikeTrain (list) -> TsGroup
 - neo.SpikeTrainList -> TsGroup
 - neo.Epoch -> IntervalSet
 - neo.Event -> Ts
+
+Note: All data types support lazy loading. Data is only loaded when accessed
+via __getitem__ (e.g., data["TsGroup"]).
 """
 
 import warnings
@@ -93,8 +96,6 @@ def _get_signal_type(signal) -> type:
     if len(signal.shape) == 1:
         return nap.Tsd
     elif len(signal.shape) == 2:
-        if signal.shape[1] == 1:
-            return nap.Tsd
         return nap.TsdFrame
     else:
         return nap.TsdTensor
@@ -183,6 +184,95 @@ def _make_intervalset_from_epoch(epoch, time_support: Optional[nap.IntervalSet] 
     return iset
 
 
+def _make_intervalset_from_epoch_multiseg(
+    block, ep_idx: int, time_support: Optional[nap.IntervalSet] = None
+) -> nap.IntervalSet:
+    """Convert Neo Epochs from multiple segments to a pynapple IntervalSet.
+
+    Parameters
+    ----------
+    block : neo.Block
+        The Neo block containing the segments
+    ep_idx : int
+        Index of the epoch in each segment
+    time_support : IntervalSet, optional
+        Time support for the IntervalSet
+
+    Returns
+    -------
+    IntervalSet
+        Pynapple IntervalSet
+    """
+    all_starts = []
+    all_ends = []
+    all_labels = []
+
+    for seg in block.segments:
+        if ep_idx >= len(seg.epochs):
+            continue
+
+        epoch = seg.epochs[ep_idx]
+        if hasattr(epoch, "load"):
+            epoch = epoch.load()
+
+        times = epoch.times.rescale("s").magnitude
+        durations = epoch.durations.rescale("s").magnitude
+
+        all_starts.extend(times)
+        all_ends.extend(times + durations)
+
+        if hasattr(epoch, "labels") and len(epoch.labels) > 0:
+            all_labels.extend(epoch.labels)
+
+    if len(all_starts) == 0:
+        return nap.IntervalSet(start=[], end=[])
+
+    metadata = {}
+    if all_labels:
+        metadata["label"] = np.array(all_labels)
+
+    return nap.IntervalSet(
+        start=np.array(all_starts),
+        end=np.array(all_ends),
+        metadata=metadata if metadata else None,
+    )
+
+
+def _make_ts_from_event_multiseg(
+    block, ev_idx: int, time_support: Optional[nap.IntervalSet] = None
+) -> nap.Ts:
+    """Convert Neo Events from multiple segments to a pynapple Ts.
+
+    Parameters
+    ----------
+    block : neo.Block
+        The Neo block containing the segments
+    ev_idx : int
+        Index of the event in each segment
+    time_support : IntervalSet, optional
+        Time support
+
+    Returns
+    -------
+    Ts
+        Pynapple Ts object
+    """
+    all_times = []
+
+    for seg in block.segments:
+        if ev_idx >= len(seg.events):
+            continue
+
+        event = seg.events[ev_idx]
+        if hasattr(event, "load"):
+            event = event.load()
+
+        times = event.times.rescale("s").magnitude
+        all_times.extend(times)
+
+    return nap.Ts(t=np.array(all_times), time_support=time_support)
+
+
 def _make_ts_from_event(event, time_support: Optional[nap.IntervalSet] = None) -> nap.Ts:
     """Convert a Neo Event to a pynapple Ts.
 
@@ -205,89 +295,114 @@ def _make_ts_from_event(event, time_support: Optional[nap.IntervalSet] = None) -
 
     return nap.Ts(t=times, time_support=time_support)
 
-
-def _make_tsd_from_analog(
-    signal,
-    time_support: Optional[nap.IntervalSet] = None,
-    column_names: Optional[List[str]] = None,
-) -> Union[nap.Tsd, nap.TsdFrame, nap.TsdTensor]:
-    """Convert a Neo AnalogSignal to a pynapple Tsd/TsdFrame/TsdTensor.
+def _make_tsd_from_interface(interface) -> Union[nap.Tsd, nap.TsdFrame, nap.TsdTensor]:
+    """Convert a NeoSignalInterface to a pynapple Tsd/TsdFrame/TsdTensor.
 
     Parameters
     ----------
-    signal : neo.AnalogSignal or AnalogSignalProxy
-        Neo analog signal
-    time_support : IntervalSet, optional
-        Time support
-    column_names : list of str, optional
-        Column names for TsdFrame
+    interface : NeoSignalInterface
+        The NeoSignalInterface object
 
     Returns
     -------
     Tsd, TsdFrame, or TsdTensor
         Appropriate pynapple time series object
     """
-    if hasattr(signal, "load"):
-        signal = signal.load()
+    times = interface.times
+    data = interface
 
-    times = signal.times.rescale("s").magnitude
-    data = signal.magnitude
-
-    nap_type = _get_signal_type(signal)
+    nap_type = interface.nap_type
 
     if nap_type == nap.Tsd:
-        if len(data.shape) == 2:
-            data = data.squeeze()
-        return nap.Tsd(t=times, d=data, time_support=time_support)
+        return nap.Tsd(t=times, d=data, time_support=interface.time_support)
     elif nap_type == nap.TsdFrame:
-        if column_names is None:
-            # Try to get channel names from annotations
-            if hasattr(signal, "array_annotations"):
-                channel_names = signal.array_annotations.get("channel_names", None)
-                if channel_names is not None:
-                    column_names = list(channel_names)
-        return nap.TsdFrame(t=times, d=data, columns=column_names, time_support=time_support)
+        return nap.TsdFrame(t=times, d=data, time_support=interface.time_support, load_array=False)
     else:
-        return nap.TsdTensor(t=times, d=data, time_support=time_support)
+        return nap.TsdTensor(t=times, d=data, time_support=interface.time_support)
+
+#
+# def _make_tsd_from_analog(
+#     signal,
+#     time_support: Optional[nap.IntervalSet] = None,
+#     column_names: Optional[List[str]] = None,
+# ) -> Union[nap.Tsd, nap.TsdFrame, nap.TsdTensor]:
+#     """Convert a Neo AnalogSignal to a pynapple Tsd/TsdFrame/TsdTensor.
+#
+#     Parameters
+#     ----------
+#     signal : neo.AnalogSignal or AnalogSignalProxy
+#         Neo analog signal
+#     time_support : IntervalSet, optional
+#         Time support
+#     column_names : list of str, optional
+#         Column names for TsdFrame
+#
+#     Returns
+#     -------
+#     Tsd, TsdFrame, or TsdTensor
+#         Appropriate pynapple time series object
+#     """
+#     if hasattr(signal, "load"):
+#         signal = signal.load()
+#
+#     times = signal.times.rescale("s").magnitude
+#     data = signal.magnitude
+#
+#     nap_type = _get_signal_type(signal)
+#
+#     if nap_type == nap.Tsd:
+#         if len(data.shape) == 2:
+#             data = data.squeeze()
+#         return nap.Tsd(t=times, d=data, time_support=time_support)
+#     elif nap_type == nap.TsdFrame:
+#         if column_names is None:
+#             # Try to get channel names from annotations
+#             if hasattr(signal, "array_annotations"):
+#                 channel_names = signal.array_annotations.get("channel_names", None)
+#                 if channel_names is not None:
+#                     column_names = list(channel_names)
+#         return nap.TsdFrame(t=times, d=data, columns=column_names, time_support=time_support)
+#     else:
+#         return nap.TsdTensor(t=times, d=data, time_support=time_support)
 
 
-def _make_tsd_from_irregular(
-    signal,
-    time_support: Optional[nap.IntervalSet] = None,
-    column_names: Optional[List[str]] = None,
-) -> Union[nap.Tsd, nap.TsdFrame, nap.TsdTensor]:
-    """Convert a Neo IrregularlySampledSignal to a pynapple Tsd/TsdFrame/TsdTensor.
-
-    Parameters
-    ----------
-    signal : neo.IrregularlySampledSignal
-        Neo irregularly sampled signal
-    time_support : IntervalSet, optional
-        Time support
-    column_names : list of str, optional
-        Column names for TsdFrame
-
-    Returns
-    -------
-    Tsd, TsdFrame, or TsdTensor
-        Appropriate pynapple time series object
-    """
-    if hasattr(signal, "load"):
-        signal = signal.load()
-
-    times = signal.times.rescale("s").magnitude
-    data = signal.magnitude
-
-    nap_type = _get_signal_type(signal)
-
-    if nap_type == nap.Tsd:
-        if len(data.shape) == 2:
-            data = data.squeeze()
-        return nap.Tsd(t=times, d=data, time_support=time_support)
-    elif nap_type == nap.TsdFrame:
-        return nap.TsdFrame(t=times, d=data, columns=column_names, time_support=time_support)
-    else:
-        return nap.TsdTensor(t=times, d=data, time_support=time_support)
+# def _make_tsd_from_irregular(
+#     signal,
+#     time_support: Optional[nap.IntervalSet] = None,
+#     column_names: Optional[List[str]] = None,
+# ) -> Union[nap.Tsd, nap.TsdFrame, nap.TsdTensor]:
+#     """Convert a Neo IrregularlySampledSignal to a pynapple Tsd/TsdFrame/TsdTensor.
+#
+#     Parameters
+#     ----------
+#     signal : neo.IrregularlySampledSignal
+#         Neo irregularly sampled signal
+#     time_support : IntervalSet, optional
+#         Time support
+#     column_names : list of str, optional
+#         Column names for TsdFrame
+#
+#     Returns
+#     -------
+#     Tsd, TsdFrame, or TsdTensor
+#         Appropriate pynapple time series object
+#     """
+#     if hasattr(signal, "load"):
+#         signal = signal.load()
+#
+#     times = signal.times.rescale("s").magnitude
+#     data = signal.magnitude
+#
+#     nap_type = _get_signal_type(signal)
+#
+#     if nap_type == nap.Tsd:
+#         if len(data.shape) == 2:
+#             data = data.squeeze()
+#         return nap.Tsd(t=times, d=data, time_support=time_support)
+#     elif nap_type == nap.TsdFrame:
+#         return nap.TsdFrame(t=times, d=data, columns=column_names, time_support=time_support)
+#     else:
+#         return nap.TsdTensor(t=times, d=data, time_support=time_support)
 
 
 def _make_ts_from_spiketrain(
@@ -313,6 +428,39 @@ def _make_ts_from_spiketrain(
     times = spiketrain.times.rescale("s").magnitude
 
     return nap.Ts(t=times, time_support=time_support)
+
+
+def _make_ts_from_spiketrain_multiseg(
+    block, unit_idx: int, time_support: Optional[nap.IntervalSet] = None
+) -> nap.Ts:
+    """Convert a Neo SpikeTrain from multiple segments to a pynapple Ts.
+
+    Parameters
+    ----------
+    block : neo.Block
+        The Neo block containing the segments
+    unit_idx : int
+        Index of the spike train in each segment
+    time_support : IntervalSet, optional
+        Time support
+
+    Returns
+    -------
+    Ts
+        Pynapple Ts object
+    """
+    all_times = []
+
+    for seg in block.segments:
+        spiketrain = seg.spiketrains[unit_idx]
+        if hasattr(spiketrain, "load"):
+            spiketrain = spiketrain.load()
+
+        times = spiketrain.times.rescale("s").magnitude
+        all_times.append(times)
+
+    spike_times = np.concatenate(all_times) if all_times else np.array([])
+    return nap.Ts(t=spike_times, time_support=time_support)
 
 
 def _make_tsgroup_from_spiketrains(
@@ -361,6 +509,66 @@ def _make_tsgroup_from_spiketrains(
     return nap.TsGroup(ts_dict, time_support=time_support, **meta_arrays)
 
 
+def _make_tsgroup_from_spiketrains_multiseg(
+    all_spiketrains: List[list],
+    time_support: Optional[nap.IntervalSet] = None,
+) -> nap.TsGroup:
+    """Convert spike trains from multiple segments to a pynapple TsGroup.
+
+    This function concatenates spike times across segments for each unit.
+
+    Parameters
+    ----------
+    all_spiketrains : list of lists
+        List of spike train lists, one per segment. Each inner list contains
+        the spike trains for that segment.
+    time_support : IntervalSet, optional
+        Time support
+
+    Returns
+    -------
+    TsGroup
+        Pynapple TsGroup
+    """
+    if len(all_spiketrains) == 0:
+        return nap.TsGroup({}, time_support=time_support)
+
+    n_units = len(all_spiketrains[0])
+    ts_dict = {}
+    metadata = {}
+
+    for unit_idx in range(n_units):
+        all_times = []
+
+        for seg_spiketrains in all_spiketrains:
+            st = seg_spiketrains[unit_idx]
+            if hasattr(st, "load"):
+                st = st.load()
+
+            times = st.times.rescale("s").magnitude
+            all_times.append(times)
+
+            # Collect metadata from first segment only
+            if seg_spiketrains is all_spiketrains[0]:
+                for key, value in _extract_annotations(st).items():
+                    if key not in metadata:
+                        metadata[key] = []
+                    metadata[key].append(value)
+
+        spike_times = np.concatenate(all_times) if all_times else np.array([])
+        ts_dict[unit_idx] = nap.Ts(t=spike_times, time_support=time_support)
+
+    # Convert metadata lists to arrays
+    meta_arrays = {}
+    for key, values in metadata.items():
+        try:
+            meta_arrays[key] = np.array(values)
+        except (ValueError, TypeError):
+            # Skip metadata that can't be converted to array
+            pass
+
+    return nap.TsGroup(ts_dict, time_support=time_support, **meta_arrays)
+
 
 # =============================================================================
 # Signal Interface for lazy loading
@@ -368,15 +576,21 @@ def _make_tsgroup_from_spiketrains(
 
 
 class NeoSignalInterface:
-    """Interface for lazy-loading Neo signals into pynapple objects.
+    """Interface for lazy-loading Neo analog signals into pynapple objects.
 
-    This class provides lazy access to Neo signals, loading data only when
-    requested via `get()` or `restrict()` methods.
+    This class provides lazy access to Neo analog signals (AnalogSignal,
+    IrregularlySampledSignal), loading data only when requested. It acts as
+    a pseudo memory-mapped array that can be passed directly to Tsd, TsdFrame,
+    or TsdTensor initialization with `load_array=False`.
+
+    The interface is array-like (has shape, dtype, ndim, supports indexing
+    and iteration) so it can be used as a drop-in replacement for numpy arrays
+    in pynapple time series constructors.
 
     Parameters
     ----------
     signal : neo signal object
-        A Neo signal (AnalogSignal, SpikeTrain, etc.)
+        A Neo analog signal (AnalogSignal or IrregularlySampledSignal)
     block : neo.Block
         The parent block containing the signal
     time_support : IntervalSet
@@ -387,20 +601,34 @@ class NeoSignalInterface:
     Attributes
     ----------
     nap_type : type
-        The pynapple type this signal will be converted to
+        The pynapple type this signal will be converted to (Tsd, TsdFrame, or TsdTensor)
     is_analog : bool
-        Whether this is an analog signal
+        Whether this is a regularly sampled analog signal
     dt : float
         Sampling interval (for analog signals)
     shape : tuple
-        Shape of the data
-    start_time : float or list
-        Start time(s)
-    end_time : float or list
-        End time(s)
+        Shape of the data (total samples across all segments, channels, ...)
+    dtype : numpy.dtype
+        Data type of the signal
+    ndim : int
+        Number of dimensions
+    times : numpy.ndarray
+        Pre-loaded timestamps for all segments (in seconds)
+    start_time : float
+        Start time
+    end_time : float
+        End time
+
+    Examples
+    --------
+    >>> interface = NeoSignalInterface(signal, block, time_support, sig_num=0)
+    >>> # Use as array-like for lazy loading
+    >>> tsd = nap.Tsd(t=interface.times, d=interface, load_array=False)
+    >>> # Data is only loaded when accessed
+    >>> chunk = tsd[0:1000]  # Loads only first 1000 samples
     """
 
-    def __init__(self, signal, block, time_support, sig_num=None):
+    def __init__(self, signal, block, time_support=None, sig_num=0):
         self.time_support = time_support
         self._block = block
         self._sig_num = sig_num
@@ -416,46 +644,256 @@ class NeoSignalInterface:
             self.is_analog = False  # Irregularly sampled
             self.nap_type = _get_signal_type(signal)
             self._signal_type = "irregular"
-        elif isinstance(signal, (neo.SpikeTrain, SpikeTrainProxy)):
-            self.nap_type = nap.Ts
-            self.is_analog = False
-            self._signal_type = "spiketrain"
-        elif isinstance(signal, (list, SpikeTrainList)):
-            self.nap_type = nap.TsGroup
-            self.is_analog = False
-            self._signal_type = "tsgroup"
-        elif isinstance(signal, (neo.Epoch,)) or (hasattr(neo.io, "proxyobjects") and isinstance(signal, EpochProxy)):
-            self.nap_type = nap.IntervalSet
-            self.is_analog = False
-            self._signal_type = "epoch"
-        elif isinstance(signal, (neo.Event,)) or (hasattr(neo.io, "proxyobjects") and isinstance(signal, EventProxy)):
-            self.nap_type = nap.Ts
-            self.is_analog = False
-            self._signal_type = "event"
         else:
             raise TypeError(f"Signal type {type(signal)} not recognized.")
+
+        # Store dtype from signal
+        self.dtype = signal.dtype
+
+        # Build segment info and compute total shape across all segments
+        self._segment_offsets = []  # Cumulative sample counts per segment
+        self._segment_n_samples = []  # Number of samples per segment
+        self._times_list = []  # Pre-load timestamps per segment (small memory footprint)
+
+        total_samples = 0
+        for seg in block.segments:
+            if self.is_analog:
+                seg_signal = seg.analogsignals[sig_num]
+            else:
+                seg_signal = seg.irregularlysampledsignals[sig_num]
+
+            n_samples = seg_signal.shape[0]
+            self._segment_offsets.append(total_samples)
+            self._segment_n_samples.append(n_samples)
+            total_samples += n_samples
+
+            # Pre-load timestamps (much smaller than data)
+            if hasattr(seg_signal, "times"):
+                self._times_list.append(seg_signal.times.rescale("s").magnitude)
+            else:
+                self._times_list.append(
+                    np.linspace(
+                        _rescale_to_seconds(seg_signal.t_start),
+                        _rescale_to_seconds(seg_signal.t_stop),
+                        n_samples,
+                        endpoint=False,
+                    )
+                )
+
+        self._segment_offsets = np.array(self._segment_offsets)
+        self._segment_n_samples = np.array(self._segment_n_samples)
+
+        # Concatenate all timestamps
+        if self._times_list:
+            self._times = np.concatenate(self._times_list)
+        else:
+            self._times = np.array([])
+
+        # Compute total shape (first dimension is total samples)
+        if len(signal.shape) == 1:
+            self.shape = (total_samples,)
+        else:
+            self.shape = (total_samples,) + signal.shape[1:]
 
         # Store timing info
         if self.is_analog:
             self.dt = (1 / signal.sampling_rate).rescale("s").magnitude
-            self.shape = signal.shape
-        elif self._signal_type == "irregular":
-            self.shape = signal.shape
 
-        if self._signal_type not in ("tsgroup",):
-            self.start_time = _rescale_to_seconds(signal.t_start)
-            self.end_time = _rescale_to_seconds(signal.t_stop)
-        else:
-            self.start_time = [_rescale_to_seconds(s.t_start) for s in signal]
-            self.end_time = [_rescale_to_seconds(s.t_stop) for s in signal]
+        self.start_time = _rescale_to_seconds(signal.t_start)
+        self.end_time = _rescale_to_seconds(signal.t_stop)
 
     def __repr__(self):
-        return f"<NeoSignalInterface: {self.nap_type.__name__}>"
+        return f"<NeoSignalInterface: {self.nap_type.__name__}, shape={self.shape}, dtype={self.dtype}>"
+
+    @property
+    def ndim(self):
+        """Number of dimensions."""
+        return len(self.shape)
+
+    @property
+    def times(self):
+        """Pre-loaded timestamps for all segments (in seconds)."""
+        return self._times
+
+    def __len__(self):
+        """Return the number of samples (first dimension of shape)."""
+        return self.shape[0]
+
+    def __iter__(self):
+        """Iterate over the first axis, loading data lazily."""
+        for i in range(len(self)):
+            yield self[i]
+
+    def _find_segment_for_index(self, idx):
+        """Find which segment contains the given global index.
+
+        Returns
+        -------
+        seg_idx : int
+            Index of the segment
+        local_idx : int
+            Index within that segment
+        """
+        if idx < 0:
+            idx = len(self) + idx
+        if idx < 0 or idx >= len(self):
+            raise IndexError(f"Index {idx} out of bounds for size {len(self)}")
+
+        # Find segment using binary search on offsets
+        seg_idx = np.searchsorted(self._segment_offsets, idx, side='right') - 1
+        local_idx = idx - self._segment_offsets[seg_idx]
+        return seg_idx, local_idx
+
+    def _load_data_range(self, start_idx, stop_idx, step=1):
+        """Load data for a range of global indices.
+
+        Parameters
+        ----------
+        start_idx : int
+            Start index (inclusive)
+        stop_idx : int
+            Stop index (exclusive)
+        step : int
+            Step size
+
+        Returns
+        -------
+        numpy.ndarray
+            The loaded data
+        """
+        if start_idx >= stop_idx:
+            # Return empty array with correct shape
+            if len(self.shape) == 1:
+                return np.array([], dtype=self.dtype)
+            else:
+                return np.empty((0,) + self.shape[1:], dtype=self.dtype)
+
+        data_chunks = []
+
+        for seg_idx, seg in enumerate(self._block.segments):
+            seg_start = self._segment_offsets[seg_idx]
+            seg_end = seg_start + self._segment_n_samples[seg_idx]
+
+            # Check if this segment overlaps with requested range
+            if stop_idx <= seg_start or start_idx >= seg_end:
+                continue
+
+            # Calculate local indices within this segment
+            local_start = max(0, start_idx - seg_start)
+            local_stop = min(self._segment_n_samples[seg_idx], stop_idx - seg_start)
+
+            # Load data from this segment
+            if self.is_analog:
+                signal = seg.analogsignals[self._sig_num]
+            else:
+                signal = seg.irregularlysampledsignals[self._sig_num]
+
+            # Try to load with indexing, fall back to time slicing
+            try:
+                if hasattr(signal, 'load'):
+                    loaded = signal.load()
+                    chunk = loaded[local_start:local_stop].magnitude
+                else:
+                    chunk = signal[local_start:local_stop].magnitude
+            except (MemoryError, AttributeError):
+                # Fall back to time slicing
+                t_start = self._times_list[seg_idx][local_start]
+                t_stop = self._times_list[seg_idx][min(local_stop, len(self._times_list[seg_idx]) - 1)]
+                chunk = signal.time_slice(t_start, t_stop).magnitude
+
+            data_chunks.append(chunk)
+
+        if not data_chunks:
+            if len(self.shape) == 1:
+                return np.array([], dtype=self.dtype)
+            else:
+                return np.empty((0,) + self.shape[1:], dtype=self.dtype)
+
+        result = np.concatenate(data_chunks, axis=0)
+
+        # Apply step if needed
+        if step != 1:
+            result = result[::step]
+
+        return result
 
     def __getitem__(self, item):
+        """Get data by index, loading lazily from Neo signals.
+
+        Supports integer indexing, slicing, and tuple indexing for
+        multi-dimensional access.
+
+        Parameters
+        ----------
+        item : int, slice, or tuple
+            Index specification
+
+        Returns
+        -------
+        numpy.ndarray or scalar
+            The requested data
+        """
+        # Handle integer indexing
+        if isinstance(item, (int, np.integer)):
+            seg_idx, local_idx = self._find_segment_for_index(item)
+
+            if self.is_analog:
+                signal = self._block.segments[seg_idx].analogsignals[self._sig_num]
+            else:
+                signal = self._block.segments[seg_idx].irregularlysampledsignals[self._sig_num]
+
+            try:
+                if hasattr(signal, 'load'):
+                    loaded = signal.load()
+                    return loaded[local_idx].magnitude
+                else:
+                    return signal[local_idx].magnitude
+            except (MemoryError, AttributeError):
+                # Fall back to time slicing for a single point
+                t = self._times_list[seg_idx][local_idx]
+                return signal.time_slice(t, t).magnitude[0]
+
+        # Handle slice indexing
         if isinstance(item, slice):
-            return self._get_from_slice(item)
-        raise ValueError(f"Cannot get item {item}.")
+            start = item.start if item.start is not None else 0
+            stop = item.stop if item.stop is not None else len(self)
+            step = item.step if item.step is not None else 1
+
+            # Handle negative indices
+            if start < 0:
+                start = len(self) + start
+            if stop < 0:
+                stop = len(self) + stop
+
+            return self._load_data_range(start, stop, step)
+
+        # Handle tuple indexing (e.g., interface[0:100, 0] for specific channel)
+        if isinstance(item, tuple):
+            # First index is for time dimension
+            time_idx = item[0]
+            rest = item[1:]
+
+            # Get data for time dimension
+            data = self[time_idx]
+
+            # Apply remaining indices
+            if rest:
+                data = data[(slice(None),) + rest] if isinstance(time_idx, slice) else data[rest]
+
+            return data
+
+        # Handle numpy array or list indexing
+        if isinstance(item, (np.ndarray, list)):
+            indices = np.asarray(item)
+            if indices.dtype == bool:
+                # Boolean indexing
+                indices = np.where(indices)[0]
+
+            # Load each index and stack
+            result = np.stack([self[int(i)] for i in indices])
+            return result
+
+        raise TypeError(f"Invalid index type: {type(item)}")
 
     def get(self, start: float, stop: float):
         """Get data between start and stop times.
@@ -476,14 +914,6 @@ class NeoSignalInterface:
             return self._get_analog(start, stop)
         elif self._signal_type == "irregular":
             return self._get_irregular(start, stop)
-        elif self._signal_type == "spiketrain":
-            return self._get_ts(self._sig_num, start, stop)
-        elif self._signal_type == "tsgroup":
-            return self._get_tsgroup(start, stop)
-        elif self._signal_type == "epoch":
-            return self._get_epoch(start, stop)
-        elif self._signal_type == "event":
-            return self._get_event(start, stop)
 
     def load(self):
         """Load all data.
@@ -512,41 +942,8 @@ class NeoSignalInterface:
         """
         if self.is_analog:
             return self._restrict_analog(epoch)
-        elif self._signal_type == "irregular":
-            return self._restrict_irregular(epoch)
-        elif self._signal_type == "spiketrain":
-            return self._restrict_ts(epoch)
-        elif self._signal_type == "tsgroup":
-            return self._restrict_tsgroup(epoch)
-        elif self._signal_type == "epoch":
-            return self._get_epoch(
-                float(epoch.start[0]), float(epoch.end[-1])
-            ).restrict(epoch)
-        elif self._signal_type == "event":
-            return self._get_event(
-                float(epoch.start[0]), float(epoch.end[-1])
-            ).restrict(epoch)
-
-    def _get_from_slice(self, slc):
-        start = slc.start if slc.start is not None else 0
-        stop = slc.stop
-        step = slc.step if slc.step is not None else 1
-
-        if self.is_analog:
-            if stop is None:
-                stop = sum(
-                    s.analogsignals[self._sig_num].shape[0]
-                    for s in self._block.segments
-                )
-            return self._slice_segment_analog(start, stop, step)
-        elif self._signal_type == "spiketrain":
-            if stop is None:
-                stop = sum(
-                    len(s.spiketrains[self._sig_num]) for s in self._block.segments
-                )
-            return self._slice_segment_ts(start, stop, step)
         else:
-            raise ValueError(f"Cannot slice a {self._signal_type}.")
+            return self._restrict_irregular(epoch)
 
     def _instantiate_nap(self, time, data, time_support):
         return self.nap_type(
@@ -721,158 +1118,6 @@ class NeoSignalInterface:
                 t=time, d=data, time_support=self.time_support
             ).restrict(epoch)
 
-    # ========== Spike Train (Ts) Methods ==========
-
-    def _get_ts(self, unit_idx, start, stop, return_array=False):
-        """Get spike times for a unit within time range."""
-        spikes = []
-
-        for i, seg in enumerate(self._block.segments):
-            spiketrain = seg.spiketrains[unit_idx]
-
-            seg_start = self.time_support.start[i]
-            seg_stop = self.time_support.end[i]
-
-            if start >= seg_stop or stop <= seg_start:
-                continue
-
-            chunk_start = max(start, seg_start)
-            chunk_stop = min(stop, seg_stop)
-
-            chunk = spiketrain.time_slice(chunk_start, chunk_stop)
-
-            if len(chunk) > 0:
-                spikes.append(chunk.times.rescale("s").magnitude)
-
-        spike_times = np.concatenate(spikes) if spikes else np.array([])
-
-        if return_array:
-            return spike_times
-        else:
-            return nap.Ts(t=spike_times, time_support=self.time_support)
-
-    def _restrict_ts(self, epoch):
-        """Restrict spike train to epochs."""
-        spikes = []
-
-        for start, end in epoch.values:
-            spike_times = self._get_ts(self._sig_num, start, end, return_array=True)
-            if len(spike_times) > 0:
-                spikes.append(spike_times)
-
-        spike_times = np.concatenate(spikes) if spikes else np.array([])
-        return nap.Ts(t=spike_times, time_support=self.time_support).restrict(epoch)
-
-    def _slice_segment_ts(self, start_idx, stop_idx, step):
-        """Slice spike trains by spike index."""
-        spikes = []
-
-        for i, seg in enumerate(self._block.segments):
-            spiketrain = seg.spiketrains[self._sig_num]
-
-            n_spikes = len(spiketrain)
-
-            seg_start_idx = max(0, start_idx)
-            seg_stop_idx = min(n_spikes, stop_idx)
-
-            if seg_start_idx >= seg_stop_idx:
-                continue
-
-            spiketrain_loaded = (
-                spiketrain.load() if hasattr(spiketrain, "load") else spiketrain
-            )
-            chunk = spiketrain_loaded[seg_start_idx:seg_stop_idx:step]
-
-            spikes.append(chunk.times.rescale("s").magnitude)
-
-        return nap.Ts(
-            t=np.concatenate(spikes) if spikes else np.array([]),
-            time_support=self.time_support,
-        )
-
-    # ========== TsGroup Methods ==========
-
-    def _get_tsgroup(self, start, stop):
-        """Get TsGroup (all units) within time range."""
-        n_units = len(self._block.segments[0].spiketrains)
-        ts_dict = {}
-
-        for unit_idx in range(n_units):
-            spike_times = self._get_ts(unit_idx, start, stop, return_array=True)
-            ts_dict[unit_idx] = nap.Ts(t=spike_times, time_support=self.time_support)
-
-        return nap.TsGroup(ts_dict, time_support=self.time_support)
-
-    def _restrict_tsgroup(self, epoch):
-        """Restrict TsGroup to epochs."""
-        n_units = len(self._block.segments[0].spiketrains)
-        ts_dict = {}
-
-        for unit_idx in range(n_units):
-            spikes = []
-            for start, end in epoch.values:
-                spike_times = self._get_ts(unit_idx, start, end, return_array=True)
-                if len(spike_times) > 0:
-                    spikes.append(spike_times)
-
-            spike_times = np.concatenate(spikes) if spikes else np.array([])
-            ts_dict[unit_idx] = nap.Ts(t=spike_times, time_support=self.time_support)
-
-        return nap.TsGroup(ts_dict, time_support=self.time_support).restrict(epoch)
-
-    # ========== Epoch Methods ==========
-
-    def _get_epoch(self, start, stop):
-        """Get epochs within time range."""
-        all_starts = []
-        all_ends = []
-        all_labels = []
-
-        for i, seg in enumerate(self._block.segments):
-            for epoch in seg.epochs:
-                if hasattr(epoch, "load"):
-                    epoch = epoch.load()
-
-                times = epoch.times.rescale("s").magnitude
-                durations = epoch.durations.rescale("s").magnitude
-
-                for t, d, lbl in zip(times, durations, epoch.labels):
-                    ep_start = t
-                    ep_end = t + d
-
-                    # Check overlap with requested range
-                    if ep_end > start and ep_start < stop:
-                        all_starts.append(max(ep_start, start))
-                        all_ends.append(min(ep_end, stop))
-                        all_labels.append(lbl)
-
-        if len(all_starts) == 0:
-            return nap.IntervalSet(start=[], end=[])
-
-        return nap.IntervalSet(
-            start=np.array(all_starts),
-            end=np.array(all_ends),
-            metadata={"label": np.array(all_labels)} if all_labels else None,
-        )
-
-    # ========== Event Methods ==========
-
-    def _get_event(self, start, stop):
-        """Get events within time range."""
-        all_times = []
-
-        for i, seg in enumerate(self._block.segments):
-            for event in seg.events:
-                if hasattr(event, "load"):
-                    event = event.load()
-
-                times = event.times.rescale("s").magnitude
-
-                mask = (times >= start) & (times <= stop)
-                all_times.extend(times[mask])
-
-        return nap.Ts(t=np.array(all_times), time_support=self.time_support)
-
 
 # =============================================================================
 # Main Interface Class
@@ -954,17 +1199,23 @@ class NeoReader(UserDict):
             if len(block.segments) > 0:
                 seg = block.segments[0]
 
-                # Analog signals
+                # Analog signals - deferred loading via NeoSignalInterface
                 for sig_idx, signal in enumerate(seg.analogsignals):
                     nap_type = _get_signal_type(signal)
                     name = signal.name if signal.name else f"signal{sig_idx}"
                     key = f"{block_prefix}{nap_type.__name__} {sig_idx}: {name}"
 
-                    interface = NeoSignalInterface(
-                        signal, block, time_support, sig_num=sig_idx
-                    )
-                    self._interfaces[key] = interface
-                    self.data[key] = {"type": nap_type.__name__, "interface": interface}
+                    # interface = NeoSignalInterface(
+                    #     signal, block, time_support, sig_num=sig_idx
+                    # )
+                    # self._interfaces[key] = interface
+                    self.data[key] = {
+                        "type": nap_type.__name__,
+                        "loader": "analogsignal",
+                        "block": block,
+                        "sig_num": sig_idx,
+                        "time_support": time_support,
+                    }
                     self._data_info[key] = nap_type.__name__
 
                 # Irregularly sampled signals
@@ -973,57 +1224,74 @@ class NeoReader(UserDict):
                     name = signal.name if signal.name else f"irregular{sig_idx}"
                     key = f"{block_prefix}{nap_type.__name__} (irregular) {sig_idx}: {name}"
 
-                    interface = NeoSignalInterface(
-                        signal, block, time_support, sig_num=sig_idx
-                    )
-                    self._interfaces[key] = interface
-                    self.data[key] = {"type": nap_type.__name__, "interface": interface}
+                    # interface = NeoSignalInterface(
+                    #     signal, block, time_support, sig_num=sig_idx
+                    # )
+                    # self._interfaces[key] = interface
+                    self.data[key] = {
+                        "type": nap_type.__name__,
+                        "loader": "irregularsignal",
+                        "block": block,
+                        "sig_num": sig_idx,
+                        "time_support": time_support,
+                    }
                     self._data_info[key] = nap_type.__name__
 
-                # Spike trains
+                # Spike trains - deferred loading
                 if len(seg.spiketrains) == 1:
                     st = seg.spiketrains[0]
                     name = st.name if st.name else "spikes"
                     key = f"{block_prefix}Ts: {name}"
 
-                    interface = NeoSignalInterface(
-                        st, block, time_support, sig_num=0
-                    )
-                    self._interfaces[key] = interface
-                    self.data[key] = {"type": "Ts", "interface": interface}
+                    # Store info for deferred loading
+                    self.data[key] = {
+                        "type": "Ts",
+                        "loader": "spiketrain",
+                        "block": block,
+                        "unit_idx": 0,
+                        "time_support": time_support,
+                    }
                     self._data_info[key] = "Ts"
                 elif len(seg.spiketrains) > 1:
                     key = f"{block_prefix}TsGroup"
 
-                    interface = NeoSignalInterface(
-                        seg.spiketrains, block, time_support
-                    )
-                    self._interfaces[key] = interface
-                    self.data[key] = {"type": "TsGroup", "interface": interface}
+                    # Store info for deferred loading
+                    self.data[key] = {
+                        "type": "TsGroup",
+                        "loader": "tsgroup",
+                        "block": block,
+                        "time_support": time_support,
+                    }
                     self._data_info[key] = "TsGroup"
 
-                # Epochs
+                # Epochs - deferred loading
                 for ep_idx, epoch in enumerate(seg.epochs):
                     name = epoch.name if hasattr(epoch, "name") and epoch.name else f"epoch{ep_idx}"
                     key = f"{block_prefix}IntervalSet {ep_idx}: {name}"
 
-                    interface = NeoSignalInterface(
-                        epoch, block, time_support, sig_num=ep_idx
-                    )
-                    self._interfaces[key] = interface
-                    self.data[key] = {"type": "IntervalSet", "interface": interface}
+                    # Store info for deferred loading
+                    self.data[key] = {
+                        "type": "IntervalSet",
+                        "loader": "epoch",
+                        "block": block,
+                        "ep_idx": ep_idx,
+                        "time_support": time_support,
+                    }
                     self._data_info[key] = "IntervalSet"
 
-                # Events
+                # Events - deferred loading
                 for ev_idx, event in enumerate(seg.events):
                     name = event.name if hasattr(event, "name") and event.name else f"event{ev_idx}"
                     key = f"{block_prefix}Ts (event) {ev_idx}: {name}"
 
-                    interface = NeoSignalInterface(
-                        event, block, time_support, sig_num=ev_idx
-                    )
-                    self._interfaces[key] = interface
-                    self.data[key] = {"type": "Ts", "interface": interface}
+                    # Store info for deferred loading
+                    self.data[key] = {
+                        "type": "Ts",
+                        "loader": "event",
+                        "block": block,
+                        "ev_idx": ev_idx,
+                        "time_support": time_support,
+                    }
                     self._data_info[key] = "Ts"
 
     def __str__(self):
@@ -1055,7 +1323,7 @@ class NeoReader(UserDict):
         Returns
         -------
         pynapple object
-            The requested data (Ts, Tsd, TsdFrame, TsGroup, IntervalSet, etc.)
+            The requested data (Ts, Tsd, TsdFrame, TsdTensor, TsGroup, IntervalSet)
         """
         if key not in self.data:
             raise KeyError(f"Key '{key}' not found. Available keys: {list(self.data.keys())}")
@@ -1066,9 +1334,51 @@ class NeoReader(UserDict):
         if not isinstance(item, dict):
             return item
 
-        # Load via interface
-        interface = item["interface"]
-        loaded_data = interface.load()
+        # Load based on loader type
+        loader = item.get("loader")
+
+        if loader == "spiketrain":
+            # Load single spike train from all segments
+            loaded_data = _make_ts_from_spiketrain_multiseg(
+                item["block"],
+                unit_idx=item["unit_idx"],
+                time_support=item["time_support"],
+            )
+        elif loader == "tsgroup":
+            # Load TsGroup from all segments
+            all_spiketrains = [s.spiketrains for s in item["block"].segments]
+            loaded_data = _make_tsgroup_from_spiketrains_multiseg(
+                all_spiketrains,
+                time_support=item["time_support"],
+            )
+        elif loader == "epoch":
+            # Load IntervalSet from all segments
+            loaded_data = _make_intervalset_from_epoch_multiseg(
+                item["block"],
+                ep_idx=item["ep_idx"],
+                time_support=item["time_support"],
+            )
+        elif loader == "event":
+            # Load Ts (event) from all segments
+            loaded_data = _make_ts_from_event_multiseg(
+                item["block"],
+                ev_idx=item["ev_idx"],
+                time_support=item["time_support"],
+            )
+        elif loader in ["analogsignal", "irregularsignal"]:
+            # Load via NeoSignalInterface (deferred loading)
+            interface = NeoSignalInterface(
+                signal=item["block"].segments[0].analogsignals[item["sig_num"]]
+                if loader == "analogsignal"
+                else item["block"].segments[0].irregularlysampledsignals[item["sig_num"]],
+                block=item["block"],
+                time_support=item["time_support"],
+                sig_num=item["sig_num"],
+            )
+            loaded_data = _make_tsd_from_interface(interface)
+
+        else:
+            raise ValueError(f"Unknown loader type for key '{key}'")
 
         # Cache the loaded data
         self.data[key] = loaded_data
@@ -1105,169 +1415,178 @@ class NeoReader(UserDict):
             self._reader.close()
 
 
-# =============================================================================
-# Legacy Interface (for backward compatibility)
-# =============================================================================
 
 
-class NEOSignalInterface(NeoSignalInterface):
-    """Legacy alias for NeoSignalInterface."""
-    pass
 
 
-class NEOExperimentInterface:
-    """Legacy interface for Neo experiments.
-
-    .. deprecated::
-        Use :class:`NeoReader` instead.
-    """
-
-    def __init__(self, reader, lazy=False):
-        warnings.warn(
-            "NEOExperimentInterface is deprecated. Use NeoReader instead.",
-            DeprecationWarning,
-            stacklevel=2,
-        )
-        self._reader = reader
-        self._lazy = lazy
-        self.experiment = self._collect_time_series_info()
-
-    def _collect_time_series_info(self):
-        blocks = self._reader.read(lazy=self._lazy)
-
-        experiments = {}
-        for i, block in enumerate(blocks):
-            name = f"block {i}"
-            if block.name:
-                name += ": " + block.name
-            experiments[name] = {}
-
-            starts, ends = np.empty(len(block.segments)), np.empty(len(block.segments))
-            for trial_num, segment in enumerate(block.segments):
-                starts[trial_num] = segment.t_start.rescale("s").magnitude
-                ends[trial_num] = segment.t_stop.rescale("s").magnitude
-
-            iset = nap.IntervalSet(starts, ends)
-
-            for trial_num, segment in enumerate(block.segments):
-                # Analog signals
-                for signal_num, signal in enumerate(segment.analogsignals):
-                    if signal.name:
-                        signame = f" {signal_num}: " + signal.name
-                    else:
-                        signame = f" {signal_num}"
-                    signal_interface = NeoSignalInterface(
-                        signal, block, iset, sig_num=signal_num
-                    )
-                    signame = signal_interface.nap_type.__name__ + signame
-                    experiments[name][signame] = signal_interface
-
-                # Spike trains
-                if len(segment.spiketrains) == 1:
-                    signal = segment.spiketrains[0]
-                    signal_interface = NeoSignalInterface(
-                        signal, block, iset, sig_num=0
-                    )
-                    signame = f"Ts" + ": " + signal.name if signal.name else "Ts"
-                    experiments[name][signame] = signal_interface
-                else:
-                    signame = f"TsGroup"
-                    experiments[name][signame] = NeoSignalInterface(
-                        segment.spiketrains, block, iset
-                    )
-
-        return experiments
-
-    def __getitem__(self, item):
-        if isinstance(item, str):
-            return self.experiment[item]
-        else:
-            res = self.experiment
-            for it in item:
-                res = res[it]
-            return res
-
-    def keys(self):
-        return [(k, k2) for k in self.experiment.keys() for k2 in self.experiment[k]]
 
 
-def load_file(path: Union[str, Path], lazy: bool = True) -> NeoReader:
-    """Load a neural recording file using Neo.
 
-    This function automatically detects the file format and uses the
-    appropriate Neo IO to load the data.
-
-    Parameters
-    ----------
-    path : str or Path
-        Path to the recording file
-    lazy : bool, default True
-        Whether to use lazy loading (recommended for large files)
-
-    Returns
-    -------
-    NeoReader
-        Interface to the loaded data
-
-    Examples
-    --------
-    >>> import pynapple as nap
-    >>> data = nap.io.neo.load_file("recording.plx")
-    >>> print(data)
-    recording
-    +---------------------+----------+
-    | Key                 | Type     |
-    +=====================+==========+
-    | TsGroup             | TsGroup  |
-    | Tsd 0: LFP          | Tsd      |
-    +---------------------+----------+
-
-    >>> spikes = data["TsGroup"]
-
-    See Also
-    --------
-    NeoReader : Class for Neo file interface
-
-    Notes
-    -----
-    Supported formats depend on your Neo installation. Common formats include:
-    - Plexon (.plx, .pl2)
-    - Blackrock (.nev, .ns*)
-    - Spike2 (.smr)
-    - Neuralynx (.ncs, .nse, .ntt)
-    - OpenEphys
-    - Intan (.rhd, .rhs)
-    - And many more (see Neo documentation)
-    """
-    return NeoReader(path, lazy=lazy)
-
-
-# Legacy alias
-def load_experiment(path: Union[str, Path], lazy: bool = True) -> NEOExperimentInterface:
-    """Load a neural recording experiment.
-
-    .. deprecated::
-        Use :func:`load_file` instead.
-
-    Parameters
-    ----------
-    path : str or Path
-        Path to the recording file
-    lazy : bool, default True
-        Whether to lazy load the data
-
-    Returns
-    -------
-    NEOExperimentInterface
-    """
-    import pathlib
-
-    path = pathlib.Path(path)
-    reader = neo.io.get_io(path)
-
-    return NEOExperimentInterface(reader, lazy=lazy)
-
-
+#
+#
+# # =============================================================================
+# # Legacy Interface (for backward compatibility)
+# # =============================================================================
+#
+#
+# class NEOSignalInterface(NeoSignalInterface):
+#     """Legacy alias for NeoSignalInterface."""
+#     pass
+#
+#
+# class NEOExperimentInterface:
+#     """Legacy interface for Neo experiments.
+#
+#     .. deprecated::
+#         Use :class:`NeoReader` instead.
+#     """
+#
+#     def __init__(self, reader, lazy=False):
+#         warnings.warn(
+#             "NEOExperimentInterface is deprecated. Use NeoReader instead.",
+#             DeprecationWarning,
+#             stacklevel=2,
+#         )
+#         self._reader = reader
+#         self._lazy = lazy
+#         self.experiment = self._collect_time_series_info()
+#
+#     def _collect_time_series_info(self):
+#         blocks = self._reader.read(lazy=self._lazy)
+#
+#         experiments = {}
+#         for i, block in enumerate(blocks):
+#             name = f"block {i}"
+#             if block.name:
+#                 name += ": " + block.name
+#             experiments[name] = {}
+#
+#             starts, ends = np.empty(len(block.segments)), np.empty(len(block.segments))
+#             for trial_num, segment in enumerate(block.segments):
+#                 starts[trial_num] = segment.t_start.rescale("s").magnitude
+#                 ends[trial_num] = segment.t_stop.rescale("s").magnitude
+#
+#             iset = nap.IntervalSet(starts, ends)
+#
+#             for trial_num, segment in enumerate(block.segments):
+#                 # Analog signals
+#                 for signal_num, signal in enumerate(segment.analogsignals):
+#                     if signal.name:
+#                         signame = f" {signal_num}: " + signal.name
+#                     else:
+#                         signame = f" {signal_num}"
+#                     signal_interface = NeoSignalInterface(
+#                         signal, block, iset, sig_num=signal_num
+#                     )
+#                     signame = signal_interface.nap_type.__name__ + signame
+#                     experiments[name][signame] = signal_interface
+#
+#                 # Spike trains
+#                 if len(segment.spiketrains) == 1:
+#                     signal = segment.spiketrains[0]
+#                     signal_interface = NeoSignalInterface(
+#                         signal, block, iset, sig_num=0
+#                     )
+#                     signame = f"Ts" + ": " + signal.name if signal.name else "Ts"
+#                     experiments[name][signame] = signal_interface
+#                 else:
+#                     signame = f"TsGroup"
+#                     experiments[name][signame] = NeoSignalInterface(
+#                         segment.spiketrains, block, iset
+#                     )
+#
+#         return experiments
+#
+#     def __getitem__(self, item):
+#         if isinstance(item, str):
+#             return self.experiment[item]
+#         else:
+#             res = self.experiment
+#             for it in item:
+#                 res = res[it]
+#             return res
+#
+#     def keys(self):
+#         return [(k, k2) for k in self.experiment.keys() for k2 in self.experiment[k]]
+#
+#
+# def load_file(path: Union[str, Path], lazy: bool = True) -> NeoReader:
+#     """Load a neural recording file using Neo.
+#
+#     This function automatically detects the file format and uses the
+#     appropriate Neo IO to load the data.
+#
+#     Parameters
+#     ----------
+#     path : str or Path
+#         Path to the recording file
+#     lazy : bool, default True
+#         Whether to use lazy loading (recommended for large files)
+#
+#     Returns
+#     -------
+#     NeoReader
+#         Interface to the loaded data
+#
+#     Examples
+#     --------
+#     >>> import pynapple as nap
+#     >>> data = nap.io.neo.load_file("recording.plx")
+#     >>> print(data)
+#     recording
+#     +---------------------+----------+
+#     | Key                 | Type     |
+#     +=====================+==========+
+#     | TsGroup             | TsGroup  |
+#     | Tsd 0: LFP          | Tsd      |
+#     +---------------------+----------+
+#
+#     >>> spikes = data["TsGroup"]
+#
+#     See Also
+#     --------
+#     NeoReader : Class for Neo file interface
+#
+#     Notes
+#     -----
+#     Supported formats depend on your Neo installation. Common formats include:
+#     - Plexon (.plx, .pl2)
+#     - Blackrock (.nev, .ns*)
+#     - Spike2 (.smr)
+#     - Neuralynx (.ncs, .nse, .ntt)
+#     - OpenEphys
+#     - Intan (.rhd, .rhs)
+#     - And many more (see Neo documentation)
+#     """
+#     return NeoReader(path, lazy=lazy)
+#
+#
+# # Legacy alias
+# def load_experiment(path: Union[str, Path], lazy: bool = True) -> NEOExperimentInterface:
+#     """Load a neural recording experiment.
+#
+#     .. deprecated::
+#         Use :func:`load_file` instead.
+#
+#     Parameters
+#     ----------
+#     path : str or Path
+#         Path to the recording file
+#     lazy : bool, default True
+#         Whether to lazy load the data
+#
+#     Returns
+#     -------
+#     NEOExperimentInterface
+#     """
+#     import pathlib
+#
+#     path = pathlib.Path(path)
+#     reader = neo.io.get_io(path)
+#
+#     return NEOExperimentInterface(reader, lazy=lazy)
+#
+#
 #
 # # =============================================================================
 # # Conversion functions: Pynapple -> Neo
