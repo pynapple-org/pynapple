@@ -147,7 +147,7 @@ class TestNeoToPynapple:
 
     def test_analog_to_tsd(self):
         """Test AnalogSignal to Tsd conversion."""
-        from pynapple.io.neo import _make_tsd_from_analog
+        from pynapple.io.interface_neo import _make_tsd_from_analog
 
         # Single channel -> Tsd
         signal = create_mock_analog_signal(n_samples=100, n_channels=1)
@@ -157,7 +157,7 @@ class TestNeoToPynapple:
 
     def test_analog_to_tsdframe(self):
         """Test AnalogSignal to TsdFrame conversion."""
-        from pynapple.io.neo import _make_tsd_from_analog
+        from pynapple.io.interface_neo import _make_tsd_from_analog
 
         # Multi-channel -> TsdFrame
         signal = create_mock_analog_signal(n_samples=100, n_channels=3)
@@ -168,7 +168,7 @@ class TestNeoToPynapple:
 
     def test_spiketrain_to_ts(self):
         """Test SpikeTrain to Ts conversion."""
-        from pynapple.io.neo import _make_ts_from_spiketrain
+        from pynapple.io.interface_neo import _make_ts_from_spiketrain
 
         spiketrain = create_mock_spiketrain(n_spikes=50)
         ts = _make_ts_from_spiketrain(spiketrain)
@@ -177,7 +177,7 @@ class TestNeoToPynapple:
 
     def test_spiketrains_to_tsgroup(self):
         """Test multiple SpikeTrains to TsGroup conversion."""
-        from pynapple.io.neo import _make_tsgroup_from_spiketrains
+        from pynapple.io.interface_neo import _make_tsgroup_from_spiketrains
 
         spiketrains = [create_mock_spiketrain(n_spikes=30) for _ in range(5)]
         tsgroup = _make_tsgroup_from_spiketrains(spiketrains)
@@ -186,7 +186,7 @@ class TestNeoToPynapple:
 
     def test_epoch_to_intervalset(self):
         """Test Epoch to IntervalSet conversion."""
-        from pynapple.io.neo import _make_intervalset_from_epoch
+        from pynapple.io.interface_neo import _make_intervalset_from_epoch
 
         epoch = create_mock_epoch(n_epochs=5)
         iset = _make_intervalset_from_epoch(epoch)
@@ -195,7 +195,7 @@ class TestNeoToPynapple:
 
     def test_event_to_ts(self):
         """Test Event to Ts conversion."""
-        from pynapple.io.neo import _make_ts_from_event
+        from pynapple.io.interface_neo import _make_ts_from_event
 
         event = create_mock_event(n_events=10)
         ts = _make_ts_from_event(event)
@@ -204,7 +204,7 @@ class TestNeoToPynapple:
 
     def test_irregular_signal_to_tsd(self):
         """Test IrregularlySampledSignal to Tsd conversion."""
-        from pynapple.io.neo import _make_tsd_from_irregular
+        from pynapple.io.interface_neo import _make_tsd_from_irregular
 
         signal = create_mock_irregular_signal(n_samples=50, n_channels=1)
         tsd = _make_tsd_from_irregular(signal)
@@ -213,7 +213,7 @@ class TestNeoToPynapple:
 
     def test_irregular_signal_to_tsdframe(self):
         """Test IrregularlySampledSignal to TsdFrame conversion."""
-        from pynapple.io.neo import _make_tsd_from_irregular
+        from pynapple.io.interface_neo import _make_tsd_from_irregular
 
         signal = create_mock_irregular_signal(n_samples=50, n_channels=3)
         tsdframe = _make_tsd_from_irregular(signal)
@@ -232,7 +232,7 @@ class TestPynappleToNeo:
 
     def test_tsd_to_analog(self):
         """Test Tsd to AnalogSignal conversion."""
-        from pynapple.io.neo import to_neo_analogsignal
+        from pynapple.io.interface_neo import to_neo_analogsignal
 
         tsd = nap.Tsd(t=np.arange(100) / 1000.0, d=np.random.randn(100))
         signal = to_neo_analogsignal(tsd, units="mV")
@@ -243,7 +243,7 @@ class TestPynappleToNeo:
 
     def test_tsdframe_to_analog(self):
         """Test TsdFrame to AnalogSignal conversion."""
-        from pynapple.io.neo import to_neo_analogsignal
+        from pynapple.io.interface_neo import to_neo_analogsignal
 
         tsdframe = nap.TsdFrame(
             t=np.arange(100) / 1000.0, d=np.random.randn(100, 3)
@@ -255,7 +255,7 @@ class TestPynappleToNeo:
 
     def test_ts_to_spiketrain(self):
         """Test Ts to SpikeTrain conversion."""
-        from pynapple.io.neo import to_neo_spiketrain
+        from pynapple.io.interface_neo import to_neo_spiketrain
 
         ts = nap.Ts(t=np.sort(np.random.uniform(0, 10, 50)))
         spiketrain = to_neo_spiketrain(ts, t_stop=10.0)
@@ -265,7 +265,7 @@ class TestPynappleToNeo:
 
     def test_intervalset_to_epoch(self):
         """Test IntervalSet to Epoch conversion."""
-        from pynapple.io.neo import to_neo_epoch
+        from pynapple.io.interface_neo import to_neo_epoch
 
         iset = nap.IntervalSet(start=[0, 5, 10], end=[2, 7, 12])
         epoch = to_neo_epoch(iset)
@@ -281,7 +281,7 @@ class TestPynappleToNeo:
 
     def test_ts_to_event(self):
         """Test Ts to Event conversion."""
-        from pynapple.io.neo import to_neo_event
+        from pynapple.io.interface_neo import to_neo_event
 
         ts = nap.Ts(t=np.array([1.0, 2.5, 5.0, 7.5]))
         event = to_neo_event(ts)
@@ -303,7 +303,7 @@ class TestNeoSignalInterface:
 
     def test_analog_interface_init(self):
         """Test initialization with AnalogSignal."""
-        from pynapple.io.neo import NeoSignalInterface
+        from pynapple.io.interface_neo import NeoSignalInterface
 
         block = create_mock_block_with_segments(n_segments=1, n_analog=1, n_spiketrains=0)
         signal = block.segments[0].analogsignals[0]
@@ -317,7 +317,7 @@ class TestNeoSignalInterface:
 
     def test_spiketrain_interface_init(self):
         """Test initialization with SpikeTrain."""
-        from pynapple.io.neo import NeoSignalInterface
+        from pynapple.io.interface_neo import NeoSignalInterface
 
         block = create_mock_block_with_segments(n_segments=1, n_analog=0, n_spiketrains=1)
         spiketrain = block.segments[0].spiketrains[0]
@@ -331,7 +331,7 @@ class TestNeoSignalInterface:
 
     def test_tsgroup_interface_init(self):
         """Test initialization with multiple SpikeTrains."""
-        from pynapple.io.neo import NeoSignalInterface
+        from pynapple.io.interface_neo import NeoSignalInterface
 
         block = create_mock_block_with_segments(n_segments=1, n_analog=0, n_spiketrains=3)
         spiketrains = block.segments[0].spiketrains
@@ -345,7 +345,7 @@ class TestNeoSignalInterface:
 
     def test_interface_load(self):
         """Test loading data through interface."""
-        from pynapple.io.neo import NeoSignalInterface
+        from pynapple.io.interface_neo import NeoSignalInterface
 
         block = create_mock_block_with_segments(n_segments=1, n_analog=1, n_spiketrains=0)
         signal = block.segments[0].analogsignals[0]
@@ -358,7 +358,7 @@ class TestNeoSignalInterface:
 
     def test_interface_get_time_range(self):
         """Test getting data for a time range."""
-        from pynapple.io.neo import NeoSignalInterface
+        from pynapple.io.interface_neo import NeoSignalInterface
 
         block = create_mock_block_with_segments(n_segments=1, n_analog=1, n_spiketrains=0)
         signal = block.segments[0].analogsignals[0]
@@ -371,7 +371,7 @@ class TestNeoSignalInterface:
 
     def test_interface_restrict(self):
         """Test restricting data to epochs."""
-        from pynapple.io.neo import NeoSignalInterface
+        from pynapple.io.interface_neo import NeoSignalInterface
 
         block = create_mock_block_with_segments(n_segments=1, n_analog=1, n_spiketrains=0)
         signal = block.segments[0].analogsignals[0]
@@ -394,7 +394,7 @@ class TestLegacyInterface:
 
     def test_legacy_deprecation_warning(self):
         """Test that legacy interface raises deprecation warning."""
-        from pynapple.io.neo import NEOExperimentInterface
+        from pynapple.io.interface_neo import NEOExperimentInterface
 
         # Create a simple mock reader
         class MockReader:
@@ -415,7 +415,7 @@ class TestHelperFunctions:
 
     def test_rescale_to_seconds(self):
         """Test rescaling quantities to seconds."""
-        from pynapple.io.neo import _rescale_to_seconds
+        from pynapple.io.interface_neo import _rescale_to_seconds
 
         # Test milliseconds
         value_ms = 1000 * pq.ms
@@ -427,7 +427,7 @@ class TestHelperFunctions:
 
     def test_get_signal_type(self):
         """Test signal type detection."""
-        from pynapple.io.neo import _get_signal_type
+        from pynapple.io.interface_neo import _get_signal_type
 
         # 1D signal -> Tsd
         signal_1d = neo.AnalogSignal(
@@ -443,7 +443,7 @@ class TestHelperFunctions:
 
     def test_extract_annotations(self):
         """Test annotation extraction."""
-        from pynapple.io.neo import _extract_annotations
+        from pynapple.io.interface_neo import _extract_annotations
 
         signal = neo.AnalogSignal(
             np.random.randn(100, 1),
@@ -474,7 +474,7 @@ class TestRoundTrip:
 
     def test_tsd_roundtrip(self):
         """Test Tsd round-trip conversion."""
-        from pynapple.io.neo import to_neo_analogsignal, _make_tsd_from_analog
+        from pynapple.io.interface_neo import to_neo_analogsignal, _make_tsd_from_analog
 
         original = nap.Tsd(t=np.arange(100) / 1000.0, d=np.random.randn(100))
 
@@ -489,7 +489,7 @@ class TestRoundTrip:
 
     def test_intervalset_roundtrip(self):
         """Test IntervalSet round-trip conversion."""
-        from pynapple.io.neo import to_neo_epoch, _make_intervalset_from_epoch
+        from pynapple.io.interface_neo import to_neo_epoch, _make_intervalset_from_epoch
 
         original = nap.IntervalSet(start=[1.0, 5.0, 10.0], end=[2.0, 7.0, 12.0])
 
@@ -505,7 +505,7 @@ class TestRoundTrip:
 
     def test_ts_roundtrip(self):
         """Test Ts round-trip conversion via SpikeTrain."""
-        from pynapple.io.neo import to_neo_spiketrain, _make_ts_from_spiketrain
+        from pynapple.io.interface_neo import to_neo_spiketrain, _make_ts_from_spiketrain
 
         spike_times = np.sort(np.random.uniform(0, 10, 50))
         original = nap.Ts(t=spike_times)
@@ -543,7 +543,7 @@ class TestIntegration:
 
     def test_multi_segment_time_support(self):
         """Test that time support correctly spans multiple segments."""
-        from pynapple.io.neo import NeoSignalInterface
+        from pynapple.io.interface_neo import NeoSignalInterface
 
         block = create_mock_block_with_segments(n_segments=3, n_analog=1, n_spiketrains=0)
 

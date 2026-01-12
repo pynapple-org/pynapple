@@ -133,6 +133,44 @@ z = data['z']
 print(type(z.d))
 ```
 
+## LFP loading & NEO compatibility
+
+Raw LFP data can be loaded with pynapple through the NEO library.
+Internally, pynapple uses the NEO raw IO classes to read the data and convert them to one of the pynapple time series object.
+This is done through the class [`nap.NeoReader`](pynapple.io.neo.NeoReader).
+
+See here the [list of supported formats](https://neo.readthedocs.io/en/stable/rawiolist.html)).
+
+
+Here is a minimal working example : 
+
+```{code-cell} ipython3
+:tags: [hide-cell]
+import urllib
+distantfile = "https://web.gin.g-node.org/NeuralEnsemble/ephy_testing_data/raw/master/plexon/File_plexon_3.plx"
+urllib.request.urlretrieve(distantfile, "File_plexon_3.plx")
+```
+
+```{code-cell} ipython3
+data = nap.NeoReader("File_plexon_3.plx")
+print(data)
+```
+
+```{code-cell} ipython3
+lfp = data['TsdFrame 0: V']
+spikes = data['TsGroup']
+```
+
+```{code-cell} ipython3
+fig = pyplot.figure()
+ax1 = fig.add_subplot(2, 1, 1)
+ax2 = fig.add_subplot(2, 1, 2)
+ax1.plot(lfp.t, lfp.d[:])
+colors = pyplot.cm.jet(np.linspace(0, 1, len(spikes)))
+ax2.eventplot([spikes[i].t for i in spikes.keys()], colors=colors)
+plt.show()
+```
+
 ## Saving as NPZ
 
 Pynapple objects have [`save`](pynapple.Tsd.save) methods to save them as npz files. 

@@ -8,11 +8,6 @@ from .misc import (
     load_folder,
     load_session,
 )
-from .neo import (
+from .interface_neo import (
     NeoReader,
-    # load_file as load_neo_file,
-    # to_neo_analogsignal,
-    # to_neo_spiketrain,
-    # to_neo_epoch,
-    # to_neo_event,
 )
