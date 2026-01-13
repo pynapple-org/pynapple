@@ -553,6 +553,70 @@ def compute_mutual_information(tuning_curves, rates=None):
     )
 
 
+def compute_sparsity(tuning_curves):
+    """
+    Computes sparsity from n-dimensional tuning curves.
+
+    This function implements Skaggs et al.'s [1] metric to quantify
+    the variability of a neuron's firing with respect to a variable
+    (e.g., position), based on its tuning curve.
+
+    The sparsity (unitless) is given by:
+
+    .. math::
+
+        S = \\frac{ \\left( \\sum_x P(x) \\lambda(x) \\right)^2 }{\\sum_x P(x) \\lambda(x)^2}
+
+    where:
+
+    - :math:`P(x)` is the probability of being in bin :math:`x` (occupancy),
+    - :math:`\\lambda(x)` is the firing rate of the neuron in bin :math:`x`,
+
+    References
+    ----------
+    .. [1] Skaggs WE, McNaughton BL, Wilson MA, Barnes CA. (1996)
+           Theta phase precession in hippocampal neuronal populations and the compression of temporal sequences.
+           In Hippocampus. 6(2):149-72
+
+    Parameters
+    ----------
+    tuning_curves : xarray.DataArray
+        Tuning curves as computed by :func:`~pynapple.process.tuning_curves.compute_tuning_curves`.
+
+    Returns
+    -------
+    pandas.Series
+        A dictionary containing the sparsity per unit.
+
+    Examples
+    --------
+    [...]
+    
+    """
+    if not isinstance(tuning_curves, xr.DataArray):
+        raise TypeError(
+            "tuning_curves should be an xr.DataArray as computed by compute_tuning_curves."
+        )
+        
+    if "occupancy" not in tuning_curves.attrs:
+        raise ValueError("No occupancy found in tuning curves.")
+    occupancy = tuning_curves.attrs["occupancy"]
+    occupancy = occupancy / np.nansum(occupancy) # probability distribution (normalized to have sum 1)  # (D1, D2, ..., Dn)
+
+    fx = tuning_curves.values  # (N, D1, D2, ...Dn)
+
+    axes = tuple(range(1, fx.ndim)) # along all features dimensions
+    
+    fr = np.nansum(fx * occupancy, axis=axes) # expectation value of firing rate per bin (from tuning curves)  # (N,)
+    fr2 = np.nansum(fx**2 * occupancy, axis=axes) # expectation value of firing rate squared # (N,)
+    Sparsity = fr**2/fr2 # formula for variance # per unit # (N,)
+    
+    return pd.Series(
+        data=Sparsity,
+        index=tuning_curves.coords["unit"],
+    )
+
+
 # =====================================================================================
 # OLD FUNCTIONS, DEPRECATED
 # =====================================================================================
