@@ -167,9 +167,11 @@ def _shift_ts(ts, min_shift=0, max_shift=None):
     if max_shift is None:
         max_shift = ts.end_time() - ts.start_time()
     shift = np.random.uniform(min_shift, max_shift)
-    shifted_timestamps = (
-        ts.times() - ts.start_time() + shift
-    ) % ts.end_time() + ts.start_time()
+    start = ts.time_support.start[0]
+    end = ts.time_support.end[0]
+    period = end - start
+
+    shifted_timestamps = start + ((ts.times() + shift - start) % period)
     shifted_ts = nap.Ts(t=np.sort(shifted_timestamps), time_support=ts.time_support)
     return shifted_ts
 

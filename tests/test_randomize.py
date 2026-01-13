@@ -7,13 +7,34 @@ import pytest
 import pynapple as nap
 
 
-def test_shift_ts():
+def test_shift_ts_format():
     ts = nap.Ts(t=np.arange(0, 100))
     shift_ts = nap.randomize.shift_timestamps(ts, min_shift=0.1, max_shift=0.2)
 
     assert isinstance(shift_ts, nap.Ts)
     assert len(ts) == len(shift_ts)
     assert (ts.time_support.values == shift_ts.time_support.values).all()
+
+
+@pytest.mark.parametrize(
+    "ts, shift, expectation",
+    [
+        (nap.Ts([25, 27, 33.3, 34.5]), 1, [26, 26, 28, 34.3]),
+        (
+            nap.Ts([25, 27, 33.3, 34.5], time_support=nap.IntervalSet(0, 34.5)),
+            1,
+            [1, 26, 28, 34.3],
+        ),
+        (
+            nap.Ts([25, 27, 33.3, 34.5], time_support=nap.IntervalSet(0, 40)),
+            1,
+            [26, 28, 34.3, 35.5],
+        ),
+    ],
+)
+def test_shift_ts_values(ts, shift, expectation):
+    shift_ts = nap.randomize.shift_timestamps(ts, min_shift=shift, max_shift=shift)
+    np.testing.assert_equal(shift_ts.times(), expectation)
 
 
 def test_shift_tsgroup():
