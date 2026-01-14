@@ -736,8 +736,8 @@ class TestTimeSeriesGeneral:
 
             tmp = tsd.values.reshape(tsd.shape[0], -1)
             tmp2 = np.zeros_like(tmp)
-            std = int(tsd.rate * 1)
-            M = std * 11
+            std = tsd.rate * 1
+            M = int(std * 11)
             window = signal.windows.gaussian(M, std=std)
             window = window / window.sum()
             for i in range(tmp.shape[-1]):
@@ -761,8 +761,8 @@ class TestTimeSeriesGeneral:
             tsd2 = tsd.smooth(1, size_factor=200, norm=False)
             tmp = tsd.values.reshape(tsd.shape[0], -1)
             tmp2 = np.zeros_like(tmp)
-            std = int(tsd.rate * 1)
-            M = std * 201
+            std = tsd.rate * 1
+            M = int(std * 201)
             window = signal.windows.gaussian(M, std=std)
             for i in range(tmp.shape[-1]):
                 tmp2[:, i] = np.convolve(tmp[:, i], window, mode="full")[
@@ -775,7 +775,7 @@ class TestTimeSeriesGeneral:
             tsd2 = tsd.smooth(1, windowsize=10, norm=False)
             tmp = tsd.values.reshape(tsd.shape[0], -1)
             tmp2 = np.zeros_like(tmp)
-            std = int(tsd.rate * 1)
+            std = tsd.rate * 1
             M = int(tsd.rate * 11)
             window = signal.windows.gaussian(M, std=std)
             for i in range(tmp.shape[-1]):
