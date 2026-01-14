@@ -578,7 +578,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             raise IOError("time_units should be of type str")
 
         std = TsIndex.format_timestamps(np.array([std]), time_units)[0]
-        std_size = int(self.rate * std)
+        std_size = self.rate * std
 
         if windowsize is not None:
             if not isinstance(windowsize, Number):
@@ -588,7 +588,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             ]
             M = int(self.rate * windowsize)
         else:
-            M = std_size * size_factor
+            M = int(std_size * size_factor)
 
         if M % 2 == 0:
             M += 1
