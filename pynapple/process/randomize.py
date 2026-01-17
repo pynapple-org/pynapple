@@ -7,7 +7,7 @@ import numpy as np
 from .. import core as nap
 
 
-def shift_timestamps(ts, min_shift=0.0, max_shift=None):
+def shift_timestamps(data, min_shift=0.0, max_shift=None):
     """
     Shifts all the time stamps of a random amount between a minimum and maximum shift, wrapping the
     end of the time support to the beginning.
@@ -19,8 +19,9 @@ def shift_timestamps(ts, min_shift=0.0, max_shift=None):
 
     Parameters
     ----------
-    ts : Ts or TsGroup
-        The timestamps to shift. If TsGroup, shifts all Ts in the group independently.
+    data : Ts, Tsd, TsGroup, TsdFrame, TsdTensor
+        The timeseries object whose timestamps to shift.
+        If TsGroup, shifts all objects in the group independently.
     min_shift : float, optional
         minimum shift (default: 0)
     max_shift : float, optional
@@ -72,17 +73,44 @@ def shift_timestamps(ts, min_shift=0.0, max_shift=None):
         26.0
         34.3
         shape: 3
-    """
-    strategies = {
-        nap.time_series.Ts: _shift_ts,
-        nap.ts_group.TsGroup: _shift_tsgroup,
-    }
-    # checks input type
-    if type(ts) not in strategies.keys():
-        raise TypeError("Invalid input type, should be Ts or TsGroup")
 
-    strategy = strategies[type(ts)]
-    return strategy(ts, min_shift, max_shift)
+    You can also pass timeseries with data, in that case the data is not shifted:
+
+        >>> tsd = nap.Tsd([25, 27, 33.3, 34.5], d=[1, 2, 3, 4])
+        >>> shifted_tsd = nap.shift_timestamps(tsd, min_shift=1, max_shift=1)
+        >>> shifted_tsd
+        Time (s)
+        ----------  --
+        26           1
+        26           2
+        28           3
+        34.3         4
+        dtype: int64, shape: (4,)
+    """
+    time_support = data.time_support
+
+    def _shift(data):
+        shifted_timestamps = np.sort(
+            _shift_ts(
+                data.times(), time_support, min_shift=min_shift, max_shift=max_shift
+            )
+        )
+        if isinstance(data, nap.Ts):
+            return nap.Ts(t=shifted_timestamps, time_support=time_support)
+        elif isinstance(data, (nap.Tsd, nap.TsdFrame, nap.TsdTensor)):
+            data_type = type(data)
+            return data_type(
+                t=shifted_timestamps, d=data.values, time_support=time_support
+            )
+        else:
+            raise TypeError("Invalid input type, should be a time series object.")
+
+    if isinstance(data, nap.TsGroup):
+        return nap.TsGroup(
+            {k: _shift(data[k]) for k in data}, time_support=time_support
+        )
+    else:
+        return _shift(data)
 
 
 # Random shuffle intervals between timestamps
@@ -189,7 +217,7 @@ def resample_timestamps(ts):
 # Helper functions
 
 
-def _shift_ts(ts, min_shift=0, max_shift=None):
+def _shift_ts(timestamps, time_support, min_shift=0, max_shift=None):
     """
     Shifts all the time stamps of a random amount between min_shift and max_shift, wrapping the
     end of the time support to the beginning.
@@ -197,7 +225,7 @@ def _shift_ts(ts, min_shift=0, max_shift=None):
 
     Parameters
     ----------
-    ts : Ts
+    timestamps : np.ndarray
         The timestamps to shift.
     min_shift : float, optional
         minimum shift (default: 0 )
@@ -211,15 +239,12 @@ def _shift_ts(ts, min_shift=0, max_shift=None):
     """
 
     if max_shift is None:
-        max_shift = ts.end_time() - ts.start_time()
+        max_shift = timestamps[-1] - timestamps[0]
     shift = np.random.uniform(min_shift, max_shift)
-    start = ts.time_support.start[0]
-    end = ts.time_support.end[-1]
+    start = time_support.start[0]
+    end = time_support.end[-1]
     period = end - start
-
-    shifted_timestamps = start + ((ts.times() + shift - start) % period)
-    shifted_ts = nap.Ts(t=np.sort(shifted_timestamps), time_support=ts.time_support)
-    return shifted_ts
+    return start + ((timestamps + shift - start) % period)
 
 
 def _shift_tsgroup(tsgroup, min_shift=0, max_shift=None):
