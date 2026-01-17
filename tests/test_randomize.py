@@ -1,10 +1,88 @@
 """Tests of randomize for `pynapple` package."""
 
+from contextlib import nullcontext as does_not_raise
+
 import numpy as np
-import pandas as pd
 import pytest
 
 import pynapple as nap
+
+
+@pytest.mark.parametrize(
+    "data, min_shift, max_shift, expectation",
+    [
+        # data type
+        (nap.Ts(t=[1, 2, 3]), 1.0, 1.0, does_not_raise()),
+        (nap.Tsd(t=[1, 2, 3], d=np.ones(3)), 1.0, 1.0, does_not_raise()),
+        (nap.TsdFrame(t=[1, 2, 3], d=np.ones((3, 2))), 1.0, 1.0, does_not_raise()),
+        (nap.TsdTensor(t=[1, 2, 3], d=np.ones((3, 2, 2))), 1.0, 1.0, does_not_raise()),
+        (
+            [1, 2, 3],
+            1.0,
+            1.0,
+            pytest.raises(
+                TypeError,
+                match="Invalid input, data should be a time series object.",
+            ),
+        ),
+        (
+            nap.IntervalSet(1, 2),
+            1.0,
+            1.0,
+            pytest.raises(
+                TypeError,
+                match="Invalid input, data should be a time series object.",
+            ),
+        ),
+        # min shift
+        (nap.Ts(t=[1, 2, 3]), 1.0, None, does_not_raise()),
+        (
+            nap.Ts(t=[1, 2, 3]),
+            None,
+            None,
+            pytest.raises(
+                TypeError,
+                match="min_shift should be a number.",
+            ),
+        ),
+        (
+            nap.Ts(t=[1, 2, 3]),
+            "1.0",
+            None,
+            pytest.raises(
+                TypeError,
+                match="min_shift should be a number.",
+            ),
+        ),
+        (
+            nap.Ts(t=[1, 2, 3]),
+            [1.0],
+            None,
+            pytest.raises(
+                TypeError,
+                match="min_shift should be a number.",
+            ),
+        ),
+        # max shift
+        (nap.Ts(t=[1, 2, 3]), 1.0, None, does_not_raise()),
+        (nap.Ts(t=[1, 2, 3]), 1.0, 1.0, does_not_raise()),
+        (
+            nap.Ts(t=[1, 2, 3]),
+            1.0,
+            "1.0",
+            pytest.raises(TypeError, match="max_shift should be a number."),
+        ),
+        (
+            nap.Ts(t=[1, 2, 3]),
+            1.0,
+            [1.0],
+            pytest.raises(TypeError, match="max_shift should be a number."),
+        ),
+    ],
+)
+def test_shift_timestamps_type_errors(data, min_shift, max_shift, expectation):
+    with expectation:
+        nap.shift_timestamps(data, min_shift, max_shift)
 
 
 @pytest.mark.parametrize(

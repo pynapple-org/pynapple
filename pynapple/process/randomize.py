@@ -87,6 +87,16 @@ def shift_timestamps(data, min_shift=0.0, max_shift=None):
         34.3         4
         dtype: int64, shape: (4,)
     """
+    if not isinstance(min_shift, (int, float)):
+        raise TypeError("min_shift should be a number.")
+    if max_shift is not None and not isinstance(max_shift, (int, float)):
+        raise TypeError("max_shift should be a number.")
+
+    if not isinstance(
+        data, (nap.Ts, nap.Tsd, nap.TsGroup, nap.TsdFrame, nap.TsdTensor)
+    ):
+        raise TypeError("Invalid input, data should be a time series object.")
+
     time_support = data.time_support
 
     def _shift(data):
@@ -97,13 +107,10 @@ def shift_timestamps(data, min_shift=0.0, max_shift=None):
         )
         if isinstance(data, nap.Ts):
             return nap.Ts(t=shifted_timestamps, time_support=time_support)
-        elif isinstance(data, (nap.Tsd, nap.TsdFrame, nap.TsdTensor)):
-            data_type = type(data)
-            return data_type(
+        else:
+            return type(data)(
                 t=shifted_timestamps, d=data.values, time_support=time_support
             )
-        else:
-            raise TypeError("Invalid input type, should be a time series object.")
 
     if isinstance(data, nap.TsGroup):
         return nap.TsGroup(
