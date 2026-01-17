@@ -89,6 +89,7 @@ def shift_timestamps(data, min_shift=0.0, max_shift=None):
     """
     if not isinstance(min_shift, (int, float)):
         raise TypeError("min_shift should be a number.")
+
     if max_shift is not None and not isinstance(max_shift, (int, float)):
         raise TypeError("max_shift should be a number.")
 
@@ -252,40 +253,6 @@ def _shift_ts(timestamps, time_support, min_shift=0, max_shift=None):
     end = time_support.end[-1]
     period = end - start
     return start + ((timestamps + shift - start) % period)
-
-
-def _shift_tsgroup(tsgroup, min_shift=0, max_shift=None):
-    """
-    Shifts each Ts in the Ts group independently.
-
-
-    Parameters
-    ----------
-    tsgroup : TsGroup
-        The collection of Ts to shift.
-    min_shift : float, optional
-        minimum shift (default: 0 )
-    max_shift : float, optional
-        maximum shift, (default: length of time support)
-
-    Returns
-    -------
-    TsGroup
-        The TSGroup with randomly shifted timestamps
-    """
-
-    start_time = tsgroup.time_support.start[0]
-    end_time = tsgroup.time_support.end[0]
-
-    if max_shift is None:
-        max_shift = end_time - start_time
-
-    shifted_tsgroup = {}
-    for k in tsgroup.keys():
-        shift = np.random.uniform(min_shift, max_shift)
-        shifted_timestamps = (tsgroup[k].times() + shift) % end_time + start_time
-        shifted_tsgroup[k] = nap.Ts(t=np.sort(shifted_timestamps))
-    return nap.TsGroup(shifted_tsgroup, time_support=tsgroup.time_support)
 
 
 def _jitter_ts(ts, max_jitter=None, keep_tsupport=False):
