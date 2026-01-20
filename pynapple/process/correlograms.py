@@ -255,7 +255,7 @@ def compute_crosscorrelogram(
         np.array([windowsize], dtype=np.float64), time_units
     )[0]
 
-    if isinstance(group, tuple):
+    if isinstance(group, (tuple, list)):
         if isinstance(ep, nap.IntervalSet):
             newgroup = [group[i].restrict(ep) for i in range(2)]
         else:
