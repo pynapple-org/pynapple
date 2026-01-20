@@ -456,7 +456,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
     def convolve(self, array, ep=None, trim="both"):
         """Return the discrete linear convolution of the time series with a one dimensional sequence.
 
-        A parameter ep can control the epochs for which the convolution will apply. Otherwise the convolution is made over the time support.
+        A parameter ep can control the epochs for which the convolution will apply. Otherwise, the convolution is made over the time support.
 
         This function assume a constant sampling rate of the time series.
 

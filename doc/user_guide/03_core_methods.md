@@ -462,7 +462,8 @@ The [`convolve`](pynapple.Tsd.convolve) method performs discrete linear convolut
 
 ```{code-cell} ipython3
 :tags: [hide-cell]
-tsd = nap.Tsd(t=np.arange(0, 100, 1), d=np.sin(np.arange(0, 10, 0.1)))
+noisy_data = np.random.rand(100) + np.sin(np.linspace(0, 2 * np.pi, 100))
+tsd = nap.Tsd(t=np.arange(100), d=noisy_data, time_support=nap.IntervalSet(0, 100))
 ```
 
 A simple example is applying a moving average filter using a uniform kernel:
@@ -480,7 +481,6 @@ plt.plot(smoothed, label="convolved (moving avg)")
 plt.xlabel("Time (s)")
 plt.legend()
 plt.title("tsd.convolve(kernel)")
-plt.xlim(0, 50)
 plt.show()
 ```
 
@@ -495,7 +495,7 @@ smoothed_ep = tsd.convolve(kernel, ep=ep)
 :tags: [hide-input]
 plt.figure()
 plt.plot(tsd, label="original", alpha=0.5)
-plt.plot(smoothed_ep, label="convolved")
+plt.plot(smoothed_ep, 'o-', label="convolved", markersize=6)
 [plt.axvspan(s, e, alpha=0.2) for s, e in ep.values]
 plt.xlabel("Time (s)")
 plt.legend()
