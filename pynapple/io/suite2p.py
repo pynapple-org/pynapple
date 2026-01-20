@@ -12,6 +12,7 @@ Loader for Suite2P
 https://github.com/MouseLand/suite2p
 
 """
+
 import importlib
 from pathlib import Path
 
