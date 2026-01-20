@@ -2,19 +2,45 @@
 Functions to compute correlograms of timestamps data.
 """
 
+from __future__ import annotations
+
 import inspect
 from functools import wraps
 from itertools import combinations, product
 from numbers import Number
+from typing import Callable, Optional, Union
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
 from numba import jit
 
 from .. import core as nap
 
 
-def _validate_correlograms_inputs(func):
+def _validate_correlograms_inputs(func: Callable) -> Callable:
+    """
+    Decorator to validate input types for correlogram functions.
+
+    Validates that group is a TsGroup (or tuple/list of TsGroups for crosscorrelogram),
+    and checks types for binsize, windowsize, ep, norm, time_units, and event parameters.
+
+    Parameters
+    ----------
+    func : Callable
+        The function to wrap with input validation.
+
+    Returns
+    -------
+    Callable
+        The wrapped function with input validation.
+
+    Raises
+    ------
+    TypeError
+        If any parameter has an invalid type.
+    """
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Validate each positional argument
@@ -62,7 +88,12 @@ def _validate_correlograms_inputs(func):
 
 
 @jit(nopython=True, cache=True)
-def _cross_correlogram(t1, t2, binsize, windowsize):
+def _cross_correlogram(
+    t1: npt.NDArray[np.float64],
+    t2: npt.NDArray[np.float64],
+    binsize: float,
+    windowsize: float,
+) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
     """
     Performs the discrete cross-correlogram of two time series.
     The units should be in s for all arguments.
@@ -132,8 +163,13 @@ def _cross_correlogram(t1, t2, binsize, windowsize):
 
 @_validate_correlograms_inputs
 def compute_autocorrelogram(
-    group, binsize, windowsize, ep=None, norm=True, time_units="s"
-):
+    group: nap.TsGroup,
+    binsize: float,
+    windowsize: float,
+    ep: Optional[nap.IntervalSet] = None,
+    norm: bool = True,
+    time_units: str = "s",
+) -> pd.DataFrame:
     """
     Computes the autocorrelogram of a group of Ts/Tsd objects.
     The group can be passed directly as a TsGroup object.
@@ -153,7 +189,7 @@ def compute_autocorrelogram(
         If None, the epoch is the time support of the group.
     norm : bool, optional
          If True, autocorrelograms are normalized to baseline (i.e. divided by the average rate)
-         If False, autoorrelograms are returned as the rate (Hz) of the time series (relative to itself)
+         If False, autocorrelograms are returned as the rate (Hz) of the time series (relative to itself)
     time_units : str, optional
         The time units of the parameters. They have to be consistent for binsize and windowsize.
         ('s' [default], 'ms', 'us').
@@ -161,12 +197,21 @@ def compute_autocorrelogram(
     Returns
     -------
     pandas.DataFrame
-        _
+        DataFrame with time lags as index and unit IDs as columns.
+        Values represent the firing rate (or normalized rate if norm=True).
 
     Raises
     ------
-    RuntimeError
-        group must be TsGroup
+    TypeError
+        If group is not a TsGroup, or if binsize, windowsize, ep, norm, or time_units
+        have invalid types.
+
+    Examples
+    --------
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> ts_group = nap.TsGroup({0: nap.Ts(t=np.sort(np.random.uniform(0, 10, 100)))})
+    >>> autocorr = nap.compute_autocorrelogram(ts_group, binsize=0.01, windowsize=0.1)
     """
     if isinstance(ep, nap.IntervalSet):
         newgroup = group.restrict(ep)
@@ -201,8 +246,14 @@ def compute_autocorrelogram(
 
 @_validate_correlograms_inputs
 def compute_crosscorrelogram(
-    group, binsize, windowsize, ep=None, norm=True, time_units="s", reverse=False
-):
+    group: Union[nap.TsGroup, tuple[nap.TsGroup, nap.TsGroup], list[nap.TsGroup]],
+    binsize: float,
+    windowsize: float,
+    ep: Optional[nap.IntervalSet] = None,
+    norm: bool = True,
+    time_units: str = "s",
+    reverse: bool = False,
+) -> pd.DataFrame:
     """
     Computes all the pairwise cross-correlograms for TsGroup or list/tuple of two TsGroup.
 
@@ -216,7 +267,10 @@ def compute_crosscorrelogram(
     Parameters
     ----------
     group : TsGroup or tuple/list of two TsGroups
-
+        The group(s) of Ts/Tsd objects to cross-correlate. If a single TsGroup,
+        computes pairwise cross-correlograms within the group. If a tuple/list
+        of two TsGroups, computes cross-correlograms between all pairs from
+        group1 (reference) and group2 (target).
     binsize : float
         The bin size. Default is second.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
@@ -228,7 +282,7 @@ def compute_crosscorrelogram(
         If None, the epoch is the time support of the group.
     norm : bool, optional
         If True (default), cross-correlograms are normalized to baseline (i.e. divided by the average rate of the target time series)
-        If False, cross-orrelograms are returned as the rate (Hz) of the target time series ((relative to the reference time series)
+        If False, cross-correlograms are returned as the rate (Hz) of the target time series (relative to the reference time series)
     time_units : str, optional
         The time units of the parameters. They have to be consistent for binsize and windowsize.
         ('s' [default], 'ms', 'us').
@@ -238,13 +292,25 @@ def compute_crosscorrelogram(
     Returns
     -------
     pandas.DataFrame
-        _
+        DataFrame with time lags as index and pair tuples (i, j) as columns.
+        Values represent the firing rate of unit j relative to unit i
+        (or normalized rate if norm=True).
 
     Raises
     ------
-    RuntimeError
-        group must be TsGroup or tuple/list of two TsGroups
+    TypeError
+        If group is not a TsGroup or tuple/list of two TsGroups, or if binsize,
+        windowsize, ep, norm, time_units, or reverse have invalid types.
 
+    Examples
+    --------
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> ts_group = nap.TsGroup({
+    ...     0: nap.Ts(t=np.sort(np.random.uniform(0, 10, 100))),
+    ...     1: nap.Ts(t=np.sort(np.random.uniform(0, 10, 100)))
+    ... })
+    >>> crosscorr = nap.compute_crosscorrelogram(ts_group, binsize=0.01, windowsize=0.1)
     """
     crosscorrs = {}
 
@@ -304,8 +370,14 @@ def compute_crosscorrelogram(
 
 @_validate_correlograms_inputs
 def compute_eventcorrelogram(
-    group, event, binsize, windowsize, ep=None, norm=True, time_units="s"
-):
+    group: nap.TsGroup,
+    event: Union[nap.Ts, nap.Tsd],
+    binsize: float,
+    windowsize: float,
+    ep: Optional[nap.IntervalSet] = None,
+    norm: bool = True,
+    time_units: str = "s",
+) -> pd.DataFrame:
     """
     Computes the correlograms of a group of Ts/Tsd objects with another single Ts/Tsd object
     The time of reference is the event times.
@@ -327,7 +399,7 @@ def compute_eventcorrelogram(
         If None, the epoch is the time support of the event.
     norm : bool, optional
         If True (default), cross-correlograms are normalized to baseline (i.e. divided by the average rate of the target time series)
-        If False, cross-orrelograms are returned as the rate (Hz) of the target time series (relative to the event time series)
+        If False, cross-correlograms are returned as the rate (Hz) of the target time series (relative to the event time series)
     time_units : str, optional
         The time units of the parameters. They have to be consistent for binsize and windowsize.
         ('s' [default], 'ms', 'us').
@@ -335,13 +407,23 @@ def compute_eventcorrelogram(
     Returns
     -------
     pandas.DataFrame
-        _
+        DataFrame with time lags as index and unit IDs as columns.
+        Values represent the firing rate of each unit relative to the event times
+        (or normalized rate if norm=True).
 
     Raises
     ------
-    RuntimeError
-        group must be TsGroup
+    TypeError
+        If group is not a TsGroup, if event is not a Ts or Tsd, or if binsize,
+        windowsize, ep, norm, or time_units have invalid types.
 
+    Examples
+    --------
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> ts_group = nap.TsGroup({0: nap.Ts(t=np.sort(np.random.uniform(0, 10, 100)))})
+    >>> event = nap.Ts(t=np.array([1.0, 3.0, 5.0, 7.0, 9.0]))
+    >>> eventcorr = nap.compute_eventcorrelogram(ts_group, event, binsize=0.01, windowsize=0.1)
     """
     if ep is None:
         ep = event.time_support
@@ -374,11 +456,11 @@ def compute_eventcorrelogram(
 
 
 def compute_isi_distribution(
-    data,
-    bins=10,
-    log_scale=False,
-    epochs=None,
-):
+    data: Union[nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor, nap.TsGroup],
+    bins: Union[int, list, npt.NDArray] = 10,
+    log_scale: bool = False,
+    epochs: Optional[nap.IntervalSet] = None,
+) -> pd.DataFrame:
     """
     Computes the interspike interval distribution.
 
@@ -400,8 +482,19 @@ def compute_isi_distribution(
     pandas.DataFrame
         DataFrame to hold the distribution data.
 
+    Raises
+    ------
+    TypeError
+        If data is not a Ts, TsGroup, Tsd, TsdFrame, or TsdTensor.
+    TypeError
+        If bins is not an int, list, or np.ndarray.
+    TypeError
+        If log_scale is not a bool.
+    ValueError
+        If bins is less than 1 (when int) or not monotonically increasing (when array).
+
     Examples
-    -------
+    --------
     >>> import numpy as np; np.random.seed(42)
     >>> import pynapple as nap
     >>> ts1 = nap.Ts(t=np.sort(np.random.uniform(0, 1000, 2000)), time_units="s")
