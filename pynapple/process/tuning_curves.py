@@ -590,9 +590,29 @@ def compute_sparsity(tuning_curves):
 
     Examples
     --------
-    [...]
+    We can compute the sparsity of neuron's tuning curve:
     
+        >>> np.random.seed(42) # reproducability
+        >>> epoch = nap.IntervalSet([0, 10]) # 0..10sec
+        >>> t = np.linspace(0, 10, 100) # 100 time samples
+        >>> feature = nap.Tsd(t=t, d=t, time_support=epoch) # feature is just a linear position with time
+        >>> # spike trains
+        >>> # 6 neurons, neuron i is uniformly active between time 1 and i+2
+        >>> st_group = nap.TsGroup({
+        ...     i: nap.Ts(sorted(np.random.uniform(1,t_,100))) for i,t_ in enumerate(range(2,8))
+        ... }, time_support=epoch)
+        >>> tcs = nap.compute_tuning_curves(st_group, feature, bins=20)
+        >>> sparsity = compute_sparsity(tcs)
+        >>> sparsity
+        0    0.103993
+        1    0.198886
+        2    0.284091
+        3    0.374251
+        4    0.444840
+        5    0.574713
+        dtype: float64
     """
+    
     if not isinstance(tuning_curves, xr.DataArray):
         raise TypeError(
             "tuning_curves should be an xr.DataArray as computed by compute_tuning_curves."
