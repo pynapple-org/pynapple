@@ -508,8 +508,8 @@ The `trim` parameter controls which side of the convolution output is trimmed to
 ```{code-cell} ipython3
 :tags: [hide-cell]
 short_tsd = nap.Tsd(t=np.arange(20), d=np.zeros(20))
-# short_tsd = short_tsd[9] = 1  # single spike at t=9
-kernel = np.array([0.1, 0.2, 0.4, 0.2, 0.1])
+short_tsd[10] = 1  # single spike at t=9
+kernel = np.array([0.1, 0.4, 0.8, 0.4, 0.1])
 ```
 
 ```{code-cell} ipython3
@@ -520,15 +520,15 @@ conv_right = short_tsd.convolve(kernel, trim='right')
 
 ```{code-cell} ipython3
 :tags: [hide-input]
-fig, axes = plt.subplots(1, 3, figsize=(12, 3))
-for ax, (conv, title) in zip(axes, [(conv_both, "trim='both'"),
-                                      (conv_left, "trim='left'"),
-                                      (conv_right, "trim='right'")]):
+fig, axes = plt.subplots(3, 1, figsize=(6, 6))
+for ax, (conv, title) in zip(axes, [(conv_both, "tsd.convolve(kernel, trim='both')"),
+                                      (conv_left, "tsd.convolve(kernel, trim='left')"),
+                                      (conv_right, "tsd.convolve(kernel, trim='right')")]):
     ax.plot(short_tsd, 'o-', label="original", alpha=0.7)
     ax.plot(conv, 'o-', label="convolved")
     ax.set_xlabel("Time (s)")
     ax.set_title(title)
-    ax.legend()
+    if ax == axes[0]: ax.legend()    
 plt.tight_layout()
 plt.show()
 ```
