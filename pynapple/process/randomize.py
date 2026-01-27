@@ -2,6 +2,8 @@
 Functions to shuffle timestamps to create surrogate datasets.
 """
 
+import warnings
+
 import numpy as np
 
 from .. import core as nap
@@ -93,25 +95,20 @@ def shift_timestamps(data, min_shift=0.0, max_shift=None):
     if max_shift is not None and not isinstance(max_shift, (int, float)):
         raise TypeError("max_shift should be a number.")
 
-    if not isinstance(
-        data, (nap.Ts, nap.Tsd, nap.TsGroup, nap.TsdFrame, nap.TsdTensor)
-    ):
-        raise TypeError("Invalid input, data should be a time series object.")
+    if not isinstance(data, (nap.Ts, nap.TsGroup)):
+        raise TypeError("Invalid input, data should be a Ts or TsGroup.")
 
     time_support = data.time_support
 
     def _shift(data):
+        if not isinstance(data, nap.Ts):
+            warnings.warn("")
         shifted_timestamps = np.sort(
             _shift_ts(
                 data.times(), time_support, min_shift=min_shift, max_shift=max_shift
             )
         )
-        if isinstance(data, nap.Ts):
-            return nap.Ts(t=shifted_timestamps, time_support=time_support)
-        else:
-            return type(data)(
-                t=shifted_timestamps, d=data.values, time_support=time_support
-            )
+        return nap.Ts(t=shifted_timestamps, time_support=time_support)
 
     if isinstance(data, nap.TsGroup):
         return nap.TsGroup(

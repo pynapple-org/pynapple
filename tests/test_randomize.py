@@ -13,16 +13,32 @@ import pynapple as nap
     [
         # data type
         (nap.Ts(t=[1, 2, 3]), 1.0, 1.0, does_not_raise()),
-        (nap.Tsd(t=[1, 2, 3], d=np.ones(3)), 1.0, 1.0, does_not_raise()),
-        (nap.TsdFrame(t=[1, 2, 3], d=np.ones((3, 2))), 1.0, 1.0, does_not_raise()),
-        (nap.TsdTensor(t=[1, 2, 3], d=np.ones((3, 2, 2))), 1.0, 1.0, does_not_raise()),
+        (nap.TsGroup({1: nap.Ts([1, 2, 3])}), 1.0, 1.0, does_not_raise()),
         (
             [1, 2, 3],
             1.0,
             1.0,
             pytest.raises(
                 TypeError,
-                match="Invalid input, data should be a time series object.",
+                match="Invalid input, data should be a Ts or TsGroup.",
+            ),
+        ),
+        (
+            nap.TsdFrame(t=[1, 2, 3], d=np.ones((3, 2))),
+            1.0,
+            1.0,
+            pytest.raises(
+                TypeError,
+                match="Invalid input, data should be a Ts or TsGroup.",
+            ),
+        ),
+        (
+            nap.Tsd(t=[1, 2, 3], d=np.ones(3)),
+            1.0,
+            1.0,
+            pytest.raises(
+                TypeError,
+                match="Invalid input, data should be a Ts or TsGroup.",
             ),
         ),
         (
@@ -31,7 +47,7 @@ import pynapple as nap
             1.0,
             pytest.raises(
                 TypeError,
-                match="Invalid input, data should be a time series object.",
+                match="Invalid input, data should be a Ts or TsGroup.",
             ),
         ),
         # min shift
@@ -96,26 +112,12 @@ def test_shift_timestamps_type_errors(data, min_shift, max_shift, expectation):
         (2, [25, 27, 33.3, 34.5], nap.IntervalSet(0, 40), [27, 29, 35.3, 36.5]),
     ],
 )
-@pytest.mark.parametrize(
-    "data_type, values",
-    [
-        (nap.Ts, None),
-        (nap.Tsd, np.ones(4)),
-        (nap.TsdFrame, np.ones((4, 2))),
-        (nap.TsdTensor, np.ones((4, 2, 2))),
-    ],
-)
-def test_shift_timestamps(data_type, values, shift, times, time_support, expectation):
-    if values is None:
-        data = data_type(t=times, time_support=time_support)
-    else:
-        data = data_type(t=times, d=values, time_support=time_support)
-    shifted = nap.randomize.shift_timestamps(data, min_shift=shift, max_shift=shift)
-    assert isinstance(shifted, data_type)
+def test_shift_timestamps(shift, times, time_support, expectation):
+    data = nap.Ts(t=times, time_support=time_support)
+    shifted = nap.shift_timestamps(data, min_shift=shift, max_shift=shift)
+    assert isinstance(shifted, nap.Ts)
     if time_support is not None:
         np.testing.assert_array_equal(shifted.time_support, time_support)
-    if values is not None:
-        np.testing.assert_array_equal(shifted.values, values)
     np.testing.assert_array_equal(shifted.times(), expectation)
 
 
@@ -178,7 +180,7 @@ def test_shift_timestamps(data_type, values, shift, times, time_support, expecta
     ],
 )
 def test_shift_timestamps_tsgroup(data, shift, expectation):
-    shifted = nap.randomize.shift_timestamps(data, min_shift=shift, max_shift=shift)
+    shifted = nap.shift_timestamps(data, min_shift=shift, max_shift=shift)
     assert len(shifted) == len(data)
     for i, (true_key, new_key) in enumerate(zip(data.keys(), shifted.keys())):
         assert true_key == new_key
