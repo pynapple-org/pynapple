@@ -60,6 +60,24 @@ def get_features_n(n, fs=10.0):
         (get_group_n(3).count(0.1), get_features_n(1), {}, does_not_raise()),
         (nap.Tsd(t=[1, 2, 3], d=[1, 1, 1]), get_features_n(1), {}, does_not_raise()),
         (nap.Ts([1, 2, 3]), get_features_n(1), {}, does_not_raise()),
+        (
+            nap.TsGroup({1: nap.Tsd(t=[1, 2, 3], d=[1, 1, 1])}),
+            get_features_n(1),
+            {},
+            pytest.warns(
+                UserWarning,
+                match="TsGroup entry 1 was not a Ts, but treating it as one!",
+            ),
+        ),
+        (
+            nap.TsGroup({1: nap.Ts([1, 2, 3]), 2: nap.Tsd(t=[1, 2, 3], d=[1, 1, 1])}),
+            get_features_n(1),
+            {},
+            pytest.warns(
+                UserWarning,
+                match="TsGroup entry 2 was not a Ts, but treating it as one!",
+            ),
+        ),
         # features
         (
             get_group_n(1),
@@ -481,7 +499,7 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 },
                 attrs={
                     "fs": 10.0,
-                    "occupancy": np.where(np.eye(10), 100.0, np.nan),
+                    "occupancy": np.where(np.eye(10), 100.0, 0.0),
                     "bin_edges": [np.linspace(0, i * 9.9, 11) for i in range(1, 3)],
                     "rates": [10.01001, 1.001001],
                 },
@@ -519,7 +537,7 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 },
                 attrs={
                     "fs": 10.0,
-                    "occupancy": np.where(np.eye(5), 200.0, np.nan),
+                    "occupancy": np.where(np.eye(5), 200.0, 0.0),
                     "bin_edges": [np.linspace(0, i * 9.9, 6) for i in range(1, 3)],
                     "rates": [10.01001],
                 },
@@ -552,11 +570,11 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                     "fs": 10.0,
                     "occupancy": np.array(
                         [
-                            [200.0, np.nan, np.nan, np.nan],
-                            [50.0, 150.0, np.nan, np.nan],
-                            [np.nan, 100.0, 100.0, np.nan],
-                            [np.nan, np.nan, 150.0, 50.0],
-                            [np.nan, np.nan, np.nan, 200.0],
+                            [200.0, 0.0, 0.0, 0.0],
+                            [50.0, 150.0, 0.0, 0.0],
+                            [0.0, 100.0, 100.0, 0.0],
+                            [0.0, 0.0, 150.0, 50.0],
+                            [0.0, 0.0, 0.0, 200.0],
                         ]
                     ),
                     "bin_edges": [np.linspace(0, 9.9, 6), np.linspace(0, 19.8, 5)],
@@ -596,7 +614,7 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 },
                 attrs={
                     "fs": 10.0,
-                    "occupancy": np.where(np.eye(5), 200.0, np.nan),
+                    "occupancy": np.where(np.eye(5), 200.0, 0.0),
                     "bin_edges": [np.linspace(0, i * 10, 6) for i in range(1, 3)],
                     "rates": [10.01001],
                 },
@@ -638,7 +656,7 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                         np.eye(10),
                         50.0
                         + 10.0 * (np.arange(10) == 9)[:, None] * (np.arange(10) == 9),
-                        np.nan,
+                        0.0,
                     ),
                     "bin_edges": [np.linspace(0, i * 5, 11) for i in range(1, 3)],
                     "rates": [10.01001],
@@ -681,7 +699,7 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                         np.eye(10),
                         50.0
                         + 10.0 * (np.arange(10) == 9)[:, None] * (np.arange(10) == 9),
-                        np.nan,
+                        0.0,
                     ),
                     "bin_edges": [np.linspace(0, i * 5, 11) for i in range(1, 3)],
                     "rates": [10.01001],
@@ -707,7 +725,7 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                         np.eye(10),
                         50.0
                         + 10.0 * (np.arange(10) == 9)[:, None] * (np.arange(10) == 9),
-                        np.nan,
+                        0.0,
                     ),
                     "bin_edges": [np.linspace(0, i * 5, 11) for i in range(1, 3)],
                     "rates": [10.01001],
@@ -797,7 +815,7 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 },
                 attrs={
                     "fs": 10.0,
-                    "occupancy": np.where(np.eye(10), 100.0, np.nan),
+                    "occupancy": np.where(np.eye(10), 100.0, 0.0),
                     "bin_edges": [np.linspace(0, i * 9.9, 11) for i in range(1, 3)],
                     "rates": [10.01001],
                 },
@@ -859,7 +877,7 @@ def test_compute_tuning_curves_type_errors(data, features, kwargs, expectation):
                 },
                 attrs={
                     "fs": 10.0,
-                    "occupancy": np.where(np.eye(10), 100.0, np.nan),
+                    "occupancy": np.where(np.eye(10), 100.0, 0.0),
                     "bin_edges": [np.linspace(0, i * 9.9, 11) for i in range(1, 3)],
                     "rates": [10.01001],
                 },
