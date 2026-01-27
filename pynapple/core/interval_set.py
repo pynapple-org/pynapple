@@ -19,11 +19,7 @@ from ._jitted_functions import (
     jitunion,
 )
 from .config import nap_config
-from .metadata_class import (
-    _MetadataMixin,
-    add_meta_docstring,
-    add_or_convert_metadata,
-)
+from .metadata_class import _MetadataMixin, add_meta_docstring, add_or_convert_metadata
 from .time_index import TsIndex
 from .utils import (
     _convert_iter_to_str,
@@ -196,9 +192,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             start = start.start.astype(np.float64)
 
         elif isinstance(start, pd.DataFrame):
-            assert (
-                "start" in start.columns and "end" in start.columns
-            ), """
+            assert "start" in start.columns and "end" in start.columns, """
                 DataFrame must contain columns name "start" and "end" for start and end times.                   
                 """
             # try sorting the DataFrame by start times, preserving its end pair, as an effort to preserve metadata
