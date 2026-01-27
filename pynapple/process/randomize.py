@@ -21,7 +21,7 @@ def shift_timestamps(data, min_shift=0.0, max_shift=None):
 
     Parameters
     ----------
-    data : Ts, Tsd, TsGroup, TsdFrame, TsdTensor
+    data : Ts, TsGroup
         The timeseries object whose timestamps to shift.
         If TsGroup, shifts all objects in the group independently.
     min_shift : float, optional
