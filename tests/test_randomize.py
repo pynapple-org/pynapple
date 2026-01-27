@@ -50,6 +50,24 @@ import pynapple as nap
                 match="Invalid input, data should be a Ts or TsGroup.",
             ),
         ),
+        (
+            nap.TsGroup({1: nap.Tsd(t=[1, 2, 3], d=[1, 1, 1])}),
+            1.0,
+            1.0,
+            pytest.warns(
+                UserWarning,
+                match="TsGroup entry 1 was not a Ts, but treating it as one!",
+            ),
+        ),
+        (
+            nap.TsGroup({1: nap.Ts([1, 2, 3]), 2: nap.Tsd(t=[1, 2, 3], d=[1, 1, 1])}),
+            1.0,
+            1.0,
+            pytest.warns(
+                UserWarning,
+                match="TsGroup entry 2 was not a Ts, but treating it as one!",
+            ),
+        ),
         # min shift
         (nap.Ts(t=[1, 2, 3]), 1.0, None, does_not_raise()),
         (

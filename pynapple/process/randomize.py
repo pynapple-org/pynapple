@@ -101,8 +101,6 @@ def shift_timestamps(data, min_shift=0.0, max_shift=None):
     time_support = data.time_support
 
     def _shift(data):
-        if not isinstance(data, nap.Ts):
-            warnings.warn("")
         shifted_timestamps = np.sort(
             _shift_ts(
                 data.times(), time_support, min_shift=min_shift, max_shift=max_shift
@@ -111,9 +109,15 @@ def shift_timestamps(data, min_shift=0.0, max_shift=None):
         return nap.Ts(t=shifted_timestamps, time_support=time_support)
 
     if isinstance(data, nap.TsGroup):
-        return nap.TsGroup(
-            {k: _shift(data[k]) for k in data}, time_support=time_support
-        )
+        shifted = {}
+        for k in data:
+            if not isinstance(data[k], nap.Ts):
+                warnings.warn(
+                    f"TsGroup entry {k} was not a Ts, but treating it as one!",
+                    UserWarning,
+                )
+            shifted[k] = _shift(data[k])
+        return nap.TsGroup(shifted, time_support=time_support)
     else:
         return _shift(data)
 
