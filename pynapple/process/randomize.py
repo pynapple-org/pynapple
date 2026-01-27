@@ -75,19 +75,6 @@ def shift_timestamps(data, min_shift=0.0, max_shift=None):
         26.0
         34.3
         shape: 3
-
-    You can also pass timeseries with data, in that case the data is not shifted:
-
-        >>> tsd = nap.Tsd([25, 27, 33.3, 34.5], d=[1, 2, 3, 4])
-        >>> shifted_tsd = nap.shift_timestamps(tsd, min_shift=1, max_shift=1)
-        >>> shifted_tsd
-        Time (s)
-        ----------  --
-        26           1
-        26           2
-        28           3
-        34.3         4
-        dtype: int64, shape: (4,)
     """
     if not isinstance(min_shift, (int, float)):
         raise TypeError("min_shift should be a number.")
