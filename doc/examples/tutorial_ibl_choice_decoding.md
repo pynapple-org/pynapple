@@ -150,7 +150,7 @@ clf = RandomizedSearchCV(
     param_distributions={'C': scipy.stats.loguniform(1e-3, 1e3)},
     random_state=0,
 )
-clf.fit(X, y)
+clf.fit(X, y);
 ```
 
 ```{code-cell} ipython3
