@@ -9,6 +9,7 @@ BaseLoader is the general class for loading session with pynapple.
 
 @author: Guillaume Viejo
 """
+
 import importlib
 import os
 import warnings
@@ -40,9 +41,7 @@ def get_error_text(path):
 
     A more advanced project for creating NWB files is neuroconv:
     https://neuroconv.readthedocs.io/en/main/
-    """.format(
-        path
-    )
+    """.format(path)
 
     error_txt = "\n" + border + "\n" + txt1 + "\n" + border
     return error_txt
