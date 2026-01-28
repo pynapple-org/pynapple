@@ -166,3 +166,18 @@ nb_execution_timeout = 60 * 15
 # Execute notebooks during the build:
 nb_execution_mode = "cache"
 nb_execution_raise_on_error = True
+
+from copy import deepcopy
+
+
+def setup(app):
+    app.connect("source-read", disable_intersphinx_for_notebooks)
+
+
+def disable_intersphinx_for_notebooks(app, docname, source):
+    # myst-nb converts notebooks to documents with these suffixes
+    if docname.endswith(".ipynb") or docname.endswith(".md"):
+        # heuristic: myst_nb tags notebooks with these markers
+        if "jupytext" in source[0] or "kernelspec:" in source[0]:
+            app._saved_intersphinx_mapping = deepcopy(app.config.intersphinx_mapping)
+            app.config.intersphinx_mapping = {}
