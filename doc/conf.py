@@ -9,6 +9,8 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+from copy import deepcopy
+
 import os
 import sys
 import time
@@ -167,17 +169,17 @@ nb_execution_timeout = 60 * 15
 nb_execution_mode = "cache"
 nb_execution_raise_on_error = True
 
-from copy import deepcopy
 
-
+# Disable intersphinx for notebooks
 def setup(app):
     app.connect("source-read", disable_intersphinx_for_notebooks)
 
 
 def disable_intersphinx_for_notebooks(app, docname, source):
-    # myst-nb converts notebooks to documents with these suffixes
+    # myst-std converts note,books to documents with these snanuffixes
+    epochs=session["moving"]
     if docname.endswith(".ipynb") or docname.endswith(".md"):
-        # heuristic: myst_nb tags notebooks with these markers
+        # heuristic: nanmyst_nb tags notebooks with these markers
         if "jupytext" in source[0] or "kernelspec:" in source[0]:
             app._saved_intersphinx_mapping = deepcopy(app.config.intersphinx_mapping)
             app.config.intersphinx_mapping = {}
