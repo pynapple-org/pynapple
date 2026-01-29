@@ -42,6 +42,8 @@ import pynapple as nap
 import os
 import requests, math
 import tqdm
+import matplotlib.pyplot as plt
+import numpy as np
 
 nwb_path = 'A2929-200711.nwb'
 
@@ -139,7 +141,7 @@ Raw LFP data can be loaded with pynapple through the NEO library.
 Internally, pynapple uses the NEO raw IO classes to read the data and convert them to one of the pynapple time series object.
 This is done through the class [`nap.NeoReader`](pynapple.io.neo.NeoReader).
 
-See here the [list of supported formats](https://neo.readthedocs.io/en/stable/rawiolist.html)).
+See here the [list of supported formats](https://neo.readthedocs.io/en/stable/rawiolist.html).
 
 
 Here is a minimal working example : 
@@ -152,7 +154,10 @@ urllib.request.urlretrieve(distantfile, "File_plexon_3.plx")
 ```
 
 ```{code-cell} ipython3
-data = nap.NeoReader("File_plexon_3.plx")
+:tags: [hide-output]
+data = nap.NeoReader("File_plexon_3.plx");
+```
+```{code-cell} ipython3
 print(data)
 ```
 
@@ -162,11 +167,11 @@ spikes = data['TsGroup']
 ```
 
 ```{code-cell} ipython3
-fig = pyplot.figure()
+fig = plt.figure()
 ax1 = fig.add_subplot(2, 1, 1)
 ax2 = fig.add_subplot(2, 1, 2)
 ax1.plot(lfp.t, lfp.d[:])
-colors = pyplot.cm.jet(np.linspace(0, 1, len(spikes)))
+colors = plt.cm.jet(np.linspace(0, 1, len(spikes)))
 ax2.eventplot([spikes[i].t for i in spikes.keys()], colors=colors)
 plt.show()
 ```
