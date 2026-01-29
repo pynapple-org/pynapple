@@ -13,7 +13,7 @@ kernelspec:
 
 # Input-output & lazy-loading
 
-Pynapple provides loaders for [NWB format](https://pynwb.readthedocs.io/en/stable/index.html#). 
+Pynapple provides multiple ways to load data. The two main formats are NWB and NPZ. In addition, raw LFP data can be loaded through the NEO library. 
 
 Each pynapple objects can be saved as a [`npz`](https://numpy.org/devdocs/reference/generated/numpy.savez.html) with a special structure and loaded as a `npz`.
 
@@ -155,7 +155,7 @@ urllib.request.urlretrieve(distantfile, "File_plexon_3.plx")
 
 ```{code-cell} ipython3
 :tags: [hide-output]
-data = nap.NeoReader("File_plexon_3.plx");
+data = nap.NeoReader("File_plexon_3.plx", format="PlexonIO");
 ```
 ```{code-cell} ipython3
 print(data)
@@ -171,8 +171,11 @@ fig = plt.figure()
 ax1 = fig.add_subplot(2, 1, 1)
 ax2 = fig.add_subplot(2, 1, 2)
 ax1.plot(lfp.t, lfp.d[:])
+ax1.set_xlabel("Time (s)")
 colors = plt.cm.jet(np.linspace(0, 1, len(spikes)))
 ax2.eventplot([spikes[i].t for i in spikes.keys()], colors=colors)
+ax2.set_xlabel("Time (s)")
+plt.tight_layout()
 plt.show()
 ```
 

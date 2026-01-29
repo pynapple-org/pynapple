@@ -79,8 +79,8 @@ Input-Ouput
     :nosignatures:
     :recursive:
 
-    NeoReader
-    NeoSignalInterface
+     NeoReader
+     NeoSignalInterface
 
 
 .. currentmodule:: pynapple.io

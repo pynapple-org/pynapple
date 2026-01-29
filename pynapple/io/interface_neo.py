@@ -1,33 +1,8 @@
-"""
-Pynapple interface for Neo (neural electrophysiology objects).
+"""Pynapple interface to Neo for reading electrophysiology files."""
 
-Neo is a Python package for working with electrophysiology data in Python,
-supporting many file formats through a unified API.
-
-The interface behaves like a dictionary.
-
-For more information on Neo, see: https://neo.readthedocs.io/
-
-Neo to Pynapple Object Conversion
----------------------------------
-The following Neo objects are converted to their pynapple equivalents:
-
-- 'neo.AnalogSignal' -> 'Tsd', `TsdFrame`, or `TsdTensor` (depending on shape) [lazy-loaded]
-- neo.IrregularlySampledSignal -> Tsd, TsdFrame, or TsdTensor (depending on shape) [lazy-loaded]
-- neo.SpikeTrain -> Ts
-- neo.SpikeTrain (list) -> TsGroup
-- neo.SpikeTrainList -> TsGroup
-- neo.Epoch -> IntervalSet
-- neo.Event -> Ts
-
-Note: All data types support lazy loading. Data is only loaded when accessed
-via __getitem__ (e.g., data["TsGroup"]).
-"""
-
-import warnings
 from collections import UserDict
 from pathlib import Path
-from typing import Union, Optional, Dict, Any, List
+from typing import Union, Optional, Dict, Any, List, Type
 
 import numpy as np
 
@@ -396,7 +371,7 @@ def _make_tsgroup_from_spiketrains(
             # Skip metadata that can't be converted to array
             pass
 
-    return nap.TsGroup(ts_dict, time_support=time_support, **meta_arrays)
+    return nap.TsGroup(ts_dict, time_support=time_support, metadata=meta_arrays)
 
 
 def _make_tsgroup_from_spiketrains_multiseg(
@@ -457,7 +432,7 @@ def _make_tsgroup_from_spiketrains_multiseg(
             # Skip metadata that can't be converted to array
             pass
 
-    return nap.TsGroup(ts_dict, time_support=time_support, **meta_arrays)
+    return nap.TsGroup(ts_dict, time_support=time_support, metadata=meta_arrays)
 
 def _make_tsd_from_interface(interface) -> Union[nap.Tsd, nap.TsdFrame, nap.TsdTensor]:
     """Convert a NeoSignalInterface to a pynapple Tsd/TsdFrame/TsdTensor.
@@ -795,11 +770,47 @@ class NeoSignalInterface:
 
 
 class NeoReader(UserDict):
-    """Class for reading Neo-compatible files.
+    """Read Neo-compatible electrophysiology files into pynapple objects.
+
+    `Neo <https://neo.readthedocs.io/>`_ is a Python package for working with
+    electrophysiology data, supporting many file formats through a unified API.
 
     This class provides a dictionary-like interface to Neo files, with
     lazy-loading support. It automatically detects the appropriate IO
     based on the file extension.
+
+    Neo to Pynapple Object Conversion
+    ---------------------------------
+    The following Neo objects are converted to their pynapple equivalents:
+
+    .. list-table::
+       :header-rows: 1
+       :widths: 40 40 20
+
+       * - Neo Object
+         - Pynapple Object
+         - Notes
+       * - `AnalogSignal <https://neo.readthedocs.io/en/latest/api_reference.html#neo.core.AnalogSignal>`_
+         - :py:class:`~pynapple.Tsd`, :py:class:`~pynapple.TsdFrame`, or :py:class:`~pynapple.TsdTensor`
+         - Depends on shape; lazy-loaded
+       * - `IrregularlySampledSignal <https://neo.readthedocs.io/en/latest/api_reference.html#neo.core.IrregularlySampledSignal>`_
+         - :py:class:`~pynapple.Tsd`, :py:class:`~pynapple.TsdFrame`, or :py:class:`~pynapple.TsdTensor`
+         - Depends on shape; lazy-loaded
+       * - `SpikeTrain <https://neo.readthedocs.io/en/latest/api_reference.html#neo.core.SpikeTrain>`_
+         - :py:class:`~pynapple.Ts`
+         - Single unit
+       * - `SpikeTrain <https://neo.readthedocs.io/en/latest/api_reference.html#neo.core.SpikeTrain>`_ (list)
+         - :py:class:`~pynapple.TsGroup`
+         - Multiple units
+       * - `Epoch <https://neo.readthedocs.io/en/latest/api_reference.html#neo.core.Epoch>`_
+         - :py:class:`~pynapple.IntervalSet`
+         -
+       * - `Event <https://neo.readthedocs.io/en/latest/api_reference.html#neo.core.Event>`_
+         - :py:class:`~pynapple.Ts`
+         -
+
+    Note: All data types support lazy loading. Data is only loaded when accessed
+    via ``__getitem__`` (e.g., ``data["TsGroup"]``).
 
     Parameters
     ----------
@@ -807,25 +818,43 @@ class NeoReader(UserDict):
         Path to the file to load
     lazy : bool, default True
         Whether to use lazy loading
+    format : str, type, or None, default None
+        Specify the Neo IO format to use. Can be:
+
+        - ``None``: Automatically detect the format using ``neo.io.get_io``
+        - ``str``: Name of the IO class (e.g., ``"PlexonIO"``, ``"Plexon"``, ``"plexon"``)
+        - ``type``: A class from ``neo.io.iolist`` (e.g., ``neo.io.PlexonIO``)
+
+        When a string is provided, it is matched case-insensitively against IO class names.
+        The "IO" suffix is optional.
 
     Examples
     --------
     >>> import pynapple as nap
-    >>> data = nap.io.NeoReader("my_file.plx")
+    >>> data = nap.NeoReader("my_file.plx")
     >>> print(data)
     my_file
-    +---------------------+----------+
-    | Key                 | Type     |
-    +=====================+==========+
-    | TsGroup             | TsGroup  |
-    | Tsd 0: LFP          | Tsd      |
-    +---------------------+----------+
+    ┍━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┑
+    │ Key                 │ Type     │
+    ┝━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┥
+    │ TsGroup             │ TsGroup  │
+    │ Tsd 0: LFP          │ Tsd      │
+    ┕━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┙
 
     >>> spikes = data["TsGroup"]
     >>> lfp = data["Tsd 0: LFP"]
+
+    To explicitly specify the file format:
+
+    >>> data = nap.NeoReader("my_file.plx", format="PlexonIO")
     """
 
-    def __init__(self, file: Union[str, Path], lazy: bool = True):
+    def __init__(
+        self,
+        file: Union[str, Path],
+        lazy: bool = True,
+        format: Union[str, Type, None] = None,
+    ):
         _check_neo_installed()
 
         self.path = Path(file)
@@ -835,8 +864,41 @@ class NeoReader(UserDict):
         self.name = self.path.stem
         self._lazy = lazy
 
-        # Get appropriate IO
-        self._reader = neo.io.get_io(str(self.path))
+        # Get appropriate IO based on format argument
+        if format is None:
+            # Auto-detect format
+            self._reader = neo.io.get_io(str(self.path))
+        elif isinstance(format, str):
+            # Find the IO class by name (case-insensitive, with or without "IO" suffix)
+            io_class = None
+            format_lower = format.lower()
+            for io in neo.io.iolist:
+                io_name = io.__name__.lower()
+                io_name_no_suffix = io_name.replace("io", "")
+                if io_name == format_lower or io_name_no_suffix == format_lower:
+                    io_class = io
+                    break
+            if io_class is None:
+                available = [io.__name__ for io in neo.io.iolist]
+                raise ValueError(
+                    f"Format '{format}' not found in neo.io.iolist. "
+                    f"Available formats: {available}"
+                )
+            self._reader = io_class(str(self.path))
+        elif isinstance(format, type):
+            # Verify the class is in neo.io.iolist
+            if format not in neo.io.iolist:
+                available = [io.__name__ for io in neo.io.iolist]
+                raise ValueError(
+                    f"Class {format.__name__} is not in neo.io.iolist. "
+                    f"Available formats: {available}"
+                )
+            self._reader = format(str(self.path))
+        else:
+            raise TypeError(
+                f"format must be None, a string, or a class from neo.io.iolist, "
+                f"not {type(format).__name__}"
+            )
 
         # Read blocks
         self._blocks = self._reader.read(lazy=lazy)
