@@ -264,13 +264,17 @@ def compute_tuning_curves(
         if isinstance(data, nap.Ts):
             data = nap.TsGroup({0: data})
         for i, n in enumerate(keys):
+            if not isinstance(data[n], nap.Ts):
+                warnings.warn(
+                    f"TsGroup entry {n} was not a Ts, but treating it as one!"
+                )
             tcs[i] = np.histogramdd(
                 data[n].value_from(features),
                 bins=bin_edges,
             )[0]
-        occupancy[occupancy == 0.0] = np.nan
-        if not return_counts:
-            tcs = (tcs / occupancy) * fs
+        with np.errstate(divide="ignore", invalid="ignore"):
+            if not return_counts:
+                tcs = (tcs / occupancy) * fs
     else:
         # RATES
         values = data.value_from(features)
