@@ -31,10 +31,11 @@ def shift_timestamps(data, min_shift=0.0, max_shift=None, mode="drop"):
         minimum shift (default: 0)
     max_shift : float, optional
         maximum shift, (default: length of time support)
-    mode : {'drop', 'wrap'}, optional
+    mode : ``'drop'`` or ``'wrap'``, optional
         How to handle timestamps that fall outside the time support after shifting.
-        - 'drop' (default): drop those timestamps
-        - 'wrap': circularly wrap timestamps within the time support
+
+        * ``'drop'``: (default): drop those timestamps
+        * ``'wrap'``: circularly wrap timestamps within the time support
 
     Returns
     -------
