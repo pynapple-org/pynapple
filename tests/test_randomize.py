@@ -9,15 +9,16 @@ import pynapple as nap
 
 
 @pytest.mark.parametrize(
-    "data, min_shift, max_shift, expectation",
+    "data, min_shift, max_shift, mode, expectation",
     [
         # data type
-        (nap.Ts(t=[1, 2, 3]), 1.0, 1.0, does_not_raise()),
-        (nap.TsGroup({1: nap.Ts([1, 2, 3])}), 1.0, 1.0, does_not_raise()),
+        (nap.Ts(t=[1, 2, 3]), 1.0, 1.0, "drop", does_not_raise()),
+        (nap.TsGroup({1: nap.Ts([1, 2, 3])}), 1.0, 1.0, "drop", does_not_raise()),
         (
             [1, 2, 3],
             1.0,
             1.0,
+            "drop",
             pytest.raises(
                 TypeError,
                 match="Invalid input, data should be a Ts or TsGroup.",
@@ -27,6 +28,7 @@ import pynapple as nap
             nap.TsdFrame(t=[1, 2, 3], d=np.ones((3, 2))),
             1.0,
             1.0,
+            "drop",
             pytest.raises(
                 TypeError,
                 match="Invalid input, data should be a Ts or TsGroup.",
@@ -36,6 +38,7 @@ import pynapple as nap
             nap.Tsd(t=[1, 2, 3], d=np.ones(3)),
             1.0,
             1.0,
+            "drop",
             pytest.raises(
                 TypeError,
                 match="Invalid input, data should be a Ts or TsGroup.",
@@ -45,6 +48,7 @@ import pynapple as nap
             nap.IntervalSet(1, 2),
             1.0,
             1.0,
+            "drop",
             pytest.raises(
                 TypeError,
                 match="Invalid input, data should be a Ts or TsGroup.",
@@ -54,6 +58,7 @@ import pynapple as nap
             nap.TsGroup({1: nap.Tsd(t=[1, 2, 3], d=[1, 1, 1])}),
             1.0,
             1.0,
+            "drop",
             pytest.warns(
                 UserWarning,
                 match="TsGroup entry 1 was not a Ts, but treating it as one!",
@@ -63,17 +68,19 @@ import pynapple as nap
             nap.TsGroup({1: nap.Ts([1, 2, 3]), 2: nap.Tsd(t=[1, 2, 3], d=[1, 1, 1])}),
             1.0,
             1.0,
+            "drop",
             pytest.warns(
                 UserWarning,
                 match="TsGroup entry 2 was not a Ts, but treating it as one!",
             ),
         ),
         # min shift
-        (nap.Ts(t=[1, 2, 3]), 1.0, None, does_not_raise()),
+        (nap.Ts(t=[1, 2, 3]), 1.0, None, "drop", does_not_raise()),
         (
             nap.Ts(t=[1, 2, 3]),
             None,
             None,
+            "drop",
             pytest.raises(
                 TypeError,
                 match="min_shift should be a number.",
@@ -83,6 +90,7 @@ import pynapple as nap
             nap.Ts(t=[1, 2, 3]),
             "1.0",
             None,
+            "drop",
             pytest.raises(
                 TypeError,
                 match="min_shift should be a number.",
@@ -92,117 +100,118 @@ import pynapple as nap
             nap.Ts(t=[1, 2, 3]),
             [1.0],
             None,
+            "drop",
             pytest.raises(
                 TypeError,
                 match="min_shift should be a number.",
             ),
         ),
         # max shift
-        (nap.Ts(t=[1, 2, 3]), 1.0, None, does_not_raise()),
-        (nap.Ts(t=[1, 2, 3]), 1.0, 1.0, does_not_raise()),
+        (nap.Ts(t=[1, 2, 3]), 1.0, None, "drop", does_not_raise()),
+        (nap.Ts(t=[1, 2, 3]), 1.0, 1.0, "drop", does_not_raise()),
         (
             nap.Ts(t=[1, 2, 3]),
             1.0,
             "1.0",
+            "drop",
             pytest.raises(TypeError, match="max_shift should be a number."),
         ),
         (
             nap.Ts(t=[1, 2, 3]),
             1.0,
             [1.0],
+            "drop",
             pytest.raises(TypeError, match="max_shift should be a number."),
+        ),
+        # mode
+        (nap.Ts(t=[1, 2, 3]), 1.0, None, "drop", does_not_raise()),
+        (nap.Ts(t=[1, 2, 3]), 1.0, 1.0, "wrap", does_not_raise()),
+        (
+            nap.Ts(t=[1, 2, 3]),
+            1.0,
+            1.0,
+            "roll",
+            pytest.raises(ValueError, match="mode must be either 'drop' or 'wrap'."),
         ),
     ],
 )
-def test_shift_timestamps_type_errors(data, min_shift, max_shift, expectation):
+def test_shift_timestamps_type_errors(data, min_shift, max_shift, mode, expectation):
     with expectation:
-        nap.shift_timestamps(data, min_shift, max_shift)
+        nap.shift_timestamps(data, min_shift, max_shift, mode)
 
 
 @pytest.mark.parametrize(
-    "shift, times, time_support, expectation",
+    "mode, shift, times, time_support, expected",
     [
-        (1, [25, 27, 33.3, 34.5], None, [26, 26, 28, 34.3]),
-        (1, [25, 27, 33.3, 34.5], nap.IntervalSet(0, 34.5), [1, 26, 28, 34.3]),
-        (1, [25, 27, 33.3, 34.5], nap.IntervalSet(0, 40), [26, 28, 34.3, 35.5]),
-        (2, [25, 27, 33.3, 34.5], None, [25.8, 27, 27, 29]),
-        (2, [25, 27, 33.3, 34.5], nap.IntervalSet(0, 34.5), [0.8, 2, 27, 29]),
-        (2, [25, 27, 33.3, 34.5], nap.IntervalSet(0, 40), [27, 29, 35.3, 36.5]),
+        ("drop", 1, [25, 27, 33.3, 34.5], None, [26, 28, 34.3]),
+        ("wrap", 1, [25, 27, 33.3, 34.5], None, [26, 28, 34.3, 26]),
+        ("drop", 2, [25, 27, 33.3, 34.5], None, [27, 29]),
+        ("wrap", 2, [25, 27, 33.3, 34.5], None, [27, 29, 25.8, 27]),
+        # -------------------------------
+        # Bigger time support
+        # -------------------------------
+        ("drop", 1, [25, 27, 33.3, 34.5], nap.IntervalSet(0, 34.5), [26, 28, 34.3]),
+        (
+            "wrap",
+            1,
+            [25, 27, 33.3, 34.5],
+            nap.IntervalSet(0, 34.5),
+            [26, 28, 34.3, 1.0],
+        ),
+        ("drop", 2, [25, 27, 33.3, 34.5], nap.IntervalSet(0, 34.5), [27, 29]),
+        ("wrap", 2, [25, 27, 33.3, 34.5], nap.IntervalSet(0, 34.5), [27, 29, 0.8, 2.0]),
+        # -------------------------------
+        # Multi-epoch time support
+        # -------------------------------
+        (
+            "drop",
+            1,
+            [25, 27, 33.3, 34.5],
+            nap.IntervalSet(start=[25, 30], end=[27, 34.5]),
+            [26, 34.3],
+        ),
+        (
+            "wrap",
+            1,
+            [25, 27, 33.3, 34.5],
+            nap.IntervalSet(start=[25, 30], end=[27, 34.5]),
+            [26, 34.3, 26],
+        ),  # wrap ignores epoch boundaries
     ],
 )
-def test_shift_timestamps(shift, times, time_support, expectation):
+def test_shift_timestamps(mode, shift, times, time_support, expected):
     data = nap.Ts(t=times, time_support=time_support)
-    shifted = nap.shift_timestamps(data, min_shift=shift, max_shift=shift)
+    shifted = nap.shift_timestamps(data, min_shift=shift, max_shift=shift, mode=mode)
+
     assert isinstance(shifted, nap.Ts)
     if time_support is not None:
         np.testing.assert_array_equal(shifted.time_support, time_support)
-    np.testing.assert_array_equal(shifted.times(), expectation)
+
+    np.testing.assert_allclose(shifted.times(), sorted(expected))
 
 
-@pytest.mark.parametrize(
-    "shift, data, expectation",
-    [
-        (1, nap.TsGroup({1: nap.Ts([25, 27, 33.3, 34.5])}), [[26, 26, 28, 34.3]]),
-        (
-            1,
-            nap.TsGroup(
-                {1: nap.Ts([25, 27, 33.3, 34.5])}, time_support=nap.IntervalSet(0, 34.5)
-            ),
-            [[1, 26, 28, 34.3]],
-        ),
-        (
-            1,
-            nap.TsGroup(
-                {1: nap.Ts([25, 27, 33.3, 34.5])}, time_support=nap.IntervalSet(0, 40)
-            ),
-            [[26, 28, 34.3, 35.5]],
-        ),
-        (
-            1,
-            nap.TsGroup(
-                {1: nap.Ts([25, 27, 33.3, 34.5]), 2: nap.Ts([24, 26, 32.3, 33.5])},
-            ),
-            [[25, 26, 28, 34.3], [24, 25, 27, 33.3]],
-        ),
-        (
-            1,
-            nap.TsGroup(
-                {1: nap.Ts([25, 27, 33.3, 34.5]), 2: nap.Ts([24, 26, 32.3, 33.5])},
-                time_support=nap.IntervalSet(0, 34.5),
-            ),
-            [[1, 26, 28, 34.3], [0, 25, 27, 33.3]],
-        ),
-        (
-            1,
-            nap.TsGroup(
-                {1: nap.Ts([25, 27, 33.3, 34.5]), 2: nap.Ts([24, 26, 32.3, 33.5])},
-                time_support=nap.IntervalSet(0, 40),
-            ),
-            [[26, 28, 34.3, 35.5], [25, 27, 33.3, 34.5]],
-        ),
-        (2, nap.TsGroup({1: nap.Ts([25, 27, 33.3, 34.5])}), [[25.8, 27, 27, 29]]),
-        (
-            2,
-            nap.TsGroup(
-                {1: nap.Ts([25, 27, 33.3, 34.5])}, time_support=nap.IntervalSet(0, 34.5)
-            ),
-            [[0.8, 2, 27, 29]],
-        ),
-        (
-            2,
-            nap.TsGroup(
-                {1: nap.Ts([25, 27, 33.3, 34.5])}, time_support=nap.IntervalSet(0, 40)
-            ),
-            [[27, 29, 35.3, 36.5]],
-        ),
-    ],
-)
-def test_shift_timestamps_tsgroup(data, shift, expectation):
-    shifted = nap.shift_timestamps(data, min_shift=shift, max_shift=shift)
-    assert len(shifted) == len(data)
-    for i, (true_key, new_key) in enumerate(zip(data.keys(), shifted.keys())):
-        assert true_key == new_key
-        np.testing.assert_array_equal(shifted[new_key].times(), expectation[i])
+def test_shift_timestamps_group_drop():
+    ts1 = nap.Ts([45, 48, 50])
+    ts2 = nap.Ts([35, 38, 40])
+    group = nap.TsGroup({1: ts1, 2: ts2}, time_support=nap.IntervalSet(0, 50))
+
+    shifted_group = nap.shift_timestamps(group, min_shift=5, max_shift=5, mode="drop")
+    assert isinstance(shifted_group, nap.TsGroup)
+
+    np.testing.assert_allclose(shifted_group[1].times(), [50])
+    np.testing.assert_allclose(shifted_group[2].times(), [40, 43, 45])
+
+
+def test_shift_timestamps_group_wrap():
+    ts1 = nap.Ts([45, 48, 50])
+    ts2 = nap.Ts([35, 38, 40])
+    group = nap.TsGroup({1: ts1, 2: ts2}, time_support=nap.IntervalSet(0, 50))
+
+    shifted_group = nap.shift_timestamps(group, min_shift=5, max_shift=5, mode="wrap")
+    assert isinstance(shifted_group, nap.TsGroup)
+
+    np.testing.assert_allclose(sorted(shifted_group[1].times()), [0, 3, 5])
+    np.testing.assert_allclose(sorted(shifted_group[2].times()), [40, 43, 45])
 
 
 def test_shuffle_intervals_ts():

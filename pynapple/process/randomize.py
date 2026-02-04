@@ -9,7 +9,7 @@ import numpy as np
 from .. import core as nap
 
 
-def shift_timestamps(data, min_shift=0.0, max_shift=None):
+def shift_timestamps(data, min_shift=0.0, max_shift=None, mode="drop"):
     """
     Shifts all the time stamps of a random amount between a minimum and maximum shift, wrapping the
     end of the time support to the beginning.
@@ -17,7 +17,10 @@ def shift_timestamps(data, min_shift=0.0, max_shift=None):
     Notes
     -----
     If the time support of the input has multiple epochs, some timepoints will fall outside of
-    those epochs after shifting. This function will drop those timepoints.
+    those epochs after shifting. In ``mode='drop'``, those timepoints are dropped. In
+    ``mode='wrap'``, timestamps are wrapped circularly using the full time support.
+    However, if there are multiple epochs and ``mode='wrap'``,
+    timepoints falling outside the epochs in the middle are still dropped.
 
     Parameters
     ----------
@@ -28,6 +31,10 @@ def shift_timestamps(data, min_shift=0.0, max_shift=None):
         minimum shift (default: 0)
     max_shift : float, optional
         maximum shift, (default: length of time support)
+    mode : {'drop', 'wrap'}, optional
+        How to handle timestamps that fall outside the time support after shifting.
+        - 'drop' (default): drop those timestamps
+        - 'wrap': circularly wrap timestamps within the time support
 
     Returns
     -------
@@ -36,45 +43,55 @@ def shift_timestamps(data, min_shift=0.0, max_shift=None):
 
     Examples
     --------
-
-    As an example, consider the case where we set a fixed shift:
+    Fixed shift with default ``mode='drop'``:
 
         >>> import pynapple as nap
         >>> ts = nap.Ts([25, 27, 33.3, 34.5])
-        >>> shifted_ts = nap.shift_timestamps(ts, min_shift=1, max_shift=1)
+        >>> shifted_ts = nap.shift_timestamps(ts, min_shift=1, max_shift=1, mode="drop")
         >>> shifted_ts
         Time (s)
-        26.0
         26.0
         28.0
         34.3
         shape: 4
 
-    If the input has a time support, it will be respected:
+    The last timepoint falls outside the time support, so it is dropped.
 
-        >>> epochs = nap.IntervalSet(start=0, end=34.5)
-        >>> ts = nap.Ts([25, 27, 33.3, 34.5], time_support=epochs)
-        >>> shifted_ts = nap.shift_timestamps(ts, min_shift=1, max_shift=1)
-        >>> shifted_ts
-        Time (s)
-        1.0
-        26.0
-        28.0
-        34.3
-        shape: 4
-
-    If the time support has multiple epochs, the timepoints that fall outside of these
-    epochs after shifting will be dropped:
+    With multiple epochs, timestamps falling outside the support anywhere are dropped:
 
         >>> epochs = nap.IntervalSet(start=[25, 30], end=[27, 34.5])
         >>> ts = nap.Ts([25, 27, 33.3, 34.5], time_support=epochs)
-        >>> shifted_ts = nap.shift_timestamps(ts, min_shift=1, max_shift=1)
+        >>> shifted_ts = nap.shift_timestamps(ts, min_shift=1, max_shift=1, mode="drop")
+        >>> shifted_ts
+        Time (s)
+        26.0
+        34.3
+        shape: 3
+
+    Using ``mode='wrap'`` to circularly wrap timestamps within the full time support:
+
+        >>> epochs = nap.IntervalSet(start=0, end=40)
+        >>> ts = nap.Ts([38, 39.5], time_support=epochs)
+        >>> shifted_ts = nap.shift_timestamps(ts, min_shift=5, max_shift=5, mode="wrap")
+        >>> shifted_ts
+        Time (s)
+        3.0
+        4.5
+        shape: 2
+
+    When ``mode='wrap'`` and there are multiple epochs, the start and end are circular, but everything in between is not:
+
+        >>> import pynapple as nap
+        >>> epochs = nap.IntervalSet(start=[25, 30], end=[27, 34.5])
+        >>> ts = nap.Ts([25, 27, 33.3, 34.5], time_support=epochs)
+        >>> shifted_ts = nap.shift_timestamps(ts, min_shift=1, max_shift=1, mode="wrap")
         >>> shifted_ts
         Time (s)
         26.0
         26.0
         34.3
         shape: 3
+
     """
     if not isinstance(min_shift, (int, float)):
         raise TypeError("min_shift should be a number.")
@@ -82,18 +99,30 @@ def shift_timestamps(data, min_shift=0.0, max_shift=None):
     if max_shift is not None and not isinstance(max_shift, (int, float)):
         raise TypeError("max_shift should be a number.")
 
+    if mode not in ("drop", "wrap"):
+        raise ValueError("mode must be either 'drop' or 'wrap'.")
+
     if not isinstance(data, (nap.Ts, nap.TsGroup)):
         raise TypeError("Invalid input, data should be a Ts or TsGroup.")
 
     time_support = data.time_support
 
+    if max_shift is None:
+        max_shift = time_support.tot_length()
+
     def _shift(data):
-        shifted_timestamps = np.sort(
-            _shift_ts(
-                data.times(), time_support, min_shift=min_shift, max_shift=max_shift
-            )
-        )
-        return nap.Ts(t=shifted_timestamps, time_support=time_support)
+        shift = np.random.uniform(min_shift, max_shift)
+        times = data.times()
+        shifted = times + shift
+
+        if mode == "wrap":
+            start = time_support.start[0]
+            end = time_support.end[-1]
+            period = end - start
+            shifted = start + ((shifted - start) % period)
+
+        shifted = np.sort(shifted)
+        return nap.Ts(t=shifted, time_support=time_support)
 
     if isinstance(data, nap.TsGroup):
         shifted = {}
@@ -211,36 +240,6 @@ def resample_timestamps(ts):
 
 
 # Helper functions
-
-
-def _shift_ts(timestamps, time_support, min_shift=0, max_shift=None):
-    """
-    Shifts all the time stamps of a random amount between min_shift and max_shift, wrapping the
-    end of the time support to the beginning.
-
-
-    Parameters
-    ----------
-    timestamps : np.ndarray
-        The timestamps to shift.
-    min_shift : float, optional
-        minimum shift (default: 0 )
-    max_shift : float, optional
-        maximum shift, (default: length of time support)
-
-    Returns
-    -------
-    Ts
-        The randomly shifted timestamps
-    """
-
-    if max_shift is None:
-        max_shift = timestamps[-1] - timestamps[0]
-    shift = np.random.uniform(min_shift, max_shift)
-    start = time_support.start[0]
-    end = time_support.end[-1]
-    period = end - start
-    return start + ((timestamps + shift - start) % period)
 
 
 def _jitter_ts(ts, max_jitter=None, keep_tsupport=False):
