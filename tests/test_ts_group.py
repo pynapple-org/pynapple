@@ -1398,3 +1398,64 @@ class TestSubsample:
             subsampled_times = subsampled[k].index.values
             for t in subsampled_times:
                 assert t in original_times
+
+
+class TestTsGroupStrRepr:
+    """Test that __str__ shows all columns/rows and __repr__ truncates."""
+
+    def test_str_shows_all_columns(self):
+        n = 5
+        tsgroup = nap.TsGroup(
+            {i: nap.Ts(t=np.sort(np.random.uniform(0, 10, 20))) for i in range(n)}
+        )
+        col_names = list("abcdefg")
+        for c in col_names:
+            tsgroup.set_info(**{c: np.random.random(n)})
+
+        output = str(tsgroup)
+        for c in col_names:
+            assert c in output
+
+    def test_str_shows_all_rows(self):
+        n = 50
+        tsgroup = nap.TsGroup(
+            {i: nap.Ts(t=np.sort(np.random.uniform(0, 10, 20))) for i in range(n)}
+        )
+
+        output = str(tsgroup)
+        # All indices 0..49 should appear; "..." row separator should not
+        for i in range(n):
+            assert str(i) in output
+        # The repr should have fewer lines due to row truncation
+        repr_output = repr(tsgroup)
+        assert repr_output.count("\n") < output.count("\n")
+
+    def test_str_empty_tsgroup(self):
+        tsgroup = nap.TsGroup({}, time_support=nap.IntervalSet(0, 1))
+        output = str(tsgroup)
+        assert isinstance(output, str)
+        assert "Index" in output
+        assert "rate" in output
+
+    def test_str_no_metadata(self):
+        tsgroup = nap.TsGroup({0: nap.Ts(t=[1, 2, 3]), 1: nap.Ts(t=[4, 5, 6])})
+        output = str(tsgroup)
+        assert "0" in output
+        assert "1" in output
+
+    def test_repr_truncates_columns(self):
+        n = 5
+        tsgroup = nap.TsGroup(
+            {i: nap.Ts(t=np.sort(np.random.uniform(0, 10, 20))) for i in range(n)}
+        )
+        # Add many columns to force truncation in repr
+        for c in [f"col_{i}" for i in range(20)]:
+            tsgroup.set_info(**{c: np.random.random(n)})
+
+        repr_output = repr(tsgroup)
+        str_output = str(tsgroup)
+        # repr should have "..." due to column truncation
+        assert "..." in repr_output
+        # str should show all columns without the trailing "..." column
+        for i in range(20):
+            assert f"col_{i}" in str_output
