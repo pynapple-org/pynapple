@@ -1042,3 +1042,29 @@ def test_same_shape(tsd, func, kwargs, expected_type):
         np.testing.assert_array_almost_equal(a.values, b)
     else:
         np.testing.assert_array_almost_equal(a, b)
+
+
+@pytest.mark.parametrize(
+    "func, kwargs",
+    [
+        ("round", {"decimals": 2}),
+        ("clip", {"a_min": 0.2, "a_max": 0.8}),
+        ("cumsum", {"axis": 0}),
+        ("copy", {}),
+    ],
+)
+def test_tsdframe_preserves_columns_and_metadata(func, kwargs):
+    """Test that numpy array functions preserve TsdFrame columns and metadata (issue #549)."""
+    tdf = nap.TsdFrame(
+        t=[0, 1, 2],
+        d=[[0.1, 0.2], [0.3, 0.4], [0.5, 0.6]],
+        columns=["a", "b"],
+        metadata={"f": [10, 20]},
+    )
+
+    result = getattr(np, func)(tdf, **kwargs)
+
+    assert isinstance(result, nap.TsdFrame)
+    assert result.columns.tolist() == ["a", "b"]
+    assert "f" in result.metadata.columns
+    np.testing.assert_array_equal(result.metadata["f"].values, [10, 20])
