@@ -332,7 +332,13 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
         if modifies_time_axis(func, new_args, kwargs):
             return out
         else:
-            return _initialize_tsd_output(self, out, drop_metadata=True)
+            if hasattr(out, "shape") and self.shape == out.shape:
+                return _initialize_tsd_output(self, out)
+            else:
+                try:
+                    return _initialize_tsd_output(self, out, drop_metadata=True)
+                except Exception:
+                    return _initialize_tsd_output(self, out)
 
     def as_array(self):
         """
