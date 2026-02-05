@@ -447,7 +447,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             if is_array_like(starts) and is_array_like(ends):
                 ep = IntervalSet(starts, ends)
             else:
-                ep = None
+                ep = IntervalSet([], [])
         else:
             ep = self.time_support
 
