@@ -511,7 +511,40 @@ class TsGroup(UserDict, _MetadataMixin):
         return tabulate(table, headers=headers)
 
     def __str__(self):
-        return self.__repr__()
+        # Show all columns and all rows (no truncation).
+        try:
+            col_names = self._metadata.columns
+        except Exception:
+            col_names = []
+
+        if len(col_names) and "rate" in col_names:
+            col_names.remove("rate")
+
+        headers = ["Index", "rate"] + col_names
+
+        if len(self) == 0:
+            return tabulate(tabular_data=[], headers=headers)
+
+        if len(col_names):
+            try:
+                mt = np.array(
+                    [_convert_iter_to_str(self._metadata[c]) for c in col_names]
+                ).T
+            except Exception:
+                mt = np.ndarray(shape=(len(self), 0))
+        else:
+            mt = np.ndarray(shape=(len(self), 0))
+
+        table = np.hstack(
+            (
+                self.index[:, None],
+                np.round(self._metadata["rate"], 5)[:, None],
+                mt,
+            ),
+            dtype=object,
+        )
+
+        return tabulate(table, headers=headers)
 
     def keys(self):
         """
