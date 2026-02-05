@@ -1438,9 +1438,7 @@ class TestTsGroupStrRepr:
         assert "rate" in output
 
     def test_str_no_metadata(self):
-        tsgroup = nap.TsGroup(
-            {0: nap.Ts(t=[1, 2, 3]), 1: nap.Ts(t=[4, 5, 6])}
-        )
+        tsgroup = nap.TsGroup({0: nap.Ts(t=[1, 2, 3]), 1: nap.Ts(t=[4, 5, 6])})
         output = str(tsgroup)
         assert "0" in output
         assert "1" in output
