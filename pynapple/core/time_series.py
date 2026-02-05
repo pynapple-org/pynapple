@@ -337,7 +337,7 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             else:
                 try:
                     return _initialize_tsd_output(self, out, drop_metadata=True)
-                except:
+                except Exception:
                     return _initialize_tsd_output(self, out)
 
     def as_array(self):
