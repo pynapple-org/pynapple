@@ -1,5 +1,12 @@
 # Releases
 
+### 0.10.3 (2026-02-06)
+
+- Added a `subsample` method to TsGroup, enabling random subsampling of timestamps per element with reproducibility options and support for both Ts and Tsd.
+- Improved handling of empty or zero-length IntervalSet objects to ensure correct initialization of time_support and rate.
+- Fixed `nap.randomize.shift_timestamps` with a mode argument to either wrap or drop timestamps that exceed the interval boundaries after shifting.
+
+
 ### 0.10.2 (2025-12-05)
 
 - New tutorial, `tutorial_null_distributions.md`, demonstrating how to use randomization methods to generate null distributions for testing spatial firing.
