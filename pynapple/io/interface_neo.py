@@ -122,7 +122,9 @@ def _extract_array_annotations(obj) -> Dict[str, np.ndarray]:
 # =============================================================================
 
 
-def _make_intervalset_from_epoch(epoch, time_support: Optional[nap.IntervalSet] = None) -> nap.IntervalSet:
+def _make_intervalset_from_epoch(
+    epoch, time_support: Optional[nap.IntervalSet] = None
+) -> nap.IntervalSet:
     """Convert a Neo Epoch to a pynapple IntervalSet.
 
     Parameters
@@ -248,7 +250,9 @@ def _make_ts_from_event_multiseg(
     return nap.Ts(t=np.array(all_times), time_support=time_support)
 
 
-def _make_ts_from_event(event, time_support: Optional[nap.IntervalSet] = None) -> nap.Ts:
+def _make_ts_from_event(
+    event, time_support: Optional[nap.IntervalSet] = None
+) -> nap.Ts:
     """Convert a Neo Event to a pynapple Ts.
 
     Parameters
@@ -269,6 +273,7 @@ def _make_ts_from_event(event, time_support: Optional[nap.IntervalSet] = None) -
     times = event.times.rescale("s").magnitude
 
     return nap.Ts(t=times, time_support=time_support)
+
 
 def _make_ts_from_spiketrain(
     spiketrain, time_support: Optional[nap.IntervalSet] = None
@@ -434,6 +439,7 @@ def _make_tsgroup_from_spiketrains_multiseg(
 
     return nap.TsGroup(ts_dict, time_support=time_support, metadata=meta_arrays)
 
+
 def _make_tsd_from_interface(interface) -> Union[nap.Tsd, nap.TsdFrame, nap.TsdTensor]:
     """Convert a NeoSignalInterface to a pynapple Tsd/TsdFrame/TsdTensor.
 
@@ -536,7 +542,9 @@ class NeoSignalInterface:
         # Build segment info and compute total shape across all segments
         self._segment_offsets = []  # Cumulative sample counts per segment
         self._segment_n_samples = []  # Number of samples per segment
-        self._times_list = []  # Pre-load timestamps per segment (small memory footprint)
+        self._times_list = (
+            []
+        )  # Pre-load timestamps per segment (small memory footprint)
 
         total_samples = 0
         for seg in block.segments:
@@ -623,7 +631,7 @@ class NeoSignalInterface:
             raise IndexError(f"Index {idx} out of bounds for size {len(self)}")
 
         # Find segment using binary search on offsets
-        seg_idx = np.searchsorted(self._segment_offsets, idx, side='right') - 1
+        seg_idx = np.searchsorted(self._segment_offsets, idx, side="right") - 1
         local_idx = idx - self._segment_offsets[seg_idx]
         return seg_idx, local_idx
 
@@ -673,7 +681,7 @@ class NeoSignalInterface:
 
             # Try to load with indexing, fall back to time slicing
             try:
-                if hasattr(signal, 'load'):
+                if hasattr(signal, "load"):
                     loaded = signal.load()
                     chunk = loaded[local_start:local_stop].magnitude
                 else:
@@ -681,7 +689,9 @@ class NeoSignalInterface:
             except (MemoryError, AttributeError):
                 # Fall back to time slicing
                 t_start = self._times_list[seg_idx][local_start]
-                t_stop = self._times_list[seg_idx][min(local_stop, len(self._times_list[seg_idx]) - 1)]
+                t_stop = self._times_list[seg_idx][
+                    min(local_stop, len(self._times_list[seg_idx]) - 1)
+                ]
                 chunk = signal.time_slice(t_start, t_stop).magnitude
 
             data_chunks.append(chunk)
@@ -745,7 +755,11 @@ class NeoSignalInterface:
 
             # Apply remaining indices
             if rest:
-                data = data[(slice(None),) + rest] if isinstance(time_idx, slice) else data[rest]
+                data = (
+                    data[(slice(None),) + rest]
+                    if isinstance(time_idx, slice)
+                    else data[rest]
+                )
 
             return data
 
@@ -761,7 +775,6 @@ class NeoSignalInterface:
             return result
 
         raise TypeError(f"Invalid index type: {type(item)}")
-
 
 
 # =============================================================================
@@ -920,9 +933,7 @@ class LFPReader(UserDict):
             starts = np.array(
                 [_rescale_to_seconds(seg.t_start) for seg in block.segments]
             )
-            ends = np.array(
-                [_rescale_to_seconds(seg.t_stop) for seg in block.segments]
-            )
+            ends = np.array([_rescale_to_seconds(seg.t_stop) for seg in block.segments])
             time_support = nap.IntervalSet(starts, ends)
 
             # Process first segment to get signal info
@@ -989,7 +1000,11 @@ class LFPReader(UserDict):
 
                 # Epochs - deferred loading
                 for ep_idx, epoch in enumerate(seg.epochs):
-                    name = epoch.name if hasattr(epoch, "name") and epoch.name else f"epoch{ep_idx}"
+                    name = (
+                        epoch.name
+                        if hasattr(epoch, "name") and epoch.name
+                        else f"epoch{ep_idx}"
+                    )
                     key = f"{block_prefix}IntervalSet {ep_idx}: {name}"
 
                     # Store info for deferred loading
@@ -1004,7 +1019,11 @@ class LFPReader(UserDict):
 
                 # Events - deferred loading
                 for ev_idx, event in enumerate(seg.events):
-                    name = event.name if hasattr(event, "name") and event.name else f"event{ev_idx}"
+                    name = (
+                        event.name
+                        if hasattr(event, "name") and event.name
+                        else f"event{ev_idx}"
+                    )
                     key = f"{block_prefix}Ts (event) {ev_idx}: {name}"
 
                     # Store info for deferred loading
@@ -1024,7 +1043,9 @@ class LFPReader(UserDict):
         headers = ["Key", "Type"]
 
         if HAS_TABULATE:
-            return title + "\n" + tabulate(view, headers=headers, tablefmt="mixed_outline")
+            return (
+                title + "\n" + tabulate(view, headers=headers, tablefmt="mixed_outline")
+            )
         else:
             # Simple fallback without tabulate
             lines = [title, "-" * len(title)]
@@ -1049,7 +1070,9 @@ class LFPReader(UserDict):
             The requested data (Ts, Tsd, TsdFrame, TsdTensor, TsGroup, IntervalSet)
         """
         if key not in self.data:
-            raise KeyError(f"Key '{key}' not found. Available keys: {list(self.data.keys())}")
+            raise KeyError(
+                f"Key '{key}' not found. Available keys: {list(self.data.keys())}"
+            )
 
         item = self.data[key]
 
@@ -1091,9 +1114,13 @@ class LFPReader(UserDict):
         elif loader in ["analogsignal", "irregularsignal"]:
             # Load via NeoSignalInterface (deferred loading)
             interface = NeoSignalInterface(
-                signal=item["block"].segments[0].analogsignals[item["sig_num"]]
-                if loader == "analogsignal"
-                else item["block"].segments[0].irregularlysampledsignals[item["sig_num"]],
+                signal=(
+                    item["block"].segments[0].analogsignals[item["sig_num"]]
+                    if loader == "analogsignal"
+                    else item["block"]
+                    .segments[0]
+                    .irregularlysampledsignals[item["sig_num"]]
+                ),
                 block=item["block"],
                 time_support=item["time_support"],
                 sig_num=item["sig_num"],
