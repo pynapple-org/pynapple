@@ -769,7 +769,7 @@ class NeoSignalInterface:
 # =============================================================================
 
 
-class NeoReader(UserDict):
+class LFPReader(UserDict):
     """Read Neo-compatible electrophysiology files into pynapple objects.
 
     `Neo <https://neo.readthedocs.io/>`_ is a Python package for working with
@@ -831,7 +831,7 @@ class NeoReader(UserDict):
     Examples
     --------
     >>> import pynapple as nap
-    >>> data = nap.NeoReader("my_file.plx")
+    >>> data = nap.LFPReader("my_file.plx")
     >>> print(data)
     my_file
     ┍━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┑
@@ -846,7 +846,7 @@ class NeoReader(UserDict):
 
     To explicitly specify the file format:
 
-    >>> data = nap.NeoReader("my_file.plx", format="PlexonIO")
+    >>> data = nap.LFPReader("my_file.plx", format="PlexonIO")
     """
 
     def __init__(
@@ -862,7 +862,6 @@ class NeoReader(UserDict):
             raise FileNotFoundError(f"File not found: {file}")
 
         self.name = self.path.stem
-        self._lazy = lazy
 
         # Get appropriate IO based on format argument
         if format is None:
