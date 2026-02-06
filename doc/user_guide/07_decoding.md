@@ -13,6 +13,11 @@ kernelspec:
 
 # Decoding
 
+```{contents}
+:local:
+:depth: 3
+```
+
 ```{code-cell} ipython3
 :tags: [hide-cell]
 import pynapple as nap

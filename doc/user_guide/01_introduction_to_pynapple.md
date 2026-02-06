@@ -21,6 +21,11 @@ You can check how to install pynapple [here](../installing.md).
 By default, pynapple will assume a time units in seconds when passing timestamps array or time parameters such as bin size (unless specified with the `time_units` argument)
 :::
 
+```{contents}
+:local:
+:depth: 2
+```
+
 ***
 Importing pynapple
 ------------------

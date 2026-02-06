@@ -19,7 +19,10 @@ Each pynapple objects can be saved as a [`npz`](https://numpy.org/devdocs/refere
 
 In addition, the `Folder` class helps you walk through a set of nested folders to load/save `npz`/`nwb` files.
 
-
+```{contents}
+:local:
+:depth: 2
+```
 
 ## NWB
 
@@ -143,8 +146,47 @@ This is done through the class [`nap.NeoReader`](pynapple.io.neo.NeoReader).
 
 See here the [list of supported formats](https://neo.readthedocs.io/en/stable/rawiolist.html).
 
+Below are shown a few examples of loading LFP and spikes.
 
-Here is a minimal working example : 
+### Neuroscope / Binary file
+
+If you have a session recorded as binary files with Neuroscope, you can load it with the `NeoReader` class or directly 
+with the function [`nap.io.misc.load_eeg'](pynapple.io.misc.load_eeg).
+
+```
+📂 my_session
+ ┣ 📄 my_session.dat
+ ┗ 📄 my_session.xml
+```
+
+### OpenEphys
+
+```
+📂 Record Node 109
+ ┣ 📄 settings.xml
+ ┗ 📂 experiment1
+    ┗ 📂 recording1
+       ┣ 📄 structure.oebin
+       ┣ 📄 sync_messages.txt
+       ┣ 📂 continuous
+       │  ┗ 📂 Neuropix-PXI-103.ProbeA
+       │     ┣ 📄 continuous.dat
+       │     ┣ 📄 sample_numbers.npy
+       │     ┗ 📄 timestamps.npy
+       ┗ 📂 events
+          ┣ 📂 MessageCenter
+          │  ┣ 📄 sample_numbers.npy
+          │  ┣ 📄 text.npy
+          │  ┗ 📄 timestamps.npy
+          ┗ 📂 Neuropix-PXI-103.ProbeA
+             ┗ 📂 TTL
+                ┣ 📄 full_words.npy
+                ┣ 📄 sample_numbers.npy
+                ┣ 📄 states.npy
+                ┗ 📄 timestamps.npy
+```
+
+### Plexon file
 
 ```{code-cell} ipython3
 :tags: [hide-cell]

@@ -19,6 +19,12 @@ Metadata can be added to `TsGroup`, `IntervalSet`, and `TsdFrame` objects at ini
 - `TsdFrame` metadata is information associated with each column, such as a channel or position.
 
 
+```{contents}
+:local:
+:depth: 3
+```
+
+
 ## Adding metadata at initialization
 At initialization, metadata can be passed via a dictionary or pandas DataFrame using the keyword argument `metadata`. The metadata name is taken from the dictionary key or DataFrame column, and it can be set to any string name with a couple class-specific exceptions. 
 

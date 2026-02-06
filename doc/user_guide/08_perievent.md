@@ -15,6 +15,11 @@ kernelspec:
 
 The perievent module allows to re-center time series and timestamps data around a particular event as well as computing events (spikes) trigger average.
 
+```{contents}
+:local:
+:depth: 3
+```
+
 ```{code-cell} ipython3
 :tags: [hide-cell]
 import pynapple as nap
