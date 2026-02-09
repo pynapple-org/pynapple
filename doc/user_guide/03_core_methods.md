@@ -171,6 +171,62 @@ print(tensor, "\n")
 print("Tensor shape = ", tensor.shape)
 ```
 
+### `subsample`
+
+The [`subsample`](pynapple.TsGroup.subsample) method randomly subsamples timestamps in each element of a `TsGroup`. This is useful for creating smaller datasets for testing, cross-validation, or comparing analyses with matched sample sizes.
+
+```{code-cell} ipython3
+:tags: [hide-cell]
+np.random.seed(0)
+group_sub = {
+    0: nap.Ts(t=np.sort(np.random.uniform(0, 100, 100))),
+    1: nap.Ts(t=np.sort(np.random.uniform(0, 100, 200))),
+    2: nap.Ts(t=np.sort(np.random.uniform(0, 100, 300))),
+}
+tsgroup_sub = nap.TsGroup(group_sub, time_support=nap.IntervalSet(0, 100))
+```
+
+```{code-cell} ipython3
+print("Original TsGroup:")
+print(tsgroup_sub)
+```
+
+Subsample to keep 50% of timestamps with a fixed seed for reproducibility:
+
+```{code-cell} ipython3
+subsampled = tsgroup_sub.subsample(0.5, seed=42)
+print("\nSubsampled TsGroup (50%):")
+print(subsampled)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.figure(figsize=(10, 4))
+plt.subplot(1, 2, 1)
+for i, k in enumerate(tsgroup_sub.keys()):
+    plt.plot(tsgroup_sub[k].fillna(i), '|', markersize=5)
+plt.title("Original TsGroup")
+plt.xlabel("Time (s)")
+plt.yticks([0, 1, 2], ['Unit 0', 'Unit 1', 'Unit 2'])
+plt.xlim(0, 100)
+
+plt.subplot(1, 2, 2)
+for i, k in enumerate(subsampled.keys()):
+    plt.plot(subsampled[k].fillna(i), '|', markersize=5)
+plt.title("Subsampled (50%)")
+plt.xlabel("Time (s)")
+plt.yticks([0, 1, 2], ['Unit 0', 'Unit 1', 'Unit 2'])
+plt.xlim(0, 100)
+plt.tight_layout()
+plt.show()
+```
+
+The time support and metadata are preserved in the subsampled `TsGroup`:
+
+```{code-cell} ipython3
+print("Time support preserved:", np.allclose(tsgroup_sub.time_support.values, subsampled.time_support.values))
+```
+
 ### `bin_average`
 
 [`bin_average`](pynapple.Tsd.bin_average) downsamples time series by averaging data point falling within a bin. This method is available for `Tsd`, `TsdFrame` and `TsdTensor`. While `bin_average` is good for downsampling with precise control of the resulting bins, it does not apply any antialiasing filter. The function [`decimate`](pynapple.Tsd.decimate) is also available for down-sampling without aliasing.
@@ -400,6 +456,96 @@ plt.title("tsd.derivative()")
 plt.show()
 ```
 
+### `convolve`
+
+The [`convolve`](pynapple.Tsd.convolve) method performs discrete linear convolution of a time series with a one-dimensional kernel. This is useful for filtering, smoothing, or applying custom kernels to your data. This method is available for `Tsd`, `TsdFrame`, and `TsdTensor` objects.
+
+```{code-cell} ipython3
+:tags: [hide-cell]
+noisy_data = np.random.rand(100) + np.sin(np.linspace(0, 2 * np.pi, 100))
+tsd = nap.Tsd(t=np.arange(100), d=noisy_data, time_support=nap.IntervalSet(0, 100))
+```
+
+A simple example is applying a moving average filter using a uniform kernel:
+
+```{code-cell} ipython3
+kernel = np.ones(5) / 5  # 5-point moving average
+smoothed = tsd.convolve(kernel)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.figure()
+plt.plot(tsd, label="original")
+plt.plot(smoothed, label="convolved (moving avg)")
+plt.xlabel("Time (s)")
+plt.legend()
+plt.title("tsd.convolve(kernel)")
+plt.show()
+```
+
+The `ep` parameter allows you to restrict the convolution to specific epochs. The convolution is applied independently within each epoch:
+
+```{code-cell} ipython3
+ep = nap.IntervalSet(start=[0, 60], end=[40, 100])
+smoothed_ep = tsd.convolve(kernel, ep=ep)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.figure()
+plt.plot(tsd, label="original", alpha=0.5)
+plt.plot(smoothed_ep, 'o-', label="convolved", markersize=6)
+[plt.axvspan(s, e, alpha=0.2) for s, e in ep.values]
+plt.xlabel("Time (s)")
+plt.legend()
+plt.title("tsd.convolve(kernel, ep=ep)")
+plt.show()
+```
+
+The `trim` parameter controls which side of the convolution output is trimmed to match the original size. Options are `'both'` (default), `'left'`, or `'right'`:
+
+```{code-cell} ipython3
+:tags: [hide-cell]
+short_tsd = nap.Tsd(t=np.arange(20), d=np.zeros(20))
+short_tsd[10] = 1  # single spike at t=9
+kernel = np.array([0.1, 0.4, 0.8, 0.4, 0.1])
+```
+
+```{code-cell} ipython3
+conv_both = short_tsd.convolve(kernel, trim='both')
+conv_left = short_tsd.convolve(kernel, trim='left')
+conv_right = short_tsd.convolve(kernel, trim='right')
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+fig, axes = plt.subplots(3, 1, figsize=(6, 6))
+for ax, (conv, title) in zip(axes, [(conv_both, "tsd.convolve(kernel, trim='both')"),
+                                      (conv_left, "tsd.convolve(kernel, trim='left')"),
+                                      (conv_right, "tsd.convolve(kernel, trim='right')")]):
+    ax.plot(short_tsd, 'o-', label="original", alpha=0.7)
+    ax.plot(conv, 'o-', label="convolved")
+    ax.set_xlabel("Time (s)")
+    ax.set_title(title)
+    if ax == axes[0]: ax.legend()    
+plt.tight_layout()
+plt.show()
+```
+
+For `TsdFrame` and `TsdTensor`, the convolution is applied independently to each column/dimension. You can also use a 2-D kernel where each column of the kernel is convolved with each column of the time series:
+
+```{code-cell} ipython3
+:tags: [hide-cell]
+tsdframe = nap.TsdFrame(t=np.arange(100), d=np.random.randn(100, 2), columns=['a', 'b'])
+```
+
+```{code-cell} ipython3
+# 1-D kernel applied to all columns
+kernel_1d = np.ones(5) / 5
+smoothed_frame = tsdframe.convolve(kernel_1d)
+print(smoothed_frame)
+```
 
 ### `to_trial_tensor`
 

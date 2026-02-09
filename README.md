@@ -52,7 +52,7 @@ Pynapple now implements signal processing. For example, to filter a 1250 Hz samp
 ```python
 nap.apply_bandpass_filter(signal, (10, 20), fs=1250)
 ```
-New functions includes power spectral density and Morlet wavelet decomposition. See the [documentation](https://pynapple-org.github.io/pynapple/reference/process/) for more details.
+New functions includes power spectral density and Morlet wavelet decomposition. See the [documentation](https://github.com/pynapple-org/pynapple/blob/main/CONTRIBUTING.md) for more details.
 
 
 Community

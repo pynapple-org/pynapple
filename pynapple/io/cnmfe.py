@@ -6,6 +6,7 @@ Loaders for calcium imaging data with miniscope.
 Support CNMF-E in matlab, inscopix-cnmfe and minian.
 
 """
+
 # @Author: gviejo
 # @Date:   2022-02-17 11:07:00
 # @Last Modified by:   gviejo
