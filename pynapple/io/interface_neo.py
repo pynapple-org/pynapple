@@ -28,6 +28,7 @@ except ImportError:
     HAS_TABULATE = False
 
 from .. import core as nap
+from .interface_neurosuite import NeuroSuiteIO
 
 
 def _check_neo_installed():
@@ -782,7 +783,7 @@ class NeoSignalInterface:
 # =============================================================================
 
 
-class LFPReader(UserDict):
+class EphysReader(UserDict):
     """Read Neo-compatible electrophysiology files into pynapple objects.
 
     `Neo <https://neo.readthedocs.io/>`_ is a Python package for working with
@@ -827,8 +828,8 @@ class LFPReader(UserDict):
 
     Parameters
     ----------
-    file : str or Path
-        Path to the file to load
+    path : str or Path
+        Path to the file to load or directory containing the files.
     lazy : bool, default True
         Whether to use lazy loading
     format : str, type, or None, default None
@@ -844,7 +845,7 @@ class LFPReader(UserDict):
     Examples
     --------
     >>> import pynapple as nap
-    >>> data = nap.LFPReader("my_file.plx")
+    >>> data = nap.EphysReader("my_file.plx")
     >>> print(data)
     my_file
     ┍━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┑
@@ -859,29 +860,76 @@ class LFPReader(UserDict):
 
     To explicitly specify the file format:
 
-    >>> data = nap.LFPReader("my_file.plx", format="PlexonIO")
+    >>> data = nap.EphysReader("my_file.plx", format="PlexonIO")
     """
 
     def __init__(
         self,
-        file: Union[str, Path],
+        path: Union[str, Path],
         lazy: bool = True,
         format: Union[str, Type, None] = None,
     ):
         _check_neo_installed()
 
-        self.path = Path(file)
+        self.path = Path(path)
         if not self.path.exists():
-            raise FileNotFoundError(f"File not found: {file}")
+            raise FileNotFoundError(f"Files not found: {path}")
 
         self.name = self.path.stem
 
-        # Get appropriate IO based on format argument
+        self.data = {}
+        # special case if format is NeuroscopeIO to check for binary files and set up deferred loading
+        if self._is_neuroscope(self.path, format):
+            self._collect_neuroscope(self.path)
+        else:
+            self._init_neo_reader(format)
+            self._collect_data(lazy=lazy)  # This will read the Neo blocks and populate self.data with metadata and interfaces for lazy loading
+
+        UserDict.__init__(self, self.data)
+
+    def _is_neuroscope(self, path, format=None):
+        """Check if the format specifies NeuroscopeIO.
+
+        Parameters
+        ----------
+        path : Path
+            The path to the file or directory being loaded.
+        format : str, type, or None
+            The format argument passed to EphysReader.
+
+        Returns
+        -------
+        bool
+            True if the format is NeuroscopeIO.
+        """
+        if isinstance(format, str) and format.lower().replace("io", "") == "neuroscope":
+            return True
+        if isinstance(format, type) and format.__name__.lower().replace("io", "") == "neuroscope":
+            return True
+        # Additional heuristic: check for presence of Neuroscope binary files
+        binary_extensions = [".dat", ".lfp", ".eeg"]
+        if path.is_dir():
+            for ext in binary_extensions:
+                if any(path.glob(f"*{ext}")):
+                    # Check for an xml file that would indicate Neuroscope format
+                    if any(path.glob("*.xml")):
+                        return True
+        elif path.suffix.lower() in binary_extensions:
+            return True
+        return False
+
+    def _init_neo_reader(self, format):
+        """Initialize the Neo reader
+
+        Parameters
+        ----------
+        format : str, type, or None
+            The format argument passed to EphysReader.
+
+        """
         if format is None:
-            # Auto-detect format
             self._reader = neo.io.get_io(str(self.path))
         elif isinstance(format, str):
-            # Find the IO class by name (case-insensitive, with or without "IO" suffix)
             io_class = None
             format_lower = format.lower()
             for io in neo.io.iolist:
@@ -898,7 +946,6 @@ class LFPReader(UserDict):
                 )
             self._reader = io_class(str(self.path))
         elif isinstance(format, type):
-            # Verify the class is in neo.io.iolist
             if format not in neo.io.iolist:
                 available = [io.__name__ for io in neo.io.iolist]
                 raise ValueError(
@@ -912,20 +959,52 @@ class LFPReader(UserDict):
                 f"not {type(format).__name__}"
             )
 
+    def _collect_neuroscope(self, path):
+        """Scan a Neuroscope session and set up deferred loading entries.
+
+        Uses :class:`~pynapple.io.interface_neurosuite.NeuroSuiteIO` to
+        discover files and parse XML metadata.  Populates ``self.data``
+        with entries for .dat, .eeg/.lfp, and .clu/.res files.
+
+        Parameters
+        ----------
+        path : Path
+            The path to the session directory (or a file inside it).
+        """
+        ns = NeuroSuiteIO(path)
+
+        # --- .dat file (raw wideband) ---
+        if ns.dat_files:
+            dat_file = ns.dat_files[0]
+            self.data[dat_file.name] = {
+                "type": "TsdFrame",
+                "loader": lambda f=dat_file: ns.load_binary(f),
+            }
+
+        # --- .eeg / .lfp file (LFP) ---
+        if ns.lfp_files:
+            lfp_file = ns.lfp_files[0]
+            self.data[lfp_file.name] = {
+                "type": "TsdFrame",
+                "loader": lambda f=lfp_file: ns.load_binary(f),
+            }
+
+        # --- .clu.N / .res.N pairs (spike sorting) ---
+        for shank in ns.spike_groups:
+            clu_file, res_file = ns.spike_groups[shank]
+            self.data[clu_file.name] = {
+                "type": "TsGroup",
+                "loader": lambda s=shank: ns.load_spikes(s),
+            }
+
+        self._ns = ns  # Store the NeuroSuiteIO instance for use in loaders
+
+    def _collect_data(self, lazy=True):
+        """Collect all data from Neo blocks into the dictionary."""
         # Read blocks
         self._blocks = self._reader.read(lazy=lazy)
 
         # Build data dictionary
-        self.data = {}
-        self._data_info = {}  # Store type info for display
-        self._interfaces = {}  # Store NeoSignalInterface objects
-
-        self._collect_data()
-
-        UserDict.__init__(self, self.data)
-
-    def _collect_data(self):
-        """Collect all data from Neo blocks into the dictionary."""
         for block_idx, block in enumerate(self._blocks):
             block_prefix = "" if len(self._blocks) == 1 else f"block{block_idx}/"
 
@@ -954,7 +1033,6 @@ class LFPReader(UserDict):
                         "sig_num": sig_idx,
                         "time_support": time_support,
                     }
-                    self._data_info[key] = nap_type.__name__
 
                 # Irregularly sampled signals
                 for sig_idx, signal in enumerate(seg.irregularlysampledsignals):
@@ -969,7 +1047,6 @@ class LFPReader(UserDict):
                         "sig_num": sig_idx,
                         "time_support": time_support,
                     }
-                    self._data_info[key] = nap_type.__name__
 
                 # Spike trains - deferred loading
                 if len(seg.spiketrains) == 1:
@@ -985,7 +1062,6 @@ class LFPReader(UserDict):
                         "unit_idx": 0,
                         "time_support": time_support,
                     }
-                    self._data_info[key] = "Ts"
                 elif len(seg.spiketrains) > 1:
                     key = f"{block_prefix}TsGroup"
 
@@ -996,8 +1072,6 @@ class LFPReader(UserDict):
                         "block": block,
                         "time_support": time_support,
                     }
-                    self._data_info[key] = "TsGroup"
-
                 # Epochs - deferred loading
                 for ep_idx, epoch in enumerate(seg.epochs):
                     name = (
@@ -1015,8 +1089,6 @@ class LFPReader(UserDict):
                         "ep_idx": ep_idx,
                         "time_support": time_support,
                     }
-                    self._data_info[key] = "IntervalSet"
-
                 # Events - deferred loading
                 for ev_idx, event in enumerate(seg.events):
                     name = (
@@ -1034,12 +1106,16 @@ class LFPReader(UserDict):
                         "ev_idx": ev_idx,
                         "time_support": time_support,
                     }
-                    self._data_info[key] = "Ts"
 
     def __str__(self):
         """String representation showing available data."""
         title = self.name
-        view = [[k, self._data_info[k]] for k in self.data.keys()]
+        view = []
+        for k, v in self.data.items():
+            if isinstance(v, dict):
+                view.append([k, v.get("type", "")])
+            else:
+                view.append([k, type(v).__name__])
         headers = ["Key", "Type"]
 
         if HAS_TABULATE:
@@ -1083,36 +1159,33 @@ class LFPReader(UserDict):
         # Load based on loader type
         loader = item.get("loader")
 
-        if loader == "spiketrain":
-            # Load single spike train from all segments
+        if callable(loader):
+            loaded_data = loader()
+        elif loader == "spiketrain":
             loaded_data = _make_ts_from_spiketrain_multiseg(
                 item["block"],
                 unit_idx=item["unit_idx"],
                 time_support=item["time_support"],
             )
         elif loader == "tsgroup":
-            # Load TsGroup from all segments
             all_spiketrains = [s.spiketrains for s in item["block"].segments]
             loaded_data = _make_tsgroup_from_spiketrains_multiseg(
                 all_spiketrains,
                 time_support=item["time_support"],
             )
         elif loader == "epoch":
-            # Load IntervalSet from all segments
             loaded_data = _make_intervalset_from_epoch_multiseg(
                 item["block"],
                 ep_idx=item["ep_idx"],
                 time_support=item["time_support"],
             )
         elif loader == "event":
-            # Load Ts (event) from all segments
             loaded_data = _make_ts_from_event_multiseg(
                 item["block"],
                 ev_idx=item["ev_idx"],
                 time_support=item["time_support"],
             )
         elif loader in ["analogsignal", "irregularsignal"]:
-            # Load via NeoSignalInterface (deferred loading)
             interface = NeoSignalInterface(
                 signal=(
                     item["block"].segments[0].analogsignals[item["sig_num"]]
@@ -1126,7 +1199,6 @@ class LFPReader(UserDict):
                 sig_num=item["sig_num"],
             )
             loaded_data = _make_tsd_from_interface(interface)
-
         else:
             raise ValueError(f"Unknown loader type for key '{key}'")
 
@@ -1147,19 +1219,9 @@ class LFPReader(UserDict):
         """Return all values (loads all data)."""
         return [self[k] for k in self.keys()]
 
-    def get_time_support(self) -> nap.IntervalSet:
-        """Get the time support from the first interface.
-
-        Returns
-        -------
-        IntervalSet
-            Time support covering all segments
-        """
-        if self._interfaces:
-            return list(self._interfaces.values())[0].time_support
-        return nap.IntervalSet(start=0, end=0)
-
     def close(self):
         """Close the underlying Neo reader if it supports closing."""
         if hasattr(self._reader, "close"):
             self._reader.close()
+        if hasattr(self, "_ns"):
+            del self._ns  # Clean up NeuroSuiteIO instance
