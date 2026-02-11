@@ -12,12 +12,7 @@ import numpy as np
 try:
     import neo
     from neo.core.spiketrainlist import SpikeTrainList
-    from neo.io.proxyobjects import (
-        AnalogSignalProxy,
-        EpochProxy,
-        EventProxy,
-        SpikeTrainProxy,
-    )
+    from neo.io.proxyobjects import AnalogSignalProxy
 
     HAS_NEO = True
 except ImportError:
@@ -176,43 +171,43 @@ def _extract_array_annotations(obj) -> dict[str, np.ndarray]:
 # =============================================================================
 
 
-def _make_intervalset_from_epoch(
-    epoch, time_support: nap.IntervalSet | None = None
-) -> nap.IntervalSet:
-    """Convert a Neo Epoch to a pynapple IntervalSet.
-
-    Parameters
-    ----------
-    epoch : neo.Epoch or neo.io.proxyobjects.EpochProxy
-        Neo Epoch object
-    time_support : IntervalSet, optional
-        Time support for the IntervalSet
-
-    Returns
-    -------
-    IntervalSet
-        Pynapple IntervalSet
-    """
-    if hasattr(epoch, "load"):
-        epoch = epoch.load()
-
-    times = epoch.times.rescale("s").magnitude
-    durations = epoch.durations.rescale("s").magnitude
-
-    starts = times
-    ends = times + durations
-
-    # Extract labels as metadata if available
-    metadata = {}
-    if hasattr(epoch, "labels") and len(epoch.labels) > 0:
-        metadata["label"] = np.array(epoch.labels)
-
-    # Add any other annotations
-    annotations = _extract_annotations(epoch)
-
-    iset = nap.IntervalSet(start=starts, end=ends, metadata=metadata)
-
-    return iset
+# def _make_intervalset_from_epoch(
+#     epoch, time_support: nap.IntervalSet | None = None
+# ) -> nap.IntervalSet:
+#     """Convert a Neo Epoch to a pynapple IntervalSet.
+#
+#     Parameters
+#     ----------
+#     epoch : neo.Epoch or neo.io.proxyobjects.EpochProxy
+#         Neo Epoch object
+#     time_support : IntervalSet, optional
+#         Time support for the IntervalSet
+#
+#     Returns
+#     -------
+#     IntervalSet
+#         Pynapple IntervalSet
+#     """
+#     if hasattr(epoch, "load"):
+#         epoch = epoch.load()
+#
+#     times = epoch.times.rescale("s").magnitude
+#     durations = epoch.durations.rescale("s").magnitude
+#
+#     starts = times
+#     ends = times + durations
+#
+#     # Extract labels as metadata if available
+#     metadata = {}
+#     if hasattr(epoch, "labels") and len(epoch.labels) > 0:
+#         metadata["label"] = np.array(epoch.labels)
+#
+#     # # Add any other annotations
+#     # annotations = _extract_annotations(epoch)
+#
+#     iset = nap.IntervalSet(start=starts, end=ends, metadata=metadata)
+#
+#     return iset
 
 
 def _make_intervalset_from_epoch_multiseg(

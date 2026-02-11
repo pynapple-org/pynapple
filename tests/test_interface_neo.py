@@ -15,7 +15,7 @@ from pynapple.io.interface_neo import (
     _extract_annotations,
     _extract_array_annotations,
     _get_signal_type,
-    _make_intervalset_from_epoch,
+    # _make_intervalset_from_epoch,
     _make_intervalset_from_epoch_multiseg,
     _make_ts_from_event,
     _make_ts_from_event_multiseg,
@@ -367,40 +367,40 @@ class TestParseOpenephysElectrodePositions:
 # ===========================================================================
 
 
-class TestMakeIntervalSetFromEpoch:
-    def test_basic(self):
-        epoch = neo.Epoch(
-            times=[1.0, 2.0] * pq.s,
-            durations=[0.5, 0.3] * pq.s,
-            labels=["a", "b"],
-        )
-        iset = _make_intervalset_from_epoch(epoch)
-        assert isinstance(iset, nap.IntervalSet)
-        assert len(iset) == 2
-        np.testing.assert_allclose(iset["start"], [1.0, 2.0])
-        np.testing.assert_allclose(iset["end"], [1.5, 2.3])
+# class TestMakeIntervalSetFromEpoch:
+#     def test_basic(self):
+#         epoch = neo.Epoch(
+#             times=[1.0, 2.0] * pq.s,
+#             durations=[0.5, 0.3] * pq.s,
+#             labels=["a", "b"],
+#         )
+#         iset = _make_intervalset_from_epoch(epoch)
+#         assert isinstance(iset, nap.IntervalSet)
+#         assert len(iset) == 2
+#         np.testing.assert_allclose(iset["start"], [1.0, 2.0])
+#         np.testing.assert_allclose(iset["end"], [1.5, 2.3])
+#
+#     def test_labels_in_metadata(self):
+#         epoch = neo.Epoch(
+#             times=[1.0] * pq.s,
+#             durations=[0.5] * pq.s,
+#             labels=["trial1"],
+#         )
+#         iset = _make_intervalset_from_epoch(epoch)
+#         assert "label" in iset.metadata.keys()
 
-    def test_labels_in_metadata(self):
-        epoch = neo.Epoch(
-            times=[1.0] * pq.s,
-            durations=[0.5] * pq.s,
-            labels=["trial1"],
-        )
-        iset = _make_intervalset_from_epoch(epoch)
-        assert "label" in iset.metadata.keys()
 
-
-class TestMakeIntervalSetFromEpochProxy:
-    def test_proxy_epoch(self):
-        epoch = neo.Epoch(
-            times=[1.0, 2.0] * pq.s,
-            durations=[0.5, 0.3] * pq.s,
-            labels=["a", "b"],
-        )
-        proxy = _FakeProxy(epoch)
-        iset = _make_intervalset_from_epoch(proxy)
-        assert isinstance(iset, nap.IntervalSet)
-        assert len(iset) == 2
+# class TestMakeIntervalSetFromEpochProxy:
+#     def test_proxy_epoch(self):
+#         epoch = neo.Epoch(
+#             times=[1.0, 2.0] * pq.s,
+#             durations=[0.5, 0.3] * pq.s,
+#             labels=["a", "b"],
+#         )
+#         proxy = _FakeProxy(epoch)
+#         iset = _make_intervalset_from_epoch(proxy)
+#         assert isinstance(iset, nap.IntervalSet)
+#         assert len(iset) == 2
 
 
 class TestMakeIntervalSetFromEpochMultiseg:
@@ -416,22 +416,6 @@ class TestMakeIntervalSetFromEpochMultiseg:
         block.segments.append(seg)
         iset = _make_intervalset_from_epoch_multiseg(block, ep_idx=0)
         assert len(iset) == 0
-
-    def test_proxy_epoch(self):
-        """Proxy epoch with .load() should be loaded transparently."""
-        epoch = neo.Epoch(
-            times=[1.0] * pq.s,
-            durations=[0.5] * pq.s,
-            labels=["trial"],
-        )
-        # Create a block with a real epoch, then test conversion
-        block = _make_block(n_segments=2)
-        # The multiseg function iterates block.segments[i].epochs[ep_idx]
-        # and calls .load() if present - already tested via test_two_segments
-        # Just verify proxy path works via single-epoch function
-        proxy = _FakeProxy(epoch)
-        iset = _make_intervalset_from_epoch(proxy)
-        assert len(iset) == 1
 
 
 class TestMakeTsFromEvent:
