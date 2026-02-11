@@ -11,13 +11,13 @@ import numpy as np
 
 try:
     import neo
+    from neo.core.spiketrainlist import SpikeTrainList
     from neo.io.proxyobjects import (
         AnalogSignalProxy,
-        SpikeTrainProxy,
         EpochProxy,
         EventProxy,
+        SpikeTrainProxy,
     )
-    from neo.core.spiketrainlist import SpikeTrainList
 
     HAS_NEO = True
 except ImportError:

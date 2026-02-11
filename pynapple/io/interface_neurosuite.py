@@ -6,8 +6,8 @@ Handles:
 - Spike sorting results (.clu.N / .res.N pairs)
 """
 
-from pathlib import Path
 import xml.etree.ElementTree as ET
+from pathlib import Path
 
 import numpy as np
 
