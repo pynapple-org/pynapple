@@ -869,7 +869,9 @@ class TestEphysReaderMmap:
         key = reader.keys()[0]
         tsd = reader[key]
         # Data is memory-mapped (or a slice of a memmap)
-        assert isinstance(tsd.d, np.ndarray)
+        assert isinstance(tsd.d, (np.ndarray, NeoSignalInterface))
+        # Values match original data
+        np.testing.assert_array_equal(tsd.d[:], data)
 
     def test_caching(self, raw_binary_file):
         fpath, _, _, _ = raw_binary_file
