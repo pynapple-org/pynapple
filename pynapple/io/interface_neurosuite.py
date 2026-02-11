@@ -23,6 +23,7 @@ def _text(parent, tag):
         return None
     return el.text.strip()
 
+
 def parse_neuroscope_xml(xml_path):
     """
     Parse a Neuroscope / ndManager XML file.
@@ -70,9 +71,7 @@ def parse_neuroscope_xml(xml_path):
     # LFP
     # --------------------
     lfp = root.find("fieldPotentials")
-    out["lfp"] = {
-        "sampling_rate": float(_text(lfp, "lfpSamplingRate"))
-    }
+    out["lfp"] = {"sampling_rate": float(_text(lfp, "lfpSamplingRate"))}
 
     # --------------------
     # Anatomical channel groups
@@ -81,15 +80,12 @@ def parse_neuroscope_xml(xml_path):
     for group in root.find("anatomicalDescription/channelGroups").findall("group"):
         channels = []
         for ch in group.findall("channel"):
-            channels.append({
-                "id": int(ch.text),
-                "skip": bool(int(ch.attrib.get("skip", "0")))
-            })
+            channels.append(
+                {"id": int(ch.text), "skip": bool(int(ch.attrib.get("skip", "0")))}
+            )
         anatomy_groups.append(channels)
 
-    out["anatomy"] = {
-        "channel_groups": anatomy_groups
-    }
+    out["anatomy"] = {"channel_groups": anatomy_groups}
 
     # --------------------
     # Spike detection groups
@@ -97,31 +93,33 @@ def parse_neuroscope_xml(xml_path):
     spike_groups = []
     for group in root.find("spikeDetection/channelGroups").findall("group"):
         channels = [int(ch.text) for ch in group.find("channels").findall("channel")]
-        spike_groups.append({
-            "channels": channels,
-            "n_samples": int(_text(group, "nSamples")),
-            "n_features": int(_text(group, "nFeatures")),
-            "peak_sample_index": int(_text(group, "peakSampleIndex")),
-        })
+        spike_groups.append(
+            {
+                "channels": channels,
+                "n_samples": int(_text(group, "nSamples")),
+                "n_features": int(_text(group, "nFeatures")),
+                "peak_sample_index": int(_text(group, "peakSampleIndex")),
+            }
+        )
 
-    out["spike_detection"] = {
-        "channel_groups": spike_groups
-    }
+    out["spike_detection"] = {"channel_groups": spike_groups}
 
     # --------------------
     # Units (clusters)
     # --------------------
     units = []
     for unit in root.find("units").findall("unit"):
-        units.append({
-            "group": int(_text(unit, "group")),
-            "cluster": int(_text(unit, "cluster")),
-            "structure": _text(unit, "structure"),
-            "type": _text(unit, "type"),
-            "isolation_distance": _text(unit, "isolationDistance"),
-            "quality": _text(unit, "quality"),
-            "notes": _text(unit, "notes"),
-        })
+        units.append(
+            {
+                "group": int(_text(unit, "group")),
+                "cluster": int(_text(unit, "cluster")),
+                "structure": _text(unit, "structure"),
+                "type": _text(unit, "type"),
+                "isolation_distance": _text(unit, "isolationDistance"),
+                "quality": _text(unit, "quality"),
+                "notes": _text(unit, "notes"),
+            }
+        )
 
     out["units"] = units
 
@@ -143,9 +141,7 @@ def parse_neuroscope_xml(xml_path):
         channels.setdefault(ch, {})
         channels[ch]["offset"] = float(_text(co, "defaultOffset"))
 
-    out["neuroscope"] = {
-        "channels": channels
-    }
+    out["neuroscope"] = {"channels": channels}
 
     return out
 
@@ -205,7 +201,9 @@ class NeuroSuiteIO:
         self.skip = np.zeros(self.n_channels, dtype=bool)
         self.groups = np.zeros(self.n_channels, dtype="int")
         count = 0
-        for group_idx, channels in enumerate(self.xml_info["anatomy"]["channel_groups"]):
+        for group_idx, channels in enumerate(
+            self.xml_info["anatomy"]["channel_groups"]
+        ):
             for ch in channels:
                 ch_id = ch["id"]
                 self.channel_order[count] = ch_id
@@ -213,7 +211,7 @@ class NeuroSuiteIO:
                 self.groups[ch["id"]] = group_idx
                 count += 1
         self.binary_metadata = {
-            "anatomy": np.argsort(self.channel_order), # Different for pynaviz
+            "anatomy": np.argsort(self.channel_order),  # Different for pynaviz
             "skip": self.skip,
             "group": self.groups,
         }
@@ -240,9 +238,7 @@ class NeuroSuiteIO:
     def _find_spike_groups(self):
         """Find paired .clu.N / .res.N files and return a dict keyed by
         shank number (str)."""
-        clu_files = sorted(
-            self.session_dir.glob(f"{self.basename}.clu.*")
-        )
+        clu_files = sorted(self.session_dir.glob(f"{self.basename}.clu.*"))
         if not clu_files:
             clu_files = sorted(self.session_dir.glob("*.clu.*"))
 
@@ -293,7 +289,9 @@ class NeuroSuiteIO:
         fp = np.memmap(filepath, np.int16, "r", shape=(n_samples, n_channels))
         timestep = np.arange(0, n_samples) / frequency
 
-        return nap.TsdFrame(t=timestep, d=fp, load_array=False, metadata=self.binary_metadata)
+        return nap.TsdFrame(
+            t=timestep, d=fp, load_array=False, metadata=self.binary_metadata
+        )
 
     def load_spikes(self, shank):
         """Load spike data for a given shank from .clu / .res files.
@@ -354,4 +352,6 @@ class NeuroSuiteIO:
 
         group = np.ones(len(unit_ids), dtype=int) * int(shank)
 
-        return nap.TsGroup(ts_dict, time_support = time_support, metadata={"group": group})
+        return nap.TsGroup(
+            ts_dict, time_support=time_support, metadata={"group": group}
+        )

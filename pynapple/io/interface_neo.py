@@ -304,9 +304,7 @@ def _make_ts_from_event_multiseg(
     return nap.Ts(t=np.array(all_times), time_support=time_support)
 
 
-def _make_ts_from_event(
-    event, time_support: nap.IntervalSet | None = None
-) -> nap.Ts:
+def _make_ts_from_event(event, time_support: nap.IntervalSet | None = None) -> nap.Ts:
     """Convert a Neo Event to a pynapple Ts.
 
     Parameters
@@ -936,7 +934,9 @@ class EphysReader(UserDict):
             self._collect_neuroscope(self.path)
         else:
             self._init_neo_reader(format)
-            self._collect_data(lazy=lazy)  # This will read the Neo blocks and populate self.data with metadata and interfaces for lazy loading
+            self._collect_data(
+                lazy=lazy
+            )  # This will read the Neo blocks and populate self.data with metadata and interfaces for lazy loading
 
         UserDict.__init__(self, self.data)
 
@@ -957,7 +957,10 @@ class EphysReader(UserDict):
         """
         if isinstance(format, str) and format.lower().replace("io", "") == "neuroscope":
             return True
-        if isinstance(format, type) and format.__name__.lower().replace("io", "") == "neuroscope":
+        if (
+            isinstance(format, type)
+            and format.__name__.lower().replace("io", "") == "neuroscope"
+        ):
             return True
         # Additional heuristic: check for presence of Neuroscope binary files
         binary_extensions = [".dat", ".lfp", ".eeg"]
@@ -1076,8 +1079,7 @@ class EphysReader(UserDict):
                     return _parse_openephys_electrode_positions(settings_file)
         return {}
 
-    def _make_mmap_entry(self, proxy, block_idx, nap_type, time_support,
-                         metadata=None):
+    def _make_mmap_entry(self, proxy, block_idx, nap_type, time_support, metadata=None):
         """Build a deferred-loading dict that memory-maps a raw binary file.
 
         Uses Neo's buffer description API to locate the file on disk and
@@ -1108,7 +1110,9 @@ class EphysReader(UserDict):
         buffer_id = stream_info["buffer_id"]
 
         bd = reader.get_analogsignal_buffer_description(
-            block_index=block_idx, seg_index=0, buffer_id=buffer_id,
+            block_index=block_idx,
+            seg_index=0,
+            buffer_id=buffer_id,
         )
         file_path = bd["file_path"]
         dtype = np.dtype(bd["dtype"])
@@ -1121,12 +1125,18 @@ class EphysReader(UserDict):
         n_samples = proxy.shape[0]
 
         def _loader(
-            _fp=file_path, _dt=dtype, _bs=buf_shape,
-            _cs=col_slice, _t0=t_start, _sr=sampling_rate,
-            _ns=n_samples, _nt=nap_type, _meta=metadata,
+            _fp=file_path,
+            _dt=dtype,
+            _bs=buf_shape,
+            _cs=col_slice,
+            _t0=t_start,
+            _sr=sampling_rate,
+            _ns=n_samples,
+            _nt=nap_type,
+            _meta=metadata,
         ):
             fp = np.memmap(_fp, _dt, "r", shape=_bs)
-            data = fp[:, _cs]
+            data = fp if _cs is None else fp[:, _cs]
             timestamps = _t0 + np.arange(_ns) / _sr
             kwargs = {}
             if _meta is not None:
@@ -1190,7 +1200,10 @@ class EphysReader(UserDict):
                                 }
 
                         self.data[key] = self._make_mmap_entry(
-                            signal, block_idx, nap_type, time_support,
+                            signal,
+                            block_idx,
+                            nap_type,
+                            time_support,
                             metadata=metadata,
                         )
                     else:
@@ -1389,7 +1402,7 @@ class EphysReader(UserDict):
 
     def close(self):
         """Close the underlying Neo reader if it supports closing."""
-        if hasattr(self._reader, "close"):
+        if hasattr(self, "_reader") and hasattr(self._reader, "close"):
             self._reader.close()
         if hasattr(self, "_ns"):
             del self._ns  # Clean up NeuroSuiteIO instance
