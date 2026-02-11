@@ -45,6 +45,35 @@ class _FakeProxy:
         return getattr(self._obj, name)
 
 
+class _FakeSegment:
+    """Segment-like object that bypasses Neo type checking."""
+
+    def __init__(
+        self,
+        epochs=None,
+        events=None,
+        spiketrains=None,
+        analogsignals=None,
+        irregularlysampledsignals=None,
+        t_start=0.0 * pq.s,
+        t_stop=1.0 * pq.s,
+    ):
+        self.epochs = epochs or []
+        self.events = events or []
+        self.spiketrains = spiketrains or []
+        self.analogsignals = analogsignals or []
+        self.irregularlysampledsignals = irregularlysampledsignals or []
+        self.t_start = t_start
+        self.t_stop = t_stop
+
+
+class _FakeBlock:
+    """Block-like object with segments."""
+
+    def __init__(self, segments):
+        self.segments = segments
+
+
 def _make_block(
     n_samples=100,
     n_channels=3,
@@ -416,6 +445,20 @@ class TestMakeIntervalSetFromEpochMultiseg:
         iset = _make_intervalset_from_epoch_multiseg(block, ep_idx=0)
         assert len(iset) == 0
 
+    def test_proxy_epoch_load(self):
+        """Epoch proxy with .load() in multiseg should be loaded."""
+        epoch = neo.Epoch(
+            times=[1.0, 2.0] * pq.s,
+            durations=[0.5, 0.3] * pq.s,
+            labels=np.array(["a", "b"]),
+        )
+        proxy_epoch = _FakeProxy(epoch)
+        seg = _FakeSegment(epochs=[proxy_epoch])
+        block = _FakeBlock([seg])
+        iset = _make_intervalset_from_epoch_multiseg(block, ep_idx=0)
+        assert isinstance(iset, nap.IntervalSet)
+        assert len(iset) == 2
+
 
 class TestMakeTsFromEvent:
     def test_basic(self):
@@ -455,6 +498,16 @@ class TestMakeTsFromEventMultiseg:
         ts = _make_ts_from_event_multiseg(block, ev_idx=0)
         assert isinstance(ts, nap.Ts)
 
+    def test_proxy_event_load(self):
+        """Event proxy with .load() in multiseg should be loaded."""
+        event = neo.Event(times=[0.1, 0.2] * pq.s, labels=np.array(["a", "b"]))
+        proxy_event = _FakeProxy(event)
+        seg = _FakeSegment(events=[proxy_event])
+        block = _FakeBlock([seg])
+        ts = _make_ts_from_event_multiseg(block, ev_idx=0)
+        assert isinstance(ts, nap.Ts)
+        assert len(ts) == 2
+
 
 class TestMakeTsFromSpikeTrain:
     def test_basic(self):
@@ -484,6 +537,16 @@ class TestMakeTsFromSpikeTrainMultiseg:
         ts = _make_ts_from_spiketrain_multiseg(block, unit_idx=0)
         assert isinstance(ts, nap.Ts)
 
+    def test_proxy_spiketrain_load(self):
+        """Spiketrain proxy with .load() in multiseg should be loaded."""
+        st = neo.SpikeTrain([0.1, 0.2, 0.3], units="s", t_stop=0.5)
+        proxy_st = _FakeProxy(st)
+        seg = _FakeSegment(spiketrains=[proxy_st])
+        block = _FakeBlock([seg])
+        ts = _make_ts_from_spiketrain_multiseg(block, unit_idx=0)
+        assert isinstance(ts, nap.Ts)
+        assert len(ts) == 3
+
 
 class TestMakeTsGroupFromSpikeTrains:
     def test_basic(self, block):
@@ -495,6 +558,16 @@ class TestMakeTsGroupFromSpikeTrains:
         block = _make_block(n_units=2)
         proxies = [_FakeProxy(st) for st in block.segments[0].spiketrains]
         tsgroup = _make_tsgroup_from_spiketrains(proxies)
+        assert isinstance(tsgroup, nap.TsGroup)
+        assert len(tsgroup) == 2
+
+    def test_unconvertible_metadata(self):
+        """Metadata that can't be converted to a numpy array is skipped."""
+        st1 = neo.SpikeTrain([0.1, 0.2], units="s", t_stop=0.5)
+        st1.annotations["ragged"] = [1, 2]
+        st2 = neo.SpikeTrain([0.3, 0.4], units="s", t_stop=0.5)
+        st2.annotations["ragged"] = [1, 2, 3]  # different length
+        tsgroup = _make_tsgroup_from_spiketrains([st1, st2])
         assert isinstance(tsgroup, nap.TsGroup)
         assert len(tsgroup) == 2
 
@@ -521,6 +594,17 @@ class TestMakeTsGroupFromSpikeTrainsMultiseg:
         time_support = nap.IntervalSet(start=0, end=1)
         tsgroup = _make_tsgroup_from_spiketrains_multiseg([], time_support=time_support)
         assert len(tsgroup) == 0
+
+    def test_unconvertible_metadata(self):
+        """Metadata that can't be converted to a numpy array is skipped."""
+        st1 = neo.SpikeTrain([0.1, 0.2], units="s", t_stop=0.5)
+        st1.annotations["ragged"] = [1, 2]
+        st2 = neo.SpikeTrain([0.3, 0.4], units="s", t_stop=0.5)
+        st2.annotations["ragged"] = [1, 2, 3]  # different length
+        all_st = [[st1, st2]]  # one segment with 2 units
+        tsgroup = _make_tsgroup_from_spiketrains_multiseg(all_st)
+        assert isinstance(tsgroup, nap.TsGroup)
+        assert len(tsgroup) == 2
 
 
 # ===========================================================================
@@ -1066,3 +1150,172 @@ class TestEphysReaderFormatHandling:
 
         with pytest.raises(ValueError, match="not in neo.io.iolist"):
             EphysReader(fpath, format=FakeIO)
+
+
+# ===========================================================================
+# Helper: create NeoMatlab files for _collect_data tests
+# ===========================================================================
+
+
+def _write_neomatlab_file(fpath, block):
+    """Write a Neo block to a .mat file using NeoMatlabIO."""
+    writer = neo.io.NeoMatlabIO(str(fpath))
+    writer.write(block)
+
+
+# ===========================================================================
+# Tests: EphysReader._collect_data non-mmap paths via NeoMatlabIO
+# ===========================================================================
+
+
+class TestEphysReaderCollectData:
+    """Test _collect_data branches that require a real non-mmap Neo IO.
+
+    NeoMatlabIO reads .mat files, doesn't have buffer_description_api,
+    and supports all Neo object types.
+    """
+
+    @pytest.fixture
+    def mat_full(self, tmp_path):
+        """A .mat file with analog signal, 3 spiketrains, epoch, and event."""
+        fpath = tmp_path / "full.mat"
+        rng = np.random.default_rng(42)
+        block = neo.Block()
+        seg = neo.Segment()
+        block.segments.append(seg)
+
+        # Analog signal
+        data = rng.standard_normal((100, 2)).astype(np.float32)
+        sig = neo.AnalogSignal(data, units="mV", sampling_rate=1000.0 * pq.Hz)
+        sig.name = "LFP"
+        seg.analogsignals.append(sig)
+
+        # 3 spike trains → TsGroup path
+        for i in range(3):
+            st = neo.SpikeTrain(
+                np.sort(rng.uniform(0, 0.1, 10)),
+                units="s",
+                t_stop=0.1 * pq.s,
+            )
+            st.name = f"unit{i}"
+            seg.spiketrains.append(st)
+
+        # Epoch
+        epoch = neo.Epoch(
+            times=[0.01, 0.05] * pq.s,
+            durations=[0.01, 0.02] * pq.s,
+            labels=np.array(["a", "b"]),
+        )
+        epoch.name = "trials"
+        seg.epochs.append(epoch)
+
+        # Event
+        event = neo.Event(
+            times=[0.02, 0.04] * pq.s,
+            labels=np.array(["x", "y"]),
+        )
+        event.name = "stim"
+        seg.events.append(event)
+
+        _write_neomatlab_file(fpath, block)
+        return fpath
+
+    @pytest.fixture
+    def mat_single_st(self, tmp_path):
+        """A .mat file with exactly 1 spiketrain (single Ts path)."""
+        fpath = tmp_path / "single_st.mat"
+        block = neo.Block()
+        seg = neo.Segment()
+        block.segments.append(seg)
+
+        st = neo.SpikeTrain([0.01, 0.03, 0.05], units="s", t_stop=0.1 * pq.s)
+        st.name = "unit0"
+        seg.spiketrains.append(st)
+
+        _write_neomatlab_file(fpath, block)
+        return fpath
+
+    @pytest.fixture
+    def mat_irregular(self, tmp_path):
+        """A .mat file with an IrregularlySampledSignal."""
+        fpath = tmp_path / "irregular.mat"
+        block = neo.Block()
+        seg = neo.Segment()
+        block.segments.append(seg)
+
+        times = np.sort(np.random.default_rng(0).uniform(0, 1, 50))
+        data = np.random.default_rng(0).standard_normal((50, 2))
+        isig = neo.IrregularlySampledSignal(times, data, units="mV", time_units="s")
+        isig.name = "irreg"
+        seg.irregularlysampledsignals.append(isig)
+
+        _write_neomatlab_file(fpath, block)
+        return fpath
+
+    def test_non_mmap_analogsignal(self, mat_full):
+        """Non-mmap analog signal path (line 1205)."""
+        reader = EphysReader(mat_full, format="NeoMatlabIO", lazy=False)
+        sig_keys = [k for k in reader.keys() if "LFP" in k]
+        assert len(sig_keys) >= 1
+        result = reader[sig_keys[0]]
+        assert isinstance(result, nap.TsdFrame)
+
+    def test_tsgroup_from_multiple_spiketrains(self, mat_full):
+        """TsGroup path when >1 spiketrain (lines 1242-1245)."""
+        reader = EphysReader(mat_full, format="NeoMatlabIO", lazy=False)
+        tsgroup_keys = [k for k in reader.keys() if "TsGroup" in k]
+        assert len(tsgroup_keys) == 1
+        result = reader[tsgroup_keys[0]]
+        assert isinstance(result, nap.TsGroup)
+        assert len(result) == 3
+
+    def test_epoch(self, mat_full):
+        """Epoch path (lines 1253-1261)."""
+        reader = EphysReader(mat_full, format="NeoMatlabIO", lazy=False)
+        epoch_keys = [k for k in reader.keys() if "trials" in k]
+        assert len(epoch_keys) >= 1
+        result = reader[epoch_keys[0]]
+        assert isinstance(result, nap.IntervalSet)
+        assert len(result) == 2
+
+    def test_event(self, mat_full):
+        """Event path (lines 1270-1278)."""
+        reader = EphysReader(mat_full, format="NeoMatlabIO", lazy=False)
+        event_keys = [k for k in reader.keys() if "stim" in k]
+        assert len(event_keys) >= 1
+        result = reader[event_keys[0]]
+        assert isinstance(result, nap.Ts)
+        assert len(result) == 2
+
+    def test_single_spiketrain(self, mat_single_st):
+        """Single spiketrain path (lines 1229-1234)."""
+        reader = EphysReader(mat_single_st, format="NeoMatlabIO", lazy=False)
+        ts_keys = [k for k in reader.keys() if "Ts:" in k]
+        assert len(ts_keys) == 1
+        result = reader[ts_keys[0]]
+        assert isinstance(result, nap.Ts)
+        assert len(result) == 3
+
+    def test_irregular_signal(self, mat_irregular):
+        """Irregular signal path (lines 1215-1219)."""
+        reader = EphysReader(mat_irregular, format="NeoMatlabIO", lazy=False)
+        irreg_keys = [
+            k for k in reader.keys() if "irregular" in k.lower() or "irreg" in k
+        ]
+        assert len(irreg_keys) >= 1
+        result = reader[irreg_keys[0]]
+        assert isinstance(result, nap.TsdFrame)
+
+    def test_auto_detect_format(self, mat_full):
+        """Auto-detect format from .mat extension (line 982)."""
+        reader = EphysReader(mat_full, lazy=False)  # format=None, auto-detect
+        assert len(reader.keys()) > 0
+
+    def test_lazy_false_non_proxy(self, raw_binary_file):
+        """With lazy=False, RawBinarySignalIO returns AnalogSignal (not proxy),
+        which goes through the non-mmap path even with buffer API."""
+        fpath, _, _, _ = raw_binary_file
+        reader = EphysReader(fpath, format="RawBinarySignalIO", lazy=False)
+        key = reader.keys()[0]
+        result = reader[key]
+        assert isinstance(result, nap.TsdFrame)
