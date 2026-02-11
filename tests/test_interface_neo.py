@@ -1007,7 +1007,7 @@ class TestEphysReaderNonMmap:
         monkeypatch.setattr(
             rbmod.RawBinarySignalRawIO,
             "has_buffer_description_api",
-            staticmethod(lambda: False),
+            lambda self: False,  # staticmethod(lambda: False),
         )
         reader = EphysReader(fpath, format="RawBinarySignalIO")
         key = reader.keys()[0]
