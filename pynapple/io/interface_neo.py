@@ -1206,7 +1206,7 @@ class EphysReader(UserDict):
                 for sig_idx, signal in enumerate(seg.irregularlysampledsignals):
                     nap_type = _get_signal_type(signal)
                     name = signal.name if signal.name else f"irregular{sig_idx}"
-                    key = f"{block_prefix}{nap_type.__name__} (irregular) {sig_idx}: {name}"
+                    key = f"{block_prefix}(irregular){sig_idx}:{name}"
 
                     self.data[key] = {
                         "type": nap_type.__name__,
@@ -1220,7 +1220,7 @@ class EphysReader(UserDict):
                 if len(seg.spiketrains) == 1:
                     st = seg.spiketrains[0]
                     name = st.name if st.name else "spikes"
-                    key = f"{block_prefix}Ts: {name}"
+                    key = f"{block_prefix}Ts:{name}"
 
                     # Store info for deferred loading
                     self.data[key] = {
@@ -1247,7 +1247,7 @@ class EphysReader(UserDict):
                         if hasattr(epoch, "name") and epoch.name
                         else f"epoch{ep_idx}"
                     )
-                    key = f"{block_prefix}IntervalSet {ep_idx}: {name}"
+                    key = f"{block_prefix}{ep_idx}:{name}"
 
                     # Store info for deferred loading
                     self.data[key] = {
@@ -1264,7 +1264,7 @@ class EphysReader(UserDict):
                         if hasattr(event, "name") and event.name
                         else f"event{ev_idx}"
                     )
-                    key = f"{block_prefix}Ts (event) {ev_idx}: {name}"
+                    key = f"{block_prefix}{ev_idx}:{name}"
 
                     # Store info for deferred loading
                     self.data[key] = {
