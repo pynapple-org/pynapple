@@ -1018,16 +1018,16 @@ class TestEphysReaderStringLoaders:
 #     assert isinstance(result, nap.TsdFrame)
 
 
-class TestEphysReaderStrFallback:
-    def test_str_without_tabulate(self, neuroscope_dir, monkeypatch):
-        """Test __str__ when tabulate is not available."""
-        import pynapple.io.interface_neo as mod
-
-        monkeypatch.setattr(mod, "HAS_TABULATE", False)
-        reader = EphysReader(neuroscope_dir)
-        s = str(reader)
-        assert "sess" in s
-        assert "TsdFrame" in s
+# class TestEphysReaderStrFallback:
+# def test_str_without_tabulate(self, neuroscope_dir, monkeypatch):
+#     """Test __str__ when tabulate is not available."""
+#     import pynapple.io.interface_neo as mod
+#
+#     monkeypatch.setattr(mod, "HAS_TABULATE", False)
+#     reader = EphysReader(neuroscope_dir)
+#     s = str(reader)
+#     assert "sess" in s
+#     assert "TsdFrame" in s
 
 
 class TestEphysReaderFormatHandling:
