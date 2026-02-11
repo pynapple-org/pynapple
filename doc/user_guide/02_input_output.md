@@ -142,22 +142,22 @@ print(type(z.d))
 
 Raw LFP data can be loaded with pynapple through the NEO library.
 Internally, pynapple uses the NEO raw IO classes to read the data and convert them to one of the pynapple time series object.
-This is done through the class [`nap.LFPReader`](pynapple.io.neo.LFPReader).
+This is done through the class [`nap.EphysReader`](pynapple.io.neo.EphysReader).
 
 See here the [list of supported formats](https://neo.readthedocs.io/en/stable/rawiolist.html) of python-neo.
 
-The minimal example to load a dataset is to instantiate the `LFPReader` class with the path to the data file.
+The minimal example to load a dataset is to instantiate the `EphysReader` class with the path to the data file.
 
 ```
 import pynapple as nap
-data = nap.LFPReader("path_to_your_file")
+data = nap.EphysReader("path_to_your_file")
 ```
 
 Below are shown a few examples of loading LFP and spikes.
 
 ### Neuroscope / Binary file
 
-If you have a session recorded as binary files with Neuroscope, you can load it with the `LFPReader` class or directly 
+If you have a session recorded as binary files with Neuroscope, you can load it with the `EphysReader` class or directly 
 with the function [`nap.load_eeg`](pynapple.io.misc.load_eeg).
 
 ```
@@ -170,15 +170,15 @@ with the function [`nap.load_eeg`](pynapple.io.misc.load_eeg).
 ```
 >>> import pynapple as nap
 
->>> data = nap.LFPReader("path/my_session.dat", format="NeuroscopeIO")
+>>> data = nap.EphysReader("path/my_session", format="NeuroscopeIO")
     my_session
     ┍━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┑
     │ Key                 │ Type     │
     ┝━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┥
-    │ TsdFrame 0: Signals │ TsdFrame │
+    │ my_session.dat      │ TsdFrame │
     ┕━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┙
 
->>> data["TsdFrame 0: Signals"]
+>>> data["my_session.dat"]
     Time (s)            0          1          2          3          4  ...
     ----------  ---------  ---------  ---------  ---------  ---------  -----
     0.0          0.274353   0.249023   0.3125     0.17395    0.240173  ...
@@ -195,7 +195,7 @@ A more direct way to load binary file is to use the function `nap.load_eeg` that
 
 ```
 >>> import pynapple as nap
->>> data = nap.load_eeg("path/my_session.dat",
+>>> data = nap.load_eeg("path/my_session/my_session.dat",
     channel=None # A list of channels to return. If None, returns all channels.
     n_channels=16, # The number of channels in the binary file. Only used if channel is None.
     sampling_rate=20000, # The sampling rate of the data.
@@ -244,23 +244,23 @@ A typical OpenEphys dataset has the following structure:
                 ┗ 📄 timestamps.npy
 ```
 
-You can load the LFP data with the `LFPReader` class with :
+You can load the LFP data with the `EphysReader` class with :
 
 ```
 >>> import pynapple as nap
 
->>> data = nap.LFPReader("Record Node 109", format="OpenEphysBinaryIO")
+>>> data = nap.EphysReader("path/to/Record Node 109", format="OpenEphysBinaryIO")
     Record Node 109
     ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┑
     │ Key                                                     │ Type     │
     ┝━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┥
-    │ TsdFrame 0: Record Node 109#Neuropix-PXI-103.ProbeA     │ TsdFrame │
-    │ TsdFrame 1: Record Node 109#Neuropix-PXI-103.ProbeASYNC │ TsdFrame │
-    │ Ts (event) 0: Messages                                  │ Ts       │
-    │ Ts (event) 1: Neuropixels PXI Sync                      │ Ts       │
+    │ 0:Record Node 109#Neuropix-PXI-103.ProbeA               │ TsdFrame │
+    │ 1:Record Node 109#Neuropix-PXI-103.ProbeASYNC           │ TsdFrame │
+    │ 0:Messages                                              │ Ts       │
+    │ 1:Neuropixels PXI Sync                                  │ Ts       │
     ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┙
     
->>> data["TsdFrame 0: Record Node 109#Neuropix-PXI-103.ProbeA"]
+>>> data["0:Record Node 109#Neuropix-PXI-103.ProbeA"]
     Time (s)             0        1         2         3         4  ...
     ------------  --------  -------  --------  --------  --------  -----
     8.044366667   -138.06   -91.65   -115.245  -187.59   -130.455  ...
@@ -285,14 +285,14 @@ urllib.request.urlretrieve(distantfile, "File_plexon_3.plx")
 
 ```{code-cell} ipython3
 :tags: [hide-output]
-data = nap.LFPReader("File_plexon_3.plx", format="PlexonIO");
+data = nap.EphysReader("File_plexon_3.plx", format="PlexonIO");
 ```
 ```{code-cell} ipython3
 print(data)
 ```
 
 ```{code-cell} ipython3
-lfp = data['TsdFrame 0: V']
+lfp = data['0:V']
 spikes = data['TsGroup']
 ```
 

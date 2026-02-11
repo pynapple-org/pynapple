@@ -1,8 +1,11 @@
 """Pynapple interface to Neo for reading electrophysiology files."""
 
+from __future__ import annotations
+
+import xml.etree.ElementTree as ET
 from collections import UserDict
 from pathlib import Path
-from typing import Union, Optional, Dict, Any, List, Type
+from typing import Any
 
 import numpy as np
 
@@ -29,6 +32,56 @@ except ImportError:
 
 from .. import core as nap
 from .interface_neurosuite import NeuroSuiteIO
+
+
+def _parse_openephys_electrode_positions(settings_xml_path):
+    """Parse electrode (x, y) positions from an Open Ephys settings.xml.
+
+    The positions are stored in ``<ELECTRODE_XPOS>`` / ``<ELECTRODE_YPOS>``
+    elements inside ``<NP_PROBE>`` nodes.  Each attribute is named ``CH{n}``
+    where *n* is the 0-based electrode index.
+
+    Parameters
+    ----------
+    settings_xml_path : str or Path
+        Path to the ``settings.xml`` file.
+
+    Returns
+    -------
+    dict[str, dict[int, np.ndarray]]
+        Mapping of probe serial number to a dict with keys ``"x"`` and
+        ``"y"``, each an ndarray of shape ``(n_electrodes,)`` ordered by
+        electrode index.  Returns an empty dict if no positions are found.
+    """
+    settings_xml_path = Path(settings_xml_path)
+    if not settings_xml_path.exists():
+        return {}
+
+    tree = ET.parse(settings_xml_path)
+    root = tree.getroot()
+
+    probes = {}
+    for np_probe in root.iter("NP_PROBE"):
+        xpos_el = np_probe.find("ELECTRODE_XPOS")
+        ypos_el = np_probe.find("ELECTRODE_YPOS")
+        if xpos_el is None or ypos_el is None:
+            continue
+
+        x_dict = {int(k[2:]): float(v) for k, v in xpos_el.attrib.items()}
+        y_dict = {int(k[2:]): float(v) for k, v in ypos_el.attrib.items()}
+
+        n = max(max(x_dict.keys()), max(y_dict.keys())) + 1
+        x = np.full(n, np.nan)
+        y = np.full(n, np.nan)
+        for ch, val in x_dict.items():
+            x[ch] = val
+        for ch, val in y_dict.items():
+            y[ch] = val
+
+        serial = np_probe.get("probe_serial_number", "unknown")
+        probes[serial] = {"x": x, "y": y}
+
+    return probes
 
 
 def _check_neo_installed():
@@ -77,7 +130,7 @@ def _get_signal_type(signal) -> type:
         return nap.TsdTensor
 
 
-def _extract_annotations(obj) -> Dict[str, Any]:
+def _extract_annotations(obj) -> dict[str, Any]:
     """Extract annotations from a Neo object.
 
     Parameters
@@ -100,7 +153,7 @@ def _extract_annotations(obj) -> Dict[str, Any]:
     return annotations
 
 
-def _extract_array_annotations(obj) -> Dict[str, np.ndarray]:
+def _extract_array_annotations(obj) -> dict[str, np.ndarray]:
     """Extract array annotations from a Neo object.
 
     Parameters
@@ -124,7 +177,7 @@ def _extract_array_annotations(obj) -> Dict[str, np.ndarray]:
 
 
 def _make_intervalset_from_epoch(
-    epoch, time_support: Optional[nap.IntervalSet] = None
+    epoch, time_support: nap.IntervalSet | None = None
 ) -> nap.IntervalSet:
     """Convert a Neo Epoch to a pynapple IntervalSet.
 
@@ -163,7 +216,7 @@ def _make_intervalset_from_epoch(
 
 
 def _make_intervalset_from_epoch_multiseg(
-    block, ep_idx: int, time_support: Optional[nap.IntervalSet] = None
+    block, ep_idx: int, time_support: nap.IntervalSet | None = None
 ) -> nap.IntervalSet:
     """Convert Neo Epochs from multiple segments to a pynapple IntervalSet.
 
@@ -217,7 +270,7 @@ def _make_intervalset_from_epoch_multiseg(
 
 
 def _make_ts_from_event_multiseg(
-    block, ev_idx: int, time_support: Optional[nap.IntervalSet] = None
+    block, ev_idx: int, time_support: nap.IntervalSet | None = None
 ) -> nap.Ts:
     """Convert Neo Events from multiple segments to a pynapple Ts.
 
@@ -252,7 +305,7 @@ def _make_ts_from_event_multiseg(
 
 
 def _make_ts_from_event(
-    event, time_support: Optional[nap.IntervalSet] = None
+    event, time_support: nap.IntervalSet | None = None
 ) -> nap.Ts:
     """Convert a Neo Event to a pynapple Ts.
 
@@ -277,7 +330,7 @@ def _make_ts_from_event(
 
 
 def _make_ts_from_spiketrain(
-    spiketrain, time_support: Optional[nap.IntervalSet] = None
+    spiketrain, time_support: nap.IntervalSet | None = None
 ) -> nap.Ts:
     """Convert a Neo SpikeTrain to a pynapple Ts.
 
@@ -302,7 +355,7 @@ def _make_ts_from_spiketrain(
 
 
 def _make_ts_from_spiketrain_multiseg(
-    block, unit_idx: int, time_support: Optional[nap.IntervalSet] = None
+    block, unit_idx: int, time_support: nap.IntervalSet | None = None
 ) -> nap.Ts:
     """Convert a Neo SpikeTrain from multiple segments to a pynapple Ts.
 
@@ -335,8 +388,8 @@ def _make_ts_from_spiketrain_multiseg(
 
 
 def _make_tsgroup_from_spiketrains(
-    spiketrains: Union[list, "SpikeTrainList"],
-    time_support: Optional[nap.IntervalSet] = None,
+    spiketrains: list | SpikeTrainList,
+    time_support: nap.IntervalSet | None = None,
 ) -> nap.TsGroup:
     """Convert a list of Neo SpikeTrains to a pynapple TsGroup.
 
@@ -381,8 +434,8 @@ def _make_tsgroup_from_spiketrains(
 
 
 def _make_tsgroup_from_spiketrains_multiseg(
-    all_spiketrains: List[list],
-    time_support: Optional[nap.IntervalSet] = None,
+    all_spiketrains: list[list],
+    time_support: nap.IntervalSet | None = None,
 ) -> nap.TsGroup:
     """Convert spike trains from multiple segments to a pynapple TsGroup.
 
@@ -441,7 +494,7 @@ def _make_tsgroup_from_spiketrains_multiseg(
     return nap.TsGroup(ts_dict, time_support=time_support, metadata=meta_arrays)
 
 
-def _make_tsd_from_interface(interface) -> Union[nap.Tsd, nap.TsdFrame, nap.TsdTensor]:
+def _make_tsd_from_interface(interface) -> nap.Tsd | nap.TsdFrame | nap.TsdTensor:
     """Convert a NeoSignalInterface to a pynapple Tsd/TsdFrame/TsdTensor.
 
     Parameters
@@ -865,9 +918,9 @@ class EphysReader(UserDict):
 
     def __init__(
         self,
-        path: Union[str, Path],
+        path: str | Path,
         lazy: bool = True,
-        format: Union[str, Type, None] = None,
+        format: str | type | None = None,
     ):
         _check_neo_installed()
 
@@ -999,6 +1052,92 @@ class EphysReader(UserDict):
 
         self._ns = ns  # Store the NeuroSuiteIO instance for use in loaders
 
+    def _get_electrode_positions(self):
+        """Extract electrode positions from the reader's settings file.
+
+        Currently supports Open Ephys binary format, where positions are
+        stored in ``settings.xml`` under ``<ELECTRODE_XPOS>`` /
+        ``<ELECTRODE_YPOS>`` elements.
+
+        Returns
+        -------
+        dict
+            Probe serial -> ``{"x": ndarray, "y": ndarray}`` mapping,
+            or empty dict if not available.
+        """
+        if not hasattr(self._reader, "folder_structure"):
+            return {}
+        fs = self._reader.folder_structure
+        # Walk to the first experiment's settings_file
+        for node in fs.values():
+            for exp in node.get("experiments", {}).values():
+                settings_file = exp.get("settings_file")
+                if settings_file is not None:
+                    return _parse_openephys_electrode_positions(settings_file)
+        return {}
+
+    def _make_mmap_entry(self, proxy, block_idx, nap_type, time_support,
+                         metadata=None):
+        """Build a deferred-loading dict that memory-maps a raw binary file.
+
+        Uses Neo's buffer description API to locate the file on disk and
+        the column slice that corresponds to this particular stream.
+
+        Parameters
+        ----------
+        proxy : AnalogSignalProxy
+            The Neo proxy for this signal.
+        block_idx : int
+            Block index in the reader.
+        nap_type : type
+            Pynapple type (Tsd, TsdFrame, TsdTensor).
+        time_support : IntervalSet
+            Time support for the recording.
+        metadata : dict or None
+            Optional per-column metadata to attach to the resulting object.
+
+        Returns
+        -------
+        dict
+            Entry for ``self.data`` with a callable ``"loader"``.
+        """
+        reader = self._reader
+        stream_idx = proxy._stream_index
+        stream_info = reader.header["signal_streams"][stream_idx]
+        stream_id = stream_info["id"]
+        buffer_id = stream_info["buffer_id"]
+
+        bd = reader.get_analogsignal_buffer_description(
+            block_index=block_idx, seg_index=0, buffer_id=buffer_id,
+        )
+        file_path = bd["file_path"]
+        dtype = np.dtype(bd["dtype"])
+        buf_shape = tuple(bd["shape"])
+        col_slice = reader._stream_buffer_slice[stream_id]
+
+        # Pre-compute timestamps from the proxy metadata
+        t_start = _rescale_to_seconds(proxy.t_start)
+        sampling_rate = float(proxy.sampling_rate.rescale("Hz").magnitude)
+        n_samples = proxy.shape[0]
+
+        def _loader(
+            _fp=file_path, _dt=dtype, _bs=buf_shape,
+            _cs=col_slice, _t0=t_start, _sr=sampling_rate,
+            _ns=n_samples, _nt=nap_type, _meta=metadata,
+        ):
+            fp = np.memmap(_fp, _dt, "r", shape=_bs)
+            data = fp[:, _cs]
+            timestamps = _t0 + np.arange(_ns) / _sr
+            kwargs = {}
+            if _meta is not None:
+                kwargs["metadata"] = _meta
+            return _nt(t=timestamps, d=data, load_array=False, **kwargs)
+
+        return {
+            "type": nap_type.__name__,
+            "loader": _loader,
+        }
+
     def _collect_data(self, lazy=True):
         """Collect all data from Neo blocks into the dictionary."""
         # Read blocks
@@ -1021,18 +1160,47 @@ class EphysReader(UserDict):
                 seg = block.segments[0]
 
                 # Analog signals - deferred loading via NeoSignalInterface
+                # or memory-mapped when the reader exposes raw buffer info
+                has_buffer_api = (
+                    hasattr(self._reader, "has_buffer_description_api")
+                    and self._reader.has_buffer_description_api()
+                )
+
+                # Parse electrode positions from settings.xml (OpenEphys)
+                electrode_positions = self._get_electrode_positions()
+
                 for sig_idx, signal in enumerate(seg.analogsignals):
                     nap_type = _get_signal_type(signal)
                     name = signal.name if signal.name else f"signal{sig_idx}"
-                    key = f"{block_prefix}{nap_type.__name__} {sig_idx}: {name}"
+                    key = f"{block_prefix}{sig_idx}:{name}"
 
-                    self.data[key] = {
-                        "type": nap_type.__name__,
-                        "loader": "analogsignal",
-                        "block": block,
-                        "sig_num": sig_idx,
-                        "time_support": time_support,
-                    }
+                    if has_buffer_api and isinstance(signal, AnalogSignalProxy):
+                        # Build per-column metadata from electrode positions
+                        metadata = None
+                        if electrode_positions:
+                            n_ch = signal.shape[1] if len(signal.shape) > 1 else 1
+                            # Use the first (and usually only) probe
+                            probe = next(iter(electrode_positions.values()))
+                            n_electrodes = np.sum(~np.isnan(probe["x"]))
+                            if n_ch == n_electrodes:
+                                mask = ~np.isnan(probe["x"])
+                                metadata = {
+                                    "x": probe["x"][mask],
+                                    "y": probe["y"][mask],
+                                }
+
+                        self.data[key] = self._make_mmap_entry(
+                            signal, block_idx, nap_type, time_support,
+                            metadata=metadata,
+                        )
+                    else:
+                        self.data[key] = {
+                            "type": nap_type.__name__,
+                            "loader": "analogsignal",
+                            "block": block,
+                            "sig_num": sig_idx,
+                            "time_support": time_support,
+                        }
 
                 # Irregularly sampled signals
                 for sig_idx, signal in enumerate(seg.irregularlysampledsignals):
