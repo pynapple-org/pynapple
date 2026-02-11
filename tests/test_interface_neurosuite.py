@@ -9,7 +9,6 @@ import pytest
 import pynapple as nap
 from pynapple.io.interface_neurosuite import NeuroSuiteIO, parse_neuroscope_xml
 
-
 # ---------------------------------------------------------------------------
 # Helpers to generate synthetic Neuroscope session files
 # ---------------------------------------------------------------------------
