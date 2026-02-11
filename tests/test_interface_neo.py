@@ -5,25 +5,24 @@ from pathlib import Path
 
 import neo
 import numpy as np
-import quantities as pq
 import pytest
+import quantities as pq
 
 import pynapple as nap
-from pynapple.io.interface_neo import (
+from pynapple.io.interface_neo import (  # _make_intervalset_from_epoch,
     EphysReader,
     NeoSignalInterface,
     _extract_annotations,
     _extract_array_annotations,
     _get_signal_type,
-    # _make_intervalset_from_epoch,
     _make_intervalset_from_epoch_multiseg,
     _make_ts_from_event,
     _make_ts_from_event_multiseg,
     _make_ts_from_spiketrain,
     _make_ts_from_spiketrain_multiseg,
+    _make_tsd_from_interface,
     _make_tsgroup_from_spiketrains,
     _make_tsgroup_from_spiketrains_multiseg,
-    _make_tsd_from_interface,
     _parse_openephys_electrode_positions,
     _rescale_to_seconds,
 )
