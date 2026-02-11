@@ -830,7 +830,7 @@ class NeoSignalInterface:
 
 
 class EphysReader(UserDict):
-    """Read Neo-compatible electrophysiology files into pynapple objects.
+    """Read Neo-compatible electrophysiology files into pynapple objects (i.e. Neurosuite, OpenEphys, Plexon, etc).
 
     `Neo <https://neo.readthedocs.io/>`_ is a Python package for working with
     electrophysiology data, supporting many file formats through a unified API.

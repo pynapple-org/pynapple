@@ -79,7 +79,7 @@ Input-Ouput
     :nosignatures:
     :recursive:
 
-     LFPReader
+     EphysReader
      NeoSignalInterface
 
 

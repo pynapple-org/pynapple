@@ -142,7 +142,7 @@ print(type(z.d))
 
 Raw LFP data can be loaded with pynapple through the NEO library.
 Internally, pynapple uses the NEO raw IO classes to read the data and convert them to one of the pynapple time series object.
-This is done through the class [`nap.EphysReader`](pynapple.io.neo.EphysReader).
+This is done through the class [`nap.EphysReader`](pynapple.io.interface_neo.EphysReader).
 
 See here the [list of supported formats](https://neo.readthedocs.io/en/stable/rawiolist.html) of python-neo.
 
