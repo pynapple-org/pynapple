@@ -2,8 +2,6 @@
 Functions to realign time series relative to a reference time.
 """
 
-import inspect
-from functools import wraps
 from numbers import Number
 
 import numpy as np
@@ -12,218 +10,6 @@ from .. import core as nap
 from ._process_functions import _perievent_continuous, _perievent_trigger_average
 
 
-def _validate_perievent_inputs(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
-        # Validate each positional argument
-        sig = inspect.signature(func)
-        kwargs = sig.bind_partial(*args, **kwargs).arguments
-
-        parameters_type = {
-            "timestamps": (nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor, nap.TsGroup),
-            "timeseries": (nap.Tsd, nap.TsdFrame, nap.TsdTensor),
-            "tref": (nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor),
-            "group": (nap.TsGroup,),
-            "ep": (nap.IntervalSet,),
-            "feature": (nap.Tsd, nap.TsdFrame, nap.TsdTensor),
-            "binsize": (Number,),
-            "windowsize": (tuple, Number),
-            "minmax": (tuple, Number),
-            "time_unit": (str,),
-        }
-        for param, param_type in parameters_type.items():
-            if param in kwargs:
-                if not isinstance(kwargs[param], param_type):
-                    raise TypeError(
-                        f"Invalid type. Parameter {param} must be of type {[p.__name__ for p in param_type]}."
-                    )
-
-        # Call the original function with validated inputs
-        return func(**kwargs)
-
-    return wrapper
-
-
-def _align_tsd(tsd, tref, window, new_time_support):
-    """
-    Helper function compiled with numba for aligning times.
-    See compute_perievent for using this function
-
-    Parameters
-    ----------
-    times : numpy.ndarray
-        The timestamps to align
-    data : numpy.ndarray
-        The data to align
-    tref : numpy.ndarray
-        The reference times
-    window : tuple
-        Start and end of the window size around tref
-
-    Returns
-    -------
-    list
-        The align times and data
-    """
-    lbounds = np.searchsorted(tsd.index, tref.index - window[0])
-    rbounds = np.searchsorted(tsd.index, tref.index + window[1])
-
-    group = {}
-
-    if isinstance(tsd, nap.Ts):
-        for i in range(len(tref)):
-            tmp = tsd.index[lbounds[i] : rbounds[i]] - tref.index[i]
-            group[i] = nap.Ts(t=tmp, time_support=new_time_support)
-    else:
-        for i in range(len(tref)):
-            tmp = tsd.index[lbounds[i] : rbounds[i]] - tref.index[i]
-            tmp2 = tsd.values[lbounds[i] : rbounds[i]]
-            group[i] = nap.Tsd(t=tmp, d=tmp2, time_support=new_time_support)
-
-    group = nap.TsGroup(group, time_support=new_time_support, bypass_check=True)
-    group.set_info(ref_times=tref.index)
-
-    return group
-
-
-@_validate_perievent_inputs
-def compute_perievent(timestamps, tref, minmax, time_unit="s", **kwargs):
-    """
-    Center the timestamps of a time series object or a time series group around the timestamps given by the `tref` argument.
-    `minmax` indicates the start and end of the window. If `minmax=(-5, 10)`, the window will be from -5 second to 10 second.
-    If `minmax=10`, the window will be from -10 second to 10 second.
-
-    To center the values of a time series around a set of timestamps, you can use `compute_perievent_continuous`.
-
-    Parameters
-    ----------
-    timestamps : Ts, Tsd, TsdFrame, TsdTensor or TsGroup
-        The timestamps to align to tref.
-        If Ts/Tsd/TsdFrame/TsdTensor, returns a TsGroup.
-        If TsGroup, returns a dictionary of TsGroup
-    tref : Ts, Tsd, TsdFrame or TsdTensor.
-        The time reference of the event to align to
-    minmax : tuple of int/float or int or float
-        The window size. Can be unequal on each side i.e. (-500, 1000).
-    time_unit : str, optional
-        Time units of the minmax ('s' [default], 'ms', 'us').
-
-    Returns
-    -------
-    dict
-        A TsGroup if timestamps is a Ts/Tsd/TsdFrame/TsdTensor or
-        a dictionary of TsGroup if timestamps is a TsGroup.
-
-    Raises
-    ------
-    RuntimeError
-        If `time_unit` not in ["s", "ms", "us"]
-        If `minmax` is wrongly defined
-    """
-    if time_unit not in ["s", "ms", "us"]:
-        raise RuntimeError("time_unit should be 's', 'ms' or 'us'")
-
-    if isinstance(minmax, Number):
-        minmax = np.array([minmax, minmax], dtype=np.float64)
-
-    if len(minmax) != 2:
-        raise RuntimeError("minmax should be a tuple of 2 numbers or a single number.")
-
-    if not all([isinstance(x, Number) for x in minmax]):
-        raise RuntimeError("minmax should be a tuple of 2 numbers or a single number.")
-
-    window = np.abs(nap.TsIndex.format_timestamps(np.array(minmax), time_unit))
-
-    new_time_support = nap.IntervalSet(start=-window[0], end=window[1])
-
-    if isinstance(timestamps, nap.TsGroup):
-        toreturn = {}
-        for n in timestamps.index:
-            toreturn[n] = _align_tsd(timestamps[n], tref, window, new_time_support)
-        return toreturn
-    else:
-        return _align_tsd(timestamps, tref, window, new_time_support)
-
-
-@_validate_perievent_inputs
-def compute_perievent_continuous(
-    timeseries, tref, minmax, ep=None, time_unit="s", **kwargs
-):
-    """
-    Center continuous time series around the timestamps given by the 'tref' argument.
-    `minmax` indicates the start and end of the window. If `minmax=(-5, 10)`, the window will be from -5 second to 10 second.
-    If `minmax=10`, the window will be from -10 second to 10 second.
-
-    To realign timestamps around a set of timestamps, you can use `compute_perievent`.
-
-    This function assumes a constant sampling rate of the time series.
-
-    Parameters
-    ----------
-    timeseries : Tsd, TsdFrame or TsdTensor
-        The time series to align to tref.
-    tref : Ts, Tsd, TsdFrame or TsdTensor
-        The time reference of the event to align to
-    minmax : tuple of int/float or int or float
-        The window size. Can be unequal on each side i.e. (-500, 1000).
-    ep : IntervalSet, optional
-        The epochs to perform the operation. If None, the default is the time support of the data.
-    time_unit : str, optional
-        Time units of the minmax ('s' [default], 'ms', 'us').
-
-    Returns
-    -------
-    TsdFrame, TsdTensor
-        If `data` is a one-dimensional Tsd, the output is a TsdFrame. Each column is one timestamps from `tref`.
-        If `data` is a TsdFrame or TsdTensor, the output is a TsdTensor with one more dimension. The first dimension is always time and the second dimension is the 'tref' timestamps.
-
-    Raises
-    ------
-    RuntimeError
-        If `time_unit` not in ["s", "ms", "us"]
-    """
-    if time_unit not in ["s", "ms", "us"]:
-        raise RuntimeError("time_unit should be 's', 'ms' or 'us'")
-
-    if isinstance(minmax, Number):
-        minmax = np.array([minmax, minmax], dtype=np.float64)
-
-    if len(minmax) != 2:
-        raise RuntimeError("minmax should be a tuple of 2 numbers or a single number.")
-
-    if not all([isinstance(x, Number) for x in minmax]):
-        raise RuntimeError("minmax should be a tuple of 2 numbers or a single number.")
-
-    if ep is None:
-        ep = timeseries.time_support
-
-    window = np.abs(nap.TsIndex.format_timestamps(np.array(minmax), time_unit))
-
-    time_array = timeseries.index.values
-    data_array = timeseries.values
-    time_target_array = tref.index.values
-    starts = ep.start
-    ends = ep.end
-
-    bin_size = time_array[1] - time_array[0]
-    idx1 = -np.arange(0, window[0] + bin_size, bin_size)[::-1][:-1]
-    idx2 = np.arange(0, window[1] + bin_size, bin_size)[1:]
-    time_idx = np.hstack((idx1, np.zeros(1), idx2))
-    minmax = np.array([idx1.shape[0], idx2.shape[0]])
-
-    new_data_array = _perievent_continuous(
-        time_array, data_array, time_target_array, starts, ends, minmax
-    )
-
-    time_support = nap.IntervalSet(start=-window[0], end=window[1])
-
-    if new_data_array.ndim == 2:
-        return nap.TsdFrame(t=time_idx, d=new_data_array, time_support=time_support)
-    else:
-        return nap.TsdTensor(t=time_idx, d=new_data_array, time_support=time_support)
-
-
-@_validate_perievent_inputs
 def compute_event_trigger_average(
     group,
     feature,
@@ -271,7 +57,7 @@ def compute_event_trigger_average(
             "windowsize should be a tuple of 2 numbers or a single number."
         )
 
-    if not all([isinstance(x, Number) for x in windowsize]):
+    if not all(isinstance(x, Number) for x in windowsize):
         raise RuntimeError(
             "windowsize should be a tuple of 2 numbers or a single number."
         )
@@ -327,3 +113,327 @@ def compute_event_trigger_average(
         return nap.TsdFrame(t=time_idx, d=eta, columns=group.index)
     else:
         return nap.TsdTensor(t=time_idx, d=eta)
+
+
+def compute_perievent(data, events, window, time_unit="s", epochs=None):
+    """
+    Perievent alignment, handles both discrete and continuous data.
+
+    This function automatically detects the data type and sampling characteristics,
+    then applies the appropriate alignment strategy:
+
+    - **discrete data:**
+        - a single ``Ts``: returns a ``TsGroup`` with one element per event
+        - multiple ``Ts`` in a ``TsGroup``: returns a dictionary with a ``TsGroup`` per unit
+    - **continuous data:**
+        - regularly sampled ``Tsd``/``TsdFrame``/``TsdTensor``: returns aligned object with
+          events as columns and uniform time sampling
+        - irregularly sampled ``Tsd``/``TsdFrame``/``TsdTensor``: returns a TsGroup
+          containing aligned objects with their own time sampling
+
+    Parameters
+    ----------
+    data : Ts, Tsd, TsdFrame, TsdTensor, TsGroup
+        The timeseries to align.
+    events : Ts, Tsd, TsdFrame, TsdTensor
+        The events to align to.
+        If not a ``Ts``, we simply take the timestamps of the object.
+    window : int, float, tuple
+        The alignment window, which can be unequal on each side, e.g. ``(-500, 1000)``
+    time_unit : str, optional
+        Time units of the window ('s' [default], 'ms', 'us').
+    epochs : IntervalSet, optional
+        The epochs to perform the operation over. If None, uses the data's ``time_support``.
+
+    Returns
+    -------
+    TsGroup, TsdFrame, TsdTensor, dict
+        The aligned timeseries.
+
+    Raises
+    ------
+    RuntimeError
+        If time_unit not in ["s", "ms", "us"] or window format is invalid
+
+    Examples
+    --------
+    Align discrete data (``Ts``) to events:
+
+    >>> import pynapple as nap
+    >>> spikes = nap.Ts(t=[0.5, 1.2, 2.1, 3.5, 4.8])
+    >>> events = nap.Ts(t=[1.0, 3.0])
+    >>> result = nap.compute_perievent(spikes, events, window=1.0)
+    >>> result
+      Index    rate
+    -------  ------
+          0       1
+          1       1
+    >>> result[0]
+    Time (s)
+    -0.5
+    0.2
+    shape: 2
+    >>> result[1]
+    Time (s)
+    -0.9
+    0.5
+    shape: 2
+
+    Align data to events within specific epochs:
+
+    >>> spikes = nap.Ts(t=[0.5, 1.2, 2.1, 3.5, 4.8])
+    >>> events = nap.Ts(t=[1.0, 3.0, 5.0])
+    >>> epochs = nap.IntervalSet(start=[0, 2.5], end=[2.4, 4.5])
+    >>> result = nap.compute_perievent(spikes, events, window=1.0, epochs=epochs)
+    >>> result # only 2 events are included!
+      Index    rate
+    -------  ------
+          0       1
+          1       1
+
+    Align with unequal window:
+
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> spikes = nap.Ts(t=[0.5, 1.2, 2.1, 3.5])
+    >>> events = nap.Ts(t=[1.0, 3.0])
+    >>> result = nap.compute_perievent(spikes, events, window=(-0.5, 1.5))
+    >>> result[0]  # window from -0.5 to +1.5 relative to first event
+    Time (s)
+    -0.5
+    0.2
+    1.1
+    shape: 3
+
+    Align multiple discrete objects (``TsGroup``):
+
+    >>> unit1 = nap.Ts(t=[0.5, 1.2, 2.1, 3.5])
+    >>> unit2 = nap.Ts(t=[0.8, 1.5, 3.2, 4.1])
+    >>> spikes = nap.TsGroup({0: unit1, 1: unit2})
+    >>> events = nap.Ts(t=[1.0, 3.0])
+    >>> result = nap.compute_perievent(spikes, events, window=1.0)
+    >>> result
+    {0:   Index    rate
+    -------  ------
+          0       1
+          1       1, 1:   Index    rate
+    -------  ------
+          0     1
+          1     0.5}
+    >>> result[0] # aligned unit 0
+      Index    rate
+    -------  ------
+          0       1
+          1       1
+    >>> result[1] # aligned unit 1
+      Index    rate
+    -------  ------
+          0     1
+          1     0.5
+
+    Align regularly sampled continuous data (``Tsd``) to events, returning a ``TsdFrame``:
+
+    >>> times = np.arange(0, 10, 0.5)
+    >>> values = np.sin(times)
+    >>> data = nap.Tsd(t=times, d=values)
+    >>> events = nap.Ts(t=[2.0, 5.0, 8.0])
+    >>> result = nap.compute_perievent(data, events, window=1.0)
+    >>> result
+    Time (s)           0          1         2
+    ----------  --------  ---------  --------
+    -1          0.841471  -0.756802  0.656987
+    -0.5        0.997495  -0.97753   0.938
+    0           0.909297  -0.958924  0.989358
+    0.5         0.598472  -0.70554   0.798487
+    1           0.14112   -0.279415  0.412118
+    dtype: float64, shape: (5, 3)
+
+    Align irregularly sampled continuous data, returning a TsGroup:
+
+    >>> times = np.array([0.1, 0.3, 0.9, 1.2, 2.5, 3.1, 4.0])
+    >>> values = np.random.randn(7)
+    >>> data = nap.Tsd(t=times, d=values)
+    >>> events = nap.Ts(t=[1.0, 3.0])
+    >>> result = nap.compute_perievent(data, events, window=1.0)
+    >>> result
+      Index    rate
+    -------  ------
+          0     2
+          1     1.5
+    >>> result[0]
+    Time (s)
+    ----------  ---------
+    -0.9        -0.375383
+    -0.7        -1.48813
+    -0.1         0.835561
+    0.2          1.15784
+    dtype: float64, shape: (4,)
+    >>> result[1]
+    Time (s)
+    ----------  ----------
+    -0.5        -0.785679
+    0.1          0.303413
+    1            0.0386285
+    dtype: float64, shape: (3,)
+
+    """
+    if time_unit not in ["s", "ms", "us"]:
+        raise RuntimeError("time_unit should be 's', 'ms' or 'us'")
+
+    if isinstance(window, Number):
+        window = np.array([window, window], dtype=np.float64)
+    if len(window) != 2 or not all(isinstance(x, Number) for x in window):
+        raise RuntimeError("window should be a tuple of 2 numbers or a single number.")
+
+    window = np.abs(nap.TsIndex.format_timestamps(np.array(window), time_unit))
+
+    # Call recursively if data is a TsGroup
+    if isinstance(data, nap.TsGroup):
+        return {
+            i: compute_perievent(data[i], events, window, time_unit, epochs)
+            for i in data
+        }
+
+    if not isinstance(data, (nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor)):
+        raise TypeError(f"data should be a time series object: {type(data)}")
+
+    if not isinstance(events, (nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor)):
+        raise TypeError(f"events should be a time series object: {type(events)}")
+
+    if epochs is None:
+        epochs = data.time_support
+
+    events = events.restrict(epochs)
+    new_time_support = nap.IntervalSet(start=-window[0], end=window[1])
+
+    if isinstance(data, nap.Ts) or not _is_regularly_sampled(data):
+        return _align_irregular(data, events, window, new_time_support)
+    else:
+        return _align_regular(data, events, window, new_time_support)
+
+
+def _is_regularly_sampled(data, tolerance=1e-6):
+    """
+    Check if a timeseries has regular sampling.
+
+    Parameters
+    ----------
+    data : Ts, Tsd, TsdFrame, TsdTensor
+        The timeseries to check
+    tolerance : float
+        Relative tolerance for bin size variation
+
+    Returns
+    -------
+    bool
+        True if sampling is regular (constant bin size)
+    """
+    if len(data) < 2:
+        return True
+
+    time_diffs = np.diff(data.t)
+    bin_size = time_diffs[0]
+
+    # Check if all differences are approximately equal
+    relative_variation = np.abs(time_diffs - bin_size) / bin_size
+    return np.all(relative_variation < tolerance)
+
+
+def _align_irregular(data, events, window, new_time_support):
+    """
+    Align any timeseries data to events, returning a TsGroup.
+
+    This is the general-purpose alignment function that works for all data types
+    with arbitrary sampling.
+
+    Parameters
+    ----------
+    data : Ts, Tsd, TsdFrame, or TsdTensor
+        Data to align
+    events : Ts or other timeseries
+        Event timestamps (pre-filtered by epochs)
+    window : array-like
+        [before, after] window
+    new_time_support : IntervalSet
+        Time support for output
+
+    Returns
+    -------
+    TsGroup
+        Aligned data, indexed by event number
+    """
+    aligned = {}
+    event_times = events.times()
+
+    for event_idx, event_time in enumerate(event_times):
+        start_time = event_time - window[0]
+        end_time = event_time + window[1]
+
+        mask = (data.t >= start_time) & (data.t <= end_time)
+        shifted_times = data.t[mask] - event_time
+
+        if isinstance(data, nap.Ts):
+            aligned[event_idx] = nap.Ts(shifted_times, time_support=new_time_support)
+        else:
+            values = data.values[mask]
+            if isinstance(data, nap.TsdFrame):
+                aligned[event_idx] = nap.TsdFrame(
+                    t=shifted_times,
+                    d=values,
+                    columns=data.columns,
+                    time_support=new_time_support,
+                )
+            else:
+                aligned[event_idx] = type(data)(
+                    t=shifted_times, d=values, time_support=new_time_support
+                )
+
+    return nap.TsGroup(aligned)
+
+
+def _align_regular(data, events, window, new_time_support):
+    """
+    Align regularly-sampled continuous data to events using optimized matrix approach.
+
+    Returns a single TsdFrame/TsdTensor where each column is one event with uniform
+    time sampling.
+
+    Parameters
+    ----------
+    data : Tsd, TsdFrame, or TsdTensor
+        Regularly-sampled continuous data
+    events : Ts or other timeseries
+        Event timestamps (pre-filtered by epochs)
+    window : array-like
+        [before, after] window
+    new_time_support : IntervalSet
+        Time support for output
+
+    Returns
+    -------
+    TsdFrame or TsdTensor
+        Aligned data with columns/slice 0 as events
+    """
+    # Get epoch information
+    epochs = data.time_support
+
+    # Compute bin size from data
+    bin_size = data.t[1] - data.t[0]
+
+    # Create output time grid
+    idx1 = -np.arange(0, window[0] + bin_size, bin_size)[::-1][:-1]
+    idx2 = np.arange(0, window[1] + bin_size, bin_size)[1:]
+    time_idx = np.hstack((idx1, np.zeros(1), idx2))
+    windowsize = np.array([idx1.shape[0], idx2.shape[0]], dtype=np.int64)
+
+    # Align data using pynapple's optimized function
+    new_data_array = _perievent_continuous(
+        data.t, data.values, events.times(), epochs.start, epochs.end, windowsize
+    )
+
+    if new_data_array.ndim == 2:
+        return nap.TsdFrame(t=time_idx, d=new_data_array, time_support=new_time_support)
+    else:
+        return nap.TsdTensor(
+            t=time_idx, d=new_data_array, time_support=new_time_support
+        )

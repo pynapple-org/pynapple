@@ -12,11 +12,7 @@ from .filtering import (
     apply_lowpass_filter,
     get_filter_frequency_response,
 )
-from .perievent import (
-    compute_event_trigger_average,
-    compute_perievent,
-    compute_perievent_continuous,
-)
+from .perievent import compute_event_trigger_average, compute_perievent
 from .randomize import (
     jitter_timestamps,
     resample_timestamps,
