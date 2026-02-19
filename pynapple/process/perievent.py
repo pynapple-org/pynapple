@@ -83,8 +83,6 @@ def compute_event_trigger_average(
     idx2 = np.arange(0, end + binsize, binsize)[1:]
     time_idx = np.hstack((idx1, np.zeros(1), idx2))
 
-    # eta = np.zeros((time_idx.shape[0], len(group), *feature.shape[1:]))
-
     windows = np.array([len(idx1), len(idx2)])
 
     # Bin the spike train
@@ -119,8 +117,8 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     """
     Perievent alignment, handles both discrete and continuous data.
 
-    This function automatically detects the data type and sampling characteristics,
-    then applies the appropriate alignment strategy:
+    This function automatically detects the data type, then applies the appropriate
+    alignment strategy:
 
     - **discrete data:**
         - a single ``Ts``: returns a ``TsGroup`` with one element per event
@@ -128,8 +126,8 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     - **continuous data:**
         - regularly sampled ``Tsd``/``TsdFrame``/``TsdTensor``: returns aligned object with
           events as columns and uniform time sampling
-        - irregularly sampled ``Tsd``/``TsdFrame``/``TsdTensor``: returns a TsGroup
-          containing aligned objects with their own time sampling
+        - irregularly sampled data is not supported; interpolate or NaN-pad to a regular
+          grid before calling this function
 
     Parameters
     ----------
@@ -153,7 +151,8 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     Raises
     ------
     RuntimeError
-        If time_unit not in ["s", "ms", "us"] or window format is invalid
+        If time_unit not in ["s", "ms", "us"], window format is invalid, or continuous
+        data is not regularly sampled.
 
     Examples
     --------
@@ -248,34 +247,20 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     1           0.14112   -0.279415  0.412118
     dtype: float64, shape: (5, 3)
 
-    Align irregularly sampled continuous data, returning a TsGroup:
+    Align a regularly sampled continuous data (``TsdFrame``) to events, returning a ``TsdTensor``:
 
-    >>> times = np.array([0.1, 0.3, 0.9, 1.2, 2.5, 3.1, 4.0])
-    >>> values = np.random.randn(7)
-    >>> data = nap.Tsd(t=times, d=values)
-    >>> events = nap.Ts(t=[1.0, 3.0])
+    >>> values = np.column_stack([np.sin(times), np.cos(times)])
+    >>> data = nap.TsdFrame(t=times, d=values, columns=["sin", "cos"])
     >>> result = nap.compute_perievent(data, events, window=1.0)
     >>> result
-      Index    rate
-    -------  ------
-          0     2
-          1     1.5
-    >>> result[0]
     Time (s)
-    ----------  ---------
-    -0.9        -0.375383
-    -0.7        -1.48813
-    -0.1         0.835561
-    0.2          1.15784
-    dtype: float64, shape: (4,)
-    >>> result[1]
-    Time (s)
-    ----------  ----------
-    -0.5        -0.785679
-    0.1          0.303413
-    1            0.0386285
-    dtype: float64, shape: (3,)
-
+    ----------  ----------------------------
+    -1          [[0.841471, 0.540302] ...]
+    -0.5        [[0.997495, 0.070737] ...]
+    0           [[ 0.909297, -0.416147] ...]
+    0.5         [[ 0.598472, -0.801144] ...]
+    1           [[ 0.14112 , -0.989992] ...]
+    dtype: float64, shape: (5, 3, 2)
     """
     if time_unit not in ["s", "ms", "us"]:
         raise RuntimeError("time_unit should be 's', 'ms' or 'us'")
@@ -306,10 +291,17 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     events = events.restrict(epochs)
     new_time_support = nap.IntervalSet(start=-window[0], end=window[1])
 
-    if isinstance(data, nap.Ts) or not _is_regularly_sampled(data):
-        return _align_irregular(data, events, window, new_time_support)
-    else:
-        return _align_regular(data, events, window, new_time_support)
+    if isinstance(data, nap.Ts):
+        return _align_discrete(data, events, window, new_time_support)
+
+    if not _is_regularly_sampled(data):
+        raise RuntimeError(
+            "Continuous data must be regularly sampled. "
+            "Please interpolate or NaN-pad your data to a uniform time grid before "
+            "calling compute_perievent."
+        )
+
+    return _align_regular(data, events, window, new_time_support)
 
 
 def _is_regularly_sampled(data, tolerance=1e-6):
@@ -334,21 +326,17 @@ def _is_regularly_sampled(data, tolerance=1e-6):
     time_diffs = np.diff(data.t)
     bin_size = time_diffs[0]
 
-    # Check if all differences are approximately equal
     relative_variation = np.abs(time_diffs - bin_size) / bin_size
     return np.all(relative_variation < tolerance)
 
 
-def _align_irregular(data, events, window, new_time_support):
+def _align_discrete(data, events, window, new_time_support):
     """
-    Align any timeseries data to events, returning a TsGroup.
-
-    This is the general-purpose alignment function that works for all data types
-    with arbitrary sampling.
+    Align a ``Ts`` to events, returning a TsGroup.
 
     Parameters
     ----------
-    data : Ts, Tsd, TsdFrame, or TsdTensor
+    data : Ts
         Data to align
     events : Ts or other timeseries
         Event timestamps (pre-filtered by epochs)
@@ -372,21 +360,7 @@ def _align_irregular(data, events, window, new_time_support):
         mask = (data.t >= start_time) & (data.t <= end_time)
         shifted_times = data.t[mask] - event_time
 
-        if isinstance(data, nap.Ts):
-            aligned[event_idx] = nap.Ts(shifted_times, time_support=new_time_support)
-        else:
-            values = data.values[mask]
-            if isinstance(data, nap.TsdFrame):
-                aligned[event_idx] = nap.TsdFrame(
-                    t=shifted_times,
-                    d=values,
-                    columns=data.columns,
-                    time_support=new_time_support,
-                )
-            else:
-                aligned[event_idx] = type(data)(
-                    t=shifted_times, d=values, time_support=new_time_support
-                )
+        aligned[event_idx] = nap.Ts(shifted_times, time_support=new_time_support)
 
     return nap.TsGroup(aligned)
 
@@ -414,19 +388,14 @@ def _align_regular(data, events, window, new_time_support):
     TsdFrame or TsdTensor
         Aligned data with columns/slice 0 as events
     """
-    # Get epoch information
     epochs = data.time_support
-
-    # Compute bin size from data
     bin_size = data.t[1] - data.t[0]
 
-    # Create output time grid
     idx1 = -np.arange(0, window[0] + bin_size, bin_size)[::-1][:-1]
     idx2 = np.arange(0, window[1] + bin_size, bin_size)[1:]
     time_idx = np.hstack((idx1, np.zeros(1), idx2))
     windowsize = np.array([idx1.shape[0], idx2.shape[0]], dtype=np.int64)
 
-    # Align data using pynapple's optimized function
     new_data_array = _perievent_continuous(
         data.t, data.values, events.times(), epochs.start, epochs.end, windowsize
     )
