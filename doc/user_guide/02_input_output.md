@@ -13,9 +13,9 @@ kernelspec:
 
 # Input-output & lazy-loading
 
-Pynapple provides multiple ways to load data. The two main formats are NWB and NPZ. In addition, raw LFP data can be loaded through the NEO library. 
+Pynapple provides multiple ways to load data. The two main formats are NWB and NPZ. In addition, raw data can be loaded through the NEO library. 
 
-Each pynapple objects can be saved as a [`npz`](https://numpy.org/devdocs/reference/generated/numpy.savez.html) with a special structure and loaded as a `npz`.
+Each pynapple objects can be saved as a [`npz`](https://numpy.org/devdocs/reference/generated/numpy.savez.html) with a Pynapple-specific structure and loaded as a `npz`.
 
 In addition, the `Folder` class helps you walk through a set of nested folders to load/save `npz`/`nwb` files.
 
@@ -138,11 +138,11 @@ z = data['z']
 print(type(z.d))
 ```
 
-## LFP loading & NEO compatibility
+## Raw data loading & NEO compatibility
 
-Raw LFP data can be loaded with pynapple through the NEO library.
-Internally, pynapple uses the NEO raw IO classes to read the data and convert them to one of the pynapple time series object.
-This is done through the class [`nap.EphysReader`](pynapple.io.interface_neo.EphysReader).
+Raw data can be loaded with pynapple through the NEO library.
+Internally, pynapple uses the NEO raw IO classes to read the data and convert them to one of the pynapple time series objects.
+This is done lazily through the [`nap.EphysReader`](pynapple.io.interface_neo.EphysReader) class.
 
 See here the [list of supported formats](https://neo.readthedocs.io/en/stable/rawiolist.html) of python-neo.
 
@@ -153,12 +153,15 @@ import pynapple as nap
 data = nap.EphysReader("path_to_your_file")
 ```
 
-Below are shown a few examples of loading LFP and spikes.
+Let us look at a couple of examples where we load LFP and spike data from different formats. 
+The `EphysReader` class will automatically detect the format of the data and load it accordingly. 
+To help the detection, you can also pass the format of the data with the argument `format`. 
+The format should be one of the supported formats of NEO. For example, if you have a binary file recorded with Neuroscope, you can pass `format="NeuroscopeIO"`.
 
 ### Neuroscope / Binary file
 
 If you have a session recorded as binary files with Neuroscope, you can load it with the `EphysReader` class or directly 
-with the function [`nap.load_eeg`](pynapple.io.misc.load_eeg).
+with the function [`nap.load_binary_file`](pynapple.io.misc.load_binary_file).
 
 ```
 📂 my_session
@@ -191,11 +194,11 @@ with the function [`nap.load_eeg`](pynapple.io.misc.load_eeg).
     dtype: int16, shape: (23999920, 16)
 ```
 
-A more direct way to load binary file is to use the function `nap.load_eeg` that will directly return a `TsdFrame` object.
+A more direct way to load binary file is to use the function `nap.load_binary_file` which will return a `TsdFrame` object directly.
 
 ```
 >>> import pynapple as nap
->>> data = nap.load_eeg("path/my_session/my_session.dat",
+>>> data = nap.load_binary_file("path/my_session/my_session.dat",
     channel=None # A list of channels to return. If None, returns all channels.
     n_channels=16, # The number of channels in the binary file. Only used if channel is None.
     sampling_rate=20000, # The sampling rate of the data.
@@ -244,7 +247,8 @@ A typical OpenEphys dataset has the following structure:
                 ┗ 📄 timestamps.npy
 ```
 
-You can load the LFP data with the `EphysReader` class with :
+This is a recording from a Neuropixel 2.0 probe, which does not have dedicated LFP channels. 
+Instead, we can visualize the raw data directly, using `EphysReader` as follows:
 
 ```
 >>> import pynapple as nap
@@ -275,6 +279,10 @@ You can load the LFP data with the `EphysReader` class with :
 ```
 
 ### Plexon file
+
+
+If you have Plexon files, you can use EphysReader in the exact same way:
+
 
 ```{code-cell} ipython3
 :tags: [hide-cell]

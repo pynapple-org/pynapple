@@ -152,7 +152,7 @@ def load_session(path, session_type=None):
         return BaseLoader(path)
 
 
-def load_eeg(
+def load_binary_file(
     filepath,
     channel=None,
     n_channels=None,
@@ -235,7 +235,6 @@ def load_eeg(
     f = open(filepath, "rb")
     startoffile = f.seek(0, 0)
     endoffile = f.seek(0, 2)
-    bytes_size = 2
     n_samples = int((endoffile - startoffile) / n_channels / bytes_size)
     duration = n_samples / frequency
     f.close()
@@ -258,6 +257,55 @@ def load_eeg(
             time_support=time_support,
             columns=channel,
         )
+
+
+def load_eeg(
+    filepath,
+    channel=None,
+    n_channels=None,
+    frequency=None,
+    precision="int16",
+    bytes_size=2,
+):
+    """
+    Deprecated. Use :func:`load_binary_file` instead.
+
+    Standalone function to load eeg/lfp/dat file in binary format.
+
+    Parameters
+    ----------
+    filepath : str
+        The path to the eeg file
+    channel : int or list of int, optional
+        The channel(s) to load. If None return a memory map of the dat file to avoid memory error
+    n_channels : int, optional
+        Number of channels
+    frequency : float, optional
+        Sampling rate of the file
+    precision : str, optional
+        The precision of the binary file
+    bytes_size : int, optional
+        Bytes size of the binary file
+
+    Returns
+    -------
+    Tsd or TsdFrame
+        The lfp in a time series format
+    """
+    warnings.warn(
+        "load_eeg is deprecated and will be removed in a future version. "
+        "Use load_binary_file instead.",
+        DeprecationWarning,
+        stacklevel=2,
+    )
+    return load_binary_file(
+        filepath,
+        channel=channel,
+        n_channels=n_channels,
+        frequency=frequency,
+        precision=precision,
+        bytes_size=bytes_size,
+    )
 
 
 def append_NWB_LFP(path, lfp, channel=None):
