@@ -9,7 +9,6 @@ from numbers import Number
 import numpy as np
 import pandas as pd
 from numba import njit
-from scipy import signal
 
 from .. import core as nap
 
@@ -239,6 +238,8 @@ def compute_mean_power_spectral_density(
     ValueError
         If overlap is not within [0, 1).
     """
+    from scipy import signal
+
     if not (0.0 <= overlap < 1.0):
         raise ValueError("Overlap should be in intervals [0.0, 1.0).")
 

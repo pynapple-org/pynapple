@@ -301,3 +301,42 @@ def test_tsgroup_no_warnings(tmp_path):  # default fixture
     #         file_path = Path(f'data_{k}.h5')
     #         if file_path.exists():
     #             file_path.unlink()
+
+
+def test_lazy_import_heavy_modules():
+    """Test that importing pynapple does not eagerly load scipy.signal, scipy.spatial, or xarray."""
+    import subprocess
+    import sys
+
+    # Run in subprocess to get clean sys.modules state
+    code = """
+import sys
+before = set(sys.modules.keys())
+import pynapple
+after = set(sys.modules.keys())
+new_modules = after - before
+
+# Check for scipy submodules (scipy base may be loaded by numba, but submodules should not)
+scipy_signal = [m for m in new_modules if m.startswith('scipy.signal')]
+scipy_spatial = [m for m in new_modules if m.startswith('scipy.spatial')]
+xarray_mods = [m for m in new_modules if m == 'xarray' or m.startswith('xarray.')]
+
+failures = []
+if scipy_signal:
+    failures.append(f"scipy.signal modules loaded: {scipy_signal}")
+if scipy_spatial:
+    failures.append(f"scipy.spatial modules loaded: {scipy_spatial}")
+if xarray_mods:
+    failures.append(f"xarray modules loaded: {xarray_mods}")
+
+if failures:
+    print("FAIL: " + "; ".join(failures))
+    sys.exit(1)
+print("PASS")
+"""
+    result = subprocess.run(
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+    )
+    assert result.returncode == 0, f"Test failed: {result.stdout}{result.stderr}"

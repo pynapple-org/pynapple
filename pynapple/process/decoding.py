@@ -12,10 +12,10 @@ from .. import core as nap
 
 
 def _format_decoding_inputs(func):
-    import xarray as xr
-
     @wraps(func)
     def wrapper(*args, **kwargs):
+        import xarray as xr
+
         # Validate each positional argument
         sig = inspect.signature(func)
         bound = sig.bind(*args, **kwargs)
