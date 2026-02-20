@@ -11,7 +11,6 @@ Otherwise the module will call the functions within `_jitted_functions.py`.
 from typing import Literal
 
 import numpy as np
-from scipy import signal
 
 from ._jitted_functions import (  # pjitconvolve,
     jitbin_array,
@@ -124,6 +123,7 @@ def _dropna(time_array, data_array, starts, ends, update_time_support, ndim):
 
 
 def _convolve(time_array, data_array, starts, ends, array, trim="both"):
+    from scipy import signal
     if get_backend() == "jax":
         from pynajax.jax_core_convolve import convolve
 

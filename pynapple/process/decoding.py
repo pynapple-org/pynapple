@@ -7,13 +7,13 @@ import warnings
 from functools import wraps
 
 import numpy as np
-import xarray as xr
-from scipy.spatial.distance import cdist
 
 from .. import core as nap
 
 
 def _format_decoding_inputs(func):
+    import xarray as xr
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Validate each positional argument
@@ -621,6 +621,7 @@ def decode_template(
     99.9        1.0  1.0
     dtype: float64, shape: (1000, 2)
     """
+    from scipy.spatial.distance import cdist
     tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1)
     ct = data.values
 
@@ -644,6 +645,7 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
           `decode_1d` will be removed in Pynapple 1.0.0, it is replaced by
           `decode_bayes` because the latter works for N dimensions.
     """
+    import xarray as xr
     warnings.warn(
         "decode_1d is deprecated and will be removed in a future version; use decode_bayes instead.",
         FutureWarning,
@@ -684,6 +686,7 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
           `decode_2d` will be removed in Pynapple 1.0.0, it is replaced by
           `decode_bayes` because the latter works for N dimensions.
     """
+    import xarray as xr
     warnings.warn(
         "decode_2d is deprecated and will be removed in a future version; use decode_bayes instead.",
         FutureWarning,
