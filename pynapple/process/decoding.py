@@ -622,6 +622,7 @@ def decode_template(
     dtype: float64, shape: (1000, 2)
     """
     from scipy.spatial.distance import cdist
+
     tc = tuning_curves.values.reshape(tuning_curves.sizes["unit"], -1)
     ct = data.values
 
@@ -646,6 +647,7 @@ def decode_1d(tuning_curves, group, ep, bin_size, time_units="s", feature=None):
           `decode_bayes` because the latter works for N dimensions.
     """
     import xarray as xr
+
     warnings.warn(
         "decode_1d is deprecated and will be removed in a future version; use decode_bayes instead.",
         FutureWarning,
@@ -687,6 +689,7 @@ def decode_2d(tuning_curves, group, ep, bin_size, xy, time_units="s", features=N
           `decode_bayes` because the latter works for N dimensions.
     """
     import xarray as xr
+
     warnings.warn(
         "decode_2d is deprecated and will be removed in a future version; use decode_bayes instead.",
         FutureWarning,

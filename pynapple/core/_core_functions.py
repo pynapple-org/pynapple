@@ -124,6 +124,7 @@ def _dropna(time_array, data_array, starts, ends, update_time_support, ndim):
 
 def _convolve(time_array, data_array, starts, ends, array, trim="both"):
     from scipy import signal
+
     if get_backend() == "jax":
         from pynajax.jax_core_convolve import convolve
 
