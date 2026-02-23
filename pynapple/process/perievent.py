@@ -7,96 +7,200 @@ from numbers import Number
 import numpy as np
 
 from .. import core as nap
-from ._process_functions import _perievent_continuous, _perievent_trigger_average
+from ._process_functions import _perievent_continuous, _perievent_triggered_average
 
 
-def compute_event_trigger_average(
-    group,
-    feature,
+def compute_event_triggered_average(
+    data,
+    events,
     binsize,
-    windowsize=0,
-    ep=None,
+    window=0,
     time_unit="s",
+    epochs=None,
 ):
     """
-    Bin the event timestamps within bin_size and compute the Event-Triggered Average (ETA) within `windowsize`.
-    If C is the event count matrix and `feature` is a Tsd array, the function computes
-    the Hankel matrix H from windowsize=(-t1,+t2) by offseting the Tsd array.
+    Bin the event timestamps and compute the Event-Triggered Average (ETA).
 
-    The ETA is then defined as the dot product between H and C divided by the number of events.
-
-    The object `feature` can be any dimensions.
+    Notes
+    -----
+    If `C` is the event count matrix and ``feature`` is a `Tsd`, then the function computes
+    the Hankel matrix H from ``window=(-t1,+t2)`` by offseting the `Tsd`.
+    The ETA is then defined as the dot product between `H` and `C` divided by the number of events.
 
     Parameters
     ----------
-    group : TsGroup
-        The group of Ts/Tsd objects that hold the trigger time.
-    feature : Tsd, TsdFrame or TsdTensor
-        The feature to average.
+    data : Tsd, TsdFrame, or TsdTensor
+        The continuous timeseries to use as the feature (must be regularly sampled).
+    events : Ts, Tsd, TsdFrame, TsdTensor, or TsGroup
+        The events (or spike trains) to align to. If a ``TsGroup``, each unit's
+        spikes are binned and used as a separate event count vector.
+        If not a ``Ts``, we simply take the timestamps of the object.
     binsize : float or int
-        The bin size. Default is second.
-        If different, specify with the parameter time_unit ('s' [default], 'ms', 'us').
-    windowsize : tuple of float/int or float/int, optional
-        The window size. Default is second. For example windowsize = (-1, 1) is equivalent to windowsize = 1
-        If different, specify with the parameter time_unit ('s' [default], 'ms', 'us').
-        Default is (0, 0)
-    ep : IntervalSet, optional
-        The epochs on which the average is computed. If None, the time support of the feature is used.
+        The bin size.
+    window : int, float, or tuple
+        The alignment window. Can be unequal on each side, e.g. ``(-2, 1)``.
     time_unit : str, optional
-        The time unit of the parameters. They have to be consistent for binsize and windowsize.
-        ('s' [default], 'ms', 'us').
+        Time units of the ``window`` and ``binsize`` ('s' [default], 'ms', 'us').
+    epochs : IntervalSet, optional
+        The epochs to perform the operation over. If None, uses the data's ``time_support``.
+
+    Returns
+    -------
+    TsdFrame or TsdTensor
+        The event-triggered average.
+
+    Raises
+    ------
+    RuntimeError
+        If ``time_unit`` is invalid, ``window`` format is invalid, or ``data`` is not
+        regularly sampled.
+    TypeError
+        If ``data`` or ``events`` are not valid timeseries objects.
+
+    Examples
+    --------
+    Compute the ETA of a continuous feature triggered on a single event train:
+
+    >>> import pynapple as nap
+    >>> import numpy as np
+    >>> times = np.arange(0, 10, 0.1)
+    >>> feature = nap.Tsd(t=times, d=np.sin(times))
+    >>> events = nap.Ts(t=[1.0, 3.0, 5.0, 7.0])
+    >>> eta = nap.compute_event_triggered_average(feature, events, binsize=0.1, window=0.5)
+    >>> eta
+    Time (s)            0
+    ----------  ---------
+    -0.5        0.0788719
+    -0.4        0.0994986
+    -0.3        0.119131
+    -0.2        0.137573
+    -0.1        0.154641
+    0           0.170163
+    0.1         0.183986
+    0.2         0.19597
+    0.3         0.205995
+    0.4         0.213963
+    0.5         0.219793
+    dtype: float64, shape: (11, 1)
+
+    You can restrict the computation to certain parts of the data by passing ``epochs``:
+
+    >>> epochs = nap.IntervalSet(start=[0, 5], end=[4, 9])
+    >>> eta = nap.compute_event_triggered_average(feature, events, binsize=0.1, window=0.5, epochs=epochs)
+    >>> eta
+    Time (s)           0
+    ----------  --------
+    -0.5        0.323254
+    -0.4        0.347921
+    -0.3        0.369112
+    -0.2        0.386614
+    -0.1        0.400254
+    0           0.170163
+    0.1         0.183986
+    0.2         0.19597
+    0.3         0.205995
+    0.4         0.213963
+    0.5         0.219793
+    dtype: float64, shape: (11, 1)
+
+    Compute the ETA triggered on multiple spike trains (``TsGroup``), returning one
+    column per unit:
+
+    >>> unit1 = nap.Ts(t=[1.0, 3.0, 5.0])
+    >>> unit2 = nap.Ts(t=[2.0, 4.0, 6.0])
+    >>> spikes = nap.TsGroup({0: unit1, 1: unit2})
+    >>> eta = nap.compute_event_triggered_average(feature, spikes, binsize=0.1, window=0.5)
+    >>> eta
+    Time (s)              0           1
+    ----------  -----------  ----------
+    -0.5         0.0334559   -0.0196095
+    -0.4         0.0288176   -0.0247378
+    -0.3         0.0238914   -0.029619
+    -0.2         0.0187265   -0.0342041
+    -0.1         0.0133745   -0.0384476
+    0            0.00788891  -0.0423069
+    0.1          0.00232445  -0.0457434
+    0.2         -0.00326324  -0.0487229
+    0.3         -0.00881832  -0.0512156
+    0.4         -0.0142853   -0.0531966
+    0.5         -0.0196095   -0.054646
+    dtype: float64, shape: (11, 2)
+
+    Compute the ETA of a multiple features (``TsdFrame``), returning a ``TsdTensor``
+    with shape ``(n_time_bins, n_events, n_features)``:
+
+    >>> values = np.column_stack([np.sin(times), np.cos(times)])
+    >>> features = nap.TsdFrame(t=times, d=values, columns=["sin", "cos"])
+    >>> eta = nap.compute_event_triggered_average(features, events, binsize=0.1, window=0.5)
+    >>> eta
+    Time (s)
+    ----------  --------------------------
+    -0.5        [[0.078872, 0.210558] ...]
+    -0.4        [[0.099499, 0.201632] ...]
+    -0.3        [[0.119131, 0.190691] ...]
+    -0.2        [[0.137573, 0.177845] ...]
+    -0.1        [[0.154641, 0.163222] ...]
+    0           [[0.170163, 0.146969] ...]
+    0.1         [[0.183986, 0.129246] ...]
+    0.2         [[0.19597 , 0.110233] ...]
+    0.3         [[0.205995, 0.090118] ...]
+    0.4         [[0.213963, 0.069102] ...]
+    0.5         [[0.219793, 0.047396] ...]
+    dtype: float64, shape: (11, 1, 2)
     """
     if time_unit not in ["s", "ms", "us"]:
         raise RuntimeError("time_unit should be 's', 'ms' or 'us'")
 
-    if isinstance(windowsize, Number):
-        windowsize = np.array([windowsize, windowsize], dtype=np.float64)
+    if isinstance(window, Number):
+        window = np.array([window, window], dtype=np.float64)
+    if len(window) != 2 or not all(isinstance(x, Number) for x in window):
+        raise RuntimeError("window should be a tuple of 2 numbers or a single number.")
 
-    if len(windowsize) != 2:
-        raise RuntimeError(
-            "windowsize should be a tuple of 2 numbers or a single number."
+    if not isinstance(data, (nap.Tsd, nap.TsdFrame, nap.TsdTensor)):
+        raise TypeError(
+            f"data should be a continuous time series (Tsd, TsdFrame, or TsdTensor): {type(data)}"
         )
 
-    if not all(isinstance(x, Number) for x in windowsize):
+    if not isinstance(
+        events, (nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor, nap.TsGroup)
+    ):
+        raise TypeError(f"events should be a time series object: {type(events)}")
+
+    if epochs is None:
+        epochs = data.time_support
+
+    if not nap.utils._is_regularly_sampled(data):
         raise RuntimeError(
-            "windowsize should be a tuple of 2 numbers or a single number."
+            "Continuous data must be regularly sampled. "
+            "Please interpolate or NaN-pad your data to a uniform time grid before "
+            "calling compute_event_triggered_average."
         )
 
-    if ep is None:
-        ep = feature.time_support
-
+    window = np.abs(nap.TsIndex.format_timestamps(np.array(window), time_unit))
     binsize = nap.TsIndex.format_timestamps(
         np.array([binsize], dtype=np.float64), time_unit
     )[0]
-    start = np.abs(
-        nap.TsIndex.format_timestamps(
-            np.array([windowsize[0]], dtype=np.float64), time_unit
-        )[0]
-    )
-    end = np.abs(
-        nap.TsIndex.format_timestamps(
-            np.array([windowsize[1]], dtype=np.float64), time_unit
-        )[0]
-    )
 
-    idx1 = -np.arange(0, start + binsize, binsize)[::-1][:-1]
-    idx2 = np.arange(0, end + binsize, binsize)[1:]
+    # Build the time index for the output
+    idx1 = -np.arange(0, window[0] + binsize, binsize)[::-1][:-1]
+    idx2 = np.arange(0, window[1] + binsize, binsize)[1:]
     time_idx = np.hstack((idx1, np.zeros(1), idx2))
+    windows = np.array([len(idx1), len(idx2)], dtype=np.int64)
 
-    windows = np.array([len(idx1), len(idx2)])
-
-    # Bin the spike train
-    count = group.count(binsize, ep)
+    # Bin the events
+    count = events.count(binsize, epochs)
 
     time_target_array = np.round(count.index.values - (binsize / 2), 9)
     count_array = count.values
-    starts = ep.start
-    ends = ep.end
+    if count_array.ndim == 1:
+        count_array = count_array[:, np.newaxis]
+    starts = epochs.start
+    ends = epochs.end
 
-    time_array = feature.index.values
-    data_array = feature.values
+    time_array = data.index.values
+    data_array = data.values
 
-    eta = _perievent_trigger_average(
+    eta = _perievent_triggered_average(
         time_target_array,
         count_array,
         time_array,
@@ -108,9 +212,63 @@ def compute_event_trigger_average(
     )
 
     if eta.ndim == 2:
-        return nap.TsdFrame(t=time_idx, d=eta, columns=group.index)
+        columns = events.index if isinstance(events, nap.TsGroup) else None
+        return nap.TsdFrame(t=time_idx, d=eta, columns=columns)
     else:
         return nap.TsdTensor(t=time_idx, d=eta)
+
+
+def compute_spike_triggered_average(
+    data,
+    spikes,
+    binsize,
+    window=0,
+    time_unit="s",
+    epochs=None,
+):
+    """
+    Alias for :func:`~pynapple.process.perievent.compute_event_triggered_average` with ``spikes`` as the events argument.
+
+    Parameters
+    ----------
+    data : Tsd, TsdFrame, or TsdTensor
+        The continuous timeseries to use as the feature (must be regularly sampled).
+    spikes : Ts, Tsd, TsdFrame, TsdTensor, or TsGroup
+        The spike train(s) to align to.
+    binsize : float or int
+        The bin size.
+    window : int, float, or tuple
+        The alignment window. Can be unequal on each side, e.g. ``(-2, 1)``.
+    time_unit : str, optional
+        Time units of the ``window`` and ``binsize`` ('s' [default], 'ms', 'us').
+    epochs : IntervalSet, optional
+        The epochs to perform the operation over. If None, uses the data's ``time_support``.
+
+    Returns
+    -------
+    TsdFrame or TsdTensor
+        The spike-triggered average.
+
+    Raises
+    ------
+    RuntimeError
+        If ``time_unit`` is invalid, ``window`` format is invalid, or ``data`` is not
+        regularly sampled.
+    TypeError
+        If ``data`` or ``spikes`` are not valid timeseries objects.
+
+    See Also
+    --------
+    :func:`~pynapple.process.perievent.compute_event_triggered_average`
+    """
+    return compute_event_triggered_average(
+        data=data,
+        events=spikes,
+        binsize=binsize,
+        window=window,
+        time_unit=time_unit,
+        epochs=epochs,
+    )
 
 
 def compute_perievent(data, events, window, time_unit="s", epochs=None):
@@ -137,7 +295,7 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
         The events to align to.
         If not a ``Ts``, we simply take the timestamps of the object.
     window : int, float, tuple
-        The alignment window, which can be unequal on each side, e.g. ``(-500, 1000)``
+        The alignment window, which can be unequal on each side, e.g. ``(-2, 1)``
     time_unit : str, optional
         Time units of the window ('s' [default], 'ms', 'us').
     epochs : IntervalSet, optional
@@ -270,8 +428,6 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     if len(window) != 2 or not all(isinstance(x, Number) for x in window):
         raise RuntimeError("window should be a tuple of 2 numbers or a single number.")
 
-    window = np.abs(nap.TsIndex.format_timestamps(np.array(window), time_unit))
-
     # Call recursively if data is a TsGroup
     if isinstance(data, nap.TsGroup):
         return {
@@ -288,13 +444,14 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     if epochs is None:
         epochs = data.time_support
 
+    window = np.abs(nap.TsIndex.format_timestamps(np.array(window), time_unit))
     events = events.restrict(epochs)
     new_time_support = nap.IntervalSet(start=-window[0], end=window[1])
 
     if isinstance(data, nap.Ts):
         return _align_discrete(data, events, window, new_time_support)
 
-    if not _is_regularly_sampled(data):
+    if not nap._is_regularly_sampled(data):
         raise RuntimeError(
             "Continuous data must be regularly sampled. "
             "Please interpolate or NaN-pad your data to a uniform time grid before "
@@ -302,32 +459,6 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
         )
 
     return _align_regular(data, events, window, new_time_support)
-
-
-def _is_regularly_sampled(data, tolerance=1e-6):
-    """
-    Check if a timeseries has regular sampling.
-
-    Parameters
-    ----------
-    data : Ts, Tsd, TsdFrame, TsdTensor
-        The timeseries to check
-    tolerance : float
-        Relative tolerance for bin size variation
-
-    Returns
-    -------
-    bool
-        True if sampling is regular (constant bin size)
-    """
-    if len(data) < 2:
-        return True
-
-    time_diffs = np.diff(data.t)
-    bin_size = time_diffs[0]
-
-    relative_variation = np.abs(time_diffs - bin_size) / bin_size
-    return np.all(relative_variation < tolerance)
 
 
 def _align_discrete(data, events, window, new_time_support):
