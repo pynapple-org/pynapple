@@ -219,12 +219,8 @@ def _check_time_equals(time_arrays):
 
     """
     return all(
-        map(
-            lambda x: np.allclose(
-                *x, rtol=0, atol=1 / (10**nap_config.time_index_precision)
-            ),
-            combinations(time_arrays, 2),
-        )
+        np.allclose(*x, rtol=0, atol=1 / (10**nap_config.time_index_precision))
+        for x in combinations(time_arrays, 2)
     )
 
 
@@ -265,10 +261,7 @@ def _concatenate_tsd(func, *args, **kwargs):
 
     for arg in args[0]:
         if all(
-            map(
-                lambda x: hasattr(arg, x),
-                ["values", "index", "time_support", "nap_class"],
-            )
+            hasattr(arg, x) for x in ["values", "index", "time_support", "nap_class"]
         ):
             arrays.append(arg.values)
             time_indexes.append(arg.index.values)
@@ -314,7 +307,7 @@ def _concatenate_tsd(func, *args, **kwargs):
             if time_equal and support_equal:
                 new_kwargs = {}
                 if len(columns):
-                    new_kwargs = {"columns": np.hstack([c for c in columns])}
+                    new_kwargs = {"columns": np.hstack(columns)}
                     if len(new_kwargs["columns"]) != output.shape[1]:
                         new_kwargs = {}
                 return args[0][0]._define_instance(
@@ -599,3 +592,29 @@ def modifies_time_axis(func, new_args, kwargs):
 
     # If none of the checks triggered, assume axis 0 is not modified.
     return False
+
+
+def _is_regularly_sampled(data, tolerance=1e-6):
+    """
+    Check if a timeseries has regular sampling.
+
+    Parameters
+    ----------
+    data : Ts, Tsd, TsdFrame, TsdTensor
+        The timeseries to check
+    tolerance : float
+        Relative tolerance for bin size variation
+
+    Returns
+    -------
+    bool
+        True if sampling is regular (constant bin size)
+    """
+    if len(data) < 2:
+        return True
+
+    time_diffs = np.diff(data.t)
+    bin_size = time_diffs[0]
+
+    relative_variation = np.abs(time_diffs - bin_size) / bin_size
+    return np.all(relative_variation < tolerance)
