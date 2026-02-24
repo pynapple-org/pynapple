@@ -1570,7 +1570,7 @@ def test_compute_1d_mutual_info(args, kwargs, expected):
     assert list(si.columns) == ["SI"]
     if isinstance(tc, pd.DataFrame):
         assert list(si.index.values) == list(tc.columns)
-    np.testing.assert_approx_equal(si.values, expected)
+    np.testing.assert_array_almost_equal(si.values, expected)
 
 
 @pytest.mark.filterwarnings("ignore")
@@ -1642,7 +1642,7 @@ def test_compute_2d_mutual_info(args, kwargs, expected):
     assert list(si.columns) == ["SI"]
     if isinstance(dict_tc, dict):
         assert list(si.index.values) == list(dict_tc.keys())
-    np.testing.assert_approx_equal(si.values, expected)
+    np.testing.assert_array_almost_equal(si.values, expected)
 
 
 # ------------------------------------------------------------------------------------
