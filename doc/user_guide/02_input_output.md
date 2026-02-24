@@ -156,9 +156,8 @@ nwbfile = interface.create_nwbfile(metadata=metadata)
 # Pass it directly to pynapple
 data = nap.NWBFile(nwbfile)
 
-# Access pynapple objects
-units = data["units"]       # TsGroup
-position = data["position"] # TsdFrame
+# Access pynapple objects by key
+ap = data["ElectricalSeriesAP"]  # TsdFrame
 ```
 
 If you are interested in a specific format, check the [conversion gallery](https://neuroconv.readthedocs.io/en/main/conversion_examples_gallery/index.html) which contains a script for each supported format very similar to the one above that you can adapt to load your data. If you want to combine data from multiple formats into a single session (e.g. electrophysiology recordings with pose estimation), see the [common interface combinations](https://neuroconv.readthedocs.io/en/main/conversion_examples_gallery/index.html#common-interface-combinations) examples.

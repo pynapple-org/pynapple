@@ -18,6 +18,99 @@ from tabulate import tabulate
 from .. import core as nap
 
 
+class _DataChunkIteratorWrapper:
+    """Wraps an HDMF DataChunkIterator to satisfy pynapple's array-like protocol.
+
+    Adds ``shape``, ``ndim``, ``__len__``, and ``__getitem__`` on top of the
+    iterator's existing ``maxshape``, ``dtype``, and ``_get_data`` so that
+    pynapple's ``is_array_like`` check passes and lazy loading works.
+
+    This is a temporary shim until catalystneuro/neuroconv#1673 is merged,
+    after which the iterators themselves will expose these attributes.
+    """
+
+    def __init__(self, iterator):
+        self._iterator = iterator
+
+    @property
+    def shape(self):
+        return tuple(self._iterator.maxshape)
+
+    @property
+    def dtype(self):
+        return self._iterator.dtype
+
+    @property
+    def ndim(self):
+        return len(self.shape)
+
+    def __len__(self):
+        return self.shape[0]
+
+    def __iter__(self):
+        return iter(self._get_data((slice(0, self.shape[0]),) + tuple(slice(0, s) for s in self.shape[1:])))
+
+    def __getitem__(self, selection):
+        resolved = self._convert_index_to_slices(selection)
+        return self._get_data(resolved)
+
+    def _get_data(self, selection):
+        return self._iterator._get_data(selection)
+
+    def _convert_index_to_slices(self, selection):
+        """Normalize indexing into a tuple of resolved slice(start, stop)."""
+        ndim = self.ndim
+
+        if isinstance(selection, (int, np.integer)):
+            selection = (selection,) + (slice(None),) * (ndim - 1)
+        elif isinstance(selection, slice):
+            selection = (selection,) + (slice(None),) * (ndim - 1)
+        elif isinstance(selection, tuple):
+            selection = selection + (slice(None),) * (ndim - len(selection))
+        else:
+            raise TypeError(f"Unsupported selection type: {type(selection)}")
+
+        resolved = []
+        for axis, sel in enumerate(selection):
+            axis_size = self.shape[axis]
+            if isinstance(sel, (int, np.integer)):
+                if sel < 0:
+                    sel = axis_size + sel
+                if sel < 0 or sel >= axis_size:
+                    raise IndexError(
+                        f"Index {sel} out of bounds for axis {axis} with size {axis_size}"
+                    )
+                resolved.append(slice(sel, sel + 1))
+            elif isinstance(sel, slice):
+                start = sel.start if sel.start is not None else 0
+                stop = sel.stop if sel.stop is not None else axis_size
+                if start < 0:
+                    start = max(axis_size + start, 0)
+                if stop < 0:
+                    stop = max(axis_size + stop, 0)
+                resolved.append(slice(start, stop))
+            else:
+                raise TypeError(f"Unsupported selection element type: {type(sel)}")
+
+        return tuple(resolved)
+
+
+def _maybe_wrap_iterator(data):
+    """Wrap a DataChunkIterator if it lacks array-like attributes.
+
+    If *data* already has ``shape`` (e.g. numpy array, h5py dataset, or a
+    neuroconv iterator after PR #1673), it is returned unchanged. Otherwise,
+    if it looks like an HDMF iterator (has ``maxshape`` and ``_get_data``),
+    it gets wrapped so pynapple can treat it as a lazy array.
+    """
+    if hasattr(data, "shape"):
+        return data
+    if hasattr(data, "maxshape") and hasattr(data, "_get_data"):
+        return _DataChunkIteratorWrapper(data)
+    return data
+
+
+
 def _get_unique_identifier(full_path_to_key):
     out, count = np.unique(list(full_path_to_key.values()), return_counts=True)
     if len(out) != len(full_path_to_key):
@@ -81,6 +174,11 @@ def iterate_over_nwb(nwbfile):
             yield obj, {"id": oid, "type": "Ts"}
 
         elif isinstance(obj, pynwb.misc.TimeSeries):
+            # Wrap DataChunkIterators so they satisfy the array-like
+            # protocol that the rest of the code expects (shape, __len__,
+            # __getitem__).  Temporary until neuroconv#1673 is merged.
+            obj.fields["data"] = _maybe_wrap_iterator(obj.data)
+
             if len(obj.data.shape) > 2:
                 yield obj, {"id": oid, "type": "TsdTensor"}
 
