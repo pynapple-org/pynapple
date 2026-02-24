@@ -7,7 +7,6 @@ from numbers import Number
 
 import numpy as np
 import pandas as pd
-from scipy.signal import butter, filtfilt, sosfiltfilt, sosfreqz
 
 from .. import core as nap
 
@@ -61,6 +60,8 @@ def _validate_filtering_inputs(func):
 
 def _get_butter_coefficients(cutoff, filter_type, sampling_frequency, order=4):
     """Calls scipy butter"""
+    from scipy.signal import butter
+
     return butter(order, cutoff, btype=filter_type, fs=sampling_frequency, output="sos")
 
 
@@ -84,6 +85,8 @@ def _compute_butterworth_filter(
         )
 
     else:
+        from scipy.signal import sosfiltfilt
+
         out = np.zeros_like(data.d)
         for ep in data.time_support:
             slc = data.get_slice(start=ep.start[0], end=ep.end[0])
@@ -494,6 +497,8 @@ def get_filter_frequency_response(
     cutoff = np.array(cutoff)
 
     if mode == "butter":
+        from scipy.signal import sosfreqz
+
         sos = _get_butter_coefficients(cutoff, filter_type, fs, order)
         w, h = sosfreqz(sos, worN=1024, fs=fs)
         return pd.Series(index=w, data=np.abs(h))
@@ -550,6 +555,8 @@ def detect_oscillatory_events(
         The interval set of detected events with metadata containing
         the power, amplitude, and peak_time
     """
+    from scipy.signal import filtfilt
+
     data = data.restrict(epoch)
 
     if fs is None:
