@@ -53,8 +53,12 @@ class _Base(abc.ABC):
                 self.time_support.values[:, 1] - self.time_support.values[:, 0]
             )
         else:
-            self.rate = np.nan
-            self.time_support = IntervalSet(start=[], end=[])
+            if isinstance(time_support, IntervalSet) and time_support.tot_length() > 0:
+                self.time_support = time_support
+                self.rate = 0.0
+            else:
+                self.rate = np.nan
+                self.time_support = IntervalSet(start=[], end=[])
 
     @abc.abstractmethod
     def _define_instance(self, time_index, time_support, values=None, **kwargs):

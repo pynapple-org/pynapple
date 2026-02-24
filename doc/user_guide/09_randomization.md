@@ -35,7 +35,8 @@ sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_par
 
 ## Shift timestamps
 
-[`shift_timestamps`](pynapple.process.randomize.shift_timestamps) shifts all the timestamps in a `Ts` object by the same random amount, wrapping the end of the time support to its beginning. This randomization preserves the temporal structure in the data but destroys the temporal relationships with other quantities (e.g. behavioural data).
+[`shift_timestamps`](pynapple.process.randomize.shift_timestamps) shifts all the timestamps in a `Ts` object by the same random amount.
+This randomization preserves the temporal structure in the data but destroys the temporal relationships with other quantities (e.g. behavioural data).
 When applied on a `TsGroup` object, each series in the group is shifted independently.
 
 

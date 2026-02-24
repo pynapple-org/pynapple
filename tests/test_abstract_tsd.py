@@ -129,6 +129,25 @@ def test_create_ats_from_number():
     assert hasattr(a, "shape")
 
 
+def test_create_ats_empty_with_time_support():
+    # Empty index with valid time_support should have rate = 0.0
+    ep = nap.IntervalSet(start=0, end=10)
+    a = MyClass2(t=[], time_support=ep)
+
+    assert a.rate == 0.0
+    assert len(a) == 0
+    np.testing.assert_array_equal(a.time_support, ep)
+
+
+def test_create_ats_empty_with_empty_time_support():
+    # Empty index with zero-duration time_support should have rate = nan
+    ep = nap.IntervalSet(start=[], end=[])
+    a = MyClass2(t=[], time_support=ep)
+
+    assert np.isnan(a.rate)
+    assert len(a) == 0
+
+
 def test_methods():
     a = MyClass(t=[], d=[])
 

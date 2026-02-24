@@ -617,6 +617,8 @@ class TestTimeSeriesGeneral:
             np.testing.assert_array_equal(tsd.values[tokeep], new_tsd.values)
             np.testing.assert_array_equal(new_tsd.time_support, tsd.time_support)
 
+    def test_dropna_all_nan(self, tsd):
+        if not isinstance(tsd, nap.Ts):
             tsd = tsd.__class__(t=tsd.t, d=np.ones(tsd.shape) * np.nan)
             new_tsd = tsd.dropna()
             assert len(new_tsd) == 0
