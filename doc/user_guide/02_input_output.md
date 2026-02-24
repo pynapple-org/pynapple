@@ -163,7 +163,7 @@ position = data["position"] # TsdFrame
 
 If you are interested in a specific format, check the [conversion gallery](https://neuroconv.readthedocs.io/en/main/conversion_examples_gallery/index.html) which contains a script for each supported format very similar to the one above that you can adapt to load your data. If you want to combine data from multiple formats into a single session (e.g. electrophysiology recordings with pose estimation), see the [common interface combinations](https://neuroconv.readthedocs.io/en/main/conversion_examples_gallery/index.html#common-interface-combinations) examples.
 
-For most formats, NeuroConv loads data lazily, meaning that together with pynapple's lazy operating capabilities you can handle very large files without loading everything into memory at once.
+For most formats, NeuroConv loads data lazily, meaning that together with pynapple's lazy operating capabilities you can explore and analyze very large files without any extra effort. This should work for most cases, but keep in mind that NeuroConv is a writing library optimized for conversion, which may lead to sub-optimal read access patterns. If reading becomes too slow or timing is critical, consider writing the data to an NWB file using `run_conversion()` (as shown in the [conversion gallery](https://neuroconv.readthedocs.io/en/main/conversion_examples_gallery/index.html)) and loading it directly with `nap.load_file()`.
 
 ## Saving as NPZ
 
