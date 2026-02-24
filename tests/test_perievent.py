@@ -98,6 +98,13 @@ def test_compute_perievent_raise_error():
         str(e_info.value) == "minmax should be a tuple of 2 numbers or a single number."
     )
 
+    with pytest.raises(TypeError) as e_info:
+        nap.compute_perievent(tsd, tref, minmax=10, ep="a")
+    assert (
+        str(e_info.value)
+        == "Invalid type. Parameter ep must be of type ['IntervalSet']."
+    )
+
 
 def test_compute_perievent_with_tsgroup():
     tsgroup = nap.TsGroup(
@@ -125,6 +132,40 @@ def test_compute_perievent_time_units():
         for i, j in zip(peth.keys(), np.arange(0, 100, 10)):
             np.testing.assert_array_almost_equal(peth[i].index, np.arange(-10, 10))
             np.testing.assert_array_almost_equal(peth[i].values, np.arange(j, j + 20))
+
+
+def test_compute_perievent_with_ep():
+    tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
+    tref = nap.Ts(t=np.array([10, 50, 80]))
+    windowsize = (-5, 10)
+    ep = nap.IntervalSet(start=[0, 60], end=[40, 99])
+
+    pe = nap.compute_perievent(tsd, tref, minmax=windowsize, ep=ep)
+
+    # tref event at t=50 is outside ep, so only 2 events should remain
+    assert len(pe) == 2
+
+    # Manually replicate the restrict + windowing logic to verify correctness:
+    # for each surviving tref event, find restricted timestamps within the window,
+    # then center them by subtracting the reference time.
+    tref_restricted = tref.restrict(ep)
+    tsd_restricted = tsd.restrict(ep)
+    for i, t in enumerate(tref_restricted.t):
+        expected_times = tsd_restricted.t[
+            (tsd_restricted.t >= t + windowsize[0])
+            & (tsd_restricted.t < t + windowsize[1])
+        ] - t
+        np.testing.assert_array_almost_equal(pe[i].index, expected_times)
+
+    # Test with TsGroup
+    tsgroup = nap.TsGroup(
+        {0: nap.Ts(t=np.arange(0, 100)), 1: nap.Ts(t=np.arange(0, 200))}
+    )
+    pe = nap.compute_perievent(tsgroup, tref, minmax=windowsize, ep=ep)
+    assert isinstance(pe, dict)
+    for key in pe:
+        assert len(pe[key]) == len(tref_restricted)
+
 
 
 def test_compute_perievent_continuous():

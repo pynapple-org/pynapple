@@ -90,7 +90,7 @@ def _align_tsd(tsd, tref, window, new_time_support):
 
 
 @_validate_perievent_inputs
-def compute_perievent(timestamps, tref, minmax, time_unit="s", **kwargs):
+def compute_perievent(timestamps, tref, minmax, ep=None, time_unit="s", **kwargs):
     """
     Center the timestamps of a time series object or a time series group around the timestamps given by the `tref` argument.
     `minmax` indicates the start and end of the window. If `minmax=(-5, 10)`, the window will be from -5 second to 10 second.
@@ -108,6 +108,8 @@ def compute_perievent(timestamps, tref, minmax, time_unit="s", **kwargs):
         The time reference of the event to align to
     minmax : tuple of int/float or int or float
         The window size. Can be unequal on each side i.e. (-500, 1000).
+    ep : IntervalSet, optional
+        The epochs to perform the operation. If None, all data is used.
     time_unit : str, optional
         Time units of the minmax ('s' [default], 'ms', 'us').
 
@@ -134,6 +136,10 @@ def compute_perievent(timestamps, tref, minmax, time_unit="s", **kwargs):
 
     if not all([isinstance(x, Number) for x in minmax]):
         raise RuntimeError("minmax should be a tuple of 2 numbers or a single number.")
+
+    if ep is not None:
+        timestamps = timestamps.restrict(ep)
+        tref = tref.restrict(ep)
 
     window = np.abs(nap.TsIndex.format_timestamps(np.array(minmax), time_unit))
 
