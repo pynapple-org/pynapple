@@ -1119,24 +1119,14 @@ class EphysReader(UserDict):
         sampling_rate = float(proxy.sampling_rate.rescale("Hz").magnitude)
         n_samples = proxy.shape[0]
 
-        def _loader(
-            _fp=file_path,
-            _dt=dtype,
-            _bs=buf_shape,
-            _cs=col_slice,
-            _t0=t_start,
-            _sr=sampling_rate,
-            _ns=n_samples,
-            _nt=nap_type,
-            _meta=metadata,
-        ):
-            fp = np.memmap(_fp, _dt, "r", shape=_bs)
-            data = fp if _cs is None else fp[:, _cs]
-            timestamps = _t0 + np.arange(_ns) / _sr
+        def _loader():
+            fp = np.memmap(file_path, dtype, "r", shape=buf_shape)
+            data = fp if col_slice is None else fp[:, col_slice]
+            timestamps = t_start + np.arange(n_samples) / sampling_rate
             kwargs = {}
-            if _meta is not None:
-                kwargs["metadata"] = _meta
-            return _nt(t=timestamps, d=data, load_array=False, **kwargs)
+            if metadata is not None:
+                kwargs["metadata"] = metadata
+            return nap_type(t=timestamps, d=data, load_array=False, **kwargs)
 
         return {
             "type": nap_type.__name__,
