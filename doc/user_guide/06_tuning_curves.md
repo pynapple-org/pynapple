@@ -18,6 +18,12 @@ With Pynapple you can easily compute n-dimensional tuning curves
 It is also possible to compute average firing rate for different epochs 
 (for example, firing rate for different epochs of stimulus presentation).
 
+```{contents}
+:local:
+:depth: 3
+```
+
+
 ```{code-cell} ipython3
 :tags: [hide-cell]
 import pynapple as nap

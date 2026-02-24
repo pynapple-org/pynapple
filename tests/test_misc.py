@@ -81,7 +81,7 @@ def test_load_folder_foldernotfound():
 
 @skip_if_backend("jax")
 @pytest.mark.parametrize("path", [path])
-def test_load_eeg(path):
+def test_load_binary_file(path):
     filepath = path / "memmap.dat"
     tmp = np.random.randn(10, 3).astype("int16")
     data = np.memmap(filename=filepath, dtype="int16", mode="w+", shape=(10, 3))
@@ -89,7 +89,7 @@ def test_load_eeg(path):
     data.flush()
 
     # All channels
-    eeg = nap.load_eeg(filepath, n_channels=3, frequency=100, precision="int16")
+    eeg = nap.load_binary_file(filepath, n_channels=3, frequency=100, precision="int16")
 
     assert isinstance(eeg, nap.TsdFrame)
     np.testing.assert_array_almost_equal(tmp, eeg.values)
@@ -97,7 +97,7 @@ def test_load_eeg(path):
     assert isinstance(eeg.values, np.memmap)
 
     # List of channels
-    eeg = nap.load_eeg(
+    eeg = nap.load_binary_file(
         filepath, channel=[0, 2], n_channels=3, frequency=100, precision="int16"
     )
 
@@ -106,7 +106,7 @@ def test_load_eeg(path):
     assert isinstance(eeg.values, np.ndarray)
 
     # Single channel
-    eeg = nap.load_eeg(
+    eeg = nap.load_binary_file(
         filepath, channel=0, n_channels=3, frequency=100, precision="int16"
     )
 
