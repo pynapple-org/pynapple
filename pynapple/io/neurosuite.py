@@ -370,7 +370,7 @@ class NeuroSuite(BaseLoader):
 
         for index, timestep in enumerate(batches):
             print(
-                f"Extracting waveforms from dat file: window {index+1} / {len(windows)}",
+                f"Extracting waveforms from dat file: window {index + 1} / {len(windows)}",
                 end="\r",
             )
 

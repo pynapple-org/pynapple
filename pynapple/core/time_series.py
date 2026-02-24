@@ -22,7 +22,6 @@ from numbers import Number
 import numpy as np
 import pandas as pd
 from numpy.lib.mixins import NDArrayOperatorsMixin
-from scipy import signal
 from tabulate import tabulate
 
 from ._core_functions import (
@@ -574,6 +573,8 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             Time series convolved with a gaussian kernel
 
         """
+        from scipy import signal
+
         if not isinstance(std, (int, float)):
             raise IOError("std should be type int or float")
         if not isinstance(size_factor, int):
@@ -648,6 +649,8 @@ class _BaseTsd(_Base, NDArrayOperatorsMixin, abc.ABC):
             >>> plt.show()
 
         """
+        from scipy import signal
+
         if not isinstance(down, int):
             raise IOError(
                 "Invalid value for 'down': Parameter 'down' should be of type int."
