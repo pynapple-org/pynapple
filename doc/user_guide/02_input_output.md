@@ -133,6 +133,38 @@ z = data['z']
 print(type(z.d))
 ```
 
+### Loading from other formats with NeuroConv
+
+[NeuroConv](https://neuroconv.readthedocs.io/en/main/) provides interfaces for a wide range of neuroscience data formats, including electrophysiology, optical imaging, behavior tracking, and more. By using NeuroConv with pynapple, you get access to **all** of these formats for free. Each interface has a `create_nwbfile()` method that returns an in-memory NWBFile object, which can be passed directly to `nap.NWBFile()` without writing to disk.
+
+```{code-block} python
+
+from datetime import datetime
+from zoneinfo import ZoneInfo
+from neuroconv.datainterfaces import SpikeGLXRecordingInterface
+
+# Instantiate a NeuroConv interface with source data
+interface = SpikeGLXRecordingInterface(folder_path="path/to/spikeglx", stream_id="imec0.ap")
+
+# Get metadata and ensure a session start time is set (some formats provide this automatically)
+metadata = interface.get_metadata()
+metadata["NWBFile"]["session_start_time"] = datetime.now(ZoneInfo("US/Eastern"))
+
+# Create an in-memory NWBFile (no file written to disk)
+nwbfile = interface.create_nwbfile(metadata=metadata)
+
+# Pass it directly to pynapple
+data = nap.NWBFile(nwbfile)
+
+# Access pynapple objects
+units = data["units"]       # TsGroup
+position = data["position"] # TsdFrame
+```
+
+If you are interested in a specific format, check the [conversion gallery](https://neuroconv.readthedocs.io/en/main/conversion_examples_gallery/index.html) which contains a script for each supported format very similar to the one above that you can adapt to load your data. If you want to combine data from multiple formats into a single session (e.g. electrophysiology recordings with pose estimation), see the [common interface combinations](https://neuroconv.readthedocs.io/en/main/conversion_examples_gallery/index.html#common-interface-combinations) examples.
+
+For most formats, NeuroConv loads data lazily, meaning that together with pynapple's lazy operating capabilities you can handle very large files without loading everything into memory at once.
+
 ## Saving as NPZ
 
 Pynapple objects have [`save`](pynapple.Tsd.save) methods to save them as npz files. 
