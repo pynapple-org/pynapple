@@ -1,6 +1,3 @@
-# -*- coding: utf-8 -*-
-#!/usr/bin/env python
-
 """Tests of perievent for `pynapple` package."""
 
 import numpy as np
