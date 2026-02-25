@@ -13,6 +13,13 @@ kernelspec:
 
 # Core methods
 
+
+```{contents}
+:local:
+:depth: 4
+```
+
+
 ```{code-cell} ipython3
 :tags: [hide-cell]
 import pynapple as nap

@@ -9,7 +9,6 @@ from functools import wraps
 
 import numpy as np
 import pandas as pd
-import xarray as xr
 
 from .. import core as nap
 
@@ -183,6 +182,7 @@ def compute_tuning_curves(
             occupancy:  [100. 100. 100. 100. 100. 100. 100. 100. 100. 100.]
             bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...
     """
+    import xarray as xr
 
     # check data
     if not isinstance(data, (nap.TsdFrame, nap.TsGroup, nap.Ts, nap.Tsd)):
@@ -367,6 +367,8 @@ def compute_response_per_epoch(data, epochs_dict, return_pandas=False):
           * unit     (unit) int64 24B 0 1 2
           * epochs   (epochs) <U5 40B 'stim0' 'stim1'
     """
+    import xarray as xr
+
     # check data
     if not isinstance(data, (nap.TsdFrame, nap.TsGroup, nap.Ts, nap.Tsd)):
         raise TypeError("data should be a TsdFrame, TsGroup, Ts, or Tsd.")
@@ -508,6 +510,8 @@ def compute_mutual_information(tuning_curves, rates=None):
         1  33.480966    3.301870
         2  33.369159    3.310432
     """
+    import xarray as xr
+
     if not isinstance(tuning_curves, xr.DataArray):
         raise TypeError(
             "tuning_curves should be an xr.DataArray as computed by compute_tuning_curves."
@@ -763,6 +767,8 @@ def compute_2d_mutual_info(dict_tc, features, ep=None, minmax=None, bitssec=Fals
           `compute_2d_mutual_info` will be removed in Pynapple 1.0.0, it is replaced by
           `compute_mutual_information` because the latter works for N dimensions.
     """
+    import xarray as xr
+
     warnings.warn(
         "compute_2d_mutual_info is deprecated and will be removed in a future version;"
         "use compute_mutual_information instead.",
@@ -820,6 +826,8 @@ def compute_1d_mutual_info(tc, feature, ep=None, minmax=None, bitssec=False):
           `compute_1d_mutual_info` will be removed in Pynapple 1.0.0, it is replaced by
           `compute_mutual_information` because the latter works for N dimensions.
     """
+    import xarray as xr
+
     warnings.warn(
         "compute_1d_mutual_info is deprecated and will be removed in a future version;"
         "use compute_mutual_information instead.",

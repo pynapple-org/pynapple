@@ -13,6 +13,15 @@ kernelspec:
 
 # Randomization
 
+Pynapple provides some ready-to-use randomization methods to compute null distributions for statistical testing.
+Different methods preserve or destroy different features of the data.
+
+
+```{contents}
+:local:
+:depth: 3
+```
+
 ```{code-cell} ipython3
 :tags: [hide-cell]
 import pynapple as nap
@@ -23,8 +32,6 @@ custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
 ```
 
-Pynapple provides some ready-to-use randomization methods to compute null distributions for statistical testing.
-Different methods preserve or destroy different features of the data.
 
 ## Shift timestamps
 
