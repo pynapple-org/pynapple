@@ -451,7 +451,7 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     if isinstance(data, nap.Ts):
         return _align_discrete(data, events, window, new_time_support)
 
-    if not nap._is_regularly_sampled(data):
+    if not nap.utils._is_regularly_sampled(data):
         raise RuntimeError(
             "Continuous data must be regularly sampled. "
             "Please interpolate or NaN-pad your data to a uniform time grid before "
