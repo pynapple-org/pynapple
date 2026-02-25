@@ -31,6 +31,13 @@ Multiple time series object are avaible depending on the shape of the data.
 - `Ts` : For timestamps data only.
 
 
+```{contents}
+:local:
+:depth: 2
+```
+
+
+
 +++
 
 Initialization

@@ -22,6 +22,12 @@ If the input is a TsGroup containing the activity of a population of neurons:
 
 Both functions works for all time series object (`Tsd`, `TsdFrame` and `TsdTensor`) and timestamp objects (`Ts` and `TsGroup`). See examples below.
 
+
+```{contents}
+:local:
+:depth: 3
+```
+
 ```{code-cell} ipython3
 :tags: [hide-cell]
 import pynapple as nap
@@ -32,8 +38,8 @@ custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
 ```
 
-`nap.build_tensor`
-------------------
+## `nap.build_tensor`
+--------------------
 
 The function [`nap.build_tensor`](pynapple.process.warping.build_tensor) slices a time series object or timestamps object for each interval of an `IntervalSet` object and returns 
 a numpy array. The intervals can be of unequal durations. 
@@ -137,8 +143,8 @@ plt.show()
 ```
 
 
-`nap.warp_tensor`
------------------
+## `nap.warp_tensor`
+--------------------
 
 The function [`nap.warp_tensor`](pynapple.process.warping.warp_tensor) is similar to `build_tensor`, but time is stretched linearly for each interval depending on
 the parameter `num_bins`. In other words, the number of bins between the start and end of an epoch is always `num_bins`, but

@@ -41,6 +41,11 @@ custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
 ```
 
+```{contents}
+:local:
+:depth: 3
+```
+
 ***
 Basics
 ------
