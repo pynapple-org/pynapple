@@ -79,13 +79,15 @@ We can also take the mean of the counts and divide by the bin size to show an es
 
 ```{code-cell} ipython3
 def plot_peth(unit_peth, unit_peth_counts, ax_mean, ax_spikes):
-    ax_mean.plot(np.mean(unit_peth_counts, axis=1) / bin_size)
+    mean = np.mean(unit_peth_counts / bin_size, axis=1)
+    ax_mean.plot(mean)
     ax_mean.set_ylabel("spikes/s")
     ax_mean.axvline(0.0, color="red")
     ax_spikes.plot(unit_peth.to_tsd(), "|", markersize=5)
     ax_spikes.set_xlabel("time from event (s)")
     ax_spikes.set_ylabel("event")
     ax_spikes.axvline(0.0, color="red")
+
 
 fig, (ax_mean, ax_spikes) = plt.subplots(
     2, 1, sharex=True, height_ratios=[0.3, 1], figsize=(6, 6)
@@ -141,7 +143,7 @@ def generate_continuous_unit(burst_offset):
     t = np.arange(0, 1000, 0.02)
     d = np.random.uniform(0, 1, len(t))
     for st in stimuli_times:
-        d += 4 * np.exp(-((t - (st + burst_offset)) ** 2) / (2 * 0.1**2))
+        d += 4 * np.exp(-((t - (st + burst_offset)) ** 2) / (2 * 0.05**2))
     return nap.Tsd(t=t, d=np.clip(d, 0, 5), time_units="s")
 
 tsd = generate_continuous_unit(burst_offset=0.1)
@@ -158,7 +160,8 @@ We can again visualize, this time using a heatmap (i.e. using `imshow`):
 
 ```{code-cell} ipython3
 def plot_peth_continuous(unit_peth, ax_mean, ax):
-    ax_mean.plot(np.nanmean(unit_peth, axis=1))
+    mean = np.nanmean(unit_peth, axis=1)
+    ax_mean.plot(mean)
     ax_mean.set_ylabel("dF/F [a.u.]")
     im = ax.imshow(
         unit_peth.values.T,
