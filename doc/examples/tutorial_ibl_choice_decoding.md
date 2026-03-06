@@ -22,6 +22,7 @@ For a more detailed tutorial on data loading with DANDI, see the "Streaming data
 **Caveats**: This example is meant to provide a simple starting point for working with trial-aligned data and data from the IBL, and so it does not faithfully replicate the IBL's quality control and filtering criteria; the decoding here is also simpler than the analyses carried out in those works.
 
 ```{code-cell} ipython3
+:tags: [hide-cell]
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -108,7 +109,7 @@ trial_aligned_spikes = nap.compute_perievent(data=spikes, events=stimulus_onsets
 The result is a dictionary of `TsGroup`, one per unit, containing that unit's spikes relative to the onset time.
 We can easily visualize that as follows:
 ```{code-cell} ipython3
-example_unit = 10
+example_unit = 42
 plt.plot(trial_aligned_spikes[example_unit].to_tsd(), "|", markersize=5)
 plt.xlabel("time from stim (s)")
 plt.ylabel("stimulus")
