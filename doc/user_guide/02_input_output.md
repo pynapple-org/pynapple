@@ -436,7 +436,7 @@ tsdframe.restrict(ep)
 ```{code-cell} ipython3
 group = nap.TsGroup({0:nap.Ts(t=[10, 20, 30])})
 
-sta = nap.compute_event_trigger_average(group, tsdframe, 1, (-2, 3))
+sta = nap.compute_event_triggered_average(tsdframe, group, 1, (-2, 3))
 
 print(type(tsdframe.values))
 print("\n")

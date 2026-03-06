@@ -104,7 +104,7 @@ pynapple: python neural analysis package
          :width: 100px
          :class: dark-light
 
-   .. grid-item-card:: Perievent
+   .. grid-item-card:: Perievent / Spike-trigerred average
       :text-align: center
       :link: ./user_guide/08_perievent.html
 
