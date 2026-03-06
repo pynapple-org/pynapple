@@ -96,7 +96,7 @@ valid_choice = trials.mouse_wheel_choice != "none"
 trials = trials[valid_choice]
 ```
 
-Now, we can use [`compute_perievent`](pynapple.perievent.compute_perievent) to align the spikes to the
+Now, we can use [`compute_perievent`](pynapple.process.perievent.compute_perievent) to align the spikes to the
 stimulus onset times.
 We will choose a window around each stimulus that extends back 0.5s and forward 1s.
 
