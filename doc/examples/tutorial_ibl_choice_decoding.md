@@ -29,9 +29,12 @@ import numpy as np
 import pandas as pd
 import pynapple as nap
 import scipy.stats
+import seaborn as sns
 
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import RandomizedSearchCV
+custom_params = {"axes.spines.right": False, "axes.spines.top": False}
+sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
 ```
 
 ## Loading data
@@ -51,7 +54,7 @@ from pynwb import NWBHDF5IO
 # The BWM dandiset:
 dandiset_id = "000409"
 # This is a randomly chosen recording session.
-asset_path = "sub-CSH-ZAD-026/sub-CSH-ZAD-026_ses-15763234-d21e-491f-a01b-1238eb96d389_behavior+ecephys+image.nwb"
+asset_path = "sub-CSH-ZAD-026/sub-CSH-ZAD-026_ses-15763234-d21e-491f-a01b-1238eb96d389_desc-processed_behavior+ecephys.nwb"
 with DandiAPIClient() as client:
     asset = client.get_dandiset(dandiset_id, "draft").get_asset_by_path(asset_path)
     s3_url = asset.get_content_url(follow_redirects=1, strip_query=True)
@@ -86,42 +89,63 @@ trials
 
 ## Trial alignment and binning
 
-Here, we start by discarding some trials where a choice wasn't made (a fuller analysis may include more criteria). Next, we create an `IntervalSet` aligned to the stimulus onset time within each trial, where the window around each stimulus extends back 0.5s and forward 2s.
-
+Here, we start by discarding some trials where a choice wasn't made (a more complete analysis may include more criteria). 
 ```{code-cell} ipython3
-valid_choice = trials.choice != 0
+valid_choice = trials.mouse_wheel_choice != "none"
 trials = trials[valid_choice]
-stim_on_intervals = nap.IntervalSet(
-    start=trials.stim_on_time - 0.5,
-    end=trials.stim_on_time + 2.0,
-)
 ```
 
-Now, use [`build_tensor`](pynapple.process.warping.build_tensor) to align the neural data to these stimulus windows and bin it in 0.1s time bins.
+Now, we can use [`compute_perievent`](pynapple.perievent.compute_perievent) to align the spikes to the
+stimulus onset times.
+We will choose a window around each stimulus that extends back 0.5s and forward 1s.
 
 ```{code-cell} ipython3
-trial_aligned_binned_spikes = nap.build_tensor(
-    spikes, stim_on_intervals, bin_size=0.1
-)
+stimulus_onsets = nap.Ts(t=trials.gabor_stimulus_onset_time.values)
+window=(-0.5, 1.0)
+trial_aligned_spikes = nap.compute_perievent(data=spikes, events=stimulus_onsets, window=window)
+```
+
+The result is a dictionary of `TsGroup`, one per unit, containing that unit's spikes relative to the onset time.
+We can easily visualize that as follows:
+```{code-cell} ipython3
+example_unit = 10
+plt.plot(trial_aligned_spikes[example_unit].to_tsd(), "|", markersize=5)
+plt.xlabel("time from stim (s)")
+plt.ylabel("stimulus")
+plt.xlim(*window)
+plt.axvline(0.0, color="red");
+```
+
+```{admonition} Note
+See the [perievent](/user_guide/08_perievent.md) user guide for how this works and other visualizations!
+```
+
+We can then bin and count these spikes as follows:
+```{code-cell} ipython3
+bin_size = 0.1
+trial_aligned_binned_spikes = np.stack([trial_aligned_spikes[unit].count(bin_size) for unit in spikes], axis=1)
 trial_aligned_binned_spikes.shape
 ```
 
-The result is `n_neurons x n_trials x n_bins`. Let's visualize the neural activity in a single trial.
+Let's visualize the neural activity in a single trial:
 
 ```{code-cell} ipython3
-trial = 645
-fig, ax = plt.subplots(figsize=(6, 6))
-ax.imshow(
-    trial_aligned_binned_spikes[:, trial],
-    aspect='auto',
-    cmap=plt.cm.gist_yarg,
-    interpolation='none',
+example_trial = 42
+plt.imshow(
+    trial_aligned_binned_spikes[:, :, example_trial].values.T,
+    aspect="auto",
+    cmap="Grays",
+    interpolation="none",
+    extent=(
+        trial_aligned_binned_spikes.times()[0],
+        trial_aligned_binned_spikes.times()[-1],
+        0,
+        trial_aligned_binned_spikes.shape[1],
+    ),
 )
-ax.axvline(5.5, lw=1, color='r', label='stimulus time')
-ax.set_ylabel('units')
-ax.set_xlabel('time bin (0.1s)')
-ax.legend(frameon=False, loc='lower right')
-ax.set_title(f'binned spiking activity in trial {trial}')
+plt.axvline(0, color='red')
+plt.ylabel('unit')
+plt.xlabel('time (s)');
 ```
 
 ## Decoding choice
@@ -131,12 +155,12 @@ We can use their cross-validation tools to pick the regularization parameter
 
 ```{code-cell} ipython3
 # process the choice from -1, 1 to 0,1
-y = (trials.choice + 1) / 2
+y = (trials.mouse_wheel_choice == "clockwise").astype(int)
 ```
 
 ```{code-cell} ipython3
 # transpose the data to lead with trial dimension
-X = trial_aligned_binned_spikes.transpose(1, 0, 2)
+X = trial_aligned_binned_spikes.swapaxes(0, 2)
 # standardize per neuron + trial
 X = (X - X.mean(2, keepdims=True)) / X.std(2, keepdims=True).clip(min=1e-6)
 # reshape to n_trials x n_features
@@ -161,7 +185,7 @@ plt.figure(figsize=(2, 4))
 plt.boxplot(best_row[[c for c in best_row.keys() if c.startswith('split')]])
 plt.ylabel('accuracy in fold')
 plt.xticks([])
-plt.title("choice decoding accuracy\nin 5-fold randomized CV")
+plt.title("choice decoding accuracy\nin 5-fold randomized CV");
 ```
 
 :::{card}
