@@ -613,7 +613,7 @@ def _is_regularly_sampled(data, tolerance=1e-6):
     if len(data) < 2:
         return True
 
-    time_diffs = np.diff(data.t)
+    time_diffs = data.time_diff().values
     bin_size = time_diffs[0]
 
     relative_variation = np.abs(time_diffs - bin_size) / bin_size
