@@ -493,7 +493,7 @@ def _align_discrete(data, events, window, new_time_support):
 
         aligned[event_idx] = nap.Ts(shifted_times, time_support=new_time_support)
 
-    return nap.TsGroup(aligned)
+    return nap.TsGroup(aligned, metadata={"events": event_times})
 
 
 def _align_regular(data, events, window, new_time_support):
@@ -531,9 +531,18 @@ def _align_regular(data, events, window, new_time_support):
         data.t, data.values, events.times(), epochs.start, epochs.end, windowsize
     )
 
+    if new_data_array.size == 0:
+        raise ValueError(
+            "No overlap between input and epochs, perievent matrix is empty..."
+        )
     if new_data_array.ndim == 2:
-        return nap.TsdFrame(t=time_idx, d=new_data_array, time_support=new_time_support)
+        columns = events.index if isinstance(events, nap.TsGroup) else None
+        return nap.TsdFrame(
+            t=time_idx, d=new_data_array, time_support=new_time_support, columns=columns
+        )
     else:
         return nap.TsdTensor(
-            t=time_idx, d=new_data_array, time_support=new_time_support
+            t=time_idx,
+            d=new_data_array,
+            time_support=new_time_support,
         )
