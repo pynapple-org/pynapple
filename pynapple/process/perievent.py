@@ -321,10 +321,10 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     >>> events = nap.Ts(t=[1.0, 3.0])
     >>> result = nap.compute_perievent(spikes, events, window=1.0)
     >>> result
-      Index    rate
-    -------  ------
-          0       1
-          1       1
+      Index    rate    events
+    -------  ------  --------
+          0       1         1
+          1       1         3
     >>> result[0]
     Time (s)
     -0.5
@@ -343,10 +343,10 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     >>> epochs = nap.IntervalSet(start=[0, 2.5], end=[2.4, 4.5])
     >>> result = nap.compute_perievent(spikes, events, window=1.0, epochs=epochs)
     >>> result # only 2 events are included!
-      Index    rate
-    -------  ------
-          0       1
-          1       1
+      Index    rate    events
+    -------  ------  --------
+          0       1         1
+          1       1         3
 
     Align with unequal window:
 
@@ -370,23 +370,23 @@ def compute_perievent(data, events, window, time_unit="s", epochs=None):
     >>> events = nap.Ts(t=[1.0, 3.0])
     >>> result = nap.compute_perievent(spikes, events, window=1.0)
     >>> result
-    {0:   Index    rate
-    -------  ------
-          0       1
-          1       1, 1:   Index    rate
-    -------  ------
-          0     1
-          1     0.5}
+    {0:   Index    rate    events
+    -------  ------  --------
+          0       1         1
+          1       1         3, 1:   Index    rate    events
+    -------  ------  --------
+          0     1           1
+          1     0.5         3}
     >>> result[0] # aligned unit 0
-      Index    rate
-    -------  ------
-          0       1
-          1       1
+      Index    rate    events
+    -------  ------  --------
+          0       1         1
+          1       1         3
     >>> result[1] # aligned unit 1
-      Index    rate
-    -------  ------
-          0     1
-          1     0.5
+      Index    rate    events
+    -------  ------  --------
+          0     1           1
+          1     0.5         3
 
     Align regularly sampled continuous data (``Tsd``) to events, returning a ``TsdFrame``:
 
