@@ -243,7 +243,7 @@ def test_get_iset_non_ascending():
     pd.testing.assert_frame_equal(ep2.metadata, expected_metadata)
 
     idx = [0, 4 , 4, 2]
-    with pytest.warns(UserWarning, match="unsorted index or index with duplicates"):
+    with pytest.warns(UserWarning, match="unsorted or duplicate index"):
         ep2 = ep[idx]
     assert isinstance(ep2, nap.IntervalSet)
     expected_indices = sorted(list(set(idx)))

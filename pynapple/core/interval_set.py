@@ -477,8 +477,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             if not all(x < y for x, y in zip(key, key[1:])):
                 key = sorted(list(set(key)))
                 warnings.warn(
-                    "Recieved unsorted index or index with duplicates," 
-                    "this is sorted to preserve the invariant that "
+                    "Received an unsorted or duplicate index, this is sorted to preserve the invariant that "
                     "nap.IntervalSet remains ordered. This differs from standard NumPy/Pandas "
                     "indexing semantics as index order is not preserved.",
                     UserWarning,
@@ -492,7 +491,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                 # to be in ascending order.
                 key = sorted([i for i in range(*key.indices(self.shape[0]))])
                 warnings.warn(
-                    "Recieved descending slice, this is reversed to preserve the invariant that "
+                    "Received descending slice, this is reversed to preserve the invariant that "
                     "nap.IntervalSet remains ordered. This differs from standard NumPy/Pandas "
                     "indexing semantics as index order is not preserved.",
                     UserWarning,
