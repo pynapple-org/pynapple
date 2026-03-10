@@ -467,6 +467,25 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             # self[[*str]]
             # only works for list of metadata columns
             return _MetadataMixin.__getitem__(self, key)
+        
+        elif isinstance(key, list) and all(isinstance(x, int) for x in key):
+            # check if list is sorted (ascending)
+            if not all(x < y for x, y in zip(key, key[1:])):
+                key = sorted(key)
+                warnings.warn("Recieved unsorted index, this is sorted to preserve the invariant that "
+                              "nap.IntervalSet remains ordered. This differs from standard NumPy/Pandas " \
+                              "indexing semantics as index order is not preserved.",
+                                UserWarning)
+                
+        elif isinstance(key,slice):
+            if key.step is None:
+                pass # prevent None step to go into next condition. No action needed
+            elif key.step < 0:
+                warnings.warn("Recieved descending slice, this is reversed to preserve the invariant that "
+                              "nap.IntervalSet remains ordered. This differs from standard NumPy/Pandas " \
+                              "indexing semantics as index order is not preserved.",
+                                UserWarning)
+                key = slice(key.stop + 1, key.start + 1, -key.step)
 
         if isinstance(key, tuple):
             if len(key) == 2:
