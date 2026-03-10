@@ -473,11 +473,12 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         # A separate if-elif block to reorder key if given row style index of type
         # list[int] or slice that is not in ascending order.
         if isinstance(key, list) and all(isinstance(x, int) for x in key):
-            # check if list is sorted (ascending)
+            # check if list is sorted (ascending) and not duplicated.
             if not all(x < y for x, y in zip(key, key[1:])):
-                key = sorted(key)
+                key = sorted(list(set(key)))
                 warnings.warn(
-                    "Recieved unsorted index, this is sorted to preserve the invariant that "
+                    "Recieved unsorted index or index with duplicates," 
+                    "this is sorted to preserve the invariant that "
                     "nap.IntervalSet remains ordered. This differs from standard NumPy/Pandas "
                     "indexing semantics as index order is not preserved.",
                     UserWarning,
