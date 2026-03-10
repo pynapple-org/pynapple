@@ -223,17 +223,20 @@ def test_get_iset():
         str(e.value) == "too many indices for IntervalSet: IntervalSet is 2-dimensional"
     )
 
+
 def test_get_iset_non_ascending():
     # Get new ivset with unsorted/descending indices
     # Needed a slightly longer test case with metadat for this.
     # So I maded a separate test block
     start = np.array([0, 10, 16, 21, 26], dtype=np.float64)
     end = np.array([5, 15, 20, 25, 30], dtype=np.float64)
-    metadata = pd.DataFrame({
-                "label": ["a", "b", "c", "d", "e"],
-                "score": [1, 2, 3, 4, 5],
-            })
-    ep = nap.IntervalSet(start=start, end=end,metadata=metadata)
+    metadata = pd.DataFrame(
+        {
+            "label": ["a", "b", "c", "d", "e"],
+            "score": [1, 2, 3, 4, 5],
+        }
+    )
+    ep = nap.IntervalSet(start=start, end=end, metadata=metadata)
     with pytest.warns(UserWarning, match="descending slice"):
         ep2 = ep[::-2]
     assert isinstance(ep2, nap.IntervalSet)
@@ -242,7 +245,7 @@ def test_get_iset_non_ascending():
     expected_metadata = metadata.iloc[::-2].iloc[::-1].reset_index(drop=True)
     pd.testing.assert_frame_equal(ep2.metadata, expected_metadata)
 
-    idx = [0, 4 , 4, 2]
+    idx = [0, 4, 4, 2]
     with pytest.warns(UserWarning, match="unsorted or duplicate index"):
         ep2 = ep[idx]
     assert isinstance(ep2, nap.IntervalSet)
@@ -251,6 +254,7 @@ def test_get_iset_non_ascending():
     np.testing.assert_array_almost_equal(ep2.values, expected_values)
     expected_metadata = metadata.iloc[expected_indices].reset_index(drop=True)
     pd.testing.assert_frame_equal(ep2.metadata, expected_metadata)
+
 
 def test_get_iset_with_series():
     start = np.array([0, 10, 16], dtype=np.float64)

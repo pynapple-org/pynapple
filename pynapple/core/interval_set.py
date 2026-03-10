@@ -487,7 +487,7 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             if key.step is None or key.step > 0:
                 pass  # positive or defautl step no action needed
             else:
-                # if slice is descending, compute the actual index and reorder it 
+                # if slice is descending, compute the actual index and reorder it
                 # to be in ascending order.
                 key = sorted([i for i in range(*key.indices(self.shape[0]))])
                 warnings.warn(
