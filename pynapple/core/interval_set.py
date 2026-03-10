@@ -484,16 +484,18 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                 )
 
         elif isinstance(key, slice):
-            if key.step is None:
-                pass  # prevent None step to go into next condition. No action needed
-            elif key.step < 0:
+            if key.step is None or key.step > 0:
+                pass  # positive or defautl step no action needed
+            else:
+                # if slice is descending, compute the actual index and reorder it 
+                # to be in ascending order.
+                key = sorted([i for i in range(*key.indices(self.shape[0]))])
                 warnings.warn(
                     "Recieved descending slice, this is reversed to preserve the invariant that "
                     "nap.IntervalSet remains ordered. This differs from standard NumPy/Pandas "
                     "indexing semantics as index order is not preserved.",
                     UserWarning,
                 )
-                key = slice(key.stop + 1, key.start + 1, -key.step)
 
         if isinstance(key, tuple):
             if len(key) == 2:
