@@ -468,7 +468,9 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             # only works for list of metadata columns
             return _MetadataMixin.__getitem__(self, key)
         
-        elif isinstance(key, list) and all(isinstance(x, int) for x in key):
+        # A separate if-elif block to reorder key if given row style index of type
+        # list[int] or slice that is not in ascending order.
+        if isinstance(key, list) and all(isinstance(x, int) for x in key):
             # check if list is sorted (ascending)
             if not all(x < y for x, y in zip(key, key[1:])):
                 key = sorted(key)
