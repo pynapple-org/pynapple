@@ -308,9 +308,11 @@ def _make_tsgroup(obj, **kwargs):
             if len(col) == N:
                 if hasattr(col, "to_dataframe"):
                     df = col.to_dataframe()
-                    df = df.sort_index()
+                    # Reset index to preserve unit order (the DataFrame index
+                    # comes from the referenced table, not the units table).
+                    df = df.reset_index(drop=True)
                     for k in df.columns:
-                        if not isinstance(
+                        if k not in metainfo and not isinstance(
                             df[k].values[0],
                             (list, tuple, dict, set, pynwb.ecephys.ElectrodeGroup),
                         ):

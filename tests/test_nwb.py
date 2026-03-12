@@ -516,6 +516,62 @@ def test_add_Units():
     np.testing.assert_array_equal(data._metadata["alpha"], alpha)
 
 
+def test_units_metadata_with_non_ragged_dynamic_table_region():
+    from pynwb.testing.mock.ecephys import mock_ElectrodeGroup
+
+    nwbfile = mock_NWBFile()
+
+    group_b = mock_ElectrodeGroup(name="ProbeB", location="area_B", nwbfile=nwbfile)
+    group_a = mock_ElectrodeGroup(name="ProbeA", location="area_A", nwbfile=nwbfile)
+
+    nwbfile.add_electrode_column(name="probe_name", description="probe name")
+    for i in range(3):
+        nwbfile.add_electrode(
+            x=float(i), y=0.0, z=0.0, location="area_B",
+            group=group_b, probe_name="ProbeB",
+        )
+    for i in range(3):
+        nwbfile.add_electrode(
+            x=float(i), y=1.0, z=0.0, location="area_A",
+            group=group_a, probe_name="ProbeA",
+        )
+
+    nwbfile.add_unit_column(name="probe_name", description="probe name")
+    nwbfile.add_unit(
+        spike_times=[0.1, 0.5], electrodes=[3, 4], probe_name="ProbeA",
+    )
+    nwbfile.add_unit(
+        spike_times=[0.2, 0.6], electrodes=[4, 5], probe_name="ProbeA",
+    )
+    nwbfile.add_unit(
+        spike_times=[0.3, 0.7], electrodes=[0, 1], probe_name="ProbeB",
+    )
+    nwbfile.add_unit(
+        spike_times=[0.4, 0.8], electrodes=[1, 2], probe_name="ProbeB",
+    )
+
+    nwbfile.units.add_column(
+        name="max_electrode",
+        description="electrode with max amplitude",
+        data=[3, 4, 0, 1],
+        table=nwbfile.electrodes,
+    )
+
+    nwb = nap.NWBFile(nwbfile)
+    units = nwb["units"]
+
+    # group_name should follow unit order, not electrode table order
+    np.testing.assert_array_equal(
+        units._metadata["group_name"],
+        np.array(["ProbeA", "ProbeA", "ProbeB", "ProbeB"]),
+    )
+    # probe_name from units table should not be overwritten by electrode resolution
+    np.testing.assert_array_equal(
+        units._metadata["probe_name"],
+        np.array(["ProbeA", "ProbeA", "ProbeB", "ProbeB"]),
+    )
+
+
 def test_add_Timestamps():
     from pynwb.core import DynamicTable, VectorData
     from pynwb.misc import AnnotationSeries
