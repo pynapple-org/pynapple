@@ -307,10 +307,8 @@ def _make_tsgroup(obj, **kwargs):
             col = obj[coln]
             if len(col) == N:
                 if hasattr(col, "to_dataframe"):
+                    # df rows are already in the correct unit order
                     df = col.to_dataframe()
-                    # Reset index to preserve unit order (the DataFrame index
-                    # comes from the referenced table, not the units table).
-                    df = df.reset_index(drop=True)
                     for k in df.columns:
                         if k not in metainfo and not isinstance(
                             df[k].values[0],
