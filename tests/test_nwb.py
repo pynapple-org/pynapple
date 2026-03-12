@@ -537,18 +537,10 @@ def test_units_metadata_with_non_ragged_dynamic_table_region():
         )
 
     nwbfile.add_unit_column(name="probe_name", description="probe name")
-    nwbfile.add_unit(
-        spike_times=[0.1, 0.5], electrodes=[3, 4], probe_name="ProbeA",
-    )
-    nwbfile.add_unit(
-        spike_times=[0.2, 0.6], electrodes=[4, 5], probe_name="ProbeA",
-    )
-    nwbfile.add_unit(
-        spike_times=[0.3, 0.7], electrodes=[0, 1], probe_name="ProbeB",
-    )
-    nwbfile.add_unit(
-        spike_times=[0.4, 0.8], electrodes=[1, 2], probe_name="ProbeB",
-    )
+    nwbfile.add_unit(spike_times=[0.1, 0.5], probe_name="ProbeA")
+    nwbfile.add_unit(spike_times=[0.2, 0.6], probe_name="ProbeA")
+    nwbfile.add_unit(spike_times=[0.3, 0.7], probe_name="ProbeB")
+    nwbfile.add_unit(spike_times=[0.4, 0.8], probe_name="ProbeB")
 
     nwbfile.units.add_column(
         name="max_electrode",
