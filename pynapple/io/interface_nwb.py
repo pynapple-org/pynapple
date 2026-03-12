@@ -310,7 +310,8 @@ def _make_tsgroup(obj, **kwargs):
                     # df rows are already in the correct unit order
                     df = col.to_dataframe()
                     for k in df.columns:
-                        if k not in metainfo and not isinstance(
+                        column_is_not_available = k not in metainfo
+                        if column_is_not_available and not isinstance(
                             df[k].values[0],
                             (list, tuple, dict, set, pynwb.ecephys.ElectrodeGroup),
                         ):
