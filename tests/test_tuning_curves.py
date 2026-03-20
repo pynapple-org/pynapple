@@ -1071,9 +1071,9 @@ def test_compute_response_per_epoch_type_errors(data, epochs_dict, kwargs, expec
             {"0": nap.IntervalSet(0, 50)},
             {},
             xr.DataArray(
-                [[10.0]],
-                dims=["unit", "epochs"],
-                coords={"unit": [1], "epochs": ["0"]},
+                [[[10.0]], [[0.0]]],
+                dims=["metric", "unit", "epochs"],
+                coords={"metric": ["mean", "std"], "unit": [1], "epochs": ["0"]},
             ),
         ),
         # two rate units, single epoch
@@ -1082,9 +1082,13 @@ def test_compute_response_per_epoch_type_errors(data, epochs_dict, kwargs, expec
             {"0": nap.IntervalSet(0, 50)},
             {},
             xr.DataArray(
-                [[10.0], [1.0]],
-                dims=["unit", "epochs"],
-                coords={"unit": [1, 2], "epochs": ["0"]},
+                [[[10.0], [1.0]], [[0.0], [0.0]]],
+                dims=["metric", "unit", "epochs"],
+                coords={
+                    "metric": ["mean", "std"],
+                    "unit": [1, 2],
+                    "epochs": ["0"],
+                },
             ),
         ),
         # two rate units, multiple epochs
@@ -1093,9 +1097,13 @@ def test_compute_response_per_epoch_type_errors(data, epochs_dict, kwargs, expec
             {"0": nap.IntervalSet(0, 50), "1": nap.IntervalSet(50, 100)},
             {},
             xr.DataArray(
-                [[10.0, 10.0], [1.0, 1.0]],
-                dims=["unit", "epochs"],
-                coords={"unit": [1, 2], "epochs": ["0", "1"]},
+                [[[10.0, 10.0], [1.0, 1.0]], [[0.0, 0.0], [0.0, 0.0]]],
+                dims=["metric", "unit", "epochs"],
+                coords={
+                    "metric": ["mean", "std"],
+                    "unit": [1, 2],
+                    "epochs": ["0", "1"],
+                },
             ),
         ),
         # two rate units, multiple epochs, overlapping
@@ -1104,9 +1112,13 @@ def test_compute_response_per_epoch_type_errors(data, epochs_dict, kwargs, expec
             {"0": nap.IntervalSet(0, 100), "1": nap.IntervalSet(50, 100)},
             {},
             xr.DataArray(
-                [[10.0, 10.0], [1.0, 1.0]],
-                dims=["unit", "epochs"],
-                coords={"unit": [1, 2], "epochs": ["0", "1"]},
+                [[[10.0, 10.0], [1.0, 1.0]], [[0.0, 0.0], [0.0, 0.0]]],
+                dims=["metric", "unit", "epochs"],
+                coords={
+                    "metric": ["mean", "std"],
+                    "unit": [1, 2],
+                    "epochs": ["0", "1"],
+                },
             ),
         ),
         # two rate units, multiple epochs, multiple intervals
@@ -1118,9 +1130,13 @@ def test_compute_response_per_epoch_type_errors(data, epochs_dict, kwargs, expec
             },
             {},
             xr.DataArray(
-                [[10.0, 10.0], [1.0, 1.0]],
-                dims=["unit", "epochs"],
-                coords={"unit": [1, 2], "epochs": ["0", "1"]},
+                [[[10.0, 10.0], [1.0, 1.0]], [[0.0, 0.0], [0.0, 0.0]]],
+                dims=["metric", "unit", "epochs"],
+                coords={
+                    "metric": ["mean", "std"],
+                    "unit": [1, 2],
+                    "epochs": ["0", "1"],
+                },
             ),
         ),
         # single unit, single epoch
