@@ -55,11 +55,18 @@ ts = generate_spiking_unit(offset=0.1)
 segment = nap.IntervalSet(100, 103.9)
 fig, ax = plt.subplots(1, 1, constrained_layout=True)
 ax.vlines(ts.restrict(segment).times(), 0.02, 0.12, label="spikes")
-ax.vlines(stimuli.restrict(segment).times(), 0.0, 0.14, color="red", label="stimulus")
+ax.vlines(
+    stimuli.restrict(segment).times(),
+    0.0,
+    0.14,
+    color="gray",
+    linestyle="--",
+    label="stimulus",
+)
 ax.yaxis.set_visible(False)
 ax.spines["left"].set_visible(False)
 ax.set_xlabel("time (s)")
-ax.legend(loc='upper left', bbox_to_anchor=(1, 1));
+ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
 ```
 
 The [`compute_perievent`](pynapple.process.perievent.compute_perievent) function
@@ -90,11 +97,11 @@ def plot_peth(unit_peth, unit_peth_counts, ax_mean, ax_spikes, color=None):
     mean = np.mean(unit_peth_counts / bin_size, axis=1)
     ax_mean.plot(mean, color=color)
     ax_mean.set_ylabel("spikes/s")
-    ax_mean.axvline(0.0, color="red")
+    ax_mean.axvline(0.0, color="gray", linestyle="--")
     ax_spikes.plot(unit_peth.to_tsd(), "|", markersize=5, color=color)
     ax_spikes.set_xlabel("time from event (s)")
     ax_spikes.set_ylabel("event")
-    ax_spikes.axvline(0.0, color="red")
+    ax_spikes.axvline(0.0, color="gray", linestyle="--")
 
 
 fig, (ax_mean, ax_spikes) = plt.subplots(
@@ -121,11 +128,18 @@ for i, unit in enumerate(tsgroup):
         label=f"unit {unit}",
         color=plt.cm.tab10(i)
     )
-ax.vlines(stimuli.restrict(segment).times(), 0.0, 0.44, color="red", label="stimulus")
+ax.vlines(
+    stimuli.restrict(segment).times(),
+    0.0,
+    0.44,
+    color="gray",
+    linestyle="--",
+    label="stimulus",
+)
 ax.yaxis.set_visible(False)
 ax.spines["left"].set_visible(False)
 ax.set_xlabel("time (s)")
-ax.legend(loc='upper left', bbox_to_anchor=(1, 1));
+ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
 ```
 
 In this case, it returns a dict of `TsGroup`, containing the same object as before, but now per unit.
@@ -177,12 +191,19 @@ tsd = generate_continuous_unit(burst_offset=0.1)
 
 segment = nap.IntervalSet(100, 102.9)
 fig, ax = plt.subplots(1, 1, constrained_layout=True)
-ax.plot(tsd.restrict(segment), color="black", label="activity")
-ax.vlines(stimuli.restrict(segment).times(), 0.0, tsd.max(), color="red", label="stimulus")
+ax.plot(tsd.restrict(segment), label="activity")
+ax.vlines(
+    stimuli.restrict(segment).times(),
+    0.0,
+    tsd.max(),
+    color="gray",
+    linestyle="--",
+    label="stimulus",
+)
 ax.yaxis.set_visible(False)
 ax.spines["left"].set_visible(False)
 ax.set_xlabel("time (s)")
-ax.legend(loc='upper left', bbox_to_anchor=(1, 1));
+ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
 ```
 
 We can pass continuous units (as a `Tsd`) to the function in the exact same way:
@@ -199,6 +220,7 @@ def plot_peth_continuous(unit_peth, ax_mean, ax, color=None):
     mean = np.nanmean(unit_peth, axis=1)
     ax_mean.plot(mean, color=color)
     ax_mean.set_ylabel("dF/F [a.u.]")
+    ax_mean.axvline(0.0, color="gray", linestyle="--")
     im = ax.imshow(
         unit_peth.values.T,
         extent=(unit_peth.times()[0], unit_peth.times()[-1], 0, unit_peth.shape[1]),
@@ -206,7 +228,7 @@ def plot_peth_continuous(unit_peth, ax_mean, ax, color=None):
         aspect="auto",
         cmap="Grays",
     )
-    ax.axvline(0.0, color="red")
+    ax.axvline(0.0, color="gray", linestyle="--")
     ax.set_xlabel("time from event (s)")
     ax.set_ylabel("event")
     return im
@@ -226,13 +248,22 @@ tsdframe = np.stack(
     [tsd, generate_continuous_unit(0.2), generate_continuous_unit(0.3)], axis=1
 )
 fig, ax = plt.subplots(1, 1, constrained_layout=True)
-for i, unit in enumerate(tsdframe.columns):
-    ax.plot(tsdframe[:, i].restrict(segment), color=plt.cm.tab10(i), label=f"unit {unit}")
-ax.vlines(stimuli.restrict(segment).times(), 0.0, tsd.max(), color="red", label="stimulus")
+for i in range(tsdframe.shape[1]):
+    ax.plot(
+        tsdframe[:, i].restrict(segment), color=plt.cm.tab10(i), label=f"unit {i+1}"
+    )
+ax.vlines(
+    stimuli.restrict(segment).times(),
+    0.0,
+    tsd.max(),
+    color="gray",
+    linestyle="--",
+    label="stimulus",
+)
 ax.yaxis.set_visible(False)
 ax.spines["left"].set_visible(False)
 ax.set_xlabel("time (s)")
-ax.legend(loc='upper left', bbox_to_anchor=(1, 1));
+ax.legend(loc="upper left", bbox_to_anchor=(1, 1));
 ```
 
 ```{code-cell} ipython3
@@ -283,8 +314,8 @@ ts = generate_spiking_unit(phase=0.0)
 
 segment = nap.IntervalSet(100, 124.9)
 fig, ax = plt.subplots(1, 1, constrained_layout=True)
-ax.vlines(ts.restrict(segment).times(), -1.0, 1.0, label="spikes")
-ax.plot(feature.restrict(segment), color="red", label="feature")
+ax.vlines(ts.restrict(segment).times(), 1.1, 1.5, label="spikes")
+ax.plot(feature.restrict(segment), color="black", label="feature")
 ax.yaxis.set_visible(False)
 ax.spines["left"].set_visible(False)
 ax.set_xlabel("time (s)")
@@ -301,7 +332,7 @@ The result is a `TsdFrame` with one column. If the neuron is driven by the stimu
 the ETA should recover the stimulus waveform preceding each spike:
 ```{code-cell} ipython3
 plt.plot(eta)
-plt.axvline(0.0, color="red")
+plt.axvline(0.0, color="gray", linestyle="--")
 plt.xlabel("time from spike (s)")
 plt.ylabel("stimulus [a.u.]");
 ```
@@ -321,8 +352,8 @@ tsgroup = nap.TsGroup({
 
 # visualization
 fig, ax = plt.subplots(1, 1, constrained_layout=True)
-unit_spacing = 0.15
-y_positions = np.linspace(-1, 1, len(tsgroup))
+unit_spacing = 0.4
+y_positions = np.linspace(1.24, 2.2, len(tsgroup))
 for i, unit in enumerate(tsgroup):
     ax.vlines(
         tsgroup[unit].restrict(segment).times(),
@@ -331,7 +362,7 @@ for i, unit in enumerate(tsgroup):
         label=f"unit {unit}",
         color=plt.cm.tab10(i)
     )
-ax.plot(feature.restrict(segment), color="red", label="feature")
+ax.plot(feature.restrict(segment), color="black", label="feature")
 ax.yaxis.set_visible(False)
 ax.spines["left"].set_visible(False)
 ax.set_xlabel("time (s)")
@@ -348,10 +379,11 @@ Each unit recovers a phase-shifted version of the stimulus:
 fig, ax = plt.subplots()
 for i, unit in enumerate(eta.columns):
     ax.plot(eta[:, i], label=f"unit {unit}", color=plt.cm.tab10(i))
-ax.axvline(0.0, color="red")
+ax.axvline(0.0, color="gray", linestyle="--")
 ax.set_xlabel("time from spike (s)")
 ax.set_ylabel("stimulus [a.u.]")
-ax.legend();
+ax.set_title("Spike Triggered Average")
+ax.legend(loc='upper left', bbox_to_anchor=(1, 1));
 ```
 
 ### Multiple features
@@ -388,9 +420,10 @@ fig, axs = plt.subplots(1, len(tsgroup), sharey=True, figsize=(10, 4))
 for i, (unit, ax) in enumerate(zip(tsgroup, axs)):
     for feat in range(len(tsdframe.columns)):
         ax.plot(eta.t, eta[:, i, feat], label=tsdframe.columns[feat])
-    ax.axvline(0.0, color="red")
+    ax.axvline(0.0, color="gray", linestyle="--")
     ax.set_title(f"unit {unit}")
     ax.set_xlabel("time from spike (s)")
 axs[0].set_ylabel("stimulus [a.u.]")
-axs[-1].legend();
+fig.suptitle("Spike Triggered Average", y=1.1)
+axs[-1].legend(loc='upper left', bbox_to_anchor=(1, 1));
 ```
