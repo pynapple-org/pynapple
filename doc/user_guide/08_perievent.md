@@ -66,7 +66,7 @@ ax.vlines(
 ax.yaxis.set_visible(False)
 ax.spines["left"].set_visible(False)
 ax.set_xlabel("time (s)")
-ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+ax.legend(loc="upper left", bbox_to_anchor=(1, 1));
 ```
 
 The [`compute_perievent`](pynapple.process.perievent.compute_perievent) function
@@ -139,7 +139,7 @@ ax.vlines(
 ax.yaxis.set_visible(False)
 ax.spines["left"].set_visible(False)
 ax.set_xlabel("time (s)")
-ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+ax.legend(loc="upper left", bbox_to_anchor=(1, 1));
 ```
 
 In this case, it returns a dict of `TsGroup`, containing the same object as before, but now per unit.
@@ -161,6 +161,7 @@ fig, axs = plt.subplots(
 
 for i, (unit, unit_axs) in enumerate(zip(tsgroup, axs.T)):
     plot_peth(peth[unit], peth[unit].count(bin_size), *unit_axs, color=plt.cm.tab10(i))
+    unit_axs[0].set_title(f"unit {unit}")
 ```
 
 ### Continuous data
@@ -203,7 +204,7 @@ ax.vlines(
 ax.yaxis.set_visible(False)
 ax.spines["left"].set_visible(False)
 ax.set_xlabel("time (s)")
-ax.legend(loc="upper left", bbox_to_anchor=(1, 1))
+ax.legend(loc="upper left", bbox_to_anchor=(1, 1));
 ```
 
 We can pass continuous units (as a `Tsd`) to the function in the exact same way:
@@ -279,8 +280,9 @@ fig, axs = plt.subplots(
     2, len(tsdframe.columns), sharex=True, height_ratios=[0.3, 1.0], figsize=(15, 8)
 )
 
-for i, (unit, unit_axs) in enumerate(zip(tsdframe.columns, axs.T)):
-    im = plot_peth_continuous(peth[:, :, unit], *unit_axs, color=plt.cm.tab10(i))
+for i, unit_axs in zip(range(tsdframe.shape[1]), axs.T):
+    im = plot_peth_continuous(peth[:, :, i], *unit_axs, color=plt.cm.tab10(i))
+    unit_axs[0].set_title(f"unit {i+1}")
 fig.colorbar(im, cax=fig.add_axes([0.92, 0.14, 0.02, 0.3]), label="dF/F [a.u.]");
 ```
 
