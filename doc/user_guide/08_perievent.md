@@ -11,7 +11,7 @@ kernelspec:
   name: python3
 ---
 
-# Perievent / spike-triggered averages
+# Perievent / Spike-triggered average
 
 The perievent module allows for aligning timeseries and timestamps data around events, 
 as well as computing event-triggered averages (e.g. spike-triggered averages).
@@ -175,7 +175,7 @@ def generate_continuous_unit(burst_offset):
 
 tsd = generate_continuous_unit(burst_offset=0.1)
 
-segment = nap.IntervalSet(100, 103.9)
+segment = nap.IntervalSet(100, 102.9)
 fig, ax = plt.subplots(1, 1, constrained_layout=True)
 ax.plot(tsd.restrict(segment), color="black", label="activity")
 ax.vlines(stimuli.restrict(segment).times(), 0.0, tsd.max(), color="red", label="stimulus")
@@ -195,9 +195,9 @@ This time, it will return a `TsdFrame` with a column per event.
 We can again visualize, this time using a heatmap (i.e. using `imshow`):
 
 ```{code-cell} ipython3
-def plot_peth_continuous(unit_peth, ax_mean, ax):
+def plot_peth_continuous(unit_peth, ax_mean, ax, color=None):
     mean = np.nanmean(unit_peth, axis=1)
-    ax_mean.plot(mean)
+    ax_mean.plot(mean, color=color)
     ax_mean.set_ylabel("dF/F [a.u.]")
     im = ax.imshow(
         unit_peth.values.T,
@@ -226,8 +226,8 @@ tsdframe = np.stack(
     [tsd, generate_continuous_unit(0.2), generate_continuous_unit(0.3)], axis=1
 )
 fig, ax = plt.subplots(1, 1, constrained_layout=True)
-for i in range(tsdframe.shape[1]):
-    ax.plot(tsdframe[:, i].restrict(segment), color=, label=f"unit {unit}")
+for i, unit in enumerate(tsdframe.columns):
+    ax.plot(tsdframe[:, i].restrict(segment), color=plt.cm.tab10(i), label=f"unit {unit}")
 ax.vlines(stimuli.restrict(segment).times(), 0.0, tsd.max(), color="red", label="stimulus")
 ax.yaxis.set_visible(False)
 ax.spines["left"].set_visible(False)
@@ -248,8 +248,8 @@ fig, axs = plt.subplots(
     2, len(tsdframe.columns), sharex=True, height_ratios=[0.3, 1.0], figsize=(15, 8)
 )
 
-for unit, unit_axs in zip(tsdframe.columns, axs.T):
-    im = plot_peth_continuous(peth[:, :, unit], *unit_axs)
+for i, (unit, unit_axs) in enumerate(zip(tsdframe.columns, axs.T)):
+    im = plot_peth_continuous(peth[:, :, unit], *unit_axs, color=plt.cm.tab10(i))
 fig.colorbar(im, cax=fig.add_axes([0.92, 0.14, 0.02, 0.3]), label="dF/F [a.u.]");
 ```
 
@@ -321,16 +321,6 @@ tsgroup = nap.TsGroup({
 
 # visualization
 fig, ax = plt.subplots(1, 1, constrained_layout=True)
-ax.vlines(ts.restrict(segment).times(), -1.0, 1.0, label="spikes")
-ax.plot(feature.restrict(segment), color="red", label="feature")
-ax.yaxis.set_visible(False)
-ax.spines["left"].set_visible(False)
-ax.set_xlabel("time (s)")
-ax.legend(loc='upper left', bbox_to_anchor=(1, 1));
-```
-
-```{code-cell} ipython3
-fig, ax = plt.subplots(1, 1, constrained_layout=True)
 unit_spacing = 0.15
 y_positions = np.linspace(-1, 1, len(tsgroup))
 for i, unit in enumerate(tsgroup):
@@ -356,8 +346,8 @@ eta
 Each unit recovers a phase-shifted version of the stimulus:
 ```{code-cell} ipython3
 fig, ax = plt.subplots()
-for unit in range(len(eta.columns)):
-    ax.plot(eta[:, unit], label=f"unit {unit}")
+for i, unit in enumerate(eta.columns):
+    ax.plot(eta[:, i], label=f"unit {unit}", color=plt.cm.tab10(i))
 ax.axvline(0.0, color="red")
 ax.set_xlabel("time from spike (s)")
 ax.set_ylabel("stimulus [a.u.]")
