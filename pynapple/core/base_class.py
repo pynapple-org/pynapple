@@ -302,7 +302,7 @@ class _Base(abc.ABC):
              - "center" [default]: the center of the interval between two timestamps.
              - "end" : the end of the interval between two timestamps.
         epochs : IntervalSet, optional
-            The epochs on which interspike intervals are computed.
+            The epochs on which differences are computed.
             If None, the time support of the input is used.
 
         Returns
