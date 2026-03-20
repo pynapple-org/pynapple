@@ -71,7 +71,7 @@ def _jitcontinuous_perievent(time_array, time_target_array, starts, ends, window
 
 
 @jit(nopython=True, cache=True)
-def _jitperievent_trigger_average(
+def _jitperievent_triggered_average(
     time_array,
     count_array,
     time_target_array,
@@ -172,7 +172,7 @@ def _jitperievent_trigger_average(
     return new_data_array
 
 
-def _perievent_trigger_average(
+def _perievent_triggered_average(
     time_target_array,
     count_array,
     time_array,
@@ -200,7 +200,7 @@ def _perievent_trigger_average(
 
     else:
         if data_array.ndim == 1:
-            eta = _jitperievent_trigger_average(
+            eta = _jitperievent_triggered_average(
                 time_target_array,
                 count_array,
                 time_array,
@@ -212,7 +212,7 @@ def _perievent_trigger_average(
             )
             return np.squeeze(eta, -1)
         else:
-            return _jitperievent_trigger_average(
+            return _jitperievent_triggered_average(
                 time_target_array,
                 count_array,
                 time_array,

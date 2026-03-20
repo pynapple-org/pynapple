@@ -13,9 +13,9 @@ from .filtering import (
     get_filter_frequency_response,
 )
 from .perievent import (
-    compute_event_trigger_average,
+    compute_event_triggered_average,
     compute_perievent,
-    compute_perievent_continuous,
+    compute_spike_triggered_average,
 )
 from .randomize import (
     jitter_timestamps,
