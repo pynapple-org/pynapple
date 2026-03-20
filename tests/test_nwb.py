@@ -527,13 +527,21 @@ def test_units_metadata_with_non_ragged_dynamic_table_region():
     nwbfile.add_electrode_column(name="probe_name", description="probe name")
     for i in range(3):
         nwbfile.add_electrode(
-            x=float(i), y=0.0, z=0.0, location="area_B",
-            group=group_b, probe_name="ProbeB",
+            x=float(i),
+            y=0.0,
+            z=0.0,
+            location="area_B",
+            group=group_b,
+            probe_name="ProbeB",
         )
     for i in range(3):
         nwbfile.add_electrode(
-            x=float(i), y=1.0, z=0.0, location="area_A",
-            group=group_a, probe_name="ProbeA",
+            x=float(i),
+            y=1.0,
+            z=0.0,
+            location="area_A",
+            group=group_a,
+            probe_name="ProbeA",
         )
 
     nwbfile.add_unit_column(name="probe_name", description="probe name")
