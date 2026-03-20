@@ -42,7 +42,7 @@ Decoding <user_guide/07_decoding>
 ```
 
 ```{toctree}
-Perievent / Spike-trigerred average <user_guide/08_perievent>
+Perievent / Spike-triggered average <user_guide/08_perievent>
 ```
 
 ```{toctree}
