@@ -11,10 +11,10 @@ kernelspec:
   name: python3
 ---
 
-# Perievent / spike-trigerred averages
+# Perievent / spike-triggered averages
 
 The perievent module allows for aligning timeseries and timestamps data around events, 
-as well as computing event-triggered averages (e.g. spike-trigerred averages).
+as well as computing event-triggered averages (e.g. spike-triggered averages).
 
 ```{contents}
 :local:
@@ -41,17 +41,25 @@ We will start with the common use-case of aligning the spiking activity of a uni
 
 Let's simulate some uniform stimuli and a unit that has a gaussian firing field after the stimulus:
 ```{code-cell} ipython3
-stimuli_times = np.arange(0, 1000, 5)
-stimuli = nap.Tsd(t=stimuli_times, d=np.random.rand(200), time_units="s")
+stimuli = nap.Ts(t=np.arange(0, 1000, 1), time_units="s")
 
 def generate_spiking_unit(offset):
     baseline = np.random.uniform(0, 1000, 500)
     burst = np.concatenate([
-        np.random.normal(st + offset, 0.05, 3) for st in stimuli_times
+        np.random.normal(st + offset, 0.05, 3) for st in stimuli.times()
     ])
     return nap.Ts(t=np.sort(np.concatenate([baseline, burst])), time_units="s")
 
 ts = generate_spiking_unit(offset=0.1)
+
+segment = nap.IntervalSet(100, 103.9)
+fig, ax = plt.subplots(1, 1, constrained_layout=True)
+ax.vlines(ts.restrict(segment).times(), 0.02, 0.12, label="spikes")
+ax.vlines(stimuli.restrict(segment).times(), 0.0, 0.14, color="red", label="stimulus")
+ax.yaxis.set_visible(False)
+ax.spines["left"].set_visible(False)
+ax.set_xlabel("time (s)")
+ax.legend(loc='upper left', bbox_to_anchor=(1, 1));
 ```
 
 The [`compute_perievent`](pynapple.process.perievent.compute_perievent) function
@@ -78,12 +86,12 @@ This function flattens the `TsGroup` into one `Tsd` containing all the timestamp
 We can also take the mean of the counts and divide by the bin size to show an estimate of the aligned firing rate:
 
 ```{code-cell} ipython3
-def plot_peth(unit_peth, unit_peth_counts, ax_mean, ax_spikes):
+def plot_peth(unit_peth, unit_peth_counts, ax_mean, ax_spikes, color=None):
     mean = np.mean(unit_peth_counts / bin_size, axis=1)
-    ax_mean.plot(mean)
+    ax_mean.plot(mean, color=color)
     ax_mean.set_ylabel("spikes/s")
     ax_mean.axvline(0.0, color="red")
-    ax_spikes.plot(unit_peth.to_tsd(), "|", markersize=5)
+    ax_spikes.plot(unit_peth.to_tsd(), "|", markersize=5, color=color)
     ax_spikes.set_xlabel("time from event (s)")
     ax_spikes.set_ylabel("event")
     ax_spikes.axvline(0.0, color="red")
@@ -102,12 +110,31 @@ The same function can be applied to a group of units:
 tsgroup = nap.TsGroup(
     {1: ts, 2: generate_spiking_unit(offset=0.2), 3: generate_spiking_unit(0.3)}
 )
+
+fig, ax = plt.subplots(1, 1, constrained_layout=True)
+unit_spacing = 0.15
+for i, unit in enumerate(tsgroup):
+    ax.vlines(
+        tsgroup[unit].restrict(segment).times(),
+        i * unit_spacing + 0.02,
+        i * unit_spacing + 0.12,
+        label=f"unit {unit}",
+        color=plt.cm.tab10(i)
+    )
+ax.vlines(stimuli.restrict(segment).times(), 0.0, 0.44, color="red", label="stimulus")
+ax.yaxis.set_visible(False)
+ax.spines["left"].set_visible(False)
+ax.set_xlabel("time (s)")
+ax.legend(loc='upper left', bbox_to_anchor=(1, 1));
+```
+
+In this case, it returns a dict of `TsGroup`, containing the same object as before, but now per unit.
+```{code-cell} ipython3
 peth = nap.compute_perievent(data=tsgroup, events=stimuli, window=window)
 peth
 ```
-In this case, it returns a dict of `TsGroup`, containing the same object as before, but now per unit.
-We can again visualize easily:
 
+We can again visualize easily:
 ```{code-cell} ipython3
 fig, axs = plt.subplots(
     2,
@@ -118,8 +145,8 @@ fig, axs = plt.subplots(
     figsize=(15, 8),
 )
 
-for unit, unit_axs in zip(tsgroup, axs.T):
-    plot_peth(peth[unit], peth[unit].count(bin_size), *unit_axs)
+for i, (unit, unit_axs) in enumerate(zip(tsgroup, axs.T)):
+    plot_peth(peth[unit], peth[unit].count(bin_size), *unit_axs, color=plt.cm.tab10(i))
 ```
 
 ### Continuous data
@@ -142,11 +169,20 @@ Let's again start by simulating some data, but this time continuous traces:
 def generate_continuous_unit(burst_offset):
     t = np.arange(0, 1000, 0.02)
     d = np.random.uniform(0, 1, len(t))
-    for st in stimuli_times:
+    for st in stimuli.times():
         d += 4 * np.exp(-((t - (st + burst_offset)) ** 2) / (2 * 0.05**2))
     return nap.Tsd(t=t, d=np.clip(d, 0, 5), time_units="s")
 
 tsd = generate_continuous_unit(burst_offset=0.1)
+
+segment = nap.IntervalSet(100, 103.9)
+fig, ax = plt.subplots(1, 1, constrained_layout=True)
+ax.plot(tsd.restrict(segment), color="black", label="activity")
+ax.vlines(stimuli.restrict(segment).times(), 0.0, tsd.max(), color="red", label="stimulus")
+ax.yaxis.set_visible(False)
+ax.spines["left"].set_visible(False)
+ax.set_xlabel("time (s)")
+ax.legend(loc='upper left', bbox_to_anchor=(1, 1));
 ```
 
 We can pass continuous units (as a `Tsd`) to the function in the exact same way:
@@ -189,6 +225,17 @@ The same function can also handle multiple continuous units, passed as a `TsdFra
 tsdframe = np.stack(
     [tsd, generate_continuous_unit(0.2), generate_continuous_unit(0.3)], axis=1
 )
+fig, ax = plt.subplots(1, 1, constrained_layout=True)
+for i in range(tsdframe.shape[1]):
+    ax.plot(tsdframe[:, i].restrict(segment), color=, label=f"unit {unit}")
+ax.vlines(stimuli.restrict(segment).times(), 0.0, tsd.max(), color="red", label="stimulus")
+ax.yaxis.set_visible(False)
+ax.spines["left"].set_visible(False)
+ax.set_xlabel("time (s)")
+ax.legend(loc='upper left', bbox_to_anchor=(1, 1));
+```
+
+```{code-cell} ipython3
 peth = nap.compute_perievent(data=tsdframe, events=stimuli, window=window)
 peth
 ```
@@ -210,7 +257,7 @@ In the most complex case, you can even pass a `TsdTensor` to [`compute_perievent
 It will return a `TsdTensor` with an added dimension for the events.
 Visualizing such a tensor becomes a bit complex, but feel free to try!
 
-## Event-Triggered Average (ETA)
+## Event-Triggered Average (ETA/STA)
 
 The [`compute_event_triggered_average`](pynapple.process.perievent.compute_event_triggered_average) computes
 the average of a continuous feature aligned to a set of events.
@@ -229,10 +276,19 @@ t = np.arange(0, 1000, 0.02)
 feature = nap.Tsd(t=t, d=np.sin(2 * np.pi * t / 10), time_units="s")
 
 def generate_spiking_unit(phase):
-    rate = np.clip(np.sin(2 * np.pi * t / 10 + phase) * 10 + 10, 0, None)
-    return nap.Ts(t=np.sort(t[np.random.rand(len(t)) < rate * 0.02]), time_units="s")
+    rate = np.clip(np.sin(2 * np.pi * t / 10 + phase) * 10 + 5, 0, None)
+    return nap.Ts(t=np.sort(t[np.random.rand(len(t)) < rate * 0.01]), time_units="s")
 
 ts = generate_spiking_unit(phase=0.0)
+
+segment = nap.IntervalSet(100, 124.9)
+fig, ax = plt.subplots(1, 1, constrained_layout=True)
+ax.vlines(ts.restrict(segment).times(), -1.0, 1.0, label="spikes")
+ax.plot(feature.restrict(segment), color="red", label="feature")
+ax.yaxis.set_visible(False)
+ax.spines["left"].set_visible(False)
+ax.set_xlabel("time (s)")
+ax.legend(loc='upper left', bbox_to_anchor=(1, 1));
 ```
 
 We can pass this to the function, passing a bin size and a window:
@@ -256,11 +312,43 @@ The same function can be used for a group of units.
 When passing a `TsGroup`, the function returns one column per unit.
 Here, we simulate units driven by the stimulus at different phases:
 ```{code-cell} ipython3
+# simulation
 tsgroup = nap.TsGroup({
     1: ts,
     2: generate_spiking_unit(phase=np.pi / 2),
     3: generate_spiking_unit(phase=np.pi),
 })
+
+# visualization
+fig, ax = plt.subplots(1, 1, constrained_layout=True)
+ax.vlines(ts.restrict(segment).times(), -1.0, 1.0, label="spikes")
+ax.plot(feature.restrict(segment), color="red", label="feature")
+ax.yaxis.set_visible(False)
+ax.spines["left"].set_visible(False)
+ax.set_xlabel("time (s)")
+ax.legend(loc='upper left', bbox_to_anchor=(1, 1));
+```
+
+```{code-cell} ipython3
+fig, ax = plt.subplots(1, 1, constrained_layout=True)
+unit_spacing = 0.15
+y_positions = np.linspace(-1, 1, len(tsgroup))
+for i, unit in enumerate(tsgroup):
+    ax.vlines(
+        tsgroup[unit].restrict(segment).times(),
+        y_positions[i] - unit_spacing / 2,
+        y_positions[i] + unit_spacing / 2,
+        label=f"unit {unit}",
+        color=plt.cm.tab10(i)
+    )
+ax.plot(feature.restrict(segment), color="red", label="feature")
+ax.yaxis.set_visible(False)
+ax.spines["left"].set_visible(False)
+ax.set_xlabel("time (s)")
+ax.legend(loc='upper left', bbox_to_anchor=(1, 1));
+```
+
+```{code-cell} ipython3
 eta = nap.compute_event_triggered_average(feature, tsgroup, binsize=0.02, window=10.0)
 eta
 ```
