@@ -665,7 +665,7 @@ def compute_1d_tuning_curves_continuous(
 ):
     """
     .. deprecated:: 0.9.2
-          `compute_1d_tuning_curves` will be removed in Pynapple 1.0.0, it is replaced by
+          `compute_1d_tuning_curves_continuous` will be removed in Pynapple 1.0.0, it is replaced by
           `compute_tuning_curves` because the latter works for N dimensions and continuous data.
     """
     warnings.warn(
@@ -691,7 +691,7 @@ def compute_1d_tuning_curves_continuous(
 def compute_2d_tuning_curves(group, features, nb_bins, ep=None, minmax=None):
     """
     .. deprecated:: 0.9.2
-          `compute_1d_tuning_curves` will be removed in Pynapple 1.0.0, it is replaced by
+          `compute_2d_tuning_curves` will be removed in Pynapple 1.0.0, it is replaced by
           `compute_tuning_curves` because the latter works for N dimensions.
     """
     warnings.warn(
@@ -720,7 +720,7 @@ def compute_2d_tuning_curves_continuous(
 ):
     """
     .. deprecated:: 0.9.2
-          `compute_1d_tuning_curves` will be removed in Pynapple 1.0.0, it is replaced by
+          `compute_2d_tuning_curves_continuous` will be removed in Pynapple 1.0.0, it is replaced by
           `compute_tuning_curves` because the latter works for N dimensions and continuous data.
     """
     warnings.warn(
