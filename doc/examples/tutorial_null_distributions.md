@@ -146,14 +146,16 @@ In practice, we will often take the activity of our neuron of interest and shuff
 Pynapple provides four methods for such shuffling:
 - [`jitter_timestamps`](pynapple.process.randomize.jitter_timestamps): jitters timestamps independently by random amounts uniformly drawn from a given range.
 - [`resample_timestamps`](pynapple.process.randomize.resample_timestamps): uniformly resamples all timestamps within the time support.
-- [`shift_timestamps`](pynapple.process.randomize.shift_timestamps): shifts all timestamps by a random amount drawn from a given range, wrapping the end of the time support to the beginning.
+- [`shift_timestamps`](pynapple.process.randomize.shift_timestamps): shifts all timestamps by a random amount drawn from a given range:
+   * `mode='drop'`: dropping spikes that fall out of the time support.
+   * `mode='wrap'`: wrapping the end of the time support to the beginning (we will use this one as it retains most of the data).
 - [`shuffle_ts_intervals`](pynapple.process.randomize.shuffle_ts_intervals): randomizes timestamps by shuffling the intervals between them.
 
 Let's apply them to an example neuron:
 ```{code-cell} ipython3
 jitter = nap.jitter_timestamps(units[3], max_jitter=2.0)
 resample = nap.resample_timestamps(units[3])
-shift = nap.shift_timestamps(units[3], min_shift=10.0)
+shift = nap.shift_timestamps(units[3], min_shift=10.0, mode="wrap")
 interval_shuffle = nap.shuffle_ts_intervals(units[3])
 ```
 and plot them to look at their effect on spatial firing:
@@ -224,7 +226,7 @@ For each neuron, we will generate `N` pseudo-neurons and compute the mutual/spat
 The resulting distributions of values are what we call the null distributions.
 ```{code-cell} ipython3
 N = 500
-shuffles = [nap.shift_timestamps(units, min_shift=20.0) for _ in range(N)]
+shuffles = [nap.shift_timestamps(units, min_shift=20.0, mode="wrap") for _ in range(N)]
 
 null_distributions = np.stack(
     [
@@ -259,7 +261,7 @@ p_values = np.sum(
     null_distributions.T >= spatial_information['bits/spike'].values, 
     axis=0
     ) / null_distributions.shape[1]
-spatial_units = tuning_curves.coords["unit"][p_values > alpha]
+spatial_units = tuning_curves.coords["unit"][p_values < alpha]
 ```
 
 We can further also compute the exact spatial information values corresponding to our alpha:
