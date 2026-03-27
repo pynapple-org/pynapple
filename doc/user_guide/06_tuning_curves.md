@@ -32,7 +32,7 @@ import xarray as xr
 from pprint import pprint
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
-xr.set_options(display_expand_attrs=False)
+xr.set_options(display_expand_attrs=False);
 ```
 
 ## From timestamps or continuous activity
@@ -120,7 +120,8 @@ It can also be indexed using the coordinates:
 tuning_curves_1d.sel(unit=1)
 ```
 
-`xarray` further has `matplotlib` support, allowing for easy visualization:
+[`xarray`](https://docs.xarray.dev/en/latest/index.html) further has [`matplotlib`](https://matplotlib.org/stable/index.html)
+support, allowing for easy visualization:
 
 ```{code-cell} ipython3
 tuning_curves_1d.plot.line(x="feature", add_legend=False)
@@ -128,7 +129,8 @@ plt.ylabel("Firing rate (Hz)")
 plt.show()
 ```
 
-You can either customize the plot labels yourself using `matplotlib`, or you can set them in the tuning curve object:
+You can either customize the plot labels yourself using [`matplotlib`](https://matplotlib.org/stable/index.html), 
+or you can set them in the tuning curve object:
 ```{code-cell} ipython3
 tuning_curves_1d.name = "Firing rate"
 tuning_curves_1d.attrs["unit"] = "Hz"
