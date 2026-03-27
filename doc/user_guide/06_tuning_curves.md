@@ -373,7 +373,7 @@ axs[0].set_ylabel("firing rate [Hz]");
 ```
 
 # Error bars
-Often, you will want error bars on our tuning curves, to be able to quantify uncertainty.
+Often, you will want error bars on your tuning curves, to be able to quantify uncertainty.
 Pynapple does not provide explicit functions for this, but in this section
 we will show how you can easily compute error bars yourself, using the functions we introduced above.
 
