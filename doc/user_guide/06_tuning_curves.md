@@ -37,34 +37,6 @@ xr.set_options(display_expand_attrs=False);
 
 ## From timestamps or continuous activity
   
-```{code-cell} ipython3
-:tags: [hide-cell]
-# Feature
-T = 500
-dt_feature = 0.02
-times_feature = np.arange(0, T, dt_feature)
-feature = nap.Tsd(
-    t=times_feature, d=np.pi + np.pi * np.cos(2 * np.pi * times_feature / 10)
-)
-
-# Spiking activity
-dt_spikes = 0.002
-feature_interp = feature.interpolate(nap.Ts(np.arange(0, T, dt_spikes)))
-N = 6
-max_rate = 20
-centers = np.linspace(0, 2 * np.pi, N, endpoint=False)
-tsdframe_1d = nap.TsdFrame(
-    t=feature_interp.times(),
-    d=max_rate
-    * np.exp(-10 * (np.sin((feature_interp.d[:, np.newaxis] - centers) / 2)) ** 2),
-)
-tsgroup_1d = nap.TsGroup(
-    {
-        i: nap.Ts(feature_interp.t[np.random.poisson(tsdframe_1d[:, i] * dt_spikes) > 0])
-        for i in range(N)
-    },
-)
-```
 Computing tuning curves is done using [`compute_tuning_curves`](pynapple.process.tuning_curves.compute_tuning_curves).
 
 When computing from general time-series, mandatory arguments are:
@@ -93,6 +65,37 @@ If you explicitly want a `pd.DataFrame` as output (which is only possible when y
 you can set `return_pandas=True`. Note that this will not return the occupancy and bin edges.
 
 ### 1D tuning curves from spikes
+We will start by simulating some spiking units modulated by a 1D circular variable:
+
+```{code-cell} ipython3
+# Feature
+T = 500
+dt_feature = 0.02
+times_feature = np.arange(0, T, dt_feature)
+feature = nap.Tsd(
+    t=times_feature, d=np.pi + np.pi * np.cos(2 * np.pi * times_feature / 10)
+)
+
+# Spikes
+N = 6
+max_rate = 20
+dt_spikes = 0.002
+feature_interp = feature.interpolate(nap.Ts(np.arange(0, T, dt_spikes)))
+centers = np.linspace(0, 2 * np.pi, N, endpoint=False)
+rates = max_rate * np.exp(
+    -10 * (np.sin((feature_interp.d[:, np.newaxis] - centers) / 2)) ** 2
+)
+tsgroup_1d = nap.TsGroup(
+    {
+        i: nap.Ts(
+            feature_interp.t[np.random.poisson(rates[:, i] * dt_spikes) > 0]
+        )
+        for i in range(N)
+    },
+)
+```
+
+We now have all the ingredients to compute tuning curves:
 
 ```{code-cell} ipython3
 tuning_curves_1d = nap.compute_tuning_curves(
@@ -169,7 +172,7 @@ spike_counts = nap.compute_tuning_curves(
     range=(0, 2*np.pi),
     feature_names=["feature"],
     return_counts=True
-    )
+)
 ```
 
 ```{code-cell} ipython3
@@ -192,9 +195,9 @@ plt.show()
 ```
 
 ### 2D tuning curves from spikes
+Now, let us simulate some spiking units modulated by a 2D circular variable:
 
 ```{code-cell} ipython3
-:tags: [hide-cell]
 features = nap.TsdFrame(
     t=times_feature,
     d=np.stack(
@@ -210,14 +213,13 @@ features_interp = features.interpolate(nap.Ts(np.arange(0, T, dt_spikes)))
 alpha = np.arctan2(features_interp["b"].values, features_interp["a"].values) / np.pi
 
 N = 6
-centers = np.linspace(-1, 1, N)
-tsdframe_2d = nap.TsdFrame(
-    t=features_interp.times(),
-    d=max_rate * np.exp(50.0 * np.cos(alpha[:, np.newaxis] - centers)) / np.exp(50.0),
+centers_2d = np.linspace(-1, 1, N)
+rates_2d = (
+    max_rate * np.exp(50.0 * np.cos(alpha[:, np.newaxis] - centers_2d)) / np.exp(50.0)
 )
 tsgroup_2d = nap.TsGroup(
     {
-        i: nap.Ts(features_interp.t[np.random.poisson(tsdframe_2d[:, i] * dt_spikes) > 0])
+        i: nap.Ts(features_interp.t[np.random.poisson(rates_2d[:, i] * dt_spikes) > 0])
         for i in range(N)
     },
 )
@@ -281,9 +283,18 @@ plt.show()
 
 ### 1D tuning curves from continuous activity
 
-We do not always have spikes. Sometimes we are analysing continuous firing rates or calcium intensities.
-In that case, we can simply pass a `Tsd` or `TsdFrame` as group:
+We do not always have spikes. 
+Sometimes we are analysing continuous firing rates or calcium intensities.
+As an example, we will simulate noisy continuous activity for some units modulated by the 1D variable:
+```{code-cell} ipython3
+noise_level = 2.0
+traces = np.exp(-10 * (np.sin((feature.d[:, np.newaxis] - centers) / 2)) ** 2)
+traces = traces * (1 + noise_level * np.random.randn(*traces.shape))
+tsdframe_1d = nap.TsdFrame(t=times_feature, d=traces)
+```
 
+The same function can take a `Tsd` or `TsdFrame` as data and compute tuning curves for
+continuous data:
 ```{code-cell} ipython3
 tuning_curves_1d_continuous = nap.compute_tuning_curves(
     data=tsdframe_1d,
@@ -304,7 +315,16 @@ plt.show()
 
 ### 2D tuning curves from continuous activity
 
-This also works with more than one feature:
+This also works with more than one feature.
+Let us first simulate noisy continuous activity for some units modulated by the 2D variable:
+```{code-cell} ipython3
+alpha = np.arctan2(features["b"].values, features["a"].values) / np.pi
+traces = np.exp(50.0 * np.cos(alpha[:, np.newaxis] - centers_2d)) / np.exp(50.0)
+traces = traces * (1 + noise_level * np.random.randn(*traces.shape))
+tsdframe_2d = nap.TsdFrame(t=times_feature, d=traces)
+```
+
+The same function again handles computing the tuning curves:
 
 ```{code-cell} ipython3
 tuning_curves_2d_continuous = nap.compute_tuning_curves(
