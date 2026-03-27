@@ -166,10 +166,8 @@ def _warp_tensor_from_tsgroup(input, epochs, num_bins):
 
 def _warp_tensor_from_tsd(input, epochs, num_bins):
     slices = [input.get_slice(s, e) for s, e in epochs.values]
-    print(slices)
     lengths = list(map(lambda sl: sl.stop - sl.start, slices))
     output = np.zeros(shape=(len(epochs), num_bins, *input.shape[1:]))
-    print(lengths)
     for i, sl in enumerate(slices):
         if lengths[i] == 0:
             output[i] = np.full(output.shape[1:], np.nan)
