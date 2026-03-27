@@ -20,7 +20,7 @@ def _validate_warping_inputs(func):
 
         parameters_type = {
             "input": (nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor, nap.TsGroup),
-            "ep": (nap.IntervalSet,),
+            "epochs": (nap.IntervalSet,),
             "bin_size": (Number,),
             "time_unit": (str,),
             "align": (str,),
@@ -42,7 +42,7 @@ def _validate_warping_inputs(func):
 
 @_validate_warping_inputs
 def build_tensor(
-    input, ep, bin_size=None, align="start", padding_value=np.nan, time_unit="s"
+    input, epochs, bin_size=None, align="start", padding_value=np.nan, time_unit="s"
 ):
     """
     Return trial-based tensor from an IntervalSet object.
@@ -64,7 +64,7 @@ def build_tensor(
     ----------
     input : Ts, Tsd, TsdFrame, TsdTensor or TsGroup
         Input to slice and align to the trials within the `ep` parameter.
-    ep : IntervalSet
+    epochs : IntervalSet
         Epochs holding the trials. Each interval can be of unequal size.
     bin_size : Number, optional
         Size of the time bins for TsGroup and Ts objects.
@@ -89,8 +89,8 @@ def build_tensor(
     >>> import pynapple as nap
     >>> import numpy as np
     >>> group = nap.TsGroup({0:nap.Ts(t=np.arange(0, 100))})
-    >>> ep = nap.IntervalSet(start=np.arange(20, 100, 20), end=np.arange(20, 100, 20) + np.arange(2, 10, 2))
-    >>> print(ep)
+    >>> epochs = nap.IntervalSet(start=np.arange(20, 100, 20), end=np.arange(20, 100, 20) + np.arange(2, 10, 2))
+    >>> print(epochs)
       index    start    end
           0       20     22
           1       40     44
@@ -98,9 +98,9 @@ def build_tensor(
           3       80     88
     shape: (4, 2), time unit: sec.
 
-    Create a trial-based tensor by counting events within 1 second bin for each interval of `ep`.
+    Create a trial-based tensor by counting events within 1 second bin for each interval of `epochs`.
 
-    >>> tensor = nap.build_tensor(group, ep, bin_size=1)
+    >>> tensor = nap.build_tensor(group, epochs, bin_size=1)
     >>> tensor
     array([[[ 1.,  1., nan, nan, nan, nan, nan, nan],
             [ 1.,  1.,  1.,  1., nan, nan, nan, nan],
@@ -109,7 +109,7 @@ def build_tensor(
 
     By default, the time series are aligned to the start of the epochs. The parameter `align` control this behavior.
 
-    >>> tensor = nap.build_tensor(group, ep, bin_size=1, align="end")
+    >>> tensor = nap.build_tensor(group, epochs, bin_size=1, align="end")
     >>> tensor
     array([[[nan, nan, nan, nan, nan, nan,  1.,  1.],
             [nan, nan, nan, nan,  1.,  1.,  1.,  1.],
@@ -119,7 +119,7 @@ def build_tensor(
     This function works for any time series.
 
     >>> tsdframe = nap.TsdFrame(t=np.arange(100), d=np.arange(200).reshape(2,100).T)
-    >>> tensor = nap.build_tensor(tsdframe, ep)
+    >>> tensor = nap.build_tensor(tsdframe, epochs)
     >>> tensor
     array([[[ 20.,  21.,  22.,  nan,  nan,  nan,  nan,  nan,  nan],
             [ 40.,  41.,  42.,  43.,  44.,  nan,  nan,  nan,  nan],
@@ -141,21 +141,21 @@ def build_tensor(
             raise RuntimeError(
                 "When input is a TsGroup or Ts object, bin_size should be specified"
             )
-        return input.trial_count(ep, bin_size, align, padding_value, time_unit)
+        return input.trial_count(epochs, bin_size, align, padding_value, time_unit)
     else:
-        return input.to_trial_tensor(ep, align, padding_value)
+        return input.to_trial_tensor(epochs, align, padding_value)
 
 
-def _warp_tensor_from_tsgroup(input, ep, num_bins):
+def _warp_tensor_from_tsgroup(input, epochs, num_bins):
     if isinstance(input, nap.Ts):
-        output = np.zeros(shape=(1, len(ep), num_bins))
+        output = np.zeros(shape=(1, len(epochs), num_bins))
     else:
-        output = np.zeros(shape=(len(input), len(ep), num_bins))
+        output = np.zeros(shape=(len(input), len(epochs), num_bins))
 
-    bin_sizes = (ep.end - ep.start) / num_bins
+    bin_sizes = (epochs.end - epochs.start) / num_bins
 
-    for i in range(len(ep)):
-        tmp = input.count(bin_sizes[i], ep[i])
+    for i in range(len(epochs)):
+        tmp = input.count(bin_sizes[i], epochs[i])
         output[:, i, :] = np.transpose(tmp.values)
 
     if isinstance(input, nap.Ts):  # Removing first axis if Ts.
@@ -164,20 +164,25 @@ def _warp_tensor_from_tsgroup(input, ep, num_bins):
     return output
 
 
-def _warp_tensor_from_tsd(input, ep, num_bins):
-    slices = [input.get_slice(s, e) for s, e in ep.values]
+def _warp_tensor_from_tsd(input, epochs, num_bins):
+    slices = [input.get_slice(s, e) for s, e in epochs.values]
+    print(slices)
     lengths = list(map(lambda sl: sl.stop - sl.start, slices))
-    output = np.zeros(shape=(len(ep), num_bins, *input.shape[1:]))
+    output = np.zeros(shape=(len(epochs), num_bins, *input.shape[1:]))
+    print(lengths)
     for i, sl in enumerate(slices):
-        if lengths[i] == num_bins:
+        if lengths[i] == 0:
+            output[i] = np.full(output.shape[1:], np.nan)
+        elif lengths[i] == num_bins:
             output[i] = input[sl].values
         elif lengths[i] > num_bins:  # Call bin_average
             output[i] = input[sl].bin_average(
-                (ep.end[i] - ep.start[i]) / num_bins, ep[i]
+                (epochs.end[i] - epochs.start[i]) / num_bins, epochs[i]
             )
         else:  # Call interpolate
             output[i] = input[sl].interpolate(
-                ts=nap.Ts(t=np.linspace(ep.start[i], ep.end[i], num_bins)), ep=ep[i]
+                ts=nap.Ts(t=np.linspace(epochs.start[i], epochs.end[i], num_bins)),
+                ep=epochs[i],
             )
 
     if output.ndim > 2:
@@ -187,7 +192,7 @@ def _warp_tensor_from_tsd(input, ep, num_bins):
 
 
 @_validate_warping_inputs
-def warp_tensor(input, ep, num_bins):
+def warp_tensor(input, epochs, num_bins):
     """
     Return linearly time-warped trial-based tensor from an IntervalSet object.
 
@@ -199,7 +204,7 @@ def warp_tensor(input, ep, num_bins):
     ----------
     input : Ts , Tsd, TsdFrame, TsdTensor or TsGroup
         Input object
-    ep : IntervalSet
+    epochs : IntervalSet
         Epochs holding the trials. Each interval can be of unequal size.
     num_bins : int
 
@@ -212,8 +217,8 @@ def warp_tensor(input, ep, num_bins):
     >>> import pynapple as nap
     >>> import numpy as np
     >>> group = nap.TsGroup({0:nap.Ts(t=np.arange(0, 100))})
-    >>> ep = nap.IntervalSet(start=np.arange(20, 100, 20), end=np.arange(20, 100, 20) + np.arange(2, 10, 2))
-    >>> print(ep)
+    >>> epochs = nap.IntervalSet(start=np.arange(20, 100, 20), end=np.arange(20, 100, 20) + np.arange(2, 10, 2))
+    >>> print(epochs)
       index    start    end
           0       20     22
           1       40     44
@@ -221,9 +226,9 @@ def warp_tensor(input, ep, num_bins):
           3       80     88
     shape: (4, 2), time unit: sec.
 
-    Create a trial-based tensor by counting events within 10 bins between start and end of each interval of `ep`.
+    Create a trial-based tensor by counting events within 10 bins between start and end of each interval of `epochs`.
 
-    >>> tensor = nap.warp_tensor(group, ep, num_bins=10)
+    >>> tensor = nap.warp_tensor(group, epochs, num_bins=10)
     >>> tensor
     array([[[1., 0., 0., 0., 0., 1., 0., 0., 0., 0.],
             [1., 0., 1., 0., 0., 1., 0., 1., 0., 0.],
@@ -233,7 +238,7 @@ def warp_tensor(input, ep, num_bins):
     This function works for any time series. Under the hood, the time series is either bin-averaged or interpolated depending on the number of bins.
 
     >>> tsd = nap.Tsd(t=np.arange(100), d=np.arange(100))
-    >>> tensor = nap.warp_tensor(tsd, ep, num_bins=3)
+    >>> tensor = nap.warp_tensor(tsd, epochs, num_bins=3)
     >>> tensor
     array([[20. , 21. , 22. ],
            [40.5, 42. , 43. ],
@@ -244,6 +249,6 @@ def warp_tensor(input, ep, num_bins):
         raise RuntimeError("num_bins should be positive integer.")
 
     if isinstance(input, (nap.TsGroup, nap.Ts)):
-        return _warp_tensor_from_tsgroup(input, ep, num_bins)
+        return _warp_tensor_from_tsgroup(input, epochs, num_bins)
     else:
-        return _warp_tensor_from_tsd(input, ep, num_bins)
+        return _warp_tensor_from_tsd(input, epochs, num_bins)
