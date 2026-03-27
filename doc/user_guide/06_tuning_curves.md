@@ -19,10 +19,8 @@ It is also possible to compute average firing rate for different epochs
 (for example, firing rate for different epochs of stimulus presentation).
 
 ```{contents}
-:local:
 :depth: 3
 ```
-
 
 ```{code-cell} ipython3
 :tags: [hide-cell]
@@ -285,20 +283,20 @@ We do not always have spikes. Sometimes we are analysing continuous firing rates
 In that case, we can simply pass a `Tsd` or `TsdFrame` as group:
 
 ```{code-cell} ipython3
-tuning_curves_1d = nap.compute_tuning_curves(
+tuning_curves_1d_continuous = nap.compute_tuning_curves(
     data=tsdframe_1d,
     features=feature,
     bins=120,
     range=(0, 2*np.pi),
     feature_names=["feature"]
 )
-tuning_curves_1d
+tuning_curves_1d_continuous
 ```
 
 ```{code-cell} ipython3
-tuning_curves_1d.name="ΔF/F"
-tuning_curves_1d.attrs["unit"]="a.u."
-tuning_curves_1d.plot.line(x="feature", add_legend=False)
+tuning_curves_1d_continuous.name="ΔF/F"
+tuning_curves_1d_continuous.attrs["unit"]="a.u."
+tuning_curves_1d_continuous.plot.line(x="feature", add_legend=False)
 plt.show()
 ```
 
@@ -307,20 +305,19 @@ plt.show()
 This also works with more than one feature:
 
 ```{code-cell} ipython3
-tuning_curves_2d = nap.compute_tuning_curves(
+tuning_curves_2d_continuous = nap.compute_tuning_curves(
     data=tsdframe_2d,
     features=features,
     bins=5,
     feature_names=["a", "b"]
     )
-tuning_curves_2d
+tuning_curves_2d_continuous
 ```
 
 ```{code-cell} ipython3
-tuning_curves_2d.name="ΔF/F"
-tuning_curves_2d.attrs["unit"]="a.u."
-tuning_curves_2d.plot(col="unit", col_wrap=3)
-plt.show()
+tuning_curves_2d_continuous.name="ΔF/F"
+tuning_curves_2d_continuous.attrs["unit"]="a.u."
+tuning_curves_2d_continuous.plot(col="unit", col_wrap=3)
 ```
 
 ## From epochs
@@ -329,8 +326,8 @@ When computing from epochs, you should store them in a dictionary:
 
 ```{code-cell} ipython3
 epochs_dict =  {
-    "stim0": nap.IntervalSet(start=0, end=20),
-    "stim1":nap.IntervalSet(start=30, end=70)
+    "A": nap.IntervalSet(start=0, end=20),
+    "B":nap.IntervalSet(start=30, end=70)
 }
 ```
 You can then compute the tuning curves using [`nap.compute_response_per_epoch`](pynapple.process.tuning_curves.compute_response_per_epoch).
@@ -346,20 +343,21 @@ epochs_tuning_curves
 We can visualize using barplots:
 
 ```{code-cell} ipython3
-fig, axs = plt.subplots(1, N, constrained_layout=True, sharey=True)
+fig, axs = plt.subplots(1, N, constrained_layout=True, sharey=True, figsize=(8,3))
 for unit, ax in zip(epochs_tuning_curves, axs):
     ax.bar(unit["epochs"], unit.values)
 axs[0].set_xlabel("epoch")
-axs[0].set_ylabel("firing rate [Hz]")
+axs[0].set_ylabel("firing rate [Hz]");
 ```
 
 # Error bars
-Often, we will want error bars on our tuning curves, allowing us to quantify uncertainty.
+Often, you will want error bars on our tuning curves, to be able to quantify uncertainty.
+Pynapple does not provide explicit functions for this, but in this section
+we will show how you can easily compute error bars yourself, using the functions we introduced above.
 
 ## From timestamps or continuous activity
-If you are computing tuning curves against features, there is no dedicated function for this in Pynapple, 
-but you can easily compute error bars yourself, by computing tuning curves over `n_splits` 
-of your session and computing statistics over those:
+If you are computing tuning curves against features, you can split your session into `n_splits`,
+compute a tuning curve per split, and then compute statistics over those:
 ```{code-cell} ipython3
 n_splits = 4
 splits = tsgroup_1d.time_support.split(tsgroup_1d.time_support.tot_length() / n_splits)
@@ -403,7 +401,49 @@ for line, unit in zip(lines, means.coords["unit"]):
 ```
 
 ## From epochs
+If you want error bars for epochs, the typical use-case will be that you have multiple presentations of a stimulus,
+and you want the mean response over those.
+In that case, you simply have to create the right epoch dictionaries and compute multiple tuning curves again:
 ```{code-cell} ipython3
+epochs_dicts = [
+    {
+        "A": nap.IntervalSet(start=0, end=10),
+        "B": nap.IntervalSet(start=10, end=20),
+    },
+    {
+        "A": nap.IntervalSet(start=20, end=30),
+        "B": nap.IntervalSet(start=30, end=40),
+    },
+    {
+        "A": nap.IntervalSet(start=40, end=50),
+        "B": nap.IntervalSet(start=50, end=60),
+    },
+    {
+        "A": nap.IntervalSet(start=60, end=70),
+        "B": nap.IntervalSet(start=70, end=80),
+    },
+]
+
+epochs_tuning_curves = xr.concat(
+    [
+        nap.compute_response_per_epoch(tsgroup_2d, epochs_dict)
+        for epochs_dict in epochs_dicts
+    ],
+    dim="presentation",
+)
+epochs_tuning_curves
+```
+
+We can then visualize again, but now with error bars:
+```{code-cell} ipython3
+means = epochs_tuning_curves.mean(dim="presentation")
+stds = epochs_tuning_curves.std(dim="presentation")
+
+fig, axs = plt.subplots(1, N, constrained_layout=True, sharey=True, figsize=(8,3))
+for mean, std, ax in zip(means, stds, axs):
+    ax.bar(mean["epochs"], mean, yerr=std)
+axs[0].set_xlabel("epoch")
+axs[0].set_ylabel("firing rate [Hz]");
 ```
 
 # Mutual information
