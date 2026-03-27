@@ -62,7 +62,7 @@ def get_ep():
             "start",
             np.nan,
             "s",
-            "Invalid type. Parameter ep must be of type ['IntervalSet'].",
+            "Invalid type. Parameter epochs must be of type ['IntervalSet'].",
         ),
         (
             get_tsd(),
@@ -108,7 +108,7 @@ def test_build_tensor_type_error(
     with pytest.raises(TypeError, match=re.escape(expectation)):
         nap.build_tensor(
             input=input,
-            ep=ep,
+            epochs=ep,
             bin_size=bin_size,
             align=align,
             padding_value=padding_value,
@@ -318,7 +318,7 @@ def get_group2():
             get_tsd(),
             {},
             10,
-            "Invalid type. Parameter ep must be of type ['IntervalSet'].",
+            "Invalid type. Parameter epochs must be of type ['IntervalSet'].",
         ),
         (
             get_tsd(),
@@ -330,7 +330,7 @@ def get_group2():
 )
 def test_warp_tensor_type_error(input, ep, num_bins, expectation):
     with pytest.raises(TypeError, match=re.escape(expectation)):
-        nap.warp_tensor(input=input, ep=ep, num_bins=num_bins)
+        nap.warp_tensor(input=input, epochs=ep, num_bins=num_bins)
 
 
 def test_warp_tensor_runtime_error():
@@ -436,3 +436,14 @@ def test_warp_tensor_with_tsdtensor():
     expected3 = np.repeat(expected3[None, :, :, :], 2, axis=0)
     tensor = nap.warp_tensor(tsdtensor, ep, 20)
     np.testing.assert_array_almost_equal(tensor, expected3)
+
+
+def test_warp_tensor_tsd_with_empty_slice():
+    tsd = get_tsd()
+    ep = nap.IntervalSet(start=[20, 50, 65.5], end=[30, 60, 65.55])
+    tensor = nap.warp_tensor(tsd, ep, 5)
+
+    assert tensor.shape == (3, 5)
+    assert not np.all(np.isnan(tensor[0]))
+    assert not np.all(np.isnan(tensor[1]))
+    assert np.all(np.isnan(tensor[2]))
