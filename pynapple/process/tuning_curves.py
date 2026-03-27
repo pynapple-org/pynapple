@@ -406,13 +406,6 @@ def compute_response_per_epoch(data, epochs_dict, return_pandas=False):
             ],
             axis=1,
         )
-        tcs = xr.DataArray(
-            tcs,
-            coords={
-                "unit": keys,
-                "epochs": list(epochs_dict.keys()),
-            },
-        )
     else:
         # RATES
         if isinstance(data, nap.Tsd):
@@ -423,20 +416,18 @@ def compute_response_per_epoch(data, epochs_dict, return_pandas=False):
             )
         tcs = np.stack(
             [
-                np.stack([restricted.mean(axis=0), restricted.std(axis=0)])
+                data.restrict(epoch).values.mean(axis=0)
                 for epoch in epochs_dict.values()
-                for restricted in [data.restrict(epoch).values]
             ],
-            axis=-1,
+            axis=1,
         )
-        tcs = xr.DataArray(
-            tcs,
-            coords={
-                "metric": ["mean", "std"],
-                "unit": keys,
-                "epochs": list(epochs_dict.keys()),
-            },
-        )
+    tcs = xr.DataArray(
+        tcs,
+        coords={
+            "unit": keys,
+            "epochs": list(epochs_dict.keys()),
+        },
+    )
     if return_pandas:
         return tcs.to_pandas().T
     else:
