@@ -41,6 +41,7 @@ We will start with the common use-case of aligning the spiking activity of a uni
 
 Let's simulate some uniform stimuli and a unit that has a gaussian firing field after the stimulus:
 ```{code-cell} ipython3
+:tags: [hide-input]
 stimuli = nap.Ts(t=np.arange(0, 1000, 1), time_units="s")
 
 def generate_spiking_unit(offset):
@@ -54,7 +55,7 @@ ts = generate_spiking_unit(offset=0.1)
 
 segment = nap.IntervalSet(100, 103.9)
 fig, ax = plt.subplots(1, 1, constrained_layout=True)
-ax.vlines(ts.restrict(segment).times(), 0.02, 0.12, label="spikes")
+ax.vlines(ts.restrict(segment).times(), 0.04, 0.10, label="spikes")
 ax.vlines(
     stimuli.restrict(segment).times(),
     0.0,
@@ -93,27 +94,31 @@ This function flattens the `TsGroup` into one `Tsd` containing all the timestamp
 We can also take the mean of the counts and divide by the bin size to show an estimate of the aligned firing rate:
 
 ```{code-cell} ipython3
+:tags: [hide-input]
 def plot_peth(unit_peth, unit_peth_counts, ax_mean, ax_spikes, color=None):
     mean = np.mean(unit_peth_counts / bin_size, axis=1)
     ax_mean.plot(mean, color=color)
     ax_mean.set_ylabel("spikes/s")
     ax_mean.axvline(0.0, color="gray", linestyle="--")
     ax_spikes.plot(unit_peth.to_tsd(), "|", markersize=5, color=color)
-    ax_spikes.set_xlabel("time from event (s)")
+    ax_mean.set_xlabel("time from event (s)")
     ax_spikes.set_ylabel("event")
     ax_spikes.axvline(0.0, color="gray", linestyle="--")
+    
 
-
-fig, (ax_mean, ax_spikes) = plt.subplots(
-    2, 1, sharex=True, height_ratios=[0.3, 1], figsize=(6, 6)
+fig, (ax_spikes, ax_mean) = plt.subplots(
+    2, 1, sharex=True, height_ratios=[1, 0.3], figsize=(6, 6), gridspec_kw={"hspace": 0.3}
 )
 plot_peth(peth, peth_counts, ax_mean, ax_spikes)
+ax_spikes.set_title("peri = nap.compute_perievent(spikes, events)")
+ax_mean.set_title("peri.count(bin_size) / bin_size")
 ```
 
 #### Multiple units
 
 The same function can be applied to a group of units:
 ```{code-cell} ipython3
+:tags: [hide-input]
 tsgroup = nap.TsGroup(
     {1: ts, 2: generate_spiking_unit(offset=0.2), 3: generate_spiking_unit(0.3)}
 )
@@ -150,6 +155,7 @@ peth
 
 We can again visualize easily:
 ```{code-cell} ipython3
+:tags: [hide-input]
 fig, axs = plt.subplots(
     2,
     len(tsgroup),
@@ -158,7 +164,7 @@ fig, axs = plt.subplots(
     height_ratios=[0.3, 1.0],
     figsize=(15, 8),
 )
-
+fig.suptitle("nap.compute_perievent(tsgroup, stimuli, (-0.1, 0.4)", y=1.02)
 for i, (unit, unit_axs) in enumerate(zip(tsgroup, axs.T)):
     plot_peth(peth[unit], peth[unit].count(bin_size), *unit_axs, color=plt.cm.tab10(i))
     unit_axs[0].set_title(f"unit {unit}")
@@ -181,6 +187,7 @@ sampled continuous data. If your data is irregularly sampled, try padding it wit
 Let's again start by simulating some data, but this time continuous traces:
 
 ```{code-cell} ipython3
+:tags: [hide-input]
 def generate_continuous_unit(burst_offset):
     t = np.arange(0, 1000, 0.02)
     d = np.random.uniform(0, 1, len(t))
@@ -217,6 +224,7 @@ This time, it will return a `TsdFrame` with a column per event.
 We can again visualize, this time using a heatmap (i.e. using `imshow`):
 
 ```{code-cell} ipython3
+:tags: [hide-input]
 def plot_peth_continuous(unit_peth, ax_mean, ax, color=None):
     mean = np.nanmean(unit_peth, axis=1)
     ax_mean.plot(mean, color=color)
@@ -237,6 +245,7 @@ def plot_peth_continuous(unit_peth, ax_mean, ax, color=None):
 fig, (ax_mean, ax) = plt.subplots(
     2, 1, sharex=True, height_ratios=[0.3, 1.0], figsize=(6, 7)
 )
+fig.suptitle("nap.compute_perievent(tsd, stimuli, (-0.1, 0.4)", y=1.02)
 im = plot_peth_continuous(peth, ax_mean, ax)
 fig.colorbar(im, cax=fig.add_axes([0.92, 0.14, 0.02, 0.3]), label="dF/F [a.u.]");
 ```
@@ -245,6 +254,7 @@ fig.colorbar(im, cax=fig.add_axes([0.92, 0.14, 0.02, 0.3]), label="dF/F [a.u.]")
 The same function can also handle multiple continuous units, passed as a `TsdFrame`:
 
 ```{code-cell} ipython3
+:tags: [hide-input]
 tsdframe = np.stack(
     [tsd, generate_continuous_unit(0.2), generate_continuous_unit(0.3)], axis=1
 )
@@ -276,6 +286,7 @@ In this case, it returns a `TsdTensor`, containing an added dimension for the ev
 We can again visualize by reusing our plotting function:
 
 ```{code-cell} ipython3
+:tags: [hide-input]
 fig, axs = plt.subplots(
     2, len(tsdframe.columns), sharex=True, height_ratios=[0.3, 1.0], figsize=(15, 8)
 )
@@ -283,6 +294,7 @@ fig, axs = plt.subplots(
 for i, unit_axs in zip(range(tsdframe.shape[1]), axs.T):
     im = plot_peth_continuous(peth[:, :, i], *unit_axs, color=plt.cm.tab10(i))
     unit_axs[0].set_title(f"unit {i+1}")
+fig.suptitle("nap.compute_perievent(tsdframe, stimuli, (-0.1, 0.4)", y=1.02)
 fig.colorbar(im, cax=fig.add_axes([0.92, 0.14, 0.02, 0.3]), label="dF/F [a.u.]");
 ```
 
@@ -305,6 +317,7 @@ is provided as an alias.
 ### Single unit
 Let's simulate a slowly varying stimulus and a neuron that fires preferentially at its peaks:
 ```{code-cell} ipython3
+:tags: [hide-input]
 t = np.arange(0, 1000, 0.02)
 feature = nap.Tsd(t=t, d=np.sin(2 * np.pi * t / 10), time_units="s")
 
@@ -333,10 +346,13 @@ eta
 The result is a `TsdFrame` with one column. If the neuron is driven by the stimulus,
 the ETA should recover the stimulus waveform preceding each spike:
 ```{code-cell} ipython3
+:tags: [hide-input]
 plt.plot(eta)
 plt.axvline(0.0, color="gray", linestyle="--")
 plt.xlabel("time from spike (s)")
-plt.ylabel("stimulus [a.u.]");
+plt.ylabel("stimulus [a.u.]")
+plt.title("Spike triggered average \n nap.compute_event_triggered_average(feature, ts, binsize=0.02, window=(-5,5))");
+plt.tight_layout();
 ```
 
 ### Multiple units
@@ -345,6 +361,7 @@ The same function can be used for a group of units.
 When passing a `TsGroup`, the function returns one column per unit.
 Here, we simulate units driven by the stimulus at different phases:
 ```{code-cell} ipython3
+:tags: [hide-input]
 # simulation
 tsgroup = nap.TsGroup({
     1: ts,
@@ -378,6 +395,7 @@ eta
 
 Each unit recovers a phase-shifted version of the stimulus:
 ```{code-cell} ipython3
+:tags: [hide-input]
 fig, ax = plt.subplots()
 for i, unit in enumerate(eta.columns):
     ax.plot(eta[:, i], label=f"unit {unit}", color=plt.cm.tab10(i))
@@ -394,6 +412,7 @@ You can also pass multiple features at once.
 Here, we simulate two units each driven by a different frequency, and pass both
 stimulus features together:
 ```{code-cell} ipython3
+:tags: [hide-input]
 tsdframe = nap.TsdFrame(
     t=t,
     d=np.stack([
@@ -411,13 +430,16 @@ tsgroup = nap.TsGroup({
     1: generate_spiking_unit_from_feature(tsdframe[:, 0].d),
     2: generate_spiking_unit_from_feature(tsdframe[:, 1].d),
 })
+```
 
+```{code-cell} ipython3
 eta = nap.compute_event_triggered_average(tsdframe, tsgroup, binsize=0.02, window=10.0)
 eta
 ```
 
 The result is a `TsdTensor`. Each unit recovers its own driving feature while the other averages to near zero:
 ```{code-cell} ipython3
+:tags: [hide-input]
 fig, axs = plt.subplots(1, len(tsgroup), sharey=True, figsize=(10, 4))
 for i, (unit, ax) in enumerate(zip(tsgroup, axs)):
     for feat in range(len(tsdframe.columns)):
