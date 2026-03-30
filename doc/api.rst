@@ -72,6 +72,19 @@ Input-Ouput
 
 .. currentmodule:: pynapple.io
 
+.. rubric:: Neo Reader / LFP
+
+.. autosummary::
+    :toctree: generated/
+    :nosignatures:
+    :recursive:
+
+     EphysReader
+     NeoSignalInterface
+
+
+.. currentmodule:: pynapple.io
+
 .. rubric:: Numpy files
 
 .. autosummary::

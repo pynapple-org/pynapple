@@ -307,10 +307,11 @@ def _make_tsgroup(obj, **kwargs):
             col = obj[coln]
             if len(col) == N:
                 if hasattr(col, "to_dataframe"):
+                    # df rows are already in the correct unit order
                     df = col.to_dataframe()
-                    df = df.sort_index()
                     for k in df.columns:
-                        if not isinstance(
+                        column_not_yet_set = k not in metainfo
+                        if column_not_yet_set and not isinstance(
                             df[k].values[0],
                             (list, tuple, dict, set, pynwb.ecephys.ElectrodeGroup),
                         ):

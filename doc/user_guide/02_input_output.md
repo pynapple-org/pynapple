@@ -13,13 +13,16 @@ kernelspec:
 
 # Input-output & lazy-loading
 
-Pynapple provides loaders for [NWB format](https://pynwb.readthedocs.io/en/stable/index.html#). 
+Pynapple provides multiple ways to load data. The two main formats are NWB and NPZ. In addition, raw data can be loaded through the NEO library. 
 
-Each pynapple objects can be saved as a [`npz`](https://numpy.org/devdocs/reference/generated/numpy.savez.html) with a special structure and loaded as a `npz`.
+Each pynapple objects can be saved as a [`npz`](https://numpy.org/devdocs/reference/generated/numpy.savez.html) with a Pynapple-specific structure and loaded as a `npz`.
 
 In addition, the `Folder` class helps you walk through a set of nested folders to load/save `npz`/`nwb` files.
 
-
+```{contents}
+:local:
+:depth: 2
+```
 
 ## NWB
 
@@ -42,6 +45,8 @@ import pynapple as nap
 import os
 import requests, math
 import tqdm
+import matplotlib.pyplot as plt
+import numpy as np
 
 nwb_path = 'A2929-200711.nwb'
 
@@ -131,6 +136,185 @@ data = nap.NWBFile(nwb_path, lazy_loading=False)
 z = data['z']
 
 print(type(z.d))
+```
+
+## Raw data loading & NEO compatibility
+
+Raw data can be loaded with pynapple through the NEO library.
+Internally, pynapple uses the NEO raw IO classes to read the data and convert them to one of the pynapple time series objects.
+This is done lazily through the [`nap.EphysReader`](pynapple.io.interface_neo.EphysReader) class.
+
+See here the [list of supported formats](https://neo.readthedocs.io/en/stable/rawiolist.html) of python-neo.
+
+The minimal example to load a dataset is to instantiate the `EphysReader` class with the path to the data file.
+
+```
+import pynapple as nap
+data = nap.EphysReader("path_to_your_file")
+```
+
+Let us look at a couple of examples where we load LFP and spike data from different formats. 
+The `EphysReader` class will automatically detect the format of the data and load it accordingly. 
+To help the detection, you can also pass the format of the data with the argument `format`. 
+The format should be one of the supported formats of NEO. For example, if you have a binary file recorded with Neuroscope, you can pass `format="NeuroscopeIO"`.
+
+### Neuroscope / Binary file
+
+If you have a session recorded as binary files with Neuroscope, you can load it with the `EphysReader` class or directly 
+with the function [`nap.load_binary_file`](pynapple.io.misc.load_binary_file).
+
+```
+📂 my_session
+ ┣ 📄 my_session.dat
+ ┗ 📄 my_session.xml
+```
+
+
+```
+>>> import pynapple as nap
+
+>>> data = nap.EphysReader("path/my_session", format="NeuroscopeIO")
+    my_session
+    ┍━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┑
+    │ Key                 │ Type     │
+    ┝━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┥
+    │ my_session.dat      │ TsdFrame │
+    ┕━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┙
+
+>>> data["my_session.dat"]
+    Time (s)            0          1          2          3          4  ...
+    ----------  ---------  ---------  ---------  ---------  ---------  -----
+    0.0          0.274353   0.249023   0.3125     0.17395    0.240173  ...
+    5e-05        0.262146   0.205078   0.325928   0.163574   0.235901  ...
+    0.0001       0.263062   0.221863   0.325317   0.181885   0.266113  ...
+    ...                                                                ...
+    1199.99585  -0.181885  -0.186157  -0.283508  -0.15686   -0.209961  ...
+    1199.9959   -0.098877  -0.209961  -0.291138  -0.213623  -0.209656  ...
+    1199.99595  -0.109863  -0.141296  -0.257874  -0.188293  -0.163879  ...
+    dtype: int16, shape: (23999920, 16)
+```
+
+A more direct way to load binary file is to use the function `nap.load_binary_file` which will return a `TsdFrame` object directly.
+
+```
+>>> import pynapple as nap
+>>> data = nap.load_binary_file("path/my_session/my_session.dat",
+    channel=None # A list of channels to return. If None, returns all channels.
+    n_channels=16, # The number of channels in the binary file. Only used if channel is None.
+    sampling_rate=20000, # The sampling rate of the data.
+    precision='int16' # The precision of the data. Can be 'int16', 'float32' or 'float64'.
+    bytes_size=2 # The byte size of the data. Can be 2, 4 or 8.
+    )
+>>> data
+    Time (s)            0          1          2          3          4  ...
+    ----------  ---------  ---------  ---------  ---------  ---------  -----
+    0.0          0.274353   0.249023   0.3125     0.17395    0.240173  ...
+    5e-05        0.262146   0.205078   0.325928   0.163574   0.235901  ...
+    0.0001       0.263062   0.221863   0.325317   0.181885   0.266113  ...
+    ...                                                                ...
+    1199.99585  -0.181885  -0.186157  -0.283508  -0.15686   -0.209961  ...
+    1199.9959   -0.098877  -0.209961  -0.291138  -0.213623  -0.209656  ...
+    1199.99595  -0.109863  -0.141296  -0.257874  -0.188293  -0.163879  ...
+    dtype: float32, shape: (23999920, n_channels)
+```
+
+### OpenEphys
+
+A typical OpenEphys dataset has the following structure:
+
+```
+📂 Record Node 109
+ ┣ 📄 settings.xml
+ ┗ 📂 experiment1
+    ┗ 📂 recording1
+       ┣ 📄 structure.oebin
+       ┣ 📄 sync_messages.txt
+       ┣ 📂 continuous
+       │  ┗ 📂 Neuropix-PXI-103.ProbeA
+       │     ┣ 📄 continuous.dat
+       │     ┣ 📄 sample_numbers.npy
+       │     ┗ 📄 timestamps.npy
+       ┗ 📂 events
+          ┣ 📂 MessageCenter
+          │  ┣ 📄 sample_numbers.npy
+          │  ┣ 📄 text.npy
+          │  ┗ 📄 timestamps.npy
+          ┗ 📂 Neuropix-PXI-103.ProbeA
+             ┗ 📂 TTL
+                ┣ 📄 full_words.npy
+                ┣ 📄 sample_numbers.npy
+                ┣ 📄 states.npy
+                ┗ 📄 timestamps.npy
+```
+
+This is a recording from a Neuropixel 2.0 probe, which does not have dedicated LFP channels. 
+Instead, we can visualize the raw data directly, using `EphysReader` as follows:
+
+```
+>>> import pynapple as nap
+
+>>> data = nap.EphysReader("path/to/Record Node 109", format="OpenEphysBinaryIO")
+    Record Node 109
+    ┍━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┑
+    │ Key                                                     │ Type     │
+    ┝━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┥
+    │ 0:Record Node 109#Neuropix-PXI-103.ProbeA               │ TsdFrame │
+    │ 1:Record Node 109#Neuropix-PXI-103.ProbeASYNC           │ TsdFrame │
+    │ 0:Messages                                              │ Ts       │
+    │ 1:Neuropixels PXI Sync                                  │ Ts       │
+    ┕━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┙
+    
+>>> data["0:Record Node 109#Neuropix-PXI-103.ProbeA"]
+    Time (s)             0        1         2         3         4  ...
+    ------------  --------  -------  --------  --------  --------  -----
+    8.044366667   -138.06   -91.65   -115.245  -187.59   -130.455  ...
+    8.0444        -132.795  -82.485  -106.08   -185.445  -131.235  ...
+    8.044433333   -132.015  -90.87   -105.3    -187.59   -122.85   ...
+    ...                                                            ...
+    68.606033333    33.54    56.55     50.31    -30.615     6.045  ...
+    68.606066667    35.88    56.55     45.045   -35.88     -1.56   ...
+    68.6061         32.76    61.815    51.87    -33.54      7.605  ...
+    dtype: int16, shape: (1816853, 384)
+    
+```
+
+### Plexon file
+
+
+If you have Plexon files, you can use EphysReader in the exact same way:
+
+
+```{code-cell} ipython3
+:tags: [hide-cell]
+import urllib
+distantfile = "https://web.gin.g-node.org/NeuralEnsemble/ephy_testing_data/raw/master/plexon/File_plexon_3.plx"
+urllib.request.urlretrieve(distantfile, "File_plexon_3.plx")
+```
+
+```{code-cell} ipython3
+:tags: [hide-output]
+data = nap.EphysReader("File_plexon_3.plx", format="PlexonIO");
+```
+```{code-cell} ipython3
+print(data)
+```
+
+```{code-cell} ipython3
+lfp = data['0:V']
+spikes = data['TsGroup']
+```
+
+```{code-cell} ipython3
+fig = plt.figure()
+ax1 = fig.add_subplot(2, 1, 1)
+ax2 = fig.add_subplot(2, 1, 2)
+ax1.plot(lfp.t, lfp.d[:])
+ax1.set_xlabel("Time (s)")
+colors = plt.cm.jet(np.linspace(0, 1, len(spikes)))
+ax2.eventplot([spikes[i].t for i in spikes.keys()], colors=colors)
+ax2.set_xlabel("Time (s)")
+plt.tight_layout()
+plt.show()
 ```
 
 ## Saving as NPZ
@@ -252,7 +436,7 @@ tsdframe.restrict(ep)
 ```{code-cell} ipython3
 group = nap.TsGroup({0:nap.Ts(t=[10, 20, 30])})
 
-sta = nap.compute_event_trigger_average(group, tsdframe, 1, (-2, 3))
+sta = nap.compute_event_triggered_average(tsdframe, group, 1, (-2, 3))
 
 print(type(tsdframe.values))
 print("\n")

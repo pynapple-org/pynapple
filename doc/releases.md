@@ -1,5 +1,17 @@
 # Releases
 
+### 0.11 (2026-03-29)
+
+- New `EphysReader` class and `NeoSignalInterface` for reading electrophysiology files through the [Neo](https://neo.readthedocs.io) library. Supports a wide range of formats (Plexon, Open Ephys, Neuralynx, …) with lazy loading of analog signals.
+- New `NeuroSuiteIO` class for reading Neuroscope/NeuroSuite formatted data (binary `.dat`/`.eeg`/`.lfp` files and `.clu`/`.res` spike sorting results).
+- New `load_binary_file` function for loading raw binary electrophysiology recordings.
+- Refactoring of the perievent module with a unified `compute_perievent` function that automatically handles both discrete (Ts, TsGroup) and continuous (Tsd, TsdFrame, TsdTensor) data.
+- `compute_event_trigger_average` renamed to `compute_event_triggered_average`. `compute_perievent_continuous` replaced by `compute_spike_triggered_average` (an alias of `compute_event_triggered_average`).
+- Scipy and xarray are now imported lazily at runtime rather than at package import, reducing startup time.
+- Fixed scrambled electrode metadata when loading NWB files whose units table contains a `DynamicTableRegion` column.
+- Fixed `warp_tensor` to correctly handle empty intervals.
+
+
 ### 0.10.3 (2026-02-06)
 
 - Added a `subsample` method to TsGroup, enabling random subsampling of timestamps per element with reproducibility options and support for both Ts and Tsd.

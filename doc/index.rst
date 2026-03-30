@@ -12,9 +12,9 @@ pynapple: python neural analysis package
    User guide <user_guide>
    Examples <examples>
    API <api>
+   External projects <external>
    About us <about>
    Releases <releases>
-   External projects <external>
    GPU acceleration <pynajax>
    Citing <citing>
 
@@ -104,7 +104,7 @@ pynapple: python neural analysis package
          :width: 100px
          :class: dark-light
 
-   .. grid-item-card:: Perievent
+   .. grid-item-card:: Perievent / Spike-triggered average
       :text-align: center
       :link: ./user_guide/08_perievent.html
 
