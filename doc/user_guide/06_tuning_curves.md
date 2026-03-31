@@ -128,13 +128,13 @@ support, allowing for easy visualization:
 
 ```{code-cell} ipython3
 tuning_curves_1d.plot.line(x="feature", add_legend=False)
-plt.ylabel("Firing rate [Hz]");
+plt.ylabel("firing rate [Hz]");
 ```
 
 You can either customize the plot labels yourself using [`matplotlib`](https://matplotlib.org/stable/index.html), 
 or you can set them in the tuning curve object:
 ```{code-cell} ipython3
-tuning_curves_1d.name = "Firing rate"
+tuning_curves_1d.name = "firing rate"
 tuning_curves_1d.attrs["unit"] = "Hz"
 tuning_curves_1d.coords["feature"].attrs["unit"] = "rad"
 tuning_curves_1d.plot.line(x="feature", add_legend=False);
@@ -149,16 +149,16 @@ plt.figure()
 plt.subplot(121)
 plt.plot(tsgroup_1d[3].value_from(feature), 'o')
 plt.plot(feature, label="feature")
-plt.ylabel("Feature")
+plt.ylabel("feature")
 plt.xlim(0, 20)
 plt.xlabel("Time [s]")
 plt.subplot(122)
 plt.plot(
     tuning_curves_1d[3].values,
     tuning_curves_1d.coords["feature"],
-    label="Tuning curve (unit=3)",
+    label="tuning curve (unit 3)",
 )
-plt.xlabel("Firing rate [Hz]")
+plt.xlabel("firing rate [Hz]")
 plt.legend();
 ```
 
@@ -182,19 +182,19 @@ plt.figure()
 plt.subplot(131)
 plt.plot(tsgroup_1d[3].value_from(feature), 'o')
 plt.plot(feature, label="feature")
-plt.ylabel("Feature")
+plt.ylabel("feature")
 plt.xlim(0, 20)
-plt.xlabel("Time [s]")
+plt.xlabel("time [s]")
 plt.subplot(132)
 plt.plot(tuning_curves_1d[3].values, tuning_curves_1d.coords["feature"])
-plt.xlabel("Firing rate [Hz]")
+plt.xlabel("firing rate [Hz]")
 plt.subplot(133)
 plt.barh(
     spike_counts.coords["feature"],
     width=spike_counts[3].values,
     height=np.mean(np.diff(spike_counts.coords["feature"])),
 )
-plt.xlabel("Spike count")
+plt.xlabel("spike count")
 plt.tight_layout()
 ```
 
@@ -257,7 +257,7 @@ Bins that have never been visited by the feature have been assigned a NaN value.
 Two-dimensional tuning curves can also easily be visualized:
 
 ```{code-cell} ipython3
-tuning_curves_2d.name="Firing rate"
+tuning_curves_2d.name="firing rate"
 tuning_curves_2d.attrs["unit"]="Hz"
 tuning_curves_2d.plot(col="unit", col_wrap=3);
 ```
@@ -383,7 +383,7 @@ We can visualize using barplots:
 
 ```{code-cell} ipython3
 fig, axs = plt.subplots(
-    1, n, constrained_layout=true, sharey=true, figsize=(8, 3)
+    1, N, constrained_layout=True, sharey=True, figsize=(8, 3)
 )
 for unit, ax in zip(epochs_tuning_curves.coords["unit"], axs):
     ax.bar(
@@ -445,7 +445,7 @@ stds = tuning_curves_per_split.std(dim="split")
 
 Visualizing also becomes more simple:
 ```{code-cell} ipython3
-tuning_curves_per_split.name = "Firing rate"
+tuning_curves_per_split.name = "firing rate"
 tuning_curves_per_split.attrs["unit"] = "Hz"
 tuning_curves_per_split.coords["feature"].attrs["unit"] = "rad"
 lines = means.plot.line(x="feature", add_legend=False)
@@ -462,8 +462,7 @@ for line, unit in zip(lines, means.coords["unit"]):
     )
 ```
 
-To make things easier in the future, here is a function that can serve
-as a starting point for your needs:
+To make things easier in the future, here is a function that does all of this:
 ```{code-cell} ipython3
 def compute_tuning_curves_with_error_bars(
     data, features, bins, range, feature_names, n_splits
@@ -493,53 +492,73 @@ def compute_tuning_curves_with_error_bars(
         tuning_curves_per_split.std(dim="split")
     )
 ```
+Feel free to extend it to your needs!
 
 ## From epochs
 If you want error bars for epochs, the typical use-case will be that you have multiple presentations of a stimulus,
-and you want the mean response over those.
-In that case, you simply have to create the right epoch dictionaries and compute multiple tuning curves again:
+and you want the mean response over those:
 ```{code-cell} ipython3
-epochs_dicts = [
-    {
-        "A": nap.IntervalSet(start=0, end=10),
-        "B": nap.IntervalSet(start=10, end=20),
-    },
-    {
-        "A": nap.IntervalSet(start=20, end=30),
-        "B": nap.IntervalSet(start=30, end=40),
-    },
-    {
-        "A": nap.IntervalSet(start=40, end=50),
-        "B": nap.IntervalSet(start=50, end=60),
-    },
-    {
-        "A": nap.IntervalSet(start=60, end=70),
-        "B": nap.IntervalSet(start=70, end=80),
-    },
-]
+epochs_dict
+```
 
-epochs_tuning_curves = xr.concat(
-    [
-        nap.compute_response_per_epoch(tsgroup_2d, epochs_dict)
-        for epochs_dict in epochs_dicts
-    ],
-    dim="presentation",
+So, we can use [`nap.compute_response_per_epoch`](pynapple.process.tuning_curves.compute_response_per_epoch) in a loop to compute that:
+```{code-cell} ipython3
+epochs_tuning_curves_per_presentation = [
+    nap.compute_response_per_epoch(
+        tsgroup_2d, {"A": stimulus_A, "B": stimulus_B}
+    )
+    for stimulus_A, stimulus_B in zip(epochs_dict["A"], epochs_dict["B"])
+]
+```
+
+To make things easier down the line, we advise combining these into one big 
+`xarray.DataArray` using [`xarray.concat`](https://docs.xarray.dev/en/stable/generated/xarray.concat.html) 
+, adding a dimension for the presentations:
+
+```{code-cell} ipython3
+epochs_tuning_curves_per_presentation = xr.concat(
+    epochs_tuning_curves_per_presentation, dim="presentation"
 )
-epochs_tuning_curves
+epochs_tuning_curves_per_presentation
 ```
 
 We can then visualize again, but now with error bars:
 ```{code-cell} ipython3
-means = epochs_tuning_curves.mean(dim="presentation")
-stds = epochs_tuning_curves.std(dim="presentation")
+means = epochs_tuning_curves_per_presentation.mean(dim="presentation")
+stds = epochs_tuning_curves_per_presentation.std(dim="presentation")
 
-fig, axs = plt.subplots(1, N, constrained_layout=True, sharey=True, figsize=(8,3))
+fig, axs = plt.subplots(
+    1, N, constrained_layout=True, sharey=True, figsize=(8, 3)
+)
 for unit, ax in zip(epochs_tuning_curves.coords["unit"], axs):
-    ax.bar(means.coords["epochs"], means.sel(unit=unit), yerr=stds.sel(unit=unit))
+    ax.bar(
+        means.coords["epochs"], means.sel(unit=unit), yerr=stds.sel(unit=unit)
+    )
     ax.set_title(f"unit {unit.item()}")
 axs[0].set_xlabel("epoch")
 axs[0].set_ylabel("firing rate [Hz]");
 ```
+
+To make things easier in the future, here is a function that does all of this:
+```{code-cell} ipython3
+def compute_response_per_epoch_with_error_bars(data, epochs_dict):
+    epochs_dict_per_presentation = [
+        dict(zip(epochs_dict.keys(), presentations))
+        for presentations in zip(*epochs_dict.values())
+    ]
+    epochs_tuning_curves_per_presentation = [
+        nap.compute_response_per_epoch(data, presentation_epochs_dict)
+        for presentation_epochs_dict in epochs_dict_per_presentation
+    ]
+    epochs_tuning_curves_per_presentation = xr.concat(
+        epochs_tuning_curves_per_presentation, dim="presentation"
+    )
+    return (
+        epochs_tuning_curves_per_presentation.mean(dim="presentation"),
+        epochs_tuning_curves_per_presentation.std(dim="presentation"),
+    )
+```
+Feel free to extend it to your needs!
 
 # Mutual information
 Given a set of tuning curves, you can use [`compute_mutual_information`](pynapple.process.tuning_curves.compute_mutual_information) to compute the mutual information between the activity of the neurons and the features, no matter what dimension.
