@@ -87,7 +87,7 @@ rates = max_rate * np.exp(
 )
 tsgroup_1d = nap.TsGroup(
     {
-        i: nap.Ts(
+        i + 1: nap.Ts(
             feature_interp.t[np.random.poisson(rates[:, i] * dt_spikes) > 0]
         )
         for i in range(N)
@@ -128,8 +128,7 @@ support, allowing for easy visualization:
 
 ```{code-cell} ipython3
 tuning_curves_1d.plot.line(x="feature", add_legend=False)
-plt.ylabel("Firing rate (Hz)")
-plt.show()
+plt.ylabel("Firing rate [Hz]");
 ```
 
 You can either customize the plot labels yourself using [`matplotlib`](https://matplotlib.org/stable/index.html), 
@@ -138,8 +137,7 @@ or you can set them in the tuning curve object:
 tuning_curves_1d.name = "Firing rate"
 tuning_curves_1d.attrs["unit"] = "Hz"
 tuning_curves_1d.coords["feature"].attrs["unit"] = "rad"
-tuning_curves_1d.plot.line(x="feature", add_legend=False)
-plt.show()
+tuning_curves_1d.plot.line(x="feature", add_legend=False);
 ```
 
 Internally, the `compute_tuning_curves` calls the [`value_from`](pynapple.Tsd.value_from) method which maps timestamps to their closest values in time from a `Tsd` object.
@@ -153,12 +151,15 @@ plt.plot(tsgroup_1d[3].value_from(feature), 'o')
 plt.plot(feature, label="feature")
 plt.ylabel("Feature")
 plt.xlim(0, 20)
-plt.xlabel("Time (s)")
+plt.xlabel("Time [s]")
 plt.subplot(122)
-plt.plot(tuning_curves_1d[3].values, tuning_curves_1d.coords["feature"], label="Tuning curve (unit=3)")
-plt.xlabel("Firing rate (Hz)")
-plt.legend()
-plt.show()
+plt.plot(
+    tuning_curves_1d[3].values,
+    tuning_curves_1d.coords["feature"],
+    label="Tuning curve (unit=3)",
+)
+plt.xlabel("Firing rate [Hz]")
+plt.legend();
 ```
 
 It is also possible to just get the spike counts per bins. This can be done by setting the argument `return_counts=True`.
@@ -183,15 +184,18 @@ plt.plot(tsgroup_1d[3].value_from(feature), 'o')
 plt.plot(feature, label="feature")
 plt.ylabel("Feature")
 plt.xlim(0, 20)
-plt.xlabel("Time (s)")
+plt.xlabel("Time [s]")
 plt.subplot(132)
 plt.plot(tuning_curves_1d[3].values, tuning_curves_1d.coords["feature"])
-plt.xlabel("Firing rate (Hz)")
+plt.xlabel("Firing rate [Hz]")
 plt.subplot(133)
-plt.barh(spike_counts.coords["feature"], width=spike_counts[3].values, height=np.mean(np.diff(spike_counts.coords["feature"])))
+plt.barh(
+    spike_counts.coords["feature"],
+    width=spike_counts[3].values,
+    height=np.mean(np.diff(spike_counts.coords["feature"])),
+)
 plt.xlabel("Spike count")
 plt.tight_layout()
-plt.show()
 ```
 
 ### 2D tuning curves from spikes
@@ -210,16 +214,25 @@ features = nap.TsdFrame(
     columns=["a", "b"],
 )
 features_interp = features.interpolate(nap.Ts(np.arange(0, T, dt_spikes)))
-alpha = np.arctan2(features_interp["b"].values, features_interp["a"].values) / np.pi
+alpha = (
+    np.arctan2(features_interp["b"].values, features_interp["a"].values)
+    / np.pi
+)
 
 N = 6
 centers_2d = np.linspace(-1, 1, N)
 rates_2d = (
-    max_rate * np.exp(50.0 * np.cos(alpha[:, np.newaxis] - centers_2d)) / np.exp(50.0)
+    max_rate
+    * np.exp(50.0 * np.cos(alpha[:, np.newaxis] - centers_2d))
+    / np.exp(50.0)
 )
 tsgroup_2d = nap.TsGroup(
     {
-        i: nap.Ts(features_interp.t[np.random.poisson(rates_2d[:, i] * dt_spikes) > 0])
+        i + 1: nap.Ts(
+            features_interp.t[
+                np.random.poisson(rates_2d[:, i] * dt_spikes) > 0
+            ]
+        )
         for i in range(N)
     },
 )
@@ -246,29 +259,35 @@ Two-dimensional tuning curves can also easily be visualized:
 ```{code-cell} ipython3
 tuning_curves_2d.name="Firing rate"
 tuning_curves_2d.attrs["unit"]="Hz"
-tuning_curves_2d.plot(col="unit", col_wrap=3)
-plt.show()
+tuning_curves_2d.plot(col="unit", col_wrap=3);
 ```
 
 Verifying the accuracy of the tuning curves can once more be done by displaying the spikes aligned 
 to the features with the function `value_from` which assign to each spikes the corresponding features value for unit 0.
 
 ```{code-cell} ipython3
-ts_to_features = tsgroup_2d[0].value_from(features)
-print(ts_to_features)
+ts_to_features = tsgroup_2d[1].value_from(features)
+ts_to_features
 ```
 
 `tsgroup[0]` which is a `Ts` object has been transformed to a `TsdFrame` object with each timestamps (spike times) being associated with a features value.
 
 ```{code-cell} ipython3
 :tags: [hide-input]
-fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8,4), sharey=True)
+fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(8, 4), sharey=True)
 ax1.plot(features["b"], features["a"], label="features")
-ax1.plot(ts_to_features["b"], ts_to_features["a"], "o", color="red", markersize=4, label="spikes")
+ax1.plot(
+    ts_to_features["b"],
+    ts_to_features["a"],
+    "o",
+    color="red",
+    markersize=4,
+    label="spikes",
+)
 ax1.set_xlabel("b")
 ax1.set_ylabel("a")
-[ax1.axvline(b, linewidth=0.5, color='grey') for b in np.linspace(-1, 1, 6)]
-[ax1.axhline(b, linewidth=0.5, color='grey') for b in np.linspace(-1, 1, 6)]
+[ax1.axvline(b, linewidth=0.5, color="grey") for b in np.linspace(-1, 1, 6)]
+[ax1.axhline(b, linewidth=0.5, color="grey") for b in np.linspace(-1, 1, 6)]
 extents = (
     np.min(features["a"]),
     np.max(features["a"]),
@@ -278,7 +297,6 @@ extents = (
 tuning_curves_2d[0].plot(ax=ax2)
 ax2.set_ylabel("")
 plt.tight_layout()
-plt.show()
 ```
 
 ### 1D tuning curves from continuous activity
@@ -309,8 +327,7 @@ tuning_curves_1d_continuous
 ```{code-cell} ipython3
 tuning_curves_1d_continuous.name="ΔF/F"
 tuning_curves_1d_continuous.attrs["unit"]="a.u."
-tuning_curves_1d_continuous.plot.line(x="feature", add_legend=False)
-plt.show()
+tuning_curves_1d_continuous.plot.line(x="feature", add_legend=False);
 ```
 
 ### 2D tuning curves from continuous activity
@@ -321,7 +338,7 @@ Let us first simulate noisy continuous activity for some units modulated by the 
 alpha = np.arctan2(features["b"].values, features["a"].values) / np.pi
 traces = np.exp(50.0 * np.cos(alpha[:, np.newaxis] - centers_2d)) / np.exp(50.0)
 traces = traces * (1 + noise_level * np.random.randn(*traces.shape))
-tsdframe_2d = nap.TsdFrame(t=times_feature, d=traces)
+tsdframe_2d = nap.TsdFrame(t=times_feature, d=traces, columns=range(1, N+1, 1))
 ```
 
 The same function again handles computing the tuning curves:
@@ -339,7 +356,7 @@ tuning_curves_2d_continuous
 ```{code-cell} ipython3
 tuning_curves_2d_continuous.name="ΔF/F"
 tuning_curves_2d_continuous.attrs["unit"]="a.u."
-tuning_curves_2d_continuous.plot(col="unit", col_wrap=3)
+tuning_curves_2d_continuous.plot(col="unit", col_wrap=3);
 ```
 
 ## From epochs
@@ -348,8 +365,8 @@ When computing from epochs, you should store them in a dictionary:
 
 ```{code-cell} ipython3
 epochs_dict =  {
-    "A": nap.IntervalSet(start=0, end=20),
-    "B":nap.IntervalSet(start=30, end=70)
+    "A": nap.IntervalSet(start=[0, 20, 40, 60, 80], end=[10, 29, 49, 69, 89]),
+    "B":nap.IntervalSet(start=[10, 30, 40, 60, 90], end=[19, 39, 59, 79, 99])
 }
 ```
 You can then compute the tuning curves using [`nap.compute_response_per_epoch`](pynapple.process.tuning_curves.compute_response_per_epoch).
@@ -365,11 +382,17 @@ epochs_tuning_curves
 We can visualize using barplots:
 
 ```{code-cell} ipython3
-fig, axs = plt.subplots(1, N, constrained_layout=True, sharey=True, figsize=(8,3))
-for unit, ax in zip(epochs_tuning_curves, axs):
-    ax.bar(unit["epochs"], unit.values)
+fig, axs = plt.subplots(
+    1, n, constrained_layout=true, sharey=true, figsize=(8, 3)
+)
+for unit, ax in zip(epochs_tuning_curves.coords["unit"], axs):
+    ax.bar(
+        epochs_tuning_curves.coords["epochs"],
+        epochs_tuning_curves.sel(unit=unit),
+    )
+    ax.set_title(f"unit {unit.item()}")
 axs[0].set_xlabel("epoch")
-axs[0].set_ylabel("firing rate [Hz]");
+axs[0].set_ylabel("firing rate [hz]");
 ```
 
 # Error bars
@@ -379,12 +402,20 @@ we will show how you can easily compute error bars yourself, using the functions
 
 ## From timestamps or continuous activity
 If you are computing tuning curves against features, you can split your session into `n_splits`,
-compute a tuning curve per split, and then compute statistics over those:
+compute a tuning curve per split, and then compute statistics over those.
+
+We will start by creating splits:
 ```{code-cell} ipython3
 n_splits = 4
-splits = tsgroup_1d.time_support.split(tsgroup_1d.time_support.tot_length() / n_splits)
-tuning_curves_splits = xr.concat(
-    [
+full_session = feature.time_support
+split_length = full_session.tot_length() / n_splits
+splits = full_session.split(split_length)
+splits
+```
+
+Then, we can compute the tuning curves like before, by looping over the splits:
+```{code-cell} ipython3
+tuning_curves_per_split = [
         nap.compute_tuning_curves(
             tsgroup_1d,
             epochs=split,
@@ -394,31 +425,72 @@ tuning_curves_splits = xr.concat(
             feature_names=["feature"],
         )
         for split in splits
-    ],
-    dim="split",
-)
-tuning_curves_splits.name = "Firing rate"
-tuning_curves_splits.attrs["unit"] = "Hz"
-tuning_curves_splits.coords["feature"].attrs["unit"] = "rad"
-tuning_curves_splits
+]
 ```
 
-We can then visualize the mean and standard deviation:
+To make things easier down the line, we advise combining these into one big 
+`xarray.DataArray` using [`xarray.concat`](https://docs.xarray.dev/en/stable/generated/xarray.concat.html) 
+, adding a dimension for the splits:
 
 ```{code-cell} ipython3
-means = tuning_curves_splits.mean(dim="split")
-stds = tuning_curves_splits.std(dim="split")
+tuning_curves_per_split = xr.concat(tuning_curves_per_split, dim="split")
+tuning_curves_per_split
+```
+
+Computing the mean and standard deviation can then be done easily using:
+```{code-cell} ipython3
+means = tuning_curves_per_split.mean(dim="split")
+stds = tuning_curves_per_split.std(dim="split")
+```
+
+Visualizing also becomes more simple:
+```{code-cell} ipython3
+tuning_curves_per_split.name = "Firing rate"
+tuning_curves_per_split.attrs["unit"] = "Hz"
+tuning_curves_per_split.coords["feature"].attrs["unit"] = "rad"
 lines = means.plot.line(x="feature", add_legend=False)
 
 for line, unit in zip(lines, means.coords["unit"]):
-    mean = means.sel(unit=unit).values
-    std = stds.sel(unit=unit).values
+    mean = means.sel(unit=unit)
+    std = stds.sel(unit=unit)
     plt.fill_between(
         means["feature"],
         mean - std,
         mean + std,
         color=line.get_color(),
         alpha=0.2,
+    )
+```
+
+To make things easier in the future, here is a function that can serve
+as a starting point for your needs:
+```{code-cell} ipython3
+def compute_tuning_curves_with_error_bars(
+    data, features, bins, range, feature_names, n_splits
+):
+    # Get splits
+    full_session = features.time_support
+    split_length = full_session.tot_length() / n_splits
+    splits = full_session.split(split_length)
+
+    # Compute tuning curves per split
+    tuning_curves_per_split = [
+        nap.compute_tuning_curves(
+            data,
+            features=features,
+            epochs=split,
+            bins=bins,
+            range=range,
+            feature_names=feature_names,
+        )
+        for split in splits
+    ]
+    tuning_curves_per_split = xr.concat(tuning_curves_per_split, dim="split")
+
+    # Return mean and standard deviation
+    return (
+        tuning_curves_per_split.mean(dim="split"), 
+        tuning_curves_per_split.std(dim="split")
     )
 ```
 
@@ -462,8 +534,9 @@ means = epochs_tuning_curves.mean(dim="presentation")
 stds = epochs_tuning_curves.std(dim="presentation")
 
 fig, axs = plt.subplots(1, N, constrained_layout=True, sharey=True, figsize=(8,3))
-for mean, std, ax in zip(means, stds, axs):
-    ax.bar(mean["epochs"], mean, yerr=std)
+for unit, ax in zip(epochs_tuning_curves.coords["unit"], axs):
+    ax.bar(means.coords["epochs"], means.sel(unit=unit), yerr=stds.sel(unit=unit))
+    ax.set_title(f"unit {unit.item()}")
 axs[0].set_xlabel("epoch")
 axs[0].set_ylabel("firing rate [Hz]");
 ```
