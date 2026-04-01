@@ -445,11 +445,7 @@ stds = tuning_curves_per_split.std(dim="split")
 
 Visualizing also becomes more simple:
 ```{code-cell} ipython3
-tuning_curves_per_split.name = "firing rate"
-tuning_curves_per_split.attrs["unit"] = "Hz"
-tuning_curves_per_split.coords["feature"].attrs["unit"] = "rad"
 lines = means.plot.line(x="feature", add_legend=False)
-
 for line, unit in zip(lines, means.coords["unit"]):
     mean = means.sel(unit=unit)
     std = stds.sel(unit=unit)
@@ -460,6 +456,8 @@ for line, unit in zip(lines, means.coords["unit"]):
         color=line.get_color(),
         alpha=0.2,
     )
+plt.xlabel("feature [rad]")
+plt.ylabel("firing rate [Hz]");
 ```
 
 To make things easier in the future, here is a function that does all of this:
