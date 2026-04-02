@@ -421,10 +421,12 @@ def compute_response_per_epoch(data, epochs_dict, return_pandas=False):
             ],
             axis=1,
         )
-
     tcs = xr.DataArray(
         tcs,
-        coords={"unit": keys, "epochs": list(epochs_dict.keys())},
+        coords={
+            "unit": keys,
+            "epochs": list(epochs_dict.keys()),
+        },
     )
     if return_pandas:
         return tcs.to_pandas().T
