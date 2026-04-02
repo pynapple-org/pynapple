@@ -1,0 +1,6 @@
+pynapple.TsGroup.trial\_count
+=============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.trial_count

@@ -1,0 +1,1959 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pynapple.io.interface_neo &#8212; pynapple 0.11.0.post1.dev34 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_contributors.css?v=fe9086e2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=f2caec9a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=ebf7fc24"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=c57da192"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pynapple/io/interface_neo';</script>
+    <link rel="icon" href="../../../_static/Pynapple_final_icon.png"/>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.11.0" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.11.0.post1.dev34 documentation - Home"/>
+    <img src="../../../_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.11.0.post1.dev34 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../external.html">
+    External projects
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pynapple.io.interface_neo</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for pynapple.io.interface_neo</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Pynapple interface to Neo for reading electrophysiology files.&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">annotations</span>
+
+<span class="kn">import</span> <span class="nn">xml.etree.ElementTree</span> <span class="k">as</span> <span class="nn">ET</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">UserDict</span>
+<span class="kn">from</span> <span class="nn">pathlib</span> <span class="kn">import</span> <span class="n">Path</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">import</span> <span class="nn">neo</span>
+    <span class="kn">from</span> <span class="nn">neo.core.spiketrainlist</span> <span class="kn">import</span> <span class="n">SpikeTrainList</span>
+    <span class="kn">from</span> <span class="nn">neo.io.proxyobjects</span> <span class="kn">import</span> <span class="n">AnalogSignalProxy</span>
+
+    <span class="n">HAS_NEO</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">HAS_NEO</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="k">try</span><span class="p">:</span>
+    <span class="kn">from</span> <span class="nn">tabulate</span> <span class="kn">import</span> <span class="n">tabulate</span>
+
+    <span class="n">HAS_TABULATE</span> <span class="o">=</span> <span class="kc">True</span>
+<span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
+    <span class="n">HAS_TABULATE</span> <span class="o">=</span> <span class="kc">False</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">core</span> <span class="k">as</span> <span class="n">nap</span>
+<span class="kn">from</span> <span class="nn">.interface_neurosuite</span> <span class="kn">import</span> <span class="n">NeuroSuiteIO</span>
+
+
+<span class="k">def</span> <span class="nf">_parse_openephys_electrode_positions</span><span class="p">(</span><span class="n">settings_xml_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Parse electrode (x, y) positions from an Open Ephys settings.xml.</span>
+
+<span class="sd">    The positions are stored in ``&lt;ELECTRODE_XPOS&gt;`` / ``&lt;ELECTRODE_YPOS&gt;``</span>
+<span class="sd">    elements inside ``&lt;NP_PROBE&gt;`` nodes.  Each attribute is named ``CH{n}``</span>
+<span class="sd">    where *n* is the 0-based electrode index.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    settings_xml_path : str or Path</span>
+<span class="sd">        Path to the ``settings.xml`` file.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict[str, dict[int, np.ndarray]]</span>
+<span class="sd">        Mapping of probe serial number to a dict with keys ``&quot;x&quot;`` and</span>
+<span class="sd">        ``&quot;y&quot;``, each an ndarray of shape ``(n_electrodes,)`` ordered by</span>
+<span class="sd">        electrode index.  Returns an empty dict if no positions are found.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">settings_xml_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">settings_xml_path</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">settings_xml_path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="n">tree</span> <span class="o">=</span> <span class="n">ET</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">settings_xml_path</span><span class="p">)</span>
+    <span class="n">root</span> <span class="o">=</span> <span class="n">tree</span><span class="o">.</span><span class="n">getroot</span><span class="p">()</span>
+
+    <span class="n">probes</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">np_probe</span> <span class="ow">in</span> <span class="n">root</span><span class="o">.</span><span class="n">iter</span><span class="p">(</span><span class="s2">&quot;NP_PROBE&quot;</span><span class="p">):</span>
+        <span class="n">xpos_el</span> <span class="o">=</span> <span class="n">np_probe</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;ELECTRODE_XPOS&quot;</span><span class="p">)</span>
+        <span class="n">ypos_el</span> <span class="o">=</span> <span class="n">np_probe</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="s2">&quot;ELECTRODE_YPOS&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">xpos_el</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">ypos_el</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">continue</span>
+
+        <span class="n">x_dict</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">[</span><span class="mi">2</span><span class="p">:]):</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">xpos_el</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">y_dict</span> <span class="o">=</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">k</span><span class="p">[</span><span class="mi">2</span><span class="p">:]):</span> <span class="nb">float</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">ypos_el</span><span class="o">.</span><span class="n">attrib</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+
+        <span class="n">n</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">max</span><span class="p">(</span><span class="n">x_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()),</span> <span class="nb">max</span><span class="p">(</span><span class="n">y_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">ch</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">x_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">x</span><span class="p">[</span><span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+        <span class="k">for</span> <span class="n">ch</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">y_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="n">y</span><span class="p">[</span><span class="n">ch</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+
+        <span class="n">serial</span> <span class="o">=</span> <span class="n">np_probe</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;probe_serial_number&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
+        <span class="n">probes</span><span class="p">[</span><span class="n">serial</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">y</span><span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">probes</span>
+
+
+<span class="k">def</span> <span class="nf">_check_neo_installed</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Check if neo is installed and raise ImportError if not.&quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">HAS_NEO</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ImportError</span><span class="p">(</span>
+            <span class="s2">&quot;Neo is required for this functionality. &quot;</span>
+            <span class="s2">&quot;Install it with: pip install neo&quot;</span>
+        <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_rescale_to_seconds</span><span class="p">(</span><span class="n">quantity</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a neo quantity to seconds.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    quantity : neo.core.baseneo.BaseNeo or quantities.Quantity</span>
+<span class="sd">        A quantity with time units</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    float</span>
+<span class="sd">        Value in seconds</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">float</span><span class="p">(</span><span class="n">quantity</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_get_signal_type</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Determine the appropriate pynapple type for a Neo signal.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    signal : neo.AnalogSignal or neo.IrregularlySampledSignal</span>
+<span class="sd">        The Neo signal object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    type</span>
+<span class="sd">        The pynapple type (Tsd, TsdFrame, or TsdTensor)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdTensor</span>
+
+
+<span class="k">def</span> <span class="nf">_extract_annotations</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract annotations from a Neo object.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    obj : neo.core.baseneo.BaseNeo</span>
+<span class="sd">        Any Neo object with annotations</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Dictionary of annotations</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">annotations</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;annotations&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">obj</span><span class="o">.</span><span class="n">annotations</span><span class="p">:</span>
+        <span class="n">annotations</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">annotations</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">obj</span><span class="o">.</span><span class="n">name</span><span class="p">:</span>
+        <span class="n">annotations</span><span class="p">[</span><span class="s2">&quot;neo_name&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">name</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;description&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">obj</span><span class="o">.</span><span class="n">description</span><span class="p">:</span>
+        <span class="n">annotations</span><span class="p">[</span><span class="s2">&quot;neo_description&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="n">description</span>
+    <span class="k">return</span> <span class="n">annotations</span>
+
+
+<span class="k">def</span> <span class="nf">_extract_array_annotations</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Extract array annotations from a Neo object.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    obj : neo.core.baseneo.BaseNeo</span>
+<span class="sd">        Any Neo object with array_annotations</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dict</span>
+<span class="sd">        Dictionary of array annotations</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;array_annotations&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">obj</span><span class="o">.</span><span class="n">array_annotations</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">obj</span><span class="o">.</span><span class="n">array_annotations</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{}</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Conversion functions: Neo -&gt; Pynapple</span>
+<span class="c1"># =============================================================================</span>
+
+
+<span class="c1"># def _make_intervalset_from_epoch(</span>
+<span class="c1">#     epoch, time_support: nap.IntervalSet | None = None</span>
+<span class="c1"># ) -&gt; nap.IntervalSet:</span>
+<span class="c1">#     &quot;&quot;&quot;Convert a Neo Epoch to a pynapple IntervalSet.</span>
+<span class="c1">#</span>
+<span class="c1">#     Parameters</span>
+<span class="c1">#     ----------</span>
+<span class="c1">#     epoch : neo.Epoch or neo.io.proxyobjects.EpochProxy</span>
+<span class="c1">#         Neo Epoch object</span>
+<span class="c1">#     time_support : IntervalSet, optional</span>
+<span class="c1">#         Time support for the IntervalSet</span>
+<span class="c1">#</span>
+<span class="c1">#     Returns</span>
+<span class="c1">#     -------</span>
+<span class="c1">#     IntervalSet</span>
+<span class="c1">#         Pynapple IntervalSet</span>
+<span class="c1">#     &quot;&quot;&quot;</span>
+<span class="c1">#     if hasattr(epoch, &quot;load&quot;):</span>
+<span class="c1">#         epoch = epoch.load()</span>
+<span class="c1">#</span>
+<span class="c1">#     times = epoch.times.rescale(&quot;s&quot;).magnitude</span>
+<span class="c1">#     durations = epoch.durations.rescale(&quot;s&quot;).magnitude</span>
+<span class="c1">#</span>
+<span class="c1">#     starts = times</span>
+<span class="c1">#     ends = times + durations</span>
+<span class="c1">#</span>
+<span class="c1">#     # Extract labels as metadata if available</span>
+<span class="c1">#     metadata = {}</span>
+<span class="c1">#     if hasattr(epoch, &quot;labels&quot;) and len(epoch.labels) &gt; 0:</span>
+<span class="c1">#         metadata[&quot;label&quot;] = np.array(epoch.labels)</span>
+<span class="c1">#</span>
+<span class="c1">#     # # Add any other annotations</span>
+<span class="c1">#     # annotations = _extract_annotations(epoch)</span>
+<span class="c1">#</span>
+<span class="c1">#     iset = nap.IntervalSet(start=starts, end=ends, metadata=metadata)</span>
+<span class="c1">#</span>
+<span class="c1">#     return iset</span>
+
+
+<span class="k">def</span> <span class="nf">_make_intervalset_from_epoch_multiseg</span><span class="p">(</span>
+    <span class="n">block</span><span class="p">,</span> <span class="n">ep_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">time_support</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert Neo Epochs from multiple segments to a pynapple IntervalSet.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    block : neo.Block</span>
+<span class="sd">        The Neo block containing the segments</span>
+<span class="sd">    ep_idx : int</span>
+<span class="sd">        Index of the epoch in each segment</span>
+<span class="sd">    time_support : IntervalSet, optional</span>
+<span class="sd">        Time support for the IntervalSet</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    IntervalSet</span>
+<span class="sd">        Pynapple IntervalSet</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">all_starts</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">all_ends</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">all_labels</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">block</span><span class="o">.</span><span class="n">segments</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ep_idx</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">epochs</span><span class="p">):</span>
+            <span class="k">continue</span>
+
+        <span class="n">epoch</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">epochs</span><span class="p">[</span><span class="n">ep_idx</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="s2">&quot;load&quot;</span><span class="p">):</span>
+            <span class="n">epoch</span> <span class="o">=</span> <span class="n">epoch</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+
+        <span class="n">times</span> <span class="o">=</span> <span class="n">epoch</span><span class="o">.</span><span class="n">times</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+        <span class="n">durations</span> <span class="o">=</span> <span class="n">epoch</span><span class="o">.</span><span class="n">durations</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+
+        <span class="n">all_starts</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+        <span class="n">all_ends</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">times</span> <span class="o">+</span> <span class="n">durations</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="s2">&quot;labels&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">epoch</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">all_labels</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">epoch</span><span class="o">.</span><span class="n">labels</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_starts</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="p">[],</span> <span class="n">end</span><span class="o">=</span><span class="p">[])</span>
+
+    <span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">all_labels</span><span class="p">:</span>
+        <span class="n">metadata</span><span class="p">[</span><span class="s2">&quot;label&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_labels</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span>
+        <span class="n">start</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_starts</span><span class="p">),</span>
+        <span class="n">end</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_ends</span><span class="p">),</span>
+        <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span> <span class="k">if</span> <span class="n">metadata</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_make_ts_from_event_multiseg</span><span class="p">(</span>
+    <span class="n">block</span><span class="p">,</span> <span class="n">ev_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">time_support</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert Neo Events from multiple segments to a pynapple Ts.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    block : neo.Block</span>
+<span class="sd">        The Neo block containing the segments</span>
+<span class="sd">    ev_idx : int</span>
+<span class="sd">        Index of the event in each segment</span>
+<span class="sd">    time_support : IntervalSet, optional</span>
+<span class="sd">        Time support</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Ts</span>
+<span class="sd">        Pynapple Ts object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">all_times</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">block</span><span class="o">.</span><span class="n">segments</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ev_idx</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">events</span><span class="p">):</span>
+            <span class="k">continue</span>
+
+        <span class="n">event</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">events</span><span class="p">[</span><span class="n">ev_idx</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="s2">&quot;load&quot;</span><span class="p">):</span>
+            <span class="n">event</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+
+        <span class="n">times</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">times</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+        <span class="n">all_times</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">all_times</span><span class="p">),</span> <span class="n">time_support</span><span class="o">=</span><span class="n">time_support</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_make_ts_from_event</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="n">time_support</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a Neo Event to a pynapple Ts.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    event : neo.Event or neo.io.proxyobjects.EventProxy</span>
+<span class="sd">        Neo Event object</span>
+<span class="sd">    time_support : IntervalSet, optional</span>
+<span class="sd">        Time support for the Ts</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Ts</span>
+<span class="sd">        Pynapple Ts object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="s2">&quot;load&quot;</span><span class="p">):</span>
+        <span class="n">event</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+
+    <span class="n">times</span> <span class="o">=</span> <span class="n">event</span><span class="o">.</span><span class="n">times</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+
+    <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">times</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="n">time_support</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_make_ts_from_spiketrain</span><span class="p">(</span>
+    <span class="n">spiketrain</span><span class="p">,</span> <span class="n">time_support</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a Neo SpikeTrain to a pynapple Ts.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    spiketrain : neo.SpikeTrain or SpikeTrainProxy</span>
+<span class="sd">        Neo spike train</span>
+<span class="sd">    time_support : IntervalSet, optional</span>
+<span class="sd">        Time support</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Ts</span>
+<span class="sd">        Pynapple Ts object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">spiketrain</span><span class="p">,</span> <span class="s2">&quot;load&quot;</span><span class="p">):</span>
+        <span class="n">spiketrain</span> <span class="o">=</span> <span class="n">spiketrain</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+
+    <span class="n">times</span> <span class="o">=</span> <span class="n">spiketrain</span><span class="o">.</span><span class="n">times</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+
+    <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">times</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="n">time_support</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_make_ts_from_spiketrain_multiseg</span><span class="p">(</span>
+    <span class="n">block</span><span class="p">,</span> <span class="n">unit_idx</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">time_support</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a Neo SpikeTrain from multiple segments to a pynapple Ts.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    block : neo.Block</span>
+<span class="sd">        The Neo block containing the segments</span>
+<span class="sd">    unit_idx : int</span>
+<span class="sd">        Index of the spike train in each segment</span>
+<span class="sd">    time_support : IntervalSet, optional</span>
+<span class="sd">        Time support</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Ts</span>
+<span class="sd">        Pynapple Ts object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">all_times</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">block</span><span class="o">.</span><span class="n">segments</span><span class="p">:</span>
+        <span class="n">spiketrain</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">spiketrains</span><span class="p">[</span><span class="n">unit_idx</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">spiketrain</span><span class="p">,</span> <span class="s2">&quot;load&quot;</span><span class="p">):</span>
+            <span class="n">spiketrain</span> <span class="o">=</span> <span class="n">spiketrain</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+
+        <span class="n">times</span> <span class="o">=</span> <span class="n">spiketrain</span><span class="o">.</span><span class="n">times</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+        <span class="n">all_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+
+    <span class="n">spike_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">all_times</span><span class="p">)</span> <span class="k">if</span> <span class="n">all_times</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+    <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">spike_times</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="n">time_support</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_make_tsgroup_from_spiketrains</span><span class="p">(</span>
+    <span class="n">spiketrains</span><span class="p">:</span> <span class="nb">list</span> <span class="o">|</span> <span class="n">SpikeTrainList</span><span class="p">,</span>
+    <span class="n">time_support</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a list of Neo SpikeTrains to a pynapple TsGroup.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    spiketrains : list of neo.SpikeTrain or SpikeTrainList</span>
+<span class="sd">        List of spike trains</span>
+<span class="sd">    time_support : IntervalSet, optional</span>
+<span class="sd">        Time support</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    TsGroup</span>
+<span class="sd">        Pynapple TsGroup</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ts_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">st</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">spiketrains</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="s2">&quot;load&quot;</span><span class="p">):</span>
+            <span class="n">st</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+
+        <span class="n">times</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">times</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+        <span class="n">ts_dict</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">times</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="n">time_support</span><span class="p">)</span>
+
+        <span class="c1"># Collect metadata from annotations</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">_extract_annotations</span><span class="p">(</span><span class="n">st</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">:</span>
+                <span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+    <span class="c1"># Convert metadata lists to arrays</span>
+    <span class="n">meta_arrays</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">metadata</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">meta_arrays</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="c1"># Skip metadata that can&#39;t be converted to array</span>
+            <span class="k">pass</span>
+
+    <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">(</span><span class="n">ts_dict</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="n">time_support</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">meta_arrays</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_make_tsgroup_from_spiketrains_multiseg</span><span class="p">(</span>
+    <span class="n">all_spiketrains</span><span class="p">:</span> <span class="nb">list</span><span class="p">[</span><span class="nb">list</span><span class="p">],</span>
+    <span class="n">time_support</span><span class="p">:</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert spike trains from multiple segments to a pynapple TsGroup.</span>
+
+<span class="sd">    This function concatenates spike times across segments for each unit.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    all_spiketrains : list of lists</span>
+<span class="sd">        List of spike train lists, one per segment. Each inner list contains</span>
+<span class="sd">        the spike trains for that segment.</span>
+<span class="sd">    time_support : IntervalSet, optional</span>
+<span class="sd">        Time support</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    TsGroup</span>
+<span class="sd">        Pynapple TsGroup</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_spiketrains</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">({},</span> <span class="n">time_support</span><span class="o">=</span><span class="n">time_support</span><span class="p">)</span>
+
+    <span class="n">n_units</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">all_spiketrains</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">ts_dict</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">metadata</span> <span class="o">=</span> <span class="p">{}</span>
+
+    <span class="k">for</span> <span class="n">unit_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_units</span><span class="p">):</span>
+        <span class="n">all_times</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">seg_spiketrains</span> <span class="ow">in</span> <span class="n">all_spiketrains</span><span class="p">:</span>
+            <span class="n">st</span> <span class="o">=</span> <span class="n">seg_spiketrains</span><span class="p">[</span><span class="n">unit_idx</span><span class="p">]</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">st</span><span class="p">,</span> <span class="s2">&quot;load&quot;</span><span class="p">):</span>
+                <span class="n">st</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+
+            <span class="n">times</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">times</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+            <span class="n">all_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">times</span><span class="p">)</span>
+
+            <span class="c1"># Collect metadata from first segment only</span>
+            <span class="k">if</span> <span class="n">seg_spiketrains</span> <span class="ow">is</span> <span class="n">all_spiketrains</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">_extract_annotations</span><span class="p">(</span><span class="n">st</span><span class="p">)</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">metadata</span><span class="p">:</span>
+                        <span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="n">metadata</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+
+        <span class="n">spike_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">all_times</span><span class="p">)</span> <span class="k">if</span> <span class="n">all_times</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="n">ts_dict</span><span class="p">[</span><span class="n">unit_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">spike_times</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="n">time_support</span><span class="p">)</span>
+
+    <span class="c1"># Convert metadata lists to arrays</span>
+    <span class="n">meta_arrays</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">metadata</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">meta_arrays</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+        <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="ne">TypeError</span><span class="p">):</span>
+            <span class="c1"># Skip metadata that can&#39;t be converted to array</span>
+            <span class="k">pass</span>
+
+    <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">(</span><span class="n">ts_dict</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="n">time_support</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">meta_arrays</span><span class="p">)</span>
+
+
+<span class="k">def</span> <span class="nf">_make_tsd_from_interface</span><span class="p">(</span><span class="n">interface</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span> <span class="o">|</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span> <span class="o">|</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdTensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a NeoSignalInterface to a pynapple Tsd/TsdFrame/TsdTensor.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    interface : NeoSignalInterface</span>
+<span class="sd">        The NeoSignalInterface object</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tsd, TsdFrame, or TsdTensor</span>
+<span class="sd">        Appropriate pynapple time series object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nap_type</span> <span class="o">=</span> <span class="n">interface</span><span class="o">.</span><span class="n">nap_type</span>
+
+    <span class="c1"># return nap_type(t=times, d=data, time_support=interface.time_support, load_array=False)</span>
+    <span class="k">return</span> <span class="n">nap_type</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">interface</span><span class="o">.</span><span class="n">times</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="n">interface</span><span class="p">,</span> <span class="n">load_array</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Signal Interface for lazy loading</span>
+<span class="c1"># =============================================================================</span>
+
+
+<div class="viewcode-block" id="NeoSignalInterface">
+<a class="viewcode-back" href="../../../generated/pynapple.io.NeoSignalInterface.html#pynapple.io.NeoSignalInterface">[docs]</a>
+<span class="k">class</span> <span class="nc">NeoSignalInterface</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Interface for lazy-loading Neo analog signals into pynapple objects.</span>
+
+<span class="sd">    This class provides lazy access to Neo analog signals (AnalogSignal,</span>
+<span class="sd">    IrregularlySampledSignal), loading data only when requested. It acts as</span>
+<span class="sd">    a pseudo memory-mapped array that can be passed directly to Tsd, TsdFrame,</span>
+<span class="sd">    or TsdTensor initialization with `load_array=False`.</span>
+
+<span class="sd">    The interface is array-like (has shape, dtype, ndim, supports indexing</span>
+<span class="sd">    and iteration) so it can be used as a drop-in replacement for numpy arrays</span>
+<span class="sd">    in pynapple time series constructors.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    signal : neo signal object</span>
+<span class="sd">        A Neo analog signal (AnalogSignal or IrregularlySampledSignal)</span>
+<span class="sd">    block : neo.Block</span>
+<span class="sd">        The parent block containing the signal</span>
+<span class="sd">    time_support : IntervalSet</span>
+<span class="sd">        Time support for the data</span>
+<span class="sd">    sig_num : int, optional</span>
+<span class="sd">        Index of the signal within the segment</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    nap_type : type</span>
+<span class="sd">        The pynapple type this signal will be converted to (Tsd, TsdFrame, or TsdTensor)</span>
+<span class="sd">    is_analog : bool</span>
+<span class="sd">        Whether this is a regularly sampled analog signal</span>
+<span class="sd">    dt : float</span>
+<span class="sd">        Sampling interval (for analog signals)</span>
+<span class="sd">    shape : tuple</span>
+<span class="sd">        Shape of the data (total samples across all segments, channels, ...)</span>
+<span class="sd">    dtype : numpy.dtype</span>
+<span class="sd">        Data type of the signal</span>
+<span class="sd">    ndim : int</span>
+<span class="sd">        Number of dimensions</span>
+<span class="sd">    times : numpy.ndarray</span>
+<span class="sd">        Pre-loaded timestamps for all segments (in seconds)</span>
+<span class="sd">    start_time : float</span>
+<span class="sd">        Start time</span>
+<span class="sd">    end_time : float</span>
+<span class="sd">        End time</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; interface = NeoSignalInterface(signal, block, time_support, sig_num=0)</span>
+<span class="sd">    &gt;&gt;&gt; # Use as array-like for lazy loading</span>
+<span class="sd">    &gt;&gt;&gt; tsd = nap.Tsd(t=interface.times, d=interface, load_array=False)</span>
+<span class="sd">    &gt;&gt;&gt; # Data is only loaded when accessed</span>
+<span class="sd">    &gt;&gt;&gt; chunk = tsd[0:1000]  # Loads only first 1000 samples</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="NeoSignalInterface.__init__">
+<a class="viewcode-back" href="../../../generated/pynapple.io.NeoSignalInterface.__init__.html#pynapple.io.NeoSignalInterface.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">signal</span><span class="p">,</span> <span class="n">block</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sig_num</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_support</span> <span class="o">=</span> <span class="n">time_support</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_block</span> <span class="o">=</span> <span class="n">block</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_sig_num</span> <span class="o">=</span> <span class="n">sig_num</span>
+
+        <span class="c1"># Determine signal type and pynapple mapping</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="p">(</span><span class="n">neo</span><span class="o">.</span><span class="n">AnalogSignal</span><span class="p">,</span> <span class="n">AnalogSignalProxy</span><span class="p">)):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_analog</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nap_type</span> <span class="o">=</span> <span class="n">_get_signal_type</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_signal_type</span> <span class="o">=</span> <span class="s2">&quot;analog&quot;</span>
+        <span class="k">elif</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">neo</span><span class="p">,</span> <span class="s2">&quot;IrregularlySampledSignal&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span>
+            <span class="n">signal</span><span class="p">,</span> <span class="n">neo</span><span class="o">.</span><span class="n">IrregularlySampledSignal</span>
+        <span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_analog</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># Irregularly sampled</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nap_type</span> <span class="o">=</span> <span class="n">_get_signal_type</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_signal_type</span> <span class="o">=</span> <span class="s2">&quot;irregular&quot;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Signal type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span><span class="si">}</span><span class="s2"> not recognized.&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Store dtype from signal</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">dtype</span>
+
+        <span class="c1"># Build segment info and compute total shape across all segments</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_segment_offsets</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Cumulative sample counts per segment</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_segment_n_samples</span> <span class="o">=</span> <span class="p">[]</span>  <span class="c1"># Number of samples per segment</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_times_list</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="p">[]</span>
+        <span class="p">)</span>  <span class="c1"># Pre-load timestamps per segment (small memory footprint)</span>
+
+        <span class="n">total_samples</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">block</span><span class="o">.</span><span class="n">segments</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_analog</span><span class="p">:</span>
+                <span class="n">seg_signal</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">analogsignals</span><span class="p">[</span><span class="n">sig_num</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">seg_signal</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">irregularlysampledsignals</span><span class="p">[</span><span class="n">sig_num</span><span class="p">]</span>
+
+            <span class="n">n_samples</span> <span class="o">=</span> <span class="n">seg_signal</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_segment_offsets</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">total_samples</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_segment_n_samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span>
+            <span class="n">total_samples</span> <span class="o">+=</span> <span class="n">n_samples</span>
+
+            <span class="c1"># Pre-load timestamps (much smaller than data)</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">seg_signal</span><span class="p">,</span> <span class="s2">&quot;times&quot;</span><span class="p">):</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_times_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">seg_signal</span><span class="o">.</span><span class="n">times</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_times_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span>
+                        <span class="n">_rescale_to_seconds</span><span class="p">(</span><span class="n">seg_signal</span><span class="o">.</span><span class="n">t_start</span><span class="p">),</span>
+                        <span class="n">_rescale_to_seconds</span><span class="p">(</span><span class="n">seg_signal</span><span class="o">.</span><span class="n">t_stop</span><span class="p">),</span>
+                        <span class="n">n_samples</span><span class="p">,</span>
+                        <span class="n">endpoint</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="p">)</span>
+                <span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_segment_offsets</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_segment_offsets</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_segment_n_samples</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_segment_n_samples</span><span class="p">)</span>
+
+        <span class="c1"># Concatenate all timestamps</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_times_list</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_times_list</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+
+        <span class="c1"># Compute total shape (first dimension is total samples)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">total_samples</span><span class="p">),)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">shape</span> <span class="o">=</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">total_samples</span><span class="p">),)</span> <span class="o">+</span> <span class="n">signal</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+        <span class="c1"># Store timing info</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_analog</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">dt</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">signal</span><span class="o">.</span><span class="n">sampling_rate</span><span class="p">)</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="s2">&quot;s&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">start_time</span> <span class="o">=</span> <span class="n">_rescale_to_seconds</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">t_start</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">end_time</span> <span class="o">=</span> <span class="n">_rescale_to_seconds</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">t_stop</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;&lt;NeoSignalInterface: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">nap_type</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">, shape=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">, dtype=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="si">}</span><span class="s2">&gt;&quot;</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">ndim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of dimensions.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+    <span class="nd">@property</span>
+    <span class="k">def</span> <span class="nf">times</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Pre-loaded timestamps for all segments (in seconds).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_times</span>
+
+    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the number of samples (first dimension of shape).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="fm">__iter__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Iterate over the first axis, loading data lazily.&quot;&quot;&quot;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)):</span>
+            <span class="k">yield</span> <span class="bp">self</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+
+    <span class="k">def</span> <span class="nf">_find_segment_for_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">idx</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Find which segment contains the given global index.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        seg_idx : int</span>
+<span class="sd">            Index of the segment</span>
+<span class="sd">        local_idx : int</span>
+<span class="sd">            Index within that segment</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">idx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">+</span> <span class="n">idx</span>
+        <span class="k">if</span> <span class="n">idx</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">idx</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Index </span><span class="si">{</span><span class="n">idx</span><span class="si">}</span><span class="s2"> out of bounds for size </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Find segment using binary search on offsets</span>
+        <span class="n">seg_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_segment_offsets</span><span class="p">,</span> <span class="n">idx</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="n">local_idx</span> <span class="o">=</span> <span class="n">idx</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_segment_offsets</span><span class="p">[</span><span class="n">seg_idx</span><span class="p">]</span>
+        <span class="k">return</span> <span class="n">seg_idx</span><span class="p">,</span> <span class="n">local_idx</span>
+
+    <span class="k">def</span> <span class="nf">_load_data_range</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_idx</span><span class="p">,</span> <span class="n">stop_idx</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load data for a range of global indices.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        start_idx : int</span>
+<span class="sd">            Start index (inclusive)</span>
+<span class="sd">        stop_idx : int</span>
+<span class="sd">            Stop index (exclusive)</span>
+<span class="sd">        step : int</span>
+<span class="sd">            Step size</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray</span>
+<span class="sd">            The loaded data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">start_idx</span> <span class="o">&gt;=</span> <span class="n">stop_idx</span><span class="p">:</span>
+            <span class="c1"># Return empty array with correct shape</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="n">data_chunks</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">seg_idx</span><span class="p">,</span> <span class="n">seg</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_block</span><span class="o">.</span><span class="n">segments</span><span class="p">):</span>
+            <span class="n">seg_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_segment_offsets</span><span class="p">[</span><span class="n">seg_idx</span><span class="p">]</span>
+            <span class="n">seg_end</span> <span class="o">=</span> <span class="n">seg_start</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_segment_n_samples</span><span class="p">[</span><span class="n">seg_idx</span><span class="p">]</span>
+
+            <span class="c1"># Check if this segment overlaps with requested range</span>
+            <span class="k">if</span> <span class="n">stop_idx</span> <span class="o">&lt;=</span> <span class="n">seg_start</span> <span class="ow">or</span> <span class="n">start_idx</span> <span class="o">&gt;=</span> <span class="n">seg_end</span><span class="p">:</span>
+                <span class="k">continue</span>
+
+            <span class="c1"># Calculate local indices within this segment</span>
+            <span class="n">local_start</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">start_idx</span> <span class="o">-</span> <span class="n">seg_start</span><span class="p">)</span>
+            <span class="n">local_stop</span> <span class="o">=</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_segment_n_samples</span><span class="p">[</span><span class="n">seg_idx</span><span class="p">],</span> <span class="n">stop_idx</span> <span class="o">-</span> <span class="n">seg_start</span><span class="p">)</span>
+
+            <span class="c1"># Load data from this segment</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_analog</span><span class="p">:</span>
+                <span class="n">signal</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">analogsignals</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_sig_num</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">signal</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">irregularlysampledsignals</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_sig_num</span><span class="p">]</span>
+
+            <span class="c1"># Try to load with indexing, fall back to time slicing</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="s2">&quot;load&quot;</span><span class="p">):</span>
+                    <span class="n">loaded</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">load</span><span class="p">()</span>
+                    <span class="n">chunk</span> <span class="o">=</span> <span class="n">loaded</span><span class="p">[</span><span class="n">local_start</span><span class="p">:</span><span class="n">local_stop</span><span class="p">]</span><span class="o">.</span><span class="n">magnitude</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">chunk</span> <span class="o">=</span> <span class="n">signal</span><span class="p">[</span><span class="n">local_start</span><span class="p">:</span><span class="n">local_stop</span><span class="p">]</span><span class="o">.</span><span class="n">magnitude</span>
+            <span class="k">except</span> <span class="p">(</span><span class="ne">MemoryError</span><span class="p">,</span> <span class="ne">AttributeError</span><span class="p">):</span>
+                <span class="c1"># Fall back to time slicing</span>
+                <span class="n">t_start</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_times_list</span><span class="p">[</span><span class="n">seg_idx</span><span class="p">][</span><span class="n">local_start</span><span class="p">]</span>
+                <span class="n">t_stop</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_times_list</span><span class="p">[</span><span class="n">seg_idx</span><span class="p">][</span>
+                    <span class="nb">min</span><span class="p">(</span><span class="n">local_stop</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_times_list</span><span class="p">[</span><span class="n">seg_idx</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="p">]</span>
+                <span class="n">chunk</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">time_slice</span><span class="p">(</span><span class="n">t_start</span><span class="p">,</span> <span class="n">t_stop</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span>
+
+            <span class="n">data_chunks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">data_chunks</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([],</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:],</span> <span class="n">dtype</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+
+        <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">data_chunks</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+        <span class="c1"># Apply step if needed</span>
+        <span class="k">if</span> <span class="n">step</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">result</span><span class="p">[::</span><span class="n">step</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">result</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">item</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get data by index, loading lazily from Neo signals.</span>
+
+<span class="sd">        Supports integer indexing, slicing, and tuple indexing for</span>
+<span class="sd">        multi-dimensional access.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        item : int, slice, or tuple</span>
+<span class="sd">            Index specification</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        numpy.ndarray or scalar</span>
+<span class="sd">            The requested data</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Handle integer indexing</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">integer</span><span class="p">)):</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data_range</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="n">item</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="c1"># Handle slice indexing</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">slice</span><span class="p">):</span>
+            <span class="n">start</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">start</span> <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">start</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span>
+            <span class="n">stop</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">stop</span> <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">stop</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="n">step</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">step</span> <span class="k">if</span> <span class="n">item</span><span class="o">.</span><span class="n">step</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">1</span>
+
+            <span class="c1"># Handle negative indices</span>
+            <span class="k">if</span> <span class="n">start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">start</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">+</span> <span class="n">start</span>
+            <span class="k">if</span> <span class="n">stop</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">stop</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">+</span> <span class="n">stop</span>
+
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_load_data_range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">stop</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+
+        <span class="c1"># Handle tuple indexing (e.g., interface[0:100, 0] for specific channel)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="c1"># First index is for time dimension</span>
+            <span class="n">time_idx</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">rest</span> <span class="o">=</span> <span class="n">item</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+
+            <span class="c1"># Get data for time dimension</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="p">[</span><span class="n">time_idx</span><span class="p">]</span>
+
+            <span class="c1"># Apply remaining indices</span>
+            <span class="k">if</span> <span class="n">rest</span><span class="p">:</span>
+                <span class="n">data</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="n">data</span><span class="p">[(</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">),)</span> <span class="o">+</span> <span class="n">rest</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_idx</span><span class="p">,</span> <span class="nb">slice</span><span class="p">)</span>
+                    <span class="k">else</span> <span class="n">data</span><span class="p">[</span><span class="n">rest</span><span class="p">]</span>
+                <span class="p">)</span>
+
+            <span class="k">return</span> <span class="n">data</span>
+
+        <span class="c1"># Handle numpy array or list indexing</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">indices</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="nb">bool</span><span class="p">:</span>
+                <span class="c1"># Boolean indexing</span>
+                <span class="n">indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">indices</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+            <span class="c1"># Load each index and stack</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="bp">self</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">indices</span><span class="p">])</span>
+            <span class="k">return</span> <span class="n">result</span>
+
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid index type: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">item</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+
+
+
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Main Interface Class</span>
+<span class="c1"># =============================================================================</span>
+
+
+<div class="viewcode-block" id="EphysReader">
+<a class="viewcode-back" href="../../../generated/pynapple.io.EphysReader.html#pynapple.io.EphysReader">[docs]</a>
+<span class="k">class</span> <span class="nc">EphysReader</span><span class="p">(</span><span class="n">UserDict</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read Neo-compatible electrophysiology files into pynapple objects (i.e. Neurosuite, OpenEphys, Plexon, etc).</span>
+
+<span class="sd">    `Neo &lt;https://neo.readthedocs.io/&gt;`_ is a Python package for working with</span>
+<span class="sd">    electrophysiology data, supporting many file formats through a unified API.</span>
+
+<span class="sd">    This class provides a dictionary-like interface to Neo files, with</span>
+<span class="sd">    lazy-loading support. It automatically detects the appropriate IO</span>
+<span class="sd">    based on the file extension.</span>
+
+<span class="sd">    Neo to Pynapple Object Conversion</span>
+<span class="sd">    ---------------------------------</span>
+<span class="sd">    The following Neo objects are converted to their pynapple equivalents:</span>
+
+<span class="sd">    .. list-table::</span>
+<span class="sd">       :header-rows: 1</span>
+<span class="sd">       :widths: 40 40 20</span>
+
+<span class="sd">       * - Neo Object</span>
+<span class="sd">         - Pynapple Object</span>
+<span class="sd">         - Notes</span>
+<span class="sd">       * - `AnalogSignal &lt;https://neo.readthedocs.io/en/latest/api_reference.html#neo.core.AnalogSignal&gt;`_</span>
+<span class="sd">         - :py:class:`~pynapple.Tsd`, :py:class:`~pynapple.TsdFrame`, or :py:class:`~pynapple.TsdTensor`</span>
+<span class="sd">         - Depends on shape; lazy-loaded</span>
+<span class="sd">       * - `IrregularlySampledSignal &lt;https://neo.readthedocs.io/en/latest/api_reference.html#neo.core.IrregularlySampledSignal&gt;`_</span>
+<span class="sd">         - :py:class:`~pynapple.Tsd`, :py:class:`~pynapple.TsdFrame`, or :py:class:`~pynapple.TsdTensor`</span>
+<span class="sd">         - Depends on shape; lazy-loaded</span>
+<span class="sd">       * - `SpikeTrain &lt;https://neo.readthedocs.io/en/latest/api_reference.html#neo.core.SpikeTrain&gt;`_</span>
+<span class="sd">         - :py:class:`~pynapple.Ts`</span>
+<span class="sd">         - Single unit</span>
+<span class="sd">       * - `SpikeTrain &lt;https://neo.readthedocs.io/en/latest/api_reference.html#neo.core.SpikeTrain&gt;`_ (list)</span>
+<span class="sd">         - :py:class:`~pynapple.TsGroup`</span>
+<span class="sd">         - Multiple units</span>
+<span class="sd">       * - `Epoch &lt;https://neo.readthedocs.io/en/latest/api_reference.html#neo.core.Epoch&gt;`_</span>
+<span class="sd">         - :py:class:`~pynapple.IntervalSet`</span>
+<span class="sd">         -</span>
+<span class="sd">       * - `Event &lt;https://neo.readthedocs.io/en/latest/api_reference.html#neo.core.Event&gt;`_</span>
+<span class="sd">         - :py:class:`~pynapple.Ts`</span>
+<span class="sd">         -</span>
+
+<span class="sd">    Note: All data types support lazy loading. Data is only loaded when accessed</span>
+<span class="sd">    via ``__getitem__`` (e.g., ``data[&quot;TsGroup&quot;]``).</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    path : str or Path</span>
+<span class="sd">        Path to the file to load or directory containing the files.</span>
+<span class="sd">    lazy : bool, default True</span>
+<span class="sd">        Whether to use lazy loading</span>
+<span class="sd">    format : str, type, or None, default None</span>
+<span class="sd">        Specify the Neo IO format to use. Can be:</span>
+
+<span class="sd">        - ``None``: Automatically detect the format using ``neo.io.get_io``</span>
+<span class="sd">        - ``str``: Name of the IO class (e.g., ``&quot;PlexonIO&quot;``, ``&quot;Plexon&quot;``, ``&quot;plexon&quot;``)</span>
+<span class="sd">        - ``type``: A class from ``neo.io.iolist`` (e.g., ``neo.io.PlexonIO``)</span>
+
+<span class="sd">        When a string is provided, it is matched case-insensitively against IO class names.</span>
+<span class="sd">        The &quot;IO&quot; suffix is optional.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import pynapple as nap</span>
+<span class="sd">    &gt;&gt;&gt; data = nap.EphysReader(&quot;my_file.plx&quot;)</span>
+<span class="sd">    &gt;&gt;&gt; print(data)</span>
+<span class="sd">    my_file</span>
+<span class="sd">    ┍━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━┑</span>
+<span class="sd">    │ Key                 │ Type     │</span>
+<span class="sd">    ┝━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━┥</span>
+<span class="sd">    │ TsGroup             │ TsGroup  │</span>
+<span class="sd">    │ Tsd 0: LFP          │ Tsd      │</span>
+<span class="sd">    ┕━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━┙</span>
+
+<span class="sd">    &gt;&gt;&gt; spikes = data[&quot;TsGroup&quot;]</span>
+<span class="sd">    &gt;&gt;&gt; lfp = data[&quot;Tsd 0: LFP&quot;]</span>
+
+<span class="sd">    To explicitly specify the file format:</span>
+
+<span class="sd">    &gt;&gt;&gt; data = nap.EphysReader(&quot;my_file.plx&quot;, format=&quot;PlexonIO&quot;)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+<div class="viewcode-block" id="EphysReader.__init__">
+<a class="viewcode-back" href="../../../generated/pynapple.io.EphysReader.__init__.html#pynapple.io.EphysReader.__init__">[docs]</a>
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Path</span><span class="p">,</span>
+        <span class="n">lazy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="nb">format</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">type</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">_check_neo_installed</span><span class="p">()</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Files not found: </span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">stem</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># special case if format is NeuroscopeIO to check for binary files and set up deferred loading</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_neuroscope</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">,</span> <span class="nb">format</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_collect_neuroscope</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_init_neo_reader</span><span class="p">(</span><span class="nb">format</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_collect_data</span><span class="p">(</span>
+                <span class="n">lazy</span><span class="o">=</span><span class="n">lazy</span>
+            <span class="p">)</span>  <span class="c1"># This will read the Neo blocks and populate self.data with metadata and interfaces for lazy loading</span>
+
+        <span class="n">UserDict</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span></div>
+
+
+    <span class="k">def</span> <span class="nf">_is_neuroscope</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if the format specifies NeuroscopeIO.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path : Path</span>
+<span class="sd">            The path to the file or directory being loaded.</span>
+<span class="sd">        format : str, type, or None</span>
+<span class="sd">            The format argument passed to EphysReader.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        bool</span>
+<span class="sd">            True if the format is NeuroscopeIO.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">format</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">format</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;io&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;neuroscope&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">if</span> <span class="p">(</span>
+            <span class="nb">isinstance</span><span class="p">(</span><span class="nb">format</span><span class="p">,</span> <span class="nb">type</span><span class="p">)</span>
+            <span class="ow">and</span> <span class="nb">format</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;io&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;neuroscope&quot;</span>
+        <span class="p">):</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="c1"># Additional heuristic: check for presence of Neuroscope binary files</span>
+        <span class="n">binary_extensions</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;.dat&quot;</span><span class="p">,</span> <span class="s2">&quot;.lfp&quot;</span><span class="p">,</span> <span class="s2">&quot;.eeg&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">path</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">ext</span> <span class="ow">in</span> <span class="n">binary_extensions</span><span class="p">:</span>
+                <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;*</span><span class="si">{</span><span class="n">ext</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)):</span>
+                    <span class="c1"># Check for an xml file that would indicate Neuroscope format</span>
+                    <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">path</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.xml&quot;</span><span class="p">)):</span>
+                        <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">path</span><span class="o">.</span><span class="n">suffix</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="n">binary_extensions</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">True</span>
+        <span class="k">return</span> <span class="kc">False</span>
+
+    <span class="k">def</span> <span class="nf">_init_neo_reader</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">format</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize the Neo reader</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        format : str, type, or None</span>
+<span class="sd">            The format argument passed to EphysReader.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">format</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reader</span> <span class="o">=</span> <span class="n">neo</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">get_io</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">format</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="n">io_class</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">format_lower</span> <span class="o">=</span> <span class="nb">format</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">io</span> <span class="ow">in</span> <span class="n">neo</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">iolist</span><span class="p">:</span>
+                <span class="n">io_name</span> <span class="o">=</span> <span class="n">io</span><span class="o">.</span><span class="vm">__name__</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                <span class="n">io_name_no_suffix</span> <span class="o">=</span> <span class="n">io_name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;io&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">io_name</span> <span class="o">==</span> <span class="n">format_lower</span> <span class="ow">or</span> <span class="n">io_name_no_suffix</span> <span class="o">==</span> <span class="n">format_lower</span><span class="p">:</span>
+                    <span class="n">io_class</span> <span class="o">=</span> <span class="n">io</span>
+                    <span class="k">break</span>
+            <span class="k">if</span> <span class="n">io_class</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">available</span> <span class="o">=</span> <span class="p">[</span><span class="n">io</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">for</span> <span class="n">io</span> <span class="ow">in</span> <span class="n">neo</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">iolist</span><span class="p">]</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Format &#39;</span><span class="si">{</span><span class="nb">format</span><span class="si">}</span><span class="s2">&#39; not found in neo.io.iolist. &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Available formats: </span><span class="si">{</span><span class="n">available</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reader</span> <span class="o">=</span> <span class="n">io_class</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="nb">format</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
+            <span class="k">if</span> <span class="nb">format</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">neo</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">iolist</span><span class="p">:</span>
+                <span class="n">available</span> <span class="o">=</span> <span class="p">[</span><span class="n">io</span><span class="o">.</span><span class="vm">__name__</span> <span class="k">for</span> <span class="n">io</span> <span class="ow">in</span> <span class="n">neo</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">iolist</span><span class="p">]</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;Class </span><span class="si">{</span><span class="nb">format</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> is not in neo.io.iolist. &quot;</span>
+                    <span class="sa">f</span><span class="s2">&quot;Available formats: </span><span class="si">{</span><span class="n">available</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reader</span> <span class="o">=</span> <span class="nb">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;format must be None, a string, or a class from neo.io.iolist, &quot;</span>
+                <span class="sa">f</span><span class="s2">&quot;not </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="nb">format</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_collect_neuroscope</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Scan a Neuroscope session and set up deferred loading entries.</span>
+
+<span class="sd">        Uses :class:`~pynapple.io.interface_neurosuite.NeuroSuiteIO` to</span>
+<span class="sd">        discover files and parse XML metadata.  Populates ``self.data``</span>
+<span class="sd">        with entries for .dat, .eeg/.lfp, and .clu/.res files.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        path : Path</span>
+<span class="sd">            The path to the session directory (or a file inside it).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">ns</span> <span class="o">=</span> <span class="n">NeuroSuiteIO</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+
+        <span class="c1"># --- .dat file (raw wideband) ---</span>
+        <span class="k">if</span> <span class="n">ns</span><span class="o">.</span><span class="n">dat_files</span><span class="p">:</span>
+            <span class="n">dat_file</span> <span class="o">=</span> <span class="n">ns</span><span class="o">.</span><span class="n">dat_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">dat_file</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;TsdFrame&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;loader&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">f</span><span class="o">=</span><span class="n">dat_file</span><span class="p">:</span> <span class="n">ns</span><span class="o">.</span><span class="n">load_binary</span><span class="p">(</span><span class="n">f</span><span class="p">),</span>
+            <span class="p">}</span>
+
+        <span class="c1"># --- .eeg / .lfp file (LFP) ---</span>
+        <span class="k">if</span> <span class="n">ns</span><span class="o">.</span><span class="n">lfp_files</span><span class="p">:</span>
+            <span class="n">lfp_file</span> <span class="o">=</span> <span class="n">ns</span><span class="o">.</span><span class="n">lfp_files</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">lfp_file</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;TsdFrame&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;loader&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">f</span><span class="o">=</span><span class="n">lfp_file</span><span class="p">:</span> <span class="n">ns</span><span class="o">.</span><span class="n">load_binary</span><span class="p">(</span><span class="n">f</span><span class="p">),</span>
+            <span class="p">}</span>
+
+        <span class="c1"># --- .clu.N / .res.N pairs (spike sorting) ---</span>
+        <span class="k">for</span> <span class="n">shank</span> <span class="ow">in</span> <span class="n">ns</span><span class="o">.</span><span class="n">spike_groups</span><span class="p">:</span>
+            <span class="n">clu_file</span><span class="p">,</span> <span class="n">res_file</span> <span class="o">=</span> <span class="n">ns</span><span class="o">.</span><span class="n">spike_groups</span><span class="p">[</span><span class="n">shank</span><span class="p">]</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">clu_file</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;TsGroup&quot;</span><span class="p">,</span>
+                <span class="s2">&quot;loader&quot;</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">s</span><span class="o">=</span><span class="n">shank</span><span class="p">:</span> <span class="n">ns</span><span class="o">.</span><span class="n">load_spikes</span><span class="p">(</span><span class="n">s</span><span class="p">),</span>
+            <span class="p">}</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">_ns</span> <span class="o">=</span> <span class="n">ns</span>  <span class="c1"># Store the NeuroSuiteIO instance for use in loaders</span>
+
+    <span class="k">def</span> <span class="nf">_get_electrode_positions</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract electrode positions from the reader&#39;s settings file.</span>
+
+<span class="sd">        Currently supports Open Ephys binary format, where positions are</span>
+<span class="sd">        stored in ``settings.xml`` under ``&lt;ELECTRODE_XPOS&gt;`` /</span>
+<span class="sd">        ``&lt;ELECTRODE_YPOS&gt;`` elements.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            Probe serial -&gt; ``{&quot;x&quot;: ndarray, &quot;y&quot;: ndarray}`` mapping,</span>
+<span class="sd">            or empty dict if not available.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_reader</span><span class="p">,</span> <span class="s2">&quot;folder_structure&quot;</span><span class="p">):</span>
+            <span class="k">return</span> <span class="p">{}</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reader</span><span class="o">.</span><span class="n">folder_structure</span>
+        <span class="c1"># Walk to the first experiment&#39;s settings_file</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">fs</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">for</span> <span class="n">exp</span> <span class="ow">in</span> <span class="n">node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;experiments&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+                <span class="n">settings_file</span> <span class="o">=</span> <span class="n">exp</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;settings_file&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">settings_file</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">return</span> <span class="n">_parse_openephys_electrode_positions</span><span class="p">(</span><span class="n">settings_file</span><span class="p">)</span>
+        <span class="k">return</span> <span class="p">{}</span>
+
+    <span class="k">def</span> <span class="nf">_make_mmap_entry</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">proxy</span><span class="p">,</span> <span class="n">block_idx</span><span class="p">,</span> <span class="n">nap_type</span><span class="p">,</span> <span class="n">time_support</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build a deferred-loading dict that memory-maps a raw binary file.</span>
+
+<span class="sd">        Uses Neo&#39;s buffer description API to locate the file on disk and</span>
+<span class="sd">        the column slice that corresponds to this particular stream.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        proxy : AnalogSignalProxy</span>
+<span class="sd">            The Neo proxy for this signal.</span>
+<span class="sd">        block_idx : int</span>
+<span class="sd">            Block index in the reader.</span>
+<span class="sd">        nap_type : type</span>
+<span class="sd">            Pynapple type (Tsd, TsdFrame, TsdTensor).</span>
+<span class="sd">        time_support : IntervalSet</span>
+<span class="sd">            Time support for the recording.</span>
+<span class="sd">        metadata : dict or None</span>
+<span class="sd">            Optional per-column metadata to attach to the resulting object.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dict</span>
+<span class="sd">            Entry for ``self.data`` with a callable ``&quot;loader&quot;``.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">reader</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reader</span>
+        <span class="n">stream_idx</span> <span class="o">=</span> <span class="n">proxy</span><span class="o">.</span><span class="n">_stream_index</span>
+        <span class="n">stream_info</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">header</span><span class="p">[</span><span class="s2">&quot;signal_streams&quot;</span><span class="p">][</span><span class="n">stream_idx</span><span class="p">]</span>
+        <span class="n">stream_id</span> <span class="o">=</span> <span class="n">stream_info</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span>
+        <span class="n">buffer_id</span> <span class="o">=</span> <span class="n">stream_info</span><span class="p">[</span><span class="s2">&quot;buffer_id&quot;</span><span class="p">]</span>
+
+        <span class="n">bd</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">get_analogsignal_buffer_description</span><span class="p">(</span>
+            <span class="n">block_index</span><span class="o">=</span><span class="n">block_idx</span><span class="p">,</span>
+            <span class="n">seg_index</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+            <span class="n">buffer_id</span><span class="o">=</span><span class="n">buffer_id</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">file_path</span> <span class="o">=</span> <span class="n">bd</span><span class="p">[</span><span class="s2">&quot;file_path&quot;</span><span class="p">]</span>
+        <span class="n">dtype</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">bd</span><span class="p">[</span><span class="s2">&quot;dtype&quot;</span><span class="p">])</span>
+        <span class="n">buf_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">bd</span><span class="p">[</span><span class="s2">&quot;shape&quot;</span><span class="p">])</span>
+        <span class="n">col_slice</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">_stream_buffer_slice</span><span class="p">[</span><span class="n">stream_id</span><span class="p">]</span>
+
+        <span class="c1"># Pre-compute timestamps from the proxy metadata</span>
+        <span class="n">t_start</span> <span class="o">=</span> <span class="n">_rescale_to_seconds</span><span class="p">(</span><span class="n">proxy</span><span class="o">.</span><span class="n">t_start</span><span class="p">)</span>
+        <span class="n">sampling_rate</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">proxy</span><span class="o">.</span><span class="n">sampling_rate</span><span class="o">.</span><span class="n">rescale</span><span class="p">(</span><span class="s2">&quot;Hz&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">magnitude</span><span class="p">)</span>
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">proxy</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+        <span class="k">def</span> <span class="nf">_loader</span><span class="p">():</span>
+            <span class="n">fp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">memmap</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">dtype</span><span class="p">,</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="n">buf_shape</span><span class="p">)</span>
+            <span class="n">data</span> <span class="o">=</span> <span class="n">fp</span> <span class="k">if</span> <span class="n">col_slice</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">fp</span><span class="p">[:,</span> <span class="n">col_slice</span><span class="p">]</span>
+            <span class="n">timestamps</span> <span class="o">=</span> <span class="n">t_start</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_samples</span><span class="p">)</span> <span class="o">/</span> <span class="n">sampling_rate</span>
+            <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">if</span> <span class="n">metadata</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;metadata&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">metadata</span>
+            <span class="k">return</span> <span class="n">nap_type</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">timestamps</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">load_array</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">nap_type</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+            <span class="s2">&quot;loader&quot;</span><span class="p">:</span> <span class="n">_loader</span><span class="p">,</span>
+        <span class="p">}</span>
+
+    <span class="k">def</span> <span class="nf">_collect_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">lazy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Collect all data from Neo blocks into the dictionary.&quot;&quot;&quot;</span>
+        <span class="c1"># Read blocks</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_blocks</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reader</span><span class="o">.</span><span class="n">read</span><span class="p">(</span><span class="n">lazy</span><span class="o">=</span><span class="n">lazy</span><span class="p">)</span>
+
+        <span class="c1"># Build data dictionary</span>
+        <span class="k">for</span> <span class="n">block_idx</span><span class="p">,</span> <span class="n">block</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_blocks</span><span class="p">):</span>
+            <span class="n">block_prefix</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_blocks</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;block</span><span class="si">{</span><span class="n">block_idx</span><span class="si">}</span><span class="s2">/&quot;</span>
+
+            <span class="c1"># Build time support from segments</span>
+            <span class="n">starts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">_rescale_to_seconds</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">t_start</span><span class="p">)</span> <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">block</span><span class="o">.</span><span class="n">segments</span><span class="p">]</span>
+            <span class="p">)</span>
+            <span class="n">ends</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">_rescale_to_seconds</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">t_stop</span><span class="p">)</span> <span class="k">for</span> <span class="n">seg</span> <span class="ow">in</span> <span class="n">block</span><span class="o">.</span><span class="n">segments</span><span class="p">])</span>
+            <span class="n">time_support</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">starts</span><span class="p">,</span> <span class="n">ends</span><span class="p">)</span>
+
+            <span class="c1"># Process first segment to get signal info</span>
+            <span class="c1"># (assuming consistent structure across segments)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">block</span><span class="o">.</span><span class="n">segments</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">seg</span> <span class="o">=</span> <span class="n">block</span><span class="o">.</span><span class="n">segments</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+                <span class="c1"># Analog signals - deferred loading via NeoSignalInterface</span>
+                <span class="c1"># or memory-mapped when the reader exposes raw buffer info</span>
+                <span class="n">has_buffer_api</span> <span class="o">=</span> <span class="p">(</span>
+                    <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_reader</span><span class="p">,</span> <span class="s2">&quot;has_buffer_description_api&quot;</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_reader</span><span class="o">.</span><span class="n">has_buffer_description_api</span><span class="p">()</span>
+                <span class="p">)</span>
+
+                <span class="c1"># Parse electrode positions from settings.xml (OpenEphys)</span>
+                <span class="n">electrode_positions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_electrode_positions</span><span class="p">()</span>
+
+                <span class="k">for</span> <span class="n">sig_idx</span><span class="p">,</span> <span class="n">signal</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">analogsignals</span><span class="p">):</span>
+                    <span class="n">nap_type</span> <span class="o">=</span> <span class="n">_get_signal_type</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">signal</span><span class="o">.</span><span class="n">name</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;signal</span><span class="si">{</span><span class="n">sig_idx</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">block_prefix</span><span class="si">}{</span><span class="n">sig_idx</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+
+                    <span class="k">if</span> <span class="n">has_buffer_api</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">signal</span><span class="p">,</span> <span class="n">AnalogSignalProxy</span><span class="p">):</span>
+                        <span class="c1"># Build per-column metadata from electrode positions</span>
+                        <span class="n">metadata</span> <span class="o">=</span> <span class="kc">None</span>
+                        <span class="k">if</span> <span class="n">electrode_positions</span><span class="p">:</span>
+                            <span class="n">n_ch</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">signal</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="mi">1</span>
+                            <span class="c1"># Use the first (and usually only) probe</span>
+                            <span class="n">probe</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">electrode_positions</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
+                            <span class="n">n_electrodes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">probe</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]))</span>
+                            <span class="k">if</span> <span class="n">n_ch</span> <span class="o">==</span> <span class="n">n_electrodes</span><span class="p">:</span>
+                                <span class="n">mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">np</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">probe</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">])</span>
+                                <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span>
+                                    <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">probe</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">][</span><span class="n">mask</span><span class="p">],</span>
+                                    <span class="s2">&quot;y&quot;</span><span class="p">:</span> <span class="n">probe</span><span class="p">[</span><span class="s2">&quot;y&quot;</span><span class="p">][</span><span class="n">mask</span><span class="p">],</span>
+                                <span class="p">}</span>
+
+                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_mmap_entry</span><span class="p">(</span>
+                            <span class="n">signal</span><span class="p">,</span>
+                            <span class="n">block_idx</span><span class="p">,</span>
+                            <span class="n">nap_type</span><span class="p">,</span>
+                            <span class="n">time_support</span><span class="p">,</span>
+                            <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">,</span>
+                        <span class="p">)</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                            <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">nap_type</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                            <span class="s2">&quot;loader&quot;</span><span class="p">:</span> <span class="s2">&quot;analogsignal&quot;</span><span class="p">,</span>
+                            <span class="s2">&quot;block&quot;</span><span class="p">:</span> <span class="n">block</span><span class="p">,</span>
+                            <span class="s2">&quot;sig_num&quot;</span><span class="p">:</span> <span class="n">sig_idx</span><span class="p">,</span>
+                            <span class="s2">&quot;time_support&quot;</span><span class="p">:</span> <span class="n">time_support</span><span class="p">,</span>
+                        <span class="p">}</span>
+
+                <span class="c1"># Irregularly sampled signals</span>
+                <span class="k">for</span> <span class="n">sig_idx</span><span class="p">,</span> <span class="n">signal</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">irregularlysampledsignals</span><span class="p">):</span>
+                    <span class="n">nap_type</span> <span class="o">=</span> <span class="n">_get_signal_type</span><span class="p">(</span><span class="n">signal</span><span class="p">)</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="n">signal</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">signal</span><span class="o">.</span><span class="n">name</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;irregular</span><span class="si">{</span><span class="n">sig_idx</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">block_prefix</span><span class="si">}</span><span class="s2">(irregular)</span><span class="si">{</span><span class="n">sig_idx</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">nap_type</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span>
+                        <span class="s2">&quot;loader&quot;</span><span class="p">:</span> <span class="s2">&quot;irregularsignal&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;block&quot;</span><span class="p">:</span> <span class="n">block</span><span class="p">,</span>
+                        <span class="s2">&quot;sig_num&quot;</span><span class="p">:</span> <span class="n">sig_idx</span><span class="p">,</span>
+                        <span class="s2">&quot;time_support&quot;</span><span class="p">:</span> <span class="n">time_support</span><span class="p">,</span>
+                    <span class="p">}</span>
+
+                <span class="c1"># Spike trains - deferred loading</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">spiketrains</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">st</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">spiketrains</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="n">st</span><span class="o">.</span><span class="n">name</span> <span class="k">if</span> <span class="n">st</span><span class="o">.</span><span class="n">name</span> <span class="k">else</span> <span class="s2">&quot;spikes&quot;</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">block_prefix</span><span class="si">}</span><span class="s2">Ts:</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+
+                    <span class="c1"># Store info for deferred loading</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Ts&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;loader&quot;</span><span class="p">:</span> <span class="s2">&quot;spiketrain&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;block&quot;</span><span class="p">:</span> <span class="n">block</span><span class="p">,</span>
+                        <span class="s2">&quot;unit_idx&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+                        <span class="s2">&quot;time_support&quot;</span><span class="p">:</span> <span class="n">time_support</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">spiketrains</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">block_prefix</span><span class="si">}</span><span class="s2">TsGroup&quot;</span>
+
+                    <span class="c1"># Store info for deferred loading</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;TsGroup&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;loader&quot;</span><span class="p">:</span> <span class="s2">&quot;tsgroup&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;block&quot;</span><span class="p">:</span> <span class="n">block</span><span class="p">,</span>
+                        <span class="s2">&quot;time_support&quot;</span><span class="p">:</span> <span class="n">time_support</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="c1"># Epochs - deferred loading</span>
+                <span class="k">for</span> <span class="n">ep_idx</span><span class="p">,</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">epochs</span><span class="p">):</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">epoch</span><span class="o">.</span><span class="n">name</span>
+                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">epoch</span><span class="o">.</span><span class="n">name</span>
+                        <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;epoch</span><span class="si">{</span><span class="n">ep_idx</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">block_prefix</span><span class="si">}{</span><span class="n">ep_idx</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+
+                    <span class="c1"># Store info for deferred loading</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;IntervalSet&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;loader&quot;</span><span class="p">:</span> <span class="s2">&quot;epoch&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;block&quot;</span><span class="p">:</span> <span class="n">block</span><span class="p">,</span>
+                        <span class="s2">&quot;ep_idx&quot;</span><span class="p">:</span> <span class="n">ep_idx</span><span class="p">,</span>
+                        <span class="s2">&quot;time_support&quot;</span><span class="p">:</span> <span class="n">time_support</span><span class="p">,</span>
+                    <span class="p">}</span>
+                <span class="c1"># Events - deferred loading</span>
+                <span class="k">for</span> <span class="n">ev_idx</span><span class="p">,</span> <span class="n">event</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">events</span><span class="p">):</span>
+                    <span class="n">name</span> <span class="o">=</span> <span class="p">(</span>
+                        <span class="n">event</span><span class="o">.</span><span class="n">name</span>
+                        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">event</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">event</span><span class="o">.</span><span class="n">name</span>
+                        <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;event</span><span class="si">{</span><span class="n">ev_idx</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="p">)</span>
+                    <span class="n">key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">block_prefix</span><span class="si">}{</span><span class="n">ev_idx</span><span class="si">}</span><span class="s2">:</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span>
+
+                    <span class="c1"># Store info for deferred loading</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                        <span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;Ts&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;loader&quot;</span><span class="p">:</span> <span class="s2">&quot;event&quot;</span><span class="p">,</span>
+                        <span class="s2">&quot;block&quot;</span><span class="p">:</span> <span class="n">block</span><span class="p">,</span>
+                        <span class="s2">&quot;ev_idx&quot;</span><span class="p">:</span> <span class="n">ev_idx</span><span class="p">,</span>
+                        <span class="s2">&quot;time_support&quot;</span><span class="p">:</span> <span class="n">time_support</span><span class="p">,</span>
+                    <span class="p">}</span>
+
+    <span class="k">def</span> <span class="fm">__str__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;String representation showing available data.&quot;&quot;&quot;</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">name</span>
+        <span class="n">view</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+                <span class="n">view</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">view</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">k</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">])</span>
+        <span class="n">headers</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Key&quot;</span><span class="p">,</span> <span class="s2">&quot;Type&quot;</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">HAS_TABULATE</span><span class="p">:</span>
+            <span class="k">return</span> <span class="p">(</span>
+                <span class="n">title</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="n">tabulate</span><span class="p">(</span><span class="n">view</span><span class="p">,</span> <span class="n">headers</span><span class="o">=</span><span class="n">headers</span><span class="p">,</span> <span class="n">tablefmt</span><span class="o">=</span><span class="s2">&quot;mixed_outline&quot;</span><span class="p">)</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Simple fallback without tabulate</span>
+            <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="n">title</span><span class="p">,</span> <span class="s2">&quot;-&quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">title</span><span class="p">)]</span>
+            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">view</span><span class="p">:</span>
+                <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="fm">__str__</span><span class="p">()</span>
+
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get data by key, loading if necessary.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        key : str</span>
+<span class="sd">            Key for the data item</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        pynapple object</span>
+<span class="sd">            The requested data (Ts, Tsd, TsdFrame, TsdTensor, TsGroup, IntervalSet)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Key &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39; not found. Available keys: </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="p">)</span>
+
+        <span class="n">item</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="c1"># If already loaded, return it</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">return</span> <span class="n">item</span>
+
+        <span class="c1"># Load based on loader type</span>
+        <span class="n">loader</span> <span class="o">=</span> <span class="n">item</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;loader&quot;</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="nb">callable</span><span class="p">(</span><span class="n">loader</span><span class="p">):</span>
+            <span class="n">loaded_data</span> <span class="o">=</span> <span class="n">loader</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">loader</span> <span class="o">==</span> <span class="s2">&quot;spiketrain&quot;</span><span class="p">:</span>
+            <span class="n">loaded_data</span> <span class="o">=</span> <span class="n">_make_ts_from_spiketrain_multiseg</span><span class="p">(</span>
+                <span class="n">item</span><span class="p">[</span><span class="s2">&quot;block&quot;</span><span class="p">],</span>
+                <span class="n">unit_idx</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;unit_idx&quot;</span><span class="p">],</span>
+                <span class="n">time_support</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;time_support&quot;</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">loader</span> <span class="o">==</span> <span class="s2">&quot;tsgroup&quot;</span><span class="p">:</span>
+            <span class="n">all_spiketrains</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span><span class="o">.</span><span class="n">spiketrains</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;block&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">segments</span><span class="p">]</span>
+            <span class="n">loaded_data</span> <span class="o">=</span> <span class="n">_make_tsgroup_from_spiketrains_multiseg</span><span class="p">(</span>
+                <span class="n">all_spiketrains</span><span class="p">,</span>
+                <span class="n">time_support</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;time_support&quot;</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">loader</span> <span class="o">==</span> <span class="s2">&quot;epoch&quot;</span><span class="p">:</span>
+            <span class="n">loaded_data</span> <span class="o">=</span> <span class="n">_make_intervalset_from_epoch_multiseg</span><span class="p">(</span>
+                <span class="n">item</span><span class="p">[</span><span class="s2">&quot;block&quot;</span><span class="p">],</span>
+                <span class="n">ep_idx</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;ep_idx&quot;</span><span class="p">],</span>
+                <span class="n">time_support</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;time_support&quot;</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">loader</span> <span class="o">==</span> <span class="s2">&quot;event&quot;</span><span class="p">:</span>
+            <span class="n">loaded_data</span> <span class="o">=</span> <span class="n">_make_ts_from_event_multiseg</span><span class="p">(</span>
+                <span class="n">item</span><span class="p">[</span><span class="s2">&quot;block&quot;</span><span class="p">],</span>
+                <span class="n">ev_idx</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;ev_idx&quot;</span><span class="p">],</span>
+                <span class="n">time_support</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;time_support&quot;</span><span class="p">],</span>
+            <span class="p">)</span>
+        <span class="k">elif</span> <span class="n">loader</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;analogsignal&quot;</span><span class="p">,</span> <span class="s2">&quot;irregularsignal&quot;</span><span class="p">]:</span>
+            <span class="n">interface</span> <span class="o">=</span> <span class="n">NeoSignalInterface</span><span class="p">(</span>
+                <span class="n">signal</span><span class="o">=</span><span class="p">(</span>
+                    <span class="n">item</span><span class="p">[</span><span class="s2">&quot;block&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">segments</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">analogsignals</span><span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;sig_num&quot;</span><span class="p">]]</span>
+                    <span class="k">if</span> <span class="n">loader</span> <span class="o">==</span> <span class="s2">&quot;analogsignal&quot;</span>
+                    <span class="k">else</span> <span class="n">item</span><span class="p">[</span><span class="s2">&quot;block&quot;</span><span class="p">]</span>
+                    <span class="o">.</span><span class="n">segments</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="o">.</span><span class="n">irregularlysampledsignals</span><span class="p">[</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;sig_num&quot;</span><span class="p">]]</span>
+                <span class="p">),</span>
+                <span class="n">block</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;block&quot;</span><span class="p">],</span>
+                <span class="n">time_support</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;time_support&quot;</span><span class="p">],</span>
+                <span class="n">sig_num</span><span class="o">=</span><span class="n">item</span><span class="p">[</span><span class="s2">&quot;sig_num&quot;</span><span class="p">],</span>
+            <span class="p">)</span>
+            <span class="n">loaded_data</span> <span class="o">=</span> <span class="n">_make_tsd_from_interface</span><span class="p">(</span><span class="n">interface</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown loader type for key &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Cache the loaded data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">loaded_data</span>
+
+        <span class="k">return</span> <span class="n">loaded_data</span>
+
+<div class="viewcode-block" id="EphysReader.keys">
+<a class="viewcode-back" href="../../../generated/pynapple.io.EphysReader.keys.html#pynapple.io.EphysReader.keys">[docs]</a>
+    <span class="k">def</span> <span class="nf">keys</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return available data keys.&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span></div>
+
+
+<div class="viewcode-block" id="EphysReader.items">
+<a class="viewcode-back" href="../../../generated/pynapple.io.EphysReader.items.html#pynapple.io.EphysReader.items">[docs]</a>
+    <span class="k">def</span> <span class="nf">items</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return key-value pairs (loads data on access).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[(</span><span class="n">k</span><span class="p">,</span> <span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span></div>
+
+
+<div class="viewcode-block" id="EphysReader.values">
+<a class="viewcode-back" href="../../../generated/pynapple.io.EphysReader.values.html#pynapple.io.EphysReader.values">[docs]</a>
+    <span class="k">def</span> <span class="nf">values</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return all values (loads all data).&quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span></div>
+
+
+<div class="viewcode-block" id="EphysReader.close">
+<a class="viewcode-back" href="../../../generated/pynapple.io.EphysReader.close.html#pynapple.io.EphysReader.close">[docs]</a>
+    <span class="k">def</span> <span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Close the underlying Neo reader if it supports closing.&quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_reader&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_reader</span><span class="p">,</span> <span class="s2">&quot;close&quot;</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_reader</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;_ns&quot;</span><span class="p">):</span>
+            <span class="k">del</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ns</span>  <span class="c1"># Clean up NeuroSuiteIO instance</span></div>
+</div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2026, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">pynapple authors</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.11.0</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

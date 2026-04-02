@@ -1,0 +1,6 @@
+pynapple.io.folder.Folder.\_\_init\_\_
+======================================
+
+.. currentmodule:: pynapple.io.folder
+
+.. automethod:: Folder.__init__

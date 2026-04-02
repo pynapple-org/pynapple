@@ -1,0 +1,1099 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pynapple.process.perievent &#8212; pynapple 0.11.0.post1.dev34 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=8878045cc6db502f8baf" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_contributors.css?v=fe9086e2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=f2caec9a" />
+  
+  <!-- So that users can add custom icons -->
+  <script src="../../../_static/scripts/fontawesome.js?digest=8878045cc6db502f8baf"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf" />
+
+    <script src="../../../_static/documentation_options.js?v=ebf7fc24"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=c57da192"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pynapple/process/perievent';</script>
+    <link rel="icon" href="../../../_static/Pynapple_final_icon.png"/>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.11.0" />
+  </head>
+  
+  
+  <body data-bs-spy="scroll" data-bs-target=".bd-toc-nav" data-offset="180" data-bs-root-margin="0px 0px -60%" data-default-mode="light">
+
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.11.0.post1.dev34 documentation - Home"/>
+    <img src="../../../_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.11.0.post1.dev34 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../external.html">
+    External projects
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button pst-js-only" aria-label="Color mode" data-bs-title="Color mode"  data-bs-placement="bottom" data-bs-toggle="tooltip">
+  <i class="theme-switch fa-solid fa-sun                fa-lg" data-mode="light" title="Light"></i>
+  <i class="theme-switch fa-solid fa-moon               fa-lg" data-mode="dark"  title="Dark"></i>
+  <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto"  title="System Settings"></i>
+</button></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i>
+            <span class="sr-only">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pynapple.process.perievent</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for pynapple.process.perievent</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Functions to realign time series relative to a reference time.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">from</span> <span class="nn">numbers</span> <span class="kn">import</span> <span class="n">Number</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">core</span> <span class="k">as</span> <span class="n">nap</span>
+<span class="kn">from</span> <span class="nn">._process_functions</span> <span class="kn">import</span> <span class="n">_perievent_continuous</span><span class="p">,</span> <span class="n">_perievent_triggered_average</span>
+
+
+<div class="viewcode-block" id="compute_event_triggered_average">
+<a class="viewcode-back" href="../../../generated/pynapple.process.perievent.html#pynapple.process.perievent.compute_event_triggered_average">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_event_triggered_average</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span>
+    <span class="n">events</span><span class="p">,</span>
+    <span class="n">binsize</span><span class="p">,</span>
+    <span class="n">window</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">time_unit</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Bin the event timestamps and compute the Event-Triggered Average (ETA).</span>
+
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    If `C` is the event count matrix and ``feature`` is a `Tsd`, then the function computes</span>
+<span class="sd">    the Hankel matrix H from ``window=(-t1,+t2)`` by offseting the `Tsd`.</span>
+<span class="sd">    The ETA is then defined as the dot product between `H` and `C` divided by the number of events.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : Tsd, TsdFrame, or TsdTensor</span>
+<span class="sd">        The continuous timeseries to use as the feature (must be regularly sampled).</span>
+<span class="sd">    events : Ts, Tsd, TsdFrame, TsdTensor, or TsGroup</span>
+<span class="sd">        The events (or spike trains) to align to. If a ``TsGroup``, each unit&#39;s</span>
+<span class="sd">        spikes are binned and used as a separate event count vector.</span>
+<span class="sd">        If not a ``Ts``, we simply take the timestamps of the object.</span>
+<span class="sd">    binsize : float or int</span>
+<span class="sd">        The bin size.</span>
+<span class="sd">    window : int, float, or tuple</span>
+<span class="sd">        The alignment window. Can be unequal on each side, e.g. ``(-2, 1)``.</span>
+<span class="sd">    time_unit : str, optional</span>
+<span class="sd">        Time units of the ``window`` and ``binsize`` (&#39;s&#39; [default], &#39;ms&#39;, &#39;us&#39;).</span>
+<span class="sd">    epochs : IntervalSet, optional</span>
+<span class="sd">        The epochs to perform the operation over. If None, uses the data&#39;s ``time_support``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    TsdFrame or TsdTensor</span>
+<span class="sd">        The event-triggered average.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    RuntimeError</span>
+<span class="sd">        If ``time_unit`` is invalid, ``window`` format is invalid, or ``data`` is not</span>
+<span class="sd">        regularly sampled.</span>
+<span class="sd">    TypeError</span>
+<span class="sd">        If ``data`` or ``events`` are not valid timeseries objects.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Compute the ETA of a continuous feature triggered on a single event train:</span>
+
+<span class="sd">    &gt;&gt;&gt; import pynapple as nap</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; times = np.arange(0, 10, 0.1)</span>
+<span class="sd">    &gt;&gt;&gt; feature = nap.Tsd(t=times, d=np.sin(times))</span>
+<span class="sd">    &gt;&gt;&gt; events = nap.Ts(t=[1.0, 3.0, 5.0, 7.0])</span>
+<span class="sd">    &gt;&gt;&gt; eta = nap.compute_event_triggered_average(feature, events, binsize=0.1, window=0.5)</span>
+<span class="sd">    &gt;&gt;&gt; eta</span>
+<span class="sd">    Time (s)            0</span>
+<span class="sd">    ----------  ---------</span>
+<span class="sd">    -0.5        0.0788719</span>
+<span class="sd">    -0.4        0.0994986</span>
+<span class="sd">    -0.3        0.119131</span>
+<span class="sd">    -0.2        0.137573</span>
+<span class="sd">    -0.1        0.154641</span>
+<span class="sd">    0           0.170163</span>
+<span class="sd">    0.1         0.183986</span>
+<span class="sd">    0.2         0.19597</span>
+<span class="sd">    0.3         0.205995</span>
+<span class="sd">    0.4         0.213963</span>
+<span class="sd">    0.5         0.219793</span>
+<span class="sd">    dtype: float64, shape: (11, 1)</span>
+
+<span class="sd">    You can restrict the computation to certain parts of the data by passing ``epochs``:</span>
+
+<span class="sd">    &gt;&gt;&gt; epochs = nap.IntervalSet(start=[0, 5], end=[4, 9])</span>
+<span class="sd">    &gt;&gt;&gt; eta = nap.compute_event_triggered_average(feature, events, binsize=0.1, window=0.5, epochs=epochs)</span>
+<span class="sd">    &gt;&gt;&gt; eta</span>
+<span class="sd">    Time (s)           0</span>
+<span class="sd">    ----------  --------</span>
+<span class="sd">    -0.5        0.323254</span>
+<span class="sd">    -0.4        0.347921</span>
+<span class="sd">    -0.3        0.369112</span>
+<span class="sd">    -0.2        0.386614</span>
+<span class="sd">    -0.1        0.400254</span>
+<span class="sd">    0           0.170163</span>
+<span class="sd">    0.1         0.183986</span>
+<span class="sd">    0.2         0.19597</span>
+<span class="sd">    0.3         0.205995</span>
+<span class="sd">    0.4         0.213963</span>
+<span class="sd">    0.5         0.219793</span>
+<span class="sd">    dtype: float64, shape: (11, 1)</span>
+
+<span class="sd">    Compute the ETA triggered on multiple spike trains (``TsGroup``), returning one</span>
+<span class="sd">    column per unit:</span>
+
+<span class="sd">    &gt;&gt;&gt; unit1 = nap.Ts(t=[1.0, 3.0, 5.0])</span>
+<span class="sd">    &gt;&gt;&gt; unit2 = nap.Ts(t=[2.0, 4.0, 6.0])</span>
+<span class="sd">    &gt;&gt;&gt; spikes = nap.TsGroup({0: unit1, 1: unit2})</span>
+<span class="sd">    &gt;&gt;&gt; eta = nap.compute_event_triggered_average(feature, spikes, binsize=0.1, window=0.5)</span>
+<span class="sd">    &gt;&gt;&gt; eta</span>
+<span class="sd">    Time (s)              0           1</span>
+<span class="sd">    ----------  -----------  ----------</span>
+<span class="sd">    -0.5         0.0334559   -0.0196095</span>
+<span class="sd">    -0.4         0.0288176   -0.0247378</span>
+<span class="sd">    -0.3         0.0238914   -0.029619</span>
+<span class="sd">    -0.2         0.0187265   -0.0342041</span>
+<span class="sd">    -0.1         0.0133745   -0.0384476</span>
+<span class="sd">    0            0.00788891  -0.0423069</span>
+<span class="sd">    0.1          0.00232445  -0.0457434</span>
+<span class="sd">    0.2         -0.00326324  -0.0487229</span>
+<span class="sd">    0.3         -0.00881832  -0.0512156</span>
+<span class="sd">    0.4         -0.0142853   -0.0531966</span>
+<span class="sd">    0.5         -0.0196095   -0.054646</span>
+<span class="sd">    dtype: float64, shape: (11, 2)</span>
+
+<span class="sd">    Compute the ETA of a multiple features (``TsdFrame``), returning a ``TsdTensor``</span>
+<span class="sd">    with shape ``(n_time_bins, n_events, n_features)``:</span>
+
+<span class="sd">    &gt;&gt;&gt; values = np.column_stack([np.sin(times), np.cos(times)])</span>
+<span class="sd">    &gt;&gt;&gt; features = nap.TsdFrame(t=times, d=values, columns=[&quot;sin&quot;, &quot;cos&quot;])</span>
+<span class="sd">    &gt;&gt;&gt; eta = nap.compute_event_triggered_average(features, events, binsize=0.1, window=0.5)</span>
+<span class="sd">    &gt;&gt;&gt; eta</span>
+<span class="sd">    Time (s)</span>
+<span class="sd">    ----------  --------------------------</span>
+<span class="sd">    -0.5        [[0.078872, 0.210558] ...]</span>
+<span class="sd">    -0.4        [[0.099499, 0.201632] ...]</span>
+<span class="sd">    -0.3        [[0.119131, 0.190691] ...]</span>
+<span class="sd">    -0.2        [[0.137573, 0.177845] ...]</span>
+<span class="sd">    -0.1        [[0.154641, 0.163222] ...]</span>
+<span class="sd">    0           [[0.170163, 0.146969] ...]</span>
+<span class="sd">    0.1         [[0.183986, 0.129246] ...]</span>
+<span class="sd">    0.2         [[0.19597 , 0.110233] ...]</span>
+<span class="sd">    0.3         [[0.205995, 0.090118] ...]</span>
+<span class="sd">    0.4         [[0.213963, 0.069102] ...]</span>
+<span class="sd">    0.5         [[0.219793, 0.047396] ...]</span>
+<span class="sd">    dtype: float64, shape: (11, 1, 2)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">time_unit</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="s2">&quot;ms&quot;</span><span class="p">,</span> <span class="s2">&quot;us&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;time_unit should be &#39;s&#39;, &#39;ms&#39; or &#39;us&#39;&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="n">Number</span><span class="p">):</span>
+        <span class="n">window</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">window</span><span class="p">,</span> <span class="n">window</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">window</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Number</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">window</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;window should be a tuple of 2 numbers or a single number.&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdTensor</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;data should be a continuous time series (Tsd, TsdFrame, or TsdTensor): </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span>
+        <span class="n">events</span><span class="p">,</span> <span class="p">(</span><span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdTensor</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">)</span>
+    <span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;events should be a time series object: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">events</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">epochs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">epochs</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">time_support</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">nap</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">_is_regularly_sampled</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;Continuous data must be regularly sampled. &quot;</span>
+            <span class="s2">&quot;Please interpolate or NaN-pad your data to a uniform time grid before &quot;</span>
+            <span class="s2">&quot;calling compute_event_triggered_average.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="n">window</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">nap</span><span class="o">.</span><span class="n">TsIndex</span><span class="o">.</span><span class="n">format_timestamps</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">window</span><span class="p">),</span> <span class="n">time_unit</span><span class="p">))</span>
+    <span class="n">binsize</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsIndex</span><span class="o">.</span><span class="n">format_timestamps</span><span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">binsize</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">),</span> <span class="n">time_unit</span>
+    <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="c1"># Build the time index for the output</span>
+    <span class="n">idx1</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">window</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">binsize</span><span class="p">,</span> <span class="n">binsize</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">idx2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">window</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">binsize</span><span class="p">,</span> <span class="n">binsize</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">time_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">idx1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">idx2</span><span class="p">))</span>
+    <span class="n">windows</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">idx1</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">idx2</span><span class="p">)],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+
+    <span class="c1"># Bin the events</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="n">events</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">binsize</span><span class="p">,</span> <span class="n">epochs</span><span class="p">)</span>
+
+    <span class="n">time_target_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="n">count</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span> <span class="o">-</span> <span class="p">(</span><span class="n">binsize</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span> <span class="mi">9</span><span class="p">)</span>
+    <span class="n">count_array</span> <span class="o">=</span> <span class="n">count</span><span class="o">.</span><span class="n">values</span>
+    <span class="k">if</span> <span class="n">count_array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="n">count_array</span> <span class="o">=</span> <span class="n">count_array</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span>
+    <span class="n">starts</span> <span class="o">=</span> <span class="n">epochs</span><span class="o">.</span><span class="n">start</span>
+    <span class="n">ends</span> <span class="o">=</span> <span class="n">epochs</span><span class="o">.</span><span class="n">end</span>
+
+    <span class="n">time_array</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span>
+    <span class="n">data_array</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">values</span>
+
+    <span class="n">eta</span> <span class="o">=</span> <span class="n">_perievent_triggered_average</span><span class="p">(</span>
+        <span class="n">time_target_array</span><span class="p">,</span>
+        <span class="n">count_array</span><span class="p">,</span>
+        <span class="n">time_array</span><span class="p">,</span>
+        <span class="n">data_array</span><span class="p">,</span>
+        <span class="n">starts</span><span class="p">,</span>
+        <span class="n">ends</span><span class="p">,</span>
+        <span class="n">windows</span><span class="p">,</span>
+        <span class="n">binsize</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">eta</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="n">events</span><span class="o">.</span><span class="n">index</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">events</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">time_idx</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="n">eta</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdTensor</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">time_idx</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="n">eta</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="compute_spike_triggered_average">
+<a class="viewcode-back" href="../../../generated/pynapple.process.perievent.html#pynapple.process.perievent.compute_spike_triggered_average">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_spike_triggered_average</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span>
+    <span class="n">spikes</span><span class="p">,</span>
+    <span class="n">binsize</span><span class="p">,</span>
+    <span class="n">window</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">time_unit</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Alias for :func:`~pynapple.process.perievent.compute_event_triggered_average` with ``spikes`` as the events argument.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : Tsd, TsdFrame, or TsdTensor</span>
+<span class="sd">        The continuous timeseries to use as the feature (must be regularly sampled).</span>
+<span class="sd">    spikes : Ts, Tsd, TsdFrame, TsdTensor, or TsGroup</span>
+<span class="sd">        The spike train(s) to align to.</span>
+<span class="sd">    binsize : float or int</span>
+<span class="sd">        The bin size.</span>
+<span class="sd">    window : int, float, or tuple</span>
+<span class="sd">        The alignment window. Can be unequal on each side, e.g. ``(-2, 1)``.</span>
+<span class="sd">    time_unit : str, optional</span>
+<span class="sd">        Time units of the ``window`` and ``binsize`` (&#39;s&#39; [default], &#39;ms&#39;, &#39;us&#39;).</span>
+<span class="sd">    epochs : IntervalSet, optional</span>
+<span class="sd">        The epochs to perform the operation over. If None, uses the data&#39;s ``time_support``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    TsdFrame or TsdTensor</span>
+<span class="sd">        The spike-triggered average.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    RuntimeError</span>
+<span class="sd">        If ``time_unit`` is invalid, ``window`` format is invalid, or ``data`` is not</span>
+<span class="sd">        regularly sampled.</span>
+<span class="sd">    TypeError</span>
+<span class="sd">        If ``data`` or ``spikes`` are not valid timeseries objects.</span>
+
+<span class="sd">    See Also</span>
+<span class="sd">    --------</span>
+<span class="sd">    :func:`~pynapple.process.perievent.compute_event_triggered_average`</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="n">compute_event_triggered_average</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span>
+        <span class="n">events</span><span class="o">=</span><span class="n">spikes</span><span class="p">,</span>
+        <span class="n">binsize</span><span class="o">=</span><span class="n">binsize</span><span class="p">,</span>
+        <span class="n">window</span><span class="o">=</span><span class="n">window</span><span class="p">,</span>
+        <span class="n">time_unit</span><span class="o">=</span><span class="n">time_unit</span><span class="p">,</span>
+        <span class="n">epochs</span><span class="o">=</span><span class="n">epochs</span><span class="p">,</span>
+    <span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="compute_perievent">
+<a class="viewcode-back" href="../../../generated/pynapple.process.perievent.html#pynapple.process.perievent.compute_perievent">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_perievent</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">time_unit</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Perievent alignment, handles both discrete and continuous data.</span>
+
+<span class="sd">    This function automatically detects the data type, then applies the appropriate</span>
+<span class="sd">    alignment strategy:</span>
+
+<span class="sd">    - **discrete data:**</span>
+<span class="sd">        - a single ``Ts``: returns a ``TsGroup`` with one element per event</span>
+<span class="sd">        - multiple ``Ts`` in a ``TsGroup``: returns a dictionary with a ``TsGroup`` per unit</span>
+<span class="sd">    - **continuous data:**</span>
+<span class="sd">        - regularly sampled ``Tsd``/``TsdFrame``/``TsdTensor``: returns aligned object with</span>
+<span class="sd">          events as columns and uniform time sampling</span>
+<span class="sd">        - irregularly sampled data is not supported; interpolate or NaN-pad to a regular</span>
+<span class="sd">          grid before calling this function</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : Ts, Tsd, TsdFrame, TsdTensor, TsGroup</span>
+<span class="sd">        The timeseries to align.</span>
+<span class="sd">    events : Ts, Tsd, TsdFrame, TsdTensor</span>
+<span class="sd">        The events to align to.</span>
+<span class="sd">        If not a ``Ts``, we simply take the timestamps of the object.</span>
+<span class="sd">    window : int, float, tuple</span>
+<span class="sd">        The alignment window, which can be unequal on each side, e.g. ``(-2, 1)``</span>
+<span class="sd">    time_unit : str, optional</span>
+<span class="sd">        Time units of the window (&#39;s&#39; [default], &#39;ms&#39;, &#39;us&#39;).</span>
+<span class="sd">    epochs : IntervalSet, optional</span>
+<span class="sd">        The epochs to perform the operation over. If None, uses the data&#39;s ``time_support``.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    TsGroup, TsdFrame, TsdTensor, dict</span>
+<span class="sd">        The aligned timeseries.</span>
+
+<span class="sd">    Raises</span>
+<span class="sd">    ------</span>
+<span class="sd">    RuntimeError</span>
+<span class="sd">        If time_unit not in [&quot;s&quot;, &quot;ms&quot;, &quot;us&quot;], window format is invalid, or continuous</span>
+<span class="sd">        data is not regularly sampled.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    Align discrete data (``Ts``) to events:</span>
+
+<span class="sd">    &gt;&gt;&gt; import pynapple as nap</span>
+<span class="sd">    &gt;&gt;&gt; spikes = nap.Ts(t=[0.5, 1.2, 2.1, 3.5, 4.8])</span>
+<span class="sd">    &gt;&gt;&gt; events = nap.Ts(t=[1.0, 3.0])</span>
+<span class="sd">    &gt;&gt;&gt; result = nap.compute_perievent(spikes, events, window=1.0)</span>
+<span class="sd">    &gt;&gt;&gt; result</span>
+<span class="sd">      Index    rate    events</span>
+<span class="sd">    -------  ------  --------</span>
+<span class="sd">          0       1         1</span>
+<span class="sd">          1       1         3</span>
+<span class="sd">    &gt;&gt;&gt; result[0]</span>
+<span class="sd">    Time (s)</span>
+<span class="sd">    -0.5</span>
+<span class="sd">    0.2</span>
+<span class="sd">    shape: 2</span>
+<span class="sd">    &gt;&gt;&gt; result[1]</span>
+<span class="sd">    Time (s)</span>
+<span class="sd">    -0.9</span>
+<span class="sd">    0.5</span>
+<span class="sd">    shape: 2</span>
+
+<span class="sd">    Align data to events within specific epochs:</span>
+
+<span class="sd">    &gt;&gt;&gt; spikes = nap.Ts(t=[0.5, 1.2, 2.1, 3.5, 4.8])</span>
+<span class="sd">    &gt;&gt;&gt; events = nap.Ts(t=[1.0, 3.0, 5.0])</span>
+<span class="sd">    &gt;&gt;&gt; epochs = nap.IntervalSet(start=[0, 2.5], end=[2.4, 4.5])</span>
+<span class="sd">    &gt;&gt;&gt; result = nap.compute_perievent(spikes, events, window=1.0, epochs=epochs)</span>
+<span class="sd">    &gt;&gt;&gt; result # only 2 events are included!</span>
+<span class="sd">      Index    rate    events</span>
+<span class="sd">    -------  ------  --------</span>
+<span class="sd">          0       1         1</span>
+<span class="sd">          1       1         3</span>
+
+<span class="sd">    Align with unequal window:</span>
+
+<span class="sd">    &gt;&gt;&gt; import pynapple as nap</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; spikes = nap.Ts(t=[0.5, 1.2, 2.1, 3.5])</span>
+<span class="sd">    &gt;&gt;&gt; events = nap.Ts(t=[1.0, 3.0])</span>
+<span class="sd">    &gt;&gt;&gt; result = nap.compute_perievent(spikes, events, window=(-0.5, 1.5))</span>
+<span class="sd">    &gt;&gt;&gt; result[0]  # window from -0.5 to +1.5 relative to first event</span>
+<span class="sd">    Time (s)</span>
+<span class="sd">    -0.5</span>
+<span class="sd">    0.2</span>
+<span class="sd">    1.1</span>
+<span class="sd">    shape: 3</span>
+
+<span class="sd">    Align multiple discrete objects (``TsGroup``):</span>
+
+<span class="sd">    &gt;&gt;&gt; unit1 = nap.Ts(t=[0.5, 1.2, 2.1, 3.5])</span>
+<span class="sd">    &gt;&gt;&gt; unit2 = nap.Ts(t=[0.8, 1.5, 3.2, 4.1])</span>
+<span class="sd">    &gt;&gt;&gt; spikes = nap.TsGroup({0: unit1, 1: unit2})</span>
+<span class="sd">    &gt;&gt;&gt; events = nap.Ts(t=[1.0, 3.0])</span>
+<span class="sd">    &gt;&gt;&gt; result = nap.compute_perievent(spikes, events, window=1.0)</span>
+<span class="sd">    &gt;&gt;&gt; result</span>
+<span class="sd">    {0:   Index    rate    events</span>
+<span class="sd">    -------  ------  --------</span>
+<span class="sd">          0       1         1</span>
+<span class="sd">          1       1         3, 1:   Index    rate    events</span>
+<span class="sd">    -------  ------  --------</span>
+<span class="sd">          0     1           1</span>
+<span class="sd">          1     0.5         3}</span>
+<span class="sd">    &gt;&gt;&gt; result[0] # aligned unit 0</span>
+<span class="sd">      Index    rate    events</span>
+<span class="sd">    -------  ------  --------</span>
+<span class="sd">          0       1         1</span>
+<span class="sd">          1       1         3</span>
+<span class="sd">    &gt;&gt;&gt; result[1] # aligned unit 1</span>
+<span class="sd">      Index    rate    events</span>
+<span class="sd">    -------  ------  --------</span>
+<span class="sd">          0     1           1</span>
+<span class="sd">          1     0.5         3</span>
+
+<span class="sd">    Align regularly sampled continuous data (``Tsd``) to events, returning a ``TsdFrame``:</span>
+
+<span class="sd">    &gt;&gt;&gt; times = np.arange(0, 10, 0.5)</span>
+<span class="sd">    &gt;&gt;&gt; values = np.sin(times)</span>
+<span class="sd">    &gt;&gt;&gt; data = nap.Tsd(t=times, d=values)</span>
+<span class="sd">    &gt;&gt;&gt; events = nap.Ts(t=[2.0, 5.0, 8.0])</span>
+<span class="sd">    &gt;&gt;&gt; result = nap.compute_perievent(data, events, window=1.0)</span>
+<span class="sd">    &gt;&gt;&gt; result</span>
+<span class="sd">    Time (s)           0          1         2</span>
+<span class="sd">    ----------  --------  ---------  --------</span>
+<span class="sd">    -1          0.841471  -0.756802  0.656987</span>
+<span class="sd">    -0.5        0.997495  -0.97753   0.938</span>
+<span class="sd">    0           0.909297  -0.958924  0.989358</span>
+<span class="sd">    0.5         0.598472  -0.70554   0.798487</span>
+<span class="sd">    1           0.14112   -0.279415  0.412118</span>
+<span class="sd">    dtype: float64, shape: (5, 3)</span>
+
+<span class="sd">    Align a regularly sampled continuous data (``TsdFrame``) to events, returning a ``TsdTensor``:</span>
+
+<span class="sd">    &gt;&gt;&gt; values = np.column_stack([np.sin(times), np.cos(times)])</span>
+<span class="sd">    &gt;&gt;&gt; data = nap.TsdFrame(t=times, d=values, columns=[&quot;sin&quot;, &quot;cos&quot;])</span>
+<span class="sd">    &gt;&gt;&gt; result = nap.compute_perievent(data, events, window=1.0)</span>
+<span class="sd">    &gt;&gt;&gt; result</span>
+<span class="sd">    Time (s)</span>
+<span class="sd">    ----------  ----------------------------</span>
+<span class="sd">    -1          [[0.841471, 0.540302] ...]</span>
+<span class="sd">    -0.5        [[0.997495, 0.070737] ...]</span>
+<span class="sd">    0           [[ 0.909297, -0.416147] ...]</span>
+<span class="sd">    0.5         [[ 0.598472, -0.801144] ...]</span>
+<span class="sd">    1           [[ 0.14112 , -0.989992] ...]</span>
+<span class="sd">    dtype: float64, shape: (5, 3, 2)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">time_unit</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;s&quot;</span><span class="p">,</span> <span class="s2">&quot;ms&quot;</span><span class="p">,</span> <span class="s2">&quot;us&quot;</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;time_unit should be &#39;s&#39;, &#39;ms&#39; or &#39;us&#39;&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">window</span><span class="p">,</span> <span class="n">Number</span><span class="p">):</span>
+        <span class="n">window</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">window</span><span class="p">,</span> <span class="n">window</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">window</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">Number</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">window</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;window should be a tuple of 2 numbers or a single number.&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Call recursively if data is a TsGroup</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">):</span>
+        <span class="k">return</span> <span class="p">{</span>
+            <span class="n">i</span><span class="p">:</span> <span class="n">compute_perievent</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">events</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">time_unit</span><span class="p">,</span> <span class="n">epochs</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">data</span>
+        <span class="p">}</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="p">(</span><span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdTensor</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;data should be a time series object: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">events</span><span class="p">,</span> <span class="p">(</span><span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdTensor</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;events should be a time series object: </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">events</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">epochs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">epochs</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">time_support</span>
+
+    <span class="n">window</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">nap</span><span class="o">.</span><span class="n">TsIndex</span><span class="o">.</span><span class="n">format_timestamps</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">window</span><span class="p">),</span> <span class="n">time_unit</span><span class="p">))</span>
+    <span class="n">events</span> <span class="o">=</span> <span class="n">events</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">epochs</span><span class="p">)</span>
+    <span class="n">new_time_support</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=-</span><span class="n">window</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">end</span><span class="o">=</span><span class="n">window</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">_align_discrete</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">new_time_support</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">nap</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">_is_regularly_sampled</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="s2">&quot;Continuous data must be regularly sampled. &quot;</span>
+            <span class="s2">&quot;Please interpolate or NaN-pad your data to a uniform time grid before &quot;</span>
+            <span class="s2">&quot;calling compute_perievent.&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">_align_regular</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">new_time_support</span><span class="p">)</span></div>
+
+
+
+<span class="k">def</span> <span class="nf">_align_discrete</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">new_time_support</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Align a ``Ts`` to events, returning a TsGroup.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : Ts</span>
+<span class="sd">        Data to align</span>
+<span class="sd">    events : Ts or other timeseries</span>
+<span class="sd">        Event timestamps (pre-filtered by epochs)</span>
+<span class="sd">    window : array-like</span>
+<span class="sd">        [before, after] window</span>
+<span class="sd">    new_time_support : IntervalSet</span>
+<span class="sd">        Time support for output</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    TsGroup</span>
+<span class="sd">        Aligned data, indexed by event number</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">aligned</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">event_times</span> <span class="o">=</span> <span class="n">events</span><span class="o">.</span><span class="n">times</span><span class="p">()</span>
+
+    <span class="k">for</span> <span class="n">event_idx</span><span class="p">,</span> <span class="n">event_time</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">event_times</span><span class="p">):</span>
+        <span class="n">start_time</span> <span class="o">=</span> <span class="n">event_time</span> <span class="o">-</span> <span class="n">window</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">end_time</span> <span class="o">=</span> <span class="n">event_time</span> <span class="o">+</span> <span class="n">window</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+
+        <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">t</span> <span class="o">&gt;=</span> <span class="n">start_time</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">t</span> <span class="o">&lt;=</span> <span class="n">end_time</span><span class="p">)</span>
+        <span class="n">shifted_times</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">-</span> <span class="n">event_time</span>
+
+        <span class="n">aligned</span><span class="p">[</span><span class="n">event_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">Ts</span><span class="p">(</span><span class="n">shifted_times</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="n">new_time_support</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">(</span><span class="n">aligned</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;events&quot;</span><span class="p">:</span> <span class="n">event_times</span><span class="p">})</span>
+
+
+<span class="k">def</span> <span class="nf">_align_regular</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">window</span><span class="p">,</span> <span class="n">new_time_support</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Align regularly-sampled continuous data to events using optimized matrix approach.</span>
+
+<span class="sd">    Returns a single TsdFrame/TsdTensor where each column is one event with uniform</span>
+<span class="sd">    time sampling.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : Tsd, TsdFrame, or TsdTensor</span>
+<span class="sd">        Regularly-sampled continuous data</span>
+<span class="sd">    events : Ts or other timeseries</span>
+<span class="sd">        Event timestamps (pre-filtered by epochs)</span>
+<span class="sd">    window : array-like</span>
+<span class="sd">        [before, after] window</span>
+<span class="sd">    new_time_support : IntervalSet</span>
+<span class="sd">        Time support for output</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    TsdFrame or TsdTensor</span>
+<span class="sd">        Aligned data with columns/slice 0 as events</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">epochs</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">time_support</span>
+    <span class="n">bin_size</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">data</span><span class="o">.</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">idx1</span> <span class="o">=</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">window</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">bin_size</span><span class="p">,</span> <span class="n">bin_size</span><span class="p">)[::</span><span class="o">-</span><span class="mi">1</span><span class="p">][:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">idx2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">window</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">bin_size</span><span class="p">,</span> <span class="n">bin_size</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="n">time_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">hstack</span><span class="p">((</span><span class="n">idx1</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">idx2</span><span class="p">))</span>
+    <span class="n">windowsize</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">idx1</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">idx2</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span>
+
+    <span class="n">new_data_array</span> <span class="o">=</span> <span class="n">_perievent_continuous</span><span class="p">(</span>
+        <span class="n">data</span><span class="o">.</span><span class="n">t</span><span class="p">,</span> <span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">events</span><span class="o">.</span><span class="n">times</span><span class="p">(),</span> <span class="n">epochs</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">epochs</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="n">windowsize</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">new_data_array</span><span class="o">.</span><span class="n">size</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;No overlap between input and epochs, perievent matrix is empty...&quot;</span>
+        <span class="p">)</span>
+    <span class="k">if</span> <span class="n">new_data_array</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">columns</span> <span class="o">=</span> <span class="n">events</span><span class="o">.</span><span class="n">index</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">events</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsGroup</span><span class="p">)</span> <span class="k">else</span> <span class="kc">None</span>
+        <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">(</span>
+            <span class="n">t</span><span class="o">=</span><span class="n">time_idx</span><span class="p">,</span> <span class="n">d</span><span class="o">=</span><span class="n">new_data_array</span><span class="p">,</span> <span class="n">time_support</span><span class="o">=</span><span class="n">new_time_support</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">columns</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdTensor</span><span class="p">(</span>
+            <span class="n">t</span><span class="o">=</span><span class="n">time_idx</span><span class="p">,</span>
+            <span class="n">d</span><span class="o">=</span><span class="n">new_data_array</span><span class="p">,</span>
+            <span class="n">time_support</span><span class="o">=</span><span class="n">new_time_support</span><span class="p">,</span>
+        <span class="p">)</span>
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=8878045cc6db502f8baf"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=8878045cc6db502f8baf"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2026, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">pynapple authors</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.11.0</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

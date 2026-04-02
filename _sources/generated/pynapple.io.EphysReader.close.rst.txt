@@ -1,0 +1,6 @@
+pynapple.io.EphysReader.close
+=============================
+
+.. currentmodule:: pynapple.io
+
+.. automethod:: EphysReader.close

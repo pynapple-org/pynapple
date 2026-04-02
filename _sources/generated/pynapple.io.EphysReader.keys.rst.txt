@@ -1,0 +1,6 @@
+pynapple.io.EphysReader.keys
+============================
+
+.. currentmodule:: pynapple.io
+
+.. automethod:: EphysReader.keys

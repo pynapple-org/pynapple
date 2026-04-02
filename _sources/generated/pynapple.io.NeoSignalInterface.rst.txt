@@ -1,0 +1,32 @@
+﻿pynapple.io.NeoSignalInterface
+==============================
+
+.. currentmodule:: pynapple.io
+
+.. autoclass:: NeoSignalInterface
+   :members:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~NeoSignalInterface.__init__
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~NeoSignalInterface.ndim
+      ~NeoSignalInterface.times
+   
+   

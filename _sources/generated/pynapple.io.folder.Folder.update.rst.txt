@@ -1,0 +1,6 @@
+pynapple.io.folder.Folder.update
+================================
+
+.. currentmodule:: pynapple.io.folder
+
+.. automethod:: Folder.update
