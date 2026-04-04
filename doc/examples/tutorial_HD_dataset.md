@@ -300,7 +300,7 @@ I hope this tutorial was helpful. If you have any questions, comments or suggest
 :::{card}
 Authors
 ^^^
-Wolf de Wulf
+[Wolf De Wulf](wulfdewolf.github.io)
 
 Dhruv Mehrotra
 

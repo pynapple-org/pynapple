@@ -125,7 +125,7 @@ axd["pos"].plot(pos_example, color="black")
 axd["pos"].margins(0)
 axd["pos"].set_xlabel("time (s)")
 axd["pos"].set_ylabel("Linearized Position")
-axd["pos"].set_xlim(RUN_interval[0, 0], RUN_interval[0, 1])
+axd["pos"].set_xlim(RUN_interval[0, 0], RUN_interval[0, 1]);
 ```
 
 In the top panel, we can see the lfp trace as a function of time, and on the bottom the mouse position on the linear
@@ -171,11 +171,11 @@ ax.axvspan(6, 10, color="red", alpha=0.1)
 ax.set_xlabel("Freq (Hz)")
 ax.set_ylabel("Power/Frequency ")
 ax.set_title("LFP Power spectral density")
-ax.legend()
+ax.legend();
 ```
 
 The red area outlines the theta rhythm (6-10 Hz) which is proeminent in hippocampal LFP.
-Hippocampal theta rhythm appears mostly when the animal is running [1].
+Hippocampal theta rhythm appears mostly when the animal is running [(Hasselmo & Stern, 2014)](https://www.sciencedirect.com/science/article/abs/pii/S1053811913006599).
 We can check it here by separating the wake epochs (`wake_ep`) into run epochs (`run_ep`) and rest epochs (`rest_ep`).
 
 
@@ -237,7 +237,7 @@ ax.axvspan(6, 10, color="red", alpha=0.1)
 ax.set_xlabel("Freq (Hz)")
 ax.set_ylabel("Power/Frequency")
 ax.set_title("LFP Fourier Decomposition")
-ax.legend()
+ax.legend();
 ```
 
 ***
@@ -306,7 +306,7 @@ ax1.set_ylabel("LFP (a.u.)")
 ax1 = plt.subplot(gs[2, 0], sharex=ax0)
 ax1.plot(pos_example, color="black")
 ax1.set_xlabel("Time (s)")
-ax1.set_ylabel("Pos.")
+ax1.set_ylabel("Pos.");
 ```
 
 ***
@@ -351,182 +351,21 @@ ax1.plot(np.real(theta_band_reconstruction), label="6-10 Hz oscillations")
 ax1.plot(theta_band_power_envelope, label="6-10 Hz power envelope")
 ax1.set_xlabel("time (s)")
 ax1.set_ylabel("Wavelet transform")
-ax1.legend()
+ax1.legend();
 ```
 
 ***
 We observe that the theta power is far stronger during the first 4 seconds of the dataset, during which the rat
 is traversing the linear track.
 
-
-+++
-
+There also seem to be peaks in the 200Hz frequency power after traversal of thew maze is complete. 
+Those events are called sharp-waves ripples, take a look at [the tutorial on sharp-wave ripples](../examples/tutorial_ripple_detection.md) to find out more about them!
 ***
-Visualizing High Frequency Oscillation
------------------------------------
-There also seem to be peaks in the 200Hz frequency power after traversal of thew maze is complete. Here we use the interval (18356, 18357.5) seconds to zoom in.
-
-
-```{code-cell} ipython3
----
-jupyter:
-  outputs_hidden: false
----
-zoom_ep = nap.IntervalSet(18356.0, 18357.5)
-
-mwt_zoom = mwt_RUN.restrict(zoom_ep)
-
-fig = plt.figure(constrained_layout=True, figsize=(10, 6))
-gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 0.5])
-ax0 = plt.subplot(gs[0, 0])
-pcmesh = ax0.pcolormesh(mwt_zoom.t, freqs, np.transpose(np.abs(mwt_zoom)))
-ax0.grid(False)
-ax0.set_yscale("log")
-ax0.set_title("Wavelet Decomposition")
-ax0.set_ylabel("Frequency (Hz)")
-cbar = plt.colorbar(pcmesh, ax=ax0, orientation="vertical")
-ax0.set_label("Amplitude")
-
-ax1 = plt.subplot(gs[1, 0], sharex=ax0)
-ax1.plot(eeg_example.restrict(zoom_ep))
-ax1.set_ylabel("LFP (a.u.)")
-ax1.set_xlabel("Time (s)")
-```
-
-Those events are called Sharp-waves ripples [2].
-
-Among other methods, we can use the Wavelet decomposition to isolate them. In this case, we will look at the power of the wavelets for frequencies between 150 to 250 Hz.
-
-
-```{code-cell} ipython3
----
-jupyter:
-  outputs_hidden: false
----
-ripple_freq_index = np.logical_and(freqs > 150, freqs < 250)
-```
-
-We can compute the mean power for this frequency band.
-
-
-```{code-cell} ipython3
----
-jupyter:
-  outputs_hidden: false
----
-ripple_power = np.mean(np.abs(mwt_RUN[:, ripple_freq_index]), 1)
-```
-
-Now let's visualise the 150-250 Hz mean amplitude of the wavelet decomposition over time
-
-
-```{code-cell} ipython3
----
-jupyter:
-  outputs_hidden: false
----
-fig = plt.figure(constrained_layout=True, figsize=(10, 5))
-gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 0.5])
-ax0 = plt.subplot(gs[0, 0])
-ax0.plot(eeg_example.restrict(zoom_ep), label="CA1")
-ax0.set_ylabel("LFP (a.u.)")
-ax0.set_title(f"EEG (1250 Hz)")
-ax1 = plt.subplot(gs[1, 0])
-ax1.legend()
-ax1.plot(ripple_power.restrict(zoom_ep), label="150-250 Hz")
-ax1.legend()
-ax1.set_ylabel("Mean Amplitude")
-ax1.set_xlabel("Time (s)")
-```
-
-It is then easy to isolate ripple times by using the pynapple functions [`smooth`](pynapple.Tsd.smooth) and [`threshold`](pynapple.Tsd.threshold). In the following lines, `ripples` is smoothed with a gaussian kernel of size 0.005 second and thesholded with a value of 100.
-
-
-
-```{code-cell} ipython3
----
-jupyter:
-  outputs_hidden: false
----
-smoothed_ripple_power = ripple_power.smooth(0.005)
-
-threshold_ripple_power = smoothed_ripple_power.threshold(100)
-```
-
-`threshold_ripple_power` contains all the time points above 100. The ripple epochs are contained in the `time_support` of the threshold time series. Here we call it `rip_ep`.
-
-
-```{code-cell} ipython3
----
-jupyter:
-  outputs_hidden: false
----
-rip_ep = threshold_ripple_power.time_support
-```
-
-Now let's plot the ripples epoch as well as the smoothed ripple power.
-
-We can also plot `rip_ep` as vertical boxes to see if the detection is accurate
-
-
-```{code-cell} ipython3
----
-jupyter:
-  outputs_hidden: false
----
-fig = plt.figure(constrained_layout=True, figsize=(10, 5))
-gs = plt.GridSpec(2, 1, figure=fig, height_ratios=[1.0, 0.5])
-ax0 = plt.subplot(gs[0, 0])
-ax0.plot(eeg_example.restrict(zoom_ep), label="CA1")
-for i, (s, e) in enumerate(rip_ep.intersect(zoom_ep).values):
-    ax0.axvspan(s, e, color=list(mcolors.TABLEAU_COLORS.keys())[i], alpha=0.2, ec=None)
-ax0.set_ylabel("LFP (a.u.)")
-ax0.set_title(f"EEG (1250 Hz)")
-ax1 = plt.subplot(gs[1, 0])
-ax1.legend()
-ax1.plot(ripple_power.restrict(zoom_ep), label="150-250 Hz")
-ax1.plot(smoothed_ripple_power.restrict(zoom_ep))
-for i, (s, e) in enumerate(rip_ep.intersect(zoom_ep).values):
-    ax1.axvspan(s, e, color=list(mcolors.TABLEAU_COLORS.keys())[i], alpha=0.2, ec=None)
-ax1.legend()
-ax1.set_ylabel("Mean Amplitude")
-ax1.set_xlabel("Time (s)")
-```
-
-Finally, let's zoom in on each of our isolated ripples
-
-
-```{code-cell} ipython3
----
-jupyter:
-  outputs_hidden: false
----
-fig = plt.figure(constrained_layout=True, figsize=(10, 5))
-gs = plt.GridSpec(2, 2, figure=fig, height_ratios=[1.0, 1.0])
-buffer = 0.075
-plt.suptitle("Isolated Sharp Wave Ripples")
-for i, (s, e) in enumerate(rip_ep.intersect(zoom_ep).values):
-    ax = plt.subplot(gs[int(i / 2), i % 2])
-    ax.plot(eeg_example.restrict(nap.IntervalSet(s - buffer, e + buffer)))
-    ax.axvspan(s, e, color=list(mcolors.TABLEAU_COLORS.keys())[i], alpha=0.2, ec=None)
-    ax.set_xlim(s - buffer, e + buffer)
-    ax.set_xlabel("Time (s)")
-    ax.set_ylabel("LFP (a.u.)")
-```
-
-***
-References
------------------------------------
-
-[1] Hasselmo, M. E., & Stern, C. E. (2014). Theta rhythm and the encoding and retrieval of space and time. Neuroimage, 85, 656-666.
-
-[2] Buzsáki, G. (2015). Hippocampal sharp wave‐ripple: A cognitive biomarker for episodic memory and planning. Hippocampus, 25(10), 1073-1188.
-
 
 :::{card}
 Authors
 ^^^
-Kipp Freud (https://kippfreud.com/)
+[Kipp Freud](https://kippfreud.com/)
 
 Guillaume Viejo
 

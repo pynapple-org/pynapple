@@ -313,6 +313,6 @@ Authors
 ^^^
 Sofia Skromne Carrasco
 
-Wolf De Wulf
+[Wolf De Wulf](wulfdewolf.github.io)
 
 :::

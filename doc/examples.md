@@ -60,4 +60,11 @@ Trial-aligned choice decoding in International Brain Lab data <examples/tutorial
 ```
 :::
 
+:::{card} 
+```{toctree}
+:maxdepth: 3
+Detecting sharp-wave ripples <examples/tutorial_ripple_detection>
+```
+:::
+
 

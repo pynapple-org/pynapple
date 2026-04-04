@@ -299,6 +299,6 @@ We now also have approximate p-values to report.
 :::{card}
 Authors
 ^^^
-Wolf De Wulf
+[Wolf De Wulf](wulfdewolf.github.io)
 :::
 <!-- #endregion -->
