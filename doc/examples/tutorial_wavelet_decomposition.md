@@ -19,12 +19,9 @@ We will examine the dataset from [Grosmark & Buzsáki (2016)](https://www.ncbi.n
 
 Specifically, we will examine Local Field Potential data from a period of active traversal of a linear track.
 
-
 ```{code-cell} ipython3
----
-jupyter:
-  outputs_hidden: false
----
+:tags: [hide-input]
+# we'll import the packages we're going to use
 import math
 import os
 
@@ -35,9 +32,9 @@ import requests
 import seaborn as sns
 import pynapple as nap
 
+# some configuration, you can ignore this
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
-sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
-
+sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params);
 ```
 
 ***
@@ -66,8 +63,6 @@ print(data)
 First we can extract the data from the NWB. The local field potential has been downsampled to 1250Hz. We will call it `eeg`.
 
 The `time_support` of the object `data['position']` contains the interval for which the rat was running along the linear track. We will call it `wake_ep`.
-
-
 
 ```{code-cell} ipython3
 ---

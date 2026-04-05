@@ -22,7 +22,8 @@ The area recorded for this experiment is the postsubiculum - a region that is kn
 The NWB file for the example is hosted on [OSF](https://osf.io/sbnaw). We show below how to stream it.
 
 ```{code-cell} ipython3
-:tags: [hide-output]
+:tags: [hide-input]
+# we'll import the packages we're going to use
 import numpy as np
 import pynapple as nap
 import matplotlib.pyplot as plt
@@ -31,9 +32,10 @@ import os
 import requests 
 import xarray as xr
 
+# some configuration, you can ignore this
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
-xr.set_options(display_expand_attrs=False)
+xr.set_options(display_expand_attrs=False);
 ```
 
 ***

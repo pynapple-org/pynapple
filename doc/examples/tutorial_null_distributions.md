@@ -25,7 +25,7 @@ If you want to learn the in's and out's of statistical analysis of neural data, 
 In this tutorial, we will use Pynapple's randomization module to generate various null distributions to test whether the activity of neurons is modulated by position.
 
 ```{code-cell} ipython3
-:tags: [remove-output]
+:tags: [hide-input]
 # we'll import the packages we're going to use
 import numpy as np
 import matplotlib.pyplot as plt
@@ -52,7 +52,7 @@ import h5py
 # some configuration, you can ignore this
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
-xr.set_options(display_expand_attrs=False)
+xr.set_options(display_expand_attrs=False);
 ```
 
 ***
