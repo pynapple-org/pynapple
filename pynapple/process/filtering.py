@@ -610,3 +610,25 @@ def detect_oscillatory_events(
     }
 
     return nap.IntervalSet(start=osc_ep.start, end=osc_ep.end, metadata=metadata)
+
+
+def apply_hilbert_transform(data):
+    """
+    Apply the Hilbert transform along the time axis.
+    Wraps :func:`scipy.signal.hilbert`, see its documentation for more information.
+
+    Parameters
+    ----------
+    data : Tsd, TsdFrame
+        Time-series to apply Hilbert transform to.
+
+    Returns
+    -------
+    TsdFrame
+        The analytic signal.
+    """
+    from scipy.signal import hilbert
+
+    return nap.TsdFrame(
+        d=hilbert(data.values, axis=0), t=data.times(), time_support=data.time_support
+    )
