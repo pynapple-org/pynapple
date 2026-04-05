@@ -9,6 +9,7 @@ from .filtering import (
     apply_bandpass_filter,
     apply_bandstop_filter,
     apply_highpass_filter,
+    apply_hilbert_transform,
     apply_lowpass_filter,
     get_filter_frequency_response,
 )

@@ -82,17 +82,18 @@ plt.legend();
 
 Hilbert transform: computing the envelope
 -----------------------------------------
-Now, we will apply the Hilbert transform to the filtered LFP to extract the amplitude envelope, 
-which reflects ripple strength over time. 
+Now, we will apply the Hilbert transform to the filtered LFP and take its absolute value 
+to extract the amplitude envelope, which reflects ripple strength over time. 
 
 ```{code-cell} ipython3
-from scipy.signal import hilbert
-envelope = hilbert(filtered_lfp.values, axis=0)
-envelope = nap.TsdFrame(t=lfp.times(), d=np.abs(envelope), columns=lfp.columns)
+envelope = np.abs(nap.apply_hilbert_transform(filtered_lfp))
 envelope
 ```
 
-We will plot the envelope alongside the filtered signal for visual confirmation:
+See [`scipy.signal.hilbert`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.hilbert.html) for
+more information on what the Hilbert transform does!
+
+We will plot the envelope over the filtered signal for visual confirmation:
 ```{code-cell} ipython3
 :tags: [hide-input]
 fig = plt.figure(figsize=(10, 6))
