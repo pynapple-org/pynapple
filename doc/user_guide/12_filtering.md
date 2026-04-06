@@ -388,7 +388,7 @@ plt.title("Low pass filtering benchmark")
 Detecting Oscillatory Events
 ---------------------------
 
-The filtering module also provides a method [`detect_oscillatory_events`](pynapple.process.filtering.detect_oscillatory_events) to automatically detect intervals containing oscillatory events (such as ripples or spindles) in a signal.
+Pynapple also provides a method [`detect_oscillatory_events`](pynapple.process.signal.detect_oscillatory_events) to automatically detect intervals containing oscillatory events (such as ripples or spindles) in a signal.
 
 To demonstrate, let's create a synthetic signal where a fast oscillation (e.g., 40 Hz) occurs in a noisy signal:
 
@@ -433,7 +433,7 @@ min_inter = 0.02      # Minimum interval between events (s)
 epoch = nap.IntervalSet(start=0, end=duration)
 
 # Detect oscillatory events
-osc_ep = nap.filtering.detect_oscillatory_events(
+osc_ep = nap.detect_oscillatory_events(
     ts, epoch, freq_band, thres_band, (min_dur, max_dur), min_inter
 )
 
