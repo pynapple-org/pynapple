@@ -62,7 +62,11 @@ Filtering time series <user_guide/12_filtering>
 ```
 
 ```{toctree}
-Building trial-based tensors <user_guide/13_warping>
+Extracting phases and envelopes <user_guide/13_phases_and_envelopes>
+```
+
+```{toctree}
+Building trial-based tensors <user_guide/14_warping>
 ```
 
 :::

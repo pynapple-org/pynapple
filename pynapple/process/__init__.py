@@ -9,7 +9,6 @@ from .filtering import (
     apply_bandpass_filter,
     apply_bandstop_filter,
     apply_highpass_filter,
-    apply_hilbert_transform,
     apply_lowpass_filter,
     get_filter_frequency_response,
 )
@@ -23,6 +22,12 @@ from .randomize import (
     resample_timestamps,
     shift_timestamps,
     shuffle_ts_intervals,
+)
+from .signal import (
+    apply_hilbert_transform,
+    compute_hilbert_envelope,
+    compute_hilbert_phase,
+    detect_oscillatory_events,
 )
 from .spectrum import (
     compute_fft,
