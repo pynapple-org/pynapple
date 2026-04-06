@@ -3,7 +3,6 @@ Functions to compute extract phases and envelopes
 """
 
 import numpy as np
-from scipy.signal import hilbert
 
 import pynapple as nap
 
@@ -77,6 +76,7 @@ def apply_hilbert_transform(data):
     19.9        (0.8676441006416694+0.17871162129618953j)      (0.49718579487120196-0.09195658451657955j)
     dtype: complex128, shape: (200, 2)
     """
+    from scipy.signal import hilbert
 
     if isinstance(data, nap.Tsd):
         return nap.Tsd(
