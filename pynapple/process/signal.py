@@ -238,18 +238,7 @@ def compute_hilbert_phase(data):
     analytic_signal = apply_hilbert_transform(data)
     phase = np.angle(analytic_signal)
     phase = np.mod(np.unwrap(phase), 2 * np.pi)
-
-    if isinstance(data, nap.Tsd):
-        return nap.Tsd(d=phase, t=data.times(), time_support=data.time_support)
-    elif isinstance(data, nap.TsdFrame):
-        return nap.TsdFrame(
-            d=phase,
-            t=data.times(),
-            columns=data.columns,
-            time_support=data.time_support,
-        )
-    else:
-        raise TypeError("data should be a Tsd or TsdFrame.")
+    return phase
 
 
 def detect_oscillatory_events(
