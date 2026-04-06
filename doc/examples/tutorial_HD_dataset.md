@@ -302,7 +302,7 @@ I hope this tutorial was helpful. If you have any questions, comments or suggest
 :::{card}
 Authors
 ^^^
-[Wolf De Wulf](wulfdewolf.github.io)
+[Wolf De Wulf](https://wulfdewolf.github.io)
 
 Dhruv Mehrotra
 

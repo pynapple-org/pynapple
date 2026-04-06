@@ -315,6 +315,6 @@ Authors
 ^^^
 Sofia Skromne Carrasco
 
-[Wolf De Wulf](wulfdewolf.github.io)
+[Wolf De Wulf](https://wulfdewolf.github.io)
 
 :::

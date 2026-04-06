@@ -139,7 +139,7 @@ Ripple density
 :::{card}
 Authors
 ^^^
-[Wolf De Wulf](wulfdewolf.github.io)
+[Wolf De Wulf](https://wulfdewolf.github.io)
 
 Guillaume Viejo
 :::
