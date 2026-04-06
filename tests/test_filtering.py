@@ -575,3 +575,31 @@ def test_detect_oscillatory_events(freq_band, thresh_band, num_events, start, en
         # Check peak_time is within the interval
         peak_time = osc_ep._metadata["peak_time"][0]
         assert start <= peak_time <= end
+
+
+@pytest.mark.parametrize(
+    "input_data, expected_output_type",
+    [
+        (nap.Tsd(np.linspace(0, 1, 500), np.random.randn(500)), nap.TsdFrame),
+        (
+            nap.TsdFrame(np.linspace(0, 1, 500), np.random.randn(500).reshape(-1, 1)),
+            nap.TsdFrame,
+        ),
+    ],
+)
+def test_apply_hilbert_transform(input_data, expected_output_type):
+    result = nap.apply_hilbert_transform(input_data)
+
+    assert isinstance(result, expected_output_type)
+    np.testing.assert_array_equal(input_data.times(), result.times())
+    assert np.iscomplexobj(result.d)
+
+    # Check if the first 5 samples in the output contain complex values
+    assert np.iscomplex(result.d[0])
+    assert np.iscomplex(result.d[1])
+    assert np.iscomplex(result.d[2])
+    assert np.iscomplex(result.d[3])
+    assert np.iscomplex(result.d[4])
+
+    # Verify the time_support is the same in the input and output
+    np.testing.assert_array_equal(input_data.time_support, result.time_support)
