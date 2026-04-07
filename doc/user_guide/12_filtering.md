@@ -380,5 +380,5 @@ for arr, label in zip(
 plt.legend()
 plt.xlabel("Number of dimensions")
 plt.ylabel("Time (s)")
-plt.title("Low pass filtering benchmark")
+plt.title("Low pass filtering benchmark");
 ```

@@ -81,7 +81,8 @@ plt.tight_layout();
 ```
 
 Now, imagine that we are interested in the theta frequency part of the signal.
-We can start by using the filtering module to keep only the relevant frequencies (5-10Hz):
+We can start by applying a bandpass filter using [`apply_bandpass_filter`](pynapple.process.filtering.apply_bandpass_filter)
+to keep only the relevant frequencies (5-10Hz):
 ```{code-cell} ipython3
 filtered_signal = nap.apply_bandpass_filter(
     signal, (5, 10), fs=sampling_rate_hz, mode="butter"
