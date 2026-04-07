@@ -80,7 +80,9 @@ def apply_hilbert_transform(data):
 
     if isinstance(data, nap.Tsd):
         return nap.Tsd(
-            d=hilbert(data.values), t=data.times(), time_support=data.time_support
+            d=hilbert(data.values),
+            t=data.times(),
+            time_support=data.time_support,
         )
     elif isinstance(data, nap.TsdFrame):
         return nap.TsdFrame(
@@ -279,6 +281,8 @@ def detect_oscillatory_events(
         The interval set of detected events with metadata containing
         the power, amplitude, and peak_time
     """
+    import warnings
+
     from scipy.signal import filtfilt
 
     data = data.restrict(epoch)
@@ -295,8 +299,14 @@ def detect_oscillatory_events(
     nSS = nap.Tsd(t=signal.index.values, d=nSS, time_support=epoch)
 
     # Detect oscillation periods by thresholding normalized signal
-    nSS2 = nSS.threshold(thresh_band[0], method="above")
-    nSS3 = nSS2.threshold(thresh_band[1], method="below")
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="Some epochs have no duration",
+            category=UserWarning,
+        )
+        nSS2 = nSS.threshold(thresh_band[0], method="above")
+        nSS3 = nSS2.threshold(thresh_band[1], method="below")
 
     # Exclude oscillation where min_duration < length < max_duration
     osc_ep = nSS3.time_support

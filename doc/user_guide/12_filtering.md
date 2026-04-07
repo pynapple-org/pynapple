@@ -421,7 +421,7 @@ plt.legend()
 plt.show()
 ```
 
-Now, let's use [`detect_oscillatory_events`](pynapple.process.filtering.detect_oscillatory_events) to find the oscillation intervals. The function will return the detected intervals as an `IntervalSet` along with metadata containing peak times.
+Now, let's use [`detect_oscillatory_events`](pynapple.process.signal.detect_oscillatory_events) to find the oscillation intervals. The function will return the detected intervals as an `IntervalSet` along with metadata containing peak times.
 
 ```{code-cell} ipython3
 # Define detection parameters
