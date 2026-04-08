@@ -2764,7 +2764,7 @@ class Tsd(_BaseTsd):
                     n_rows = max_rows // 2
                     table = []
                     for i, v in zip(self.index[0:n_rows], self.values[0:n_rows]):
-                        table.append([i, v])
+                        table.append([i, str(v)])
                     table.append(["..."])
                     for i, v in zip(
                         self.index[-n_rows:],
@@ -2772,7 +2772,7 @@ class Tsd(_BaseTsd):
                             self.values.shape[0] - n_rows : self.values.shape[0]
                         ],
                     ):
-                        table.append([i, v])
+                        table.append([i, str(v)])
 
                     return (
                         tabulate(table, headers=headers, colalign=("left",))

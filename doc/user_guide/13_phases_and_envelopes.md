@@ -33,37 +33,24 @@ sns.set_theme(
 ```
 
 ## Extracting the analytic signal
-Let us start by simulating a simple oscillatory signal.
-As an example, we will simulate a theta oscillation at 8Hz, 
-with nested-gamma oscillations at 40Hz [(a known phenomenon in the brain)](https://www.sciencedirect.com/science/article/pii/S0896627313002316):
+Let us start by simulating a noisy oscillatory signal containing two frequencies:
 ```{code-cell} ipython3
 sampling_rate_hz = 1000
 times = np.arange(0, 5, 1 / sampling_rate_hz)
 
-# Theta oscillation (8 Hz)
-theta_freq_hz = 8
-theta = np.cos(2 * np.pi * theta_freq_hz * times)
+# Low frequency (8 Hz)
+low_freq_hz = 8
+signal = np.cos(2 * np.pi * low_freq_hz * times)
 
-# Gamma oscillation (40 Hz)
-gamma_freq_hz = 40
-gamma = np.cos(2 * np.pi * gamma_freq_hz * times)
+# High-frequency (40 Hz)
+high_freq_hz = 40
+segments = [(1.5, 2.0), (3.0, 3.5)]
+for start, end in segments:
+    mask = (times >= start) & (times <= end)
+    signal[mask] = np.cos(2 * np.pi * high_freq_hz * times[mask])
 
-# Compute theta phase
-theta_phase = np.angle(np.exp(1j * 2 * np.pi * theta_freq_hz * times))
-
-# Create square burst envelopes near theta peak (phase ~ 0)
-phase_window = np.abs(theta_phase) < (np.pi / 6)  # narrow window
-burst_envelope = np.zeros_like(times)
-burst_centers = np.where(np.diff(phase_window.astype(int)) == 1)[0]
-burst_duration_samples = int(0.03 * sampling_rate_hz)  # 30 ms burst length
-
-for c in burst_centers:
-    start_idx = c
-    end_idx = min(c + burst_duration_samples, len(times))
-    burst_envelope[start_idx:end_idx] = 1.0  # full amplitude square pulse
-
-# Final signal: theta + bursty gamma
-signal = theta + burst_envelope * gamma
+# Add noise
+signal = signal + 0.3 * np.random.normal(size=len(times))
 
 # Convert to Tsd
 signal = nap.Tsd(t=times, d=signal)
@@ -72,7 +59,7 @@ signal = nap.Tsd(t=times, d=signal)
 Let's visualize that:
 ```{code-cell} ipython3
 :tags: [hide-input]
-segment = nap.IntervalSet(1, 2)
+segment = nap.IntervalSet(1, 4)
 plt.figure(figsize=(10,3))
 plt.plot(signal.restrict(segment))
 plt.xlabel("time (s)")
@@ -80,7 +67,7 @@ plt.ylabel("amplitude (a.u.)")
 plt.tight_layout();
 ```
 
-Now, imagine that we are interested in the theta frequency part of the signal.
+Now, imagine that we are interested in the low frequency part of the signal.
 We can start by applying a bandpass filter using [`apply_bandpass_filter`](pynapple.process.filtering.apply_bandpass_filter)
 to keep only the relevant frequencies (5-10Hz):
 ```{code-cell} ipython3
@@ -119,6 +106,7 @@ plt.plot(analytic_signal.restrict(segment), label="analytic signal")
 plt.xlabel("time (s)")
 plt.ylabel("amplitude (a.u.)")
 plt.legend(loc="upper left", bbox_to_anchor=(1, 1))
+plt.title("nap.apply_hilbert_transform(filtered_signal)")
 plt.tight_layout();
 ```
 
@@ -160,6 +148,7 @@ plt.plot(envelope.restrict(segment), label="envelope", color="red")
 plt.xlabel("time (s)")
 plt.ylabel("amplitude (a.u.)")
 plt.legend(loc="upper left", bbox_to_anchor=(1, 1))
+plt.title("nap.compute_hilbert_envelope(filtered_signal)")
 plt.tight_layout();
 ```
 
@@ -181,27 +170,28 @@ ax_sig.set_ylabel("amplitude (a.u.)")
 ax_phase.plot(phase.restrict(segment), label="phase")
 ax_phase.set_xlabel("time (s)")
 ax_phase.set_ylabel("phase (rad)")
+plt.title("nap.compute_hilbert_phase(filtered_signal)")
 plt.tight_layout()
 ```
 
 ## Detecting oscillatory events
-Having looked at the theta part of our signal, we might also be interested in the gamma part.
+Having looked at the low frequency part of our signal, we might also be interested in the high frequency part.
 To start with, we might simply be interested in finding the epochs where the signal is oscillating
-at gamma frequencies.
+at high frequencies.
 Pynapple provides the [`detect_oscillatory_events`](pynapple.process.signal.detect_oscillatory_events)
 exactly for such a goal.
 
 To get it to work nicely, you will have the tune the following detection parameters:
-- frequency band: the band of frequencies you are interested in (35 to 45Hz for gamma).
+- frequency band: the band of frequencies you are interested in.
 - threshold band: minimum and maximum thresholds to apply to the z-scored envelope of the squared signal.
 - minimum and maximum duration of the events
 - minimum interval between events
 ```{code-cell} ipython3
 # Define detection parameters
 freq_band = (35, 45)   # Gamma band
-thres_band = (0.25, 5) # Thresholds for normalized squared envelope
-min_dur = 0.04         # Minimum event duration
-max_dur = 0.08         # Max event duration
+thres_band = (1, 5)    # Thresholds for normalized squared envelope
+min_dur = 0.4          # Minimum event duration
+max_dur = 0.6          # Max event duration
 min_inter = 0.05       # Minimum interval between events
 epoch = signal.time_support
 
@@ -217,7 +207,7 @@ events = nap.detect_oscillatory_events(
 events
 ```
 
-We can then visualize to found events on top of the original signal as validation:
+We can then visualize the found events on top of the original signal as validation:
 ```{code-cell} ipython3
 :tags: [hide-input]
 plt.figure(figsize=(10, 3))
@@ -232,5 +222,6 @@ for s, e in events.intersect(segment).values:
 plt.xlabel("time (s)")
 plt.ylabel("amplitude (a.u.)")
 plt.legend(loc="upper left", bbox_to_anchor=(1, 1))
+plt.title("nap.detect_oscillatory_events(signal, ...)")
 plt.tight_layout();
 ```
