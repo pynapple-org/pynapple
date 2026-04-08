@@ -119,6 +119,7 @@ it automatically plots only the real part (see the warnings above).
 To actually see what’s going on, you can plot the real and imaginary parts separately:
 ```{code-cell} ipython3
 :tags: [hide-input]
+plt.figure(figsize=(10,3))
 plt.plot(np.real(analytic_signal).restrict(segment), label="real part")
 plt.plot(
     np.imag(analytic_signal).restrict(segment),
