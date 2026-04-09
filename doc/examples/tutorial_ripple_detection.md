@@ -134,7 +134,7 @@ plt.tight_layout();
 
 Ripple detection
 ----------------
-We detect ripple events by thresholding the z-scored smoothed signal with a threshold of 2 standard deviations.
+We detect ripple events by thresholding the z-scored smoothed signal with a threshold of 3 standard deviations.
 We further filter detected events to keep only those between 30 ms and 300 ms in duration, typical for hippocampal ripples. 
 ```{code-cell} ipython3
 threshold = 3
