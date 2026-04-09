@@ -173,12 +173,12 @@ plt.show()
 Computing phase
 ---------------
 
-From the filtered signal, it is easy to get the phase using the Hilbert transform. Here we use scipy Hilbert method.
+From the filtered signal, it is easy to get the phase using the Hilbert transform, (see the [user guide](/user_guide/13_phases_and_envelopes.md)).
+Pynapple provides function [`compute_hilbert_phase`](pynapple.process.signal.compute_hilbert_phase) for this:
 
 ```{code-cell} ipython3
-from scipy import signal
-
-theta_phase = nap.Tsd(t=theta_band.t, d=np.angle(signal.hilbert(theta_band)))
+theta_phase = nap.compute_hilbert_phase(theta_band)
+theta_phase
 ```
 
 Let's plot the phase.

@@ -121,6 +121,7 @@ Analysis modules
     filtering
     perievent
     randomize
+    signal
     spectrum
     tuning_curves
     wavelets

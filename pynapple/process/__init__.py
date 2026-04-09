@@ -23,6 +23,12 @@ from .randomize import (
     shift_timestamps,
     shuffle_ts_intervals,
 )
+from .signal import (
+    apply_hilbert_transform,
+    compute_hilbert_envelope,
+    compute_hilbert_phase,
+    detect_oscillatory_events,
+)
 from .spectrum import (
     compute_fft,
     compute_mean_power_spectral_density,
