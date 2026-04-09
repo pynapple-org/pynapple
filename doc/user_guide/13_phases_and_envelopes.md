@@ -119,6 +119,7 @@ it automatically plots only the real part (see the warnings above).
 To actually see what’s going on, you can plot the real and imaginary parts separately:
 ```{code-cell} ipython3
 :tags: [hide-input]
+plt.figure(figsize=(10,3))
 plt.plot(np.real(analytic_signal).restrict(segment), label="real part")
 plt.plot(
     np.imag(analytic_signal).restrict(segment),
@@ -164,14 +165,22 @@ phase
 Visualizing the phase with the signal:
 ```{code-cell} ipython3
 :tags: [hide-input]
-fig, (ax_sig, ax_phase) = plt.subplots(2, 1, figsize=(10, 6), sharex=True)
-ax_sig.plot(filtered_signal.restrict(segment), label="filtered signal")
+fig, ax_sig = plt.subplots(figsize=(10, 3))
+signal_line = ax_sig.plot(filtered_signal.restrict(segment))
 ax_sig.set_ylabel("amplitude (a.u.)")
-ax_phase.plot(phase.restrict(segment), label="phase")
-ax_phase.set_xlabel("time (s)")
+ax_phase = ax_sig.twinx()
+ax_phase.spines["right"].set_visible(True)
+phase_line = ax_phase.plot(phase.restrict(segment), color="red", linewidth=0.5)
 ax_phase.set_ylabel("phase (rad)")
+ax_sig.set_xlabel("time (s)")
+ax_sig.legend(
+    signal_line + phase_line,
+    ["filtered signal", "phase"],
+    loc="upper left",
+    bbox_to_anchor=(1.15, 1),
+)
 plt.title("nap.compute_hilbert_phase(filtered_signal)")
-plt.tight_layout()
+plt.tight_layout();
 ```
 
 ## Detecting oscillatory events
@@ -215,7 +224,7 @@ plt.plot(signal.restrict(segment), label="signal")
 first = True
 for s, e in events.intersect(segment).values:
     if first:
-        plt.axvspan(s, e, color="orange", alpha=0.3, label="gamma\nevent")
+        plt.axvspan(s, e, color="orange", alpha=0.3, label="event")
         first = False
     else:
         plt.axvspan(s, e, color="orange", alpha=0.3)
