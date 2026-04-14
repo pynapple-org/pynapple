@@ -247,35 +247,38 @@ def compute_hilbert_phase(data):
 
 def detect_oscillatory_events(
     data,
-    epoch,
-    freq_band,
-    thresh_band,
+    epochs,
+    frequency_band,
+    threshold_band,
     duration_band,
-    min_inter_duration,
+    min_interval,
     fs=None,
-    wsize=51,
+    sliding_window_size=51,
 ):
     """
-    Simple helper for detecting oscillatory events (e.g. ripples, spindles)
+    Function for detecting oscillatory events such as ripples, spindles, and more.
 
     Parameters
     ----------
     data : Tsd
-        1-dimensional time series
-    epoch : IntervalSet
-        The epoch for restricting the detection
-    freq_band : tuple
-        The (low, high) frequency to bandpass the signal
-    thresh_band : tuple
-        The (min, max) value for thresholding the normalized envelope of the signal after filtering
+        One-dimensional time series.
+    epochs : IntervalSet
+        The epochs for restricting the detection.
+    frequency_band : tuple
+        The lower and upper frequency to bandpass filter the signal.
+    threshold_band : tuple
+        The lower and upper threshold applied to the normalized envelope of the
+        filtered signal.
     duration_band : tuple
-        The (min, max) duration of an event in second
-    min_inter_duration : float
-        The minimum duration between two events otherwise they are merged (in seconds)
+        The minimal and maximal duration of an event (in seconds).
+    min_interval : float
+        The minimum duration between two events (in seconds).
+        If shorter, the two events are merged.
     fs : float, optional
-        The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.
-    wsize : int, optional
-        The size of the window for digital filtering
+        The sampling frequency of the signal in Hz.
+        If not provided, it will be inferred from the time axis of the data.
+    sliding_window_size : int, optional
+        The size of the smoothing window.
 
     Returns
     -------
@@ -288,8 +291,8 @@ def detect_oscillatory_events(
     if not isinstance(data, nap.Tsd):
         raise TypeError(f"`data` must be `Tsd`, got {type(data)}")
 
-    if not isinstance(epoch, nap.IntervalSet):
-        raise TypeError(f"`epoch` must be `IntervalSet`, got {type(epoch)}")
+    if not isinstance(epochs, nap.IntervalSet):
+        raise TypeError(f"`epochs` must be `IntervalSet`, got {type(epochs)}")
 
     def _check_tuple(name, val):
         if not isinstance(val, tuple):
@@ -301,14 +304,14 @@ def detect_oscillatory_events(
         if val[0] >= val[1]:
             raise ValueError(f"`{name}` must be (min, max) with min < max")
 
-    _check_tuple("freq_band", freq_band)
-    _check_tuple("thresh_band", thresh_band)
+    _check_tuple("frequency_band", frequency_band)
+    _check_tuple("threshold_band", threshold_band)
     _check_tuple("duration_band", duration_band)
 
-    if not isinstance(min_inter_duration, numbers.Real):
-        raise TypeError("`min_inter_duration` must be a number")
-    if min_inter_duration < 0:
-        raise ValueError("`min_inter_duration` must be >= 0")
+    if not isinstance(min_interval, numbers.Real):
+        raise TypeError("`min_interval` must be a number")
+    if min_interval < 0:
+        raise ValueError("`min_interval` must be >= 0")
 
     if fs is not None:
         if not isinstance(fs, numbers.Real):
@@ -318,23 +321,21 @@ def detect_oscillatory_events(
     else:
         fs = data.rate
 
-    if not isinstance(wsize, int):
-        raise TypeError("`wsize` must be an integer")
-    if wsize <= 0:
-        raise ValueError("`wsize` must be > 0")
-    if wsize % 2 == 0:
-        raise ValueError("`wsize` should be odd for symmetric smoothing")
+    if not isinstance(sliding_window_size, int):
+        raise TypeError("`sliding_window_size` must be an integer")
+    if sliding_window_size <= 0:
+        raise ValueError("`sliding_window_size` must be > 0")
 
-    data = data.restrict(epoch)
+    data = data.restrict(epochs)
 
     # Frequency filter
-    filtered = nap.apply_bandpass_filter(data, freq_band, fs)
+    filtered = nap.apply_bandpass_filter(data, frequency_band, fs)
 
     # Compute envelope
     envelope = nap.compute_hilbert_envelope(filtered)
 
     # Smooth
-    window = np.ones(wsize) / wsize
+    window = np.ones(sliding_window_size) / sliding_window_size
     smoothed = envelope.convolve(window)
 
     # Z-score
@@ -348,10 +349,10 @@ def detect_oscillatory_events(
             category=UserWarning,
         )
         zscored_smoothed_above = zscored_smoothed.threshold(
-            thresh_band[0], method="above"
+            threshold_band[0], method="above"
         )
         zscored_smoothed_thresholded = zscored_smoothed_above.threshold(
-            thresh_band[1], method="below"
+            threshold_band[1], method="below"
         )
 
     # Exclude oscillations where min_duration < length < max_duration
@@ -360,7 +361,7 @@ def detect_oscillatory_events(
     osc_ep = osc_ep.drop_long_intervals(duration_band[1], time_units="s")
 
     # Merge if inter-oscillation period is too short
-    osc_ep = osc_ep.merge_close_intervals(min_inter_duration, time_units="s")
+    osc_ep = osc_ep.merge_close_intervals(min_interval, time_units="s")
 
     # Compute power, amplitude, and peak_time for each interval
     powers = []

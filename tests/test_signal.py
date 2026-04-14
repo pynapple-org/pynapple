@@ -24,45 +24,49 @@ import pynapple as nap
             pytest.raises(TypeError, match="`data` must be `Tsd`, got <class 'str'>"),
         ),
         (
-            "epoch",
+            "epochs",
             None,
             pytest.raises(
                 TypeError,
-                match="`epoch` must be `IntervalSet`, got <class 'NoneType'>",
+                match="`epochs` must be `IntervalSet`, got <class 'NoneType'>",
             ),
         ),
         (
-            "epoch",
+            "epochs",
             "invalid_epoch",
             pytest.raises(
                 TypeError,
-                match="`epoch` must be `IntervalSet`, got <class 'str'>",
+                match="`epochs` must be `IntervalSet`, got <class 'str'>",
             ),
         ),
         (
-            "freq_band",
+            "frequency_band",
             (10, "not_a_number"),
-            pytest.raises(TypeError, match="`freq_band` must contain numeric values"),
-        ),
-        (
-            "freq_band",
-            (10, 5),
             pytest.raises(
-                ValueError,
-                match=re.escape("`freq_band` must be (min, max) with min < max"),
+                TypeError, match="`frequency_band` must contain numeric values"
             ),
         ),
         (
-            "thresh_band",
-            (1, "not_a_number"),
-            pytest.raises(TypeError, match="`thresh_band` must contain numeric values"),
-        ),
-        (
-            "thresh_band",
+            "frequency_band",
             (10, 5),
             pytest.raises(
                 ValueError,
-                match=re.escape("`thresh_band` must be (min, max) with min < max"),
+                match=re.escape("`frequency_band` must be (min, max) with min < max"),
+            ),
+        ),
+        (
+            "threshold_band",
+            (1, "not_a_number"),
+            pytest.raises(
+                TypeError, match="`threshold_band` must contain numeric values"
+            ),
+        ),
+        (
+            "threshold_band",
+            (10, 5),
+            pytest.raises(
+                ValueError,
+                match=re.escape("`threshold_band` must be (min, max) with min < max"),
             ),
         ),
         (
@@ -88,14 +92,14 @@ import pynapple as nap
             ),
         ),
         (
-            "min_inter_duration",
+            "min_interval",
             "string",
-            pytest.raises(TypeError, match="`min_inter_duration` must be a number"),
+            pytest.raises(TypeError, match="`min_interval` must be a number"),
         ),
         (
-            "min_inter_duration",
+            "min_interval",
             -0.1,
-            pytest.raises(ValueError, match="`min_inter_duration` must be >= 0"),
+            pytest.raises(ValueError, match="`min_interval` must be >= 0"),
         ),
         (
             "fs",
@@ -108,27 +112,19 @@ import pynapple as nap
             pytest.raises(ValueError, match="`fs` must be > 0"),
         ),
         (
-            "wsize",
+            "sliding_window_size",
             "string",
-            pytest.raises(TypeError, match="`wsize` must be an integer"),
+            pytest.raises(TypeError, match="`sliding_window_size` must be an integer"),
         ),
         (
-            "wsize",
+            "sliding_window_size",
             -5,
-            pytest.raises(ValueError, match="`wsize` must be > 0"),
+            pytest.raises(ValueError, match="`sliding_window_size` must be > 0"),
         ),
         (
-            "wsize",
+            "sliding_window_size",
             0,
-            pytest.raises(ValueError, match="`wsize` must be > 0"),
-        ),
-        (
-            "wsize",
-            2,
-            pytest.raises(
-                ValueError,
-                match="`wsize` should be odd for symmetric smoothing",
-            ),
+            pytest.raises(ValueError, match="`sliding_window_size` must be > 0"),
         ),
         # Valid cases (does not raise exceptions)
         (
@@ -136,14 +132,14 @@ import pynapple as nap
             nap.Tsd(t=np.linspace(0, 5, 100), d=np.sin(np.linspace(0, 5, 100))),
             does_not_raise(),
         ),
-        ("epoch", nap.IntervalSet(start=0, end=5), does_not_raise()),
-        ("freq_band", (10, 30), does_not_raise()),
-        ("thresh_band", (1, 10), does_not_raise()),
+        ("epochs", nap.IntervalSet(start=0, end=5), does_not_raise()),
+        ("frequency_band", (10, 30), does_not_raise()),
+        ("threshold_band", (1, 10), does_not_raise()),
         ("duration_band", (0.1, 2), does_not_raise()),
-        ("min_inter_duration", 0.02, does_not_raise()),
+        ("min_interval", 0.02, does_not_raise()),
         ("fs", 1000, does_not_raise()),
         ("fs", None, does_not_raise()),
-        ("wsize", 51, does_not_raise()),
+        ("sliding_window_size", 51, does_not_raise()),
     ],
 )
 def test_detect_oscillatory_events_input_types(param_name, invalid_value, exception):
@@ -157,19 +153,19 @@ def test_detect_oscillatory_events_input_types(param_name, invalid_value, except
     min_dur = 0.1
     max_dur = 2
     min_inter = 0.02
-    freq_band = (10, 30)
-    thresh_band = (1, 10)
+    frequency_band = (10, 30)
+    threshold_band = (1, 10)
 
     # Modify the parameter based on the test case
     kwargs = {
         "data": ts,
-        "epoch": epoch,
-        "freq_band": freq_band,
-        "thresh_band": thresh_band,
+        "epochs": epoch,
+        "frequency_band": frequency_band,
+        "threshold_band": threshold_band,
         "duration_band": (min_dur, max_dur),
-        "min_inter_duration": min_inter,
+        "min_interval": min_inter,
         "fs": fs,
-        "wsize": 51,
+        "sliding_window_size": 51,
     }
     kwargs[param_name] = invalid_value
 
@@ -178,14 +174,16 @@ def test_detect_oscillatory_events_input_types(param_name, invalid_value, except
 
 
 @pytest.mark.parametrize(
-    "freq_band, thresh_band, num_events, start, end",
+    "frequency_band, threshold_band, num_events, start, end",
     [
         ((10, 30), (1, 10), 1, 0, 2),
         ((40, 60), (1, 10), 1, 3, 5),
         ((100, 150), (1, 10), 0, None, None),
     ],
 )
-def test_detect_oscillatory_events(freq_band, thresh_band, num_events, start, end):
+def test_detect_oscillatory_events(
+    frequency_band, threshold_band, num_events, start, end
+):
     fs = 1000
     duration = 5
     min_dur = 0.1
@@ -206,12 +204,17 @@ def test_detect_oscillatory_events(freq_band, thresh_band, num_events, start, en
     signal[mask2] = np.sin(2 * np.pi * freq_2 * t[mask2])
 
     ts = nap.Tsd(t=t, d=signal)
-    epoch = nap.IntervalSet(start=0, end=duration)
+    epochs = nap.IntervalSet(start=0, end=duration)
     osc_ep = nap.detect_oscillatory_events(
-        ts, epoch, freq_band, thresh_band, (min_dur, max_dur), min_inter
+        ts,
+        epochs,
+        frequency_band,
+        threshold_band,
+        (min_dur, max_dur),
+        min_inter,
     )
 
-    assert len(osc_ep) == num_events  # Only one event in given freq_band
+    assert len(osc_ep) == num_events  # Only one event in given frequency_band
 
     if num_events > 0:
         # Start and end should be close to actuals +/- a small amount

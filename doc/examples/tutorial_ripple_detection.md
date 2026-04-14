@@ -62,7 +62,7 @@ lfp.rate
 
 Frequency filtering
 -------------------
-To look for ripples we will only keep frequencies within 150 to 250Hz:
+To look for ripples we will only keep frequencies within 120 to 250Hz:
 ```{code-cell} ipython3
 filtered_lfp = nap.apply_bandpass_filter(lfp, cutoff=(120, 250), fs=lfp.rate)
 filtered_lfp
@@ -77,7 +77,7 @@ plt.plot(filtered_lfp.restrict(segment), label="filtered LFP")
 plt.xlabel("time (s)")
 plt.ylabel("amplitude (a.u.)")
 plt.legend()
-plt.title("nap.apply_bandpass_filter(lfp, cutoff=(120, 150), fs=lfp.rate")
+plt.title("nap.apply_bandpass_filter(lfp, cutoff=(120, 150), fs=lfp.rate)")
 plt.tight_layout();
 ```
 
@@ -85,7 +85,7 @@ Hilbert transform: computing the envelope
 -----------------------------------------
 Now, we will apply the Hilbert transform to the filtered LFP and take its absolute value 
 to extract the amplitude envelope, which reflects ripple strength over time. 
-Pynapple provides [`compute_hilbert_envelope`](pynapple.process.signal.compute_hilbert_envelope]:
+Pynapple provides [`compute_hilbert_envelope`](pynapple.process.signal.compute_hilbert_envelope):
 
 ```{code-cell} ipython3
 envelope = nap.compute_hilbert_envelope(filtered_lfp)
@@ -113,7 +113,9 @@ Smooth and Z-score
 We will then smooth and z-score the envelope:
 
 ```{code-cell} ipython3
-smoothed = envelope.smooth(0.005)
+smoothing_bins = 10
+window = np.ones(smoothing_bins) / smoothing_bins
+smoothed = envelope.convolve(window)
 zscored_smoothed = (smoothed - smoothed.mean()) / smoothed.std()
 ```
 
@@ -135,17 +137,58 @@ plt.tight_layout();
 Ripple detection
 ----------------
 We detect ripple events by thresholding the z-scored smoothed signal with a threshold of 3 standard deviations.
-We further filter detected events to keep only those between 30 ms and 300 ms in duration, typical for hippocampal ripples. 
+We further filter detected events to keep only those between 30ms and 300ms in duration, typical for hippocampal ripples. 
+We lastly merge events that are closer to each other than 20ms, as they are likely to be the same ripple.
 ```{code-cell} ipython3
 threshold = 3
 ripple_events = zscored_smoothed.threshold(threshold, method="above")
 ripple_epochs = ripple_events.time_support
 ripple_epochs = ripple_epochs.drop_short_intervals(0.03, time_units="s")
-ripple_epochs = ripple_epochs.drop_long_intervals(0.2, time_units="s")    
+ripple_epochs = ripple_epochs.drop_long_intervals(0.3, time_units="s")    
+ripple_epochs = ripple_epochs.merge_close_intervals(0.02, time_units="s")
 ripple_epochs.intersect(segment)
 ```
 
 Finally, we can plot the detected ripple events on top of the filtered LFP signal for visual confirmation:
+```{code-cell} ipython3
+:tags: [hide-input]
+fig = plt.figure(figsize=(10, 5))
+plt.plot(zscored_smoothed.restrict(segment), label="z-scored & smoothed")
+for start, end in ripple_epochs.intersect(segment).values:
+    plt.axvspan(start, end, alpha=0.3, color="red")
+plt.axhline(threshold, color="black", linestyle="--")
+plt.ylabel("amplitude (a.u.)")
+plt.xlabel("time (s)")
+plt.tight_layout();
+```
+
+
+Using `detect_oscillatory_events`
+=================================
+
+For your convenience, we put the entire process into a single 
+function called [`detect_oscillatory_events`](pynapple.process.signal.detect_oscillatory_events).
+
+To get it to work nicely, you will have to the tune the following detection parameters:
+- frequency band: the band of frequencies you are interested in
+- threshold band: minimum and maximum thresholds to apply to the z-scored envelope of the squared signal
+- duration band: minimum and maximum duration of the events
+- minimum interval between events
+```{code-cell} ipython3
+ripple_epochs = nap.detect_oscillatory_events(
+    data=lfp,
+    epochs=lfp.time_support,
+    frequency_band=(120, 250),
+    threshold_band=(3, 15),
+    duration_band=(0.03, 0.3),
+    min_interval=0.02,
+    sliding_window_size=smoothing_bins
+)
+ripple_epochs.intersect(segment)
+```
+
+You can see that this gives the same result as before:
+
 ```{code-cell} ipython3
 :tags: [hide-input]
 fig = plt.figure(figsize=(10, 5))
