@@ -19,7 +19,8 @@ The NWB file for the example is hosted on [OSF](https://osf.io/jb2gd). We show b
 The entire dataset can be downloaded [here](https://dandiarchive.org/dandiset/000056).
 
 ```{code-cell} ipython3
-:tags: [remove-output]
+:tags: [hide-input]
+# we'll import the packages we're going to use
 import scipy
 import pandas as pd
 import numpy as np
@@ -29,9 +30,10 @@ import seaborn as sns
 import requests, os
 import xarray as xr 
 
+# some configuration, you can ignore this
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
 sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
-xr.set_options(display_expand_attrs=False)
+xr.set_options(display_expand_attrs=False);
 ```
 
 ***
@@ -300,7 +302,7 @@ I hope this tutorial was helpful. If you have any questions, comments or suggest
 :::{card}
 Authors
 ^^^
-Wolf de Wulf
+[Wolf De Wulf](https://wulfdewolf.github.io)
 
 Dhruv Mehrotra
 
