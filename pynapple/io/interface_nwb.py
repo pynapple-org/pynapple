@@ -235,9 +235,13 @@ def _make_tsd_frame(obj, lazy_loading=True):
         # (channel mapping)
         try:
             df = obj.electrodes.to_dataframe()
-            if hasattr(df, "label"):
-                columns = df["label"].values
-            else:
+            key_missing = True
+            for k in ["channel_name", "label"]:
+                if hasattr(df, k):
+                    columns = df[k].values
+                    key_missing = True
+                    break
+            if key_missing:
                 columns = df.index.values
         except Exception:
             columns = np.arange(obj.data.shape[1])
