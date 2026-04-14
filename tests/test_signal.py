@@ -151,7 +151,7 @@ def test_detect_oscillatory_events_input_types(param_name, invalid_value, except
     duration = 5
     fs = 1000
     t = np.linspace(0, duration, int(fs * duration), endpoint=False)
-    signal = np.sin(2 * np.pi * 25 * t)  # simple 25 Hz signal
+    signal = np.sin(2 * np.pi * 25 * t)
     ts = nap.Tsd(t=t, d=signal)
     epoch = nap.IntervalSet(start=0, end=duration)
     min_dur = 0.1
