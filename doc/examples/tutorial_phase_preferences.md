@@ -20,6 +20,8 @@ with spiking data, to find phase preferences of spiking units.
 Specifically, we will examine LFP and spiking data from a period of REM sleep, after traversal of a linear track.
 
 ```{code-cell} ipython3
+:tags: [hide-input]
+# we'll import the packages we're going to use
 import math
 import os
 
@@ -31,9 +33,9 @@ import scipy
 import seaborn as sns
 import pynapple as nap
 
+# some configuration, you can ignore this
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
-sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
-
+sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params);
 ```
 
 ***
@@ -255,7 +257,7 @@ plt.show()
 :::{card}
 Authors
 ^^^
-Kipp Freud (https://kippfreud.com/)
+[Kipp Freud](https://kippfreud.com/)
 
 Guillaume Viejo
 

@@ -22,7 +22,8 @@ For a more detailed tutorial on data loading with DANDI, see the "Streaming data
 **Caveats**: This example is meant to provide a simple starting point for working with trial-aligned data and data from the IBL, and so it does not faithfully replicate the IBL's quality control and filtering criteria; the decoding here is also simpler than the analyses carried out in those works.
 
 ```{code-cell} ipython3
-:tags: [hide-cell]
+:tags: [hide-input]
+# we'll import the packages we're going to use
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -32,10 +33,11 @@ import pynapple as nap
 import scipy.stats
 import seaborn as sns
 
+# some configuration, you can ignore this
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import RandomizedSearchCV
 custom_params = {"axes.spines.right": False, "axes.spines.top": False}
-sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params)
+sns.set_theme(style="ticks", palette="colorblind", font_scale=1.5, rc=custom_params);
 ```
 
 ## Loading data
