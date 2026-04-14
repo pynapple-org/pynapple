@@ -2,6 +2,8 @@
 Functions to compute phases and envelopes
 """
 
+import numbers
+
 import numpy as np
 
 import pynapple as nap
@@ -265,7 +267,7 @@ def detect_oscillatory_events(
     freq_band : tuple
         The (low, high) frequency to bandpass the signal
     thresh_band : tuple
-        The (min, max) value for thresholding the normalized squared signal after filtering
+        The (min, max) value for thresholding the normalized envelope of the signal after filtering
     duration_band : tuple
         The (min, max) duration of an event in second
     min_inter_duration : float
@@ -283,20 +285,60 @@ def detect_oscillatory_events(
     """
     import warnings
 
-    from scipy.signal import filtfilt
+    if not isinstance(data, nap.Tsd):
+        raise TypeError(f"`data` must be `Tsd`, got {type(data)}")
+
+    if not isinstance(epoch, nap.IntervalSet):
+        raise TypeError(f"`epoch` must be `IntervalSet`, got {type(epoch)}")
+
+    def _check_tuple(name, val):
+        if not isinstance(val, tuple):
+            raise TypeError(f"`{name}` must be a tuple, got {type(val)}")
+        if len(val) != 2:
+            raise ValueError(f"`{name}` must have length 2, got {len(val)}")
+        if not all(isinstance(x, numbers.Real) for x in val):
+            raise TypeError(f"`{name}` must contain numeric values")
+        if val[0] >= val[1]:
+            raise ValueError(f"`{name}` must be (min, max) with min < max")
+
+    _check_tuple("freq_band", freq_band)
+    _check_tuple("thresh_band", thresh_band)
+    _check_tuple("duration_band", duration_band)
+
+    if not isinstance(min_inter_duration, numbers.Real):
+        raise TypeError("`min_inter_duration` must be a number")
+    if min_inter_duration < 0:
+        raise ValueError("`min_inter_duration` must be >= 0")
+
+    if fs is not None:
+        if not isinstance(fs, numbers.Real):
+            raise TypeError("`fs` must be a number or None")
+        if fs <= 0:
+            raise ValueError("`fs` must be > 0")
+    else:
+        fs = data.rate
+
+    if not isinstance(wsize, int):
+        raise TypeError("`wsize` must be an integer")
+    if wsize <= 0:
+        raise ValueError("`wsize` must be > 0")
+    if wsize % 2 == 0:
+        raise ValueError("`wsize` should be odd for symmetric smoothing")
 
     data = data.restrict(epoch)
 
-    if fs is None:
-        fs = data.rate
+    # Frequency filter
+    filtered = nap.apply_bandpass_filter(data, freq_band, fs)
 
-    signal = nap.apply_bandpass_filter(data, freq_band, fs)
-    squared_signal = np.square(signal.values)
+    # Compute envelope
+    envelope = nap.compute_hilbert_envelope(filtered)
+
+    # Smooth
     window = np.ones(wsize) / wsize
+    smoothed = envelope.convolve(window)
 
-    nSS = filtfilt(window, 1, squared_signal)
-    nSS = (nSS - np.mean(nSS)) / np.std(nSS)
-    nSS = nap.Tsd(t=signal.index.values, d=nSS, time_support=epoch)
+    # Z-score
+    zscored_smoothed = (smoothed - smoothed.mean()) / smoothed.std()
 
     # Detect oscillation periods by thresholding normalized signal
     with warnings.catch_warnings():
@@ -305,11 +347,15 @@ def detect_oscillatory_events(
             message="Some epochs have no duration",
             category=UserWarning,
         )
-        nSS2 = nSS.threshold(thresh_band[0], method="above")
-        nSS3 = nSS2.threshold(thresh_band[1], method="below")
+        zscored_smoothed_above = zscored_smoothed.threshold(
+            thresh_band[0], method="above"
+        )
+        zscored_smoothed_thresholded = zscored_smoothed_above.threshold(
+            thresh_band[1], method="below"
+        )
 
-    # Exclude oscillation where min_duration < length < max_duration
-    osc_ep = nSS3.time_support
+    # Exclude oscillations where min_duration < length < max_duration
+    osc_ep = zscored_smoothed_thresholded.time_support
     osc_ep = osc_ep.drop_short_intervals(duration_band[0], time_units="s")
     osc_ep = osc_ep.drop_long_intervals(duration_band[1], time_units="s")
 
@@ -322,17 +368,20 @@ def detect_oscillatory_events(
     peak_times = []
 
     for s, e in osc_ep.values:
-        seg = signal.get(s, e)
+        seg = envelope.get(s, e)
         if len(seg) == 0:
             powers.append(np.nan)
             amplitudes.append(np.nan)
             peak_times.append(np.nan)
             continue
-        power = np.mean(np.square(seg))
-        power_db = 10 * np.log10(power)
-        amplitude = np.max(np.abs(seg.values))
-        peak_idx = np.argmax(np.abs(seg.values))
+
+        power = np.mean(seg.values**2)
+        power_db = 10 * np.log10(power) if power > 0 else np.nan
+
+        amplitude = np.max(seg.values)
+        peak_idx = np.argmax(seg.values)
         peak_time = seg.index.values[peak_idx]
+
         powers.append(power_db)
         amplitudes.append(amplitude)
         peak_times.append(peak_time)
