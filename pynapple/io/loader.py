@@ -41,7 +41,9 @@ def get_error_text(path):
 
     A more advanced project for creating NWB files is neuroconv:
     https://neuroconv.readthedocs.io/en/main/
-    """.format(path)
+    """.format(
+        path
+    )
 
     error_txt = "\n" + border + "\n" + txt1 + "\n" + border
     return error_txt
@@ -128,23 +130,6 @@ class BaseLoader(object):
             self.epochs = self._make_epochs(epochs)
 
             self.time_support = self._join_epochs(epochs, "s")
-
-        if nwbfile.processing is not None:
-            import numpy as np
-
-            lfp = nwbfile.processing["ecephys"]["LFP"]["LFP"]
-            timestamps = np.arange(0, len(lfp.data)) * 1 / lfp.rate
-            metadata = (
-                nwbfile.processing["ecephys"]["LFP"]["LFP"]
-                .electrodes[:]
-                .convert_dtypes()
-            )
-            self.LFP = nap.TsdFrame(
-                d=lfp.data[:],
-                t=timestamps,
-                columns=metadata.index,
-                metadata=metadata,
-            )
 
         io.close()
 

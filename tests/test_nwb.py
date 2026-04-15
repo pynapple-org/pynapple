@@ -58,13 +58,6 @@ class Test_NWB:
     def test_time_support(self, data):
         assert isinstance(data.time_support, nap.IntervalSet)
 
-    def test_electrical_series(self, data):
-        lfp = data.LFP
-        assert isinstance(lfp, nap.TsdFrame)
-        assert len(lfp.columns) == 10
-        assert len(lfp) == 1000
-        assert not np.all(np.isnan(lfp.values))
-
     @pytest.mark.filterwarnings("ignore")
     def test_nwb_meta_info(self, data):
         from pynwb import NWBHDF5IO
@@ -99,7 +92,6 @@ def test_NWBFile():
     assert nwb.keys() == [
         "position_time_support",
         "epochs",
-        "LFP",
         "z",
         "y",
         "x",
