@@ -26,7 +26,7 @@ Learning pynapple
 Workshops are regularly organized by the [center for Computational Neuroscience ](https://www.simonsfoundation.org/flatiron/center-for-computational-neuroscience/) of the Flatiron institute 
 to teach pynapple & [NeMos](https://nemos.readthedocs.io/en/latest/) to new users. 
 
-**The next workshop will take place before FENS in Barcelona. Apply [here](https://www.simonsfoundation.org/event/ccn_fens2026/?swcfpc=1).**
+**The next workshop will take place in NYC in 2027.**
 
 
 New release :fire:
