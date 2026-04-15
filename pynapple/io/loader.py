@@ -41,7 +41,9 @@ def get_error_text(path):
 
     A more advanced project for creating NWB files is neuroconv:
     https://neuroconv.readthedocs.io/en/main/
-    """.format(path)
+    """.format(
+        path
+    )
 
     error_txt = "\n" + border + "\n" + txt1 + "\n" + border
     return error_txt
@@ -110,7 +112,9 @@ class BaseLoader(object):
             if "position_time_support" in nwbfile.intervals.keys():
                 epochs = nwbfile.intervals["position_time_support"].to_dataframe()
                 time_support = nap.IntervalSet(
-                    start=epochs["start_time"], end=epochs["stop_time"], time_units="s"
+                    start=epochs["start_time"],
+                    end=epochs["stop_time"],
+                    time_units="s",
                 )
 
             self.position = nap.TsdFrame(
@@ -126,6 +130,16 @@ class BaseLoader(object):
             self.epochs = self._make_epochs(epochs)
 
             self.time_support = self._join_epochs(epochs, "s")
+
+        if nwbfile.processing is not None:
+            import numpy as np
+
+            lfp = nwbfile.processing["ecephys"]["LFP"]["LFP"]
+            timestamps = np.arange(0, len(lfp.data)) * 1 / lfp.rate
+            columns = nwbfile.processing["ecephys"]["LFP"]["LFP"].electrodes[:][
+                "channel_name"
+            ]
+            self.LFP = nap.TsdFrame(d=lfp.data[:], t=timestamps, columns=columns)
 
         io.close()
 
@@ -218,7 +232,8 @@ class BaseLoader(object):
             timestamps=tsd.as_units("s").index.values,
         )
         time_support = pynwb.epoch.TimeIntervals(
-            name=name + "_timesupport", description="The time support of the object"
+            name=name + "_timesupport",
+            description="The time support of the object",
         )
 
         epochs = tsd.time_support.as_units("s")
@@ -251,7 +266,9 @@ class BaseLoader(object):
         if name in nwbfile.intervals.keys():
             epochs = nwbfile.intervals[name].to_dataframe()
             isets = nap.IntervalSet(
-                start=epochs["start_time"], end=epochs["stop_time"], time_units="s"
+                start=epochs["start_time"],
+                end=epochs["stop_time"],
+                time_units="s",
             )
             io.close()
             return isets
@@ -282,7 +299,10 @@ class BaseLoader(object):
         time_support = self.load_nwb_intervals(name + "_timesupport")
 
         tsd = nap.Tsd(
-            t=ts.timestamps[:], d=ts.data[:], time_units="s", time_support=time_support
+            t=ts.timestamps[:],
+            d=ts.data[:],
+            time_units="s",
+            time_support=time_support,
         )
 
         io.close()
