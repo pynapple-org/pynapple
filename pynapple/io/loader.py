@@ -41,7 +41,9 @@ def get_error_text(path):
 
     A more advanced project for creating NWB files is neuroconv:
     https://neuroconv.readthedocs.io/en/main/
-    """.format(path)
+    """.format(
+        path
+    )
 
     error_txt = "\n" + border + "\n" + txt1 + "\n" + border
     return error_txt
@@ -108,9 +110,7 @@ class BaseLoader(object):
 
             # retrieveing time support position if in epochs
             if "position_time_support" in nwbfile.intervals.keys():
-                epochs = nwbfile.intervals[
-                    "position_time_support"
-                ].to_dataframe()
+                epochs = nwbfile.intervals["position_time_support"].to_dataframe()
                 time_support = nap.IntervalSet(
                     start=epochs["start_time"],
                     end=epochs["stop_time"],
@@ -126,9 +126,7 @@ class BaseLoader(object):
             # NWB is dumb and cannot take a single string for labels
             epochs["label"] = [epochs.loc[i, "tags"][0] for i in epochs.index]
             epochs = epochs.drop(labels="tags", axis=1)
-            epochs = epochs.rename(
-                columns={"start_time": "start", "stop_time": "end"}
-            )
+            epochs = epochs.rename(columns={"start_time": "start", "stop_time": "end"})
             self.epochs = self._make_epochs(epochs)
 
             self.time_support = self._join_epochs(epochs, "s")
@@ -201,9 +199,7 @@ class BaseLoader(object):
         nwbfile = io.read()
 
         epochs = iset.as_units("s")
-        time_intervals = pynwb.epoch.TimeIntervals(
-            name=name, description=description
-        )
+        time_intervals = pynwb.epoch.TimeIntervals(name=name, description=description)
         for i in epochs.index:
             time_intervals.add_interval(
                 start_time=epochs.loc[i, "start"],
