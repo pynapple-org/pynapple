@@ -64,7 +64,6 @@ class Test_NWB:
         assert len(lfp.columns) == 10
         assert len(lfp) == 1000
         assert not np.all(np.isnan(lfp.values))
-        assert all(col == f"CH{i}" for i, col in enumerate(lfp.columns, 1))
 
     @pytest.mark.filterwarnings("ignore")
     def test_nwb_meta_info(self, data):

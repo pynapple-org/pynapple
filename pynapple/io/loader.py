@@ -136,10 +136,17 @@ class BaseLoader(object):
 
             lfp = nwbfile.processing["ecephys"]["LFP"]["LFP"]
             timestamps = np.arange(0, len(lfp.data)) * 1 / lfp.rate
-            columns = nwbfile.processing["ecephys"]["LFP"]["LFP"].electrodes[:][
-                "channel_name"
-            ]
-            self.LFP = nap.TsdFrame(d=lfp.data[:], t=timestamps, columns=columns)
+            metadata = (
+                nwbfile.processing["ecephys"]["LFP"]["LFP"]
+                .electrodes[:]
+                .convert_dtypes()
+            )
+            self.LFP = nap.TsdFrame(
+                d=lfp.data[:],
+                t=timestamps,
+                columns=metadata.index,
+                metadata=metadata,
+            )
 
         io.close()
 
