@@ -2,6 +2,8 @@
 Functions to compute phases and envelopes
 """
 
+import numbers
+
 import numpy as np
 
 import pynapple as nap
@@ -245,35 +247,38 @@ def compute_hilbert_phase(data):
 
 def detect_oscillatory_events(
     data,
-    epoch,
-    freq_band,
-    thresh_band,
+    epochs,
+    frequency_band,
+    threshold_band,
     duration_band,
-    min_inter_duration,
+    min_interval,
     fs=None,
-    wsize=51,
+    sliding_window_size=51,
 ):
     """
-    Simple helper for detecting oscillatory events (e.g. ripples, spindles)
+    Function for detecting oscillatory events such as ripples, spindles, and more.
 
     Parameters
     ----------
     data : Tsd
-        1-dimensional time series
-    epoch : IntervalSet
-        The epoch for restricting the detection
-    freq_band : tuple
-        The (low, high) frequency to bandpass the signal
-    thresh_band : tuple
-        The (min, max) value for thresholding the normalized squared signal after filtering
+        One-dimensional time series.
+    epochs : IntervalSet
+        The epochs for restricting the detection.
+    frequency_band : tuple
+        The lower and upper frequency to bandpass filter the signal.
+    threshold_band : tuple
+        The lower and upper threshold applied to the normalized envelope of the
+        filtered signal.
     duration_band : tuple
-        The (min, max) duration of an event in second
-    min_inter_duration : float
-        The minimum duration between two events otherwise they are merged (in seconds)
+        The minimal and maximal duration of an event (in seconds).
+    min_interval : float
+        The minimum duration between two events (in seconds).
+        If shorter, the two events are merged.
     fs : float, optional
-        The sampling frequency of the signal in Hz. If not provided, it will be inferred from the time axis of the data.
-    wsize : int, optional
-        The size of the window for digital filtering
+        The sampling frequency of the signal in Hz.
+        If not provided, it will be inferred from the time axis of the data.
+    sliding_window_size : int, optional
+        The size of the smoothing window.
 
     Returns
     -------
@@ -283,20 +288,58 @@ def detect_oscillatory_events(
     """
     import warnings
 
-    from scipy.signal import filtfilt
+    if not isinstance(data, nap.Tsd):
+        raise TypeError(f"`data` must be `Tsd`, got {type(data)}")
 
-    data = data.restrict(epoch)
+    if not isinstance(epochs, nap.IntervalSet):
+        raise TypeError(f"`epochs` must be `IntervalSet`, got {type(epochs)}")
 
-    if fs is None:
+    def _check_tuple(name, val):
+        if not isinstance(val, tuple):
+            raise TypeError(f"`{name}` must be a tuple, got {type(val)}")
+        if len(val) != 2:
+            raise ValueError(f"`{name}` must have length 2, got {len(val)}")
+        if not all(isinstance(x, numbers.Real) for x in val):
+            raise TypeError(f"`{name}` must contain numeric values")
+        if val[0] >= val[1]:
+            raise ValueError(f"`{name}` must be (min, max) with min < max")
+
+    _check_tuple("frequency_band", frequency_band)
+    _check_tuple("threshold_band", threshold_band)
+    _check_tuple("duration_band", duration_band)
+
+    if not isinstance(min_interval, numbers.Real):
+        raise TypeError("`min_interval` must be a number")
+    if min_interval < 0:
+        raise ValueError("`min_interval` must be >= 0")
+
+    if fs is not None:
+        if not isinstance(fs, numbers.Real):
+            raise TypeError("`fs` must be a number or None")
+        if fs <= 0:
+            raise ValueError("`fs` must be > 0")
+    else:
         fs = data.rate
 
-    signal = nap.apply_bandpass_filter(data, freq_band, fs)
-    squared_signal = np.square(signal.values)
-    window = np.ones(wsize) / wsize
+    if not isinstance(sliding_window_size, int):
+        raise TypeError("`sliding_window_size` must be an integer")
+    if sliding_window_size <= 0:
+        raise ValueError("`sliding_window_size` must be > 0")
 
-    nSS = filtfilt(window, 1, squared_signal)
-    nSS = (nSS - np.mean(nSS)) / np.std(nSS)
-    nSS = nap.Tsd(t=signal.index.values, d=nSS, time_support=epoch)
+    data = data.restrict(epochs)
+
+    # Frequency filter
+    filtered = nap.apply_bandpass_filter(data, frequency_band, fs)
+
+    # Compute envelope
+    envelope = nap.compute_hilbert_envelope(filtered)
+
+    # Smooth
+    window = np.ones(sliding_window_size) / sliding_window_size
+    smoothed = envelope.convolve(window)
+
+    # Z-score
+    zscored_smoothed = (smoothed - smoothed.mean()) / smoothed.std()
 
     # Detect oscillation periods by thresholding normalized signal
     with warnings.catch_warnings():
@@ -305,16 +348,20 @@ def detect_oscillatory_events(
             message="Some epochs have no duration",
             category=UserWarning,
         )
-        nSS2 = nSS.threshold(thresh_band[0], method="above")
-        nSS3 = nSS2.threshold(thresh_band[1], method="below")
+        zscored_smoothed_above = zscored_smoothed.threshold(
+            threshold_band[0], method="above"
+        )
+        zscored_smoothed_thresholded = zscored_smoothed_above.threshold(
+            threshold_band[1], method="below"
+        )
 
-    # Exclude oscillation where min_duration < length < max_duration
-    osc_ep = nSS3.time_support
+    # Exclude oscillations where min_duration < length < max_duration
+    osc_ep = zscored_smoothed_thresholded.time_support
     osc_ep = osc_ep.drop_short_intervals(duration_band[0], time_units="s")
     osc_ep = osc_ep.drop_long_intervals(duration_band[1], time_units="s")
 
     # Merge if inter-oscillation period is too short
-    osc_ep = osc_ep.merge_close_intervals(min_inter_duration, time_units="s")
+    osc_ep = osc_ep.merge_close_intervals(min_interval, time_units="s")
 
     # Compute power, amplitude, and peak_time for each interval
     powers = []
@@ -322,17 +369,20 @@ def detect_oscillatory_events(
     peak_times = []
 
     for s, e in osc_ep.values:
-        seg = signal.get(s, e)
+        seg = envelope.get(s, e)
         if len(seg) == 0:
             powers.append(np.nan)
             amplitudes.append(np.nan)
             peak_times.append(np.nan)
             continue
-        power = np.mean(np.square(seg))
-        power_db = 10 * np.log10(power)
-        amplitude = np.max(np.abs(seg.values))
-        peak_idx = np.argmax(np.abs(seg.values))
+
+        power = np.mean(seg.values**2)
+        power_db = 10 * np.log10(power) if power > 0 else np.nan
+
+        amplitude = np.max(seg.values)
+        peak_idx = np.argmax(seg.values)
         peak_time = seg.index.values[peak_idx]
+
         powers.append(power_db)
         amplitudes.append(amplitude)
         peak_times.append(peak_time)

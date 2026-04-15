@@ -190,28 +190,19 @@ at high frequencies.
 Pynapple provides the [`detect_oscillatory_events`](pynapple.process.signal.detect_oscillatory_events)
 exactly for such a goal.
 
-To get it to work nicely, you will have the tune the following detection parameters:
-- frequency band: the band of frequencies you are interested in.
-- threshold band: minimum and maximum thresholds to apply to the z-scored envelope of the squared signal.
-- minimum and maximum duration of the events
+To get it to work nicely, you will have to the tune the following detection parameters:
+- frequency band: the band of frequencies you are interested in
+- threshold band: minimum and maximum thresholds to apply to the z-scored envelope of the squared signal
+- duration band: minimum and maximum duration of the events
 - minimum interval between events
 ```{code-cell} ipython3
-# Define detection parameters
-freq_band = (35, 45)   # Gamma band
-thres_band = (1, 5)    # Thresholds for normalized squared envelope
-min_dur = 0.4          # Minimum event duration
-max_dur = 0.6          # Max event duration
-min_inter = 0.05       # Minimum interval between events
-epoch = signal.time_support
-
-# Detect oscillatory events
 events = nap.detect_oscillatory_events(
-    signal,
-    epoch,
-    freq_band,
-    thres_band,
-    (min_dur, max_dur),
-    min_inter,
+    data=signal,
+    epochs=signal.time_support,
+    frequency_band=(35, 45),
+    threshold_band=(1,5),
+    duration_band=(0.4,0.6),
+    min_interval=0.05,
 )
 events
 ```
