@@ -2295,7 +2295,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
         return TsGroup(
             {
-                col: Tsd(t=data.t, d=data.values[:, i], time_support=epochs).find_peaks(
+                i: Tsd(t=data.t, d=data.values[:, i], time_support=epochs).find_peaks(
                     epochs, return_prop, *args, **kwargs
                 )
                 for i, col in enumerate(self.columns)

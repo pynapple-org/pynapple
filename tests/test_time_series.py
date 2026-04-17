@@ -2101,6 +2101,84 @@ class TestTsdFrame:
         with expectation:
             tsdframe.find_peaks(epochs=epochs, return_prop=return_prop)
 
+    def test_find_peaks(self, tsdframe):
+        from scipy.signal import find_peaks
+
+        peaks = tsdframe.find_peaks()
+        assert isinstance(peaks, nap.TsGroup)
+        assert len(peaks) == len(tsdframe.columns)
+        np.testing.assert_array_almost_equal(peaks.time_support, tsdframe.time_support)
+
+        for i, k in enumerate(tsdframe.columns):
+            assert isinstance(peaks[i], nap.Tsd)
+
+            expected_peaks = find_peaks(tsdframe.values[:, i])[0]
+            expected_peak_values = tsdframe.values[expected_peaks, i]
+            expected_peak_times = tsdframe.t[expected_peaks]
+
+            np.testing.assert_array_almost_equal(peaks[i].values, expected_peak_values)
+            np.testing.assert_array_almost_equal(peaks[i].t, expected_peak_times)
+
+    @pytest.mark.parametrize(
+        "epochs",
+        [
+            nap.IntervalSet(0, 10),
+            nap.IntervalSet([0, 10], [5, 30]),
+            nap.IntervalSet(0, 1000),
+        ],
+    )
+    def test_find_peaks_epochs(self, tsdframe, epochs):
+        from scipy.signal import find_peaks
+
+        peaks = tsdframe.find_peaks(epochs=epochs)
+        assert isinstance(peaks, nap.TsGroup)
+        assert len(peaks) == len(tsdframe.columns)
+        np.testing.assert_array_almost_equal(peaks.time_support, epochs)
+
+        data = tsdframe.restrict(epochs)
+        for i, k in enumerate(tsdframe.columns):
+            assert isinstance(peaks[i], nap.Tsd)
+
+            expected_peaks = find_peaks(data.values[:, i])[0]
+            expected_peak_values = data.values[expected_peaks, i]
+            expected_peak_times = data.t[expected_peaks]
+
+            np.testing.assert_array_almost_equal(peaks[i].values, expected_peak_values)
+            np.testing.assert_array_almost_equal(peaks[i].t, expected_peak_times)
+
+    @pytest.mark.parametrize(
+        "kwargs", [{}, {"width": 0.1}, {"width": 0.1, "height": 0.1}]
+    )
+    def test_find_peaks_return_prop(self, tsdframe, kwargs):
+        from scipy.signal import find_peaks
+
+        peaks = tsdframe.find_peaks(return_prop=True, **kwargs)
+        assert isinstance(peaks, nap.TsGroup)
+        assert len(peaks) == len(tsdframe.columns)
+        np.testing.assert_array_almost_equal(peaks.time_support, tsdframe.time_support)
+
+        for i, k in enumerate(tsdframe.columns):
+            assert isinstance(peaks[i], nap.TsdFrame)
+
+            expected_peaks, properties = find_peaks(tsdframe.values[:, i], **kwargs)
+            expected_peak_values = tsdframe.values[expected_peaks, i]
+            expected_peak_times = tsdframe.t[expected_peaks]
+
+            np.testing.assert_array_almost_equal(
+                peaks[i].values[:, 0], expected_peak_values
+            )
+            np.testing.assert_array_almost_equal(peaks[i].t, expected_peak_times)
+
+            assert len(peaks[i].columns) == len(properties) + 1
+            assert all(
+                col == expected_col
+                for col, expected_col in zip(
+                    peaks[i].columns, ["peak_value"] + list(properties.keys())
+                )
+            )
+            for key in properties.keys():
+                np.testing.assert_array_almost_equal(peaks[i][key], properties[key])
+
     # def test_deprecation_warning(self, tsdframe):
     #     columns = tsdframe.columns
     #     # warning using loc
