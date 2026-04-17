@@ -2177,7 +2177,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         """
         return _Base.time_diff(self, align, epochs)
 
-    def find_peaks(self, epochs=None, return_prop=False, *args):
+    def find_peaks(self, epochs=None, return_prop=False, *args, **kwargs):
         """
         Find peaks based on peak properties.
 
@@ -2229,12 +2229,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
         Returns
         -------
-        peaks : dict
+        peaks : TsGroup
             The time points and values of the peaks per column.
-        properties : dict
-            A dictionary containing properties of the returned peaks which were
-            calculated as intermediate results during evaluation of the specified
-            conditions, see :func:`scipy.signal.find_peaks`.
+            Peak properties are included in the entry columns if ``return_prop=True``.
 
         Examples
         --------
@@ -2248,17 +2245,58 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         -------  -------
               0  0.20202
               1  0.10101
+        >>> peaks[0]
+        Time (s)
+        ----------  --------
+        1.6         0.999574
+        7.9         0.998941
+        dtype: float64, shape: (2,)
+
+        You can set various requirements for finding peaks, for example a minimum width:
+
+        >>> peaks = tsdframe.find_peaks(width=21)
+        >>> peaks
+          Index     rate
+        -------  -------
+              0  0.10101
+              1  0.10101
+        >>> peaks[0]
+        Time (s)
+        ----------  --------
+        7.9         0.998941
+        dtype: float64, shape: (1,)
+
+        If you further want the peak properties returned, you can pass `return_prop=True`:
+
+        >>> peaks = tsdframe.find_peaks(return_prop=True, width=21)
+        >>> peaks
+          Index     rate
+        -------  -------
+              0  0.10101
+              1  0.10101
+        >>> peaks[0]
+        Time (s)      peak_value    prominences    left_bases    right_bases    widths  ...
+        ----------  ------------  -------------  ------------  -------------  --------  -----
+        7.9             0.998941        1.45648            47             99   25.9266  ...
+        dtype: float64, shape: (1, 8)
         """
         from .ts_group import TsGroup
 
+        # check epochs
         if epochs is None:
             epochs = self.time_support
-
+        elif not isinstance(epochs, IntervalSet):
+            raise TypeError("epochs should be an IntervalSet.")
         data = self.restrict(epochs)
+
+        # check return_prop
+        if return_prop != 1 and return_prop != 0 and not isinstance(return_prop, bool):
+            raise TypeError("return_prop should be a boolean.")
+
         return TsGroup(
             {
                 col: Tsd(t=data.t, d=data.values[:, i], time_support=epochs).find_peaks(
-                    epochs, return_prop, *args
+                    epochs, return_prop, *args, **kwargs
                 )
                 for i, col in enumerate(self.columns)
             },
@@ -3367,7 +3405,7 @@ class Tsd(_BaseTsd):
             group, time_support=self.time_support, bypass_check=True
         )
 
-    def find_peaks(self, epochs=None, return_prop=False, *args):
+    def find_peaks(self, epochs=None, return_prop=False, *args, **kwargs):
         """
         Find peaks based on peak properties.
 
@@ -3419,9 +3457,9 @@ class Tsd(_BaseTsd):
 
         Returns
         -------
-        peaks : Tsd, TsdFrame
+        Tsd, TsdFrame
             The time points and values of the peaks.
-            Peak properties are included as columns if `return_prop=True`.
+            Peak properties are included as columns if ``return_prop=True``.
 
         Examples
         --------
@@ -3436,14 +3474,39 @@ class Tsd(_BaseTsd):
         1.6         0.999574
         7.9         0.998941
         dtype: float64, shape: (2,)
+
+        You can set various requirements for finding peaks, for example a minimum width:
+
+        >>> peaks = tsd.find_peaks(width=21)
+        >>> peaks
+        Time (s)
+        ----------  --------
+        7.9         0.998941
+        dtype: float64, shape: (1,)
+
+        If you further want the peak properties returned, you can pass `return_prop=True`:
+
+        >>> peaks = tsd.find_peaks(return_prop=True, width=21)
+        >>> peaks
+        Time (s)      peak_value    prominences    left_bases    right_bases    widths  ...
+        ----------  ------------  -------------  ------------  -------------  --------  -----
+        7.9             0.998941        1.45648            47             99   25.9266  ...
+        dtype: float64, shape: (1, 8)
         """
         from scipy.signal import find_peaks
 
+        # check epochs
         if epochs is None:
             epochs = self.time_support
-
+        elif not isinstance(epochs, IntervalSet):
+            raise TypeError("epochs should be an IntervalSet.")
         data = self.restrict(epochs)
-        peaks, properties = find_peaks(data.values, *args)
+
+        # check return_prop
+        if return_prop != 1 and return_prop != 0 and not isinstance(return_prop, bool):
+            raise TypeError("return_prop should be a boolean.")
+
+        peaks, properties = find_peaks(data.values, *args, **kwargs)
         times = data.t[peaks]
         values = data.values[peaks]
 
