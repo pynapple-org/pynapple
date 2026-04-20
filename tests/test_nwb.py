@@ -9,6 +9,7 @@
 import warnings
 
 import numpy as np
+import pandas as pd
 import pynwb
 import pytest
 from pynwb.testing.mock.file import mock_NWBFile
@@ -59,7 +60,7 @@ class Test_NWB:
 
     @pytest.mark.filterwarnings("ignore")
     def test_nwb_meta_info(self, data):
-        from pynwb import NWBHDF5IO, NWBFile
+        from pynwb import NWBHDF5IO
 
         io = NWBHDF5IO(data.nwbfilepath, "r")
         nwbfile = io.read()
@@ -195,7 +196,12 @@ def test_add_SpatialSeries():
 
     for name, Series in zip(
         ["SpatialSeries", "Position", "PupilTracking", "CompassDirection"],
-        [mock_SpatialSeries, mock_Position, mock_PupilTracking, mock_CompassDirection],
+        [
+            mock_SpatialSeries,
+            mock_Position,
+            mock_PupilTracking,
+            mock_CompassDirection,
+        ],
     ):
         name_generator_registry.clear()
         nwbfile = mock_NWBFile()
@@ -255,7 +261,8 @@ def test_add_Ecephys():
 
         name_generator_registry.clear()
         nwbfile = mock_NWBFile()
-        nwbfile.add_acquisition(mock_ElectricalSeries())
+        mock_series = mock_ElectricalSeries()
+        nwbfile.add_acquisition(mock_series)
         nwb = nap.NWBFile(nwbfile)
         assert len(nwb) == 1
         assert "ElectricalSeries" in nwb.keys()
@@ -264,11 +271,16 @@ def test_add_Ecephys():
         obj = nwbfile.acquisition["ElectricalSeries"]
         np.testing.assert_array_almost_equal(data.values, obj.data[:])
         np.testing.assert_array_almost_equal(
-            data.index, obj.starting_time + np.arange(obj.num_samples) / obj.rate
+            data.index,
+            obj.starting_time + np.arange(obj.num_samples) / obj.rate,
         )
         np.testing.assert_array_almost_equal(
             data.columns.values, obj.electrodes["id"][:]
         )
+        metadata = (
+            mock_series.electrodes[:].convert_dtypes().select_dtypes(exclude="object")
+        )
+        pd.testing.assert_frame_equal(data.metadata.convert_dtypes(), metadata)
 
         # Try ElectrialSeries without channel mapping
         name_generator_registry.clear()
@@ -282,7 +294,8 @@ def test_add_Ecephys():
         obj = nwbfile.acquisition["ElectricalSeries"]
         np.testing.assert_array_almost_equal(data.values, obj.data[:])
         np.testing.assert_array_almost_equal(
-            data.index, obj.starting_time + np.arange(obj.num_samples) / obj.rate
+            data.index,
+            obj.starting_time + np.arange(obj.num_samples) / obj.rate,
         )
         np.testing.assert_array_almost_equal(
             data.columns.values, np.arange(obj.data.shape[1])
@@ -496,7 +509,9 @@ def test_add_Units():
             np.where(np.random.rand((res * duration)) < (firing_rate / res))[0] / res
         )
         nwbfile.add_unit(
-            spike_times=spike_times, quality="good", alpha=alpha[n_units_per_shank]
+            spike_times=spike_times,
+            quality="good",
+            alpha=alpha[n_units_per_shank],
         )
         spks[n_units_per_shank] = spike_times
 
@@ -671,7 +686,9 @@ def test_add_object_with_same_name():
     processing_module = ProcessingModule(name="processed", description="processed data")
     processing_module.add(
         mock_TimeSeries(
-            name="timeseries", data=np.random.randn(100), timestamps=np.arange(100)
+            name="timeseries",
+            data=np.random.randn(100),
+            timestamps=np.arange(100),
         )
     )
 
@@ -709,7 +726,12 @@ def test_add_object_with_same_name():
         ),
         (
             {"/a/b/c": "c", "/a/e/c": "c", "/a/e/d": "d", "/x/e/d": "d"},
-            {"/a/b/c": "b/c", "/a/e/c": "e/c", "/a/e/d": "a/e/d", "/x/e/d": "x/e/d"},
+            {
+                "/a/b/c": "b/c",
+                "/a/e/c": "e/c",
+                "/a/e/d": "a/e/d",
+                "/x/e/d": "x/e/d",
+            },
         ),
     ],
 )

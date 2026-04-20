@@ -110,7 +110,9 @@ class BaseLoader(object):
             if "position_time_support" in nwbfile.intervals.keys():
                 epochs = nwbfile.intervals["position_time_support"].to_dataframe()
                 time_support = nap.IntervalSet(
-                    start=epochs["start_time"], end=epochs["stop_time"], time_units="s"
+                    start=epochs["start_time"],
+                    end=epochs["stop_time"],
+                    time_units="s",
                 )
 
             self.position = nap.TsdFrame(
@@ -218,7 +220,8 @@ class BaseLoader(object):
             timestamps=tsd.as_units("s").index.values,
         )
         time_support = pynwb.epoch.TimeIntervals(
-            name=name + "_timesupport", description="The time support of the object"
+            name=name + "_timesupport",
+            description="The time support of the object",
         )
 
         epochs = tsd.time_support.as_units("s")
@@ -251,7 +254,9 @@ class BaseLoader(object):
         if name in nwbfile.intervals.keys():
             epochs = nwbfile.intervals[name].to_dataframe()
             isets = nap.IntervalSet(
-                start=epochs["start_time"], end=epochs["stop_time"], time_units="s"
+                start=epochs["start_time"],
+                end=epochs["stop_time"],
+                time_units="s",
             )
             io.close()
             return isets
@@ -282,7 +287,10 @@ class BaseLoader(object):
         time_support = self.load_nwb_intervals(name + "_timesupport")
 
         tsd = nap.Tsd(
-            t=ts.timestamps[:], d=ts.data[:], time_units="s", time_support=time_support
+            t=ts.timestamps[:],
+            d=ts.data[:],
+            time_units="s",
+            time_support=time_support,
         )
 
         io.close()

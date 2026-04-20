@@ -61,7 +61,7 @@ def iterate_over_nwb(nwbfile):
     pynwb = importlib.import_module("pynwb")
     for oid, obj in nwbfile.objects.items():
         if isinstance(obj, pynwb.misc.DynamicTable) and any(
-            [i.name.endswith("_times_index") for i in obj.columns]
+            i.name.endswith("_times_index") for i in obj.columns
         ):
             # data["units"] = {"id": oid, "type": "TsGroup"}
             yield obj, {"id": oid, "type": "TsGroup"}
@@ -71,7 +71,7 @@ def iterate_over_nwb(nwbfile):
             yield obj, {"id": oid, "type": "IntervalSet"}
 
         elif isinstance(obj, pynwb.misc.DynamicTable) and any(
-            [i.name.endswith("_times") for i in obj.columns]
+            i.name.endswith("_times") for i in obj.columns
         ):
             # Supposedly Timestamps
             yield obj, {"id": oid, "type": "Ts"}
@@ -215,6 +215,7 @@ def _make_tsd_frame(obj, lazy_loading=True):
     pynwb = importlib.import_module("pynwb")
 
     d = obj.data
+    metadata = {}
     if not lazy_loading:
         d = d[:]
 
@@ -234,11 +235,12 @@ def _make_tsd_frame(obj, lazy_loading=True):
     elif isinstance(obj, pynwb.ecephys.ElectricalSeries):
         # (channel mapping)
         try:
-            df = obj.electrodes.to_dataframe()
-            if hasattr(df, "label"):
-                columns = df["label"].values
-            else:
-                columns = df.index.values
+            metadata = (
+                obj.electrodes.to_dataframe()
+                .convert_dtypes()
+                .select_dtypes(exclude="object")
+            )
+            columns = metadata.index
         except Exception:
             columns = np.arange(obj.data.shape[1])
 
@@ -257,7 +259,13 @@ def _make_tsd_frame(obj, lazy_loading=True):
     else:
         columns = np.arange(obj.data.shape[1])
 
-    data = nap.TsdFrame(t=t, d=d, columns=columns, load_array=not lazy_loading)
+    data = nap.TsdFrame(
+        t=t,
+        d=d,
+        columns=columns,
+        load_array=not lazy_loading,
+        metadata=metadata,
+    )
 
     return data
 
@@ -313,7 +321,13 @@ def _make_tsgroup(obj, **kwargs):
                         column_not_yet_set = k not in metainfo
                         if column_not_yet_set and not isinstance(
                             df[k].values[0],
-                            (list, tuple, dict, set, pynwb.ecephys.ElectrodeGroup),
+                            (
+                                list,
+                                tuple,
+                                dict,
+                                set,
+                                pynwb.ecephys.ElectrodeGroup,
+                            ),
                         ):
                             metainfo[k] = df[k].values
                 # elif not isinstance(col[0], (np.ndarray, list, tuple, dict, set)):
