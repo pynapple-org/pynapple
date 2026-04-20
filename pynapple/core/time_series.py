@@ -2301,6 +2301,7 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                 for i, col in enumerate(self.columns)
             },
             time_support=epochs,
+            metadata={"columns": list(self.columns)},
         )
 
     # @add_or_convert_metadata

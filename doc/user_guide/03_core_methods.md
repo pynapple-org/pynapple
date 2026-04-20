@@ -432,6 +432,112 @@ plt.title("tsd.threshold(0.5)")
 plt.show()
 ```
 
+### `find_peaks`
+
+The [`find_peaks`](pynapple.Tsd.find_peaks) method detects local maxima in a `Tsd` or `TsdFrame`. 
+It wraps [`scipy.signal.find_peaks`](https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.find_peaks.html) 
+and returns the time points and values of the detected peaks.
+
+```{code-cell} ipython3
+:tags: [hide-cell]
+np.random.seed(0)
+times = np.arange(0, 4, 0.01)
+signal = np.sin(2 * np.pi * 1 * times) + 0.4 * np.sin(2 * np.pi * 5 * times)
+tsd = nap.Tsd(t=times, d=signal)
+```
+
+```{code-cell} ipython3
+peaks = tsd.find_peaks()
+print(peaks)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.figure()
+plt.plot(tsd, label="tsd")
+plt.plot(peaks, 'o', label="peaks", markersize=8)
+plt.xlabel("Time (s)")
+plt.title("tsd.find_peaks()")
+plt.show()
+```
+
+The parameter `height` can be used to set a minimum height for the peaks. This is useful to filter out small peaks that may be due to noise.
+
+```{code-cell} ipython3
+peak_height = tsd.find_peaks(height=0.5)
+print(peak_height)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.figure()
+plt.plot(tsd, label="tsd")
+plt.plot(peak_height, 'o', markersize=8)
+plt.xlabel("Time (s)")
+plt.title("tsd.find_peaks(height=0.5)")
+plt.axhline(0.5, linewidth=0.5, color='grey')
+plt.show()
+```
+
+For `TsdFrame`, [`find_peaks`](pynapple.TsdFrame.find_peaks) applies the detection independently to each column and returns a `TsGroup` where each entry corresponds to one column.
+
+```{code-cell} ipython3
+:tags: [hide-cell]
+np.random.seed(0)
+times = np.arange(0, 4, 0.01)
+sig1 = np.sin(2 * np.pi * 1 * times) + 0.4 * np.sin(2 * np.pi * 5 * times)
+sig2 = np.sin(2 * np.pi * 2 * times) + 0.3 * np.sin(2 * np.pi * 7 * times)
+tsdframe = nap.TsdFrame(t=times, d=np.stack([sig1, sig2], axis=1), columns=['A', 'B'])
+```
+
+```{code-cell} ipython3
+peaks_frame = tsdframe.find_peaks(height=0.5)
+print(peaks_frame)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.figure()
+plt.plot(tsdframe, label=tsdframe.columns)
+for i, col in enumerate(tsdframe.columns):
+    plt.plot(peaks_frame[i], 'o', markersize=8)
+plt.xlabel("Time (s)")
+plt.title("tsdframe.find_peaks()")
+plt.axhline(0.5, linewidth=0.5, color='grey')
+plt.legend()
+plt.show()
+```
+
+You can also pass `epochs` to restrict the peak detection to specific time intervals.
+
+```{code-cell} ipython3
+:tags: [hide-cell]
+intervalset = nap.IntervalSet(start=[0.5, 2.5], end=[1.5, 3.5])
+```
+```{code-cell} ipython3
+peaks_epoch = tsdframe.find_peaks(epochs=intervalset, height=0.5)
+print(peaks_epoch)
+```
+```{code-cell} ipython3
+:tags: [hide-input]
+plt.figure()
+plt.plot(tsdframe, label=tsdframe.columns)
+for i, col in enumerate(tsdframe.columns):
+    plt.plot(peaks_epoch[i], 'o', markersize=8)
+[plt.axvspan(s, e, alpha=0.2) for s, e in intervalset.values]
+plt.xlabel("Time (s)")
+plt.title("tsdframe.find_peaks(epochs=intervalset)")
+plt.axhline(0.5, linewidth=0.5, color='grey')
+plt.legend()
+plt.show()
+```
+
+The time support of the resulting `TsGroup` is updated to reflect the epochs used for peak detection.
+
+```{code-cell} ipython3
+print("Peak time support:", peaks_epoch.time_support)
+```
+
 ### `derivative`
 
 The [`derivative`](pynapple.Tsd.derivative) method of `Tsd`, `TsdFrame` and `TsdTensor` can be used to calculate the derivative of a time series with respect to time. It is a wrapper of [`numpy.gradient`](https://numpy.org/devdocs/reference/generated/numpy.gradient.html).
