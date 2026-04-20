@@ -20,6 +20,17 @@ class TestComputePerieventDiscrete:
         assert isinstance(peth, nap.TsGroup)
         np.testing.assert_array_almost_equal(peth[4].index, np.arange(-10, 11))
 
+    def test_align_ts_empty(self):
+        tsd = nap.Ts(t=np.arange(100))
+        events = nap.Ts(t=np.arange(200, 300, 10))
+        peth = nap.compute_perievent(tsd, events, window=(-10, 10))
+
+        assert len(peth) == 0
+        assert isinstance(peth, nap.TsGroup)
+        np.testing.assert_array_almost_equal(
+            peth.time_support.values, nap.IntervalSet(-10, 10).values
+        )
+
     def test_align_ts_symmetric_window(self):
         tsd = nap.Ts(t=np.arange(100))
         events = nap.Ts(t=np.arange(10, 100, 10))
@@ -77,6 +88,22 @@ class TestComputePerieventDiscrete:
         for i in peth.keys():
             assert len(peth[i]) == len(events)
             np.testing.assert_array_almost_equal(peth[i][4].index, np.arange(-10, 11))
+
+    def test_align_tsgroup_empty(self):
+        tsgroup = nap.TsGroup(
+            {0: nap.Ts(t=np.arange(0, 100)), 1: nap.Ts(t=np.arange(0, 200))}
+        )
+        events = nap.Ts(t=np.arange(300, 400, 10))
+        peth = nap.compute_perievent(tsgroup, events, window=(-10, 10))
+
+        assert isinstance(peth, dict)
+        assert list(tsgroup.keys()) == list(peth.keys())
+
+        for i in peth.keys():
+            assert len(peth[i]) == 0
+            np.testing.assert_array_almost_equal(
+                peth[i].time_support.values, nap.IntervalSet(-10, 10).values
+            )
 
     def test_align_tsgroup_metadata(self):
         unit1 = nap.Ts(t=[0.5, 1.2, 2.1, 3.5])
