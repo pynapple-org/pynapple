@@ -192,7 +192,9 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             start = start.start.astype(np.float64)
 
         elif isinstance(start, pd.DataFrame):
-            assert "start" in start.columns and "end" in start.columns, """
+            assert (
+                "start" in start.columns and "end" in start.columns
+            ), """
                 DataFrame must contain columns name "start" and "end" for start and end times.                   
                 """
             # try sorting the DataFrame by start times, preserving its end pair, as an effort to preserve metadata
@@ -467,6 +469,33 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
             # self[[*str]]
             # only works for list of metadata columns
             return _MetadataMixin.__getitem__(self, key)
+
+        # A separate if-elif block to reorder key if given row style index of type
+        # list[int] or slice that is not in ascending order.
+        if isinstance(key, list) and all(isinstance(x, int) for x in key):
+            # check if list is sorted (ascending) and not duplicated.
+            if not all(x < y for x, y in zip(key, key[1:])):
+                key = sorted(list(set(key)))
+                warnings.warn(
+                    "Received an unsorted or duplicate index, this is sorted to preserve the invariant that "
+                    "nap.IntervalSet remains ordered. This differs from standard NumPy/Pandas "
+                    "indexing semantics as index order is not preserved.",
+                    UserWarning,
+                )
+
+        elif isinstance(key, slice):
+            if key.step is None or key.step > 0:
+                pass  # positive or defautl step no action needed
+            else:
+                # if slice is descending, compute the actual index and reorder it
+                # to be in ascending order.
+                key = sorted([i for i in range(*key.indices(self.shape[0]))])
+                warnings.warn(
+                    "Received descending slice, this is reversed to preserve the invariant that "
+                    "nap.IntervalSet remains ordered. This differs from standard NumPy/Pandas "
+                    "indexing semantics as index order is not preserved.",
+                    UserWarning,
+                )
 
         if isinstance(key, tuple):
             if len(key) == 2:
