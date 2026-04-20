@@ -493,7 +493,9 @@ def _align_discrete(data, events, window, new_time_support):
 
         aligned[event_idx] = nap.Ts(shifted_times, time_support=new_time_support)
 
-    return nap.TsGroup(aligned, metadata={"events": event_times})
+    return nap.TsGroup(
+        aligned, metadata={"events": event_times}, time_support=new_time_support
+    )
 
 
 def _align_regular(data, events, window, new_time_support):
