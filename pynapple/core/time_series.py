@@ -2177,6 +2177,133 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         """
         return _Base.time_diff(self, align, epochs)
 
+    def find_peaks(self, epochs=None, return_prop=False, *args, **kwargs):
+        """
+        Find peaks based on peak properties.
+
+        This function wraps :func:`scipy.signal.find_peaks`.
+
+        Parameters
+        ----------
+        return_prop : bool, optional
+            Whether to return the peak properties in the columns.
+            See :func:`scipy.signal.find_peaks` for the list of properties.
+        height : number or ndarray or sequence, optional
+            Required height of peaks. Either a number, ``None``, an array matching
+            `x` or a 2-element sequence of the former. The first element is
+            always interpreted as the  minimal and the second, if supplied, as the
+            maximal required height.
+        threshold : number or ndarray or sequence, optional
+            Required threshold of peaks, the vertical distance to its neighboring
+            samples. Either a number, ``None``, an array matching `x` or a
+            2-element sequence of the former. The first element is always
+            interpreted as the  minimal and the second, if supplied, as the maximal
+            required threshold.
+        distance : number, optional
+            Required minimal horizontal distance (>= 1) in samples between
+            neighbouring peaks. Smaller peaks are removed first until the condition
+            is fulfilled for all remaining peaks.
+        prominence : number or ndarray or sequence, optional
+            Required prominence of peaks. Either a number, ``None``, an array
+            matching `x` or a 2-element sequence of the former. The first
+            element is always interpreted as the  minimal and the second, if
+            supplied, as the maximal required prominence.
+        width : number or ndarray or sequence, optional
+            Required width of peaks in samples. Either a number, ``None``, an array
+            matching `x` or a 2-element sequence of the former. The first
+            element is always interpreted as the  minimal and the second, if
+            supplied, as the maximal required width.
+        wlen : int, optional
+            Used for calculation of the peaks prominences, thus it is only used if
+            one of the arguments `prominence` or `width` is given. See argument
+            `wlen` in `peak_prominences` for a full description of its effects.
+        rel_height : float, optional
+            Used for calculation of the peaks width, thus it is only used if `width`
+            is given. See argument  `rel_height` in `peak_widths` for a full
+            description of its effects.
+        plateau_size : number or ndarray or sequence, optional
+            Required size of the flat top of peaks in samples. Either a number,
+            ``None``, an array matching `x` or a 2-element sequence of the former.
+            The first element is always interpreted as the minimal and the second,
+            if supplied as the maximal required plateau size.
+
+        Returns
+        -------
+        peaks : TsGroup
+            The time points and values of the peaks per column.
+            Peak properties are included in the entry columns if ``return_prop=True``.
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> times = np.arange(0, 10, 0.1)
+        >>> tsdframe = nap.TsdFrame(t=times, d=np.stack([np.sin(times), np.cos(times)], axis=1))
+        >>> peaks = tsdframe.find_peaks()
+        >>> peaks
+          Index     rate
+        -------  -------
+              0  0.20202
+              1  0.10101
+        >>> peaks[0]
+        Time (s)
+        ----------  --------
+        1.6         0.999574
+        7.9         0.998941
+        dtype: float64, shape: (2,)
+
+        You can set various requirements for finding peaks, for example a minimum width:
+
+        >>> peaks = tsdframe.find_peaks(width=21)
+        >>> peaks
+          Index     rate
+        -------  -------
+              0  0.10101
+              1  0.10101
+        >>> peaks[0]
+        Time (s)
+        ----------  --------
+        7.9         0.998941
+        dtype: float64, shape: (1,)
+
+        If you further want the peak properties returned, you can pass `return_prop=True`:
+
+        >>> peaks = tsdframe.find_peaks(return_prop=True, width=21)
+        >>> peaks
+          Index     rate
+        -------  -------
+              0  0.10101
+              1  0.10101
+        >>> peaks[0]
+        Time (s)      peak_value    prominences    left_bases    right_bases    widths  ...
+        ----------  ------------  -------------  ------------  -------------  --------  -----
+        7.9             0.998941        1.45648            47             99   25.9266  ...
+        dtype: float64, shape: (1, 8)
+        """
+        from .ts_group import TsGroup
+
+        # check epochs
+        if epochs is None:
+            epochs = self.time_support
+        elif not isinstance(epochs, IntervalSet):
+            raise TypeError("epochs should be an IntervalSet.")
+        data = self.restrict(epochs)
+
+        # check return_prop
+        if return_prop != 1 and return_prop != 0 and not isinstance(return_prop, bool):
+            raise TypeError("return_prop should be a boolean.")
+
+        return TsGroup(
+            {
+                i: Tsd(t=data.t, d=data.values[:, i], time_support=epochs).find_peaks(
+                    epochs, return_prop, *args, **kwargs
+                )
+                for i, col in enumerate(self.columns)
+            },
+            time_support=epochs,
+            metadata={"columns": list(self.columns)},
+        )
+
     # @add_or_convert_metadata
     def save(self, filename):
         """
@@ -3278,6 +3405,121 @@ class Tsd(_BaseTsd):
         return ts_group.TsGroup(
             group, time_support=self.time_support, bypass_check=True
         )
+
+    def find_peaks(self, epochs=None, return_prop=False, *args, **kwargs):
+        """
+        Find peaks based on peak properties.
+
+        This function wraps :func:`scipy.signal.find_peaks`.
+
+        Parameters
+        ----------
+        return_prop : bool, optional
+            Whether to return the peak properties in the columns.
+            See :func:`scipy.signal.find_peaks` for the list of properties.
+        height : number or ndarray or sequence, optional
+            Required height of peaks. Either a number, ``None``, an array matching
+            `x` or a 2-element sequence of the former. The first element is
+            always interpreted as the  minimal and the second, if supplied, as the
+            maximal required height.
+        threshold : number or ndarray or sequence, optional
+            Required threshold of peaks, the vertical distance to its neighboring
+            samples. Either a number, ``None``, an array matching `x` or a
+            2-element sequence of the former. The first element is always
+            interpreted as the  minimal and the second, if supplied, as the maximal
+            required threshold.
+        distance : number, optional
+            Required minimal horizontal distance (>= 1) in samples between
+            neighbouring peaks. Smaller peaks are removed first until the condition
+            is fulfilled for all remaining peaks.
+        prominence : number or ndarray or sequence, optional
+            Required prominence of peaks. Either a number, ``None``, an array
+            matching `x` or a 2-element sequence of the former. The first
+            element is always interpreted as the  minimal and the second, if
+            supplied, as the maximal required prominence.
+        width : number or ndarray or sequence, optional
+            Required width of peaks in samples. Either a number, ``None``, an array
+            matching `x` or a 2-element sequence of the former. The first
+            element is always interpreted as the  minimal and the second, if
+            supplied, as the maximal required width.
+        wlen : int, optional
+            Used for calculation of the peaks prominences, thus it is only used if
+            one of the arguments `prominence` or `width` is given. See argument
+            `wlen` in `peak_prominences` for a full description of its effects.
+        rel_height : float, optional
+            Used for calculation of the peaks width, thus it is only used if `width`
+            is given. See argument  `rel_height` in `peak_widths` for a full
+            description of its effects.
+        plateau_size : number or ndarray or sequence, optional
+            Required size of the flat top of peaks in samples. Either a number,
+            ``None``, an array matching `x` or a 2-element sequence of the former.
+            The first element is always interpreted as the minimal and the second,
+            if supplied as the maximal required plateau size.
+
+        Returns
+        -------
+        Tsd, TsdFrame
+            The time points and values of the peaks.
+            Peak properties are included as columns if ``return_prop=True``.
+
+        Examples
+        --------
+        >>> import pynapple as nap
+        >>> import numpy as np
+        >>> times = np.arange(0, 10, 0.1)
+        >>> tsd = nap.Tsd(t=times, d=np.sin(times))
+        >>> peaks = tsd.find_peaks()
+        >>> peaks
+        Time (s)
+        ----------  --------
+        1.6         0.999574
+        7.9         0.998941
+        dtype: float64, shape: (2,)
+
+        You can set various requirements for finding peaks, for example a minimum width:
+
+        >>> peaks = tsd.find_peaks(width=21)
+        >>> peaks
+        Time (s)
+        ----------  --------
+        7.9         0.998941
+        dtype: float64, shape: (1,)
+
+        If you further want the peak properties returned, you can pass `return_prop=True`:
+
+        >>> peaks = tsd.find_peaks(return_prop=True, width=21)
+        >>> peaks
+        Time (s)      peak_value    prominences    left_bases    right_bases    widths  ...
+        ----------  ------------  -------------  ------------  -------------  --------  -----
+        7.9             0.998941        1.45648            47             99   25.9266  ...
+        dtype: float64, shape: (1, 8)
+        """
+        from scipy.signal import find_peaks
+
+        # check epochs
+        if epochs is None:
+            epochs = self.time_support
+        elif not isinstance(epochs, IntervalSet):
+            raise TypeError("epochs should be an IntervalSet.")
+        data = self.restrict(epochs)
+
+        # check return_prop
+        if return_prop != 1 and return_prop != 0 and not isinstance(return_prop, bool):
+            raise TypeError("return_prop should be a boolean.")
+
+        peaks, properties = find_peaks(data.values, *args, **kwargs)
+        times = data.t[peaks]
+        values = data.values[peaks]
+
+        if return_prop:
+            return TsdFrame(
+                t=times,
+                d=np.stack([values] + list(properties.values()), axis=1),
+                columns=["peak_value"] + list(properties.keys()),
+                time_support=epochs,
+            )
+        else:
+            return Tsd(t=times, d=values, time_support=epochs)
 
     def save(self, filename):
         """
