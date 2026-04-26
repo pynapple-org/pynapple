@@ -563,6 +563,90 @@ def compute_mutual_information(tuning_curves, rates=None):
     )
 
 
+def compute_sparsity(tuning_curves):
+    """
+    Computes sparsity from n-dimensional tuning curves.
+
+    This function implements Skaggs et al.'s [1] metric to quantify
+    the variability of a neuron's firing with respect to a variable
+    (e.g., position), based on its tuning curve.
+
+    The sparsity (unitless) is given by:
+
+    .. math::
+
+        S = \\frac{ \\left( \\sum_x P(x) \\lambda(x) \\right)^2 }{\\sum_x P(x) \\lambda(x)^2}
+
+    where:
+
+    - :math:`P(x)` is the probability of being in bin :math:`x` (occupancy),
+    - :math:`\\lambda(x)` is the firing rate of the neuron in bin :math:`x`,
+
+    References
+    ----------
+    .. [1] Skaggs WE, McNaughton BL, Wilson MA, Barnes CA. (1996)
+           Theta phase precession in hippocampal neuronal populations and the compression of temporal sequences.
+           In Hippocampus. 6(2):149-72
+
+    Parameters
+    ----------
+    tuning_curves : xarray.DataArray
+        Tuning curves as computed by :func:`~pynapple.process.tuning_curves.compute_tuning_curves`.
+
+    Returns
+    -------
+    pandas.Series
+        A dictionary containing the sparsity per unit.
+
+    Examples
+    --------
+    We can compute the sparsity of neuron's tuning curve:
+    
+        >>> np.random.seed(42) # reproducability
+        >>> epoch = nap.IntervalSet([0, 10]) # 0..10sec
+        >>> t = np.linspace(0, 10, 100) # 100 time samples
+        >>> feature = nap.Tsd(t=t, d=t, time_support=epoch) # feature is just a linear position with time
+        >>> # spike trains
+        >>> # 6 neurons, neuron i is uniformly active between time 1 and i+2
+        >>> st_group = nap.TsGroup({
+        ...     i: nap.Ts(sorted(np.random.uniform(1,t_,100))) for i,t_ in enumerate(range(2,8))
+        ... }, time_support=epoch)
+        >>> tcs = nap.compute_tuning_curves(st_group, feature, bins=20)
+        >>> sparsity = compute_sparsity(tcs)
+        >>> sparsity
+        0    0.103993
+        1    0.198886
+        2    0.284091
+        3    0.374251
+        4    0.444840
+        5    0.574713
+        dtype: float64
+    """
+    
+    if not isinstance(tuning_curves, xr.DataArray):
+        raise TypeError(
+            "tuning_curves should be an xr.DataArray as computed by compute_tuning_curves."
+        )
+        
+    if "occupancy" not in tuning_curves.attrs:
+        raise ValueError("No occupancy found in tuning curves.")
+    occupancy = tuning_curves.attrs["occupancy"]
+    occupancy = occupancy / np.nansum(occupancy) # probability distribution (normalized to have sum 1)  # (D1, D2, ..., Dn)
+
+    fx = tuning_curves.values  # (N, D1, D2, ...Dn)
+
+    axes = tuple(range(1, fx.ndim)) # along all features dimensions
+    
+    fr = np.nansum(fx * occupancy, axis=axes) # expectation value of firing rate per bin (from tuning curves)  # (N,)
+    fr2 = np.nansum(fx**2 * occupancy, axis=axes) # expectation value of firing rate squared # (N,)
+    Sparsity = fr**2/fr2 # formula for variance # per unit # (N,)
+    
+    return pd.Series(
+        data=Sparsity,
+        index=tuning_curves.coords["unit"],
+    )
+
+
 # =====================================================================================
 # OLD FUNCTIONS, DEPRECATED
 # =====================================================================================
