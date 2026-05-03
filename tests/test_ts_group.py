@@ -175,6 +175,40 @@ class TestTsGroup1:
         )
         np.testing.assert_array_almost_equal(tsgroup._metadata["ar"], ar_info)
 
+    def test_copy(self, group):
+        sr_info = pd.Series(index=[0, 1, 2], data=[0.5, 1.5, 2.5], name="sr")
+        ar_info = np.ones(3) * 10
+        tsgroup = nap.TsGroup(group, sr=sr_info, ar=ar_info)
+
+        tsgroup_copy = tsgroup.copy()
+        assert isinstance(tsgroup_copy, nap.TsGroup)
+        assert len(tsgroup_copy) == len(tsgroup)
+        assert tsgroup_copy.keys() == tsgroup.keys()
+
+        # Verify that all Ts objects are the same
+        for key in tsgroup.keys():
+            np.testing.assert_array_equal(tsgroup_copy[key].index, tsgroup[key].index)
+            # If it's a Tsd, also check values
+            if hasattr(tsgroup[key], "values"):
+                np.testing.assert_array_equal(
+                    tsgroup_copy[key].values, tsgroup[key].values
+                )
+
+        # Verify that metadata matches
+        assert tsgroup_copy._metadata == tsgroup._metadata
+
+        # Verify that time support matches
+        np.testing.assert_array_almost_equal(
+            tsgroup_copy.time_support.values, tsgroup.time_support.values
+        )
+
+        # Verify that metadata columns are the same
+        assert list(tsgroup_copy._metadata.columns) == list(tsgroup._metadata.columns)
+
+        # Verify that it's a deep copy (modifying the copy doesn't affect original)
+        tsgroup_copy["sr"] = np.array([100, 200, 300])
+        assert not np.array_equal(tsgroup_copy.get_info("sr"), tsgroup.get_info("sr"))
+
     def test_keys(self, group):
         tsgroup = nap.TsGroup(group)
         assert tsgroup.keys() == [0, 1, 2]
