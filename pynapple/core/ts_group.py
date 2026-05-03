@@ -586,6 +586,14 @@ class TsGroup(UserDict, _MetadataMixin):
         """
         return self._metadata["rate"]
 
+    def copy(self):
+        """
+        Return an exact copy of the TsGroup
+        """
+        import copy
+
+        return copy.deepcopy(self)
+
     #################################
     # Generic functions of Tsd objects
     #################################
