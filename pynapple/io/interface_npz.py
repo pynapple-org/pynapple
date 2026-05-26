@@ -62,7 +62,7 @@ class NPZFile(object):
         path = Path(path)
         self.path = path
         self.name = path.name
-        self.file = np.load(self.path, allow_pickle=True)
+        self.file = np.load(self.path, allow_pickle=False)
         type_ = ""
 
         # First check if type is explicitely defined in the file:
