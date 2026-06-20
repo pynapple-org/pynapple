@@ -1,0 +1,326 @@
+{
+  "pynapple\\__init__.py": {
+    "loc": 21,
+    "lloc": 9,
+    "sloc": 18,
+    "comments": 1,
+    "multi": 0,
+    "blank": 2,
+    "single_comments": 1
+  },
+  "pynapple\\core\\base_class.py": {
+    "loc": 691,
+    "lloc": 290,
+    "sloc": 291,
+    "comments": 20,
+    "multi": 251,
+    "blank": 128,
+    "single_comments": 21
+  },
+  "pynapple\\core\\config.py": {
+    "loc": 164,
+    "lloc": 54,
+    "sloc": 52,
+    "comments": 2,
+    "multi": 76,
+    "blank": 34,
+    "single_comments": 2
+  },
+  "pynapple\\core\\interval_set.py": {
+    "loc": 1361,
+    "lloc": 476,
+    "sloc": 535,
+    "comments": 37,
+    "multi": 567,
+    "blank": 221,
+    "single_comments": 38
+  },
+  "pynapple\\core\\metadata_class.py": {
+    "loc": 909,
+    "lloc": 424,
+    "sloc": 484,
+    "comments": 58,
+    "multi": 241,
+    "blank": 131,
+    "single_comments": 53
+  },
+  "pynapple\\core\\time_index.py": {
+    "loc": 151,
+    "lloc": 55,
+    "sloc": 47,
+    "comments": 2,
+    "multi": 76,
+    "blank": 26,
+    "single_comments": 2
+  },
+  "pynapple\\core\\time_series.py": {
+    "loc": 4128,
+    "lloc": 961,
+    "sloc": 1167,
+    "comments": 53,
+    "multi": 2349,
+    "blank": 560,
+    "single_comments": 52
+  },
+  "pynapple\\core\\ts_group.py": {
+    "loc": 2133,
+    "lloc": 615,
+    "sloc": 749,
+    "comments": 74,
+    "multi": 996,
+    "blank": 319,
+    "single_comments": 69
+  },
+  "pynapple\\core\\utils.py": {
+    "loc": 620,
+    "lloc": 310,
+    "sloc": 333,
+    "comments": 36,
+    "multi": 150,
+    "blank": 109,
+    "single_comments": 28
+  },
+  "pynapple\\core\\_core_functions.py": {
+    "loc": 181,
+    "lloc": 99,
+    "sloc": 128,
+    "comments": 10,
+    "multi": 7,
+    "blank": 39,
+    "single_comments": 7
+  },
+  "pynapple\\core\\_jitted_functions.py": {
+    "loc": 826,
+    "lloc": 570,
+    "sloc": 587,
+    "comments": 135,
+    "multi": 33,
+    "blank": 157,
+    "single_comments": 49
+  },
+  "pynapple\\core\\__init__.py": {
+    "loc": 5,
+    "lloc": 5,
+    "sloc": 5,
+    "comments": 0,
+    "multi": 0,
+    "blank": 0,
+    "single_comments": 0
+  },
+  "pynapple\\io\\cnmfe.py": {
+    "loc": 206,
+    "lloc": 83,
+    "sloc": 82,
+    "comments": 5,
+    "multi": 79,
+    "blank": 40,
+    "single_comments": 5
+  },
+  "pynapple\\io\\folder.py": {
+    "loc": 310,
+    "lloc": 134,
+    "sloc": 125,
+    "comments": 34,
+    "multi": 89,
+    "blank": 61,
+    "single_comments": 35
+  },
+  "pynapple\\io\\interface_neo.py": {
+    "loc": 1398,
+    "lloc": 563,
+    "sloc": 665,
+    "comments": 116,
+    "multi": 369,
+    "blank": 243,
+    "single_comments": 121
+  },
+  "pynapple\\io\\interface_neurosuite.py": {
+    "loc": 494,
+    "lloc": 246,
+    "sloc": 266,
+    "comments": 41,
+    "multi": 105,
+    "blank": 85,
+    "single_comments": 38
+  },
+  "pynapple\\io\\interface_npz.py": {
+    "loc": 93,
+    "lloc": 40,
+    "sloc": 43,
+    "comments": 3,
+    "multi": 25,
+    "blank": 22,
+    "single_comments": 3
+  },
+  "pynapple\\io\\interface_nwb.py": {
+    "loc": 562,
+    "lloc": 270,
+    "sloc": 286,
+    "comments": 34,
+    "multi": 137,
+    "blank": 107,
+    "single_comments": 32
+  },
+  "pynapple\\io\\loader.py": {
+    "loc": 298,
+    "lloc": 136,
+    "sloc": 177,
+    "comments": 8,
+    "multi": 60,
+    "blank": 53,
+    "single_comments": 8
+  },
+  "pynapple\\io\\misc.py": {
+    "loc": 372,
+    "lloc": 125,
+    "sloc": 174,
+    "comments": 3,
+    "multi": 131,
+    "blank": 64,
+    "single_comments": 3
+  },
+  "pynapple\\io\\neurosuite.py": {
+    "loc": 430,
+    "lloc": 175,
+    "sloc": 244,
+    "comments": 35,
+    "multi": 100,
+    "blank": 65,
+    "single_comments": 21
+  },
+  "pynapple\\io\\phy.py": {
+    "loc": 155,
+    "lloc": 61,
+    "sloc": 79,
+    "comments": 2,
+    "multi": 47,
+    "blank": 27,
+    "single_comments": 2
+  },
+  "pynapple\\io\\suite2p.py": {
+    "loc": 210,
+    "lloc": 97,
+    "sloc": 110,
+    "comments": 16,
+    "multi": 40,
+    "blank": 45,
+    "single_comments": 15
+  },
+  "pynapple\\io\\__init__.py": {
+    "loc": 12,
+    "lloc": 5,
+    "sloc": 12,
+    "comments": 0,
+    "multi": 0,
+    "blank": 0,
+    "single_comments": 0
+  },
+  "pynapple\\process\\correlograms.py": {
+    "loc": 553,
+    "lloc": 180,
+    "sloc": 236,
+    "comments": 5,
+    "multi": 227,
+    "blank": 85,
+    "single_comments": 5
+  },
+  "pynapple\\process\\decoding.py": {
+    "loc": 713,
+    "lloc": 139,
+    "sloc": 240,
+    "comments": 19,
+    "multi": 363,
+    "blank": 93,
+    "single_comments": 17
+  },
+  "pynapple\\process\\filtering.py": {
+    "loc": 517,
+    "lloc": 128,
+    "sloc": 206,
+    "comments": 2,
+    "multi": 238,
+    "blank": 69,
+    "single_comments": 4
+  },
+  "pynapple\\process\\perievent.py": {
+    "loc": 550,
+    "lloc": 103,
+    "sloc": 149,
+    "comments": 3,
+    "multi": 319,
+    "blank": 79,
+    "single_comments": 3
+  },
+  "pynapple\\process\\randomize.py": {
+    "loc": 402,
+    "lloc": 109,
+    "sloc": 116,
+    "comments": 7,
+    "multi": 194,
+    "blank": 85,
+    "single_comments": 7
+  },
+  "pynapple\\process\\signal.py": {
+    "loc": 396,
+    "lloc": 92,
+    "sloc": 116,
+    "comments": 8,
+    "multi": 218,
+    "blank": 54,
+    "single_comments": 8
+  },
+  "pynapple\\process\\spectrum.py": {
+    "loc": 313,
+    "lloc": 117,
+    "sloc": 134,
+    "comments": 24,
+    "multi": 101,
+    "blank": 62,
+    "single_comments": 16
+  },
+  "pynapple\\process\\tuning_curves.py": {
+    "loc": 864,
+    "lloc": 267,
+    "sloc": 449,
+    "comments": 31,
+    "multi": 297,
+    "blank": 95,
+    "single_comments": 23
+  },
+  "pynapple\\process\\warping.py": {
+    "loc": 253,
+    "lloc": 73,
+    "sloc": 84,
+    "comments": 5,
+    "multi": 119,
+    "blank": 48,
+    "single_comments": 2
+  },
+  "pynapple\\process\\wavelets.py": {
+    "loc": 240,
+    "lloc": 85,
+    "sloc": 111,
+    "comments": 10,
+    "multi": 87,
+    "blank": 36,
+    "single_comments": 6
+  },
+  "pynapple\\process\\_process_functions.py": {
+    "loc": 258,
+    "lloc": 147,
+    "sloc": 196,
+    "comments": 5,
+    "multi": 7,
+    "blank": 52,
+    "single_comments": 3
+  },
+  "pynapple\\process\\__init__.py": {
+    "loc": 50,
+    "lloc": 10,
+    "sloc": 50,
+    "comments": 0,
+    "multi": 0,
+    "blank": 0,
+    "single_comments": 0
+  }
+}
