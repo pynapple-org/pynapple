@@ -1,0 +1,146 @@
+{
+  "pynapple\\__init__.py": {
+    "mi": 100.0,
+    "rank": "A"
+  },
+  "pynapple\\core\\base_class.py": {
+    "mi": 35.5603791813772,
+    "rank": "A"
+  },
+  "pynapple\\core\\config.py": {
+    "mi": 65.0858124930402,
+    "rank": "A"
+  },
+  "pynapple\\core\\interval_set.py": {
+    "mi": 25.529408007025438,
+    "rank": "A"
+  },
+  "pynapple\\core\\metadata_class.py": {
+    "mi": 23.88986239452392,
+    "rank": "A"
+  },
+  "pynapple\\core\\time_index.py": {
+    "mi": 56.56881752918955,
+    "rank": "A"
+  },
+  "pynapple\\core\\time_series.py": {
+    "mi": 0.0,
+    "rank": "C"
+  },
+  "pynapple\\core\\ts_group.py": {
+    "mi": 6.174426542163714,
+    "rank": "C"
+  },
+  "pynapple\\core\\utils.py": {
+    "mi": 36.790532740999105,
+    "rank": "A"
+  },
+  "pynapple\\core\\_core_functions.py": {
+    "mi": 54.481643210719206,
+    "rank": "A"
+  },
+  "pynapple\\core\\_jitted_functions.py": {
+    "mi": 19.05188831518543,
+    "rank": "A"
+  },
+  "pynapple\\core\\__init__.py": {
+    "mi": 100.0,
+    "rank": "A"
+  },
+  "pynapple\\io\\cnmfe.py": {
+    "mi": 72.8303106722477,
+    "rank": "A"
+  },
+  "pynapple\\io\\folder.py": {
+    "mi": 54.8780013131626,
+    "rank": "A"
+  },
+  "pynapple\\io\\interface_neo.py": {
+    "mi": 20.1561736380572,
+    "rank": "A"
+  },
+  "pynapple\\io\\interface_neurosuite.py": {
+    "mi": 46.61540365766217,
+    "rank": "A"
+  },
+  "pynapple\\io\\interface_npz.py": {
+    "mi": 79.62581754045347,
+    "rank": "A"
+  },
+  "pynapple\\io\\interface_nwb.py": {
+    "mi": 44.26534196663698,
+    "rank": "A"
+  },
+  "pynapple\\io\\loader.py": {
+    "mi": 61.291113388592166,
+    "rank": "A"
+  },
+  "pynapple\\io\\misc.py": {
+    "mi": 59.98180502111947,
+    "rank": "A"
+  },
+  "pynapple\\io\\neurosuite.py": {
+    "mi": 52.050576248338636,
+    "rank": "A"
+  },
+  "pynapple\\io\\phy.py": {
+    "mi": 72.78967875640119,
+    "rank": "A"
+  },
+  "pynapple\\io\\suite2p.py": {
+    "mi": 65.61169146631396,
+    "rank": "A"
+  },
+  "pynapple\\io\\__init__.py": {
+    "mi": 100.0,
+    "rank": "A"
+  },
+  "pynapple\\process\\correlograms.py": {
+    "mi": 49.85492418235842,
+    "rank": "A"
+  },
+  "pynapple\\process\\decoding.py": {
+    "mi": 45.06528524068721,
+    "rank": "A"
+  },
+  "pynapple\\process\\filtering.py": {
+    "mi": 54.816369572003296,
+    "rank": "A"
+  },
+  "pynapple\\process\\perievent.py": {
+    "mi": 35.35659759338484,
+    "rank": "A"
+  },
+  "pynapple\\process\\randomize.py": {
+    "mi": 46.855118931091205,
+    "rank": "A"
+  },
+  "pynapple\\process\\signal.py": {
+    "mi": 45.01562461107994,
+    "rank": "A"
+  },
+  "pynapple\\process\\spectrum.py": {
+    "mi": 56.6917557995576,
+    "rank": "A"
+  },
+  "pynapple\\process\\tuning_curves.py": {
+    "mi": 41.63877951415578,
+    "rank": "A"
+  },
+  "pynapple\\process\\warping.py": {
+    "mi": 57.58310857244146,
+    "rank": "A"
+  },
+  "pynapple\\process\\wavelets.py": {
+    "mi": 59.615530920347695,
+    "rank": "A"
+  },
+  "pynapple\\process\\_process_functions.py": {
+    "mi": 40.81308136992112,
+    "rank": "A"
+  },
+  "pynapple\\process\\__init__.py": {
+    "mi": 100.0,
+    "rank": "A"
+  }
+}
