@@ -1,0 +1,247 @@
+[
+  {
+    "arquivo": "pynapple\\core\\time_series.py",
+    "convention": 62,
+    "total": 112,
+    "warning": 19,
+    "refactor": 31
+  },
+  {
+    "arquivo": "pynapple\\core\\ts_group.py",
+    "convention": 52,
+    "total": 80,
+    "warning": 12,
+    "refactor": 16
+  },
+  {
+    "arquivo": "pynapple\\core\\utils.py",
+    "convention": 14,
+    "total": 58,
+    "refactor": 19,
+    "error": 1,
+    "warning": 24
+  },
+  {
+    "arquivo": "pynapple\\core\\metadata_class.py",
+    "convention": 34,
+    "total": 56,
+    "warning": 5,
+    "refactor": 17
+  },
+  {
+    "arquivo": "pynapple\\core\\interval_set.py",
+    "convention": 30,
+    "total": 48,
+    "warning": 7,
+    "refactor": 11
+  },
+  {
+    "arquivo": "pynapple\\process\\filtering.py",
+    "convention": 25,
+    "total": 43,
+    "error": 1,
+    "warning": 2,
+    "refactor": 15
+  },
+  {
+    "arquivo": "pynapple\\core\\_jitted_functions.py",
+    "convention": 12,
+    "total": 42,
+    "refactor": 29,
+    "error": 1
+  },
+  {
+    "arquivo": "pynapple\\io\\neurosuite.py",
+    "convention": 13,
+    "total": 36,
+    "warning": 4,
+    "refactor": 13,
+    "error": 6
+  },
+  {
+    "arquivo": "pynapple\\io\\interface_neo.py",
+    "convention": 14,
+    "total": 35,
+    "warning": 9,
+    "refactor": 12
+  },
+  {
+    "arquivo": "pynapple\\process\\decoding.py",
+    "convention": 20,
+    "total": 35,
+    "refactor": 11,
+    "warning": 4
+  },
+  {
+    "arquivo": "pynapple\\core\\base_class.py",
+    "convention": 18,
+    "total": 31,
+    "warning": 4,
+    "refactor": 7,
+    "error": 2
+  },
+  {
+    "arquivo": "pynapple\\process\\_process_functions.py",
+    "refactor": 18,
+    "total": 31,
+    "convention": 8,
+    "warning": 3,
+    "error": 2
+  },
+  {
+    "arquivo": "pynapple\\process\\tuning_curves.py",
+    "convention": 19,
+    "total": 28,
+    "refactor": 8,
+    "warning": 1
+  },
+  {
+    "arquivo": "pynapple\\io\\interface_nwb.py",
+    "convention": 9,
+    "total": 26,
+    "warning": 7,
+    "refactor": 10
+  },
+  {
+    "arquivo": "pynapple\\process\\correlograms.py",
+    "convention": 14,
+    "total": 24,
+    "refactor": 9,
+    "warning": 1
+  },
+  {
+    "arquivo": "pynapple\\core\\_core_functions.py",
+    "refactor": 16,
+    "total": 23,
+    "convention": 4,
+    "error": 3
+  },
+  {
+    "arquivo": "pynapple\\process\\signal.py",
+    "convention": 17,
+    "total": 22,
+    "refactor": 5
+  },
+  {
+    "arquivo": "pynapple\\io\\misc.py",
+    "convention": 5,
+    "total": 21,
+    "refactor": 12,
+    "error": 3,
+    "warning": 1
+  },
+  {
+    "arquivo": "pynapple\\process\\warping.py",
+    "convention": 12,
+    "total": 20,
+    "refactor": 4,
+    "warning": 4
+  },
+  {
+    "arquivo": "pynapple\\io\\suite2p.py",
+    "convention": 11,
+    "total": 19,
+    "refactor": 5,
+    "warning": 3
+  },
+  {
+    "arquivo": "pynapple\\process\\spectrum.py",
+    "convention": 13,
+    "total": 18,
+    "refactor": 5
+  },
+  {
+    "arquivo": "pynapple\\io\\folder.py",
+    "convention": 8,
+    "total": 16,
+    "refactor": 5,
+    "warning": 3
+  },
+  {
+    "arquivo": "pynapple\\io\\loader.py",
+    "convention": 4,
+    "total": 15,
+    "warning": 3,
+    "refactor": 7,
+    "error": 1
+  },
+  {
+    "arquivo": "pynapple\\io\\phy.py",
+    "convention": 4,
+    "total": 15,
+    "refactor": 7,
+    "warning": 2,
+    "error": 2
+  },
+  {
+    "arquivo": "pynapple\\process\\__init__.py",
+    "convention": 1,
+    "total": 15,
+    "refactor": 14
+  },
+  {
+    "arquivo": "pynapple\\core\\config.py",
+    "convention": 8,
+    "total": 11,
+    "warning": 3
+  },
+  {
+    "arquivo": "pynapple\\io\\cnmfe.py",
+    "convention": 8,
+    "total": 11,
+    "refactor": 3
+  },
+  {
+    "arquivo": "pynapple\\process\\perievent.py",
+    "convention": 2,
+    "total": 11,
+    "refactor": 7,
+    "warning": 2
+  },
+  {
+    "arquivo": "pynapple\\process\\wavelets.py",
+    "convention": 6,
+    "total": 11,
+    "refactor": 4,
+    "error": 1
+  },
+  {
+    "arquivo": "pynapple\\io\\interface_npz.py",
+    "convention": 2,
+    "total": 6,
+    "refactor": 3,
+    "warning": 1
+  },
+  {
+    "arquivo": "pynapple\\process\\randomize.py",
+    "convention": 5,
+    "total": 6,
+    "refactor": 1
+  },
+  {
+    "arquivo": "pynapple\\io\\interface_neurosuite.py",
+    "refactor": 4,
+    "total": 5,
+    "warning": 1
+  },
+  {
+    "arquivo": "pynapple\\core\\time_index.py",
+    "refactor": 2,
+    "total": 2
+  },
+  {
+    "arquivo": "pynapple\\__init__.py",
+    "convention": 1,
+    "total": 1
+  },
+  {
+    "arquivo": "pynapple\\core\\__init__.py",
+    "convention": 1,
+    "total": 1
+  },
+  {
+    "arquivo": "pynapple\\io\\__init__.py",
+    "convention": 1,
+    "total": 1
+  }
+]
