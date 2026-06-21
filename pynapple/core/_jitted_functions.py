@@ -100,94 +100,115 @@ def jitvaluefrom(
     starts,
     mode,
 ):
-    """
-    Compute value_from in a loop.
+    if mode == 0:
+        return _jitvaluefrom_before(
+            time_array,
+            time_target_array,
+            count,
+            count_target,
+            starts,
+        )
+    elif mode == 1:
+        return _jitvaluefrom_closest(
+            time_array,
+            time_target_array,
+            count,
+            count_target,
+            starts,
+        )
+    else:
+        return _jitvaluefrom_after(
+            time_array,
+            time_target_array,
+            count,
+            count_target,
+            starts,
+        )
 
-    Parameters
-    ----------
-    time_array : ndarray
-        The time array for the input.
-    time_target_array : ndarray
-        The time array for the target.
-    count : ndarray[int]
-        Count how many input time points are in each epoch. len(count) is the number of epochs.
-    count_target  ndarray[int]
-        Count how many target time points are in each epoch. len(count_target) is the number of epochs.
-    starts : ndarray[int]
-        Start time for each epoch.
-    mode : int
-        0 before, 1 closest, 2 after.
-    """
-    # Get the number of intervals, the length of time_array, and the length of time_target_array
+
+@jit(nopython=True, cache=True)
+def _jitvaluefrom_before(time_array, time_target_array, count, count_target, starts):
     m = starts.shape[0]
     n = time_array.shape[0]
-    d = time_target_array.shape[0]
-
-    # Initialize an array to store indices with NaN as default values
     idx = np.full(n, np.nan)
 
-    # Proceed only if both time arrays have elements
-    if n > 0 and d > 0:
-        for k in range(m):  # Iterate through each epoch
-            # Check if there are time stamps in both arrays
+    if n > 0 and time_target_array.shape[0] > 0:
+        for k in range(m):
             if count[k] > 0 and count_target[k] > 0:
                 t = np.sum(count[0:k])
                 i = np.sum(count_target[0:k])
-                maxt = (
-                    t + count[k]
-                )  # Maximum index for time_array in the current interval
-                maxi = i + count_target[k]  # Maximum index in the target array
-                while t < maxt:  # Iterate over the current interval in time_array
-                    # compute signed or abs temporal difference
-                    # abs for closest, signed for after or before
-                    if mode != 1:
-                        interval = time_target_array[i] - time_array[t]
-                    else:
-                        interval = abs(time_target_array[i] - time_array[t])
+                maxt = t + count[k]
+                maxi = i + count_target[k]
+                last_idx = np.nan
 
-                    idx[t] = float(i)  # Store the initial index
+                while t < maxt:
+                    while i < maxi and time_target_array[i] <= time_array[t]:
+                        last_idx = float(i)
+                        i += 1
 
-                    i += 1
-                    while (
-                        i < maxi
-                    ):  # Iterate through time_target_array within the current interval
-                        # check the next temporal difference
-                        if mode != 1:
-                            new_interval = time_target_array[i] - time_array[t]
-                            break_cond = (
-                                ((new_interval > 0) and (interval <= 0))
-                                or (interval >= 0)
-                                if mode == 0
-                                else ((new_interval < 0) and (interval >= 0))
-                                or (interval >= 0)
-                            )
-                            nan_cond = interval > 0 if mode == 0 else new_interval < 0
-                        else:
-                            new_interval = abs(time_target_array[i] - time_array[t])
-                            break_cond = new_interval > interval
-                            nan_cond = False
+                    idx[t] = last_idx
+                    t += 1
 
-                        if break_cond:  # Break if the new interval is larger
-                            if nan_cond:
-                                idx[t] = np.nan
-                            break
-                        else:
-                            idx[t] = float(i)  # Update the index with the closer target
-                            interval = new_interval  # Update the interval
-                            i += 1
+    return idx
+
+
+@jit(nopython=True, cache=True)
+def _jitvaluefrom_after(time_array, time_target_array, count, count_target, starts):
+    m = starts.shape[0]
+    n = time_array.shape[0]
+    idx = np.full(n, np.nan)
+
+    if n > 0 and time_target_array.shape[0] > 0:
+        for k in range(m):
+            if count[k] > 0 and count_target[k] > 0:
+                t = np.sum(count[0:k])
+                i = np.sum(count_target[0:k])
+                maxt = t + count[k]
+                maxi = i + count_target[k]
+
+                while t < maxt:
+                    while i < maxi and time_target_array[i] < time_array[t]:
+                        i += 1
 
                     if i == maxi:
-                        if mode == 2:
-                            new_interval = time_target_array[i - 1] - time_array[t]
-                            nan_cond = new_interval < 0
-                        elif mode == 0:
-                            nan_cond = interval > 0
-                        else:
-                            nan_cond = False
-                        if nan_cond:
-                            idx[t] = np.nan
-                    i -= 1  # Revert to the last valid index
-                    t += 1  # Move to the next time point
+                        idx[t] = np.nan
+                    else:
+                        idx[t] = float(i)
+                    t += 1
+
+    return idx
+
+
+@jit(nopython=True, cache=True)
+def _jitvaluefrom_closest(time_array, time_target_array, count, count_target, starts):
+    m = starts.shape[0]
+    n = time_array.shape[0]
+    idx = np.full(n, np.nan)
+
+    if n > 0 and time_target_array.shape[0] > 0:
+        for k in range(m):
+            if count[k] > 0 and count_target[k] > 0:
+                t = np.sum(count[0:k])
+                start_i = np.sum(count_target[0:k])
+                i = start_i
+                maxt = t + count[k]
+                maxi = start_i + count_target[k]
+
+                while t < maxt:
+                    interval = abs(time_target_array[i] - time_array[t])
+                    idx[t] = float(i)
+                    i += 1
+
+                    while i < maxi:
+                        new_interval = abs(time_target_array[i] - time_array[t])
+                        if new_interval > interval:
+                            break
+                        idx[t] = float(i)
+                        interval = new_interval
+                        i += 1
+
+                    i -= 1
+                    t += 1
 
     return idx  # Return the array of indices
 

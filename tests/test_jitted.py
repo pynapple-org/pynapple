@@ -678,3 +678,15 @@ def test_jitvaluefrom_single_target_mode_after():
     )
     assert idx[0] == 0.0  # target 1.5 is after timestamp 1.0 → target index 0
     assert np.isnan(idx[1])  # target 1.5 is before timestamp 2.0 → no after-target
+
+
+def test_jitvaluefrom_closest_prefers_last_duplicate_on_tie():
+    time_array = np.array([1.0])
+    time_target = np.array([0.9, 1.0, 1.0, 1.1])
+    count = np.array([1], dtype=np.int64)
+    count_target = np.array([4], dtype=np.int64)
+    starts = np.array([0.0])
+    idx = nap.core._jitted_functions.jitvaluefrom(
+        time_array, time_target, count, count_target, starts, 1
+    )
+    assert idx[0] == 2.0
