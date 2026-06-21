@@ -207,6 +207,68 @@ class _MetadataMixin:
         for k in kwargs:
             self._raise_invalid_metadata_column_name(k)
 
+    def _normalize_metadata_kwargs(self, metadata=None, **kwargs):
+        """
+        Merge metadata passed as a mapping with keyword arguments.
+        """
+        if metadata is None:
+            return kwargs
+
+        if hasattr(metadata, "keys") is False:
+            raise TypeError(
+                f"Metadata with type {type(metadata)} should be passed as a keyword argument."
+            )
+
+        if (
+            hasattr(metadata, "index")
+            # exlude length 1 objects in case of pandas.Series
+            and (len(self.metadata_index) > 1)
+            and not np.all(self.metadata_index == metadata.index)
+        ):
+            raise ValueError("Metadata index does not match.")
+
+        return {**metadata, **kwargs}
+
+    def _set_metadata_value(self, key, value):
+        """
+        Store one metadata column, returning False when the value is unsupported.
+        """
+        if hasattr(value, "keys") and hasattr(value, "index"):
+            # pandas.Series
+            if np.all(self.metadata_index == value.index):
+                self._metadata[key] = np.array(value)
+                self._metadata[key].setflags(write=False)
+                return True
+
+            raise ValueError(f"Metadata index does not match for argument {key}")
+
+        if (len(self.metadata_index) == 1) and (
+            (hasattr(value, "__iter__") is False) or isinstance(value, str)
+        ):
+            # special case for single index objects for non iterable objects or strings
+            self._metadata[key] = np.array([value])
+            self._metadata[key].setflags(write=False)
+            return True
+
+        if hasattr(value, "__len__") and not isinstance(value, dict):
+            # object that has a length
+            if len(self.metadata_index) == len(value):
+                self._metadata[key] = np.array(value)
+                self._metadata[key].setflags(write=False)
+                return True
+
+            if len(self.metadata_index) == 1:
+                # special case for single index objects
+                self._metadata[key] = np.array([value])
+                self._metadata[key].setflags(write=False)
+                return True
+
+            raise ValueError(
+                f"input array length {len(value)} does not match metadata length {len(self.metadata_index)}."
+            )
+
+        return False
+
     def set_info(self, metadata=None, **kwargs):
         """
         Add metadata information about the object. Metadata are saved as a dictionary.
@@ -245,60 +307,11 @@ class _MetadataMixin:
         """
         # check for duplicate names and/or formatted names that cannot be accessed as attributes or keys
         self._check_metadata_column_names(metadata, **kwargs)
+        kwargs = self._normalize_metadata_kwargs(metadata, **kwargs)
         not_set = []
-        if metadata is not None:
-            if hasattr(metadata, "keys"):
-                # metadata is a dictionary-like object
-                if (
-                    hasattr(metadata, "index")
-                    # exlude length 1 objects in case of pandas.Series
-                    and (len(self.metadata_index) > 1)
-                    and not np.all(self.metadata_index == metadata.index)
-                ):
-                    raise ValueError("Metadata index does not match.")
-                else:
-                    kwargs = {**metadata, **kwargs}
-
-            else:
-                raise TypeError(
-                    f"Metadata with type {type(metadata)} should be passed as a keyword argument."
-                )
-
         if len(kwargs):
             for k, v in kwargs.items():
-
-                if hasattr(v, "keys") and hasattr(v, "index"):
-                    # pandas.Series
-                    if np.all(self.metadata_index == v.index):
-                        self._metadata[k] = np.array(v)
-                        self._metadata[k].setflags(write=False)
-                    else:
-                        raise ValueError(
-                            f"Metadata index does not match for argument {k}"
-                        )
-
-                elif (len(self.metadata_index) == 1) and (
-                    (hasattr(v, "__iter__") is False) or isinstance(v, str)
-                ):
-                    # special case for single index objects for non iterable objects or strings
-                    self._metadata[k] = np.array([v])
-                    self._metadata[k].setflags(write=False)
-
-                elif hasattr(v, "__len__") and not isinstance(v, dict):
-                    # object that has a length
-                    if len(self.metadata_index) == len(v):
-                        self._metadata[k] = np.array(v)
-                        self._metadata[k].setflags(write=False)
-                    elif len(self.metadata_index) == 1:
-                        # special case for single index objects
-                        self._metadata[k] = np.array([v])
-                        self._metadata[k].setflags(write=False)
-                    else:
-                        raise ValueError(
-                            f"input array length {len(v)} does not match metadata length {len(self.metadata_index)}."
-                        )
-
-                else:
+                if self._set_metadata_value(k, v) is False:
                     not_set.append({k: v})
 
         if not_set:
