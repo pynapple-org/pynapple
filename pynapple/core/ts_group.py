@@ -944,36 +944,7 @@ class TsGroup(UserDict, _MetadataMixin):
             "Unknown argument format" ; if argument is not a string, list, numpy.ndarray or pandas.Series
 
         """
-        if len(args):
-            if isinstance(args[0], pd.Series):
-                if np.array_equal(self._metadata.index, args[0].index):
-                    _values = args[0].values.flatten()
-                else:
-                    raise RuntimeError("Index are not equals")
-            elif isinstance(args[0], (np.ndarray, list)):
-                if self._metadata.shape[0] == len(args[0]):
-                    _values = np.array(args[0])
-                else:
-                    raise RuntimeError("Values is not the same length.")
-            elif isinstance(args[0], str):
-                if args[0] in self._metadata.columns:
-                    _values = self._metadata[args[0]]
-                else:
-                    raise RuntimeError(
-                        "Key {} not in metadata of TsGroup".format(args[0])
-                    )
-            else:
-                possible_keys = []
-                for k, d in self._metadata.dtypes.items():
-                    if "int" in str(d) or "float" in str(d):
-                        possible_keys.append(k)
-                raise RuntimeError(
-                    "Unknown argument format. Must be pandas.Series, numpy.ndarray or a string from one of the following values : [{}]".format(
-                        ", ".join(possible_keys)
-                    )
-                )
-        else:
-            _values = self.index
+        _values = self._normalize_to_tsd_values(*args)
 
         nt = 0
         for n in self.index:
@@ -992,6 +963,37 @@ class TsGroup(UserDict, _MetadataMixin):
         toreturn = Tsd(t=times[idx], d=data[idx], time_support=self.time_support)
 
         return toreturn
+
+    def _normalize_to_tsd_values(self, *args):
+        if len(args) == 0:
+            return self.index
+
+        values = args[0]
+
+        if isinstance(values, pd.Series):
+            if np.array_equal(self._metadata.index, values.index):
+                return values.values.flatten()
+            raise RuntimeError("Index are not equals")
+
+        if isinstance(values, (np.ndarray, list)):
+            if self._metadata.shape[0] == len(values):
+                return np.array(values)
+            raise RuntimeError("Values is not the same length.")
+
+        if isinstance(values, str):
+            if values in self._metadata.columns:
+                return self._metadata[values]
+            raise RuntimeError("Key {} not in metadata of TsGroup".format(values))
+
+        possible_keys = []
+        for k, d in self._metadata.dtypes.items():
+            if "int" in str(d) or "float" in str(d):
+                possible_keys.append(k)
+        raise RuntimeError(
+            "Unknown argument format. Must be pandas.Series, numpy.ndarray or a string from one of the following values : [{}]".format(
+                ", ".join(possible_keys)
+            )
+        )
 
     @add_or_convert_metadata
     def trial_count(
