@@ -344,17 +344,7 @@ def jitremove_nan(time_array, index_nan):
 def jitthreshold(time_array, data_array, starts, ends, thr, method="above"):
     n = time_array.shape[0]
 
-    if method == "above":
-        ix = data_array > thr
-    elif method == "below":
-        ix = data_array < thr
-    elif method == "aboveequal":
-        ix = data_array >= thr
-    elif method == "belowequal":
-        ix = data_array <= thr
-
-    k = 0
-    t = 0
+    ix = _jitthreshold_mask(data_array, thr, method)
 
     ix_start = np.zeros(n, dtype=np.bool_)
     ix_end = np.zeros(n, dtype=np.bool_)
@@ -364,56 +354,13 @@ def jitthreshold(time_array, data_array, starts, ends, thr, method="above"):
     if n == 0:
         return (time_array[ix], data_array[ix], new_start[ix_start], new_end[ix_end])
 
-    while k < len(starts) and time_array[t] < starts[k]:
-        k += 1
-
-    if ix[t]:
-        ix_start[t] = 1
-        new_start[t] = time_array[t]
-
     if n == 1:
-        if ix[t]:
-            ix_end[t] = 1
-            new_end[t] = time_array[t]
+        _jitthreshold_init_single_point(
+            time_array, ix, ix_start, new_start, ix_end, new_end
+        )
         return (time_array[ix], data_array[ix], new_start[ix_start], new_end[ix_end])
 
-    t += 1
-
-    while t < n - 1:
-        # transition
-        if time_array[t] > ends[k]:
-            k += 1
-            if ix[t - 1]:
-                ix_end[t - 1] = 1
-                new_end[t - 1] = time_array[t - 1]
-            if ix[t]:
-                ix_start[t] = 1
-                new_start[t] = time_array[t]
-
-        else:
-            if not ix[t - 1] and ix[t]:
-                ix_start[t] = 1
-                new_start[t] = time_array[t] - (time_array[t] - time_array[t - 1]) / 2
-
-            if ix[t - 1] and not ix[t]:
-                ix_end[t] = 1
-                new_end[t] = time_array[t] - (time_array[t] - time_array[t - 1]) / 2
-
-        t += 1
-
-    if ix[t] and ix[t - 1]:
-        ix_end[t] = 1
-        new_end[t] = time_array[t]
-
-    if ix[t] and not ix[t - 1]:
-        ix_start[t] = 1
-        ix_end[t] = 1
-        new_start[t] = time_array[t] - (time_array[t] - time_array[t - 1]) / 2
-        new_end[t] = time_array[t]
-
-    elif ix[t - 1] and not ix[t]:
-        ix_end[t] = 1
-        new_end[t] = time_array[t] - (time_array[t] - time_array[t - 1]) / 2
+    _jitthreshold_scan(time_array, ix, starts, ends, ix_start, ix_end, new_start, new_end)
 
     new_time_array = time_array[ix]
     new_data_array = data_array[ix]
@@ -421,6 +368,98 @@ def jitthreshold(time_array, data_array, starts, ends, thr, method="above"):
     new_ends = new_end[ix_end]
 
     return (new_time_array, new_data_array, new_starts, new_ends)
+
+
+@jit(nopython=True, cache=True)
+def _jitthreshold_mask(data_array, thr, method):
+    if method == "above":
+        return data_array > thr
+    if method == "below":
+        return data_array < thr
+    if method == "aboveequal":
+        return data_array >= thr
+    return data_array <= thr
+
+
+@jit(nopython=True, cache=True)
+def _jitthreshold_seek_start_interval(time_array, starts):
+    k = 0
+    while k < len(starts) and time_array[0] < starts[k]:
+        k += 1
+    return k
+
+
+@jit(nopython=True, cache=True)
+def _jitthreshold_init_first_point(time_array, ix, ix_start, new_start, ix_end, new_end):
+    if ix[0]:
+        ix_start[0] = 1
+        new_start[0] = time_array[0]
+
+
+@jit(nopython=True, cache=True)
+def _jitthreshold_init_single_point(time_array, ix, ix_start, new_start, ix_end, new_end):
+    if ix[0]:
+        ix_start[0] = 1
+        new_start[0] = time_array[0]
+        ix_end[0] = 1
+        new_end[0] = time_array[0]
+
+
+@jit(nopython=True, cache=True)
+def _jitthreshold_handle_boundary(time_array, ix, ix_start, ix_end, new_start, new_end, t):
+    if ix[t - 1]:
+        ix_end[t - 1] = 1
+        new_end[t - 1] = time_array[t - 1]
+    if ix[t]:
+        ix_start[t] = 1
+        new_start[t] = time_array[t]
+
+
+@jit(nopython=True, cache=True)
+def _jitthreshold_handle_middle(time_array, ix, ix_start, ix_end, new_start, new_end, t):
+    if not ix[t - 1] and ix[t]:
+        ix_start[t] = 1
+        new_start[t] = time_array[t] - (time_array[t] - time_array[t - 1]) / 2
+    if ix[t - 1] and not ix[t]:
+        ix_end[t] = 1
+        new_end[t] = time_array[t] - (time_array[t] - time_array[t - 1]) / 2
+
+
+@jit(nopython=True, cache=True)
+def _jitthreshold_handle_tail(time_array, ix, ix_start, ix_end, new_start, new_end):
+    t = time_array.shape[0] - 1
+    if ix[t] and ix[t - 1]:
+        ix_end[t] = 1
+        new_end[t] = time_array[t]
+    elif ix[t] and not ix[t - 1]:
+        ix_start[t] = 1
+        ix_end[t] = 1
+        new_start[t] = time_array[t] - (time_array[t] - time_array[t - 1]) / 2
+        new_end[t] = time_array[t]
+    elif ix[t - 1] and not ix[t]:
+        ix_end[t] = 1
+        new_end[t] = time_array[t] - (time_array[t] - time_array[t - 1]) / 2
+
+
+@jit(nopython=True, cache=True)
+def _jitthreshold_scan(time_array, ix, starts, ends, ix_start, ix_end, new_start, new_end):
+    k = _jitthreshold_seek_start_interval(time_array, starts)
+    _jitthreshold_init_first_point(time_array, ix, ix_start, new_start, ix_end, new_end)
+
+    t = 1
+    while t < time_array.shape[0] - 1:
+        if time_array[t] > ends[k]:
+            k += 1
+            _jitthreshold_handle_boundary(
+                time_array, ix, ix_start, ix_end, new_start, new_end, t
+            )
+        else:
+            _jitthreshold_handle_middle(
+                time_array, ix, ix_start, ix_end, new_start, new_end, t
+            )
+        t += 1
+
+    _jitthreshold_handle_tail(time_array, ix, ix_start, ix_end, new_start, new_end)
 
 
 def jitbin_array(time_array, data_array, starts, ends, bin_size):
