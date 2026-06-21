@@ -609,82 +609,15 @@ def jitunion(start1, end1, start2, end2):
     m = start1.shape[0]  # number of intervals in set 1
     n = start2.shape[0]  # number of intervals in set 2
 
-    i = 0  # interval index for set 1
-    j = 0  # interval index for set 2
+    starts = np.empty(m + n, dtype=np.float64)
+    ends = np.empty(m + n, dtype=np.float64)
 
-    newstart = np.zeros(m + n, dtype=np.float64)
-    newend = np.zeros(m + n, dtype=np.float64)
-    ct = 0
+    starts[:m] = start1
+    starts[m:] = start2
+    ends[:m] = end1
+    ends[m:] = end2
 
-    while i < m:
-        while j < n:  # all set 2 intervals that start before set 1 interval
-            if end2[j] > start1[i]:
-                break
-            newstart[ct] = start2[j]  # add set 2 interval
-            newend[ct] = end2[j]
-            ct += 1
-            j += 1  # increment set 2 index
-
-        if j == n:
-            break
-
-        if start2[j] < end1[i]:  # overlap
-            newstart[ct] = min(
-                start1[i], start2[j]
-            )  # start of interval is whichever occurs first
-
-            while i < m and j < n:
-                newend[ct] = max(
-                    end1[i], end2[j]
-                )  # end of interval is whichever occurs last
-
-                if end1[i] < end2[j]:
-                    i += 1  # incremet set 1 index if it ends first
-                else:
-                    j += 1  # increment set 2 index if it ends first
-
-                if i == m:  # stop if no more intervals in set 1
-                    j += 1  # increment set 2 index
-                    ct += 1
-                    break
-
-                if j == n:  # stop if no more intervals in set 2
-                    i += 1  # increment set 1 index
-                    ct += 1
-                    break
-
-                # stop if end of overlap
-                if end2[j] < start1[i]:  # set 2 interval comes first
-                    j += 1  # increment set 2 index
-                    ct += 1
-                    break
-                elif end1[i] < start2[j]:  # set 1 interval comes first
-                    i += 1  # increment set 1 index
-                    ct += 1
-                    break
-
-        else:  # no overlap
-            newstart[ct] = start1[i]  # add set 1 interval
-            newend[ct] = end1[i]
-            ct += 1
-            i += 1  # increment set 1 index
-
-    while i < m:  # add remaining intervals from set 1
-        newstart[ct] = start1[i]
-        newend[ct] = end1[i]
-        ct += 1
-        i += 1
-
-    while j < n:  # add remaining intervals from set 2
-        newstart[ct] = start2[j]
-        newend[ct] = end2[j]
-        ct += 1
-        j += 1
-
-    newstart = newstart[0:ct]
-    newend = newend[0:ct]
-
-    return (newstart, newend)
+    return jitunion_isets(starts, ends)
 
 
 @jit(nopython=True, cache=True)
