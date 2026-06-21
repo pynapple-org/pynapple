@@ -241,91 +241,109 @@ def _split_tsd(func, tsd, indices_or_sections, axis=0):
         return func._implementation(tsd.values, indices_or_sections, axis)
 
 
-def _concatenate_tsd(func, *args, **kwargs):
-    """
-    Wrappers of concatenation functions
-    """
+def _normalize_concat_axis(func, args, kwargs):
+    if func == np.concatenate and "axis" not in kwargs and len(args) >= 2:
+        kwargs = dict(kwargs)
+        kwargs["axis"] = args[1] if isinstance(args[1], int) else 0
+    return kwargs
+
+
+def _collect_concat_inputs(items):
     arrays = []
     time_indexes = []
     time_supports = []
-    nap_types = []
     columns = []
     nap_class = None
 
-    if func == np.concatenate:  # search for axis
-        if "axis" not in kwargs and len(args) >= 2:  # assume second arg is axis
-            if isinstance(args[1], int):
-                kwargs["axis"] = args[1]
-            else:
-                kwargs["axis"] = 0
-
-    for arg in args[0]:
+    for arg in items:
         if all(
             hasattr(arg, x) for x in ["values", "index", "time_support", "nap_class"]
         ):
             arrays.append(arg.values)
             time_indexes.append(arg.index.values)
             time_supports.append(arg.time_support)
-            nap_types.append(arg.nap_class)
             nap_class = arg.__class__
             if hasattr(arg, "columns"):
                 columns.append(arg.columns)
         else:
             arrays.append(arg)
 
+    return arrays, time_indexes, time_supports, columns, nap_class
+
+
+def _concatenate_time_axis(output, arrays, time_indexes, time_supports, columns, nap_class):
+    if len(time_indexes) != len(arrays) or len(time_supports) != len(arrays):
+        return output
+
+    new_index = np.hstack(time_indexes)
+    if np.any(np.diff(new_index) <= 0):
+        raise RuntimeError(
+            "The order of the time series indexes should be strictly increasing and non overlapping."
+        )
+
+    time_support = time_supports[0]
+    for support in time_supports[1:]:
+        time_support = time_support.union(support)
+
+    new_kwargs = {"columns": columns[0]} if len(columns) else {}
+    return nap_class(t=new_index, d=output, time_support=time_support, **new_kwargs)
+
+
+def _concatenate_feature_axis(output, args, time_indexes, time_supports, columns, nap_class):
+    if len(time_indexes) == 1:
+        return nap_class(t=time_indexes[0], d=output, time_support=time_supports[0])
+
+    time_equal = _check_time_equals(time_indexes)
+    support_equal = _check_time_equals([x.values for x in time_supports])
+
+    if time_equal and support_equal:
+        new_kwargs = {}
+        if len(columns):
+            new_kwargs = {"columns": np.hstack(columns)}
+            if len(new_kwargs["columns"]) != output.shape[1]:
+                new_kwargs = {}
+        return args[0][0]._define_instance(
+            time_index=time_indexes[0],
+            time_support=time_supports[0],
+            values=output,
+            **new_kwargs,
+        )
+
+    if not time_equal and not support_equal:
+        msg = (
+            "Time indexes and time supports are not all equals up to pynapple precision. "
+            "Returning numpy array!"
+        )
+    elif not time_equal and support_equal:
+        msg = "Time indexes are not all equals up to pynapple precision. Returning numpy array!"
+    else:
+        msg = "Time supports are not all equals up to pynapple precision. Returning numpy array!"
+
+    warnings.warn(msg, stacklevel=2)
+    return output
+
+
+def _concatenate_tsd(func, *args, **kwargs):
+    """
+    Wrappers of concatenation functions
+    """
+    kwargs = _normalize_concat_axis(func, args, kwargs)
+    arrays, time_indexes, time_supports, columns, nap_class = _collect_concat_inputs(
+        args[0]
+    )
+
     output = func._implementation(arrays, **kwargs)
 
     # dimension increased in the first axis
     if output.shape[0] > arrays[0].shape[0]:
-        if len(time_indexes) == len(arrays) and len(time_supports) == len(arrays):
-            # check if time indexes can be concatenated
-            new_index = np.hstack(time_indexes)
-            if np.any(np.diff(new_index) <= 0):
-                raise RuntimeError(
-                    "The order of the time series indexes should be strictly increasing and non overlapping."
-                )
-            # Joining Time support
-            time_support = time_supports[0]
-            for support in time_supports[1:]:
-                time_support = time_support.union(support)
-
-            new_kwargs = {"columns": columns[0]} if len(columns) else {}
-
-            return nap_class(
-                t=new_index, d=output, time_support=time_support, **new_kwargs
-            )
-        else:
-            return output
+        return _concatenate_time_axis(
+            output, arrays, time_indexes, time_supports, columns, nap_class
+        )
     # dimension increased in other axis
     else:
-        if len(time_indexes) == 1:
-            return nap_class(t=time_indexes[0], d=output, time_support=time_supports[0])
-        else:
-            time_equal = _check_time_equals(time_indexes)
-            support_equal = _check_time_equals([x.values for x in time_supports])
-
-            if time_equal and support_equal:
-                new_kwargs = {}
-                if len(columns):
-                    new_kwargs = {"columns": np.hstack(columns)}
-                    if len(new_kwargs["columns"]) != output.shape[1]:
-                        new_kwargs = {}
-                return args[0][0]._define_instance(
-                    time_index=time_indexes[0],
-                    time_support=time_supports[0],
-                    values=output,
-                    **new_kwargs,
-                )  # Dropping metadata in this case
-            else:
-                if not time_equal and not support_equal:
-                    msg = "Time indexes and time supports are not all equals up to pynapple precision. Returning numpy array!"
-                elif not time_equal and support_equal:
-                    msg = "Time indexes are not all equals up to pynapple precision. Returning numpy array!"
-                else:
-                    msg = "Time supports are not all equals up to pynapple precision. Returning numpy array!"
-
-                warnings.warn(msg, stacklevel=2)
-                return output
+        return _concatenate_feature_axis(
+            output, args, time_indexes, time_supports, columns, nap_class
+        )
 
 
 class _TsdFrameSliceHelper:
