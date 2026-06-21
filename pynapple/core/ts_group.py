@@ -1380,40 +1380,17 @@ class TsGroup(UserDict, _MetadataMixin):
         items = tsg1.items()
         keys = set(tsg1.keys())
         metadata = tsg1._metadata.copy()
+        time_support = None if reset_time_support else tsg1.time_support
 
         for i, tsg in enumerate(tsgroups[1:]):
-            if not ignore_metadata:
-                if tsg1.metadata_columns != tsg.metadata_columns:
-                    raise ValueError(
-                        f"TsGroup at position {i + 2} has different metadata columns from previous TsGroup objects. "
-                        "Set `ignore_metadata=True` to bypass the check."
-                    )
-                metadata.merge(tsg._metadata)
-
-            if not reset_index:
-                key_overlap = keys.intersection(tsg.keys())
-                if key_overlap:
-                    raise ValueError(
-                        f"TsGroup at position {i + 2} has overlapping keys {key_overlap} with previous TsGroup objects. "
-                        "Set `reset_index=True` to bypass the check."
-                    )
-                keys.update(tsg.keys())
-
-            if reset_time_support:
-                time_support = None
-            else:
-                if not np.allclose(
-                    tsg1.time_support.as_units("s").to_numpy(),
-                    tsg.time_support.as_units("s").to_numpy(),
-                    atol=10 ** (-nap_config.time_index_precision),
-                    rtol=0,
-                ):
-                    raise ValueError(
-                        f"TsGroup at position {i + 2} has different time support from previous TsGroup objects. "
-                        "Set `reset_time_support=True` to bypass the check."
-                    )
-                time_support = tsg1.time_support
-
+            position = i + 2
+            TsGroup._validate_merge_metadata(
+                tsg1, tsg, metadata, ignore_metadata, position
+            )
+            TsGroup._validate_merge_keys(keys, tsg, reset_index, position)
+            TsGroup._validate_merge_time_support(
+                tsg1, tsg, reset_time_support, position
+            )
             items.extend(tsg.items())
 
         if reset_index:
@@ -1431,6 +1408,49 @@ class TsGroup(UserDict, _MetadataMixin):
                 time_support=time_support,
                 bypass_check=False,
                 metadata=metadata,
+            )
+
+    @staticmethod
+    def _validate_merge_metadata(tsg1, tsg, metadata, ignore_metadata, position):
+        if ignore_metadata:
+            return
+
+        if tsg1.metadata_columns != tsg.metadata_columns:
+            raise ValueError(
+                f"TsGroup at position {position} has different metadata columns from previous TsGroup objects. "
+                "Set `ignore_metadata=True` to bypass the check."
+            )
+
+        metadata.merge(tsg._metadata)
+
+    @staticmethod
+    def _validate_merge_keys(keys, tsg, reset_index, position):
+        if reset_index:
+            return
+
+        key_overlap = keys.intersection(tsg.keys())
+        if key_overlap:
+            raise ValueError(
+                f"TsGroup at position {position} has overlapping keys {key_overlap} with previous TsGroup objects. "
+                "Set `reset_index=True` to bypass the check."
+            )
+
+        keys.update(tsg.keys())
+
+    @staticmethod
+    def _validate_merge_time_support(tsg1, tsg, reset_time_support, position):
+        if reset_time_support:
+            return
+
+        if not np.allclose(
+            tsg1.time_support.as_units("s").to_numpy(),
+            tsg.time_support.as_units("s").to_numpy(),
+            atol=10 ** (-nap_config.time_index_precision),
+            rtol=0,
+        ):
+            raise ValueError(
+                f"TsGroup at position {position} has different time support from previous TsGroup objects. "
+                "Set `reset_time_support=True` to bypass the check."
             )
 
     def merge(
