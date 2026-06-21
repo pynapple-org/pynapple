@@ -190,61 +190,49 @@ class TsGroup(UserDict, _MetadataMixin):
     nap_class: str
     """The pynapple class name"""
 
-    def __init__(
-        self,
-        data,
-        time_support=None,
-        time_units="s",
-        bypass_check=False,
-        metadata=None,
-        **kwargs,
-    ):
-        # Check input type
+    @staticmethod
+    def _validate_init_args(time_support, time_units, bypass_check):
         if time_units not in ["s", "ms", "us"]:
             raise ValueError("Argument time_units should be 's', 'ms' or 'us'")
         if not isinstance(bypass_check, bool):
             raise TypeError("Argument bypass_check should be of type bool")
-        passed_time_support = False
-
         if isinstance(time_support, IntervalSet):
-            passed_time_support = True
-        else:
-            if time_support is not None:
-                raise TypeError("Argument time_support should be of type IntervalSet")
-            else:
-                passed_time_support = False
+            return True
+        if time_support is not None:
+            raise TypeError("Argument time_support should be of type IntervalSet")
+        return False
 
-        # set directly in __dict__ to avoid infinite recursion in __setattr__
-        self.__dict__["_initialized"] = False
-
+    @staticmethod
+    def _normalize_data_input(data):
         if not isinstance(data, dict):
-            data = dict(enumerate(data))
+            return dict(enumerate(data))
+        return data
 
-        # convert all keys to integer
+    @staticmethod
+    def _convert_and_validate_keys(data):
         try:
-            keys = [int(k) for k in data.keys()]
+            input_keys = [int(k) for k in data.keys()]
         except Exception:
             raise ValueError("All keys must be convertible to integer.")
 
         # check that there were no floats with decimal points in keys.
         # i.e. 0.5 is not a valid key
-        if not all(np.allclose(keys[j], float(k)) for j, k in enumerate(data.keys())):
+        if not all(np.allclose(input_keys[j], float(k)) for j, k in enumerate(data.keys())):
             raise ValueError("All keys must have integer value!}")
 
         # check that we have the same num of unique keys
         # {"0":val, 0:val} would be a problem...
-        if len(keys) != len(np.unique(keys)):
+        if len(input_keys) != len(np.unique(input_keys)):
             raise ValueError("Two dictionary keys contain the same integer value!")
 
-        data = {keys[j]: data[k] for j, k in enumerate(data.keys())}
-        self.index = np.sort(keys)
+        normalized_data = {input_keys[j]: data[k] for j, k in enumerate(data.keys())}
+        index = np.sort(input_keys)
+        sort_index = np.argsort(input_keys)
+        return normalized_data, input_keys, index, sort_index
 
-        # Make sure data dict and index are ordered the same
-        data = {k: data[k] for k in self.index}
-
-        # Also sort metadata if more than one key
+    @staticmethod
+    def _sort_metadata(metadata, kwargs, keys, sort_index):
         if len(keys) > 1:
-            sort_index = np.argsort(keys)
             if (metadata is not None) and (len(metadata) > 0):
                 if hasattr(metadata, "index") and np.all(metadata.index != keys):
                     # check that index matches before sort if index exists
@@ -261,13 +249,12 @@ class TsGroup(UserDict, _MetadataMixin):
                     key: np.array(value)[sort_index] for key, value in kwargs.items()
                 }
 
-        # initialize metadata
-        _MetadataMixin.__init__(self)
-        # to test compatibility with pandas
-        # self._metadata = pd.DataFrame(index=self.metadata_index)
+        return metadata, kwargs
 
+    @staticmethod
+    def _coerce_data_to_ts(data, index, time_support, time_units):
         # Transform elements to Ts/Tsd objects
-        for k in self.index:
+        for k in index:
             if not isinstance(data[k], _Base):
                 if isinstance(data[k], list) or is_array_like(data[k]):
                     warnings.warn(
@@ -281,22 +268,56 @@ class TsGroup(UserDict, _MetadataMixin):
                         time_support=time_support,
                         time_units=time_units,
                     )
+        return data
 
-        # If time_support is passed, all elements of data are restricted prior to init
+    @staticmethod
+    def _apply_time_support(data, index, time_support, bypass_check, passed_time_support):
         if passed_time_support:
-            self.time_support = time_support
             if not bypass_check:
-                data = {k: data[k].restrict(self.time_support) for k in self.index}
-        else:
-            # Otherwise do the union of all time supports
-            time_support = _union_intervals([data[k].time_support for k in self.index])
-            if len(time_support) == 0:
-                raise RuntimeError(
-                    "Union of time supports is empty. Consider passing a time support as argument."
-                )
-            self.time_support = time_support
-            if not bypass_check:
-                data = {k: data[k].restrict(self.time_support) for k in self.index}
+                data = {k: data[k].restrict(time_support) for k in index}
+            return data, time_support
+
+        # Otherwise do the union of all time supports
+        time_support = _union_intervals([data[k].time_support for k in index])
+        if len(time_support) == 0:
+            raise RuntimeError(
+                "Union of time supports is empty. Consider passing a time support as argument."
+            )
+        if not bypass_check:
+            data = {k: data[k].restrict(time_support) for k in index}
+        return data, time_support
+
+    def __init__(
+        self,
+        data,
+        time_support=None,
+        time_units="s",
+        bypass_check=False,
+        metadata=None,
+        **kwargs,
+    ):
+        passed_time_support = self._validate_init_args(
+            time_support, time_units, bypass_check
+        )
+
+        # set directly in __dict__ to avoid infinite recursion in __setattr__
+        self.__dict__["_initialized"] = False
+
+        data = self._normalize_data_input(data)
+        data, input_keys, keys, sort_index = self._convert_and_validate_keys(data)
+        self.index = keys
+
+        # Make sure data dict and index are ordered the same
+        data = {k: data[k] for k in self.index}
+        metadata, kwargs = self._sort_metadata(metadata, kwargs, input_keys, sort_index)
+
+        # initialize metadata
+        _MetadataMixin.__init__(self)
+        data = self._coerce_data_to_ts(data, self.index, time_support, time_units)
+        data, time_support = self._apply_time_support(
+            data, self.index, time_support, bypass_check, passed_time_support
+        )
+        self.time_support = time_support
 
         UserDict.__init__(self, data)
         rate = np.array([data[k].rate for k in self.index])
