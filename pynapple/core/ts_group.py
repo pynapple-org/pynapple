@@ -720,6 +720,31 @@ class TsGroup(UserDict, _MetadataMixin):
         cols = self._metadata.columns[1:]  # .drop("rate")
         return TsGroup(newgr, time_support=ep, metadata=self._metadata[cols])
 
+    def _normalize_count_args(self, bin_size, ep, time_units, dtype):
+        if bin_size is not None:
+            if isinstance(bin_size, int):
+                bin_size = float(bin_size)
+            if not isinstance(bin_size, float):
+                raise TypeError("bin_size argument should be float or int.")
+
+        if not isinstance(time_units, str) or time_units not in ["s", "ms", "us"]:
+            raise ValueError("time_units argument should be 's', 'ms' or 'us'.")
+
+        if ep is None:
+            ep = self.time_support
+        if not isinstance(ep, IntervalSet):
+            raise TypeError("ep argument should be of type IntervalSet")
+
+        if dtype is None:
+            dtype = np.dtype(np.int64)
+        else:
+            try:
+                dtype = np.dtype(dtype)
+            except Exception:
+                raise ValueError(f"{dtype} is not a valid numpy dtype.")
+
+        return bin_size, ep, dtype
+
     @add_or_convert_metadata
     def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
         """
@@ -790,27 +815,7 @@ class TsGroup(UserDict, _MetadataMixin):
         dtype: int64, shape: (100, 3)
 
         """
-        if bin_size is not None:
-            if isinstance(bin_size, int):
-                bin_size = float(bin_size)
-            if not isinstance(bin_size, float):
-                raise TypeError("bin_size argument should be float or int.")
-
-        if not isinstance(time_units, str) or time_units not in ["s", "ms", "us"]:
-            raise ValueError("time_units argument should be 's', 'ms' or 'us'.")
-
-        if ep is None:
-            ep = self.time_support
-        if not isinstance(ep, IntervalSet):
-            raise TypeError("ep argument should be of type IntervalSet")
-
-        if dtype is None:
-            dtype = np.dtype(np.int64)
-        else:
-            try:
-                dtype = np.dtype(dtype)
-            except Exception:
-                raise ValueError(f"{dtype} is not a valid numpy dtype.")
+        bin_size, ep, dtype = self._normalize_count_args(bin_size, ep, time_units, dtype)
 
         starts = ep.start
         ends = ep.end
