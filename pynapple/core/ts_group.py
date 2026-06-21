@@ -2077,6 +2077,32 @@ class TsGroup(UserDict, _MetadataMixin):
         """
         return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)
 
+    @staticmethod
+    def _subsample_indices(n_timestamps, fraction, rng):
+        if n_timestamps == 0:
+            return np.array([], dtype=int)
+
+        n_keep = int(np.round(n_timestamps * fraction))
+        if n_keep == 0:
+            return np.array([], dtype=int)
+        if n_keep >= n_timestamps:
+            return np.arange(n_timestamps)
+
+        random_values = rng.random(n_timestamps)
+        return np.sort(np.argpartition(random_values, n_keep)[:n_keep])
+
+    @staticmethod
+    def _build_subsampled_item(ts, idx, time_support):
+        new_times = ts.index.values[idx] if len(idx) > 0 else np.array([])
+        if hasattr(ts, "values"):
+            return Tsd(
+                t=new_times,
+                d=ts.values[idx] if len(idx) > 0 else np.array([]),
+                time_support=time_support,
+            )
+
+        return Ts(t=new_times, time_support=time_support)
+
     def subsample(self, fraction, seed=None):
         """
         Randomly subsample timestamps in each element of the TsGroup.
@@ -2138,39 +2164,8 @@ class TsGroup(UserDict, _MetadataMixin):
         newgr = {}
         for k in self.index:
             ts = self.data[k]
-            n_timestamps = len(ts)
-            if n_timestamps > 0:
-                # Calculate exact number to keep
-                n_keep = int(np.round(n_timestamps * fraction))
-                if n_keep == 0:
-                    idx = np.array([], dtype=int)
-                elif n_keep >= n_timestamps:
-                    idx = np.arange(n_timestamps)
-                else:
-                    # Use argpartition for O(n) selection of exactly n_keep indices
-                    random_values = rng.random(n_timestamps)
-                    idx = np.sort(np.argpartition(random_values, n_keep)[:n_keep])
-                new_times = ts.index.values[idx] if len(idx) > 0 else np.array([])
-                if hasattr(ts, "values"):
-                    # For Tsd objects, preserve the data values
-                    newgr[k] = Tsd(
-                        t=new_times,
-                        d=ts.values[idx] if len(idx) > 0 else np.array([]),
-                        time_support=self.time_support,
-                    )
-                else:
-                    # For Ts objects
-                    newgr[k] = Ts(t=new_times, time_support=self.time_support)
-            else:
-                # Keep empty Ts/Tsd with same time support
-                if hasattr(ts, "values"):
-                    newgr[k] = Tsd(
-                        t=np.array([]),
-                        d=np.array([]),
-                        time_support=self.time_support,
-                    )
-                else:
-                    newgr[k] = Ts(t=np.array([]), time_support=self.time_support)
+            idx = self._subsample_indices(len(ts), fraction, rng)
+            newgr[k] = self._build_subsampled_item(ts, idx, self.time_support)
 
         cols = self._metadata.columns[1:]  # drop "rate"
         return TsGroup(
