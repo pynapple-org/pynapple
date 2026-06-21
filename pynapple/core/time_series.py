@@ -1597,28 +1597,23 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         # )
         return _TsdFrameSliceHelper(self)
 
-    def __repr__(self):
-        # Start by determining how many columns and rows.
-        # This can be unique for each object
-        cols, rows = _get_terminal_size()
-        max_cols = np.maximum(cols // 100, 5)
-        max_rows = np.maximum(rows - 10, 2)
-
-        # Computing headers and bottom
+    def _repr_headers(self, max_cols):
         headers = ["Time (s)"] + [str(k) for k in self.columns]
-        bottom = f"dtype: {self.dtype}, shape: {self.shape}"
+        end = ["..."] if self.shape[1] > max_cols else []
 
         if self.shape[1] > max_cols:
             headers = headers[0 : max_cols + 1] + ["..."]
 
+        return headers, end
+
+    def _repr_main_table(self, max_rows, max_cols, end):
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
             if len(self):
-                end = ["..."] if self.shape[1] > max_cols else []
                 if len(self) > max_rows:
                     n_rows = max_rows // 2
                     ends = np.array([end] * n_rows)
-                    table = np.vstack(
+                    return np.vstack(
                         (
                             np.hstack(
                                 (
@@ -1646,20 +1641,20 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                             ),
                         )
                     )
-                else:
-                    ends = np.array([end] * len(self))
-                    table = np.hstack(
-                        (
-                            self.index[:, None],
-                            self.values[:, 0:max_cols],
-                            ends,
-                        ),
-                        dtype=object,
-                    )
-            else:
-                table = np.ndarray(shape=(0, self.shape[1] + 1))
-                end = []
 
+                ends = np.array([end] * len(self))
+                return np.hstack(
+                    (
+                        self.index[:, None],
+                        self.values[:, 0:max_cols],
+                        ends,
+                    ),
+                    dtype=object,
+                )
+
+            return np.ndarray(shape=(0, self.shape[1] + 1))
+
+    def _repr_metadata_table(self, table, end):
         # Adding metadata if any.
         try:
             metadata = self._metadata
@@ -1724,10 +1719,17 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
             if table.shape[1] == mtable.shape[1]:
                 table = np.vstack((table, mtable))
 
-        if len(table):
-            return tabulate(table, headers=headers, colalign=("left",)) + "\n" + bottom
-        else:
-            return tabulate([], headers=headers) + "\n" + bottom
+        return table
+
+    def __repr__(self):
+        cols, rows = _get_terminal_size()
+        max_cols = np.maximum(cols // 100, 5)
+        max_rows = np.maximum(rows - 10, 2)
+        headers, end = self._repr_headers(max_cols)
+        table = self._repr_main_table(max_rows, max_cols, end)
+        table = self._repr_metadata_table(table, end)
+        bottom = f"dtype: {self.dtype}, shape: {self.shape}"
+        return tabulate(table, headers=headers, colalign=("left",)) + "\n" + bottom
 
     def __setattr__(self, name, value):
         # necessary setter to allow metadata to be set as an attribute
@@ -1791,77 +1793,86 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
     @add_or_convert_metadata
     def __getitem__(self, key, *args, **kwargs):
-        if isinstance(key, tuple):
-            key = tuple(k.values if hasattr(k, "values") else k for k in key)
+        key = self._normalize_getitem_key(key)
+
         if isinstance(key, (Tsd, TsdFrame)):
-            try:
-                assert np.issubdtype(key.dtype, np.bool_)
-            except AssertionError:
-                raise ValueError(
-                    "When indexing with a Tsd or TsdFrame, it must contain boolean values"
-                )
+            self._validate_boolean_key(key, "Tsd or TsdFrame")
             if isinstance(key, TsdFrame):
                 return self.values.__getitem__(key.d)
             else:
                 key = key.d
         if isinstance(key, str):
-            if key in self.columns:
-                with warnings.catch_warnings():
-                    # ignore deprecated warning for loc
-                    warnings.simplefilter("ignore")
-                    return self.loc[key]
-            else:
-                return _MetadataMixin.__getitem__(self, key)
+            return self._getitem_column(key)
         elif hasattr(key, "__iter__") and all([isinstance(k, str) for k in key]):
-            if all(k in self.columns for k in key):
-                with warnings.catch_warnings():
-                    # ignore deprecated warning for loc
-                    warnings.simplefilter("ignore")
-                    return self.loc[key]
-            else:
-                return _MetadataMixin.__getitem__(self, key)
+            return self._getitem_column_list(key)
+        return self._getitem_array_like(key, *args, **kwargs)
+
+    def _normalize_getitem_key(self, key):
+        if isinstance(key, tuple):
+            return tuple(k.values if hasattr(k, "values") else k for k in key)
+        return key
+
+    def _validate_boolean_key(self, key, label):
+        try:
+            assert np.issubdtype(key.dtype, np.bool_)
+        except AssertionError:
+            raise ValueError(
+                f"When indexing with a {label}, it must contain boolean values"
+            )
+
+    def _getitem_column(self, key):
+        if key in self.columns:
+            with warnings.catch_warnings():
+                # ignore deprecated warning for loc
+                warnings.simplefilter("ignore")
+                return self.loc[key]
+        return _MetadataMixin.__getitem__(self, key)
+
+    def _getitem_column_list(self, key):
+        if all(k in self.columns for k in key):
+            with warnings.catch_warnings():
+                # ignore deprecated warning for loc
+                warnings.simplefilter("ignore")
+                return self.loc[key]
+        return _MetadataMixin.__getitem__(self, key)
+
+    def _getitem_array_like(self, key, *args, **kwargs):
+        output = self.values.__getitem__(key)
+        columns = self.columns
+
+        if isinstance(key, tuple):
+            index = self.index.__getitem__(key[0])
+            if index.ndim > 1:
+                index = np.squeeze(index)
+            if len(key) == 2 and key[1] is not None:
+                columns = self.columns.__getitem__(key[1])
         else:
-            output = self.values.__getitem__(key)
-            columns = self.columns
+            index = self.index.__getitem__(key)
 
+        if all(is_array_like(a) for a in [index, output]):
             if isinstance(key, tuple):
-                index = self.index.__getitem__(key[0])
-                if index.ndim > 1:
-                    index = np.squeeze(index)
-                if len(key) == 2 and key[1] is not None:
-                    columns = self.columns.__getitem__(key[1])
-            else:
-                index = self.index.__getitem__(key)
-
-            # if isinstance(index, Number):
-            #     index = np.array([index])
-
-            if all(is_array_like(a) for a in [index, output]):
-                if isinstance(key, tuple):
-                    if (
-                        len(index) == 1
-                        and output.ndim == 1
-                        and not isinstance(key[1], (int, np.integer))
-                    ):
-                        output = output[None, :]
-                    elif (
-                        (output.ndim == 1)
-                        and isinstance(key[1], (list, np.ndarray))
-                        and (len(columns) == 1)
-                    ):
-                        # reshape output of single column if column key is a list or array
-                        output = output[:, None]
-                # if getting a row (1 dim implied)
-                elif isinstance(key, Number):
+                if (
+                    len(index) == 1
+                    and output.ndim == 1
+                    and not isinstance(key[1], (int, np.integer))
+                ):
                     output = output[None, :]
+                elif (
+                    (output.ndim == 1)
+                    and isinstance(key[1], (list, np.ndarray))
+                    and (len(columns) == 1)
+                ):
+                    # reshape output of single column if column key is a list or array
+                    output = output[:, None]
+            elif isinstance(key, Number):
+                # if getting a row (1 dim implied)
+                output = output[None, :]
 
-                kwargs["columns"] = columns
-                kwargs["metadata"] = self._metadata.loc[columns]
-                return _initialize_tsd_output(
-                    self, output, time_index=index, kwargs=kwargs
-                )
-            else:
-                return output
+            kwargs["columns"] = columns
+            kwargs["metadata"] = self._metadata.loc[columns]
+            return _initialize_tsd_output(self, output, time_index=index, kwargs=kwargs)
+
+        return output
 
     def as_dataframe(self):
         """
