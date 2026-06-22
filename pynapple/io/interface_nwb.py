@@ -197,6 +197,53 @@ def _make_tsd_tensor(obj, lazy_loading=True):
     return data
 
 
+def _normalize_tsd_frame_columns(columns, ncols):
+    if len(columns) >= ncols:
+        return columns[:ncols]
+    return np.arange(ncols)
+
+
+def _make_spatial_series_columns(obj):
+    ncols = obj.data.shape[1]
+    if ncols == 2:
+        return ["x", "y"]
+    if ncols == 3:
+        return ["x", "y", "z"]
+    return np.arange(ncols)
+
+
+def _make_electrical_series_columns(obj):
+    try:
+        metadata = (
+            obj.electrodes.to_dataframe()
+            .convert_dtypes()
+            .select_dtypes(exclude="object")
+        )
+        return metadata.index, metadata
+    except Exception:
+        return np.arange(obj.data.shape[1]), {}
+
+
+def _make_roi_response_series_columns(obj):
+    try:
+        return obj.rois["id"][:]
+    except Exception:
+        return np.arange(obj.data.shape[1])
+
+
+def _make_tsd_frame_columns(obj, pynwb):
+    if isinstance(obj, pynwb.behavior.SpatialSeries):
+        return _make_spatial_series_columns(obj), {}
+
+    if isinstance(obj, pynwb.ecephys.ElectricalSeries):
+        return _make_electrical_series_columns(obj)
+
+    if isinstance(obj, pynwb.ophys.RoiResponseSeries):
+        return _make_roi_response_series_columns(obj), {}
+
+    return np.arange(obj.data.shape[1]), {}
+
+
 def _make_tsd_frame(obj, lazy_loading=True):
     """Helper function to make TsdFrame
 
@@ -215,7 +262,6 @@ def _make_tsd_frame(obj, lazy_loading=True):
     pynwb = importlib.import_module("pynwb")
 
     d = obj.data
-    metadata = {}
     if not lazy_loading:
         d = d[:]
 
@@ -224,40 +270,8 @@ def _make_tsd_frame(obj, lazy_loading=True):
     else:
         t = obj.starting_time + np.arange(obj.num_samples) / obj.rate
 
-    if isinstance(obj, pynwb.behavior.SpatialSeries):
-        if obj.data.shape[1] == 2:
-            columns = ["x", "y"]
-        elif obj.data.shape[1] == 3:
-            columns = ["x", "y", "z"]
-        else:
-            columns = np.arange(obj.data.shape[1])
-
-    elif isinstance(obj, pynwb.ecephys.ElectricalSeries):
-        # (channel mapping)
-        try:
-            metadata = (
-                obj.electrodes.to_dataframe()
-                .convert_dtypes()
-                .select_dtypes(exclude="object")
-            )
-            columns = metadata.index
-        except Exception:
-            columns = np.arange(obj.data.shape[1])
-
-    elif isinstance(obj, pynwb.ophys.RoiResponseSeries):
-        # (cell number)
-        try:
-            columns = obj.rois["id"][:]
-        except Exception:
-            columns = np.arange(obj.data.shape[1])
-
-    else:
-        columns = np.arange(obj.data.shape[1])
-
-    if len(columns) >= d.shape[1]:  # Weird sometimes if background ID added
-        columns = columns[0 : obj.data.shape[1]]
-    else:
-        columns = np.arange(obj.data.shape[1])
+    columns, metadata = _make_tsd_frame_columns(obj, pynwb)
+    columns = _normalize_tsd_frame_columns(columns, d.shape[1])
 
     data = nap.TsdFrame(
         t=t,
