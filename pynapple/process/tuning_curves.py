@@ -606,67 +606,97 @@ def compute_mutual_information(tuning_curves, rates=None):
 # =====================================================================================
 
 
+def _validate_feature(feature):
+    if not isinstance(feature, (nap.Tsd, nap.TsdFrame)):
+        raise TypeError("feature should be a Tsd (or TsdFrame with 1 column only)")
+    if isinstance(feature, nap.TsdFrame) and not feature.shape[1] == 1:
+        raise ValueError("feature should be a Tsd (or TsdFrame with 1 column only)")
+
+
+def _validate_features(features):
+    if not isinstance(features, nap.TsdFrame):
+        raise TypeError("features should be a TsdFrame with 2 columns")
+    if not features.shape[1] == 2:
+        raise ValueError("features should have 2 columns only.")
+
+
+def _validate_nb_bins(nb_bins):
+    if not isinstance(nb_bins, (int, tuple)):
+        raise TypeError(
+            "nb_bins should be of type int (or tuple with (int, int) for 2D tuning curves)."
+        )
+
+
+def _validate_group(group):
+    if not isinstance(group, nap.TsGroup):
+        raise TypeError("group should be a TsGroup.")
+
+
+def _validate_ep(ep):
+    if not isinstance(ep, nap.IntervalSet):
+        raise TypeError("ep should be an IntervalSet")
+
+
+def _validate_minmax(minmax):
+    if not isinstance(minmax, Iterable):
+        raise TypeError("minmax should be a tuple/list of 2 numbers")
+
+
+def _validate_dict_ep(dict_ep):
+    if not isinstance(dict_ep, dict):
+        raise TypeError("dict_ep should be a dictionary of IntervalSet")
+    if not all(isinstance(v, nap.IntervalSet) for v in dict_ep.values()):
+        raise TypeError("dict_ep argument should contain only IntervalSet.")
+
+
+def _validate_tc(tc):
+    if not isinstance(tc, (pd.DataFrame, np.ndarray)):
+        raise TypeError(
+            "Argument tc should be of type pandas.DataFrame or numpy.ndarray"
+        )
+
+
+def _validate_dict_tc(dict_tc):
+    if not isinstance(dict_tc, (dict, np.ndarray)):
+        raise TypeError(
+            "Argument dict_tc should be a dictionary of numpy.ndarray or numpy.ndarray."
+        )
+
+
+def _validate_bitssec(bitssec):
+    if not isinstance(bitssec, bool):
+        raise TypeError("Argument bitssec should be of type bool")
+
+
+def _validate_tsdframe(tsdframe):
+    if not isinstance(tsdframe, (nap.Tsd, nap.TsdFrame)):
+        raise TypeError("Argument tsdframe should be of type Tsd or TsdFrame.")
+
+
 def _validate_tuning_inputs(func):
+    validators = {
+        "feature": _validate_feature,
+        "features": _validate_features,
+        "nb_bins": _validate_nb_bins,
+        "group": _validate_group,
+        "ep": _validate_ep,
+        "minmax": _validate_minmax,
+        "dict_ep": _validate_dict_ep,
+        "tc": _validate_tc,
+        "dict_tc": _validate_dict_tc,
+        "bitssec": _validate_bitssec,
+        "tsdframe": _validate_tsdframe,
+    }
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         # Validate each positional argument
         sig = inspect.signature(func)
         kwargs = sig.bind_partial(*args, **kwargs).arguments
 
-        if "feature" in kwargs:
-            if not isinstance(kwargs["feature"], (nap.Tsd, nap.TsdFrame)):
-                raise TypeError(
-                    "feature should be a Tsd (or TsdFrame with 1 column only)"
-                )
-            if (
-                isinstance(kwargs["feature"], nap.TsdFrame)
-                and not kwargs["feature"].shape[1] == 1
-            ):
-                raise ValueError(
-                    "feature should be a Tsd (or TsdFrame with 1 column only)"
-                )
-        if "features" in kwargs:
-            if not isinstance(kwargs["features"], nap.TsdFrame):
-                raise TypeError("features should be a TsdFrame with 2 columns")
-            if not kwargs["features"].shape[1] == 2:
-                raise ValueError("features should have 2 columns only.")
-        if "nb_bins" in kwargs:
-            if not isinstance(kwargs["nb_bins"], (int, tuple)):
-                raise TypeError(
-                    "nb_bins should be of type int (or tuple with (int, int) for 2D tuning curves)."
-                )
-        if "group" in kwargs:
-            if not isinstance(kwargs["group"], nap.TsGroup):
-                raise TypeError("group should be a TsGroup.")
-        if "ep" in kwargs:
-            if not isinstance(kwargs["ep"], nap.IntervalSet):
-                raise TypeError("ep should be an IntervalSet")
-        if "minmax" in kwargs:
-            if not isinstance(kwargs["minmax"], Iterable):
-                raise TypeError("minmax should be a tuple/list of 2 numbers")
-        if "dict_ep" in kwargs:
-            if not isinstance(kwargs["dict_ep"], dict):
-                raise TypeError("dict_ep should be a dictionary of IntervalSet")
-            if not all(
-                isinstance(v, nap.IntervalSet) for v in kwargs["dict_ep"].values()
-            ):
-                raise TypeError("dict_ep argument should contain only IntervalSet.")
-        if "tc" in kwargs:
-            if not isinstance(kwargs["tc"], (pd.DataFrame, np.ndarray)):
-                raise TypeError(
-                    "Argument tc should be of type pandas.DataFrame or numpy.ndarray"
-                )
-        if "dict_tc" in kwargs:
-            if not isinstance(kwargs["dict_tc"], (dict, np.ndarray)):
-                raise TypeError(
-                    "Argument dict_tc should be a dictionary of numpy.ndarray or numpy.ndarray."
-                )
-        if "bitssec" in kwargs:
-            if not isinstance(kwargs["bitssec"], bool):
-                raise TypeError("Argument bitssec should be of type bool")
-        if "tsdframe" in kwargs:
-            if not isinstance(kwargs["tsdframe"], (nap.Tsd, nap.TsdFrame)):
-                raise TypeError("Argument tsdframe should be of type Tsd or TsdFrame.")
+        for name, validator in validators.items():
+            if name in kwargs:
+                validator(kwargs[name])
         # Call the original function with validated inputs
         return func(**kwargs)
 
