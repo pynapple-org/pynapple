@@ -621,6 +621,52 @@ def jitunion(start1, end1, start2, end2):
 
 
 @jit(nopython=True, cache=True)
+def _jitdiff_append(newstart, newend, newmeta, ct, start, end, meta):
+    newstart[ct] = start
+    newend[ct] = end
+    newmeta[ct] = meta
+    return ct + 1
+
+
+@jit(nopython=True, cache=True)
+def _jitdiff_interval(start1, end1, start2, end2, i, j, newstart, newend, newmeta, ct):
+    n = start2.shape[0]
+
+    while j < n and end2[j] <= start1:
+        j += 1
+
+    if j == n:
+        ct = _jitdiff_append(newstart, newend, newmeta, ct, start1, end1, i)
+        return j, ct
+
+    if start2[j] >= end1:
+        ct = _jitdiff_append(newstart, newend, newmeta, ct, start1, end1, i)
+        return j, ct
+
+    if start2[j] > start1:
+        ct = _jitdiff_append(newstart, newend, newmeta, ct, start1, start2[j], i)
+
+    if end2[j] >= end1:
+        return j, ct
+
+    left = end2[j]
+    j += 1
+
+    while j < n and start2[j] < end1:
+        if start2[j] > left:
+            ct = _jitdiff_append(newstart, newend, newmeta, ct, left, start2[j], i)
+        if end2[j] >= end1:
+            return j, ct
+        left = end2[j]
+        j += 1
+
+    if left < end1:
+        ct = _jitdiff_append(newstart, newend, newmeta, ct, left, end1, i)
+
+    return j, ct
+
+
+@jit(nopython=True, cache=True)
 def jitdiff(start1, end1, start2, end2):
     m = start1.shape[0]  # number of intervals in set 1
     n = start2.shape[0]  # number of intervals in set 2
@@ -634,74 +680,10 @@ def jitdiff(start1, end1, start2, end2):
     ct = 0
 
     while i < m:
-        while j < n:  # for all set 2 intervals that end before set 1 interval starts
-            if end2[j] > start1[i]:
-                break
-            j += 1  # increment set 2 index
-
-        if j == n:  # stop if no more intervals in set 2
-            break
-
-        if start2[j] < end1[i]:  # overlap
-            if (
-                start2[j] < start1[i] and end1[i] < end2[j]
-            ):  # if set 1 interval is completely within set 2 interval
-                i += 1  # increment set 1 index
-
-            else:
-                if (
-                    start2[j] > start1[i]
-                ):  # if set 2 interval starts inside set 1 interval
-                    newstart[ct] = start1[i]  # add interval between both starts
-                    newend[ct] = start2[j]
-                    newmeta[ct] = i  # store index of interval in set 1 for metadata
-                    ct += 1
-                    j += 1  # increment set 2 index
-
-                else:  # if set 2 interval starts before set 1 interval
-                    newstart[ct] = end2[j]  # add interval between both ends
-                    newend[ct] = end1[i]
-                    newmeta[ct] = i
-                    j += 1  # increment set 2 index
-
-                while j < n:
-                    if (
-                        start2[j] < end1[i]
-                    ):  # space between adjacent set 2 intervals falls inside set 1 interval
-                        newstart[ct] = end2[
-                            j - 1
-                        ]  # add interval for space between adjacent set 2 intervals
-                        newend[ct] = start2[j]
-                        newmeta[ct] = i
-                        ct += 1
-                        j += 1  # increment set 2 index
-                    else:
-                        break
-
-                if (
-                    end2[j - 1] < end1[i]
-                ):  # previous set 2 interval ends before set 1 interval
-                    newstart[ct] = end2[j - 1]  # add interval between both ends
-                    newend[ct] = end1[i]
-                    newmeta[ct] = i
-                    ct += 1
-                else:  # previous set 2 interval ends after set 1 interval
-                    j -= 1  # decrement set 2 index
-                i += 1  # increment set 1 index
-
-        else:  # no overlap
-            newstart[ct] = start1[i]  # add set 1 interval
-            newend[ct] = end1[i]
-            newmeta[ct] = i
-            ct += 1
-            i += 1  # increment set 1 index
-
-    while i < m:  # add remaining intervals from set 1
-        newstart[ct] = start1[i]
-        newend[ct] = end1[i]
-        newmeta[ct] = i
-        ct += 1
-        i += 1
+        j, ct = _jitdiff_interval(
+            start1[i], end1[i], start2, end2, i, j, newstart, newend, newmeta, ct
+        )
+        i += 1  # increment set 1 index
 
     newstart = newstart[0:ct]
     newend = newend[0:ct]
