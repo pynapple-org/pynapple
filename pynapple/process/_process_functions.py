@@ -71,6 +71,39 @@ def _jitcontinuous_perievent(time_array, time_target_array, starts, ends, window
 
 
 @jit(nopython=True, cache=True)
+def _jitperievent_bin_average(time_target_array, data_target_array, lbound, rbound, i, maxi):
+    i_start = i
+    i_stop = i
+
+    while i_stop < maxi:
+        if time_target_array[i_stop] < rbound:
+            i_stop += 1
+        else:
+            break
+
+    while i_start < i_stop - 1:
+        if time_target_array[i_start] < lbound:
+            i_start += 1
+        else:
+            break
+
+    v = np.sum(data_target_array[i_start:i_stop], 0) / float(i_stop - i_start)
+    return i_start, v
+
+
+@jit(nopython=True, cache=True)
+def _jitperievent_shift_hankel(hankel_array):
+    hankel_array[0:-1] = hankel_array[1:]
+    hankel_array[-1] = 0.0
+
+
+@jit(nopython=True, cache=True)
+def _jitperievent_flush_hankel(new_data_array, hankel_array, count_array, count_index, N):
+    for n in range(N):
+        new_data_array[:, n] += hankel_array * count_array[count_index, n]
+
+
+@jit(nopython=True, cache=True)
 def _jitperievent_triggered_average(
     time_array,
     count_array,
@@ -113,22 +146,8 @@ def _jitperievent_triggered_average(
                 rbound = np.round(lbound + binsize, 9)
 
                 if time_target_array[i] < rbound:
-                    i_start = i
-                    i_stop = i
-
-                    while i_stop < maxi:
-                        if time_target_array[i_stop] < rbound:
-                            i_stop += 1
-                        else:
-                            break
-
-                    while i_start < i_stop - 1:
-                        if time_target_array[i_start] < lbound:
-                            i_start += 1
-                        else:
-                            break
-                    v = np.sum(data_target_array[i_start:i_stop], 0) / float(
-                        i_stop - i_start
+                    i_start, v = _jitperievent_bin_average(
+                        time_target_array, data_target_array, lbound, rbound, i, maxi
                     )
 
                     checknan = np.sum(v)
@@ -136,14 +155,16 @@ def _jitperievent_triggered_average(
                         hankel_array[-1] = v
 
                 if t - t_start >= windows[1]:
-                    for n in range(N):
-                        new_data_array[:, n] += (
-                            hankel_array * count_array[t - windows[1], n]
-                        )
+                    _jitperievent_flush_hankel(
+                        new_data_array,
+                        hankel_array,
+                        count_array,
+                        t - windows[1],
+                        N,
+                    )
 
                 # hankel_array = np.roll(hankel_array, -1, axis=0)
-                hankel_array[0:-1] = hankel_array[1:]
-                hankel_array[-1] = 0.0
+                _jitperievent_shift_hankel(hankel_array)
 
                 t += 1
 
@@ -152,14 +173,16 @@ def _jitperievent_triggered_average(
                 if t == T or time_array[t] > ends[k]:
                     if t - t_start > windows[1]:
                         for j in range(windows[1]):
-                            for n in range(N):
-                                new_data_array[:, n] += (
-                                    hankel_array * count_array[t - windows[1] + j, n]
-                                )
+                            _jitperievent_flush_hankel(
+                                new_data_array,
+                                hankel_array,
+                                count_array,
+                                t - windows[1] + j,
+                                N,
+                            )
 
                             # hankel_array = np.roll(hankel_array, -1, axis=0)
-                            hankel_array[0:-1] = hankel_array[1:]
-                            hankel_array[-1] = 0.0
+                            _jitperievent_shift_hankel(hankel_array)
 
                     hankel_array *= 0.0
                     break
