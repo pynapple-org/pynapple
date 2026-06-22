@@ -12,10 +12,71 @@ from .. import core as nap
 
 
 def _format_decoding_inputs(func):
-    @wraps(func)
-    def wrapper(*args, **kwargs):
+    def _validate_tuning_curves(tuning_curves):
         import xarray as xr
 
+        if not isinstance(tuning_curves, xr.DataArray):
+            raise TypeError(
+                "tuning_curves should be an xarray.DataArray as computed by compute_tuning_curves."
+            )
+
+    def _prepare_data(data, bin_size, epochs, time_units):
+        was_continuous = True
+        if isinstance(data, nap.TsdFrame):
+            actual_bin_size = np.mean(data.time_diff().values)
+            if not isinstance(bin_size, (int, float)):
+                raise ValueError("bin_size should be a number.")
+            if not np.isclose(
+                actual_bin_size,
+                nap.TsIndex.format_timestamps(
+                    np.array([bin_size], dtype=np.float64),
+                    units=time_units,
+                ),
+            )[0]:
+                warnings.warn("passed bin_size is different from actual data bin size.")
+            return data, was_continuous
+
+        if isinstance(data, nap.TsGroup):
+            data = data.count(bin_size, epochs, time_units=time_units)
+            was_continuous = False
+            return data, was_continuous
+
+        raise TypeError("Unknown format for data.")
+
+    def _validate_tuning_curves_and_data(tuning_curves, data):
+        if tuning_curves.sizes["unit"] != data.shape[1]:
+            raise ValueError("Different shapes for tuning_curves and data.")
+        if not np.all(tuning_curves.coords["unit"] == data.columns.values):
+            raise ValueError("Different indices for tuning curves and data keys.")
+
+    def _validate_uniform_prior(tuning_curves, uniform_prior):
+        if not uniform_prior and "occupancy" not in tuning_curves.attrs:
+            raise ValueError(
+                "uniform_prior set to False but no occupancy found in tuning curves."
+            )
+
+    def _apply_smoothing(data, sliding_window_size, epochs, was_continuous, bin_size):
+        if sliding_window_size is None:
+            return data, bin_size
+
+        if not isinstance(sliding_window_size, int):
+            raise ValueError("sliding_window_size should be a integer.")
+        if sliding_window_size < 1:
+            raise ValueError("sliding_window_size should be >= 1.")
+
+        data = data.convolve(
+            np.ones(sliding_window_size),
+            ep=epochs,
+        )
+        if was_continuous:
+            data = data / sliding_window_size
+        else:
+            bin_size = sliding_window_size * bin_size
+
+        return data, bin_size
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
         # Validate each positional argument
         sig = inspect.signature(func)
         bound = sig.bind(*args, **kwargs)
@@ -24,69 +85,31 @@ def _format_decoding_inputs(func):
 
         # check tuning curves
         tuning_curves = kwargs["tuning_curves"]
-        if not isinstance(tuning_curves, xr.DataArray):
-            raise TypeError(
-                "tuning_curves should be an xarray.DataArray as computed by compute_tuning_curves."
-            )
+        _validate_tuning_curves(tuning_curves)
 
         # check data
-        data = kwargs["data"]
-        was_continuous = True
-        if isinstance(data, nap.TsdFrame):
-            # check match bin_size
-            actual_bin_size = np.mean(data.time_diff().values)
-            passed_bin_size = kwargs["bin_size"]
-            if not isinstance(passed_bin_size, (int, float)):
-                raise ValueError("bin_size should be a number.")
-            if not np.isclose(
-                actual_bin_size,
-                nap.TsIndex.format_timestamps(
-                    np.array([passed_bin_size], dtype=np.float64),
-                    units=kwargs["time_units"],
-                ),
-            )[0]:
-                warnings.warn("passed bin_size is different from actual data bin size.")
-        elif isinstance(data, nap.TsGroup):
-            data = data.count(
-                kwargs["bin_size"], kwargs["epochs"], time_units=kwargs["time_units"]
-            )
-            was_continuous = False
-        else:
-            raise TypeError("Unknown format for data.")
+        data, was_continuous = _prepare_data(
+            kwargs["data"],
+            kwargs["bin_size"],
+            kwargs["epochs"],
+            kwargs["time_units"],
+        )
 
         # check match tuning curves and data
-        if tuning_curves.sizes["unit"] != data.shape[1]:
-            raise ValueError("Different shapes for tuning_curves and data.")
-        if not np.all(tuning_curves.coords["unit"] == data.columns.values):
-            raise ValueError("Different indices for tuning curves and data keys.")
-
-        if (
-            "uniform_prior" in kwargs
-            and not kwargs["uniform_prior"]
-            and "occupancy" not in tuning_curves.attrs
-        ):
-            raise ValueError(
-                "uniform_prior set to False but no occupancy found in tuning curves."
-            )
+        _validate_tuning_curves_and_data(tuning_curves, data)
+        _validate_uniform_prior(tuning_curves, kwargs.get("uniform_prior", True))
 
         # smooth
-        sliding_window_size = kwargs["sliding_window_size"]
-        if sliding_window_size is not None:
-            if not isinstance(sliding_window_size, int):
-                raise ValueError("sliding_window_size should be a integer.")
-            if sliding_window_size < 1:
-                raise ValueError("sliding_window_size should be >= 1.")
-            data = data.convolve(
-                np.ones(sliding_window_size),
-                ep=kwargs["epochs"],
-            )
-            if was_continuous:
-                data = data / sliding_window_size
-            else:
-                bin_size = sliding_window_size * kwargs["bin_size"]
-                kwargs["bin_size"] = bin_size
+        data, bin_size = _apply_smoothing(
+            data,
+            kwargs["sliding_window_size"],
+            kwargs["epochs"],
+            was_continuous,
+            kwargs["bin_size"],
+        )
 
         kwargs["data"] = data
+        kwargs["bin_size"] = bin_size
 
         # Call the original function with validated inputs
         return func(**kwargs)
