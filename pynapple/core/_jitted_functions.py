@@ -753,29 +753,18 @@ def _jitfix_iset(start, end):
     ct = 0
 
     while i < m:
-        newstart = start[i]
-        newend = end[i]
-
-        while i < m:
+        while i < m and end[i] <= start[i]:
             if end[i] == start[i]:
                 to_warn[3] = True
-                i += 1
             else:
-                newstart = start[i]
-                newend = end[i]
-                break
-
-        while i < m:
-            if end[i] < start[i]:
                 to_warn[1] = True
-                i += 1
-            else:
-                newstart = start[i]
-                newend = end[i]
-                break
+            i += 1
 
         if i >= m:
             break
+
+        newstart = start[i]
+        newend = end[i]
 
         while i < m - 1:
             if start[i + 1] < end[i]:
@@ -785,10 +774,9 @@ def _jitfix_iset(start, end):
             else:
                 break
 
-        if i < m - 1:
-            if newend == start[i + 1]:
-                to_warn[0] = True
-                newend -= 1.0e-6
+        if i < m - 1 and newend == start[i + 1]:
+            to_warn[0] = True
+            newend -= 1.0e-6
 
         data[ct, 0] = newstart
         data[ct, 1] = newend
