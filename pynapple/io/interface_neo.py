@@ -659,6 +659,29 @@ class NeoSignalInterface:
             return np.concatenate(times_list)
         return np.array([])
 
+    def _empty_range_result(self):
+        """Return an empty array with the correct output shape."""
+        if len(self.shape) == 1:
+            return np.array([], dtype=self.dtype)
+
+        return np.empty((0,) + self.shape[1:], dtype=self.dtype)
+
+    def _load_segment_range(self, seg, seg_idx, local_start, local_stop):
+        """Load a slice from one segment, with time-slice fallback."""
+        signal = self._get_segment_signal(seg)
+
+        try:
+            if hasattr(signal, "load"):
+                signal = signal.load()
+            return signal[local_start:local_stop].magnitude
+        except (MemoryError, AttributeError):
+            # Fall back to time slicing when direct indexing is not available.
+            t_start = self._times_list[seg_idx][local_start]
+            t_stop = self._times_list[seg_idx][
+                min(local_stop, len(self._times_list[seg_idx]) - 1)
+            ]
+            return signal.time_slice(t_start, t_stop).magnitude
+
     def _build_shape(self, signal, total_samples):
         """Build the lazy array shape using total samples and signal tail."""
         if len(signal.shape) == 1:
@@ -722,11 +745,7 @@ class NeoSignalInterface:
             The loaded data
         """
         if start_idx >= stop_idx:
-            # Return empty array with correct shape
-            if len(self.shape) == 1:
-                return np.array([], dtype=self.dtype)
-            else:
-                return np.empty((0,) + self.shape[1:], dtype=self.dtype)
+            return self._empty_range_result()
 
         data_chunks = []
 
@@ -742,34 +761,12 @@ class NeoSignalInterface:
             local_start = max(0, start_idx - seg_start)
             local_stop = min(self._segment_n_samples[seg_idx], stop_idx - seg_start)
 
-            # Load data from this segment
-            if self.is_analog:
-                signal = seg.analogsignals[self._sig_num]
-            else:
-                signal = seg.irregularlysampledsignals[self._sig_num]
-
-            # Try to load with indexing, fall back to time slicing
-            try:
-                if hasattr(signal, "load"):
-                    loaded = signal.load()
-                    chunk = loaded[local_start:local_stop].magnitude
-                else:
-                    chunk = signal[local_start:local_stop].magnitude
-            except (MemoryError, AttributeError):
-                # Fall back to time slicing
-                t_start = self._times_list[seg_idx][local_start]
-                t_stop = self._times_list[seg_idx][
-                    min(local_stop, len(self._times_list[seg_idx]) - 1)
-                ]
-                chunk = signal.time_slice(t_start, t_stop).magnitude
-
-            data_chunks.append(chunk)
+            data_chunks.append(
+                self._load_segment_range(seg, seg_idx, local_start, local_stop)
+            )
 
         if not data_chunks:
-            if len(self.shape) == 1:
-                return np.array([], dtype=self.dtype)
-            else:
-                return np.empty((0,) + self.shape[1:], dtype=self.dtype)
+            return self._empty_range_result()
 
         result = np.concatenate(data_chunks, axis=0)
 
