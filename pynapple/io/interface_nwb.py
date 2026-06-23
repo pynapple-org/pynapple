@@ -421,7 +421,6 @@ class NWBFile(UserDict):
             path = Path(file)
 
             if path.exists():
-                self.path = path
                 self.name = path.stem
                 self.io = NWBHDF5IO(path, "r")
                 self.nwb = self.io.read()
@@ -437,13 +436,10 @@ class NWBFile(UserDict):
         )
 
         # Creating the reverse mapping for the user : key -> full_path and key -> {'id', 'type'}
-        self.key_to_full_path = {v: k for k, v in self.full_path_to_key.items()}
         self.data = {self.full_path_to_key[p]: self.data[p] for p in self.data.keys()}
 
         # Mapping unique path identifier to id
         self.key_to_id = {k: self.data[k]["id"] for k in self.data.keys()}
-
-        self._view = [[k, self.data[k]["type"]] for k in self.data.keys()]
 
         self._lazy_loading = lazy_loading
 
@@ -452,10 +448,11 @@ class NWBFile(UserDict):
     def __str__(self):
         title = self.name if isinstance(self.name, str) else "-"
         headers = ["Keys", "Type"]
+        view = [[k, self.data[k]["type"]] for k in self.data.keys()]
         return (
             title
             + "\n"
-            + tabulate(self._view, headers=headers, tablefmt="mixed_outline")
+            + tabulate(view, headers=headers, tablefmt="mixed_outline")
         )
 
         # self._view = Table(title=self.name)

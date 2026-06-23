@@ -134,9 +134,7 @@ class Folder(UserDict):
             self._basic_view.add("[magenta]" + file.name + " \t|\t NWB file")
 
         # Putting everything together
-        self.data = {**self.npz_files, **self.nwb_files, **self.subfolds}
-
-        UserDict.__init__(self, self.data)
+        super().__init__({**self.npz_files, **self.nwb_files, **self.subfolds})
 
     def __str__(self):
         """View of the object"""

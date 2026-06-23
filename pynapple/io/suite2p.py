@@ -61,7 +61,6 @@ class Suite2P(BaseLoader):
             The path of the session
         """
         path = Path(path)
-        self.basename = path.name
 
         super().__init__(path)
 
@@ -88,7 +87,7 @@ class Suite2P(BaseLoader):
             #################################################################
             dims = nwbfile.acquisition["TwoPhotonSeries"].dimension[:]
             self.ops = {"Ly": dims[0], "Lx": dims[1]}
-            self.rate = nwbfile.acquisition[
+            rate = nwbfile.acquisition[
                 "TwoPhotonSeries"
             ].imaging_plane.imaging_rate
 
@@ -182,10 +181,10 @@ class Suite2P(BaseLoader):
 
                     if ophys[name][pl].timestamps is not None:
                         t = ophys[name][pl].timestamps[:]
-                    else:
-                        t = (np.arange(0, len(d)) / self.rate) + ophys[name][
-                            pl
-                        ].starting_time
+                else:
+                    t = (np.arange(0, len(d)) / rate) + ophys[name][
+                        pl
+                    ].starting_time
 
                     tmp.append(d)
                     timestamps.append(t)

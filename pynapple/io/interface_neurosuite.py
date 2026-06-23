@@ -10,6 +10,7 @@ Handles:
 import re
 import xml.etree.ElementTree as ET
 from collections import defaultdict
+from dataclasses import dataclass
 from pathlib import Path
 
 import numpy as np
@@ -231,6 +232,26 @@ def parse_neuroscope_xml(xml_path):
     return out
 
 
+@dataclass(frozen=True)
+class _NeuroSuiteMetadata:
+    xml_info: dict
+    n_channels: int
+    channel_order: np.ndarray
+    skip: np.ndarray
+    groups: np.ndarray
+    binary_metadata: dict
+    fs_dat: float
+    fs_lfp: float
+
+
+@dataclass(frozen=True)
+class _DiscoveredFiles:
+    dat_files: list[Path]
+    lfp_files: list[Path]
+    spike_groups: dict
+    evt_files: list[Path]
+
+
 class NeuroSuiteIO:
     """Load data from a Neurosuite/Neuroscope session directory.
 
@@ -248,8 +269,8 @@ class NeuroSuiteIO:
     path : str or Path
         Path to the session directory, or to a file inside it.
 
-    Attributes
-    ----------
+    Public properties
+    ------------------
     session_dir : Path
         Resolved session directory.
     basename : str
@@ -260,8 +281,10 @@ class NeuroSuiteIO:
         Sampling rate of the .dat file (Hz).
     fs_lfp : float
         Sampling rate of the .eeg/.lfp file (Hz).
-    channel_groups : dict
-        Mapping of group index to list of channel numbers.
+    channel_order : ndarray
+        Channel ordering as read from the XML.
+    groups : ndarray
+        Channel group index per channel.
     dat_files : list of Path
         Detected .dat files.
     lfp_files : list of Path
@@ -283,34 +306,90 @@ class NeuroSuiteIO:
             self.basename = path.stem.split(".")[0]
 
         # Parse XML
-        self.xml_info = parse_neuroscope_xml(self.session_dir / f"{self.basename}.xml")
-        self.n_channels = self.xml_info["acquisition"]["n_channels"]
-        self.channel_order = np.zeros(self.n_channels, dtype="int")
-        self.skip = np.zeros(self.n_channels, dtype=bool)
-        self.groups = np.zeros(self.n_channels, dtype="int")
+        xml_info = parse_neuroscope_xml(self.session_dir / f"{self.basename}.xml")
+        n_channels = xml_info["acquisition"]["n_channels"]
+        channel_order = np.zeros(n_channels, dtype="int")
+        skip = np.zeros(n_channels, dtype=bool)
+        groups = np.zeros(n_channels, dtype="int")
         count = 0
-        for group_idx, channels in enumerate(
-            self.xml_info["anatomy"]["channel_groups"]
-        ):
+        for group_idx, channels in enumerate(xml_info["anatomy"]["channel_groups"]):
             for ch in channels:
                 ch_id = ch["id"]
-                self.channel_order[count] = ch_id
-                self.skip[ch_id] = ch["skip"]
-                self.groups[ch_id] = group_idx
+                channel_order[count] = ch_id
+                skip[ch_id] = ch["skip"]
+                groups[ch_id] = group_idx
                 count += 1
-        self.binary_metadata = {
-            "anatomy": np.argsort(self.channel_order),  # Different for pynaviz
-            "skip": self.skip,
-            "group": self.groups,
+        binary_metadata = {
+            "anatomy": np.argsort(channel_order),  # Different for pynaviz
+            "skip": skip,
+            "group": groups,
         }
-        self.fs_dat = self.xml_info["acquisition"]["sampling_rate"]
-        self.fs_lfp = self.xml_info["lfp"]["sampling_rate"]
+        self._metadata = _NeuroSuiteMetadata(
+            xml_info=xml_info,
+            n_channels=n_channels,
+            channel_order=channel_order,
+            skip=skip,
+            groups=groups,
+            binary_metadata=binary_metadata,
+            fs_dat=xml_info["acquisition"]["sampling_rate"],
+            fs_lfp=xml_info["lfp"]["sampling_rate"],
+        )
 
         # Discover files
-        self.dat_files = self._find_files(".dat")
-        self.lfp_files = self._find_files(".eeg") or self._find_files(".lfp")
-        self.spike_groups = self._find_spike_groups()
-        self.evt_files = self._find_evt_files()
+        self._files = _DiscoveredFiles(
+            dat_files=self._find_files(".dat"),
+            lfp_files=self._find_files(".eeg") or self._find_files(".lfp"),
+            spike_groups=self._find_spike_groups(),
+            evt_files=self._find_evt_files(),
+        )
+
+    @property
+    def xml_info(self):
+        return self._metadata.xml_info
+
+    @property
+    def n_channels(self):
+        return self._metadata.n_channels
+
+    @property
+    def channel_order(self):
+        return self._metadata.channel_order
+
+    @property
+    def skip(self):
+        return self._metadata.skip
+
+    @property
+    def groups(self):
+        return self._metadata.groups
+
+    @property
+    def binary_metadata(self):
+        return self._metadata.binary_metadata
+
+    @property
+    def fs_dat(self):
+        return self._metadata.fs_dat
+
+    @property
+    def fs_lfp(self):
+        return self._metadata.fs_lfp
+
+    @property
+    def dat_files(self):
+        return self._files.dat_files
+
+    @property
+    def lfp_files(self):
+        return self._files.lfp_files
+
+    @property
+    def spike_groups(self):
+        return self._files.spike_groups
+
+    @property
+    def evt_files(self):
+        return self._files.evt_files
 
     # ------------------------------------------------------------------
     # File discovery helpers

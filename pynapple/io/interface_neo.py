@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import xml.etree.ElementTree as ET
 from collections import UserDict
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -123,6 +124,96 @@ def _get_signal_type(signal) -> type:
         return nap.TsdFrame
     else:
         return nap.TsdTensor
+
+
+@dataclass(frozen=True)
+class _NeoSignalMetadata:
+    """Cached metadata for a Neo signal."""
+
+    is_analog: bool
+    nap_type: type
+    dtype: np.dtype
+    shape: tuple
+    dt: float | None
+    start_time: float
+    end_time: float
+
+
+@dataclass(frozen=True)
+class _NeoSignalCache:
+    """Cached segment layout and timestamps for a Neo signal."""
+
+    times: np.ndarray
+    segment_offsets: np.ndarray
+    segment_n_samples: np.ndarray
+
+
+def _build_neo_signal_layout(signal, block, sig_num) -> tuple[_NeoSignalMetadata, _NeoSignalCache]:
+    """Compute the cached layout for a Neo signal interface."""
+    if isinstance(signal, (neo.AnalogSignal, AnalogSignalProxy)):
+        is_analog = True
+        nap_type = _get_signal_type(signal)
+    elif hasattr(neo, "IrregularlySampledSignal") and isinstance(
+        signal, neo.IrregularlySampledSignal
+    ):
+        is_analog = False
+        nap_type = _get_signal_type(signal)
+    else:
+        raise TypeError(f"Signal type {type(signal)} not recognized.")
+
+    segment_offsets = []
+    segment_n_samples = []
+    times_list = []
+
+    total_samples = 0
+    for seg in block.segments:
+        seg_signal = (
+            seg.analogsignals[sig_num]
+            if is_analog
+            else seg.irregularlysampledsignals[sig_num]
+        )
+
+        n_samples = seg_signal.shape[0]
+        segment_offsets.append(total_samples)
+        segment_n_samples.append(n_samples)
+        total_samples += n_samples
+
+        if hasattr(seg_signal, "times"):
+            times_list.append(seg_signal.times.rescale("s").magnitude)
+        else:
+            times_list.append(
+                np.linspace(
+                    _rescale_to_seconds(seg_signal.t_start),
+                    _rescale_to_seconds(seg_signal.t_stop),
+                    n_samples,
+                    endpoint=False,
+                )
+            )
+
+    times = np.concatenate(times_list) if times_list else np.array([])
+    shape = (
+        (int(total_samples),)
+        if len(signal.shape) == 1
+        else (int(total_samples),) + signal.shape[1:]
+    )
+    dt = (1 / signal.sampling_rate).rescale("s").magnitude if is_analog else None
+
+    return (
+        _NeoSignalMetadata(
+            is_analog=is_analog,
+            nap_type=nap_type,
+            dtype=signal.dtype,
+            shape=shape,
+            dt=dt,
+            start_time=_rescale_to_seconds(signal.t_start),
+            end_time=_rescale_to_seconds(signal.t_stop),
+        ),
+        _NeoSignalCache(
+            times=times,
+            segment_offsets=np.array(segment_offsets),
+            segment_n_samples=np.array(segment_n_samples),
+        ),
+    )
 
 
 def _extract_annotations(obj) -> dict[str, Any]:
@@ -568,80 +659,38 @@ class NeoSignalInterface:
         self.time_support = time_support
         self._block = block
         self._sig_num = sig_num
-
-        # Determine signal type and pynapple mapping
-        if isinstance(signal, (neo.AnalogSignal, AnalogSignalProxy)):
-            self.is_analog = True
-            self.nap_type = _get_signal_type(signal)
-            self._signal_type = "analog"
-        elif hasattr(neo, "IrregularlySampledSignal") and isinstance(
-            signal, neo.IrregularlySampledSignal
-        ):
-            self.is_analog = False  # Irregularly sampled
-            self.nap_type = _get_signal_type(signal)
-            self._signal_type = "irregular"
-        else:
-            raise TypeError(f"Signal type {type(signal)} not recognized.")
-
-        # Store dtype from signal
-        self.dtype = signal.dtype
-
-        # Build segment info and compute total shape across all segments
-        self._segment_offsets = []  # Cumulative sample counts per segment
-        self._segment_n_samples = []  # Number of samples per segment
-        self._times_list = (
-            []
-        )  # Pre-load timestamps per segment (small memory footprint)
-
-        total_samples = 0
-        for seg in block.segments:
-            if self.is_analog:
-                seg_signal = seg.analogsignals[sig_num]
-            else:
-                seg_signal = seg.irregularlysampledsignals[sig_num]
-
-            n_samples = seg_signal.shape[0]
-            self._segment_offsets.append(total_samples)
-            self._segment_n_samples.append(n_samples)
-            total_samples += n_samples
-
-            # Pre-load timestamps (much smaller than data)
-            if hasattr(seg_signal, "times"):
-                self._times_list.append(seg_signal.times.rescale("s").magnitude)
-            else:
-                self._times_list.append(
-                    np.linspace(
-                        _rescale_to_seconds(seg_signal.t_start),
-                        _rescale_to_seconds(seg_signal.t_stop),
-                        n_samples,
-                        endpoint=False,
-                    )
-                )
-
-        self._segment_offsets = np.array(self._segment_offsets)
-        self._segment_n_samples = np.array(self._segment_n_samples)
-
-        # Concatenate all timestamps
-        if self._times_list:
-            self._times = np.concatenate(self._times_list)
-        else:
-            self._times = np.array([])
-
-        # Compute total shape (first dimension is total samples)
-        if len(signal.shape) == 1:
-            self.shape = (int(total_samples),)
-        else:
-            self.shape = (int(total_samples),) + signal.shape[1:]
-
-        # Store timing info
-        if self.is_analog:
-            self.dt = (1 / signal.sampling_rate).rescale("s").magnitude
-
-        self.start_time = _rescale_to_seconds(signal.t_start)
-        self.end_time = _rescale_to_seconds(signal.t_stop)
+        self._meta, self._cache = _build_neo_signal_layout(signal, block, sig_num)
 
     def __repr__(self):
         return f"<NeoSignalInterface: {self.nap_type.__name__}, shape={self.shape}, dtype={self.dtype}>"
+
+    @property
+    def is_analog(self):
+        return self._meta.is_analog
+
+    @property
+    def nap_type(self):
+        return self._meta.nap_type
+
+    @property
+    def dtype(self):
+        return self._meta.dtype
+
+    @property
+    def shape(self):
+        return self._meta.shape
+
+    @property
+    def dt(self):
+        return self._meta.dt
+
+    @property
+    def start_time(self):
+        return self._meta.start_time
+
+    @property
+    def end_time(self):
+        return self._meta.end_time
 
     @property
     def ndim(self):
@@ -651,7 +700,7 @@ class NeoSignalInterface:
     @property
     def times(self):
         """Pre-loaded timestamps for all segments (in seconds)."""
-        return self._times
+        return self._cache.times
 
     def __len__(self):
         """Return the number of samples (first dimension of shape)."""
@@ -678,8 +727,8 @@ class NeoSignalInterface:
             raise IndexError(f"Index {idx} out of bounds for size {len(self)}")
 
         # Find segment using binary search on offsets
-        seg_idx = np.searchsorted(self._segment_offsets, idx, side="right") - 1
-        local_idx = idx - self._segment_offsets[seg_idx]
+        seg_idx = np.searchsorted(self._cache.segment_offsets, idx, side="right") - 1
+        local_idx = idx - self._cache.segment_offsets[seg_idx]
         return seg_idx, local_idx
 
     def _load_data_range(self, start_idx, stop_idx, step=1):
@@ -709,8 +758,8 @@ class NeoSignalInterface:
         data_chunks = []
 
         for seg_idx, seg in enumerate(self._block.segments):
-            seg_start = self._segment_offsets[seg_idx]
-            seg_end = seg_start + self._segment_n_samples[seg_idx]
+            seg_start = self._cache.segment_offsets[seg_idx]
+            seg_end = seg_start + self._cache.segment_n_samples[seg_idx]
 
             # Check if this segment overlaps with requested range
             if stop_idx <= seg_start or start_idx >= seg_end:
@@ -718,7 +767,7 @@ class NeoSignalInterface:
 
             # Calculate local indices within this segment
             local_start = max(0, start_idx - seg_start)
-            local_stop = min(self._segment_n_samples[seg_idx], stop_idx - seg_start)
+            local_stop = min(self._cache.segment_n_samples[seg_idx], stop_idx - seg_start)
 
             # Load data from this segment
             if self.is_analog:
@@ -735,10 +784,9 @@ class NeoSignalInterface:
                     chunk = signal[local_start:local_stop].magnitude
             except (MemoryError, AttributeError):
                 # Fall back to time slicing
-                t_start = self._times_list[seg_idx][local_start]
-                t_stop = self._times_list[seg_idx][
-                    min(local_stop, len(self._times_list[seg_idx]) - 1)
-                ]
+                seg_times = self._cache.times[seg_start:seg_end]
+                t_start = seg_times[local_start]
+                t_stop = seg_times[min(local_stop, len(seg_times) - 1)]
                 chunk = signal.time_slice(t_start, t_stop).magnitude
 
             data_chunks.append(chunk)
