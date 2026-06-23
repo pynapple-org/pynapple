@@ -320,17 +320,71 @@ def jitremove_nan(time_array, index_nan):
 # Time Data functions
 ################################
 @jit(nopython=True, cache=True)
+def _jitthreshold_mask(data_array, thr, method):
+    if method == "above":
+        return data_array > thr
+    elif method == "below":
+        return data_array < thr
+    elif method == "aboveequal":
+        return data_array >= thr
+    else:
+        return data_array <= thr
+
+
+@jit(nopython=True, cache=True)
+def _jitthreshold_transition(
+    time_array,
+    ix,
+    ix_start,
+    ix_end,
+    new_start,
+    new_end,
+    t,
+    k,
+    ends,
+):
+    if time_array[t] > ends[k]:
+        k += 1
+        if ix[t - 1]:
+            ix_end[t - 1] = 1
+            new_end[t - 1] = time_array[t - 1]
+        if ix[t]:
+            ix_start[t] = 1
+            new_start[t] = time_array[t]
+    else:
+        if not ix[t - 1] and ix[t]:
+            ix_start[t] = 1
+            new_start[t] = time_array[t] - (time_array[t] - time_array[t - 1]) / 2
+
+        if ix[t - 1] and not ix[t]:
+            ix_end[t] = 1
+            new_end[t] = time_array[t] - (time_array[t] - time_array[t - 1]) / 2
+
+    return k
+
+
+@jit(nopython=True, cache=True)
+def _jitthreshold_last_point(time_array, ix, ix_start, ix_end, new_start, new_end, t):
+    if ix[t] and ix[t - 1]:
+        ix_end[t] = 1
+        new_end[t] = time_array[t]
+
+    if ix[t] and not ix[t - 1]:
+        ix_start[t] = 1
+        ix_end[t] = 1
+        new_start[t] = time_array[t] - (time_array[t] - time_array[t - 1]) / 2
+        new_end[t] = time_array[t]
+
+    elif ix[t - 1] and not ix[t]:
+        ix_end[t] = 1
+        new_end[t] = time_array[t] - (time_array[t] - time_array[t - 1]) / 2
+
+
+@jit(nopython=True, cache=True)
 def jitthreshold(time_array, data_array, starts, ends, thr, method="above"):
     n = time_array.shape[0]
 
-    if method == "above":
-        ix = data_array > thr
-    elif method == "below":
-        ix = data_array < thr
-    elif method == "aboveequal":
-        ix = data_array >= thr
-    elif method == "belowequal":
-        ix = data_array <= thr
+    ix = _jitthreshold_mask(data_array, thr, method)
 
     k = 0
     t = 0
@@ -359,40 +413,22 @@ def jitthreshold(time_array, data_array, starts, ends, thr, method="above"):
     t += 1
 
     while t < n - 1:
-        # transition
-        if time_array[t] > ends[k]:
-            k += 1
-            if ix[t - 1]:
-                ix_end[t - 1] = 1
-                new_end[t - 1] = time_array[t - 1]
-            if ix[t]:
-                ix_start[t] = 1
-                new_start[t] = time_array[t]
-
-        else:
-            if not ix[t - 1] and ix[t]:
-                ix_start[t] = 1
-                new_start[t] = time_array[t] - (time_array[t] - time_array[t - 1]) / 2
-
-            if ix[t - 1] and not ix[t]:
-                ix_end[t] = 1
-                new_end[t] = time_array[t] - (time_array[t] - time_array[t - 1]) / 2
-
+        k = _jitthreshold_transition(
+            time_array,
+            ix,
+            ix_start,
+            ix_end,
+            new_start,
+            new_end,
+            t,
+            k,
+            ends,
+        )
         t += 1
 
-    if ix[t] and ix[t - 1]:
-        ix_end[t] = 1
-        new_end[t] = time_array[t]
-
-    if ix[t] and not ix[t - 1]:
-        ix_start[t] = 1
-        ix_end[t] = 1
-        new_start[t] = time_array[t] - (time_array[t] - time_array[t - 1]) / 2
-        new_end[t] = time_array[t]
-
-    elif ix[t - 1] and not ix[t]:
-        ix_end[t] = 1
-        new_end[t] = time_array[t] - (time_array[t] - time_array[t - 1]) / 2
+    _jitthreshold_last_point(
+        time_array, ix, ix_start, ix_end, new_start, new_end, t
+    )
 
     new_time_array = time_array[ix]
     new_data_array = data_array[ix]
@@ -543,6 +579,146 @@ def jitintersect(start1, end1, start2, end2):
 
     return (newstart, newend, newmeta)
 
+@jit(nopython=True, cache=True)
+def _jitunion_copy_leading(start1_i, start2, end2, j, newstart, newend, ct):
+    n = start2.shape[0]
+    while j < n:
+        if end2[j] > start1_i:
+            break
+        newstart[ct] = start2[j]
+        newend[ct] = end2[j]
+        ct += 1
+        j += 1
+
+    return j, ct
+
+
+@jit(nopython=True, cache=True)
+def _jitunion_append_remaining(start, end, idx, newstart, newend, ct):
+    n = start.shape[0]
+    while idx < n:
+        newstart[ct] = start[idx]
+        newend[ct] = end[idx]
+        ct += 1
+        idx += 1
+
+    return idx, ct
+
+
+@jit(nopython=True, cache=True)
+def _jitunion_merge_overlap(start1, end1, start2, end2, i, j, newstart, newend, ct):
+    m = start1.shape[0]
+    n = start2.shape[0]
+
+    newstart[ct] = min(start1[i], start2[j])
+
+    while i < m and j < n:
+        newend[ct] = max(end1[i], end2[j])
+
+        if end1[i] < end2[j]:
+            i += 1
+        else:
+            j += 1
+
+        if i == m:
+            j += 1
+            ct += 1
+            break
+
+        if j == n:
+            i += 1
+            ct += 1
+            break
+
+        if end2[j] < start1[i]:
+            j += 1
+            ct += 1
+            break
+
+        if end1[i] < start2[j]:
+            i += 1
+            ct += 1
+            break
+
+    return i, j, ct
+
+
+@jit(nopython=True, cache=True)
+def _jitdiff_process_overlap(
+    start1, end1, start2, end2, i, j, newstart, newend, newmeta, ct
+):
+    n = start2.shape[0]
+
+    if start2[j] < start1[i] and end1[i] < end2[j]:
+        i += 1
+        return i, j, ct
+
+    if start2[j] > start1[i]:
+        newstart[ct] = start1[i]
+        newend[ct] = start2[j]
+        newmeta[ct] = i
+        ct += 1
+        j += 1
+    else:
+        newstart[ct] = end2[j]
+        newend[ct] = end1[i]
+        newmeta[ct] = i
+        j += 1
+
+    while j < n:
+        if start2[j] < end1[i]:
+            newstart[ct] = end2[j - 1]
+            newend[ct] = start2[j]
+            newmeta[ct] = i
+            ct += 1
+            j += 1
+        else:
+            break
+
+    if end2[j - 1] < end1[i]:
+        newstart[ct] = end2[j - 1]
+        newend[ct] = end1[i]
+        newmeta[ct] = i
+        ct += 1
+    else:
+        j -= 1
+
+    i += 1
+    return i, j, ct
+
+
+@jit(nopython=True, cache=True)
+def _jitdiff_advance_to_overlap(start2, end2, j, start1_i):
+    n = start2.shape[0]
+    while j < n:
+        if end2[j] > start1_i:
+            break
+        j += 1
+
+    return j
+
+
+@jit(nopython=True, cache=True)
+def _jitdiff_write_interval(start, end, idx, newstart, newend, newmeta, ct):
+    newstart[ct] = start[idx]
+    newend[ct] = end[idx]
+    newmeta[ct] = idx
+
+    return ct + 1
+
+
+@jit(nopython=True, cache=True)
+def _jitdiff_append_remaining(start, end, idx, newstart, newend, newmeta, ct):
+    n = start.shape[0]
+    while idx < n:
+        newstart[ct] = start[idx]
+        newend[ct] = end[idx]
+        newmeta[ct] = idx
+        ct += 1
+        idx += 1
+
+    return idx, ct
+
 
 @jit(nopython=True, cache=True)
 def jitunion(start1, end1, start2, end2):
@@ -557,69 +733,23 @@ def jitunion(start1, end1, start2, end2):
     ct = 0
 
     while i < m:
-        while j < n:  # all set 2 intervals that start before set 1 interval
-            if end2[j] > start1[i]:
-                break
-            newstart[ct] = start2[j]  # add set 2 interval
-            newend[ct] = end2[j]
-            ct += 1
-            j += 1  # increment set 2 index
+        j, ct = _jitunion_copy_leading(start1[i], start2, end2, j, newstart, newend, ct)
 
         if j == n:
             break
 
-        if start2[j] < end1[i]:  # overlap
-            newstart[ct] = min(
-                start1[i], start2[j]
-            )  # start of interval is whichever occurs first
-
-            while i < m and j < n:
-                newend[ct] = max(
-                    end1[i], end2[j]
-                )  # end of interval is whichever occurs last
-
-                if end1[i] < end2[j]:
-                    i += 1  # incremet set 1 index if it ends first
-                else:
-                    j += 1  # increment set 2 index if it ends first
-
-                if i == m:  # stop if no more intervals in set 1
-                    j += 1  # increment set 2 index
-                    ct += 1
-                    break
-
-                if j == n:  # stop if no more intervals in set 2
-                    i += 1  # increment set 1 index
-                    ct += 1
-                    break
-
-                # stop if end of overlap
-                if end2[j] < start1[i]:  # set 2 interval comes first
-                    j += 1  # increment set 2 index
-                    ct += 1
-                    break
-                elif end1[i] < start2[j]:  # set 1 interval comes first
-                    i += 1  # increment set 1 index
-                    ct += 1
-                    break
-
-        else:  # no overlap
-            newstart[ct] = start1[i]  # add set 1 interval
+        if start2[j] < end1[i]:
+            i, j, ct = _jitunion_merge_overlap(
+                start1, end1, start2, end2, i, j, newstart, newend, ct
+            )
+        else:
+            newstart[ct] = start1[i]
             newend[ct] = end1[i]
             ct += 1
-            i += 1  # increment set 1 index
+            i += 1
 
-    while i < m:  # add remaining intervals from set 1
-        newstart[ct] = start1[i]
-        newend[ct] = end1[i]
-        ct += 1
-        i += 1
-
-    while j < n:  # add remaining intervals from set 2
-        newstart[ct] = start2[j]
-        newend[ct] = end2[j]
-        ct += 1
-        j += 1
+    i, ct = _jitunion_append_remaining(start1, end1, i, newstart, newend, ct)
+    j, ct = _jitunion_append_remaining(start2, end2, j, newstart, newend, ct)
 
     newstart = newstart[0:ct]
     newend = newend[0:ct]
@@ -641,74 +771,22 @@ def jitdiff(start1, end1, start2, end2):
     ct = 0
 
     while i < m:
-        while j < n:  # for all set 2 intervals that end before set 1 interval starts
-            if end2[j] > start1[i]:
-                break
-            j += 1  # increment set 2 index
+        j = _jitdiff_advance_to_overlap(start2, end2, j, start1[i])
 
-        if j == n:  # stop if no more intervals in set 2
+        if j == n:
             break
 
-        if start2[j] < end1[i]:  # overlap
-            if (
-                start2[j] < start1[i] and end1[i] < end2[j]
-            ):  # if set 1 interval is completely within set 2 interval
-                i += 1  # increment set 1 index
+        if start2[j] < end1[i]:
+            i, j, ct = _jitdiff_process_overlap(
+                start1, end1, start2, end2, i, j, newstart, newend, newmeta, ct
+            )
+        else:
+            ct = _jitdiff_write_interval(
+                start1, end1, i, newstart, newend, newmeta, ct
+            )
+            i += 1
 
-            else:
-                if (
-                    start2[j] > start1[i]
-                ):  # if set 2 interval starts inside set 1 interval
-                    newstart[ct] = start1[i]  # add interval between both starts
-                    newend[ct] = start2[j]
-                    newmeta[ct] = i  # store index of interval in set 1 for metadata
-                    ct += 1
-                    j += 1  # increment set 2 index
-
-                else:  # if set 2 interval starts before set 1 interval
-                    newstart[ct] = end2[j]  # add interval between both ends
-                    newend[ct] = end1[i]
-                    newmeta[ct] = i
-                    j += 1  # increment set 2 index
-
-                while j < n:
-                    if (
-                        start2[j] < end1[i]
-                    ):  # space between adjacent set 2 intervals falls inside set 1 interval
-                        newstart[ct] = end2[
-                            j - 1
-                        ]  # add interval for space between adjacent set 2 intervals
-                        newend[ct] = start2[j]
-                        newmeta[ct] = i
-                        ct += 1
-                        j += 1  # increment set 2 index
-                    else:
-                        break
-
-                if (
-                    end2[j - 1] < end1[i]
-                ):  # previous set 2 interval ends before set 1 interval
-                    newstart[ct] = end2[j - 1]  # add interval between both ends
-                    newend[ct] = end1[i]
-                    newmeta[ct] = i
-                    ct += 1
-                else:  # previous set 2 interval ends after set 1 interval
-                    j -= 1  # decrement set 2 index
-                i += 1  # increment set 1 index
-
-        else:  # no overlap
-            newstart[ct] = start1[i]  # add set 1 interval
-            newend[ct] = end1[i]
-            newmeta[ct] = i
-            ct += 1
-            i += 1  # increment set 1 index
-
-    while i < m:  # add remaining intervals from set 1
-        newstart[ct] = start1[i]
-        newend[ct] = end1[i]
-        newmeta[ct] = i
-        ct += 1
-        i += 1
+    i, ct = _jitdiff_append_remaining(start1, end1, i, newstart, newend, newmeta, ct)
 
     newstart = newstart[0:ct]
     newend = newend[0:ct]

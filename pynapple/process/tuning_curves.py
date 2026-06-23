@@ -183,17 +183,55 @@ def compute_tuning_curves(
             bin_edges:  [array([0.  , 0.09, 0.18, 0.27, 0.36, 0.45, 0.54, 0.63, 0.72,...
             fs:         10.0
     """
-    import xarray as xr
+    data, features, feature_names, fs, range = _validate_tuning_curves_inputs(
+        data=data,
+        features=features,
+        feature_names=feature_names,
+        epochs=epochs,
+        fs=fs,
+        range=range,
+        return_pandas=return_pandas,
+        return_counts=return_counts,
+    )
+    occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
+    keys = _get_tuning_curve_keys(data)
+    tcs = _compute_tuning_curve_values(
+        data=data,
+        features=features,
+        occupancy=occupancy,
+        bin_edges=bin_edges,
+        keys=keys,
+        fs=fs,
+        return_counts=return_counts,
+    )
+    tcs = _build_tuning_curve_dataarray(
+        tcs=tcs,
+        occupancy=occupancy,
+        bin_edges=bin_edges,
+        keys=keys,
+        feature_names=feature_names,
+        fs=fs,
+        data=data,
+    )
+    return tcs.to_pandas().T if return_pandas else tcs
 
-    # check data
+
+def _validate_tuning_curves_inputs(
+    data,
+    features,
+    feature_names,
+    epochs,
+    fs,
+    range,
+    return_pandas,
+    return_counts,
+):
     if not isinstance(data, (nap.TsdFrame, nap.TsGroup, nap.Ts, nap.Tsd)):
         raise TypeError("data should be a TsdFrame, TsGroup, Ts, or Tsd.")
 
-    # check features
     if not isinstance(features, (nap.TsdFrame, nap.Tsd)):
         raise TypeError("features should be a Tsd or TsdFrame.")
 
-    # check feature names
     if feature_names is None:
         feature_names = (
             features.columns if isinstance(features, nap.TsdFrame) else ["0"]
@@ -210,7 +248,6 @@ def compute_tuning_curves(
         ):
             raise ValueError("feature_names should match the number of features.")
 
-    # check epochs
     if epochs is None:
         epochs = features.time_support
     elif isinstance(epochs, nap.IntervalSet):
@@ -219,13 +256,11 @@ def compute_tuning_curves(
         raise TypeError("epochs should be an IntervalSet.")
     data = data.restrict(epochs)
 
-    # check fs
     if fs is None:
         fs = 1 / np.mean(features.time_diff(epochs=epochs).values)
     if not isinstance(fs, (int, float)):
         raise TypeError("fs should be a number (int or float)")
 
-    # check range
     if range is not None and isinstance(range, tuple):
         if features.ndim == 1 or features.shape[1] == 1:
             range = [range]
@@ -234,7 +269,6 @@ def compute_tuning_curves(
                 "range should be a sequence of tuples, one for each feature."
             )
 
-    # check return_pandas
     if (
         return_pandas != 1
         and return_pandas != 0
@@ -242,7 +276,6 @@ def compute_tuning_curves(
     ):
         raise TypeError("return_pandas should be a boolean.")
 
-    # check return_counts
     if (
         return_counts != 1
         and return_counts != 0
@@ -250,18 +283,24 @@ def compute_tuning_curves(
     ):
         raise TypeError("return_counts should be a boolean.")
 
-    # occupancy
-    occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
+    return data, features, feature_names, fs, range
 
-    # tuning curves
-    keys = (
-        data.keys()
-        if isinstance(data, nap.TsGroup)
-        else data.columns if isinstance(data, nap.TsdFrame) else [0]
-    )
+
+def _get_tuning_curve_keys(data):
+    return data.keys() if isinstance(data, nap.TsGroup) else data.columns if isinstance(data, nap.TsdFrame) else [0]
+
+
+def _compute_tuning_curve_values(
+    data,
+    features,
+    occupancy,
+    bin_edges,
+    keys,
+    fs,
+    return_counts,
+):
     tcs = np.zeros([len(keys), *occupancy.shape])
     if isinstance(data, (nap.TsGroup, nap.Ts)):
-        # SPIKES
         if isinstance(data, nap.Ts):
             data = nap.TsGroup({0: data})
         for i, n in enumerate(keys):
@@ -276,27 +315,40 @@ def compute_tuning_curves(
         with np.errstate(divide="ignore", invalid="ignore"):
             if not return_counts:
                 tcs = (tcs / occupancy) * fs
-    else:
-        # RATES
-        values = data.value_from(features)
-        if isinstance(data, nap.Tsd):
-            data = np.expand_dims(data.values, -1)
-        counts = np.histogramdd(values, bins=bin_edges)[0]
-        counts[counts == 0] = np.nan
-        for i, n in enumerate(keys):
-            tcs[i] = np.histogramdd(
-                values,
-                weights=data[:, i],
-                bins=bin_edges,
-            )[0]
-        tcs /= counts
-        tcs[np.isnan(tcs)] = 0.0
-        tcs[:, occupancy == 0.0] = np.nan
+        return tcs
+
+    values = data.value_from(features)
+    if isinstance(data, nap.Tsd):
+        data = np.expand_dims(data.values, -1)
+    counts = np.histogramdd(values, bins=bin_edges)[0]
+    counts[counts == 0] = np.nan
+    for i, n in enumerate(keys):
+        tcs[i] = np.histogramdd(
+            values,
+            weights=data[:, i],
+            bins=bin_edges,
+        )[0]
+    tcs /= counts
+    tcs[np.isnan(tcs)] = 0.0
+    tcs[:, occupancy == 0.0] = np.nan
+    return tcs
+
+
+def _build_tuning_curve_dataarray(
+    tcs,
+    occupancy,
+    bin_edges,
+    keys,
+    feature_names,
+    fs,
+    data,
+):
+    import xarray as xr
 
     attrs = {"occupancy": occupancy, "bin_edges": bin_edges, "fs": fs}
     if isinstance(data, nap.TsGroup):
         attrs["rates"] = data.rates
-    tcs = xr.DataArray(
+    return xr.DataArray(
         tcs,
         coords={
             "unit": keys,
@@ -307,10 +359,6 @@ def compute_tuning_curves(
         },
         attrs=attrs,
     )
-    if return_pandas:
-        return tcs.to_pandas().T
-    else:
-        return tcs
 
 
 def compute_response_per_epoch(data, epochs_dict, return_pandas=False):

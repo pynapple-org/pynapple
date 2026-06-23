@@ -245,6 +245,120 @@ def compute_hilbert_phase(data):
     return phase
 
 
+def _validate_detect_oscillatory_events_inputs(
+    data,
+    epochs,
+    frequency_band,
+    threshold_band,
+    duration_band,
+    min_interval,
+    fs,
+    sliding_window_size,
+):
+    if not isinstance(data, nap.Tsd):
+        raise TypeError(f"`data` must be `Tsd`, got {type(data)}")
+
+    if not isinstance(epochs, nap.IntervalSet):
+        raise TypeError(f"`epochs` must be `IntervalSet`, got {type(epochs)}")
+
+    def _check_tuple(name, val):
+        if not isinstance(val, tuple):
+            raise TypeError(f"`{name}` must be a tuple, got {type(val)}")
+        if len(val) != 2:
+            raise ValueError(f"`{name}` must have length 2, got {len(val)}")
+        if not all(isinstance(x, numbers.Real) for x in val):
+            raise TypeError(f"`{name}` must contain numeric values")
+        if val[0] >= val[1]:
+            raise ValueError(f"`{name}` must be (min, max) with min < max")
+
+    _check_tuple("frequency_band", frequency_band)
+    _check_tuple("threshold_band", threshold_band)
+    _check_tuple("duration_band", duration_band)
+
+    if not isinstance(min_interval, numbers.Real):
+        raise TypeError("`min_interval` must be a number")
+    if min_interval < 0:
+        raise ValueError("`min_interval` must be >= 0")
+
+    if fs is not None:
+        if not isinstance(fs, numbers.Real):
+            raise TypeError("`fs` must be a number or None")
+        if fs <= 0:
+            raise ValueError("`fs` must be > 0")
+    else:
+        fs = data.rate
+
+    if not isinstance(sliding_window_size, int):
+        raise TypeError("`sliding_window_size` must be an integer")
+    if sliding_window_size <= 0:
+        raise ValueError("`sliding_window_size` must be > 0")
+
+    return fs
+
+
+def _compute_smoothed_envelope(data, epochs, frequency_band, fs, sliding_window_size):
+    data = data.restrict(epochs)
+    filtered = nap.apply_bandpass_filter(data, frequency_band, fs)
+    envelope = nap.compute_hilbert_envelope(filtered)
+
+    window = np.ones(sliding_window_size) / sliding_window_size
+    smoothed = envelope.convolve(window)
+    zscored_smoothed = (smoothed - smoothed.mean()) / smoothed.std()
+    return envelope, zscored_smoothed
+
+
+def _extract_oscillatory_epochs(
+    zscored_smoothed, threshold_band, duration_band, min_interval
+):
+    import warnings
+
+    # Thresholding may emit a warning when some epochs have no duration.
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            "ignore",
+            message="Some epochs have no duration",
+            category=UserWarning,
+        )
+        above = zscored_smoothed.threshold(threshold_band[0], method="above")
+        thresholded = above.threshold(threshold_band[1], method="below")
+
+    osc_ep = thresholded.time_support
+    osc_ep = osc_ep.drop_short_intervals(duration_band[0], time_units="s")
+    osc_ep = osc_ep.drop_long_intervals(duration_band[1], time_units="s")
+    return osc_ep.merge_close_intervals(min_interval, time_units="s")
+
+
+def _build_oscillatory_event_metadata(envelope, osc_ep):
+    powers = []
+    amplitudes = []
+    peak_times = []
+
+    for s, e in osc_ep.values:
+        seg = envelope.get(s, e)
+        if len(seg) == 0:
+            powers.append(np.nan)
+            amplitudes.append(np.nan)
+            peak_times.append(np.nan)
+            continue
+
+        power = np.mean(seg.values**2)
+        power_db = 10 * np.log10(power) if power > 0 else np.nan
+
+        amplitude = np.max(seg.values)
+        peak_idx = np.argmax(seg.values)
+        peak_time = seg.index.values[peak_idx]
+
+        powers.append(power_db)
+        amplitudes.append(amplitude)
+        peak_times.append(peak_time)
+
+    return {
+        "power": powers,
+        "amplitude": amplitudes,
+        "peak_time": peak_times,
+    }
+
+
 def detect_oscillatory_events(
     data,
     epochs,
@@ -286,111 +400,23 @@ def detect_oscillatory_events(
         The interval set of detected events with metadata containing
         the power, amplitude, and peak_time
     """
-    import warnings
+    fs = _validate_detect_oscillatory_events_inputs(
+        data,
+        epochs,
+        frequency_band,
+        threshold_band,
+        duration_band,
+        min_interval,
+        fs,
+        sliding_window_size,
+    )
 
-    if not isinstance(data, nap.Tsd):
-        raise TypeError(f"`data` must be `Tsd`, got {type(data)}")
-
-    if not isinstance(epochs, nap.IntervalSet):
-        raise TypeError(f"`epochs` must be `IntervalSet`, got {type(epochs)}")
-
-    def _check_tuple(name, val):
-        if not isinstance(val, tuple):
-            raise TypeError(f"`{name}` must be a tuple, got {type(val)}")
-        if len(val) != 2:
-            raise ValueError(f"`{name}` must have length 2, got {len(val)}")
-        if not all(isinstance(x, numbers.Real) for x in val):
-            raise TypeError(f"`{name}` must contain numeric values")
-        if val[0] >= val[1]:
-            raise ValueError(f"`{name}` must be (min, max) with min < max")
-
-    _check_tuple("frequency_band", frequency_band)
-    _check_tuple("threshold_band", threshold_band)
-    _check_tuple("duration_band", duration_band)
-
-    if not isinstance(min_interval, numbers.Real):
-        raise TypeError("`min_interval` must be a number")
-    if min_interval < 0:
-        raise ValueError("`min_interval` must be >= 0")
-
-    if fs is not None:
-        if not isinstance(fs, numbers.Real):
-            raise TypeError("`fs` must be a number or None")
-        if fs <= 0:
-            raise ValueError("`fs` must be > 0")
-    else:
-        fs = data.rate
-
-    if not isinstance(sliding_window_size, int):
-        raise TypeError("`sliding_window_size` must be an integer")
-    if sliding_window_size <= 0:
-        raise ValueError("`sliding_window_size` must be > 0")
-
-    data = data.restrict(epochs)
-
-    # Frequency filter
-    filtered = nap.apply_bandpass_filter(data, frequency_band, fs)
-
-    # Compute envelope
-    envelope = nap.compute_hilbert_envelope(filtered)
-
-    # Smooth
-    window = np.ones(sliding_window_size) / sliding_window_size
-    smoothed = envelope.convolve(window)
-
-    # Z-score
-    zscored_smoothed = (smoothed - smoothed.mean()) / smoothed.std()
-
-    # Detect oscillation periods by thresholding normalized signal
-    with warnings.catch_warnings():
-        warnings.filterwarnings(
-            "ignore",
-            message="Some epochs have no duration",
-            category=UserWarning,
-        )
-        zscored_smoothed_above = zscored_smoothed.threshold(
-            threshold_band[0], method="above"
-        )
-        zscored_smoothed_thresholded = zscored_smoothed_above.threshold(
-            threshold_band[1], method="below"
-        )
-
-    # Exclude oscillations where min_duration < length < max_duration
-    osc_ep = zscored_smoothed_thresholded.time_support
-    osc_ep = osc_ep.drop_short_intervals(duration_band[0], time_units="s")
-    osc_ep = osc_ep.drop_long_intervals(duration_band[1], time_units="s")
-
-    # Merge if inter-oscillation period is too short
-    osc_ep = osc_ep.merge_close_intervals(min_interval, time_units="s")
-
-    # Compute power, amplitude, and peak_time for each interval
-    powers = []
-    amplitudes = []
-    peak_times = []
-
-    for s, e in osc_ep.values:
-        seg = envelope.get(s, e)
-        if len(seg) == 0:
-            powers.append(np.nan)
-            amplitudes.append(np.nan)
-            peak_times.append(np.nan)
-            continue
-
-        power = np.mean(seg.values**2)
-        power_db = 10 * np.log10(power) if power > 0 else np.nan
-
-        amplitude = np.max(seg.values)
-        peak_idx = np.argmax(seg.values)
-        peak_time = seg.index.values[peak_idx]
-
-        powers.append(power_db)
-        amplitudes.append(amplitude)
-        peak_times.append(peak_time)
-
-    metadata = {
-        "power": powers,
-        "amplitude": amplitudes,
-        "peak_time": peak_times,
-    }
+    envelope, zscored_smoothed = _compute_smoothed_envelope(
+        data, epochs, frequency_band, fs, sliding_window_size
+    )
+    osc_ep = _extract_oscillatory_epochs(
+        zscored_smoothed, threshold_band, duration_band, min_interval
+    )
+    metadata = _build_oscillatory_event_metadata(envelope, osc_ep)
 
     return nap.IntervalSet(start=osc_ep.start, end=osc_ep.end, metadata=metadata)

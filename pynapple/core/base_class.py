@@ -486,6 +486,80 @@ class _Base(abc.ABC):
             start, end=end, mode=mode, n_points=None, time_unit=time_unit
         )
 
+    def _validate_slice_args(self, start, end, mode, n_points):
+        if not isinstance(start, Number):
+            raise ValueError(
+                f"'start' must be an int or a float. Type {type(start)} provided instead!"
+            )
+
+        if n_points is not None and not isinstance(n_points, int):
+            raise TypeError(
+                f"'n_points' must be of type int or None. Type {type(n_points)} provided instead!"
+            )
+
+        if end is None and n_points:
+            raise ValueError("'n_points' can be used only when 'end' is specified!")
+
+        if mode not in ["before_t", "after_t", "closest_t", "restrict"]:
+            raise ValueError(
+                "'mode' only accepts 'before_t', 'after_t', 'closest_t' or 'restrict'."
+            )
+
+        if mode == "restrict" and n_points:
+            raise ValueError(
+                "Fixing the number of time points is incompatible with 'restrict' mode."
+            )
+
+        if end is not None and not isinstance(end, Number):
+            raise ValueError(
+                f"'end' must be an int or a float. Type {type(end)} provided instead!"
+            )
+
+    def _format_timestamp(self, timestamp, time_unit):
+        return TsIndex.format_timestamps(np.array([timestamp]), time_unit)[0]
+
+    def _resolve_start_index(self, start, mode):
+        idx_start = np.searchsorted(self.t, start, side="left")
+        if idx_start == len(self.t) and mode != "restrict":
+            idx_start -= 1
+
+        if mode == "before_t":
+            idx_start -= self.t[idx_start] > start
+        elif mode == "closest_t":
+            di = self.t[idx_start] - start > np.abs(self.t[idx_start - 1] - start)
+            idx_start -= di
+
+        return idx_start
+
+    def _resolve_end_index(self, end, mode):
+        idx_end = np.searchsorted(self.t, end, side="left")
+        add_if_forward = 0
+        if idx_end == len(self.t):
+            idx_end -= 1
+            add_if_forward = 1
+
+        if mode == "before_t":
+            idx_end -= (self.t[idx_end] > end) - int(idx_end == 0)
+        elif mode == "closest_t":
+            di = self.t[idx_end] - end > np.abs(self.t[idx_end - 1] - end)
+            idx_end -= di
+        elif mode == "after_t" and idx_end == len(self.t) - 1:
+            idx_end += add_if_forward
+        elif mode == "restrict":
+            idx_end += int(self.t[idx_end] <= end)
+
+        return idx_end
+
+    def _apply_n_points(self, idx_start, idx_end, n_points):
+        step = None
+        tot_tps = idx_end - idx_start
+        if tot_tps > n_points:
+            rounding = tot_tps % n_points
+            step = tot_tps // n_points
+            idx_end -= rounding
+
+        return idx_start, idx_end, step
+
     def _get_slice(
         self, start, end=None, mode="closest_t", n_points=None, time_unit="s"
     ):
@@ -546,51 +620,9 @@ class _Base(abc.ABC):
             - If start is greater than end.
 
         """
-        if not isinstance(start, Number):
-            raise ValueError(
-                f"'start' must be an int or a float. Type {type(start)} provided instead!"
-            )
-
-        if n_points is not None and not isinstance(n_points, int):
-            raise TypeError(
-                f"'n_points' must be of type int or None. Type {type(n_points)} provided instead!"
-            )
-
-        if end is None and n_points:
-            raise ValueError("'n_points' can be used only when 'end' is specified!")
-
-        if mode not in ["before_t", "after_t", "closest_t", "restrict"]:
-            raise ValueError(
-                "'mode' only accepts 'before_t', 'after_t', 'closest_t' or 'restrict'."
-            )
-
-        if mode == "restrict" and n_points:
-            raise ValueError(
-                "Fixing the number of time points is incompatible with 'restrict' mode."
-            )
-
-        # convert and get index for start
-        start = TsIndex.format_timestamps(np.array([start]), time_unit)[0]
-
-        # check end
-        if end is not None and not isinstance(end, Number):
-            raise ValueError(
-                f"'end' must be an int or a float. Type {type(end)} provided instead!"
-            )
-
-        # get index of preceding time value
-        idx_start = np.searchsorted(self.t, start, side="left")
-        if idx_start == len(self.t) and mode != "restrict":
-            idx_start -= 1  # make sure the index is not out of bound
-
-        if mode == "before_t":
-            # in order to get the index preceding start
-            # subtract one except if self.t[idx_start] is exactly equal to start
-            idx_start -= self.t[idx_start] > start
-        elif mode == "closest_t":
-            # subtract 1 if start is closer to the previous index
-            di = self.t[idx_start] - start > np.abs(self.t[idx_start - 1] - start)
-            idx_start -= di
+        self._validate_slice_args(start, end, mode, n_points)
+        start = self._format_timestamp(start, time_unit)
+        idx_start = self._resolve_start_index(start, mode)
 
         if end is None:
             if idx_start < 0:  # happens only on backwards if start < self.t[0]
@@ -600,39 +632,16 @@ class _Base(abc.ABC):
             ):  # happens only on forward if start >= self.t[-1]
                 return slice(idx_start, idx_start)
             return slice(idx_start, idx_start + 1)
-        else:
-            idx_start = max([0, idx_start])  # if taking a range set slice index to 0
 
-        # convert and get index for end
-        end = TsIndex.format_timestamps(np.array([end]), time_unit)[0]
+        idx_start = max([0, idx_start])  # if taking a range set slice index to 0
+        end = self._format_timestamp(end, time_unit)
         if start > end:
             raise ValueError("'start' should not precede 'end'.")
 
-        idx_end = np.searchsorted(self.t, end, side="left")
-        add_if_forward = 0
-        if idx_end == len(self.t):
-            idx_end -= 1  # make sure the index is not out of bound
-            add_if_forward = 1  # add back the index if forward
-
-        if mode == "before_t":
-            # remove 1 if self.t[idx_end] is larger than end, except if idx_end is 0
-            idx_end -= (self.t[idx_end] > end) - int(idx_end == 0)
-        elif mode == "closest_t":
-            # subtract 1 if end is closer to self.t[idx_end - 1]
-            di = self.t[idx_end] - end > np.abs(self.t[idx_end - 1] - end)
-            idx_end -= di
-        elif mode == "after_t" and idx_end == len(self.t) - 1:
-            idx_end += add_if_forward  # add one if idx_start < len(self.t)
-        elif mode == "restrict":
-            idx_end += int(self.t[idx_end] <= end)
-
+        idx_end = self._resolve_end_index(end, mode)
         step = None
         if n_points:
-            tot_tps = idx_end - idx_start
-            if tot_tps > n_points:
-                rounding = tot_tps % n_points
-                step = tot_tps // n_points
-                idx_end -= rounding
+            idx_start, idx_end, step = self._apply_n_points(idx_start, idx_end, n_points)
 
         return slice(idx_start, idx_end, step)
 

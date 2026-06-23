@@ -245,6 +245,163 @@ class NeuroSuite(BaseLoader):
 
         return
 
+    def _normalize_waveform_window(self, waveform_window):
+        if isinstance(waveform_window, nap.IntervalSet):
+            return waveform_window
+        return nap.IntervalSet(start=-0.5, end=1, time_units="ms")
+
+    def _ensure_path_exists(self):
+        if not self.path.exists():  # check if path exists
+            print(f"The path {self.path} doesn't exist; Exiting ...")
+            sys.exit()
+
+    def _restrict_spikes_to_epoch(self, spikes, epoch, fs):
+        if epoch is None:
+            return spikes, None
+
+        if type(epoch) is not nap.IntervalSet:
+            print("Epoch must be an IntervalSet")
+            sys.exit()
+
+        print("Restricting spikes to epoch")
+        restricted_spikes = spikes.restrict(epoch)
+        epstart = int(epoch.as_units("s")["start"].values[0] * fs)
+        epend = int(epoch.as_units("s")["end"].values[0] * fs)
+        return restricted_spikes, (epstart, epend)
+
+    def _load_dat_file(self, n_channels):
+        file = next(self.path.glob("^[^.][^.]*.dat"))
+        f = open(file, "rb")
+        startoffile = f.seek(0, 0)
+        endoffile = f.seek(0, 2)
+        bytes_size = 2
+        n_samples = int((endoffile - startoffile) / n_channels / bytes_size)
+        f.close()
+        fp = np.memmap(file, np.int16, "r", shape=(n_samples, n_channels))
+        return file, fp, n_samples, bytes_size
+
+    def _sample_counted_spikes(self, sample_spikes, spike_count):
+        sample_counted_spikes = {}
+        for index, neuron in enumerate(sample_spikes):
+            if len(sample_spikes[neuron]) >= spike_count:
+                sample_counted_spikes[neuron] = np.array(
+                    np.random.choice(list(sample_spikes[neuron]), spike_count)
+                )
+            elif len(sample_spikes[neuron]) < spike_count:
+                print(
+                    "Not enough spikes in neuron " + str(index) + "... using all spikes"
+                )
+                sample_counted_spikes[neuron] = sample_spikes[neuron]
+        return sample_counted_spikes
+
+    def _build_batches(self, n_samples, batch_size, overlap, epoch_bounds=None):
+        windows = np.arange(0, n_samples, batch_size)
+        if epoch_bounds is not None:
+            print("Restricting dat file to epoch")
+            windows = windows[(windows >= epoch_bounds[0]) & (windows <= epoch_bounds[1])]
+
+        if not len(windows):
+            return []
+
+        batches = []
+        for i in windows:
+            if i == windows[-1]:
+                batches.append([i, n_samples])
+            else:
+                batches.append([i, i + batch_size + overlap])
+        return [np.int32(batch) for batch in batches]
+
+    def _accumulate_waveforms(
+        self,
+        fp,
+        batches,
+        sample_counted_spikes,
+        spikes,
+        waveform_window,
+        n_channels,
+        group_to_channel,
+        group,
+    ):
+        neuron_waveforms = {
+            n: np.zeros([np.sum(waveform_window), len(group_to_channel[group[n]])])
+            for n in sample_counted_spikes
+        }
+
+        spike_check = np.array(
+            [
+                int(spikes_neuron)
+                for spikes_neuron in sample_counted_spikes[neuron]
+                for neuron in sample_counted_spikes
+            ]
+        )
+
+        for index, timestep in enumerate(batches):
+            print(
+                f"Extracting waveforms from dat file: window {index + 1} / {len(batches)}",
+                end="\r",
+            )
+
+            if (
+                len(
+                    spike_check[
+                        (timestep[0] < spike_check) & (timestep[1] > spike_check)
+                    ]
+                )
+                == 0
+            ):
+                continue
+
+            tmp = pd.DataFrame(
+                data=fp[timestep[0] : timestep[1], :],
+                columns=np.arange(n_channels),
+                index=range(timestep[0], timestep[1]),
+            )
+
+            for neuron in sample_counted_spikes:
+                neurontmp = sample_counted_spikes[neuron]
+                tmp2 = neurontmp[(timestep[0] < neurontmp) & (timestep[1] > neurontmp)]
+                if len(neurontmp) == 0:
+                    continue
+
+                tmpn = tmp[group_to_channel[group[neuron]]]
+
+                for time in tmp2:
+                    spikewindow = tmpn.loc[
+                        time - waveform_window[0] : time + waveform_window[1] - 1
+                    ]
+                    try:
+                        neuron_waveforms[neuron] += spikewindow.values
+                    except Exception:
+                        pass
+
+        return neuron_waveforms
+
+    def _build_mean_waveforms(
+        self,
+        neuron_waveforms,
+        sample_counted_spikes,
+        spike_count,
+        spikes,
+        group_to_channel,
+        group,
+        waveform_window,
+        fs,
+    ):
+        return {
+            n: pd.DataFrame(
+                data=np.array(neuron_waveforms[n]) / spike_count,
+                columns=np.arange(len(group_to_channel[group[n]])),
+                index=np.array(np.arange(-waveform_window[0], waveform_window[1])) / fs,
+            )
+            for n in sample_counted_spikes
+        }
+
+    def _build_max_channels(self, meanwf, spikes):
+        return pd.Series(
+            data=[meanwf[n][meanwf[n].loc[0].idxmin()].name for n in meanwf],
+            index=spikes.keys(),
+        )
+
     def load_mean_waveforms(self, epoch=None, waveform_window=None, spike_count=1000):
         """
         Load the mean waveforms from a dat file.
@@ -269,50 +426,22 @@ class NeuroSuite(BaseLoader):
             the channel with the maximum waveform for each neuron
 
         """
-        if not isinstance(waveform_window, nap.IntervalSet):
-            waveform_window = nap.IntervalSet(start=-0.5, end=1, time_units="ms")
+        waveform_window = self._normalize_waveform_window(waveform_window)
 
-        spikes = self.spikes
-        if not self.path.exists():  # check if path exists
-            print("The path " + self.path + " doesn't exist; Exiting ...")
-            sys.exit()
+        self._ensure_path_exists()
 
-        # Load XML INFO
         self.load_neurosuite_xml(self.path)
         n_channels = self.nChannels
         fs = self.fs_dat
         group_to_channel = self.group_to_channel
+        spikes = self.spikes
         group = spikes.get_info("group")
 
-        # Check if there is an epoch, restrict spike times to epoch
-        if epoch is not None:
-            if type(epoch) is not nap.IntervalSet:
-                print("Epoch must be an IntervalSet")
-                sys.exit()
-            else:
-                print("Restricting spikes to epoch")
-                spikes = spikes.restrict(epoch)
-                epstart = int(epoch.as_units("s")["start"].values[0] * fs)
-                epend = int(epoch.as_units("s")["end"].values[0] * fs)
+        spikes, epoch_bounds = self._restrict_spikes_to_epoch(spikes, epoch, fs)
 
-        # Find dat file
-        # files = os.listdir(self.path)
-        #  dat_files = np.sort([f for f in files if "dat" in f and f[0] != "."])
+        _, fp, n_samples, bytes_size = self._load_dat_file(n_channels)
 
-        # Need n_samples collected in the entire recording from dat file to load
-        # file = self.path / dat_files[0]
-        file = next(self.path.glob("^[^.][^.]*.dat"))
-        f = open(
-            file, "rb"
-        )  # open file to get number of samples collected in the entire recording
-        startoffile = f.seek(0, 0)
-        endoffile = f.seek(0, 2)
-        bytes_size = 2
-        n_samples = int((endoffile - startoffile) / n_channels / bytes_size)
-        f.close()
         # map to memory all samples for all channels, channels are numbered according to neuroscope number
-        fp = np.memmap(file, np.int16, "r", shape=(n_samples, n_channels))
-
         # convert spike times to spikes in sample number
         sample_spikes = {
             neuron: (spikes[neuron].as_units("s").index.values * fs).astype("int")
@@ -320,111 +449,36 @@ class NeuroSuite(BaseLoader):
         }
 
         # prep for waveforms
-        overlap = int(
-            waveform_window.tot_length(time_units="s")
-        )  # one spike's worth of overlap between windows
-        waveform_window = abs(np.array(waveform_window.as_units("s"))[0] * fs).astype(
-            int
-        )  # convert time to sample number
-        neuron_waveforms = {
-            n: np.zeros([np.sum(waveform_window), len(group_to_channel[group[n]])])
-            for n in sample_spikes
-        }
+        overlap = int(waveform_window.tot_length(time_units="s"))
+        waveform_window = abs(np.array(waveform_window.as_units("s"))[0] * fs).astype(int)
 
         # divide dat file into batches that slightly overlap for faster loading
         batch_size = 3000000
-        windows = np.arange(0, int(endoffile / n_channels / bytes_size), batch_size)
-        if epoch is not None:
-            print("Restricting dat file to epoch")
-            windows = windows[(windows >= epstart) & (windows <= epend)]
-        batches = []
-        for (
-            i
-        ) in windows:  # make overlapping batches from the beginning to end of recording
-            if i == windows[-1]:  # the last batch cannot overlap with the next one
-                batches.append([i, n_samples])
-            else:
-                batches.append([i, i + batch_size + overlap])
-        batches = [np.int32(batch) for batch in batches]
+        sample_counted_spikes = self._sample_counted_spikes(sample_spikes, spike_count)
+        batches = self._build_batches(n_samples, batch_size, overlap, epoch_bounds)
 
-        sample_counted_spikes = {}
-        for index, neuron in enumerate(sample_spikes):
-            if len(sample_spikes[neuron]) >= spike_count:
-                sample_counted_spikes[neuron] = np.array(
-                    np.random.choice(list(sample_spikes[neuron]), spike_count)
-                )
-            elif len(sample_spikes[neuron]) < spike_count:
-                print(
-                    "Not enough spikes in neuron " + str(index) + "... using all spikes"
-                )
-                sample_counted_spikes[neuron] = sample_spikes[neuron]
-
-        # Make one array containing all selected spike times of all neurons - will be used to check for spikes before loading dat file
-        spike_check = np.array(
-            [
-                int(spikes_neuron)
-                for spikes_neuron in sample_counted_spikes[neuron]
-                for neuron in sample_counted_spikes
-            ]
+        neuron_waveforms = self._accumulate_waveforms(
+            fp,
+            batches,
+            sample_counted_spikes,
+            spikes,
+            waveform_window,
+            n_channels,
+            group_to_channel,
+            group,
         )
 
-        for index, timestep in enumerate(batches):
-            print(
-                f"Extracting waveforms from dat file: window {index + 1} / {len(windows)}",
-                end="\r",
-            )
-
-            if (
-                len(
-                    spike_check[
-                        (timestep[0] < spike_check) & (timestep[1] > spike_check)
-                    ]
-                )
-                == 0
-            ):
-                continue  # if there are no spikes for any neurons in this batch, skip and go to the next one
-
-            # Load dat file for timestep
-            tmp = pd.DataFrame(
-                data=fp[timestep[0] : timestep[1], :],
-                columns=np.arange(n_channels),
-                index=range(timestep[0], timestep[1]),
-            )  # load dat file
-
-            # Check if any spikes are present
-            for neuron in sample_counted_spikes:
-                neurontmp = sample_counted_spikes[neuron]
-                tmp2 = neurontmp[(timestep[0] < neurontmp) & (timestep[1] > neurontmp)]
-                if len(neurontmp) == 0:
-                    continue  # skip neuron if it has no spikes in this batch
-                tmpn = tmp[
-                    group_to_channel[group[neuron]]
-                ]  # restrict dat file to the channel group of the neuron
-
-                for time in tmp2:  # add each spike waveform to neuron_waveform
-                    spikewindow = tmpn.loc[
-                        time - waveform_window[0] : time + waveform_window[1] - 1
-                    ]  # waveform for this spike time
-                    try:
-                        neuron_waveforms[neuron] += spikewindow.values
-                    except (
-                        Exception
-                    ):  # ignore if full waveform is not present in this batch
-                        pass
-
-        meanwf = {
-            n: pd.DataFrame(
-                data=np.array(neuron_waveforms[n]) / spike_count,
-                columns=np.arange(len(group_to_channel[group[n]])),
-                index=np.array(np.arange(-waveform_window[0], waveform_window[1])) / fs,
-            )
-            for n in sample_counted_spikes
-        }
-
-        # find the max channel for each neuron
-        maxch = pd.Series(
-            data=[meanwf[n][meanwf[n].loc[0].idxmin()].name for n in meanwf],
-            index=spikes.keys(),
+        meanwf = self._build_mean_waveforms(
+            neuron_waveforms,
+            sample_counted_spikes,
+            spike_count,
+            spikes,
+            group_to_channel,
+            group,
+            waveform_window,
+            fs,
         )
+
+        maxch = self._build_max_channels(meanwf, spikes)
 
         return meanwf, maxch

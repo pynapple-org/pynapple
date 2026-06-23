@@ -175,80 +175,84 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
     nap_class: str
     """The pynapple class name"""
 
-    def __init__(
-        self,
-        start,
-        end=None,
-        time_units="s",
-        metadata=None,
-    ):
-        # set directly in __dict__ to avoid infinite recursion in __setattr__
-        self.__dict__["_initialized"] = False
+    @staticmethod
+    def _coerce_array(data, arg):
+        if isinstance(data, Number):
+            return np.array([data])
+        if isinstance(data, (list, tuple)):
+            return np.ravel(np.array(data))
+        if isinstance(data, pd.Series):
+            return data.values
+        if isinstance(data, np.ndarray):
+            return np.ravel(data)
+        if is_array_like(data):
+            return convert_to_numpy_array(data, arg)
+        raise RuntimeError(
+            "Unknown format for {}. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.".format(
+                arg
+            )
+        )
+
+    @staticmethod
+    def _normalize_start_end(start, end):
+        if end is None:
+            if is_array_like(start) and start.shape == (0, 2):
+                return np.array([]), np.array([])
+
+            try:
+                start_end_array = np.array(list(start)).reshape(-1, 2)
+                start, end = zip(*start_end_array)
+            except (TypeError, ValueError):
+                raise ValueError(
+                    "Unable to Interpret the input. Please provide a list of start-end pairs."
+                )
+
+        args = {"start": start, "end": end}
+        for arg, data in args.items():
+            args[arg] = IntervalSet._coerce_array(data, arg)
+
+        start = args["start"]
+        end = args["end"]
+
+        assert len(start) == len(end), "Starts end ends are not of the same length"
+        return start, end
+
+    @staticmethod
+    def _normalize_dataframe(start):
+        assert "start" in start.columns and "end" in start.columns, """
+                DataFrame must contain columns name "start" and "end" for start and end times.                   
+                """
+        # try sorting the DataFrame by start times, preserving its end pair, as an effort to preserve metadata
+        # since metadata would be dropped if starts and ends are sorted separately
+        # note that if end times are still not sorted, metadata will be dropped
+        if np.any(start["start"].diff() < 0):
+            warnings.warn(
+                "DataFrame is not sorted by start times. Sorting it.", stacklevel=4
+            )
+            start = start.sort_values("start").reset_index(drop=True)
+
+        metadata = start.drop(columns=["start", "end"])
+        end = start["end"].values.astype(np.float64)
+        start = start["start"].values.astype(np.float64)
+        return start, end, metadata
+
+    @staticmethod
+    def _normalize_inputs(start, end, metadata):
         if isinstance(start, IntervalSet):
             end = start.end.astype(np.float64)
             start = start.start.astype(np.float64)
+            return start, end, metadata
 
-        elif isinstance(start, pd.DataFrame):
-            assert "start" in start.columns and "end" in start.columns, """
-                DataFrame must contain columns name "start" and "end" for start and end times.                   
-                """
-            # try sorting the DataFrame by start times, preserving its end pair, as an effort to preserve metadata
-            # since metadata would be dropped if starts and ends are sorted separately
-            # note that if end times are still not sorted, metadata will be dropped
-            if np.any(start["start"].diff() < 0):
-                warnings.warn(
-                    "DataFrame is not sorted by start times. Sorting it.", stacklevel=2
-                )
-                start = start.sort_values("start").reset_index(drop=True)
+        if isinstance(start, pd.DataFrame):
+            return IntervalSet._normalize_dataframe(start)
 
-            metadata = start.drop(columns=["start", "end"])
-            end = start["end"].values.astype(np.float64)
-            start = start["start"].values.astype(np.float64)
+        start, end = IntervalSet._normalize_start_end(start, end)
+        return start, end, metadata
 
-        else:
-            if end is None:
-                # Catch if start is not shape (0, 2)
-                if is_array_like(start) and start.shape == (0, 2):
-                    start, end = np.array([]), np.array([])
-                else:
-                    # Require iterable of (start, end) tuples
-                    try:
-                        start_end_array = np.array(list(start)).reshape(-1, 2)
-                        start, end = zip(*start_end_array)
-                    except (TypeError, ValueError):
-                        raise ValueError(
-                            "Unable to Interpret the input. Please provide a list of start-end pairs."
-                        )
-
-            args = {"start": start, "end": end}
-
-            for arg, data in args.items():
-                if isinstance(data, Number):
-                    args[arg] = np.array([data])
-                elif isinstance(data, (list, tuple)):
-                    args[arg] = np.ravel(np.array(data))
-                elif isinstance(data, pd.Series):
-                    args[arg] = data.values
-                elif isinstance(data, np.ndarray):
-                    args[arg] = np.ravel(data)
-                elif is_array_like(data):
-                    args[arg] = convert_to_numpy_array(data, arg)
-                else:
-                    raise RuntimeError(
-                        "Unknown format for {}. Accepted formats are numpy.ndarray, list, tuple or any array-like objects.".format(
-                            arg
-                        )
-                    )
-
-            start = args["start"]
-            end = args["end"]
-
-            assert len(start) == len(end), "Starts end ends are not of the same length"
-
-        start = TsIndex.format_timestamps(start, time_units)
-        end = TsIndex.format_timestamps(end, time_units)
-
+    @staticmethod
+    def _sort_timestamps(start, end, metadata):
         drop_meta = False
+
         if not (np.diff(start) > 0).all():
             if metadata is not None:
                 msg1 = "Cannot add metadata to unsorted start times. "
@@ -257,7 +261,8 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                 msg1 = ""
                 msg2 = ""
             warnings.warn(
-                "start is not sorted. " + msg1 + "Sorting it" + msg2 + ".", stacklevel=2
+                "start is not sorted. " + msg1 + "Sorting it" + msg2 + ".",
+                stacklevel=3,
             )
             start = np.sort(start)
             drop_meta = True
@@ -270,20 +275,28 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
                 msg1 = ""
                 msg2 = ""
             warnings.warn(
-                "end is not sorted. " + msg1 + "Sorting it" + msg2 + ".", stacklevel=2
+                "end is not sorted. " + msg1 + "Sorting it" + msg2 + ".",
+                stacklevel=3,
             )
             end = np.sort(end)
             drop_meta = True
 
+        return start, end, drop_meta
+
+    @staticmethod
+    def _fix_intervals(start, end, metadata, drop_meta):
         data, to_warn = _jitfix_iset(start, end)
 
         if np.any(to_warn):
             msg = "\n".join(all_warnings[to_warn])
-            warnings.warn(msg, stacklevel=2)
+            warnings.warn(msg, stacklevel=3)
             if np.any(to_warn[1:]) and (metadata is not None):
                 drop_meta = True
-                warnings.warn("epochs have changed, dropping metadata.", stacklevel=2)
+                warnings.warn("epochs have changed, dropping metadata.", stacklevel=3)
 
+        return data, drop_meta
+
+    def _finalize_init(self, data, metadata, drop_meta):
         self.values = data
         self.index = np.arange(data.shape[0], dtype="int")
         self.columns = np.array(["start", "end"])
@@ -297,6 +310,24 @@ class IntervalSet(NDArrayOperatorsMixin, _MetadataMixin):
         self._initialized = True
         if (drop_meta is False) and (metadata is not None) and len(metadata):
             self.set_info(metadata)
+
+    def __init__(
+        self,
+        start,
+        end=None,
+        time_units="s",
+        metadata=None,
+    ):
+        # set directly in __dict__ to avoid infinite recursion in __setattr__
+        self.__dict__["_initialized"] = False
+        start, end, metadata = self._normalize_inputs(start, end, metadata)
+
+        start = TsIndex.format_timestamps(start, time_units)
+        end = TsIndex.format_timestamps(end, time_units)
+
+        start, end, drop_meta = self._sort_timestamps(start, end, metadata)
+        data, drop_meta = self._fix_intervals(start, end, metadata, drop_meta)
+        self._finalize_init(data, metadata, drop_meta)
 
     def __repr__(self):
         # Start by determining how many columns and rows.

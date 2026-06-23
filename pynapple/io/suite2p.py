@@ -67,7 +67,118 @@ class Suite2P(BaseLoader):
 
         self.load_suite2p_nwb(path)
 
-    def load_suite2p_nwb(self, path):
+    def _get_ophys_processing(self, nwbfile):
+        if "ophys" in nwbfile.processing.keys():
+            return nwbfile.processing["ophys"]
+        return None
+
+    def _load_metadata(self, nwbfile, ophys):
+        dims = nwbfile.acquisition["TwoPhotonSeries"].dimension[:]
+        self.ops = {"Ly": dims[0], "Lx": dims[1]}
+        self.rate = nwbfile.acquisition["TwoPhotonSeries"].imaging_plane.imaging_rate
+
+        self.stats = {0: {}}
+        self.iscell = ophys["ImageSegmentation"]["PlaneSegmentation"]["iscell"].data[:]
+        return pd.DataFrame(data=self.iscell[:, 0].astype("int"), columns=["iscell"])
+
+    def _get_rois(self, ophys):
+        plane_seg = ophys["ImageSegmentation"]["PlaneSegmentation"]
+        try:
+            return plane_seg["pixel_mask"], False
+        except Exception:
+            return plane_seg["voxel_mask"], True
+
+    def _populate_stats_and_plane_info(self, rois, info):
+        idx = np.where(self.iscell[:, 0])[0]
+        info["plane"] = 0
+
+        for n in range(len(rois)):
+            roi = pd.DataFrame(rois[n])
+            if "z" in roi.columns:
+                pl = roi["z"][0]
+            else:
+                pl = 0
+
+            info.loc[n, "plane"] = pl
+
+            if pl not in self.stats.keys():
+                self.stats[pl] = {}
+
+            if n in idx:
+                self.stats[pl][n] = {
+                    "xpix": roi["y"].values,
+                    "ypix": roi["x"].values,
+                    "lam": roi["weight"].values,
+                }
+
+        return info
+
+    def _get_timeseries_fields(self, ophys):
+        fields = np.intersect1d(
+            ["Fluorescence", "Neuropil", "Deconvolved"],
+            list(ophys.fields["data_interfaces"].keys()),
+        )
+
+        if len(fields) == 0:
+            print(
+                "No " + " or ".join(["Fluorescence", "Neuropil", "Deconvolved"]),
+                "found in nwb {}".format(self.nwbfilepath),
+            )
+            return False
+
+        return [name for name in ["Fluorescence", "Neuropil", "Deconvolved"] if name in fields]
+
+    def _get_planes(self, ophys, field_name, multiplane):
+        if multiplane:
+            keys = ophys[field_name].roi_response_series.keys()
+            return [int(k[-1]) for k in keys if "plane" in k]
+        return [0]
+
+    def _load_timeseries(self, ophys, info, multiplane):
+        data = {}
+
+        fields = self._get_timeseries_fields(ophys)
+        if not fields:
+            return False
+
+        for key, name in zip(["F", "Fneu", "spks"], fields):
+            planes = self._get_planes(ophys, name, multiplane)
+            tmp = []
+            timestamps = []
+
+            for n in planes:
+                if multiplane:
+                    pl = "plane{}".format(n)
+                else:
+                    pl = name
+
+                tokeep = info["iscell"][info["plane"] == n].values == 1
+                d = np.transpose(ophys[name][pl].data[:][tokeep])
+
+                if ophys[name][pl].timestamps is not None:
+                    t = ophys[name][pl].timestamps[:]
+                else:
+                    t = (np.arange(0, len(d)) / self.rate) + ophys[name][pl].starting_time
+
+                tmp.append(d)
+                timestamps.append(t)
+
+            data[key] = nap.TsdFrame(t=timestamps[0], d=np.hstack(tmp))
+
+        if "F" in data.keys():
+            self.F = data["F"]
+        if "Fneu" in data.keys():
+            self.Fneu = data["Fneu"]
+        if "spks" in data.keys():
+            self.spks = data["spks"]
+
+        self.plane_info = pd.DataFrame(
+            data=info["plane"][info["iscell"] == 1].values, columns=["plane"]
+        )
+
+        return True
+
+    def load_suite2p_nwb(self, path=None):
         """
         Load suite2p data from NWB
 
@@ -80,131 +191,14 @@ class Suite2P(BaseLoader):
         io = pynwb.NWBHDF5IO(self.nwbfilepath, "r")
         nwbfile = io.read()
 
-        if "ophys" in nwbfile.processing.keys():
-            ophys = nwbfile.processing["ophys"]
-
-            #################################################################
-            # STATS, OPS and ISCELL
-            #################################################################
-            dims = nwbfile.acquisition["TwoPhotonSeries"].dimension[:]
-            self.ops = {"Ly": dims[0], "Lx": dims[1]}
-            self.rate = nwbfile.acquisition[
-                "TwoPhotonSeries"
-            ].imaging_plane.imaging_rate
-
-            self.stats = {0: {}}
-            self.iscell = ophys["ImageSegmentation"]["PlaneSegmentation"][
-                "iscell"
-            ].data[:]
-
-            info = pd.DataFrame(
-                data=self.iscell[:, 0].astype("int"), columns=["iscell"]
-            )
-
-            #################################################################
-            # ROIS
-            #################################################################
-            try:
-                rois = nwbfile.processing["ophys"]["ImageSegmentation"][
-                    "PlaneSegmentation"
-                ]["pixel_mask"]
-                multiplane = False
-            except Exception:
-                rois = nwbfile.processing["ophys"]["ImageSegmentation"][
-                    "PlaneSegmentation"
-                ]["voxel_mask"]
-                multiplane = True
-
-            idx = np.where(self.iscell[:, 0])[0]
-            info["plane"] = 0
-
-            for n in range(len(rois)):
-                roi = pd.DataFrame(rois[n])
-                if "z" in roi.columns:
-                    pl = roi["z"][0]
-                else:
-                    pl = 0
-
-                info.loc[n, "plane"] = pl
-
-                if pl not in self.stats.keys():
-                    self.stats[pl] = {}
-
-                if n in idx:
-                    self.stats[pl][n] = {
-                        "xpix": roi["y"].values,
-                        "ypix": roi["x"].values,
-                        "lam": roi["weight"].values,
-                    }
-
-            #################################################################
-            # Time Series
-            #################################################################
-            fields = np.intersect1d(
-                ["Fluorescence", "Neuropil", "Deconvolved"],
-                list(ophys.fields["data_interfaces"].keys()),
-            )
-
-            if len(fields) == 0:
-                print(
-                    "No " + " or ".join(["Fluorescence", "Neuropil", "Deconvolved"]),
-                    "found in nwb {}".format(self.nwbfilepath),
-                )
+        try:
+            ophys = self._get_ophys_processing(nwbfile)
+            if ophys is None:
                 return False
 
-            keys = ophys[fields[0]].roi_response_series.keys()
-
-            planes = [int(k[-1]) for k in keys if "plane" in k]
-
-            data = {}
-
-            if multiplane:
-                keys = ophys[fields[0]].roi_response_series.keys()
-                planes = [int(k[-1]) for k in keys if "plane" in k]
-            else:
-                planes = [0]
-
-            for k, name in zip(
-                ["F", "Fneu", "spks"], ["Fluorescence", "Neuropil", "Deconvolved"]
-            ):
-                tmp = []
-                timestamps = []
-
-                for i, n in enumerate(planes):
-                    if multiplane:
-                        pl = "plane{}".format(n)
-                    else:
-                        pl = name  # This doesn't make sense
-
-                    tokeep = info["iscell"][info["plane"] == n].values == 1
-
-                    d = np.transpose(ophys[name][pl].data[:][tokeep])
-
-                    if ophys[name][pl].timestamps is not None:
-                        t = ophys[name][pl].timestamps[:]
-                    else:
-                        t = (np.arange(0, len(d)) / self.rate) + ophys[name][
-                            pl
-                        ].starting_time
-
-                    tmp.append(d)
-                    timestamps.append(t)
-
-                data[k] = nap.TsdFrame(t=timestamps[0], d=np.hstack(tmp))
-
-            if "F" in data.keys():
-                self.F = data["F"]
-            if "Fneu" in data.keys():
-                self.Fneu = data["Fneu"]
-            if "spks" in data.keys():
-                self.spks = data["spks"]
-
-            self.plane_info = pd.DataFrame(
-                data=info["plane"][info["iscell"] == 1].values, columns=["plane"]
-            )
-
+            info = self._load_metadata(nwbfile, ophys)
+            rois, multiplane = self._get_rois(ophys)
+            info = self._populate_stats_and_plane_info(rois, info)
+            return self._load_timeseries(ophys, info, multiplane)
+        finally:
             io.close()
-            return True
-        else:
-            io.close()
-            return False
