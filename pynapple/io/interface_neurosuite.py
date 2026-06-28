@@ -240,8 +240,6 @@ class _NeuroSuiteMetadata:
     skip: np.ndarray
     groups: np.ndarray
     binary_metadata: dict
-    fs_dat: float
-    fs_lfp: float
 
 
 @dataclass(frozen=True)
@@ -331,8 +329,6 @@ class NeuroSuiteIO:
             skip=skip,
             groups=groups,
             binary_metadata=binary_metadata,
-            fs_dat=xml_info["acquisition"]["sampling_rate"],
-            fs_lfp=xml_info["lfp"]["sampling_rate"],
         )
 
         # Discover files
@@ -369,11 +365,11 @@ class NeuroSuiteIO:
 
     @property
     def fs_dat(self):
-        return self._metadata.fs_dat
+        return self._metadata.xml_info["acquisition"]["sampling_rate"]
 
     @property
     def fs_lfp(self):
-        return self._metadata.fs_lfp
+        return self._metadata.xml_info["lfp"]["sampling_rate"]
 
     @property
     def dat_files(self):
