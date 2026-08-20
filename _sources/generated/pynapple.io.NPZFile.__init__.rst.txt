@@ -1,0 +1,6 @@
+pynapple.io.NPZFile.\_\_init\_\_
+================================
+
+.. currentmodule:: pynapple.io
+
+.. automethod:: NPZFile.__init__

@@ -1,0 +1,6 @@
+pynapple.TsGroup.getby\_intervals
+=================================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.getby_intervals

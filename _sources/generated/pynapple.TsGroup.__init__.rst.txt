@@ -1,0 +1,6 @@
+pynapple.TsGroup.\_\_init\_\_
+=============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.__init__

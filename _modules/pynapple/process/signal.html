@@ -1,0 +1,967 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../../../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>pynapple.process.signal &#8212; pynapple 0.11.3.post1.dev60 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx_contributors.css?v=fe9086e2" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=52434729" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../../../_static/documentation_options.js?v=25e7f992"></script>
+    <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../../_static/copybutton.js?v=c57da192"></script>
+    <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_modules/pynapple/process/signal';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../../../_static/Pynapple_final_icon.png"/>
+    <link rel="author" title="About these documents" href="../../../about.html" />
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.11.3" />
+  
+    
+    <script src="../../../_static/searchtools.js"></script>
+    <script src="../../../_static/language_data.js"></script>
+    <script src="../../../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../../../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../../../_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.11.3.post1.dev60 documentation - Home"/>
+    <img src="../../../_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.11.3.post1.dev60 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../learning_material.html">
+    Learning material
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../external.html">
+    External projects
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../../../citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../learning_material.html">
+    Learning material
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../../../citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../../../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../../../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../../index.html" class="nav-link">Module code</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">pynapple.process.signal</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <h1>Source code for pynapple.process.signal</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">Functions to compute phases and envelopes</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="kn">import</span> <span class="nn">numbers</span>
+
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+
+<span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+
+
+<div class="viewcode-block" id="apply_hilbert_transform">
+<a class="viewcode-back" href="../../../generated/pynapple.process.signal.html#pynapple.process.signal.apply_hilbert_transform">[docs]</a>
+<span class="k">def</span> <span class="nf">apply_hilbert_transform</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Apply the Hilbert transform to a time-series.</span>
+
+<span class="sd">    This function wraps :func:`scipy.signal.hilbert` to compute the analytic signal,</span>
+<span class="sd">    which represents the original signal plus its Hilbert transform.</span>
+<span class="sd">    The Hilbert transform is commonly used for phase and envelope computations.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : Tsd, TsdFrame</span>
+<span class="sd">        The time-series to which the Hilbert transform will be applied.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tsd, TsdFrame</span>
+<span class="sd">        The analytic signal.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; import pynapple as nap</span>
+<span class="sd">    &gt;&gt;&gt; times = np.arange(0, 20, 0.1)</span>
+<span class="sd">    &gt;&gt;&gt; data = nap.Tsd(d=np.sin(times), t=times)</span>
+<span class="sd">    &gt;&gt;&gt; analytic_signal = nap.apply_hilbert_transform(data)</span>
+<span class="sd">    &gt;&gt;&gt; analytic_signal</span>
+<span class="sd">    Time (s)</span>
+<span class="sd">    -------------------  ---------------------------------------------</span>
+<span class="sd">    0.0                  (-7.105427357601002e-17+0.16863846755783507j)</span>
+<span class="sd">    0.1                  (0.09983341664682804-0.4242708612183068j)</span>
+<span class="sd">    0.2                  (0.1986693307950611-0.39707635680514186j)</span>
+<span class="sd">    0.30000000000000004  (0.2955202066613397-0.5595039695854611j)</span>
+<span class="sd">    0.4                  (0.3894183423086504-0.5111880915563278j)</span>
+<span class="sd">    0.5                  (0.4794255386042027-0.5737652837793169j)</span>
+<span class="sd">    0.6000000000000001   (0.5646424733950355-0.507679928825233j)</span>
+<span class="sd">    ...</span>
+<span class="sd">    19.3                 (0.4353653603728936-0.8487963381972523j)</span>
+<span class="sd">    19.400000000000002   (0.5230657651576995-0.8346984246178151j)</span>
+<span class="sd">    19.5                 (0.6055398697196014-0.6962597876075753j)</span>
+<span class="sd">    19.6                 (0.6819636200681357-0.673794027075586j)</span>
+<span class="sd">    19.700000000000003   (0.7515734153521505-0.4510063664570575j)</span>
+<span class="sd">    19.8                 (0.8136737375071058-0.4288655114005536j)</span>
+<span class="sd">    19.900000000000002   (0.8676441006416694+0.17871162129618953j)</span>
+<span class="sd">    dtype: complex128, shape: (200,)</span>
+
+<span class="sd">    Can be used for multiple signals in a `TsdFrame`:</span>
+
+<span class="sd">    &gt;&gt;&gt; data = nap.TsdFrame(d=np.stack([np.sin(times), np.cos(times)], axis=1), t=times)</span>
+<span class="sd">    &gt;&gt;&gt; analytic_signals = nap.apply_hilbert_transform(data)</span>
+<span class="sd">    &gt;&gt;&gt; analytic_signals</span>
+<span class="sd">    Time (s)             0                                              1</span>
+<span class="sd">    -------------------  ---------------------------------------------  ------------------------------------------</span>
+<span class="sd">    0.0                  (-7.105427357601002e-17+0.16863846755783507j)  (0.9999999999999999-0.10933857636723118j)</span>
+<span class="sd">    0.1                  (0.09983341664682804-0.4242708612183068j)      (0.9950041652780255+0.2511675765027083j)</span>
+<span class="sd">    0.2                  (0.1986693307950611-0.39707635680514186j)      (0.9800665778412415+0.29226919446209765j)</span>
+<span class="sd">    0.30000000000000004  (0.2955202066613397-0.5595039695854611j)       (0.9553364891256061+0.45596645091122484j)</span>
+<span class="sd">    0.4                  (0.3894183423086504-0.5111880915563278j)       (0.9210609940028853+0.5095457107948864j)</span>
+<span class="sd">    0.5                  (0.4794255386042027-0.5737652837793169j)       (0.8775825618903729+0.6332440634658392j)</span>
+<span class="sd">    0.6000000000000001   (0.5646424733950355-0.507679928825233j)        (0.8253356149096783+0.6873614294191187j)</span>
+<span class="sd">    ...</span>
+<span class="sd">    19.3                 (0.4353653603728936-0.8487963381972523j)       (0.9002538547473041+0.09873915660984472j)</span>
+<span class="sd">    19.400000000000002   (0.5230657651576995-0.8346984246178151j)       (0.852292323865463+0.18298411058238345j)</span>
+<span class="sd">    19.5                 (0.6055398697196014-0.6962597876075753j)       (0.7958149698139438+0.19019044271235275j)</span>
+<span class="sd">    19.6                 (0.6819636200681357-0.673794027075586j)        (0.7313860956454965+0.2587502761655236j)</span>
+<span class="sd">    19.700000000000003   (0.7515734153521505-0.4510063664570575j)       (0.6596494533734591+0.1992088667212628j)</span>
+<span class="sd">    19.8                 (0.8136737375071058-0.4288655114005536j)       (0.5813218118144358+0.24323915864085138j)</span>
+<span class="sd">    19.900000000000002   (0.8676441006416694+0.17871162129618953j)      (0.49718579487120196-0.09195658451657955j)</span>
+<span class="sd">    dtype: complex128, shape: (200, 2)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">from</span> <span class="nn">scipy.signal</span> <span class="kn">import</span> <span class="n">hilbert</span>
+
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">(</span>
+            <span class="n">d</span><span class="o">=</span><span class="n">hilbert</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">),</span>
+            <span class="n">t</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="p">(),</span>
+            <span class="n">time_support</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">time_support</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">TsdFrame</span><span class="p">(</span>
+            <span class="n">d</span><span class="o">=</span><span class="n">hilbert</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+            <span class="n">t</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">times</span><span class="p">(),</span>
+            <span class="n">columns</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">columns</span><span class="p">,</span>
+            <span class="n">time_support</span><span class="o">=</span><span class="n">data</span><span class="o">.</span><span class="n">time_support</span><span class="p">,</span>
+        <span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;data should be a Tsd or TsdFrame.&quot;</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="compute_hilbert_envelope">
+<a class="viewcode-back" href="../../../generated/pynapple.process.signal.html#pynapple.process.signal.compute_hilbert_envelope">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_hilbert_envelope</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the Hilbert envelope of a time-series.</span>
+
+<span class="sd">    This function computes the envelope of the signal, which is the magnitude of the analytic</span>
+<span class="sd">    signal obtained by applying the Hilbert transform. The envelope provides a smooth</span>
+<span class="sd">    representation of the amplitude modulation of the signal.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : Tsd, TsdFrame</span>
+<span class="sd">        The time-series data to compute the Hilbert envelope for.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tsd, TsdFrame</span>
+<span class="sd">        The Hilbert envelope.</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; import pynapple as nap</span>
+<span class="sd">    &gt;&gt;&gt; times = np.arange(0, 20, 0.1)</span>
+<span class="sd">    &gt;&gt;&gt; data = nap.Tsd(d=np.sin(times), t=times)</span>
+<span class="sd">    &gt;&gt;&gt; envelope = nap.compute_hilbert_envelope(data)</span>
+<span class="sd">    &gt;&gt;&gt; envelope</span>
+<span class="sd">    Time (s)</span>
+<span class="sd">    -------------------  --------</span>
+<span class="sd">    0.0                  0.168638</span>
+<span class="sd">    0.1                  0.435858</span>
+<span class="sd">    0.2                  0.444004</span>
+<span class="sd">    0.30000000000000004  0.632753</span>
+<span class="sd">    0.4                  0.64262</span>
+<span class="sd">    0.5                  0.7477</span>
+<span class="sd">    0.6000000000000001   0.759316</span>
+<span class="sd">    ...</span>
+<span class="sd">    19.3                 0.953938</span>
+<span class="sd">    19.400000000000002   0.985048</span>
+<span class="sd">    19.5                 0.922744</span>
+<span class="sd">    19.6                 0.958683</span>
+<span class="sd">    19.700000000000003   0.87651</span>
+<span class="sd">    19.8                 0.919777</span>
+<span class="sd">    19.900000000000002   0.885858</span>
+<span class="sd">    dtype: float64, shape: (200,)</span>
+
+<span class="sd">    Can be used for multiple signals in a `TsdFrame`:</span>
+
+<span class="sd">    &gt;&gt;&gt; data = nap.TsdFrame(d=np.stack([np.sin(times), np.cos(times)], axis=1), t=times)</span>
+<span class="sd">    &gt;&gt;&gt; envelopes = nap.compute_hilbert_envelope(data)</span>
+<span class="sd">    &gt;&gt;&gt; envelopes</span>
+<span class="sd">    Time (s)                    0         1</span>
+<span class="sd">    -------------------  --------  --------</span>
+<span class="sd">    0.0                  0.168638  1.00596</span>
+<span class="sd">    0.1                  0.435858  1.02622</span>
+<span class="sd">    0.2                  0.444004  1.02272</span>
+<span class="sd">    0.30000000000000004  0.632753  1.05857</span>
+<span class="sd">    0.4                  0.64262   1.05261</span>
+<span class="sd">    0.5                  0.7477    1.0822</span>
+<span class="sd">    0.6000000000000001   0.759316  1.07408</span>
+<span class="sd">    ...</span>
+<span class="sd">    19.3                 0.953938  0.905652</span>
+<span class="sd">    19.400000000000002   0.985048  0.871714</span>
+<span class="sd">    19.5                 0.922744  0.818226</span>
+<span class="sd">    19.6                 0.958683  0.775808</span>
+<span class="sd">    19.700000000000003   0.87651   0.689073</span>
+<span class="sd">    19.8                 0.919777  0.630159</span>
+<span class="sd">    19.900000000000002   0.885858  0.505618</span>
+<span class="sd">    dtype: float64, shape: (200, 2)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">analytic_signal</span> <span class="o">=</span> <span class="n">apply_hilbert_transform</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">analytic_signal</span><span class="p">)</span></div>
+
+
+
+<div class="viewcode-block" id="compute_hilbert_phase">
+<a class="viewcode-back" href="../../../generated/pynapple.process.signal.html#pynapple.process.signal.compute_hilbert_phase">[docs]</a>
+<span class="k">def</span> <span class="nf">compute_hilbert_phase</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Compute the Hilbert phase of a time-series.</span>
+
+<span class="sd">    This function computes the instantaneous phase of the signal using the Hilbert transform.</span>
+<span class="sd">    The phase is unwrapped to provide a continuous representation, and it is then wrapped to</span>
+<span class="sd">    ensure it stays within the range [0, 2π].</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : Tsd, TsdFrame</span>
+<span class="sd">        The time-series data to compute the Hilbert phase for.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    Tsd, TsdFrame</span>
+<span class="sd">        The instantaneous phase of the signal, with values wrapped between [0, 2π].</span>
+
+<span class="sd">    Examples</span>
+<span class="sd">    --------</span>
+<span class="sd">    &gt;&gt;&gt; import numpy as np</span>
+<span class="sd">    &gt;&gt;&gt; import pynapple as nap</span>
+<span class="sd">    &gt;&gt;&gt; times = np.arange(0, 20, 0.1)</span>
+<span class="sd">    &gt;&gt;&gt; data = nap.Tsd(d=np.sin(times), t=times)</span>
+<span class="sd">    &gt;&gt;&gt; phase = nap.compute_hilbert_envelope(data)</span>
+<span class="sd">    &gt;&gt;&gt; phase</span>
+<span class="sd">    Time (s)</span>
+<span class="sd">    -------------------  --------</span>
+<span class="sd">    0.0                  0.168638</span>
+<span class="sd">    0.1                  0.435858</span>
+<span class="sd">    0.2                  0.444004</span>
+<span class="sd">    0.30000000000000004  0.632753</span>
+<span class="sd">    0.4                  0.64262</span>
+<span class="sd">    0.5                  0.7477</span>
+<span class="sd">    0.6000000000000001   0.759316</span>
+<span class="sd">    ...</span>
+<span class="sd">    19.3                 0.953938</span>
+<span class="sd">    19.400000000000002   0.985048</span>
+<span class="sd">    19.5                 0.922744</span>
+<span class="sd">    19.6                 0.958683</span>
+<span class="sd">    19.700000000000003   0.87651</span>
+<span class="sd">    19.8                 0.919777</span>
+<span class="sd">    19.900000000000002   0.885858</span>
+<span class="sd">    dtype: float64, shape: (200,)</span>
+
+<span class="sd">    Can be used for multiple signals in a `TsdFrame`:</span>
+
+<span class="sd">    &gt;&gt;&gt; data = nap.TsdFrame(d=np.stack([np.sin(times), np.cos(times)], axis=1), t=times)</span>
+<span class="sd">    &gt;&gt;&gt; phases = nap.compute_hilbert_envelope(data)</span>
+<span class="sd">    &gt;&gt;&gt; phases</span>
+<span class="sd">    Time (s)                    0         1</span>
+<span class="sd">    -------------------  --------  --------</span>
+<span class="sd">    0.0                  0.168638  1.00596</span>
+<span class="sd">    0.1                  0.435858  1.02622</span>
+<span class="sd">    0.2                  0.444004  1.02272</span>
+<span class="sd">    0.30000000000000004  0.632753  1.05857</span>
+<span class="sd">    0.4                  0.64262   1.05261</span>
+<span class="sd">    0.5                  0.7477    1.0822</span>
+<span class="sd">    0.6000000000000001   0.759316  1.07408</span>
+<span class="sd">    ...</span>
+<span class="sd">    19.3                 0.953938  0.905652</span>
+<span class="sd">    19.400000000000002   0.985048  0.871714</span>
+<span class="sd">    19.5                 0.922744  0.818226</span>
+<span class="sd">    19.6                 0.958683  0.775808</span>
+<span class="sd">    19.700000000000003   0.87651   0.689073</span>
+<span class="sd">    19.8                 0.919777  0.630159</span>
+<span class="sd">    19.900000000000002   0.885858  0.505618</span>
+<span class="sd">    dtype: float64, shape: (200, 2)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">analytic_signal</span> <span class="o">=</span> <span class="n">apply_hilbert_transform</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+    <span class="n">phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">angle</span><span class="p">(</span><span class="n">analytic_signal</span><span class="p">)</span>
+    <span class="n">phase</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mod</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">unwrap</span><span class="p">(</span><span class="n">phase</span><span class="p">),</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">phase</span></div>
+
+
+
+<div class="viewcode-block" id="detect_oscillatory_events">
+<a class="viewcode-back" href="../../../generated/pynapple.process.signal.html#pynapple.process.signal.detect_oscillatory_events">[docs]</a>
+<span class="k">def</span> <span class="nf">detect_oscillatory_events</span><span class="p">(</span>
+    <span class="n">data</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="p">,</span>
+    <span class="n">frequency_band</span><span class="p">,</span>
+    <span class="n">threshold_band</span><span class="p">,</span>
+    <span class="n">duration_band</span><span class="p">,</span>
+    <span class="n">min_interval</span><span class="p">,</span>
+    <span class="n">fs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">sliding_window_size</span><span class="o">=</span><span class="mi">51</span><span class="p">,</span>
+<span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Function for detecting oscillatory events such as ripples, spindles, and more.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    data : Tsd</span>
+<span class="sd">        One-dimensional time series.</span>
+<span class="sd">    epochs : IntervalSet</span>
+<span class="sd">        The epochs for restricting the detection.</span>
+<span class="sd">    frequency_band : tuple</span>
+<span class="sd">        The lower and upper frequency to bandpass filter the signal.</span>
+<span class="sd">    threshold_band : tuple</span>
+<span class="sd">        The lower and upper threshold applied to the normalized envelope of the</span>
+<span class="sd">        filtered signal.</span>
+<span class="sd">    duration_band : tuple</span>
+<span class="sd">        The minimal and maximal duration of an event (in seconds).</span>
+<span class="sd">    min_interval : float</span>
+<span class="sd">        The minimum duration between two events (in seconds).</span>
+<span class="sd">        If shorter, the two events are merged.</span>
+<span class="sd">    fs : float, optional</span>
+<span class="sd">        The sampling frequency of the signal in Hz.</span>
+<span class="sd">        If not provided, it will be inferred from the time axis of the data.</span>
+<span class="sd">    sliding_window_size : int, optional</span>
+<span class="sd">        The size of the smoothing window.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    IntervalSet</span>
+<span class="sd">        The interval set of detected events with metadata containing</span>
+<span class="sd">        the power, amplitude, and peak_time</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="kn">import</span> <span class="nn">warnings</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">Tsd</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`data` must be `Tsd`, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">data</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">epochs</span><span class="p">,</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`epochs` must be `IntervalSet`, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">epochs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_check_tuple</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">val</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">` must be a tuple, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">` must have length 2, got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">val</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">` must contain numeric values&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">val</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;`</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">` must be (min, max) with min &lt; max&quot;</span><span class="p">)</span>
+
+    <span class="n">_check_tuple</span><span class="p">(</span><span class="s2">&quot;frequency_band&quot;</span><span class="p">,</span> <span class="n">frequency_band</span><span class="p">)</span>
+    <span class="n">_check_tuple</span><span class="p">(</span><span class="s2">&quot;threshold_band&quot;</span><span class="p">,</span> <span class="n">threshold_band</span><span class="p">)</span>
+    <span class="n">_check_tuple</span><span class="p">(</span><span class="s2">&quot;duration_band&quot;</span><span class="p">,</span> <span class="n">duration_band</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">min_interval</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;`min_interval` must be a number&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">min_interval</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`min_interval` must be &gt;= 0&quot;</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">fs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">fs</span><span class="p">,</span> <span class="n">numbers</span><span class="o">.</span><span class="n">Real</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;`fs` must be a number or None&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">fs</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`fs` must be &gt; 0&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fs</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">rate</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sliding_window_size</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;`sliding_window_size` must be an integer&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">sliding_window_size</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`sliding_window_size` must be &gt; 0&quot;</span><span class="p">)</span>
+
+    <span class="n">data</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">epochs</span><span class="p">)</span>
+
+    <span class="c1"># Frequency filter</span>
+    <span class="n">filtered</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">apply_bandpass_filter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">frequency_band</span><span class="p">,</span> <span class="n">fs</span><span class="p">)</span>
+
+    <span class="c1"># Compute envelope</span>
+    <span class="n">envelope</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_hilbert_envelope</span><span class="p">(</span><span class="n">filtered</span><span class="p">)</span>
+
+    <span class="c1"># Smooth</span>
+    <span class="n">window</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">sliding_window_size</span><span class="p">)</span> <span class="o">/</span> <span class="n">sliding_window_size</span>
+    <span class="n">smoothed</span> <span class="o">=</span> <span class="n">envelope</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
+
+    <span class="c1"># Z-score</span>
+    <span class="n">zscored_smoothed</span> <span class="o">=</span> <span class="p">(</span><span class="n">smoothed</span> <span class="o">-</span> <span class="n">smoothed</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">/</span> <span class="n">smoothed</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+
+    <span class="c1"># Detect oscillation periods by thresholding normalized signal</span>
+    <span class="k">with</span> <span class="n">warnings</span><span class="o">.</span><span class="n">catch_warnings</span><span class="p">():</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">filterwarnings</span><span class="p">(</span>
+            <span class="s2">&quot;ignore&quot;</span><span class="p">,</span>
+            <span class="n">message</span><span class="o">=</span><span class="s2">&quot;Some epochs have no duration&quot;</span><span class="p">,</span>
+            <span class="n">category</span><span class="o">=</span><span class="ne">UserWarning</span><span class="p">,</span>
+        <span class="p">)</span>
+        <span class="n">zscored_smoothed_above</span> <span class="o">=</span> <span class="n">zscored_smoothed</span><span class="o">.</span><span class="n">threshold</span><span class="p">(</span>
+            <span class="n">threshold_band</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;above&quot;</span>
+        <span class="p">)</span>
+        <span class="n">zscored_smoothed_thresholded</span> <span class="o">=</span> <span class="n">zscored_smoothed_above</span><span class="o">.</span><span class="n">threshold</span><span class="p">(</span>
+            <span class="n">threshold_band</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;below&quot;</span>
+        <span class="p">)</span>
+
+    <span class="c1"># Exclude oscillations where min_duration &lt; length &lt; max_duration</span>
+    <span class="n">osc_ep</span> <span class="o">=</span> <span class="n">zscored_smoothed_thresholded</span><span class="o">.</span><span class="n">time_support</span>
+    <span class="n">osc_ep</span> <span class="o">=</span> <span class="n">osc_ep</span><span class="o">.</span><span class="n">drop_short_intervals</span><span class="p">(</span><span class="n">duration_band</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">time_units</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+    <span class="n">osc_ep</span> <span class="o">=</span> <span class="n">osc_ep</span><span class="o">.</span><span class="n">drop_long_intervals</span><span class="p">(</span><span class="n">duration_band</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">time_units</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Merge if inter-oscillation period is too short</span>
+    <span class="n">osc_ep</span> <span class="o">=</span> <span class="n">osc_ep</span><span class="o">.</span><span class="n">merge_close_intervals</span><span class="p">(</span><span class="n">min_interval</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+
+    <span class="c1"># Compute power, amplitude, and peak_time for each interval</span>
+    <span class="n">powers</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">amplitudes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">peak_times</span> <span class="o">=</span> <span class="p">[]</span>
+
+    <span class="k">for</span> <span class="n">s</span><span class="p">,</span> <span class="n">e</span> <span class="ow">in</span> <span class="n">osc_ep</span><span class="o">.</span><span class="n">values</span><span class="p">:</span>
+        <span class="n">seg</span> <span class="o">=</span> <span class="n">envelope</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">e</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">seg</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">powers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+            <span class="n">amplitudes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+            <span class="n">peak_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+            <span class="k">continue</span>
+
+        <span class="n">power</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">values</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+        <span class="n">power_db</span> <span class="o">=</span> <span class="mi">10</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="n">power</span><span class="p">)</span> <span class="k">if</span> <span class="n">power</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span>
+
+        <span class="n">amplitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">peak_idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">seg</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+        <span class="n">peak_time</span> <span class="o">=</span> <span class="n">seg</span><span class="o">.</span><span class="n">index</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">peak_idx</span><span class="p">]</span>
+
+        <span class="n">powers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">power_db</span><span class="p">)</span>
+        <span class="n">amplitudes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">amplitude</span><span class="p">)</span>
+        <span class="n">peak_times</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">peak_time</span><span class="p">)</span>
+
+    <span class="n">metadata</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;power&quot;</span><span class="p">:</span> <span class="n">powers</span><span class="p">,</span>
+        <span class="s2">&quot;amplitude&quot;</span><span class="p">:</span> <span class="n">amplitudes</span><span class="p">,</span>
+        <span class="s2">&quot;peak_time&quot;</span><span class="p">:</span> <span class="n">peak_times</span><span class="p">,</span>
+    <span class="p">}</span>
+
+    <span class="k">return</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="n">start</span><span class="o">=</span><span class="n">osc_ep</span><span class="o">.</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="o">=</span><span class="n">osc_ep</span><span class="o">.</span><span class="n">end</span><span class="p">,</span> <span class="n">metadata</span><span class="o">=</span><span class="n">metadata</span><span class="p">)</span></div>
+
+</pre></div>
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2026, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">pynapple authors</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.11.3</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

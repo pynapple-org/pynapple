@@ -1,0 +1,6 @@
+pynapple.Tsd.as\_array
+======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Tsd.as_array

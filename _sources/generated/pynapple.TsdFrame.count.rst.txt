@@ -1,0 +1,6 @@
+pynapple.TsdFrame.count
+=======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.count

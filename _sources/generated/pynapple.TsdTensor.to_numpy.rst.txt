@@ -1,0 +1,6 @@
+pynapple.TsdTensor.to\_numpy
+============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.to_numpy

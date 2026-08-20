@@ -1,0 +1,6 @@
+pynapple.Tsd.copy
+=================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Tsd.copy

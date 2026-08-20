@@ -1,0 +1,1019 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Detecting sharp-wave ripples &#8212; pynapple 0.11.3.post1.dev60 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_contributors.css?v=fe9086e2" />
+    <link rel="stylesheet" type="text/css" href="../_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=52434729" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../_static/documentation_options.js?v=25e7f992"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=c57da192"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'examples/tutorial_ripple_detection';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="../_static/Pynapple_final_icon.png"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="API reference" href="../api.html" />
+    <link rel="prev" title="Trial-aligned decoding with International Brain Lab data" href="tutorial_ibl_choice_decoding.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.11.3" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.11.3.post1.dev60 documentation - Home"/>
+    <img src="../_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.11.3.post1.dev60 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../learning_material.html">
+    Learning material
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../learning_material.html">
+    Learning material
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../releases.html">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item">
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="tutorial_HD_dataset.html">Analysing head-direction cells</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_pynapple_dandi.html">Streaming data from DANDI</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_null_distributions.html">Null distributions to test spatial firing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_calcium_imaging.html">Calcium Imaging</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_wavelet_decomposition.html">Wavelet Transform</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_phase_preferences.html">Spikes-phase coupling</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorial_ibl_choice_decoding.html">Trial-aligned decoding with International Brain Lab data</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">Detecting sharp-wave ripples</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../learning_material.html" class="nav-link">Learning material</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Detecting sharp-wave ripples</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="detecting-sharp-wave-ripples">
+<h1>Detecting sharp-wave ripples<a class="headerlink" href="#detecting-sharp-wave-ripples" title="Link to this heading">#</a></h1>
+<p>This tutorial demonstrates how to use Pynapple to detect sharp-wave ripples.</p>
+<div class="cell tag_hide-input docutils container">
+<details class="admonition hide above-input">
+<summary aria-label="Toggle hidden content">
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># we&#39;ll import the packages we&#39;re going to use</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">os</span>
+
+<span class="kn">import</span> <span class="nn">matplotlib.colors</span> <span class="k">as</span> <span class="nn">mcolors</span>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="k">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">requests</span>
+<span class="kn">import</span> <span class="nn">seaborn</span> <span class="k">as</span> <span class="nn">sns</span>
+<span class="kn">import</span> <span class="nn">pynapple</span> <span class="k">as</span> <span class="nn">nap</span>
+
+<span class="c1"># some configuration, you can ignore this</span>
+<span class="n">custom_params</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;axes.spines.right&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;axes.spines.top&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">}</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">set_theme</span><span class="p">(</span><span class="n">style</span><span class="o">=</span><span class="s2">&quot;ticks&quot;</span><span class="p">,</span> <span class="n">palette</span><span class="o">=</span><span class="s2">&quot;colorblind&quot;</span><span class="p">,</span> <span class="n">font_scale</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">rc</span><span class="o">=</span><span class="n">custom_params</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+</details>
+</div>
+<section id="downloading-the-data">
+<h2>Downloading the data<a class="headerlink" href="#downloading-the-data" title="Link to this heading">#</a></h2>
+<p>We will examine the dataset from <a class="reference external" href="https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4919122/">Grosmark &amp; Buzsáki (2016)</a>.
+Let’s download the data and save it locally:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">path</span> <span class="o">=</span> <span class="s2">&quot;Achilles_10252013_EEG.nwb&quot;</span>
+<span class="k">if</span> <span class="n">path</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">):</span>
+    <span class="n">r</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;https://osf.io/2dfvp/download&quot;</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="n">block_size</span> <span class="o">=</span> <span class="mi">1024</span> <span class="o">*</span> <span class="mi">1024</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;wb&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">r</span><span class="o">.</span><span class="n">iter_content</span><span class="p">(</span><span class="n">block_size</span><span class="p">):</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<span class="n">data</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">load_file</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+<span class="n">data</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Achilles_10252013_EEG
+┍━━━━━━━━━━━━━┯━━━━━━━━━━━━━┑
+│ Keys        │ Type        │
+┝━━━━━━━━━━━━━┿━━━━━━━━━━━━━┥
+│ units       │ TsGroup     │
+│ rem         │ IntervalSet │
+│ nrem        │ IntervalSet │
+│ forward_ep  │ IntervalSet │
+│ eeg         │ TsdFrame    │
+│ theta_phase │ Tsd         │
+│ position    │ Tsd         │
+┕━━━━━━━━━━━━━┷━━━━━━━━━━━━━┙
+</pre></div>
+</div>
+</div>
+</div>
+<p>We only need to local field potential (LFP), which has been downsampled to 1250Hz:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lfp</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;eeg&quot;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="n">lfp</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)
+----------  ----
+12679.5     -258
+12679.5008  -341
+12679.5016  -355
+12679.5024  -379
+12679.5032  -364
+12679.504   -406
+12679.5048  -508
+...
+25546.9696  2035
+25546.9704  2021
+25546.9712  2023
+25546.972   1906
+25546.9728  1848
+25546.9736  1862
+25546.9744  1976
+dtype: int16, shape: (16084344,)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">lfp</span><span class="o">.</span><span class="n">rate</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>np.float64(1250.0000777153286)
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="frequency-filtering">
+<h2>Frequency filtering<a class="headerlink" href="#frequency-filtering" title="Link to this heading">#</a></h2>
+<p>To look for ripples we will only keep frequencies within 120 to 250Hz:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">filtered_lfp</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">apply_bandpass_filter</span><span class="p">(</span><span class="n">lfp</span><span class="p">,</span> <span class="n">cutoff</span><span class="o">=</span><span class="p">(</span><span class="mi">120</span><span class="p">,</span> <span class="mi">250</span><span class="p">),</span> <span class="n">fs</span><span class="o">=</span><span class="n">lfp</span><span class="o">.</span><span class="n">rate</span><span class="p">)</span>
+<span class="n">filtered_lfp</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)
+----------  ---
+12679.5       0
+12679.5008  -40
+12679.5016  -44
+12679.5024  -13
+12679.5032   22
+12679.504    33
+12679.5048   19
+...
+25546.9696   57
+25546.9704   81
+25546.9712   49
+25546.972   -29
+25546.9728  -95
+25546.9736  -90
+25546.9744  -16
+dtype: int16, shape: (16084344,)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell tag_hide-input docutils container">
+<details class="admonition hide above-input">
+<summary aria-label="Toggle hidden content">
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">segment</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">IntervalSet</span><span class="p">(</span><span class="mf">17233.4</span><span class="p">,</span> <span class="mf">17234.2</span><span class="p">)</span>
+<span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">lfp</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">segment</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;LFP&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">filtered_lfp</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">segment</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;filtered LFP&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;time (s)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;amplitude (a.u.)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;nap.apply_bandpass_filter(lfp, cutoff=(120, 150), fs=lfp.rate)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<img alt="../_images/4929b8d1dc8e0b6fdb8ac5c7d0426dc5c45f7eb73825b6433191428c05f25293.png" src="../_images/4929b8d1dc8e0b6fdb8ac5c7d0426dc5c45f7eb73825b6433191428c05f25293.png" />
+</div>
+</div>
+</section>
+<section id="hilbert-transform-computing-the-envelope">
+<h2>Hilbert transform: computing the envelope<a class="headerlink" href="#hilbert-transform-computing-the-envelope" title="Link to this heading">#</a></h2>
+<p>Now, we will apply the Hilbert transform to the filtered LFP and take its absolute value
+to extract the amplitude envelope, which reflects ripple strength over time.
+Pynapple provides <a class="reference internal" href="../generated/pynapple.process.signal.html#pynapple.process.signal.compute_hilbert_envelope" title="pynapple.process.signal.compute_hilbert_envelope"><span class="xref myst py py-func"><code class="docutils literal notranslate"><span class="pre">compute_hilbert_envelope</span></code></span></a>:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">envelope</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">compute_hilbert_envelope</span><span class="p">(</span><span class="n">filtered_lfp</span><span class="p">)</span>
+<span class="n">envelope</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Time (s)
+----------  ---------
+12679.5       3.00686
+12679.5008   40.3712
+12679.5016   54.7394
+12679.5024   55.3081
+12679.5032   47.6888
+12679.504    34.8182
+12679.5048   22.0093
+...
+25546.9696   65.9358
+25546.9704   84.1077
+25546.9712  101.346
+25546.972   110.556
+25546.9728  110.843
+25546.9736   94.404
+25546.9744   51.4788
+dtype: float64, shape: (16084344,)
+</pre></div>
+</div>
+</div>
+</div>
+<p>See <a class="reference external" href="https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.hilbert.html"><code class="docutils literal notranslate"><span class="pre">scipy.signal.hilbert</span></code></a> for
+more information on what the Hilbert transform does!</p>
+<p>We will plot the envelope over the filtered signal for visual confirmation:</p>
+<div class="cell tag_hide-input docutils container">
+<details class="admonition hide above-input">
+<summary aria-label="Toggle hidden content">
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">filtered_lfp</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">segment</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;filtered LFP&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">envelope</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">segment</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;envelope&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;time (s)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;amplitude (a.u.)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;nap.compute_hilbert_envelope(filtered_lfp)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<img alt="../_images/4e470304a9d080fd2acff670831117afd109ae28692080b1daa5863c45323c4c.png" src="../_images/4e470304a9d080fd2acff670831117afd109ae28692080b1daa5863c45323c4c.png" />
+</div>
+</div>
+</section>
+<section id="smooth-and-z-score">
+<h2>Smooth and Z-score<a class="headerlink" href="#smooth-and-z-score" title="Link to this heading">#</a></h2>
+<p>We will then smooth and z-score the envelope:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">smoothing_bins</span> <span class="o">=</span> <span class="mi">10</span>
+<span class="n">window</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">smoothing_bins</span><span class="p">)</span> <span class="o">/</span> <span class="n">smoothing_bins</span>
+<span class="n">smoothed</span> <span class="o">=</span> <span class="n">envelope</span><span class="o">.</span><span class="n">convolve</span><span class="p">(</span><span class="n">window</span><span class="p">)</span>
+<span class="n">zscored_smoothed</span> <span class="o">=</span> <span class="p">(</span><span class="n">smoothed</span> <span class="o">-</span> <span class="n">smoothed</span><span class="o">.</span><span class="n">mean</span><span class="p">())</span> <span class="o">/</span> <span class="n">smoothed</span><span class="o">.</span><span class="n">std</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Let’s visualize everything up until now as an overview:</p>
+<div class="cell tag_hide-input docutils container">
+<details class="admonition hide above-input">
+<summary aria-label="Toggle hidden content">
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span><span class="mi">9</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">lfp</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">segment</span><span class="p">))</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;LFP&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">filtered_lfp</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">segment</span><span class="p">))</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">envelope</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">segment</span><span class="p">),</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;filtered LFP + envelope&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">zscored_smoothed</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">segment</span><span class="p">))</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;smoothed &amp; z-scored&quot;</span><span class="p">)</span>
+<span class="n">axs</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;time (s)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<img alt="../_images/d6169aae9634bc941cca9f593e011d1111b3a603c16566b0909a4f4c2fc960f9.png" src="../_images/d6169aae9634bc941cca9f593e011d1111b3a603c16566b0909a4f4c2fc960f9.png" />
+</div>
+</div>
+</section>
+<section id="ripple-detection">
+<h2>Ripple detection<a class="headerlink" href="#ripple-detection" title="Link to this heading">#</a></h2>
+<p>We detect ripple events by thresholding the z-scored smoothed signal with a threshold of 3 standard deviations.
+We further filter detected events to keep only those between 30ms and 300ms in duration, typical for hippocampal ripples.
+We lastly merge events that are closer to each other than 20ms, as they are likely to be the same ripple.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">threshold</span> <span class="o">=</span> <span class="mi">3</span>
+<span class="n">ripple_events</span> <span class="o">=</span> <span class="n">zscored_smoothed</span><span class="o">.</span><span class="n">threshold</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;above&quot;</span><span class="p">)</span>
+<span class="n">ripple_epochs</span> <span class="o">=</span> <span class="n">ripple_events</span><span class="o">.</span><span class="n">time_support</span>
+<span class="n">ripple_epochs</span> <span class="o">=</span> <span class="n">ripple_epochs</span><span class="o">.</span><span class="n">drop_short_intervals</span><span class="p">(</span><span class="mf">0.03</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+<span class="n">ripple_epochs</span> <span class="o">=</span> <span class="n">ripple_epochs</span><span class="o">.</span><span class="n">drop_long_intervals</span><span class="p">(</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>    
+<span class="n">ripple_epochs</span> <span class="o">=</span> <span class="n">ripple_epochs</span><span class="o">.</span><span class="n">merge_close_intervals</span><span class="p">(</span><span class="mf">0.02</span><span class="p">,</span> <span class="n">time_units</span><span class="o">=</span><span class="s2">&quot;s&quot;</span><span class="p">)</span>
+<span class="n">ripple_epochs</span><span class="o">.</span><span class="n">intersect</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  index    start      end
+      0  17233.7  17233.8
+      1  17234    17234
+shape: (2, 2), time unit: sec.
+</pre></div>
+</div>
+</div>
+</div>
+<p>Finally, we can plot the detected ripple events on top of the filtered LFP signal for visual confirmation:</p>
+<div class="cell tag_hide-input docutils container">
+<details class="admonition hide above-input">
+<summary aria-label="Toggle hidden content">
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">zscored_smoothed</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">segment</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;z-scored &amp; smoothed&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="n">ripple_epochs</span><span class="o">.</span><span class="n">intersect</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">:</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;amplitude (a.u.)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;time (s)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<img alt="../_images/8624843b891999261d4def4c3d03dd2df8bdd9205e51ba1b2055d19f7b00811e.png" src="../_images/8624843b891999261d4def4c3d03dd2df8bdd9205e51ba1b2055d19f7b00811e.png" />
+</div>
+</div>
+</section>
+<section id="using-detect-oscillatory-events">
+<h2>Using <code class="docutils literal notranslate"><span class="pre">detect_oscillatory_events</span></code><a class="headerlink" href="#using-detect-oscillatory-events" title="Link to this heading">#</a></h2>
+<p>For your convenience, we put the entire process into a single
+function called <a class="reference internal" href="../generated/pynapple.process.signal.html#pynapple.process.signal.detect_oscillatory_events" title="pynapple.process.signal.detect_oscillatory_events"><span class="xref myst py py-func"><code class="docutils literal notranslate"><span class="pre">detect_oscillatory_events</span></code></span></a>.</p>
+<p>To get it to work nicely, you will have to the tune the following detection parameters:</p>
+<ul class="simple">
+<li><p>frequency band: the band of frequencies you are interested in</p></li>
+<li><p>threshold band: minimum and maximum thresholds to apply to the z-scored envelope of the squared signal</p></li>
+<li><p>duration band: minimum and maximum duration of the events</p></li>
+<li><p>minimum interval between events</p></li>
+</ul>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ripple_epochs</span> <span class="o">=</span> <span class="n">nap</span><span class="o">.</span><span class="n">detect_oscillatory_events</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">lfp</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="n">lfp</span><span class="o">.</span><span class="n">time_support</span><span class="p">,</span>
+    <span class="n">frequency_band</span><span class="o">=</span><span class="p">(</span><span class="mi">120</span><span class="p">,</span> <span class="mi">250</span><span class="p">),</span>
+    <span class="n">threshold_band</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span>
+    <span class="n">duration_band</span><span class="o">=</span><span class="p">(</span><span class="mf">0.03</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span>
+    <span class="n">min_interval</span><span class="o">=</span><span class="mf">0.02</span><span class="p">,</span>
+    <span class="n">sliding_window_size</span><span class="o">=</span><span class="n">smoothing_bins</span>
+<span class="p">)</span>
+<span class="n">ripple_epochs</span><span class="o">.</span><span class="n">intersect</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>  index    start      end    power    amplitude    peak_time
+      0  17233.7  17233.8    54.28       641.17      17233.7
+      1  17234    17234      53.48       666.65      17234
+shape: (2, 2), time unit: sec.
+</pre></div>
+</div>
+</div>
+</div>
+<p>You can see that this gives the same result as before:</p>
+<div class="cell tag_hide-input docutils container">
+<details class="admonition hide above-input">
+<summary aria-label="Toggle hidden content">
+<p class="collapsed admonition-title">Show code cell source</p>
+<p class="expanded admonition-title">Hide code cell source</p>
+</summary>
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">zscored_smoothed</span><span class="o">.</span><span class="n">restrict</span><span class="p">(</span><span class="n">segment</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;z-scored &amp; smoothed&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="n">ripple_epochs</span><span class="o">.</span><span class="n">intersect</span><span class="p">(</span><span class="n">segment</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="p">:</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axvspan</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="n">threshold</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;amplitude (a.u.)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;time (s)&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">();</span>
+</pre></div>
+</div>
+</div>
+</details>
+<div class="cell_output docutils container">
+<img alt="../_images/11c5487a9883e73219a3770210b6e10d25ce2fe6c095c9eb3011c5955b420491.png" src="../_images/11c5487a9883e73219a3770210b6e10d25ce2fe6c095c9eb3011c5955b420491.png" />
+</div>
+</div>
+<div class="sd-card sd-sphinx-override sd-mb-3 sd-shadow-sm docutils">
+<div class="sd-card-header docutils">
+<p class="sd-card-text">Authors</p>
+</div>
+<div class="sd-card-body docutils">
+<p class="sd-card-text"><a class="reference external" href="https://wulfdewolf.github.io">Wolf De Wulf</a></p>
+<p class="sd-card-text">Guillaume Viejo</p>
+</div>
+</div>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="tutorial_ibl_choice_decoding.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">Trial-aligned decoding with International Brain Lab data</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../api.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">API reference</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#downloading-the-data">Downloading the data</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#frequency-filtering">Frequency filtering</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#hilbert-transform-computing-the-envelope">Hilbert transform: computing the envelope</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#smooth-and-z-score">Smooth and Z-score</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#ripple-detection">Ripple detection</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#using-detect-oscillatory-events">Using <code class="docutils literal notranslate"><span class="pre">detect_oscillatory_events</span></code></a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="../_sources/examples/tutorial_ripple_detection.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2026, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">pynapple authors</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.11.3</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

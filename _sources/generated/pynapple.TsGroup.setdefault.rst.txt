@@ -1,0 +1,6 @@
+pynapple.TsGroup.setdefault
+===========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.setdefault

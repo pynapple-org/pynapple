@@ -1,0 +1,6 @@
+pynapple.TsdTensor.get
+======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.get

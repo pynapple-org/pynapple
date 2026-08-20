@@ -1,0 +1,37 @@
+﻿pynapple.io.NWBFile
+===================
+
+.. currentmodule:: pynapple.io
+
+.. autoclass:: NWBFile
+   :members:
+   :inherited-members:
+
+   
+   .. automethod:: __init__
+
+   
+   .. rubric:: Methods
+
+   .. autosummary::
+      :toctree: ./
+   
+      ~NWBFile.__init__
+      ~NWBFile.clear
+      ~NWBFile.close
+      ~NWBFile.copy
+      ~NWBFile.fromkeys
+      ~NWBFile.get
+      ~NWBFile.items
+      ~NWBFile.keys
+      ~NWBFile.pop
+      ~NWBFile.popitem
+      ~NWBFile.setdefault
+      ~NWBFile.update
+      ~NWBFile.values
+   
+   
+
+   
+   
+   

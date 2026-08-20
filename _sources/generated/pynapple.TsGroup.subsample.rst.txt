@@ -1,0 +1,6 @@
+pynapple.TsGroup.subsample
+==========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.subsample

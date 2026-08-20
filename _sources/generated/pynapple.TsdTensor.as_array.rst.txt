@@ -1,0 +1,6 @@
+pynapple.TsdTensor.as\_array
+============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.as_array

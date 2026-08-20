@@ -1,0 +1,6 @@
+pynapple.IntervalSet.\_\_init\_\_
+=================================
+
+.. currentmodule:: pynapple
+
+.. automethod:: IntervalSet.__init__

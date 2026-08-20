@@ -1,0 +1,6 @@
+pynapple.Ts.start\_time
+=======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Ts.start_time

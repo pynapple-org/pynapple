@@ -1,0 +1,6 @@
+pynapple.io.EphysReader.\_\_init\_\_
+====================================
+
+.. currentmodule:: pynapple.io
+
+.. automethod:: EphysReader.__init__

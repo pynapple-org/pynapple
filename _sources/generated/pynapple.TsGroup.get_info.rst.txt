@@ -1,0 +1,6 @@
+pynapple.TsGroup.get\_info
+==========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.get_info

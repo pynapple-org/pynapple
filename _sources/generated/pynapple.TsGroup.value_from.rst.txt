@@ -1,0 +1,6 @@
+pynapple.TsGroup.value\_from
+============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsGroup.value_from

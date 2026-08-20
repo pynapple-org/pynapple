@@ -1,0 +1,6 @@
+pynapple.TsdTensor.end\_time
+============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.end_time

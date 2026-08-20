@@ -1,0 +1,6 @@
+pynapple.Tsd.start\_time
+========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Tsd.start_time

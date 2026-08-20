@@ -1,0 +1,6 @@
+pynapple.TsdFrame.bin\_average
+==============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.bin_average

@@ -1,0 +1,6 @@
+pynapple.IntervalSet.time\_span
+===============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: IntervalSet.time_span

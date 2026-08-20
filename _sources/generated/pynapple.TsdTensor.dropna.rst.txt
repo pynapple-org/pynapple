@@ -1,0 +1,6 @@
+pynapple.TsdTensor.dropna
+=========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.dropna

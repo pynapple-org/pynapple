@@ -1,0 +1,6 @@
+pynapple.Ts.get\_slice
+======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Ts.get_slice

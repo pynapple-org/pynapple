@@ -1,0 +1,6 @@
+pynapple.Tsd.as\_series
+=======================
+
+.. currentmodule:: pynapple
+
+.. automethod:: Tsd.as_series

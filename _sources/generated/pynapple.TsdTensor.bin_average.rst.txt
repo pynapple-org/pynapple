@@ -1,0 +1,6 @@
+pynapple.TsdTensor.bin\_average
+===============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.bin_average

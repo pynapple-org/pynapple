@@ -1,0 +1,6 @@
+pynapple.TsdFrame.restrict
+==========================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.restrict

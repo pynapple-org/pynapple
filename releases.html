@@ -1,0 +1,1012 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="./" data-theme="light">
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Releases &#8212; pynapple 0.11.3.post1.dev60 documentation</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "light";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "light";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx_contributors.css?v=fe9086e2" />
+    <link rel="stylesheet" type="text/css" href="_static/plot_directive.css" />
+    <link rel="stylesheet" type="text/css" href="_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="_static/custom.css?v=52434729" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="_static/documentation_options.js?v=25e7f992"></script>
+    <script src="_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="_static/copybutton.js?v=c57da192"></script>
+    <script src="_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'releases';</script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="icon" href="_static/Pynapple_final_icon.png"/>
+    <link rel="author" title="About these documents" href="about.html" />
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Accelerating pynapple with jax" href="pynajax.html" />
+    <link rel="prev" title="About us" href="about.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="0.11.3" />
+  
+    
+    <script src="_static/searchtools.js"></script>
+    <script src="_static/language_data.js"></script>
+    <script src="searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="light">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class="col-lg-3 navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="index.html">
+  
+  
+  
+  
+  
+    
+    
+    
+    <img src="_static/Pynapple_final_logo.png" class="logo__image only-light" alt="pynapple 0.11.3.post1.dev60 documentation - Home"/>
+    <img src="_static/Pynapple_final_logo.png" class="logo__image only-dark pst-js-only" alt="pynapple 0.11.3.post1.dev60 documentation - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class="col-lg-9 navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="learning_material.html">
+    Learning material
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="external.html">
+    External projects
+  </a>
+</li>
+
+            <li class="nav-item dropdown">
+                <button class="btn dropdown-toggle nav-item" type="button"
+                data-bs-toggle="dropdown" aria-expanded="false"
+                aria-controls="pst-nav-more-links">
+                    More
+                </button>
+                <ul id="pst-nav-more-links" class="dropdown-menu">
+                    
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="about.html">
+    About us
+  </a>
+</li>
+
+
+<li class=" current active">
+  <a class="nav-link dropdown-item nav-internal" href="#">
+    Releases
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class=" ">
+  <a class="nav-link dropdown-item nav-internal" href="citing.html">
+    Citing
+  </a>
+</li>
+
+                </ul>
+            </li>
+            
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+</ul></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn search-button-field search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+ <i class="fa-solid fa-magnifying-glass"></i>
+ <span class="search-button__default-text">Search</span>
+ <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd class="kbd-shortcut__modifier">K</kbd></span>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="installing.html">
+    Installing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="user_guide.html">
+    User guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="learning_material.html">
+    Learning material
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="api.html">
+    API
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="external.html">
+    External projects
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="about.html">
+    About us
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="#">
+    Releases
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="pynajax.html">
+    GPU acceleration
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="citing.html">
+    Citing
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/pynapple-org/pynapple" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://twitter.com/thepynapple" title="Twitter" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fab fa-twitter fa-lg" aria-hidden="true"></i><span class="visually-hidden">Twitter</span></a>
+        </li>
+</ul></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">Releases</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section id="releases">
+<h1>Releases<a class="headerlink" href="#releases" title="Link to this heading">#</a></h1>
+<section id="unreleased">
+<h2>Unreleased<a class="headerlink" href="#unreleased" title="Link to this heading">#</a></h2>
+</section>
+<section id="id1">
+<h2>0.11.4 (2026-08-19)<a class="headerlink" href="#id1" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Major speed-up of <code class="docutils literal notranslate"><span class="pre">restrict</span></code> and object reconstruction: internal operations that provably return a sorted, in-support index skip revalidation, and <code class="docutils literal notranslate"><span class="pre">restrict</span></code> uses <code class="docutils literal notranslate"><span class="pre">searchsorted</span></code>. At 10M samples, <code class="docutils literal notranslate"><span class="pre">restrict</span></code> 33 ms -&gt; 2.8 ms, <code class="docutils literal notranslate"><span class="pre">get</span></code> 15 ms -&gt; 12 us.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">compute_tuning_curves</span></code> accepts bin edges directly for a single feature, and errors when the number of bin specifications does not match the number of features.</p></li>
+<li><p>New <a class="reference internal" href="learning_material.html"><span class="doc std std-doc">Learning material</span></a> page collecting workshop and summer school material.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">convolve</span></code> and <code class="docutils literal notranslate"><span class="pre">smooth</span></code> now warn when the kernel is longer than an epoch, where the output is entirely determined by the zero-padding.</p></li>
+<li><p>NWB loader attaches <code class="docutils literal notranslate"><span class="pre">rois</span></code> metadata to <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> from a <code class="docutils literal notranslate"><span class="pre">RoiResponseSeries</span></code>, skipping per-row array columns (<code class="docutils literal notranslate"><span class="pre">image_mask</span></code>, <code class="docutils literal notranslate"><span class="pre">pixel_mask</span></code>).</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code> drops rows with <code class="docutils literal notranslate"><span class="pre">NaN</span></code> start or end times at initialization, with a warning.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NeuroSuiteIO</span></code> XML parsing no longer fails on a missing <code class="docutils literal notranslate"><span class="pre">units</span></code> section or empty <code class="docutils literal notranslate"><span class="pre">nSamples</span></code>, <code class="docutils literal notranslate"><span class="pre">nFeatures</span></code>, <code class="docutils literal notranslate"><span class="pre">peakSampleIndex</span></code> fields.</p></li>
+<li><p>Fixed tuning curves carrying the pandas index name (e.g. <code class="docutils literal notranslate"><span class="pre">id</span></code>) into the xarray coordinate instead of <code class="docutils literal notranslate"><span class="pre">unit</span></code>.</p></li>
+<li><p>Added a <code class="docutils literal notranslate"><span class="pre">codespell</span></code> tox environment and CI workflow, plus typo fixes throughout.</p></li>
+<li><p>Added Python 3.12 to the tox test matrix.</p></li>
+<li><p>Added <a class="reference external" href="https://github.com/pynapple-org/claude-skills">pynapple-org/claude-skills</a>, a Claude Code skill teaching pynapple idioms to AI coding assistants. See <a class="reference internal" href="external.html"><span class="doc std std-doc">External Projects</span></a>.</p></li>
+</ul>
+</section>
+<section id="id2">
+<h2>0.11.3 (2026-05-26)<a class="headerlink" href="#id2" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">NeuroSuiteIO</span></code> channel indexing: <code class="docutils literal notranslate"><span class="pre">skip</span></code> and <code class="docutils literal notranslate"><span class="pre">groups</span></code> are now keyed by channel ID instead of sequential count, correcting channel ordering when IDs are non-contiguous.</p></li>
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">TsIndex</span></code> to preserve full floating-point precision for timestamps already in seconds by removing unnecessary <code class="docutils literal notranslate"><span class="pre">np.around</span></code> rounding, resolving precision loss for UTC-based timestamps.</p></li>
+<li><p>Fixed doctests across core modules (<code class="docutils literal notranslate"><span class="pre">interval_set</span></code>, <code class="docutils literal notranslate"><span class="pre">time_series</span></code>, <code class="docutils literal notranslate"><span class="pre">ts_group</span></code>) and process modules (<code class="docutils literal notranslate"><span class="pre">signal</span></code>, <code class="docutils literal notranslate"><span class="pre">decoding</span></code>, <code class="docutils literal notranslate"><span class="pre">randomize</span></code>). Added a GitHub Actions CI workflow to run doctests on every pull request.</p></li>
+</ul>
+</section>
+<section id="id3">
+<h2>0.11.2 (2026-05-13)<a class="headerlink" href="#id3" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Fixed out-of-bounds memory access in <code class="docutils literal notranslate"><span class="pre">jitrestrict</span></code>, <code class="docutils literal notranslate"><span class="pre">jitrestrict_with_count</span></code>, <code class="docutils literal notranslate"><span class="pre">jitin_interval</span></code>, <code class="docutils literal notranslate"><span class="pre">jitremove_nan</span></code>, <code class="docutils literal notranslate"><span class="pre">jitthreshold</span></code>, and <code class="docutils literal notranslate"><span class="pre">jitunion_isets</span></code> when called with empty time arrays or empty epoch sets. With Numba JIT enabled these manifested as random crashes or segfaults; with JIT disabled they raised <code class="docutils literal notranslate"><span class="pre">IndexError</span></code>.</p></li>
+<li><p>Fixed missing <code class="docutils literal notranslate"><span class="pre">k</span> <span class="pre">&lt;</span> <span class="pre">m</span></code> bounds guard in <code class="docutils literal notranslate"><span class="pre">jitrestrict_with_count</span></code> and <code class="docutils literal notranslate"><span class="pre">jitin_interval</span></code>, which could cause an out-of-bounds read when all epoch ends precede the first timestamp.</p></li>
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">jitthreshold</span></code> producing an out-of-bounds access when the input contains a single time point.</p></li>
+<li><p>Fixed undefined <code class="docutils literal notranslate"><span class="pre">nan_cond</span></code> variable in <code class="docutils literal notranslate"><span class="pre">jitvaluefrom</span></code> when an epoch contains exactly one target timestamp and mode is <code class="docutils literal notranslate"><span class="pre">before</span></code> or <code class="docutils literal notranslate"><span class="pre">closest</span></code>, which could silently return wrong results instead of <code class="docutils literal notranslate"><span class="pre">NaN</span></code>.</p></li>
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">compute_perievent</span></code> crashing on <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code> inputs when any event has no spikes within the requested window.</p></li>
+</ul>
+</section>
+<section id="id4">
+<h2>0.11.1 (2026-05-06)<a class="headerlink" href="#id4" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>New <code class="docutils literal notranslate"><span class="pre">signal</span></code> module exposing <code class="docutils literal notranslate"><span class="pre">apply_hilbert_transform</span></code>, <code class="docutils literal notranslate"><span class="pre">compute_hilbert_envelope</span></code>, and <code class="docutils literal notranslate"><span class="pre">compute_hilbert_phase</span></code> for computing the Hilbert transform, signal envelope, and instantaneous phase of time series.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">detect_oscillatory_events</span></code> updated to use the Hilbert transform internally and to validate input types.</p></li>
+<li><p>New <code class="docutils literal notranslate"><span class="pre">find_peaks</span></code> method for <code class="docutils literal notranslate"><span class="pre">Tsd</span></code> and <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code>, wrapping <code class="docutils literal notranslate"><span class="pre">scipy.signal.find_peaks</span></code> with support for epoch-restricted peak detection and optional return of peak properties.</p></li>
+<li><p>New tutorial <code class="docutils literal notranslate"><span class="pre">tutorial_ripple_detection.md</span></code> demonstrating oscillatory event detection on hippocampal LFP data.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">NeuroSuiteIO</span></code> now reads epoch files and returns them as an <code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code>.</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">copy</span></code> method to <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code>.</p></li>
+<li><p>NWB loader now reads <code class="docutils literal notranslate"><span class="pre">ElectrodesTable</span></code> metadata when loading an <code class="docutils literal notranslate"><span class="pre">ElectricalSeries</span></code>.</p></li>
+<li><p>Fixed time support propagation in <code class="docutils literal notranslate"><span class="pre">compute_perievent</span></code>.</p></li>
+</ul>
+</section>
+<section id="id5">
+<h2>0.11.0 (2026-03-29)<a class="headerlink" href="#id5" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>New <code class="docutils literal notranslate"><span class="pre">EphysReader</span></code> class and <code class="docutils literal notranslate"><span class="pre">NeoSignalInterface</span></code> for reading electrophysiology files through the <a class="reference external" href="https://neo.readthedocs.io">Neo</a> library. Supports a wide range of formats (Plexon, Open Ephys, Neuralynx, …) with lazy loading of analog signals.</p></li>
+<li><p>New <code class="docutils literal notranslate"><span class="pre">NeuroSuiteIO</span></code> class for reading Neuroscope/NeuroSuite formatted data (binary <code class="docutils literal notranslate"><span class="pre">.dat</span></code>/<code class="docutils literal notranslate"><span class="pre">.eeg</span></code>/<code class="docutils literal notranslate"><span class="pre">.lfp</span></code> files and <code class="docutils literal notranslate"><span class="pre">.clu</span></code>/<code class="docutils literal notranslate"><span class="pre">.res</span></code> spike sorting results).</p></li>
+<li><p>New <code class="docutils literal notranslate"><span class="pre">load_binary_file</span></code> function for loading raw binary electrophysiology recordings.</p></li>
+<li><p>Refactoring of the perievent module with a unified <code class="docutils literal notranslate"><span class="pre">compute_perievent</span></code> function that automatically handles both discrete (Ts, TsGroup) and continuous (Tsd, TsdFrame, TsdTensor) data.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">compute_event_trigger_average</span></code> renamed to <code class="docutils literal notranslate"><span class="pre">compute_event_triggered_average</span></code>. <code class="docutils literal notranslate"><span class="pre">compute_perievent_continuous</span></code> replaced by <code class="docutils literal notranslate"><span class="pre">compute_spike_triggered_average</span></code> (an alias of <code class="docutils literal notranslate"><span class="pre">compute_event_triggered_average</span></code>).</p></li>
+<li><p>Scipy and xarray are now imported lazily at runtime rather than at package import, reducing startup time.</p></li>
+<li><p>Fixed scrambled electrode metadata when loading NWB files whose units table contains a <code class="docutils literal notranslate"><span class="pre">DynamicTableRegion</span></code> column.</p></li>
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">warp_tensor</span></code> to correctly handle empty intervals.</p></li>
+</ul>
+</section>
+<section id="id6">
+<h2>0.10.3 (2026-02-06)<a class="headerlink" href="#id6" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Added a <code class="docutils literal notranslate"><span class="pre">subsample</span></code> method to TsGroup, enabling random subsampling of timestamps per element with reproducibility options and support for both Ts and Tsd.</p></li>
+<li><p>Improved handling of empty or zero-length IntervalSet objects to ensure correct initialization of time_support and rate.</p></li>
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">nap.randomize.shift_timestamps</span></code> with a mode argument to either wrap or drop timestamps that exceed the interval boundaries after shifting.</p></li>
+</ul>
+</section>
+<section id="id7">
+<h2>0.10.2 (2025-12-05)<a class="headerlink" href="#id7" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>New tutorial, <code class="docutils literal notranslate"><span class="pre">tutorial_null_distributions.md</span></code>, demonstrating how to use randomization methods to generate null distributions for testing spatial firing.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">compute_tuning_curves</span></code> include firing rates (rates) in the returned attributes</p></li>
+<li><p>Fixed a key mismatch in <code class="docutils literal notranslate"><span class="pre">ts_group.py</span></code> for loading data from NPZ files, correcting <code class="docutils literal notranslate"><span class="pre">&quot;data&quot;</span></code> to <code class="docutils literal notranslate"><span class="pre">&quot;d&quot;</span></code></p></li>
+</ul>
+</section>
+<section id="id8">
+<h2>0.10.1 (2025-10-30)<a class="headerlink" href="#id8" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Fixing smoothing for <code class="docutils literal notranslate"><span class="pre">nap.decode_bayes</span></code>.</p></li>
+<li><p>Fixing <code class="docutils literal notranslate"><span class="pre">np.einsum</span></code>.</p></li>
+</ul>
+</section>
+<section id="id9">
+<h2>0.10.0 (2025-10-27)<a class="headerlink" href="#id9" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Generalizing <code class="docutils literal notranslate"><span class="pre">nap.compute_tuning_curves</span></code>. It can take any time series object (Tsd, TsdFrame, TsGroup, TsdTensor) as input and
+work for any dimension of data.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">nap.compute_1d_tuning_curve</span></code>, <code class="docutils literal notranslate"><span class="pre">nap.compute_2d_tuning_curve</span></code>, <code class="docutils literal notranslate"><span class="pre">nap.compute_1d_tuning_curve_continuous</span></code>, <code class="docutils literal notranslate"><span class="pre">nap.compute_2d_tuning_curve_continuous</span></code>
+are being deprecated in favor of the general <code class="docutils literal notranslate"><span class="pre">nap.compute_tuning_curves</span></code>.</p></li>
+<li><p>Generalization of <code class="docutils literal notranslate"><span class="pre">nap.decode_1d</span></code> and <code class="docutils literal notranslate"><span class="pre">nap.decode_2d</span></code> to <code class="docutils literal notranslate"><span class="pre">nap.decode_bayes</span></code> for bayesian decoding of any dimension of data.</p></li>
+<li><p>New function <code class="docutils literal notranslate"><span class="pre">nap.decode_template</span></code> for template matching decoding of any dimension of data.</p></li>
+<li><p>Metadata can be restricted with <code class="docutils literal notranslate"><span class="pre">restrict_info</span></code>.</p></li>
+<li><p>New function <code class="docutils literal notranslate"><span class="pre">detect_oscillatory_events</span></code> to detect oscillatory events in a Tsd object.</p></li>
+<li><p>Fix TsdFrame <code class="docutils literal notranslate"><span class="pre">__repr__</span></code> for boolean data type.</p></li>
+<li><p>Refactoring of <code class="docutils literal notranslate"><span class="pre">nap.compute_mutual_information</span></code> to take as input xarray tuning curves object.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">in_interval</span></code> method for IntervalSet to check if time points are within intervals.</p></li>
+<li><p>Refactoring <code class="docutils literal notranslate"><span class="pre">nap.compute_discrete_tuning_curves</span></code> to <code class="docutils literal notranslate"><span class="pre">compute_response_per_epoch</span></code>.</p></li>
+<li><p>Tuning curves function can return spike counts and occupancy separately.</p></li>
+</ul>
+</section>
+<section id="id10">
+<h2>0.9.2 (2025-06-16)<a class="headerlink" href="#id10" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Implement <code class="docutils literal notranslate"><span class="pre">time_diff</span></code> method for time series objects</p></li>
+<li><p>Implement <code class="docutils literal notranslate"><span class="pre">nap.compute_isi_distribution</span></code>, which uses <code class="docutils literal notranslate"><span class="pre">time_diff</span></code> to compute the distribution of inter spike intervals</p></li>
+<li><p>Fix IntervalSet and TsGroup <code class="docutils literal notranslate"><span class="pre">__repr__</span></code></p></li>
+<li><p>Fix backward compatibility for loading old npz files.</p></li>
+</ul>
+</section>
+<section id="id11">
+<h2>0.9.1 (2025-06-04)<a class="headerlink" href="#id11" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Fix TsdFrame <code class="docutils literal notranslate"><span class="pre">__repr__</span></code></p></li>
+</ul>
+</section>
+<section id="id12">
+<h2>0.9.0 (2025-05-13)<a class="headerlink" href="#id12" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>New private class: <code class="docutils literal notranslate"><span class="pre">_MetadataMixin</span></code> and <code class="docutils literal notranslate"><span class="pre">_Metadata(UserDict)</span></code> (core/metadata_class.py). Can be inherited by:</p>
+<ul>
+<li><p>IntervalSet</p></li>
+<li><p>TsdFrame</p></li>
+<li><p>TsGroup
+This class assumes that whatever is inheriting it has the private property <code class="docutils literal notranslate"><span class="pre">self._initialized</span></code>.
+<code class="docutils literal notranslate"><span class="pre">metadata</span></code>: public read-only view of metadata</p></li>
+</ul>
+</li>
+<li><p>Add a decimate method to _BaseTsd.</p></li>
+<li><p>Adds support for a new derivative method which wraps <code class="docutils literal notranslate"><span class="pre">np.gradient</span></code> with support for epochs and time index</p></li>
+</ul>
+</section>
+<section id="id13">
+<h2>0.8.5 (2025-03-24)<a class="headerlink" href="#id13" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Implements <code class="docutils literal notranslate"><span class="pre">nap.build_tensor</span></code> and <code class="docutils literal notranslate"><span class="pre">nap.warp_tensor</span></code> for trial-based data.</p></li>
+<li><p>Fix horizontal slicing for TsdFrame (Issue )</p></li>
+<li><p>Fix empty TsGroup. The rate attribute was not added to the metadata dataframe.</p></li>
+<li><p>New example notebook : Trial-aligned choice decoding in International Brain Lab data</p></li>
+<li><p>Set pynapple version dynamically by reading the github tag.</p></li>
+</ul>
+</section>
+<section id="id14">
+<h2>0.8.4 (2025-02-07)<a class="headerlink" href="#id14" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Fix value printing of IntervalSet when rows are collapsed</p></li>
+<li><p>Backward compatibility fix for loading npz files with TsGroup</p></li>
+<li><p>Fix indexing of IntervalSet to be able to use -1</p></li>
+<li><p>Add column names for compute_wavelet_transform</p></li>
+</ul>
+</section>
+<section id="id15">
+<h2>0.8.3 (2025-01-24)<a class="headerlink" href="#id15" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">compute_mean_power_spectral_density</span></code> computes the mean periodogram.</p></li>
+</ul>
+</section>
+<section id="id16">
+<h2>0.8.2 (2025-01-22)<a class="headerlink" href="#id16" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">compute_power_spectral_density</span></code> now computes the periodogram, where previously it was only computing the FFT</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">compute_fft</span></code> has been added that contains the old functionality of <code class="docutils literal notranslate"><span class="pre">compute_power_spectral_density</span></code>.</p></li>
+</ul>
+</section>
+<section id="id17">
+<h2>0.8.1 (2025-01-17)<a class="headerlink" href="#id17" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Bugfix : time support was not updated for <code class="docutils literal notranslate"><span class="pre">bin_average</span></code> and <code class="docutils literal notranslate"><span class="pre">interpolate</span></code> with new <code class="docutils literal notranslate"><span class="pre">_initialize_tsd_output</span></code> method</p></li>
+</ul>
+</section>
+<section id="id18">
+<h2>0.8.0 (2025-01-15)<a class="headerlink" href="#id18" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>New private class: <code class="docutils literal notranslate"><span class="pre">_MetadataMixin</span></code> (core/metadata_class.py). Can be inherited by <code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code>, <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> and <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code>.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">decode_1d</span></code> and <code class="docutils literal notranslate"><span class="pre">decode_2d</span></code> now accepts <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> as input.</p></li>
+</ul>
+</section>
+<section id="id19">
+<h2>0.7.1 (2024-09-24)<a class="headerlink" href="#id19" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Fixing nan issue when computing 1d tuning curve (See issue #334).</p></li>
+<li><p>Refactor tuning curves and correlogram tests.</p></li>
+<li><p>Adding validators decorators for tuning curves and correlogram modules.</p></li>
+</ul>
+</section>
+<section id="id20">
+<h2>0.7.0 (2024-09-16)<a class="headerlink" href="#id20" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Morlet wavelets spectrogram with utility for plotting the wavelets.</p></li>
+<li><p>(Mean) Power spectral density. Returns a Pandas DataFrame.</p></li>
+<li><p>Convolve function works for any dimension of time series and any dimensions of kernel.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">dtype</span></code> in count function</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">get_slice</span></code>: public method with a simplified API, argument start, end, time_units. returns a slice that matches behavior of Base.get.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">_get_slice</span></code>: private method, adds the argument “mode” this can be: “after_t”, “before_t”, “closest_t”, “restrict”.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">split</span></code> method for IntervalSet. Argument is <code class="docutils literal notranslate"><span class="pre">interval_size</span></code> in time unit.</p></li>
+<li><p>Changed os import to pathlib.</p></li>
+<li><p>Fixed pickling issue. TsGroup can now be saved as pickle.</p></li>
+<li><p>TsGroup can be created from an iterable of Ts/Tsd objects.</p></li>
+<li><p>IntervalSet can be created from (start, end) pairs</p></li>
+</ul>
+</section>
+<section id="id21">
+<h2>0.6.6 (2024-05-28)<a class="headerlink" href="#id21" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Full lazy-loading for NWB file.</p></li>
+<li><p>Parameter <code class="docutils literal notranslate"><span class="pre">load_array</span></code> for time series can prevent loading zarr array</p></li>
+<li><p>Function to merge a list of <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code></p></li>
+</ul>
+</section>
+<section id="id22">
+<h2>0.6.5 (2024-05-14)<a class="headerlink" href="#id22" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Full <code class="docutils literal notranslate"><span class="pre">pynajax</span></code> backend compatibility</p></li>
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> column slicing</p></li>
+</ul>
+</section>
+<section id="id23">
+<h2>0.6.4 (2024-04-18)<a class="headerlink" href="#id23" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Fixing IntervalSet <code class="docutils literal notranslate"><span class="pre">__repr__</span></code>. Tabulate conflict with numpy 1.26.</p></li>
+</ul>
+</section>
+<section id="id24">
+<h2>0.6.3 (2024-04-17)<a class="headerlink" href="#id24" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Improving <code class="docutils literal notranslate"><span class="pre">__repr__</span></code> for all objects.</p></li>
+<li><p>TsGroup <code class="docutils literal notranslate"><span class="pre">__getattr__</span></code> and <code class="docutils literal notranslate"><span class="pre">__setattr__</span></code> added to access metadata columns directly</p></li>
+<li><p>TsGroup <code class="docutils literal notranslate"><span class="pre">__setitem__</span></code> now allows changes directly to metadata</p></li>
+<li><p>TsGroup <code class="docutils literal notranslate"><span class="pre">__getitem__</span></code> returns column of metadata if passed as string</p></li>
+</ul>
+</section>
+<section id="id25">
+<h2>0.6.2 (2024-04-04)<a class="headerlink" href="#id25" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">smooth</span></code> now takes standard deviation in time units</p></li>
+<li><p>Fixed <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code> saving method.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">__getattr__</span></code> of <code class="docutils literal notranslate"><span class="pre">BaseTsd</span></code> allow numpy functions to be attached as attributes of Tsd objects</p></li>
+<li><p>Added <code class="docutils literal notranslate"><span class="pre">get</span></code> method for <code class="docutils literal notranslate"><span class="pre">TsGroup</span></code></p></li>
+<li><p>Tsds can be concatenate vertically if time indexes matches.</p></li>
+</ul>
+</section>
+<section id="id26">
+<h2>0.6.1 (2024-03-03)<a class="headerlink" href="#id26" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Fixed pynapple <code class="docutils literal notranslate"><span class="pre">loc</span></code> method for new <code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code></p></li>
+</ul>
+</section>
+<section id="id27">
+<h2>0.6.0 (2024-03-02)<a class="headerlink" href="#id27" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Refactoring <code class="docutils literal notranslate"><span class="pre">IntervalSet</span></code> to pure numpy ndarray.</p></li>
+<li><p>Implementing new chain of inheritance for time series with abstract base class. <code class="docutils literal notranslate"><span class="pre">base_class.Base</span></code> holds the temporal methods for all time series and <code class="docutils literal notranslate"><span class="pre">Ts</span></code>. <code class="docutils literal notranslate"><span class="pre">time_series.BaseTsd</span></code> inherit <code class="docutils literal notranslate"><span class="pre">Base</span></code> and implements the common methods for <code class="docutils literal notranslate"><span class="pre">Tsd</span></code>, <code class="docutils literal notranslate"><span class="pre">TsdFrame</span></code> and <code class="docutils literal notranslate"><span class="pre">Tsd</span></code>.</p></li>
+<li><p>Automatic conversion to numpy ndarray for all objects that are numpy-like (typically jax).</p></li>
+</ul>
+</section>
+<section id="id28">
+<h2>0.5.1 (2024-01-29)<a class="headerlink" href="#id28" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Implementing <code class="docutils literal notranslate"><span class="pre">event_trigger_average</span></code> for all dimensions.</p></li>
+<li><p>Hiding jitted functions from users.</p></li>
+</ul>
+</section>
+<section id="id29">
+<h2>0.5.0 (2023-12-12)<a class="headerlink" href="#id29" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Removing GUI stack from pynapple. To create a NWB file, users need to install nwbmatic (https://github.com/pynapple-org/nwbmatic)</p></li>
+<li><p>Implementing <code class="docutils literal notranslate"><span class="pre">compute_perievent_continuous</span></code></p></li>
+<li><p>Implementing <code class="docutils literal notranslate"><span class="pre">convolve</span></code> for Tsd, TsdFrame and TsdTensor</p></li>
+<li><p>Implementing <code class="docutils literal notranslate"><span class="pre">smooth</span></code> for fast gaussian smoothing of time series</p></li>
+</ul>
+</section>
+<section id="id30">
+<h2>0.4.1 (2023-10-30)<a class="headerlink" href="#id30" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Implementing <code class="docutils literal notranslate"><span class="pre">get</span></code> method that return both an interval or the closest timepoint</p></li>
+</ul>
+</section>
+<section id="id31">
+<h2>0.4.0 (2023-10-11)<a class="headerlink" href="#id31" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Implementing the numpy array container approach within pynapple</p></li>
+<li><p>TsdTensor for objects larger than 2 dimensions is now available</p></li>
+</ul>
+</section>
+<section id="id32">
+<h2>0.3.6 (2023-09-11)<a class="headerlink" href="#id32" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Fix issue in NWB reader class with units</p></li>
+<li><p>Implement a linear interpolation function.</p></li>
+</ul>
+</section>
+<section id="id33">
+<h2>0.3.5 (2023-08-08)<a class="headerlink" href="#id33" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>NWB reader class</p></li>
+<li><p>NPZ reader class</p></li>
+<li><p>Folder class for navigating a dataset.</p></li>
+<li><p>Cross-correlograms function can take tuple</p></li>
+<li><p>New doc with mkdocs-gallery</p></li>
+</ul>
+</section>
+<section id="id34">
+<h2>0.3.4 (2023-06-29)<a class="headerlink" href="#id34" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">TsGroup.to_tsd</span></code> and <code class="docutils literal notranslate"><span class="pre">Tsd.to_tsgroup</span></code> transformations</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">count</span></code> can take IntervalSet</p></li>
+<li><p>Saving to npz functions for all objects.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">tsd.value_from</span></code> can take TsdFrame</p></li>
+<li><p>Warning message for deprecating current IO.</p></li>
+</ul>
+</section>
+<section id="id35">
+<h2>0.3.3 (2023-04-17)<a class="headerlink" href="#id35" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Fixed minor bug with tkinter</p></li>
+</ul>
+</section>
+<section id="id36">
+<h2>0.3.2 (2023-04-12)<a class="headerlink" href="#id36" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>PyQt removed from the list of dependencies</p></li>
+</ul>
+</section>
+<section id="id37">
+<h2>0.3.1 (2022-12-08)<a class="headerlink" href="#id37" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Core functions rewritten with Numba</p></li>
+</ul>
+</section>
+<section id="id38">
+<h2>0.2.4 (2022-05-02)<a class="headerlink" href="#id38" title="Link to this heading">#</a></h2>
+</section>
+<section id="id39">
+<h2>0.2.3 (2022-04-05)<a class="headerlink" href="#id39" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Fixed minor bug when saving DLC in NWB.</p></li>
+</ul>
+</section>
+<section id="id40">
+<h2>0.2.3 (2022-04-05)<a class="headerlink" href="#id40" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Alpha release</p></li>
+</ul>
+</section>
+<section id="id41">
+<h2>0.2.2 (2022-04-05)<a class="headerlink" href="#id41" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Beta testing version for public</p></li>
+</ul>
+</section>
+<section id="id42">
+<h2>0.2.1 (2022-02-07)<a class="headerlink" href="#id42" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Beta testing version for Peyrache Lab.</p></li>
+</ul>
+</section>
+<section id="id43">
+<h2>0.2.0 (2022-01-10)<a class="headerlink" href="#id43" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>First version for pynapple with main features in core, process and IO.</p></li>
+</ul>
+</section>
+<section id="pre-release-2022-01-06">
+<h2>0.2.0 Pre-release (2022-01-06)<a class="headerlink" href="#pre-release-2022-01-06" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Pre-release version for pynapple with main features in core and process.</p></li>
+</ul>
+</section>
+<section id="id44">
+<h2>0.1.1 (2021-10-25)<a class="headerlink" href="#id44" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>First release on PyPI.</p></li>
+<li><p>First minimal version</p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="about.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title">About us</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="pynajax.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">Accelerating pynapple with jax</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#unreleased">Unreleased</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">0.11.4 (2026-08-19)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">0.11.3 (2026-05-26)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id3">0.11.2 (2026-05-13)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id4">0.11.1 (2026-05-06)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id5">0.11.0 (2026-03-29)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id6">0.10.3 (2026-02-06)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id7">0.10.2 (2025-12-05)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id8">0.10.1 (2025-10-30)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id9">0.10.0 (2025-10-27)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id10">0.9.2 (2025-06-16)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id11">0.9.1 (2025-06-04)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id12">0.9.0 (2025-05-13)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id13">0.8.5 (2025-03-24)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id14">0.8.4 (2025-02-07)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id15">0.8.3 (2025-01-24)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id16">0.8.2 (2025-01-22)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id17">0.8.1 (2025-01-17)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id18">0.8.0 (2025-01-15)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id19">0.7.1 (2024-09-24)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id20">0.7.0 (2024-09-16)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id21">0.6.6 (2024-05-28)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id22">0.6.5 (2024-05-14)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id23">0.6.4 (2024-04-18)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id24">0.6.3 (2024-04-17)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id25">0.6.2 (2024-04-04)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id26">0.6.1 (2024-03-03)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id27">0.6.0 (2024-03-02)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id28">0.5.1 (2024-01-29)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id29">0.5.0 (2023-12-12)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id30">0.4.1 (2023-10-30)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id31">0.4.0 (2023-10-11)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id32">0.3.6 (2023-09-11)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id33">0.3.5 (2023-08-08)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id34">0.3.4 (2023-06-29)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id35">0.3.3 (2023-04-17)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id36">0.3.2 (2023-04-12)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id37">0.3.1 (2022-12-08)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id38">0.2.4 (2022-05-02)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id39">0.2.3 (2022-04-05)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id40">0.2.3 (2022-04-05)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id41">0.2.2 (2022-04-05)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id42">0.2.1 (2022-02-07)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id43">0.2.0 (2022-01-10)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#pre-release-2022-01-06">0.2.0 Pre-release (2022-01-06)</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#id44">0.1.1 (2021-10-25)</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  <div class="tocsection sourcelink">
+    <a href="_sources/releases.md.txt">
+      <i class="fa-solid fa-file-lines"></i> Show Source
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+<footer class="footer" style="border-top: 1px solid #ccc; padding-top: 10px">
+  <div class="container">
+    <div id="credits" style="width: 50%; float: left">
+      <p>
+      &#169; Copyright 2021-2026, <a href="https://www.simonsfoundation.org/people/guillaume-viejo/">pynapple authors</a>.<br/>
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> and the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/">PyData Theme</a>.<br/>
+      </p>
+    </div>
+    <div id="version" style="color: #999; float: right; margin: 15px">v0.11.3</div>
+    </div>
+  </div>
+</footer>
+  </body>
+</html>

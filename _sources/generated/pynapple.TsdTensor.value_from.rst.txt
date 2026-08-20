@@ -1,0 +1,6 @@
+pynapple.TsdTensor.value\_from
+==============================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdTensor.value_from

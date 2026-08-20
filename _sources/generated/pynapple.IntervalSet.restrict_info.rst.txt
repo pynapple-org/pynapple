@@ -1,0 +1,6 @@
+pynapple.IntervalSet.restrict\_info
+===================================
+
+.. currentmodule:: pynapple
+
+.. automethod:: IntervalSet.restrict_info

@@ -1,0 +1,6 @@
+pynapple.TsdFrame.groupby\_apply
+================================
+
+.. currentmodule:: pynapple
+
+.. automethod:: TsdFrame.groupby_apply
