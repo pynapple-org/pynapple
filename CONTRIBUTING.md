@@ -16,7 +16,7 @@ conda create --name pynapple pip python=3.8
 conda activate pynapple
 
 # Install in editable mode with dev dependencies
-pip install -e ".[dev,docs]"
+pip install -e ".[dev,doc]"
 ```
 
 Note: If you're an external contributor, you'll likely want to fork the repository first with your own GitHub account, and then set up an `upstream` remote branch:
