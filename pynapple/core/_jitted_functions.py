@@ -106,6 +106,29 @@ VALUE_FROM_BSEARCH_RATIO = 128
 
 
 @jit(nopython=True, cache=True, inline="always")
+def use_bsearch_match(n_in, n_tg):
+    """Whether to match this epoch by binary search rather than a merge scan.
+
+    Exposed (and jitted so the kernel can call it) so the threshold can be tested
+    directly: the branch itself is inside compiled code and cannot be spied on, and
+    picking the wrong one costs speed without changing any result.
+
+    Parameters
+    ----------
+    n_in : int
+        Input timestamps in the epoch.
+    n_tg : int
+        Targets in the epoch.
+
+    Returns
+    -------
+    bool
+        True to binary search, False to merge scan.
+    """
+    return n_in * VALUE_FROM_BSEARCH_RATIO < n_tg
+
+
+@jit(nopython=True, cache=True, inline="always")
 def _vf_first_of_run(time_target_array, index, start):
     """First index of the run of targets sharing ``time_target_array[index]``.
 
@@ -285,7 +308,7 @@ def jitvaluefrom_ranges(
             out_offset += n_in
             continue
 
-        if n_in * VALUE_FROM_BSEARCH_RATIO < n_tg:
+        if use_bsearch_match(n_in, n_tg):
             # input far sparser than the target: binary search each timestamp.
             # The search spans the whole epoch every time on purpose -- narrowing
             # the lower bound from the previous result measures ~2.8x slower, as
