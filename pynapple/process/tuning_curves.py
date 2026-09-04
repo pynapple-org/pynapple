@@ -13,6 +13,68 @@ import pandas as pd
 from .. import core as nap
 
 
+def _flat_bin_index(sample, bin_edges):
+    """Assign each sample to a bin of the ``histogramdd`` grid, once.
+
+    ``np.histogramdd`` re-derives this assignment on every call. When many
+    histograms share one set of edges -- one per unit or per column -- computing it
+    once and reusing it turns each subsequent histogram into a single
+    :func:`numpy.bincount`.
+
+    The grid is the padded one numpy uses internally: each dimension gets two extra
+    bins holding the samples that fall outside the edges, so out-of-range samples
+    (and NaN, which sorts to the far end) are carried along and dropped later by
+    :func:`_histogram_from_bin_index` rather than needing a mask here.
+
+    Parameters
+    ----------
+    sample : array_like
+        ``(n_samples,)`` or ``(n_samples, n_features)``. A 1-D array is read as
+        many samples of one feature.
+    bin_edges : sequence of ndarray
+        One monotonically increasing edge array per feature, as returned by
+        :func:`numpy.histogramdd`.
+
+    Returns
+    -------
+    flat_index : ndarray
+        ``(n_samples,)`` index into the flattened padded grid.
+    n_flat : int
+        Size of the flattened padded grid.
+    """
+    sample = np.asarray(sample)
+    if sample.ndim == 1:
+        # (n_samples,) is n samples of one feature, never one sample of n
+        sample = sample[:, None]
+
+    n_bins = np.empty(len(bin_edges), dtype=np.intp)
+    per_dim = []
+    for i, edges in enumerate(bin_edges):
+        n_bins[i] = len(edges) + 1
+        index = np.searchsorted(edges, sample[:, i], side="right")
+        # numpy puts samples sitting exactly on the rightmost edge in the last
+        # real bin rather than in the outlier bin above it
+        index[sample[:, i] == edges[-1]] -= 1
+        per_dim.append(index)
+
+    return np.ravel_multi_index(per_dim, n_bins), int(n_bins.prod())
+
+
+def _histogram_from_bin_index(flat_index, n_flat, bin_edges, weights=None):
+    """Histogram from a precomputed :func:`_flat_bin_index`, dropping outliers.
+
+    Equivalent to ``np.histogramdd(sample, bins=bin_edges, weights=weights)[0]``
+    for the sample the index was built from.
+    """
+    padded_shape = [len(edges) + 1 for edges in bin_edges]
+    counts = np.bincount(flat_index, weights=weights, minlength=n_flat)
+    if weights is None:
+        # bincount counts as int64, histogramdd always returns float64
+        counts = counts.astype(np.float64)
+    interior = tuple(slice(1, -1) for _ in bin_edges)
+    return counts.reshape(padded_shape)[interior]
+
+
 def compute_tuning_curves(
     data,
     features,
@@ -294,15 +356,48 @@ def compute_tuning_curves(
         # SPIKES
         if isinstance(data, nap.Ts):
             data = nap.TsGroup({0: data})
+
+        # Each unit is matched against the same feature, so the feature's bin
+        # assignment can be computed once and looked up per unit instead of being
+        # re-derived from the matched values. `value_from` does the lookup: run
+        # against a series carrying the bin indices on the feature's own
+        # timestamps, it returns the bin of each spike directly, with exactly the
+        # matching and epochs it would have used on the feature itself.
+        #
+        # Worth it only when more values are matched in total than the feature has
+        # samples; below that, binning the whole feature costs more than binning
+        # the matches. Measured to hold at both ends: 33.7 -> 23.2 ms at 400k
+        # matches over 100k samples, but 44.7 -> 54.7 ms at 400k over 1M.
+        prebin = sum(len(data[n]) for n in keys) > len(features)
+        if prebin:
+            feature_bins, n_flat = _flat_bin_index(features, bin_edges)
+            # float64, not the integer index: an integer-valued target sends
+            # `value_from` down a slower path
+            feature_bins = nap.Tsd(
+                t=features.index,
+                d=feature_bins.astype(np.float64),
+                time_support=features.time_support,
+            )
+
         for i, n in enumerate(keys):
             if not isinstance(data[n], nap.Ts):
                 warnings.warn(
                     f"TsGroup entry {n} was not a Ts, but treating it as one!"
                 )
-            tcs[i] = np.histogramdd(
-                data[n].value_from(features),
-                bins=bin_edges,
-            )[0]
+            if prebin:
+                spike_bins = data[n].value_from(feature_bins).values
+                # a spike with no target in its epoch comes back NaN; it has no bin
+                # and is dropped, as an unmatched value would be by histogramdd
+                if np.isnan(spike_bins).any():
+                    spike_bins = spike_bins[~np.isnan(spike_bins)]
+                tcs[i] = _histogram_from_bin_index(
+                    spike_bins.astype(np.intp), n_flat, bin_edges
+                )
+            else:
+                tcs[i] = np.histogramdd(
+                    data[n].value_from(features),
+                    bins=bin_edges,
+                )[0]
         with np.errstate(divide="ignore", invalid="ignore"):
             if not return_counts:
                 tcs = (tcs / occupancy) * fs
@@ -311,14 +406,18 @@ def compute_tuning_curves(
         values = data.value_from(features)
         if isinstance(data, nap.Tsd):
             data = np.expand_dims(data.values, -1)
-        counts = np.histogramdd(values, bins=bin_edges)[0]
+        else:
+            # the raw array: `data[:, i]` below would rebuild a Tsd per column
+            data = data.values
+        # every column is histogrammed over the same samples and the same edges,
+        # so the bin assignment is computed once and only the weights change
+        flat_index, n_flat = _flat_bin_index(values, bin_edges)
+        counts = _histogram_from_bin_index(flat_index, n_flat, bin_edges)
         counts[counts == 0] = np.nan
         for i, n in enumerate(keys):
-            tcs[i] = np.histogramdd(
-                values,
-                weights=data[:, i],
-                bins=bin_edges,
-            )[0]
+            tcs[i] = _histogram_from_bin_index(
+                flat_index, n_flat, bin_edges, weights=data[:, i]
+            )
         tcs /= counts
         tcs[np.isnan(tcs)] = 0.0
         tcs[:, occupancy == 0.0] = np.nan
