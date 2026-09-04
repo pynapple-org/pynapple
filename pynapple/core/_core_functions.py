@@ -101,8 +101,10 @@ def _value_from(
     else:
         mode = 0 if mode == "before" else 2
 
+    new_time_array = time_array[idx_t]
+
     idx = jitvaluefrom(
-        time_array[idx_t],
+        new_time_array,
         time_target_array[idx_target],
         count,
         count_target,
@@ -110,30 +112,41 @@ def _value_from(
         mode=mode,
     )
 
-    new_time_array = time_array[idx_t]
-    nan_idx = np.isnan(idx)
+    # `idx` indexes the *restricted* target and uses NaN for unmatched timestamps.
+    nan_mask = np.isnan(idx)
+    has_nan = bool(nan_mask.any())
 
-    # set the type as default
+    # Composing `idx_target[idx]` gathers the values once, straight out of the full
+    # target, instead of materializing the whole restricted target only to index
+    # into it again. The composed indices are neither sorted nor unique, which
+    # h5py/zarr datasets (``lazy_loading=True``) reject, so those keep the two-step
+    # gather -- there the first, monotonic gather is what loads the data.
+    can_compose = isinstance(data_target_array, np.ndarray)
+
+    # keep the target dtype if it is floating or if every timestamp matched,
+    # otherwise upcast to float to hold the NaNs
     use_type = data_target_array.dtype
+    if has_nan and not np.issubdtype(use_type, np.floating):
+        use_type = np.float64
 
-    # if is already floating or all values are valid, keep type, otherwise use float
-    use_type = (
-        use_type if np.issubdtype(use_type, np.floating) or not any(nan_idx) else float
-    )
-    if not np.issubdtype(use_type, np.floating):
-        new_data_array = np.zeros(
-            (len(new_time_array), *data_target_array.shape[1:]),
-            dtype=use_type,
-        )
+    out_shape = (len(new_time_array), *data_target_array.shape[1:])
+
+    if has_nan:
+        # `use_type` is necessarily floating here
+        new_data_array = np.full(out_shape, np.nan, dtype=use_type)
+        valid = ~nan_mask
+        local = idx[valid].astype(np.int64)
+        if can_compose:
+            new_data_array[valid] = data_target_array[idx_target[local]]
+        else:
+            new_data_array[valid] = data_target_array[idx_target][local]
     else:
-        new_data_array = np.full(
-            (len(new_time_array), *data_target_array.shape[1:]),
-            np.nan,
-            dtype=use_type,
-        )
-
-    idx2 = ~np.isnan(idx)
-    new_data_array[idx2] = data_target_array[idx_target][idx[idx2].astype(int)]
+        local = idx.astype(np.int64)
+        if can_compose:
+            new_data_array = np.empty(out_shape, dtype=use_type)
+            np.take(data_target_array, idx_target[local], axis=0, out=new_data_array)
+        else:
+            new_data_array = data_target_array[idx_target][local]
 
     return new_time_array, new_data_array
 
