@@ -219,13 +219,17 @@ def test_equidistant_tie_resolves_to_the_later_target():
     """A strict `<` in the distance comparison would silently flip these."""
     time_array = np.array([4.0])
     time_target_array = np.array([0.0, 3.0, 5.0])  # |4-3| == |5-4|
-    got = run_kernel(time_array, time_target_array, np.array([0.0]), np.array([9.0]), "closest")
+    got = run_kernel(
+        time_array, time_target_array, np.array([0.0]), np.array([9.0]), "closest"
+    )
     np.testing.assert_array_equal(got, [2])
 
 
 def test_tie_breaking_is_visible_through_the_public_api():
     """The kernel's tie rules are reachable without touching internals."""
-    target = nap.Tsd(t=np.array([1.0, 2.0, 2.0, 4.0]), d=np.array([10.0, 20.0, 21.0, 40.0]))
+    target = nap.Tsd(
+        t=np.array([1.0, 2.0, 2.0, 4.0]), d=np.array([10.0, 20.0, 21.0, 40.0])
+    )
     ts = nap.Ts(t=np.array([2.0]))
     assert ts.value_from(target, mode="before").values[0] == 20.0
     assert ts.value_from(target, mode="after").values[0] == 20.0
@@ -362,8 +366,10 @@ def test_mixed_density_epochs(mode):
     dense_in = np.sort(rng.uniform(20, 30, 300))
     time_array = np.concatenate([sparse_in, dense_in])
     time_target_array = np.concatenate(
-        [np.sort(rng.uniform(0, 10, 4 * VALUE_FROM_BSEARCH_RATIO)),
-         np.sort(rng.uniform(20, 30, 300))]
+        [
+            np.sort(rng.uniform(0, 10, 4 * VALUE_FROM_BSEARCH_RATIO)),
+            np.sort(rng.uniform(20, 30, 300)),
+        ]
     )
     starts, ends = np.array([0.0, 20.0]), np.array([10.0, 30.0])
 
@@ -405,7 +411,11 @@ def test_epoch_with_input_but_no_target(mode):
     # there for all three modes; nothing at all lands in [10, 13]
     time_target_array = np.array([0.5, 2.5])
     got = run_kernel(
-        time_array, time_target_array, np.array([0.0, 10.0]), np.array([3.0, 13.0]), mode
+        time_array,
+        time_target_array,
+        np.array([0.0, 10.0]),
+        np.array([3.0, 13.0]),
+        mode,
     )
     assert (got[2:] == -1).all(), "epoch without any target must be all unmatched"
     assert (got[:2] >= 0).all(), "epoch with bracketing targets must all match"

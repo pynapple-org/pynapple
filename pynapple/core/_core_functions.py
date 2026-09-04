@@ -58,7 +58,9 @@ def _restrict_ranges(time_array, data_array, starts, ends):
     ir = np.searchsorted(time_array, ends, side="right")
 
     new_time = _concat_ranges(time_array, il, ir, copy=True)
-    new_data = None if data_array is None else _concat_ranges(data_array, il, ir, copy=True)
+    new_data = (
+        None if data_array is None else _concat_ranges(data_array, il, ir, copy=True)
+    )
 
     return new_time, new_data
 
@@ -90,8 +92,12 @@ def _concat_ranges(array, range_starts, range_stops, copy):
     counts = range_stops - range_starts
     total = int(np.sum(counts))
 
-    if not copy and total and (
-        len(range_starts) == 1 or np.array_equal(range_stops[:-1], range_starts[1:])
+    if (
+        not copy
+        and total
+        and (
+            len(range_starts) == 1 or np.array_equal(range_stops[:-1], range_starts[1:])
+        )
     ):
         return array[range_starts[0] : range_stops[-1]]
 

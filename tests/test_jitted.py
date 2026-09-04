@@ -668,7 +668,9 @@ def test_jitvaluefrom_single_target_mode_before():
     # a single target in the epoch used to trigger an undefined nan_cond at mode=0
     time_array = np.array([1.0, 2.0])
     time_target = np.array([1.5])
-    idx = _valuefrom_ranges(time_array, time_target, np.array([0.0]), np.array([3.0]), 0)
+    idx = _valuefrom_ranges(
+        time_array, time_target, np.array([0.0]), np.array([3.0]), 0
+    )
     assert idx[0] == -1  # target 1.5 is after timestamp 1.0 → no before-target
     assert idx[1] == 0  # target 1.5 is before timestamp 2.0 → target index 0
 
@@ -677,6 +679,8 @@ def test_jitvaluefrom_single_target_mode_after():
     # single target in the epoch, mode=2 (regression guard)
     time_array = np.array([1.0, 2.0])
     time_target = np.array([1.5])
-    idx = _valuefrom_ranges(time_array, time_target, np.array([0.0]), np.array([3.0]), 2)
+    idx = _valuefrom_ranges(
+        time_array, time_target, np.array([0.0]), np.array([3.0]), 2
+    )
     assert idx[0] == 0  # target 1.5 is after timestamp 1.0 → target index 0
     assert idx[1] == -1  # target 1.5 is before timestamp 2.0 → no after-target
