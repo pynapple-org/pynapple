@@ -19,7 +19,7 @@ from ._jitted_functions import (  # pjitconvolve,
     jitrestrict,
     jitrestrict_with_count,
     jitthreshold,
-    jitvaluefrom,
+    jitvaluefrom_ranges,
 )
 from .utils import get_backend
 
@@ -56,24 +56,52 @@ def _restrict_ranges(time_array, data_array, starts, ends):
     """
     il = np.searchsorted(time_array, starts, side="left")
     ir = np.searchsorted(time_array, ends, side="right")
-    total = int(np.sum(ir - il))
 
-    new_time = np.empty(total, dtype=time_array.dtype)
-    new_data = (
-        None
-        if data_array is None
-        else np.empty((total,) + data_array.shape[1:], dtype=data_array.dtype)
-    )
-
-    pos = 0
-    for k in range(len(il)):
-        count = ir[k] - il[k]
-        new_time[pos : pos + count] = time_array[il[k] : ir[k]]
-        if new_data is not None:
-            new_data[pos : pos + count] = data_array[il[k] : ir[k]]
-        pos += count
+    new_time = _concat_ranges(time_array, il, ir, copy=True)
+    new_data = None if data_array is None else _concat_ranges(data_array, il, ir, copy=True)
 
     return new_time, new_data
+
+
+def _concat_ranges(array, range_starts, range_stops, copy):
+    """Concatenate the slices ``array[range_starts[k]:range_stops[k]]`` along axis 0.
+
+    The ranges must be sorted and non-overlapping. Each is copied with a plain
+    contiguous slice assignment (one memcpy per range), which beats both a
+    fancy-index gather and a numba kernel in the few-range regime.
+
+    Parameters
+    ----------
+    array : ndarray
+        Array to take the ranges from.
+    range_starts, range_stops : ndarray[int]
+        Half-open bounds of each range.
+    copy : bool
+        When False, ranges that happen to tile a single contiguous span are
+        returned as a *view* of ``array`` rather than copied. Callers that hand the
+        result to a user-facing object must weigh that aliasing; pass True to
+        always copy.
+
+    Returns
+    -------
+    ndarray
+        The concatenated ranges.
+    """
+    counts = range_stops - range_starts
+    total = int(np.sum(counts))
+
+    if not copy and total and (
+        len(range_starts) == 1 or np.array_equal(range_stops[:-1], range_starts[1:])
+    ):
+        return array[range_starts[0] : range_stops[-1]]
+
+    out = np.empty((total,) + array.shape[1:], dtype=array.dtype)
+    pos = 0
+    for k in range(len(range_starts)):
+        count = counts[k]
+        out[pos : pos + count] = array[range_starts[k] : range_stops[k]]
+        pos += count
+    return out
 
 
 def _count(time_array, starts, ends, bin_size=None, dtype=None):
@@ -93,60 +121,67 @@ def _value_from(
     ends,
     mode: Literal["closest", "before", "after"] = "closest",
 ):
-    idx_t, count = jitrestrict_with_count(time_array, starts, ends)
-    idx_target, count_target = jitrestrict_with_count(time_target_array, starts, ends)
     # replace flag with int
     if mode == "closest":
         mode = 1
     else:
         mode = 0 if mode == "before" else 2
 
-    new_time_array = time_array[idx_t]
+    # Per-epoch slice boundaries, found with a handful of binary searches instead of
+    # an O(n) scan over each array. IntervalSet guarantees sorted, disjoint and
+    # non-touching epochs, so this reproduces jitrestrict's inclusive
+    # ``start <= t <= end`` selection exactly, and nothing has to be gathered:
+    # the kernel reads both full arrays through these bounds.
+    in_start = np.searchsorted(time_array, starts, side="left")
+    in_stop = np.searchsorted(time_array, ends, side="right")
+    tg_start = np.searchsorted(time_target_array, starts, side="left")
+    tg_stop = np.searchsorted(time_target_array, ends, side="right")
 
-    idx = jitvaluefrom(
-        new_time_array,
-        time_target_array[idx_target],
-        count,
-        count_target,
-        starts,
-        mode=mode,
+    new_time_array = _concat_ranges(time_array, in_start, in_stop, copy=False)
+
+    # index into the *full* target for each kept timestamp, -1 where unmatched
+    gather_idx = jitvaluefrom_ranges(
+        time_array, time_target_array, in_start, in_stop, tg_start, tg_stop, mode
     )
-
-    # `idx` indexes the *restricted* target and uses NaN for unmatched timestamps.
-    nan_mask = np.isnan(idx)
-    has_nan = bool(nan_mask.any())
-
-    # Composing `idx_target[idx]` gathers the values once, straight out of the full
-    # target, instead of materializing the whole restricted target only to index
-    # into it again. The composed indices are neither sorted nor unique, which
-    # h5py/zarr datasets (``lazy_loading=True``) reject, so those keep the two-step
-    # gather -- there the first, monotonic gather is what loads the data.
-    can_compose = isinstance(data_target_array, np.ndarray)
+    matched = gather_idx >= 0
+    all_matched = bool(matched.all())
 
     # keep the target dtype if it is floating or if every timestamp matched,
     # otherwise upcast to float to hold the NaNs
     use_type = data_target_array.dtype
-    if has_nan and not np.issubdtype(use_type, np.floating):
+    if not (all_matched or np.issubdtype(use_type, np.floating)):
         use_type = np.float64
 
     out_shape = (len(new_time_array), *data_target_array.shape[1:])
+    take_idx = gather_idx if all_matched else gather_idx[matched]
 
-    if has_nan:
+    if isinstance(data_target_array, np.ndarray):
+        values = None  # gathered straight out of the target below
+    else:
+        # h5py/zarr datasets (``lazy_loading=True``) only accept fancy indices that
+        # are strictly increasing, while `take_idx` is neither sorted nor unique
+        # (any target matched by several timestamps repeats). Reading the distinct
+        # targets once and expanding satisfies that, and touches strictly less of
+        # the dataset than materializing the restricted target would.
+        unique_idx, inverse = np.unique(take_idx, return_inverse=True)
+        values = (
+            data_target_array[unique_idx][inverse]
+            if len(unique_idx)
+            else np.empty((0,) + data_target_array.shape[1:], dtype=use_type)
+        )
+
+    if all_matched:
+        new_data_array = np.empty(out_shape, dtype=use_type)
+        if values is None:
+            np.take(data_target_array, take_idx, axis=0, out=new_data_array)
+        else:
+            new_data_array[:] = values
+    else:
         # `use_type` is necessarily floating here
         new_data_array = np.full(out_shape, np.nan, dtype=use_type)
-        valid = ~nan_mask
-        local = idx[valid].astype(np.int64)
-        if can_compose:
-            new_data_array[valid] = data_target_array[idx_target[local]]
-        else:
-            new_data_array[valid] = data_target_array[idx_target][local]
-    else:
-        local = idx.astype(np.int64)
-        if can_compose:
-            new_data_array = np.empty(out_shape, dtype=use_type)
-            np.take(data_target_array, idx_target[local], axis=0, out=new_data_array)
-        else:
-            new_data_array = data_target_array[idx_target][local]
+        new_data_array[matched] = (
+            data_target_array[take_idx] if values is None else values
+        )
 
     return new_time_array, new_data_array
 
