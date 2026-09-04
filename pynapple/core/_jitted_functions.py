@@ -104,6 +104,12 @@ def jitrestrict_with_count(time_array, starts, ends, dtype=np.int64):
 # is much worse than either, at 1.27x average and 3.6x worst case.
 VALUE_FROM_BSEARCH_RATIO = 128
 
+# The helpers below are called once per timestamp from the innermost loops, so they
+# are declared inline="always". That makes numba paste their body into the caller
+# instead of emitting a call. Consequences are that: there is no longer a
+# function call per element, and because `mode` is the same on every iteration,
+# the compiler can test it once before the loop rather than on every timestamp.
+
 
 @jit(nopython=True, cache=True, inline="always")
 def use_bsearch_match(n_in, n_tg):
