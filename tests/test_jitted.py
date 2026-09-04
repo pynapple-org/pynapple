@@ -652,29 +652,31 @@ def test_jitunion_isets_empty():
     assert len(e) == 0
 
 
+def _valuefrom_ranges(time_array, time_target, starts, ends, mode):
+    return nap.core._jitted_functions.jitvaluefrom_ranges(
+        time_array,
+        time_target,
+        np.searchsorted(time_array, starts, side="left"),
+        np.searchsorted(time_array, ends, side="right"),
+        np.searchsorted(time_target, starts, side="left"),
+        np.searchsorted(time_target, ends, side="right"),
+        mode,
+    )
+
+
 def test_jitvaluefrom_single_target_mode_before():
-    # count_target[k]==1 triggers undefined nan_cond when mode=0
+    # a single target in the epoch used to trigger an undefined nan_cond at mode=0
     time_array = np.array([1.0, 2.0])
     time_target = np.array([1.5])
-    count = np.array([2], dtype=np.int64)
-    count_target = np.array([1], dtype=np.int64)
-    starts = np.array([0.0])
-    idx = nap.core._jitted_functions.jitvaluefrom(
-        time_array, time_target, count, count_target, starts, 0
-    )
-    assert np.isnan(idx[0])  # target 1.5 is after timestamp 1.0 → no before-target
-    assert idx[1] == 0.0  # target 1.5 is before timestamp 2.0 → target index 0
+    idx = _valuefrom_ranges(time_array, time_target, np.array([0.0]), np.array([3.0]), 0)
+    assert idx[0] == -1  # target 1.5 is after timestamp 1.0 → no before-target
+    assert idx[1] == 0  # target 1.5 is before timestamp 2.0 → target index 0
 
 
 def test_jitvaluefrom_single_target_mode_after():
-    # count_target[k]==1, mode=2 (already handled, regression guard)
+    # single target in the epoch, mode=2 (regression guard)
     time_array = np.array([1.0, 2.0])
     time_target = np.array([1.5])
-    count = np.array([2], dtype=np.int64)
-    count_target = np.array([1], dtype=np.int64)
-    starts = np.array([0.0])
-    idx = nap.core._jitted_functions.jitvaluefrom(
-        time_array, time_target, count, count_target, starts, 2
-    )
-    assert idx[0] == 0.0  # target 1.5 is after timestamp 1.0 → target index 0
-    assert np.isnan(idx[1])  # target 1.5 is before timestamp 2.0 → no after-target
+    idx = _valuefrom_ranges(time_array, time_target, np.array([0.0]), np.array([3.0]), 2)
+    assert idx[0] == 0  # target 1.5 is after timestamp 1.0 → target index 0
+    assert idx[1] == -1  # target 1.5 is before timestamp 2.0 → no after-target
