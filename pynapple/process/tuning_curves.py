@@ -13,6 +13,32 @@ import pandas as pd
 from .. import core as nap
 
 
+def _use_prebinned_feature(n_matched, n_samples):
+    """Whether to bin the feature once and look bins up, per unit, or bin per unit.
+
+    Pre-binning costs one pass over the whole feature and saves one pass over every
+    matched value, so it pays exactly when more values are matched in total than the
+    feature has samples. Measured at both ends: 33.7 -> 23.2 ms for 400k matches
+    over 100k samples, but 44.7 -> 54.7 ms for 400k matches over 1M.
+
+    Split out because both branches return identical numbers by construction, so
+    nothing else can pin the choice down.
+
+    Parameters
+    ----------
+    n_matched : int
+        Total timestamps to be matched, summed over units.
+    n_samples : int
+        Samples in the feature.
+
+    Returns
+    -------
+    bool
+        True to pre-bin the feature, False to bin each unit's matched values.
+    """
+    return n_matched > n_samples
+
+
 def _flat_bin_index(sample, bin_edges):
     """Assign each sample to a bin of the ``histogramdd`` grid, once.
 
@@ -363,12 +389,8 @@ def compute_tuning_curves(
         # against a series carrying the bin indices on the feature's own
         # timestamps, it returns the bin of each spike directly, with exactly the
         # matching and epochs it would have used on the feature itself.
-        #
-        # Worth it only when more values are matched in total than the feature has
-        # samples; below that, binning the whole feature costs more than binning
-        # the matches. Measured to hold at both ends: 33.7 -> 23.2 ms at 400k
-        # matches over 100k samples, but 44.7 -> 54.7 ms at 400k over 1M.
-        prebin = sum(len(data[n]) for n in keys) > len(features)
+        # See `_use_prebinned_feature` for when that is worth doing.
+        prebin = _use_prebinned_feature(sum(len(data[n]) for n in keys), len(features))
         if prebin:
             feature_bins, n_flat = _flat_bin_index(features, bin_edges)
             # float64, not the integer index: an integer-valued target sends
@@ -386,8 +408,11 @@ def compute_tuning_curves(
                 )
             if prebin:
                 spike_bins = data[n].value_from(feature_bins).values
-                # a spike with no target in its epoch comes back NaN; it has no bin
-                # and is dropped, as an unmatched value would be by histogramdd
+                # A spike with no target in its epoch comes back NaN; it has no
+                # bin and is dropped, as an unmatched value would be by
+                # histogramdd. This filter is not optional: casting NaN to an
+                # integer is undefined behaviour, giving 0 on aarch64 but INT_MIN
+                # on x86, where the bincount below then raises.
                 if np.isnan(spike_bins).any():
                     spike_bins = spike_bins[~np.isnan(spike_bins)]
                 tcs[i] = _histogram_from_bin_index(
