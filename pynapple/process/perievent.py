@@ -31,10 +31,11 @@ def compute_event_triggered_average(
     ----------
     data : Tsd, TsdFrame, or TsdTensor
         The continuous timeseries to use as the feature (must be regularly sampled).
-    events : Ts, Tsd, TsdFrame, TsdTensor, or TsGroup
+    events : Ts, Tsd, TsdFrame, TsdTensor, TsGroup, or IntervalSet
         The events (or spike trains) to align to. If a ``TsGroup``, each unit's
         spikes are binned and used as a separate event count vector.
-        If not a ``Ts``, we simply take the timestamps of the object.
+        If an ``IntervalSet``, the start of each interval is used as an event.
+        For other time-series objects, only the timestamps are used.
     binsize : float or int
         The bin size.
     window : int, float, or tuple
@@ -55,7 +56,7 @@ def compute_event_triggered_average(
         If ``time_unit`` is invalid, ``window`` format is invalid, or ``data`` is not
         regularly sampled.
     TypeError
-        If ``data`` or ``events`` are not valid timeseries objects.
+        If ``data`` or ``events`` have unsupported types.
 
     Examples
     --------
@@ -161,10 +162,15 @@ def compute_event_triggered_average(
             f"data should be a continuous time series (Tsd, TsdFrame, or TsdTensor): {type(data)}"
         )
 
+    if isinstance(events, nap.IntervalSet):
+        events = nap.Ts(events.start)
+
     if not isinstance(
         events, (nap.Ts, nap.Tsd, nap.TsdFrame, nap.TsdTensor, nap.TsGroup)
     ):
-        raise TypeError(f"events should be a time series object: {type(events)}")
+        raise TypeError(
+            f"events should be a time series object or an IntervalSet: {type(events)}"
+        )
 
     if epochs is None:
         epochs = data.time_support

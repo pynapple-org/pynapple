@@ -355,6 +355,16 @@ plt.title("Spike triggered average \n nap.compute_event_triggered_average(featur
 plt.tight_layout();
 ```
 
+An `IntervalSet` can also be passed as the events. In this case, the start of
+each interval is used as the alignment time:
+
+```{code-cell} ipython3
+event_intervals = nap.IntervalSet(start=[100, 300, 500], end=[101, 302, 501])
+interval_eta = nap.compute_event_triggered_average(
+    feature, event_intervals, binsize=0.02, window=(-5, 5)
+)
+```
+
 ### Multiple units
 
 The same function can be used for a group of units.

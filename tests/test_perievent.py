@@ -366,6 +366,48 @@ class TestComputeEventTriggeredAverage:
         assert eta.shape[1] == 2
         assert list(eta.columns) == [0, 1]
 
+    @pytest.mark.parametrize("time_units, scale", [("s", 1.0), ("ms", 1_000.0)])
+    def test_intervalset_events_use_interval_starts(self, time_units, scale):
+        times = np.arange(0, 10, 0.1)
+        feature = nap.Tsd(t=times, d=np.sin(times))
+        intervals = nap.IntervalSet(
+            start=np.array([1.0, 3.0, 5.0]) * scale,
+            end=np.array([1.2, 3.8, 5.4]) * scale,
+            time_units=time_units,
+        )
+
+        actual = nap.compute_event_triggered_average(
+            feature, intervals, binsize=0.1, window=0.5
+        )
+        expected = nap.compute_event_triggered_average(
+            feature, nap.Ts(intervals.start), binsize=0.1, window=0.5
+        )
+
+        np.testing.assert_array_equal(actual.index.values, expected.index.values)
+        np.testing.assert_array_equal(actual.values, expected.values)
+
+    def test_intervalset_events_with_epochs(self):
+        times = np.arange(0, 10, 0.1)
+        feature = nap.Tsd(t=times, d=np.sin(times))
+        intervals = nap.IntervalSet(
+            start=[1.0, 3.0, 5.0, 7.0], end=[1.2, 3.4, 5.6, 7.8]
+        )
+        epochs = nap.IntervalSet(start=[0.0, 6.0], end=[2.0, 9.0])
+
+        actual = nap.compute_event_triggered_average(
+            feature, intervals, binsize=0.1, window=0.5, epochs=epochs
+        )
+        expected = nap.compute_event_triggered_average(
+            feature,
+            nap.Ts(intervals.start),
+            binsize=0.1,
+            window=0.5,
+            epochs=epochs,
+        )
+
+        np.testing.assert_array_equal(actual.index.values, expected.index.values)
+        np.testing.assert_array_equal(actual.values, expected.values)
+
     def test_tsdframe_returns_tsdtensor(self):
         times = np.arange(0, 10, 0.1)
         features = nap.TsdFrame(
@@ -494,7 +536,9 @@ class TestComputeEventTriggeredAverage:
     def test_invalid_events_type(self, bad_events):
         times = np.arange(0, 10, 0.1)
         feature = nap.Tsd(t=times, d=np.sin(times))
-        with pytest.raises(TypeError, match="events should be a time series object"):
+        with pytest.raises(
+            TypeError, match="events should be a time series object or an IntervalSet"
+        ):
             nap.compute_event_triggered_average(
                 feature, bad_events, binsize=0.1, window=0.5
             )
