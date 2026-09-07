@@ -67,6 +67,42 @@ print(crosscorrs)
 
 Column name `(0, 1)` is read as cross-correlogram of neuron 0 and 1 with neuron 0 being the reference time.
 
+## Lagged cross-correlations
+
+Lagged cross-correlation measures how continuous signals vary together at different time offsets. The input is a regularly sampled `TsdFrame`; no binning is needed because its columns are already sampled on the same time axis.
+
+```{code-cell} ipython3
+rng = np.random.default_rng(1)
+timestamps = np.arange(1000) / 100
+reference = rng.normal(size=len(timestamps))
+delayed = np.r_[np.zeros(10), reference[:-10]]
+signals = nap.TsdFrame(
+    t=timestamps,
+    d=np.column_stack((reference, delayed)),
+    columns=["reference", "delayed"],
+    time_support=nap.IntervalSet(0, 10),
+)
+
+lagged_corr = nap.compute_lagged_crosscorrelation(
+    signals, windowsize=0.5, time_units="s"
+)
+print(lagged_corr)
+```
+
+The output is a pandas DataFrame with lags in seconds as its index and signal pairs as its columns. Here the correlation peaks at `+0.1` seconds: positive lags mean that the second signal follows the first.
+
+Passing two `TsdFrame` objects computes all cross-frame column pairs. Their timestamps must match.
+
+```{code-cell} ipython3
+reference_frame = signals[:, [0]]
+delayed_frame = signals[:, [1]]
+cross_frame_corr = nap.compute_lagged_crosscorrelation(
+    (reference_frame, delayed_frame), windowsize=0.5
+)
+```
+
+The optional `epochs` argument restricts the calculation. Valid observations are pooled across epochs for each lag, but pairs never cross an epoch boundary.
+
 ## Event-correlograms
 
 Event-correlograms count the number of event in the `TsGroup` based on an `event` timestamps object. 
