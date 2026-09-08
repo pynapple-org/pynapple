@@ -19,6 +19,13 @@ conda activate pynapple
 pip install -e ".[dev,doc]"
 ```
 
+Alternatively, [uv](https://docs.astral.sh/uv/) creates the virtual environment and installs pynapple in editable mode in a single step:
+
+```bash
+uv sync --extra dev --extra doc --python=3.8
+source .venv/bin/activate
+```
+
 Note: If you're an external contributor, you'll likely want to fork the repository first with your own GitHub account, and then set up an `upstream` remote branch:
 
 ```
