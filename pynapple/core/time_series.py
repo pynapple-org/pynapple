@@ -2883,12 +2883,12 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
         Apply a custom function:
 
         >>> tsdframe.groupby_apply("l1", lambda x: x.shape)
-        {1: (5,), 2: (5, 2)}
+        {1: (5, 1), 2: (5, 2)}
 
         Apply a function with additional arguments:
 
         >>> tsdframe.groupby_apply("l1", np.sum, axis=0)
-        {1: np.float64(5.0), 2: array([5., 5.])}
+        {1: array([5.]), 2: array([5., 5.])}
         """
         return _MetadataMixin.groupby_apply(self, by, func, input_key, **func_kwargs)
 
