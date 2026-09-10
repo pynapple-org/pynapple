@@ -528,7 +528,7 @@ def _align_regular(data, events, window, new_time_support):
         Aligned data with columns/slice 0 as events
     """
     epochs = data.time_support
-    bin_size = data.t[1] - data.t[0]
+    bin_size = np.round(np.median(np.diff(data.t)), 9)#[1] - data.t[0]
 
     idx1 = -np.arange(0, window[0] + bin_size, bin_size)[::-1][:-1]
     idx2 = np.arange(0, window[1] + bin_size, bin_size)[1:]
