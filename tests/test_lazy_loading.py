@@ -1,6 +1,7 @@
 import warnings
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
+from unittest.mock import patch
 
 import h5py
 import numpy as np
@@ -200,6 +201,73 @@ def test_lazy_load_hdf5_tsdframe_loc(tmp_path):
     #     # delete file
     #     if file_path.exists():
     #         file_path.unlink()
+
+
+def _lazy_and_eager_tsdframe(tmp_path):
+    """A TsdFrame backed by an h5py dataset, and its eagerly loaded twin."""
+    file_path = tmp_path / Path("data.h5")
+    data = np.arange(60, dtype=float).reshape(20, 3)
+    with h5py.File(file_path, "w") as f:
+        f.create_dataset("data", data=data)
+    h5_data = h5py.File(file_path, "r")["data"]
+    t = np.arange(20, dtype=float)
+    lazy = nap.TsdFrame(t=t, d=h5_data, load_array=False)
+    assert not isinstance(lazy.values, np.ndarray)
+    return lazy, nap.TsdFrame(t=t, d=data)
+
+
+@pytest.mark.parametrize("mode", ["closest", "before", "after"])
+@pytest.mark.parametrize(
+    "ep",
+    [
+        # every timestamp matches -> the all-valid gather
+        nap.IntervalSet(0, 19),
+        nap.IntervalSet([0, 10], [4, 19]),
+        # the target ends at t=19, so the second epoch holds input timestamps but
+        # no target at all -> unmatched (NaN) gather, for every mode
+        nap.IntervalSet([0, 21], [19, 24]),
+    ],
+)
+def test_lazy_load_hdf5_value_from(mode, ep, tmp_path):
+    """`value_from` against a lazily loaded target must match the eager result.
+
+    `_value_from` gathers the matched values by composing the restrict indices
+    with the per-timestamp match indices. Whenever the input is denser than the
+    target, several timestamps match the same sample, so the composition contains
+    repeats -- which h5py/zarr datasets reject ("Indexing elements must be in
+    increasing order"). A non-ndarray target therefore falls back to a two-step
+    gather; this pins that fallback down.
+    """
+    lazy, eager = _lazy_and_eager_tsdframe(tmp_path)
+
+    # 10x denser than the target, so the matched indices repeat
+    ts = nap.Ts(t=np.arange(0.0, 24.0, 0.1))
+
+    out_lazy = ts.value_from(lazy, ep=ep, mode=mode)
+    out_eager = ts.value_from(eager, ep=ep, mode=mode)
+
+    np.testing.assert_array_equal(out_lazy.t, out_eager.t)
+    np.testing.assert_array_equal(out_lazy.values, out_eager.values)
+
+
+def test_lazy_load_hdf5_value_from_does_not_materialize(tmp_path):
+    """The lazy target must never be handed to ``np.take``.
+
+    ``np.take`` accepts an h5py dataset, but only by converting the *whole*
+    dataset to an array first -- which silently defeats lazy loading instead of
+    raising. Only the repeat-free case would reach it, so guard it explicitly.
+    """
+    lazy, _ = _lazy_and_eager_tsdframe(tmp_path)
+    ts = nap.Ts(t=np.arange(0.0, 19.0, 0.1))
+
+    real_take = np.take
+
+    def spy(a, *args, **kwargs):
+        assert isinstance(a, np.ndarray), "np.take called on the lazy target"
+        return real_take(a, *args, **kwargs)
+
+    with patch.object(np, "take", side_effect=spy):
+        ts.value_from(lazy)
 
 
 @pytest.mark.parametrize(
