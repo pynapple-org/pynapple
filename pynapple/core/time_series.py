@@ -1965,7 +1965,9 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
                     output = output[None, :]
 
                 kwargs["columns"] = columns
-                kwargs["metadata"] = self._metadata.loc[columns]
+                # A tuple column label is one metadata row, not two indexers.
+                metadata_columns = [columns] if isinstance(columns, tuple) else columns
+                kwargs["metadata"] = self._metadata.loc[metadata_columns]
                 with trusted_construction(_index_preserves_order(key)):
                     return _initialize_tsd_output(
                         self, output, time_index=index, kwargs=kwargs

@@ -1552,6 +1552,42 @@ class TestTsd:
 ####################################################
 # Test for tsdframe
 ####################################################
+@pytest.mark.parametrize("arity", [2, 3])
+@pytest.mark.parametrize("as_multiindex", [False, True])
+@pytest.mark.parametrize("with_metadata", [False, True])
+@pytest.mark.parametrize("column", [0, np.int64(1), -1, [0], [2, 0], slice(0, 2)])
+def test_tsdframe_positional_slicing_tuple_columns(
+    arity, as_multiindex, with_metadata, column
+):
+    columns = [("ca1", 1), ("ca1", 2), ("ca3", 1)]
+    if arity == 3:
+        columns = [label + ("recording",) for label in columns]
+    if as_multiindex:
+        columns = pd.MultiIndex.from_tuples(columns)
+    data = np.arange(15).reshape(5, 3)
+    quality = np.array([0.1, 0.2, 0.3])
+    frame = nap.TsdFrame(
+        t=np.array([0, 1, 3, 4, 5]),
+        d=data,
+        columns=columns,
+        time_support=nap.IntervalSet(start=[0, 3], end=[1, 6]),
+        metadata={"quality": quality} if with_metadata else None,
+    )
+
+    out = frame[:, column]
+
+    np.testing.assert_array_equal(out.values, data[:, column])
+    np.testing.assert_array_equal(out.t, frame.t)
+    np.testing.assert_array_equal(out.time_support.values, frame.time_support.values)
+    if isinstance(column, (int, np.integer)):
+        assert isinstance(out, nap.Tsd)
+    else:
+        assert isinstance(out, nap.TsdFrame)
+        assert list(out.columns) == list(frame.columns[column])
+        if with_metadata:
+            np.testing.assert_array_equal(out.get_info("quality"), quality[column])
+
+
 @pytest.mark.parametrize(
     "tsdframe",
     [
