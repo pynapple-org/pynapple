@@ -161,6 +161,224 @@ def _cross_correlogram(
     return C, B
 
 
+@jit(nopython=True, cache=True)
+def _lagged_crosscorrelation(
+    data1: npt.NDArray[np.float64],
+    data2: npt.NDArray[np.float64],
+    counts: npt.NDArray[np.int64],
+    pairs1: npt.NDArray[np.int64],
+    pairs2: npt.NDArray[np.int64],
+    max_lag: int,
+) -> npt.NDArray[np.float64]:
+    """Compute Pearson correlations for lagged column pairs within epochs."""
+    n_lags = 2 * max_lag + 1
+    n_pairs = len(pairs1)
+    correlations = np.full((n_lags, n_pairs), np.nan)
+
+    # Shift each stream before the online updates to preserve small variations.
+    anchors1 = np.empty(data1.shape[1])
+    anchors2 = np.empty(data2.shape[1])
+    means1 = np.empty(data1.shape[1])
+    means2 = np.empty(data2.shape[1])
+    sums_of_squares1 = np.empty(data1.shape[1])
+    sums_of_squares2 = np.empty(data2.shape[1])
+    deltas1 = np.empty(data1.shape[1])
+    residuals2 = np.empty(data2.shape[1])
+    sums_of_products = np.empty(n_pairs)
+
+    for lag_index in range(n_lags):
+        lag = lag_index - max_lag
+        means1.fill(0.0)
+        means2.fill(0.0)
+        sums_of_squares1.fill(0.0)
+        sums_of_squares2.fill(0.0)
+        sums_of_products.fill(0.0)
+        n_observations = 0
+        epoch_start = 0
+
+        for count in counts:
+            n_valid = count - abs(lag)
+            if n_valid > 0:
+                if lag >= 0:
+                    start1 = epoch_start
+                    start2 = epoch_start + lag
+                else:
+                    start1 = epoch_start - lag
+                    start2 = epoch_start
+
+                for sample in range(n_valid):
+                    if n_observations == 0:
+                        anchors1[:] = data1[start1 + sample]
+                        anchors2[:] = data2[start2 + sample]
+                    n_observations += 1
+
+                    for column in range(data1.shape[1]):
+                        value = data1[start1 + sample, column] - anchors1[column]
+                        delta = value - means1[column]
+                        means1[column] += delta / n_observations
+                        sums_of_squares1[column] += delta * (value - means1[column])
+                        deltas1[column] = delta
+
+                    for column in range(data2.shape[1]):
+                        value = data2[start2 + sample, column] - anchors2[column]
+                        delta = value - means2[column]
+                        means2[column] += delta / n_observations
+                        residual = value - means2[column]
+                        sums_of_squares2[column] += delta * residual
+                        residuals2[column] = residual
+
+                    for pair in range(n_pairs):
+                        sums_of_products[pair] += (
+                            deltas1[pairs1[pair]] * residuals2[pairs2[pair]]
+                        )
+
+            epoch_start += count
+
+        if n_observations < 2:
+            continue
+        for pair in range(n_pairs):
+            denominator = np.sqrt(
+                sums_of_squares1[pairs1[pair]] * sums_of_squares2[pairs2[pair]]
+            )
+            if denominator > 0.0:
+                correlation = sums_of_products[pair] / denominator
+                correlations[lag_index, pair] = min(1.0, max(-1.0, correlation))
+
+    return correlations
+
+
+def compute_lagged_crosscorrelation(
+    data: Union[
+        nap.TsdFrame,
+        tuple[nap.TsdFrame, nap.TsdFrame],
+        list[nap.TsdFrame],
+    ],
+    windowsize: float,
+    epochs: Optional[nap.IntervalSet] = None,
+    time_units: str = "s",
+) -> pd.DataFrame:
+    """
+    Compute lagged Pearson correlations between columns of continuous data.
+
+    If ``data`` is one ``TsdFrame``, correlations are computed for every unique
+    pair of columns. If ``data`` is a tuple or list of two ``TsdFrame`` objects,
+    correlations are computed for every pair of columns across the two frames.
+    Positive lags indicate that the second signal follows the first signal.
+
+    Valid observations are pooled across epochs for each lag. Pairs never cross
+    an epoch boundary.
+
+    Parameters
+    ----------
+    data : TsdFrame or tuple/list of two TsdFrames
+        The regularly sampled continuous signals to correlate. Two frames must
+        have identical timestamps.
+    windowsize : float
+        Maximum lag duration on either side of zero.
+    epochs : IntervalSet, optional
+        Epochs over which correlations are computed. If None, the shared time
+        support of the input data is used.
+    time_units : str, optional
+        Unit of ``windowsize`` (``"s"`` [default], ``"ms"``, or ``"us"``).
+
+    Returns
+    -------
+    pandas.DataFrame
+        Correlations indexed by lag in seconds, with signal pairs as columns.
+
+    Raises
+    ------
+    TypeError
+        If the inputs have invalid types.
+    ValueError
+        If ``windowsize`` is negative, ``time_units`` is invalid, or two input
+        frames do not have identical timestamps.
+    RuntimeError
+        If the input is not regularly sampled or its sampling interval cannot
+        be determined.
+
+    Examples
+    --------
+    >>> import numpy as np
+    >>> import pynapple as nap
+    >>> t = np.arange(100) / 10
+    >>> frame = nap.TsdFrame(t=t, d=np.column_stack((np.sin(t), np.cos(t))))
+    >>> correlation = nap.compute_lagged_crosscorrelation(frame, windowsize=0.5)
+    """
+    if isinstance(data, (tuple, list)):
+        if len(data) != 2 or not all(isinstance(d, nap.TsdFrame) for d in data):
+            raise TypeError(
+                "data must be a TsdFrame or a tuple/list of two TsdFrame objects."
+            )
+        data1, data2 = data
+        if not np.array_equal(data1.index.values, data2.index.values):
+            raise ValueError("The two TsdFrame objects must have identical timestamps.")
+        if data1.shape[1] == 0 or data2.shape[1] == 0:
+            raise ValueError("Each TsdFrame must contain at least one column.")
+        time_support = data1.time_support.intersect(data2.time_support)
+        pair_indices = list(product(range(data1.shape[1]), range(data2.shape[1])))
+        pair_labels = list(product(data1.columns, data2.columns))
+    else:
+        if not isinstance(data, nap.TsdFrame):
+            raise TypeError(
+                "data must be a TsdFrame or a tuple/list of two TsdFrame objects."
+            )
+        data1 = data2 = data
+        if data.shape[1] < 2:
+            raise ValueError("A single TsdFrame must contain at least two columns.")
+        time_support = data.time_support
+        pair_indices = list(combinations(range(data.shape[1]), 2))
+        pair_labels = list(combinations(data.columns, 2))
+
+    if not isinstance(windowsize, Number):
+        raise TypeError("windowsize must be a number.")
+    if not np.isfinite(windowsize) or windowsize < 0:
+        raise ValueError("windowsize must be finite and non-negative.")
+    if epochs is not None and not isinstance(epochs, nap.IntervalSet):
+        raise TypeError("epochs must be an IntervalSet or None.")
+    if not isinstance(time_units, str):
+        raise TypeError("time_units must be a string.")
+
+    if np.iscomplexobj(data1.values) or np.iscomplexobj(data2.values):
+        raise TypeError("Lagged cross-correlation requires real-valued data.")
+
+    if epochs is not None:
+        time_support = time_support.intersect(epochs)
+
+    if not nap.utils._is_regularly_sampled(data1):
+        raise RuntimeError("Lagged cross-correlation requires regularly sampled data.")
+    time_differences = data1.time_diff().values
+    if len(time_differences) == 0:
+        raise RuntimeError("The sampling interval could not be determined.")
+    sampling_interval = time_differences[0]
+    if not np.isfinite(sampling_interval) or sampling_interval <= 0:
+        raise RuntimeError("The sampling interval must be finite and positive.")
+
+    window_seconds = nap.TsIndex.format_timestamps(
+        np.array([windowsize], dtype=np.float64), time_units
+    )[0]
+    max_lag = int(np.floor(window_seconds / sampling_interval + 1e-12))
+
+    indices, counts = nap._jitted_functions.jitrestrict_with_count(
+        data1.index.values, time_support.start, time_support.end
+    )
+    pairs1 = np.asarray([pair[0] for pair in pair_indices], dtype=np.int64)
+    pairs2 = np.asarray([pair[1] for pair in pair_indices], dtype=np.int64)
+
+    correlations = _lagged_crosscorrelation(
+        np.asarray(data1.values[indices], dtype=np.float64),
+        np.asarray(data2.values[indices], dtype=np.float64),
+        counts,
+        pairs1,
+        pairs2,
+        max_lag,
+    )
+    lags = np.arange(-max_lag, max_lag + 1) * sampling_interval
+    columns = pd.MultiIndex.from_tuples(pair_labels)
+
+    return pd.DataFrame(correlations, index=lags, columns=columns, dtype=float)
+
+
 @_validate_correlograms_inputs
 def compute_autocorrelogram(
     group: nap.TsGroup,
