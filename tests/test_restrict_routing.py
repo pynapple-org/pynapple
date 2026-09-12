@@ -97,6 +97,48 @@ def test_ts_without_values_routes_to_searchsorted():
     assert len(out) == int(np.sum((t >= 100) & (t <= 200)))
 
 
+class InMemoryDuckArray(MockArray):
+    """A non-numpy array that lives in memory, like a jax or cupy array.
+
+    Declared by ``__array_namespace__`` (the Python array API), which the array
+    libraries implement and the lazy datasets do not. Stubbed rather than importing
+    jax, which is not a test dependency -- the contract under test is the protocol,
+    not any one library.
+    """
+
+    def __array_namespace__(self, api_version=None):
+        return np
+
+
+def test_in_memory_duck_array_routes_to_scan():
+    """In-memory duck arrays (jax, cupy) must keep the fancy gather, not slices.
+
+    One gather is a single device op; the range path is one op per interval, which
+    measured ~200x slower on a real jax array at 512 intervals. Only disk-backed
+    data benefits from the slice path.
+    """
+    t = np.arange(100_000.0)
+    tsd = nap.Tsd(
+        t=t,
+        d=InMemoryDuckArray(np.arange(100_000.0)),
+        time_support=nap.IntervalSet(0, t[-1]),
+        load_array=False,
+    )
+    assert not isinstance(tsd.values, np.ndarray)
+    ep = nap.IntervalSet(100, 200)  # few intervals: numpy would take the range path
+    ranges_patch, scan_patch = _spy()
+    with ranges_patch as ranges, scan_patch as scan:
+        out = tsd.restrict(ep)
+    assert scan.call_count == 1
+    assert ranges.call_count == 0
+
+    expected = nap.Tsd(
+        t=t, d=np.arange(100_000.0), time_support=nap.IntervalSet(0, t[-1])
+    ).restrict(ep)
+    np.testing.assert_array_equal(out.t, expected.t)
+    np.testing.assert_array_equal(np.asarray(out.values.data), expected.values)
+
+
 @pytest.mark.parametrize(
     "ep",
     [

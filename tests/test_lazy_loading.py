@@ -270,6 +270,36 @@ def test_lazy_load_hdf5_value_from_does_not_materialize(tmp_path):
         ts.value_from(lazy)
 
 
+def test_is_lazy_array_classification(tmp_path):
+    """Only disk-backed arrays count as lazy.
+
+    The gather-as-slices optimization is a win for disk-backed data and a heavy
+    loss for in-memory duck arrays, where one fancy index is a single device op
+    and the slice path is one op per range. `np.memmap` subclasses `ndarray` but
+    is disk-backed, so it must not be classified by the ndarray check alone.
+    """
+    from pynapple.core.utils import is_lazy_array
+
+    assert not is_lazy_array(np.arange(12.0))
+
+    path = tmp_path / Path("m.dat")
+    mm = np.memmap(path, dtype="f8", mode="w+", shape=(12,))
+    mm[:] = np.arange(12.0)
+    mm.flush()
+    assert is_lazy_array(np.memmap(path, dtype="f8", mode="r", shape=(12,)))
+
+    lazy, _ = _lazy_and_eager_tsdframe(tmp_path)
+    assert is_lazy_array(lazy.values)
+
+    # an in-memory duck array (jax, cupy) declares itself via the array API;
+    # stubbed because jax is not a test dependency
+    class InMemoryDuckArray:
+        def __array_namespace__(self, api_version=None):
+            return np
+
+    assert not is_lazy_array(InMemoryDuckArray())
+
+
 def _assert_slice_reads_only(dataset, fn):
     """Run `fn`, asserting every read of `dataset` used a slice, not a point index."""
     keys = []

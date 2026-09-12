@@ -1,7 +1,7 @@
 import numpy as np
 from numba import jit  # , njit, prange
 
-from .utils import take_lazy
+from .utils import take
 
 
 ################################
@@ -571,7 +571,7 @@ def jitbin_array(time_array, data_array, starts, ends, bin_size):
     """Slice first for compatibility with lazy loading."""
     idx, countin = jitrestrict_with_count(time_array, starts, ends)
     return _jitbin_array(
-        countin, time_array[idx], take_lazy(data_array, idx), starts, ends, bin_size
+        countin, time_array[idx], take(data_array, idx), starts, ends, bin_size
     )
 
 

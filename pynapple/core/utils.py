@@ -620,26 +620,42 @@ def _is_regularly_sampled(data, tolerance=1e-6):
     return np.all(relative_variation < tolerance)
 
 
-def take_lazy(array, idx):
-    """Gather ``array[idx]`` reading contiguous runs instead of scattered points.
+def is_lazy_array(array):
+    """Whether reads from `array` cost per access (disk-backed) rather than per element.
 
-    ``array[idx]`` on an h5py/zarr dataset (``lazy_loading=True``) is a point
-    selection, which those backends serve element by element -- measured 20-30x
-    slower than reading the same elements as slices. ``idx`` coming out of a
-    restrict is run-structured (one run per epoch or window), so splitting it into
-    maximal runs of consecutive indices turns the gather into a handful of slice
-    reads over exactly the same elements.
-
-    ``idx`` must be strictly increasing, which is what the restrict kernels return.
-    Plain fancy indexing is used for numpy arrays, where it is already optimal, and
-    for an ``idx`` too fragmented for runs to pay off.
+    In-memory arrays are told apart by ``__array_namespace__``; ``np.memmap`` is
+    disk-backed despite subclassing ndarray.
 
     Parameters
     ----------
     array : ndarray or array-like
-        Array to gather from. Only needs ``.shape``, ``.dtype`` and slice indexing.
+        Array to classify.
+
+    Returns
+    -------
+    bool
+        True for disk-backed arrays, which should be gathered as slice reads.
+    """
+    if isinstance(array, np.memmap):
+        return True
+    if isinstance(array, np.ndarray):
+        return False
+    return not hasattr(array, "__array_namespace__")
+
+
+def take(array, idx):
+    """Gather ``array[idx]``, as contiguous slice reads when `array` is disk-backed.
+
+    Drop-in for ``array[idx]``: callers need not know the backend. A point
+    selection on h5py/zarr is served element by element, so consecutive runs of
+    `idx` become slice reads; in-memory arrays use plain fancy indexing.
+
+    Parameters
+    ----------
+    array : ndarray or array-like
+        Array to gather from.
     idx : ndarray[int]
-        Strictly increasing indices to gather along axis 0.
+        Strictly increasing indices along axis 0.
 
     Returns
     -------
@@ -647,7 +663,7 @@ def take_lazy(array, idx):
         ``array[idx]``.
     """
     n = len(idx)
-    if isinstance(array, np.ndarray) or n == 0:
+    if n == 0 or not is_lazy_array(array):
         return array[idx]
 
     # maximal stretches of indices increasing by exactly 1
