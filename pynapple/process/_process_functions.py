@@ -12,6 +12,7 @@ import numpy as np
 from numba import jit
 
 from .. import core as nap
+from ..core.utils import take_lazy
 
 
 @jit(nopython=True, cache=True)
@@ -231,7 +232,7 @@ def _perievent_continuous(
         time_array, time_target_array, starts, ends, windowsize
     )
 
-    data_array = data_array[idx]
+    data_array = take_lazy(data_array, idx)
 
     if nap.utils.get_backend() == "jax":
         from pynajax.jax_process_perievent import perievent_continuous

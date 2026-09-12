@@ -618,3 +618,48 @@ def _is_regularly_sampled(data, tolerance=1e-6):
 
     relative_variation = np.abs(time_diffs - bin_size) / bin_size
     return np.all(relative_variation < tolerance)
+
+
+def take_lazy(array, idx):
+    """Gather ``array[idx]`` reading contiguous runs instead of scattered points.
+
+    ``array[idx]`` on an h5py/zarr dataset (``lazy_loading=True``) is a point
+    selection, which those backends serve element by element -- measured 20-30x
+    slower than reading the same elements as slices. ``idx`` coming out of a
+    restrict is run-structured (one run per epoch or window), so splitting it into
+    maximal runs of consecutive indices turns the gather into a handful of slice
+    reads over exactly the same elements.
+
+    ``idx`` must be strictly increasing, which is what the restrict kernels return.
+    Plain fancy indexing is used for numpy arrays, where it is already optimal, and
+    for an ``idx`` too fragmented for runs to pay off.
+
+    Parameters
+    ----------
+    array : ndarray or array-like
+        Array to gather from. Only needs ``.shape``, ``.dtype`` and slice indexing.
+    idx : ndarray[int]
+        Strictly increasing indices to gather along axis 0.
+
+    Returns
+    -------
+    ndarray
+        ``array[idx]``.
+    """
+    n = len(idx)
+    if isinstance(array, np.ndarray) or n == 0:
+        return array[idx]
+
+    # maximal stretches of indices increasing by exactly 1
+    breaks = np.flatnonzero(np.diff(idx) != 1) + 1
+    if len(breaks) + 1 > n // 4:
+        # runs too short for slice reads to beat one point selection
+        return array[idx]
+
+    run_starts = np.concatenate(([0], breaks))
+    run_stops = np.concatenate((breaks, [n]))
+
+    out = np.empty((n, *array.shape[1:]), dtype=array.dtype)
+    for start, stop in zip(run_starts, run_stops):
+        out[start:stop] = array[idx[start] : idx[stop - 1] + 1]
+    return out

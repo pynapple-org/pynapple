@@ -270,6 +270,58 @@ def test_lazy_load_hdf5_value_from_does_not_materialize(tmp_path):
         ts.value_from(lazy)
 
 
+def _assert_slice_reads_only(dataset, fn):
+    """Run `fn`, asserting every read of `dataset` used a slice, not a point index."""
+    keys = []
+    real_getitem = type(dataset).__getitem__
+
+    def spy(self, key):
+        keys.append(key)
+        return real_getitem(self, key)
+
+    with patch.object(type(dataset), "__getitem__", spy):
+        out = fn()
+
+    assert keys, "the lazy target was never read"
+    assert all(
+        isinstance(key, slice) for key in keys
+    ), f"lazy target read with a non-slice index: {keys}"
+    return out
+
+
+def test_lazy_load_hdf5_bin_average_reads_contiguous_slices(tmp_path):
+    """`bin_average` must read the lazy target with contiguous slices.
+
+    h5py/zarr serve a scattered fancy index element by element, ~20-30x slower than
+    slice reads over the same elements.
+    """
+    lazy, eager = _lazy_and_eager_tsdframe(tmp_path)
+    ep = nap.IntervalSet([0.0, 10.0], [4.0, 19.0])
+
+    # bin_average must see the lazy array itself -- restricting first would
+    # materialize it to numpy and the spy would never observe the gather
+    out_lazy = _assert_slice_reads_only(
+        lazy.values, lambda: lazy.bin_average(2.0, ep=ep)
+    )
+    out_eager = eager.bin_average(2.0, ep=ep)
+    np.testing.assert_array_equal(out_lazy.t, out_eager.t)
+    np.testing.assert_array_equal(out_lazy.values, out_eager.values)
+
+
+def test_lazy_load_hdf5_perievent_reads_contiguous_slices(tmp_path):
+    """`compute_perievent` must read the lazy target with contiguous slices."""
+    lazy, eager = _lazy_and_eager_tsdframe(tmp_path)
+    events = nap.Ts(t=np.array([5.0, 12.0]))
+
+    out_lazy = _assert_slice_reads_only(
+        lazy.values, lambda: nap.compute_perievent(lazy, events, (3.0, 3.0))
+    )
+    out_eager = nap.compute_perievent(eager, events, (3.0, 3.0))
+    np.testing.assert_array_equal(
+        np.asarray(out_lazy.values), np.asarray(out_eager.values)
+    )
+
+
 def test_lazy_load_hdf5_restrict_reads_contiguous_slices(tmp_path):
     """`restrict` must read the lazy target with contiguous slices too.
 
