@@ -270,6 +270,33 @@ def test_lazy_load_hdf5_value_from_does_not_materialize(tmp_path):
         ts.value_from(lazy)
 
 
+def test_lazy_load_hdf5_value_from_reads_contiguous_slices(tmp_path):
+    """The lazy target must be read with contiguous slices, never a point selection.
+
+    h5py/zarr serve a scattered fancy index element by element, ~100x slower than
+    a hyperslab of the same span.
+    """
+    lazy, _ = _lazy_and_eager_tsdframe(tmp_path)
+    # 10x denser than the target, so the matched indices repeat and are scattered
+    ts = nap.Ts(t=np.arange(0.0, 19.0, 0.1))
+
+    dataset = lazy.values
+    keys = []
+    real_getitem = type(dataset).__getitem__
+
+    def spy(self, key):
+        keys.append(key)
+        return real_getitem(self, key)
+
+    with patch.object(type(dataset), "__getitem__", spy):
+        ts.value_from(lazy, ep=nap.IntervalSet([0, 10], [4, 19]))
+
+    assert keys, "the lazy target was never read"
+    assert all(
+        isinstance(key, slice) for key in keys
+    ), f"lazy target read with a non-slice index: {keys}"
+
+
 @pytest.mark.parametrize(
     "lazy",
     [
