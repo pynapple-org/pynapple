@@ -646,16 +646,19 @@ def is_lazy_array(array):
 def take(array, idx):
     """Gather ``array[idx]``, as contiguous slice reads when `array` is disk-backed.
 
-    Drop-in for ``array[idx]``: callers need not know the backend. A point
-    selection on h5py/zarr is served element by element, so consecutive runs of
-    `idx` become slice reads; in-memory arrays use plain fancy indexing.
+    For indices that came from slicing epochs, which arrive as a handful of long
+    runs. A point selection on h5py/zarr is served element by element, so each run
+    is read as a slice instead; in-memory arrays use plain fancy indexing.
+
+    Not for arbitrary indices: an unstructured `idx` degenerates to one read per
+    element. Pass those to the array itself and let the backend decide.
 
     Parameters
     ----------
     array : ndarray or array-like
         Array to gather from.
     idx : ndarray[int]
-        Strictly increasing indices along axis 0.
+        Strictly increasing indices along axis 0, grouped in runs (one per epoch).
 
     Returns
     -------
@@ -668,9 +671,6 @@ def take(array, idx):
 
     # maximal stretches of indices increasing by exactly 1
     breaks = np.flatnonzero(np.diff(idx) != 1) + 1
-    if len(breaks) + 1 > n // 4:
-        # runs too short for slice reads to beat one point selection
-        return array[idx]
 
     run_starts = np.concatenate(([0], breaks))
     run_stops = np.concatenate((breaks, [n]))
