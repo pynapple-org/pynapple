@@ -377,14 +377,16 @@ class _Base(abc.ABC):
         ends = iset.end
 
         values = getattr(self, "values", None)
-        if (
-            values is None or isinstance(values, np.ndarray)
-        ) and _use_searchsorted_restrict(len(starts), len(time_array)):
+        is_lazy = values is not None and not isinstance(values, np.ndarray)
+        if is_lazy or _use_searchsorted_restrict(len(starts), len(time_array)):
             # few intervals: locate boundaries with searchsorted and copy
-            # contiguous ranges (no O(n) scan, no fancy-index gather)
+            # contiguous ranges (no O(n) scan, no fancy-index gather).
+            # Lazy (h5py/zarr) data always takes this path: gathering is a point
+            # selection there, measured 100-670x slower than the slice reads at
+            # every interval count, so the many-interval heuristic never applies.
             new_t, data = _restrict_ranges(time_array, values, starts, ends)
         else:
-            # many intervals (or non-numpy/lazy data): single merge scan + gather
+            # many intervals: single merge scan + gather
             idx = _restrict(time_array, starts, ends)
             new_t = time_array[idx]
             data = None if values is None else values[idx]

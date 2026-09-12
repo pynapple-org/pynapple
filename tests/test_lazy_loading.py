@@ -270,6 +270,38 @@ def test_lazy_load_hdf5_value_from_does_not_materialize(tmp_path):
         ts.value_from(lazy)
 
 
+def test_lazy_load_hdf5_restrict_reads_contiguous_slices(tmp_path):
+    """`restrict` must read the lazy target with contiguous slices too.
+
+    The searchsorted/slice path is picked by an interval-count heuristic tuned for
+    numpy; for a lazy target the gather is a point selection and loses at every
+    interval count, so lazy data must skip the heuristic entirely.
+    """
+    lazy, eager = _lazy_and_eager_tsdframe(tmp_path)
+    # enough intervals that the numpy heuristic would pick the gather path
+    ep = nap.IntervalSet(np.arange(0.0, 20.0, 2.0), np.arange(0.0, 20.0, 2.0) + 0.5)
+
+    dataset = lazy.values
+    keys = []
+    real_getitem = type(dataset).__getitem__
+
+    def spy(self, key):
+        keys.append(key)
+        return real_getitem(self, key)
+
+    with patch.object(type(dataset), "__getitem__", spy):
+        out_lazy = lazy.restrict(ep)
+
+    assert keys, "the lazy target was never read"
+    assert all(
+        isinstance(key, slice) for key in keys
+    ), f"lazy target read with a non-slice index: {keys}"
+
+    out_eager = eager.restrict(ep)
+    np.testing.assert_array_equal(out_lazy.t, out_eager.t)
+    np.testing.assert_array_equal(out_lazy.values, out_eager.values)
+
+
 def test_lazy_load_hdf5_value_from_reads_contiguous_slices(tmp_path):
     """The lazy target must be read with contiguous slices, never a point selection.
 
