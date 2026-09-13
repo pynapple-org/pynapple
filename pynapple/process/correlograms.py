@@ -539,7 +539,9 @@ def compute_isi_distribution(
             raise ValueError("`bins` must be positive, when an integer")
         all_time_diffs = np.hstack([time_diff.d for time_diff in time_diffs.values()])
         min_isi, max_isi = np.min(all_time_diffs), np.max(all_time_diffs)
-        bin_edges = np.linspace(min_isi, max_isi, bins + 1)
+        bin_edges = np.histogram_bin_edges(
+            all_time_diffs, bins=bins, range=(min_isi, max_isi)
+        )
     elif np.ndim(bins) == 1:
         bin_edges = np.asarray(bins)
         if np.any(bin_edges[:-1] > bin_edges[1:]):
