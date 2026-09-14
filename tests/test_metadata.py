@@ -1734,16 +1734,19 @@ class TestMetadata:
                 # index same as pandas
                 assert all(idx == pd_groups[grp])
                 if isinstance(obj, nap.TsdFrame):
-                    if isinstance(obj_grp, nap.TsdFrame):
-                        # columns should be the same
-                        assert all(obj_grp.columns == obj.loc[idx].columns)
+                    # a group is always a TsdFrame, including groups holding a single column
+                    assert isinstance(obj_grp, nap.TsdFrame)
 
-                        # get_group should be the same as indexed object
-                        pd.testing.assert_frame_equal(
-                            obj_grp.metadata, obj.loc[idx].metadata
-                        )
+                    # columns should be the members of the group
+                    assert all(obj_grp.columns == idx)
+
+                    # get_group should carry the metadata of the group members
+                    pd.testing.assert_frame_equal(
+                        obj_grp.metadata, obj.metadata.loc[idx]
+                    )
+
                     # index should be the same for both objects
-                    assert all(obj_grp.index == obj.loc[idx].index)
+                    assert all(obj_grp.index == obj.index)
                 else:
                     # get_group should be the same as indexed object
                     pd.testing.assert_frame_equal(obj_grp.metadata, obj[idx].metadata)
@@ -1839,10 +1842,8 @@ class TestMetadata:
             grouped_out = obj.groupby_apply(group, func, ep, **func_kwargs)
 
             for grp, idx in groups.items():
-                if isinstance(obj, nap.TsdFrame):
-                    obj_idx = obj.loc[idx]
-                else:
-                    obj_idx = obj[idx]
+                # applying the function to the group should match groupby_apply
+                obj_idx = obj.groupby(group, get_group=grp)
                 if ep:
                     np.testing.assert_array_almost_equal(
                         func(**{ep: obj_idx, **func_kwargs}), grouped_out[grp]
@@ -2440,8 +2441,21 @@ class TestGroupbyApplyFunctions:
             t=np.linspace(1, 100, 1000),
             d=np.random.rand(1000, 4),
             time_units="s",
-            metadata={"label": ["x", "x", "y", "y"]},
+            metadata={"label": ["x", "x", "y", "z"]},
         )
+
+    def test_groupby_apply_column_reduction_on_single_column_group(self, tsdframe_gba):
+        """
+        Test that a column-wise reduction works on a group holding a single column. If such a
+        group collapses to a Tsd, np.mean(..., axis=1) raises an AxisError.
+        """
+        groups = tsdframe_gba.groupby("label")
+
+        # the fixture is shared, so guard the property this test relies on
+        assert 1 in map(len, groups.values()), "fixture must hold a single-column group"
+
+        # column reduction should raise no error
+        tsdframe_gba.groupby_apply("label", np.mean, axis=1)
 
     def test_metadata_groupby_apply_tuning_curves(self, tsgroup_gba, iset_gba):
         """
