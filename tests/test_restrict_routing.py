@@ -97,9 +97,64 @@ def test_ts_without_values_routes_to_searchsorted():
     assert len(out) == int(np.sum((t >= 100) & (t <= 200)))
 
 
-def test_non_numpy_data_routes_to_scan():
-    """Array-like (non-ndarray) values must use the scan path even for a single
-    interval, since the searchsorted copy path needs a real numpy array."""
+class InMemoryDuckArray(MockArray):
+    """A non-numpy array that lives in memory, like a jax or cupy array.
+
+    Declared by ``__array_namespace__`` (the Python array API), which the array
+    libraries implement and the lazy datasets do not. Stubbed rather than importing
+    jax, which is not a test dependency -- the contract under test is the protocol,
+    not any one library.
+    """
+
+    def __array_namespace__(self, api_version=None):
+        return np
+
+
+def test_in_memory_duck_array_routes_to_scan():
+    """In-memory duck arrays (jax, cupy) must keep the fancy gather, not slices.
+
+    One gather is a single device op; the range path is one op per interval, which
+    measured ~200x slower on a real jax array at 512 intervals. Only disk-backed
+    data benefits from the slice path.
+    """
+    t = np.arange(100_000.0)
+    tsd = nap.Tsd(
+        t=t,
+        d=InMemoryDuckArray(np.arange(100_000.0)),
+        time_support=nap.IntervalSet(0, t[-1]),
+        load_array=False,
+    )
+    assert not isinstance(tsd.values, np.ndarray)
+    ep = nap.IntervalSet(100, 200)  # few intervals: numpy would take the range path
+    ranges_patch, scan_patch = _spy()
+    with ranges_patch as ranges, scan_patch as scan:
+        out = tsd.restrict(ep)
+    assert scan.call_count == 1
+    assert ranges.call_count == 0
+
+    expected = nap.Tsd(
+        t=t, d=np.arange(100_000.0), time_support=nap.IntervalSet(0, t[-1])
+    ).restrict(ep)
+    np.testing.assert_array_equal(out.t, expected.t)
+    np.testing.assert_array_equal(np.asarray(out.values.data), expected.values)
+
+
+@pytest.mark.parametrize(
+    "ep",
+    [
+        nap.IntervalSet(100, 200),  # few intervals
+        # many intervals: numpy data would route to the scan here, lazy must not
+        _tiled_intervals(100_000, 200),
+    ],
+)
+def test_non_numpy_data_routes_to_searchsorted(ep):
+    """Array-like (non-ndarray) values must use the searchsorted copy path.
+
+    The interval-count heuristic is tuned for numpy; gathering from an h5py/zarr
+    dataset is a point selection, which loses to the slice reads at every interval
+    count, so lazy data skips the heuristic. `_concat_ranges` only needs `.shape`,
+    `.dtype` and slice indexing, all guaranteed by the array-like contract.
+    """
     t = np.arange(100_000.0)
     tsd = nap.Tsd(
         t=t,
@@ -107,12 +162,17 @@ def test_non_numpy_data_routes_to_scan():
         time_support=nap.IntervalSet(0, t[-1]),
         load_array=False,
     )
-    ep = nap.IntervalSet(100, 200)  # few intervals, but non-numpy data
     ranges_patch, scan_patch = _spy()
     with ranges_patch as ranges, scan_patch as scan:
-        tsd.restrict(ep)
-    assert scan.call_count == 1
-    assert ranges.call_count == 0
+        out = tsd.restrict(ep)
+    assert ranges.call_count == 1
+    assert scan.call_count == 0
+
+    expected = nap.Tsd(
+        t=t, d=np.arange(100_000.0), time_support=nap.IntervalSet(0, t[-1])
+    ).restrict(ep)
+    np.testing.assert_array_equal(out.t, expected.t)
+    np.testing.assert_array_equal(out.values, expected.values)
 
 
 # --------------------------------------------------------------------------

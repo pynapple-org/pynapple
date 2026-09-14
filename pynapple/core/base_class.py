@@ -17,7 +17,7 @@ from ._core_functions import (
 )
 from .interval_set import IntervalSet
 from .time_index import TsIndex, trusted_construction
-from .utils import check_filename, convert_to_numpy_array
+from .utils import check_filename, convert_to_numpy_array, is_lazy_array
 
 
 class _Base(abc.ABC):
@@ -377,14 +377,25 @@ class _Base(abc.ABC):
         ends = iset.end
 
         values = getattr(self, "values", None)
-        if (
-            values is None or isinstance(values, np.ndarray)
-        ) and _use_searchsorted_restrict(len(starts), len(time_array)):
-            # few intervals: locate boundaries with searchsorted and copy
-            # contiguous ranges (no O(n) scan, no fancy-index gather)
+        if values is not None and is_lazy_array(values):
+            # Disk-backed data always takes the searchsorted/slice path: gathering
+            # is a point selection there, measured 100-670x slower than the slice
+            # reads at every interval count, so the heuristic never applies.
+            use_ranges = True
+        elif values is None or isinstance(values, np.ndarray):
+            use_ranges = _use_searchsorted_restrict(len(starts), len(time_array))
+        else:
+            # In-memory duck array (jax, cupy, torch): one fancy gather is a single
+            # device op, while the slice path is one op per interval -- measured
+            # ~200x slower on jax at 512 intervals. Never take the range path.
+            use_ranges = False
+
+        if use_ranges:
+            # locate boundaries with searchsorted and copy contiguous ranges
+            # (no O(n) scan, no fancy-index gather)
             new_t, data = _restrict_ranges(time_array, values, starts, ends)
         else:
-            # many intervals (or non-numpy/lazy data): single merge scan + gather
+            # single merge scan + gather
             idx = _restrict(time_array, starts, ends)
             new_t = time_array[idx]
             data = None if values is None else values[idx]

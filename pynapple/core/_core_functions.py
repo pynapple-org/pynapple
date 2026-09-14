@@ -164,17 +164,16 @@ def _value_from(
     if isinstance(data_target_array, np.ndarray):
         values = None  # gathered straight out of the target below
     else:
-        # h5py/zarr datasets (``lazy_loading=True``) only accept fancy indices that
-        # are strictly increasing, while `take_idx` is neither sorted nor unique
-        # (any target matched by several timestamps repeats). Reading the distinct
-        # targets once and expanding satisfies that, and touches strictly less of
-        # the dataset than materializing the restricted target would.
-        unique_idx, inverse = np.unique(take_idx, return_inverse=True)
-        values = (
-            data_target_array[unique_idx][inverse]
-            if len(unique_idx)
-            else np.empty((0,) + data_target_array.shape[1:], dtype=use_type)
-        )
+        # h5py/zarr datasets (``lazy_loading=True``) reject repeated or unsorted
+        # fancy indices, and serve scattered ones element by element (~100x a
+        # hyperslab of the same span). Read the epoch ranges as slices instead and
+        # gather in numpy.
+        target_values = _concat_ranges(data_target_array, tg_start, tg_stop, copy=True)
+        # map full-target indices onto their position in the concatenated ranges
+        offsets = np.zeros(len(tg_start) + 1, dtype=np.int64)
+        np.cumsum(tg_stop - tg_start, out=offsets[1:])
+        epoch = np.searchsorted(tg_start, take_idx, side="right") - 1
+        values = target_values[take_idx - tg_start[epoch] + offsets[epoch]]
 
     if all_matched:
         new_data_array = np.empty(out_shape, dtype=use_type)
