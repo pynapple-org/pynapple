@@ -618,3 +618,64 @@ def _is_regularly_sampled(data, tolerance=1e-6):
 
     relative_variation = np.abs(time_diffs - bin_size) / bin_size
     return np.all(relative_variation < tolerance)
+
+
+def is_lazy_array(array):
+    """Whether reads from `array` cost per access (disk-backed) rather than per element.
+
+    In-memory arrays are told apart by ``__array_namespace__``; ``np.memmap`` is
+    disk-backed despite subclassing ndarray.
+
+    Parameters
+    ----------
+    array : ndarray or array-like
+        Array to classify.
+
+    Returns
+    -------
+    bool
+        True for disk-backed arrays, which should be gathered as slice reads.
+    """
+    if isinstance(array, np.memmap):
+        return True
+    if isinstance(array, np.ndarray):
+        return False
+    return not hasattr(array, "__array_namespace__")
+
+
+def take(array, idx):
+    """Gather ``array[idx]``, as contiguous slice reads when `array` is disk-backed.
+
+    For indices that came from slicing epochs, which arrive as a handful of long
+    runs. A point selection on h5py/zarr is served element by element, so each run
+    is read as a slice instead; in-memory arrays use plain fancy indexing.
+
+    Not for arbitrary indices: an unstructured `idx` degenerates to one read per
+    element. Pass those to the array itself and let the backend decide.
+
+    Parameters
+    ----------
+    array : ndarray or array-like
+        Array to gather from.
+    idx : ndarray[int]
+        Strictly increasing indices along axis 0, grouped in runs (one per epoch).
+
+    Returns
+    -------
+    ndarray
+        ``array[idx]``.
+    """
+    n = len(idx)
+    if n == 0 or not is_lazy_array(array):
+        return array[idx]
+
+    # maximal stretches of indices increasing by exactly 1
+    breaks = np.flatnonzero(np.diff(idx) != 1) + 1
+
+    run_starts = np.concatenate(([0], breaks))
+    run_stops = np.concatenate((breaks, [n]))
+
+    out = np.empty((n, *array.shape[1:]), dtype=array.dtype)
+    for start, stop in zip(run_starts, run_stops):
+        out[start:stop] = array[idx[start] : idx[stop - 1] + 1]
+    return out

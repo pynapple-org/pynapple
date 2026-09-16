@@ -270,6 +270,147 @@ def test_lazy_load_hdf5_value_from_does_not_materialize(tmp_path):
         ts.value_from(lazy)
 
 
+def test_is_lazy_array_classification(tmp_path):
+    """Only disk-backed arrays count as lazy.
+
+    The gather-as-slices optimization is a win for disk-backed data and a heavy
+    loss for in-memory duck arrays, where one fancy index is a single device op
+    and the slice path is one op per range. `np.memmap` subclasses `ndarray` but
+    is disk-backed, so it must not be classified by the ndarray check alone.
+    """
+    from pynapple.core.utils import is_lazy_array
+
+    assert not is_lazy_array(np.arange(12.0))
+
+    path = tmp_path / Path("m.dat")
+    mm = np.memmap(path, dtype="f8", mode="w+", shape=(12,))
+    mm[:] = np.arange(12.0)
+    mm.flush()
+    assert is_lazy_array(np.memmap(path, dtype="f8", mode="r", shape=(12,)))
+
+    lazy, _ = _lazy_and_eager_tsdframe(tmp_path)
+    assert is_lazy_array(lazy.values)
+
+    # an in-memory duck array (jax, cupy) declares itself via the array API;
+    # stubbed because jax is not a test dependency
+    class InMemoryDuckArray:
+        def __array_namespace__(self, api_version=None):
+            return np
+
+    assert not is_lazy_array(InMemoryDuckArray())
+
+
+def _assert_slice_reads_only(dataset, fn):
+    """Run `fn`, asserting every read of `dataset` used a slice, not a point index."""
+    keys = []
+    real_getitem = type(dataset).__getitem__
+
+    def spy(self, key):
+        keys.append(key)
+        return real_getitem(self, key)
+
+    with patch.object(type(dataset), "__getitem__", spy):
+        out = fn()
+
+    assert keys, "the lazy target was never read"
+    assert all(
+        isinstance(key, slice) for key in keys
+    ), f"lazy target read with a non-slice index: {keys}"
+    return out
+
+
+def test_lazy_load_hdf5_bin_average_reads_contiguous_slices(tmp_path):
+    """`bin_average` must read the lazy target with contiguous slices.
+
+    h5py/zarr serve a scattered fancy index element by element, ~20-30x slower than
+    slice reads over the same elements.
+    """
+    lazy, eager = _lazy_and_eager_tsdframe(tmp_path)
+    ep = nap.IntervalSet([0.0, 10.0], [4.0, 19.0])
+
+    # bin_average must see the lazy array itself -- restricting first would
+    # materialize it to numpy and the spy would never observe the gather
+    out_lazy = _assert_slice_reads_only(
+        lazy.values, lambda: lazy.bin_average(2.0, ep=ep)
+    )
+    out_eager = eager.bin_average(2.0, ep=ep)
+    np.testing.assert_array_equal(out_lazy.t, out_eager.t)
+    np.testing.assert_array_equal(out_lazy.values, out_eager.values)
+
+
+def test_lazy_load_hdf5_perievent_reads_contiguous_slices(tmp_path):
+    """`compute_perievent` must read the lazy target with contiguous slices."""
+    lazy, eager = _lazy_and_eager_tsdframe(tmp_path)
+    events = nap.Ts(t=np.array([5.0, 12.0]))
+
+    out_lazy = _assert_slice_reads_only(
+        lazy.values, lambda: nap.compute_perievent(lazy, events, (3.0, 3.0))
+    )
+    out_eager = nap.compute_perievent(eager, events, (3.0, 3.0))
+    np.testing.assert_array_equal(
+        np.asarray(out_lazy.values), np.asarray(out_eager.values)
+    )
+
+
+def test_lazy_load_hdf5_restrict_reads_contiguous_slices(tmp_path):
+    """`restrict` must read the lazy target with contiguous slices too.
+
+    The searchsorted/slice path is picked by an interval-count heuristic tuned for
+    numpy; for a lazy target the gather is a point selection and loses at every
+    interval count, so lazy data must skip the heuristic entirely.
+    """
+    lazy, eager = _lazy_and_eager_tsdframe(tmp_path)
+    # enough intervals that the numpy heuristic would pick the gather path
+    ep = nap.IntervalSet(np.arange(0.0, 20.0, 2.0), np.arange(0.0, 20.0, 2.0) + 0.5)
+
+    dataset = lazy.values
+    keys = []
+    real_getitem = type(dataset).__getitem__
+
+    def spy(self, key):
+        keys.append(key)
+        return real_getitem(self, key)
+
+    with patch.object(type(dataset), "__getitem__", spy):
+        out_lazy = lazy.restrict(ep)
+
+    assert keys, "the lazy target was never read"
+    assert all(
+        isinstance(key, slice) for key in keys
+    ), f"lazy target read with a non-slice index: {keys}"
+
+    out_eager = eager.restrict(ep)
+    np.testing.assert_array_equal(out_lazy.t, out_eager.t)
+    np.testing.assert_array_equal(out_lazy.values, out_eager.values)
+
+
+def test_lazy_load_hdf5_value_from_reads_contiguous_slices(tmp_path):
+    """The lazy target must be read with contiguous slices, never a point selection.
+
+    h5py/zarr serve a scattered fancy index element by element, ~100x slower than
+    a hyperslab of the same span.
+    """
+    lazy, _ = _lazy_and_eager_tsdframe(tmp_path)
+    # 10x denser than the target, so the matched indices repeat and are scattered
+    ts = nap.Ts(t=np.arange(0.0, 19.0, 0.1))
+
+    dataset = lazy.values
+    keys = []
+    real_getitem = type(dataset).__getitem__
+
+    def spy(self, key):
+        keys.append(key)
+        return real_getitem(self, key)
+
+    with patch.object(type(dataset), "__getitem__", spy):
+        ts.value_from(lazy, ep=nap.IntervalSet([0, 10], [4, 19]))
+
+    assert keys, "the lazy target was never read"
+    assert all(
+        isinstance(key, slice) for key in keys
+    ), f"lazy target read with a non-slice index: {keys}"
+
+
 @pytest.mark.parametrize(
     "lazy",
     [

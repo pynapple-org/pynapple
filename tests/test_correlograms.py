@@ -662,9 +662,9 @@ def test_compute_isi_distribution(data, bins, epochs):
     if not isinstance(time_diff, dict):
         time_diff = {0: time_diff}
     if isinstance(data, nap.TsGroup) and isinstance(bins, int):
-        min_isi = min([isi for isis in time_diff.values() for isi in isis])
-        max_isi = max([isi for isis in time_diff.values() for isi in isis])
-        bins = np.linspace(min_isi, max_isi, bins + 1)
+        _, bins = np.histogram(
+            np.concatenate([isis.values for isis in time_diff.values()]), bins=bins
+        )
 
     for i in time_diff:
         expected_values, expected_edges = np.histogram(time_diff[i].values, bins=bins)
@@ -675,3 +675,40 @@ def test_compute_isi_distribution(data, bins, epochs):
     np.testing.assert_array_almost_equal(
         actual.columns, list(data.keys()) if isinstance(data, nap.TsGroup) else [0]
     )
+
+
+@pytest.mark.parametrize("data_type", ["Ts", "Tsd", "TsdFrame", "TsdTensor", "TsGroup"])
+@pytest.mark.parametrize("n_events", [2, 4])
+@pytest.mark.parametrize("bins", [1, 10])
+@pytest.mark.parametrize("log_scale", [False, True])
+def test_compute_isi_distribution_constant_intervals(
+    data_type, n_events, bins, log_scale
+):
+    times = 1.0 + 2.0 * np.arange(n_events)
+    epochs = nap.IntervalSet(0, 8)
+    if data_type == "TsGroup":
+        data = nap.TsGroup({0: nap.Ts(times), 1: nap.Ts(times)}, time_support=epochs)
+    elif data_type == "Ts":
+        data = nap.Ts(times, time_support=epochs)
+    else:
+        shape = {
+            "Tsd": (n_events,),
+            "TsdFrame": (n_events, 2),
+            "TsdTensor": (n_events, 2, 2),
+        }
+        data = getattr(nap, data_type)(
+            times, np.ones(shape[data_type]), time_support=epochs
+        )
+
+    intervals = np.diff(times)
+    if log_scale:
+        intervals = np.log(intervals)
+    expected, edges = np.histogram(intervals, bins=bins)
+    actual = nap.compute_isi_distribution(
+        data, bins=bins, log_scale=log_scale, epochs=epochs
+    )
+
+    for column in actual:
+        np.testing.assert_array_equal(actual[column], expected)
+    np.testing.assert_allclose(actual.index, edges[:-1] + np.diff(edges) / 2)
+    assert actual.index.is_unique
