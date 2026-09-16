@@ -339,6 +339,78 @@ def test_lagged_crosscorrelation_nan_and_constant_values_propagate():
     assert np.isnan(result.loc[0.0, ("a", "constant")])
 
 
+@pytest.mark.parametrize("nan_index", [0, 3, 6])
+def test_lagged_crosscorrelation_nan_is_pair_and_lag_specific(nan_index):
+    values = np.random.default_rng(12).normal(size=(7, 3))
+    values[nan_index, 1] = np.nan
+    frame = nap.TsdFrame(t=np.arange(7), d=values)
+
+    result = nap.compute_lagged_crosscorrelation(frame, windowsize=2)
+
+    for lag in range(-2, 3):
+        expected = _reference_lagged_correlation(
+            values, values, np.array([7]), lag, [(0, 1), (0, 2), (1, 2)]
+        )
+        np.testing.assert_allclose(result.loc[float(lag)], expected, equal_nan=True)
+    assert np.isfinite(result[(0, 2)]).all()
+    assert np.isnan(result.loc[0.0, (0, 1)])
+    if nan_index == 0:
+        assert np.isfinite(result.loc[1.0, (0, 1)])
+        assert np.isnan(result.loc[-1.0, (0, 1)])
+    elif nan_index == 6:
+        assert np.isfinite(result.loc[-1.0, (0, 1)])
+        assert np.isnan(result.loc[1.0, (0, 1)])
+
+
+@pytest.mark.parametrize("container", [tuple, list])
+@pytest.mark.parametrize("nan_frame", [0, 1])
+@pytest.mark.parametrize("nan_index", [0, 3, 6])
+def test_lagged_crosscorrelation_nan_in_two_frames(container, nan_frame, nan_index):
+    rng = np.random.default_rng(13)
+    values = [rng.normal(size=(7, 2)), rng.normal(size=(7, 2))]
+    values[nan_frame][nan_index, 0] = np.nan
+    frames = container(nap.TsdFrame(t=np.arange(7), d=v) for v in values)
+
+    result = nap.compute_lagged_crosscorrelation(frames, windowsize=2)
+
+    for lag in range(-2, 3):
+        expected = _reference_lagged_correlation(
+            values[0],
+            values[1],
+            np.array([7]),
+            lag,
+            [(0, 0), (0, 1), (1, 0), (1, 1)],
+        )
+        np.testing.assert_allclose(result.loc[float(lag)], expected, equal_nan=True)
+    assert np.isfinite(result[(1, 1)]).all()
+    assert np.isnan(result.loc[0.0, (0, 0)])
+
+
+@pytest.mark.parametrize("two_frames", [False, True])
+@pytest.mark.parametrize("nan_index", [5, 8])
+def test_lagged_crosscorrelation_nan_respects_selected_epochs(two_frames, nan_index):
+    values = np.random.default_rng(14).normal(size=(12, 2))
+    values[nan_index, 0] = np.nan
+    if two_frames:
+        data = tuple(nap.TsdFrame(t=np.arange(12), d=values[:, [i]]) for i in (0, 1))
+    else:
+        data = nap.TsdFrame(t=np.arange(12), d=values)
+    epochs = nap.IntervalSet(start=[0, 7], end=[3, 11])
+
+    result = nap.compute_lagged_crosscorrelation(data, windowsize=2, epochs=epochs)
+
+    selected = values[np.r_[0:4, 7:12]]
+    for lag in range(-2, 3):
+        expected = _reference_lagged_correlation(
+            selected, selected, np.array([4, 5]), lag, [(0, 1)]
+        )
+        np.testing.assert_allclose(result.loc[float(lag)], expected, equal_nan=True)
+    if nan_index == 5:
+        assert np.isfinite(result.values).all()
+    else:
+        assert np.isnan(result.loc[0.0].values).all()
+
+
 def test_lagged_crosscorrelation_is_stable_for_large_offsets():
     rng = np.random.default_rng(4)
     values = 1e12 + rng.normal(size=(1000, 2))
@@ -518,14 +590,22 @@ def test_lagged_crosscorrelation_requires_a_sampling_interval():
         nap.compute_lagged_crosscorrelation(frame, 0)
 
 
-def test_lagged_crosscorrelation_rejects_complex_data():
+@pytest.mark.parametrize("complex_frame", [None, 0, 1])
+def test_lagged_crosscorrelation_rejects_complex_data(complex_frame):
     frame = nap.TsdFrame(
         t=np.arange(5),
         d=np.column_stack((np.arange(5), np.arange(5))) * (1 + 1j),
     )
 
+    if complex_frame is None:
+        data = frame
+    else:
+        real_frame = nap.TsdFrame(t=np.arange(5), d=np.arange(5)[:, None])
+        data = [real_frame, real_frame]
+        data[complex_frame] = frame
+
     with pytest.raises(TypeError, match="real-valued data"):
-        nap.compute_lagged_crosscorrelation(frame, 1)
+        nap.compute_lagged_crosscorrelation(data, 1)
 
 
 #################################################

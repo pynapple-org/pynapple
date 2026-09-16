@@ -69,7 +69,7 @@ Column name `(0, 1)` is read as cross-correlogram of neuron 0 and 1 with neuron 
 
 ## Lagged cross-correlations
 
-Lagged cross-correlation measures how continuous signals vary together at different time offsets. The input is a regularly sampled `TsdFrame`; no binning is needed because its columns are already sampled on the same time axis.
+Lagged cross-correlation measures how continuous signals vary together at different time offsets. The input is a regularly sampled `TsdFrame`.
 
 ```{code-cell} ipython3
 rng = np.random.default_rng(1)

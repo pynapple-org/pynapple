@@ -271,8 +271,8 @@ def compute_lagged_crosscorrelation(
     Parameters
     ----------
     data : TsdFrame or tuple/list of two TsdFrames
-        The regularly sampled continuous signals to correlate. Two frames must
-        have identical timestamps.
+        The regularly sampled, real-valued continuous signals to correlate.
+        Two frames must have identical timestamps.
     windowsize : float
         Maximum lag duration on either side of zero.
     epochs : IntervalSet, optional
@@ -289,13 +289,24 @@ def compute_lagged_crosscorrelation(
     Raises
     ------
     TypeError
-        If the inputs have invalid types.
+        If the inputs have invalid types or the signals are complex-valued.
     ValueError
         If ``windowsize`` is negative, ``time_units`` is invalid, or two input
         frames do not have identical timestamps.
     RuntimeError
         If the input is not regularly sampled or its sampling interval cannot
         be determined.
+
+    Notes
+    -----
+    NaN values are propagated, not omitted or interpolated. For each lag and
+    column pair, the result is NaN if either signal contains a NaN among the
+    observations used at that lag, pooled across the selected epochs. NaNs in
+    other columns, outside the selected epochs, or outside the overlapping
+    samples for that lag do not affect the result.
+
+    The result is also NaN when fewer than two observations are available or
+    either signal has zero variance among the observations used at that lag.
 
     Examples
     --------
