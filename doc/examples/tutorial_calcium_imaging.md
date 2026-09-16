@@ -46,11 +46,12 @@ First things first: let's find our file.
 ```{code-cell} ipython3
 path = "A0670-221213.nwb"
 if path not in os.listdir("."):
-  r = requests.get(f"https://osf.io/sbnaw/download", stream=True)
-  block_size = 1024*1024
-  with open(path, 'wb') as f:
-    for data in r.iter_content(block_size):
-      f.write(data)
+    with requests.get("https://osf.io/sbnaw/download", stream=True, timeout=60) as r:
+        r.raise_for_status()
+        with open(f"{path}.part", "wb") as f:
+            for data in r.iter_content(1024 * 1024):
+                f.write(data)
+    os.replace(f"{path}.part", path)
 ```
 
 ***
