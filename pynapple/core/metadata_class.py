@@ -481,7 +481,8 @@ class _MetadataMixin:
                 )
             idx = groups[get_group]
             if self.nap_class == "TsdFrame":
-                return self.loc[idx]
+                # use `.get_indexer`, since `.loc` collapses a single column to a Tsd
+                return self[:, self.columns.get_indexer(idx)]
             else:
                 return self[idx]
         else:
@@ -527,7 +528,11 @@ class _MetadataMixin:
 
         groups = self.groupby(by)
         if self.nap_class == "TsdFrame":
-            out = {k: anon_func(self.loc[v]) for k, v in groups.items()}
+            # use `.get_indexer`, since `.loc` collapses a single column to a Tsd
+            out = {
+                k: anon_func(self[:, self.columns.get_indexer(v)])
+                for k, v in groups.items()
+            }
         else:
             out = {k: anon_func(self[v]) for k, v in groups.items()}
         return out
