@@ -3,6 +3,7 @@ from .correlograms import (
     compute_crosscorrelogram,
     compute_eventcorrelogram,
     compute_isi_distribution,
+    compute_lagged_crosscorrelation,
 )
 from .decoding import decode_1d, decode_2d, decode_bayes, decode_template
 from .filtering import (
