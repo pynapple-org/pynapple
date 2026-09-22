@@ -333,7 +333,8 @@ class _TsdFrameSliceHelper:
         self.tsdframe = tsdframe
 
     def __getitem__(self, key):
-        if not hasattr(key, "__iter__") or isinstance(key, str):
+        is_label = isinstance(key, tuple) and key in self.tsdframe.columns
+        if is_label or not hasattr(key, "__iter__") or isinstance(key, str):
             if key not in self.tsdframe.columns:
                 raise IndexError(str(key))
             index = self.tsdframe.columns.get_indexer([key])
