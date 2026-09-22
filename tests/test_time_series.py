@@ -1588,6 +1588,30 @@ def test_tsdframe_positional_slicing_tuple_columns(
             np.testing.assert_array_equal(out.get_info("quality"), quality[column])
 
 
+@pytest.mark.parametrize("as_list", [False, True], ids=["scalar", "list"])
+@pytest.mark.parametrize(
+    "select, column",
+    [
+        (lambda frame, column: frame.loc[column], "b"),
+        (lambda frame, column: frame[column], "b"),
+        (lambda frame, column: frame[:, column], 1),
+    ],
+    ids=["loc", "getitem", "positional"],
+)
+def test_tsdframe_column_selection(select, column, as_list):
+    """
+    Test that a scalar key drops the column dimension and a list key keeps it, whatever the
+    number of columns it selects, for both label and positional selection.
+    """
+    data = np.arange(15).reshape(5, 3)
+    frame = nap.TsdFrame(t=np.arange(5), d=data, columns=["a", "b", "c"])
+
+    out = select(frame, [column] if as_list else column)
+
+    assert isinstance(out, nap.TsdFrame if as_list else nap.Tsd)
+    np.testing.assert_array_equal(np.ravel(out.values), data[:, 1])
+
+
 @pytest.mark.parametrize(
     "tsdframe",
     [
