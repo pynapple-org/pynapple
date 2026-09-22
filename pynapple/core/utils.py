@@ -333,22 +333,17 @@ class _TsdFrameSliceHelper:
         self.tsdframe = tsdframe
 
     def __getitem__(self, key):
-        if hasattr(key, "__iter__") and not isinstance(key, str):
-            for k in key:
-                if k not in self.tsdframe.columns:
-                    raise IndexError(str(k))
-            index = self.tsdframe.columns.get_indexer(key)
-        else:
+        if not hasattr(key, "__iter__") or isinstance(key, str):
             if key not in self.tsdframe.columns:
                 raise IndexError(str(key))
             index = self.tsdframe.columns.get_indexer([key])
-
-        if len(index) == 1:
             return self.tsdframe.__getitem__((slice(None, None, None), index[0]))
-        else:
-            return self.tsdframe.__getitem__(
-                (slice(None, None, None), index), columns=key
-            )
+
+        for k in key:
+            if k not in self.tsdframe.columns:
+                raise IndexError(str(k))
+        index = self.tsdframe.columns.get_indexer(key)
+        return self.tsdframe.__getitem__((slice(None, None, None), index), columns=key)
 
 
 class _IntervalSetSliceHelper:
