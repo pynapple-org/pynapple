@@ -199,6 +199,9 @@ def _reference_lagged_correlation(data1, data2, counts, lag, pairs):
     start = 0
     for count in counts:
         end = start + count
+        if count <= abs(lag):
+            start = end
+            continue
         if lag >= 0:
             values1.append(data1[start : end - lag])
             values2.append(data2[start + lag : end])
@@ -207,6 +210,8 @@ def _reference_lagged_correlation(data1, data2, counts, lag, pairs):
             values2.append(data2[start : end + lag])
         start = end
 
+    if not values1 or sum(len(values) for values in values1) < 2:
+        return np.full(len(pairs), np.nan)
     values1 = np.concatenate(values1)
     values2 = np.concatenate(values2)
     return np.array([np.corrcoef(values1[:, i], values2[:, j])[0, 1] for i, j in pairs])
@@ -424,6 +429,85 @@ def test_lagged_crosscorrelation_is_stable_for_large_offsets():
     expected = np.corrcoef(values[:, 0], values[:, 1])[0, 1]
 
     np.testing.assert_allclose(result.iloc[0, 0], expected, atol=1e-8)
+
+
+@pytest.mark.parametrize("two_frames", [False, True])
+@pytest.mark.parametrize(
+    "scales",
+    [
+        [1e100, 1e100, -1e100],
+        [1e-100, 1e-100, -1e-100],
+        [1e300, 1e300, -1e300],
+        [1e-300, 1e-300, -1e-300],
+        [1e300, 1e-300, -1.0],
+        [1e-300, -1e300, 1.0],
+    ],
+)
+def test_lagged_crosscorrelation_is_scale_invariant(scales, two_frames):
+    values = np.array(
+        [
+            [1, 3, -2],
+            [-2, 1, 4],
+            [3, 2, 1],
+            [1, -2, -3],
+            [-1, 4, 2],
+            [2, -3, -1],
+            [-3, -1, 3],
+        ],
+        dtype=float,
+    )
+    timestamps = np.r_[np.arange(2), np.arange(10, 15)]
+    support = nap.IntervalSet(start=[0, 10], end=[1, 14])
+    scaled = values * scales
+    if two_frames:
+        data = (
+            nap.TsdFrame(t=timestamps, d=scaled[:, :1], time_support=support),
+            nap.TsdFrame(t=timestamps, d=scaled[:, 1:], time_support=support),
+        )
+        pairs = [(0, 1), (0, 2)]
+    else:
+        data = nap.TsdFrame(t=timestamps, d=scaled, time_support=support)
+        pairs = [(0, 1), (0, 2), (1, 2)]
+    # The oracle only sees moderate values, not the potentially overflowing data.
+    reference = values * np.sign(scales)
+    result = nap.compute_lagged_crosscorrelation(data, windowsize=3)
+    for lag in range(-3, 4):
+        expected = _reference_lagged_correlation(
+            reference, reference, [2, 5], lag, pairs
+        )
+        np.testing.assert_allclose(result.loc[lag], expected, atol=1e-14)
+
+
+@pytest.mark.parametrize(
+    "scale", [np.nextafter(0.0, 1.0), 2.0**-664, 2.0**664, np.finfo(float).max / 2]
+)
+def test_lagged_crosscorrelation_extreme_finite_values(scale):
+    values = np.arange(-2.0, 3.0) * scale
+    frame = nap.TsdFrame(t=np.arange(5), d=np.column_stack((values, values, -values)))
+    result = nap.compute_lagged_crosscorrelation(frame, windowsize=0)
+    np.testing.assert_allclose(result.iloc[0], [1.0, -1.0, -1.0])
+
+
+@pytest.mark.parametrize("exponent", [-900, 0, 900])
+def test_lagged_crosscorrelation_preserves_small_variations(exponent):
+    variations = np.array([[0, 3], [1, -2], [-2, 1], [3, 0], [-1, 2]])
+    values = np.ldexp(1.0 + variations * 2.0**-50, exponent)
+    frame = nap.TsdFrame(t=np.arange(5), d=values)
+    result = nap.compute_lagged_crosscorrelation(frame, windowsize=0)
+    expected = np.corrcoef(variations.T)[0, 1]
+    np.testing.assert_allclose(result.iloc[0, 0], expected, atol=1e-14)
+
+
+@pytest.mark.parametrize("nonfinite", [np.nan, np.inf, -np.inf])
+def test_lagged_crosscorrelation_scale_uses_only_overlapping_samples(nonfinite):
+    # Excluded endpoints must not erase tiny variations at lag +1.
+    first = np.array([1e-300, 2e-300, 3e-300, 4e-300, 1e300])
+    second = np.array([nonfinite, 1e-300, 2e-300, 3e-300, 4e-300])
+    frames = [nap.TsdFrame(t=np.arange(5), d=x[:, None]) for x in (first, second)]
+    result = nap.compute_lagged_crosscorrelation(frames, windowsize=1)
+    assert result.loc[1.0].iloc[0] == pytest.approx(1.0)
+    assert np.isnan(result.loc[-1.0].iloc[0])
+    assert np.isnan(result.loc[0.0].iloc[0])
 
 
 def test_lagged_crosscorrelation_is_symmetric_when_inputs_are_swapped():

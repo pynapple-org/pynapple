@@ -7,6 +7,7 @@ from __future__ import annotations
 import inspect
 from functools import wraps
 from itertools import combinations, product
+from math import frexp, ldexp
 from numbers import Number
 from typing import Callable, Optional, Union
 
@@ -162,6 +163,23 @@ def _cross_correlogram(
 
 
 @jit(nopython=True, cache=True)
+def _lagged_correlation_scales(data, counts, lag):
+    """Power-of-two scaling for the observations used by one lagged stream."""
+    maximums = np.zeros(data.shape[1])
+    start = 0
+    for count in counts:
+        for row in range(start + max(lag, 0), start + count + min(lag, 0)):
+            for column in range(data.shape[1]):
+                magnitude = abs(data[row, column])
+                if magnitude > maximums[column]:
+                    maximums[column] = magnitude
+        start += count
+    for column in range(data.shape[1]):
+        maximums[column] = ldexp(1.0, frexp(maximums[column])[1] - 1)
+    return maximums
+
+
+@jit(nopython=True, cache=True)
 def _lagged_crosscorrelation(
     data1: npt.NDArray[np.float64],
     data2: npt.NDArray[np.float64],
@@ -188,6 +206,9 @@ def _lagged_crosscorrelation(
 
     for lag_index in range(n_lags):
         lag = lag_index - max_lag
+        # Scale before subtracting/squaring; powers of two preserve close values.
+        scales1 = _lagged_correlation_scales(data1, counts, -lag)
+        scales2 = _lagged_correlation_scales(data2, counts, lag)
         means1.fill(0.0)
         means2.fill(0.0)
         sums_of_squares1.fill(0.0)
@@ -208,19 +229,25 @@ def _lagged_crosscorrelation(
 
                 for sample in range(n_valid):
                     if n_observations == 0:
-                        anchors1[:] = data1[start1 + sample]
-                        anchors2[:] = data2[start2 + sample]
+                        anchors1[:] = data1[start1 + sample] / scales1
+                        anchors2[:] = data2[start2 + sample] / scales2
                     n_observations += 1
 
                     for column in range(data1.shape[1]):
-                        value = data1[start1 + sample, column] - anchors1[column]
+                        value = (
+                            data1[start1 + sample, column] / scales1[column]
+                            - anchors1[column]
+                        )
                         delta = value - means1[column]
                         means1[column] += delta / n_observations
                         sums_of_squares1[column] += delta * (value - means1[column])
                         deltas1[column] = delta
 
                     for column in range(data2.shape[1]):
-                        value = data2[start2 + sample, column] - anchors2[column]
+                        value = (
+                            data2[start2 + sample, column] / scales2[column]
+                            - anchors2[column]
+                        )
                         delta = value - means2[column]
                         means2[column] += delta / n_observations
                         residual = value - means2[column]
@@ -237,11 +264,10 @@ def _lagged_crosscorrelation(
         if n_observations < 2:
             continue
         for pair in range(n_pairs):
-            denominator = np.sqrt(
-                sums_of_squares1[pairs1[pair]] * sums_of_squares2[pairs2[pair]]
-            )
-            if denominator > 0.0:
-                correlation = sums_of_products[pair] / denominator
+            norm1 = np.sqrt(sums_of_squares1[pairs1[pair]])
+            norm2 = np.sqrt(sums_of_squares2[pairs2[pair]])
+            if norm1 > 0.0 and norm2 > 0.0:
+                correlation = (sums_of_products[pair] / norm1) / norm2
                 correlations[lag_index, pair] = min(1.0, max(-1.0, correlation))
 
     return correlations
