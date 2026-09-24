@@ -657,6 +657,27 @@ def test_lagged_crosscorrelation_empty_epochs_are_nan():
     assert result.isna().all().all()
 
 
+@pytest.mark.parametrize("counts", [[], [0, 0], [0, 1, 0, 3, 0], [2, 0, 4, 0, 1]])
+@pytest.mark.parametrize("max_lag", [0, 5])
+def test_lagged_crosscorrelation_kernel_empty_and_short_epochs(counts, max_lag):
+    from pynapple.process.correlograms import _lagged_crosscorrelation
+
+    rng = np.random.default_rng(42)
+    counts = np.asarray(counts, dtype=np.int64)
+    data1 = rng.normal(size=(sum(counts), 3))
+    data2 = rng.normal(size=(sum(counts), 2))
+    pairs = [(0, 0), (1, 1), (2, 0)]
+    pairs1, pairs2 = np.asarray(pairs).T
+
+    result = _lagged_crosscorrelation(data1, data2, counts, pairs1, pairs2, max_lag)
+
+    for index, lag in enumerate(range(-max_lag, max_lag + 1)):
+        expected = _reference_lagged_correlation(data1, data2, counts, lag, pairs)
+        np.testing.assert_allclose(
+            result[index], expected, rtol=1e-12, atol=1e-14, equal_nan=True
+        )
+
+
 @pytest.mark.parametrize(
     "data, windowsize, epochs, time_units, error, message",
     [

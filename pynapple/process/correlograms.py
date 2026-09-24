@@ -236,6 +236,8 @@ def _lagged_crosscorrelation(
     )
     for lag_index in range(n_lags):
         lag = lag_index - max_lag
+        shift1 = max(-lag, 0)
+        shift2 = max(lag, 0)
         scales1 = all_scales1[n_lags - 1 - lag_index]
         scales2 = all_scales2[lag_index]
         means1.fill(0.0)
@@ -247,46 +249,39 @@ def _lagged_crosscorrelation(
         epoch_start = 0
 
         for count in counts:
-            n_valid = count - abs(lag)
-            if n_valid > 0:
-                if lag >= 0:
-                    start1 = epoch_start
-                    start2 = epoch_start + lag
-                else:
-                    start1 = epoch_start - lag
-                    start2 = epoch_start
+            start1 = epoch_start + shift1
+            start2 = epoch_start + shift2
+            for sample in range(count - abs(lag)):
+                if n_observations == 0:
+                    anchors1[:] = data1[start1 + sample] / scales1
+                    anchors2[:] = data2[start2 + sample] / scales2
+                n_observations += 1
 
-                for sample in range(n_valid):
-                    if n_observations == 0:
-                        anchors1[:] = data1[start1 + sample] / scales1
-                        anchors2[:] = data2[start2 + sample] / scales2
-                    n_observations += 1
+                for column in range(data1.shape[1]):
+                    value = (
+                        data1[start1 + sample, column] / scales1[column]
+                        - anchors1[column]
+                    )
+                    delta = value - means1[column]
+                    means1[column] += delta / n_observations
+                    sums_of_squares1[column] += delta * (value - means1[column])
+                    deltas1[column] = delta
 
-                    for column in range(data1.shape[1]):
-                        value = (
-                            data1[start1 + sample, column] / scales1[column]
-                            - anchors1[column]
-                        )
-                        delta = value - means1[column]
-                        means1[column] += delta / n_observations
-                        sums_of_squares1[column] += delta * (value - means1[column])
-                        deltas1[column] = delta
+                for column in range(data2.shape[1]):
+                    value = (
+                        data2[start2 + sample, column] / scales2[column]
+                        - anchors2[column]
+                    )
+                    delta = value - means2[column]
+                    means2[column] += delta / n_observations
+                    residual = value - means2[column]
+                    sums_of_squares2[column] += delta * residual
+                    residuals2[column] = residual
 
-                    for column in range(data2.shape[1]):
-                        value = (
-                            data2[start2 + sample, column] / scales2[column]
-                            - anchors2[column]
-                        )
-                        delta = value - means2[column]
-                        means2[column] += delta / n_observations
-                        residual = value - means2[column]
-                        sums_of_squares2[column] += delta * residual
-                        residuals2[column] = residual
-
-                    for pair in range(n_pairs):
-                        sums_of_products[pair] += (
-                            deltas1[pairs1[pair]] * residuals2[pairs2[pair]]
-                        )
+                for pair in range(n_pairs):
+                    sums_of_products[pair] += (
+                        deltas1[pairs1[pair]] * residuals2[pairs2[pair]]
+                    )
 
             epoch_start += count
 
