@@ -163,20 +163,41 @@ def _cross_correlogram(
 
 
 @jit(nopython=True, cache=True)
-def _lagged_correlation_scales(data, counts, lag):
-    """Power-of-two scaling for the observations used by one lagged stream."""
-    maximums = np.zeros(data.shape[1])
-    start = 0
-    for count in counts:
-        for row in range(start + max(lag, 0), start + count + min(lag, 0)):
+def _lagged_correlation_scales(data, counts, max_lag):
+    """Power-of-two scales for overlaps at lags from -max_lag to max_lag."""
+    scales = np.zeros((2 * max_lag + 1, data.shape[1]))
+    if max_lag == 0:
+        # All restricted samples contribute; no prefix/suffix bookkeeping is needed.
+        maximums = scales[0]
+        for row in range(data.shape[0]):
             for column in range(data.shape[1]):
                 magnitude = abs(data[row, column])
                 if magnitude > maximums[column]:
                     maximums[column] = magnitude
-        start += count
-    for column in range(data.shape[1]):
-        maximums[column] = ldexp(1.0, frexp(maximums[column])[1] - 1)
-    return maximums
+    else:
+        maximums = np.empty(data.shape[1])
+        start = 0
+        for count in counts:
+            # Prefix/suffix maxima avoid a full scan per lag.
+            for direction in range(2):
+                maximums.fill(0.0)
+                for offset in range(count):
+                    row = (
+                        start + offset if direction == 0 else start + count - 1 - offset
+                    )
+                    lag = count - 1 - offset
+                    index = max_lag - lag if direction == 0 else max_lag + lag
+                    for column in range(data.shape[1]):
+                        magnitude = abs(data[row, column])
+                        if magnitude > maximums[column]:
+                            maximums[column] = magnitude
+                        if lag <= max_lag and maximums[column] > scales[index, column]:
+                            scales[index, column] = maximums[column]
+            start += count
+    for index in range(scales.shape[0]):
+        for column in range(scales.shape[1]):
+            scales[index, column] = ldexp(1.0, frexp(scales[index, column])[1] - 1)
+    return scales
 
 
 @jit(nopython=True, cache=True)
@@ -204,11 +225,13 @@ def _lagged_crosscorrelation(
     residuals2 = np.empty(data2.shape[1])
     sums_of_products = np.empty(n_pairs)
 
+    # Scale before subtracting/squaring; powers of two preserve close values.
+    all_scales1 = _lagged_correlation_scales(data1, counts, max_lag)
+    all_scales2 = _lagged_correlation_scales(data2, counts, max_lag)
     for lag_index in range(n_lags):
         lag = lag_index - max_lag
-        # Scale before subtracting/squaring; powers of two preserve close values.
-        scales1 = _lagged_correlation_scales(data1, counts, -lag)
-        scales2 = _lagged_correlation_scales(data2, counts, lag)
+        scales1 = all_scales1[n_lags - 1 - lag_index]
+        scales2 = all_scales2[lag_index]
         means1.fill(0.0)
         means2.fill(0.0)
         sums_of_squares1.fill(0.0)
@@ -382,14 +405,14 @@ def compute_lagged_crosscorrelation(
     if epochs is not None:
         time_support = time_support.intersect(epochs)
 
-    if not nap.utils._is_regularly_sampled(data1):
-        raise RuntimeError("Lagged cross-correlation requires regularly sampled data.")
     time_differences = data1.time_diff().values
     if len(time_differences) == 0:
         raise RuntimeError("The sampling interval could not be determined.")
     sampling_interval = time_differences[0]
     if not np.isfinite(sampling_interval) or sampling_interval <= 0:
         raise RuntimeError("The sampling interval must be finite and positive.")
+    if not nap.utils._is_regularly_sampled(data1):
+        raise RuntimeError("Lagged cross-correlation requires regularly sampled data.")
 
     window_seconds = nap.TsIndex.format_timestamps(
         np.array([windowsize], dtype=np.float64), time_units
@@ -402,9 +425,15 @@ def compute_lagged_crosscorrelation(
     pairs1 = np.asarray([pair[0] for pair in pair_indices], dtype=np.int64)
     pairs2 = np.asarray([pair[1] for pair in pair_indices], dtype=np.int64)
 
+    values1 = np.asarray(data1.values[indices], dtype=np.float64)
+    values2 = (
+        values1
+        if data1 is data2
+        else np.asarray(data2.values[indices], dtype=np.float64)
+    )
     correlations = _lagged_crosscorrelation(
-        np.asarray(data1.values[indices], dtype=np.float64),
-        np.asarray(data2.values[indices], dtype=np.float64),
+        values1,
+        values2,
         counts,
         pairs1,
         pairs2,

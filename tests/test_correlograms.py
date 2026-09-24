@@ -510,6 +510,37 @@ def test_lagged_crosscorrelation_scale_uses_only_overlapping_samples(nonfinite):
     assert np.isnan(result.loc[0.0].iloc[0])
 
 
+@pytest.mark.parametrize("counts", [[7], [0, 1, 2, 0, 4], [0, 0]])
+@pytest.mark.parametrize("max_lag", [0, 1, 8])
+def test_lagged_correlation_scales_match_selected_samples(counts, max_lag):
+    data = np.array(
+        [
+            [1e300, np.nan, 0.0, np.finfo(float).max],
+            [1e-300, np.inf, 0.0, 1.0],
+            [2e-300, -np.inf, 0.0, -1.0],
+            [3e-300, 3.0, 0.0, 0.0],
+            [4e-300, -4.0, 0.0, 2.0],
+            [5e-300, 5.0, 0.0, -2.0],
+            [6e-300, 6.0, 0.0, np.nextafter(0.0, 1.0)],
+        ]
+    )[: sum(counts)]
+    scales = nap.process.correlograms._lagged_correlation_scales(
+        data, np.array(counts), max_lag
+    )
+    expected = []
+    for lag in range(-max_lag, max_lag + 1):
+        rows = []
+        start = 0
+        for count in counts:
+            rows.extend(range(start + max(lag, 0), start + count + min(lag, 0)))
+            start += count
+        maximums = np.zeros(data.shape[1])
+        for row in data[rows]:
+            maximums = np.fmax(maximums, np.abs(row))
+        expected.append(np.ldexp(1.0, np.frexp(maximums)[1] - 1))
+    np.testing.assert_array_equal(scales, expected)
+
+
 def test_lagged_crosscorrelation_is_symmetric_when_inputs_are_swapped():
     rng = np.random.default_rng(5)
     timestamps = np.arange(50) / 5
@@ -663,15 +694,42 @@ def test_lagged_crosscorrelation_requires_regular_sampling():
         nap.compute_lagged_crosscorrelation(frame, 1)
 
 
-def test_lagged_crosscorrelation_requires_a_sampling_interval():
+@pytest.mark.parametrize("n_samples", [1, 3])
+def test_lagged_crosscorrelation_requires_a_sampling_interval(n_samples):
+    timestamps = np.arange(n_samples) * 10.0
     frame = nap.TsdFrame(
-        t=np.array([0.0]),
-        d=np.array([[1.0, 2.0]]),
-        time_support=nap.IntervalSet(0, 1),
+        t=timestamps,
+        d=np.ones((n_samples, 2)),
+        time_support=nap.IntervalSet(start=timestamps, end=timestamps + 1),
     )
 
     with pytest.raises(RuntimeError, match="sampling interval could not be determined"):
         nap.compute_lagged_crosscorrelation(frame, 0)
+
+
+@pytest.mark.parametrize("mode", ["single", "same", "distinct"])
+def test_lagged_crosscorrelation_reuses_identical_inputs(monkeypatch, mode):
+    values = np.arange(24, dtype=np.float32).reshape(12, 2)
+    frame = nap.TsdFrame(t=np.arange(12), d=values.copy())
+    other = nap.TsdFrame(t=frame.t, d=values.copy())
+    data = frame if mode == "single" else (frame, frame if mode == "same" else other)
+    module = nap.process.correlograms
+    kernel = module._lagged_crosscorrelation
+    calls = []
+
+    def check_inputs(first, second, *args):
+        calls.append(first is second)
+        assert first.dtype == second.dtype == np.float64
+        return kernel(first, second, *args)
+
+    monkeypatch.setattr(module, "_lagged_crosscorrelation", check_inputs)
+    result = nap.compute_lagged_crosscorrelation(
+        data, windowsize=1, epochs=nap.IntervalSet(3, 8)
+    )
+    assert calls == [mode != "distinct"]
+    np.testing.assert_allclose(result.values, 1.0)
+    np.testing.assert_array_equal(frame.values, values)
+    np.testing.assert_array_equal(other.values, values)
 
 
 @pytest.mark.parametrize("complex_frame", [None, 0, 1])
