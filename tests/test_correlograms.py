@@ -541,6 +541,39 @@ def test_lagged_correlation_scales_match_selected_samples(counts, max_lag):
     np.testing.assert_array_equal(scales, expected)
 
 
+@pytest.mark.parametrize("same_input", [True, False])
+@pytest.mark.parametrize("max_lag", [0, 2, 12])
+def test_lagged_crosscorrelation_reuses_preprocessing(monkeypatch, same_input, max_lag):
+    module = nap.process.correlograms
+    kernel = module._lagged_crosscorrelation
+    scales = module._lagged_correlation_scales
+    sqrt = np.sqrt
+    rng = np.random.default_rng(640)
+    left = rng.normal(size=(10, 8))
+    right = left if same_input else rng.normal(size=left.shape)
+    pairs = np.array(list(combinations(range(8), 2)))
+    args = left, right, np.array([4, 6]), pairs[:, 0], pairs[:, 1], max_lag
+    expected = kernel(*args)
+    scale_calls = []
+    sqrt_sizes = []
+
+    def count_scales(data, *args):
+        scale_calls.append(data)
+        return scales(data, *args)
+
+    def count_sqrt(values, *args, **kwargs):
+        sqrt_sizes.append(np.size(values))
+        return sqrt(values, *args, **kwargs)
+
+    with monkeypatch.context() as patch:
+        patch.setattr(module, "_lagged_correlation_scales", count_scales)
+        patch.setattr(np, "sqrt", count_sqrt)
+        result = getattr(kernel, "py_func", kernel)(*args)
+    assert len(scale_calls) == (1 if same_input else 2)
+    assert sum(sqrt_sizes) <= (2 * max_lag + 1) * (left.shape[1] + right.shape[1])
+    np.testing.assert_allclose(result, expected, rtol=1e-12, atol=1e-14)
+
+
 def test_lagged_crosscorrelation_is_symmetric_when_inputs_are_swapped():
     rng = np.random.default_rng(5)
     timestamps = np.arange(50) / 5
@@ -692,6 +725,31 @@ def test_lagged_crosscorrelation_requires_regular_sampling():
 
     with pytest.raises(RuntimeError, match="regularly sampled"):
         nap.compute_lagged_crosscorrelation(frame, 1)
+
+
+@pytest.mark.parametrize(
+    "jitter, regular",
+    [(0, True), (5e-7, True), (9e-7, True), (1e-6, False), (2e-6, False)],
+)
+def test_lagged_crosscorrelation_checks_sampling_once(monkeypatch, jitter, regular):
+    frame = nap.TsdFrame(
+        t=np.array([0.0, 1.0, 2.0, 3.0 + jitter]), d=np.arange(8).reshape(4, 2)
+    )
+    assert nap.core.utils._is_regularly_sampled(frame) == regular
+    time_diff = type(frame).time_diff
+    calls = []
+
+    def count_time_diff(self, *args, **kwargs):
+        calls.append(self)
+        return time_diff(self, *args, **kwargs)
+
+    monkeypatch.setattr(type(frame), "time_diff", count_time_diff)
+    if regular:
+        np.testing.assert_allclose(nap.compute_lagged_crosscorrelation(frame, 0), 1.0)
+    else:
+        with pytest.raises(RuntimeError, match="regularly sampled"):
+            nap.compute_lagged_crosscorrelation(frame, 0)
+    assert len(calls) == 1
 
 
 @pytest.mark.parametrize("n_samples", [1, 3])

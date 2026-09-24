@@ -221,13 +221,19 @@ def _lagged_crosscorrelation(
     means2 = np.empty(data2.shape[1])
     sums_of_squares1 = np.empty(data1.shape[1])
     sums_of_squares2 = np.empty(data2.shape[1])
+    norms1 = np.empty(data1.shape[1])
+    norms2 = np.empty(data2.shape[1])
     deltas1 = np.empty(data1.shape[1])
     residuals2 = np.empty(data2.shape[1])
     sums_of_products = np.empty(n_pairs)
 
     # Scale before subtracting/squaring; powers of two preserve close values.
     all_scales1 = _lagged_correlation_scales(data1, counts, max_lag)
-    all_scales2 = _lagged_correlation_scales(data2, counts, max_lag)
+    all_scales2 = (
+        all_scales1
+        if data1 is data2
+        else _lagged_correlation_scales(data2, counts, max_lag)
+    )
     for lag_index in range(n_lags):
         lag = lag_index - max_lag
         scales1 = all_scales1[n_lags - 1 - lag_index]
@@ -286,9 +292,11 @@ def _lagged_crosscorrelation(
 
         if n_observations < 2:
             continue
+        np.sqrt(sums_of_squares1, norms1)
+        np.sqrt(sums_of_squares2, norms2)
         for pair in range(n_pairs):
-            norm1 = np.sqrt(sums_of_squares1[pairs1[pair]])
-            norm2 = np.sqrt(sums_of_squares2[pairs2[pair]])
+            norm1 = norms1[pairs1[pair]]
+            norm2 = norms2[pairs2[pair]]
             if norm1 > 0.0 and norm2 > 0.0:
                 correlation = (sums_of_products[pair] / norm1) / norm2
                 correlations[lag_index, pair] = min(1.0, max(-1.0, correlation))
@@ -411,7 +419,10 @@ def compute_lagged_crosscorrelation(
     sampling_interval = time_differences[0]
     if not np.isfinite(sampling_interval) or sampling_interval <= 0:
         raise RuntimeError("The sampling interval must be finite and positive.")
-    if not nap.utils._is_regularly_sampled(data1):
+    relative_variation = (
+        np.abs(time_differences - sampling_interval) / sampling_interval
+    )
+    if not np.all(relative_variation < 1e-6):
         raise RuntimeError("Lagged cross-correlation requires regularly sampled data.")
 
     window_seconds = nap.TsIndex.format_timestamps(
