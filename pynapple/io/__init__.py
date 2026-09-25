@@ -1,4 +1,5 @@
 from .folder import Folder
+from .movement import from_movement
 from .interface_neo import EphysReader, NeoSignalInterface
 from .interface_npz import NPZFile
 from .interface_nwb import NWBFile
