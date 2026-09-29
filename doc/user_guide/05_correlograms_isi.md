@@ -89,7 +89,22 @@ lagged_corr = nap.compute_lagged_crosscorrelation(
 print(lagged_corr)
 ```
 
-The output is a pandas DataFrame with lags in seconds as its index and signal pairs as its columns. Here the correlation peaks at `+0.1` seconds: positive lags mean that the second signal follows the first.
+```{code-cell} ipython3
+:tags: [hide-input]
+fig, axes = plt.subplots(2, 1, figsize=(8, 6), constrained_layout=True)
+excerpt = timestamps < 0.6
+axes[0].plot(timestamps[excerpt], reference[excerpt], label="reference")
+axes[0].plot(timestamps[excerpt], delayed[excerpt], label="delayed")
+axes[0].set(xlabel="Time (s)", ylabel="Signal (a.u.)")
+axes[0].legend()
+
+axes[1].plot(lagged_corr.index, lagged_corr.iloc[:, 0])
+axes[1].axvline(0, color="0.5", linestyle=":")
+axes[1].set(xlabel="Lag (s)", ylabel="Pearson correlation")
+plt.show()
+```
+
+The upper panel shows the first 0.6 seconds of both signals; the lower panel shows their lagged correlation. The output is a pandas DataFrame with lags in seconds as its index and signal pairs as its columns. Here the correlation peaks at `+0.1` seconds: positive lags mean that the second signal follows the first.
 
 Passing two `TsdFrame` objects computes all cross-frame column pairs. Their timestamps must match.
 
