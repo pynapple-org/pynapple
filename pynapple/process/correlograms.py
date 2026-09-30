@@ -556,8 +556,7 @@ def compute_isi_distribution(
         if np.any(bin_edges[:-1] > bin_edges[1:]):
             raise ValueError("`bins` must increase monotonically, when an array")
         histograms = {
-            i: np.histogram(time_diffs[i].values, bin_edges)[0]
-            for i in time_diffs
+            i: np.histogram(time_diffs[i].values, bin_edges)[0] for i in time_diffs
         }
     else:
         raise ValueError("`bins` must be 1d, when an array")
