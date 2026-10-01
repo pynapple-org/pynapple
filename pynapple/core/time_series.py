@@ -1140,6 +1140,10 @@ class TsdTensor(_BaseTsd):
             return tabulate([], headers=headers) + "\n" + bottom
 
     def __getitem__(self, key):
+        if key is None:
+            # Adding an axis before time returns a plain array.
+            return self.values[None]
+
         if isinstance(key, Tsd):
             if not np.issubdtype(key.dtype, np.bool_):
                 raise ValueError(
@@ -1900,6 +1904,10 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
     @add_or_convert_metadata
     def __getitem__(self, key, *args, **kwargs):
+        if key is None:
+            # Adding an axis before time returns a plain array.
+            return self.values[None]
+
         if isinstance(key, tuple):
             key = tuple(k.values if hasattr(k, "values") else k for k in key)
         if isinstance(key, (Tsd, TsdFrame)):
@@ -3057,6 +3065,10 @@ class Tsd(_BaseTsd):
             raise IndexError
 
     def __getitem__(self, key, *args, **kwargs):
+        if key is None:
+            # Adding an axis before time returns a plain array.
+            return self.values[None]
+
         if isinstance(key, Tsd):
             try:
                 assert np.issubdtype(key.dtype, np.bool_)
