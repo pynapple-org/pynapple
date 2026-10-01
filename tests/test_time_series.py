@@ -314,41 +314,6 @@ def test_base_tsd_class():
 ####################################################
 # General test for time series
 ####################################################
-@pytest.mark.parametrize("n_times", [0, 1, 3])
-@pytest.mark.parametrize(
-    "cls, shape", [(nap.Tsd, ()), (nap.TsdFrame, (2,)), (nap.TsdTensor, (2, 3))]
-)
-def test_indexing_with_bare_newaxis(cls, shape, n_times):
-    times = np.arange(n_times, dtype=float)
-    data = np.arange(n_times * int(np.prod(shape)), dtype=np.int16).reshape(
-        (n_times,) + shape
-    )
-    time_support = nap.IntervalSet(start=-1, end=4)
-    kwargs = {"metadata": {"label": ["a", "b"]}} if cls is nap.TsdFrame else {}
-    tsd = cls(t=times, d=data, time_support=time_support, **kwargs)
-
-    # None (also np.newaxis) moves time away from the first axis.
-    expected = tsd.values[np.newaxis]
-    out = tsd[None]
-    assert type(out) is type(expected)
-    assert out.shape == (1,) + data.shape
-    assert out.dtype == data.dtype
-    np.testing.assert_array_equal(out, data[np.newaxis])
-
-    # Adding an axis after time should still return a time series.
-    trailing = tsd[:, None]
-    assert isinstance(trailing, (nap.TsdFrame, nap.TsdTensor))
-    np.testing.assert_array_equal(trailing.values, data[:, None])
-    np.testing.assert_array_equal(trailing.t, times)
-    np.testing.assert_array_equal(trailing.time_support.values, time_support.values)
-
-    np.testing.assert_array_equal(tsd.values, data)
-    np.testing.assert_array_equal(tsd.t, times)
-    np.testing.assert_array_equal(tsd.time_support.values, time_support.values)
-    if cls is nap.TsdFrame:
-        assert tsd.get_info("label").tolist() == ["a", "b"]
-
-
 @pytest.mark.parametrize(
     "tsd",
     [

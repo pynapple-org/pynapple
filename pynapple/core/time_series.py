@@ -87,6 +87,23 @@ def _index_preserves_order(key):
     return False
 
 
+def _index_requires_axis_tracking(key):
+    """Identify indexing that inserts axes or abbreviates their positions."""
+    keys = key if isinstance(key, tuple) else (key,)
+    for k in keys:
+        if isinstance(k, _BaseTsd):
+            k = k.values
+        if k is None or k is Ellipsis or isinstance(k, (bool, np.bool_)):
+            return True
+        if isinstance(k, (list, tuple)) and not k:
+            return True
+        if isinstance(k, np.ndarray) and (
+            k.size == 0 or (k.dtype == np.bool_ and k.ndim != 1)
+        ):
+            return True
+    return not keys
+
+
 def _initialize_tsd_output(
     input_object,
     values,
@@ -221,6 +238,112 @@ class _BaseTsd(_ReconstructMixin, _Base, NDArrayOperatorsMixin, abc.ABC):
 
     values: np.ndarray
     """An array of the time series data"""
+
+    def _getitem_with_axis_tracking(self, key):
+        """Keep timestamps only when indexing retains a leading time axis.
+
+        Axis identity, rather than matching lengths, matters for singleton and
+        empty dimensions. Advanced index groups can also move ahead of time.
+        """
+        keys = key if isinstance(key, tuple) else (key,)
+        for k in keys:
+            if isinstance(k, _BaseTsd) and not np.issubdtype(k.dtype, np.bool_):
+                raise ValueError("Time series used as indices must be boolean")
+        keys = tuple(k.values if isinstance(k, _BaseTsd) else k for k in keys)
+        native_key = keys if isinstance(key, tuple) else keys[0]
+        # Let the backing array validate the original index without converting
+        # the data or changing backend-specific indexing behavior.
+        output = self.values[native_key]
+
+        keys = tuple(
+            k if k is None or k is Ellipsis or isinstance(k, slice) else np.asarray(k)
+            for k in keys
+        )
+        # NumPy accepts empty Python lists as integer selectors, whereas
+        # np.asarray([]) defaults to a floating-point dtype.
+        keys = tuple(
+            (
+                k.astype(int)
+                if isinstance(k, np.ndarray) and k.size == 0 and k.dtype != np.bool_
+                else k
+            )
+            for k in keys
+        )
+        # Multidimensional masks combine input axes; scalar booleans introduce
+        # a selection axis without selecting timestamps. Keep their native result.
+        if any(
+            isinstance(k, np.ndarray) and k.dtype == np.bool_ and k.ndim != 1
+            for k in keys
+        ):
+            return output
+        missing = self.ndim - sum(k is not None and k is not Ellipsis for k in keys)
+        expanded = []
+        for k in keys:
+            if k is Ellipsis:
+                # Even a zero-width ellipsis separates advanced index groups.
+                expanded.append(Ellipsis)
+                expanded.extend([slice(None)] * missing)
+            else:
+                expanded.append(k)
+        if not any(k is Ellipsis for k in keys):
+            expanded.extend([slice(None)] * missing)
+
+        selectors = []
+        axes = []
+        positions = []
+        advanced = []
+        for pos, k in enumerate(expanded):
+            if k is None:
+                axes.append(None)
+            elif isinstance(k, slice):
+                axes.append(len(selectors))
+                selectors.append(k)
+            elif k is not Ellipsis:
+                positions.append((pos, len(axes)))
+                if k.ndim:
+                    advanced.append(np.flatnonzero(k) if k.dtype == np.bool_ else k)
+                selectors.append(k)
+
+        time_key = selectors[0]
+        if not isinstance(time_key, slice) and time_key.ndim != 1:
+            return output
+        if advanced:
+            shape = np.broadcast(*advanced).shape
+            first, last = positions[0][0], positions[-1][0]
+            contiguous = last - first + 1 == len(positions)
+            offset = positions[0][1] if contiguous else 0
+            axes[offset:offset] = ["advanced"] * len(shape)
+            if not isinstance(time_key, slice):
+                if len(shape) != 1 or axes[0] != "advanced":
+                    return output
+                time_positions = (
+                    np.flatnonzero(time_key) if time_key.dtype == np.bool_ else time_key
+                )
+                index = self.index[np.broadcast_to(time_positions, shape)]
+            elif axes[0] == 0:
+                index = self.index[time_key]
+            else:
+                return output
+        elif axes and axes[0] == 0:
+            index = self.index[time_key]
+        else:
+            return output
+
+        kwargs = {}
+        if isinstance(self, TsdFrame) and axes in (
+            [0, 1],
+            [0, "advanced"],
+            ["advanced", 1],
+        ):
+            column_key = selectors[1]
+            if isinstance(column_key, np.ndarray) and column_key.dtype == np.bool_:
+                column_key = np.flatnonzero(column_key)
+            columns = self.columns[column_key]
+            kwargs = {"columns": columns, "metadata": self._metadata.loc[columns]}
+        with trusted_construction(_index_preserves_order(time_key)):
+            return _initialize_tsd_output(
+                self, output, time_index=index, drop_metadata=True, kwargs=kwargs
+            )
 
     def __init__(self, t, d, time_units="s", time_support=None, load_array=True):
         super().__init__(t, time_units, time_support)
@@ -1140,9 +1263,8 @@ class TsdTensor(_BaseTsd):
             return tabulate([], headers=headers) + "\n" + bottom
 
     def __getitem__(self, key):
-        if key is None:
-            # Adding an axis before time returns a plain array.
-            return self.values[None]
+        if _index_requires_axis_tracking(key):
+            return self._getitem_with_axis_tracking(key)
 
         if isinstance(key, Tsd):
             if not np.issubdtype(key.dtype, np.bool_):
@@ -1904,9 +2026,8 @@ class TsdFrame(_BaseTsd, _MetadataMixin):
 
     @add_or_convert_metadata
     def __getitem__(self, key, *args, **kwargs):
-        if key is None:
-            # Adding an axis before time returns a plain array.
-            return self.values[None]
+        if _index_requires_axis_tracking(key):
+            return self._getitem_with_axis_tracking(key)
 
         if isinstance(key, tuple):
             key = tuple(k.values if hasattr(k, "values") else k for k in key)
@@ -3065,9 +3186,8 @@ class Tsd(_BaseTsd):
             raise IndexError
 
     def __getitem__(self, key, *args, **kwargs):
-        if key is None:
-            # Adding an axis before time returns a plain array.
-            return self.values[None]
+        if _index_requires_axis_tracking(key):
+            return self._getitem_with_axis_tracking(key)
 
         if isinstance(key, Tsd):
             try:
