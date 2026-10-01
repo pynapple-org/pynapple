@@ -216,7 +216,7 @@ phase_modulation = nap.compute_tuning_curves(
     data=spikes, 
     features=theta_phase, 
     bins=61, 
-    range=(-np.pi, np.pi), 
+    range=(0, 2*np.pi), 
     feature_names=["Phase"]
 )
 ```
@@ -227,7 +227,7 @@ Let's plot the first 3 neurons.
 phase_modulation.name="Firing Rate"
 phase_modulation.attrs["units"]="Hz"
 phase_modulation.coords["Phase"].attrs["unit"]="rad"
-phase_modulation[:3].plot(row="unit", col_wrap=3, sharey=False)
+phase_modulation[:3].plot(row="unit", col_wrap=3, sharey=True)
 plt.show()
 ```
 
