@@ -307,3 +307,30 @@ intervalset.groupby_apply(
     features=feature, 
     bins=2)
 ```
+
+When the applied function preserves time, the group results can be stacked into a single `TsdFrame` instead of a dictionary by passing `return_tsdframe=True`. This is convenient for aggregating columns that belong to the same group, for example averaging the signals of all the ROIs of a cell. Each group becomes one column, named after the group, and the metadata used for grouping is added back so that the result can be grouped again.
+
+```{code-cell} ipython3
+tsdframe.groupby_apply("label", np.mean, axis=1, return_tsdframe=True)
+```
+
+If the function returns the columns of each group instead of aggregating them, those columns keep their own names and inherit all of the metadata of the grouped object.
+
+```{code-cell} ipython3
+tsdframe.groupby_apply("label", lambda x: x - np.mean(x.values, 1, keepdims=True), return_tsdframe=True)
+```
+
+If the returned column names repeat across groups, they are prefixed with the group they came from, as `(group, name)`. This happens in two ways: the function invents the names, such as `["mean", "std"]` for every group, or it returns the columns of another object, such as an event-triggered average returning all units for every group of epochs. Columns that come from the grouped object itself never repeat, since the groups partition them. Pass `column_name` to keep the name they were given as a metadata column too, e.g. `column_name="statistic"` in the first case and `column_name="unit"` in the second, so that the result can also be grouped by it.
+
+```{code-cell} ipython3
+def summary(group):
+    return nap.TsdFrame(
+        t=group.index,
+        d=np.stack([np.mean(group.values, 1), np.std(group.values, 1)], axis=1),
+        columns=["mean", "std"],
+    )
+
+tsdframe.groupby_apply("label", summary, return_tsdframe=True, column_name="statistic")
+```
+
+If the group results cannot be stacked, for instance when the applied function does not return a time series or when the groups are not defined on the same timestamps, a `ValueError` is raised describing why.
