@@ -319,6 +319,53 @@ def _assert_slice_reads_only(dataset, fn):
     return out
 
 
+@pytest.mark.parametrize(
+    "cls, trailing_shape",
+    [(nap.Tsd, ()), (nap.TsdFrame, (2,)), (nap.TsdTensor, (2, 3))],
+)
+@pytest.mark.parametrize(
+    "align, full_t, epoch_t",
+    [
+        ("start", [0, 1, 3, 7, 10, 11], [1, 10]),
+        ("center", [0.5, 2, 5, 8.5, 10.5, 13], [2, 10.5]),
+        ("end", [1, 3, 7, 10, 11, 15], [3, 11]),
+    ],
+)
+@pytest.mark.parametrize("use_epochs", [False, True])
+def test_lazy_load_hdf5_time_diff_does_not_read_values(
+    tmp_path, cls, trailing_shape, align, full_t, epoch_t, use_epochs
+):
+    """Timestamp differences must not index or materialize signal values."""
+    t = np.array([0, 1, 3, 7, 10, 11, 15])
+    epochs = nap.IntervalSet([1, 10], [3, 12]) if use_epochs else None
+    with h5py.File(tmp_path / "time_diff.h5", "w") as f:
+        dataset = f.create_dataset(
+            "data", shape=(len(t), *trailing_shape), dtype="float64"
+        )
+        data = cls(t=t, d=dataset, load_array=False)
+        assert isinstance(data.values, h5py.Dataset)
+        with patch.object(
+            h5py.Dataset,
+            "__getitem__",
+            side_effect=AssertionError("signal values were indexed"),
+        ), patch.object(
+            h5py.Dataset,
+            "__array__",
+            side_effect=AssertionError("signal values were materialized"),
+        ):
+            result = data.time_diff(align=align, epochs=epochs)
+
+        assert isinstance(result, nap.Tsd)
+        np.testing.assert_array_equal(result.t, epoch_t if use_epochs else full_t)
+        np.testing.assert_array_equal(
+            result.values, [2, 1] if use_epochs else [1, 2, 4, 3, 1, 4]
+        )
+        np.testing.assert_array_equal(
+            result.time_support.values,
+            epochs.values if use_epochs else data.time_support.values,
+        )
+
+
 def test_lazy_load_hdf5_bin_average_reads_contiguous_slices(tmp_path):
     """`bin_average` must read the lazy target with contiguous slices.
 
