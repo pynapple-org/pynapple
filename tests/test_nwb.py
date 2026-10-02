@@ -560,7 +560,10 @@ def test_add_Ophys_roi_metadata_extra_roi():
 def test_add_Ophys_roi_metadata_only_image_mask():
     """A PlaneSegmentation without scalar columns yields empty metadata."""
     pytest.importorskip("pynwb.testing.mock.ophys")
-    from pynwb.testing.mock.ophys import mock_PlaneSegmentation, mock_RoiResponseSeries
+    from pynwb.testing.mock.ophys import (
+        mock_PlaneSegmentation,
+        mock_RoiResponseSeries,
+    )
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -650,6 +653,118 @@ def test_add_Units():
         data._metadata["quality"], np.array(["good"] * n_units)
     )
     np.testing.assert_array_equal(data._metadata["alpha"], alpha)
+
+
+@pytest.fixture
+def units_nwb_path(tmp_path):
+    """NWB file on disk with a units table: unsorted ids, an empty unit, and a
+    single-spike unit outside every other unit's span."""
+    nwbfile = mock_NWBFile()
+    nwbfile.add_unit_column(name="quality", description="sorting quality")
+    rng = np.random.default_rng(0)
+    spikes = {
+        7: np.sort(rng.uniform(0, 10, 200)),
+        2: np.sort(rng.uniform(5, 20, 300)),
+        # shares timestamps with unit 2
+        4: np.sort(np.concatenate([rng.uniform(1, 3, 50), [7.0, 7.0]])),
+        9: np.array([]),
+        3: np.array([50.0]),
+    }
+    spikes[2][10] = 7.0
+    for i, (k, t) in enumerate(spikes.items()):
+        nwbfile.add_unit(id=k, spike_times=t, quality=f"q{i}")
+    path = tmp_path / "units.nwb"
+    with pynwb.NWBHDF5IO(path, "w") as io:
+        io.write(nwbfile)
+    return path, spikes
+
+
+def test_units_lazy_matches_eager(units_nwb_path):
+    from pynapple.io.interface_nwb import _NWBLazyTsGroup
+
+    path, spikes = units_nwb_path
+    units = nap.load_file(path)["units"]
+    assert isinstance(units, _NWBLazyTsGroup)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")  # empty/single-spike time supports
+        eager = nap.TsGroup(
+            {k: nap.Ts(t) for k, t in spikes.items()},
+            metadata={"quality": [f"q{i}" for i in range(len(spikes))]},
+        )
+
+    # metadata-only access does not read spike times
+    np.testing.assert_array_equal(units.index, eager.index)
+    np.testing.assert_array_equal(units.rates, eager.rates)
+    np.testing.assert_array_equal(units.time_support.values, eager.time_support.values)
+    np.testing.assert_array_equal(
+        units._metadata["quality"], eager._metadata["quality"]
+    )
+    repr(units)
+    assert not units._materialized
+
+    for k in eager.keys():
+        np.testing.assert_array_equal(units[k].t, eager[k].t)
+    assert units._materialized
+    np.testing.assert_array_equal(units._times, eager._times)
+    np.testing.assert_array_equal(units._unit_index, eager._unit_index)
+    np.testing.assert_array_equal(units.count(1.0).values, eager.count(1.0).values)
+
+
+def test_units_materialized_once(units_nwb_path, monkeypatch):
+    from pynapple.io.interface_nwb import _NWBLazyTsGroup
+
+    calls = []
+    original = _NWBLazyTsGroup._materialize
+
+    def spy(self):
+        calls.append(1)
+        original(self)
+
+    monkeypatch.setattr(_NWBLazyTsGroup, "_materialize", spy)
+
+    path, _ = units_nwb_path
+    units = nap.load_file(path)["units"]
+    units.rates
+    assert calls == []
+    units.count(1.0)
+    assert calls == [1]
+    units.restrict(nap.IntervalSet(0, 5))
+    units[[2, 4]]
+    units.to_tsd()
+    assert calls == [1]
+
+
+def test_units_not_lazy(units_nwb_path):
+    path, spikes = units_nwb_path
+    units = nap.load_file(path, lazy_loading=False)["units"]
+    assert units._materialized
+    np.testing.assert_array_equal(units[7].t, spikes[7])
+
+
+def test_units_usable_after_close(units_nwb_path):
+    path, spikes = units_nwb_path
+    nwb = nap.load_file(path)
+    units = nwb["units"]
+    nwb.close()
+    assert units._materialized
+    np.testing.assert_array_equal(units[7].t, spikes[7])
+    units.count(1.0)
+
+
+def test_units_lazy_pickle_and_copy(units_nwb_path):
+    import pickle
+
+    path, spikes = units_nwb_path
+    units = nap.load_file(path)["units"]
+    for other in (pickle.loads(pickle.dumps(units)), units.copy()):
+        assert type(other) is nap.TsGroup
+        np.testing.assert_array_equal(other.index, units.index)
+        np.testing.assert_array_equal(other.rates, units.rates)
+        np.testing.assert_array_equal(
+            other._metadata["quality"], units._metadata["quality"]
+        )
+        np.testing.assert_array_equal(other[2].t, units[2].t)
 
 
 def test_units_metadata_with_non_ragged_dynamic_table_region():

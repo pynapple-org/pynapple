@@ -2,6 +2,10 @@
 
 ### Unreleased
 
+- `TsGroup` now stores all its timestamps in one sorted array (with the key of each timestamp, and values for `Tsd` elements) instead of one object per element. Operations over the whole group run once instead of once per element. At 1000 units x 2000 spikes: `count` 217 ms -> 42 ms, `restrict` on a fragmented support 71 ms -> 15 ms, `value_from` 253 ms -> 45 ms, `to_tsd` 162 ms -> 25 ms, `get` 45 ms -> 2.3 ms, `subsample` 108 ms -> 64 ms. In return, building a `TsGroup` sorts every timestamp (40 ms -> 190 ms), selecting a few units out of many scans the whole group (`tsgroup[[0, 1, 2, 3, 4]]` 0.5 ms -> 8 ms), and indexing an element builds a new `Ts`/`Tsd` on each call.
+- `TsGroup` elements that hold values must have the same shape after the time axis, and their values are cast to a common dtype. `TsdFrame` elements share one set of column names. `TsGroup.data` is now a read-only mapping instead of a `dict`.
+- Spike times of NWB units tables are read on first use instead of when accessing `data["units"]`. Metadata, rates and time support are available without reading spikes (`data["units"]` at 1000 units x 2000 spikes: 157 ms -> 16 ms); the first operation that needs spikes pays for reading them, so loading plus a first `count` costs about the same as before. `NWBFile.close()` reads them before closing the file.
+- Fixed `TsGroup.time_diff` crashing when an element has no timestamps.
 
 ### 0.11.4 (2026-08-19)
 

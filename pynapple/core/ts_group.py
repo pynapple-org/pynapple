@@ -7,7 +7,8 @@ The class `TsGroup` helps group objects with different timestamps
 
 import warnings
 from collections import UserDict
-from collections.abc import Hashable
+from collections.abc import Hashable, Mapping
+from functools import cached_property
 from numbers import Number
 
 import numpy
@@ -15,14 +16,26 @@ import numpy as np
 import pandas as pd
 from tabulate import tabulate
 
-from ._core_functions import _count
+from ._core_functions import (
+    _concat_ranges,
+    _count,
+    _count_grouped,
+    _group_by_unit,
+    _restrict_grouped,
+    _time_diff_grouped,
+    _value_from,
+)
 from ._jitted_functions import jitunion, jitunion_isets
 from .base_class import _Base
 from .config import nap_config
 from .interval_set import IntervalSet
-from .metadata_class import _MetadataMixin, add_meta_docstring, add_or_convert_metadata
-from .time_index import TsIndex
-from .time_series import Ts, Tsd, TsdFrame, _BaseTsd, is_array_like
+from .metadata_class import (
+    _MetadataMixin,
+    add_meta_docstring,
+    add_or_convert_metadata,
+)
+from .time_index import TsIndex, trusted_construction
+from .time_series import Ts, Tsd, TsdFrame, TsdTensor, _BaseTsd, is_array_like
 from .utils import (
     _convert_iter_to_str,
     _get_terminal_size,
@@ -63,6 +76,149 @@ def _union_intervals(i_sets):
     return IntervalSet(new_start, new_end)
 
 
+def _concat_values(parts, lengths):
+    """Concatenate per-part values into one array aligned with merged times.
+
+    Parameters
+    ----------
+    parts : list of array-like or None
+        Values of each part (a member, or a whole group); None for parts
+        without values.
+    lengths : list of int
+        Number of timestamps of each part.
+
+    Returns
+    -------
+    ndarray or None
+        Values cast to the common dtype of the valued parts, the timestamps of
+        parts without values filled with NaN (0 for non-floating dtypes). None
+        when no part holds values.
+
+    Raises
+    ------
+    ValueError
+        If valued parts do not share the same shape after the time axis.
+    """
+    valued = [np.asarray(p) for p in parts if p is not None]
+    if not valued:
+        return None
+    trailing = {a.shape[1:] for a in valued}
+    if len(trailing) > 1:
+        raise ValueError(
+            "All Tsd, TsdFrame or TsdTensor objects in a TsGroup must have the "
+            f"same shape after the time axis. Got shapes {sorted(trailing)}."
+        )
+    dtype = np.result_type(*[a.dtype for a in valued])
+    fill = np.nan if np.issubdtype(dtype, np.inexact) else 0
+    values = np.empty((int(np.sum(lengths)),) + valued[0].shape[1:], dtype=dtype)
+    valued = iter(valued)
+    pos = 0
+    for p, n in zip(parts, lengths):
+        values[pos : pos + n] = fill if p is None else next(valued)
+        pos += n
+    return values
+
+
+def _build_sorted_arrays(data):
+    """Merge per-unit Ts/Tsd objects into a TsGroup's flat sorted arrays.
+
+    Parameters
+    ----------
+    data : dict
+        ``{key: Ts/Tsd/TsdFrame/TsdTensor}``, keys being integers.
+
+    Returns
+    -------
+    times : ndarray[float64]
+        Every unit's timestamps merged into one sorted array. Ties keep the
+        dict order (stable sort), and each unit keeps its own timestamp order.
+    unit_index : ndarray[int64]
+        The key of the unit each timestamp belongs to.
+    values : ndarray or None
+        Values aligned with ``times`` (shape ``(n, *trailing)``), cast to the
+        common dtype of the valued members. Timestamps of bare ``Ts`` members are
+        filled with NaN (0 for non-floating dtypes) and flagged by ``is_tsd``.
+        None when no member holds values.
+    is_tsd : ndarray[bool]
+        Per unit (dict order), whether the member holds values.
+
+    Raises
+    ------
+    ValueError
+        If valued members do not share the same shape after the time axis.
+    """
+    keys = np.fromiter(data.keys(), dtype=np.int64, count=len(data))
+    members = list(data.values())
+    lengths = np.array([len(m) for m in members], dtype=np.int64)
+    is_tsd = np.array([isinstance(m, _BaseTsd) for m in members], dtype=bool)
+
+    if len(members):
+        times = np.concatenate([m.index.values for m in members]).astype(
+            np.float64, copy=False
+        )
+    else:
+        times = np.empty(0, dtype=np.float64)
+    unit_index = np.repeat(keys, lengths)
+
+    values = _concat_values(
+        [m.values if v else None for m, v in zip(members, is_tsd)], lengths
+    )
+
+    if len(times) > 1 and np.any(times[1:] < times[:-1]):
+        order = np.argsort(times, kind="stable")
+        times = times[order]
+        unit_index = unit_index[order]
+        if values is not None:
+            values = values[order]
+
+    return times, unit_index, values, is_tsd
+
+
+def _shared_columns(members):
+    """Column names shared by every TsdFrame among ``members``.
+
+    The merged layout stores one set of column names for the whole group. None
+    when there is no TsdFrame, or (with a warning) when their columns differ.
+    """
+    frames = [m for m in members if isinstance(m, TsdFrame)]
+    if not frames:
+        return None
+    columns = frames[0].columns
+    if all(np.array_equal(f.columns, columns) for f in frames[1:]):
+        return columns
+    warnings.warn(
+        "TsdFrame objects in a TsGroup have different columns: "
+        "columns are reset to default.",
+        stacklevel=3,
+    )
+    return None
+
+
+class _TsGroupMembers(Mapping):
+    """Read-only ``key -> Ts/Tsd`` view of a TsGroup.
+
+    Stands in for the dict ``TsGroup.data`` used to be: members are built from
+    the group's merged arrays on access, never stored.
+    """
+
+    def __init__(self, group):
+        self._group = group
+
+    def __getitem__(self, key):
+        if key not in self._group:
+            raise KeyError(key)
+        return self._group._get_member(key)
+
+    def __iter__(self):
+        return iter(self._group.index.tolist())
+
+    def __len__(self):
+        return len(self._group.index)
+
+    def __contains__(self, key):
+        return key in self._group
+
+
 class TsGroup(UserDict, _MetadataMixin):
     """
     Dictionary-like object to group objects with different timestamps (for example timestamps of spikes of a population of neurons).
@@ -97,6 +253,21 @@ class TsGroup(UserDict, _MetadataMixin):
         - If a key was a floating point with non-negligible decimal part.
         - If the converted keys are not unique, i.e. {1: ts_2, "2": ts_2} is valid,
             {1: ts_2, "1": ts_2}  is invalid.
+        - If Tsd/TsdFrame/TsdTensor objects have different shapes after the time axis.
+
+    Notes
+    -----
+    The group does not store one object per element: every timestamp is merged
+    into one sorted array, along with the key of its element (and its value for
+    Tsd, TsdFrame or TsdTensor elements). Operations over the whole group run once
+    over that array instead of once per element. Consequently:
+
+    - Accessing an element (``tsgroup[k]``, ``values()``, iteration) builds a new
+      Ts/Tsd object on each call.
+    - Values of all elements share one array, cast to a common dtype; TsdFrame
+      elements share one set of column names (reset to default, with a warning,
+      if they differ).
+    - Timestamps shared by several elements are ordered by key.
 
     Examples
     --------
@@ -282,25 +453,84 @@ class TsGroup(UserDict, _MetadataMixin):
                         time_units=time_units,
                     )
 
-        # If time_support is passed, all elements of data are restricted prior to init
-        if passed_time_support:
-            self.time_support = time_support
-            if not bypass_check:
-                data = {k: data[k].restrict(self.time_support) for k in self.index}
-        else:
+        if not passed_time_support:
             # Otherwise do the union of all time supports
             time_support = _union_intervals([data[k].time_support for k in self.index])
             if len(time_support) == 0:
                 raise RuntimeError(
                     "Union of time supports is empty. Consider passing a time support as argument."
                 )
-            self.time_support = time_support
-            if not bypass_check:
-                data = {k: data[k].restrict(self.time_support) for k in self.index}
+        self.time_support = time_support
 
-        UserDict.__init__(self, data)
-        rate = np.array([data[k].rate for k in self.index])
-        self._metadata["rate"] = rate
+        for k in self.index:
+            if not isinstance(data[k], _Base):
+                raise TypeError(
+                    f"Element {k} of TsGroup should be a Ts, Tsd, TsdFrame or "
+                    f"TsdTensor. {type(data[k])} provided instead."
+                )
+
+        # Every unit is merged into one sorted array, restricted once to the
+        # time support (instead of once per unit).
+        times, unit_index, values, is_tsd = _build_sorted_arrays(data)
+        if not bypass_check:
+            times, unit_index, values = _restrict_grouped(
+                times, unit_index, values, time_support.start, time_support.end
+            )
+        self._set_arrays(
+            times, unit_index, values, is_tsd, _shared_columns(data.values())
+        )
+
+        self._finalize(metadata, kwargs)
+
+    @classmethod
+    def _from_arrays(
+        cls,
+        times,
+        unit_index,
+        values,
+        is_tsd,
+        index,
+        time_support,
+        metadata=None,
+        columns=None,
+    ):
+        """Build a TsGroup directly from its merged arrays, without validation.
+
+        Bypasses ``__init__``, which only builds from a dict of per-unit objects:
+        callers already holding merged arrays would otherwise split them into
+        one Ts per unit just to have them merged again.
+
+        ``times`` must be sorted, ``unit_index`` hold keys of ``index``, and
+        ``index`` be sorted; ``metadata`` rows must follow ``index``. ``columns``
+        names the columns of 2-dimensional members.
+        """
+        obj = cls.__new__(cls)
+        obj.__dict__["_initialized"] = False
+        obj.index = np.asarray(index, dtype=np.int64)
+        _MetadataMixin.__init__(obj)
+        obj.time_support = time_support
+        obj._set_arrays(times, unit_index, values, is_tsd, columns)
+        obj._finalize(metadata)
+        return obj
+
+    def _set_arrays(self, times, unit_index, values, is_tsd, columns=None):
+        """Set the merged sorted arrays backing the group.
+
+        ``_times`` holds every unit's timestamps in one sorted array,
+        ``_unit_index`` the (real) key of each timestamp's unit, ``_data`` the
+        matching values (None when no member holds values), ``_is_tsd`` which
+        units hold values and ``_columns`` the column names of 2-dimensional
+        members (None for the default ones).
+        """
+        self._times = times
+        self._unit_index = unit_index
+        self._data = values
+        self._is_tsd = np.asarray(is_tsd, dtype=bool)
+        self._columns = columns
+
+    def _finalize(self, metadata=None, kwargs=None):
+        """Compute rates, freeze the object and set metadata."""
+        self._metadata["rate"] = self._compute_rates()
         self.nap_class = self.__class__.__name__
         # grab current attributes before adding metadata
         self._class_attributes = self.__dir__()
@@ -309,17 +539,136 @@ class TsGroup(UserDict, _MetadataMixin):
         # Making the TsGroup non mutable
         self._initialized = True
 
-        # Adding manually the rate column if data is empty.
-        if len(data) == 0:
-            self._metadata["rate"] = np.array([])
-
         # Trying to add argument as metainfo
+        kwargs = kwargs or {}
         if len(kwargs):
             warnings.warn(
                 "initializing metadata with variable keyword arguments may be unsupported in a future version of Pynapple. Instead, initialize using the metadata argument.",
                 FutureWarning,
             )
         self.set_info(metadata, **kwargs)
+
+    def _unit_counts(self):
+        """Number of timestamps of each unit, following ``self.index``."""
+        return np.bincount(self._unit_pos(), minlength=len(self.index))
+
+    def _compute_rates(self):
+        ts = self.time_support.values
+        duration = np.sum(ts[:, 1] - ts[:, 0])
+        counts = self._unit_counts()
+        if duration > 0:
+            return counts / duration
+        return np.full(len(counts), np.nan)
+
+    def _unit_pos(self, unit_index=None):
+        """Dense ``0..n_units-1`` column of each timestamp's unit.
+
+        Transient (never stored): only kernels whose output has one column per
+        unit need it.
+        """
+        if unit_index is None:
+            unit_index = self._unit_index
+        if len(self.index) == 0:
+            return np.zeros(len(unit_index), dtype=np.int64)
+        # A dense key -> position table makes this one gather instead of a
+        # binary search per timestamp (~3x faster than searchsorted on
+        # time-sorted, hence key-shuffled, input). Fall back to searchsorted
+        # when keys are too sparse for the table to stay small.
+        lo = self.index[0]
+        span = int(self.index[-1] - lo) + 1
+        if span > 16 * len(self.index) + 4096:
+            return np.searchsorted(self.index, unit_index)
+        lut = np.zeros(span, dtype=np.int64)
+        lut[self.index - lo] = np.arange(len(self.index))
+        return lut[unit_index - lo]
+
+    @cached_property
+    def _unit_order(self):
+        """``(order, offsets)`` such that ``order[offsets[i]:offsets[i + 1]]``
+        are the positions in ``_times`` of unit ``self.index[i]``, in time order.
+
+        Computed once on first per-unit access and cached, so that iterating
+        over members costs one counting sort overall rather than a full scan per
+        member.
+        """
+        return _group_by_unit(self._unit_pos(), len(self.index))
+
+    @cached_property
+    def _keys_set(self):
+        """Keys as a set, for O(1) membership tests."""
+        return set(self.index.tolist())
+
+    def _make_member(self, i, idx):
+        """Ts/Tsd/TsdFrame/TsdTensor of unit ``self.index[i]`` from the positions
+        ``idx`` of its timestamps."""
+        t = self._times[idx]
+        # timestamps come sorted out of the merged arrays
+        with trusted_construction():
+            if self._data is None or not self._is_tsd[i]:
+                return Ts(t=t, time_support=self.time_support)
+            d = self._data[idx]
+            if d.ndim == 1:
+                return Tsd(t=t, d=d, time_support=self.time_support)
+            if d.ndim == 2:
+                return TsdFrame(
+                    t=t, d=d, time_support=self.time_support, columns=self._columns
+                )
+            return TsdTensor(t=t, d=d, time_support=self.time_support)
+
+    def _get_member(self, key):
+        i = int(np.searchsorted(self.index, key))
+        order, offsets = self._unit_order
+        return self._make_member(i, order[offsets[i] : offsets[i + 1]])
+
+    def _members(self):
+        """All members, in index order."""
+        order, offsets = self._unit_order
+        return [
+            self._make_member(i, order[offsets[i] : offsets[i + 1]])
+            for i in range(len(self.index))
+        ]
+
+    def _take(self, keys):
+        """New TsGroup holding only the units ``keys`` (sorted, unique)."""
+        mask = np.isin(self._unit_index, keys)
+        sel = np.searchsorted(self.index, keys)
+        return TsGroup._from_arrays(
+            self._times[mask],
+            self._unit_index[mask],
+            None if self._data is None else self._data[mask],
+            self._is_tsd[sel],
+            keys,
+            self.time_support,
+            metadata=self._metadata.loc[keys].copy().drop("rate"),
+            columns=self._columns,
+        )
+
+    @property
+    def data(self):
+        """Read-only mapping from each key to its Ts/Tsd, built on access."""
+        return _TsGroupMembers(self)
+
+    def __getstate__(self):
+        state = dict(self.__dict__)
+        # derived and O(n_timestamps): recomputed on demand after unpickling
+        state.pop("_unit_order", None)
+        return state
+
+    def __setstate__(self, state):
+        state = dict(state)
+        # objects pickled before the merged-array layout held a dict of members
+        members = state.pop("data", None)
+        self.__dict__.update(state)
+        if "_times" not in state and members is not None:
+            members = {k: members[k] for k in self.index}
+            times, unit_index, values, is_tsd = _build_sorted_arrays(members)
+            self.__dict__.update(
+                _times=times,
+                _unit_index=unit_index,
+                _data=values,
+                _is_tsd=is_tsd,
+                _columns=_shared_columns(members.values()),
+            )
 
     """
     Base functions
@@ -371,7 +720,7 @@ class TsGroup(UserDict, _MetadataMixin):
         # Standard dict keys are Hashable
         if isinstance(key, Hashable):
             if self.__contains__(key):
-                return self.data[key]
+                return self._get_member(key)
             elif key in self._metadata.columns:
                 return _MetadataMixin.__getitem__(self, key)
             else:
@@ -405,12 +754,19 @@ class TsGroup(UserDict, _MetadataMixin):
         return self._ts_group_from_keys(key)
 
     def _ts_group_from_keys(self, keys):
-        metadata = self._metadata.loc[keys].copy().drop("rate")
-        return TsGroup(
-            {k: self[k] for k in keys},
-            time_support=self.time_support,
-            metadata=metadata,
-        )
+        return self._take(np.unique(np.asarray(keys, dtype=np.int64)))
+
+    def __len__(self):
+        return len(self.index)
+
+    def __iter__(self):
+        return iter(self.index.tolist())
+
+    def __contains__(self, key):
+        try:
+            return key in self._keys_set
+        except TypeError:  # unhashable
+            return False
 
     def __repr__(self):
         # Start by determining how many columns and rows.
@@ -555,7 +911,7 @@ class TsGroup(UserDict, _MetadataMixin):
         list
             List of keys
         """
-        return list(self.data.keys())
+        return self.index.tolist()
 
     def items(self):
         """
@@ -566,7 +922,7 @@ class TsGroup(UserDict, _MetadataMixin):
         list
             List of tuples
         """
-        return list(self.data.items())
+        return list(zip(self.index.tolist(), self._members()))
 
     def values(self):
         """
@@ -577,7 +933,7 @@ class TsGroup(UserDict, _MetadataMixin):
         list
             List of Ts/Tsd objects
         """
-        return list(self.data.values())
+        return self._members()
 
     @property
     def rates(self):
@@ -633,13 +989,22 @@ class TsGroup(UserDict, _MetadataMixin):
               0        0    100
         shape: (1, 2), time unit: sec.
         """
-        newgr = {}
-        for k in self.index:
-            newgr[k] = self.data[k].restrict(ep)
+        if not isinstance(ep, IntervalSet):
+            raise TypeError("Argument should be IntervalSet")
+        times, unit_index, values = _restrict_grouped(
+            self._times, self._unit_index, self._data, ep.start, ep.end
+        )
         cols = self._metadata.columns[1:]  # .drop("rate")
 
-        return TsGroup(
-            newgr, time_support=ep, bypass_check=True, metadata=self._metadata[cols]
+        return TsGroup._from_arrays(
+            times,
+            unit_index,
+            values,
+            self._is_tsd,
+            self.index,
+            ep,
+            metadata=self._metadata[cols],
+            columns=self._columns,
         )
 
     def value_from(self, tsd, ep=None, mode="closest"):
@@ -692,12 +1057,31 @@ class TsGroup(UserDict, _MetadataMixin):
                 f"Argument mode should be 'closest', 'before', or 'after'. {mode} provided instead."
             )
 
-        newgr = {}
-        for k in self.data:
-            newgr[k] = self.data[k].value_from(tsd, ep=ep, mode=mode)
+        starts = ep.start
+        ends = ep.end
+        # matching depends only on each timestamp, not on its unit: one pass
+        # over the merged array covers every unit
+        times, values = _value_from(
+            self._times, tsd.index.values, tsd.values, starts, ends, mode=mode
+        )
+        unit_index = _concat_ranges(
+            self._unit_index,
+            np.searchsorted(self._times, starts, side="left"),
+            np.searchsorted(self._times, ends, side="right"),
+            copy=True,
+        )
 
         cols = self._metadata.columns[1:]  # .drop("rate")
-        return TsGroup(newgr, time_support=ep, metadata=self._metadata[cols])
+        return TsGroup._from_arrays(
+            times,
+            unit_index,
+            values,
+            np.ones(len(self.index), dtype=bool),
+            self.index,
+            IntervalSet(start=starts, end=ends),
+            metadata=self._metadata[cols],
+            columns=tsd.columns if isinstance(tsd, TsdFrame) else None,
+        )
 
     @add_or_convert_metadata
     def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
@@ -797,27 +1181,16 @@ class TsGroup(UserDict, _MetadataMixin):
         if isinstance(bin_size, (float, int)):
             bin_size = TsIndex.format_timestamps(np.array([bin_size]), time_units)[0]
 
-        # Call it on first element to pre-allocate the array
         if len(self) >= 1:
-            time_index, d = _count(
-                self.data[self.index[0]].index.values,
+            time_index, count = _count_grouped(
+                self._times,
+                self._unit_pos(),
+                len(self.index),
                 starts,
                 ends,
                 bin_size,
                 dtype=dtype,
             )
-
-            count = np.zeros((len(time_index), len(self.index)), dtype=dtype)
-            count[:, 0] = d
-
-            for i in range(1, len(self.index)):
-                count[:, i] = _count(
-                    self.data[self.index[i]].index.values,
-                    starts,
-                    ends,
-                    bin_size,
-                    dtype=dtype,
-                )[1]
 
             metadata = self._metadata.copy()
             # drop rate
@@ -949,23 +1322,11 @@ class TsGroup(UserDict, _MetadataMixin):
         else:
             _values = self.index
 
-        nt = 0
-        for n in self.index:
-            nt += len(self[n])
+        data = np.zeros(len(self._times))
+        if len(data):
+            data[:] = np.asarray(_values)[self._unit_pos()]
 
-        times = np.zeros(nt)
-        data = np.zeros(nt)
-        k = 0
-        for n, v in zip(self.index, _values):
-            kl = len(self[n])
-            times[k : k + kl] = self[n].index
-            data[k : k + kl] = v
-            k += kl
-
-        idx = np.argsort(times)
-        toreturn = Tsd(t=times[idx], d=data[idx], time_support=self.time_support)
-
-        return toreturn
+        return Tsd(t=self._times, d=data, time_support=self.time_support)
 
     @add_or_convert_metadata
     def trial_count(
@@ -1117,9 +1478,31 @@ class TsGroup(UserDict, _MetadataMixin):
         8            2
         dtype: float64, shape: (3,)}
         """
-        return {
-            k: v.time_diff(align=align, epochs=epochs) for k, v in self.data.items()
-        }
+        if align not in ["start", "center", "end"]:
+            raise RuntimeError("align should be 'start', 'center' or 'end'")
+
+        if epochs is None:
+            epochs = self.time_support
+        elif not isinstance(epochs, IntervalSet):
+            raise TypeError("epochs should be an object of type IntervalSet")
+
+        alpha = 0.0 if align == "start" else 0.5 if align == "center" else 1.0
+        new_t, new_d, offsets = _time_diff_grouped(
+            self._times,
+            self._unit_pos(),
+            len(self.index),
+            epochs.start,
+            epochs.end,
+            alpha,
+        )
+
+        out = {}
+        for i, k in enumerate(self.index.tolist()):
+            sl = slice(offsets[i], offsets[i + 1])
+            # differences are emitted per-epoch in order -> sorted and within `epochs`
+            with trusted_construction():
+                out[k] = Tsd(t=new_t[sl], d=new_d[sl], time_support=epochs)
+        return out
 
     def get(self, start, end=None, time_units="s"):
         """Slice the `TsGroup` object from `start` to `end` such that all the timestamps within the group satisfy `start<=t<=end`.
@@ -1134,16 +1517,43 @@ class TsGroup(UserDict, _MetadataMixin):
         end : float or int or None
             The end
         """
-        newgr = {}
-        for k in self.index:
-            newgr[k] = self.data[k].get(start, end, time_units)
         cols = self._metadata.columns[1:]  # .drop("rate")
 
-        return TsGroup(
-            newgr,
-            time_support=self.time_support,
-            bypass_check=True,
+        if end is None:
+            # closest timestamp of each unit: inherently per unit
+            newgr = {k: m.get(start, end, time_units) for k, m in self.items()}
+            return TsGroup(
+                newgr,
+                time_support=self.time_support,
+                bypass_check=True,
+                metadata=self._metadata[cols],
+            )
+
+        # `start <= t <= end` does not depend on the unit: slice the merged
+        # array once. Same validation as `Ts.get`, but bounds come from a plain
+        # searchsorted since several units may share the `end` timestamp.
+        for name, value in (("start", start), ("end", end)):
+            if not isinstance(value, Number):
+                raise ValueError(
+                    f"'{name}' must be an int or a float. Type {type(value)} provided instead!"
+                )
+        start, end = TsIndex.format_timestamps(np.array([start, end]), time_units)
+        if start > end:
+            raise ValueError("'start' should not precede 'end'.")
+        sl = slice(
+            np.searchsorted(self._times, start, side="left"),
+            np.searchsorted(self._times, end, side="right"),
+        )
+
+        return TsGroup._from_arrays(
+            self._times[sl],
+            self._unit_index[sl],
+            None if self._data is None else self._data[sl],
+            self._is_tsd,
+            self.index,
+            self.time_support,
             metadata=self._metadata[cols],
+            columns=self._columns,
         )
 
     #################################
@@ -1349,7 +1759,6 @@ class TsGroup(UserDict, _MetadataMixin):
             return tsgroups[0]
 
         tsg1 = tsgroups[0]
-        items = tsg1.items()
         keys = set(tsg1.keys())
         metadata = tsg1._metadata.copy()
 
@@ -1386,24 +1795,75 @@ class TsGroup(UserDict, _MetadataMixin):
                     )
                 time_support = tsg1.time_support
 
-            items.extend(tsg.items())
+        if time_support is None:
+            time_support = _union_intervals([tsg.time_support for tsg in tsgroups])
 
+        # Concatenate the merged arrays of every group. With `reset_index`, keys
+        # become 0..n-1 following the groups' order then each group's key order.
+        unit_index = []
+        offset = 0
+        for tsg in tsgroups:
+            if reset_index:
+                unit_index.append(tsg._unit_pos() + offset)
+                offset += len(tsg.index)
+            else:
+                unit_index.append(tsg._unit_index)
+        unit_index = np.concatenate(unit_index).astype(np.int64, copy=False)
         if reset_index:
-            metadata.reset_index()
-            data = {i: ts[1] for i, ts in enumerate(items)}
+            index = np.arange(offset, dtype=np.int64)
         else:
-            data = dict(items)
+            index = np.concatenate([tsg.index for tsg in tsgroups])
+        times = np.concatenate([tsg._times for tsg in tsgroups])
+        is_tsd = np.concatenate([tsg._is_tsd for tsg in tsgroups])
+
+        # groups without values contribute fill values, flagged by `is_tsd`
+        values = _concat_values(
+            [tsg._data for tsg in tsgroups], [len(tsg._times) for tsg in tsgroups]
+        )
+
+        order = np.argsort(times, kind="stable")
+        times = times[order]
+        unit_index = unit_index[order]
+        if values is not None:
+            values = values[order]
+
+        times, unit_index, values = _restrict_grouped(
+            times, unit_index, values, time_support.start, time_support.end
+        )
+
+        # keep the index sorted, metadata rows and `is_tsd` following it
+        sort_index = np.argsort(index, kind="stable")
+        index = index[sort_index]
+        is_tsd = is_tsd[sort_index]
 
         if ignore_metadata:
-            return TsGroup(data, time_support=time_support, bypass_check=False)
+            metadata = None
         else:
+            if reset_index:
+                metadata.reset_index()
             metadata.drop("rate")
-            return TsGroup(
-                data,
-                time_support=time_support,
-                bypass_check=False,
-                metadata=metadata,
-            )
+            metadata = metadata.iloc[sort_index]
+
+        columns = tsgroups[0]._columns
+        if any(
+            tsg._columns is None
+            or columns is None
+            or not np.array_equal(tsg._columns, columns)
+            for tsg in tsgroups[1:]
+            if tsg._data is not None
+        ):
+            columns = None
+
+        return TsGroup._from_arrays(
+            times,
+            unit_index,
+            values,
+            is_tsd,
+            index,
+            time_support,
+            metadata=metadata,
+            columns=columns,
+        )
 
     def merge(
         self,
@@ -1593,31 +2053,15 @@ class TsGroup(UserDict, _MetadataMixin):
         #             tmp = tmp.astype(np.str_)
         #         dicttosave[k] = tmp
 
-        # We can't use to_tsd here in case tsgroup contains Tsd and not only Ts.
-        nt = 0
-        for n in self.index:
-            nt += len(self[n])
-
-        times = np.zeros(nt)
-        data = np.full(nt, np.nan)
-        index = np.zeros(nt, dtype=np.int64)
-        k = 0
-        for n in self.index:
-            kl = len(self[n])
-            times[k : k + kl] = self[n].index
-            if isinstance(self[n], _BaseTsd):
-                data[k : k + kl] = self[n].values
-            index[k : k + kl] = int(n)
-            k += kl
-
-        idx = np.argsort(times)
-        times = times[idx]
-        index = index[idx]
-
-        dicttosave["t"] = times
-        dicttosave["index"] = index
-        if not np.all(np.isnan(data)):
-            dicttosave["d"] = data[idx]
+        # The merged arrays already are the flattened layout saved on disk.
+        dicttosave["t"] = self._times
+        dicttosave["index"] = self._unit_index
+        if self._data is not None:
+            data = np.full(self._data.shape, np.nan)
+            valued = self._is_tsd[self._unit_pos()]
+            data[valued] = self._data[valued]
+            if not np.all(np.isnan(data)):
+                dicttosave["d"] = data
         dicttosave["keys"] = np.array(self.keys())
         dicttosave["start"] = self.time_support.start
         dicttosave["end"] = self.time_support.end
@@ -1651,25 +2095,29 @@ class TsGroup(UserDict, _MetadataMixin):
             data = file["d"]
 
         if "keys" in file.keys():
-            keys = file["keys"]
+            keys = np.asarray(file["keys"], dtype=np.int64)
         else:
             keys = np.unique(index)
+        keys = np.sort(keys)
 
-        group = {}
-        for key in keys:
-            filtering_index = index == key
-            t = times[filtering_index]
-
+        times = np.asarray(times, dtype=np.float64)
+        index = np.asarray(index, dtype=np.int64)
+        values = data if has_data else None
+        if len(times) > 1 and np.any(times[1:] < times[:-1]):
+            order = np.argsort(times, kind="stable")
+            times = times[order]
+            index = index[order]
             if has_data:
-                group[key] = Tsd(
-                    t=t,
-                    d=data[filtering_index],
-                    time_support=time_support,
-                )
-            else:
-                group[key] = Ts(t=t, time_support=time_support)
+                values = values[order]
 
-        tsgroup = cls(group, time_support=time_support, bypass_check=True)
+        tsgroup = cls._from_arrays(
+            times,
+            index,
+            values,
+            np.full(len(keys), has_data, dtype=bool),
+            keys,
+            time_support,
+        )
 
         if "_metadata" in file:  # load metadata if it exists
             if file["_metadata"]:  # check that metadata is not empty
@@ -2087,47 +2535,30 @@ class TsGroup(UserDict, _MetadataMixin):
         else:
             rng = np.random.default_rng()
 
-        newgr = {}
-        for k in self.index:
-            ts = self.data[k]
-            n_timestamps = len(ts)
-            if n_timestamps > 0:
-                # Calculate exact number to keep
-                n_keep = int(np.round(n_timestamps * fraction))
-                if n_keep == 0:
-                    idx = np.array([], dtype=int)
-                elif n_keep >= n_timestamps:
-                    idx = np.arange(n_timestamps)
-                else:
-                    # Use argpartition for O(n) selection of exactly n_keep indices
-                    random_values = rng.random(n_timestamps)
-                    idx = np.sort(np.argpartition(random_values, n_keep)[:n_keep])
-                new_times = ts.index.values[idx] if len(idx) > 0 else np.array([])
-                if hasattr(ts, "values"):
-                    # For Tsd objects, preserve the data values
-                    newgr[k] = Tsd(
-                        t=new_times,
-                        d=ts.values[idx] if len(idx) > 0 else np.array([]),
-                        time_support=self.time_support,
-                    )
-                else:
-                    # For Ts objects
-                    newgr[k] = Ts(t=new_times, time_support=self.time_support)
-            else:
-                # Keep empty Ts/Tsd with same time support
-                if hasattr(ts, "values"):
-                    newgr[k] = Tsd(
-                        t=np.array([]),
-                        d=np.array([]),
-                        time_support=self.time_support,
-                    )
-                else:
-                    newgr[k] = Ts(t=np.array([]), time_support=self.time_support)
+        # Keep exactly round(n * fraction) timestamps per unit: draw one random
+        # value per timestamp and keep, within each unit, the n_keep smallest
+        # (argpartition: O(n) per unit, no sort).
+        order, offsets = self._unit_order
+        counts = np.diff(offsets)
+        n_keep = np.round(counts * fraction).astype(np.int64)
+        random_values = rng.random(len(self._times))
+        keep = np.zeros(len(self._times), dtype=bool)
+        for i in range(len(self.index)):
+            idx = order[offsets[i] : offsets[i + 1]]
+            if n_keep[i] >= counts[i]:
+                keep[idx] = True
+            elif n_keep[i] > 0:
+                part = np.argpartition(random_values[idx], n_keep[i])
+                keep[idx[part[: n_keep[i]]]] = True
 
         cols = self._metadata.columns[1:]  # drop "rate"
-        return TsGroup(
-            newgr,
-            time_support=self.time_support,
-            bypass_check=True,
+        return TsGroup._from_arrays(
+            self._times[keep],
+            self._unit_index[keep],
+            None if self._data is None else self._data[keep],
+            self._is_tsd,
+            self.index,
+            self.time_support,
             metadata=self._metadata[cols],
+            columns=self._columns,
         )

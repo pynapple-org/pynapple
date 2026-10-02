@@ -93,6 +93,193 @@ def jitrestrict_with_count(time_array, starts, ends, dtype=np.int64):
     return ix[0:x], count
 
 
+@jit(nopython=True, cache=True)
+def jitrestrict_with_count_grouped(
+    time_array, unit_pos, starts, ends, n_units, dtype=np.int64
+):
+    """Multi-unit analogue of :func:`jitrestrict_with_count`.
+
+    ``time_array`` is a single array merging every unit's timestamps (globally
+    sorted), with ``unit_pos`` the matching dense ``0..n_units-1`` position of
+    each timestamp's unit (computed by the caller, e.g. via
+    ``np.searchsorted`` against the group's sorted keys -- never stored).
+    Returns one ``count[k, :]`` row per epoch instead of a single scalar.
+    """
+    n = len(time_array)
+    m = len(starts)
+    count = np.zeros((m, n_units), dtype=dtype)
+
+    if n == 0 or m == 0:
+        return count
+
+    k = 0
+    t = 0
+
+    while k < m and ends[k] < time_array[t]:
+        k += 1
+
+    while k < m:
+        # Outside
+        while t < n:
+            if time_array[t] >= starts[k]:
+                break
+            t += 1
+
+        # Inside
+        while t < n:
+            if time_array[t] > ends[k]:
+                k += 1
+                break
+            else:
+                count[k, unit_pos[t]] += 1
+            t += 1
+
+        if k == m:
+            break
+        if t == n:
+            break
+
+    return count
+
+
+@jit(nopython=True, cache=True)
+def jitcount_grouped(time_array, unit_pos, starts, ends, bin_size, n_units, dtype):
+    """Multi-unit analogue of :func:`jitcount`.
+
+    Sweeps the merged, globally sorted ``time_array`` once, incrementing
+    ``cnt[bin, unit_pos[t]]``, instead of re-sweeping the bins once per unit.
+    Unlike :func:`jitcount` there is no restrict pass first: spikes and
+    epochs/bins are walked together, which avoids an index array and two
+    gathers. Bin placement (``np.round(..., 9)`` boundaries, a bin kept only if
+    its center falls at or before the epoch end) is identical to
+    :func:`jitcount`.
+    """
+    n = time_array.shape[0]
+    m = starts.shape[0]
+
+    nb_bins = np.zeros(m, dtype=np.int32)
+    for k in range(m):
+        if (ends[k] - starts[k]) > bin_size:
+            nb_bins[k] = int(np.ceil((ends[k] + bin_size - starts[k]) / bin_size))
+        else:
+            nb_bins[k] = 1
+
+    nb = np.sum(nb_bins)
+    bins = np.zeros(nb, dtype=np.float64)
+    cnt = np.zeros((nb, n_units), dtype=dtype)
+
+    t = 0
+    b = 0
+
+    for k in range(m):
+        # Outside
+        while t < n and time_array[t] < starts[k]:
+            t += 1
+
+        maxb = b + nb_bins[k]
+        lbound = starts[k]
+
+        while b < maxb:
+            xpos = lbound + bin_size / 2
+            if xpos > ends[k]:
+                break
+            else:
+                bins[b] = xpos
+                rbound = np.round(lbound + bin_size, 9)
+                # similar to numpy histogram
+                while t < n and time_array[t] < rbound and time_array[t] <= ends[k]:
+                    cnt[b, unit_pos[t]] += 1
+                    t += 1
+
+                lbound += bin_size
+                lbound = np.round(lbound, 9)
+                b += 1
+
+        # Inside the epoch but past its last kept bin
+        while t < n and time_array[t] <= ends[k]:
+            t += 1
+
+    return (bins[0:b], cnt[0:b])
+
+
+@jit(nopython=True, cache=True)
+def jittimediff_grouped(time_array, unit_pos, starts, ends, n_units, alpha):
+    """Differences between subsequent timestamps of each unit, within epochs.
+
+    Forward sweeps over the merged, globally sorted ``time_array``, keeping the
+    last timestamp seen per unit (and the epoch it was seen in): a difference is
+    emitted whenever a unit is seen again within the same epoch. A first sweep
+    only counts the differences of each unit, so that the second one writes
+    each unit's differences into its own contiguous block, in time order --
+    splitting the output by unit then needs no sort and no gather.
+
+    Returns
+    -------
+    (new_t, new_d, offsets)
+        ``new_t = last + alpha * diff`` and ``new_d = diff``, where
+        ``[offsets[i]:offsets[i + 1]]`` is the block of unit ``i``.
+    """
+    n = len(time_array)
+    m = len(starts)
+    last_time = np.zeros(n_units, dtype=np.float64)
+    last_epoch = np.full(n_units, -1, dtype=np.int64)
+    offsets = np.zeros(n_units + 1, dtype=np.int64)
+
+    for sweep in range(2):
+        if sweep == 1:
+            for u in range(n_units):
+                offsets[u + 1] += offsets[u]
+            fill = offsets[:-1].copy()
+            new_t = np.empty(offsets[n_units], dtype=np.float64)
+            new_d = np.empty(offsets[n_units], dtype=np.float64)
+            last_epoch[:] = -1
+
+        t = 0
+        k = 0
+        while k < m and t < n:
+            while t < n and time_array[t] < starts[k]:
+                t += 1
+            while t < n and time_array[t] <= ends[k]:
+                u = unit_pos[t]
+                if last_epoch[u] == k:
+                    if sweep == 0:
+                        offsets[u + 1] += 1
+                    else:
+                        diff = time_array[t] - last_time[u]
+                        new_d[fill[u]] = diff
+                        new_t[fill[u]] = last_time[u] + alpha * diff
+                        fill[u] += 1
+                last_time[u] = time_array[t]
+                last_epoch[u] = k
+                t += 1
+            k += 1
+
+    return new_t, new_d, offsets
+
+
+@jit(nopython=True, cache=True)
+def jitgroup_by_unit(unit_pos, n_units):
+    """Stable counting sort of dense unit positions.
+
+    Returns ``(order, offsets)`` such that ``order[offsets[i]:offsets[i + 1]]``
+    are the positions holding unit ``i``, in their original order. O(n), unlike
+    a comparison-based stable argsort.
+    """
+    n = unit_pos.shape[0]
+    offsets = np.zeros(n_units + 1, dtype=np.int64)
+    for i in range(n):
+        offsets[unit_pos[i] + 1] += 1
+    for u in range(n_units):
+        offsets[u + 1] += offsets[u]
+    fill = offsets[:-1].copy()
+    order = np.empty(n, dtype=np.int64)
+    for i in range(n):
+        u = unit_pos[i]
+        order[fill[u]] = i
+        fill[u] += 1
+    return order, offsets
+
+
 # Within one epoch, matching `n` timestamps against `d` targets costs ~n*log2(d)
 # cache-missing jumps by binary search, versus ~n+d sequential steps by merge scan,
 # so binary search only pays when the input is far sparser than the target.
