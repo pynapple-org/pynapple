@@ -88,15 +88,22 @@ def _index_preserves_order(key):
 
 
 def _index_requires_axis_tracking(key):
-    """Identify indexing that inserts axes or abbreviates their positions."""
+    """Identify indexing that needs explicit axis tracking."""
     keys = key if isinstance(key, tuple) else (key,)
     for k in keys:
         if isinstance(k, _BaseTsd):
             k = k.values
         if k is None or k is Ellipsis or isinstance(k, (bool, np.bool_)):
             return True
-        if isinstance(k, (list, tuple)) and not k:
-            return True
+        if isinstance(k, (list, tuple)):
+            if not k:
+                return True
+            # Inspect nested masks without converting ordinary flat selectors.
+            if isinstance(k[0], (list, tuple, np.ndarray)):
+                try:
+                    k = np.asarray(k)
+                except (TypeError, ValueError):
+                    continue
         if isinstance(k, np.ndarray) and (
             k.size == 0 or (k.dtype == np.bool_ and k.ndim != 1)
         ):

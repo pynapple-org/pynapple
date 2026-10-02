@@ -244,12 +244,17 @@ def test_boolean_scalar_indexing_returns_native_array(cls, shape, key):
 )
 @pytest.mark.parametrize("as_tuple", [False, True])
 @pytest.mark.parametrize("select_any", [False, True])
-def test_full_data_boolean_mask_returns_native_array(cls, shape, as_tuple, select_any):
+@pytest.mark.parametrize("as_list", [False, True])
+def test_full_data_boolean_mask_returns_native_array(
+    cls, shape, as_tuple, select_any, as_list
+):
     data = np.arange(np.prod(shape)).reshape(shape)
     obj = cls(
         t=10 + 10 * np.arange(shape[0]), d=data, time_support=nap.IntervalSet(0, 50)
     )
     mask = (data % 2 == 0) if select_any else np.zeros(shape, dtype=bool)
+    if as_list:
+        mask = mask.tolist()
     key = (mask,) if as_tuple else mask
     # Masking all dimensions flattens values and removes the original time axis.
     assert_native_result(obj[key], obj.values[key])
@@ -305,3 +310,14 @@ def test_empty_boolean_column_selector_preserves_empty_metadata(count):
     assert len(result.columns) == 0
     assert result.metadata_columns == ["quality"]
     assert len(result.get_info("quality")) == 0
+
+
+@pytest.mark.parametrize("key", [[[True, False], [True]], [[0, 1], [2]]])
+@pytest.mark.parametrize("as_tuple", [False, True])
+def test_ragged_sequence_index_preserves_native_error(key, as_tuple):
+    frame = nap.TsdFrame(t=[10, 20, 30], d=np.arange(6).reshape(3, 2))
+    key = (key,) if as_tuple else key
+    with pytest.raises((IndexError, TypeError, ValueError)) as native_error:
+        frame.values[key]
+    with pytest.raises(type(native_error.value)):
+        frame[key]
