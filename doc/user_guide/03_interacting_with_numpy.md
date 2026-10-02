@@ -105,6 +105,37 @@ First element. Return a numpy ndarray
 print(tsdtensor[0])
 ```
 
+`None` (also called `np.newaxis`) inserts a dimension of length one. Adding a
+dimension before time returns the underlying array, because time is no longer
+the first dimension. These two expressions have the same result:
+
+```{code-cell} ipython3
+print(tsdtensor[None].shape)
+print(tsdtensor[None, ...].shape)
+```
+
+Adding a dimension after time keeps the timestamps and time support:
+
+```{code-cell} ipython3
+print(type(tsd[:, None]))  # TsdFrame
+print(type(tsdframe[..., None]))  # TsdTensor
+```
+
+Indexing with `None` or an ellipsis follows NumPy's output shape, including for
+empty and single-sample series. Selecting a single time
+point with an integer removes the time dimension, so `tsdtensor[0, None]`
+returns an array. Advanced indexing may also move or combine dimensions; a
+time-series object is returned only when a one-dimensional time selection
+remains the first output dimension. Column metadata is retained only when
+the output's column dimension still represents the original frame columns.
+For example, `tsdframe[:, 0, None]` creates a new column dimension and does not
+inherit the original column labels or metadata. The source object is unchanged.
+
+An empty selection such as `tsdframe[[]]` keeps the original columns and metadata
+but selects no timestamps. Scalar Boolean indices and multidimensional Boolean
+masks return the underlying array's result, since they insert a selection
+dimension or combine multiple input dimensions.
+
 The time support is never changing when slicing time down.
 
 
