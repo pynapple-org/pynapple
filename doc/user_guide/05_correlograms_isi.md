@@ -67,6 +67,63 @@ print(crosscorrs)
 
 Column name `(0, 1)` is read as cross-correlogram of neuron 0 and 1 with neuron 0 being the reference time.
 
+## Lagged cross-correlations
+
+Lagged cross-correlation measures how continuous signals vary together at different time offsets. Pass a regularly sampled, real-valued `TsdFrame` to [`compute_crosscorrelogram`](pynapple.process.correlograms.compute_crosscorrelogram). Set `windowsize` and leave `binsize=None`: lags are spaced by the timestamp sampling interval, and results are Pearson coefficients rather than spike rates. An explicit `binsize` or `norm=False` raises `ValueError` for continuous inputs.
+
+```{code-cell} ipython3
+rng = np.random.default_rng(1)
+timestamps = np.arange(1000) / 100
+reference = rng.normal(size=len(timestamps))
+delayed = np.r_[np.zeros(10), reference[:-10]]
+signals = nap.TsdFrame(
+    t=timestamps,
+    d=np.column_stack((reference, delayed)),
+    columns=["reference", "delayed"],
+    time_support=nap.IntervalSet(0, 10),
+)
+
+lagged_corr = nap.compute_crosscorrelogram(
+    signals, windowsize=0.5, time_units="s"
+)
+print(lagged_corr)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+fig, axes = plt.subplots(2, 1, figsize=(8, 6), constrained_layout=True)
+excerpt = timestamps < 0.6
+axes[0].plot(timestamps[excerpt], reference[excerpt], label="reference")
+axes[0].plot(timestamps[excerpt], delayed[excerpt], label="delayed")
+axes[0].set(xlabel="Time (s)", ylabel="Signal (a.u.)")
+axes[0].legend()
+
+axes[1].plot(lagged_corr.index, lagged_corr.iloc[:, 0])
+axes[1].axvline(0, color="0.5", linestyle=":")
+axes[1].set(xlabel="Lag (s)", ylabel="Pearson correlation")
+plt.show()
+```
+
+The upper panel shows the first 0.6 seconds of both signals; the lower panel shows their lagged correlation. The output is a pandas DataFrame with lags in seconds as its index and signal pairs as its columns. Here the correlation peaks at `+0.1` seconds: positive lags mean that the second signal follows the first.
+
+Passing two `TsdFrame` objects computes all cross-frame column pairs. Their timestamps must match.
+
+```{code-cell} ipython3
+reference_frame = signals[:, [0]]
+delayed_frame = signals[:, [1]]
+cross_frame_corr = nap.compute_crosscorrelogram(
+    (reference_frame, delayed_frame), windowsize=0.5
+)
+```
+
+The optional `ep` argument restricts the calculation. Observations are pooled across epochs for each lag, but pairs never cross an epoch boundary. NaNs propagate only from the overlapping observations of a given column pair and lag. Fewer than two observations or zero variance yield NaN.
+
+For continuous autocorrelation, pass the same frame to [`compute_autocorrelogram`](pynapple.process.correlograms.compute_autocorrelogram). It computes only same-column pairs; the zero-lag coefficient is one for nonconstant finite signals, not zero as in a spike autocorrelogram.
+
+```{code-cell} ipython3
+continuous_autocorr = nap.compute_autocorrelogram(signals, windowsize=0.5)
+```
+
 ## Event-correlograms
 
 Event-correlograms count the number of event in the `TsGroup` based on an `event` timestamps object. 
