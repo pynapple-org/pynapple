@@ -11,32 +11,66 @@ import numpy as np
 import pandas as pd
 
 from .. import core as nap
+from ..core._jitted_functions import jitvaluefrom_histogram
 
 
-def _use_prebinned_feature(n_matched, n_samples):
-    """Whether to bin the feature once and look bins up, per unit, or bin per unit.
+def _spike_histograms(group, features, feature_bins, n_flat, bin_edges, epochs):
+    """Per-unit histograms of the feature's bins at each spike, and the rates.
 
-    Pre-binning costs one pass over the whole feature and saves one pass over every
-    matched value, so it pays exactly when more values are matched in total than the
-    feature has samples. Measured at both ends: 33.7 -> 23.2 ms for 400k matches
-    over 100k samples, but 44.7 -> 54.7 ms for 400k matches over 1M.
-
-    Split out because both branches return identical numbers by construction, so
-    nothing else can pin the choice down.
-
-    Parameters
-    ----------
-    n_matched : int
-        Total timestamps to be matched, summed over units.
-    n_samples : int
-        Samples in the feature.
+    Equivalent to restricting ``group`` to ``epochs``, matching it against the
+    feature's bin index with `value_from` and histogramming each unit, without
+    building either intermediate group.
 
     Returns
     -------
-    bool
-        True to pre-bin the feature, False to bin each unit's matched values.
+    counts : ndarray
+        ``(n_units, *n_bins)`` float64 spike counts per unit and bin.
+    rates : ndarray
+        ``(n_units,)`` rates within ``epochs``, as ``group.restrict(epochs).rates``.
     """
-    return n_matched > n_samples
+    times = group._times
+    target_times = features.index.values
+    # `value_from` would match within the feature's time support, which is
+    # exactly `epochs`: either `epochs` is that support, or the feature was
+    # restricted to `epochs`, which sets its support to `epochs`. So the spikes
+    # counted in `n_in_epochs` are also those `restrict(epochs)` would keep.
+    counts, n_in_epochs = jitvaluefrom_histogram(
+        times,
+        group._unit_pos(),
+        target_times,
+        feature_bins,
+        np.searchsorted(times, epochs.start, side="left"),
+        np.searchsorted(times, epochs.end, side="right"),
+        np.searchsorted(target_times, epochs.start, side="left"),
+        np.searchsorted(target_times, epochs.end, side="right"),
+        len(group.index),
+        n_flat,
+    )
+    padded_shape = [len(group.index), *[len(edges) + 1 for edges in bin_edges]]
+    interior = (slice(None), *[slice(1, -1) for _ in bin_edges])
+    counts = counts.reshape(padded_shape)[interior]
+
+    duration = np.sum(epochs.end - epochs.start)
+    if duration > 0:
+        rates = n_in_epochs / duration
+    else:
+        rates = np.full(len(group.index), np.nan)
+    return counts, rates
+
+
+def _bin_edges(sample, bins, range):
+    """The bin edges ``np.histogramdd(sample, bins=bins, range=range)`` would use.
+
+    Without a ``range``, ``histogramdd`` derives edges from each feature's minimum
+    and maximum only, so histogramming those two rows gives the same edges (and
+    raises the same errors) without binning the whole sample.
+    """
+    sample = np.asarray(sample)
+    if sample.ndim == 1:
+        sample = sample[:, None]
+    if len(sample):
+        sample = np.stack([sample.min(axis=0), sample.max(axis=0)])
+    return np.histogramdd(sample, bins=bins, range=range)[1]
 
 
 def _flat_bin_index(sample, bin_edges):
@@ -332,7 +366,11 @@ def compute_tuning_curves(
         features = features.restrict(epochs)
     else:
         raise TypeError("epochs should be an IntervalSet.")
-    data = data.restrict(epochs)
+    if isinstance(data, nap.Ts):
+        data = nap.TsGroup({0: data})
+    if not isinstance(data, nap.TsGroup):
+        # spikes are restricted while being matched, see `_spike_histograms`
+        data = data.restrict(epochs)
 
     # check fs
     if fs is None:
@@ -366,7 +404,11 @@ def compute_tuning_curves(
         raise TypeError("return_counts should be a boolean.")
 
     # occupancy
-    occupancy, bin_edges = np.histogramdd(features, bins=bins, range=range)
+    # The feature is binned once: the same bin index gives the occupancy and,
+    # for spikes, each spike's bin.
+    bin_edges = _bin_edges(features, bins, range)
+    feature_bins, n_flat = _flat_bin_index(features, bin_edges)
+    occupancy = _histogram_from_bin_index(feature_bins, n_flat, bin_edges)
 
     # tuning curves
     # np.asarray drops any name carried by a pandas Index (TsdFrame.columns
@@ -377,52 +419,20 @@ def compute_tuning_curves(
         if isinstance(data, nap.TsGroup)
         else data.columns if isinstance(data, nap.TsdFrame) else [0]
     )
-    tcs = np.zeros([len(keys), *occupancy.shape])
-    if isinstance(data, (nap.TsGroup, nap.Ts)):
+    rates = None
+    if isinstance(data, nap.TsGroup):
         # SPIKES
-        if isinstance(data, nap.Ts):
-            data = nap.TsGroup({0: data})
+        for n in data.index[data._is_tsd]:
+            warnings.warn(f"TsGroup entry {n} was not a Ts, but treating it as one!")
 
-        # Each unit is matched against the same feature, so the feature's bin
-        # assignment can be computed once and looked up per unit instead of being
-        # re-derived from the matched values. `value_from` does the lookup: run
-        # against a series carrying the bin indices on the feature's own
-        # timestamps, it returns the bin of each spike directly, with exactly the
-        # matching and epochs it would have used on the feature itself.
-        # See `_use_prebinned_feature` for when that is worth doing.
-        prebin = _use_prebinned_feature(sum(len(data[n]) for n in keys), len(features))
-        if prebin:
-            feature_bins, n_flat = _flat_bin_index(features, bin_edges)
-            # float64, not the integer index: an integer-valued target sends
-            # `value_from` down a slower path
-            feature_bins = nap.Tsd(
-                t=features.index,
-                d=feature_bins.astype(np.float64),
-                time_support=features.time_support,
-            )
-
-        for i, n in enumerate(keys):
-            if not isinstance(data[n], nap.Ts):
-                warnings.warn(
-                    f"TsGroup entry {n} was not a Ts, but treating it as one!"
-                )
-            if prebin:
-                spike_bins = data[n].value_from(feature_bins).values
-                # A spike with no target in its epoch comes back NaN; it has no
-                # bin and is dropped, as an unmatched value would be by
-                # histogramdd. This filter is not optional: casting NaN to an
-                # integer is undefined behaviour, giving 0 on aarch64 but INT_MIN
-                # on x86, where the bincount below then raises.
-                if np.isnan(spike_bins).any():
-                    spike_bins = spike_bins[~np.isnan(spike_bins)]
-                tcs[i] = _histogram_from_bin_index(
-                    spike_bins.astype(np.intp), n_flat, bin_edges
-                )
-            else:
-                tcs[i] = np.histogramdd(
-                    data[n].value_from(features),
-                    bins=bin_edges,
-                )[0]
+        # Every unit is matched against the same feature, so the whole group is
+        # matched at once, and against the feature's bin index rather than its
+        # values: the bin of each spike's matching sample is counted directly,
+        # with exactly the matching and epochs `value_from` would have used on
+        # the feature itself.
+        tcs, rates = _spike_histograms(
+            data, features, feature_bins, n_flat, bin_edges, epochs
+        )
         with np.errstate(divide="ignore", invalid="ignore"):
             if not return_counts:
                 tcs = (tcs / occupancy) * fs
@@ -439,17 +449,21 @@ def compute_tuning_curves(
         flat_index, n_flat = _flat_bin_index(values, bin_edges)
         counts = _histogram_from_bin_index(flat_index, n_flat, bin_edges)
         counts[counts == 0] = np.nan
-        for i, n in enumerate(keys):
-            tcs[i] = _histogram_from_bin_index(
-                flat_index, n_flat, bin_edges, weights=data[:, i]
-            )
+        tcs = np.stack(
+            [
+                _histogram_from_bin_index(
+                    flat_index, n_flat, bin_edges, weights=data[:, i]
+                )
+                for i in np.arange(len(keys))
+            ]
+        )
         tcs /= counts
         tcs[np.isnan(tcs)] = 0.0
         tcs[:, occupancy == 0.0] = np.nan
 
     attrs = {"occupancy": occupancy, "bin_edges": bin_edges, "fs": fs}
-    if isinstance(data, nap.TsGroup):
-        attrs["rates"] = data.rates
+    if rates is not None:
+        attrs["rates"] = rates
     tcs = xr.DataArray(
         tcs,
         coords={

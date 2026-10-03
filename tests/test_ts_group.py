@@ -923,7 +923,8 @@ class TestTsGroup1:
         times = np.hstack(times)
         index = np.hstack(index)
         data = np.hstack(data)
-        idx = np.argsort(times)
+        # timestamps shared by several units are saved in key order
+        idx = np.argsort(times, kind="stable")
         times = times[idx]
         data = data[idx]
         index = index[idx]
@@ -1493,3 +1494,116 @@ class TestTsGroupStrRepr:
         # str should show all columns without the trailing "..." column
         for i in range(20):
             assert f"col_{i}" in str_output
+
+
+class TestSortedArrayMatchesPerUnit:
+    """TsGroup operations run on one merged sorted array; each must match the
+    same operation applied unit by unit on the members."""
+
+    @staticmethod
+    def make(seed=0, with_tsd=False):
+        rng = np.random.default_rng(seed)
+        # 0.5 s grid: units share timestamps, some land exactly on epoch bounds
+        units = {
+            k: np.unique(rng.integers(0, 400, 150) * 0.5) for k in [9, 1, 4, 20, 7]
+        }
+        units[4] = np.array([])
+        members = {
+            k: (
+                nap.Tsd(t=t, d=np.arange(len(t)) * 1.5)
+                if with_tsd and k % 2
+                else nap.Ts(t)
+            )
+            for k, t in units.items()
+        }
+        group = nap.TsGroup(members, time_support=nap.IntervalSet(0, 200))
+        edges = np.sort(rng.choice(np.arange(410), 24, replace=False)) * 0.5
+        ep = nap.IntervalSet(edges[::2], edges[1::2])
+        return group, members, ep
+
+    @pytest.mark.parametrize("seed", range(3))
+    @pytest.mark.parametrize("bin_size", [None, 0.5, 0.37, 3.0])
+    def test_count(self, seed, bin_size):
+        group, members, ep = self.make(seed)
+        out = group.count(bin_size, ep)
+        for k in group.keys():
+            ref = members[k].count(bin_size, ep)
+            np.testing.assert_array_equal(out.t, ref.t)
+            np.testing.assert_array_equal(out.loc[k].values, ref.values)
+
+    @pytest.mark.parametrize("seed", range(3))
+    @pytest.mark.parametrize("with_tsd", [False, True])
+    def test_restrict(self, seed, with_tsd):
+        group, members, ep = self.make(seed, with_tsd)
+        out = group.restrict(ep)
+        for k in group.keys():
+            ref = members[k].restrict(ep)
+            assert type(out[k]) is type(ref)
+            np.testing.assert_array_equal(out[k].t, ref.t)
+            if with_tsd and k % 2:
+                np.testing.assert_array_equal(out[k].values, ref.values)
+
+    @pytest.mark.parametrize("seed", range(3))
+    @pytest.mark.parametrize("mode", ["closest", "before", "after"])
+    def test_value_from(self, seed, mode):
+        group, members, ep = self.make(seed)
+        target = nap.Tsd(t=np.arange(0, 200, 0.7), d=np.arange(286) * 2.0)
+        out = group.value_from(target, ep, mode=mode)
+        for k in group.keys():
+            ref = members[k].value_from(target, ep, mode=mode)
+            np.testing.assert_array_equal(out[k].t, ref.t)
+            np.testing.assert_array_equal(out[k].values, ref.values)
+
+    @pytest.mark.parametrize("seed", range(3))
+    @pytest.mark.parametrize("align", ["start", "center", "end"])
+    def test_time_diff(self, seed, align):
+        group, members, ep = self.make(seed)
+        out = group.time_diff(align=align, epochs=ep)
+        assert list(out.keys()) == group.keys()
+        for k in group.keys():
+            if len(members[k]) == 0:  # Ts([]).time_diff crashes
+                assert len(out[k]) == 0
+                continue
+            ref = members[k].time_diff(align=align, epochs=ep)
+            np.testing.assert_array_equal(out[k].t, ref.t)
+            np.testing.assert_array_equal(out[k].values, ref.values)
+
+    @pytest.mark.parametrize("seed", range(3))
+    def test_take_and_members(self, seed):
+        group, members, _ = self.make(seed, with_tsd=True)
+        sub = group[[20, 1]]
+        np.testing.assert_array_equal(sub.index, [1, 20])
+        for k in group.keys():
+            assert type(group[k]) is type(members[k])
+            np.testing.assert_array_equal(group[k].t, members[k].t)
+            if k in sub:
+                np.testing.assert_array_equal(sub[k].t, members[k].t)
+
+    @pytest.mark.parametrize("seed", range(3))
+    def test_to_tsd_and_get(self, seed):
+        group, members, _ = self.make(seed)
+        tsd = group.to_tsd()
+        t = np.concatenate([members[k].t for k in group.keys()])
+        keys = np.repeat(group.keys(), [len(members[k]) for k in group.keys()])
+        order = np.argsort(t, kind="stable")  # ties in key order
+        np.testing.assert_array_equal(tsd.t, t[order])
+        np.testing.assert_array_equal(tsd.values, keys[order])
+
+        out = group.get(20.0, 60.0)
+        for k in group.keys():
+            np.testing.assert_array_equal(
+                out[k].t, members[k].t[(members[k].t >= 20) & (members[k].t <= 60)]
+            )
+
+    @pytest.mark.parametrize("seed", range(3))
+    def test_subsample(self, seed):
+        group, members, _ = self.make(seed, with_tsd=True)
+        out = group.subsample(0.3, seed=seed)
+        for k in group.keys():
+            ref = members[k]
+            assert len(out[k]) == int(np.round(len(ref) * 0.3))
+            assert np.all(np.isin(out[k].t, ref.t))
+            if k % 2:  # values follow their timestamps
+                np.testing.assert_array_equal(
+                    out[k].values, ref.values[np.searchsorted(ref.t, out[k].t)]
+                )

@@ -21,6 +21,7 @@ from pynapple.core._core_functions import _concat_ranges
 from pynapple.core._jitted_functions import (
     VALUE_FROM_BSEARCH_RATIO,
     jitrestrict_with_count,
+    jitvaluefrom_histogram,
     jitvaluefrom_ranges,
     use_bsearch_match,
 )
@@ -419,6 +420,74 @@ def test_epoch_with_input_but_no_target(mode):
     )
     assert (got[2:] == -1).all(), "epoch without any target must be all unmatched"
     assert (got[:2] >= 0).all(), "epoch with bracketing targets must all match"
+
+
+# --------------------------------------------------------------------------
+# jitvaluefrom_histogram: the matching above, fused with a per-unit bincount
+# --------------------------------------------------------------------------
+
+
+@pytest.mark.parametrize(
+    "n_in, n_tg, expected_branch",
+    [
+        (4, 8 * VALUE_FROM_BSEARCH_RATIO, "bsearch"),
+        (300, 300, "merge"),
+        (0, 50, "bsearch"),  # no input
+        (50, 0, "merge"),  # no target: nothing counted, everything in epochs
+    ],
+)
+def test_histogram_kernel_agrees_with_oracle(n_in, n_tg, expected_branch):
+    """``jitvaluefrom_histogram`` must count exactly the ``closest`` matches the
+    oracle picks, on both dispatch branches, as it carries its own matching loop.
+    """
+    assert use_bsearch_match(n_in, n_tg) == (expected_branch == "bsearch")
+
+    rng = np.random.default_rng(4)
+    n_units, n_flat = 3, 7
+    # two epochs, plus input and target outside both, which must be ignored
+    starts, ends = np.array([0.0, 60.0]), np.array([40.0, 100.0])
+    time_target_array = rng.uniform(-10, 110, n_tg)
+    # duplicated targets and inputs sitting exactly on a target exercise the
+    # tie-breaking `_vf_match` pins; random floats alone never tie
+    quarter = n_tg // 4
+    time_target_array[quarter : 2 * quarter] = time_target_array[:quarter]
+    time_target_array = np.sort(time_target_array)
+    time_array = rng.uniform(-10, 110, n_in)
+    if n_tg:
+        on_target = rng.choice(time_target_array, n_in // 2)
+        time_array[: n_in // 2] = on_target
+    time_array = np.sort(time_array)
+    unit_pos = rng.integers(0, n_units, n_in)
+    target_bins = rng.integers(0, n_flat, n_tg)
+
+    in_start = np.searchsorted(time_array, starts, side="left")
+    in_stop = np.searchsorted(time_array, ends, side="right")
+    counts, n_in_epochs = jitvaluefrom_histogram(
+        time_array,
+        unit_pos,
+        time_target_array,
+        target_bins,
+        in_start,
+        in_stop,
+        np.searchsorted(time_target_array, starts, side="left"),
+        np.searchsorted(time_target_array, ends, side="right"),
+        n_units,
+        n_flat,
+    )
+
+    matched = oracle(time_array, time_target_array, starts, ends, "closest")
+    kept_units = _concat_ranges(unit_pos, in_start, in_stop, copy=True)
+    expected = np.zeros((n_units, n_flat))
+    np.add.at(
+        expected,
+        (kept_units[matched >= 0], target_bins[matched[matched >= 0]]),
+        1,
+    )
+    assert counts.dtype == np.float64
+    np.testing.assert_array_equal(counts, expected)
+    np.testing.assert_array_equal(
+        n_in_epochs, np.bincount(kept_units, minlength=n_units)
+    )
 
 
 # --------------------------------------------------------------------------

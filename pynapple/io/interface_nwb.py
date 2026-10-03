@@ -16,6 +16,10 @@ import numpy as np
 from tabulate import tabulate
 
 from .. import core as nap
+from ..core._core_functions import _restrict_grouped
+from ..core._jitted_functions import jitunion_isets
+from ..core.metadata_class import _MetadataMixin
+from ..core.ts_group import TsGroup
 
 
 def _get_unique_identifier(full_path_to_key):
@@ -308,7 +312,163 @@ def _make_tsd_frame(obj, lazy_loading=True):
     return data
 
 
-def _make_tsgroup(obj, **kwargs):
+def _tsgroup_from_state(state):
+    """Unpickle a regular TsGroup (see ``_NWBLazyTsGroup.__reduce_ex__``)."""
+    obj = TsGroup.__new__(TsGroup)
+    obj.__setstate__(state)
+    return obj
+
+
+class _NWBLazyTsGroup(TsGroup):
+    """TsGroup over an NWB units table whose spike times are read on first use.
+
+    The units table stores spike times ragged on disk (``spike_times`` plus the
+    cumulative ``spike_times_index``). Building a regular TsGroup would read,
+    concatenate and sort every spike up front. Here only the index and the first
+    and last spike of each unit are read -- enough for keys, metadata, time
+    support and rates -- and ``_times``/``_unit_index`` are materialized, once,
+    the first time an operation needs them. Every TsGroup method goes through
+    those two attributes, so nothing else needs overriding; groups derived from
+    this one (``restrict``, slicing, ...) are regular TsGroups.
+
+    The time support and rates match the eager construction: the time support is
+    the union of each unit's ``[first, last]`` spike span (a single-spike unit
+    has none), spikes outside it are dropped.
+    """
+
+    def __init__(self, spike_times, spike_times_index, ids, metadata=None):
+        """
+        Parameters
+        ----------
+        spike_times : array-like
+            Flat spike times of every unit (h5py dataset for a file on disk).
+        spike_times_index : array-like
+            One past the last spike of each unit in ``spike_times``.
+        ids : array-like of int
+            Unit ids, in table order.
+        metadata : dict, optional
+            Metadata columns, in table order.
+        """
+        self.__dict__["_initialized"] = False
+
+        ids = np.asarray(ids, dtype=np.int64)
+        stops = np.asarray(spike_times_index, dtype=np.int64)
+        starts = np.concatenate([[0], stops[:-1]]).astype(np.int64)
+        counts = stops - starts
+
+        if not hasattr(spike_times, "shape"):  # in-memory lists
+            spike_times = np.asarray(spike_times, dtype=np.float64)
+
+        # first and last spike of each non-empty unit (increasing positions, as
+        # h5py point selection requires)
+        nonempty = counts > 0
+        first = np.asarray(spike_times[starts[nonempty]], dtype=np.float64)
+        last = np.asarray(spike_times[stops[nonempty] - 1], dtype=np.float64)
+
+        # a unit's time support is its [first, last] span; a zero-length span
+        # (single spike) is dropped, as IntervalSet does
+        spans = last > first
+        ts_start, ts_end = jitunion_isets(first[spans], last[spans])
+        if len(ts_start) == 0:
+            raise RuntimeError(
+                "Union of time supports is empty. Consider passing a time support as argument."
+            )
+        time_support = nap.IntervalSet(ts_start, ts_end)
+
+        # spikes outside the time support are dropped: only possible for
+        # single-spike units, whose spike is `first`
+        is_single = ~spans & (counts[nonempty] == 1)
+        if np.any(is_single):
+            single = np.flatnonzero(nonempty)[is_single]
+            t = first[is_single]
+            k = np.searchsorted(ts_start, t, side="right") - 1
+            outside = (k < 0) | (t > ts_end[np.maximum(k, 0)])
+            counts = counts.copy()
+            counts[single[outside]] = 0
+
+        sort_index = np.argsort(ids, kind="stable")
+        self.index = ids[sort_index]
+        _MetadataMixin.__init__(self)
+        self.time_support = time_support
+
+        self._materialized = False
+        self._spike_times = spike_times
+        self._table_ids = ids
+        self._table_starts = starts
+        self._table_stops = stops
+        self._counts = counts[sort_index]
+        # spike times only: no values, no columns
+        self._data = None
+        self._is_tsd = np.zeros(len(ids), dtype=bool)
+        self._columns = None
+
+        if metadata:
+            metadata = {k: np.asarray(v)[sort_index] for k, v in metadata.items()}
+        self._finalize(metadata)
+
+    def _unit_counts(self):
+        # known from the ragged index: rates need no spike read
+        return self._counts
+
+    @property
+    def _times(self):
+        if not self._materialized:
+            self._materialize()
+        return self.__dict__["_materialized_times"]
+
+    @property
+    def _unit_index(self):
+        if not self._materialized:
+            self._materialize()
+        return self.__dict__["_materialized_unit_index"]
+
+    def _materialize(self):
+        """Read every spike once and build the merged sorted arrays."""
+        n = int(self._table_stops[-1]) if len(self._table_stops) else 0
+        times = np.asarray(self._spike_times[:n], dtype=np.float64)
+        unit_index = np.repeat(self._table_ids, self._table_stops - self._table_starts)
+
+        unsorted = np.flatnonzero(times[1:] < times[:-1]) + 1
+        if np.any(~np.isin(unsorted, self._table_starts)):
+            warnings.warn(
+                "Spike times of some units are not sorted: the time support was "
+                "computed from their first and last spikes.",
+                stacklevel=3,
+            )
+        if len(unsorted):
+            order = np.argsort(times, kind="stable")
+            times = times[order]
+            unit_index = unit_index[order]
+
+        # drops what eager construction drops (see `__init__`)
+        ts = self.time_support
+        times, unit_index, _ = _restrict_grouped(
+            times, unit_index, None, ts.start, ts.end
+        )
+
+        self.__dict__["_materialized_times"] = times
+        self.__dict__["_materialized_unit_index"] = unit_index
+        self.__dict__["_materialized"] = True
+        # the file handle is no longer needed
+        self.__dict__.pop("_spike_times", None)
+
+    def __reduce_ex__(self, protocol):
+        # the h5py dataset cannot be pickled or deep-copied: hand over a regular
+        # TsGroup holding the materialized arrays instead
+        cols = self._metadata.columns[1:]  # .drop("rate")
+        plain = TsGroup._from_arrays(
+            self._times,
+            self._unit_index,
+            None,
+            self._is_tsd,
+            self.index,
+            self.time_support,
+            metadata=self._metadata[cols],
+        )
+        return (_tsgroup_from_state, (plain.__getstate__(),))
+
+
+def _make_tsgroup(obj, lazy_loading=True, **kwargs):
     """Helper function to make TsGroup
 
     Parameters
@@ -323,13 +483,8 @@ def _make_tsgroup(obj, **kwargs):
     """
     pynwb = importlib.import_module("pynwb")
     index = obj.id[:]
-    tsgroup = {}
-    for i, gr in zip(index, obj.spike_times_index[:]):
-        # if np.min(np.diff(gr))<0.0:
-        #     break
-        tsgroup[i] = nap.Ts(t=np.array(gr))
 
-    N = len(tsgroup)
+    N = len(index)
     metainfo = {}
     for coln in obj.colnames:
         if coln == "electrode_group":
@@ -374,7 +529,15 @@ def _make_tsgroup(obj, **kwargs):
                 else:
                     pass
 
-    tsgroup = nap.TsGroup(tsgroup, metadata=metainfo)
+    # spike times are only read when first needed
+    tsgroup = _NWBLazyTsGroup(
+        obj.spike_times.data,
+        obj.spike_times_index.data[:],
+        index,
+        metadata=metainfo,
+    )
+    if not lazy_loading:
+        tsgroup._materialize()
 
     return tsgroup
 
@@ -564,6 +727,11 @@ class NWBFile(UserDict):
 
     def close(self):
         """Close the NWB file"""
+        # units groups read their spike times on first use: read them now, while
+        # the file is still open
+        for data in self.data.values():
+            if isinstance(data, _NWBLazyTsGroup) and not data._materialized:
+                data._materialize()
         self.io.close()
 
     def keys(self):

@@ -127,6 +127,8 @@ Carefulness should still apply when calling any pynapple function on a memory ma
 :::
 
 
+Spike times of a units table (`data['units']`) are lazy-loaded as well. Accessing `data['units']` reads only what is needed for the keys, the metadata, the time support and the rates. The spike times are read from the file once, the first time an operation needs them (e.g. `count`, `restrict` or indexing a unit). Calling `data.close()` reads the spike times of any units group that has been accessed before closing the file, so the group stays usable.
+
 To change this behavior, you can pass `lazy_loading=False` when instantiating the `NWBClass`.
 
 

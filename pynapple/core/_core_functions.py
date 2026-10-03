@@ -15,10 +15,14 @@ import numpy as np
 from ._jitted_functions import (  # pjitconvolve,
     jitbin_array,
     jitcount,
+    jitcount_grouped,
+    jitgroup_by_unit,
     jitremove_nan,
     jitrestrict,
     jitrestrict_with_count,
+    jitrestrict_with_count_grouped,
     jitthreshold,
+    jittimediff_grouped,
     jitvaluefrom_ranges,
 )
 from .utils import get_backend
@@ -117,6 +121,62 @@ def _count(time_array, starts, ends, bin_size=None, dtype=None):
         _, d = jitrestrict_with_count(time_array, starts, ends, dtype)
         t = starts + (ends - starts) / 2
     return t, d
+
+
+def _restrict_grouped(time_array, unit_index, data_array, starts, ends):
+    """Restrict a merged multi-unit array (see ``TsGroup``) to intervals.
+
+    Restriction only looks at timestamps, so the per-spike ``unit_index`` and
+    ``data_array`` (None for timestamps-only groups) are carried along with the
+    same selection: one pass covers every unit. Dispatches between
+    :func:`_restrict_ranges` and :func:`jitrestrict` exactly like single
+    objects do.
+    """
+    if _use_searchsorted_restrict(len(starts), len(time_array)):
+        il = np.searchsorted(time_array, starts, side="left")
+        ir = np.searchsorted(time_array, ends, side="right")
+        return (
+            _concat_ranges(time_array, il, ir, copy=True),
+            _concat_ranges(unit_index, il, ir, copy=True),
+            None if data_array is None else _concat_ranges(data_array, il, ir, True),
+        )
+    idx = jitrestrict(time_array, starts, ends)
+    return (
+        time_array[idx],
+        unit_index[idx],
+        None if data_array is None else data_array[idx],
+    )
+
+
+def _group_by_unit(unit_pos, n_units):
+    """``(order, offsets)``: ``order[offsets[i]:offsets[i + 1]]`` are the
+    positions of unit ``i`` in their original order (stable counting sort)."""
+    return jitgroup_by_unit(np.asarray(unit_pos, dtype=np.int64), n_units)
+
+
+def _count_grouped(
+    time_array, unit_pos, n_units, starts, ends, bin_size=None, dtype=None
+):
+    """Multi-unit analogue of :func:`_count`, returning a ``(n_bins, n_units)``
+    count matrix. ``unit_pos`` holds the dense ``0..n_units-1`` column of each
+    timestamp."""
+    if isinstance(bin_size, (float, int)):
+        t, d = jitcount_grouped(
+            time_array, unit_pos, starts, ends, bin_size, n_units, dtype
+        )
+    else:
+        d = jitrestrict_with_count_grouped(
+            time_array, unit_pos, starts, ends, n_units, dtype
+        )
+        t = starts + (ends - starts) / 2
+    return t, d
+
+
+def _time_diff_grouped(time_array, unit_pos, n_units, starts, ends, alpha):
+    """Per-unit differences between subsequent timestamps, within epochs, of a
+    merged multi-unit array. Returns ``(new_t, new_d, offsets)``, unit ``i``
+    holding the block ``[offsets[i]:offsets[i + 1]]``."""
+    return jittimediff_grouped(time_array, unit_pos, starts, ends, n_units, alpha)
 
 
 def _value_from(
