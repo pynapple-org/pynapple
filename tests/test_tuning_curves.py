@@ -1011,6 +1011,48 @@ def test_compute_tuning_curves_named_columns():
     assert responses.coords["unit"].dims == ("unit",)
 
 
+@pytest.mark.parametrize(
+    "epochs",
+    [
+        None,
+        # the second epoch extends past the feature, the third holds no sample
+        nap.IntervalSet([0.0, 40.0, 200.0], [20.0, 150.0, 210.0]),
+    ],
+)
+def test_compute_tuning_curves_sparse_spikes(epochs):
+    """Few spikes against a dense feature: spikes are matched by binary search
+    rather than by merge scan, a branch denser data never reaches."""
+    from pynapple.core._jitted_functions import use_bsearch_match
+
+    t = np.arange(0, 100, 0.001)
+    rng = np.random.default_rng(0)
+    features = nap.Tsd(t=t, d=rng.random(len(t)))
+    group = nap.TsGroup(
+        {
+            # on the first sample, on the last one, and between two samples
+            0: nap.Ts(t=np.array([t[0], t[-1], 50.0005])),
+            7: nap.Ts(t=np.sort(rng.uniform(0, 100, 30))),
+            9: nap.Ts(t=np.array([205.0])),  # only in the sample-free epoch
+        },
+        time_support=nap.IntervalSet(0, 210),
+    )
+    assert use_bsearch_match(len(group.to_tsd()), len(t))
+
+    tcs = nap.compute_tuning_curves(group, features, bins=9, epochs=epochs)
+
+    ep = features.time_support if epochs is None else epochs
+    restricted = group.restrict(ep)
+    for n in group.keys():
+        expected = np.histogramdd(
+            restricted[n].value_from(features.restrict(ep)),
+            bins=tcs.attrs["bin_edges"],
+        )[0]
+        np.testing.assert_array_equal(
+            tcs.sel(unit=n).values, expected / tcs.attrs["occupancy"] * tcs.attrs["fs"]
+        )
+    np.testing.assert_array_equal(tcs.attrs["rates"], restricted.rates)
+
+
 # ------------------------------------------------------------------------------------
 # DISCRETE TUNING CURVE TESTS
 # ------------------------------------------------------------------------------------

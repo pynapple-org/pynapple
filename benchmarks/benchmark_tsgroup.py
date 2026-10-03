@@ -123,6 +123,33 @@ def bench_slicing():
     return "slicing", "size", results
 
 
+def bench_tuning_curves():
+    """`compute_tuning_curves` on spikes: an end-to-end workflow that restricts
+    the group, then matches every unit's spikes against the feature."""
+    rng = np.random.default_rng(2)
+    t = np.arange(0, DURATION, 0.01)  # 100 Hz behavior
+    feature_1d = nap.Tsd(t=t, d=rng.random(len(t)) * 360)
+    feature_2d = nap.TsdFrame(t=t, d=rng.random((len(t), 2)))
+    epochs = fragmented_ep(100)
+    results = {
+        "1D (36 bins)": {},
+        "2D (20x20 bins)": {},
+        "1D, 100 epochs": {},
+    }
+    for n_units in UNIT_COUNTS:
+        tsg = make_tsgroup(n_units)
+        results["1D (36 bins)"][n_units] = median_ms(
+            lambda: nap.compute_tuning_curves(tsg, feature_1d, bins=36)
+        )
+        results["2D (20x20 bins)"][n_units] = median_ms(
+            lambda: nap.compute_tuning_curves(tsg, feature_2d, bins=20)
+        )
+        results["1D, 100 epochs"][n_units] = median_ms(
+            lambda: nap.compute_tuning_curves(tsg, feature_1d, bins=36, epochs=epochs)
+        )
+    return "compute_tuning_curves (100 Hz feature, 2,000 spikes/unit)", "n_units", results
+
+
 def bench_nwb():
     """Loading a units table and the first operation on it (which, with lazy
     units, includes reading the spikes)."""
@@ -196,12 +223,16 @@ def main():
     warm.value_from(nap.Tsd(t=np.linspace(0, DURATION, 100), d=np.zeros(100)))
     warm.to_tsd()
     warm[[0, 1]]
+    nap.compute_tuning_curves(
+        warm, nap.Tsd(t=np.linspace(0, DURATION, 100), d=np.zeros(100)), bins=5
+    )
 
     sections = [
         bench_vs_units,
         bench_count_bin_size,
         bench_restrict_fragmentation,
         bench_slicing,
+        bench_tuning_curves,
     ]
     if not args.no_nwb:
         try:
