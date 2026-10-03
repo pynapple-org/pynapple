@@ -69,7 +69,7 @@ Column name `(0, 1)` is read as cross-correlogram of neuron 0 and 1 with neuron 
 
 ## Lagged cross-correlations
 
-Lagged cross-correlation measures how continuous signals vary together at different time offsets. The input is a regularly sampled `TsdFrame`.
+Lagged cross-correlation measures how continuous signals vary together at different time offsets. Pass a regularly sampled, real-valued `TsdFrame` to [`compute_crosscorrelogram`](pynapple.process.correlograms.compute_crosscorrelogram). Set `windowsize` and leave `binsize=None`: lags are spaced by the timestamp sampling interval, and results are Pearson coefficients rather than spike rates. An explicit `binsize` or `norm=False` raises `ValueError` for continuous inputs.
 
 ```{code-cell} ipython3
 rng = np.random.default_rng(1)
@@ -83,7 +83,7 @@ signals = nap.TsdFrame(
     time_support=nap.IntervalSet(0, 10),
 )
 
-lagged_corr = nap.compute_lagged_crosscorrelation(
+lagged_corr = nap.compute_crosscorrelogram(
     signals, windowsize=0.5, time_units="s"
 )
 print(lagged_corr)
@@ -111,12 +111,18 @@ Passing two `TsdFrame` objects computes all cross-frame column pairs. Their time
 ```{code-cell} ipython3
 reference_frame = signals[:, [0]]
 delayed_frame = signals[:, [1]]
-cross_frame_corr = nap.compute_lagged_crosscorrelation(
+cross_frame_corr = nap.compute_crosscorrelogram(
     (reference_frame, delayed_frame), windowsize=0.5
 )
 ```
 
-The optional `epochs` argument restricts the calculation. Valid observations are pooled across epochs for each lag, but pairs never cross an epoch boundary.
+The optional `ep` argument restricts the calculation. Observations are pooled across epochs for each lag, but pairs never cross an epoch boundary. NaNs propagate only from the overlapping observations of a given column pair and lag. Fewer than two observations or zero variance yield NaN.
+
+For continuous autocorrelation, pass the same frame to [`compute_autocorrelogram`](pynapple.process.correlograms.compute_autocorrelogram). It computes only same-column pairs; the zero-lag coefficient is one for nonconstant finite signals, not zero as in a spike autocorrelogram.
+
+```{code-cell} ipython3
+continuous_autocorr = nap.compute_autocorrelogram(signals, windowsize=0.5)
+```
 
 ## Event-correlograms
 

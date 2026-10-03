@@ -1,5 +1,5 @@
 """
-Functions to compute correlograms of timestamps data.
+Functions to compute spike-train correlograms and continuous correlations.
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ def _validate_correlograms_inputs(func: Callable) -> Callable:
     """
     Decorator to validate input types for correlogram functions.
 
-    Validates that group is a TsGroup (or tuple/list of TsGroups for crosscorrelogram),
+    Validates TsGroup and TsdFrame inputs (homogeneous pairs for crosscorrelogram),
     and checks types for binsize, windowsize, ep, norm, time_units, and event parameters.
 
     Parameters
@@ -42,45 +42,61 @@ def _validate_correlograms_inputs(func: Callable) -> Callable:
         If any parameter has an invalid type.
     """
 
+    sig = inspect.signature(func)
+    cross = func.__name__ == "compute_crosscorrelogram"
+    accepts_continuous = func.__name__ != "compute_eventcorrelogram"
+    group_types = (nap.TsGroup, nap.TsdFrame) if accepts_continuous else (nap.TsGroup,)
+    message = "Invalid type. Parameter group must be of type TsGroup"
+    if cross:
+        message += " or a tuple/list of (TsGroup, TsGroup)."
+    if accepts_continuous:
+        message += " Continuous inputs must be a TsdFrame"
+        message += " or two TsdFrame objects." if cross else "."
+
+    parameters_type = {
+        "binsize": Number,
+        "windowsize": Number,
+        "ep": nap.IntervalSet,
+        "norm": bool,
+        "time_units": str,
+        "reverse": bool,
+        "event": (nap.Ts, nap.Tsd),
+    }
+
     @wraps(func)
     def wrapper(*args, **kwargs):
-        # Validate each positional argument
-        sig = inspect.signature(func)
         kwargs = sig.bind_partial(*args, **kwargs).arguments
-
-        # Only TypeError here
-        if getattr(func, "__name__") == "compute_crosscorrelogram" and isinstance(
-            kwargs["group"], (tuple, list)
-        ):
-            if (
-                not all([isinstance(g, nap.TsGroup) for g in kwargs["group"]])
-                or len(kwargs["group"]) != 2
+        group = kwargs.get("group")
+        if cross and isinstance(group, (tuple, list)):
+            if len(group) != 2 or not any(
+                all(isinstance(g, kind) for g in group) for kind in group_types
             ):
-                raise TypeError(
-                    "Invalid type. Parameter group must be of type TsGroup or a tuple/list of (TsGroup, TsGroup)."
-                )
+                raise TypeError(message)
+            continuous = isinstance(group[0], nap.TsdFrame)
         else:
-            if not isinstance(kwargs["group"], nap.TsGroup):
-                msg = "Invalid type. Parameter group must be of type TsGroup"
-                if getattr(func, "__name__") == "compute_crosscorrelogram":
-                    msg = msg + " or a tuple/list of (TsGroup, TsGroup)."
-                raise TypeError(msg)
+            if not isinstance(group, group_types):
+                raise TypeError(message)
+            continuous = isinstance(group, nap.TsdFrame)
 
-        parameters_type = {
-            "binsize": Number,
-            "windowsize": Number,
-            "ep": nap.IntervalSet,
-            "norm": bool,
-            "time_units": str,
-            "reverse": bool,
-            "event": (nap.Ts, nap.Tsd),
-        }
         for param, param_type in parameters_type.items():
             if param in kwargs:
+                if continuous and param in ("binsize", "ep") and kwargs[param] is None:
+                    continue
                 if not isinstance(kwargs[param], param_type):
                     raise TypeError(
                         f"Invalid type. Parameter {param} must be of type {param_type}."
                     )
+
+        if continuous:
+            if kwargs.get("binsize") is not None:
+                raise ValueError("binsize must be None for continuous signals.")
+            if kwargs.get("norm", True) is not True:
+                raise ValueError("norm must be True for continuous signals.")
+        else:
+            if kwargs.get("binsize") is None:
+                raise TypeError("binsize must be a number for TsGroup inputs.")
+        if kwargs.get("windowsize") is None:
+            raise TypeError("windowsize must be a number.")
 
         # Call the original function with validated inputs
         return func(**kwargs)
@@ -299,80 +315,11 @@ def _lagged_crosscorrelation(
     return correlations
 
 
-def compute_lagged_crosscorrelation(
-    data: Union[
-        nap.TsdFrame,
-        tuple[nap.TsdFrame, nap.TsdFrame],
-        list[nap.TsdFrame],
-    ],
-    windowsize: float,
-    epochs: Optional[nap.IntervalSet] = None,
-    time_units: str = "s",
-) -> pd.DataFrame:
-    """
-    Compute lagged Pearson correlations between columns of continuous data.
-
-    If ``data`` is one ``TsdFrame``, correlations are computed for every unique
-    pair of columns. If ``data`` is a tuple or list of two ``TsdFrame`` objects,
-    correlations are computed for every pair of columns across the two frames.
-    Positive lags indicate that the second signal follows the first signal.
-
-    Valid observations are pooled across epochs for each lag. Pairs never cross
-    an epoch boundary.
-
-    Parameters
-    ----------
-    data : TsdFrame or tuple/list of two TsdFrames
-        The regularly sampled, real-valued continuous signals to correlate.
-        Two frames must have identical timestamps.
-    windowsize : float
-        Maximum lag duration on either side of zero.
-    epochs : IntervalSet, optional
-        Epochs over which correlations are computed. If None, the shared time
-        support of the input data is used.
-    time_units : str, optional
-        Unit of ``windowsize`` (``"s"`` [default], ``"ms"``, or ``"us"``).
-
-    Returns
-    -------
-    pandas.DataFrame
-        Correlations indexed by lag in seconds, with signal pairs as columns.
-
-    Raises
-    ------
-    TypeError
-        If the inputs have invalid types or the signals are complex-valued.
-    ValueError
-        If ``windowsize`` is negative, ``time_units`` is invalid, or two input
-        frames do not have identical timestamps.
-    RuntimeError
-        If the input is not regularly sampled or its sampling interval cannot
-        be determined.
-
-    Notes
-    -----
-    NaN values are propagated, not omitted or interpolated. For each lag and
-    column pair, the result is NaN if either signal contains a NaN among the
-    observations used at that lag, pooled across the selected epochs. NaNs in
-    other columns, outside the selected epochs, or outside the overlapping
-    samples for that lag do not affect the result.
-
-    The result is also NaN when fewer than two observations are available or
-    either signal has zero variance among the observations used at that lag.
-
-    Examples
-    --------
-    >>> import numpy as np
-    >>> import pynapple as nap
-    >>> t = np.arange(100) / 10
-    >>> frame = nap.TsdFrame(t=t, d=np.column_stack((np.sin(t), np.cos(t))))
-    >>> correlation = nap.compute_lagged_crosscorrelation(frame, windowsize=0.5)
-    """
+def _continuous_correlogram(
+    data, windowsize, ep, time_units, auto=False, reverse=False
+):
+    """Compute epoch-bounded Pearson correlations for the requested column pairs."""
     if isinstance(data, (tuple, list)):
-        if len(data) != 2 or not all(isinstance(d, nap.TsdFrame) for d in data):
-            raise TypeError(
-                "data must be a TsdFrame or a tuple/list of two TsdFrame objects."
-            )
         data1, data2 = data
         if not np.array_equal(data1.index.values, data2.index.values):
             raise ValueError("The two TsdFrame objects must have identical timestamps.")
@@ -382,31 +329,30 @@ def compute_lagged_crosscorrelation(
         pair_indices = list(product(range(data1.shape[1]), range(data2.shape[1])))
         pair_labels = list(product(data1.columns, data2.columns))
     else:
-        if not isinstance(data, nap.TsdFrame):
-            raise TypeError(
-                "data must be a TsdFrame or a tuple/list of two TsdFrame objects."
-            )
         data1 = data2 = data
-        if data.shape[1] < 2:
-            raise ValueError("A single TsdFrame must contain at least two columns.")
+        if auto:
+            if data.shape[1] == 0:
+                raise ValueError("Each TsdFrame must contain at least one column.")
+            pair_indices = [(i, i) for i in range(data.shape[1])]
+            pair_labels = data.columns
+        else:
+            if data.shape[1] < 2:
+                raise ValueError("A single TsdFrame must contain at least two columns.")
+            pair_indices = list(combinations(range(data.shape[1]), 2))
+            pair_labels = list(combinations(data.columns, 2))
+            if reverse:
+                pair_indices = [(j, i) for i, j in pair_indices]
+                pair_labels = [(j, i) for i, j in pair_labels]
         time_support = data.time_support
-        pair_indices = list(combinations(range(data.shape[1]), 2))
-        pair_labels = list(combinations(data.columns, 2))
 
-    if not isinstance(windowsize, Number):
-        raise TypeError("windowsize must be a number.")
     if not np.isfinite(windowsize) or windowsize < 0:
         raise ValueError("windowsize must be finite and non-negative.")
-    if epochs is not None and not isinstance(epochs, nap.IntervalSet):
-        raise TypeError("epochs must be an IntervalSet or None.")
-    if not isinstance(time_units, str):
-        raise TypeError("time_units must be a string.")
 
     if np.iscomplexobj(data1.values) or np.iscomplexobj(data2.values):
         raise TypeError("Lagged cross-correlation requires real-valued data.")
 
-    if epochs is not None:
-        time_support = time_support.intersect(epochs)
+    if ep is not None:
+        time_support = time_support.intersect(ep)
 
     time_differences = data1.time_diff().values
     if len(time_differences) == 0:
@@ -446,33 +392,36 @@ def compute_lagged_crosscorrelation(
         max_lag,
     )
     lags = np.arange(-max_lag, max_lag + 1) * sampling_interval
-    columns = pd.MultiIndex.from_tuples(pair_labels)
+    columns = pair_labels if auto else pd.MultiIndex.from_tuples(pair_labels)
 
     return pd.DataFrame(correlations, index=lags, columns=columns, dtype=float)
 
 
 @_validate_correlograms_inputs
 def compute_autocorrelogram(
-    group: nap.TsGroup,
-    binsize: float,
-    windowsize: float,
+    group: Union[nap.TsGroup, nap.TsdFrame],
+    binsize: Optional[float] = None,
+    windowsize: Optional[float] = None,
     ep: Optional[nap.IntervalSet] = None,
     norm: bool = True,
     time_units: str = "s",
 ) -> pd.DataFrame:
     """
-    Computes the autocorrelogram of a group of Ts/Tsd objects.
-    The group can be passed directly as a TsGroup object.
+    Compute spike-train autocorrelograms or continuous-signal autocorrelations.
+
+    A TsGroup produces spike rates, optionally normalized by the average rate.
+    A TsdFrame produces the lagged Pearson correlation of each column with
+    itself. Continuous inputs require binsize=None and norm=True.
 
     Parameters
     ----------
-    group : TsGroup
-        The group of Ts/Tsd objects to auto-correlate
-    binsize : float
-        The bin size. Default is second.
+    group : TsGroup or TsdFrame
+        Spike trains or regularly sampled, real-valued continuous signals.
+    binsize : float or None
+        Required for TsGroup; must be None for TsdFrame. Default units are seconds.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
     windowsize : float
-        The window size. Default is second.
+        Required maximum lag duration on either side of zero, in seconds by default.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
     ep : IntervalSet
         The epoch on which auto-corrs are computed.
@@ -480,6 +429,7 @@ def compute_autocorrelogram(
     norm : bool, optional
          If True, autocorrelograms are normalized to baseline (i.e. divided by the average rate)
          If False, autocorrelograms are returned as the rate (Hz) of the time series (relative to itself)
+         Must be True for TsdFrame inputs, which return Pearson coefficients.
     time_units : str, optional
         The time units of the parameters. They have to be consistent for binsize and windowsize.
         ('s' [default], 'ms', 'us').
@@ -488,13 +438,29 @@ def compute_autocorrelogram(
     -------
     pandas.DataFrame
         DataFrame with time lags as index and unit IDs as columns.
-        Values represent the firing rate (or normalized rate if norm=True).
+        Values represent firing rates (or normalized rates if norm=True) for
+        TsGroup, and Pearson coefficients for TsdFrame. Continuous lags are
+        spaced by the timestamp sampling interval and expressed in seconds.
 
     Raises
     ------
     TypeError
-        If group is not a TsGroup, or if binsize, windowsize, ep, norm, or time_units
-        have invalid types.
+        If group is not a TsGroup or TsdFrame, or if binsize, windowsize, ep, norm, or time_units
+        have invalid types, or if continuous signals are complex-valued.
+    ValueError
+        If a continuous input has binsize != None, norm=False, or a non-finite
+        or negative windowsize.
+    RuntimeError
+        If continuous data are not regularly sampled or their sampling
+        interval cannot be determined.
+
+    Notes
+    -----
+    For continuous data, observations are pooled across the selected epochs
+    at each lag without pairing samples across epoch boundaries. NaNs propagate
+    only from overlapping observations of the corresponding column. Fewer than
+    two observations or zero variance yield NaN. Unlike spike autocorrelograms,
+    the zero-lag continuous coefficient is not set to zero.
 
     Examples
     --------
@@ -502,7 +468,15 @@ def compute_autocorrelogram(
     >>> import numpy as np
     >>> ts_group = nap.TsGroup({0: nap.Ts(t=np.sort(np.random.uniform(0, 10, 100)))})
     >>> autocorr = nap.compute_autocorrelogram(ts_group, binsize=0.01, windowsize=0.1)
+    >>> t = np.arange(100) / 10
+    >>> frame = nap.TsdFrame(t=t, d=np.column_stack((np.sin(t), np.cos(t))))
+    >>> continuous_autocorr = nap.compute_autocorrelogram(frame, windowsize=0.5)
+    >>> np.allclose(continuous_autocorr.loc[0], 1.0)
+    True
     """
+    if isinstance(group, nap.TsdFrame):
+        return _continuous_correlogram(group, windowsize, ep, time_units, auto=True)
+
     if isinstance(ep, nap.IntervalSet):
         newgroup = group.restrict(ep)
     else:
@@ -536,16 +510,28 @@ def compute_autocorrelogram(
 
 @_validate_correlograms_inputs
 def compute_crosscorrelogram(
-    group: Union[nap.TsGroup, tuple[nap.TsGroup, nap.TsGroup], list[nap.TsGroup]],
-    binsize: float,
-    windowsize: float,
+    group: Union[
+        nap.TsGroup,
+        nap.TsdFrame,
+        tuple[nap.TsGroup, nap.TsGroup],
+        tuple[nap.TsdFrame, nap.TsdFrame],
+        list[nap.TsGroup],
+        list[nap.TsdFrame],
+    ],
+    binsize: Optional[float] = None,
+    windowsize: Optional[float] = None,
     ep: Optional[nap.IntervalSet] = None,
     norm: bool = True,
     time_units: str = "s",
     reverse: bool = False,
 ) -> pd.DataFrame:
     """
-    Computes all the pairwise cross-correlograms for TsGroup or list/tuple of two TsGroup.
+    Compute pairwise spike-train correlograms or continuous Pearson correlations.
+
+    A TsdFrame computes correlations between unique column pairs; two TsdFrames
+    compute all cross-frame pairs and must have identical timestamps.
+    Positive lags mean the target follows the reference. Continuous inputs
+    require binsize=None and norm=True; no binning or rate normalization occurs.
 
     If input is TsGroup only, the reference Ts/Tsd and target are chosen based on the builtin itertools.combinations function.
     For example if indexes are [0,1,2], the function computes cross-correlograms
@@ -556,41 +542,62 @@ def compute_crosscorrelogram(
 
     Parameters
     ----------
-    group : TsGroup or tuple/list of two TsGroups
+    group : TsGroup, TsdFrame, tuple, or list
         The group(s) of Ts/Tsd objects to cross-correlate. If a single TsGroup,
         computes pairwise cross-correlograms within the group. If a tuple/list
         of two TsGroups, computes cross-correlograms between all pairs from
-        group1 (reference) and group2 (target).
-    binsize : float
-        The bin size. Default is second.
+        group1 (reference) and group2 (target). TsdFrames contain regularly
+        sampled, real-valued signals and use the same pair selection.
+    binsize : float or None
+        Required for TsGroup; must be None for TsdFrame. Default units are seconds.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
     windowsize : float
-        The window size. Default is second.
+        Required maximum lag duration on either side of zero, in seconds by default.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
     ep : IntervalSet
         The epoch on which cross-corrs are computed.
-        If None, the epoch is the time support of the group.
+        If None, each TsGroup uses its own time support. Continuous inputs use
+        the shared time support of the input frames, intersected with ep if given.
     norm : bool, optional
         If True (default), cross-correlograms are normalized to baseline (i.e. divided by the average rate of the target time series)
         If False, cross-correlograms are returned as the rate (Hz) of the target time series (relative to the reference time series)
+        Must be True for TsdFrame inputs, which return Pearson coefficients.
     time_units : str, optional
         The time units of the parameters. They have to be consistent for binsize and windowsize.
         ('s' [default], 'ms', 'us').
     reverse : bool, optional
-        To reverse the pair order if input is TsGroup
+        Reverse the pair order for a single TsGroup or TsdFrame.
 
     Returns
     -------
     pandas.DataFrame
         DataFrame with time lags as index and pair tuples (i, j) as columns.
         Values represent the firing rate of unit j relative to unit i
-        (or normalized rate if norm=True).
+        (or normalized rate if norm=True) for TsGroup. TsdFrame values are
+        Pearson coefficients with lags in seconds, spaced by the timestamp
+        sampling interval.
 
     Raises
     ------
     TypeError
-        If group is not a TsGroup or tuple/list of two TsGroups, or if binsize,
-        windowsize, ep, norm, time_units, or reverse have invalid types.
+        If group is not a TsGroup, TsdFrame, or a homogeneous pair, or if binsize,
+        windowsize, ep, norm, time_units, or reverse have invalid types, or if
+        continuous signals are complex-valued.
+    ValueError
+        If continuous inputs have binsize != None, norm=False, a non-finite
+        or negative windowsize, or mismatched timestamps.
+    RuntimeError
+        If continuous data are not regularly sampled or their sampling
+        interval cannot be determined.
+
+    Notes
+    -----
+    For continuous data, observations are pooled across the selected epochs
+    at each lag without pairing samples across epoch boundaries. NaNs propagate,
+    rather than being omitted or interpolated: only NaNs in the overlapping
+    observations of the given column pair affect that pair and lag. NaNs in
+    other columns or outside the selected epochs do not affect the result.
+    Fewer than two observations or zero variance yield NaN.
 
     Examples
     --------
@@ -601,7 +608,17 @@ def compute_crosscorrelogram(
     ...     1: nap.Ts(t=np.sort(np.random.uniform(0, 10, 100)))
     ... })
     >>> crosscorr = nap.compute_crosscorrelogram(ts_group, binsize=0.01, windowsize=0.1)
+    >>> t = np.arange(100) / 10
+    >>> frame = nap.TsdFrame(t=t, d=np.column_stack((np.sin(t), np.cos(t))))
+    >>> continuous_crosscorr = nap.compute_crosscorrelogram(frame, windowsize=0.5)
     """
+    if isinstance(group, nap.TsdFrame) or (
+        isinstance(group, (tuple, list)) and isinstance(group[0], nap.TsdFrame)
+    ):
+        return _continuous_correlogram(
+            group, windowsize, ep, time_units, reverse=reverse
+        )
+
     crosscorrs = {}
 
     binsize = nap.TsIndex.format_timestamps(

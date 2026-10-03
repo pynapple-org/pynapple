@@ -69,9 +69,9 @@ def get_event():
 @pytest.mark.parametrize(
     "func",
     [
-        # nap.compute_autocorrelogram,
-        # nap.compute_crosscorrelogram,
-        nap.compute_eventcorrelogram
+        nap.compute_autocorrelogram,
+        nap.compute_crosscorrelogram,
+        nap.compute_eventcorrelogram,
     ],
 )
 @pytest.mark.parametrize(
@@ -231,7 +231,7 @@ def test_lagged_crosscorrelation_matches_numpy_and_lag_sign():
         time_support=nap.IntervalSet(0, 10),
     )
 
-    result = nap.compute_lagged_crosscorrelation(frame, windowsize=0.5)
+    result = nap.compute_crosscorrelogram(frame, windowsize=0.5)
 
     assert isinstance(result, pd.DataFrame)
     assert list(result.columns) == [
@@ -270,7 +270,7 @@ def test_lagged_crosscorrelation_two_frames(container):
         time_support=support,
     )
 
-    result = nap.compute_lagged_crosscorrelation(container((frame1, frame2)), 1)
+    result = nap.compute_crosscorrelogram(container((frame1, frame2)), windowsize=1)
 
     pairs = [(0, 0), (0, 1), (1, 0), (1, 1)]
     assert list(result.columns) == [("a", "c"), ("a", "d"), ("b", "c"), ("b", "d")]
@@ -297,7 +297,7 @@ def test_lagged_crosscorrelation_pools_epochs_without_crossing_boundaries():
         time_support=support,
     )
 
-    result = nap.compute_lagged_crosscorrelation(frame, windowsize=2)
+    result = nap.compute_crosscorrelogram(frame, windowsize=2)
 
     for lag_index, lag in enumerate(range(-2, 3)):
         expected = _reference_lagged_correlation(
@@ -319,8 +319,8 @@ def test_lagged_crosscorrelation_epochs_are_intersected_with_time_support():
         time_support=support,
     )
 
-    result = nap.compute_lagged_crosscorrelation(
-        frame, windowsize=1, epochs=nap.IntervalSet(0, 15)
+    result = nap.compute_crosscorrelogram(
+        frame, windowsize=1, ep=nap.IntervalSet(0, 15)
     )
     expected = _reference_lagged_correlation(
         frame.values, frame.values, np.array([5, 5]), 1, [(0, 1)]
@@ -338,7 +338,7 @@ def test_lagged_crosscorrelation_nan_and_constant_values_propagate():
         time_support=nap.IntervalSet(0, 5),
     )
 
-    result = nap.compute_lagged_crosscorrelation(frame, windowsize=0)
+    result = nap.compute_crosscorrelogram(frame, windowsize=0)
 
     assert np.isnan(result.loc[0.0, ("a", "nan")])
     assert np.isnan(result.loc[0.0, ("a", "constant")])
@@ -350,7 +350,7 @@ def test_lagged_crosscorrelation_nan_is_pair_and_lag_specific(nan_index):
     values[nan_index, 1] = np.nan
     frame = nap.TsdFrame(t=np.arange(7), d=values)
 
-    result = nap.compute_lagged_crosscorrelation(frame, windowsize=2)
+    result = nap.compute_crosscorrelogram(frame, windowsize=2)
 
     for lag in range(-2, 3):
         expected = _reference_lagged_correlation(
@@ -376,7 +376,7 @@ def test_lagged_crosscorrelation_nan_in_two_frames(container, nan_frame, nan_ind
     values[nan_frame][nan_index, 0] = np.nan
     frames = container(nap.TsdFrame(t=np.arange(7), d=v) for v in values)
 
-    result = nap.compute_lagged_crosscorrelation(frames, windowsize=2)
+    result = nap.compute_crosscorrelogram(frames, windowsize=2)
 
     for lag in range(-2, 3):
         expected = _reference_lagged_correlation(
@@ -402,7 +402,7 @@ def test_lagged_crosscorrelation_nan_respects_selected_epochs(two_frames, nan_in
         data = nap.TsdFrame(t=np.arange(12), d=values)
     epochs = nap.IntervalSet(start=[0, 7], end=[3, 11])
 
-    result = nap.compute_lagged_crosscorrelation(data, windowsize=2, epochs=epochs)
+    result = nap.compute_crosscorrelogram(data, windowsize=2, ep=epochs)
 
     selected = values[np.r_[0:4, 7:12]]
     for lag in range(-2, 3):
@@ -425,7 +425,7 @@ def test_lagged_crosscorrelation_is_stable_for_large_offsets():
         time_support=nap.IntervalSet(0, 1000),
     )
 
-    result = nap.compute_lagged_crosscorrelation(frame, windowsize=0)
+    result = nap.compute_crosscorrelogram(frame, windowsize=0)
     expected = np.corrcoef(values[:, 0], values[:, 1])[0, 1]
 
     np.testing.assert_allclose(result.iloc[0, 0], expected, atol=1e-8)
@@ -470,7 +470,7 @@ def test_lagged_crosscorrelation_is_scale_invariant(scales, two_frames):
         pairs = [(0, 1), (0, 2), (1, 2)]
     # The oracle only sees moderate values, not the potentially overflowing data.
     reference = values * np.sign(scales)
-    result = nap.compute_lagged_crosscorrelation(data, windowsize=3)
+    result = nap.compute_crosscorrelogram(data, windowsize=3)
     for lag in range(-3, 4):
         expected = _reference_lagged_correlation(
             reference, reference, [2, 5], lag, pairs
@@ -484,7 +484,7 @@ def test_lagged_crosscorrelation_is_scale_invariant(scales, two_frames):
 def test_lagged_crosscorrelation_extreme_finite_values(scale):
     values = np.arange(-2.0, 3.0) * scale
     frame = nap.TsdFrame(t=np.arange(5), d=np.column_stack((values, values, -values)))
-    result = nap.compute_lagged_crosscorrelation(frame, windowsize=0)
+    result = nap.compute_crosscorrelogram(frame, windowsize=0)
     np.testing.assert_allclose(result.iloc[0], [1.0, -1.0, -1.0])
 
 
@@ -493,7 +493,7 @@ def test_lagged_crosscorrelation_preserves_small_variations(exponent):
     variations = np.array([[0, 3], [1, -2], [-2, 1], [3, 0], [-1, 2]])
     values = np.ldexp(1.0 + variations * 2.0**-50, exponent)
     frame = nap.TsdFrame(t=np.arange(5), d=values)
-    result = nap.compute_lagged_crosscorrelation(frame, windowsize=0)
+    result = nap.compute_crosscorrelogram(frame, windowsize=0)
     expected = np.corrcoef(variations.T)[0, 1]
     np.testing.assert_allclose(result.iloc[0, 0], expected, atol=1e-14)
 
@@ -504,7 +504,7 @@ def test_lagged_crosscorrelation_scale_uses_only_overlapping_samples(nonfinite):
     first = np.array([1e-300, 2e-300, 3e-300, 4e-300, 1e300])
     second = np.array([nonfinite, 1e-300, 2e-300, 3e-300, 4e-300])
     frames = [nap.TsdFrame(t=np.arange(5), d=x[:, None]) for x in (first, second)]
-    result = nap.compute_lagged_crosscorrelation(frames, windowsize=1)
+    result = nap.compute_crosscorrelogram(frames, windowsize=1)
     assert result.loc[1.0].iloc[0] == pytest.approx(1.0)
     assert np.isnan(result.loc[-1.0].iloc[0])
     assert np.isnan(result.loc[0.0].iloc[0])
@@ -585,8 +585,8 @@ def test_lagged_crosscorrelation_is_symmetric_when_inputs_are_swapped():
         t=timestamps, d=rng.normal(size=(50, 1)), columns=["b"], time_support=support
     )
 
-    forward = nap.compute_lagged_crosscorrelation((frame1, frame2), 1)
-    backward = nap.compute_lagged_crosscorrelation((frame2, frame1), 1)
+    forward = nap.compute_crosscorrelogram((frame1, frame2), windowsize=1)
+    backward = nap.compute_crosscorrelogram((frame2, frame1), windowsize=1)
 
     np.testing.assert_allclose(
         forward[("a", "b")].values, backward[("b", "a")].values[::-1]
@@ -601,7 +601,7 @@ def test_lagged_crosscorrelation_time_units():
         time_support=nap.IntervalSet(0, 0.01),
     )
 
-    result = nap.compute_lagged_crosscorrelation(frame, windowsize=2, time_units="ms")
+    result = nap.compute_crosscorrelogram(frame, windowsize=2, time_units="ms")
 
     np.testing.assert_allclose(result.index, np.arange(-2, 3) / 1000)
 
@@ -613,7 +613,7 @@ def test_lagged_crosscorrelation_uses_timestamp_spacing():
         d=np.column_stack((np.arange(10), np.arange(10))),
     )
 
-    result = nap.compute_lagged_crosscorrelation(frame, windowsize=0.2)
+    result = nap.compute_crosscorrelogram(frame, windowsize=0.2)
 
     np.testing.assert_allclose(result.index, np.arange(-2, 3) / 10)
 
@@ -624,7 +624,7 @@ def test_lagged_crosscorrelation_window_smaller_than_sample_interval():
         d=np.column_stack((np.arange(10), np.arange(10))),
     )
 
-    result = nap.compute_lagged_crosscorrelation(frame, windowsize=0.05)
+    result = nap.compute_crosscorrelogram(frame, windowsize=0.05)
 
     np.testing.assert_array_equal(result.index, np.array([0.0]))
     assert result.iloc[0, 0] == pytest.approx(1.0)
@@ -637,7 +637,7 @@ def test_lagged_crosscorrelation_lags_without_observations_are_nan():
         time_support=nap.IntervalSet(0, 3),
     )
 
-    result = nap.compute_lagged_crosscorrelation(frame, windowsize=3)
+    result = nap.compute_crosscorrelogram(frame, windowsize=3)
 
     assert np.isnan(result.loc[-3.0, (0, 1)])
     assert np.isnan(result.loc[3.0, (0, 1)])
@@ -650,8 +650,8 @@ def test_lagged_crosscorrelation_empty_epochs_are_nan():
         time_support=nap.IntervalSet(0, 5),
     )
 
-    result = nap.compute_lagged_crosscorrelation(
-        frame, windowsize=1, epochs=nap.IntervalSet(10, 11)
+    result = nap.compute_crosscorrelogram(
+        frame, windowsize=1, ep=nap.IntervalSet(10, 11)
     )
 
     assert result.isna().all().all()
@@ -681,16 +681,18 @@ def test_lagged_crosscorrelation_kernel_empty_and_short_epochs(counts, max_lag):
 @pytest.mark.parametrize(
     "data, windowsize, epochs, time_units, error, message",
     [
-        (np.arange(3), 1, None, "s", TypeError, "data must be a TsdFrame"),
-        ([], 1, None, "s", TypeError, "data must be a TsdFrame"),
-        (None, "one", None, "s", TypeError, "data must be a TsdFrame"),
+        (np.arange(3), 1, None, "s", TypeError, "Continuous inputs must be a TsdFrame"),
+        ([], 1, None, "s", TypeError, "Continuous inputs must be a TsdFrame"),
+        (None, "one", None, "s", TypeError, "Continuous inputs must be a TsdFrame"),
     ],
 )
 def test_lagged_crosscorrelation_invalid_data(
     data, windowsize, epochs, time_units, error, message
 ):
     with pytest.raises(error, match=message):
-        nap.compute_lagged_crosscorrelation(data, windowsize, epochs, time_units)
+        nap.compute_crosscorrelogram(
+            data, windowsize=windowsize, ep=epochs, time_units=time_units
+        )
 
 
 def test_lagged_crosscorrelation_invalid_parameters():
@@ -700,18 +702,18 @@ def test_lagged_crosscorrelation_invalid_parameters():
         time_support=nap.IntervalSet(0, 5),
     )
 
-    with pytest.raises(TypeError, match="windowsize must be a number"):
-        nap.compute_lagged_crosscorrelation(frame, "one")
+    with pytest.raises(TypeError, match="Parameter windowsize must be of type"):
+        nap.compute_crosscorrelogram(frame, windowsize="one")
     with pytest.raises(ValueError, match="finite and non-negative"):
-        nap.compute_lagged_crosscorrelation(frame, -1)
+        nap.compute_crosscorrelogram(frame, windowsize=-1)
     with pytest.raises(ValueError, match="finite and non-negative"):
-        nap.compute_lagged_crosscorrelation(frame, np.inf)
-    with pytest.raises(TypeError, match="epochs must be an IntervalSet"):
-        nap.compute_lagged_crosscorrelation(frame, 1, epochs=[(0, 1)])
-    with pytest.raises(TypeError, match="time_units must be a string"):
-        nap.compute_lagged_crosscorrelation(frame, 1, time_units=1)
+        nap.compute_crosscorrelogram(frame, windowsize=np.inf)
+    with pytest.raises(TypeError, match="Parameter ep must be of type"):
+        nap.compute_crosscorrelogram(frame, windowsize=1, ep=[(0, 1)])
+    with pytest.raises(TypeError, match="Parameter time_units must be of type"):
+        nap.compute_crosscorrelogram(frame, windowsize=1, time_units=1)
     with pytest.raises(ValueError, match="unrecognized time units type"):
-        nap.compute_lagged_crosscorrelation(frame, 1, time_units="minutes")
+        nap.compute_crosscorrelogram(frame, windowsize=1, time_units="minutes")
 
 
 def test_lagged_crosscorrelation_requires_matching_timestamps():
@@ -719,14 +721,14 @@ def test_lagged_crosscorrelation_requires_matching_timestamps():
     frame2 = nap.TsdFrame(t=np.arange(5) + 0.1, d=np.arange(5)[:, None])
 
     with pytest.raises(ValueError, match="identical timestamps"):
-        nap.compute_lagged_crosscorrelation((frame1, frame2), 1)
+        nap.compute_crosscorrelogram((frame1, frame2), windowsize=1)
 
 
 def test_lagged_crosscorrelation_requires_two_columns_for_one_frame():
     frame = nap.TsdFrame(t=np.arange(5), d=np.arange(5)[:, None])
 
     with pytest.raises(ValueError, match="at least two columns"):
-        nap.compute_lagged_crosscorrelation(frame, 1)
+        nap.compute_crosscorrelogram(frame, windowsize=1)
 
 
 def test_lagged_crosscorrelation_requires_columns_in_both_frames():
@@ -735,7 +737,7 @@ def test_lagged_crosscorrelation_requires_columns_in_both_frames():
     frame = nap.TsdFrame(t=timestamps, d=np.arange(5)[:, None])
 
     with pytest.raises(ValueError, match="at least one column"):
-        nap.compute_lagged_crosscorrelation((empty, frame), 1)
+        nap.compute_crosscorrelogram((empty, frame), windowsize=1)
 
 
 def test_lagged_crosscorrelation_requires_regular_sampling():
@@ -745,7 +747,7 @@ def test_lagged_crosscorrelation_requires_regular_sampling():
     )
 
     with pytest.raises(RuntimeError, match="regularly sampled"):
-        nap.compute_lagged_crosscorrelation(frame, 1)
+        nap.compute_crosscorrelogram(frame, windowsize=1)
 
 
 @pytest.mark.parametrize(
@@ -766,10 +768,12 @@ def test_lagged_crosscorrelation_checks_sampling_once(monkeypatch, jitter, regul
 
     monkeypatch.setattr(type(frame), "time_diff", count_time_diff)
     if regular:
-        np.testing.assert_allclose(nap.compute_lagged_crosscorrelation(frame, 0), 1.0)
+        np.testing.assert_allclose(
+            nap.compute_crosscorrelogram(frame, windowsize=0), 1.0
+        )
     else:
         with pytest.raises(RuntimeError, match="regularly sampled"):
-            nap.compute_lagged_crosscorrelation(frame, 0)
+            nap.compute_crosscorrelogram(frame, windowsize=0)
     assert len(calls) == 1
 
 
@@ -783,7 +787,7 @@ def test_lagged_crosscorrelation_requires_a_sampling_interval(n_samples):
     )
 
     with pytest.raises(RuntimeError, match="sampling interval could not be determined"):
-        nap.compute_lagged_crosscorrelation(frame, 0)
+        nap.compute_crosscorrelogram(frame, windowsize=0)
 
 
 @pytest.mark.parametrize("mode", ["single", "same", "distinct"])
@@ -802,9 +806,7 @@ def test_lagged_crosscorrelation_reuses_identical_inputs(monkeypatch, mode):
         return kernel(first, second, *args)
 
     monkeypatch.setattr(module, "_lagged_crosscorrelation", check_inputs)
-    result = nap.compute_lagged_crosscorrelation(
-        data, windowsize=1, epochs=nap.IntervalSet(3, 8)
-    )
+    result = nap.compute_crosscorrelogram(data, windowsize=1, ep=nap.IntervalSet(3, 8))
     assert calls == [mode != "distinct"]
     np.testing.assert_allclose(result.values, 1.0)
     np.testing.assert_array_equal(frame.values, values)
@@ -826,7 +828,7 @@ def test_lagged_crosscorrelation_rejects_complex_data(complex_frame):
         data[complex_frame] = frame
 
     with pytest.raises(TypeError, match="real-valued data"):
-        nap.compute_lagged_crosscorrelation(data, 1)
+        nap.compute_crosscorrelogram(data, windowsize=1)
 
 
 #################################################
