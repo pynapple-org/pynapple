@@ -13,7 +13,7 @@ from typing import Callable, Optional, Union
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-from numba import jit
+from numba import jit, prange
 
 from .. import core as nap
 
@@ -161,6 +161,147 @@ def _cross_correlogram(
     return C, B
 
 
+@jit(nopython=True, inline="always")
+def _autocorrelogram_unit(times, order, start, stop, width, bin_width, counts):
+    """Accumulate one unit's autocorrelogram counts into ``counts``.
+
+    ``order[start:stop]`` are the positions in ``times`` of the unit's spikes,
+    in time order. Each pair of spikes within the window is visited once, from
+    its earlier spike, and counted at both -lag and +lag. Lags are taken at
+    double scale (``2 * lag``) so that the half-window, ``width / 2``, needs no
+    rounding even when the number of bins is odd.
+    """
+    stop_window = start
+    for i in range(start, stop):
+        t = times[order[i]]
+        if stop_window < i + 1:
+            stop_window = i + 1
+        while stop_window < stop and 2 * (times[order[stop_window]] - t) <= width:
+            stop_window += 1
+        for k in range(i + 1, stop_window):
+            lag2 = 2 * (times[order[k]] - t)
+            # from spike k, spike i lies at -lag: always in the window, since
+            # its left edge is included
+            counts[(width - lag2) // bin_width] += 1
+            # from spike i, spike k lies at +lag: its right edge is excluded
+            if lag2 < width:
+                counts[(width + lag2) // bin_width] += 1
+
+
+@jit(nopython=True, cache=True, parallel=True)
+def _autocorrelogram_counts(times, order, offsets, nbins, binsize):
+    """Autocorrelogram counts of every unit of a group, units in parallel.
+
+    Parameters
+    ----------
+    times : numpy.ndarray
+        Every unit's spike times, merged, as integer nanoseconds.
+    order, offsets : numpy.ndarray
+        ``order[offsets[u]:offsets[u + 1]]`` are the positions in ``times`` of
+        unit ``u``'s spikes, in time order.
+    nbins : int
+        Number of bins, odd.
+    binsize : int
+        Bin size in nanoseconds.
+
+    Returns
+    -------
+    numpy.ndarray
+        ``(n_units, nbins)`` counts. Bin ``j`` of a spike at ``t`` is
+        ``[t - w + j * binsize, t - w + (j + 1) * binsize)`` with
+        ``w = nbins * binsize / 2``, computed exactly in integers. The spike
+        itself is not counted.
+    """
+    n_units = len(offsets) - 1
+    counts = np.zeros((n_units, nbins), dtype=np.int64)
+    width = nbins * binsize  # 2 * w
+    bin_width = 2 * binsize
+    # units are independent and each writes only its own row
+    for u in prange(n_units):
+        _autocorrelogram_unit(
+            times, order, offsets[u], offsets[u + 1], width, bin_width, counts[u]
+        )
+    return counts
+
+
+@jit(nopython=True, cache=True, parallel=True)
+def _crosscorrelogram_counts(
+    times1, order1, offsets1, times2, order2, offsets2, ref, target, nbins, binsize
+):
+    """Cross-correlogram counts of pairs of units, pairs in parallel.
+
+    Parameters
+    ----------
+    times1, times2 : numpy.ndarray
+        Merged spike times of the reference and target groups, as integer
+        nanoseconds (the same array when both come from one group).
+    order1, offsets1, order2, offsets2 : numpy.ndarray
+        ``order[offsets[u]:offsets[u + 1]]`` are the positions in ``times`` of
+        unit ``u``'s spikes, in time order.
+    ref, target : numpy.ndarray
+        Positions of the reference and target unit of each pair.
+    nbins : int
+        Number of bins, odd.
+    binsize : int
+        Bin size in nanoseconds.
+
+    Returns
+    -------
+    numpy.ndarray
+        ``(n_pairs, nbins)`` counts. Bin ``j`` of a reference spike at ``t`` is
+        ``[t - w + j * binsize, t - w + (j + 1) * binsize)`` with
+        ``w = nbins * binsize / 2``, computed exactly in integers.
+    """
+    n_pairs = len(ref)
+    counts = np.zeros((n_pairs, nbins), dtype=np.int64)
+    # lags are taken at double scale so that w = width / 2 needs no rounding
+    width = nbins * binsize
+    bin_width = 2 * binsize
+    # pairs are independent and each writes only its own row
+    for p in prange(n_pairs):
+        start1, stop1 = offsets1[ref[p]], offsets1[ref[p] + 1]
+        start2, stop2 = offsets2[target[p]], offsets2[target[p] + 1]
+        # target spikes in [t - w, t + w), moving forward with t
+        lo = start2
+        hi = start2
+        for i in range(start1, stop1):
+            t2 = 2 * times1[order1[i]]
+            while lo < stop2 and 2 * times2[order2[lo]] < t2 - width:
+                lo += 1
+            if hi < lo:
+                hi = lo
+            while hi < stop2 and 2 * times2[order2[hi]] < t2 + width:
+                hi += 1
+            for k in range(lo, hi):
+                counts[p, (2 * times2[order2[k]] - t2 + width) // bin_width] += 1
+    return counts
+
+
+def _correlogram_bins(binsize, windowsize):
+    """Number of bins, half-window and bin size in integer nanoseconds.
+
+    Spike times are binned in integer nanoseconds (the precision of the time
+    index), so a lag falling exactly on a bin edge always lands in the bin on
+    its right, with no floating-point rounding either way.
+    """
+    nbins = int((windowsize * 2) // binsize)
+    if nbins % 2 == 0:
+        nbins = nbins + 1
+    w = (nbins / 2) * binsize
+    binsize_ns = int(np.round(binsize * 10.0**nap.nap_config.time_index_precision))
+    if binsize_ns < 1:
+        raise ValueError(
+            f"binsize should be at least 1e-{nap.nap_config.time_index_precision} s."
+        )
+    return nbins, w, binsize_ns
+
+
+def _times_ns(times):
+    """Times in seconds as integer nanoseconds (the time index precision)."""
+    precision = 10.0**nap.nap_config.time_index_precision
+    return np.round(np.asarray(times, dtype=np.float64) * precision).astype(np.int64)
+
+
 @_validate_correlograms_inputs
 def compute_autocorrelogram(
     group: nap.TsGroup,
@@ -218,8 +359,6 @@ def compute_autocorrelogram(
     else:
         newgroup = group
 
-    autocorrs = {}
-
     binsize = nap.TsIndex.format_timestamps(
         np.array([binsize], dtype=np.float64), time_units
     )[0]
@@ -227,12 +366,18 @@ def compute_autocorrelogram(
         np.array([windowsize], dtype=np.float64), time_units
     )[0]
 
-    for n in newgroup.keys():
-        spk_time = newgroup[n].index
-        auc, times = _cross_correlogram(spk_time, spk_time, binsize, windowsize)
-        autocorrs[n] = pd.Series(index=np.round(times, 6), data=auc, dtype="float")
+    nbins, w, binsize_ns = _correlogram_bins(binsize, windowsize)
+    order, offsets = newgroup._unit_order
+    counts = _autocorrelogram_counts(
+        _times_ns(newgroup._times), order, offsets, nbins, binsize_ns
+    )
 
-    autocorrs = pd.DataFrame.from_dict(autocorrs)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        autocorrs = counts.T / (np.diff(offsets) * binsize)
+    lags = -w + binsize / 2 + np.arange(nbins) * binsize
+    autocorrs = pd.DataFrame(
+        autocorrs, index=np.round(lags, 6), columns=newgroup.index
+    )
 
     if norm:
         autocorrs = autocorrs / newgroup.get_info("rate")
@@ -312,8 +457,6 @@ def compute_crosscorrelogram(
     ... })
     >>> crosscorr = nap.compute_crosscorrelogram(ts_group, binsize=0.01, windowsize=0.1)
     """
-    crosscorrs = {}
-
     binsize = nap.TsIndex.format_timestamps(
         np.array([binsize], dtype=np.float64), time_units
     )[0]
@@ -325,45 +468,51 @@ def compute_crosscorrelogram(
         if isinstance(ep, nap.IntervalSet):
             newgroup = [group[i].restrict(ep) for i in range(2)]
         else:
-            newgroup = group
-
-        pairs = product(list(newgroup[0].keys()), list(newgroup[1].keys()))
-
-        for i, j in pairs:
-            spk1 = newgroup[0][i].index
-            spk2 = newgroup[1][j].index
-            auc, times = _cross_correlogram(spk1, spk2, binsize, windowsize)
-            if norm:
-                auc /= newgroup[1][j].rate
-            crosscorrs[(i, j)] = pd.Series(index=times, data=auc, dtype="float")
-
-        crosscorrs = pd.DataFrame.from_dict(crosscorrs)
+            newgroup = list(group)
+        pairs = list(product(newgroup[0].keys(), newgroup[1].keys()))
     else:
         if isinstance(ep, nap.IntervalSet):
             newgroup = group.restrict(ep)
         else:
             newgroup = group
-        neurons = list(newgroup.keys())
-        pairs = list(combinations(neurons, 2))
+        pairs = list(combinations(newgroup.keys(), 2))
         if reverse:
             pairs = list(map(lambda n: (n[1], n[0]), pairs))
+        newgroup = [newgroup, newgroup]
 
-        for i, j in pairs:
-            spk1 = newgroup[i].index
-            spk2 = newgroup[j].index
-            auc, times = _cross_correlogram(spk1, spk2, binsize, windowsize)
-            crosscorrs[(i, j)] = pd.Series(index=times, data=auc, dtype="float")
+    if len(pairs) == 0:
+        return pd.DataFrame().astype("float")
 
-        crosscorrs = pd.DataFrame.from_dict(crosscorrs)
+    ref = np.searchsorted(newgroup[0].index, [i for i, _ in pairs])
+    target = np.searchsorted(newgroup[1].index, [j for _, j in pairs])
 
+    nbins, w, binsize_ns = _correlogram_bins(binsize, windowsize)
+    order1, offsets1 = newgroup[0]._unit_order
+    order2, offsets2 = newgroup[1]._unit_order
+    times1 = _times_ns(newgroup[0]._times)
+    times2 = times1 if newgroup[1] is newgroup[0] else _times_ns(newgroup[1]._times)
+    counts = _crosscorrelogram_counts(
+        times1,
+        order1,
+        offsets1,
+        times2,
+        order2,
+        offsets2,
+        ref,
+        target,
+        nbins,
+        binsize_ns,
+    )
+
+    with np.errstate(divide="ignore", invalid="ignore"):
+        crosscorrs = counts.T / (np.diff(offsets1)[ref] * binsize)
         if norm:
-            freq = pd.Series(
-                index=newgroup.metadata_index, data=newgroup.get_info("rate")
-            )
-            freq2 = pd.Series(
-                index=pairs, data=list(map(lambda n: freq.loc[n[1]], pairs))
-            )
-            crosscorrs = crosscorrs / freq2
+            # rate of the target of each pair
+            crosscorrs = crosscorrs / newgroup[1].rates[target]
+    lags = (-w + binsize / 2) + np.arange(nbins) * binsize
+    crosscorrs = pd.DataFrame(
+        crosscorrs, index=lags, columns=pd.MultiIndex.from_tuples(pairs)
+    )
 
     return crosscorrs.astype("float")
 
@@ -433,8 +582,6 @@ def compute_eventcorrelogram(
 
     newgroup = group.restrict(ep)
 
-    crosscorrs = {}
-
     binsize = nap.TsIndex.format_timestamps(
         np.array([binsize], dtype=np.float64), time_units
     )[0]
@@ -442,15 +589,33 @@ def compute_eventcorrelogram(
         np.array([windowsize], dtype=np.float64), time_units
     )[0]
 
-    for n in newgroup.keys():
-        spk_time = newgroup[n].index
-        auc, times = _cross_correlogram(tsd1, spk_time, binsize, windowsize)
-        crosscorrs[n] = pd.Series(index=times, data=auc, dtype="float")
+    if len(newgroup.index) == 0:
+        return pd.DataFrame().astype("float")
 
-    crosscorrs = pd.DataFrame.from_dict(crosscorrs)
+    # the events are a single reference unit, paired with every unit of the group
+    nbins, w, binsize_ns = _correlogram_bins(binsize, windowsize)
+    n_events = len(tsd1)
+    n_units = len(newgroup.index)
+    order, offsets = newgroup._unit_order
+    counts = _crosscorrelogram_counts(
+        _times_ns(tsd1),
+        np.arange(n_events),
+        np.array([0, n_events]),
+        _times_ns(newgroup._times),
+        order,
+        offsets,
+        np.zeros(n_units, dtype=np.int64),
+        np.arange(n_units),
+        nbins,
+        binsize_ns,
+    )
 
-    if norm:
-        crosscorrs = crosscorrs / newgroup.get_info("rate")
+    with np.errstate(divide="ignore", invalid="ignore"):
+        crosscorrs = counts.T / (n_events * binsize)
+        if norm:
+            crosscorrs = crosscorrs / newgroup.rates
+    lags = (-w + binsize / 2) + np.arange(nbins) * binsize
+    crosscorrs = pd.DataFrame(crosscorrs, index=lags, columns=newgroup.index)
 
     return crosscorrs.astype("float")
 

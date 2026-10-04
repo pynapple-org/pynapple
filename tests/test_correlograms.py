@@ -298,6 +298,62 @@ def test_autocorrelogram(group, binsize, windowsize, kwargs, expected):
     np.testing.assert_array_almost_equal(cc.values, expected)
 
 
+@pytest.mark.parametrize("spacing", [0.005, 0.0025])
+def test_autocorrelogram_lags_on_bin_edges(spacing):
+    # Spikes every `spacing` s with 0.01 s bins: half the lags fall exactly on a
+    # bin edge, and each belongs to the bin on its right. Bin [-0.095, -0.085)
+    # then holds the lags -0.095 + k * spacing, minus those reaching before the
+    # first spike.
+    t = np.arange(0, 10, spacing)
+    group = nap.TsGroup({0: nap.Ts(t=t)})
+    cc = nap.compute_autocorrelogram(group, 0.01, 0.1, norm=False)
+    lags = -0.095 + np.arange(int(round(0.01 / spacing))) * spacing
+    count = sum(np.sum(t >= -lag - 1e-12) for lag in lags)
+    np.testing.assert_allclose(cc.loc[-0.09].values, count / (len(t) * 0.01))
+
+
+@pytest.mark.parametrize("spacing", [0.005, 0.0025])
+def test_crosscorrelogram_lags_on_bin_edges(spacing):
+    # A unit cross-correlated with an identical copy of itself must match its
+    # autocorrelogram outside lag 0, including lags exactly on bin edges.
+    t = np.arange(0, 10, spacing)
+    group = nap.TsGroup({0: nap.Ts(t=t), 1: nap.Ts(t=t)})
+    cc = nap.compute_crosscorrelogram(group, 0.01, 0.1, norm=False)
+    ac = nap.compute_autocorrelogram(group, 0.01, 0.1, norm=False)
+    nonzero = ac.index != 0
+    np.testing.assert_array_equal(cc[(0, 1)].values[nonzero], ac[0].values[nonzero])
+    cc2 = nap.compute_crosscorrelogram(
+        (group[[0]], group[[1]]), 0.01, 0.1, norm=False
+    )
+    np.testing.assert_array_equal(cc2.values, cc.values)
+
+
+@pytest.mark.parametrize("spacing", [0.005, 0.0025])
+def test_eventcorrelogram_lags_on_bin_edges(spacing):
+    # Events correlated with a unit must match the cross-correlogram that takes
+    # the events as reference, including lags exactly on bin edges.
+    t = np.arange(0, 10, spacing)
+    event = nap.Ts(t=t)
+    group = nap.TsGroup({0: nap.Ts(t=t), 1: nap.Ts(t=t[::3])})
+    ec = nap.compute_eventcorrelogram(group, event, 0.01, 0.1, norm=False)
+    cc = nap.compute_crosscorrelogram(
+        (nap.TsGroup({0: event}), group), 0.01, 0.1, norm=False
+    )
+    np.testing.assert_array_equal(ec.values, cc.values)
+
+
+def test_crosscorrelogram_binsize_below_precision():
+    group = nap.TsGroup({0: nap.Ts(t=np.array([0.0, 1.0])), 1: nap.Ts(t=[0.5, 2.0])})
+    with pytest.raises(ValueError, match="binsize should be at least"):
+        nap.compute_crosscorrelogram(group, 1e-10, 1e-9)
+
+
+def test_autocorrelogram_binsize_below_precision():
+    group = nap.TsGroup({0: nap.Ts(t=np.array([0.0, 1.0]))})
+    with pytest.raises(ValueError, match="binsize should be at least"):
+        nap.compute_autocorrelogram(group, 1e-10, 1e-9)
+
+
 @pytest.mark.parametrize(
     "group, event, binsize, windowsize, kwargs, expected",
     [
