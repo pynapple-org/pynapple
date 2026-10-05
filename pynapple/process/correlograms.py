@@ -375,9 +375,7 @@ def compute_autocorrelogram(
     with np.errstate(divide="ignore", invalid="ignore"):
         autocorrs = counts.T / (np.diff(offsets) * binsize)
     lags = -w + binsize / 2 + np.arange(nbins) * binsize
-    autocorrs = pd.DataFrame(
-        autocorrs, index=np.round(lags, 6), columns=newgroup.index
-    )
+    autocorrs = pd.DataFrame(autocorrs, index=np.round(lags, 6), columns=newgroup.index)
 
     if norm:
         autocorrs = autocorrs / newgroup.get_info("rate")
