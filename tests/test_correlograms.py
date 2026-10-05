@@ -322,9 +322,7 @@ def test_crosscorrelogram_lags_on_bin_edges(spacing):
     ac = nap.compute_autocorrelogram(group, 0.01, 0.1, norm=False)
     nonzero = ac.index != 0
     np.testing.assert_array_equal(cc[(0, 1)].values[nonzero], ac[0].values[nonzero])
-    cc2 = nap.compute_crosscorrelogram(
-        (group[[0]], group[[1]]), 0.01, 0.1, norm=False
-    )
+    cc2 = nap.compute_crosscorrelogram((group[[0]], group[[1]]), 0.01, 0.1, norm=False)
     np.testing.assert_array_equal(cc2.values, cc.values)
 
 
