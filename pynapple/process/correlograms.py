@@ -1,5 +1,5 @@
 """
-Functions to compute spike-train correlograms and continuous correlations.
+Functions to compute lagged correlations of continuous and timestamps data (correlograms).
 """
 
 from __future__ import annotations
@@ -354,10 +354,10 @@ def _continuous_correlogram(
     if ep is not None:
         time_support = time_support.intersect(ep)
 
-    time_differences = data1.time_diff().values
+    time_differences = data1.time_diff(align="start").values
     if len(time_differences) == 0:
         raise RuntimeError("The sampling interval could not be determined.")
-    sampling_interval = time_differences[0]
+    sampling_interval = np.median(time_differences)
     if not np.isfinite(sampling_interval) or sampling_interval <= 0:
         raise RuntimeError("The sampling interval must be finite and positive.")
     relative_variation = (
@@ -366,10 +366,26 @@ def _continuous_correlogram(
     if not np.all(relative_variation < 1e-6):
         raise RuntimeError("Lagged cross-correlation requires regularly sampled data.")
 
+    # Round only within the precision lost when subtracting timestamps.
+    timestamp_scale = max(abs(data1.index[0]), abs(data1.index[-1]))
+    roundoff = min(np.spacing(timestamp_scale), np.ptp(time_differences))
+    rounded_interval = np.round(sampling_interval, 9)
+    if rounded_interval > 0 and abs(rounded_interval - sampling_interval) <= roundoff:
+        sampling_interval = rounded_interval
+
     window_seconds = nap.TsIndex.format_timestamps(
         np.array([windowsize], dtype=np.float64), time_units
     )[0]
-    max_lag = int(np.floor(window_seconds / sampling_interval + 1e-12))
+    window_samples = window_seconds / sampling_interval
+    nearest_lag = np.rint(window_samples)
+    max_lag = int(np.floor(window_samples))
+    if np.isclose(
+        window_seconds,
+        nearest_lag * sampling_interval,
+        rtol=0,
+        atol=nearest_lag * roundoff + np.spacing(window_seconds),
+    ):
+        max_lag = int(nearest_lag)
 
     indices, counts = nap._jitted_functions.jitrestrict_with_count(
         data1.index.values, time_support.start, time_support.end
@@ -466,8 +482,14 @@ def compute_autocorrelogram(
     --------
     >>> import pynapple as nap
     >>> import numpy as np
+
+    For spike trains, specify both the bin size and the window:
+
     >>> ts_group = nap.TsGroup({0: nap.Ts(t=np.sort(np.random.uniform(0, 10, 100)))})
     >>> autocorr = nap.compute_autocorrelogram(ts_group, binsize=0.01, windowsize=0.1)
+
+    For continuous signals, the timestamps determine the lag spacing:
+
     >>> t = np.arange(100) / 10
     >>> frame = nap.TsdFrame(t=t, d=np.column_stack((np.sin(t), np.cos(t))))
     >>> continuous_autocorr = nap.compute_autocorrelogram(frame, windowsize=0.5)
@@ -603,11 +625,17 @@ def compute_crosscorrelogram(
     --------
     >>> import pynapple as nap
     >>> import numpy as np
+
+    For spike trains, specify both the bin size and the window:
+
     >>> ts_group = nap.TsGroup({
     ...     0: nap.Ts(t=np.sort(np.random.uniform(0, 10, 100))),
     ...     1: nap.Ts(t=np.sort(np.random.uniform(0, 10, 100)))
     ... })
     >>> crosscorr = nap.compute_crosscorrelogram(ts_group, binsize=0.01, windowsize=0.1)
+
+    For continuous signals, the timestamps determine the lag spacing:
+
     >>> t = np.arange(100) / 10
     >>> frame = nap.TsdFrame(t=t, d=np.column_stack((np.sin(t), np.cos(t))))
     >>> continuous_crosscorr = nap.compute_crosscorrelogram(frame, windowsize=0.5)

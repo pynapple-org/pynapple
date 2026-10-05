@@ -136,6 +136,48 @@ def test_continuous_explicit_none_and_positional_arguments(signals, function):
 @pytest.mark.parametrize(
     "function", [nap.compute_autocorrelogram, nap.compute_crosscorrelogram]
 )
+@pytest.mark.parametrize("rate", [6, 10, 100, 30000])
+@pytest.mark.parametrize("origin", [1000, 10000])
+def test_continuous_lag_window_is_independent_of_timestamp_origin(
+    function, rate, origin
+):
+    values = np.random.default_rng(640).normal(size=(100, 2))
+    frame = nap.TsdFrame(t=origin + np.arange(100) / rate, d=values)
+    result = function(frame, windowsize=5 / rate)
+
+    assert len(result) == 11
+    np.testing.assert_allclose(result.index, np.arange(-5, 6) / rate, atol=1e-11)
+
+
+@pytest.mark.parametrize(
+    "function", [nap.compute_autocorrelogram, nap.compute_crosscorrelogram]
+)
+@pytest.mark.parametrize("rate", [300, 30000, 44100])
+def test_continuous_lag_spacing_preserves_fractional_sampling_intervals(function, rate):
+    frame = nap.TsdFrame(t=np.arange(100) / rate, d=np.arange(200).reshape(100, 2))
+    result = function(frame, windowsize=5 / rate)
+
+    np.testing.assert_allclose(
+        result.index, np.arange(-5, 6) / rate, rtol=1e-12, atol=0
+    )
+
+
+@pytest.mark.parametrize(
+    "function", [nap.compute_autocorrelogram, nap.compute_crosscorrelogram]
+)
+@pytest.mark.parametrize("window, max_lag", [(0.499999, 4), (0.5, 5), (0.500001, 5)])
+def test_continuous_lag_window_does_not_include_the_next_sample(
+    function, window, max_lag
+):
+    frame = nap.TsdFrame(t=1000 + np.arange(100) / 10, d=np.arange(200).reshape(100, 2))
+    result = function(frame, windowsize=window)
+
+    np.testing.assert_allclose(result.index, np.arange(-max_lag, max_lag + 1) / 10)
+
+
+@pytest.mark.parametrize(
+    "function", [nap.compute_autocorrelogram, nap.compute_crosscorrelogram]
+)
 @pytest.mark.parametrize("window", [-1, np.nan, np.inf])
 def test_continuous_invalid_window(function, window, signals):
     with pytest.raises(ValueError):

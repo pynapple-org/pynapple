@@ -71,6 +71,8 @@ Column name `(0, 1)` is read as cross-correlogram of neuron 0 and 1 with neuron 
 
 Lagged cross-correlation measures how continuous signals vary together at different time offsets. Pass a regularly sampled, real-valued `TsdFrame` to [`compute_crosscorrelogram`](pynapple.process.correlograms.compute_crosscorrelogram). Set `windowsize` and leave `binsize=None`: lags are spaced by the timestamp sampling interval, and results are Pearson coefficients rather than spike rates. An explicit `binsize` or `norm=False` raises `ValueError` for continuous inputs.
 
+First, generate two signals, with the second delayed by 0.1 seconds:
+
 ```{code-cell} ipython3
 rng = np.random.default_rng(1)
 timestamps = np.arange(1000) / 100
@@ -82,7 +84,11 @@ signals = nap.TsdFrame(
     columns=["reference", "delayed"],
     time_support=nap.IntervalSet(0, 10),
 )
+```
 
+Then compute their correlation over lags from -0.5 to +0.5 seconds:
+
+```{code-cell} ipython3
 lagged_corr = nap.compute_crosscorrelogram(
     signals, windowsize=0.5, time_units="s"
 )
@@ -122,6 +128,17 @@ For continuous autocorrelation, pass the same frame to [`compute_autocorrelogram
 
 ```{code-cell} ipython3
 continuous_autocorr = nap.compute_autocorrelogram(signals, windowsize=0.5)
+```
+
+```{code-cell} ipython3
+:tags: [hide-input]
+fig, ax = plt.subplots(figsize=(8, 3), constrained_layout=True)
+for column in continuous_autocorr.columns:
+    ax.plot(continuous_autocorr.index, continuous_autocorr[column], label=column)
+ax.axvline(0, color="0.5", linestyle=":")
+ax.set(xlabel="Lag (s)", ylabel="Pearson autocorrelation")
+ax.legend()
+plt.show()
 ```
 
 ## Event-correlograms
