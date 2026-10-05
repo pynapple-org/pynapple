@@ -20,7 +20,6 @@ import pandas as pd
 from tabulate import tabulate
 
 from ._core_functions import (
-    _concat_ranges,
     _count,
     _count_clusters,
     _count_grouped,
@@ -533,9 +532,9 @@ class TsGroup(_MetadataMixin):
         if len(self.index) == 0:
             return np.zeros(len(self._clusters), dtype=np.int64)
         lo = self.index[0]
-        lut = np.empty(self.index[-1] - lo + 1, dtype=np.int64)
-        lut[self.index - lo] = np.arange(len(self.index))
-        return lut[self._clusters - lo]
+        key_to_column = np.empty(self.index[-1] - lo + 1, dtype=np.int64)
+        key_to_column[self.index - lo] = np.arange(len(self.index))
+        return key_to_column[self._clusters - lo]
 
     @classmethod
     def _from_arrays(
@@ -1064,39 +1063,79 @@ class TsGroup(_MetadataMixin):
         mode: Literal["closest", "before", "after"] = "closest",
     ) -> TsGroup:
         """
-        Replace the value of each Ts/Tsd object within the Ts group with the closest value from tsd argument
+        Give each timestamp of the group a value taken from ``tsd``.
+
+        For every timestamp of every unit, the matching sample of ``tsd`` is
+        found and its value is assigned to the timestamp. A typical use is to
+        get the position of the animal at each spike.
+
+        The match uses only the samples of ``tsd`` in the same epoch of
+        ``ep`` as the timestamp. A timestamp with no matching sample in its
+        epoch gets NaN (integer values are then converted to float).
+
+        The returned TsGroup:
+
+        - holds only the timestamps inside ``ep``,
+        - has ``ep`` as its time support, with the rates computed again on it,
+        - holds members of the same type as ``tsd``: ``Tsd``, ``TsdFrame``
+          (with the columns of ``tsd``) or ``TsdTensor``. Values held before
+          by the group are replaced.
+        - keeps the keys and the metadata of the group.
 
         Parameters
         ----------
-        tsd : Tsd
-            The Tsd object holding the values to replace
-        ep : IntervalSet (optional)
-            The IntervalSet object to restrict the operation.
-            If None, the time support of the tsd input object is used.
-        mode: literal, either 'closest', 'before', 'after'
-            If closest, replace value with value from Tsd/TsdFrame/TsdTensor, if before gets the
-            first value before, if after the first value after.
+        tsd : Tsd, TsdFrame or TsdTensor
+            The object that holds the values to assign.
+        ep : IntervalSet, optional
+            The epochs in which the timestamps are kept and matched. If None,
+            the time support of ``tsd`` is used.
+        mode : {'closest', 'before', 'after'}, optional
+            How a timestamp is matched to a sample of ``tsd``:
+
+            - ``'closest'`` (default): the nearest sample.
+            - ``'before'``: the last sample at or before the timestamp.
+            - ``'after'``: the first sample at or after the timestamp.
 
         Returns
         -------
-        out : TsGroup
-            TsGroup object with the new values
+        TsGroup
+            A new TsGroup whose members hold the values from ``tsd``.
+
+        Raises
+        ------
+        TypeError
+            If ``tsd`` is not a Tsd, TsdFrame or TsdTensor, or if ``ep`` is not
+            an IntervalSet.
+        ValueError
+            If ``mode`` is not 'closest', 'before' or 'after'.
 
         Examples
         --------
         >>> import pynapple as nap
         >>> import numpy as np
-        >>> tmp = {0: nap.Ts(t=np.arange(0, 200), time_units='s'),
-        ...        1: nap.Ts(t=np.arange(0, 200, 0.5), time_units='s'),
-        ...        2: nap.Ts(t=np.arange(0, 300, 0.25), time_units='s')}
-        >>> tsgroup = nap.TsGroup(tmp)
-        >>> ep = nap.IntervalSet(start=0, end=100, time_units='s')
+        >>> tsgroup = nap.TsGroup({0: nap.Ts(t=[1.0, 2.5, 6.0]), 3: nap.Ts(t=[2.0, 4.6])})
 
-        The variable tsd is a time series object containing the values to assign, for example the tracking data:
+        ``tsd`` holds the values to assign, for example the position of the
+        animal sampled every second:
 
-        >>> tsd = nap.Tsd(t=np.arange(0,100), d=np.random.rand(100), time_units='s')
-        >>> ep = nap.IntervalSet(start = 0, end = 100, time_units = 's')
-        >>> newtsgroup = tsgroup.value_from(tsd, ep)
+        >>> tsd = nap.Tsd(t=np.arange(0.0, 6.0), d=np.arange(0.0, 60.0, 10.0))
+        >>> newtsgroup = tsgroup.value_from(tsd)
+        >>> newtsgroup[0]
+        Time (s)
+        ----------  --
+        1           10
+        2.5         30
+        dtype: float64, shape: (2,)
+
+        The timestamp at 6.0 s is outside the time support of ``tsd`` and is
+        dropped. With ``mode="before"``, 2.5 s takes the sample at 2 s:
+
+        >>> tsgroup.value_from(tsd, mode="before")[0]
+        Time (s)
+        ----------  --
+        1           10
+        2.5         20
+        dtype: float64, shape: (2,)
 
         """
         if not isinstance(tsd, _BaseTsd):
@@ -1116,14 +1155,14 @@ class TsGroup(_MetadataMixin):
         ends = ep.end
         # matching depends only on each timestamp, not on its unit: one pass
         # over the merged array covers every unit
-        times, values = _value_from(
-            self._times, tsd.index.values, tsd.values, starts, ends, mode=mode
-        )
-        clusters = _concat_ranges(
+        times, values, clusters = _value_from(
+            self._times,
+            tsd.index.values,
+            tsd.values,
+            starts,
+            ends,
             self._clusters,
-            np.searchsorted(self._times, starts, side="left"),
-            np.searchsorted(self._times, ends, side="right"),
-            copy=True,
+            mode=mode,
         )
 
         cols = self._metadata.columns[1:]  # .drop("rate")
@@ -1147,43 +1186,63 @@ class TsGroup(_MetadataMixin):
         dtype: Optional[Union[str, type, np.dtype]] = None,
     ) -> TsdFrame:
         """
-        Count occurrences of events within bin_size or within a set of bins defined as an IntervalSet.
-        You can call this function in multiple ways :
+        Count the timestamps of each unit in time bins.
 
-        1. *tsgroup.count(bin_size=1, time_units = 'ms')*
-        -> Count occurrence of events within a 1 ms bin defined on the time support of the object.
+        There are two ways to define the bins:
 
-        2. *tsgroup.count(1, ep=my_epochs)*
-        -> Count occurent of events within a 1 second bin defined on the IntervalSet my_epochs.
+        - With ``bin_size``: each epoch of ``ep`` is cut into bins of
+          ``bin_size``, starting at the start of the epoch. The last bin of an
+          epoch can be shorter than ``bin_size``. It is kept only if its
+          center is at or before the end of the epoch. Otherwise, its
+          timestamps are not counted.
+        - Without ``bin_size``: each epoch of ``ep`` is one bin.
 
-        3. *tsgroup.count(ep=my_bins)*
-        -> Count occurent of events within each epoch of the intervalSet object my_bins
+        Timestamps outside ``ep`` are not counted. The time of each bin is its
+        center.
 
-        4. *tsgroup.count()*
-        -> Count occurent of events within each epoch of the time support.
+        Typical calls:
 
-        bin_size should be seconds unless specified.
-        If bin_size is used and no epochs is passed, the data will be binned based on the time support of the object.
+        - ``tsgroup.count(0.1)``: bins of 0.1 s over the time support.
+        - ``tsgroup.count(100, time_units="ms")``: bins of 100 ms over the
+          time support.
+        - ``tsgroup.count(0.1, ep=epochs)``: bins of 0.1 s inside each epoch
+          of ``epochs``.
+        - ``tsgroup.count(ep=epochs)``: one count per epoch of ``epochs``.
+        - ``tsgroup.count()``: one count per epoch of the time support.
 
         Parameters
         ----------
-        bin_size : None or float, optional
-            The bin size (default is second)
-        ep : None or IntervalSet, optional
-            IntervalSet to restrict the operation
-        time_units : str, optional
-            Time units of bin size ('us', 'ms', 's' [default])
-        dtype: type, optional
-            Data type for the count. Default is np.int64.
+        bin_size : float or int, optional
+            Size of the bins, in ``time_units``. If None (default), each epoch
+            of ``ep`` is one bin.
+        ep : IntervalSet, optional
+            The epochs to count in. If None (default), the time support of the
+            group is used.
+        time_units : {'s', 'ms', 'us'}, optional
+            Unit of ``bin_size``. Default is 's'.
+        dtype : str, type or np.dtype, optional
+            Data type of the counts. Default is np.int64.
 
         Returns
         -------
-        out: TsdFrame
-            A TsdFrame with the columns being the index of each item in the TsGroup.
+        TsdFrame
+            The counts, with one row per bin and one column per unit. The
+            columns are the keys of the group, the time support is ``ep``,
+            and the metadata of the group (without ``rate``) is attached to
+            the columns.
+
+        Raises
+        ------
+        TypeError
+            If ``bin_size`` is not a float or an int, or if ``ep`` is not an
+            IntervalSet.
+        ValueError
+            If ``time_units`` is not 's', 'ms' or 'us', or if ``dtype`` is not
+            a valid numpy dtype.
 
         Examples
         --------
-        This example shows how to count events within bins of 0.1 second for the first 100 seconds.
+        Count the timestamps in bins of 1 second over the first 100 seconds:
 
         >>> import pynapple as nap
         >>> import numpy as np
@@ -1212,6 +1271,15 @@ class TsGroup(_MetadataMixin):
         98.5          1    2    4
         99.5          1    2    4
         dtype: int64, shape: (100, 3)
+
+        Without ``bin_size``, each epoch is one bin, centered on the epoch:
+
+        >>> tsgroup.count(ep=nap.IntervalSet(start=[0, 100], end=[10, 150]))
+        Time (s)      0    1    2
+        ----------  ---  ---  ---
+        5            11   21   41
+        125          51  101  201
+        dtype: int64, shape: (2, 3)
 
         """
         if bin_size is not None:

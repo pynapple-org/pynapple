@@ -767,6 +767,23 @@ def test_jitgroup_by_unit(seed):
     np.testing.assert_array_equal(np.diff(offsets), [len(u) for u in units])
 
 
+@pytest.mark.parametrize("mode", ["closest", "before", "after"])
+def test_value_from_extra_arrays(mode):
+    from pynapple.core._core_functions import _value_from
+
+    ep, ts, tsd, _ = get_example_dataset()
+    labels = np.arange(len(ts.t))
+    t, d, sliced, none = _value_from(
+        ts.t, tsd.t, tsd.d, ep.start, ep.end, labels, None, mode=mode
+    )
+    t_ref, d_ref = _value_from(ts.t, tsd.t, tsd.d, ep.start, ep.end, mode=mode)
+    np.testing.assert_array_equal(t, t_ref)
+    np.testing.assert_array_equal(d, d_ref)
+    # the extra array is sliced the same way as the timestamps
+    np.testing.assert_array_equal(ts.t[sliced], t)
+    assert none is None
+
+
 @pytest.mark.parametrize("seed", range(5))
 def test_jitcount_clusters(seed):
     from pynapple.core._core_functions import _count_clusters

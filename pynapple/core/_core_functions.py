@@ -189,8 +189,17 @@ def _value_from(
     data_target_array,
     starts,
     ends,
+    *arrays,
     mode: Literal["closest", "before", "after"] = "closest",
 ):
+    """Values of ``data_target_array`` matched to the timestamps of
+    ``time_array`` inside the epochs ``[starts, ends]``.
+
+    Returns ``(times, values, *arrays)``: the timestamps of ``time_array``
+    inside the epochs, their matched values, and each extra array of
+    ``arrays`` (aligned with ``time_array``, ``None`` allowed) sliced the same
+    way as the timestamps.
+    """
     # replace flag with int
     if mode == "closest":
         mode = 1
@@ -252,7 +261,14 @@ def _value_from(
             data_target_array[take_idx] if values is None else values
         )
 
-    return new_time_array, new_data_array
+    return (
+        new_time_array,
+        new_data_array,
+        *(
+            None if a is None else _concat_ranges(a, in_start, in_stop, copy=True)
+            for a in arrays
+        ),
+    )
 
 
 def _dropna(time_array, data_array, starts, ends, update_time_support, ndim):
