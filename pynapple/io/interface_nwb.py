@@ -16,7 +16,7 @@ import numpy as np
 from tabulate import tabulate
 
 from .. import core as nap
-from ..core._core_functions import _restrict_grouped
+from ..core._core_functions import _restrict_arrays
 from ..core._jitted_functions import jitunion_isets
 from ..core.metadata_class import _MetadataMixin
 from ..core.ts_group import TsGroup
@@ -326,7 +326,7 @@ class _NWBLazyTsGroup(TsGroup):
     cumulative ``spike_times_index``). Building a regular TsGroup would read,
     concatenate and sort every spike up front. Here only the index and the first
     and last spike of each unit are read -- enough for keys, metadata, time
-    support and rates -- and ``_times``/``_unit_index`` are materialized, once,
+    support and rates -- and ``_times``/``_clusters`` are materialized, once,
     the first time an operation needs them. Every TsGroup method goes through
     those two attributes, so nothing else needs overriding; groups derived from
     this one (``restrict``, slicing, ...) are regular TsGroups.
@@ -417,16 +417,16 @@ class _NWBLazyTsGroup(TsGroup):
         return self.__dict__["_materialized_times"]
 
     @property
-    def _unit_index(self):
+    def _clusters(self):
         if not self._materialized:
             self._materialize()
-        return self.__dict__["_materialized_unit_index"]
+        return self.__dict__["_materialized_clusters"]
 
     def _materialize(self):
         """Read every spike once and build the merged sorted arrays."""
         n = int(self._table_stops[-1]) if len(self._table_stops) else 0
         times = np.asarray(self._spike_times[:n], dtype=np.float64)
-        unit_index = np.repeat(self._table_ids, self._table_stops - self._table_starts)
+        clusters = np.repeat(self._table_ids, self._table_stops - self._table_starts)
 
         unsorted = np.flatnonzero(times[1:] < times[:-1]) + 1
         if np.any(~np.isin(unsorted, self._table_starts)):
@@ -438,16 +438,14 @@ class _NWBLazyTsGroup(TsGroup):
         if len(unsorted):
             order = np.argsort(times, kind="stable")
             times = times[order]
-            unit_index = unit_index[order]
+            clusters = clusters[order]
 
         # drops what eager construction drops (see `__init__`)
         ts = self.time_support
-        times, unit_index, _ = _restrict_grouped(
-            times, unit_index, None, ts.start, ts.end
-        )
+        times, clusters = _restrict_arrays(times, ts.start, ts.end, clusters)
 
         self.__dict__["_materialized_times"] = times
-        self.__dict__["_materialized_unit_index"] = unit_index
+        self.__dict__["_materialized_clusters"] = clusters
         self.__dict__["_materialized"] = True
         # the file handle is no longer needed
         self.__dict__.pop("_spike_times", None)
@@ -458,7 +456,7 @@ class _NWBLazyTsGroup(TsGroup):
         cols = self._metadata.columns[1:]  # .drop("rate")
         plain = TsGroup._from_arrays(
             self._times,
-            self._unit_index,
+            self._clusters,
             None,
             self._is_tsd,
             self.index,

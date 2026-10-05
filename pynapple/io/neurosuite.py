@@ -71,7 +71,7 @@ class NeuroSuite(BaseLoader):
                 spikes,
                 time_support=self.time_support,
                 time_units="s",
-                group=units["group"],
+                metadata={"group": units["group"]},
             )
 
             if ~np.all(units["location"] == ""):

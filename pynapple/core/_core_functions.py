@@ -15,6 +15,7 @@ import numpy as np
 from ._jitted_functions import (  # pjitconvolve,
     jitbin_array,
     jitcount,
+    jitcount_clusters,
     jitcount_grouped,
     jitgroup_by_unit,
     jitremove_nan,
@@ -45,14 +46,15 @@ def _use_searchsorted_restrict(n_intervals, n_samples):
     return n_intervals * 1024 < n_samples
 
 
-def _restrict_ranges(time_array, data_array, starts, ends):
+def _restrict_ranges(time_array, starts, ends, *arrays):
     """Restrict to intervals via searchsorted boundaries + contiguous copies.
 
-    Returns copied ``(new_time, new_data)``; ``new_data`` is None when
-    ``data_array`` is None (timestamps-only objects). Assumes ``time_array`` is
-    sorted and ``starts``/``ends`` are sorted and disjoint (guaranteed by
-    IntervalSet), so the result is sorted and lies within the intervals. The
-    inclusivity ``start <= t <= end`` matches :func:`jitrestrict`.
+    Returns copied ``(new_time, *new_arrays)``, each of ``arrays`` (aligned with
+    ``time_array``) restricted with the same selection; None entries stay None
+    (timestamps-only objects). Assumes ``time_array`` is sorted and
+    ``starts``/``ends`` are sorted and disjoint (guaranteed by IntervalSet), so
+    the result is sorted and lies within the intervals. The inclusivity
+    ``start <= t <= end`` matches :func:`jitrestrict`.
 
     The selected ranges are copied with plain numpy contiguous slice assignment
     (one memcpy per interval), which beats both a fancy-index gather and a numba
@@ -61,12 +63,29 @@ def _restrict_ranges(time_array, data_array, starts, ends):
     il = np.searchsorted(time_array, starts, side="left")
     ir = np.searchsorted(time_array, ends, side="right")
 
-    new_time = _concat_ranges(time_array, il, ir, copy=True)
-    new_data = (
-        None if data_array is None else _concat_ranges(data_array, il, ir, copy=True)
+    return (
+        _concat_ranges(time_array, il, ir, copy=True),
+        *(None if a is None else _concat_ranges(a, il, ir, copy=True) for a in arrays),
     )
 
-    return new_time, new_data
+
+def _restrict_arrays(time_array, starts, ends, *arrays, use_ranges=None):
+    """Restrict ``time_array`` to intervals, and ``arrays`` with the same selection.
+
+    Each of ``arrays`` is aligned with ``time_array`` (values of a time series,
+    unit keys of a TsGroup, ...); None entries stay None. Returns
+    ``(new_time, *new_arrays)``.
+
+    ``use_ranges`` picks :func:`_restrict_ranges` (True) or the numba merge scan
+    :func:`_restrict` plus a gather (False); None decides from the number of
+    intervals and timestamps (:func:`_use_searchsorted_restrict`).
+    """
+    if use_ranges is None:
+        use_ranges = _use_searchsorted_restrict(len(starts), len(time_array))
+    if use_ranges:
+        return _restrict_ranges(time_array, starts, ends, *arrays)
+    idx = _restrict(time_array, starts, ends)
+    return (time_array[idx], *(None if a is None else a[idx] for a in arrays))
 
 
 def _concat_ranges(array, range_starts, range_stops, copy):
@@ -123,35 +142,20 @@ def _count(time_array, starts, ends, bin_size=None, dtype=None):
     return t, d
 
 
-def _restrict_grouped(time_array, unit_index, data_array, starts, ends):
-    """Restrict a merged multi-unit array (see ``TsGroup``) to intervals.
-
-    Restriction only looks at timestamps, so the per-spike ``unit_index`` and
-    ``data_array`` (None for timestamps-only groups) are carried along with the
-    same selection: one pass covers every unit. Dispatches between
-    :func:`_restrict_ranges` and :func:`jitrestrict` exactly like single
-    objects do.
-    """
-    if _use_searchsorted_restrict(len(starts), len(time_array)):
-        il = np.searchsorted(time_array, starts, side="left")
-        ir = np.searchsorted(time_array, ends, side="right")
-        return (
-            _concat_ranges(time_array, il, ir, copy=True),
-            _concat_ranges(unit_index, il, ir, copy=True),
-            None if data_array is None else _concat_ranges(data_array, il, ir, True),
-        )
-    idx = jitrestrict(time_array, starts, ends)
-    return (
-        time_array[idx],
-        unit_index[idx],
-        None if data_array is None else data_array[idx],
-    )
-
-
 def _group_by_unit(unit_pos, n_units):
     """``(order, offsets)``: ``order[offsets[i]:offsets[i + 1]]`` are the
     positions of unit ``i`` in their original order (stable counting sort)."""
     return jitgroup_by_unit(np.asarray(unit_pos, dtype=np.int64), n_units)
+
+
+def _count_clusters(clusters, index):
+    """Number of entries of ``clusters`` equal to each key of the sorted ``index``."""
+    if len(index) == 0:
+        return np.zeros(0, dtype=np.int64)
+    lo = int(index[0])
+    span = int(index[-1]) - lo + 1
+    counts = jitcount_clusters(np.asarray(clusters, dtype=np.int64), lo, span)
+    return counts[np.asarray(index, dtype=np.int64) - lo]
 
 
 def _count_grouped(

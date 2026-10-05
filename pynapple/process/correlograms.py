@@ -367,7 +367,7 @@ def compute_autocorrelogram(
     )[0]
 
     nbins, w, binsize_ns = _correlogram_bins(binsize, windowsize)
-    order, offsets = newgroup._unit_order
+    order, offsets = newgroup._ragged_index
     counts = _autocorrelogram_counts(
         _times_ns(newgroup._times), order, offsets, nbins, binsize_ns
     )
@@ -485,8 +485,8 @@ def compute_crosscorrelogram(
     target = np.searchsorted(newgroup[1].index, [j for _, j in pairs])
 
     nbins, w, binsize_ns = _correlogram_bins(binsize, windowsize)
-    order1, offsets1 = newgroup[0]._unit_order
-    order2, offsets2 = newgroup[1]._unit_order
+    order1, offsets1 = newgroup[0]._ragged_index
+    order2, offsets2 = newgroup[1]._ragged_index
     times1 = _times_ns(newgroup[0]._times)
     times2 = times1 if newgroup[1] is newgroup[0] else _times_ns(newgroup[1]._times)
     counts = _crosscorrelogram_counts(
@@ -594,7 +594,7 @@ def compute_eventcorrelogram(
     nbins, w, binsize_ns = _correlogram_bins(binsize, windowsize)
     n_events = len(tsd1)
     n_units = len(newgroup.index)
-    order, offsets = newgroup._unit_order
+    order, offsets = newgroup._ragged_index
     counts = _crosscorrelogram_counts(
         _times_ns(tsd1),
         np.arange(n_events),

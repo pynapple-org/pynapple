@@ -768,16 +768,33 @@ def test_jitgroup_by_unit(seed):
 
 
 @pytest.mark.parametrize("seed", range(5))
+def test_jitcount_clusters(seed):
+    from pynapple.core._core_functions import _count_clusters
+
+    _, unit_pos, units, _, _ = get_grouped_dataset(seed)
+    # non-contiguous keys with gaps and an offset: unit i has key 3 * i + 7
+    index = 3 * np.arange(len(units)) + 7
+    clusters = index[unit_pos]
+    counts = nap.core._jitted_functions.jitcount_clusters(
+        clusters, index[0], index[-1] - index[0] + 1
+    )
+    np.testing.assert_array_equal(counts[index - index[0]], [len(u) for u in units])
+    np.testing.assert_array_equal(
+        _count_clusters(clusters, index), [len(u) for u in units]
+    )
+
+
+@pytest.mark.parametrize("seed", range(5))
 @pytest.mark.parametrize("fragmented", [True, False])
 @pytest.mark.parametrize("with_data", [True, False])
-def test_restrict_grouped(seed, fragmented, with_data):
-    from pynapple.core._core_functions import _restrict_grouped
+def test_restrict_arrays(seed, fragmented, with_data):
+    from pynapple.core._core_functions import _restrict_arrays
 
     times, unit_pos, units, starts, ends = get_grouped_dataset(seed)
     if not fragmented:  # few intervals: searchsorted path rather than merge scan
         starts, ends = starts[:1], ends[:1]
     data = np.stack([times, -times], axis=1) if with_data else None
-    t, u, d = _restrict_grouped(times, unit_pos, data, starts, ends)
+    t, u, d = _restrict_arrays(times, starts, ends, unit_pos, data)
     for i, ui in enumerate(units):
         ref = ui[nap.core._jitted_functions.jitrestrict(ui, starts, ends)]
         np.testing.assert_array_equal(t[u == i], ref)
@@ -813,3 +830,8 @@ def test_grouped_kernels_empty():
     order, offsets = jf.jitgroup_by_unit(empty_u, 3)
     assert len(order) == 0
     np.testing.assert_array_equal(offsets, np.zeros(4))
+
+    np.testing.assert_array_equal(jf.jitcount_clusters(empty_u, 0, 3), np.zeros(3))
+    from pynapple.core._core_functions import _count_clusters
+
+    assert len(_count_clusters(empty_u, empty_u)) == 0

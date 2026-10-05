@@ -280,6 +280,19 @@ def jitgroup_by_unit(unit_pos, n_units):
     return order, offsets
 
 
+@jit(nopython=True, cache=True)
+def jitcount_clusters(clusters, lo, span):
+    """Number of timestamps of each cluster key, in one pass.
+
+    ``counts[k - lo]`` is the number of entries of ``clusters`` equal to ``k``,
+    for ``lo <= k < lo + span``. Assumes dense keys: memory is O(span).
+    """
+    counts = np.zeros(span, dtype=np.int64)
+    for i in range(clusters.shape[0]):
+        counts[clusters[i] - lo] += 1
+    return counts
+
+
 # Within one epoch, matching `n` timestamps against `d` targets costs ~n*log2(d)
 # cache-missing jumps by binary search, versus ~n+d sequential steps by merge scan,
 # so binary search only pays when the input is far sparser than the target.

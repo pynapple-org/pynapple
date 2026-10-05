@@ -808,12 +808,12 @@ class TestTsGroupMetadata:
         with get_key_exp:
             np.testing.assert_array_almost_equal(tsgroup_meta[name], np.ones(4))
 
-    def test_tsgroup_metadata_future_warnings(self):
+    def test_tsgroup_metadata_kwargs_removed(self):
         """
-        Test future warning when setting metadata as kwargs.
+        Test that setting metadata as kwargs (deprecated since 0.8) raises.
         """
-        with pytest.warns(FutureWarning, match="may be unsupported"):
-            tsgroup = nap.TsGroup(
+        with pytest.raises(TypeError, match="unexpected keyword argument 'label'"):
+            nap.TsGroup(
                 {
                     0: nap.Ts(t=np.arange(0, 200)),
                     1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),

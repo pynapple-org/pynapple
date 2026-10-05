@@ -707,7 +707,7 @@ def test_units_lazy_matches_eager(units_nwb_path):
         np.testing.assert_array_equal(units[k].t, eager[k].t)
     assert units._materialized
     np.testing.assert_array_equal(units._times, eager._times)
-    np.testing.assert_array_equal(units._unit_index, eager._unit_index)
+    np.testing.assert_array_equal(units._clusters, eager._clusters)
     np.testing.assert_array_equal(units.count(1.0).values, eager.count(1.0).values)
 
 
