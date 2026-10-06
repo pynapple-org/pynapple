@@ -364,14 +364,16 @@ def _support_and_counts(first, last, counts):
 class _NWBLazyTsGroup(TsGroup):
     """TsGroup over an NWB units table whose spike times are read on first use.
 
-    The units table stores spike times ragged on disk (``spike_times`` plus the
-    cumulative ``spike_times_index``). Building a regular TsGroup would read,
-    concatenate and sort every spike up front. Here only the index and the first
-    and last spike of each unit are read -- enough for keys, metadata, time
-    support and rates -- and ``_times``/``_clusters`` are materialized, once,
-    the first time an operation needs them. Every TsGroup method goes through
-    those two attributes, so nothing else needs overriding; groups derived from
-    this one (``restrict``, slicing, ...) are regular TsGroups.
+    The units table stores spike times ragged on disk: the NWB column
+    ``spike_times`` (here ``ragged_array``) plus the cumulative
+    ``spike_times_index`` (here ``ragged_array_index``). Building a regular
+    TsGroup would read, concatenate and sort every spike up front. Here only
+    the index and the first and last spike of each unit are read -- enough for
+    keys, metadata, time support and rates -- and ``_times``/``_clusters`` are
+    materialized, once, the first time an operation needs them. Every TsGroup
+    method goes through those two attributes, so nothing else needs
+    overriding; groups derived from this one (``restrict``, slicing, ...) are
+    regular TsGroups.
 
     The time support and rates match the eager construction: the time support is
     the union of each unit's ``[first, last]`` spike span (a single-spike unit
@@ -381,14 +383,14 @@ class _NWBLazyTsGroup(TsGroup):
     warning), so that no spike is dropped.
     """
 
-    def __init__(self, spike_times, spike_times_index, ids, metadata=None):
+    def __init__(self, ragged_array, ragged_array_index, ids, metadata=None):
         """
         Parameters
         ----------
-        spike_times : array-like
+        ragged_array : array-like
             Flat spike times of every unit (h5py dataset for a file on disk).
-        spike_times_index : array-like
-            One past the last spike of each unit in ``spike_times``.
+        ragged_array_index : array-like
+            One past the last spike of each unit in ``ragged_array``.
         ids : array-like of int
             Unit ids, in table order.
         metadata : dict, optional
@@ -397,18 +399,18 @@ class _NWBLazyTsGroup(TsGroup):
         self.__dict__["_initialized"] = False
 
         ids = np.asarray(ids, dtype=np.int64)
-        stops = np.asarray(spike_times_index, dtype=np.int64)
+        stops = np.asarray(ragged_array_index, dtype=np.int64)
         starts = np.concatenate([[0], stops[:-1]]).astype(np.int64)
         counts = stops - starts
 
-        if not hasattr(spike_times, "shape"):  # in-memory lists
-            spike_times = np.asarray(spike_times, dtype=np.float64)
+        if not hasattr(ragged_array, "shape"):  # in-memory lists
+            ragged_array = np.asarray(ragged_array, dtype=np.float64)
 
         # first and last spike of each non-empty unit (increasing positions, as
         # h5py point selection requires)
         nonempty = counts > 0
-        first = np.asarray(spike_times[starts[nonempty]], dtype=np.float64)
-        last = np.asarray(spike_times[stops[nonempty] - 1], dtype=np.float64)
+        first = np.asarray(ragged_array[starts[nonempty]], dtype=np.float64)
+        last = np.asarray(ragged_array[stops[nonempty] - 1], dtype=np.float64)
 
         time_support, counts = _support_and_counts(first, last, counts)
 
@@ -418,7 +420,7 @@ class _NWBLazyTsGroup(TsGroup):
         self.time_support = time_support
 
         self._materialized = False
-        self._spike_times = spike_times
+        self._ragged_array = ragged_array
         self._table_ids = ids
         self._table_starts = starts
         self._table_stops = stops
@@ -452,7 +454,7 @@ class _NWBLazyTsGroup(TsGroup):
     def _materialize(self):
         """Read every spike once and build the merged sorted arrays."""
         n = int(self._table_stops[-1]) if len(self._table_stops) else 0
-        times = np.asarray(self._spike_times[:n], dtype=np.float64)
+        times = np.asarray(self._ragged_array[:n], dtype=np.float64)
         clusters = np.repeat(self._table_ids, self._table_stops - self._table_starts)
 
         unsorted = np.flatnonzero(times[1:] < times[:-1]) + 1
@@ -488,7 +490,7 @@ class _NWBLazyTsGroup(TsGroup):
         self.__dict__["_materialized_clusters"] = clusters
         self.__dict__["_materialized"] = True
         # the file handle is no longer needed
-        self.__dict__.pop("_spike_times", None)
+        self.__dict__.pop("_ragged_array", None)
 
     def __reduce_ex__(self, protocol):
         # the h5py dataset cannot be pickled or deep-copied: hand over a regular

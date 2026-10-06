@@ -32,11 +32,15 @@ N_SPIKES = 2_000
 UNIT_COUNTS = [10, 100, 1000]
 
 
-def median_ms(fn, repeat=7):
-    """Median milliseconds per call, with an adaptive loop count."""
-    n = 1
-    while timeit.timeit(fn, number=n) < 0.05:
-        n *= 5
+def median_ms(fn, repeat=5, min_time=0.02):
+    """Median milliseconds per call, over `repeat` runs.
+
+    The function times one call, then sets the number of calls in each run so
+    that a run lasts about `min_time` seconds. A call slower than `min_time`
+    runs once in each run.
+    """
+    once = timeit.timeit(fn, number=1)
+    n = max(1, int(np.ceil(min_time / max(once, 1e-9))))
     return 1e3 * np.median([timeit.timeit(fn, number=n) / n for _ in range(repeat)])
 
 
@@ -154,6 +158,8 @@ def bench_nwb():
     """Loading a units table and the first operation on it (which, with lazy
     units, includes reading the spikes)."""
     pynwb = __import__("pynwb")
+    from hdmf.common import VectorData, VectorIndex
+    from pynwb.misc import Units
     from pynwb.testing.mock.file import mock_NWBFile
 
     results = {"nwb['units']": {}, "first count(0.1)": {}}
@@ -161,8 +167,25 @@ def bench_nwb():
         for n_units in UNIT_COUNTS:
             path = Path(tmp) / f"units_{n_units}.nwb"
             nwbfile = mock_NWBFile()
-            for ts in make_members(n_units).values():
-                nwbfile.add_unit(spike_times=ts.t)
+            # build the ragged spike_times column in one step: adding the
+            # units one by one with `add_unit` makes the write ~15x slower
+            members = list(make_members(n_units).values())
+            spike_times = VectorData(
+                name="spike_times",
+                description="spike times",
+                data=np.concatenate([ts.t for ts in members]),
+            )
+            spike_times_index = VectorIndex(
+                name="spike_times_index",
+                data=np.cumsum([len(ts) for ts in members]),
+                target=spike_times,
+            )
+            nwbfile.units = Units(
+                name="units",
+                description="units",
+                id=np.arange(n_units),
+                columns=[spike_times, spike_times_index],
+            )
             with pynwb.NWBHDF5IO(path, "w") as io:
                 io.write(nwbfile)
 
