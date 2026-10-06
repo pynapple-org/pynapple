@@ -148,14 +148,42 @@ def _group_by_unit(unit_pos, n_units):
     return jitgroup_by_unit(np.asarray(unit_pos, dtype=np.int64), n_units)
 
 
+def _is_dense_index(index):
+    """Whether a ``key - min(key)`` lookup table over the sorted ``index`` is
+    small enough to use: its size must stay O(number of keys), so that sparse
+    keys (e.g. ``{0, 10**12}``) cannot blow up memory."""
+    span = int(index[-1]) - int(index[0]) + 1
+    return span <= 4 * len(index) + 1024
+
+
+def _cluster_positions(clusters, index):
+    """Position ``0..len(index)-1`` in the sorted ``index`` of each entry of
+    ``clusters`` (whose values must be keys of ``index``)."""
+    clusters = np.asarray(clusters, dtype=np.int64)
+    index = np.asarray(index, dtype=np.int64)
+    if len(index) == 0:
+        return np.zeros(len(clusters), dtype=np.int64)
+    if not _is_dense_index(index):
+        return np.searchsorted(index, clusters)
+    lo = index[0]
+    key_to_position = np.empty(index[-1] - lo + 1, dtype=np.int64)
+    key_to_position[index - lo] = np.arange(len(index))
+    return key_to_position[clusters - lo]
+
+
 def _count_clusters(clusters, index):
     """Number of entries of ``clusters`` equal to each key of the sorted ``index``."""
     if len(index) == 0:
         return np.zeros(0, dtype=np.int64)
+    index = np.asarray(index, dtype=np.int64)
+    if not _is_dense_index(index):
+        return np.bincount(
+            _cluster_positions(clusters, index), minlength=len(index)
+        ).astype(np.int64)
     lo = int(index[0])
     span = int(index[-1]) - lo + 1
     counts = jitcount_clusters(np.asarray(clusters, dtype=np.int64), lo, span)
-    return counts[np.asarray(index, dtype=np.int64) - lo]
+    return counts[index - lo]
 
 
 def _count_grouped(

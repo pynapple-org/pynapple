@@ -1661,3 +1661,21 @@ class TestTsGroupEquality:
     )
     def test_no_mutable_mapping_methods(self, method):
         assert not hasattr(self.make(), method)
+
+
+@pytest.mark.parametrize("keys", [[-5, 2], [0, 10**12], [-(10**12), 3, 10**12]])
+def test_sparse_keys(keys):
+    """Keys far apart must not allocate a lookup table over their range."""
+    tsgroup = nap.TsGroup(
+        {k: nap.Ts(t=np.arange(i + 1) + 0.5) for i, k in enumerate(keys)},
+        time_support=nap.IntervalSet(0, 10),
+    )
+    n = np.arange(1, len(keys) + 1)
+    np.testing.assert_array_equal(tsgroup.count(1.0).values.sum(0), n)
+    np.testing.assert_array_equal(tsgroup.rates, n / 10)
+    np.testing.assert_array_equal(
+        np.unique(tsgroup.to_tsd().values, return_counts=True)[1], n
+    )
+    for i, k in enumerate(keys):
+        np.testing.assert_array_equal(tsgroup[k].t, np.arange(i + 1) + 0.5)
+        np.testing.assert_array_equal(tsgroup.time_diff()[k].values, np.ones(i))

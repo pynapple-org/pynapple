@@ -711,6 +711,32 @@ def test_units_lazy_matches_eager(units_nwb_path):
     np.testing.assert_array_equal(units.count(1.0).values, eager.count(1.0).values)
 
 
+def test_units_lazy_unsorted_matches_eager():
+    """A unit whose spikes are not sorted on disk: its first/last spikes are not
+    its extremes, so the time support and rates are recomputed on
+    materialization instead of dropping spikes."""
+    from pynapple.io.interface_nwb import _NWBLazyTsGroup
+
+    # unit 3 unsorted, unit 0 empty, unit 7 a single spike, unit 1 sorted
+    spike_times = np.array([5.0, 1.0, 9.0, 6.0, 20.0, 2.0, 3.0, 4.0])
+    stops = np.array([4, 4, 5, 8])
+    ids = [3, 0, 7, 1]
+    starts = np.concatenate([[0], stops[:-1]])
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        eager = nap.TsGroup(
+            {k: nap.Ts(spike_times[a:b]) for k, a, b in zip(ids, starts, stops)}
+        )
+        units = _NWBLazyTsGroup(spike_times, stops, ids)
+
+    with pytest.warns(UserWarning, match="not sorted"):
+        units._materialize()
+    assert units == eager
+    np.testing.assert_array_equal(units.rates, eager.rates)
+    np.testing.assert_array_equal(units.time_support.values, eager.time_support.values)
+    np.testing.assert_array_equal(units[3].t, [1.0, 5.0, 6.0, 9.0])
+
+
 def test_units_materialized_once(units_nwb_path, monkeypatch):
     from pynapple.io.interface_nwb import _NWBLazyTsGroup
 

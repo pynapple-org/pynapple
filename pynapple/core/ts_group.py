@@ -20,6 +20,7 @@ import pandas as pd
 from tabulate import tabulate
 
 from ._core_functions import (
+    _cluster_positions,
     _count,
     _count_clusters,
     _count_grouped,
@@ -524,17 +525,8 @@ class TsGroup(_MetadataMixin):
         return _count_clusters(self._clusters, self.index)
 
     def _cluster_positions(self) -> np.ndarray:
-        """Position ``0..n_units-1`` in ``self.index`` of each timestamp's unit.
-
-        Uses a ``key -> position`` lookup table, which assumes dense keys:
-        memory is O(max key - min key).
-        """
-        if len(self.index) == 0:
-            return np.zeros(len(self._clusters), dtype=np.int64)
-        lo = self.index[0]
-        key_to_column = np.empty(self.index[-1] - lo + 1, dtype=np.int64)
-        key_to_column[self.index - lo] = np.arange(len(self.index))
-        return key_to_column[self._clusters - lo]
+        """Position ``0..n_units-1`` in ``self.index`` of each timestamp's unit."""
+        return _cluster_positions(self._clusters, self.index)
 
     @classmethod
     def _from_arrays(

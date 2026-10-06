@@ -319,6 +319,48 @@ def _tsgroup_from_state(state):
     return obj
 
 
+def _support_and_counts(first, last, counts):
+    """Time support and per-unit counts of a units table, as eager construction
+    gives them.
+
+    Parameters
+    ----------
+    first, last : ndarray
+        Earliest and latest spike of each non-empty unit, in table order.
+    counts : ndarray
+        Number of spikes of each unit, in table order.
+
+    Returns
+    -------
+    time_support : IntervalSet
+        Union of each unit's ``[first, last]`` span. A zero-length span (single
+        spike) is dropped, as IntervalSet does.
+    counts : ndarray
+        ``counts``, with 0 for single-spike units whose spike falls outside the
+        time support (eager construction drops it).
+    """
+    nonempty = counts > 0
+    spans = last > first
+    ts_start, ts_end = jitunion_isets(first[spans], last[spans])
+    if len(ts_start) == 0:
+        raise RuntimeError(
+            "Union of time supports is empty. Consider passing a time support as argument."
+        )
+
+    # spikes outside the time support are dropped: only possible for
+    # single-spike units, whose spike is `first`
+    is_single = ~spans & (counts[nonempty] == 1)
+    if np.any(is_single):
+        single = np.flatnonzero(nonempty)[is_single]
+        t = first[is_single]
+        k = np.searchsorted(ts_start, t, side="right") - 1
+        outside = (k < 0) | (t > ts_end[np.maximum(k, 0)])
+        counts = counts.copy()
+        counts[single[outside]] = 0
+
+    return nap.IntervalSet(ts_start, ts_end), counts
+
+
 class _NWBLazyTsGroup(TsGroup):
     """TsGroup over an NWB units table whose spike times are read on first use.
 
@@ -333,7 +375,10 @@ class _NWBLazyTsGroup(TsGroup):
 
     The time support and rates match the eager construction: the time support is
     the union of each unit's ``[first, last]`` spike span (a single-spike unit
-    has none), spikes outside it are dropped.
+    has none), spikes outside it are dropped. This assumes each unit's spikes
+    are sorted on disk; if materialization finds a unit that is not, the time
+    support and rates are recomputed from each unit's actual extremes (with a
+    warning), so that no spike is dropped.
     """
 
     def __init__(self, spike_times, spike_times_index, ids, metadata=None):
@@ -365,26 +410,7 @@ class _NWBLazyTsGroup(TsGroup):
         first = np.asarray(spike_times[starts[nonempty]], dtype=np.float64)
         last = np.asarray(spike_times[stops[nonempty] - 1], dtype=np.float64)
 
-        # a unit's time support is its [first, last] span; a zero-length span
-        # (single spike) is dropped, as IntervalSet does
-        spans = last > first
-        ts_start, ts_end = jitunion_isets(first[spans], last[spans])
-        if len(ts_start) == 0:
-            raise RuntimeError(
-                "Union of time supports is empty. Consider passing a time support as argument."
-            )
-        time_support = nap.IntervalSet(ts_start, ts_end)
-
-        # spikes outside the time support are dropped: only possible for
-        # single-spike units, whose spike is `first`
-        is_single = ~spans & (counts[nonempty] == 1)
-        if np.any(is_single):
-            single = np.flatnonzero(nonempty)[is_single]
-            t = first[is_single]
-            k = np.searchsorted(ts_start, t, side="right") - 1
-            outside = (k < 0) | (t > ts_end[np.maximum(k, 0)])
-            counts = counts.copy()
-            counts[single[outside]] = 0
+        time_support, counts = _support_and_counts(first, last, counts)
 
         sort_index = np.argsort(ids, kind="stable")
         self.index = ids[sort_index]
@@ -396,6 +422,7 @@ class _NWBLazyTsGroup(TsGroup):
         self._table_ids = ids
         self._table_starts = starts
         self._table_stops = stops
+        self._sort_index = sort_index
         self._counts = counts[sort_index]
         # spike times only: no values, no columns
         self._data = None
@@ -430,11 +457,24 @@ class _NWBLazyTsGroup(TsGroup):
 
         unsorted = np.flatnonzero(times[1:] < times[:-1]) + 1
         if np.any(~np.isin(unsorted, self._table_starts)):
+            # some unit's spikes are not sorted on disk: its first and last
+            # spikes are not its extremes, so the time support and rates set at
+            # construction would drop spikes. Recompute them from each unit's
+            # actual min/max, as eager construction does.
             warnings.warn(
-                "Spike times of some units are not sorted: the time support was "
-                "computed from their first and last spikes.",
+                "Spike times of some units are not sorted: the time support and "
+                "rates were recomputed when reading the spike times.",
                 stacklevel=3,
             )
+            counts = self._table_stops - self._table_starts
+            seg = self._table_starts[counts > 0]
+            time_support, counts = _support_and_counts(
+                np.minimum.reduceat(times, seg), np.maximum.reduceat(times, seg), counts
+            )
+            # bypass __setattr__: both are reserved attributes once initialized
+            self.__dict__["time_support"] = time_support
+            self.__dict__["_counts"] = counts[self._sort_index]
+            self._metadata["rate"] = self._compute_rates()
         if len(unsorted):
             order = np.argsort(times, kind="stable")
             times = times[order]
