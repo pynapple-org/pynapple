@@ -127,7 +127,21 @@ Carefulness should still apply when calling any pynapple function on a memory ma
 :::
 
 
-Spike times of a units table (`data['units']`) are lazy-loaded as well. Accessing `data['units']` reads only what is needed for the keys, the metadata, the time support and the rates. The spike times are read from the file once, the first time an operation needs them (e.g. `count`, `restrict` or indexing a unit). Calling `data.close()` reads the spike times of any units group that has been accessed before closing the file, so the group stays usable.
+Spike times of a units table (`data['units']`) are lazy-loaded as well. Accessing `data['units']` reads only what is needed for the keys, the metadata, the time support and the rates. The group never keeps the spike times in memory. Each operation reads only what it needs from the file:
+
+- A selection of units (e.g. `data['units'][[0, 1]]`) reads only those units.
+- `restrict(ep)`, `get(start, end)` and the operations with an epoch argument (e.g. `count(bin_size, ep)`) read only the spikes in the span of the epochs.
+- The other operations (e.g. `count(bin_size)` without `ep`) read all the spikes, each time they run.
+
+A selection gives a regular `TsGroup` in memory. To work several times on the same units or the same epochs, select them once and keep the result:
+
+```python
+units = data['units']
+spikes = units[[0, 1]]  # reads only units 0 and 1
+spikes_ep = units.restrict(ep)  # reads only the spikes in the span of ep
+```
+
+After `data.close()`, the metadata, rates and time support of `data['units']` still work, but an operation that reads spikes raises an error. A selection made before `close()` stays usable.
 
 To change this behavior, you can pass `lazy_loading=False` when instantiating the `NWBClass`.
 

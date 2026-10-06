@@ -362,25 +362,38 @@ def _support_and_counts(first, last, counts):
 
 
 class _NWBLazyTsGroup(TsGroup):
-    """TsGroup over an NWB units table whose spike times are read on first use.
+    """TsGroup over an NWB units table. It reads the spike times only when an
+    operation needs them, and it never keeps them.
 
-    The units table stores spike times ragged on disk: the NWB column
-    ``spike_times`` (here ``ragged_array``) plus the cumulative
-    ``spike_times_index`` (here ``ragged_array_index``). Building a regular
-    TsGroup would read, concatenate and sort every spike up front. Here only
-    the index and the first and last spike of each unit are read -- enough for
-    keys, metadata, time support and rates -- and ``_times``/``_clusters`` are
-    materialized, once, the first time an operation needs them. Every TsGroup
-    method goes through those two attributes, so nothing else needs
-    overriding; groups derived from this one (``restrict``, slicing, ...) are
-    regular TsGroups.
+    The units table stores the spike times of all the units in one ragged
+    array on disk. The NWB column ``spike_times`` (here ``ragged_array``)
+    holds the spike times of each unit, one unit after the other. The NWB
+    column ``spike_times_index`` (here ``ragged_array_index``) holds the end
+    position of each unit in that array.
 
-    The time support and rates match the eager construction: the time support is
-    the union of each unit's ``[first, last]`` spike span (a single-spike unit
-    has none), spikes outside it are dropped. This assumes each unit's spikes
-    are sorted on disk; if materialization finds a unit that is not, the time
-    support and rates are recomputed from each unit's actual extremes (with a
-    warning), so that no spike is dropped.
+    The constructor reads only the index and the first and last spike of each
+    unit. These give the keys, the time support and the rates.
+
+    Each operation reads only what it needs into a temporary regular TsGroup,
+    and runs on that group:
+
+    - A selection of units (``units[k]``, ``units[[k1, k2]]``, ``getby_*``)
+      reads only the selected units.
+    - ``restrict(ep)``, ``get(start, end)`` and the operations with an epoch
+      argument (``count``, ``value_from``, ``time_diff``) read, in each unit,
+      only the spikes from the start of the first epoch to the end of the
+      last epoch. A binary search in the file finds these positions.
+    - The other operations (``to_tsd``, ``count`` without ``ep``, iteration,
+      ``copy``, ...) read all the spikes, and drop them after the operation.
+
+    A selection gives a regular TsGroup, not a lazy one.
+
+    The time support and the binary search assume that the spikes of each
+    unit are sorted in the file. A read that finds unsorted spikes gives a
+    warning.
+
+    After ``NWBFile.close()``, an operation that reads spikes raises a
+    RuntimeError.
     """
 
     def __init__(self, ragged_array, ragged_array_index, ids, metadata=None):
@@ -419,11 +432,15 @@ class _NWBLazyTsGroup(TsGroup):
         _MetadataMixin.__init__(self)
         self.time_support = time_support
 
-        self._materialized = False
+        # everything below is in table order, except `_counts`
         self._ragged_array = ragged_array
-        self._table_ids = ids
+        self._file_closed = False
         self._table_starts = starts
         self._table_stops = stops
+        self._table_first = np.full(len(ids), np.nan)
+        self._table_first[nonempty] = first
+        self._table_last = np.full(len(ids), np.nan)
+        self._table_last[nonempty] = last
         self._sort_index = sort_index
         self._counts = counts[sort_index]
         # spike times only: no values, no columns
@@ -439,73 +456,229 @@ class _NWBLazyTsGroup(TsGroup):
         # known from the ragged index: rates need no spike read
         return self._counts
 
-    @property
-    def _times(self):
-        if not self._materialized:
-            self._materialize()
-        return self.__dict__["_materialized_times"]
+    #################################
+    # Read from the file
+    #################################
 
-    @property
-    def _clusters(self):
-        if not self._materialized:
-            self._materialize()
-        return self.__dict__["_materialized_clusters"]
+    def _search(self, lo, hi, t, right):
+        """Position of ``t`` in the sorted spikes ``ragged_array[lo:hi]``, as
+        ``np.searchsorted`` gives it. In a file, it reads one spike for each
+        step of a binary search."""
+        array = self._ragged_array
+        if isinstance(array, np.ndarray):
+            side = "right" if right else "left"
+            return lo + int(np.searchsorted(array[lo:hi], t, side=side))
+        while lo < hi:
+            mid = (lo + hi) // 2
+            value = array[mid]
+            if value < t or (right and value == t):
+                lo = mid + 1
+            else:
+                hi = mid
+        return lo
 
-    def _materialize(self):
-        """Read every spike once and build the merged sorted arrays."""
-        n = int(self._table_stops[-1]) if len(self._table_stops) else 0
-        times = np.asarray(self._ragged_array[:n], dtype=np.float64)
-        clusters = np.repeat(self._table_ids, self._table_stops - self._table_starts)
+    def _read_rows(self, keys, lo, hi):
+        """Read ``ragged_array[lo[i]:hi[i]]`` for each unit ``keys[i]`` into a
+        regular TsGroup with the time support of this group.
 
-        unsorted = np.flatnonzero(times[1:] < times[:-1]) + 1
-        if np.any(~np.isin(unsorted, self._table_starts)):
-            # some unit's spikes are not sorted on disk: its first and last
-            # spikes are not its extremes, so the time support and rates set at
-            # construction would drop spikes. Recompute them from each unit's
-            # actual min/max, as eager construction does.
+        ``keys`` must be sorted keys of the group.
+        """
+        if self.__dict__.get("_file_closed", False):
+            raise RuntimeError(
+                "The NWB file is closed: the spike times of this units group "
+                "cannot be read. Select the units or the time that you need "
+                "(e.g. units[[0, 1]] or units.restrict(ep)) before you close "
+                "the file."
+            )
+        lengths = hi - lo
+        try:
+            array = self._ragged_array
+            n_total = int(self._table_stops[-1]) if len(self._table_stops) else 0
+            if len(lengths) and np.sum(lengths) == n_total:
+                # every spike: one read is faster than one read for each unit
+                array = np.asarray(array[:n_total])
+            parts = [
+                np.asarray(array[a:b], dtype=np.float64)
+                for a, b in zip(lo, hi)
+                if b > a
+            ]
+        except (ValueError, OSError, KeyError) as err:
+            raise RuntimeError(
+                "Cannot read the spike times from the NWB file."
+            ) from err
+        times = np.concatenate(parts) if parts else np.zeros(0)
+        clusters = np.repeat(np.asarray(keys, dtype=np.int64), lengths)
+
+        # the time support and the binary search assume sorted units
+        ends = np.cumsum(lengths)
+        unsorted = np.setdiff1d(np.flatnonzero(times[1:] < times[:-1]) + 1, ends)
+        if len(unsorted):
+            bad = np.unique(clusters[unsorted]).tolist()
             warnings.warn(
-                "Spike times of some units are not sorted: the time support and "
-                "rates were recomputed when reading the spike times.",
+                f"Spike times of units {bad} are not sorted in the NWB file. "
+                "The lazy units group assumes sorted spike times: its time "
+                "support, its rates and its time windows can be wrong. Load "
+                "the file with lazy_loading=False.",
                 stacklevel=3,
             )
-            counts = self._table_stops - self._table_starts
-            seg = self._table_starts[counts > 0]
-            time_support, counts = _support_and_counts(
-                np.minimum.reduceat(times, seg), np.maximum.reduceat(times, seg), counts
-            )
-            # bypass __setattr__: both are reserved attributes once initialized
-            self.__dict__["time_support"] = time_support
-            self.__dict__["_counts"] = counts[self._sort_index]
-            self._metadata["rate"] = self._compute_rates()
-        if len(unsorted):
-            order = np.argsort(times, kind="stable")
-            times = times[order]
-            clusters = clusters[order]
 
-        # drops what eager construction drops (see `__init__`)
+        # sorted by time, then by key for equal times (as TsGroup does)
+        order = np.lexsort((clusters, times))
         ts = self.time_support
-        times, clusters = _restrict_arrays(times, ts.start, ts.end, clusters)
+        times, clusters = _restrict_arrays(
+            times[order], ts.start, ts.end, clusters[order]
+        )
+        return TsGroup._from_arrays(
+            times,
+            clusters,
+            None,
+            np.zeros(len(keys), dtype=bool),
+            keys,
+            ts,
+            metadata=self._metadata.loc[keys].copy().drop("rate"),
+        )
 
-        self.__dict__["_materialized_times"] = times
-        self.__dict__["_materialized_clusters"] = clusters
-        self.__dict__["_materialized"] = True
-        # the file handle is no longer needed
-        self.__dict__.pop("_ragged_array", None)
+    def _read(self, keys=None, start=-np.inf, end=np.inf):
+        """Read the units ``keys`` (default: all) into a regular TsGroup.
+
+        Only the spikes ``t`` with ``start <= t <= end`` (in seconds) are read.
+        A binary search in the file finds them in the units that are only
+        partly in ``[start, end]``.
+        """
+        if keys is None:
+            keys = self.index
+        keys = np.unique(np.asarray(keys, dtype=np.int64))
+        rows = self._sort_index[np.searchsorted(self.index, keys)]
+        lo = self._table_starts[rows].copy()
+        hi = self._table_stops[rows].copy()
+        first = self._table_first[rows]
+        last = self._table_last[rows]
+
+        # units with no spike in [start, end] (an empty unit has a NaN first)
+        if start > end:
+            outside = np.ones(len(rows), dtype=bool)
+        else:
+            outside = ~(first <= end) | ~(last >= start)
+        hi[outside] = lo[outside]
+        for i in np.flatnonzero(~outside & (first < start)):
+            lo[i] = self._search(lo[i], hi[i], start, right=False)
+        for i in np.flatnonzero(~outside & (last > end)):
+            hi[i] = self._search(lo[i], hi[i], end, right=True)
+        # with unsorted spikes, the binary search can give hi < lo
+        hi = np.maximum(hi, lo)
+
+        return self._read_rows(keys, lo, hi)
+
+    def _loaded(self, ep=None):
+        """Read the spikes in the span of ``ep`` (default: all the spikes)."""
+        if ep is None:
+            return self._read()
+        if not isinstance(ep, nap.IntervalSet):
+            # read nothing: the method of the regular group raises its error
+            return self._read(keys=[])
+        if len(ep) == 0:
+            return self._read(start=np.inf, end=-np.inf)
+        return self._read(start=ep.start[0], end=ep.end[-1])
+
+    #################################
+    # Selection of units
+    #################################
+
+    def _take(self, keys):
+        return self._read(keys)
+
+    def _get_member(self, key):
+        return self._read([key])._get_member(key)
+
+    def _members(self):
+        return self._read()._members()
+
+    #################################
+    # Selection of time
+    #################################
+
+    def restrict(self, ep):
+        return self._loaded(ep).restrict(ep)
+
+    def get(self, start, end=None, time_units="s"):
+        for name, value in (("start", start), ("end", end)):
+            if value is not None and not isinstance(value, Number):
+                raise ValueError(
+                    f"'{name}' must be an int or a float. Type {type(value)} "
+                    "provided instead!"
+                )
+        if end is not None:
+            s, e = nap.TsIndex.format_timestamps(np.array([start, end]), time_units)
+            return self._read(start=s, end=e).get(start, end, time_units)
+
+        # the closest spike of each unit is one of the two spikes around `start`
+        t = nap.TsIndex.format_timestamps(np.array([start]), time_units)[0]
+        keys = self.index
+        rows = self._sort_index
+        lo, hi = self._table_starts[rows], self._table_stops[rows]
+        pos = np.array([self._search(a, b, t, right=False) for a, b in zip(lo, hi)])
+        group = self._read_rows(keys, np.maximum(lo, pos - 1), np.minimum(hi, pos + 1))
+        return group.get(start, end, time_units)
+
+    def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
+        return self._loaded(ep).count(bin_size, ep, time_units, dtype)
+
+    def value_from(self, tsd, ep=None, mode="closest"):
+        # without `ep`, `value_from` uses the time support of `tsd`
+        window = ep if ep is not None else getattr(tsd, "time_support", None)
+        group = self._read(keys=[]) if window is None else self._loaded(window)
+        return group.value_from(tsd, ep, mode)
+
+    def time_diff(self, align="center", epochs=None):
+        return self._loaded(epochs).time_diff(align, epochs)
+
+    #################################
+    # Operations on all the spikes
+    #################################
+
+    def to_tsd(self, *args):
+        return self._read().to_tsd(*args)
+
+    def subsample(self, fraction, seed=None):
+        return self._read().subsample(fraction, seed)
+
+    def save(self, filename):
+        return self._read().save(filename)
+
+    def merge(self, *tsgroups, **kwargs):
+        return self._read().merge(*tsgroups, **kwargs)
+
+    def __eq__(self, other):
+        return self._read() == other
+
+    __hash__ = None
 
     def __reduce_ex__(self, protocol):
         # the h5py dataset cannot be pickled or deep-copied: hand over a regular
-        # TsGroup holding the materialized arrays instead
-        cols = self._metadata.columns[1:]  # .drop("rate")
-        plain = TsGroup._from_arrays(
-            self._times,
-            self._clusters,
-            None,
-            self._is_tsd,
-            self.index,
-            self.time_support,
-            metadata=self._metadata[cols],
-        )
-        return (_tsgroup_from_state, (plain.__getstate__(),))
+        # TsGroup holding the spikes instead
+        return (_tsgroup_from_state, (self._read().__getstate__(),))
+
+    # Code that reads the merged arrays directly gets them from a full read,
+    # which is not kept. Callers in pynapple use `_loaded` first.
+    @property
+    def _times(self):
+        return self._read()._times
+
+    @property
+    def _clusters(self):
+        return self._read()._clusters
+
+    @property
+    def _cluster_positions(self):
+        return self._read()._cluster_positions
+
+    @property
+    def _ragged_index(self):
+        return self._read()._ragged_index
+
+    def _close_file(self):
+        """Mark the file as closed: later reads raise a RuntimeError."""
+        self.__dict__["_file_closed"] = True
 
 
 def _make_tsgroup(obj, lazy_loading=True, **kwargs):
@@ -569,17 +742,20 @@ def _make_tsgroup(obj, lazy_loading=True, **kwargs):
                 else:
                     pass
 
-    # spike times are only read when first needed
-    tsgroup = _NWBLazyTsGroup(
+    if not lazy_loading:
+        # read every unit now, as a regular TsGroup
+        units = {
+            i: nap.Ts(t=np.array(t)) for i, t in zip(index, obj.spike_times_index[:])
+        }
+        return nap.TsGroup(units, metadata=metainfo)
+
+    # spike times are only read when an operation needs them
+    return _NWBLazyTsGroup(
         obj.spike_times.data,
         obj.spike_times_index.data[:],
         index,
         metadata=metainfo,
     )
-    if not lazy_loading:
-        tsgroup._materialize()
-
-    return tsgroup
 
 
 def _make_ts(obj, **kwargs):
@@ -758,6 +934,9 @@ class NWBFile(UserDict):
                         )
                         data = obj
 
+                    if isinstance(data, _NWBLazyTsGroup):
+                        # keep the file open while the group can read it
+                        data.__dict__["_nwb_file"] = self
                     self.data[key] = data
                     return data
                 else:
@@ -767,11 +946,10 @@ class NWBFile(UserDict):
 
     def close(self):
         """Close the NWB file"""
-        # units groups read their spike times on first use: read them now, while
-        # the file is still open
+        # lazy units groups cannot read their spike times after this
         for data in self.data.values():
-            if isinstance(data, _NWBLazyTsGroup) and not data._materialized:
-                data._materialize()
+            if isinstance(data, _NWBLazyTsGroup):
+                data._close_file()
         self.io.close()
 
     def keys(self):

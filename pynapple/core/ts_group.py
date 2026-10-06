@@ -722,6 +722,16 @@ class TsGroup(_MetadataMixin):
         """All members, in index order."""
         return [self._get_member(k) for k in self.index]
 
+    def _loaded(self, ep: Optional[IntervalSet] = None) -> TsGroup:
+        """The group with its spikes in memory, for code that reads the merged
+        arrays directly.
+
+        A regular TsGroup returns itself. A lazy group (e.g. the units of an
+        NWB file) returns a regular TsGroup with the spikes in the span of
+        ``ep``, or all the spikes if ``ep`` is None.
+        """
+        return self
+
     def _take(self, keys: Iterable[int]) -> TsGroup:
         """New TsGroup holding only the units ``keys``.
 
@@ -2346,6 +2356,9 @@ class TsGroup(_MetadataMixin):
         if len(tsgroups) == 1:
             print("Only one TsGroup object provided, no merge needed.")
             return tsgroups[0]
+
+        # the merge reads the merged arrays of every group
+        tsgroups = [tsg._loaded() for tsg in tsgroups]
 
         tsg1 = tsgroups[0]
         keys = set(tsg1.keys())

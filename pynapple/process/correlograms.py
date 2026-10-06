@@ -357,7 +357,7 @@ def compute_autocorrelogram(
     if isinstance(ep, nap.IntervalSet):
         newgroup = group.restrict(ep)
     else:
-        newgroup = group
+        newgroup = group._loaded()
 
     binsize = nap.TsIndex.format_timestamps(
         np.array([binsize], dtype=np.float64), time_units
@@ -466,13 +466,13 @@ def compute_crosscorrelogram(
         if isinstance(ep, nap.IntervalSet):
             newgroup = [group[i].restrict(ep) for i in range(2)]
         else:
-            newgroup = list(group)
+            newgroup = [g._loaded() for g in group]
         pairs = list(product(newgroup[0].keys(), newgroup[1].keys()))
     else:
         if isinstance(ep, nap.IntervalSet):
             newgroup = group.restrict(ep)
         else:
-            newgroup = group
+            newgroup = group._loaded()
         pairs = list(combinations(newgroup.keys(), 2))
         if reverse:
             pairs = list(map(lambda n: (n[1], n[0]), pairs))
