@@ -16,12 +16,10 @@ from ._jitted_functions import (  # pjitconvolve,
     jitbin_array,
     jitcount,
     jitcount_clusters,
-    jitcount_grouped,
+    jitcount_epochs,
     jitgroup_by_unit,
     jitremove_nan,
     jitrestrict,
-    jitrestrict_with_count,
-    jitrestrict_with_count_grouped,
     jitthreshold,
     jittimediff_grouped,
     jitvaluefrom_ranges,
@@ -133,13 +131,26 @@ def _concat_ranges(array, range_starts, range_stops, copy):
     return out
 
 
-def _count(time_array, starts, ends, bin_size=None, dtype=None):
+def _count(
+    time_array, starts, ends, bin_size=None, dtype=None, cluster_pos=None, n_units=None
+):
+    """Count timestamps per bin (``bin_size``) or per epoch (no ``bin_size``).
+
+    With ``cluster_pos`` (the dense ``0..n_units-1`` column of each timestamp of a
+    merged multi-unit array), returns a ``(n_bins, n_units)`` count matrix.
+    Without it, ``time_array`` is a single series and the counts are 1-d.
+    """
+    single = cluster_pos is None
+    if single:
+        # one column for every timestamp, without allocating it
+        cluster_pos = np.broadcast_to(np.int64(0), len(time_array))
+        n_units = 1
     if isinstance(bin_size, (float, int)):
-        t, d = jitcount(time_array, starts, ends, bin_size, dtype)
+        t, d = jitcount(time_array, cluster_pos, starts, ends, bin_size, n_units, dtype)
     else:
-        _, d = jitrestrict_with_count(time_array, starts, ends, dtype)
+        d = jitcount_epochs(time_array, cluster_pos, starts, ends, n_units, dtype)
         t = starts + (ends - starts) / 2
-    return t, d
+    return t, (d[:, 0] if single else d)
 
 
 def _group_by_unit(unit_pos, n_units):
@@ -156,21 +167,6 @@ def _is_dense_index(index):
     return span <= 4 * len(index) + 1024
 
 
-def _cluster_positions(clusters, index):
-    """Position ``0..len(index)-1`` in the sorted ``index`` of each entry of
-    ``clusters`` (whose values must be keys of ``index``)."""
-    clusters = np.asarray(clusters, dtype=np.int64)
-    index = np.asarray(index, dtype=np.int64)
-    if len(index) == 0:
-        return np.zeros(len(clusters), dtype=np.int64)
-    if not _is_dense_index(index):
-        return np.searchsorted(index, clusters)
-    lo = index[0]
-    key_to_position = np.empty(index[-1] - lo + 1, dtype=np.int64)
-    key_to_position[index - lo] = np.arange(len(index))
-    return key_to_position[clusters - lo]
-
-
 def _count_clusters(clusters, index):
     """Number of entries of ``clusters`` equal to each key of the sorted ``index``."""
     if len(index) == 0:
@@ -178,30 +174,13 @@ def _count_clusters(clusters, index):
     index = np.asarray(index, dtype=np.int64)
     if not _is_dense_index(index):
         return np.bincount(
-            _cluster_positions(clusters, index), minlength=len(index)
+            np.searchsorted(index, np.asarray(clusters, dtype=np.int64)),
+            minlength=len(index),
         ).astype(np.int64)
     lo = int(index[0])
     span = int(index[-1]) - lo + 1
     counts = jitcount_clusters(np.asarray(clusters, dtype=np.int64), lo, span)
     return counts[index - lo]
-
-
-def _count_grouped(
-    time_array, unit_pos, n_units, starts, ends, bin_size=None, dtype=None
-):
-    """Multi-unit analogue of :func:`_count`, returning a ``(n_bins, n_units)``
-    count matrix. ``unit_pos`` holds the dense ``0..n_units-1`` column of each
-    timestamp."""
-    if isinstance(bin_size, (float, int)):
-        t, d = jitcount_grouped(
-            time_array, unit_pos, starts, ends, bin_size, n_units, dtype
-        )
-    else:
-        d = jitrestrict_with_count_grouped(
-            time_array, unit_pos, starts, ends, n_units, dtype
-        )
-        t = starts + (ends - starts) / 2
-    return t, d
 
 
 def _time_diff_grouped(time_array, unit_pos, n_units, starts, ends, alpha):

@@ -36,7 +36,7 @@ def _spike_histograms(group, features, feature_bins, n_flat, bin_edges, epochs):
     # counted in `n_in_epochs` are also those `restrict(epochs)` would keep.
     counts, n_in_epochs = jitvaluefrom_histogram(
         times,
-        group._cluster_positions(),
+        group._cluster_positions,
         target_times,
         feature_bins,
         np.searchsorted(times, epochs.start, side="left"),

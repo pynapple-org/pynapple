@@ -94,16 +94,14 @@ def jitrestrict_with_count(time_array, starts, ends, dtype=np.int64):
 
 
 @jit(nopython=True, cache=True)
-def jitrestrict_with_count_grouped(
-    time_array, unit_pos, starts, ends, n_units, dtype=np.int64
-):
-    """Multi-unit analogue of :func:`jitrestrict_with_count`.
+def jitcount_epochs(time_array, unit_pos, starts, ends, n_units, dtype=np.int64):
+    """Count timestamps per epoch and per unit.
 
-    ``time_array`` is a single array merging every unit's timestamps (globally
-    sorted), with ``unit_pos`` the matching dense ``0..n_units-1`` position of
-    each timestamp's unit (computed by the caller, e.g. via
-    ``np.searchsorted`` against the group's sorted keys -- never stored).
-    Returns one ``count[k, :]`` row per epoch instead of a single scalar.
+    ``time_array`` is sorted and may merge the timestamps of several units,
+    with ``unit_pos`` the column ``0..n_units-1`` of each timestamp. Returns a
+    ``(n_epochs, n_units)`` count matrix. Epoch ends are inclusive, as in
+    :func:`jitrestrict_with_count`. For a single series, pass ``n_units=1``
+    and ``unit_pos=np.broadcast_to(np.int64(0), len(time_array))``.
     """
     n = len(time_array)
     m = len(starts)
@@ -143,16 +141,20 @@ def jitrestrict_with_count_grouped(
 
 
 @jit(nopython=True, cache=True)
-def jitcount_grouped(time_array, unit_pos, starts, ends, bin_size, n_units, dtype):
-    """Multi-unit analogue of :func:`jitcount`.
+def jitcount(time_array, unit_pos, starts, ends, bin_size, n_units, dtype):
+    """Count timestamps per bin of ``bin_size`` within each epoch, per unit.
 
-    Sweeps the merged, globally sorted ``time_array`` once, incrementing
-    ``cnt[bin, unit_pos[t]]``, instead of re-sweeping the bins once per unit.
-    Unlike :func:`jitcount` there is no restrict pass first: spikes and
-    epochs/bins are walked together, which avoids an index array and two
-    gathers. Bin placement (``np.round(..., 9)`` boundaries, a bin kept only if
-    its center falls at or before the epoch end) is identical to
-    :func:`jitcount`.
+    ``time_array`` is sorted and may merge the timestamps of several units,
+    with ``unit_pos`` the column ``0..n_units-1`` of each timestamp. Returns
+    the bin centers and a ``(n_bins, n_units)`` count matrix. For a single
+    series, pass ``n_units=1`` and
+    ``unit_pos=np.broadcast_to(np.int64(0), len(time_array))``.
+
+    The kernel walks the timestamps and the bins together in one sweep. It
+    does not restrict the timestamps first. It rounds the bin edges to 9
+    decimals. Each bin includes its left edge and excludes its right edge,
+    like ``np.histogram``. The kernel keeps a bin only if its center is at or
+    before the epoch end.
     """
     n = time_array.shape[0]
     m = starts.shape[0]
@@ -655,59 +657,6 @@ def jitvaluefrom_histogram(
                 counts[unit_pos[i], target_bins[j]] += 1
 
     return counts, n_in_epochs
-
-
-@jit(nopython=True, cache=True)
-def jitcount(time_array, starts, ends, bin_size, dtype):
-    idx, countin = jitrestrict_with_count(time_array, starts, ends)
-    time_array = time_array[idx]
-
-    m = starts.shape[0]
-
-    nb_bins = np.zeros(m, dtype=np.int32)
-    for k in range(m):
-        if (ends[k] - starts[k]) > bin_size:
-            nb_bins[k] = int(np.ceil((ends[k] + bin_size - starts[k]) / bin_size))
-        else:
-            nb_bins[k] = 1
-
-    nb = np.sum(nb_bins)
-    bins = np.zeros(nb, dtype=np.float64)
-    cnt = np.zeros(nb, dtype=dtype)
-
-    k = 0
-    t = 0
-    b = 0
-
-    while k < m:
-        maxb = b + nb_bins[k]
-        maxt = t + countin[k]
-        lbound = starts[k]
-
-        while b < maxb:
-            xpos = lbound + bin_size / 2
-            if xpos > ends[k]:
-                break
-            else:
-                bins[b] = xpos
-                rbound = np.round(lbound + bin_size, 9)
-                while t < maxt:
-                    if time_array[t] < rbound:  # similar to numpy hisrogram
-                        cnt[b] += 1
-                        t += 1
-                    else:
-                        break
-
-                lbound += bin_size
-                lbound = np.round(lbound, 9)
-                b += 1
-        t = maxt
-        k += 1
-
-    new_time_array = bins[0:b]
-    new_data_array = cnt[0:b]
-
-    return (new_time_array, new_data_array)
 
 
 @jit(nopython=True, cache=True)

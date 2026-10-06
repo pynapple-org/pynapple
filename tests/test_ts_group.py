@@ -54,8 +54,8 @@ class TestTsGroup1:
         assert len(tsgroup) == 3
 
     def test_create_ts_group_from_invalid(self):
-        with pytest.raises(AttributeError):
-            tsgroup = nap.TsGroup(np.arange(0, 200))
+        with pytest.raises(TypeError, match="Element 0 of TsGroup should be a Ts"):
+            nap.TsGroup(np.arange(0, 200))
 
     @pytest.mark.parametrize(
         "test_dict, expectation",
@@ -1679,3 +1679,83 @@ def test_sparse_keys(keys):
     for i, k in enumerate(keys):
         np.testing.assert_array_equal(tsgroup[k].t, np.arange(i + 1) + 0.5)
         np.testing.assert_array_equal(tsgroup.time_diff()[k].values, np.ones(i))
+
+
+@pytest.mark.parametrize(
+    "make",
+    [
+        lambda g: g,
+        lambda g: g.restrict(nap.IntervalSet(0, 2)),
+        lambda g: g.copy(),
+        lambda g: pickle.loads(pickle.dumps(g)),
+    ],
+    ids=["new", "restrict", "copy", "pickle"],
+)
+def test_metadata_read_only(make):
+    """The rates and the other metadata columns cannot be changed in place."""
+    tsgroup = make(
+        nap.TsGroup(
+            {0: nap.Ts(t=[1.0, 2.0, 3.0]), 5: nap.Ts(t=[2.0, 4.0])},
+            time_support=nap.IntervalSet(0, 4),
+            metadata={"label": [1, 2]},
+        )
+    )
+    rates = tsgroup.rates.copy()
+    with pytest.raises(ValueError, match="read-only"):
+        tsgroup.rates[0] = 10
+    with pytest.raises(ValueError, match="read-only"):
+        tsgroup._metadata["label"][0] = 10
+    np.testing.assert_array_equal(tsgroup.rates, rates)
+
+
+@pytest.mark.parametrize("time_support", [None, nap.IntervalSet(0, 10)])
+def test_element_type_error(time_support):
+    """A wrong element type raises TypeError, with or without a time support."""
+    with pytest.raises(TypeError, match="Element 1 of TsGroup should be a Ts"):
+        nap.TsGroup({0: nap.Ts(t=[1.0, 2.0]), 1: "abc"}, time_support=time_support)
+
+
+@pytest.mark.parametrize(
+    "metadata, n_values",
+    [
+        ({"label": ["a"]}, 1),
+        ({"label": ["a", "b", "c"]}, 3),
+        ({"label": "ab"}, 1),
+        ({"label": 3}, 1),
+        (pd.DataFrame({"label": ["a"]}), 1),
+    ],
+)
+def test_metadata_length_error(metadata, n_values):
+    """Metadata with a wrong number of values raises a clear ValueError."""
+    with pytest.raises(
+        ValueError,
+        match=f"Metadata 'label' must have 2 values, one for each element. "
+        f"It has {n_values}.",
+    ):
+        nap.TsGroup(
+            {0: nap.Ts(t=[1.0, 2.0]), 1: nap.Ts(t=[1.0, 3.0])}, metadata=metadata
+        )
+
+
+def test_data_view_repr():
+    """The repr of ``tsgroup.data`` lists each element without building it."""
+    tsgroup = nap.TsGroup(
+        {
+            0: nap.Ts(t=np.arange(10.0)),
+            3: nap.Tsd(t=np.arange(5.0), d=np.arange(5.0)),
+            7: nap.Ts(t=[2.0]),
+        },
+        time_support=nap.IntervalSet(0, 10),
+    )
+    assert repr(tsgroup.data) == (
+        "_TsGroupDictView: 3 elements (read-only)\n"
+        "  0: Ts, 10 timestamps\n"
+        "  3: Tsd, 5 timestamps\n"
+        "  7: Ts, 1 timestamp"
+    )
+    assert "_ragged_index" not in tsgroup.__dict__
+
+    large = nap.TsGroup({i: nap.Ts(t=np.arange(3.0)) for i in range(12)})
+    lines = repr(large.data).splitlines()
+    assert len(lines) == 12
+    assert lines[6] == "  ..."
