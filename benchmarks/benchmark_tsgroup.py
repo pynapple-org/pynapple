@@ -30,6 +30,8 @@ import pynapple as nap
 DURATION = 100.0
 N_SPIKES = 2_000
 UNIT_COUNTS = [10, 100, 1000]
+# the cross-correlogram has n * (n - 1) / 2 pairs
+CORRELOGRAM_UNIT_COUNTS = [10, 50, 100]
 
 
 def median_ms(fn, repeat=5, min_time=0.02):
@@ -151,7 +153,53 @@ def bench_tuning_curves():
         results["1D, 100 epochs"][n_units] = median_ms(
             lambda: nap.compute_tuning_curves(tsg, feature_1d, bins=36, epochs=epochs)
         )
-    return "compute_tuning_curves (100 Hz feature, 2,000 spikes/unit)", "n_units", results
+    return (
+        "compute_tuning_curves (100 Hz feature, 2,000 spikes/unit)",
+        "n_units",
+        results,
+    )
+
+
+def bench_correlograms():
+    """The correlograms and the ISI distribution: functions of
+    ``pynapple.process`` that read the spikes of every unit.
+
+    A cross-correlogram of ``n`` units has ``n * (n - 1) / 2`` pairs (4950 for
+    100 units). Thus this section stops at 100 units.
+    """
+    rng = np.random.default_rng(3)
+    event = nap.Ts(t=np.sort(rng.random(1000) * DURATION))
+    epochs = fragmented_ep(100)
+    binsize, windowsize = 0.005, 0.1
+    results = {
+        "autocorrelogram": {},
+        "crosscorrelogram": {},
+        "crosscorrelogram, 100 ep": {},
+        "eventcorrelogram (1k ev)": {},
+        "isi_distribution": {},
+    }
+    for n_units in CORRELOGRAM_UNIT_COUNTS:
+        tsg = make_tsgroup(n_units)
+        results["autocorrelogram"][n_units] = median_ms(
+            lambda: nap.compute_autocorrelogram(tsg, binsize, windowsize)
+        )
+        results["crosscorrelogram"][n_units] = median_ms(
+            lambda: nap.compute_crosscorrelogram(tsg, binsize, windowsize)
+        )
+        results["crosscorrelogram, 100 ep"][n_units] = median_ms(
+            lambda: nap.compute_crosscorrelogram(tsg, binsize, windowsize, ep=epochs)
+        )
+        results["eventcorrelogram (1k ev)"][n_units] = median_ms(
+            lambda: nap.compute_eventcorrelogram(tsg, event, binsize, windowsize)
+        )
+        results["isi_distribution"][n_units] = median_ms(
+            lambda: nap.compute_isi_distribution(tsg, bins=50)
+        )
+    return (
+        "correlograms (5 ms bins, 100 ms window, 2,000 spikes/unit)",
+        "n_units",
+        results,
+    )
 
 
 def bench_nwb():
@@ -249,6 +297,10 @@ def main():
     nap.compute_tuning_curves(
         warm, nap.Tsd(t=np.linspace(0, DURATION, 100), d=np.zeros(100)), bins=5
     )
+    nap.compute_autocorrelogram(warm, 0.005, 0.1)
+    nap.compute_crosscorrelogram(warm, 0.005, 0.1)
+    nap.compute_crosscorrelogram(warm, 0.005, 0.1, ep=fragmented_ep(5))
+    nap.compute_eventcorrelogram(warm, nap.Ts(t=np.array([1.0, 2.0])), 0.005, 0.1)
 
     sections = [
         bench_vs_units,
@@ -256,6 +308,7 @@ def main():
         bench_restrict_fragmentation,
         bench_slicing,
         bench_tuning_curves,
+        bench_correlograms,
     ]
     if not args.no_nwb:
         try:
