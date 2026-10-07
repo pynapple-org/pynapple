@@ -1171,6 +1171,275 @@ class TsGroup(_MetadataMixin):
         return copy.deepcopy(self)
 
     #################################
+    # Groups from arrays on disk
+    #################################
+
+    @staticmethod
+    def _metadata_in_order(metadata, n_units, order):
+        """Check that each metadata column has one value for each unit, then
+        put the values in the order ``order``."""
+        if metadata is None:
+            return None
+        columns = {}
+        for name, value in metadata.items():
+            value = np.asarray(value)
+            if value.ndim == 0 or len(value) != n_units:
+                n_values = 1 if value.ndim == 0 else len(value)
+                raise ValueError(
+                    f"Metadata '{name}' must have {n_units} values, one for "
+                    f"each unit. It has {n_values}."
+                )
+            columns[name] = value[order]
+        return columns
+
+    @classmethod
+    def from_ragged_arrays(
+        cls,
+        ragged_array: Any,
+        ragged_array_index: Any,
+        keys: Optional[Iterable[int]] = None,
+        metadata: Optional[Union[pd.DataFrame, dict]] = None,
+        lazy: bool = True,
+    ) -> TsGroup:
+        """
+        Make a TsGroup from spike times in a ragged layout.
+
+        ``ragged_array`` holds the spike times of each unit, one unit after the
+        other. The spike times of each unit must be sorted.
+        ``ragged_array_index`` holds the end position of each unit in
+        ``ragged_array``. This is the layout of the units table of an NWB file
+        (``spike_times`` and ``spike_times_index``).
+
+        The arrays can be numpy arrays, memory-mapped arrays, h5py datasets or
+        other array-likes that support slices.
+
+        Parameters
+        ----------
+        ragged_array : array-like
+            The spike times of all the units, in seconds.
+        ragged_array_index : array-like of int
+            The end position of each unit in ``ragged_array`` (one position
+            after its last spike). Unit ``i`` holds
+            ``ragged_array[ragged_array_index[i - 1]:ragged_array_index[i]]``.
+        keys : array-like of int, optional
+            The key of each unit, in the order of ``ragged_array_index``. The
+            default is ``0..n_units-1``.
+        metadata : dict or pandas.DataFrame, optional
+            One value for each unit, in the order of ``ragged_array_index``.
+        lazy : bool, optional
+            - True (default): return a LazyTsGroup. It keeps the spike times
+              on disk and reads them only when an operation needs them.
+            - False: read all the spike times and return a regular TsGroup.
+
+        Returns
+        -------
+        LazyTsGroup or TsGroup
+            The time support is the union of the spans of the units. The span
+            of a unit goes from its first spike to its last spike.
+
+        Raises
+        ------
+        ValueError
+            - If ``keys`` does not have one key for each unit, or if two keys
+              are equal.
+            - If ``ragged_array_index`` decreases, or if it goes past the end
+              of ``ragged_array``.
+            - If a metadata column does not have one value for each unit.
+
+        See Also
+        --------
+        from_sorted_arrays : Make a TsGroup from spike times in a sorted layout.
+
+        Notes
+        -----
+        A LazyTsGroup reads only the spike times that each operation needs:
+
+        - A selection of units (``units[[0, 1]]``) reads only these units. It
+          is fast.
+        - ``restrict(ep)``, ``get(start, end)`` and the operations with an
+          epoch argument read only the spikes in the span of the epochs. They
+          do a binary search in each unit, with one read for each step. This
+          is fast for h5py, but slow for zarr.
+        - The other operations read all the spike times, each time that they
+          run.
+
+        A selection gives a regular TsGroup in memory. The arrays must stay
+        readable while the LazyTsGroup is in use (e.g. keep the h5py file
+        open).
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> import pynapple as nap
+        >>> ragged_array = np.array([0.5, 1.5, 2.0, 4.0, 1.0, 3.0])
+        >>> ragged_array_index = np.array([4, 6])
+        >>> units = nap.TsGroup.from_ragged_arrays(
+        ...     ragged_array, ragged_array_index, metadata={"area": ["CA1", "PFC"]}
+        ... )
+        >>> units
+          Index     rate  area
+        -------  -------  ------
+              0  1.14286  CA1
+              1  0.57143  PFC
+
+        A selection of units reads only these units:
+
+        >>> units[1]
+        Time (s)
+        1.0
+        3.0
+        shape: 2
+
+        With h5py, the arrays stay in the file:
+
+        .. code-block:: python
+
+            import h5py
+
+            f = h5py.File("spikes.h5", "r")
+            units = nap.TsGroup.from_ragged_arrays(
+                f["spike_times"], f["spike_times_index"][:]
+            )
+        """
+        from .lazy_ts_group import LazyTsGroup, _RaggedArraySource
+
+        n_units = len(ragged_array_index)
+        if keys is None:
+            keys = np.arange(n_units)
+        source = _RaggedArraySource(ragged_array, ragged_array_index, keys)
+        metadata = cls._metadata_in_order(
+            metadata, n_units, np.argsort(np.asarray(keys), kind="stable")
+        )
+        group = LazyTsGroup(source, metadata=metadata)
+        return group if lazy else group._read()
+
+    @classmethod
+    def from_sorted_arrays(
+        cls,
+        times: Any,
+        clusters: Any,
+        keys: Optional[Iterable[int]] = None,
+        metadata: Optional[Union[pd.DataFrame, dict]] = None,
+        lazy: bool = True,
+    ) -> TsGroup:
+        """
+        Make a TsGroup from spike times in a sorted layout.
+
+        ``times`` holds the spike times of all the units, sorted. ``clusters``
+        holds the key of each spike. This is the layout of
+        ``TsGroup.to_tsd()``: its timestamps are ``times``, and its values are
+        the keys.
+
+        The arrays can be numpy arrays, memory-mapped arrays, h5py datasets,
+        zarr arrays or other array-likes that support slices.
+
+        Parameters
+        ----------
+        times : array-like
+            The spike times of all the units, sorted, in seconds.
+        clusters : array-like of int
+            The key of each spike.
+        keys : array-like of int, optional
+            The keys of the units. Use it to add units with no spike. The
+            default is the keys in ``clusters``.
+        metadata : dict or pandas.DataFrame, optional
+            One value for each unit, in the order of ``keys``. Without
+            ``keys``, in the order of the sorted keys in ``clusters``.
+        lazy : bool, optional
+            - True (default): return a LazyTsGroup. It keeps the spike times
+              on disk and reads them only when an operation needs them.
+            - False: read all the spike times and return a regular TsGroup.
+
+        Returns
+        -------
+        LazyTsGroup or TsGroup
+            The time support is the union of the spans of the units. The span
+            of a unit goes from its first spike to its last spike.
+
+        Raises
+        ------
+        ValueError
+            - If ``times`` and ``clusters`` do not have the same length.
+            - If two keys are equal, or if ``clusters`` holds a key that is not
+              in ``keys``.
+            - If a metadata column does not have one value for each unit.
+
+        See Also
+        --------
+        from_ragged_arrays : Make a TsGroup from spike times in a ragged layout.
+
+        Notes
+        -----
+        The construction reads all of ``clusters`` one time, to find the keys
+        and the number of spikes of each unit. It reads only some values of
+        ``times``.
+
+        A LazyTsGroup reads only the spike times that each operation needs:
+
+        - ``restrict(ep)``, ``get(start, end)`` and the operations with an
+          epoch argument read only the spikes in the span of the epochs. They
+          do two binary searches in ``times``, then read one slice. This is
+          fast.
+        - A selection of units (``units[[0, 1]]``) reads all of ``clusters``,
+          and ``times`` only where the selected units have spikes.
+        - The other operations read all the spike times, each time that they
+          run.
+
+        A selection gives a regular TsGroup in memory. The arrays must stay
+        readable while the LazyTsGroup is in use (e.g. keep the h5py file
+        open).
+
+        Examples
+        --------
+        >>> import numpy as np
+        >>> import pynapple as nap
+        >>> times = np.array([0.5, 1.0, 1.5, 2.0, 3.0, 4.0])
+        >>> clusters = np.array([0, 1, 0, 0, 1, 0])
+        >>> units = nap.TsGroup.from_sorted_arrays(
+        ...     times, clusters, metadata={"area": ["CA1", "PFC"]}
+        ... )
+        >>> units
+          Index     rate  area
+        -------  -------  ------
+              0  1.14286  CA1
+              1  0.57143  PFC
+
+        A selection of time reads only the spikes in that time:
+
+        >>> units.restrict(nap.IntervalSet(1, 2))
+          Index    rate  area
+        -------  ------  ------
+              0       2  CA1
+              1       1  PFC
+
+        Save a TsGroup in zarr, then make a lazy TsGroup from the saved
+        arrays:
+
+        .. code-block:: python
+
+            import zarr
+
+            tsd = tsgroup.to_tsd()
+            root = zarr.open("spikes.zarr", mode="w")
+            root["times"] = tsd.t
+            root["clusters"] = tsd.values.astype(np.int64)
+
+            root = zarr.open("spikes.zarr", mode="r")
+            units = nap.TsGroup.from_sorted_arrays(root["times"], root["clusters"])
+        """
+        from .lazy_ts_group import LazyTsGroup, _SortedArraySource
+
+        source = _SortedArraySource(times, clusters, keys=keys)
+        # The metadata follow `keys`, or the sorted keys in `clusters`.
+        if keys is None:
+            order = np.arange(len(source.keys))
+        else:
+            order = np.argsort(np.asarray(keys), kind="stable")
+        metadata = cls._metadata_in_order(metadata, len(source.keys), order)
+        group = LazyTsGroup(source, metadata=metadata)
+        return group if lazy else group._read()
+
+    #################################
     # Generic functions of Tsd objects
     #################################
     def restrict(self, ep: IntervalSet) -> TsGroup:

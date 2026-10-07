@@ -683,25 +683,25 @@ def units_nwb_path(tmp_path):
 @pytest.fixture
 def read_counter(monkeypatch):
     """Count the spikes that lazy units groups read from the file."""
-    from pynapple.io.interface_nwb import _NWBLazyTsGroup
+    from pynapple.core.lazy_ts_group import _RaggedArraySource
 
     reads = []
-    original = _NWBLazyTsGroup._read_rows
+    original = _RaggedArraySource._read_rows
 
     def spy(self, keys, lo, hi):
         reads.append(int(np.sum(hi - lo)))
         return original(self, keys, lo, hi)
 
-    monkeypatch.setattr(_NWBLazyTsGroup, "_read_rows", spy)
+    monkeypatch.setattr(_RaggedArraySource, "_read_rows", spy)
     return reads
 
 
 def test_units_lazy_matches_eager(units_nwb_path, read_counter):
-    from pynapple.io.interface_nwb import _NWBLazyTsGroup
+    from pynapple.core.lazy_ts_group import LazyTsGroup
 
     path, spikes = units_nwb_path
     units = nap.load_file(path)["units"]
-    assert isinstance(units, _NWBLazyTsGroup)
+    assert isinstance(units, LazyTsGroup)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")  # empty/single-spike time supports
@@ -785,26 +785,6 @@ def test_units_lazy_keeps_file_open(units_nwb_path):
     np.testing.assert_array_equal(units[7].t, spikes[7])
 
 
-def test_units_lazy_unsorted_warns():
-    """A unit whose spikes are not sorted in the file gives a warning when
-    it is read: the lazy group assumes sorted spikes."""
-    from pynapple.io.interface_nwb import _NWBLazyTsGroup
-
-    # unit 3 unsorted, unit 0 empty, unit 7 a single spike, unit 1 sorted
-    spike_times = np.array([5.0, 1.0, 9.0, 6.0, 20.0, 2.0, 3.0, 4.0])
-    stops = np.array([4, 4, 5, 8])
-    ids = [3, 0, 7, 1]
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        units = _NWBLazyTsGroup(spike_times, stops, ids)
-
-    with pytest.warns(UserWarning, match=r"units \[3\] are not sorted"):
-        units[3]
-    with warnings.catch_warnings():
-        warnings.simplefilter("error")
-        np.testing.assert_array_equal(units[1].t, [2.0, 3.0, 4.0])
-
-
 def test_units_not_lazy(units_nwb_path):
     path, spikes = units_nwb_path
     with warnings.catch_warnings():
@@ -826,9 +806,9 @@ def test_units_after_close(units_nwb_path):
     units.rates
     units.index
     repr(units)
-    with pytest.raises(RuntimeError, match="The NWB file is closed"):
+    with pytest.raises(RuntimeError, match="The file is closed"):
         units.count(1.0)
-    with pytest.raises(RuntimeError, match="The NWB file is closed"):
+    with pytest.raises(RuntimeError, match="The file is closed"):
         units[7]
     np.testing.assert_array_equal(selection[7].t, spikes[7])
 
