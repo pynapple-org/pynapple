@@ -29,7 +29,7 @@ def _spike_histograms(group, features, feature_bins, n_flat, bin_edges, epochs):
         ``(n_units,)`` rates within ``epochs``, as ``group.restrict(epochs).rates``.
     """
     # a lazy group reads only the spikes in the span of `epochs`
-    group = group._loaded(epochs)
+    group = group._load_in_memory(epochs)
     times = group._times
     target_times = features.index.values
     # `value_from` would match within the feature's time support, which is

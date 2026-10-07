@@ -2614,3 +2614,16 @@ def test_no_conflict_between_class_and_metadatamixin(nap_class):
         f"Conflict detected! The following methods/attributes are "
         f"overwritten in IntervalSet: {conflicting_members}"
     )
+
+
+@pytest.mark.parametrize("cls", [nap.TsGroup, nap.IntervalSet, nap.TsdFrame])
+def test_getattr_before_init(cls):
+    """An object that is not fully built has no metadata. A read of a missing
+    attribute raises AttributeError, not an infinite recursion. A debugger
+    reads attributes of such an object, and the recursion can crash it."""
+    obj = cls.__new__(cls)
+    obj.__dict__["_initialized"] = False
+    for name in ["index", "rate", "_metadata"]:
+        with pytest.raises(AttributeError, match=f"no attribute '{name}'"):
+            getattr(obj, name)
+    assert not hasattr(obj, "index")

@@ -3,7 +3,6 @@ from importlib.metadata import version as _get_version
 
 from .core import (
     IntervalSet,
-    LazyTsGroup,
     Ts,
     Tsd,
     TsdFrame,

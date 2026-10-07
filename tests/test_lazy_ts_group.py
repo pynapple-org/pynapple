@@ -1,4 +1,4 @@
-"""Tests of LazyTsGroup.
+"""Tests of _LazyTsGroup.
 
 A lazy group must give the same results as a regular TsGroup with the same
 spikes, with each source and each storage (numpy, h5py, zarr). It must read
@@ -15,11 +15,11 @@ import pytest
 
 import pynapple as nap
 from pynapple.core.lazy_ts_group import (
-    LazyTsGroup,
+    _LazyTsGroup,
     _RaggedArraySource,
     _SortedArraySource,
-    _windows,
 )
+from pynapple.core.utils import is_lazy_array
 
 
 def make_spikes():
@@ -161,7 +161,7 @@ def make_lazy(request, store):
         metadata = {"quality": [QUALITY[k] for k in source.keys]}
         with warnings.catch_warnings():
             warnings.simplefilter("ignore")
-            return LazyTsGroup(source, metadata=metadata)
+            return _LazyTsGroup(source, metadata=metadata)
 
     return make
 
@@ -282,7 +282,7 @@ OPERATIONS = {
 def test_same_as_eager(make_lazy, name):
     operation = OPERATIONS[name]
     lazy = make_lazy(SPIKES)
-    assert type(lazy) is LazyTsGroup
+    assert type(lazy) is _LazyTsGroup
     assert_same(run(operation, lazy), run(operation, make_eager(SPIKES)))
 
 
@@ -316,7 +316,13 @@ def n_spikes_in(ep):
     )
 
 
-# Operations with epochs, and the time windows that they read.
+def span_of(ep):
+    """The span of the epochs ``ep``: from the start of the first epoch to the
+    end of the last epoch."""
+    return nap.IntervalSet(ep.start[0], ep.end[-1])
+
+
+# Operations with epochs, and the epochs that they read.
 OPERATIONS_WITH_EPOCHS = [
     (lambda g: g.restrict(EP), EP),
     (lambda g: g.count(0.5, EP), EP),
@@ -331,7 +337,7 @@ def counted(make_lazy):
 
     Returns
     -------
-    lazy : LazyTsGroup
+    lazy : _LazyTsGroup
     construction : dict
         The number of values that the construction read from each array.
     n_read : function
@@ -380,13 +386,13 @@ def test_ragged_reads(counted, request):
     lazy[7]
     assert n_read() == len(SPIKES[7])
 
-    # time: the spikes in each epoch, plus a binary search in each unit that
-    # is only partly in the epoch
-    search = 2 * 3 * int(np.ceil(np.log2(N_TOTAL) + 1))
+    # time: one slice of each unit, from the start of the first epoch to the
+    # end of the last epoch, plus two binary searches in each unit
+    search = 2 * len(SPIKES) * int(np.ceil(np.log2(N_TOTAL) + 1))
     for operation, ep in OPERATIONS_WITH_EPOCHS:
         assert_same(operation(lazy), operation(eager))
-        in_ep = n_spikes_in(ep)
-        assert in_ep <= n_read() <= in_ep + len(ep) * search
+        in_span = n_spikes_in(span_of(ep))
+        assert in_span <= n_read() <= in_span + search
     lazy.restrict(nap.IntervalSet(100, 200))
     assert n_read() == 0
 
@@ -454,63 +460,58 @@ def test_sorted_reads(counted, request):
     )
 
 
-
-@pytest.mark.parametrize(
-    "starts, ends, max_windows, expected",
-    [
-        # few intervals: one window for each interval
-        ([0, 5, 9], [1, 6, 10], 16, ([0, 5, 9], [1, 6, 10])),
-        # too many intervals: keep the largest gap
-        ([0, 2, 9], [1, 3, 10], 2, ([0, 9], [3, 10])),
-        # one window: the span
-        ([0, 2, 9], [1, 3, 10], 1, ([0], [10])),
-        # touching intervals: always merged
-        ([0, 1, 5], [1, 2, 6], 16, ([0, 5], [2, 6])),
-        ([0], [1], 16, ([0], [1])),
-    ],
-)
-def test_windows(starts, ends, max_windows, expected):
-    s, e = _windows(np.array(starts, float), np.array(ends, float), max_windows)
-    np.testing.assert_array_equal(s, expected[0])
-    np.testing.assert_array_equal(e, expected[1])
-
-
 def test_fragmented_epochs(counted, request):
-    """With many short epochs over a long time, the read skips the gaps,
-    up to ``max_windows`` windows."""
+    """Many short epochs over a long time.
+
+    - A ragged source reads one slice of each unit, from the start of the
+      first epoch to the end of the last epoch. It does two binary searches
+      in each unit.
+    - A sorted source reads one slice for each epoch, with two binary
+      searches in ``times`` for each epoch. Thus it skips the gaps.
+    """
     lazy, _, n_read = counted
     eager = make_eager(SPIKES)
     starts = np.arange(0, 20, 1.0)
     ep = nap.IntervalSet(starts, starts + 0.1)
-    # binary search reads for each window: in each unit for a ragged source,
-    # in `times` for a sorted source
-    n_searches = 2 * (len(SPIKES) if "ragged" in request.node.name else 1)
-    search = n_searches * int(np.ceil(np.log2(N_TOTAL) + 1))
+    steps = int(np.ceil(np.log2(N_TOTAL) + 1))
 
-    def n_read_spikes():
-        reads = n_read()
-        return reads.get("ragged_array", reads.get("times"))
+    assert_same(lazy.restrict(ep), eager.restrict(ep))
+    reads = n_read()
+    in_ep = n_spikes_in(ep)
+    in_span = n_spikes_in(span_of(ep))
+    assert in_ep < in_span
+    if "ragged" in request.node.name:
+        assert in_span <= reads["ragged_array"] <= in_span + 2 * len(SPIKES) * steps
+    else:
+        assert reads["clusters"] == in_ep
+        assert in_ep <= reads["times"] <= in_ep + len(ep) * 2 * steps
 
-    for max_windows in [1, 4, 256]:
-        lazy._source.max_windows = max_windows
-        windows = nap.IntervalSet(*_windows(ep.start, ep.end, max_windows))
-        assert len(windows) == min(max_windows, len(ep))
-        assert_same(lazy.restrict(ep), eager.restrict(ep))
-        in_windows = n_spikes_in(windows)
-        assert in_windows <= n_read_spikes() <= in_windows + len(windows) * search
 
-    # the windows skip the largest gaps
-    assert n_spikes_in(ep) < n_spikes_in(nap.IntervalSet(*_windows(ep.start, ep.end, 4)))
-    assert n_spikes_in(nap.IntervalSet(*_windows(ep.start, ep.end, 4))) < n_spikes_in(
-        nap.IntervalSet(0, 19.1)
+def test_read_then_call_errors(make_lazy):
+    """A method made with ``_read_then_call`` and called with wrong arguments
+    gives the name of the TsGroup method in the error: the lazy class is
+    private."""
+    lazy = make_lazy(SPIKES)
+    with pytest.raises(TypeError, match=r"^TsGroup\.restrict\(\) missing"):
+        lazy.restrict()
+    with pytest.raises(TypeError, match=r"^TsGroup\.count\(\) got an unexpected"):
+        lazy.count(x=1)
+    assert _LazyTsGroup.count.__qualname__ == "_LazyTsGroup.count"
+
+
+def test_read_no_window(make_lazy):
+    """A read with no time window gives no spike."""
+    times, clusters = make_lazy(SPIKES)._source.read(
+        start=np.array([]), end=np.array([])
     )
+    assert len(times) == 0 and len(clusters) == 0
 
 
 @pytest.mark.parametrize("chunk_size", [1, 7, 1_000_000])
 def test_sorted_chunk_sizes(store, chunk_size):
     """The size of the chunks does not change the results."""
     source = sorted_source(SPIKES, store, chunk_size=chunk_size)
-    lazy = LazyTsGroup(source, metadata={"quality": [QUALITY[k] for k in source.keys]})
+    lazy = _LazyTsGroup(source, metadata={"quality": [QUALITY[k] for k in source.keys]})
     eager = make_eager(SPIKES)
     np.testing.assert_array_equal(lazy.rates, eager.rates)
     for operation in [
@@ -527,7 +528,7 @@ def test_sorted_keys_from_clusters(store):
     spikes = {k: t for k, t in SPIKES.items() if len(t)}
     source = sorted_source(spikes, store)
     times, clusters = source._times, source._clusters
-    lazy = LazyTsGroup(_SortedArraySource(times, clusters))
+    lazy = _LazyTsGroup(_SortedArraySource(times, clusters))
     np.testing.assert_array_equal(lazy.index, sorted(spikes))
     assert_same(lazy.count(0.5), make_eager(spikes).count(0.5))
 
@@ -536,7 +537,7 @@ def test_sorted_equal_times_in_key_order(store):
     """Equal times come back in the order of the keys, as in a TsGroup."""
     times = store("times", np.array([1.0, 2.0, 2.0, 2.0, 3.0]))
     clusters = store("clusters", np.array([5, 9, 2, 5, 2]))
-    lazy = LazyTsGroup(_SortedArraySource(times, clusters))
+    lazy = _LazyTsGroup(_SortedArraySource(times, clusters))
     with warnings.catch_warnings():
         # the Ts of unit 9 has one spike: its time support has no duration
         warnings.simplefilter("ignore")
@@ -553,7 +554,7 @@ def test_sorted_unsorted_warns(store):
     """A read of unsorted times gives a warning."""
     times = store("times", np.array([1.0, 3.0, 2.0, 4.0]))
     clusters = store("clusters", np.array([0, 1, 0, 1]))
-    lazy = LazyTsGroup(_SortedArraySource(times, clusters))
+    lazy = _LazyTsGroup(_SortedArraySource(times, clusters))
     with pytest.warns(UserWarning, match="Spike times are not sorted"):
         lazy.to_tsd()
 
@@ -599,7 +600,7 @@ def test_ragged_unsorted_warns(store):
     }
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
-        lazy = LazyTsGroup(ragged_source(spikes, store))
+        lazy = _LazyTsGroup(ragged_source(spikes, store))
 
     with pytest.warns(UserWarning, match=r"units \[3\] are not sorted"):
         lazy[3]
@@ -613,9 +614,11 @@ def test_ragged_unsorted_warns(store):
 #################################
 
 
-def test_exported():
-    assert nap.LazyTsGroup is LazyTsGroup
-    assert issubclass(nap.LazyTsGroup, nap.TsGroup)
+def test_not_exported():
+    """The lazy class is private: the entry points are the TsGroup methods."""
+    assert not hasattr(nap, "LazyTsGroup")
+    assert not hasattr(nap, "_LazyTsGroup")
+    assert issubclass(_LazyTsGroup, nap.TsGroup)
 
 
 @pytest.mark.parametrize("lazy", [True, False])
@@ -623,16 +626,19 @@ def test_from_ragged_arrays(store, lazy):
     keys = list(SPIKES)
     flat = np.concatenate([SPIKES[k] for k in keys])
     index = np.cumsum([len(SPIKES[k]) for k in keys])
+    ragged_array = store("ragged_array", flat)
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         units = nap.TsGroup.from_ragged_arrays(
-            store("ragged_array", flat),
+            ragged_array,
             index,
             keys=keys,
             metadata={"quality": [QUALITY[k] for k in keys]},
             lazy=lazy,
         )
-    assert type(units) is (nap.LazyTsGroup if lazy else nap.TsGroup)
+    # a lazy group only for an array on disk
+    on_disk = is_lazy_array(ragged_array)
+    assert type(units) is (_LazyTsGroup if lazy and on_disk else nap.TsGroup)
     assert_same(run(lambda g: g.restrict(EP), units), make_eager(SPIKES).restrict(EP))
     assert units == make_eager(SPIKES)
 
@@ -642,17 +648,60 @@ def test_from_sorted_arrays(store, lazy):
     """The round trip through ``to_tsd`` gives the same group."""
     eager = make_eager(SPIKES)
     tsd = eager.to_tsd()
+    times = store("times", tsd.t)
+    clusters = store("clusters", tsd.values.astype(np.int64))
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
         units = nap.TsGroup.from_sorted_arrays(
-            store("times", tsd.t),
-            store("clusters", tsd.values.astype(np.int64)),
+            times,
+            clusters,
             keys=eager.index,
             metadata={"quality": eager.quality.values},
             lazy=lazy,
         )
-    assert type(units) is (nap.LazyTsGroup if lazy else nap.TsGroup)
+    # a lazy group only for arrays on disk
+    on_disk = is_lazy_array(times)
+    assert type(units) is (_LazyTsGroup if lazy and on_disk else nap.TsGroup)
     assert units == eager
+
+
+def test_from_arrays_in_memory_or_on_disk(tmp_path):
+    """Arrays in memory give a regular TsGroup. Arrays on disk give a lazy
+    TsGroup, unless ``lazy=False``."""
+    ragged_array = np.array([0.5, 1.5, 2.0, 1.0, 3.0])
+    index = np.array([3, 5])
+    times = np.array([0.5, 1.0, 1.5, 2.0, 3.0])
+    clusters = np.array([0, 1, 0, 0, 1])
+    np.save(tmp_path / "ragged.npy", ragged_array)
+    np.save(tmp_path / "times.npy", times)
+    np.save(tmp_path / "clusters.npy", clusters)
+    memmap = {
+        n: np.load(tmp_path / f"{n}.npy", mmap_mode="r")
+        for n in ["ragged", "times", "clusters"]
+    }
+
+    in_memory = [
+        nap.TsGroup.from_ragged_arrays(ragged_array, index),
+        nap.TsGroup.from_ragged_arrays(list(ragged_array), list(index)),
+        nap.TsGroup.from_sorted_arrays(times, clusters),
+        nap.TsGroup.from_sorted_arrays(list(times), list(clusters)),
+        nap.TsGroup.from_ragged_arrays(memmap["ragged"], index, lazy=False),
+        nap.TsGroup.from_sorted_arrays(memmap["times"], memmap["clusters"], lazy=False),
+    ]
+    on_disk = [
+        nap.TsGroup.from_ragged_arrays(memmap["ragged"], index),
+        nap.TsGroup.from_sorted_arrays(memmap["times"], memmap["clusters"]),
+        # one array on disk is enough
+        nap.TsGroup.from_sorted_arrays(times, memmap["clusters"]),
+        nap.TsGroup.from_sorted_arrays(memmap["times"], clusters),
+    ]
+    expected = nap.TsGroup({0: nap.Ts([0.5, 1.5, 2.0]), 1: nap.Ts([1.0, 3.0])})
+    for units in in_memory:
+        assert type(units) is nap.TsGroup
+        assert units == expected
+    for units in on_disk:
+        assert type(units) is _LazyTsGroup
+        assert units == expected
 
 
 def test_from_ragged_arrays_default_keys():

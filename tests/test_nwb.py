@@ -697,11 +697,11 @@ def read_counter(monkeypatch):
 
 
 def test_units_lazy_matches_eager(units_nwb_path, read_counter):
-    from pynapple.core.lazy_ts_group import LazyTsGroup
+    from pynapple.core.lazy_ts_group import _LazyTsGroup
 
     path, spikes = units_nwb_path
     units = nap.load_file(path)["units"]
-    assert isinstance(units, LazyTsGroup)
+    assert isinstance(units, _LazyTsGroup)
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")  # empty/single-spike time supports
@@ -748,19 +748,20 @@ def test_units_lazy_reads_only_selection(units_nwb_path, read_counter):
     np.testing.assert_array_equal(units[7].t, spikes[7])
     assert read_counter[-1] == len(spikes[7])
 
-    # time: only the spikes in each epoch, with one read for each epoch
+    # time: one read of the span of the epochs, from the start of the first
+    # epoch to the end of the last epoch
     ep = nap.IntervalSet([2, 6], [4, 8])
 
-    def in_epochs(windows):
+    def in_windows(starts, ends):
         return [
             sum(np.sum((t >= s) & (t <= e)) for t in spikes.values())
-            for s, e in windows
+            for s, e in zip(starts, ends)
         ]
 
     for operation, windows in [
-        (lambda g: g.restrict(ep), ep.values),
-        (lambda g: g.get(2, 8), [(2, 8)]),
-        (lambda g: g.count(0.5, ep).values, ep.values),
+        (lambda g: g.restrict(ep), ([2], [8])),
+        (lambda g: g.get(2, 8), ([2], [8])),
+        (lambda g: g.count(0.5, ep).values, ([2], [8])),
     ]:
         read_counter.clear()
         result, expected = operation(units), operation(eager)
@@ -768,7 +769,8 @@ def test_units_lazy_reads_only_selection(units_nwb_path, read_counter):
             assert result == expected
         else:
             np.testing.assert_array_equal(result, expected)
-        assert read_counter == in_epochs(windows) and sum(read_counter) < n_total
+        assert read_counter == in_windows(*windows)
+        assert sum(read_counter) < n_total
 
     # nothing is kept: each operation reads the file again
     read_counter.clear()
@@ -798,6 +800,19 @@ def test_units_not_lazy(units_nwb_path):
         units = nap.load_file(path, lazy_loading=False)["units"]
     assert type(units) is nap.TsGroup
     np.testing.assert_array_equal(units[7].t, spikes[7])
+
+
+def test_close_nwbfile_object(units_nwb_path):
+    """An NWBFile made from an NWB file object of pynwb does not own the file.
+    Thus ``close()`` does nothing, and the lazy units can still read."""
+    path, spikes = units_nwb_path
+    with pynwb.NWBHDF5IO(path, "r") as io:
+        nwb = nap.NWBFile(io.read())
+        units = nwb["units"]
+        nwb.close()
+        np.testing.assert_array_equal(units[7].t, spikes[7])
+    # an NWB file in memory
+    nap.NWBFile(mock_NWBFile()).close()
 
 
 def test_units_after_close(units_nwb_path):

@@ -45,6 +45,7 @@ from .utils import (
     _get_terminal_size,
     check_filename,
     convert_to_numpy_array,
+    is_lazy_array,
 )
 
 
@@ -722,7 +723,7 @@ class TsGroup(_MetadataMixin):
         """All members, in index order."""
         return [self._get_member(k) for k in self.index]
 
-    def _loaded(self, ep: Optional[IntervalSet] = None) -> TsGroup:
+    def _load_in_memory(self, ep: Optional[IntervalSet] = None) -> TsGroup:
         """The group with its spikes in memory, for code that reads the merged
         arrays directly.
 
@@ -1227,13 +1228,16 @@ class TsGroup(_MetadataMixin):
         metadata : dict or pandas.DataFrame, optional
             One value for each unit, in the order of ``ragged_array_index``.
         lazy : bool, optional
-            - True (default): return a LazyTsGroup. It keeps the spike times
-              on disk and reads them only when an operation needs them.
+            - True (default): if ``ragged_array`` is on disk (e.g. an h5py
+              dataset, a zarr array or a numpy.memmap), return a lazy
+              TsGroup. It keeps the spike times on disk and reads them only
+              when an operation needs them. If ``ragged_array`` is in memory
+              (e.g. a numpy array or a list), return a regular TsGroup.
             - False: read all the spike times and return a regular TsGroup.
 
         Returns
         -------
-        LazyTsGroup or TsGroup
+        TsGroup
             The time support is the union of the spans of the units. The span
             of a unit goes from its first spike to its last spike.
 
@@ -1252,21 +1256,21 @@ class TsGroup(_MetadataMixin):
 
         Notes
         -----
-        A LazyTsGroup reads only the spike times that each operation needs:
+        A lazy TsGroup reads only the spike times that each operation needs:
 
         - A selection of units (``units[[0, 1]]``) reads only these units. It
           is fast.
         - ``restrict(ep)``, ``get(start, end)`` and the operations with an
-          epoch argument read only the spikes in the epochs. They do a binary
-          search in each unit, with one read for each step. This is fast for
-          h5py, but slow for zarr. With many epochs, the read merges the
-          epochs that have the smallest gaps between them, so that it reads
-          at most 16 time windows.
+          epoch argument read one slice of each unit, from the start of the
+          first epoch to the end of the last epoch. Then they drop the spikes
+          between the epochs. A binary search in each unit finds the slice,
+          with one read for each step. This is fast for h5py, but slow for
+          zarr.
         - The other operations read all the spike times, each time that they
           run.
 
         A selection gives a regular TsGroup in memory. The arrays must stay
-        readable while the LazyTsGroup is in use (e.g. keep the h5py file
+        readable while the lazy TsGroup is in use (e.g. keep the h5py file
         open).
 
         Examples
@@ -1284,7 +1288,7 @@ class TsGroup(_MetadataMixin):
               0  1.14286  CA1
               1  0.57143  PFC
 
-        A selection of units reads only these units:
+        The arrays are in memory. Thus ``units`` is a regular TsGroup:
 
         >>> units[1]
         Time (s)
@@ -1292,7 +1296,8 @@ class TsGroup(_MetadataMixin):
         3.0
         shape: 2
 
-        With h5py, the arrays stay in the file:
+        With h5py, the arrays stay in the file, and ``units`` is a lazy
+        TsGroup. ``units[1]`` then reads only unit 1 from the file:
 
         .. code-block:: python
 
@@ -1303,8 +1308,10 @@ class TsGroup(_MetadataMixin):
                 f["spike_times"], f["spike_times_index"][:]
             )
         """
-        from .lazy_ts_group import LazyTsGroup, _RaggedArraySource
+        from .lazy_ts_group import _LazyTsGroup, _RaggedArraySource
 
+        if not hasattr(ragged_array, "shape"):  # e.g. a list
+            ragged_array = np.asarray(ragged_array, dtype=np.float64)
         n_units = len(ragged_array_index)
         if keys is None:
             keys = np.arange(n_units)
@@ -1312,8 +1319,11 @@ class TsGroup(_MetadataMixin):
         metadata = cls._metadata_in_order(
             metadata, n_units, np.argsort(np.asarray(keys), kind="stable")
         )
-        group = LazyTsGroup(source, metadata=metadata)
-        return group if lazy else group._read()
+        group = _LazyTsGroup(source, metadata=metadata)
+        # Arrays in memory give a regular TsGroup: a lazy group has no use.
+        if lazy and is_lazy_array(ragged_array):
+            return group
+        return group._read_units()
 
     @classmethod
     def from_sorted_arrays(
@@ -1348,13 +1358,16 @@ class TsGroup(_MetadataMixin):
             One value for each unit, in the order of ``keys``. Without
             ``keys``, in the order of the sorted keys in ``clusters``.
         lazy : bool, optional
-            - True (default): return a LazyTsGroup. It keeps the spike times
-              on disk and reads them only when an operation needs them.
+            - True (default): if ``times`` or ``clusters`` is on disk (e.g. an
+              h5py dataset, a zarr array or a numpy.memmap), return a lazy
+              TsGroup. It keeps the spike times on disk and reads them only
+              when an operation needs them. If both arrays are in memory
+              (e.g. numpy arrays or lists), return a regular TsGroup.
             - False: read all the spike times and return a regular TsGroup.
 
         Returns
         -------
-        LazyTsGroup or TsGroup
+        TsGroup
             The time support is the union of the spans of the units. The span
             of a unit goes from its first spike to its last spike.
 
@@ -1376,21 +1389,19 @@ class TsGroup(_MetadataMixin):
         and the number of spikes of each unit. It reads only some values of
         ``times``.
 
-        A LazyTsGroup reads only the spike times that each operation needs:
+        A lazy TsGroup reads only the spike times that each operation needs:
 
         - ``restrict(ep)``, ``get(start, end)`` and the operations with an
-          epoch argument read only the spikes in the epochs. For each epoch,
-          they do two binary searches in ``times``, then read one slice. This
-          is fast. With many epochs, the read merges the epochs that have the
-          smallest gaps between them, so that it reads at most 256 time
-          windows.
+          epoch argument read only the spikes in the epochs. For each
+          epoch, they do two binary searches in ``times``, then read one
+          slice. This is fast.
         - A selection of units (``units[[0, 1]]``) reads all of ``clusters``,
           and ``times`` only where the selected units have spikes.
         - The other operations read all the spike times, each time that they
           run.
 
         A selection gives a regular TsGroup in memory. The arrays must stay
-        readable while the LazyTsGroup is in use (e.g. keep the h5py file
+        readable while the lazy TsGroup is in use (e.g. keep the h5py file
         open).
 
         Examples
@@ -1408,7 +1419,7 @@ class TsGroup(_MetadataMixin):
               0  1.14286  CA1
               1  0.57143  PFC
 
-        A selection of time reads only the spikes in that time:
+        The arrays are in memory. Thus ``units`` is a regular TsGroup:
 
         >>> units.restrict(nap.IntervalSet(1, 2))
           Index    rate  area
@@ -1417,7 +1428,8 @@ class TsGroup(_MetadataMixin):
               1       1  PFC
 
         Save a TsGroup in zarr, then make a lazy TsGroup from the saved
-        arrays:
+        arrays. ``units.restrict(ep)`` then reads only the spikes in ``ep``
+        from the file:
 
         .. code-block:: python
 
@@ -1431,8 +1443,12 @@ class TsGroup(_MetadataMixin):
             root = zarr.open("spikes.zarr", mode="r")
             units = nap.TsGroup.from_sorted_arrays(root["times"], root["clusters"])
         """
-        from .lazy_ts_group import LazyTsGroup, _SortedArraySource
+        from .lazy_ts_group import _LazyTsGroup, _SortedArraySource
 
+        if not hasattr(times, "shape"):  # e.g. a list
+            times = np.asarray(times, dtype=np.float64)
+        if not hasattr(clusters, "shape"):
+            clusters = np.asarray(clusters, dtype=np.int64)
         source = _SortedArraySource(times, clusters, keys=keys)
         # The metadata follow `keys`, or the sorted keys in `clusters`.
         if keys is None:
@@ -1440,8 +1456,11 @@ class TsGroup(_MetadataMixin):
         else:
             order = np.argsort(np.asarray(keys), kind="stable")
         metadata = cls._metadata_in_order(metadata, len(source.keys), order)
-        group = LazyTsGroup(source, metadata=metadata)
-        return group if lazy else group._read()
+        group = _LazyTsGroup(source, metadata=metadata)
+        # Arrays in memory give a regular TsGroup: a lazy group has no use.
+        if lazy and (is_lazy_array(times) or is_lazy_array(clusters)):
+            return group
+        return group._read_units()
 
     #################################
     # Generic functions of Tsd objects
@@ -2631,7 +2650,7 @@ class TsGroup(_MetadataMixin):
             return tsgroups[0]
 
         # the merge reads the merged arrays of every group
-        tsgroups = [tsg._loaded() for tsg in tsgroups]
+        tsgroups = [tsg._load_in_memory() for tsg in tsgroups]
 
         tsg1 = tsgroups[0]
         keys = set(tsg1.keys())
