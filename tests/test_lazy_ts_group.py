@@ -18,6 +18,7 @@ from pynapple.core.lazy_ts_group import (
     LazyTsGroup,
     _RaggedArraySource,
     _SortedArraySource,
+    _windows,
 )
 
 
@@ -308,6 +309,22 @@ def test_get_closest(make_lazy):
 #################################
 
 
+def n_spikes_in(ep):
+    """The number of spikes in the epochs ``ep``."""
+    return sum(
+        np.sum((t >= s) & (t <= e)) for t in SPIKES.values() for s, e in ep.values
+    )
+
+
+# Operations with epochs, and the time windows that they read.
+OPERATIONS_WITH_EPOCHS = [
+    (lambda g: g.restrict(EP), EP),
+    (lambda g: g.count(0.5, EP), EP),
+    (lambda g: g.get(2, 8), nap.IntervalSet(2, 8)),
+    (lambda g: nap.compute_tuning_curves(g, TSD, bins=5, epochs=EP), EP),
+]
+
+
 @pytest.fixture
 def counted(make_lazy):
     """A lazy group whose stored arrays count their reads.
@@ -363,18 +380,13 @@ def test_ragged_reads(counted, request):
     lazy[7]
     assert n_read() == len(SPIKES[7])
 
-    # time: the spikes in the span of the epochs, plus a binary search in each
-    # unit that is only partly in the span
-    in_span = sum(np.sum((t >= 2) & (t <= 8)) for t in SPIKES.values())
+    # time: the spikes in each epoch, plus a binary search in each unit that
+    # is only partly in the epoch
     search = 2 * 3 * int(np.ceil(np.log2(N_TOTAL) + 1))
-    for operation in [
-        lambda g: g.restrict(EP),
-        lambda g: g.count(0.5, EP),
-        lambda g: g.get(2, 8),
-        lambda g: nap.compute_tuning_curves(g, TSD, bins=5, epochs=EP),
-    ]:
+    for operation, ep in OPERATIONS_WITH_EPOCHS:
         assert_same(operation(lazy), operation(eager))
-        assert in_span <= n_read() <= in_span + search
+        in_ep = n_spikes_in(ep)
+        assert in_ep <= n_read() <= in_ep + len(ep) * search
     lazy.restrict(nap.IntervalSet(100, 200))
     assert n_read() == 0
 
@@ -418,18 +430,13 @@ def test_sorted_reads(counted, request):
     reads = n_read()
     assert reads["clusters"] == N_TOTAL and reads["times"] <= 64
 
-    # time: one slice of the spikes in the span, plus two binary searches
-    in_span = sum(np.sum((t >= 2) & (t <= 8)) for t in SPIKES.values())
-    for operation in [
-        lambda g: g.restrict(EP),
-        lambda g: g.count(0.5, EP),
-        lambda g: g.get(2, 8),
-        lambda g: nap.compute_tuning_curves(g, TSD, bins=5, epochs=EP),
-    ]:
+    # time: one slice of the spikes in each epoch, plus two binary searches
+    for operation, ep in OPERATIONS_WITH_EPOCHS:
         assert_same(operation(lazy), operation(eager))
+        in_ep = n_spikes_in(ep)
         reads = n_read()
-        assert reads["clusters"] == in_span
-        assert in_span <= reads["times"] <= in_span + search
+        assert reads["clusters"] == in_ep
+        assert in_ep <= reads["times"] <= in_ep + len(ep) * search
     lazy.restrict(nap.IntervalSet(100, 200))
     reads = n_read()
     assert reads["clusters"] == 0 and reads["times"] <= search
@@ -444,6 +451,58 @@ def test_sorted_reads(counted, request):
     assert n_read() == {"times": 2 * N_TOTAL, "clusters": 2 * N_TOTAL}
     assert not any(
         isinstance(v, np.ndarray) and len(v) == N_TOTAL for v in lazy.__dict__.values()
+    )
+
+
+
+@pytest.mark.parametrize(
+    "starts, ends, max_windows, expected",
+    [
+        # few intervals: one window for each interval
+        ([0, 5, 9], [1, 6, 10], 16, ([0, 5, 9], [1, 6, 10])),
+        # too many intervals: keep the largest gap
+        ([0, 2, 9], [1, 3, 10], 2, ([0, 9], [3, 10])),
+        # one window: the span
+        ([0, 2, 9], [1, 3, 10], 1, ([0], [10])),
+        # touching intervals: always merged
+        ([0, 1, 5], [1, 2, 6], 16, ([0, 5], [2, 6])),
+        ([0], [1], 16, ([0], [1])),
+    ],
+)
+def test_windows(starts, ends, max_windows, expected):
+    s, e = _windows(np.array(starts, float), np.array(ends, float), max_windows)
+    np.testing.assert_array_equal(s, expected[0])
+    np.testing.assert_array_equal(e, expected[1])
+
+
+def test_fragmented_epochs(counted, request):
+    """With many short epochs over a long time, the read skips the gaps,
+    up to ``max_windows`` windows."""
+    lazy, _, n_read = counted
+    eager = make_eager(SPIKES)
+    starts = np.arange(0, 20, 1.0)
+    ep = nap.IntervalSet(starts, starts + 0.1)
+    # binary search reads for each window: in each unit for a ragged source,
+    # in `times` for a sorted source
+    n_searches = 2 * (len(SPIKES) if "ragged" in request.node.name else 1)
+    search = n_searches * int(np.ceil(np.log2(N_TOTAL) + 1))
+
+    def n_read_spikes():
+        reads = n_read()
+        return reads.get("ragged_array", reads.get("times"))
+
+    for max_windows in [1, 4, 256]:
+        lazy._source.max_windows = max_windows
+        windows = nap.IntervalSet(*_windows(ep.start, ep.end, max_windows))
+        assert len(windows) == min(max_windows, len(ep))
+        assert_same(lazy.restrict(ep), eager.restrict(ep))
+        in_windows = n_spikes_in(windows)
+        assert in_windows <= n_read_spikes() <= in_windows + len(windows) * search
+
+    # the windows skip the largest gaps
+    assert n_spikes_in(ep) < n_spikes_in(nap.IntervalSet(*_windows(ep.start, ep.end, 4)))
+    assert n_spikes_in(nap.IntervalSet(*_windows(ep.start, ep.end, 4))) < n_spikes_in(
+        nap.IntervalSet(0, 19.1)
     )
 
 

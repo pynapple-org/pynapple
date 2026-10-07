@@ -748,13 +748,19 @@ def test_units_lazy_reads_only_selection(units_nwb_path, read_counter):
     np.testing.assert_array_equal(units[7].t, spikes[7])
     assert read_counter[-1] == len(spikes[7])
 
-    # time: only the spikes in the span of the epochs
+    # time: only the spikes in each epoch, with one read for each epoch
     ep = nap.IntervalSet([2, 6], [4, 8])
-    in_span = sum(np.sum((t >= 2) & (t <= 8)) for t in spikes.values())
-    for operation in [
-        lambda g: g.restrict(ep),
-        lambda g: g.get(2, 8),
-        lambda g: g.count(0.5, ep).values,
+
+    def in_epochs(windows):
+        return [
+            sum(np.sum((t >= s) & (t <= e)) for t in spikes.values())
+            for s, e in windows
+        ]
+
+    for operation, windows in [
+        (lambda g: g.restrict(ep), ep.values),
+        (lambda g: g.get(2, 8), [(2, 8)]),
+        (lambda g: g.count(0.5, ep).values, ep.values),
     ]:
         read_counter.clear()
         result, expected = operation(units), operation(eager)
@@ -762,7 +768,7 @@ def test_units_lazy_reads_only_selection(units_nwb_path, read_counter):
             assert result == expected
         else:
             np.testing.assert_array_equal(result, expected)
-        assert read_counter == [in_span] and in_span < n_total
+        assert read_counter == in_epochs(windows) and sum(read_counter) < n_total
 
     # nothing is kept: each operation reads the file again
     read_counter.clear()

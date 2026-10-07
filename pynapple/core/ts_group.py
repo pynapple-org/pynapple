@@ -727,8 +727,8 @@ class TsGroup(_MetadataMixin):
         arrays directly.
 
         A regular TsGroup returns itself. A lazy group (e.g. the units of an
-        NWB file) returns a regular TsGroup with the spikes in the span of
-        ``ep``, or all the spikes if ``ep`` is None.
+        NWB file) returns a regular TsGroup with the spikes in ``ep``, or all
+        the spikes if ``ep`` is None.
         """
         return self
 
@@ -1257,9 +1257,11 @@ class TsGroup(_MetadataMixin):
         - A selection of units (``units[[0, 1]]``) reads only these units. It
           is fast.
         - ``restrict(ep)``, ``get(start, end)`` and the operations with an
-          epoch argument read only the spikes in the span of the epochs. They
-          do a binary search in each unit, with one read for each step. This
-          is fast for h5py, but slow for zarr.
+          epoch argument read only the spikes in the epochs. They do a binary
+          search in each unit, with one read for each step. This is fast for
+          h5py, but slow for zarr. With many epochs, the read merges the
+          epochs that have the smallest gaps between them, so that it reads
+          at most 16 time windows.
         - The other operations read all the spike times, each time that they
           run.
 
@@ -1377,9 +1379,11 @@ class TsGroup(_MetadataMixin):
         A LazyTsGroup reads only the spike times that each operation needs:
 
         - ``restrict(ep)``, ``get(start, end)`` and the operations with an
-          epoch argument read only the spikes in the span of the epochs. They
-          do two binary searches in ``times``, then read one slice. This is
-          fast.
+          epoch argument read only the spikes in the epochs. For each epoch,
+          they do two binary searches in ``times``, then read one slice. This
+          is fast. With many epochs, the read merges the epochs that have the
+          smallest gaps between them, so that it reads at most 256 time
+          windows.
         - A selection of units (``units[[0, 1]]``) reads all of ``clusters``,
           and ``times`` only where the selected units have spikes.
         - The other operations read all the spike times, each time that they

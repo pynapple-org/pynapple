@@ -17,6 +17,8 @@ There are two sources:
   time is fast.
 """
 
+import functools
+import inspect
 import warnings
 from numbers import Number
 
@@ -51,6 +53,36 @@ def _search(array, lo, hi, t, right):
         else:
             hi = mid
     return lo
+
+
+def _windows(starts, ends, max_windows):
+    """Merge the intervals ``[starts[i], ends[i]]`` into at most
+    ``max_windows`` time windows to read.
+
+    Each window costs a fixed time (binary searches, and one read for each
+    unit in a ragged source). Thus the function keeps only the largest gaps
+    between the intervals, and reads the spikes in the other gaps. It always
+    merges intervals that touch, so that no spike is read twice.
+
+    Parameters
+    ----------
+    starts, ends : ndarray
+        The intervals, sorted and without overlap (as in an IntervalSet).
+    max_windows : int
+        The maximum number of windows.
+
+    Returns
+    -------
+    starts, ends : ndarray
+        The windows.
+    """
+    gaps = starts[1:] - ends[:-1]
+    split = np.zeros(len(gaps), dtype=bool)
+    if max_windows > 1:
+        largest = np.argsort(gaps, kind="stable")[-(max_windows - 1) :]
+        split[largest] = True
+    split &= gaps > 0
+    return starts[np.r_[True, split]], ends[np.r_[split, True]]
 
 
 def _tsgroup_from_state(state):
@@ -128,7 +160,12 @@ class _RaggedArraySource:
         ``NWBFile`` that holds the arrays).
     closed : bool
         True after ``close()``.
+    max_windows : int
+        The maximum number of time windows that an operation with epochs
+        reads. Each window costs one read for each unit.
     """
+
+    max_windows = 16
 
     def __init__(self, ragged_array, ragged_array_index, keys, keep_alive=None):
         """
@@ -269,15 +306,16 @@ class _RaggedArraySource:
         """Read the spike times of the units ``keys``.
 
         The function reads only the spikes ``t`` with ``start <= t <= end``
-        (in seconds). In a unit that is only partly in ``[start, end]``, a
-        binary search in the file finds these spikes.
+        (in seconds). In a unit that is only partly in a window, a binary
+        search in the file finds these spikes.
 
         Parameters
         ----------
         keys : array-like of int, optional
             Sorted keys of the source. The default is all the keys.
-        start, end : float, optional
-            The time window, in seconds. The default is all the time.
+        start, end : float or array-like, optional
+            The time windows, in seconds. The windows must be sorted, and must
+            not overlap or touch. The default is all the time.
 
         Returns
         -------
@@ -286,6 +324,18 @@ class _RaggedArraySource:
             each spike.
         """
         keys = self.keys if keys is None else np.asarray(keys, dtype=np.int64)
+        parts = [
+            self._read_window(keys, s, e)
+            for s, e in zip(np.atleast_1d(start), np.atleast_1d(end))
+        ]
+        # The windows are sorted and disjoint. Thus the spikes stay sorted.
+        return (
+            np.concatenate([t for t, _ in parts]),
+            np.concatenate([c for _, c in parts]),
+        )
+
+    def _read_window(self, keys, start, end):
+        """Read the spikes of the units ``keys`` in one time window."""
         rows = self._rows(keys)
         lo = self._starts[rows].copy()
         hi = self._stops[rows].copy()
@@ -359,7 +409,12 @@ class _SortedArraySource:
         An object that the source keeps, so that the file stays open.
     closed : bool
         True after ``close()``.
+    max_windows : int
+        The maximum number of time windows that an operation with epochs
+        reads. Each window costs two binary searches and one slice.
     """
+
+    max_windows = 256
 
     def __init__(
         self, times, clusters, keys=None, keep_alive=None, chunk_size=1_000_000
@@ -514,14 +569,16 @@ class _SortedArraySource:
         """Read the spike times of the units ``keys``.
 
         The function reads only the spikes ``t`` with ``start <= t <= end``
-        (in seconds). Two binary searches in ``times`` find these spikes.
+        (in seconds). For each window, two binary searches in ``times`` find
+        these spikes.
 
         Parameters
         ----------
         keys : array-like of int, optional
             Sorted keys of the source. The default is all the keys.
-        start, end : float, optional
-            The time window, in seconds. The default is all the time.
+        start, end : float or array-like, optional
+            The time windows, in seconds. The windows must be sorted, and must
+            not overlap or touch. The default is all the time.
 
         Returns
         -------
@@ -531,28 +588,58 @@ class _SortedArraySource:
         """
         if self.closed:
             raise RuntimeError(_CLOSED_MESSAGE)
-        empty = np.zeros(0), np.zeros(0, dtype=np.int64)
-        if start > end or (keys is not None and len(keys) == 0):
-            return empty
+        start, end = np.atleast_1d(start), np.atleast_1d(end)
+        start, end = start[start <= end], end[start <= end]
+        if len(start) == 0 or (keys is not None and len(keys) == 0):
+            return np.zeros(0), np.zeros(0, dtype=np.int64)
         try:
-            lo = (
-                0
-                if start == -np.inf
-                else _search(self._times, 0, self._n, start, False)
+            lo = np.array(
+                [
+                    0 if s == -np.inf else _search(self._times, 0, self._n, s, False)
+                    for s in start
+                ],
+                dtype=np.int64,
             )
-            hi = (
-                self._n
-                if end == np.inf
-                else _search(self._times, 0, self._n, end, True)
+            hi = np.array(
+                [
+                    self._n
+                    if e == np.inf
+                    else _search(self._times, 0, self._n, e, True)
+                    for e in end
+                ],
+                dtype=np.int64,
             )
+            # With unsorted spikes, the binary search can give hi < lo.
+            hi = np.maximum(hi, lo)
             if keys is None or np.array_equal(keys, self.keys):
-                times = np.asarray(self._times[lo:hi], dtype=np.float64)
-                clusters = np.asarray(self._clusters[lo:hi], dtype=np.int64)
+                times, clusters = self._read_slices(lo, hi)
             else:
-                times, clusters = self._read_units(np.asarray(keys), lo, hi)
+                parts = [
+                    self._read_units(np.asarray(keys), a, b) for a, b in zip(lo, hi)
+                ]
+                times = np.concatenate([t for t, _ in parts])
+                clusters = np.concatenate([c for _, c in parts])
         except (ValueError, OSError, KeyError) as err:
             raise RuntimeError("Cannot read the spike times from the file.") from err
         return self._ordered(times, clusters)
+
+    def _read_slices(self, lo, hi):
+        """Read ``times[lo[i]:hi[i]]`` and ``clusters[lo[i]:hi[i]]`` for each
+        window ``i``.
+
+        The function makes the two output arrays first, then reads the windows
+        into them one at a time. Thus the memory holds only the output and one
+        window, not all the windows and the output (as with
+        ``np.concatenate``).
+        """
+        offsets = np.concatenate([[0], np.cumsum(hi - lo)])
+        times = np.empty(offsets[-1], dtype=np.float64)
+        clusters = np.empty(offsets[-1], dtype=np.int64)
+        for a, b, o in zip(lo, hi, offsets[:-1]):
+            if b > a:
+                times[o : o + b - a] = self._times[a:b]
+                clusters[o : o + b - a] = self._clusters[a:b]
+        return times, clusters
 
     def _read_units(self, keys, lo, hi):
         """Read the spikes of the units ``keys`` in ``[lo, hi)``. Read ``times``
@@ -619,6 +706,70 @@ class _SortedArraySource:
             width *= 4
 
 
+#################################
+# Routing of the LazyTsGroup methods
+#################################
+# A reader takes the lazy group and the arguments of a call (by name), and
+# reads the spikes that the call needs into a regular TsGroup.
+
+
+def _all_spikes(group, args):
+    return group._read()
+
+
+def _spikes_in(name):
+    """Reader for the spikes in the epoch argument ``name``. If
+    the argument is None, read all the spikes."""
+    return lambda group, args: group._loaded(args[name])
+
+
+def _value_from_spikes(group, args):
+    # Without `ep`, `value_from` uses the time support of `tsd`.
+    ep = args["ep"]
+    window = ep if ep is not None else getattr(args["tsd"], "time_support", None)
+    return group._read(keys=[]) if window is None else group._loaded(window)
+
+
+def _get_spikes(group, args):
+    start, end, time_units = args["start"], args["end"], args["time_units"]
+    for name, value in (("start", start), ("end", end)):
+        if value is not None and not isinstance(value, Number):
+            raise ValueError(
+                f"'{name}' must be an int or a float. Type {type(value)} "
+                "provided instead!"
+            )
+    if end is not None:
+        s, e = TsIndex.format_timestamps(np.array([start, end]), time_units)
+        return group._read(start=s, end=e)
+
+    # The closest spike of each unit is one of the two spikes around `start`.
+    t = TsIndex.format_timestamps(np.array([start]), time_units)[0]
+    times, clusters = group._source.read_closest(t)
+    return group._group(group.index, times, clusters)
+
+
+def _routed(name, reader):
+    """Make the LazyTsGroup method ``name``. The method gives its arguments to
+    ``reader``, then calls the method ``name`` of the regular TsGroup that
+    ``reader`` returns. It keeps the docstring of ``TsGroup.name``."""
+    method = getattr(TsGroup, name)
+    signature = inspect.signature(method)
+
+    @functools.wraps(method)
+    def routed(self, *args, **kwargs):
+        bound = signature.bind(self, *args, **kwargs)
+        bound.apply_defaults()
+        return getattr(reader(self, bound.arguments), name)(*args, **kwargs)
+
+    return routed
+
+
+def _read_attribute(name):
+    """Property that reads all the spikes, and gives the attribute ``name`` of
+    the regular TsGroup."""
+    return property(lambda self: getattr(self._read(), name))
+
+
 class LazyTsGroup(TsGroup):
     """TsGroup that keeps its spike times on disk. It reads them only when an
     operation needs them, and it does not keep them in memory.
@@ -639,7 +790,8 @@ class LazyTsGroup(TsGroup):
       reads only the selected units.
     - ``restrict(ep)``, ``get(start, end)`` and the operations with an epoch
       argument (``count``, ``value_from``, ``time_diff``) read only the spikes
-      from the start of the first epoch to the end of the last epoch.
+      in the epochs. With many epochs, the read merges the epochs that have
+      the smallest gaps between them (see ``_windows``).
     - The other operations (``to_tsd``, ``count`` without ``ep``, iteration,
       ``copy``, ...) read all the spikes. They drop the spikes after the
       operation.
@@ -701,7 +853,8 @@ class LazyTsGroup(TsGroup):
         """Read the units ``keys`` (default: all) into a regular TsGroup.
 
         The function reads only the spikes ``t`` with ``start <= t <= end``
-        (in seconds).
+        (in seconds). ``start`` and ``end`` can be arrays of time windows. The
+        windows must be sorted, and must not overlap or touch.
         """
         if keys is None:
             keys = self.index
@@ -710,8 +863,11 @@ class LazyTsGroup(TsGroup):
         return self._group(keys, times, clusters)
 
     def _loaded(self, ep=None):
-        """Read the spikes in the span of ``ep`` into a regular TsGroup. If
-        ``ep`` is None, read all the spikes."""
+        """Read the spikes in ``ep`` into a regular TsGroup. If ``ep`` is
+        None, read all the spikes.
+
+        The function reads at most ``source.max_windows`` time windows (see
+        ``_windows``)."""
         if ep is None:
             return self._read()
         if not isinstance(ep, IntervalSet):
@@ -720,76 +876,36 @@ class LazyTsGroup(TsGroup):
             return self._read(keys=[])
         if len(ep) == 0:
             return self._read(start=np.inf, end=-np.inf)
-        return self._read(start=ep.start[0], end=ep.end[-1])
-
-    #################################
-    # Selection of units
-    #################################
+        start, end = _windows(ep.start, ep.end, self._source.max_windows)
+        return self._read(start=start, end=end)
 
     def _take(self, keys):
         return self._read(keys)
 
-    def _get_member(self, key):
-        return self._read([key])._get_member(key)
-
-    def _members(self):
-        return self._read()._members()
-
     #################################
+    # Routed operations
+    #################################
+    # Each line names a TsGroup method and the spikes that it needs. The
+    # method reads these spikes into a regular TsGroup, then calls the same
+    # method of that group with the same arguments.
+
+    # Selection of units
+    _get_member = _routed("_get_member", lambda g, a: g._read([a["key"]]))
+    _members = _routed("_members", _all_spikes)
+
     # Selection of time
-    #################################
+    restrict = _routed("restrict", _spikes_in("ep"))
+    count = _routed("count", _spikes_in("ep"))
+    time_diff = _routed("time_diff", _spikes_in("epochs"))
+    value_from = _routed("value_from", _value_from_spikes)
+    get = _routed("get", _get_spikes)
 
-    def restrict(self, ep):
-        return self._loaded(ep).restrict(ep)
-
-    def get(self, start, end=None, time_units="s"):
-        for name, value in (("start", start), ("end", end)):
-            if value is not None and not isinstance(value, Number):
-                raise ValueError(
-                    f"'{name}' must be an int or a float. Type {type(value)} "
-                    "provided instead!"
-                )
-        if end is not None:
-            s, e = TsIndex.format_timestamps(np.array([start, end]), time_units)
-            return self._read(start=s, end=e).get(start, end, time_units)
-
-        # The closest spike of each unit is one of the two spikes around
-        # `start`.
-        t = TsIndex.format_timestamps(np.array([start]), time_units)[0]
-        times, clusters = self._source.read_closest(t)
-        return self._group(self.index, times, clusters).get(start, end, time_units)
-
-    def count(self, bin_size=None, ep=None, time_units="s", dtype=None):
-        return self._loaded(ep).count(bin_size, ep, time_units, dtype)
-
-    def value_from(self, tsd, ep=None, mode="closest"):
-        # Without `ep`, `value_from` uses the time support of `tsd`.
-        window = ep if ep is not None else getattr(tsd, "time_support", None)
-        group = self._read(keys=[]) if window is None else self._loaded(window)
-        return group.value_from(tsd, ep, mode)
-
-    def time_diff(self, align="center", epochs=None):
-        return self._loaded(epochs).time_diff(align, epochs)
-
-    #################################
     # Operations on all the spikes
-    #################################
-
-    def to_tsd(self, *args):
-        return self._read().to_tsd(*args)
-
-    def subsample(self, fraction, seed=None):
-        return self._read().subsample(fraction, seed)
-
-    def save(self, filename):
-        return self._read().save(filename)
-
-    def merge(self, *tsgroups, **kwargs):
-        return self._read().merge(*tsgroups, **kwargs)
-
-    def __eq__(self, other):
-        return self._read() == other
-
+    to_tsd = _routed("to_tsd", _all_spikes)
+    subsample = _routed("subsample", _all_spikes)
+    save = _routed("save", _all_spikes)
+    merge = _routed("merge", _all_spikes)
+    __eq__ = _routed("__eq__", _all_spikes)
     __hash__ = None
 
     def __reduce_ex__(self, protocol):
@@ -800,18 +916,7 @@ class LazyTsGroup(TsGroup):
     # Some code reads the merged arrays directly. These properties read all
     # the spikes for each access, and do not keep them. The code in pynapple
     # calls `_loaded` first.
-    @property
-    def _times(self):
-        return self._read()._times
-
-    @property
-    def _clusters(self):
-        return self._read()._clusters
-
-    @property
-    def _cluster_positions(self):
-        return self._read()._cluster_positions
-
-    @property
-    def _ragged_index(self):
-        return self._read()._ragged_index
+    _times = _read_attribute("_times")
+    _clusters = _read_attribute("_clusters")
+    _cluster_positions = _read_attribute("_cluster_positions")
+    _ragged_index = _read_attribute("_ragged_index")
