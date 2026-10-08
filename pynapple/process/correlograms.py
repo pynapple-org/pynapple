@@ -161,69 +161,6 @@ def _cross_correlogram(
     return C, B
 
 
-@jit(nopython=True, inline="always")
-def _autocorrelogram_unit(times, order, start, stop, width, bin_width, counts):
-    """Accumulate one unit's autocorrelogram counts into ``counts``.
-
-    ``order[start:stop]`` are the positions in ``times`` of the unit's spikes,
-    in time order. Each pair of spikes within the window is visited once, from
-    its earlier spike, and counted at both -lag and +lag. Lags are taken at
-    double scale (``2 * lag``) so that the half-window, ``width / 2``, needs no
-    rounding even when the number of bins is odd.
-    """
-    stop_window = start
-    for i in range(start, stop):
-        t = times[order[i]]
-        if stop_window < i + 1:
-            stop_window = i + 1
-        while stop_window < stop and 2 * (times[order[stop_window]] - t) <= width:
-            stop_window += 1
-        for k in range(i + 1, stop_window):
-            lag2 = 2 * (times[order[k]] - t)
-            # from spike k, spike i lies at -lag: always in the window, since
-            # its left edge is included
-            counts[(width - lag2) // bin_width] += 1
-            # from spike i, spike k lies at +lag: its right edge is excluded
-            if lag2 < width:
-                counts[(width + lag2) // bin_width] += 1
-
-
-@jit(nopython=True, cache=True, parallel=True)
-def _autocorrelogram_counts(times, order, offsets, nbins, binsize):
-    """Autocorrelogram counts of every unit of a group, units in parallel.
-
-    Parameters
-    ----------
-    times : numpy.ndarray
-        Every unit's spike times, merged, as integer nanoseconds.
-    order, offsets : numpy.ndarray
-        ``order[offsets[u]:offsets[u + 1]]`` are the positions in ``times`` of
-        unit ``u``'s spikes, in time order.
-    nbins : int
-        Number of bins, odd.
-    binsize : int
-        Bin size in nanoseconds.
-
-    Returns
-    -------
-    numpy.ndarray
-        ``(n_units, nbins)`` counts. Bin ``j`` of a spike at ``t`` is
-        ``[t - w + j * binsize, t - w + (j + 1) * binsize)`` with
-        ``w = nbins * binsize / 2``, computed exactly in integers. The spike
-        itself is not counted.
-    """
-    n_units = len(offsets) - 1
-    counts = np.zeros((n_units, nbins), dtype=np.int64)
-    width = nbins * binsize  # 2 * w
-    bin_width = 2 * binsize
-    # units are independent and each writes only its own row
-    for u in prange(n_units):
-        _autocorrelogram_unit(
-            times, order, offsets[u], offsets[u + 1], width, bin_width, counts[u]
-        )
-    return counts
-
-
 @jit(nopython=True, cache=True, parallel=True)
 def _crosscorrelogram_counts(
     times1, order1, offsets1, times2, order2, offsets2, ref, target, nbins, binsize
@@ -283,16 +220,24 @@ def _correlogram_bins(binsize, windowsize):
     Spike times are binned in integer nanoseconds (the precision of the time
     index), so a lag falling exactly on a bin edge always lands in the bin on
     its right, with no floating-point rounding either way.
+
+    Raises a ValueError if ``binsize`` (in seconds) is smaller than one unit of
+    the time precision, ``10**-nap_config.time_index_precision`` seconds.
     """
+    precision = nap.nap_config.time_index_precision
+    # Check first: a bin size of 0 makes the number of bins infinite. Compare
+    # at 6 decimals: binsize * 10**precision is not exact in floats.
+    if np.round(binsize * 10.0**precision, 6) < 1:
+        raise ValueError(
+            f"binsize must be at least 1e-{precision} s, the time precision of "
+            f"pynapple (nap_config.time_index_precision = {precision}). "
+            f"Got {binsize} s after the conversion to seconds."
+        )
     nbins = int((windowsize * 2) // binsize)
     if nbins % 2 == 0:
         nbins = nbins + 1
     w = (nbins / 2) * binsize
-    binsize_ns = int(np.round(binsize * 10.0**nap.nap_config.time_index_precision))
-    if binsize_ns < 1:
-        raise ValueError(
-            f"binsize should be at least 1e-{nap.nap_config.time_index_precision} s."
-        )
+    binsize_ns = int(np.round(binsize * 10.0**precision))
     return nbins, w, binsize_ns
 
 
@@ -300,6 +245,64 @@ def _times_ns(times):
     """Times in seconds as integer nanoseconds (the time index precision)."""
     precision = 10.0**nap.nap_config.time_index_precision
     return np.round(np.asarray(times, dtype=np.float64) * precision).astype(np.int64)
+
+
+def _ragged_spikes(group):
+    """Give the spikes of a group in the layout of the correlogram kernel.
+
+    Returns
+    -------
+    times, order, offsets : numpy.ndarray
+        ``times`` holds the spike times in integer nanoseconds.
+        ``order[offsets[u]:offsets[u + 1]]`` are the positions in ``times`` of
+        the spikes of unit ``u``, in time order.
+    """
+    order, offsets = group._ragged_index
+    return _times_ns(group._times), order, offsets
+
+
+def _correlogram_counts(
+    reference, target, ref_units, target_units, binsize, windowsize
+):
+    """Count the lags of the pairs of units in the bins of a correlogram.
+
+    The three public correlogram functions call this function. It computes the
+    bins, then calls the kernel ``_crosscorrelogram_counts``, with the pairs in
+    parallel.
+
+    Parameters
+    ----------
+    reference, target : tuple of numpy.ndarray
+        The spikes of the reference units and of the target units, as
+        ``_ragged_spikes`` gives them: ``(times, order, offsets)``. Use the same
+        tuple twice for pairs in one group.
+    ref_units, target_units : array-like of int
+        The position of the reference unit and of the target unit of each
+        pair.
+    binsize, windowsize : float
+        The bin size and the window size, in seconds.
+
+    Returns
+    -------
+    counts : numpy.ndarray
+        ``(n_pairs, n_bins)`` counts. For each spike at ``t`` of a reference
+        unit, bin ``j`` counts the target spikes in
+        ``[t - w + j * binsize, t - w + (j + 1) * binsize)``, with
+        ``w = n_bins * binsize / 2``.
+    lags : numpy.ndarray
+        The center of each bin, in seconds.
+    """
+    nbins, w, binsize_ns = _correlogram_bins(binsize, windowsize)
+    counts = _crosscorrelogram_counts(
+        *reference,
+        *target,
+        np.asarray(ref_units, dtype=np.int64),
+        np.asarray(target_units, dtype=np.int64),
+        nbins,
+        binsize_ns,
+    )
+    lags = -w + binsize / 2 + np.arange(nbins) * binsize
+    return counts, lags
 
 
 @_validate_correlograms_inputs
@@ -320,8 +323,9 @@ def compute_autocorrelogram(
     group : TsGroup
         The group of Ts/Tsd objects to auto-correlate
     binsize : float
-        The bin size. Default is second.
-        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
+        The bin size, in ``time_units`` (seconds by default). It must be at
+        least the time precision of pynapple:
+        ``10**-nap_config.time_index_precision`` seconds (1 ns by default).
     windowsize : float
         The window size. Default is second.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
@@ -347,6 +351,16 @@ def compute_autocorrelogram(
         If group is not a TsGroup, or if binsize, windowsize, ep, norm, or time_units
         have invalid types.
 
+    ValueError
+        If ``binsize`` is smaller than the time precision of pynapple
+        (``10**-nap_config.time_index_precision`` seconds, 1 ns by default).
+
+    Notes
+    -----
+    The function computes the lags in integer units of the time precision of
+    pynapple (1 ns by default). Thus it has no floating-point error, and a lag
+    exactly on a bin edge always goes into the bin on its right.
+
     Examples
     --------
     >>> import pynapple as nap
@@ -366,15 +380,19 @@ def compute_autocorrelogram(
         np.array([windowsize], dtype=np.float64), time_units
     )[0]
 
-    nbins, w, binsize_ns = _correlogram_bins(binsize, windowsize)
-    order, offsets = newgroup._ragged_index
-    counts = _autocorrelogram_counts(
-        _times_ns(newgroup._times), order, offsets, nbins, binsize_ns
+    # The autocorrelogram of a unit is its cross-correlogram with itself: the
+    # pairs (u, u). The kernel also counts each spike with itself, at lag 0.
+    # Remove these counts: the center bin is lag 0 (the number of bins is odd).
+    spikes = _ragged_spikes(newgroup)
+    n_spikes = np.diff(spikes[2])
+    units = np.arange(len(n_spikes))
+    counts, lags = _correlogram_counts(
+        spikes, spikes, units, units, binsize, windowsize
     )
+    counts[:, len(lags) // 2] -= n_spikes
 
     with np.errstate(divide="ignore", invalid="ignore"):
-        autocorrs = counts.T / (np.diff(offsets) * binsize)
-    lags = -w + binsize / 2 + np.arange(nbins) * binsize
+        autocorrs = counts.T / (n_spikes * binsize)
     autocorrs = pd.DataFrame(autocorrs, index=np.round(lags, 6), columns=newgroup.index)
 
     if norm:
@@ -415,8 +433,9 @@ def compute_crosscorrelogram(
         of two TsGroups, computes cross-correlograms between all pairs from
         group1 (reference) and group2 (target).
     binsize : float
-        The bin size. Default is second.
-        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
+        The bin size, in ``time_units`` (seconds by default). It must be at
+        least the time precision of pynapple:
+        ``10**-nap_config.time_index_precision`` seconds (1 ns by default).
     windowsize : float
         The window size. Default is second.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
@@ -444,6 +463,16 @@ def compute_crosscorrelogram(
     TypeError
         If group is not a TsGroup or tuple/list of two TsGroups, or if binsize,
         windowsize, ep, norm, time_units, or reverse have invalid types.
+
+    ValueError
+        If ``binsize`` is smaller than the time precision of pynapple
+        (``10**-nap_config.time_index_precision`` seconds, 1 ns by default).
+
+    Notes
+    -----
+    The function computes the lags in integer units of the time precision of
+    pynapple (1 ns by default). Thus it has no floating-point error, and a lag
+    exactly on a bin edge always goes into the bin on its right.
 
     Examples
     --------
@@ -484,30 +513,17 @@ def compute_crosscorrelogram(
     ref = np.searchsorted(newgroup[0].index, [i for i, _ in pairs])
     target = np.searchsorted(newgroup[1].index, [j for _, j in pairs])
 
-    nbins, w, binsize_ns = _correlogram_bins(binsize, windowsize)
-    order1, offsets1 = newgroup[0]._ragged_index
-    order2, offsets2 = newgroup[1]._ragged_index
-    times1 = _times_ns(newgroup[0]._times)
-    times2 = times1 if newgroup[1] is newgroup[0] else _times_ns(newgroup[1]._times)
-    counts = _crosscorrelogram_counts(
-        times1,
-        order1,
-        offsets1,
-        times2,
-        order2,
-        offsets2,
-        ref,
-        target,
-        nbins,
-        binsize_ns,
+    spikes1 = _ragged_spikes(newgroup[0])
+    spikes2 = spikes1 if newgroup[1] is newgroup[0] else _ragged_spikes(newgroup[1])
+    counts, lags = _correlogram_counts(
+        spikes1, spikes2, ref, target, binsize, windowsize
     )
 
     with np.errstate(divide="ignore", invalid="ignore"):
-        crosscorrs = counts.T / (np.diff(offsets1)[ref] * binsize)
+        crosscorrs = counts.T / (np.diff(spikes1[2])[ref] * binsize)
         if norm:
             # rate of the target of each pair
             crosscorrs = crosscorrs / newgroup[1].rates[target]
-    lags = (-w + binsize / 2) + np.arange(nbins) * binsize
     crosscorrs = pd.DataFrame(
         crosscorrs, index=lags, columns=pd.MultiIndex.from_tuples(pairs)
     )
@@ -536,8 +552,9 @@ def compute_eventcorrelogram(
     event : Ts/Tsd
         The event to correlate the each of the time series in the group with.
     binsize : float
-        The bin size. Default is second.
-        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
+        The bin size, in ``time_units`` (seconds by default). It must be at
+        least the time precision of pynapple:
+        ``10**-nap_config.time_index_precision`` seconds (1 ns by default).
     windowsize : float
         The window size. Default is second.
         If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
@@ -563,6 +580,16 @@ def compute_eventcorrelogram(
     TypeError
         If group is not a TsGroup, if event is not a Ts or Tsd, or if binsize,
         windowsize, ep, norm, or time_units have invalid types.
+
+    ValueError
+        If ``binsize`` is smaller than the time precision of pynapple
+        (``10**-nap_config.time_index_precision`` seconds, 1 ns by default).
+
+    Notes
+    -----
+    The function computes the lags in integer units of the time precision of
+    pynapple (1 ns by default). Thus it has no floating-point error, and a lag
+    exactly on a bin edge always goes into the bin on its right.
 
     Examples
     --------
@@ -590,29 +617,24 @@ def compute_eventcorrelogram(
     if len(newgroup.index) == 0:
         return pd.DataFrame().astype("float")
 
-    # the events are a single reference unit, paired with every unit of the group
-    nbins, w, binsize_ns = _correlogram_bins(binsize, windowsize)
+    # The events are a single reference unit, paired with every unit of the
+    # group.
     n_events = len(tsd1)
     n_units = len(newgroup.index)
-    order, offsets = newgroup._ragged_index
-    counts = _crosscorrelogram_counts(
-        _times_ns(tsd1),
-        np.arange(n_events),
-        np.array([0, n_events]),
-        _times_ns(newgroup._times),
-        order,
-        offsets,
+    events = (_times_ns(tsd1), np.arange(n_events), np.array([0, n_events]))
+    counts, lags = _correlogram_counts(
+        events,
+        _ragged_spikes(newgroup),
         np.zeros(n_units, dtype=np.int64),
         np.arange(n_units),
-        nbins,
-        binsize_ns,
+        binsize,
+        windowsize,
     )
 
     with np.errstate(divide="ignore", invalid="ignore"):
         crosscorrs = counts.T / (n_events * binsize)
         if norm:
             crosscorrs = crosscorrs / newgroup.rates
-    lags = (-w + binsize / 2) + np.arange(nbins) * binsize
     crosscorrs = pd.DataFrame(crosscorrs, index=lags, columns=newgroup.index)
 
     return crosscorrs.astype("float")

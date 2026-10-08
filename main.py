@@ -15,6 +15,8 @@ spikes = data["units"]
 head_direction = data["ry"]
 wake_ep = data["position_time_support"]
 
+ac = nap.compute_autocorrelogram(spikes, 0.01, 1.0, wake_ep)
+
 # COMPUTING TUNING CURVES
 tuning_curves = nap.compute_tuning_curves(
     spikes,
