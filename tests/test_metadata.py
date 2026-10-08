@@ -2420,7 +2420,9 @@ class TestGroupbyApplyFunctions:
             3: np.geomspace(1, 100, 3000),
             4: np.geomspace(1, 100, 4000),
         }
-        return nap.TsGroup(units, metadata={"label": ["A", "A", "B", "B"]})
+        return nap.TsGroup(
+            units, metadata={"label": ["A", "A", "B", "B"], "depth": [10, 20, 30, 40]}
+        )
 
     @pytest.fixture
     def iset_gba(self):
@@ -2441,7 +2443,7 @@ class TestGroupbyApplyFunctions:
             t=np.linspace(1, 100, 1000),
             d=np.random.rand(1000, 4),
             time_units="s",
-            metadata={"label": ["x", "x", "y", "z"]},
+            metadata={"label": ["x", "x", "y", "z"], "region": ["a", "a", "b", "b"]},
         )
 
     def test_groupby_apply_column_reduction_on_single_column_group(self, tsdframe_gba):
@@ -2456,6 +2458,158 @@ class TestGroupbyApplyFunctions:
 
         # column reduction should raise no error
         tsdframe_gba.groupby_apply("label", np.mean, axis=1)
+
+    @pytest.mark.parametrize(
+        "by, func, func_kwargs, column_source",
+        [
+            ("label", np.mean, {"axis": 1}, "groups"),
+            (["label", "region"], np.mean, {"axis": 1}, "groups"),
+            ("label", lambda x: x - np.mean(x.values, 1, keepdims=True), {}, "input"),
+        ],
+        ids=["aggregate", "aggregate-two-keys", "transform"],
+    )
+    def test_metadata_groupby_apply_return_tsdframe(
+        self, tsdframe_gba, by, func, func_kwargs, column_source
+    ):
+        """
+        Test the return_tsdframe option when a TsdFrame is grouped. The columns of the result
+        come either from the groups or from the input:
+        1. aggregation gives one column per group, named after it, and one metadata column per
+           grouping name, holding that name's component of the group name
+        2. transformation gives back the input's columns, which keep their names and all of their
+           metadata
+        """
+        if column_source == "groups":
+            columns = list(tsdframe_gba.groupby(by).keys())
+            names = [c if isinstance(c, tuple) else (c,) for c in columns]
+            metadata = {
+                b: [n[i] for n in names]
+                for i, b in enumerate(by if isinstance(by, list) else [by])
+            }
+        else:
+            columns = list(tsdframe_gba.columns)
+            metadata = tsdframe_gba.metadata.to_dict("list")
+
+        out = tsdframe_gba.groupby_apply(by, func, return_tsdframe=True, **func_kwargs)
+        assert isinstance(out, nap.TsdFrame)
+        assert list(out.columns) == columns
+        assert out.metadata.to_dict("list") == metadata
+
+    def test_metadata_groupby_apply_return_tsdframe_tsgroup(self, tsgroup_gba):
+        """
+        Test the return_tsdframe option when a TsGroup is grouped. Counting each group gives one
+        column per unit, so the columns are the unit indices and they inherit the unit metadata.
+        `rate` is derived from the TsGroup rather than attached to it, and is not carried over.
+        """
+        out = tsgroup_gba.groupby_apply(
+            "label", lambda x: x.count(10), return_tsdframe=True
+        )
+        assert isinstance(out, nap.TsdFrame)
+        assert list(out.columns) == list(tsgroup_gba.index)
+        assert out.metadata.to_dict("list") == tsgroup_gba.metadata.drop(
+            columns="rate"
+        ).to_dict("list")
+
+    def test_metadata_groupby_apply_return_tsdframe_intervalset(
+        self, iset_gba, tsgroup_gba, tsdframe_gba
+    ):
+        """
+        Test the return_tsdframe option when an IntervalSet is grouped. Each group is a set of
+        epochs, and the applied function maps them onto a common axis, here the lags of an
+        event-triggered average, so the group results stack.
+        """
+        out = iset_gba.groupby_apply(
+            "label",
+            lambda x: nap.compute_event_triggered_average(
+                tsdframe_gba[:, 0], tsgroup_gba, binsize=1, window=(-2, 2), epochs=x
+            ),
+            return_tsdframe=True,
+        )
+        groups = list(iset_gba.groupby("label").keys())
+        units = list(tsgroup_gba.index)
+
+        assert isinstance(out, nap.TsdFrame)
+        assert list(out.columns) == [(g, u) for g in groups for u in units]
+
+    @pytest.mark.parametrize("column_name", [None, "name"])
+    @pytest.mark.parametrize(
+        "grouped, func, names",
+        [
+            # the function invents the names, so every group returns the same ones
+            (
+                "tsdframe_gba",
+                lambda x: nap.TsdFrame(
+                    t=x.index, d=np.ones((len(x), 2)), columns=["mean", "std"]
+                ),
+                ["mean", "std"],
+            ),
+            # the function returns the columns of another object, all of them for every group
+            (
+                "iset_gba",
+                lambda x: nap.TsdFrame(
+                    t=np.arange(3.0), d=np.ones((3, 2)), columns=["a", "b"]
+                ),
+                ["a", "b"],
+            ),
+        ],
+        ids=["invented-names", "other-object-columns"],
+    )
+    def test_metadata_groupby_apply_return_tsdframe_colliding_names(
+        self, request, grouped, func, names, column_name
+    ):
+        """
+        Test that column names repeating across groups are prefixed with the group they came from,
+        whichever object is grouped, and that the name they were given is recorded as metadata only
+        when column_name asks for it.
+        """
+        obj = request.getfixturevalue(grouped)
+        out = obj.groupby_apply(
+            "label", func, return_tsdframe=True, column_name=column_name
+        )
+        groups = list(obj.groupby("label").keys())
+
+        metadata = {"label": [g for g in groups for _ in names]}
+        if column_name:
+            metadata[column_name] = names * len(groups)
+
+        assert list(out.columns) == [(g, n) for g in groups for n in names]
+        assert out.metadata.to_dict("list") == metadata
+
+    @pytest.mark.parametrize(
+        "call, err",
+        [
+            (
+                lambda f, _: f.groupby_apply(
+                    "label", lambda x: x.shape[1], return_tsdframe=True
+                ),
+                pytest.raises(ValueError, match="did not preserve time"),
+            ),
+            (
+                lambda f, _: f.groupby_apply(
+                    "label", np.diff, axis=1, return_tsdframe=True
+                ),
+                pytest.raises(ValueError, match="returned no columns"),
+            ),
+            (  # restrict TsdFrame with different iset -> no shared time index
+                lambda f, iset: iset.groupby_apply(
+                    "label", lambda x: f.restrict(x), return_tsdframe=True
+                ),
+                pytest.raises(ValueError, match="not defined on the same timestamps"),
+            ),
+            (
+                lambda f, _: f.groupby_apply("label", np.mean, return_tsdframe="yes"),
+                pytest.raises(TypeError, match="return_tsdframe should be a boolean"),
+            ),
+        ],
+    )
+    def test_metadata_groupby_apply_return_tsdframe_errors(
+        self, tsdframe_gba, iset_gba, call, err
+    ):
+        """
+        Test that groupby_apply raises when the group results cannot be stacked into a TsdFrame.
+        """
+        with err:
+            call(tsdframe_gba, iset_gba)
 
     def test_metadata_groupby_apply_tuning_curves(self, tsgroup_gba, iset_gba):
         """
