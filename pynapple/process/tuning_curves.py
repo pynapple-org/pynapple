@@ -2,20 +2,61 @@
 Functions to compute n-dimensional tuning curves.
 """
 
+from __future__ import annotations
+
 import inspect
 import warnings
 from collections.abc import Iterable
 from functools import wraps
+from typing import TYPE_CHECKING, Dict, Hashable, Optional, Sequence, Tuple, Union
 
 import numpy as np
+import numpy.typing as npt
 import pandas as pd
+from numba import jit
 
 from .. import core as nap
-from ..core._jitted_functions import jitvaluefrom_histogram
+from ..core._core_functions import _concat_ranges
+from ..core._jitted_functions import jitvaluefrom
+
+if TYPE_CHECKING:
+    import xarray as xr
 
 
-def _spike_histograms(group, features, feature_bins, n_flat, bin_edges, epochs):
-    """Per-unit histograms of the feature's bins at each spike, and the rates.
+@jit(nopython=True, cache=True)
+def _jitcount_spikes(idx, units, feature_bins, n_units, n_flat):
+    """Count the spikes of each unit, in total and in each feature bin.
+
+    Parameters
+    ----------
+    idx : ndarray[int64]
+        The matched feature sample of each spike, or -1 if none.
+    units : ndarray[int]
+        The position of the unit of each spike, in ``range(n_units)``.
+    feature_bins : ndarray[intp]
+        The flat bin of each feature sample, in ``range(n_flat)``.
+    n_units, n_flat : int
+        The number of units and of flat bins.
+
+    Returns
+    -------
+    counts : ndarray[float64]
+        ``(n_units, n_flat)``. The matched spikes of each unit in each bin.
+    n_spikes : ndarray[int64]
+        ``(n_units,)``. All the spikes of each unit, matched or not.
+    """
+    counts = np.zeros((n_units, n_flat))
+    n_spikes = np.zeros(n_units, dtype=np.int64)
+    for i in range(idx.shape[0]):
+        n_spikes[units[i]] += 1
+        if idx[i] >= 0:
+            counts[units[i], feature_bins[idx[i]]] += 1
+    return counts, n_spikes
+
+
+def _match_and_count_spikes(group, features, feature_bins, n_flat, bin_edges, epochs):
+    """Match each spike to a feature sample, and count the spikes of each unit
+    in each feature bin. Also return the rate of each unit.
 
     Equivalent to restricting ``group`` to ``epochs``, matching it against the
     feature's bin index with `value_from` and histogramming each unit, without
@@ -32,23 +73,24 @@ def _spike_histograms(group, features, feature_bins, n_flat, bin_edges, epochs):
     group = group._load_in_memory(epochs)
     times = group._times
     target_times = features.index.values
-    # `value_from` would match within the feature's time support, which is
-    # exactly `epochs`: either `epochs` is that support, or the feature was
-    # restricted to `epochs`, which sets its support to `epochs`. So the spikes
-    # counted in `n_in_epochs` are also those `restrict(epochs)` would keep.
-    counts, n_in_epochs = jitvaluefrom_histogram(
+
+    in_start = np.searchsorted(times, epochs.start, side="left")
+    in_stop = np.searchsorted(times, epochs.end, side="right")
+    # the matched feature sample of each spike in the epochs, -1 if none
+    idx = jitvaluefrom(
         times,
-        group._cluster_positions,
         target_times,
-        feature_bins,
-        np.searchsorted(times, epochs.start, side="left"),
-        np.searchsorted(times, epochs.end, side="right"),
+        in_start,
+        in_stop,
         np.searchsorted(target_times, epochs.start, side="left"),
         np.searchsorted(target_times, epochs.end, side="right"),
-        len(group.index),
-        n_flat,
+        1,  # closest
     )
-    padded_shape = [len(group.index), *[len(edges) + 1 for edges in bin_edges]]
+    # the unit of each spike in the epochs
+    units = _concat_ranges(group._cluster_positions, in_start, in_stop, copy=False)
+    n_units = len(group.index)
+    counts, n_in_epochs = _jitcount_spikes(idx, units, feature_bins, n_units, n_flat)
+    padded_shape = [n_units, *[len(edges) + 1 for edges in bin_edges]]
     interior = (slice(None), *[slice(1, -1) for _ in bin_edges])
     counts = counts.reshape(padded_shape)[interior]
 
@@ -56,7 +98,7 @@ def _spike_histograms(group, features, feature_bins, n_flat, bin_edges, epochs):
     if duration > 0:
         rates = n_in_epochs / duration
     else:
-        rates = np.full(len(group.index), np.nan)
+        rates = np.full(n_units, np.nan)
     return counts, rates
 
 
@@ -138,80 +180,144 @@ def _histogram_from_bin_index(flat_index, n_flat, bin_edges, weights=None):
 
 
 def compute_tuning_curves(
-    data,
-    features,
-    bins=10,
-    range=None,
-    epochs=None,
-    fs=None,
-    feature_names=None,
-    return_pandas=False,
-    return_counts=False,
-):
+    data: Union[nap.TsGroup, nap.Ts, nap.TsdFrame, nap.Tsd],
+    features: Union[nap.Tsd, nap.TsdFrame],
+    bins: Union[int, Sequence[int], Sequence[npt.ArrayLike], npt.ArrayLike] = 10,
+    range: Optional[
+        Union[Tuple[float, float], Sequence[Optional[Tuple[float, float]]]]
+    ] = None,
+    epochs: Optional[nap.IntervalSet] = None,
+    fs: Optional[float] = None,
+    feature_names: Optional[Sequence[str]] = None,
+    return_pandas: bool = False,
+    return_counts: bool = False,
+) -> Union[xr.DataArray, pd.DataFrame]:
     """
-    Compute n-dimensional tuning curves describing how `data` varies as a
-    function of one or more `features`.
+    Compute the tuning curve of each unit of ``data`` as a function of one or
+    more features.
 
-    A tuning curve quantifies the relationship between a signal (e.g. neuronal
-    spike rate or a continuous measurement) and one or more explanatory
-    variables such as position, head direction, or speed. The feature space is
-    discretised into bins, the data are accumulated within each bin, and the
-    result is normalised by the occupancy of each bin (unless
-    `return_counts=True`).
+    A tuning curve gives the mean response of a unit for each value of a
+    feature. An example is the firing rate of a neuron for each head
+    direction. The function divides the feature space into bins, and gives one
+    value for each unit and each bin.
 
-    If `epochs` is not provided, the tuning curves are computed over the time
-    support of `features`.
+    Let :math:`x(t)` be the feature samples, at the sampling rate :math:`f_s`,
+    and let :math:`B` be a bin. The **occupancy** :math:`\\mathrm{occ}(B)` is
+    the number of feature samples in :math:`B`. Thus
+    :math:`\\mathrm{occ}(B) / f_s` is the time spent in :math:`B`.
+
+    **Spike times** (TsGroup or Ts). The function matches each spike to the
+    closest feature sample. Let :math:`N_u(B)` be the number of spikes of the
+    unit :math:`u` whose matched sample is in :math:`B`. The tuning curve is the
+    firing rate in :math:`B`, in Hz:
+
+    .. math::
+
+        \\lambda_u(B) = \\frac{N_u(B)}{\\mathrm{occ}(B) / f_s}
+        = f_s \\frac{N_u(B)}{\\mathrm{occ}(B)}
+
+    **Continuous values** (TsdFrame or Tsd), for example calcium imaging. The
+    function matches each sample :math:`y_u(t)` of the data to the closest
+    feature sample. Let :math:`T(B)` be the set of data timestamps whose matched
+    sample is in :math:`B`. The tuning curve is the mean value in :math:`B`:
+
+    .. math::
+
+        \\bar{y}_u(B) = \\frac{1}{|T(B)|} \\sum_{t \\in T(B)} y_u(t)
+
+    The function uses only the spikes, the data samples and the feature samples
+    in ``epochs``. A spike or a data sample matches only a feature sample of the
+    same epoch. A feature value outside the bin edges is not in any bin.
+
+    Empty bins:
+
+    - If :math:`\\mathrm{occ}(B) = 0`, the tuning curve is NaN in :math:`B`.
+    - For continuous values, if :math:`\\mathrm{occ}(B) > 0` but :math:`T(B)` is
+      empty, the tuning curve is 0 in :math:`B`.
 
     Parameters
     ----------
-    data : TsGroup, TsdFrame, Ts, Tsd
-        The data for which the tuning curves will be computed. This usually corresponds to the activity of the
-        neurons, either as spike times (TsGroup or Ts) or continuous values (TsdFrame or Tsd).
-    features : Tsd, TsdFrame
-        The features (i.e. one column per feature). This usually corresponds to behavioral variables such as
-        position, head direction, speed, etc.
-    bins : sequence or int
-        The bin specification:
+    data : TsGroup, Ts, TsdFrame or Tsd
+        The responses: spike times (a TsGroup, or a Ts for one unit), or
+        continuous values (a TsdFrame, or a Tsd for one unit). A Ts or a Tsd
+        becomes the unit 0. The function uses a TsGroup member that is a Tsd as
+        a Ts, and gives a warning.
+    features : Tsd or TsdFrame
+        The features, with one column for each feature. Examples are the
+        position, the head direction or the speed.
+    bins : int, sequence of int, or sequence of arrays, optional
+        The bins of the features:
 
-        * A sequence of arrays describing the monotonically increasing bin
-          edges along each dimension. For a single feature, the edge sequence
-          can be passed directly without wrapping it in another sequence.
-        * The number of bins for each dimension (nx, ny, ... =bins)
-        * The number of bins for all dimensions (nx=ny=...=bins).
-    range : sequence, optional
-        A sequence of entries per feature, each an optional (lower, upper) tuple giving
-        the outer bin edges to be used if the edges are not given explicitly in
-        `bins`.
-        An entry of None in the sequence results in the minimum and maximum
-        values being used for the corresponding dimension.
-        The default, None, is equivalent to passing a tuple of D None values.
+        - An int: the number of bins of each feature. Default is 10.
+        - A sequence of int: the number of bins of each feature, in order.
+        - A sequence of arrays: the increasing bin edges of each feature. For
+          one feature, one array of edges is also accepted.
+
+        Each bin includes its left edge. The last bin also includes its right
+        edge.
+    range : sequence of (float, float), optional
+        The lower edge and the upper edge of each feature, when ``bins`` does
+        not give the edges. An entry of None uses the minimum and the maximum of
+        the feature. For one feature, one tuple is also accepted. If None
+        (default), the function uses the minimum and the maximum of each
+        feature.
     epochs : IntervalSet, optional
-        The epochs on which tuning curves are computed.
-        If None, the epochs are the time support of the features.
+        The epochs to use. If None (default), the function uses the time
+        support of ``features``.
     fs : float, optional
-        The exact sampling frequency of the features used to normalise the tuning curves.
-        Unit should match that of the features. If not passed, it is estimated.
-    feature_names : list, optional
-        A list of feature names. If not passed, the column names in `features` are used.
+        The sampling rate :math:`f_s` of the features, in Hz. If None
+        (default), the function uses 1 divided by the mean interval between two
+        feature samples in ``epochs``. Give the exact value when you know it.
+    feature_names : list of str, optional
+        The name of each feature, used as the dimension names of the result. If
+        None (default), the function uses the column names of ``features``, or
+        ``"0"`` for a Tsd.
     return_pandas : bool, optional
-        If True, the function returns a pandas.DataFrame instead of an xarray.DataArray.
-        Note that this will not work if the features are not 1D and that occupancy and bin edges
-        will not be stored as attributes.
+        If True, return a pandas.DataFrame with one row for each bin and one
+        column for each unit. Only for one feature. The DataFrame does not
+        keep the attributes. Default is False.
     return_counts : bool, optional
-        If True, does not divide the spike counts by occupancy, but returns the counts directly.
-        The occupancy is stored in the xarray attributes, so the division can be performed after any
-        particular processing steps.
-        If the input is a TsdFrame, this does not do anything.
+        Only for spike times. If True, return the spike counts
+        :math:`N_u(B)`, not divided by the occupancy. The attributes keep the
+        occupancy and :math:`f_s`, so that you can divide later. Default is
+        False.
 
     Returns
     -------
     xarray.DataArray
-        A tensor containing the tuning curves with labeled bin centres.
-        The bin edges and occupancy are stored as attributes.
+        The tuning curves. The first dimension is ``"unit"``, then one
+        dimension for each feature, with the bin centers as coordinates. The
+        attributes are:
+
+        - ``occupancy``: :math:`\\mathrm{occ}(B)`, with one value for each bin.
+        - ``bin_edges``: one array of edges for each feature.
+        - ``fs``: the sampling rate :math:`f_s`.
+        - ``rates``: only for spike times. The mean firing rate of each unit
+          in ``epochs``: its number of spikes divided by the total duration of
+          the epochs.
+    pandas.DataFrame
+        If ``return_pandas`` is True.
+
+    Raises
+    ------
+    TypeError
+        If ``data`` or ``features`` has an incorrect type, if
+        ``feature_names`` is not a list of str, if ``epochs`` is not an
+        IntervalSet, if ``fs`` is not a number, or if ``return_pandas`` or
+        ``return_counts`` is not a boolean.
+    ValueError
+        If ``feature_names`` or ``bins`` does not have one entry for each
+        feature, or if ``range`` is one tuple with more than one feature.
+
+    See Also
+    --------
+    compute_response_per_epoch : The mean response of each unit in each epoch.
+    compute_mutual_information : The information that tuning curves give.
+    decode_bayes : Decode the features from spikes and tuning curves.
 
     Examples
     --------
-    In the simplest case, we can pass a group of spikes per neuron and a single feature:
+    Spike times and one feature:
 
         >>> import pynapple as nap
         >>> import numpy as np; np.random.seed(42)
@@ -234,8 +340,8 @@ def compute_tuning_curves(
             fs:         10.0
             rates:      [10.01001001  5.00500501]
 
-    The function can also take multiple features, in which case it computes n-dimensional tuning curves.
-    We can specify the number of bins for each feature:
+    With more than one feature, the tuning curves have more than one dimension.
+    ``bins`` can give the number of bins of each feature:
 
         >>> features = nap.TsdFrame(
         ...     d=np.stack(
@@ -271,7 +377,7 @@ def compute_tuning_curves(
             fs:         10.0
             rates:      [10.01001001  5.00500501]
 
-    Or even specify the bin edges directly:
+    ``bins`` can also give the bin edges of each feature:
 
         >>> tcs = nap.compute_tuning_curves(
         ...     group,
@@ -299,7 +405,8 @@ def compute_tuning_curves(
             fs:         10.0
             rates:      [10.01001001  5.00500501]
 
-    In all of these cases, it is also possible to pass continuous values instead of spikes (e.g. calcium imaging data), in that case the mean response is computed:
+    With continuous values (for example calcium imaging), the tuning curves are
+    the mean values in each bin:
 
         >>> frame = nap.TsdFrame(d=np.random.rand(2000, 3), t=np.arange(0, 100, 0.05))
         >>> tcs = nap.compute_tuning_curves(frame, feature, bins=10)
@@ -371,7 +478,7 @@ def compute_tuning_curves(
     if isinstance(data, nap.Ts):
         data = nap.TsGroup({0: data})
     if not isinstance(data, nap.TsGroup):
-        # spikes are restricted while being matched, see `_spike_histograms`
+        # spikes are restricted while being matched, see `_match_and_count_spikes`
         data = data.restrict(epochs)
 
     # check fs
@@ -432,7 +539,7 @@ def compute_tuning_curves(
         # values: the bin of each spike's matching sample is counted directly,
         # with exactly the matching and epochs `value_from` would have used on
         # the feature itself.
-        tcs, rates = _spike_histograms(
+        tcs, rates = _match_and_count_spikes(
             data, features, feature_bins, n_flat, bin_edges, epochs
         )
         with np.errstate(divide="ignore", invalid="ignore"):
@@ -483,28 +590,79 @@ def compute_tuning_curves(
         return tcs
 
 
-def compute_response_per_epoch(data, epochs_dict, return_pandas=False):
+def compute_response_per_epoch(
+    data: Union[nap.TsGroup, nap.Ts, nap.TsdFrame, nap.Tsd],
+    epochs_dict: Dict[Hashable, nap.IntervalSet],
+    return_pandas: bool = False,
+) -> Union[xr.DataArray, pd.DataFrame]:
     """
-    Compute mean response per epoch, given a dictionary of epochs.
+    Compute the mean response of each unit of ``data`` in each set of epochs.
+
+    Use this function for discrete conditions, for example stimuli that are
+    presented more than once. Each entry of ``epochs_dict`` is one condition,
+    and its IntervalSet holds all the presentations of the condition.
+
+    Let :math:`E` be the IntervalSet of one condition, and let :math:`|E|` be
+    its total duration, in seconds.
+
+    **Spike times** (TsGroup or Ts). Let :math:`N_u(E)` be the number of
+    spikes of the unit :math:`u` in :math:`E`. The response is the firing
+    rate in :math:`E`, in Hz:
+
+    .. math::
+
+        \\lambda_u(E) = \\frac{N_u(E)}{|E|}
+
+    **Continuous values** (TsdFrame or Tsd), for example calcium imaging. Let
+    :math:`T(E)` be the set of data timestamps in :math:`E`. The response is
+    the mean value in :math:`E`:
+
+    .. math::
+
+        \\bar{y}_u(E) = \\frac{1}{|T(E)|} \\sum_{t \\in T(E)} y_u(t)
+
+    A spike or a sample exactly on the start or on the end of an epoch is in
+    the epoch. The IntervalSets of two conditions can overlap, but the epochs
+    of one IntervalSet cannot overlap. For continuous values, a condition
+    with no data sample gives NaN.
 
     Parameters
     ----------
-    data : TsGroup, TsdFrame, Ts, Tsd
-        The data for which the tuning curves will be computed.
-    epochs_dict : dict
-        Dictionary of IntervalSets.
+    data : TsGroup, Ts, TsdFrame or Tsd
+        The responses: spike times (a TsGroup, or a Ts for one unit), or
+        continuous values (a TsdFrame, or a Tsd for one unit). A Ts or a Tsd
+        becomes the unit 0.
+    epochs_dict : dict of IntervalSet
+        One entry for each condition. The keys are the names of the
+        conditions, and the values are their epochs. The dict must not be
+        empty.
     return_pandas : bool, optional
-        If True, the function returns a pandas.DataFrame instead of an xarray.DataArray.
+        If True, return a pandas.DataFrame with one row for each condition and
+        one column for each unit. Default is False.
 
     Returns
     -------
     xarray.DataArray
-        A tensor containing the tuning curves with labeled epochs.
+        The responses, with the dimensions ``"unit"`` and ``"epochs"``. The
+        coordinates are the unit labels and the keys of ``epochs_dict``.
+    pandas.DataFrame
+        If ``return_pandas`` is True.
+
+    Raises
+    ------
+    TypeError
+        If ``data`` has an incorrect type, if ``epochs_dict`` is not a
+        non-empty dict of IntervalSets, or if ``return_pandas`` is not a
+        boolean.
+
+    See Also
+    --------
+    compute_tuning_curves : The response of each unit as a function of
+        continuous features.
 
     Examples
     --------
-    This function is typically used for a set of discrete stimuli being presented for multiple epochs.
-    The stimulus epochs can overlap, though note that epochs within an IntervalSet can not overlap.
+    Spike times, with two conditions:
 
         >>> import pynapple as nap
         >>> import numpy as np; np.random.seed(42)
@@ -525,7 +683,18 @@ def compute_response_per_epoch(data, epochs_dict, return_pandas=False):
           * unit     (unit) int64 16B 1 2
           * epochs   (epochs) <U5 40B 'stim0' 'stim1'
 
-    You can also pass a TsdFrame (e.g. calcium imaging data), in that case the response is computed:
+    The same responses as a pandas.DataFrame:
+
+        >>> nap.compute_response_per_epoch(
+        ...     group, epochs_dict, return_pandas=True
+        ... )  # doctest: +NORMALIZE_WHITESPACE
+        unit            1         2
+        epochs
+        stim0   10.033333  5.033333
+        stim1   10.033333  5.033333
+
+    Continuous values (for example calcium imaging), with the mean value in
+    each condition:
 
         >>> frame = nap.TsdFrame(d=np.random.rand(2000, 3), t=np.arange(0, 100, 0.05))
         >>> tcs = nap.compute_response_per_epoch(frame, epochs_dict)
@@ -606,13 +775,17 @@ def compute_response_per_epoch(data, epochs_dict, return_pandas=False):
         return tcs
 
 
-def compute_mutual_information(tuning_curves, rates=None):
+def compute_mutual_information(
+    tuning_curves: xr.DataArray,
+    rates: Optional[Union[list, np.ndarray]] = None,
+) -> pd.DataFrame:
     """
-    Computes mutual information from n-dimensional tuning curves.
+    Compute the mutual information between the firing of each unit and the
+    features, from n-dimensional tuning curves.
 
-    This function implements Skaggs et al.'s [1] metric to quantify
-    the information content of a neuron's firing with respect to a variable
-    (e.g., position), based on its tuning curve.
+    The function uses the metric of Skaggs et al. [1]_. It gives how much
+    information the spikes of a unit carry about the features, for example
+    about the position.
 
     The mutual information in bits per second is given by:
 
@@ -632,29 +805,57 @@ def compute_mutual_information(tuning_curves, rates=None):
 
         I_\\text{bits/spike} = \\frac{I}{\\bar{\\lambda}}
 
+    :math:`P(x)` is the occupancy of the bin :math:`x` divided by the sum of
+    the occupancy. A bin with :math:`\\lambda(x) = 0` adds 0 to the sum, and
+    a bin with no occupancy (NaN) is not in the sum.
+
+    Parameters
+    ----------
+    tuning_curves : xarray.DataArray
+        The tuning curves, as :func:`~pynapple.process.tuning_curves.compute_tuning_curves`
+        returns them. The attribute ``occupancy`` is necessary.
+    rates : list or numpy.ndarray, optional
+        The mean firing rate :math:`\\bar{\\lambda}` of each unit, in the
+        order of the units. If None (default), the function uses the attribute
+        ``rates`` of ``tuning_curves``: the mean firing rates in the epochs of
+        the tuning curves. If ``tuning_curves`` has no attribute ``rates``,
+        the function uses :math:`\\sum_x P(x) \\lambda(x)`, and gives a
+        warning.
+
+    Returns
+    -------
+    pandas.DataFrame
+        One row for each unit, with the unit labels as index. The column
+        ``"bits/sec"`` is :math:`I_\\text{bits/s}`, and the column
+        ``"bits/spike"`` is :math:`I_\\text{bits/spike}`.
+
+    Raises
+    ------
+    TypeError
+        If ``tuning_curves`` is not an xarray.DataArray, or if ``rates`` is not
+        a list or a numpy.ndarray.
+    ValueError
+        If ``rates`` does not have one value for each unit, or if
+        ``tuning_curves`` has no attribute ``occupancy``.
+
+    Warns
+    -----
+    UserWarning
+        If ``rates`` is None and ``tuning_curves`` has no attribute ``rates``.
+
+    See Also
+    --------
+    compute_tuning_curves : Compute the tuning curves and their occupancy.
+
     References
     ----------
     .. [1] Skaggs, W. E., McNaughton, B. L., & Gothard, K. M. (1993).
            An information-theoretic approach to deciphering the hippocampal code.
            In Advances in neural information processing systems (pp. 1030-1037).
 
-    Parameters
-    ----------
-    tuning_curves : xarray.DataArray
-        Tuning curves as computed by :func:`~pynapple.process.tuning_curves.compute_tuning_curves`.
-    rates : list or numpy.ndarray, optional
-        Mean firing rates of the units. By default :func:`~pynapple.process.tuning_curves.compute_tuning_curves` saves
-        the mean firing rates over the epochs of the tuning curves in the tuning curve objects.
-        This argument can be used to pass your own.
-
-    Returns
-    -------
-    pandas.DataFrame
-        A table containing the spatial information per unit, in both bits/sec and bits/spike.
-
     Examples
     --------
-    We can compute the mutual information between a variable and a set of neurons' firing from the tuning curves:
+    Two units, each with spikes in one bin of the feature:
 
         >>> import pynapple as nap
         >>> import numpy as np; np.random.seed(42)
@@ -678,6 +879,9 @@ def compute_mutual_information(tuning_curves, rates=None):
             bin_edges:  [array([0. , 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1. ])]
             fs:         100.0
             rates:      [10.14 10.08]
+
+    The mutual information of each unit:
+
         >>> MI = nap.compute_mutual_information(tcs)
         >>> MI
             bits/sec  bits/spike

@@ -623,7 +623,7 @@ def test_jitunion_isets_empty():
 
 
 def _valuefrom_ranges(time_array, time_target, starts, ends, mode):
-    return nap.core._jitted_functions.jitvaluefrom_ranges(
+    return nap.core._jitted_functions.jitvaluefrom(
         time_array,
         time_target,
         np.searchsorted(time_array, starts, side="left"),

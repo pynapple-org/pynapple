@@ -22,7 +22,7 @@ from ._jitted_functions import (  # pjitconvolve,
     jitrestrict,
     jitthreshold,
     jittimediff_grouped,
-    jitvaluefrom_ranges,
+    jitvaluefrom,
 )
 from .utils import get_backend
 
@@ -220,14 +220,20 @@ def _value_from(
     # the kernel reads both full arrays through these bounds.
     in_start = np.searchsorted(time_array, starts, side="left")
     in_stop = np.searchsorted(time_array, ends, side="right")
-    tg_start = np.searchsorted(time_target_array, starts, side="left")
-    tg_stop = np.searchsorted(time_target_array, ends, side="right")
+    target_start = np.searchsorted(time_target_array, starts, side="left")
+    target_stop = np.searchsorted(time_target_array, ends, side="right")
 
     new_time_array = _concat_ranges(time_array, in_start, in_stop, copy=False)
 
     # index into the *full* target for each kept timestamp, -1 where unmatched
-    gather_idx = jitvaluefrom_ranges(
-        time_array, time_target_array, in_start, in_stop, tg_start, tg_stop, mode
+    gather_idx = jitvaluefrom(
+        time_array,
+        time_target_array,
+        in_start,
+        in_stop,
+        target_start,
+        target_stop,
+        mode,
     )
     matched = gather_idx >= 0
     all_matched = bool(matched.all())
@@ -248,12 +254,14 @@ def _value_from(
         # fancy indices, and serve scattered ones element by element (~100x a
         # hyperslab of the same span). Read the epoch ranges as slices instead and
         # gather in numpy.
-        target_values = _concat_ranges(data_target_array, tg_start, tg_stop, copy=True)
+        target_values = _concat_ranges(
+            data_target_array, target_start, target_stop, copy=True
+        )
         # map full-target indices onto their position in the concatenated ranges
-        offsets = np.zeros(len(tg_start) + 1, dtype=np.int64)
-        np.cumsum(tg_stop - tg_start, out=offsets[1:])
-        epoch = np.searchsorted(tg_start, take_idx, side="right") - 1
-        values = target_values[take_idx - tg_start[epoch] + offsets[epoch]]
+        offsets = np.zeros(len(target_start) + 1, dtype=np.int64)
+        np.cumsum(target_stop - target_start, out=offsets[1:])
+        epoch = np.searchsorted(target_start, take_idx, side="right") - 1
+        values = target_values[take_idx - target_start[epoch] + offsets[epoch]]
 
     if all_matched:
         new_data_array = np.empty(out_shape, dtype=use_type)
