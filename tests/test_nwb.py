@@ -560,7 +560,10 @@ def test_add_Ophys_roi_metadata_extra_roi():
 def test_add_Ophys_roi_metadata_only_image_mask():
     """A PlaneSegmentation without scalar columns yields empty metadata."""
     pytest.importorskip("pynwb.testing.mock.ophys")
-    from pynwb.testing.mock.ophys import mock_PlaneSegmentation, mock_RoiResponseSeries
+    from pynwb.testing.mock.ophys import (
+        mock_PlaneSegmentation,
+        mock_RoiResponseSeries,
+    )
 
     with warnings.catch_warnings():
         warnings.simplefilter("ignore")
@@ -650,6 +653,200 @@ def test_add_Units():
         data._metadata["quality"], np.array(["good"] * n_units)
     )
     np.testing.assert_array_equal(data._metadata["alpha"], alpha)
+
+
+@pytest.fixture
+def units_nwb_path(tmp_path):
+    """NWB file on disk with a units table: unsorted ids, an empty unit, and a
+    single-spike unit outside every other unit's span."""
+    nwbfile = mock_NWBFile()
+    nwbfile.add_unit_column(name="quality", description="sorting quality")
+    rng = np.random.default_rng(0)
+    spikes = {
+        7: np.sort(rng.uniform(0, 10, 200)),
+        2: np.sort(rng.uniform(5, 20, 300)),
+        # shares timestamps with unit 2
+        4: np.sort(np.concatenate([rng.uniform(1, 3, 50), [7.0, 7.0]])),
+        9: np.array([]),
+        3: np.array([50.0]),
+    }
+    spikes[2][10] = 7.0
+    spikes[2] = np.sort(spikes[2])
+    for i, (k, t) in enumerate(spikes.items()):
+        nwbfile.add_unit(id=k, spike_times=t, quality=f"q{i}")
+    path = tmp_path / "units.nwb"
+    with pynwb.NWBHDF5IO(path, "w") as io:
+        io.write(nwbfile)
+    return path, spikes
+
+
+@pytest.fixture
+def read_counter(monkeypatch):
+    """Count the spikes that lazy units groups read from the file."""
+    from pynapple.core.lazy_ts_group import _RaggedArraySource
+
+    reads = []
+    original = _RaggedArraySource._read_rows
+
+    def spy(self, keys, lo, hi):
+        reads.append(int(np.sum(hi - lo)))
+        return original(self, keys, lo, hi)
+
+    monkeypatch.setattr(_RaggedArraySource, "_read_rows", spy)
+    return reads
+
+
+def test_units_lazy_matches_eager(units_nwb_path, read_counter):
+    from pynapple.core.lazy_ts_group import _LazyTsGroup
+
+    path, spikes = units_nwb_path
+    units = nap.load_file(path)["units"]
+    assert isinstance(units, _LazyTsGroup)
+
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")  # empty/single-spike time supports
+        eager = nap.TsGroup(
+            {k: nap.Ts(t) for k, t in spikes.items()},
+            metadata={"quality": [f"q{i}" for i in range(len(spikes))]},
+        )
+
+    # metadata-only access does not read spike times
+    np.testing.assert_array_equal(units.index, eager.index)
+    np.testing.assert_array_equal(units.rates, eager.rates)
+    np.testing.assert_array_equal(units.time_support.values, eager.time_support.values)
+    np.testing.assert_array_equal(
+        units._metadata["quality"], eager._metadata["quality"]
+    )
+    repr(units)
+    repr(units.data)
+    assert read_counter == []
+
+    for k in eager.keys():
+        np.testing.assert_array_equal(units[k].t, eager[k].t)
+    np.testing.assert_array_equal(units._times, eager._times)
+    np.testing.assert_array_equal(units._clusters, eager._clusters)
+    np.testing.assert_array_equal(units.count(1.0).values, eager.count(1.0).values)
+    assert units == eager
+
+
+def test_units_lazy_reads_only_selection(units_nwb_path, read_counter):
+    """A selection of units or of time reads only that part of the file, and
+    the lazy group keeps no spike in memory."""
+    path, spikes = units_nwb_path
+    units = nap.load_file(path)["units"]
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        eager = nap.TsGroup(
+            {k: nap.Ts(t) for k, t in spikes.items()},
+            metadata={"quality": [f"q{i}" for i in range(len(spikes))]},
+        )
+    n_total = sum(len(t) for t in spikes.values())
+
+    # units: only the selected units
+    assert units[[2, 4]] == eager[[2, 4]]
+    assert read_counter == [len(spikes[2]) + len(spikes[4])]
+    np.testing.assert_array_equal(units[7].t, spikes[7])
+    assert read_counter[-1] == len(spikes[7])
+
+    # time: one read of the span of the epochs, from the start of the first
+    # epoch to the end of the last epoch
+    ep = nap.IntervalSet([2, 6], [4, 8])
+
+    def in_windows(starts, ends):
+        return [
+            sum(np.sum((t >= s) & (t <= e)) for t in spikes.values())
+            for s, e in zip(starts, ends)
+        ]
+
+    for operation, windows in [
+        (lambda g: g.restrict(ep), ([2], [8])),
+        (lambda g: g.get(2, 8), ([2], [8])),
+        (lambda g: g.count(0.5, ep).values, ([2], [8])),
+    ]:
+        read_counter.clear()
+        result, expected = operation(units), operation(eager)
+        if isinstance(result, nap.TsGroup):
+            assert result == expected
+        else:
+            np.testing.assert_array_equal(result, expected)
+        assert read_counter == in_windows(*windows)
+        assert sum(read_counter) < n_total
+
+    # nothing is kept: each operation reads the file again
+    read_counter.clear()
+    units.count(1.0)
+    units.count(1.0)
+    assert read_counter == [n_total, n_total]
+    assert not any(
+        isinstance(v, np.ndarray) and len(v) == n_total for v in units.__dict__.values()
+    )
+
+
+def test_units_lazy_keeps_file_open(units_nwb_path):
+    """The lazy group keeps the file open when nothing else refers to the
+    NWBFile object."""
+    import gc
+
+    path, spikes = units_nwb_path
+    units = nap.load_file(path)["units"]
+    gc.collect()
+    np.testing.assert_array_equal(units[7].t, spikes[7])
+
+
+def test_units_not_lazy(units_nwb_path):
+    path, spikes = units_nwb_path
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        units = nap.load_file(path, lazy_loading=False)["units"]
+    assert type(units) is nap.TsGroup
+    np.testing.assert_array_equal(units[7].t, spikes[7])
+
+
+def test_close_nwbfile_object(units_nwb_path):
+    """An NWBFile made from an NWB file object of pynwb does not own the file.
+    Thus ``close()`` does nothing, and the lazy units can still read."""
+    path, spikes = units_nwb_path
+    with pynwb.NWBHDF5IO(path, "r") as io:
+        nwb = nap.NWBFile(io.read())
+        units = nwb["units"]
+        nwb.close()
+        np.testing.assert_array_equal(units[7].t, spikes[7])
+    # an NWB file in memory
+    nap.NWBFile(mock_NWBFile()).close()
+
+
+def test_units_after_close(units_nwb_path):
+    """After close, the metadata still work, the spikes cannot be read, and a
+    selection made before close still works."""
+    path, spikes = units_nwb_path
+    nwb = nap.load_file(path)
+    units = nwb["units"]
+    selection = units[[7]]
+    nwb.close()
+
+    units.rates
+    units.index
+    repr(units)
+    with pytest.raises(RuntimeError, match="The file is closed"):
+        units.count(1.0)
+    with pytest.raises(RuntimeError, match="The file is closed"):
+        units[7]
+    np.testing.assert_array_equal(selection[7].t, spikes[7])
+
+
+def test_units_lazy_pickle_and_copy(units_nwb_path):
+    import pickle
+
+    path, spikes = units_nwb_path
+    units = nap.load_file(path)["units"]
+    for other in (pickle.loads(pickle.dumps(units)), units.copy()):
+        assert type(other) is nap.TsGroup
+        np.testing.assert_array_equal(other.index, units.index)
+        np.testing.assert_array_equal(other.rates, units.rates)
+        np.testing.assert_array_equal(
+            other._metadata["quality"], units._metadata["quality"]
+        )
+        np.testing.assert_array_equal(other[2].t, units[2].t)
 
 
 def test_units_metadata_with_non_ragged_dynamic_table_region():

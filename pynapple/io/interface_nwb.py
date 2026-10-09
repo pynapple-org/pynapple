@@ -16,6 +16,7 @@ import numpy as np
 from tabulate import tabulate
 
 from .. import core as nap
+from ..core.lazy_ts_group import _LazyTsGroup
 
 
 def _get_unique_identifier(full_path_to_key):
@@ -308,7 +309,7 @@ def _make_tsd_frame(obj, lazy_loading=True):
     return data
 
 
-def _make_tsgroup(obj, **kwargs):
+def _make_tsgroup(obj, lazy_loading=True, **kwargs):
     """Helper function to make TsGroup
 
     Parameters
@@ -323,13 +324,8 @@ def _make_tsgroup(obj, **kwargs):
     """
     pynwb = importlib.import_module("pynwb")
     index = obj.id[:]
-    tsgroup = {}
-    for i, gr in zip(index, obj.spike_times_index[:]):
-        # if np.min(np.diff(gr))<0.0:
-        #     break
-        tsgroup[i] = nap.Ts(t=np.array(gr))
 
-    N = len(tsgroup)
+    N = len(index)
     metainfo = {}
     for coln in obj.colnames:
         if coln == "electrode_group":
@@ -374,9 +370,21 @@ def _make_tsgroup(obj, **kwargs):
                 else:
                     pass
 
-    tsgroup = nap.TsGroup(tsgroup, metadata=metainfo)
+    if not lazy_loading:
+        # Read every unit now, into a regular TsGroup.
+        units = {
+            i: nap.Ts(t=np.array(t)) for i, t in zip(index, obj.spike_times_index[:])
+        }
+        return nap.TsGroup(units, metadata=metainfo)
 
-    return tsgroup
+    # The group reads the spike times only when an operation needs them. The
+    # metadata follow the order of the units table.
+    return nap.TsGroup.from_ragged_arrays(
+        obj.spike_times.data,
+        obj.spike_times_index.data[:],
+        keys=index,
+        metadata=metainfo,
+    )
 
 
 def _make_ts(obj, **kwargs):
@@ -408,20 +416,92 @@ def _make_ts(obj, **kwargs):
 
 
 class NWBFile(UserDict):
-    """Class for reading NWB Files.
+    """Read the objects of an NWB file as pynapple objects.
 
+    ``nap.load_file`` returns an NWBFile for a ``.nwb`` file. An NWBFile works
+    like a dictionary. Each key is the name of an NWB object that pynapple can
+    convert. The value is the pynapple object. The class makes it at the
+    first access to the key, then keeps it.
+
+    The class converts these NWB objects:
+
+    - a units table (a ``DynamicTable`` with a ``*_times_index`` column):
+      ``TsGroup``
+    - a ``TimeIntervals`` table: ``IntervalSet``
+    - a ``DynamicTable`` with a ``*_times`` column, or an
+      ``AnnotationSeries``: ``Ts``
+    - a ``TimeSeries``: ``Tsd``, ``TsdFrame`` or ``TsdTensor``, for data with
+      1, 2 or more dimensions
+
+    Parameters
+    ----------
+    file : str, pathlib.Path or pynwb.file.NWBFile
+        The path of an NWB file, or an NWB file object of pynwb.
+    lazy_loading : bool, optional
+        - True (default): the objects keep their data in the file. A Tsd,
+          TsdFrame or TsdTensor reads its values from the file only when an
+          operation needs them. A units table gives a lazy TsGroup: it reads
+          the spike times only when an operation needs them, and it does not
+          keep them in memory.
+        - False: the class reads all the data of an object into memory at the
+          first access to its key.
+
+    Raises
+    ------
+    FileNotFoundError
+        If the file does not exist.
+    TypeError
+        If ``file`` is not a str, a path or an NWB file object of pynwb.
+
+    Notes
+    -----
+    - A key is the name of the NWB object. If two objects have the same name,
+      their keys also hold the name of their parent (e.g.
+      ``"behavior/position"``). The full path of an object in the file (e.g.
+      ``"/units"``) is also a valid key. A key that is not in the file
+      raises a KeyError.
+    - If the class cannot convert an object, it gives a warning and returns
+      the NWB object for manual inspection.
+    - ``close()`` closes the file. After ``close()``, an object with lazy
+      loading cannot read from the file. Select the units or the epochs that
+      you need before you close the file. If ``file`` is an NWB file object
+      of pynwb, ``close()`` does nothing: the file belongs to the caller.
 
     Examples
     --------
     >>> import pynapple as nap
-    >>> data = nap.load_file("my_file.nwb")
-    >>> data["units"]
-      Index    rate  location      group
-    -------  ------  ----------  -------
-          0    1.0  brain        0
-          1    1.0  brain        0
-          2    1.0  brain        0
+    >>> data = nap.load_file("A2929-200711.nwb")  # doctest: +SKIP
+    >>> data  # doctest: +SKIP
+    A2929-200711
+    ┍━━━━━━━━━━━━━━━━━━━━━━━┯━━━━━━━━━━━━━┑
+    │ Keys                  │ Type        │
+    ┝━━━━━━━━━━━━━━━━━━━━━━━┿━━━━━━━━━━━━━┥
+    │ units                 │ TsGroup     │
+    │ position_time_support │ IntervalSet │
+    │ epochs                │ IntervalSet │
+    │ z                     │ Tsd         │
+    │ y                     │ Tsd         │
+    │ x                     │ Tsd         │
+    │ rz                    │ Tsd         │
+    │ ry                    │ Tsd         │
+    │ rx                    │ Tsd         │
+    ┕━━━━━━━━━━━━━━━━━━━━━━━┷━━━━━━━━━━━━━┙
 
+    Get the units. The TsGroup reads the spike times only when an operation
+    needs them:
+
+    >>> units = data["units"]  # doctest: +SKIP
+    >>> units  # doctest: +SKIP
+    Index    rate      location    group
+    -------  --------  ----------  -------
+    0        7.30358   adn         0
+    1        5.73269   adn         0
+    2        8.11944   adn         0
+    ...
+
+    Close the file when you do not need it anymore:
+
+    >>> data.close()  # doctest: +SKIP
     """
 
     _f_eval = {
@@ -434,21 +514,7 @@ class NWBFile(UserDict):
     }
 
     def __init__(self, file, lazy_loading=True):
-        """
-        Parameters
-        ----------
-        file : str or pynwb.file.NWBFile
-            Valid file to a NWB file
-        lazy_loading: bool
-            If True return a memory-view of the data, load otherwise.
-
-        Raises
-        ------
-        FileNotFoundError
-            If path is invalid
-        RuntimeError
-            If file is not an instance of NWBFile
-        """
+        # The parameters are in the docstring of the class.
         # TODO: do we really need to have instantiation from file and object in the same place?
         pynwb = importlib.import_module("pynwb")
         NWBHDF5IO = pynwb.NWBHDF5IO
@@ -555,6 +621,9 @@ class NWBFile(UserDict):
                         )
                         data = obj
 
+                    if isinstance(data, _LazyTsGroup):
+                        # Keep the file open while the group can read it.
+                        data._source.keep_alive = self
                     self.data[key] = data
                     return data
                 else:
@@ -563,8 +632,21 @@ class NWBFile(UserDict):
                 raise KeyError("Can't find key {} in group index.".format(key))
 
     def close(self):
-        """Close the NWB file"""
-        self.io.close()
+        """Close the NWB file.
+
+        If the NWBFile comes from a path, the function closes the file. After
+        this, the lazy units groups cannot read their spike times.
+
+        If the NWBFile comes from an NWB file object of pynwb, the function
+        does nothing: the file belongs to the caller, who opened it.
+        """
+        io = getattr(self, "io", None)
+        if io is None:
+            return
+        for data in self.data.values():
+            if isinstance(data, _LazyTsGroup):
+                data._source.close()
+        io.close()
 
     def keys(self):
         """

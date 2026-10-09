@@ -13,7 +13,7 @@ from typing import Callable, Optional, Union
 import numpy as np
 import numpy.typing as npt
 import pandas as pd
-from numba import jit
+from numba import jit, prange
 
 from .. import core as nap
 
@@ -87,78 +87,165 @@ def _validate_correlograms_inputs(func: Callable) -> Callable:
     return wrapper
 
 
-@jit(nopython=True, cache=True)
-def _cross_correlogram(
-    t1: npt.NDArray[np.float64],
-    t2: npt.NDArray[np.float64],
-    binsize: float,
-    windowsize: float,
-) -> tuple[npt.NDArray[np.float64], npt.NDArray[np.float64]]:
-    """
-    Performs the discrete cross-correlogram of two time series.
-    The units should be in s for all arguments.
-    Return the firing rate of the series t2 relative to the timings of t1.
-    See compute_crosscorrelogram, compute_autocorrelogram and compute_eventcorrelogram
-    for wrappers of this function.
+@jit(nopython=True, cache=True, parallel=True)
+def _cross_correlograms(
+    times1, offsets1, times2, offsets2, ref, target, binsize, windowsize, precision
+):
+    """Compute the cross-correlograms of pairs of units, with the pairs in
+    parallel.
+
+    The function uses integer times. Thus it has no floating-point error, and
+    a lag exactly on a bin edge always goes into the bin on its right.
 
     Parameters
     ----------
-    t1 : numpy.ndarray
-        The timestamps of the reference time series (in seconds)
-    t2 : numpy.ndarray
-        The timestamps of the target time series (in seconds)
-    binsize : float
-        The bin size (in seconds)
-    windowsize : float
-        The window size (in seconds)
+    times1, times2 : numpy.ndarray
+        The spike times of the reference units and of the target units, in
+        integer units of the time precision (nanoseconds by default). The
+        spikes of unit ``u`` are the sorted block
+        ``times[offsets[u]:offsets[u + 1]]``. For pairs in one group, give the
+        same arrays twice.
+    offsets1, offsets2 : numpy.ndarray
+        The start of the block of each unit, and the end of the last block.
+    ref, target : numpy.ndarray
+        The position of the reference unit and of the target unit of each
+        pair.
+    binsize, windowsize : float
+        The bin size and the window size, in seconds.
+    precision : float
+        The number of time units in one second
+        (``10**nap_config.time_index_precision``).
 
     Returns
     -------
     numpy.ndarray
-        The cross-correlogram
+        ``(n_pairs, n_bins)``. The rate of the target unit around the spikes
+        of the reference unit, in Hz. For each spike at ``t`` of the reference
+        unit, bin ``j`` counts the target spikes in
+        ``[t - w + j * binsize, t - w + (j + 1) * binsize)``, with
+        ``w = n_bins * binsize / 2``. The bin size is ``binsize`` rounded to
+        the time precision.
     numpy.ndarray
-        Center of the bins (in s)
-
+        The center of each bin, in seconds.
     """
-    # nbins = ((windowsize//binsize)*2)
-
-    nt1 = len(t1)
-    nt2 = len(t2)
-
+    # an odd number of bins, so that the center bin is the lag 0
     nbins = int((windowsize * 2) // binsize)
-    if np.floor(nbins / 2) * 2 == nbins:
+    if nbins % 2 == 0:
         nbins = nbins + 1
 
-    w = (nbins / 2) * binsize
-    C = np.zeros(nbins)
-    i2 = 0
+    # The bin size in integer time units. The bins and the lags use this value.
+    binsize_int = int(np.round(binsize * precision))
+    # The center of each bin. The division of two exact integers gives the
+    # nearest float, so the lags have no floating-point error.
+    lags = ((np.arange(nbins) - nbins // 2) * binsize_int) / precision
 
-    for i1 in range(nt1):
-        lbound = t1[i1] - w
-        while i2 < nt2 and t2[i2] < lbound:
-            i2 = i2 + 1
-        while i2 > 0 and t2[i2 - 1] > lbound:
-            i2 = i2 - 1
+    # The lags are doubled, so that the half-window width / 2 needs no
+    # rounding.
+    width = nbins * binsize_int
+    bin_width = 2 * binsize_int
 
-        rbound = lbound
-        leftb = i2
-        for j in range(nbins):
-            k = 0
-            rbound = rbound + binsize
-            while leftb < nt2 and t2[leftb] < rbound:
-                leftb = leftb + 1
-                k = k + 1
+    n_pairs = len(ref)
+    rates = np.zeros((n_pairs, nbins))
+    # Each pair writes only its own row: the pairs can run in parallel.
+    for p in prange(n_pairs):
+        # the block of the reference unit and the block of the target unit
+        start1, stop1 = offsets1[ref[p]], offsets1[ref[p] + 1]
+        start2, stop2 = offsets2[target[p]], offsets2[target[p] + 1]
+        # the target spikes in [t - w, t + w) are times2[lo:hi].
+        # t increases, so lo and hi only move forward.
+        lo = start2
+        hi = start2
+        for i in range(start1, stop1):
+            # the reference spike time, doubled
+            t_ref = 2 * times1[i]
+            # move lo past the target spikes before t - w
+            while lo < stop2 and 2 * times2[lo] < t_ref - width:
+                lo += 1
+            if hi < lo:
+                hi = lo
+            # move hi past the target spikes before t + w
+            while hi < stop2 and 2 * times2[hi] < t_ref + width:
+                hi += 1
+            # add each target spike in the window to the bin of its lag
+            # Faster than in vectorized form
+            for k in range(lo, hi):
+                # the lag of the target spike, doubled, in [-width, width)
+                lag = 2 * times2[k] - t_ref
+                # shift the lag to [0, 2 * width)
+                shifted = lag + width
+                # the bin of the lag, from 0 to nbins - 1
+                b = shifted // bin_width
+                rates[p, b] += 1
+        # change the counts to a rate in Hz per reference spike
+        rates[p] /= (stop1 - start1) * binsize_int / precision
+    return rates, lags
 
-            C[j] += k
 
-    C = C / (nt1 * binsize)
+def _bin_parameters(binsize, windowsize, time_units):
+    """
+    Convert the bin size and the window size to seconds and check the bin size.
 
-    m = -w + binsize / 2
-    B = np.zeros(nbins)
-    for j in range(nbins):
-        B[j] = m + j * binsize
+    Parameters
+    ----------
+    binsize : float
+        The bin size, in time_units.
+    windowsize : float
+        The window size, in time_units.
+    time_units : str
+        The time units of binsize and windowsize ('s', 'ms' or 'us').
 
-    return C, B
+    Returns
+    -------
+    binsize : float
+        The bin size in seconds.
+    windowsize : float
+        The window size in seconds.
+    precision : float
+        The number of time units in one second (10**time_index_precision).
+
+    Raises
+    ------
+    ValueError
+        If binsize is smaller than the time precision of pynapple.
+    """
+    binsize = nap.TsIndex.format_timestamps(
+        np.array([binsize], dtype=np.float64), time_units
+    )[0]
+    windowsize = nap.TsIndex.format_timestamps(
+        np.array([windowsize], dtype=np.float64), time_units
+    )[0]
+
+    digits = nap.nap_config.time_index_precision
+    precision = 10.0**digits
+    if np.round(binsize * precision) < 1:
+        raise ValueError(
+            f"binsize must be at least 1e-{digits} s, the time precision of "
+            f"pynapple (nap_config.time_index_precision = {digits})."
+        )
+    return binsize, windowsize, precision
+
+
+def _integer_ragged_times(group, precision):
+    """
+    Return the spike times of a TsGroup as a ragged array of integers.
+
+    Parameters
+    ----------
+    group : TsGroup
+        The group, loaded in memory.
+    precision : float
+        The number of time units in one second (10**time_index_precision).
+
+    Returns
+    -------
+    times : numpy.ndarray
+        The spike times in integer time units, one sorted block per unit.
+    offsets : numpy.ndarray
+        The block of unit u is times[offsets[u]:offsets[u + 1]].
+    """
+    order, offsets = group._ragged_index
+    times = np.round(group._times[order] * precision).astype(np.int64)
+    return times, offsets
 
 
 @_validate_correlograms_inputs
@@ -171,75 +258,123 @@ def compute_autocorrelogram(
     time_units: str = "s",
 ) -> pd.DataFrame:
     """
-    Computes the autocorrelogram of a group of Ts/Tsd objects.
-    The group can be passed directly as a TsGroup object.
+    Compute the autocorrelogram of each unit of a group.
+
+    For each spike of a unit, the function counts the other spikes of the same
+    unit in the bins of a window around the spike. Then it divides the counts
+    by the number of spikes and by the bin size. The result is a rate in Hz.
 
     Parameters
     ----------
     group : TsGroup
-        The group of Ts/Tsd objects to auto-correlate
+        The units.
     binsize : float
-        The bin size. Default is second.
-        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
+        The width of one bin, in ``time_units``. The function rounds it to the
+        time precision of pynapple (1 ns by default).
     windowsize : float
-        The window size. Default is second.
-        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
-    ep : IntervalSet
-        The epoch on which auto-corrs are computed.
-        If None, the epoch is the time support of the group.
+        The largest lag, in ``time_units``. The bins cover the lags from about
+        ``-windowsize`` to ``windowsize``.
+    ep : IntervalSet, optional
+        The epochs to use. The function restricts the group to ``ep``. If None
+        (default), the function uses the time support of the group.
     norm : bool, optional
-         If True, autocorrelograms are normalized to baseline (i.e. divided by the average rate)
-         If False, autocorrelograms are returned as the rate (Hz) of the time series (relative to itself)
+        If True (default), divide the autocorrelogram of each unit by the mean
+        rate of the unit. Then the value 1 is equal to the mean rate. If False,
+        the values are rates in Hz.
     time_units : str, optional
-        The time units of the parameters. They have to be consistent for binsize and windowsize.
-        ('s' [default], 'ms', 'us').
+        The time units of ``binsize`` and ``windowsize``: ``'s'`` (default),
+        ``'ms'`` or ``'us'``.
 
     Returns
     -------
     pandas.DataFrame
-        DataFrame with time lags as index and unit IDs as columns.
-        Values represent the firing rate (or normalized rate if norm=True).
+        One column for each unit, with the unit labels as column names. The
+        index is the center of each bin (the lag), in seconds.
+
+        The bin at lag 0 is always 0. Without this, each spike counts itself
+        in this bin. Thus the bin at lag 0 also does not count the other
+        spikes of the unit in ``[-binsize / 2, binsize / 2)``.
+
+        If a unit has no spikes, its column is NaN. If the group has no units,
+        the DataFrame is empty.
 
     Raises
     ------
     TypeError
-        If group is not a TsGroup, or if binsize, windowsize, ep, norm, or time_units
-        have invalid types.
+        If ``group`` is not a TsGroup, or if a parameter has an incorrect type.
+    ValueError
+        If ``binsize`` is smaller than the time precision of pynapple.
+
+    See Also
+    --------
+    compute_crosscorrelogram : The correlograms of pairs of units.
+    compute_eventcorrelogram : The correlograms of units with events.
+
+    Notes
+    -----
+    The number of bins is ``2 * windowsize // binsize``, plus 1 if this number
+    is even. Thus the number of bins is always odd, and the center bin has the
+    lag 0. The bin with the center ``lag`` counts the lags in
+    ``[lag - binsize / 2, lag + binsize / 2)``. A lag exactly on a bin edge
+    goes into the bin on its right.
+
+    The function counts with integer times, in units of the time precision of
+    pynapple. Thus the bins have no floating-point error.
 
     Examples
     --------
-    >>> import pynapple as nap
+    A unit with a spike every 100 ms, and a unit with a spike every 200 ms:
+
     >>> import numpy as np
-    >>> ts_group = nap.TsGroup({0: nap.Ts(t=np.sort(np.random.uniform(0, 10, 100)))})
-    >>> autocorr = nap.compute_autocorrelogram(ts_group, binsize=0.01, windowsize=0.1)
+    >>> import pynapple as nap
+    >>> group = nap.TsGroup({
+    ...     0: nap.Ts(t=np.arange(0, 10, 0.1)),
+    ...     1: nap.Ts(t=np.arange(0.02, 10, 0.2)),
+    ... })
+    >>> nap.compute_autocorrelogram(group, binsize=0.05, windowsize=0.2, norm=False)
+              0     1
+    -0.20  19.6  19.6
+    -0.15   0.0   0.0
+    -0.10  19.8   0.0
+    -0.05   0.0   0.0
+     0.00   0.0   0.0
+     0.05   0.0   0.0
+     0.10  19.8   0.0
+     0.15   0.0   0.0
+     0.20  19.6  19.6
+
+    The same bins, with the sizes in milliseconds:
+
+    >>> autocorr = nap.compute_autocorrelogram(
+    ...     group, binsize=50, windowsize=200, time_units="ms"
+    ... )
+    >>> autocorr.index.values
+    array([-0.2 , -0.15, -0.1 , -0.05,  0.  ,  0.05,  0.1 ,  0.15,  0.2 ])
     """
+    binsize, windowsize, precision = _bin_parameters(binsize, windowsize, time_units)
+
     if isinstance(ep, nap.IntervalSet):
         newgroup = group.restrict(ep)
     else:
-        newgroup = group
+        newgroup = group._load_in_memory()
 
-    autocorrs = {}
+    if len(newgroup) == 0:
+        return pd.DataFrame().astype("float")
 
-    binsize = nap.TsIndex.format_timestamps(
-        np.array([binsize], dtype=np.float64), time_units
-    )[0]
-    windowsize = nap.TsIndex.format_timestamps(
-        np.array([windowsize], dtype=np.float64), time_units
-    )[0]
-
-    for n in newgroup.keys():
-        spk_time = newgroup[n].index
-        auc, times = _cross_correlogram(spk_time, spk_time, binsize, windowsize)
-        autocorrs[n] = pd.Series(index=np.round(times, 6), data=auc, dtype="float")
-
-    autocorrs = pd.DataFrame.from_dict(autocorrs)
-
+    # each unit is the reference and the target of its own pair
+    times, offsets = _integer_ragged_times(newgroup, precision)
+    units = np.arange(len(newgroup))
+    rates, lags = _cross_correlograms(
+        times, offsets, times, offsets, units, units, binsize, windowsize, precision
+    )
+    # The number of bins is odd, so the center bin is always the lag 0.
+    # In this bin, each spike counts itself: set it to 0.
+    rates[:, len(lags) // 2] = 0.0
     if norm:
-        autocorrs = autocorrs / newgroup.get_info("rate")
+        with np.errstate(divide="ignore", invalid="ignore"):
+            rates = rates / newgroup.rates[:, None]
 
-    # Bug here
-    if 0 in autocorrs.index:
-        autocorrs.loc[0] = 0.0
+    autocorrs = pd.DataFrame(rates.T, index=lags, columns=newgroup.index)
 
     return autocorrs.astype("float")
 
@@ -255,116 +390,163 @@ def compute_crosscorrelogram(
     reverse: bool = False,
 ) -> pd.DataFrame:
     """
-    Computes all the pairwise cross-correlograms for TsGroup or list/tuple of two TsGroup.
+    Compute the cross-correlograms of pairs of units.
 
-    If input is TsGroup only, the reference Ts/Tsd and target are chosen based on the builtin itertools.combinations function.
-    For example if indexes are [0,1,2], the function computes cross-correlograms
-    for the pairs (0,1), (0, 2), and (1, 2). The left index gives the reference time series.
-    To reverse the order, set reverse=True.
+    Each pair has a reference unit and a target unit. For each spike of the
+    reference unit, the function counts the spikes of the target unit in the
+    bins of a window around the spike. Then it divides the counts by the
+    number of reference spikes and by the bin size. The result is a rate in Hz.
 
-    If input is tuple/list of TsGroup, for example group=(group1, group2), the reference for each pairs comes from group1.
+    The pairs come from ``group``:
+
+    - **One TsGroup:** each pair of two different units, from
+      ``itertools.combinations``. For the units ``[0, 1, 2]``, the pairs are
+      ``(0, 1)``, ``(0, 2)`` and ``(1, 2)``. The first unit of a pair is the
+      reference. Set ``reverse=True`` to use the second unit as the reference.
+    - **Two TsGroups** ``(group1, group2)``: each unit of ``group1`` with each
+      unit of ``group2``. The unit of ``group1`` is the reference.
 
     Parameters
     ----------
-    group : TsGroup or tuple/list of two TsGroups
-        The group(s) of Ts/Tsd objects to cross-correlate. If a single TsGroup,
-        computes pairwise cross-correlograms within the group. If a tuple/list
-        of two TsGroups, computes cross-correlograms between all pairs from
-        group1 (reference) and group2 (target).
+    group : TsGroup, or tuple or list of two TsGroups
+        The units.
     binsize : float
-        The bin size. Default is second.
-        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
+        The width of one bin, in ``time_units``. The function rounds it to the
+        time precision of pynapple (1 ns by default).
     windowsize : float
-        The window size. Default is second.
-        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
-    ep : IntervalSet
-        The epoch on which cross-corrs are computed.
-        If None, the epoch is the time support of the group.
+        The largest lag, in ``time_units``. The bins cover the lags from about
+        ``-windowsize`` to ``windowsize``.
+    ep : IntervalSet, optional
+        The epochs to use. The function restricts each group to ``ep``. If None
+        (default), the function uses the time support of each group.
     norm : bool, optional
-        If True (default), cross-correlograms are normalized to baseline (i.e. divided by the average rate of the target time series)
-        If False, cross-correlograms are returned as the rate (Hz) of the target time series (relative to the reference time series)
+        If True (default), divide the cross-correlogram of each pair by the
+        mean rate of the target unit. Then the value 1 is equal to the mean
+        rate of the target unit. If False, the values are rates in Hz.
     time_units : str, optional
-        The time units of the parameters. They have to be consistent for binsize and windowsize.
-        ('s' [default], 'ms', 'us').
+        The time units of ``binsize`` and ``windowsize``: ``'s'`` (default),
+        ``'ms'`` or ``'us'``.
     reverse : bool, optional
-        To reverse the pair order if input is TsGroup
+        If True, use the second unit of each pair as the reference. Only for
+        one TsGroup. Default is False.
 
     Returns
     -------
     pandas.DataFrame
-        DataFrame with time lags as index and pair tuples (i, j) as columns.
-        Values represent the firing rate of unit j relative to unit i
-        (or normalized rate if norm=True).
+        One column for each pair, with the tuple ``(reference, target)`` of
+        unit labels as column name. The index is the center of each bin (the
+        lag), in seconds. A positive lag is a target spike after a reference
+        spike.
+
+        If the reference unit has no spikes, the column is NaN. With
+        ``norm=True``, the column is also NaN if the target unit has no spikes.
+        If there are no pairs, the DataFrame is empty.
 
     Raises
     ------
     TypeError
-        If group is not a TsGroup or tuple/list of two TsGroups, or if binsize,
-        windowsize, ep, norm, time_units, or reverse have invalid types.
+        If ``group`` is not a TsGroup or a tuple or list of two TsGroups, or if
+        a parameter has an incorrect type.
+    ValueError
+        If ``binsize`` is smaller than the time precision of pynapple.
+
+    See Also
+    --------
+    compute_autocorrelogram : The correlogram of each unit with itself.
+    compute_eventcorrelogram : The correlograms of units with events.
+
+    Notes
+    -----
+    The number of bins is ``2 * windowsize // binsize``, plus 1 if this number
+    is even. Thus the number of bins is always odd, and the center bin has the
+    lag 0. The bin with the center ``lag`` counts the lags in
+    ``[lag - binsize / 2, lag + binsize / 2)``. A lag exactly on a bin edge
+    goes into the bin on its right.
+
+    The function counts with integer times, in units of the time precision of
+    pynapple. Thus the bins have no floating-point error.
 
     Examples
     --------
-    >>> import pynapple as nap
-    >>> import numpy as np
-    >>> ts_group = nap.TsGroup({
-    ...     0: nap.Ts(t=np.sort(np.random.uniform(0, 10, 100))),
-    ...     1: nap.Ts(t=np.sort(np.random.uniform(0, 10, 100)))
-    ... })
-    >>> crosscorr = nap.compute_crosscorrelogram(ts_group, binsize=0.01, windowsize=0.1)
-    """
-    crosscorrs = {}
+    A unit with a spike every 100 ms, and a unit with a spike every 200 ms,
+    20 ms after the spikes of unit 0:
 
-    binsize = nap.TsIndex.format_timestamps(
-        np.array([binsize], dtype=np.float64), time_units
-    )[0]
-    windowsize = nap.TsIndex.format_timestamps(
-        np.array([windowsize], dtype=np.float64), time_units
-    )[0]
+    >>> import numpy as np
+    >>> import pynapple as nap
+    >>> group = nap.TsGroup({
+    ...     0: nap.Ts(t=np.arange(0, 10, 0.1)),
+    ...     1: nap.Ts(t=np.arange(0.02, 10, 0.2)),
+    ... })
+    >>> nap.compute_crosscorrelogram(group, binsize=0.05, windowsize=0.2, norm=False)
+              0
+              1
+    -0.20   9.8
+    -0.15   0.0
+    -0.10  10.0
+    -0.05   0.0
+     0.00  10.0
+     0.05   0.0
+     0.10   9.8
+     0.15   0.0
+     0.20   9.8
+
+    With ``reverse=True``, unit 1 is the reference:
+
+    >>> crosscorr = nap.compute_crosscorrelogram(
+    ...     group, binsize=0.05, windowsize=0.2, reverse=True
+    ... )
+    >>> crosscorr.columns.tolist()
+    [(1, 0)]
+
+    With two groups, the units of the first group are the references:
+
+    >>> crosscorr = nap.compute_crosscorrelogram(
+    ...     (group[[0]], group[[1]]), binsize=0.05, windowsize=0.2
+    ... )
+    >>> crosscorr.columns.tolist()
+    [(0, 1)]
+    """
+    binsize, windowsize, precision = _bin_parameters(binsize, windowsize, time_units)
+
+    def _load(g):
+        if isinstance(ep, nap.IntervalSet):
+            return g.restrict(ep)
+        return g._load_in_memory()
 
     if isinstance(group, (tuple, list)):
-        if isinstance(ep, nap.IntervalSet):
-            newgroup = [group[i].restrict(ep) for i in range(2)]
-        else:
-            newgroup = group
-
-        pairs = product(list(newgroup[0].keys()), list(newgroup[1].keys()))
-
-        for i, j in pairs:
-            spk1 = newgroup[0][i].index
-            spk2 = newgroup[1][j].index
-            auc, times = _cross_correlogram(spk1, spk2, binsize, windowsize)
-            if norm:
-                auc /= newgroup[1][j].rate
-            crosscorrs[(i, j)] = pd.Series(index=times, data=auc, dtype="float")
-
-        crosscorrs = pd.DataFrame.from_dict(crosscorrs)
+        group1 = _load(group[0])
+        group2 = _load(group[1])
+        pairs = list(product(group1.keys(), group2.keys()))
     else:
-        if isinstance(ep, nap.IntervalSet):
-            newgroup = group.restrict(ep)
-        else:
-            newgroup = group
-        neurons = list(newgroup.keys())
-        pairs = list(combinations(neurons, 2))
+        group1 = group2 = _load(group)
+        pairs = list(combinations(group1.keys(), 2))
         if reverse:
-            pairs = list(map(lambda n: (n[1], n[0]), pairs))
+            pairs = [(j, i) for i, j in pairs]
 
-        for i, j in pairs:
-            spk1 = newgroup[i].index
-            spk2 = newgroup[j].index
-            auc, times = _cross_correlogram(spk1, spk2, binsize, windowsize)
-            crosscorrs[(i, j)] = pd.Series(index=times, data=auc, dtype="float")
+    if len(pairs) == 0:
+        return pd.DataFrame().astype("float")
 
-        crosscorrs = pd.DataFrame.from_dict(crosscorrs)
+    times1, offsets1 = _integer_ragged_times(group1, precision)
+    if group2 is group1:
+        times2, offsets2 = times1, offsets1
+    else:
+        times2, offsets2 = _integer_ragged_times(group2, precision)
 
-        if norm:
-            freq = pd.Series(
-                index=newgroup.metadata_index, data=newgroup.get_info("rate")
-            )
-            freq2 = pd.Series(
-                index=pairs, data=list(map(lambda n: freq.loc[n[1]], pairs))
-            )
-            crosscorrs = crosscorrs / freq2
+    # the position of each unit in its group
+    ref = np.searchsorted(group1.index, [i for i, _ in pairs])
+    target = np.searchsorted(group2.index, [j for _, j in pairs])
 
+    rates, lags = _cross_correlograms(
+        times1, offsets1, times2, offsets2, ref, target, binsize, windowsize, precision
+    )
+    if norm:
+        # divide each pair by the mean rate of its target unit
+        with np.errstate(divide="ignore", invalid="ignore"):
+            rates = rates / group2.rates[target][:, None]
+
+    crosscorrs = pd.DataFrame(
+        rates.T, index=lags, columns=pd.MultiIndex.from_tuples(pairs)
+    )
     return crosscorrs.astype("float")
 
 
@@ -379,51 +561,94 @@ def compute_eventcorrelogram(
     time_units: str = "s",
 ) -> pd.DataFrame:
     """
-    Computes the correlograms of a group of Ts/Tsd objects with another single Ts/Tsd object
-    The time of reference is the event times.
+    Compute the correlogram of each unit of a group with events.
+
+    The events are the reference. For each event, the function counts the
+    spikes of each unit in the bins of a window around the event. Then it
+    divides the counts by the number of events and by the bin size. The result
+    is a rate in Hz.
 
     Parameters
     ----------
     group : TsGroup
-        The group of Ts/Tsd objects to correlate with the event
-    event : Ts/Tsd
-        The event to correlate the each of the time series in the group with.
+        The units.
+    event : Ts or Tsd
+        The event times.
     binsize : float
-        The bin size. Default is second.
-        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
+        The width of one bin, in ``time_units``. The function rounds it to the
+        time precision of pynapple (1 ns by default).
     windowsize : float
-        The window size. Default is second.
-        If different, specify with the parameter time_units ('s' [default], 'ms', 'us').
-    ep : IntervalSet
-        The epoch on which cross-corrs are computed.
-        If None, the epoch is the time support of the event.
+        The largest lag, in ``time_units``. The bins cover the lags from about
+        ``-windowsize`` to ``windowsize``.
+    ep : IntervalSet, optional
+        The epochs to use. The function restricts the events and the group to
+        ``ep``. If None (default), the function uses the time support of
+        ``event``, and restricts the group to it.
     norm : bool, optional
-        If True (default), cross-correlograms are normalized to baseline (i.e. divided by the average rate of the target time series)
-        If False, cross-correlograms are returned as the rate (Hz) of the target time series (relative to the event time series)
+        If True (default), divide the correlogram of each unit by the mean rate
+        of the unit. Then the value 1 is equal to the mean rate. If False, the
+        values are rates in Hz.
     time_units : str, optional
-        The time units of the parameters. They have to be consistent for binsize and windowsize.
-        ('s' [default], 'ms', 'us').
+        The time units of ``binsize`` and ``windowsize``: ``'s'`` (default),
+        ``'ms'`` or ``'us'``.
 
     Returns
     -------
     pandas.DataFrame
-        DataFrame with time lags as index and unit IDs as columns.
-        Values represent the firing rate of each unit relative to the event times
-        (or normalized rate if norm=True).
+        One column for each unit, with the unit labels as column names. The
+        index is the center of each bin (the lag), in seconds. A positive lag
+        is a spike after an event.
+
+        If there are no events, all the columns are NaN. With ``norm=True``,
+        the column of a unit with no spikes is also NaN. If the group has no
+        units, the DataFrame is empty.
 
     Raises
     ------
     TypeError
-        If group is not a TsGroup, if event is not a Ts or Tsd, or if binsize,
-        windowsize, ep, norm, or time_units have invalid types.
+        If ``group`` is not a TsGroup, if ``event`` is not a Ts or a Tsd, or if
+        a parameter has an incorrect type.
+    ValueError
+        If ``binsize`` is smaller than the time precision of pynapple.
+
+    See Also
+    --------
+    compute_autocorrelogram : The correlogram of each unit with itself.
+    compute_crosscorrelogram : The correlograms of pairs of units.
+
+    Notes
+    -----
+    The number of bins is ``2 * windowsize // binsize``, plus 1 if this number
+    is even. Thus the number of bins is always odd, and the center bin has the
+    lag 0. The bin with the center ``lag`` counts the lags in
+    ``[lag - binsize / 2, lag + binsize / 2)``. A lag exactly on a bin edge
+    goes into the bin on its right.
+
+    The function counts with integer times, in units of the time precision of
+    pynapple. Thus the bins have no floating-point error.
 
     Examples
     --------
-    >>> import pynapple as nap
     >>> import numpy as np
-    >>> ts_group = nap.TsGroup({0: nap.Ts(t=np.sort(np.random.uniform(0, 10, 100)))})
+    >>> import pynapple as nap
+    >>> group = nap.TsGroup({
+    ...     0: nap.Ts(t=np.arange(0, 10, 0.1)),
+    ...     1: nap.Ts(t=np.arange(0.02, 10, 0.2)),
+    ... })
     >>> event = nap.Ts(t=np.array([1.0, 3.0, 5.0, 7.0, 9.0]))
-    >>> eventcorr = nap.compute_eventcorrelogram(ts_group, event, binsize=0.01, windowsize=0.1)
+    >>> nap.compute_eventcorrelogram(
+    ...     group, event, binsize=0.05, windowsize=0.2, norm=False
+    ... )
+              0     1
+    -0.20  16.0  16.0
+    -0.15   0.0   0.0
+    -0.10  16.0   0.0
+    -0.05   0.0   0.0
+     0.00  20.0  16.0
+     0.05   0.0   0.0
+     0.10  16.0   0.0
+     0.15   0.0   0.0
+     0.20  16.0  16.0
     """
     if ep is None:
         ep = event.time_support
@@ -433,24 +658,32 @@ def compute_eventcorrelogram(
 
     newgroup = group.restrict(ep)
 
-    crosscorrs = {}
+    if len(newgroup) == 0:
+        return pd.DataFrame().astype("float")
 
-    binsize = nap.TsIndex.format_timestamps(
-        np.array([binsize], dtype=np.float64), time_units
-    )[0]
-    windowsize = nap.TsIndex.format_timestamps(
-        np.array([windowsize], dtype=np.float64), time_units
-    )[0]
+    binsize, windowsize, precision = _bin_parameters(binsize, windowsize, time_units)
 
-    for n in newgroup.keys():
-        spk_time = newgroup[n].index
-        auc, times = _cross_correlogram(tsd1, spk_time, binsize, windowsize)
-        crosscorrs[n] = pd.Series(index=times, data=auc, dtype="float")
-
-    crosscorrs = pd.DataFrame.from_dict(crosscorrs)
-
+    # the event is the reference of each pair, as a ragged array with one unit
+    times1 = np.round(np.asarray(tsd1) * precision).astype(np.int64)
+    offsets1 = np.array([0, len(times1)])
+    times2, offsets2 = _integer_ragged_times(newgroup, precision)
+    units = np.arange(len(newgroup))
+    rates, lags = _cross_correlograms(
+        times1,
+        offsets1,
+        times2,
+        offsets2,
+        np.zeros_like(units),
+        units,
+        binsize,
+        windowsize,
+        precision,
+    )
     if norm:
-        crosscorrs = crosscorrs / newgroup.get_info("rate")
+        with np.errstate(divide="ignore", invalid="ignore"):
+            rates = rates / newgroup.rates[:, None]
+
+    crosscorrs = pd.DataFrame(rates.T, index=lags, columns=newgroup.index)
 
     return crosscorrs.astype("float")
 

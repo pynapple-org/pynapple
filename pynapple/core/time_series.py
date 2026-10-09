@@ -3516,9 +3516,7 @@ class Tsd(_BaseTsd):
         for k in idx:
             group[k] = Ts(t=t[d == k], time_support=self.time_support)
 
-        return ts_group.TsGroup(
-            group, time_support=self.time_support, bypass_check=True
-        )
+        return ts_group.TsGroup(group, time_support=self.time_support)
 
     def find_peaks(self, epochs=None, return_prop=False, *args, **kwargs):
         """

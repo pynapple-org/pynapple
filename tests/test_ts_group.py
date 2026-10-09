@@ -3,7 +3,6 @@
 import pickle
 import re
 import warnings
-from collections import UserDict
 from contextlib import nullcontext as does_not_raise
 from pathlib import Path
 
@@ -30,7 +29,7 @@ def ts_group():
     ts1 = nap.Ts(t=np.arange(10))
     ts2 = nap.Ts(t=np.arange(5))
     data = {1: ts1, 2: ts2}
-    group = nap.TsGroup(data, meta=[10, 11])
+    group = nap.TsGroup(data, metadata={"meta": [10, 11]})
     return group
 
 
@@ -39,24 +38,24 @@ def ts_group_one_group():
     # Placeholder setup for Ts and Tsd objects. Adjust as necessary.
     ts1 = nap.Ts(t=np.arange(10))
     data = {1: ts1}
-    group = nap.TsGroup(data, meta=[10])
+    group = nap.TsGroup(data, metadata={"meta": [10]})
     return group
 
 
 class TestTsGroup1:
     def test_create_ts_group(self, group):
         tsgroup = nap.TsGroup(group)
-        assert isinstance(tsgroup, UserDict)
+        assert isinstance(tsgroup, nap.TsGroup)
         assert len(tsgroup) == 3
 
     def test_create_ts_group_from_iter(self, group):
         tsgroup = nap.TsGroup(group.values())
-        assert isinstance(tsgroup, UserDict)
+        assert isinstance(tsgroup, nap.TsGroup)
         assert len(tsgroup) == 3
 
     def test_create_ts_group_from_invalid(self):
-        with pytest.raises(AttributeError):
-            tsgroup = nap.TsGroup(np.arange(0, 200))
+        with pytest.raises(TypeError, match="Element 0 of TsGroup should be a Ts"):
+            nap.TsGroup(np.arange(0, 200))
 
     @pytest.mark.parametrize(
         "test_dict, expectation",
@@ -143,31 +142,24 @@ class TestTsGroup1:
             == "Union of time supports is empty. Consider passing a time support as argument."
         )
 
-    def test_create_ts_group_with_bypass_check(self):
-        tmp = {
-            0: nap.Ts(t=np.arange(0, 100)),
-            1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
-            2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
-        }
-        tsgroup = nap.TsGroup(
-            tmp, time_support=nap.IntervalSet(0, 100), bypass_check=True
-        )
-        for i in tmp.keys():
-            np.testing.assert_array_almost_equal(tmp[i].index, tsgroup[i].index)
+    def test_create_ts_group_unknown_keyword(self, group):
+        # metadata can no longer be passed as keyword arguments
+        with pytest.raises(TypeError, match="unexpected keyword argument 'label'"):
+            nap.TsGroup(group, label=["a", "b", "c"])
+        with pytest.raises(
+            TypeError, match="unexpected keyword argument 'bypass_check'"
+        ):
+            nap.TsGroup(group, time_support=nap.IntervalSet(0, 100), bypass_check=True)
 
-        tmp = {
-            0: nap.Ts(t=np.arange(0, 100)),
-            1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
-            2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
-        }
-        tsgroup = nap.TsGroup(tmp, bypass_check=True)
-        for i in tmp.keys():
-            np.testing.assert_array_almost_equal(tmp[i].index, tsgroup[i].index)
+    def test_create_ts_group_restricts_to_time_support(self, group):
+        tsgroup = nap.TsGroup(group, time_support=nap.IntervalSet(0, 100))
+        for i in group.keys():
+            np.testing.assert_array_equal(tsgroup[i].t, group[i].t[group[i].t <= 100])
 
     def test_create_ts_group_with_metainfo(self, group):
         sr_info = pd.Series(index=[0, 1, 2], data=[0, 0, 0], name="sr")
         ar_info = np.ones(3) * 1
-        tsgroup = nap.TsGroup(group, sr=sr_info, ar=ar_info)
+        tsgroup = nap.TsGroup(group, metadata={"sr": sr_info, "ar": ar_info})
         assert tsgroup._metadata.shape == (3, 3)
         np.testing.assert_array_almost_equal(tsgroup._metadata["sr"], sr_info.values)
         np.testing.assert_array_almost_equal(
@@ -178,7 +170,7 @@ class TestTsGroup1:
     def test_copy(self, group):
         sr_info = pd.Series(index=[0, 1, 2], data=[0.5, 1.5, 2.5], name="sr")
         ar_info = np.ones(3) * 10
-        tsgroup = nap.TsGroup(group, sr=sr_info, ar=ar_info)
+        tsgroup = nap.TsGroup(group, metadata={"sr": sr_info, "ar": ar_info})
 
         tsgroup_copy = tsgroup.copy()
         assert isinstance(tsgroup_copy, nap.TsGroup)
@@ -533,7 +525,7 @@ class TestTsGroup1:
 
     def test_threshold_slicing(self, group):
         sr_info = pd.Series(index=[0, 1, 2], data=[0, 1, 2], name="sr")
-        tsgroup = nap.TsGroup(group, sr=sr_info)
+        tsgroup = nap.TsGroup(group, metadata={"sr": sr_info})
         assert tsgroup.getby_threshold("sr", 1).keys() == [2]
         assert tsgroup.getby_threshold("sr", 1, ">").keys() == [2]
         assert tsgroup.getby_threshold("sr", 1, "<").keys() == [0]
@@ -542,7 +534,7 @@ class TestTsGroup1:
 
     def test_threshold_error(self, group):
         sr_info = pd.Series(index=[0, 1, 2], data=[0, 1, 2], name="sr")
-        tsgroup = nap.TsGroup(group, sr=sr_info)
+        tsgroup = nap.TsGroup(group, metadata={"sr": sr_info})
         op = "!="
         with pytest.raises(RuntimeError) as e_info:
             tsgroup.getby_threshold("sr", 1, op)
@@ -550,7 +542,7 @@ class TestTsGroup1:
 
     def test_intervals_slicing(self, group):
         sr_info = pd.Series(index=[0, 1, 2], data=[0, 1, 2], name="sr")
-        tsgroup = nap.TsGroup(group, sr=sr_info)
+        tsgroup = nap.TsGroup(group, metadata={"sr": sr_info})
         lgroup, bincenter = tsgroup.getby_intervals("sr", [0, 1, 2])
         np.testing.assert_array_almost_equal(bincenter, np.array([0.5, 1.5]))
         assert lgroup[0].keys() == [0]
@@ -558,7 +550,7 @@ class TestTsGroup1:
 
     def test_category_slicing(self, group):
         sr_info = pd.Series(index=[0, 1, 2], data=["a", "a", "b"], name="sr")
-        tsgroup = nap.TsGroup(group, sr=sr_info)
+        tsgroup = nap.TsGroup(group, metadata={"sr": sr_info})
         dgroup = tsgroup.getby_category("sr")
         assert isinstance(dgroup, dict)
         assert list(dgroup.keys()) == ["a", "b"]
@@ -877,8 +869,10 @@ class TestTsGroup1:
 
         tsgroup = nap.TsGroup(
             group,
-            meta=np.arange(len(group), dtype=np.int64),
-            meta2=np.array(["a", "b", "c"]),
+            metadata={
+                "meta": np.arange(len(group), dtype=np.int64),
+                "meta2": np.array(["a", "b", "c"]),
+            },
         )
 
         with pytest.raises(TypeError) as e:
@@ -923,7 +917,8 @@ class TestTsGroup1:
         times = np.hstack(times)
         index = np.hstack(index)
         data = np.hstack(data)
-        idx = np.argsort(times)
+        # timestamps shared by several units are saved in key order
+        idx = np.argsort(times, kind="stable")
         times = times[idx]
         data = data[idx]
         index = index[idx]
@@ -1083,7 +1078,7 @@ class TestTsGroup1:
                 4: nap.Ts(t=np.arange(20)),
             },
             time_support=ts_group.time_support,
-            meta=np.array([12, 13]),
+            metadata={"meta": np.array([12, 13])},
         )
         merged = ts_group.merge(ts_group2)
         assert len(merged) == 4
@@ -1115,7 +1110,7 @@ class TestTsGroup1:
                 4: nap.Ts(t=np.arange(20)),
             },
             time_support=ts_group.time_support,
-            **metadata,
+            metadata=metadata,
         )
 
         with expectation:
@@ -1145,7 +1140,7 @@ class TestTsGroup1:
         ts_group2 = nap.TsGroup(
             dict(zip(index, [nap.Ts(t=np.arange(15)), nap.Ts(t=np.arange(20))])),
             time_support=ts_group.time_support,
-            meta=np.array([12, 13]),
+            metadata={"meta": np.array([12, 13])},
         )
 
         with expectation:
@@ -1184,7 +1179,7 @@ class TestTsGroup1:
                 4: nap.Ts(t=np.arange(20)),
             },
             time_support=time_support,
-            meta=np.array([12, 13]),
+            metadata={"meta": np.array([12, 13])},
         )
 
         with expectation:
@@ -1493,3 +1488,274 @@ class TestTsGroupStrRepr:
         # str should show all columns without the trailing "..." column
         for i in range(20):
             assert f"col_{i}" in str_output
+
+
+class TestSortedArrayMatchesPerUnit:
+    """TsGroup operations run on one merged sorted array; each must match the
+    same operation applied unit by unit on the members."""
+
+    @staticmethod
+    def make(seed=0, with_tsd=False):
+        rng = np.random.default_rng(seed)
+        # 0.5 s grid: units share timestamps, some land exactly on epoch bounds
+        units = {
+            k: np.unique(rng.integers(0, 400, 150) * 0.5) for k in [9, 1, 4, 20, 7]
+        }
+        units[4] = np.array([])
+        members = {
+            k: (
+                nap.Tsd(t=t, d=np.arange(len(t)) * 1.5)
+                if with_tsd and k % 2
+                else nap.Ts(t)
+            )
+            for k, t in units.items()
+        }
+        group = nap.TsGroup(members, time_support=nap.IntervalSet(0, 200))
+        edges = np.sort(rng.choice(np.arange(410), 24, replace=False)) * 0.5
+        ep = nap.IntervalSet(edges[::2], edges[1::2])
+        return group, members, ep
+
+    @pytest.mark.parametrize("seed", range(3))
+    @pytest.mark.parametrize("bin_size", [None, 0.5, 0.37, 3.0])
+    def test_count(self, seed, bin_size):
+        group, members, ep = self.make(seed)
+        out = group.count(bin_size, ep)
+        for k in group.keys():
+            ref = members[k].count(bin_size, ep)
+            np.testing.assert_array_equal(out.t, ref.t)
+            np.testing.assert_array_equal(out.loc[k].values, ref.values)
+
+    @pytest.mark.parametrize("seed", range(3))
+    @pytest.mark.parametrize("with_tsd", [False, True])
+    def test_restrict(self, seed, with_tsd):
+        group, members, ep = self.make(seed, with_tsd)
+        out = group.restrict(ep)
+        for k in group.keys():
+            ref = members[k].restrict(ep)
+            assert type(out[k]) is type(ref)
+            np.testing.assert_array_equal(out[k].t, ref.t)
+            if with_tsd and k % 2:
+                np.testing.assert_array_equal(out[k].values, ref.values)
+
+    @pytest.mark.parametrize("seed", range(3))
+    @pytest.mark.parametrize("mode", ["closest", "before", "after"])
+    def test_value_from(self, seed, mode):
+        group, members, ep = self.make(seed)
+        target = nap.Tsd(t=np.arange(0, 200, 0.7), d=np.arange(286) * 2.0)
+        out = group.value_from(target, ep, mode=mode)
+        for k in group.keys():
+            ref = members[k].value_from(target, ep, mode=mode)
+            np.testing.assert_array_equal(out[k].t, ref.t)
+            np.testing.assert_array_equal(out[k].values, ref.values)
+
+    @pytest.mark.parametrize("seed", range(3))
+    @pytest.mark.parametrize("align", ["start", "center", "end"])
+    def test_time_diff(self, seed, align):
+        group, members, ep = self.make(seed)
+        out = group.time_diff(align=align, epochs=ep)
+        assert list(out.keys()) == group.keys()
+        for k in group.keys():
+            if len(members[k]) == 0:  # Ts([]).time_diff crashes
+                assert len(out[k]) == 0
+                continue
+            ref = members[k].time_diff(align=align, epochs=ep)
+            np.testing.assert_array_equal(out[k].t, ref.t)
+            np.testing.assert_array_equal(out[k].values, ref.values)
+
+    @pytest.mark.parametrize("seed", range(3))
+    def test_take_and_members(self, seed):
+        group, members, _ = self.make(seed, with_tsd=True)
+        sub = group[[20, 1]]
+        np.testing.assert_array_equal(sub.index, [1, 20])
+        for k in group.keys():
+            assert type(group[k]) is type(members[k])
+            np.testing.assert_array_equal(group[k].t, members[k].t)
+            if k in sub:
+                np.testing.assert_array_equal(sub[k].t, members[k].t)
+
+    @pytest.mark.parametrize("seed", range(3))
+    def test_to_tsd_and_get(self, seed):
+        group, members, _ = self.make(seed)
+        tsd = group.to_tsd()
+        t = np.concatenate([members[k].t for k in group.keys()])
+        keys = np.repeat(group.keys(), [len(members[k]) for k in group.keys()])
+        order = np.argsort(t, kind="stable")  # ties in key order
+        np.testing.assert_array_equal(tsd.t, t[order])
+        np.testing.assert_array_equal(tsd.values, keys[order])
+
+        out = group.get(20.0, 60.0)
+        for k in group.keys():
+            np.testing.assert_array_equal(
+                out[k].t, members[k].t[(members[k].t >= 20) & (members[k].t <= 60)]
+            )
+
+    @pytest.mark.parametrize("seed", range(3))
+    def test_subsample(self, seed):
+        group, members, _ = self.make(seed, with_tsd=True)
+        out = group.subsample(0.3, seed=seed)
+        for k in group.keys():
+            ref = members[k]
+            assert len(out[k]) == int(np.round(len(ref) * 0.3))
+            assert np.all(np.isin(out[k].t, ref.t))
+            if k % 2:  # values follow their timestamps
+                np.testing.assert_array_equal(
+                    out[k].values, ref.values[np.searchsorted(ref.t, out[k].t)]
+                )
+
+
+class TestTsGroupEquality:
+    @staticmethod
+    def make():
+        data = {
+            0: nap.Ts(t=np.arange(0, 100, 1.5)),
+            3: nap.Tsd(t=np.arange(0, 100, 2.5), d=np.arange(40) * 1.0),
+        }
+        return nap.TsGroup(data, metadata={"label": ["a", "b"]})
+
+    def test_equal_by_content(self):
+        tsgroup = self.make()
+        assert tsgroup == tsgroup
+        assert tsgroup == self.make()
+        assert tsgroup == tsgroup.copy()
+        assert not (tsgroup != self.make())
+
+    @pytest.mark.parametrize(
+        "other",
+        [
+            lambda g: g[[0]],  # keys
+            lambda g: g.restrict(nap.IntervalSet(0, 50)),  # timestamps, support
+            lambda g: nap.TsGroup(
+                {0: g[0], 3: nap.Tsd(t=g[3].t, d=g[3].values + 1)},
+                metadata={"label": ["a", "b"]},
+            ),  # values
+            lambda g: nap.TsGroup(
+                {0: g[0], 3: nap.Ts(t=g[3].t)}, metadata={"label": ["a", "b"]}
+            ),  # Ts instead of Tsd
+            lambda g: nap.TsGroup(dict(g.items()), metadata={"label": ["a", "c"]}),
+            lambda g: nap.TsGroup(
+                dict(g.items()), time_support=nap.IntervalSet(0, 200)
+            ),
+        ],
+    )
+    def test_not_equal(self, other):
+        tsgroup = self.make()
+        assert tsgroup != other(tsgroup)
+
+    def test_not_equal_to_other_types(self):
+        tsgroup = self.make()
+        assert tsgroup != dict(tsgroup.items())
+        assert tsgroup != 1
+
+    def test_unhashable(self):
+        with pytest.raises(TypeError, match="unhashable"):
+            hash(self.make())
+
+    def test_shallow_copy(self):
+        import copy
+
+        tsgroup = self.make()
+        assert copy.copy(tsgroup) == tsgroup
+
+    @pytest.mark.parametrize(
+        "method", ["pop", "popitem", "clear", "setdefault", "update", "fromkeys"]
+    )
+    def test_no_mutable_mapping_methods(self, method):
+        assert not hasattr(self.make(), method)
+
+
+@pytest.mark.parametrize("keys", [[-5, 2], [0, 10**12], [-(10**12), 3, 10**12]])
+def test_sparse_keys(keys):
+    """Keys far apart must not allocate a lookup table over their range."""
+    tsgroup = nap.TsGroup(
+        {k: nap.Ts(t=np.arange(i + 1) + 0.5) for i, k in enumerate(keys)},
+        time_support=nap.IntervalSet(0, 10),
+    )
+    n = np.arange(1, len(keys) + 1)
+    np.testing.assert_array_equal(tsgroup.count(1.0).values.sum(0), n)
+    np.testing.assert_array_equal(tsgroup.rates, n / 10)
+    np.testing.assert_array_equal(
+        np.unique(tsgroup.to_tsd().values, return_counts=True)[1], n
+    )
+    for i, k in enumerate(keys):
+        np.testing.assert_array_equal(tsgroup[k].t, np.arange(i + 1) + 0.5)
+        np.testing.assert_array_equal(tsgroup.time_diff()[k].values, np.ones(i))
+
+
+@pytest.mark.parametrize(
+    "make",
+    [
+        lambda g: g,
+        lambda g: g.restrict(nap.IntervalSet(0, 2)),
+        lambda g: g.copy(),
+        lambda g: pickle.loads(pickle.dumps(g)),
+    ],
+    ids=["new", "restrict", "copy", "pickle"],
+)
+def test_metadata_read_only(make):
+    """The rates and the other metadata columns cannot be changed in place."""
+    tsgroup = make(
+        nap.TsGroup(
+            {0: nap.Ts(t=[1.0, 2.0, 3.0]), 5: nap.Ts(t=[2.0, 4.0])},
+            time_support=nap.IntervalSet(0, 4),
+            metadata={"label": [1, 2]},
+        )
+    )
+    rates = tsgroup.rates.copy()
+    with pytest.raises(ValueError, match="read-only"):
+        tsgroup.rates[0] = 10
+    with pytest.raises(ValueError, match="read-only"):
+        tsgroup._metadata["label"][0] = 10
+    np.testing.assert_array_equal(tsgroup.rates, rates)
+
+
+@pytest.mark.parametrize("time_support", [None, nap.IntervalSet(0, 10)])
+def test_element_type_error(time_support):
+    """A wrong element type raises TypeError, with or without a time support."""
+    with pytest.raises(TypeError, match="Element 1 of TsGroup should be a Ts"):
+        nap.TsGroup({0: nap.Ts(t=[1.0, 2.0]), 1: "abc"}, time_support=time_support)
+
+
+@pytest.mark.parametrize(
+    "metadata, n_values",
+    [
+        ({"label": ["a"]}, 1),
+        ({"label": ["a", "b", "c"]}, 3),
+        ({"label": "ab"}, 1),
+        ({"label": 3}, 1),
+        (pd.DataFrame({"label": ["a"]}), 1),
+    ],
+)
+def test_metadata_length_error(metadata, n_values):
+    """Metadata with a wrong number of values raises a clear ValueError."""
+    with pytest.raises(
+        ValueError,
+        match=f"Metadata 'label' must have 2 values, one for each element. "
+        f"It has {n_values}.",
+    ):
+        nap.TsGroup(
+            {0: nap.Ts(t=[1.0, 2.0]), 1: nap.Ts(t=[1.0, 3.0])}, metadata=metadata
+        )
+
+
+def test_data_view_repr():
+    """The repr of ``tsgroup.data`` lists each element without building it."""
+    tsgroup = nap.TsGroup(
+        {
+            0: nap.Ts(t=np.arange(10.0)),
+            3: nap.Tsd(t=np.arange(5.0), d=np.arange(5.0)),
+            7: nap.Ts(t=[2.0]),
+        },
+        time_support=nap.IntervalSet(0, 10),
+    )
+    assert repr(tsgroup.data) == (
+        "_TsGroupDictView: 3 elements (read-only)\n"
+        "  0: Ts, 10 timestamps\n"
+        "  3: Tsd, 5 timestamps\n"
+        "  7: Ts, 1 timestamp"
+    )
+    assert "_ragged_index" not in tsgroup.__dict__
+
+    large = nap.TsGroup({i: nap.Ts(t=np.arange(3.0)) for i in range(12)})
+    lines = repr(large.data).splitlines()
+    assert len(lines) == 12
+    assert lines[6] == "  ..."

@@ -229,9 +229,15 @@ def test_jitcount():
         ends = ep.end
         bin_size = 1.0
         t, d = nap.core._jitted_functions.jitcount(
-            time_array, starts, ends, bin_size, np.int64
+            time_array,
+            np.zeros(len(time_array), dtype=np.int64),
+            starts,
+            ends,
+            bin_size,
+            1,
+            np.int64,
         )
-        tsd3 = nap.Tsd(t=t, d=d, time_support=ep)
+        tsd3 = nap.Tsd(t=t, d=d[:, 0], time_support=ep)
 
         tsd2 = []
         for j in ep.index:
@@ -556,42 +562,6 @@ def test_jitin_interval():
 # ── Edge-case tests ────────────────────────────────────────────────────────────
 
 
-def test_jitrestrict_empty_time_array():
-    starts = np.array([0.0, 5.0])
-    ends = np.array([2.0, 8.0])
-    ix = nap.core._jitted_functions.jitrestrict(
-        np.array([], dtype=np.float64), starts, ends
-    )
-    assert len(ix) == 0
-
-
-def test_jitrestrict_empty_epochs():
-    time_array = np.array([1.0, 2.0, 3.0])
-    ix = nap.core._jitted_functions.jitrestrict(
-        time_array, np.array([], dtype=np.float64), np.array([], dtype=np.float64)
-    )
-    assert len(ix) == 0
-
-
-def test_jitrestrict_with_count_empty_time_array():
-    starts = np.array([0.0, 5.0])
-    ends = np.array([2.0, 8.0])
-    ix, count = nap.core._jitted_functions.jitrestrict_with_count(
-        np.array([], dtype=np.float64), starts, ends
-    )
-    assert len(ix) == 0
-    np.testing.assert_array_equal(count, np.zeros(2, dtype=np.int64))
-
-
-def test_jitrestrict_with_count_empty_epochs():
-    time_array = np.array([1.0, 2.0, 3.0])
-    ix, count = nap.core._jitted_functions.jitrestrict_with_count(
-        time_array, np.array([], dtype=np.float64), np.array([], dtype=np.float64)
-    )
-    assert len(ix) == 0
-    assert len(count) == 0
-
-
 def test_jitin_interval_empty_time_array():
     starts = np.array([0.0])
     ends = np.array([10.0])
@@ -653,7 +623,7 @@ def test_jitunion_isets_empty():
 
 
 def _valuefrom_ranges(time_array, time_target, starts, ends, mode):
-    return nap.core._jitted_functions.jitvaluefrom_ranges(
+    return nap.core._jitted_functions.jitvaluefrom(
         time_array,
         time_target,
         np.searchsorted(time_array, starts, side="left"),
@@ -684,3 +654,177 @@ def test_jitvaluefrom_single_target_mode_after():
     )
     assert idx[0] == 0  # target 1.5 is after timestamp 1.0 → target index 0
     assert idx[1] == -1  # target 1.5 is before timestamp 2.0 → no after-target
+
+
+######################################
+# Grouped (multi-unit) kernels
+######################################
+
+
+def get_grouped_dataset(seed, n_units=6, n_spikes=150, n_epochs=12):
+    """Merged multi-unit array as a TsGroup stores it, plus each unit's own.
+
+    Timestamps and epoch bounds lie on a shared 0.5 s grid, so units share
+    timestamps and some timestamps fall exactly on epoch bounds. Unit 2 is empty.
+    """
+    rng = np.random.default_rng(seed)
+    units = [np.unique(rng.integers(0, 400, n_spikes) * 0.5) for _ in range(n_units)]
+    units[2] = np.array([])
+    times = np.concatenate(units)
+    unit_pos = np.repeat(np.arange(n_units), [len(u) for u in units])
+    order = np.argsort(times, kind="stable")
+    edges = np.sort(rng.choice(np.arange(410), 2 * n_epochs, replace=False)) * 0.5
+    starts, ends = edges[::2], edges[1::2]
+    return times[order], unit_pos[order], units, starts, ends
+
+
+@pytest.mark.parametrize("seed", range(5))
+@pytest.mark.parametrize("bin_size", [0.5, 1.0, 0.37, 3.0, 100.0])
+@pytest.mark.parametrize("dtype", [np.int64, np.float32])
+def test_jitcount_multi_unit(seed, bin_size, dtype):
+    # counting merged units at once matches counting each unit alone
+    jitcount = nap.core._jitted_functions.jitcount
+    times, unit_pos, units, starts, ends = get_grouped_dataset(seed)
+    t, cnt = jitcount(
+        times, unit_pos, starts, ends, bin_size, len(units), np.dtype(dtype)
+    )
+    assert cnt.shape == (len(t), len(units))
+    assert cnt.dtype == dtype
+    for i, u in enumerate(units):
+        t_ref, d_ref = jitcount(
+            u,
+            np.zeros(len(u), dtype=np.int64),
+            starts,
+            ends,
+            bin_size,
+            1,
+            np.dtype(dtype),
+        )
+        np.testing.assert_array_equal(t, t_ref)
+        np.testing.assert_array_equal(cnt[:, i], d_ref[:, 0])
+
+
+@pytest.mark.parametrize("seed", range(5))
+def test_jitcount_epochs(seed):
+    times, unit_pos, units, starts, ends = get_grouped_dataset(seed)
+    cnt = nap.core._jitted_functions.jitcount_epochs(
+        times, unit_pos, starts, ends, len(units)
+    )
+    assert cnt.shape == (len(starts), len(units))
+    for i, u in enumerate(units):
+        _, ref = nap.core._jitted_functions.jitrestrict_with_count(u, starts, ends)
+        np.testing.assert_array_equal(cnt[:, i], ref)
+
+
+@pytest.mark.parametrize("seed", range(5))
+@pytest.mark.parametrize(
+    "align, alpha", [("start", 0.0), ("center", 0.5), ("end", 1.0)]
+)
+def test_jittimediff_grouped(seed, align, alpha):
+    times, unit_pos, units, starts, ends = get_grouped_dataset(seed)
+    new_t, new_d, offsets = nap.core._jitted_functions.jittimediff_grouped(
+        times, unit_pos, starts, ends, len(units), alpha
+    )
+    assert offsets[0] == 0 and offsets[-1] == len(new_t) == len(new_d)
+    ep = nap.IntervalSet(starts, ends)
+    for i, u in enumerate(units):
+        if len(u) == 0:
+            # (the reference crashes on an empty Ts)
+            assert offsets[i + 1] == offsets[i]
+            continue
+        ref = nap.Ts(u, time_support=ep).time_diff(align=align, epochs=ep)
+        np.testing.assert_array_equal(new_t[offsets[i] : offsets[i + 1]], ref.t)
+        np.testing.assert_array_equal(new_d[offsets[i] : offsets[i + 1]], ref.values)
+
+
+@pytest.mark.parametrize("seed", range(5))
+def test_jitgroup_by_unit(seed):
+    _, unit_pos, units, _, _ = get_grouped_dataset(seed)
+    order, offsets = nap.core._jitted_functions.jitgroup_by_unit(unit_pos, len(units))
+    np.testing.assert_array_equal(order, np.argsort(unit_pos, kind="stable"))
+    np.testing.assert_array_equal(np.diff(offsets), [len(u) for u in units])
+
+
+@pytest.mark.parametrize("mode", ["closest", "before", "after"])
+def test_value_from_extra_arrays(mode):
+    from pynapple.core._core_functions import _value_from
+
+    ep, ts, tsd, _ = get_example_dataset()
+    labels = np.arange(len(ts.t))
+    t, d, sliced, none = _value_from(
+        ts.t, tsd.t, tsd.d, ep.start, ep.end, labels, None, mode=mode
+    )
+    t_ref, d_ref = _value_from(ts.t, tsd.t, tsd.d, ep.start, ep.end, mode=mode)
+    np.testing.assert_array_equal(t, t_ref)
+    np.testing.assert_array_equal(d, d_ref)
+    # the extra array is sliced the same way as the timestamps
+    np.testing.assert_array_equal(ts.t[sliced], t)
+    assert none is None
+
+
+@pytest.mark.parametrize("seed", range(5))
+def test_jitcount_clusters(seed):
+    from pynapple.core._core_functions import _count_clusters
+
+    _, unit_pos, units, _, _ = get_grouped_dataset(seed)
+    # non-contiguous keys with gaps and an offset: unit i has key 3 * i + 7
+    index = 3 * np.arange(len(units)) + 7
+    clusters = index[unit_pos]
+    counts = nap.core._jitted_functions.jitcount_clusters(
+        clusters, index[0], index[-1] - index[0] + 1
+    )
+    np.testing.assert_array_equal(counts[index - index[0]], [len(u) for u in units])
+    np.testing.assert_array_equal(
+        _count_clusters(clusters, index), [len(u) for u in units]
+    )
+
+
+@pytest.mark.parametrize("seed", range(5))
+@pytest.mark.parametrize("fragmented", [True, False])
+@pytest.mark.parametrize("with_data", [True, False])
+def test_restrict_arrays(seed, fragmented, with_data):
+    from pynapple.core._core_functions import _restrict_arrays
+
+    times, unit_pos, units, starts, ends = get_grouped_dataset(seed)
+    if not fragmented:  # few intervals: searchsorted path rather than merge scan
+        starts, ends = starts[:1], ends[:1]
+    data = np.stack([times, -times], axis=1) if with_data else None
+    t, u, d = _restrict_arrays(times, starts, ends, unit_pos, data)
+    for i, ui in enumerate(units):
+        ref = ui[nap.core._jitted_functions.jitrestrict(ui, starts, ends)]
+        np.testing.assert_array_equal(t[u == i], ref)
+    if with_data:
+        np.testing.assert_array_equal(d, np.stack([t, -t], axis=1))
+    else:
+        assert d is None
+
+
+def test_grouped_kernels_empty():
+    jf = nap.core._jitted_functions
+    empty_t = np.array([], dtype=np.float64)
+    empty_u = np.array([], dtype=np.int64)
+    starts, ends = np.array([0.0, 10.0]), np.array([5.0, 15.0])
+    no_ep = np.array([], dtype=np.float64)
+
+    t, cnt = jf.jitcount(empty_t, empty_u, starts, ends, 1.0, 3, np.int64)
+    assert cnt.shape == (len(t), 3) and cnt.sum() == 0
+    t, cnt = jf.jitcount(np.array([1.0]), np.array([0]), no_ep, no_ep, 1.0, 3, np.int64)
+    assert len(t) == 0 and cnt.shape == (0, 3)
+
+    cnt = jf.jitcount_epochs(empty_t, empty_u, starts, ends, 3)
+    np.testing.assert_array_equal(cnt, np.zeros((2, 3)))
+
+    new_t, new_d, offsets = jf.jittimediff_grouped(
+        empty_t, empty_u, starts, ends, 3, 0.5
+    )
+    assert len(new_t) == len(new_d) == 0
+    np.testing.assert_array_equal(offsets, np.zeros(4))
+
+    order, offsets = jf.jitgroup_by_unit(empty_u, 3)
+    assert len(order) == 0
+    np.testing.assert_array_equal(offsets, np.zeros(4))
+
+    np.testing.assert_array_equal(jf.jitcount_clusters(empty_u, 0, 3), np.zeros(3))
+    from pynapple.core._core_functions import _count_clusters
+
+    assert len(_count_clusters(empty_u, empty_u)) == 0

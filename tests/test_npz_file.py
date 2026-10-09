@@ -50,7 +50,7 @@ data = {
             1: nap.Ts(t=np.arange(0, 200, 0.5), time_units="s"),
             2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
         },
-        minfo=[1, 2, 3],
+        metadata={"minfo": [1, 2, 3]},
     ),
     "tsdgroup": nap.TsGroup(
         {
@@ -69,7 +69,7 @@ data = {
             ),
             2: nap.Ts(t=np.arange(0, 300, 0.2), time_units="s"),
         },
-        minfo=[1, 2, 3],
+        metadata={"minfo": [1, 2, 3]},
     ),
     "iset": nap.IntervalSet(start=np.array([0.0, 5.0]), end=np.array([1.0, 6.0])),
     "iset_minfo": nap.IntervalSet(
