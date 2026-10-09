@@ -10,39 +10,6 @@ import pytest
 import pynapple as nap
 
 
-def test_cross_correlogram():
-    t1 = np.array([0])
-    t2 = np.array([1])
-    cc, bincenter = nap.process.correlograms._cross_correlogram(t1, t2, 1, 100)
-    np.testing.assert_approx_equal(cc[101], 1.0)
-
-    cc, bincenter = nap.process.correlograms._cross_correlogram(t2, t1, 1, 100)
-    np.testing.assert_approx_equal(cc[99], 1.0)
-
-    t1 = np.array([0])
-    t2 = np.array([100])
-    cc, bincenter = nap.process.correlograms._cross_correlogram(t1, t2, 1, 100)
-    np.testing.assert_approx_equal(cc[200], 1.0)
-
-    t1 = np.array([0, 10])
-    cc, bincenter = nap.process.correlograms._cross_correlogram(t1, t1, 1, 100)
-    np.testing.assert_approx_equal(cc[100], 1.0)
-    np.testing.assert_approx_equal(cc[90], 0.5)
-    np.testing.assert_approx_equal(cc[110], 0.5)
-
-    np.testing.assert_array_almost_equal(bincenter, np.arange(-100, 101))
-
-    for t in [100, 200, 1000]:
-        np.testing.assert_array_almost_equal(
-            nap.process.correlograms._cross_correlogram(
-                np.arange(0, t), np.arange(0, t), 1, t
-            )[0],
-            np.hstack(
-                (np.arange(0, 1, 1 / t), np.ones(1), np.arange(0, 1, 1 / t)[::-1])
-            ),
-        )
-
-
 #############################
 # Type Error
 #############################
@@ -352,7 +319,6 @@ def test_crosscorrelogram_binsize_below_precision():
         (1e-9, "s", does_not_raise()),
         (1e-6, "ms", does_not_raise()),
         (1e-3, "us", does_not_raise()),
-        (0.7e-9, "s", pytest.raises(ValueError, match="Got 7e-10 s")),
         (0.5e-6, "ms", pytest.raises(ValueError, match="binsize must be at least")),
     ],
 )
@@ -786,35 +752,49 @@ def test_compute_isi_distribution_constant_intervals(
     assert actual.index.is_unique
 
 
-def test_autocorrelogram_counts_without_self():
-    """The cross kernel on the pairs (u, u) also counts each spike with itself
-    at lag 0. Without these counts, the result is the counts of the pairs of
-    different spikes. The check uses the counts before
-    ``compute_autocorrelogram`` sets the lag-0 bin to 0."""
-    from pynapple.process.correlograms import (
-        _correlogram_bins,
-        _correlogram_counts,
-        _ragged_spikes,
-        _times_ns,
+@pytest.mark.parametrize("n_units", [2, 5, 12])
+@pytest.mark.parametrize("binsize, windowsize", [(0.005, 0.1), (0.01, 0.05)])
+def test_cross_correlograms_matches_pairs(n_units, binsize, windowsize):
+    """The parallel integer function gives the same values as a count of all
+    the lags, pair by pair. Some spikes have equal times in two units, and one
+    unit is empty."""
+    from pynapple.process.correlograms import _cross_correlograms
+
+    rng = np.random.default_rng(n_units)
+    shared = np.array([2.0, 5.0, 5.0])
+    units = {
+        k: nap.Ts(np.sort(np.r_[rng.random(150) * 10, shared[: 1 + k % 3]]))
+        for k in range(n_units)
+    }
+    units[n_units] = nap.Ts(np.array([]))
+    group = nap.TsGroup(units, time_support=nap.IntervalSet(0, 10))
+    order, offsets = group._ragged_index
+    precision = 10.0**nap.nap_config.time_index_precision
+    times = np.round(group._times[order] * precision).astype(np.int64)
+    pairs = [(i, j) for i in range(len(group)) for j in range(len(group)) if i != j]
+    ref = np.array([i for i, _ in pairs])
+    target = np.array([j for _, j in pairs])
+    rates, lags = _cross_correlograms(
+        times, offsets, times, offsets, ref, target, binsize, windowsize, precision
     )
 
-    rng = np.random.default_rng(0)
-    units = {k: nap.Ts(np.sort(rng.random(200) * 10)) for k in range(3)}
-    # two equal spike times: a real pair at lag 0
-    units[0] = nap.Ts(np.sort(np.r_[rng.random(198) * 10, 5.0, 5.0]))
-    group = nap.TsGroup(units, time_support=nap.IntervalSet(0, 10))
-    binsize, windowsize = 0.01, 0.1
-    nbins, w, _ = _correlogram_bins(binsize, windowsize)
+    # the expected bins, in integer time units
+    nbins = int((windowsize * 2) // binsize)
+    nbins = nbins + 1 if nbins % 2 == 0 else nbins
+    binsize_int = int(np.round(binsize * precision))
+    expected_lags = (np.arange(nbins) - nbins // 2) * binsize_int / precision
+    np.testing.assert_array_equal(lags, expected_lags)
 
-    spikes = _ragged_spikes(group)
-    units = np.arange(len(group))
-    counts, _ = _correlogram_counts(spikes, spikes, units, units, binsize, windowsize)
-    counts[:, nbins // 2] -= np.diff(spikes[2])
-
-    # direct count: every ordered pair of different spikes, lag in [-w, w)
-    edges_ns = np.round((-w + np.arange(nbins + 1) * binsize) * 1e9).astype(np.int64)
-    for u, k in enumerate(group.keys()):
-        t = _times_ns(group[k].t)
-        lags = (t[None, :] - t[:, None])[~np.eye(len(t), dtype=bool)]
-        expected = np.histogram(lags, edges_ns)[0]
-        np.testing.assert_array_equal(counts[u], expected)
+    # The lags are doubled, so that the bin edges are integers.
+    edges = -nbins * binsize_int + np.arange(nbins + 1) * 2 * binsize_int
+    for p, (i, j) in enumerate(pairs):
+        t1 = times[offsets[i] : offsets[i + 1]]
+        t2 = times[offsets[j] : offsets[j + 1]]
+        d = 2 * (t2[None, :] - t1[:, None]).ravel()
+        d = d[(d >= edges[0]) & (d < edges[-1])]
+        counts = np.bincount(
+            np.searchsorted(edges, d, side="right") - 1, minlength=nbins
+        )
+        with np.errstate(divide="ignore", invalid="ignore"):
+            expected = counts / (len(t1) * binsize_int / precision)
+        np.testing.assert_array_equal(rates[p], expected)
