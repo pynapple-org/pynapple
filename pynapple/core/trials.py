@@ -10,6 +10,12 @@ from .time_index import TsIndex
 from .time_series import Ts, Tsd, TsdFrame
 from .ts_group import TsGroup
 
+MAX_REPR_TRIALS = 10
+MAX_REPR_TRIAL_METADATA = 6
+MAX_REPR_UNIT_METADATA = 8
+MAX_REPR_FEATURE = 8
+MAX_REPR_FEATURE_METADATA = 8
+
 
 def _repr_positions(size: int, limit: int) -> list[int | None]:
     """Return head/tail positions separated by an ellipsis."""
@@ -138,9 +144,6 @@ def _metadata_summary(
 
 
 class _TrialMetadataMixin:
-    MAX_REPR_TRIALS = 10
-    MAX_REPR_TRIAL_METADATA = 6
-
     trial_ids: pd.Index
     trial_metadata: pd.DataFrame
     durations: np.ndarray
@@ -225,9 +228,6 @@ class TsTrials(_TrialMetadataMixin):
     The underlying ``index`` has shape ``(n_trials, n_units, 2)``
     and stores the start and stop offsets for each trial/unit spike train.
     """
-
-    MAX_REPR_UNITS = 8
-    MAX_REPR_UNIT_METADATA = 8
 
     def __init__(
         self,
@@ -361,7 +361,7 @@ class TsTrials(_TrialMetadataMixin):
 
         trial_positions = _repr_positions(
             len(self),
-            self.MAX_REPR_TRIALS,
+            MAX_REPR_TRIALS,
         )
         metadata_positions = self._trial_metadata_positions()
 
@@ -420,8 +420,8 @@ class TsTrials(_TrialMetadataMixin):
             pd.Index(self.unit_keys),
             self.unit_metadata,
             label_header="Unit",
-            max_items=self.MAX_REPR_UNITS,
-            max_metadata=self.MAX_REPR_UNIT_METADATA,
+            max_items=MAX_REPR_UNITS,
+            max_metadata=MAX_REPR_UNIT_METADATA,
         )
 
     def __getitem__(self, key):
@@ -735,8 +735,6 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         Trial intervals, data is aligned to trial starts.
     """
 
-    MAX_REPR_FEATURE = 8
-    MAX_REPR_FEATURE_METADATA = 8
     __array_priority__ = 1000
 
     def __init__(
@@ -957,7 +955,7 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
         """Return a compact per-trial summary."""
         trial_positions = _repr_positions(
             len(self),
-            self.MAX_REPR_TRIALS,
+            MAX_REPR_TRIALS,
         )
         metadata_positions = self._trial_metadata_positions()
 
@@ -1066,8 +1064,8 @@ class TsdTrials(_TrialMetadataMixin, NDArrayOperatorsMixin):
             self.feature_names,
             self.feature_metadata,
             label_header="Feature",
-            max_items=self.MAX_REPR_FEATURE,
-            max_metadata=self.MAX_REPR_FEATURE_METADATA,
+            max_items=MAX_REPR_FEATURE,
+            max_metadata=MAX_REPR_FEATURE_METADATA,
         )
 
     def _sample_size_summary(self) -> str:
