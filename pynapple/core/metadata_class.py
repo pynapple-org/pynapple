@@ -487,7 +487,15 @@ class _MetadataMixin:
         else:
             return groups
 
-    def groupby_apply(self, by, func, input_key=None, **func_kwargs):
+    def groupby_apply(
+        self,
+        by,
+        func,
+        input_key=None,
+        return_tsdframe=False,
+        column_name=None,
+        **func_kwargs,
+    ):
         """
         Apply a function to each group in a grouped pynapple object.
 
@@ -499,14 +507,24 @@ class _MetadataMixin:
             Function to apply to each group.
         input_key : str or None, optional
             Input key that the grouped object will be passed as. If None, the grouped object will be passed as the first positional argument.
+        return_tsdframe : bool, optional
+            If True, stack the group results into the columns of a TsdFrame instead of returning a dictionary. Raises a ValueError unless every group returned a Tsd or a TsdFrame on the same timestamps and time support.
+        column_name : str, optional
+            Name of a metadata column recording what the applied function called each of its columns, added only when those names repeat across groups and have to be prefixed with the group. None, the default, does not add it.
         **func_kwargs : optional
             Additional keyword arguments to pass to the function. Any required positional arguments that are not the grouped object should be passed as keyword arguments.
 
         Returns
         -------
-        dict
-            Dictionary of results from applying the function to each group, where the keys are the group names and the values are the results.
+        dict or TsdFrame
+            Dictionary of results from applying the function to each group, where the keys are the group names and the values are the results. If `return_tsdframe` is True, a TsdFrame whose columns are the stacked group results.
         """
+        if (
+            return_tsdframe != 1
+            and return_tsdframe != 0
+            and not isinstance(return_tsdframe, bool)
+        ):
+            raise TypeError("return_tsdframe should be a boolean.")
 
         if input_key is not None:
             if not isinstance(input_key, str):
@@ -530,7 +548,116 @@ class _MetadataMixin:
             out = {k: anon_func(self.loc[v]) for k, v in groups.items()}
         else:
             out = {k: anon_func(self[v]) for k, v in groups.items()}
+
+        if return_tsdframe:
+            return _stack_groups(out, by, self, column_name)
         return out
+
+
+def _stack_groups(out, by, obj, column_name):
+    """
+    Stack the results of `groupby_apply` into the columns of a single TsdFrame.
+
+    Groups stack when every one of them returned a Tsd or a TsdFrame on the same timestamps and
+    time support. An aggregated group is named after the group, a tuple when grouping by several
+    metadata names. A group that returned columns of the grouped object keeps their names and
+    inherits its metadata. Columns the applied function named itself repeat across groups, and are
+    renamed to (group, name) so they stay distinct, and `column_name`, if given, names a metadata
+    column holding the name they were given.
+    """
+    from .time_series import Tsd, TsdFrame
+
+    hint = " Use return_tsdframe=False to return results as a dictionary instead."
+
+    if len(out) == 0:
+        raise ValueError(
+            "Cannot return a TsdFrame: there are no groups to stack." + hint
+        )
+
+    not_time_series = {
+        group: type(result).__name__
+        for group, result in out.items()
+        if not isinstance(result, (Tsd, TsdFrame))
+    }
+    if not_time_series:
+        raise ValueError(
+            f"Cannot return a TsdFrame: the function did not preserve time for group(s) "
+            f"{list(not_time_series.keys())}, which returned "
+            f"{list(not_time_series.values())} instead of a Tsd or a TsdFrame." + hint
+        )
+
+    first_group, first_result = next(iter(out.items()))
+    for group, result in out.items():
+        if not np.array_equal(result.index, first_result.index) or not np.array_equal(
+            result.time_support.values, first_result.time_support.values
+        ):
+            raise ValueError(
+                f"Cannot return a TsdFrame: groups '{first_group}' and '{group}' are not defined "
+                "on the same timestamps and time support." + hint
+            )
+
+    empty = [
+        group
+        for group, result in out.items()
+        if isinstance(result, TsdFrame) and result.shape[1] == 0
+    ]
+    if empty:
+        raise ValueError(
+            f"Cannot return a TsdFrame: group(s) {empty} returned no columns, and would be "
+            "dropped from the stacked object." + hint
+        )
+
+    by = [by] if isinstance(by, str) else by
+
+    # one (column name, group name, named by the applied function) record per output column
+    data, origins = [], []
+    for group, result in out.items():
+        parts = group if isinstance(group, tuple) else (group,)
+        if isinstance(result, Tsd):
+            data.append(result.values[:, np.newaxis])
+            origins.append((group, parts, False))
+        else:
+            data.append(result.values)
+            origins += [(column, parts, True) for column in result.columns]
+
+    given = [column for column, _, _ in origins]
+    qualified = len(set(given)) != len(given)
+    columns = (
+        [parts + (column,) if by_func else column for column, parts, by_func in origins]
+        if qualified
+        else given
+    )
+
+    if (
+        all(isinstance(result, TsdFrame) for result in out.values())
+        # an IntervalSet is indexed by epoch, which a column never corresponds to
+        and obj.nap_class in ("TsdFrame", "TsGroup")
+        and set(columns) <= set(obj.metadata_index)
+    ):
+        inherited = obj.metadata.loc[columns]
+        if obj.nap_class == "TsGroup":
+            # `rate` is derived from the TsGroup rather than attached to it, and would shadow
+            # the TsdFrame attribute of the same name
+            inherited = inherited.drop(columns="rate", errors="ignore")
+        metadata = inherited.to_dict("list")
+    else:
+        metadata = {b: [parts[i] for _, parts, _ in origins] for i, b in enumerate(by)}
+        if qualified and column_name is not None:
+            # the group is already a metadata column, so record the name as well
+            if column_name in metadata:
+                raise ValueError(
+                    f"Cannot return a TsdFrame: '{column_name}' is already a metadata name used "
+                    "for grouping. Pass a different column_name." + hint
+                )
+            metadata[column_name] = given
+
+    return TsdFrame(
+        t=first_result.index,
+        d=np.hstack(data),
+        columns=columns,
+        time_support=first_result.time_support,
+        metadata=metadata,
+    )
 
 
 class _Metadata(UserDict):
