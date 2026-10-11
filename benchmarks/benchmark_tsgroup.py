@@ -34,14 +34,18 @@ UNIT_COUNTS = [10, 100, 1000]
 CORRELOGRAM_UNIT_COUNTS = [10, 50, 100]
 
 
-def median_ms(fn, repeat=5, min_time=0.02):
+def median_ms(fn, repeat=5, min_time=0.02, slow=0.5):
     """Median milliseconds per call, over `repeat` runs.
 
     The function times one call, then sets the number of calls in each run so
     that a run lasts about `min_time` seconds. A call slower than `min_time`
-    runs once in each run.
+    runs once in each run. A call slower than `slow` seconds runs 3 times in
+    all, and the first call counts as a run: this keeps the slow rows short.
     """
     once = timeit.timeit(fn, number=1)
+    if once >= slow:
+        runs = [once] + [timeit.timeit(fn, number=1) for _ in range(2)]
+        return 1e3 * np.median(runs)
     n = max(1, int(np.ceil(min_time / max(once, 1e-9))))
     return 1e3 * np.median([timeit.timeit(fn, number=n) / n for _ in range(repeat)])
 
@@ -202,6 +206,87 @@ def bench_correlograms():
     )
 
 
+def bench_process():
+    """The other functions of ``pynapple.process`` that take a group. They call
+    a group method (``count`` or ``trial_count``), except ``compute_perievent``.
+    On ``main``, it aligns every unit separately. On the PR branch, it aligns
+    the merged spikes of all the units in one pass."""
+    rng = np.random.default_rng(4)
+    t = np.arange(0, DURATION, 0.01)  # 100 Hz behavior
+    feature_1d = nap.Tsd(t=t, d=rng.random(len(t)) * 360)
+    feature_2d = nap.TsdFrame(t=t, d=rng.random((len(t), 2)))
+    signal = nap.Tsd(t=t, d=rng.standard_normal(len(t)))
+    events = nap.Ts(t=np.sort(rng.uniform(1, DURATION - 1, 100)))
+    trials = fragmented_ep(100)
+    epochs = nap.IntervalSet(0, DURATION)
+    results = {
+        "event_triggered_average": {},
+        "perievent (100 events)": {},
+        "decode_bayes (1D)": {},
+        "decode_template (1D)": {},
+        "decode_1d": {},
+        "decode_2d (10x10 bins)": {},
+        "build_tensor (100 trials)": {},
+        "warp_tensor (100 trials)": {},
+    }
+    for n_units in UNIT_COUNTS:
+        tsg = make_tsgroup(n_units)
+        tc_1d = nap.compute_tuning_curves(tsg, feature_1d, bins=36)
+        tc_2d = nap.compute_tuning_curves(tsg, feature_2d, bins=10)
+        # the formats of the deprecated decode_1d and decode_2d
+        tc_1d_df = tc_1d.to_pandas().T
+        tc_2d_dict = dict(zip(tc_2d.coords["unit"].values, tc_2d.values))
+        xy = [tc_2d.coords[d].values for d in tc_2d.dims[1:]]
+        benches = {
+            # spike_triggered_average only calls this function: no row of its own
+            "event_triggered_average": lambda: nap.compute_event_triggered_average(
+                signal, tsg, 0.01, 0.1
+            ),
+            "perievent (100 events)": lambda: nap.compute_perievent(tsg, events, 1.0),
+            "decode_bayes (1D)": lambda: nap.decode_bayes(tc_1d, tsg, epochs, 0.1),
+            "decode_template (1D)": lambda: nap.decode_template(
+                tc_1d, tsg, epochs, 0.1
+            ),
+            "decode_1d": lambda: nap.decode_1d(tc_1d_df, tsg, epochs, 0.1),
+            "decode_2d (10x10 bins)": lambda: nap.decode_2d(
+                tc_2d_dict, tsg, epochs, 0.1, xy
+            ),
+            "build_tensor (100 trials)": lambda: nap.build_tensor(
+                tsg, trials, bin_size=0.05
+            ),
+            "warp_tensor (100 trials)": lambda: nap.warp_tensor(tsg, trials, 10),
+        }
+        for name, fn in benches.items():
+            results[name][n_units] = median_ms(fn)
+    return (
+        "perievent, decoding and warping (2,000 spikes/unit)",
+        "n_units",
+        results,
+    )
+
+
+def bench_randomize():
+    """The randomization functions: each one loops over the units and builds a
+    new group from the results."""
+    results = {
+        "shift_timestamps": {},
+        "shuffle_ts_intervals": {},
+        "jitter_timestamps": {},
+        "resample_timestamps": {},
+    }
+    for n_units in UNIT_COUNTS:
+        tsg = make_tsgroup(n_units)
+        benches = {
+            "shift_timestamps": lambda: nap.shift_timestamps(tsg, min_shift=1.0),
+            "shuffle_ts_intervals": lambda: nap.shuffle_ts_intervals(tsg),
+            "jitter_timestamps": lambda: nap.jitter_timestamps(tsg, max_jitter=0.01),
+            "resample_timestamps": lambda: nap.resample_timestamps(tsg),
+        }
+        for name, fn in benches.items():
+            results[name][n_units] = median_ms(fn)
+    return "randomize (2,000 spikes/unit)", "n_units", results
+
+
 def bench_nwb():
     """Loading a units table and the first operation on it (which, with lazy
     units, includes reading the spikes)."""
@@ -301,6 +386,13 @@ def main():
     nap.compute_crosscorrelogram(warm, 0.005, 0.1)
     nap.compute_crosscorrelogram(warm, 0.005, 0.1, ep=fragmented_ep(5))
     nap.compute_eventcorrelogram(warm, nap.Ts(t=np.array([1.0, 2.0])), 0.005, 0.1)
+    signal = nap.Tsd(t=np.arange(0, DURATION, 0.01), d=np.zeros(int(DURATION * 100)))
+    nap.compute_event_triggered_average(signal, warm, 0.01, 0.1)
+    nap.compute_perievent(warm, nap.Ts(t=np.array([10.0, 20.0])), 1.0)
+    nap.build_tensor(warm, fragmented_ep(5), bin_size=0.05)
+    nap.warp_tensor(warm, fragmented_ep(5), 10)
+    nap.shift_timestamps(warm, min_shift=1.0)
+    nap.jitter_timestamps(warm, max_jitter=0.01)
 
     sections = [
         bench_vs_units,
@@ -309,6 +401,8 @@ def main():
         bench_slicing,
         bench_tuning_curves,
         bench_correlograms,
+        bench_process,
+        bench_randomize,
     ]
     if not args.no_nwb:
         try:

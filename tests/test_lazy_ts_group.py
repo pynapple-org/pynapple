@@ -275,6 +275,10 @@ OPERATIONS = {
     "autocorrelogram": lambda g: nap.compute_autocorrelogram(g, 0.1, 1.0),
     "crosscorrelogram(ep)": lambda g: nap.compute_crosscorrelogram(g, 0.1, 1.0, ep=EP),
     "eventcorrelogram": lambda g: nap.compute_eventcorrelogram(g, EVENT, 0.1, 1.0),
+    "perievent": lambda g: nap.compute_perievent(g, EVENT, 0.3),
+    "perievent(epochs)": lambda g: nap.compute_perievent(
+        g, EVENT, (0.2, 0.4), epochs=EP
+    ),
 }
 
 
@@ -304,6 +308,25 @@ def test_get_closest(make_lazy):
         assert_same(lazy.get(t), eager.get(t))
 
 
+def test_perievent_zero_window(make_lazy):
+    """A zero window gives groups of zero duration, whose rates are NaN.
+    ``TsGroup.__eq__`` finds NaN rates different, even in the same group.
+    Thus compare the spikes, the events and the support."""
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore")
+        lazy = nap.compute_perievent(make_lazy(SPIKES), EVENT, 0.0)
+        eager = nap.compute_perievent(make_eager(SPIKES), EVENT, 0.0)
+    assert list(lazy) == list(eager)
+    for k in lazy:
+        assert list(lazy[k]) == list(eager[k])
+        np.testing.assert_array_equal(lazy[k]["events"], eager[k]["events"])
+        np.testing.assert_array_equal(
+            lazy[k].time_support.values, eager[k].time_support.values
+        )
+        for i in lazy[k]:
+            np.testing.assert_array_equal(lazy[k][i].t, eager[k][i].t)
+
+
 #################################
 # Read only what the operation needs
 #################################
@@ -322,8 +345,17 @@ def span_of(ep):
     return nap.IntervalSet(ep.start[0], ep.end[-1])
 
 
+def perievent_windows(window):
+    """The windows that ``compute_perievent(g, EVENT, window)`` reads: one
+    window for each event in the time support of the group. The windows of
+    ``EVENT`` (0.62 s apart) do not overlap."""
+    events = EVENT.restrict(make_eager(SPIKES).time_support).t
+    return nap.IntervalSet(events - window, events + window)
+
+
 # Operations with epochs, and the epochs that they read.
 OPERATIONS_WITH_EPOCHS = [
+    (lambda g: nap.compute_perievent(g, EVENT, 0.3), perievent_windows(0.3)),
     (lambda g: g.restrict(EP), EP),
     (lambda g: g.count(0.5, EP), EP),
     (lambda g: g.get(2, 8), nap.IntervalSet(2, 8)),

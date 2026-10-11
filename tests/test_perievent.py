@@ -4,6 +4,7 @@ import numpy as np
 import pytest
 
 import pynapple as nap
+from pynapple.process.perievent import _align_sorted
 
 # =============================================================================
 # compute_perievent — discrete data (Ts input)
@@ -144,6 +145,188 @@ class TestComputePerieventDiscrete:
                 tsd, events, window=(-10 * fa, 10 * fa), time_unit=tu
             )
             np.testing.assert_array_almost_equal(peth[4].index, np.arange(-10, 11))
+
+
+# =============================================================================
+# compute_perievent — discrete data, against the per-event loop
+# =============================================================================
+
+
+def align_by_loop(ts, events, window, time_unit="s", epochs=None):
+    """The former implementation of ``compute_perievent`` for a ``Ts``: one
+    mask over all the spikes for each event. It is the reference for the
+    sorted-array kernel."""
+    if not isinstance(window, tuple):
+        window = (window, window)
+    if epochs is None:
+        epochs = ts.time_support
+    window = np.abs(nap.TsIndex.format_timestamps(np.array(window), time_unit))
+    event_times = events.restrict(epochs).times()
+    support = nap.IntervalSet(start=-window[0], end=window[1])
+    aligned = {}
+    for i, event in enumerate(event_times):
+        mask = (ts.t >= event - window[0]) & (ts.t <= event + window[1])
+        aligned[i] = nap.Ts(ts.t[mask] - event, time_support=support)
+    return nap.TsGroup(aligned, metadata={"events": event_times}, time_support=support)
+
+
+def assert_same_peth(a, b):
+    """Check that two outputs of ``compute_perievent`` for spikes are equal."""
+    assert isinstance(a, nap.TsGroup) and isinstance(b, nap.TsGroup)
+    assert list(a) == list(b)
+    np.testing.assert_array_equal(a.time_support.values, b.time_support.values)
+    np.testing.assert_array_equal(a["events"], b["events"])
+    np.testing.assert_array_equal(a.rates, b.rates)
+    for i in a:
+        np.testing.assert_array_equal(a[i].t, b[i].t)
+
+
+def random_case(seed):
+    """A Ts, a TsGroup with sparse keys and an empty unit, and events. Some
+    events are outside the data and some windows overlap."""
+    rng = np.random.default_rng(seed)
+    support = nap.IntervalSet(0, 50)
+    ts = nap.Ts(np.sort(rng.uniform(0, 50, 500)), time_support=support)
+    group = nap.TsGroup(
+        {
+            3: ts,
+            10**9: nap.Ts(np.sort(rng.uniform(0, 50, 200))),
+            12: nap.Ts(np.array([])),
+        },
+        time_support=support,
+    )
+    events = nap.Ts(np.sort(rng.uniform(-5, 55, 40)))
+    return ts, group, events
+
+
+WINDOWS = [
+    ((0.5, 1.5), "s"),
+    (2.0, "s"),
+    ((500.0, 1500.0), "ms"),
+    ((0.0, 1.0), "s"),
+    (0.0, "s"),
+]
+
+
+class TestComputePerieventSorted:
+    @pytest.mark.parametrize("seed", range(5))
+    @pytest.mark.parametrize("window, time_unit", WINDOWS)
+    @pytest.mark.parametrize("epochs", [None, nap.IntervalSet([5, 30], [20, 45])])
+    def test_same_as_loop(self, seed, window, time_unit, epochs):
+        ts, group, events = random_case(seed)
+        assert_same_peth(
+            nap.compute_perievent(ts, events, window, time_unit, epochs),
+            align_by_loop(ts, events, window, time_unit, epochs),
+        )
+        peth = nap.compute_perievent(group, events, window, time_unit, epochs)
+        assert list(peth) == list(group)
+        for k in group:
+            assert_same_peth(
+                peth[k], align_by_loop(group[k], events, window, time_unit, epochs)
+            )
+
+    def test_spikes_on_window_bounds(self):
+        """``t - event`` can fall just outside the window (1.4 - 1.7 gives
+        -0.30000000000000004). Such spikes are dropped, as by a Ts on the
+        window."""
+        ts = nap.Ts(np.round(np.arange(0, 10, 0.1), 10))
+        events = nap.Ts(np.array([0.3, 1.7, 2.9, 5.0]))
+        peth = nap.compute_perievent(ts, events, (0.3, 0.7))
+        assert_same_peth(peth, align_by_loop(ts, events, (0.3, 0.7)))
+        assert -0.3 not in peth[1].t  # 1.4 - 1.7
+        group = nap.TsGroup({0: ts, 1: nap.Ts(ts.t[::3])})
+        for k, aligned in nap.compute_perievent(group, events, (0.3, 0.7)).items():
+            assert_same_peth(aligned, align_by_loop(group[k], events, (0.3, 0.7)))
+
+    def test_overlapping_windows(self):
+        """A spike in two windows is aligned to each event."""
+        ts = nap.Ts(np.array([5.0]), time_support=nap.IntervalSet(0, 10))
+        peth = nap.compute_perievent(ts, nap.Ts(np.array([4.0, 5.5])), 1.0)
+        np.testing.assert_array_equal(peth[0].t, [1.0])
+        np.testing.assert_array_equal(peth[1].t, [-0.5])
+
+    def test_spikes_outside_epochs(self):
+        """``epochs`` restricts the events, not the spikes: a spike outside
+        ``epochs`` but in a window is aligned."""
+        ts = nap.Ts(np.array([4.5, 5.5]), time_support=nap.IntervalSet(0, 10))
+        events = nap.Ts(np.array([5.0, 8.0]))
+        epochs = nap.IntervalSet(5, 6)
+        for peth in [
+            nap.compute_perievent(ts, events, 1.0, epochs=epochs),
+            nap.compute_perievent(nap.TsGroup({0: ts}), events, 1.0, epochs=epochs)[0],
+        ]:
+            assert list(peth) == [0]
+            np.testing.assert_array_equal(peth[0].t, [-0.5, 0.5])
+
+    def test_no_event(self):
+        """No event in the support: one empty group per unit, with an int64
+        index, as with events."""
+        ts = nap.Ts(np.arange(10.0))
+        events = nap.Ts(np.array([50.0]))
+        for peth in [
+            nap.compute_perievent(ts, events, 1.0),
+            nap.compute_perievent(nap.TsGroup({0: ts}), events, 1.0)[0],
+        ]:
+            assert len(peth) == 0
+            assert peth.index.dtype == np.int64
+            np.testing.assert_array_equal(peth.time_support.values, [[-1.0, 1.0]])
+
+    def test_empty_group(self):
+        group = nap.TsGroup({}, time_support=nap.IntervalSet(0, 10))
+        assert nap.compute_perievent(group, nap.Ts(np.array([5.0])), 1.0) == {}
+
+    def test_group_of_tsd(self):
+        """Members with values align as continuous data, one unit at a time."""
+        group = nap.TsGroup(
+            {
+                0: nap.Tsd(t=np.arange(100.0), d=np.arange(100.0)),
+                1: nap.Tsd(t=np.arange(100.0), d=-np.arange(100.0)),
+            }
+        )
+        events = nap.Ts(np.array([20.0, 60.0]))
+        peth = nap.compute_perievent(group, events, 5.0)
+        for k in group:
+            assert isinstance(peth[k], nap.TsdFrame)
+            np.testing.assert_array_equal(
+                peth[k].values, nap.compute_perievent(group[k], events, 5.0).values
+            )
+
+
+class TestAlignSorted:
+    def test_order_and_offsets(self):
+        """Sorted by unit, then by relative time, then by event."""
+        times = np.array([1.0, 2.0, 2.0, 3.0, 4.0])
+        unit_pos = np.array([1, 0, 1, 1, 0])
+        event_times = np.array([2.0, 3.0])
+        relative_times, event_idx, offsets = _align_sorted(
+            times, unit_pos, 2, event_times, np.array([1.0, 1.0])
+        )
+        np.testing.assert_array_equal(offsets, [0, 3, 8])
+        # unit 0: spikes 2.0 and 4.0
+        np.testing.assert_array_equal(relative_times[:3], [-1.0, 0.0, 1.0])
+        np.testing.assert_array_equal(event_idx[:3], [1, 0, 1])
+        # unit 1: spikes 1.0, 2.0 and 3.0; the ties keep the event order
+        np.testing.assert_array_equal(relative_times[3:], [-1.0, -1.0, 0.0, 0.0, 1.0])
+        np.testing.assert_array_equal(event_idx[3:], [0, 1, 0, 1, 0])
+
+    @pytest.mark.parametrize(
+        "times, unit_pos, n_units, event_times",
+        [
+            ([1.0, 2.0], [0, 1], 2, []),  # no event
+            ([], [], 0, [5.0]),  # no unit
+            ([1.0, 2.0], [0, 1], 2, [50.0]),  # no spike in the windows
+        ],
+    )
+    def test_empty(self, times, unit_pos, n_units, event_times):
+        relative_times, event_idx, offsets = _align_sorted(
+            np.array(times, dtype=np.float64),
+            np.array(unit_pos, dtype=np.int64),
+            n_units,
+            np.array(event_times, dtype=np.float64),
+            np.array([1.0, 1.0]),
+        )
+        assert len(relative_times) == len(event_idx) == 0
+        np.testing.assert_array_equal(offsets, np.zeros(n_units + 1))
 
 
 # =============================================================================
