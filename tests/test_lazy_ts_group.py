@@ -279,6 +279,7 @@ OPERATIONS = {
     "perievent(epochs)": lambda g: nap.compute_perievent(
         g, EVENT, (0.2, 0.4), epochs=EP
     ),
+    "warp_tensor": lambda g: nap.warp_tensor(g, EP, 4),
 }
 
 
@@ -360,6 +361,7 @@ OPERATIONS_WITH_EPOCHS = [
     (lambda g: g.count(0.5, EP), EP),
     (lambda g: g.get(2, 8), nap.IntervalSet(2, 8)),
     (lambda g: nap.compute_tuning_curves(g, TSD, bins=5, epochs=EP), EP),
+    (lambda g: nap.warp_tensor(g, EP, 4), EP),
 ]
 
 
